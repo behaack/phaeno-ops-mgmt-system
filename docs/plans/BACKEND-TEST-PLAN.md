@@ -1,5 +1,256 @@
 # Backend Test Plan
 
+## Customer transportation-kit ordering and receipt — September 8, 2026
+
+The focused checkpoint passed **53/53** cases against a newly migrated,
+isolated PostgreSQL database. This includes the existing 44 shipping, packing,
+catalog and Lab handoff cases, six new transportation-kit cases and three new
+Customer delivery-location cases. The solution build completed without warnings
+or errors. The scratch database was removed and synthetic notification rows
+were verified empty; notification delivery used a fake sender.
+
+New coverage includes concurrent/duplicate request suppression, frozen delivery
+and container facts, one Phaeno fulfillment notice, partial dispatch and receipt,
+receipt-gated tube scanning and packing, residual capacity after another
+container is allocated, delivery-location isolation, cancellation without
+operational changes, and all 261 records in the staff queue with status filters.
+Delivery-location coverage checks Department ownership, tenant isolation,
+administrator/member permissions, default replacement, optimistic concurrency,
+soft deactivation and validation without changing a saved default. A demoted
+administrator must receive explicit Department membership before member reads
+are permitted; missing membership remains a 404.
+
+Migration `20260909013740_AddCustomerTransportationKitOrdering` was applied only
+to the configured localhost `phaeno_ops` database. The model has no pending
+changes. Before/after evidence confirms identical HS5Y7DB7 order state, nine
+sample identities and values, 18 tubes, and shipment identities and versions.
+Evidence: `artifacts/transportation-kit-ordering-tests/transportation-kit-ordering.trx`,
+`latest-run.log`, `local-migration.log` and `local-job-{before,after}.json`.
+
+### Reusable transportation-kit scenarios
+
+The IDs below are stable regression references. **H53** means the named test
+passed in the historical September 8, 2026 53-case checkpoint above; this
+documentation update did not run tests or produce new acceptance evidence.
+**Planned** means the stated scenario has no dedicated passing case identified
+here. A passing API test or fake notification sender does not establish mailbox,
+physical inventory, scanner, carrier or customer-delivery acceptance. Follow
+the [E2E test plan](E2E-TEST-PLAN.md) for the observable Customer/Phaeno walkthrough
+and record its evidence separately.
+
+Reference keys below name exact source files. Methods in TK, LOC, PACK and SHIP
+belong to the shared `SampleShippingPostgresTests` partial class.
+
+| Key | Test source |
+| --- | --- |
+| TK | [TransportationKitOrderingPostgresTests.cs](../../backend/test/TransportationKitOrderingPostgresTests.cs) |
+| LOC | [CustomerDeliveryLocationPostgresTests.cs](../../backend/test/CustomerDeliveryLocationPostgresTests.cs) |
+| PACK | [SampleShippingPackingPostgresTests.cs](../../backend/test/SampleShippingPackingPostgresTests.cs) |
+| SHIP | [SampleShippingPostgresTests.cs](../../backend/test/SampleShippingPostgresTests.cs) |
+| CAT | [SampleShippingContainerTests.cs](../../backend/test/SampleShippingContainerTests.cs) |
+| DOMAIN | [SampleShippingDomainTests.cs](../../backend/test/SampleShippingDomainTests.cs) |
+| LEGACY | [LabOwnedSampleOperationPostgresTests.cs](../../backend/test/LabOwnedSampleOperationPostgresTests.cs), in `LabOperationsCommercialHandoffPostgresTests` |
+
+| ID | Trigger and required invariant | Existing exact test reference | Evidence |
+| --- | --- | --- | --- |
+| KIT-B01 | Read/order as Customer administrator, ordinary Department member, user without Department access, foreign Customer or Phaeno staff. Retain member reads, deny unauthorized writes, and hide foreign records; cancellation before dispatch permits one replacement request. | TK.`TransportationKitOrderAuthorizationCancellationAndWrongKitLeaveRecordsIntact`; LOC.`CustomerDeliveryLocationsRejectOtherTenantAndMemberWritesWhilePhaenoCanManage`; LOC.`CustomerDeliveryLocationsRespectDepartmentOwnershipAndRejectInvalidAddressWithoutReplacingDefault` | H53 |
+| KIT-B02 | Create/change a default delivery location, submit stale edits or invalid address data, and deactivate a location. Keep one active default per Department, reject stale/invalid writes without changing it, and retain inactive record details. | LOC.`CustomerDeliveryLocationsReplaceDefaultWithConcurrencyAndPreserveInactiveDetails`; LOC.`CustomerDeliveryLocationsRespectDepartmentOwnershipAndRejectInvalidAddressWithoutReplacingDefault` | H53 |
+| KIT-B03 | Confirm recommended kits for an accepted Customer Lab Job from concurrent clients and retry. Create one Pending request, retain included-cost presentation, preserve sample counts and shipment allocation, freeze the confirmed address against later address edits, and retain requested container capacity. | TK.`TransportationKitConcurrentRequestsFreezeFactsAndNotifyPhaenoOnlyOnce` | H53; included-cost flag is asserted, financial-ledger absence is not separately asserted |
+| KIT-B04 | Process the new-request notification and replay ordering. Queue one notice and resolve the Phaeno administrator recipient through the existing dispatcher. | TK.`TransportationKitConcurrentRequestsFreezeFactsAndNotifyPhaenoOnlyOnce` | H53 with fake sender; actual mailbox delivery outstanding |
+| KIT-B05 | Dispatch one requested size before the other, or pick a wrong size. Preserve exact requested revision/quantity matching; report PartiallyDispatched, then Dispatched; reject the wrong kit without saving dispatch facts. On-the-way quantities remain unavailable. | TK.`TransportationKitPartialDispatchAndReceiptEnableOnlyAcknowledgedCapacity`; TK.`TransportationKitOrderAuthorizationCancellationAndWrongKitLeaveRecordsIntact` | H53 |
+| KIT-B06 | Acknowledge only received kits, repeat the acknowledgement, then receive the remainder. Make only acknowledged capacity usable, preserve receipt/version on repeat, and reach Received only when every requested kit is acknowledged. Block preparation and tube scans before receipt. | TK.`TransportationKitPartialDispatchAndReceiptEnableOnlyAcknowledgedCapacity`; TK.`TransportationKitReceiptGateBlocksTubeScanUntilCustomerAcknowledgesDelivery` | H53 |
+| KIT-B07 | Allocate a received 20-tube kit while ten tubes remain, or order to a second delivery location. Keep the same request across the residual pool; subtract already-prepared containers; recommend only missing capacity; do not pool another location's kits. An acknowledged kit already bound to its shipment remains usable there. | TK.`TransportationKitPartialDispatchAndReceiptEnableOnlyAcknowledgedCapacity`; TK.`TransportationKitPackingDoesNotPoolReceivedKitsAcrossDeliveryLocations`; TK.`TransportationKitReceiptGateBlocksTubeScanUntilCustomerAcknowledgesDelivery` | H53 |
+| KIT-B08 | Configure compatible sizes and recommend/override them with unknown, zero or limited availability. Enforce Phaeno configuration access and exact compatibility; preserve frozen shipment revisions; prefer fewest containers, then least spare capacity; support 20+10, two 20s or six 5s and retain exact shortfall. | PACK.`ContainerCatalogRequiresPhaenoConfigurationAccessAndExactCompatibilityPairs`; PACK.`ContainerCatalogDraftPreviewRevisionsAndDeactivationPreserveFrozenShipmentFacts`; CAT.`DefaultThirtyTubesUsesTwentyAndTen`; CAT.`ActualAvailabilityControlsRecommendation`; CAT.`UnknownAvailabilityIsNotZeroAndNoCompatibleOptionsIsIncomplete`; CAT.`ZeroAvailabilityDoesNotInventContainers`; CAT.`InvalidSelectionsRejectDuplicatesUnavailableAndUnknownDefinitions` | H53; recorded Job stock does not establish a complete customer inventory balance |
+| KIT-B09 | Split tubes 15+15 or 10+10+10, skip an empty container, finish a residual pool, or submit simultaneous packing confirmations. Preserve every physical tube's global sample ordinal and earlier shipment identities; invalid plans leave the source unchanged; only one concurrent allocation wins. | PACK.`ContainerPackingCustomCountsSupportEvenSplitsAndSkipEmptyExtras`; PACK.`ContainerPackingHonorsAlternateSelectionsAndLeavesShortfallExplicit`; PACK.`ContainerPackingRejectsInvalidCustomCountsWithoutChangingTheSource`; PACK.`ContainerPackingConcurrentConfirmAllocatesEveryPhysicalTubeOnlyOnce` | H53 |
+| KIT-B10 | Register/dispatch a standard kit and scan its permanent tube barcode into a partially filled return container. Require the complete registered kit before dispatch, bind the physical kit once, retain unused spare tubes separately, and preserve existing supplier-barcode adoption. | DOMAIN.`ReturnKitRequiresTheExactRegisteredTubeCountBeforeFulfillment`; PACK.`ContainerStockConcurrentScansBindOnePhysicalKitToOnlyOneShipment`; PACK.`ContainerStockWholeKitBindsOnFirstScanWhilePartialFillKeepsUnusedTubesSeparate`; SHIP.`RegisteredTubeJourneyFreezesCrosswalkEnforcesTenantAndAdoptsBarcodeAtAccession` | H53 |
+| KIT-B11 | Print/replace a split-sample manifest and receive/accession individual tubes. Preserve order/shipment/sample/tube identities, reject a void packet, resolve the current shipment packet, and advance physical counts only for received tubes. A complete package can become Received without fabricated Customer dispatch details; the other package stays incomplete. | PACK.`ContainerStockWholeKitBindsOnFirstScanWhilePartialFillKeepsUnusedTubesSeparate`; SHIP.`RegisteredTubeJourneyFreezesCrosswalkEnforcesTenantAndAdoptsBarcodeAtAccession` | H53; physical print/scan acceptance remains E2E work |
+| KIT-B12 | Open and filter a queue or a Job with more than 250 related records. Return all 261 matching requests/shipments without losing older records; retain readable Customer/Department names and tenant/member scope. | TK.`TransportationKitQueueReturnsAllRecordsForClientFilteringBeyondTwoHundredFifty`; PACK.`ContainerShipmentSourceListingIncludesAllPackagesAndRetainsMemberReadOnlyScope` | H53 |
+| KIT-B13 | Invoke old whole-sample receipt/accession/status endpoints for Lab-owned shipping samples, then repeat on an unowned legacy sample. Reject the owned bypass with 409 and unchanged state; retain the three legacy operations for unowned samples. | LEGACY.`LabOwnedShippingSampleRejectsLegacyReceiptAccessionAndTransitionWithoutChanges`; LEGACY.`LegacySampleWithoutLabOwnedShippingRetainsReceiptAccessionAndTransition` | H53 |
+
+### Additional backend cases and broader inventory boundaries
+
+These are coverage requirements for later authorized test work, not new passing
+results or a claim that the broader inventory model exists. Keep the scenario
+IDs when adding tests and replace the reference/status only after evidence is
+recorded.
+
+| ID | Trigger and expected invariant | Existing coverage boundary | Evidence/status |
+| --- | --- | --- | --- |
+| KIT-B14 | Open ordering with no location, one non-default location or several locations without a default; change/deactivate the chosen location before confirmation. Require explicit setup/choice where needed and reject stale confirmation without creating a request. | KIT-B02 covers saved defaults, validation and deactivation; no dedicated backend case covers every ordering-selection branch or stale location confirmation. | Planned regression |
+| KIT-B15 | Attempt kit ordering for an unaccepted/held/cancelled Job, Trial or Partner context; retry the same idempotency key with altered data; race dispatch, receipt and cancellation. Preserve eligibility, payload-conflict, quantity and transaction boundaries. | KIT-B01/B03/B05/B06 cover selected authorization, concurrent creation, wrong-kit rollback and repeated receipt; these additional negative/race combinations are not established by those passes. | Planned regression |
+| KIT-B16 | Order included kits/outbound delivery and exercise notification failure/retry, missing routing or a future designated recipient. Assert no new invoice/financial posting and no duplicate notification delivery record. | KIT-B03 asserts the included-cost flag; KIT-B04 proves initial routing through a fake sender. Dedicated financial-absence and notification-recovery cases are not identified. | Planned regression; named-recipient policy/configuration remains a separate decision |
+| KIT-B17 | Reserve Phaeno/customer stock for simultaneous Jobs, move supply between warehouse/customer locations, and release reservations after plan changes or cancellation. Prevent double allocation across Jobs and distinguish transit from confirmed on-hand balance. | Current kit supply is Job/location scoped; it is not a cross-Job inventory ledger or warehouse reservation system. | Planned product scope; no implemented backend test reference |
+| KIT-B18 | Reconcile unknown/stale balances, record lost/damaged supply, adjust with reasons, or split/reassemble kits and reuse spare tubes. Preserve movement history and permanent identities without inventing availability. | Current partial-fill/spare-tube checks do not implement reusable spare inventory, stock adjustments or reconciliation. | Planned product scope; no implemented backend test reference |
+| KIT-B19 | Recalculate preliminary demand at order intake, then exact demand after final sample entry; apply replenishment thresholds and partial fulfillment/receipt over multiple orders. Create one appropriate replenishment work item and avoid automatic charges or shipments without policy. | Finalized-Job request and partial receipt are covered above; automatic replenishment and preliminary-demand inventory planning remain in the [owning shipping plan](SAMPLE-SHIPPING-AND-INTAKE-PLAN.md). | Planned product scope; no implemented backend test reference |
+
+For future authorized execution, use isolated synthetic PostgreSQL fixtures and
+a fake notification sender; verify cleanup. Do not use the walkthrough Job as
+a test fixture. Backend pass counts, signed-in walkthrough results and real
+delivery/receipt evidence must remain separate in the
+[E2E test plan](E2E-TEST-PLAN.md).
+
+## Container configuration, stock kits and split shipments — September 8, 2026
+
+The final focused checkpoint passed **44/44** cases: 17 container/catalog
+domain and packing cases, eight existing shipping domain cases, four packing
+invariants, and 15 PostgreSQL cases (twelve new and three existing journeys).
+The new PostgreSQL cases are in `SampleShippingPackingPostgresTests.cs`, a
+partial of the existing shipping fixture; cleanup scopes all new catalog and
+stock records to that fixture's unique SKU prefix.
+
+Coverage includes inactive draft preview, stable case-insensitive SKU identity,
+revision history, explicit deactivation, frozen shipment container facts,
+Phaeno configuration authorization, exact structured compatibility pairs,
+fewest-container/least-unused-capacity recommendations, unknown/zero/limited
+availability, arbitrary compatible selections, exact shortfalls and preserved
+global sample tube ordinals. The optimizer is also compared with exhaustive
+results for 675 small bounded cases. Confirmed plans cover 20+10, two 20s,
+six 5s, custom 15+15 and 10+10+10 splits, skipped empty extras, and rejection of
+invalid counts without source changes.
+
+The final lifecycle review also verifies completing a previously partial
+packing pool without changing earlier containers, retrieving all 261 packages
+for a selected job despite the general list's 250-record limit, and retaining
+Member read access while blocking administrative writes. Draft preview cannot
+override active, ended or deactivated revisions. Complete physical receipt or
+accession marks a confirmed package Received even if Customer dispatch details
+were never entered, retaining absent carrier/tracking values rather than
+inventing them.
+
+`LabOwnedSampleOperationPostgresTests.cs` verifies that the legacy POMS sample
+receipt, accession and status-transition endpoints reject samples connected to
+Lab-owned shipping work with 409 and direct staff to Lab operations. The guard
+leaves sample, order, specimen, work and shipment state, audit events and notices
+unchanged. Samples without that ownership retain all three legacy operations.
+
+Concurrent confirmation and concurrent stock-kit binding each permit exactly
+one winning operation. A complete stocked 20-tube kit can back a 10-tube return
+container without making the other supplied tubes expected returns. Packet
+tests verify SKU, distinct order/shipment/sample barcodes, split-sample totals
+and other-container references. Identity lookup resolves each context; a
+shipment barcode resolves the current packet, while an explicitly replaced
+packet barcode is rejected. Physical receipt advances from 1 through 10 of
+30 expected tubes while the other container remains at zero. Unpaired receipt,
+receipt of an unused spare tube, cross-tenant reads and reuse of a received
+tube are rejected. Existing supplier-barcode adoption and packet issuance
+regressions still pass.
+
+All database fixtures ran against freshly created local scratch databases with
+no copied user data or running notification dispatcher. All five scratch
+databases were dropped and absence verified; each left zero synthetic notices.
+The intermediate checkpoint caught an unmapped computed void-status property
+in packet queries; the final code queries the persisted void timestamp.
+The isolated backend/test build passed with zero warnings and errors.
+
+Migration `20260908234930_AddSampleShippingContainerPackingAndStock` adds five
+catalog/stock tables, three shipment packing fields and a physical-tube receipt
+timestamp. Existing required return-kit ownership is unchanged. The model
+snapshot has no pending changes and the complete database ERD is regenerated.
+After verifying it was the sole pending migration on `localhost/phaeno_ops`,
+it was applied locally. Before/after evidence confirms that the walkthrough
+job's nine unique sample IDs, saved sample values, 18 tubes, order status and
+version, and shipment IDs/statuses/versions are identical. No fixtures ran
+against that database. Shared/production migration, actual supply configuration
+and physical kit/scanner acceptance remain unperformed.
+
+## Sample source capacity, imports and roster responses — September 8, 2026
+
+The final focused checkpoint passed 13 cases: five new PostgreSQL capacity
+cases, three existing acceptance/finalization/replay PostgreSQL regressions,
+and five unit/CSV checks. An earlier broader unit/domain batch passed 27/27.
+Coverage includes quota enforcement while other sources still have room,
+record counts independent of tubes, source normalization, unchanged-source
+legacy metadata recovery, moving/removing records, exact finalization flags
+and authorization, persisted CSV revalidation, and simultaneous requests for
+the last available source slot. The computed count property is verified absent
+from EF metadata, so no model or migration change is required.
+
+The first isolated run exposed duplicate Add response rows from EF collection
+fix-up: tracking the sample before explicitly adding it to the order collection
+could return the same saved record twice. Add/import now attach the collection
+member before tracking it; response-count checks passed. A subsequent failing
+assertion depended on source-group iteration order; it now accepts either
+correct source-mismatch explanation, and the entire checkpoint passed.
+
+The owner's Visual Studio session repeatedly restarted local IIS, so tests
+used fresh local scratch databases instead of the active development database.
+Each received the existing migrations without copied user data. All three
+scratch databases were dropped and absence verified; cleanup left zero
+synthetic notification rows. No user samples were changed and no shared or
+production database was used. Root's final local API build passed with zero
+warnings/errors; the restarted API returned health HTTP 200.
+
+## Quote decline reason selection — September 8, 2026
+
+The decline dropdown uses the existing withdrawal `ReasonRequest` contract
+and request-closure operation. Named selections serialize their readable label;
+Other serializes `Other: ` plus trimmed explanation, within the existing
+2,000-character limit. No API, authorization or persisted-model change is
+required, so no migration or additional backend test run is needed for this UI
+change. Focused frontend tests cover the payload and conditional validation.
+
+## Quote expiration and extension requests — September 8, 2026
+
+All six `LabQuoteExtensionPostgresTests` cases passed against guarded local
+PostgreSQL. They cover effective expiry without read mutation, blocked expired
+acceptance, durable duplicate/idempotent requests, organization/department and
+Member/admin boundaries, inactive membership, stale versions/source quotes,
+pending staff filtering, future-dated reissue, immutable original terms,
+atomic request resolution, one issuance notice, and Accepted-state preservation.
+The first checkpoint found a duplicate fixture Job name; unique fixture names
+fixed it and all six cases passed on rerun. The other 36 related quote issuance,
+PDF and order-domain cases passed in the original checkpoint.
+
+The API was stopped during committed test fixtures so synthetic notices could
+not dispatch; fixture cleanup deletes extension requests before their quotes.
+Migration `20260908204524_AddLabServiceQuoteExtensionRequests` was verified
+additive and applied only to `localhost/phaeno_ops`. Existing Phaeno read
+authorization is unchanged. Shared/production execution remains unperformed.
+
+## Branded quote PDF — September 8, 2026
+
+All 6 `QuotePdfRendererTests` cases passed: embedded Phaeno logo/fonts, saved
+USD900 pre-tax quote without invented terms, frozen billing/tax/payment terms,
+precise unit prices and rounded line amounts, historical status, long/multipage
+descriptions with repeated headers and bounded glyphs, and safe failure for
+unsupported characters. The representative one-page PDF and every page of the
+five-page layout sample were visually checked under `artifacts/quote-pdf-review`.
+
+All 5 `DepartmentAccessPostgresTests.QuotePdf*` cases passed against guarded
+local PostgreSQL using rolled-back fixtures, with zero failures/skips. They
+cover ordinary Member download, organization/department/order/quote boundaries,
+unissued and missing revisions, membership revocation, immutable quote/order/
+audit data, frozen billing versus the current profile, and malformed-line 409
+recovery. Local API build passed with zero warnings/errors. No migration or
+shared-environment change was required. The owner's Firefox retry remains
+separate from these automated results.
+
+After the owner's successful Firefox download, the spacing-only refinement
+reran the same 6 renderer cases successfully. The sample and all five long
+document pages were visually reviewed again, including aligned metadata, table
+padding and totals-divider clearance. No new cosmetic test or access-test
+rerun was needed; content, money calculations and download permissions did
+not change. API rebuild passed with zero warnings/errors.
+
+## Private invitation preview — September 8, 2026
+
+Two `DepartmentAccessPostgresTests.InvitationPreview*` cases passed against the
+local development database inside rolled-back transactions. They cover the
+minimal pending recipient preview, no-store headers, no membership/lifecycle
+mutation, and generic failures for unknown, empty, oversized, expired, revoked,
+accepted, declined, and inactive-organization links. The preview POST is
+anonymous only with a valid secret invitation token and uses the API rate
+limiter. Acceptance and decline authorization remain unchanged. Local API
+build passed with zero warnings/errors. No migration was needed.
+
+## Domain invitation template — September 8, 2026
+
+Updated `MailgunInvitationEmailSenderTests.SendInvitationPostsSingleEmailToMailgun`
+to verify the domain template name, private `t:variables` organization/recipient/
+invitation URL, plain-text fallback, and absence of inline HTML or public token
+metadata. All four focused Mailgun sender/renderer/webhook tests passed. API
+build passed with zero warnings/errors. No other backend suite was run.
+
 ## CRM outreach decisions — September 8, 2026
 
 `CrmOutreachTests` covers legacy permission requiring review, legacy suppression,

@@ -13,6 +13,7 @@ using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Application;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Commercial.Relationships.Domain;
+using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.FileManagement.Services;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.DTOs;
@@ -115,7 +116,8 @@ public sealed class PlatformLabServiceOrdersController(
         [FromQuery] DateTime? updatedTo = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        [FromQuery] bool quoteExtensionRequested = false)
     {
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         page = Math.Max(1, page);
@@ -138,6 +140,8 @@ public sealed class PlatformLabServiceOrdersController(
         if (unassigned) query = query.Where(order => order.AssignedToUserId == null);
         if (holds) query = query.Where(order => order.Status == LabServiceOrderStatus.OnHold);
         if (readyForIntake) query = query.Where(order => order.SampleRosterFinalizedAt != null);
+        if (quoteExtensionRequested) query = query.Where(order => order.Status == LabServiceOrderStatus.QuoteIssued
+            && dbContext.LabServiceQuoteExtensionRequests.Any(request => request.LabServiceOrderId == order.Id && request.ResolvedAt == null));
         if (overdue)
         {
             var now = DateTime.UtcNow;
@@ -151,7 +155,8 @@ public sealed class PlatformLabServiceOrdersController(
             .Select(order => new OrderListItemDto(order.Id, order.OrderNumber, order.Status.ToString(), order.CustomerReference,
                 order.OrganizationId, order.CreatedAt, order.UpdatedAt, order.Version, order.TenantSafeReason,
                 order.AssignedToUserId, order.DueAt, order.DueAt != null && order.DueAt < DateTime.UtcNow
-                    && order.Status != LabServiceOrderStatus.Completed && order.Status != LabServiceOrderStatus.Cancelled && order.Status != LabServiceOrderStatus.Declined)).ToListAsync(cancellationToken);
+                    && order.Status != LabServiceOrderStatus.Completed && order.Status != LabServiceOrderStatus.Cancelled && order.Status != LabServiceOrderStatus.Declined,
+                order.Status == LabServiceOrderStatus.QuoteIssued && dbContext.LabServiceQuoteExtensionRequests.Any(request => request.LabServiceOrderId == order.Id && request.ResolvedAt == null))).ToListAsync(cancellationToken);
         return new PagedResult<OrderListItemDto>(items, page, pageSize, total);
     }
 
@@ -413,9 +418,18 @@ public sealed class PlatformLabServiceOrdersController(
             : await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
         var scope = $"platform:lab-order:{orderId}:quote";
+        await using var transaction = dbContext.Database.CurrentTransaction is null
+            ? await dbContext.Database.BeginTransactionAsync(cancellationToken) : null;
+        await idempotency.AcquireOrderLockAsync($"lab-order:{orderId}", cancellationToken);
         var replay = await idempotency.ReadAsync<LabServiceOrderDto>(actor.Id, scope, key, request, cancellationToken);
         if (replay != null) return replay;
         var order = await ReadAsync(orderId, cancellationToken);
+        await dbContext.Entry(order).ReloadAsync(cancellationToken);
+        foreach (var item in order.Quotes) await dbContext.Entry(item).ReloadAsync(cancellationToken);
+        await dbContext.LabServiceQuotes.Where(item => item.LabServiceOrderId == orderId).LoadAsync(cancellationToken);
+        if (order.IsDiscarded) throw Missing();
+        if (request.SourceQuoteId.HasValue && order.CurrentQuoteId != request.SourceQuoteId.Value)
+            throw Conflict("quote_not_current", "This quote was replaced. Refresh the Job and review the current revision before issuing another quote.");
         if (order.Version != request.Version)
         {
             logger.LogWarning(
@@ -476,6 +490,8 @@ public sealed class PlatformLabServiceOrdersController(
         var now = DateTime.UtcNow;
         var config = await dbContext.OrderSystemConfigurations.AsNoTracking().OrderBy(item => item.CreatedAt).FirstOrDefaultAsync(cancellationToken);
         var expiresAt = request.ExpiresAt ?? now.AddDays(config?.QuoteValidityDays ?? 30);
+        if (expiresAt.Kind != DateTimeKind.Utc || expiresAt <= now)
+            throw Invalid("quote_expiration_invalid", "Choose a quote expiration date in the future.");
         if (!Enum.TryParse<QuotePurpose>(request.Purpose, true, out var purpose)) throw Invalid("quote_purpose_invalid", "The quote purpose is invalid.");
         var snapshots = request.Lines.Select(line => new QuoteLineSnapshot(line.CatalogItemId, catalog[line.CatalogItemId].ExternalItemId,
             line.Description.Trim(), line.Quantity, line.UnitPrice)).ToList();
@@ -502,7 +518,7 @@ public sealed class PlatformLabServiceOrdersController(
             request.PricingDecisionReason,
             actor.Id,
             now));
-        var previous = order.Quotes.Where(item => item.Status is QuoteStatus.Issued or QuoteStatus.SyncPending).OrderByDescending(item => item.Revision).FirstOrDefault();
+        var previous = order.Quotes.Where(item => item.Status is QuoteStatus.Issued or QuoteStatus.Expired or QuoteStatus.SyncPending).OrderByDescending(item => item.Revision).FirstOrDefault();
         previous?.Supersede(quote.Id);
         dbContext.LabServiceQuotes.Add(quote);
         if (nativeReceivables)
@@ -510,6 +526,9 @@ public sealed class PlatformLabServiceOrdersController(
             var previousStatus = order.Status.ToString();
             quote.MarkIssued();
             order.MarkQuoteIssued(quote.Id);
+            var pendingExtensions = await dbContext.LabServiceQuoteExtensionRequests
+                .Where(item => item.LabServiceOrderId == order.Id && item.ResolvedAt == null).ToListAsync(cancellationToken);
+            foreach (var extension in pendingExtensions) extension.Resolve(quote.Id, now);
             Event(order, previousStatus, order.Status.ToString(), actor.Id, internalNote: PricingDecisionAudit(quote));
             Notice(order, "lab-quote-issued", "Laboratory quote available", $"Pricing for {order.OrderNumber} is available for review.");
         }
@@ -542,6 +561,7 @@ public sealed class PlatformLabServiceOrdersController(
         var response = await MapAsync(order, cancellationToken);
         idempotency.Store(actor.Id, scope, key, request, response, StatusCodes.Status202Accepted);
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         Response.StatusCode = nativeReceivables ? StatusCodes.Status201Created : StatusCodes.Status202Accepted;
         return response;
     }
@@ -553,6 +573,7 @@ public sealed class PlatformLabServiceOrdersController(
         var order = await ReadAsync(orderId, cancellationToken);
         var sample = order.Samples.SingleOrDefault(item => item.Id == sampleId) ?? throw Missing();
         EnsureVersion(sample.Version, request.Version);
+        await EnsureLegacySampleOperationAllowedAsync(order, sample.Id, cancellationToken);
         var before = sample.Status.ToString();
         Execute(() => sample.Receive(request.ReceivedAt, request.ReceiptCondition));
         Event(order, before, sample.Status.ToString(), actor.Id, childId: sample.Id);
@@ -567,6 +588,7 @@ public sealed class PlatformLabServiceOrdersController(
         var order = await ReadAsync(orderId, cancellationToken);
         var sample = order.Samples.SingleOrDefault(item => item.Id == sampleId) ?? throw Missing();
         EnsureVersion(sample.Version, request.Version);
+        await EnsureLegacySampleOperationAllowedAsync(order, sample.Id, cancellationToken);
         var before = sample.Status.ToString();
         Execute(() => sample.Accession(request.AccessionId));
         Event(order, before, sample.Status.ToString(), actor.Id, childId: sample.Id);
@@ -582,6 +604,7 @@ public sealed class PlatformLabServiceOrdersController(
         var order = await ReadAsync(orderId, cancellationToken);
         var sample = order.Samples.SingleOrDefault(item => item.Id == sampleId) ?? throw Missing();
         EnsureVersion(sample.Version, request.Version);
+        await EnsureLegacySampleOperationAllowedAsync(order, sample.Id, cancellationToken);
         var before = sample.Status.ToString();
         Execute(() => sample.TransitionTo(target, request.Reason, request.InternalNote));
         if (target is LabSampleStatus.LabAnalysis or LabSampleStatus.DataProcessing) Execute(order.MarkWorkStarted);
@@ -889,6 +912,28 @@ public sealed class PlatformLabServiceOrdersController(
             .Include(order => order.Quotes).Include(order => order.Revisions)
             .FirstOrDefaultAsync(order => order.Id == orderId && !order.IsDiscarded, cancellationToken) ?? throw Missing();
 
+    private async Task EnsureLegacySampleOperationAllowedAsync(
+        LabServiceOrder order, Guid sampleId, CancellationToken cancellationToken)
+    {
+        var labOwnsShipping = await (
+            from item in dbContext.SampleShipmentItems
+            join shipment in dbContext.SampleShipments on item.SampleShipmentId equals shipment.Id
+            join work in dbContext.LabWorkOrders on shipment.LabWorkOrderId equals work.Id
+            join specimen in dbContext.LabSpecimens on work.Id equals specimen.LabWorkOrderId
+            where item.SubmittedSpecimenId == sampleId && specimen.SubmittedSpecimenId == sampleId
+                && shipment.AuthorizationSource == SampleShipmentAuthorizationSource.CustomerLabServiceOrder
+                && shipment.AuthorizationSourceId == order.Id
+                && shipment.OrganizationId == order.OrganizationId
+                && shipment.DepartmentId == order.DepartmentId
+                && work.AuthorizationSource == LabAuthorizationSource.CommercialOrder
+                && work.AuthorizationSourceId == order.Id
+                && work.SubmittingOrganizationId == order.OrganizationId
+            select item.Id).AnyAsync(cancellationToken);
+        if (labOwnsShipping)
+            throw Conflict("lab_owned_sample_operation_required",
+                "This sample is managed in Lab operations. Use Lab receiving to record physical tube receipt, and Lab operations for accession and sample status changes.");
+    }
+
     private async Task<Guid?> ResolveActingAdministratorAsync(
         LabServiceOrder order,
         CancellationToken cancellationToken)
@@ -917,6 +962,8 @@ public sealed class PlatformLabServiceOrdersController(
 
     private async Task<LabServiceOrderDto> MapAsync(LabServiceOrder order, CancellationToken cancellationToken)
     {
+        var extensionRequests = await dbContext.LabServiceQuoteExtensionRequests.AsNoTracking()
+            .Where(item => item.LabServiceOrderId == order.Id).ToDictionaryAsync(item => item.QuoteId, cancellationToken);
         var files = await dbContext.ManagedOperationalFiles.AsNoTracking().Where(item => item.WorkflowType == OrderWorkflowTypes.LabService && item.WorkflowId == order.Id).OrderBy(item => item.CreatedAt).ToListAsync(cancellationToken);
         var releases = await dbContext.LabResultReleases.AsNoTracking().Where(item => item.LabServiceOrderId == order.Id).OrderBy(item => item.GeneratedAt).ToListAsync(cancellationToken);
         var releaseIds = releases.Select(release => release.Id).ToList();
@@ -955,7 +1002,7 @@ public sealed class PlatformLabServiceOrdersController(
             order.StorageRequirements, order.SafetyDeclaration, order.SubmissionInstructionsSnapshot,
             order.Status.ToString(), order.RequestRevision, order.SubmittedAt, order.PlacedAt, order.CompletedAt, order.TenantSafeReason,
             order.InternalNote, order.CreatedAt, order.UpdatedAt, order.Version, false, false, false, false, false,
-            order.Samples.OrderBy(item => item.CreatedAt).Select(item => item.ToDto(true)).ToList(), order.Quotes.OrderByDescending(item => item.Revision).Select(item => item.ToDto()).ToList(),
+            order.Samples.OrderBy(item => item.CreatedAt).Select(item => item.ToDto(true)).ToList(), order.Quotes.OrderByDescending(item => item.Revision).Select(item => item.ToDto(extensionRequests.GetValueOrDefault(item.Id))).ToList(),
             releases.Select(item => item.ToDto(retentionByReleaseId.GetValueOrDefault(item.Id))).ToList(), files.Select(item => item.ToDto()).ToList(), docs.Select(item => item.ToDto(true)).ToList(), cancellations.Select(item => item.ToDto()).ToList(), timeline.Select(item => item.ToDto(true)).ToList(),
             order.AssignedToUserId, order.DueAt,
             RequestRevisions: order.Revisions.OrderByDescending(item => item.Revision).Select(item => new LabRequestRevisionDto(item.Id,
@@ -981,7 +1028,25 @@ public sealed class PlatformLabServiceOrdersController(
             PriceProposedAt: order.PriceProposedAt,
             EntryMode: order.EntryMode.ToString(),
             StandardCommercialSnapshot: LabServiceTimingService.CommercialSnapshot(order.ReadConfiguredSnapshot()),
-            Timing: timing);
+            Timing: timing,
+            CanManageQuotes: await CanManageQuotesAsync(cancellationToken));
+    }
+
+    private async Task<bool> CanManageQuotesAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (orderToCashOptions.Value.NativePSeqAccountsReceivable)
+                await requestContext.RequireBusinessRoleAsync(HttpContext, BusinessRole.CommercialOperator,
+                    orderToCashOptions.Value.BusinessRoles || orderToCashOptions.Value.DualControlEnforced, cancellationToken);
+            else
+                await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+            return true;
+        }
+        catch (OrderManagementException exception) when (exception.ErrorCode is "business_role_required" or "platform_capability_required")
+        {
+            return false;
+        }
     }
 
     private static IReadOnlyList<LabServiceSourceGroupWriteRequest> ValidatePricingProfile(

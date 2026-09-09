@@ -2,6 +2,26 @@
 
 Receipt and accession connect the Customer’s submitted specimen identity to the physical material handled in the laboratory. Record these steps in sequence and never create an unlinked laboratory specimen.
 
+## Fulfill Customer transportation-kit orders
+
+Open **Lab operations → Receipt & accession → Kit requests** to review Customer transportation-kit orders. New orders notify Phaeno administrators for fulfillment. Open a request to review its Customer, Department, Job, requested sizes and quantities, and the delivery address saved when the Customer confirmed. Transportation kits and outbound delivery are included with the accepted laboratory order; this action creates no additional quote, invoice or payment step.
+
+Use **Fulfill request** to choose matching, fully registered physical kits and record the carrier, tracking number and dispatch time. If there is insufficient prepared stock, prepare and register more standard kits before dispatch. A partial dispatch leaves the remaining requested quantities outstanding. The kit order and saved delivery address remain linked to each dispatched kit.
+
+Dispatch adds those kits to the Customer's provisional inventory as **On the way**. The Customer acknowledges the kits that arrive, moving them to **Available** and enabling sample preparation with those kits. Customer acknowledgment is separate from the laboratory's later receipt of returned samples. Kits not yet acknowledged remain unavailable for the new request-based sample-shipping workflow.
+
+Maintain delivery locations from the Customer's **Departments & services** workspace or the Department's delivery-location screen. They belong to the Customer and Department, and are separate from global lab receiving destinations. Changing a saved location does not rewrite a confirmed kit order's delivery address.
+
+## Prepare and send standard kits
+
+Open **Lab operations → Receipt & accession → Standard kits**. Search by kit number, size, SKU, or Customer Job, or filter by preparation and dispatch status. Open the kit number to review its products, registered tubes, and outbound tracking.
+
+Choose **Prepare standard kit**, select an active configured container size, and record the actual tube supplier, product, optional lot, and shipper product. The configured size supplies the usable tube capacity and available shipper references. A new kit does not yet belong to a Customer Job.
+
+Open the kit and choose **Register tubes**. Scan each permanent supplier barcode on its own line. A kit must contain exactly its full configured tube capacity before dispatch; duplicate scans and excess tubes are rejected. When the kit is full, choose **Record dispatch**, select the receiving Customer Job, and enter the carrier, tracking number, and dispatch time. The dispatched tube membership is frozen. The customer's first scan of a matching kit binds it to the selected physical return container.
+
+**Sent to customer** means dispatch was recorded; **Assigned to return container** means the kit was subsequently bound to a return shipment. For new transportation-kit orders, the linked request also tracks customer receipt and distinguishes provisional from available stock at the saved delivery location. Legacy stock dispatch without a kit order does not establish those location balances. Complete older shipment-specific kits through **Existing return kits**. Use the configuration workflow to qualify or revise container sizes rather than changing a kit's capacity.
+
 ## Record receipt
 
 Open the authorized Lab work order and confirm the expected submitted specimen, service, and Customer-safe identifiers. Record when and where the physical item arrived and any intake observation permitted by the approved procedure.
@@ -9,6 +29,8 @@ Open the authorized Lab work order and confirm the expected submitted specimen, 
 Receipt does not accept the specimen for processing. It establishes custody and allows accession to begin. If the physical item cannot be matched safely to the expected specimen, stop and record an exception rather than guessing.
 
 When an incoming package includes a Phaeno shipment packet, open **Lab operations** > **Receipt & accession** and scan the packet and each registered supplier tube first. That comparison identifies the exact expected sample and linked Lab work but does not record receipt. After a tube matches, choose **Continue to receipt and accession**. POMS carries the packet and tube into the work order, checks them again, and shows the matched Customer sample. Record receipt, then confirm accession in the next dialog. The known sample label, tube quantity and unit, packet, tube barcode, and recorded location are carried forward for review. The packet barcode is not a specimen or container barcode and must not be copied into an accession or container field.
+
+The **Shipping barcode** field also accepts the Customer Job, sample, and shipment identities printed on a manifest. A Job or sample lookup lists its related shipments; choose **Open manifest** to compare that shipment's tubes. Lookup alone never records custody, receipt, or accession. A shipment without a confirmed manifest is shown as such and cannot start manifest-based comparison.
 
 ## Accession the specimen
 

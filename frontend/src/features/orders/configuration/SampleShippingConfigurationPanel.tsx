@@ -31,6 +31,7 @@ import {
   RequiredFieldName,
   RequiredLegend,
 } from '#/components/ui/required-field'
+import { ContainerSizesPanel } from './ContainerSizesPanel'
 
 const codePattern = /^[A-Za-z0-9][A-Za-z0-9_-]*$/
 const positiveOptionalNumber = z.string().refine(
@@ -171,6 +172,8 @@ export function SampleShippingConfigurationPanel({ apiEnabled }: { apiEnabled: b
           Destinations, sample types, and instruction rules are versioned. New records default to inactive; enter only approved operational content before activation. Approved Trial and Customer jobs use these definitions when preparing their shipment.
         </AlertDescription>
       </Alert>
+
+      <ContainerSizesPanel apiEnabled={apiEnabled} configuration={configuration.data} />
 
       <Card>
         <CardHeader>

@@ -18,9 +18,11 @@ const api = vi.hoisted(() => ({
   getSampleShipment: vi.fn(),
   issueSampleShippingPacket: vi.fn(),
   recordSampleShipment: vi.fn(),
+  getSampleShipments: vi.fn(),
 }))
 
 vi.mock('@tanstack/react-router', () => ({
+  useBlocker: vi.fn(),
   Link: ({ children }: { children: ReactNode }) => <a href="#sample-shipping">{children}</a>,
 }))
 
@@ -30,12 +32,14 @@ vi.mock('#/api/sample-shipping', () => ({
   getSampleShipment: api.getSampleShipment,
   issueSampleShippingPacket: api.issueSampleShippingPacket,
   recordSampleShipment: api.recordSampleShipment,
+  getSourceSampleShipments: api.getSampleShipments,
 }))
 
 describe('SampleShippingDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     api.getSampleShipment.mockResolvedValue(shipment)
+    api.getSampleShipments.mockResolvedValue([shipment])
     api.assignSampleTube.mockResolvedValue(shipment)
     api.issueSampleShippingPacket.mockResolvedValue(shipment)
   })

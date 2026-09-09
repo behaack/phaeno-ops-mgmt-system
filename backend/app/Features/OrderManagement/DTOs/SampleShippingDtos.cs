@@ -201,7 +201,11 @@ public sealed record SampleShippingPacketScanDto(
     int AwaitingReceiptSampleCount,
     string ReceiptState,
     DateTime IssuedAt,
-    IReadOnlyList<SampleShippingCrosswalkItemDto> Crosswalk);
+    IReadOnlyList<SampleShippingCrosswalkItemDto> Crosswalk,
+    int ExpectedTubeCount = 0,
+    int ReceivedTubeCount = 0,
+    int OrderExpectedTubeCount = 0,
+    int OrderReceivedTubeCount = 0);
 
 public sealed record SampleShippingCrosswalkItemDto(
     Guid ShipmentItemId,
@@ -217,7 +221,13 @@ public sealed record SampleShippingCrosswalkItemDto(
     long Version,
     Guid? TubeSlotId = null,
     int TubeOrdinal = 1,
-    int TubeCount = 1);
+    int TubeCount = 1,
+    string? SampleBarcode = null,
+    int TotalSampleTubeCount = 1,
+    IReadOnlyList<SampleOtherShipmentDto>? OtherShipments = null,
+    int ReceivedTubeCount = 0,
+    int UnallocatedTubeCount = 0,
+    bool IsReceived = false);
 
 public sealed record RegisteredSampleTubeDto(
     Guid Id,
@@ -266,7 +276,13 @@ public sealed record SampleShipmentWorkflowDto(
     long Version,
     SampleReturnKitDto? ReturnKit,
     IReadOnlyList<SampleShippingCrosswalkItemDto> Crosswalk,
-    SampleShippingPacketSummaryDto? CurrentPacket);
+    SampleShippingPacketSummaryDto? CurrentPacket,
+    ShipmentContainerDto? Container = null,
+    bool IsPackingPool = false,
+    int ExpectedTubeCount = 0,
+    int ReceivedTubeCount = 0,
+    int OrderExpectedTubeCount = 0,
+    int OrderReceivedTubeCount = 0);
 
 public sealed record SampleShippingPacketSummaryDto(
     Guid Id,
@@ -326,4 +342,5 @@ public sealed record RegisteredSampleTubeScanDto(
     string? SampleName,
     string? TubeStatus,
     bool IsAccessioned,
-    string Outcome);
+    string Outcome,
+    bool IsReceived = false);

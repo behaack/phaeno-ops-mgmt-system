@@ -1,6 +1,6 @@
 # Major-workflow acceptance run record
 
-Copy this file for each run; leave this template unchanged. Follow [README.md](README.md) and [TEST-DATA.md](TEST-DATA.md). All 60 cases are initially Not run.
+Copy this file for each run; leave this template unchanged. Follow [README.md](README.md) and [TEST-DATA.md](TEST-DATA.md). All 74 cases are initially Not run.
 
 ## Run identity
 
@@ -29,6 +29,12 @@ Copy this file for each run; leave this template unchanged. Follow [README.md](R
 | Sample / authorization / shipment / tubes | | | |
 | Lab work / protocol / workflow / execution | | | |
 | Kit order / unit / case / input revision | | | |
+| Transportation-kit request / version / notification | | | |
+| Customer delivery location / version / frozen address reference | | | |
+| Container definition SKU / revision / capacity | | | |
+| Physical kit / registered tube roster / outbound tracking | | | |
+| Customer kit receipt / actor / location / observed time | | | |
+| Packing pool / container shipment / current and void packet | | | |
 | Scientific package / release / receipt | | | |
 | Invoice / receipt / allocation / reconciliation | | | |
 | Source / curated version / grant | | | |
@@ -65,7 +71,7 @@ Use Pass / Fail / Blocked / Not run / Not applicable. Every required step and va
 | ORD-02 | Configured standard Lab commitment | Not run | | |
 | ORD-03 | Manual pricing, immutable quote and Customer acceptance | Not run | | |
 | ORD-04 | Exact sample roster, CSV preview and finalization | Not run | | |
-| ORD-05 | Return kit, frozen packet and sample shipment | Not run | | |
+| ORD-05 | Transportation kits, containers, frozen manifests and sample dispatch | Not run | | |
 | ORD-06 | Custom work, sales-assisted intake, timing and cancellation | Not run | | |
 | KIT-01 | Negotiated Kit draft, review and one purchase | Not run | | |
 | KIT-02 | Commercial acceptance, split shipments and billing lineage | Not run | | |
@@ -103,6 +109,35 @@ Use Pass / Fail / Blocked / Not run / Not applicable. Every required step and va
 | SYS-04 | Holds, cancellation and cross-screen ownership | Not run | | |
 | SYS-05 | Keyboard, responsive UI, errors and draft recovery | Not run | | |
 | SYS-06 | Coordinated restore and release-level acceptance | Not run | | |
+| SHP-01 | Container sizes and compatible recommendations | Not run | | |
+| SHP-02 | Customer and Department delivery locations | Not run | | |
+| SHP-03 | Included-cost kit order and confirmation | Not run | | |
+| SHP-04 | Duplicate prevention, stale review and cancellation | Not run | | |
+| SHP-05 | Fulfillment notification and request queue | Not run | | |
+| SHP-06 | Prepare and register physical stock at Phaeno | Not run | | |
+| SHP-07 | Dispatch and provisional customer inventory | Not run | | |
+| SHP-08 | Customer receipt and partial availability | Not run | | |
+| SHP-09 | Available sizes, alternate packing and residual supply | Not run | | |
+| SHP-10 | Scan tubes and retain exact identities | Not run | | |
+| SHP-11 | Branded manifests and samples split across containers | Not run | | |
+| SHP-12 | Record each sample-return shipment | Not run | | |
+| SHP-13 | Laboratory receipt across split shipments | Not run | | |
+| SHP-14 | Access, recovery and usable long workflows | Not run | | |
+
+## Transportation-kit quantity and identity evidence
+
+For SHP cases, repeat a row at each order/dispatch/receipt/packing handoff. Counts
+are kits unless labeled tubes; preserve identity links instead of relying only
+on a success banner. Quantities awaiting dispatch are distinct from kits already
+on the way. Link the snapshot to the request and physical kit records.
+
+| Case/step | Job / location / request version | SKU / physical kit IDs | Requested / dispatched / received | On the way / available / allocated | Sample tubes allocated / still pending | Shipment / manifest / receipt evidence |
+| --- | --- | --- | --- | --- | --- | --- |
+| | | | | | | |
+
+Mark provider delivery and physical dispatch/receipt independently from application
+state. The current Job/location supply model does not prove cross-Job warehouse
+balances, reservation release, damaged-kit corrections or automatic replenishment.
 
 ## Detailed step record (repeat for each case and variant)
 
@@ -139,7 +174,7 @@ Add/remove rows to match the case; repeat separately for each role, state or dev
 
 ## Acceptance decision
 
-- Case totals: Pass __ / Fail __ / Blocked __ / Not run __ / Not applicable __ (must total 60):
+- Case totals: Pass __ / Fail __ / Blocked __ / Not run __ / Not applicable __ (must total 74):
 - Connected journeys completed:
 - Remaining failures/blockers and explicit disposition:
 - Missing provider / destination / physical / restore evidence:

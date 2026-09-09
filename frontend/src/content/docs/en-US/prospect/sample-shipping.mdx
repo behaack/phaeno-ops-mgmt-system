@@ -1,23 +1,35 @@
 # Prepare and ship Trial Project samples
 
-Open the Trial and its **Return kit and shipment** section to find related shipments. The shared **Samples & shipping** list also shows authorized shipments across your Department. The shipment shows the Phaeno return kit, expected samples, destination, and current packet status. Phaeno creates and approves scope in **Trial Projects**. A Prospect organization administrator accepts it and submits coded samples there before this shared shipment is authorized. See [Trial Projects](./trial-projects).
+Open the approved Trial and its **Shipping containers** section. Phaeno creates and approves the Trial scope. A Prospect organization administrator accepts it and submits coded samples before shipping is authorized. Organization and Department administrators may prepare the resulting shipments; these shipping permissions do not grant permission to accept Trial scope or submit its original samples. See [Trial Projects](./trial-projects).
 
-## Keep your records connected to the tubes
+## Choose compatible containers
 
-Each Phaeno-supplied tube has a permanent manufacturer barcode. Your organization or department administrator scans or enters that barcode beside the correct Customer sample identifier before anything is shipped. Use a stable, non-PHI identifier that your organization can connect to its own sample record. Do not enter a patient name, medical-record number, date of birth, or other direct identifier.
+Open **Choose containers** for tubes awaiting allocation. Review the recommended sizes by common name, SKU and usable tube capacity. The recommendation prefers the fewest containers and then the least spare capacity; it does not verify or reserve stock.
 
-Phaeno preserves the tube-to-sample crosswalk in the Portal and in the shipment packet. Download the CSV or print the packet for your records. Your organization remains responsible for knowing what its Customer sample identifier means; Phaeno is responsible for retaining the identifier-to-tube association used for shipping and intake.
+Use **Adjust containers** to enter the sizes and quantities you actually have. **Available to you** is an optional upper limit; blank means unknown and zero excludes that size. **Use recommendation for these quantities** recalculates within those limits. Any compatible alternative is allowed without an explanation. The preview shows the tube count, container count, capacity, spare slots and exact unallocated tube count.
 
-If the wrong tube was assigned, an organization or department administrator can scan the replacement tube and record why the assignment changed. The earlier association remains in history. If a packet was already confirmed, saving the correction before shipment voids that packet and issues a corrected revision; destroy any unused copy of the old packet and print the replacement. Do not cover, alter, or remove the manufacturer barcode.
+**Confirm containers** creates one shipment for each container with allocated tubes. A partly filled container is valid and empty containers do not become shipments. If capacity is insufficient, **Prepare available containers** prepares the allocated tubes while the remaining tubes stay visible. The accepted Trial sample count and no-charge scope do not change. Tubes from one sample may occupy different containers.
 
-## Confirm and ship
+**Tubes in each container** lets you adjust the distribution, such as 15 + 15 across two 20-tube containers. Each count must fit its container, and the combined count must equal the tubes allocated in the preview. Enter zero for a selected container you will leave empty; it will not create a shipment.
 
-Assign exactly one registered tube from the displayed return kit to every expected tube slot. A sample with multiple tubes has one slot per tube, shown as **Tube 1 of N**. Confirm the crosswalk only after checking every row. The Portal then freezes the destination, instructions, manifest, packet barcode, and tube-to-sample crosswalk for that packet revision.
+## Scan permanent tube barcodes
 
-Print the full packet. Follow the preparation and packing instructions, place the manifest inside the package, and use the ship-to page with the carrier label. The Phaeno packet barcode does not buy postage and is not a tube barcode.
+Your organization must retain the connection between each coded sample ID and its own sample record. Do not enter patient names, medical-record numbers, dates of birth or other direct identifiers. Phaeno retains the permanent-tube-to-sample crosswalk used for shipping and intake.
 
-Confirmation shows both the number of samples and the number of tubes. **View packet** checks the current revision before offering **Print packet**; reconnect or use **Try again** if it cannot be checked. A correction or replacement refreshes the packet. If saving fails, the message appears in the open dialog and your entries stay available for review.
+Open a prepared shipment and use **Scan tubes into this shipment**. Scan the physical tube for the displayed sample and tube number, then press Enter or **Save scan**. A successful match shows the saved number and barcode graphic, updates progress and advances to the next tube. Saved matches survive leaving the page. **Previous tubes** and **Next tubes** review long lists without expanding the whole page.
 
-After handing the package to the carrier, record the carrier, tracking number, and shipment time in **Samples & shipping**. If a tube cannot be matched confidently or its barcode will not scan, stop and contact Phaeno instead of guessing.
+Use tubes registered in a fulfilled kit for this Trial. The first successful scan associates the physical kit with this container; subsequent tubes must come from that kit. Unknown, ineligible, duplicate and already-used barcodes cannot advance scanning. A failed scan retains the barcode and current sample for correction and retry. Do not cover, alter or remove a permanent manufacturer barcode.
 
-Use **Back to Trial** from the shipment to return to its approved scope and sample progress, or **All shipments** for your authorized shipment list. Shipping administration may be performed by the Department administrator; accepting Trial scope and submitting original samples remain organization-administrator actions.
+Use **Change tube** or **Correct tube** to fix an assignment before dispatch and explain the correction. History is retained. When a packet has already been confirmed, the correction voids it and issues a corrected revision. Destroy unused copies of the old packet.
+
+## Confirm, print and dispatch each shipment
+
+Review every declared tube, then select **Review and confirm packet**. Confirmation distinguishes samples from tubes and freezes that shipment's destination, packing instructions and crosswalk. Spare slots do not create expected returns.
+
+Print the full packet and place its manifest inside the corresponding container. The frozen container name, SKU and capacity identify the selected size. Order/Trial, shipment and sample barcodes identify records; separate permanent tube barcodes identify each physical tube. The manifest lists only this container's physical contents. A split sample shows its total tubes, this container's tubes, and other shipment references or still-unallocated tubes in a separate section. References reflect the confirmed revision; current progress remains in the Portal.
+
+**View packet** checks the current revision before offering **Print packet**. Reconnect or choose **Try again** if the revision cannot be verified. Failed confirmation keeps the dialog entries for retry. Retain the packet or **Crosswalk CSV** for your records. The packet does not purchase postage or replace the carrier label.
+
+After handing each package to the carrier, record its carrier, tracking number and shipment time. Receipt progress aggregates tubes across shipments. The first received package does not mark all tubes of a split sample received, and a barcode lookup is not proof that physical material arrived.
+
+Use **Back to Trial** for approved scope and current progress or **All shipments** for your authorized shipment list. Contact Phaeno with the Trial and shipment references if no compatible container exists, a tube cannot be matched confidently, or existing assignments need repacking. Do not guess a tube identity or change approved scope through shipping.

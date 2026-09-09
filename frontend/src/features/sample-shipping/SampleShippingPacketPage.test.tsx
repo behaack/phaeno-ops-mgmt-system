@@ -46,4 +46,38 @@ describe('SampleShippingPacketPage', () => {
     expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Back to shipment' })).toBeTruthy()
   })
+
+  it('prints frozen order, shipment, sample and individual tube identities with separate split references', async () => {
+    const common = { submittedSpecimenId: 'specimen-1', customerSampleId: 'RNA-SPLIT', sampleName: 'Extracted RNA', sampleTypeName: 'RNA', sampleBarcode: 'PH-M-SPECIMEN1', totalSampleTubeCount: 4, tubeCount: 2, otherShipments: [{ shipmentId: 'shipment-2', shipmentNumber: 'SHIP-OTHER', tubeCount: 1 }], unallocatedTubeCount: 1 }
+    api.getPacket.mockResolvedValue({ ...packet, manifestSnapshotJson: JSON.stringify({ orderBarcode: 'PH-O-ORDER1', shipmentBarcode: 'PH-S-SHIPMENT1', container: { definitionId: 'container-20', commonName: 'Frozen container name', sku: '000-20', capacity: 20 }, samples: [{ ...common, tubeOrdinal: 1, supplierTubeBarcode: 'TUBE_0001' }, { ...common, tubeOrdinal: 2, supplierTubeBarcode: 'TUBE_0002' }] }), shipment: { ...packet.shipment, container: { commonName: 'Current revised name', sku: 'CHANGED', capacity: 99 } } })
+    show()
+    await screen.findByRole('button', { name: 'Print packet' })
+    expect(screen.getByRole('img', { name: 'Order barcode PH-O-ORDER1' })).toBeTruthy()
+    expect(screen.getByRole('img', { name: 'Shipment barcode PH-S-SHIPMENT1' })).toBeTruthy()
+    expect(screen.getAllByRole('img', { name: 'Sample barcode PH-M-SPECIMEN1' })).toHaveLength(1)
+    expect(screen.getByRole('img', { name: 'Permanent tube barcode TUBE_0001' })).toBeTruthy()
+    expect(screen.getByRole('img', { name: 'Permanent tube barcode TUBE_0002' })).toBeTruthy()
+    expect(screen.getByText('2 of 4 tubes in this shipment')).toBeTruthy()
+    expect(screen.getByText('1 tube in shipment SHIP-OTHER')).toBeTruthy()
+    expect(screen.getByText('1 tube is not yet allocated to a shipment.')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: /Other tubes for this sample/ })).toBeTruthy()
+    expect(screen.getByText('Frozen container name')).toBeTruthy()
+    expect(screen.queryByText('Current revised name')).toBeNull()
+    expect(screen.getAllByRole('img', { name: /Permanent tube barcode/ })).toHaveLength(2)
+  })
+
+  it('keeps a legacy frozen crosswalk printable without inventing sample identifiers', async () => {
+    api.getPacket.mockResolvedValue({ ...packet, manifestSnapshotJson: JSON.stringify({ samples: [{ customerSampleId: 'LEGACY-1', sampleName: 'Legacy RNA', supplierTubeBarcode: 'LEGACY-TUBE' }] }) })
+    show()
+    await screen.findByRole('button', { name: 'Print packet' })
+    expect(screen.getByRole('img', { name: 'Permanent tube barcode LEGACY-TUBE' })).toBeTruthy()
+    expect(screen.queryByRole('img', { name: /^Sample barcode/ })).toBeNull()
+  })
+
+  it('withholds a voided packet even if a cached response contains it', async () => {
+    api.getPacket.mockResolvedValue({ ...packet, shipment: { ...packet.shipment, currentPacket: { ...packet.shipment.currentPacket, isVoided: true } } })
+    show()
+    expect(await screen.findByText('Packet no longer current')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Print packet' })).toBeNull()
+  })
 })

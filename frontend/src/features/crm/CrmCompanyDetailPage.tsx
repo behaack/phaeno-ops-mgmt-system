@@ -387,7 +387,7 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
         {canAdminister ? <TabsContent value="departments" className="space-y-6">
           {company.accessOrganizationId ? (
             <>
-              <OrganizationDepartmentsPanel organizationId={company.accessOrganizationId} />
+              <OrganizationDepartmentsPanel organizationId={company.accessOrganizationId} deliveryLocations={company.portalRelationship === 'Customer'} companyId={companyId} />
               <OrganizationDetailPage
                 organizationId={company.accessOrganizationId}
                 embedded

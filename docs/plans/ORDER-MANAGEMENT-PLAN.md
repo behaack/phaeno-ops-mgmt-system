@@ -1,5 +1,330 @@
 # Order Management Plan
 
+## Finalization review sorting — September 8, 2026
+
+The owner reviewed the nine-sample finalization dialog and found its insertion
+order difficult to scan. Display the same accepted biological-source groups
+as the main panel, with natural numeric sample-ID ordering within each group.
+Use that ordering in the main panel too, without mutating the saved array or
+changing sample records, quantities, accepted scope, versions or API payloads.
+Retain unmatched records in their visible repair groups. The compact review
+shows each source's entered/required count, aligned ID/tube rows, and an overall
+sample/tube summary. Shared modal scrolling, no-PHI confirmation and all existing
+finalization guards remain unchanged. No backend or migration is needed.
+
+The owner's Firefox screenshot confirms the revised grouping and sorting for
+HS5Y7DB7: nine unique sample IDs, 18 tubes and accepted source counts 1/5/3.
+The owner approved the result as "Much better" and then finalized the list.
+Read-only local verification confirmed finalization at September 8, 3:53:25 PM
+PDT: nine unique sample records and IDs, 18 tubes, exact source counts 1/1,
+5/5 and 3/3, and Job status PlacedAwaitingSamples. Shipment
+SHP-20260908-7437F875A7D was created in Preparing with nine items and 18
+unassigned tube slots. No registered return kit exists yet, and shipped,
+delivered and received timestamps are empty; Phaeno preparation remains next.
+
+Review of the long-list case found initial keyboard focus on the off-screen
+no-PHI checkbox. Finalization now starts focus on the visible sample/tube
+summary inside the scrolling body; keyboard scrolling and normal Tab movement
+then reach confirmation. Import focus and shared close/focus-return behavior
+are preserved.
+
+Verification passed: seven existing sample-panel cases, full TypeScript,
+scoped ESLint and eight final synthetic browser cases across desktop/phone
+and both themes. The latter includes natural IDs, preserved source/input
+order, exact quantities, no-PHI gating/reset and long/short-height keyboard
+scrolling. Temporary browser fixtures were removed. Customer/Partner help,
+generated documentation and living test plans are current.
+
+## Biological-source groups and sample capacity — September 8, 2026
+
+The owner approved grouping sample rows by biological source instead of
+repeating the source on each row. Each accepted source has a heading with its
+entered/required sample count, including empty groups; the overall count stays
+above the list. Preserve compact ID/tube/status/icon rows and show unexpected
+source records explicitly so no saved sample disappears from review.
+
+The owner's longer-list walkthrough also exposed excessive page height. Bound
+the sample groups to a keyboard-focusable vertical scroll region, up to 24rem
+or 60 percent of the viewport height. Keep group bands sticky within that
+region and use an opaque semantic background in both themes. Overall counts,
+CSV/finalization controls and shipment content stay outside it. Short lists
+keep their natural height; all sample rows stay available without pagination.
+Show the owner's requested green check beside the overall counter only when
+the total and every accepted source count match; an equal overall total with
+an incorrect source mix still shows the warning. The icon has an accessible
+completion label and uses the existing light/dark status-ready token. This
+indicates count completion; finalization remains a separate confirmed action.
+Each accepted group also shows that check beside its count when exactly full;
+empty, incomplete, overfilled and unmatched groups never show a completion check.
+
+The owner also observed 2 of 1 samples for a source. Add previously enforced only
+the overall Job count. Enforce source quotas during add and source changes in
+both UI and API, using sample records rather than tube quantity. New entries
+start from a + Add button beside the count in the selected group band. That
+button is disabled when the group or overall roster is full. The Add dialog
+inherits that exact source and displays it as context without a source field;
+Edit retains the source choice so records can be corrected. Full sources are
+unavailable for new assignments. An open Add dialog never silently switches
+source if its original group fills during a background refresh.
+Keep existing excess records and mark the group red with an explanatory warning.
+Allow unchanged-source metadata edits and removal so existing data can be
+corrected; moving a sample must respect the destination quota. Exact overall
+and per-source composition is required before finalization.
+
+Preserve tenant/department/role boundaries and existing version checks. Review
+all roster writes (add/edit/remove/import/finalize) for serialized capacity
+decisions and CSV bypasses. Background refresh must update available capacity
+without discarding an open form's entered values. No accepted scientific scope,
+price or persisted record may be silently altered to accommodate excess.
+
+Following the owner's populated-list feedback, disable Import sample list
+while any sample exists and explain that all entries must be removed before
+importing a new list. Keep Download CSV template available because it does not
+change saved records. Guard the open import action if a refresh reveals newly
+added samples. Existing API import confirmation/version and atomicity safeguards
+remain in place; no saved rows are removed by this UI change.
+
+This authorized correction is local. Existing reason/status contracts and
+sample/source entities should suffice without a migration. Cover count and
+source boundaries, overfilled-data recovery, import, finalization, concurrent
+writes, grouped rendering, keyboard/mobile behavior and preserved form drafts
+with focused tests. Root reloads the local API after the checkpoint; no real
+test Job samples are changed automatically.
+
+Completed locally: 24 focused frontend cases and 24 synthetic browser cases
+passed, including a 36-row scroll region, group/overall completion checks,
+fixed Add context, import protection and correction of existing excess. The
+backend checkpoint passed 13 focused cases, including eight PostgreSQL cases;
+an earlier unit/domain batch passed 27. These tests also exposed and fixed EF
+navigation fix-up adding a new sample twice to the immediate Add/import
+response, despite one persisted record. Roster insertion now adds the
+collection member before tracking it, so saved response counts are accurate.
+
+Visual Studio repeatedly restarted the development API during initial test
+setup, so database tests moved to freshly created isolated local databases
+with existing migrations and no copied data. All scratch databases were
+removed and absence verified, with no remaining synthetic notices. No user
+Job records were changed. The computed count property is not EF-mapped;
+no migration was created or required. Full frontend TypeScript, scoped lint,
+documentation and whitespace checks passed. Root built the local API with
+zero warnings/errors, restarted it and verified health HTTP 200.
+
+## Compact sample list rows — September 8, 2026
+
+The owner confirmed TEST-001 was saved for HS5Y7DB7: one sample out of nine,
+one tube and the first source group at one of one. The row used three stacked
+lines for short details and actions. Compact ordinary rows into a single
+wrapping line: sample ID, biological source/tube count, status, then the existing
+Edit sample and Remove sample actions. The owner then chose pencil/trash icons
+for those actions; provide keyboard/hover tooltips and sample-specific accessible
+names, keeping removal confirmation. Keep accession details and any
+customer-visible reason; long content and narrow viewports may wrap without
+clipping. Use singular tube for one in both the list and finalization preview.
+
+The owner also approved hiding the informational Expected badge while preparing
+the sample list. Show it after roster finalization; other sample statuses stay
+visible so exceptions and laboratory progress are not concealed.
+
+This changes presentation only. Preserve all edit/remove permissions,
+confirmation, pending state, sample count and shipping/finalization behavior.
+Update Customer/Partner guidance for the pencil/trash actions,
+run focused existing checks and responsive browser review, then resume the
+owner's Edit sample step. No schema, API, migration or deployment is required.
+
+Completed locally: existing sample-list tests (2), TypeScript and scoped lint
+passed. Browser review passed 16 row/action cases and 24 final status cases
+across desktop/phone and both themes. Long details, sample-specific tooltips,
+keyboard edit/focus return and cancelled removal were checked without real
+mutations. Customer/Partner help and generated-documentation checks are current.
+
+## Sample entry layout refinement — September 8, 2026
+
+The owner's Firefox walkthrough confirmed quote acceptance for HS5Y7DB7:
+revision 1 is Accepted at USD900 pre-tax and sample entry is available at
+0 of 9. The Add sample modal then exposed cramped header/body spacing, a long
+introduction, and excessive width for three short fields.
+
+Use the shared compact dialog width and padded scrolling body, stack the
+sample identifier, accepted biological-source choice and tube count, and put
+short persistent guidance beside its control. Keep the extracted-RNA context,
+no-patient-identifiers instruction, shared Job settings and standard data-file
+scope visible. Keep existing default values, accepted-source filtering,
+single-source handling, integer tube validation, save/error behavior and
+permissions. The footer and header remain fixed; only the body scrolls.
+
+Browser review also found the existing dirty-dismissal warning did not fire:
+the form's dirty state was only read inside the event handler. Subscribe to it
+during render so Cancel, Close and Escape preserve an edited draft until the
+user confirms discarding it. Add a focused regression for that behavior. Show
+the accepted source as read-only text when there is only one choice; its saved
+value and the source-selection rules remain unchanged.
+
+This is a local presentation correction for both Add and Edit sample. No API,
+database, migration or scientific workflow change is needed. Review existing
+audience guidance, run scoped static checks and synthetic desktop/phone browser
+checks, then resume the owner's same Add sample step. Do not add cosmetic unit
+tests or create a real sample during layout verification. The dirty-dismissal
+regression is behavioral coverage for the discovered bug.
+
+Completed locally: 20 synthetic browser cases passed across Add/Edit, sources,
+errors, desktop/phone, both themes and short-height scrolling. Four Add/Edit
+dirty/pristine dismissal regressions passed, along with TypeScript, scoped
+lint, documentation and whitespace checks. Audience guides now explain the
+form and discard warning. No real samples were created; owner review of the
+refined Add sample form is the next manual checkpoint.
+
+## Quote decline reasons — September 8, 2026
+
+The owner requested a short reason dropdown instead of a mandatory free-text
+explanation when a Customer or eligible Partner administrator declines a quote.
+The required selection starts blank and offers Our needs changed, Cost is too
+high, Selected another vendor, Prefer not to say, and Other. Other reveals a
+required multiline Please explain field. Named reasons need no explanation.
+
+The existing closure confirmation, role scope, request status transition,
+version check and recorded reason remain. Store the selected reason's readable
+label through the existing reason contract; Other includes its trimmed
+explanation. Hidden explanation text must never accompany a named reason.
+Preserve in-progress choices/text on recoverable errors and when toggling the
+selection; retain dirty-dismissal confirmation and busy-state protection.
+Prequote withdrawal and postacceptance cancellation keep their current forms.
+This is a local frontend change with no database migration or permission change.
+
+Acceptance covers each reason, conditional required explanation, whitespace,
+switching away from Other, retry/draft preservation, accessible labels/errors,
+keyboard operation, and responsive dialog layout. Resume the owner's Firefox
+walkthrough by inspecting Other without submitting a real decline.
+
+Completed locally: 45 focused frontend cases, TypeScript, scoped lint,
+documentation and whitespace checks passed. Four synthetic desktop/phone,
+light/dark browser cases passed, with no real request closure. The React
+component review confirmed conditional fields, preserved drafts and repeated
+submission protection. No EF migration, backend code change or deployment
+was required.
+
+## Expired quotes and extension requests — September 8, 2026
+
+The Product Owner approved a complete recovery path for expired, unaccepted
+Lab Service quotes. Customer and eligible Partner organization/department
+administrators can request an extension; ordinary Members can review/download
+and see who is authorized to accept. Phaeno users with existing Order Operations
+access and quote-issuance authority review the request
+and issue a new quote revision with an approved future expiration. Accepted
+quotes stay Accepted when their former deadline passes.
+
+Effective expiration is derived from the current issued quote's UTC deadline
+without mutating the stored quote on read. Portal shows a red Expired badge,
+warning icon and expiration date. Accept quote, Decline quote and Download quote PDF
+share a wrapping action row beneath the total in Quote and billing. Accept quote
+is available to administrators, disabled with an explanation when blocked.
+The API also rejects expired acceptance. PDF downloads remain available.
+
+The owner subsequently approved contextual action wording: Decline quote for
+an issued/expired offer, Withdraw request before a quote is available, and
+Request cancellation after acceptance. Decline retains the existing request
+closure operation; its confirmation explicitly says the entire request will
+close. This wording does not introduce a separate negotiation or reopening state.
+
+An extension request belongs to the exact current expired quote, with optional
+reason (up to 2,000 characters), requester, timestamps and durable Pending /
+Resolved status. A unique quote reference, idempotency and order-level locking
+prevent duplicate requests across retries/tabs. Only active scoped administrators
+may request; requesting a review does not itself require new-order eligibility.
+Pending requests appear in Phaeno intake and detail, and customers see Extension
+requested. New issuance resolves the request atomically, records the replacement
+quote, and preserves the original dates/prices and audit history. Existing
+issuance readiness, authority, concurrency and quote-ready notification rules
+remain in force. No request sends an email directly.
+
+Contract: POST `/api/lab-service-orders/{orderId}/quotes/{quoteId}/extension-request`
+accepts `{version, reason?}` plus Idempotency-Key and returns the refreshed Job.
+Quote DTOs gain `extensionRequest`; Job DTOs gain `canManageQuotes`,
+`canRequestQuoteExtension`, and `quoteAcceptanceBlockedReason`; staff queue
+rows expose `hasPendingQuoteExtension`; active intake displays the marker, and
+the Lab Service list API supports a pending-only filter. The durable
+request needs an additive EF migration and updated ERD, applied only to the
+verified local development database in this authorized implementation.
+
+Acceptance covers admin/member/department/tenant boundaries, deadline crossing,
+accepted-state preservation, duplicate and stale commands, rejected expired
+acceptance, visible staff review, future-dated revision and request resolution,
+immutable original quote, and retryable accessible dialogs. Focused tests and
+local browser checks precede the owner's next Firefox walkthrough step.
+
+Completed locally: migration `20260908204524_AddLabServiceQuoteExtensionRequests`
+was applied to guarded `localhost/phaeno_ops`; the ERD and audience guides were
+updated. Six real PostgreSQL extension cases and 36 related quote/domain cases
+passed across the focused checkpoint and corrected fixture rerun. All 59
+focused customer/staff frontend cases passed. Synthetic browser review covered
+20 desktop/phone, light/dark scenarios with no real account, email or API writes;
+the final action-row grouping was subsequently covered by component assertions
+and a separate seven-width synthetic layout review. All actions fit together
+at 1280px and above; the download wraps cleanly on narrower quote cards/phones.
+Owner acceptance in Firefox remains the next manual gate.
+
+The final local API build passed with zero warnings/errors, documentation
+generation/checks passed, and the local migration list has no pending entries.
+
+Existing Phaeno read permissions remain unchanged. Automatic approval review
+rejected expanding quote-review access to Commercial Operators who are not
+platform administrators; the workflow uses the existing authorized staff path.
+
+## Quote PDF spacing refinement — September 8, 2026
+
+The owner confirmed the branded PDF opens for HS5Y7DB7 and requested a more
+balanced layout. Tighten excess space before the pricing table, give header
+details consistent alignment and spacing, and separate totals from their
+dividers with clear padding. Retain the existing readable type sizes, branding,
+all quote facts and frozen commercial terms, and long-content pagination.
+This changes PDF presentation only; the download action and help instructions
+remain current. Recheck the representative and long PDFs visually, then return
+to the owner's same download step.
+
+Completed locally: aligned Prepared for/Quote details columns, reduced the gap
+before pricing, balanced table row padding, and added a padded pale totals
+panel with clear divider spacing. All 6 existing renderer cases passed; the
+sample and every page of the five-page long quote were visually reviewed.
+API build passed with zero warnings/errors. No prices, terms, content or
+workflow permissions changed.
+
+## Lab Job heading cleanup — September 8, 2026
+
+The owner walkthrough identified a redundant Job number immediately above the
+same number in the main heading. The Customer/Partner Lab Job detail now uses
+**Back to lab services** with a decorative back arrow. The main Job heading,
+status, Job name and update date remain; the link preserves the existing list
+search/filter state. This is a presentation-only correction.
+
+## Branded quote download — September 8, 2026
+
+The owner walkthrough found that **Download quote** exported the internal quote
+object as JSON. Customer and Partner members reviewing an issued quote need a
+readable document they can retain and share. The approved correction is
+**Download quote PDF**, using the Phaeno logo, brand colors, job identity,
+quote revision/status, dates, itemized pricing, and saved commercial terms.
+
+The authenticated `GET /api/lab-service-orders/{orderId}/quotes/{quoteId}/pdf`
+endpoint reuses the active organization/department read boundary, including
+ordinary assigned Members. Draft and SyncPending quotes are unavailable.
+Issued and historical issued revisions can be downloaded without accepting,
+updating, or recalculating the quote. Prices, tax determination, billing details,
+and payment terms come only from the saved quote; legacy missing terms are not
+filled from a mutable billing profile. Undetermined tax remains labeled
+**Pre-tax total**. Internal identifiers, review notes, and raw snapshot JSON are
+excluded. Request revision snapshots retain their separate JSON download.
+
+Acceptance requires a branded PDF with accurate saved amounts, readable wrapping
+and pagination, a retryable download failure, and unchanged authorization and
+database state. This is a local API/UI correction with no new dependency,
+authentication-setting change, migration, or deployment. Focused automated checks
+and PDF visual review precede retrying the owner's Firefox download.
+
+Local verification: 6 renderer and 5 PostgreSQL access/data-integrity cases
+passed; 16 focused frontend cases, TypeScript, scoped lint, documentation and
+whitespace checks passed. The one-page representative quote and all five pages
+of the long layout sample were visually reviewed. The local API was rebuilt
+with zero warnings/errors and reloaded for the owner's same-step retry.
+
 ## Authorized bundle implementation — September 7, 2026
 
 The Product Owner has requested completion of the configured Lab Service and

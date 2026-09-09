@@ -21,6 +21,7 @@ import { Route as LabOperationsRouteImport } from './routes/lab-operations'
 import { Route as FileManagementRouteImport } from './routes/file-management'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DepartmentsRouteImport } from './routes/departments'
+import { Route as DeliveryLocationsRouteImport } from './routes/delivery-locations'
 import { Route as DataProvisioningRouteImport } from './routes/data-provisioning'
 import { Route as DataLibraryRouteImport } from './routes/data-library'
 import { Route as DataAssemblyRouteImport } from './routes/data-assembly'
@@ -41,6 +42,7 @@ import { Route as LabServicesOrderIdRouteImport } from './routes/lab-services.$o
 import { Route as LabOperationsWorkOrderIdRouteImport } from './routes/lab-operations.$workOrderId'
 import { Route as DocsSearchRouteImport } from './routes/docs.search'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
+import { Route as DeliveryLocationsLocationIdRouteImport } from './routes/delivery-locations.$locationId'
 import { Route as DataLibraryDatasetIdRouteImport } from './routes/data-library.$datasetId'
 import { Route as DataAssemblyNewRouteImport } from './routes/data-assembly.new'
 import { Route as DataAssemblyRequestIdRouteImport } from './routes/data-assembly.$requestId'
@@ -58,8 +60,11 @@ import { Route as ReagentOrdersOrderIdEditRouteImport } from './routes/reagent-o
 import { Route as OrderOperationsResultPackagesPackageIdRouteImport } from './routes/order-operations.result-packages.$packageId'
 import { Route as OrderOperationsIntakeOrderIdRouteImport } from './routes/order-operations.intake.$orderId'
 import { Route as OrderOperationsWorkflowOrderIdRouteImport } from './routes/order-operations.$workflow.$orderId'
+import { Route as OrderConfigurationShippingContainersContainerIdRouteImport } from './routes/order-configuration.shipping-containers.$containerId'
 import { Route as LabServicesOrderIdEditRouteImport } from './routes/lab-services.$orderId.edit'
+import { Route as LabOperationsStockKitsKitIdRouteImport } from './routes/lab-operations.stock-kits.$kitId'
 import { Route as LabOperationsPseqKitOrdersOrderIdRouteImport } from './routes/lab-operations.pseq-kit-orders.$orderId'
+import { Route as LabOperationsKitRequestsRequestIdRouteImport } from './routes/lab-operations.kit-requests.$requestId'
 import { Route as LabOperationsExecutionsExecutionIdRouteImport } from './routes/lab-operations.executions.$executionId'
 import { Route as LabOperationsDataAssemblyOrderIdRouteImport } from './routes/lab-operations.data-assembly.$orderId'
 import { Route as DocsAudienceSlugRouteImport } from './routes/docs.$audience.$slug'
@@ -133,6 +138,11 @@ const DocsRoute = DocsRouteImport.update({
 const DepartmentsRoute = DepartmentsRouteImport.update({
   id: '/departments',
   path: '/departments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeliveryLocationsRoute = DeliveryLocationsRouteImport.update({
+  id: '/delivery-locations',
+  path: '/delivery-locations',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DataProvisioningRoute = DataProvisioningRouteImport.update({
@@ -239,6 +249,12 @@ const DemoTanstackQueryRoute = DemoTanstackQueryRouteImport.update({
   path: '/demo/tanstack-query',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DeliveryLocationsLocationIdRoute =
+  DeliveryLocationsLocationIdRouteImport.update({
+    id: '/$locationId',
+    path: '/$locationId',
+    getParentRoute: () => DeliveryLocationsRoute,
+  } as any)
 const DataLibraryDatasetIdRoute = DataLibraryDatasetIdRouteImport.update({
   id: '/$datasetId',
   path: '/$datasetId',
@@ -330,15 +346,33 @@ const OrderOperationsWorkflowOrderIdRoute =
     path: '/$workflow/$orderId',
     getParentRoute: () => OrderOperationsRoute,
   } as any)
+const OrderConfigurationShippingContainersContainerIdRoute =
+  OrderConfigurationShippingContainersContainerIdRouteImport.update({
+    id: '/shipping-containers/$containerId',
+    path: '/shipping-containers/$containerId',
+    getParentRoute: () => OrderConfigurationRoute,
+  } as any)
 const LabServicesOrderIdEditRoute = LabServicesOrderIdEditRouteImport.update({
   id: '/edit',
   path: '/edit',
   getParentRoute: () => LabServicesOrderIdRoute,
 } as any)
+const LabOperationsStockKitsKitIdRoute =
+  LabOperationsStockKitsKitIdRouteImport.update({
+    id: '/stock-kits/$kitId',
+    path: '/stock-kits/$kitId',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
 const LabOperationsPseqKitOrdersOrderIdRoute =
   LabOperationsPseqKitOrdersOrderIdRouteImport.update({
     id: '/pseq-kit-orders/$orderId',
     path: '/pseq-kit-orders/$orderId',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
+const LabOperationsKitRequestsRequestIdRoute =
+  LabOperationsKitRequestsRequestIdRouteImport.update({
+    id: '/kit-requests/$requestId',
+    path: '/kit-requests/$requestId',
     getParentRoute: () => LabOperationsRoute,
   } as any)
 const LabOperationsExecutionsExecutionIdRoute =
@@ -431,12 +465,13 @@ export interface FileRoutesByFullPath {
   '/data-assembly': typeof DataAssemblyRouteWithChildren
   '/data-library': typeof DataLibraryRouteWithChildren
   '/data-provisioning': typeof DataProvisioningRouteWithChildren
+  '/delivery-locations': typeof DeliveryLocationsRouteWithChildren
   '/departments': typeof DepartmentsRoute
   '/docs': typeof DocsRouteWithChildren
   '/file-management': typeof FileManagementRoute
   '/lab-operations': typeof LabOperationsRouteWithChildren
   '/lab-services': typeof LabServicesRouteWithChildren
-  '/order-configuration': typeof OrderConfigurationRoute
+  '/order-configuration': typeof OrderConfigurationRouteWithChildren
   '/order-operations': typeof OrderOperationsRouteWithChildren
   '/phaeno-users': typeof PhaenoUsersRoute
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
@@ -454,6 +489,7 @@ export interface FileRoutesByFullPath {
   '/data-assembly/$requestId': typeof DataAssemblyRequestIdRouteWithChildren
   '/data-assembly/new': typeof DataAssemblyNewRoute
   '/data-library/$datasetId': typeof DataLibraryDatasetIdRoute
+  '/delivery-locations/$locationId': typeof DeliveryLocationsLocationIdRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/docs/search': typeof DocsSearchRoute
   '/lab-operations/$workOrderId': typeof LabOperationsWorkOrderIdRoute
@@ -475,8 +511,11 @@ export interface FileRoutesByFullPath {
   '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
   '/lab-operations/data-assembly/$orderId': typeof LabOperationsDataAssemblyOrderIdRoute
   '/lab-operations/executions/$executionId': typeof LabOperationsExecutionsExecutionIdRoute
+  '/lab-operations/kit-requests/$requestId': typeof LabOperationsKitRequestsRequestIdRoute
   '/lab-operations/pseq-kit-orders/$orderId': typeof LabOperationsPseqKitOrdersOrderIdRoute
+  '/lab-operations/stock-kits/$kitId': typeof LabOperationsStockKitsKitIdRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
+  '/order-configuration/shipping-containers/$containerId': typeof OrderConfigurationShippingContainersContainerIdRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
   '/order-operations/result-packages/$packageId': typeof OrderOperationsResultPackagesPackageIdRoute
@@ -498,12 +537,13 @@ export interface FileRoutesByTo {
   '/data-assembly': typeof DataAssemblyRouteWithChildren
   '/data-library': typeof DataLibraryRouteWithChildren
   '/data-provisioning': typeof DataProvisioningRouteWithChildren
+  '/delivery-locations': typeof DeliveryLocationsRouteWithChildren
   '/departments': typeof DepartmentsRoute
   '/docs': typeof DocsRouteWithChildren
   '/file-management': typeof FileManagementRoute
   '/lab-operations': typeof LabOperationsRouteWithChildren
   '/lab-services': typeof LabServicesRouteWithChildren
-  '/order-configuration': typeof OrderConfigurationRoute
+  '/order-configuration': typeof OrderConfigurationRouteWithChildren
   '/order-operations': typeof OrderOperationsRouteWithChildren
   '/phaeno-users': typeof PhaenoUsersRoute
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
@@ -521,6 +561,7 @@ export interface FileRoutesByTo {
   '/data-assembly/$requestId': typeof DataAssemblyRequestIdRouteWithChildren
   '/data-assembly/new': typeof DataAssemblyNewRoute
   '/data-library/$datasetId': typeof DataLibraryDatasetIdRoute
+  '/delivery-locations/$locationId': typeof DeliveryLocationsLocationIdRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/docs/search': typeof DocsSearchRoute
   '/lab-operations/$workOrderId': typeof LabOperationsWorkOrderIdRoute
@@ -542,8 +583,11 @@ export interface FileRoutesByTo {
   '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
   '/lab-operations/data-assembly/$orderId': typeof LabOperationsDataAssemblyOrderIdRoute
   '/lab-operations/executions/$executionId': typeof LabOperationsExecutionsExecutionIdRoute
+  '/lab-operations/kit-requests/$requestId': typeof LabOperationsKitRequestsRequestIdRoute
   '/lab-operations/pseq-kit-orders/$orderId': typeof LabOperationsPseqKitOrdersOrderIdRoute
+  '/lab-operations/stock-kits/$kitId': typeof LabOperationsStockKitsKitIdRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
+  '/order-configuration/shipping-containers/$containerId': typeof OrderConfigurationShippingContainersContainerIdRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
   '/order-operations/result-packages/$packageId': typeof OrderOperationsResultPackagesPackageIdRoute
@@ -566,12 +610,13 @@ export interface FileRoutesById {
   '/data-assembly': typeof DataAssemblyRouteWithChildren
   '/data-library': typeof DataLibraryRouteWithChildren
   '/data-provisioning': typeof DataProvisioningRouteWithChildren
+  '/delivery-locations': typeof DeliveryLocationsRouteWithChildren
   '/departments': typeof DepartmentsRoute
   '/docs': typeof DocsRouteWithChildren
   '/file-management': typeof FileManagementRoute
   '/lab-operations': typeof LabOperationsRouteWithChildren
   '/lab-services': typeof LabServicesRouteWithChildren
-  '/order-configuration': typeof OrderConfigurationRoute
+  '/order-configuration': typeof OrderConfigurationRouteWithChildren
   '/order-operations': typeof OrderOperationsRouteWithChildren
   '/phaeno-users': typeof PhaenoUsersRoute
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
@@ -589,6 +634,7 @@ export interface FileRoutesById {
   '/data-assembly/$requestId': typeof DataAssemblyRequestIdRouteWithChildren
   '/data-assembly/new': typeof DataAssemblyNewRoute
   '/data-library/$datasetId': typeof DataLibraryDatasetIdRoute
+  '/delivery-locations/$locationId': typeof DeliveryLocationsLocationIdRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/docs/search': typeof DocsSearchRoute
   '/lab-operations/$workOrderId': typeof LabOperationsWorkOrderIdRoute
@@ -610,8 +656,11 @@ export interface FileRoutesById {
   '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
   '/lab-operations/data-assembly/$orderId': typeof LabOperationsDataAssemblyOrderIdRoute
   '/lab-operations/executions/$executionId': typeof LabOperationsExecutionsExecutionIdRoute
+  '/lab-operations/kit-requests/$requestId': typeof LabOperationsKitRequestsRequestIdRoute
   '/lab-operations/pseq-kit-orders/$orderId': typeof LabOperationsPseqKitOrdersOrderIdRoute
+  '/lab-operations/stock-kits/$kitId': typeof LabOperationsStockKitsKitIdRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
+  '/order-configuration/shipping-containers/$containerId': typeof OrderConfigurationShippingContainersContainerIdRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
   '/order-operations/result-packages/$packageId': typeof OrderOperationsResultPackagesPackageIdRoute
@@ -635,6 +684,7 @@ export interface FileRouteTypes {
     | '/data-assembly'
     | '/data-library'
     | '/data-provisioning'
+    | '/delivery-locations'
     | '/departments'
     | '/docs'
     | '/file-management'
@@ -658,6 +708,7 @@ export interface FileRouteTypes {
     | '/data-assembly/$requestId'
     | '/data-assembly/new'
     | '/data-library/$datasetId'
+    | '/delivery-locations/$locationId'
     | '/demo/tanstack-query'
     | '/docs/search'
     | '/lab-operations/$workOrderId'
@@ -679,8 +730,11 @@ export interface FileRouteTypes {
     | '/docs/$audience/$slug'
     | '/lab-operations/data-assembly/$orderId'
     | '/lab-operations/executions/$executionId'
+    | '/lab-operations/kit-requests/$requestId'
     | '/lab-operations/pseq-kit-orders/$orderId'
+    | '/lab-operations/stock-kits/$kitId'
     | '/lab-services/$orderId/edit'
+    | '/order-configuration/shipping-containers/$containerId'
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
     | '/order-operations/result-packages/$packageId'
@@ -702,6 +756,7 @@ export interface FileRouteTypes {
     | '/data-assembly'
     | '/data-library'
     | '/data-provisioning'
+    | '/delivery-locations'
     | '/departments'
     | '/docs'
     | '/file-management'
@@ -725,6 +780,7 @@ export interface FileRouteTypes {
     | '/data-assembly/$requestId'
     | '/data-assembly/new'
     | '/data-library/$datasetId'
+    | '/delivery-locations/$locationId'
     | '/demo/tanstack-query'
     | '/docs/search'
     | '/lab-operations/$workOrderId'
@@ -746,8 +802,11 @@ export interface FileRouteTypes {
     | '/docs/$audience/$slug'
     | '/lab-operations/data-assembly/$orderId'
     | '/lab-operations/executions/$executionId'
+    | '/lab-operations/kit-requests/$requestId'
     | '/lab-operations/pseq-kit-orders/$orderId'
+    | '/lab-operations/stock-kits/$kitId'
     | '/lab-services/$orderId/edit'
+    | '/order-configuration/shipping-containers/$containerId'
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
     | '/order-operations/result-packages/$packageId'
@@ -769,6 +828,7 @@ export interface FileRouteTypes {
     | '/data-assembly'
     | '/data-library'
     | '/data-provisioning'
+    | '/delivery-locations'
     | '/departments'
     | '/docs'
     | '/file-management'
@@ -792,6 +852,7 @@ export interface FileRouteTypes {
     | '/data-assembly/$requestId'
     | '/data-assembly/new'
     | '/data-library/$datasetId'
+    | '/delivery-locations/$locationId'
     | '/demo/tanstack-query'
     | '/docs/search'
     | '/lab-operations/$workOrderId'
@@ -813,8 +874,11 @@ export interface FileRouteTypes {
     | '/docs/$audience/$slug'
     | '/lab-operations/data-assembly/$orderId'
     | '/lab-operations/executions/$executionId'
+    | '/lab-operations/kit-requests/$requestId'
     | '/lab-operations/pseq-kit-orders/$orderId'
+    | '/lab-operations/stock-kits/$kitId'
     | '/lab-services/$orderId/edit'
+    | '/order-configuration/shipping-containers/$containerId'
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
     | '/order-operations/result-packages/$packageId'
@@ -837,12 +901,13 @@ export interface RootRouteChildren {
   DataAssemblyRoute: typeof DataAssemblyRouteWithChildren
   DataLibraryRoute: typeof DataLibraryRouteWithChildren
   DataProvisioningRoute: typeof DataProvisioningRouteWithChildren
+  DeliveryLocationsRoute: typeof DeliveryLocationsRouteWithChildren
   DepartmentsRoute: typeof DepartmentsRoute
   DocsRoute: typeof DocsRouteWithChildren
   FileManagementRoute: typeof FileManagementRoute
   LabOperationsRoute: typeof LabOperationsRouteWithChildren
   LabServicesRoute: typeof LabServicesRouteWithChildren
-  OrderConfigurationRoute: typeof OrderConfigurationRoute
+  OrderConfigurationRoute: typeof OrderConfigurationRouteWithChildren
   OrderOperationsRoute: typeof OrderOperationsRouteWithChildren
   PhaenoUsersRoute: typeof PhaenoUsersRoute
   ReagentOrdersRoute: typeof ReagentOrdersRouteWithChildren
@@ -937,6 +1002,13 @@ declare module '@tanstack/react-router' {
       path: '/departments'
       fullPath: '/departments'
       preLoaderRoute: typeof DepartmentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/delivery-locations': {
+      id: '/delivery-locations'
+      path: '/delivery-locations'
+      fullPath: '/delivery-locations'
+      preLoaderRoute: typeof DeliveryLocationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/data-provisioning': {
@@ -1079,6 +1151,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoTanstackQueryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/delivery-locations/$locationId': {
+      id: '/delivery-locations/$locationId'
+      path: '/$locationId'
+      fullPath: '/delivery-locations/$locationId'
+      preLoaderRoute: typeof DeliveryLocationsLocationIdRouteImport
+      parentRoute: typeof DeliveryLocationsRoute
+    }
     '/data-library/$datasetId': {
       id: '/data-library/$datasetId'
       path: '/$datasetId'
@@ -1198,6 +1277,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrderOperationsWorkflowOrderIdRouteImport
       parentRoute: typeof OrderOperationsRoute
     }
+    '/order-configuration/shipping-containers/$containerId': {
+      id: '/order-configuration/shipping-containers/$containerId'
+      path: '/shipping-containers/$containerId'
+      fullPath: '/order-configuration/shipping-containers/$containerId'
+      preLoaderRoute: typeof OrderConfigurationShippingContainersContainerIdRouteImport
+      parentRoute: typeof OrderConfigurationRoute
+    }
     '/lab-services/$orderId/edit': {
       id: '/lab-services/$orderId/edit'
       path: '/edit'
@@ -1205,11 +1291,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LabServicesOrderIdEditRouteImport
       parentRoute: typeof LabServicesOrderIdRoute
     }
+    '/lab-operations/stock-kits/$kitId': {
+      id: '/lab-operations/stock-kits/$kitId'
+      path: '/stock-kits/$kitId'
+      fullPath: '/lab-operations/stock-kits/$kitId'
+      preLoaderRoute: typeof LabOperationsStockKitsKitIdRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
     '/lab-operations/pseq-kit-orders/$orderId': {
       id: '/lab-operations/pseq-kit-orders/$orderId'
       path: '/pseq-kit-orders/$orderId'
       fullPath: '/lab-operations/pseq-kit-orders/$orderId'
       preLoaderRoute: typeof LabOperationsPseqKitOrdersOrderIdRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
+    '/lab-operations/kit-requests/$requestId': {
+      id: '/lab-operations/kit-requests/$requestId'
+      path: '/kit-requests/$requestId'
+      fullPath: '/lab-operations/kit-requests/$requestId'
+      preLoaderRoute: typeof LabOperationsKitRequestsRequestIdRouteImport
       parentRoute: typeof LabOperationsRoute
     }
     '/lab-operations/executions/$executionId': {
@@ -1406,6 +1506,17 @@ const DataProvisioningRouteChildren: DataProvisioningRouteChildren = {
 const DataProvisioningRouteWithChildren =
   DataProvisioningRoute._addFileChildren(DataProvisioningRouteChildren)
 
+interface DeliveryLocationsRouteChildren {
+  DeliveryLocationsLocationIdRoute: typeof DeliveryLocationsLocationIdRoute
+}
+
+const DeliveryLocationsRouteChildren: DeliveryLocationsRouteChildren = {
+  DeliveryLocationsLocationIdRoute: DeliveryLocationsLocationIdRoute,
+}
+
+const DeliveryLocationsRouteWithChildren =
+  DeliveryLocationsRoute._addFileChildren(DeliveryLocationsRouteChildren)
+
 interface DocsRouteChildren {
   DocsSearchRoute: typeof DocsSearchRoute
   DocsAudienceSlugRoute: typeof DocsAudienceSlugRoute
@@ -1422,7 +1533,9 @@ interface LabOperationsRouteChildren {
   LabOperationsWorkOrderIdRoute: typeof LabOperationsWorkOrderIdRoute
   LabOperationsDataAssemblyOrderIdRoute: typeof LabOperationsDataAssemblyOrderIdRoute
   LabOperationsExecutionsExecutionIdRoute: typeof LabOperationsExecutionsExecutionIdRoute
+  LabOperationsKitRequestsRequestIdRoute: typeof LabOperationsKitRequestsRequestIdRoute
   LabOperationsPseqKitOrdersOrderIdRoute: typeof LabOperationsPseqKitOrdersOrderIdRoute
+  LabOperationsStockKitsKitIdRoute: typeof LabOperationsStockKitsKitIdRoute
   LabOperationsProtocolsProtocolIdVersionsNewRoute: typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   LabOperationsWorkflowsWorkflowIdVersionsNewRoute: typeof LabOperationsWorkflowsWorkflowIdVersionsNewRoute
   LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute: typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
@@ -1434,8 +1547,11 @@ const LabOperationsRouteChildren: LabOperationsRouteChildren = {
   LabOperationsDataAssemblyOrderIdRoute: LabOperationsDataAssemblyOrderIdRoute,
   LabOperationsExecutionsExecutionIdRoute:
     LabOperationsExecutionsExecutionIdRoute,
+  LabOperationsKitRequestsRequestIdRoute:
+    LabOperationsKitRequestsRequestIdRoute,
   LabOperationsPseqKitOrdersOrderIdRoute:
     LabOperationsPseqKitOrdersOrderIdRoute,
+  LabOperationsStockKitsKitIdRoute: LabOperationsStockKitsKitIdRoute,
   LabOperationsProtocolsProtocolIdVersionsNewRoute:
     LabOperationsProtocolsProtocolIdVersionsNewRoute,
   LabOperationsWorkflowsWorkflowIdVersionsNewRoute:
@@ -1474,6 +1590,18 @@ const LabServicesRouteChildren: LabServicesRouteChildren = {
 const LabServicesRouteWithChildren = LabServicesRoute._addFileChildren(
   LabServicesRouteChildren,
 )
+
+interface OrderConfigurationRouteChildren {
+  OrderConfigurationShippingContainersContainerIdRoute: typeof OrderConfigurationShippingContainersContainerIdRoute
+}
+
+const OrderConfigurationRouteChildren: OrderConfigurationRouteChildren = {
+  OrderConfigurationShippingContainersContainerIdRoute:
+    OrderConfigurationShippingContainersContainerIdRoute,
+}
+
+const OrderConfigurationRouteWithChildren =
+  OrderConfigurationRoute._addFileChildren(OrderConfigurationRouteChildren)
 
 interface OrderOperationsRouteChildren {
   OrderOperationsWorkflowOrderIdRoute: typeof OrderOperationsWorkflowOrderIdRoute
@@ -1591,12 +1719,13 @@ const rootRouteChildren: RootRouteChildren = {
   DataAssemblyRoute: DataAssemblyRouteWithChildren,
   DataLibraryRoute: DataLibraryRouteWithChildren,
   DataProvisioningRoute: DataProvisioningRouteWithChildren,
+  DeliveryLocationsRoute: DeliveryLocationsRouteWithChildren,
   DepartmentsRoute: DepartmentsRoute,
   DocsRoute: DocsRouteWithChildren,
   FileManagementRoute: FileManagementRoute,
   LabOperationsRoute: LabOperationsRouteWithChildren,
   LabServicesRoute: LabServicesRouteWithChildren,
-  OrderConfigurationRoute: OrderConfigurationRoute,
+  OrderConfigurationRoute: OrderConfigurationRouteWithChildren,
   OrderOperationsRoute: OrderOperationsRouteWithChildren,
   PhaenoUsersRoute: PhaenoUsersRoute,
   ReagentOrdersRoute: ReagentOrdersRouteWithChildren,

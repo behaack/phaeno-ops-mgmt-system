@@ -28,7 +28,6 @@ import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
@@ -272,7 +271,9 @@ export function ExternalDashboardContent({
       ) : null}
 
       {cards.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{cards}</div>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,20rem),1fr))] gap-4">
+          {cards}
+        </div>
       ) : (
         <Card className="max-w-2xl border-dashed">
           <CardHeader>
@@ -304,20 +305,20 @@ function WorkflowCard({
   const value = loadingValue(isLoading, error, mock, total)
 
   return (
-    <Card className="h-full">
-      <CardHeader>
-        <div className="mb-2 flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-          <Icon aria-hidden="true" className="size-4" />
-        </div>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-        {totalLabel ? (
-          <CardAction>
-            <Badge variant="outline">
+    <Card className="h-full min-w-0 gap-3 border border-border ring-0">
+      <CardHeader className="block">
+        <div className="flex items-center gap-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+            <Icon aria-hidden="true" className="size-4" />
+          </div>
+          <CardTitle className="min-w-0 flex-1">{title}</CardTitle>
+          {totalLabel ? (
+            <Badge variant="outline" className="shrink-0">
               {value} {value === '1' ? singular(totalLabel) : totalLabel}
             </Badge>
-          </CardAction>
-        ) : null}
+          ) : null}
+        </div>
+        <CardDescription className="mt-3">{description}</CardDescription>
       </CardHeader>
       <CardContent className="mt-auto">
         <p
@@ -333,7 +334,7 @@ function WorkflowCard({
                 : summary}
         </p>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="py-2">
         <Button asChild variant="ghost" className="-ml-3">
           <Link to={href}>
             {actionLabel}

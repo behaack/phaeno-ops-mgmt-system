@@ -39,7 +39,13 @@ public sealed class MailgunInvitationEmailSender(
             ["to"] = message.Email,
             ["subject"] = $"You have been invited to {message.OrganizationName}",
             ["text"] = content.Text,
-            ["html"] = content.Html,
+            ["template"] = "organization-invitation.en-us",
+            ["t:variables"] = JsonSerializer.Serialize(new
+            {
+                organization_name = message.OrganizationName,
+                invite_url = message.InviteUrl,
+                recipient_email = message.Email
+            }),
             ["o:tracking"] = "false",
             ["o:tracking-clicks"] = "no",
             ["o:tracking-opens"] = "no",

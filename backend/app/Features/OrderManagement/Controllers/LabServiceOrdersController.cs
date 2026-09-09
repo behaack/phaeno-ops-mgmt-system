@@ -339,6 +339,11 @@ public sealed partial class LabServiceOrdersController(
             {
                 var order = await ReadOrderAsync(orderId, tenant, operationCancellationToken);
                 EnsureVersion(order.Version, request.Version);
+                var currentQuote = order.Quotes.SingleOrDefault(item => item.Id == quoteId) ?? throw Missing();
+                if (order.CurrentQuoteId != quoteId)
+                    throw Conflict("quote_not_current", "Only the current quote can be accepted.");
+                if (currentQuote.EffectiveStatus(DateTime.UtcNow) == QuoteStatus.Expired)
+                    throw Conflict("quote_expired", "This quote has expired. Request an extension before accepting a new revision.");
                 var eligibility = await LabServiceOrderingEligibility.RequireAsync(
                     dbContext,
                     tenant.Organization.Id,
@@ -425,16 +430,20 @@ public sealed partial class LabServiceOrdersController(
         CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
-        var order = await ReadOrderAsync(orderId, tenant, cancellationToken);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var order = await ReadLockedRosterAsync(orderId, tenant, cancellationToken);
         EnsureVersion(order.Version, request.OrderVersion);
         Execute(order.EnsureSampleRosterEditable);
         if (order.Samples.Count >= order.RequestedSpecimenCount)
             throw Conflict("sample_count_exceeded", $"This accepted Job allows exactly {order.RequestedSpecimenCount} samples.");
         EnsureUniqueSampleId(order, request.CustomerSampleId, null);
         var sample = ToRosterSample(order, request);
-        dbContext.LabSamples.Add(sample);
+        EnsureRosterSourceCapacity(order, sample.BiologicalSource);
         order.Samples.Add(sample);
+        dbContext.LabSamples.Add(sample);
+        order.MarkUpdated(DateTime.UtcNow, tenant.Actor.Id);
         await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         Response.StatusCode = StatusCodes.Status201Created;
         return await MapAsync(order, true, false, cancellationToken);
     }
@@ -444,16 +453,21 @@ public sealed partial class LabServiceOrdersController(
         [FromBody] LabSampleRosterWriteRequest request, CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
-        var order = await ReadOrderAsync(orderId, tenant, cancellationToken);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var order = await ReadLockedRosterAsync(orderId, tenant, cancellationToken);
         Execute(order.EnsureSampleRosterEditable);
         var sample = order.Samples.SingleOrDefault(item => item.Id == sampleId) ?? throw Missing();
         EnsureVersion(sample.Version, request.Version);
         EnsureUniqueSampleId(order, request.CustomerSampleId, sample.Id);
+        var source = ResolveRosterSource(order, request.BiologicalSource, sample);
+        EnsureRosterSourceCapacity(order, source, sample.Id);
         Execute(() => sample.UpdateMetadata(request.CustomerSampleId, StandardMaterialType,
-            ResolveRosterSource(order, request.BiologicalSource), request.TubeCount, StandardQuantityUnit,
+            source, request.TubeCount, StandardQuantityUnit,
             order.StorageRequirements, order.SafetyDeclaration, request.CollectionDate, request.Concentration,
             request.Notes, sample.AnalysisDefinitionIdsJson));
+        order.MarkUpdated(DateTime.UtcNow, tenant.Actor.Id);
         await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         return await MapAsync(order, true, false, cancellationToken);
     }
 
@@ -462,14 +476,18 @@ public sealed partial class LabServiceOrdersController(
         [FromBody] VersionRequest request, CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
-        var order = await ReadOrderAsync(orderId, tenant, cancellationToken);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var order = await ReadLockedRosterAsync(orderId, tenant, cancellationToken);
         var isLegacyDraftCleanup = order.Status is LabServiceOrderStatus.DraftRequest
             or LabServiceOrderStatus.ChangesRequested;
         if (!isLegacyDraftCleanup) Execute(order.EnsureSampleRosterEditable);
         var sample = order.Samples.SingleOrDefault(item => item.Id == sampleId) ?? throw Missing();
         EnsureVersion(sample.Version, request.Version);
         dbContext.LabSamples.Remove(sample);
+        order.Samples.Remove(sample);
+        order.MarkUpdated(DateTime.UtcNow, tenant.Actor.Id);
         await dbContext.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
         return await MapAsync(order, true, false, cancellationToken);
     }
 
@@ -510,8 +528,8 @@ public sealed partial class LabServiceOrdersController(
         [FromBody] ConfirmLabSampleImportRequest request, CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
-        var order = await ReadOrderAsync(orderId, tenant, cancellationToken);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        var order = await ReadLockedRosterAsync(orderId, tenant, cancellationToken);
         EnsureVersion(order.Version, request.Version);
         Execute(order.EnsureSampleRosterEditable);
         var preview = await dbContext.LabSampleImportPreviews.SingleOrDefaultAsync(item => item.Id == previewId
@@ -521,6 +539,9 @@ public sealed partial class LabServiceOrdersController(
         if (errors.Count != 0)
             throw Conflict("sample_import_has_errors", "Correct every preview error before replacing the sample list.");
         var rows = JsonSerializer.Deserialize<List<LabSampleImportRowDto>>(preview.RowsJson, JsonSerializerOptions) ?? [];
+        var currentErrors = LabSampleCsvParser.ValidateRows(rows, order);
+        if (currentErrors.Count != 0)
+            throw Conflict("sample_import_has_errors", "The sample list does not match the accepted source counts. Upload a corrected CSV and review it again.");
         Execute(() => preview.Confirm(DateTime.UtcNow));
         dbContext.LabSamples.RemoveRange(order.Samples);
         order.Samples.Clear();
@@ -528,9 +549,10 @@ public sealed partial class LabServiceOrdersController(
         {
             var sample = ToRosterSample(order, new LabSampleRosterWriteRequest(
                 row.CustomerSampleId, row.BiologicalSource, row.TubeCount));
-            dbContext.LabSamples.Add(sample);
             order.Samples.Add(sample);
+            dbContext.LabSamples.Add(sample);
         }
+        order.MarkUpdated(DateTime.UtcNow, tenant.Actor.Id);
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return await MapAsync(order, true, false, cancellationToken);
@@ -551,7 +573,7 @@ public sealed partial class LabServiceOrdersController(
             request,
             async operationCancellationToken =>
             {
-                var order = await ReadOrderAsync(orderId, tenant, operationCancellationToken);
+                var order = await ReadLockedRosterAsync(orderId, tenant, operationCancellationToken);
                 EnsureVersion(order.Version, request.Version);
                 Execute(() => order.FinalizeSampleRoster(tenant.Actor.Id, DateTime.UtcNow));
                 if (await dbContext.CommercialLabAuthorizations.AnyAsync(item => item.CommercialOrderId == order.Id, operationCancellationToken))
@@ -822,13 +844,16 @@ public sealed partial class LabServiceOrdersController(
             order.StorageRequirements, order.SafetyDeclaration, request.CollectionDate, request.Concentration,
             request.Notes, JsonSerializer.Serialize(order.ReadConfiguredSnapshot()?.AnalysisIds ?? [], JsonSerializerOptions));
 
-    private static string ResolveRosterSource(LabServiceOrder order, string? requestedSource)
+    private static string ResolveRosterSource(LabServiceOrder order, string? requestedSource, LabSample? existing = null)
     {
         if (string.IsNullOrWhiteSpace(requestedSource) && order.SourceGroups.Count == 1)
             return order.SourceGroups.Single().BiologicalSource;
         if (string.IsNullOrWhiteSpace(requestedSource))
             throw Invalid("biological_source_required", "Select one of the biological sources accepted with this Job.");
         var normalized = LabServiceSourceGroup.Normalize(requestedSource);
+        if (existing is not null && LabServiceSourceGroup.Normalize(existing.BiologicalSource) == normalized
+            && !order.SourceGroups.Any(group => group.NormalizedBiologicalSource == normalized))
+            return existing.BiologicalSource;
         return order.SourceGroups.SingleOrDefault(group => group.NormalizedBiologicalSource == normalized)?.BiologicalSource
             ?? throw Invalid("biological_source_not_accepted", "This biological source is not part of the accepted Job.");
     }
@@ -958,6 +983,16 @@ public sealed partial class LabServiceOrdersController(
                 DateTime.UtcNow,
                 cancellationToken,
                 order.DepartmentId)).CanOrder;
+        var currentQuote = order.Quotes.SingleOrDefault(item => item.Id == order.CurrentQuoteId);
+        var extensionRequests = await dbContext.LabServiceQuoteExtensionRequests.AsNoTracking()
+            .Where(item => item.LabServiceOrderId == order.Id).ToDictionaryAsync(item => item.QuoteId, cancellationToken);
+        var currentQuoteStatus = currentQuote?.EffectiveStatus(DateTime.UtcNow);
+        var canAcceptQuote = canManage && orderingEligible && order.Status == LabServiceOrderStatus.QuoteIssued
+            && currentQuoteStatus == QuoteStatus.Issued;
+        var quoteAcceptanceBlockedReason = !canManage ? "An organization or department administrator must accept quotes."
+            : currentQuoteStatus == QuoteStatus.Expired ? "This quote has expired. Request an extension before accepting a new revision."
+            : !orderingEligible ? "Ordering is currently unavailable. Contact Phaeno before accepting this quote."
+            : !canAcceptQuote ? "There is no current issued quote available to accept." : null;
         var timing = await new LabServiceTimingService(dbContext).ReadAsync(order.Id, order.OrganizationId, false, false, cancellationToken);
         return new LabServiceOrderDto(order.Id, order.OrganizationId, order.OrderNumber, order.CustomerReference, order.Description,
             order.HasMixedBiologicalSources, order.SharedBiologicalSource,
@@ -967,12 +1002,12 @@ public sealed partial class LabServiceOrdersController(
             order.CreatedAt, order.UpdatedAt, order.Version,
             canManage && orderingEligible && editable,
             canManage && orderingEligible && editable,
-            canManage && orderingEligible && order.Status == LabServiceOrderStatus.QuoteIssued,
+            canAcceptQuote,
             canManage && order.Status is LabServiceOrderStatus.DraftRequest or LabServiceOrderStatus.SubmittedForQuote
                 or LabServiceOrderStatus.ChangesRequested or LabServiceOrderStatus.QuoteInPreparation or LabServiceOrderStatus.QuoteIssued,
             canManage && order.Status is LabServiceOrderStatus.PlacedAwaitingSamples or LabServiceOrderStatus.InProgress or LabServiceOrderStatus.ResultsAvailable,
             order.Samples.OrderBy(item => item.CreatedAt).Select(item => item.ToDto(platform)).ToList(),
-            order.Quotes.OrderByDescending(item => item.Revision).Select(item => item.ToDto()).ToList(),
+            order.Quotes.OrderByDescending(item => item.Revision).Select(item => item.ToDto(extensionRequests.GetValueOrDefault(item.Id))).ToList(),
             releases.Select(item => item.ToDto(
                 retentionByReleaseId.GetValueOrDefault(item.Id),
                 downloadByReleaseId.GetValueOrDefault(item.Id))).ToList(),
@@ -992,7 +1027,7 @@ public sealed partial class LabServiceOrdersController(
                 .Select(group => new LabServiceSourceGroupDto(group.Id, group.BiologicalSource, group.SpecimenCount, group.Version)).ToList(),
             SampleRosterFinalizedAt: order.SampleRosterFinalizedAt,
             CanEditSamples: canManage && order.CanEditSampleRoster,
-            CanFinalizeSamples: canManage && order.CanEditSampleRoster && order.Samples.Count == order.RequestedSpecimenCount,
+            CanFinalizeSamples: canManage && order.CanEditSampleRoster && order.HasAcceptedSampleSourceCounts,
             ProposedUnitPrice: order.ProposedUnitPrice,
             ProposedCurrency: order.ProposedUnitPrice.HasValue ? "USD" : null,
             PriceProposalNote: order.PriceProposalNote,
@@ -1002,7 +1037,12 @@ public sealed partial class LabServiceOrdersController(
             StandardCommercialSnapshot: LabServiceTimingService.CommercialSnapshot(order.ReadConfiguredSnapshot()),
             CanPlaceStandardOrder: editable && orderingEligible && order.SourceRequestId is null && order.ProposedUnitPrice is null
                 && (await requestContext.RequireLabServiceTenantAsync(HttpContext, false, cancellationToken)).Membership.IsOrganizationAdmin,
-            Timing: timing);
+            Timing: timing,
+            CanRequestQuoteExtension: canManage && order.Status == LabServiceOrderStatus.QuoteIssued
+                && currentQuoteStatus == QuoteStatus.Expired && currentQuote is not null
+                && currentQuote.AcceptedAt is null && !extensionRequests.ContainsKey(currentQuote.Id),
+            CanManageQuotes: canManage,
+            QuoteAcceptanceBlockedReason: quoteAcceptanceBlockedReason);
     }
 
     private async Task<string> BuildRequestSnapshotAsync(LabServiceOrder order, CancellationToken cancellationToken)

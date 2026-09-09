@@ -131,7 +131,7 @@ export function CommercialOrderIntakePanel({
         <CardHeader>
           <CardTitle>Intake, pricing, and quotes</CardTitle>
           <CardDescription>
-            Active intake includes pricing, quote decisions and held orders. Use All orders for accepted, completed and cancelled records. Laboratory execution continues in Lab operations.
+            Active intake includes pricing, quote decisions, extension requests and held orders. Use All orders for accepted, completed and cancelled records. Laboratory execution continues in Lab operations.
           </CardDescription>
           <div className="mt-3 flex flex-wrap items-end gap-3">
             <div><Label htmlFor="intake-view">View</Label><select id="intake-view" className="mt-2 block h-9 cursor-pointer rounded-lg border bg-background px-3 text-sm" value={view} onChange={event => setFilters({ intakeView: event.target.value as 'active' | 'holds' | 'all' })}><option value="active">Active intake</option><option value="holds">On hold</option><option value="all">All orders and history</option></select></div>
@@ -247,6 +247,7 @@ function CommercialOrderRow({
             {order.reference || order.number}
           </Link>
           <Badge variant="outline">{orderTypeLabel(order.orderType)}</Badge>
+          {order.hasPendingQuoteExtension ? <Badge variant="secondary">Extension requested</Badge> : null}
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
           {order.number} · {organizationName ?? order.organizationId} · updated {formatDateTime(order.updatedAt)}

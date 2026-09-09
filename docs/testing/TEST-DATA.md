@@ -17,6 +17,7 @@ These are responsibilities, not invented role-picker labels. The platform admini
 | Alias | Required identity/capability |
 | --- | --- |
 | P-ADMIN | Phaeno platform administrator; isolated setup and restricted CRM/access actions |
+| P-FULFILL | Phaeno fulfillment tester using current platform-administrator authority; may be the P-ADMIN identity. This is a responsibility alias, not a new product role. Initial kit notices route to Phaeno administrators. |
 | P-SALES | Ordinary Phaeno commercial user without platform administration |
 | P-PRICE | Authorized order-pricing operator; separate proposal reviewer where dual control applies |
 | P-TRIAL-C / P-TRIAL-S | Different people assigned Commercial / Scientific Operations Trial approval authority |
@@ -56,6 +57,44 @@ Prepare active Customer A, Customer B, Partner and Prospect Companies. Each oper
 The Lab owner supplies approved test-only operating definitions with known valid values/units and deliberately invalid alternatives. Capture exact analysis, protocol, workflow, output-role and profile versions. Provide a required numeric capture, a choice capture, an optional/conditional step, an explicit confirmation, a repeatable step, a role-restricted step and Pass/Fail/Hold QC. Record the acceptance criteria; passing software validation does not establish scientific validity.
 
 Provide approved test destination/sample-type/instruction revisions, registered unused supplier tubes, a packet/return-kit fixture, a second shipment for wrong-tube checks, a qualified material lot, failed/expired lot variants, calibrated/overdue equipment, and approved final-output fixtures matching the frozen output contract. Physical execution needs approved tubes, packout, printer/scanner, custody procedures and an accountable operator.
+
+## Transportation-kit ordering and split-shipment fixtures
+
+Use these with [SHP-01–14](11-transportation-kits.md). The configured local
+checkpoint includes migration `20260909013740_AddCustomerTransportationKitOrdering`
+and active revision-2 TRANS-20/TRANS-10/TRANS-05 sizes. Record the actual target
+schema and definition revisions before a new run; this note does not apply a
+migration or qualify physical materials. Kit types are not assembled stock.
+
+| Alias | Fixture and expected use |
+| --- | --- |
+| LAB-SHIP-18 | Accepted, finalized Customer Job with nine samples and 18 tubes; eligible receiving/handling rules. The existing HS5Y7DB7 checkpoint may be resumed without altering its finalized roster; otherwise prepare a separate Job with documented accepted composition. One TRANS-20 gives two spare slots. |
+| LAB-SHIP-30 | Separate accepted/finalized 30-tube Job; one approved sample with 30 tubes provides a deterministic split across 20+10 containers. Use additional separate copies for two 20s, six 5s and 15+15 allocation. Do not change accepted scope on the main Job to create these variants. |
+| LOC-MAIN / LOC-SECOND | Two active delivery locations in the tested Customer/Department, with versions and actual test delivery details. Prepare zero-location, one-default and no-default variants; only one active default per Department. |
+| LOC-OTHER-DEPT / LOC-OTHER-CUSTOMER | Locations the Department-scoped/main Customer identities cannot manage or read outside their membership. Retain explicit ownership to test denial and stock isolation. |
+| TRANS-CATALOG | Approved names/SKUs: 20-tube transportation kit / TRANS-20; 10-tube transportation kit / TRANS-10; 5-tube transportation kit / TRANS-05. Effective capacities 20/10/5, approved structured compatibility; separate inactive/future/incompatible revision fixtures. |
+| TRANS-STOCK | Fully registered physical kits at Phaeno, with distinct kit numbers and complete permanent tube rosters for each capacity. Supply actual supplier/product/lot facts. Separate incomplete, duplicate-barcode, incompatible, sent and already-bound variants. |
+| TRANS-PARTIAL | One request for a 20 and a 10: no dispatch → 20 dispatched only → 20 acknowledged → 20 allocated with ten tubes pending → 10 dispatched/acknowledged → residual packing completed. Capture counts and request versions at each handoff. |
+| TRANS-ALTERNATES | Separate Jobs with acknowledged, request-linked stock for two 20s or six 5s. Engineering may prepare documented connected API fixtures when ordinary one-click ordering does not produce those quantities; never over-fulfill a different requested line or treat in-transit stock as available. |
+| TRANS-REORDER | Completed Received request plus an eligible uncovered residual pool, prepared through supported actions or a documented isolated fixture. Tests additional ordering without losing earlier request/receipt history. |
+| TRANS-LEGACY | Genuine pre-request Trial/Customer shipping fixture with its established return kit. Verify compatibility without inferring new Partner/Trial kit-order pricing or location balances. |
+| TRANS-LARGE | Many requests, kits, tube rows and long names for filtering/pagination and short-height dialogs; include more than 250 request records for complete queue retrieval. Use isolated fixture generation rather than hundreds of manual commercial actions. |
+
+Kits and outbound delivery for the Customer ordering slice are included with
+the accepted Lab order. Do not add a charge/payment fixture. Record the approved
+notification sender and controlled Phaeno fulfillment recipients, and separately
+capture queue creation, provider acceptance and destination receipt. The
+physical tester supplies observed dispatch/receipt facts; simulation is labeled
+as such and cannot pass the physical assertion.
+
+The stock ledger must distinguish requested, dispatched/on the way, customer
+acknowledged/available, allocated to a prepared container, and bound to a physical
+return shipment. Track each by Job, delivery location, SKU and physical kit;
+counts must not be pooled across locations or incremented again on retries.
+An 18-tube return uses one 20-tube kit; its two spare slots do not establish a
+reusable two-tube customer balance. General cross-Job stock, reservations,
+damage/loss corrections and replenishment are planned scope, not prerequisites
+that testers can satisfy by inventing current screens.
 
 ## Financial arithmetic fixtures
 

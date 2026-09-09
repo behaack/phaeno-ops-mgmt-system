@@ -64,6 +64,19 @@ export type AcceptedInvitation = Invitation & {
   organizationKind?: OrganizationKind
 }
 
+export type InvitationPreview = {
+  email: string
+  firstName: string | null
+  lastName: string | null
+  organizationName: string
+  expiresAt: string
+}
+
+export async function previewInvitation(token: string) {
+  const response = await api.post<InvitationPreview>('/invitations/preview', { token })
+  return response.data
+}
+
 export async function createInvitation(input: {
   organizationId: string
   firstName: string

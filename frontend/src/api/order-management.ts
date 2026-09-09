@@ -29,6 +29,7 @@ export type OrderListItem = {
   assignedToUserId?: string | null;
   dueAt?: string | null;
   isOverdue?: boolean;
+  hasPendingQuoteExtension?: boolean;
 };
 
 export type CommercialOrderListItem = OrderListItem & {
@@ -105,6 +106,17 @@ export type Quote = {
   pricingDecision?: "PricedWithoutProposal" | "ApprovedAsProposed" | "AmendedProposal" | null;
   pricingDecidedByUserId?: string | null;
   pricingDecidedAt?: string | null;
+  extensionRequest?: QuoteExtensionRequest | null;
+};
+
+export type QuoteExtensionRequest = {
+  id: string;
+  quoteId: string;
+  status: "Pending" | "Resolved";
+  reason: string | null;
+  requestedAt: string;
+  resolvedAt: string | null;
+  replacementQuoteId: string | null;
 };
 
 export type CancellationRequest = {
@@ -259,6 +271,9 @@ export type LabServiceOrder = {
   canEdit: boolean;
   canSubmit: boolean;
   canAcceptQuote: boolean;
+  canManageQuotes?: boolean;
+  canRequestQuoteExtension?: boolean;
+  quoteAcceptanceBlockedReason?: string | null;
   canWithdraw: boolean;
   canRequestCancellation: boolean;
   samples: LabSample[];
@@ -627,6 +642,28 @@ export async function getLabServiceOrderingEligibility() {
 export async function getLabOrder(id: string) {
   return get<LabServiceOrder>(`/lab-service-orders/${id}`);
 }
+export async function downloadLabQuotePdf(
+  orderId: string,
+  orderNumber: string,
+  quote: Pick<Quote, "id" | "revision">,
+) {
+  let response;
+  try {
+    response = await api.get<Blob>(
+      `/lab-service-orders/${orderId}/quotes/${quote.id}/pdf`,
+      { responseType: "blob" },
+    );
+  } catch (failure) {
+    if (axios.isAxiosError(failure) && failure.response?.data instanceof Blob) {
+      try {
+        const envelope: unknown = JSON.parse(await failure.response.data.text());
+        if (envelope && typeof envelope === "object") failure.response.data = envelope;
+      } catch { /* Preserve the original error when the response is not JSON. */ }
+    }
+    throw failure;
+  }
+  saveBlob(response.data, `${orderNumber}-quote-r${quote.revision}.pdf`);
+}
 export async function listAnalysisDefinitions() {
   return get<AnalysisDefinition[]>("/order-catalog/analyses");
 }
@@ -703,6 +740,21 @@ export async function acceptLabQuote(
     true,
   );
 }
+export async function requestLabQuoteExtension(
+  orderId: string,
+  quoteId: string,
+  version: number,
+  reason?: string,
+  idempotencyKey?: string,
+) {
+  return post<LabServiceOrder>(
+    `/lab-service-orders/${orderId}/quotes/${quoteId}/extension-request`,
+    { version, reason: reason?.trim() || null },
+    true,
+    idempotencyKey,
+  );
+}
+
 export type LabSampleRosterWrite = {
   customerSampleId: string;
   biologicalSource: string;
@@ -1173,6 +1225,7 @@ export async function issuePlatformQuote(
     expiresAt?: string | null;
     purpose: "Initial" | "Change";
     pricingDecisionReason?: string | null;
+    sourceQuoteId?: string;
   },
 ) {
   const path =

@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { ArrowLeft, Download, Printer, ScanBarcode } from 'lucide-react'
+import { ArrowLeft, Download, Printer } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -23,19 +23,26 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
-import { usePhaenoSession } from '#/features/auth/session-context'
+import { getSelectedMembership, usePhaenoSession } from '#/features/auth/session-context'
+import { SampleTubeScanner } from './SampleTubeScanner'
+import { SampleShipmentPackingPanel } from './SampleShipmentPackingPanel'
+import { RelatedSampleShipments } from './RelatedSampleShipments'
+import { TransportationKitsPanel } from './TransportationKitsPanel'
+import { getShipmentKitSupply } from '#/api/transportation-kit-requests'
 
 const assignmentSchema = z.object({ supplierBarcode: z.string().trim().min(4, 'Scan or enter the complete tube barcode.').max(100), reason: z.string().trim().max(1000) })
 const shipmentSchema = z.object({ carrier: z.string().trim().min(1, 'Enter the carrier.').max(255), trackingNumber: z.string().trim().min(1, 'Enter the tracking number.').max(255), shippedAt: z.string().min(1, 'Enter the shipment time.') })
 type AssignmentValues = z.infer<typeof assignmentSchema>
 type ShipmentValues = z.infer<typeof shipmentSchema>
 
-export function SampleShippingDetailPage({ shipmentId }: { shipmentId: string }) {
-  const { authProvider, session } = usePhaenoSession()
+export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false }: { shipmentId: string; autoOpenKitOrder?: boolean }) {
+  const { authProvider, session, selectedOrganizationId } = usePhaenoSession()
   const client = useQueryClient()
   const canView = Boolean(session?.capabilities.canViewSampleShipping)
   const canManage = Boolean(session?.capabilities.canManageSampleShipping)
   const query = useQuery({ queryKey: ['sample-shipment', shipmentId], queryFn: () => getSampleShipment(shipmentId), enabled: canView && authProvider !== 'mock' })
+  const customerKitSupply = query.data?.authorizationSource === 'CustomerLabServiceOrder' && getSelectedMembership(session, selectedOrganizationId)?.organizationKind === 'Customer'
+  const kitSupply = useQuery({ queryKey: ['transportation-kit-supply', query.data?.authorizationSourceId, shipmentId], queryFn: () => getShipmentKitSupply(shipmentId), enabled: customerKitSupply && canView && authProvider !== 'mock' })
   const [assignmentItem, setAssignmentItem] = useState<SampleShippingCrosswalkItem | null>(null)
   const [shipmentOpen, setShipmentOpen] = useState(false)
   const [packetAction, setPacketAction] = useState<'confirm' | 'replace' | null>(null)
@@ -50,8 +57,15 @@ export function SampleShippingDetailPage({ shipmentId }: { shipmentId: string })
   if (query.error || !query.data) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Shipment unavailable</AlertTitle><AlertDescription>{query.error ? apiErrorMessage(query.error) : 'The requested shipment was not found.'}</AlertDescription></Alert></main>
   const shipment = query.data
   const matchedCount = shipment.crosswalk.filter((item) => item.supplierTubeBarcode).length
-  const readyToConfirm = shipment.returnKit?.status === 'Fulfilled' && matchedCount === shipment.crosswalk.length && shipment.crosswalk.length > 0 && shipment.status === 'Preparing'
+  const preparationAllowed = !customerKitSupply || Boolean(kitSupply.data?.canPrepareSamples)
+  const readyToConfirm = preparationAllowed && !shipment.isPackingPool && (Boolean(shipment.container) || shipment.returnKit?.status === 'Fulfilled') && matchedCount === shipment.crosswalk.length && shipment.crosswalk.length > 0 && shipment.status === 'Preparing'
   const error = download.error
+  const preparation = shipment.isPackingPool ? <SampleShipmentPackingPanel shipment={shipment} canManage={canManage} /> : <SampleTubeScanner key={shipment.id} shipment={shipment} canManage={canManage} onCorrect={item => { assignment.reset(); setAssignmentItem(item) }} onAssign={async (item, barcode) => {
+    const saved = await assignSampleTube(shipment.id, item.shipmentItemId, { supplierBarcode: barcode, reason: null, version: item.version, tubeSlotId: item.tubeSlotId ?? null })
+    client.setQueryData(['sample-shipment', shipment.id], saved)
+    await refresh()
+    return saved
+  }} />
 
   return (
     <main className="page-wrap px-4 py-8">
@@ -88,15 +102,22 @@ export function SampleShippingDetailPage({ shipmentId }: { shipmentId: string })
           ) : null}
           {canManage && readyToConfirm ? <Button onClick={() => { issue.reset(); setPacketAction('confirm') }}>Review and confirm packet</Button> : null}
           {canManage && shipment.status === 'ReadyToShip' && shipment.currentPacket ? <Button variant="outline" onClick={() => { issue.reset(); setPacketAction('replace') }}>Replace packet</Button> : null}
-          {canManage && shipment.status === 'ReadyToShip' ? <Button onClick={() => { shipped.reset(); setShipmentOpen(true) }}>Record shipment</Button> : null}
+          {canManage && shipment.status === 'ReadyToShip' ? <Button disabled={!preparationAllowed} onClick={() => { shipped.reset(); setShipmentOpen(true) }}>Record shipment</Button> : null}
         </div>
       </section>
       {error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Crosswalk download failed</AlertTitle><AlertDescription>{apiErrorMessage(error)}</AlertDescription></Alert> : null}
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(18rem,0.8fr)]">
-        <Card><CardHeader><CardTitle>Tube-to-sample crosswalk</CardTitle><CardDescription>Use only your non-PHI sample identifier. Scan the permanent barcode already printed on each Phaeno-supplied tube.</CardDescription></CardHeader><CardContent><div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="border-b text-muted-foreground"><tr><th className="px-2 py-3 font-medium">Sample ID</th><th className="px-2 py-3 font-medium">Sample</th><th className="px-2 py-3 font-medium">Tube barcode</th><th className="px-2 py-3 font-medium"><span className="sr-only">Actions</span></th></tr></thead><tbody>{shipment.crosswalk.map((item) => <tr key={item.tubeSlotId ?? item.shipmentItemId} className="border-b last:border-0"><td className="px-2 py-3 font-medium">{item.customerSampleId}<p className="mt-1 text-xs font-normal text-muted-foreground">Tube {item.tubeOrdinal ?? 1} of {item.tubeCount ?? 1}</p></td><td className="px-2 py-3">{item.sampleName}<p className="mt-1 text-xs text-muted-foreground">{item.sampleTypeName} · {item.quantity} {item.quantityUnit}</p></td><td className="px-2 py-3 font-mono">{item.supplierTubeBarcode ?? 'Not matched'}{item.supplierTubeBarcode ? <p className="mt-1 font-sans text-xs text-muted-foreground">{humanize(item.tubeStatus)}</p> : null}</td><td className="px-2 py-3 text-right">{canManage && (shipment.status === 'Preparing' || shipment.status === 'ReadyToShip') && shipment.returnKit?.status === 'Fulfilled' ? <Button size="sm" variant="outline" onClick={() => { assignment.reset(); setAssignmentItem(item) }}><ScanBarcode data-icon="inline-start" />{shipment.currentPacket ? 'Correct tube' : item.supplierTubeBarcode ? 'Change' : 'Match tube'}</Button> : null}</td></tr>)}</tbody></table></div></CardContent></Card>
-        <div className="space-y-5"><Card><CardHeader><CardTitle>Return kit</CardTitle><CardDescription>Phaeno registers these materials before sending them to you.</CardDescription></CardHeader><CardContent className="space-y-3 text-sm">{shipment.returnKit ? <><Info label="Kit" value={shipment.returnKit.kitNumber} /><Info label="Tube" value={`${shipment.returnKit.tubeSupplierName} ${shipment.returnKit.tubeProductNumber}`} /><Info label="Shipper" value={`${shipment.returnKit.shipperSupplierName} ${shipment.returnKit.shipperProductNumber}`} /><Info label="Registered tubes" value={`${shipment.returnKit.tubes.length} of ${shipment.returnKit.requiredTubeCount}`} /><Info label="Outbound tracking" value={shipment.returnKit.outboundTrackingNumber ?? 'Not yet recorded'} /></> : <p className="text-muted-foreground">Phaeno has not prepared the return kit yet.</p>}</CardContent></Card><Card><CardHeader><CardTitle>Before confirming</CardTitle></CardHeader><CardContent><ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground"><li>Verify every Customer sample ID is non-PHI and matches your internal records.</li><li>Verify each physical tube barcode matches the row shown here.</li><li>Keep the packet or download the CSV for your records.</li></ul><p className="mt-4 text-sm font-medium">{matchedCount} of {shipment.crosswalk.length} tubes matched</p></CardContent></Card></div>
+        {customerKitSupply ? <TransportationKitsPanel key={shipment.id} shipment={shipment} canManage={canManage} autoOpenOrder={autoOpenKitOrder}>{preparation}</TransportationKitsPanel> : preparation}
+        <div className="space-y-5">
+          {shipment.container ? <Card><CardHeader><CardTitle>Shipping container</CardTitle></CardHeader><CardContent className="space-y-3 text-sm"><Info label="Container" value={shipment.container.commonName} /><Info label="SKU" value={shipment.container.sku} /><Info label="Contents and capacity" value={`${shipment.crosswalk.length} tubes · ${shipment.container.capacity} usable slots · ${Math.max(0, shipment.container.capacity - shipment.crosswalk.length)} spare`} /><p className="text-xs text-muted-foreground">Spare slots are empty capacity, not missing samples. Scan tubes from the fulfilled kits registered for this Job.</p></CardContent></Card> : null}
+          {!customerKitSupply || !shipment.isPackingPool || shipment.returnKit ? <Card><CardHeader><CardTitle>Return kit</CardTitle><CardDescription>Phaeno registers these materials before sending them to you.</CardDescription></CardHeader><CardContent className="space-y-3 text-sm">{shipment.returnKit ? <><Info label="Kit" value={shipment.returnKit.kitNumber} /><Info label="Tube" value={`${shipment.returnKit.tubeSupplierName} ${shipment.returnKit.tubeProductNumber}`} /><Info label="Shipper" value={`${shipment.returnKit.shipperSupplierName} ${shipment.returnKit.shipperProductNumber}`} /><Info label="Registered tubes" value={`${shipment.returnKit.tubes.length} of ${shipment.returnKit.requiredTubeCount}`} /><Info label="Outbound tracking" value={shipment.returnKit.outboundTrackingNumber ?? 'Not yet recorded'} /></> : <p className="text-muted-foreground">{shipment.container ? 'Use the permanent barcoded tubes supplied in the registered kits for this Job.' : 'Phaeno has not prepared the return kit yet.'}</p>}</CardContent></Card> : null}
+          {shipment.receivedTubeCount !== undefined ? <Card><CardHeader><CardTitle>Receipt progress</CardTitle></CardHeader><CardContent className="space-y-2 text-sm"><p>{shipment.receivedTubeCount} of {shipment.expectedTubeCount ?? shipment.crosswalk.length} tubes received from this shipment.</p>{shipment.orderExpectedTubeCount !== undefined ? <p>{shipment.orderReceivedTubeCount ?? 0} of {shipment.orderExpectedTubeCount} tubes received across the Job.</p> : null}<p className="text-xs text-muted-foreground">A sample split across containers is only fully received when all of its expected tubes have been recorded.</p></CardContent></Card> : null}
+          {!shipment.isPackingPool ? <Card><CardHeader><CardTitle>Before confirming</CardTitle></CardHeader><CardContent><ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground"><li>Verify every Customer sample ID is non-PHI and matches your internal records.</li><li>Verify each physical tube barcode matches the row shown here.</li><li>Keep the packet or download the CSV for your records.</li></ul><p className="mt-4 text-sm font-medium">{matchedCount} of {shipment.crosswalk.length} tubes matched</p></CardContent></Card> : null}
+        </div>
       </div>
+
+      <div className="mt-6"><RelatedSampleShipments sourceId={shipment.authorizationSourceId} /></div>
 
       <TubeAssignmentDialog item={assignmentItem} replacesPacket={Boolean(shipment.currentPacket)} isPending={assignment.isPending} error={assignment.error ? apiErrorMessage(assignment.error) : undefined} onOpenChange={(open) => { if (!open) setAssignmentItem(null) }} onSubmit={(values) => { if (assignmentItem) assignment.mutate({ item: assignmentItem, values }) }} />
       <ConfirmPacketDialog action={packetAction} shipmentNumber={shipment.shipmentNumber} sampleCount={new Set(shipment.crosswalk.map((item) => item.shipmentItemId)).size} tubeCount={shipment.crosswalk.length} isPending={issue.isPending} error={issue.error ? apiErrorMessage(issue.error) : undefined} onOpenChange={(open) => { if (!open) setPacketAction(null) }} onConfirm={(reason) => issue.mutate(reason)} />

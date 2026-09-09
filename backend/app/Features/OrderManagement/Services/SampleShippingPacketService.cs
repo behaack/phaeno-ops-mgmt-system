@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Laboratory.Domain;
+using PhaenoPortal.App.Features.OrderManagement.DTOs;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
 public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContext)
@@ -51,6 +52,11 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
             throw new OrderManagementException(
                 "sample_shipping_manifest_empty",
                 "Add at least one authorized sample before issuing a packet.");
+        if (shipment.IsPackingPool)
+            throw new OrderManagementException("sample_packing_required", "Select containers for these tubes before confirming a manifest.", 409);
+        if (SampleShippingPackingData.Container(shipment.ContainerSnapshotJson) is { } container
+            && SampleShippingPackingData.TubeCount(shipment) > container.Capacity)
+            throw new OrderManagementException("container_capacity_exceeded", "This shipment exceeds its selected container capacity.", 409);
         if (shipment.ReturnKit is not { Status: SampleReturnKitStatus.Fulfilled } returnKit)
             throw new OrderManagementException(
                 "sample_return_kit_not_fulfilled",
@@ -168,6 +174,7 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
         var barcode = await AllocateBarcodeAsync(cancellationToken);
         var revision = shipment.PacketRevisions.Select(item => item.Revision).DefaultIfEmpty(0).Max() + 1;
         var packetNumber = $"SP-{issuedAt:yyyyMMdd}-{barcode.Split('-')[2]}";
+        var family = await SampleShippingPackingData.FamilyAsync(dbContext, shipment, cancellationToken);
         var packet = new SampleShippingPacketRevision(
             shipment.Id,
             revision,
@@ -175,7 +182,7 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
             barcode,
             SerializeDestination(resolution.Destination),
             SerializeInstructions(resolution),
-            SerializeManifest(shipment, tubesById, sampleTypesById),
+            SerializeManifest(shipment, tubesById, sampleTypesById, family),
             issuedAt);
 
         if (currentPacket != null)
@@ -289,8 +296,44 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
     private static string SerializeManifest(
         SampleShipment shipment,
         IReadOnlyDictionary<Guid, RegisteredSampleTube> tubesById,
-        IReadOnlyDictionary<Guid, SampleTypeDefinition> sampleTypesById) =>
-        JsonSerializer.Serialize(new
+        IReadOnlyDictionary<Guid, SampleTypeDefinition> sampleTypesById,
+        IReadOnlyList<SampleShipment> family)
+    {
+        var rows = new List<object>();
+        foreach (var item in shipment.Items.OrderBy(value => value.CustomerSampleId))
+        {
+            var total = family.SelectMany(value => value.Items).Where(value => value.SubmittedSpecimenId == item.SubmittedSpecimenId)
+                .Sum(SampleShippingPackingData.TubeCount);
+            var otherShipments = family.Where(value => value.Id != shipment.Id && !value.IsPackingPool)
+                .Select(value => new SampleOtherShipmentDto(value.Id, value.ShipmentNumber,
+                    value.Items.Where(other => other.SubmittedSpecimenId == item.SubmittedSpecimenId).Sum(SampleShippingPackingData.TubeCount)))
+                .Where(value => value.TubeCount > 0).OrderBy(value => value.ShipmentNumber).ToArray();
+            var pending = family.Where(value => value.IsPackingPool).SelectMany(value => value.Items)
+                .Where(value => value.SubmittedSpecimenId == item.SubmittedSpecimenId).Sum(SampleShippingPackingData.TubeCount);
+            IEnumerable<(Guid? Id, int Ordinal, Guid? TubeId)> slots = item.TubeSlots.Count > 0
+                ? item.TubeSlots.OrderBy(slot => slot.Ordinal).Select(slot => ((Guid?)slot.Id, slot.Ordinal, slot.RegisteredSampleTubeId))
+                : [(null, 1, item.RegisteredSampleTubeId)];
+            foreach (var slot in slots) rows.Add(new
+            {
+                item.SubmittedSpecimenId,
+                item.SampleTypeDefinitionId,
+                sampleBarcode = SampleShippingIdentity.Sample(item.SubmittedSpecimenId),
+                sampleTypeName = sampleTypesById[item.SampleTypeDefinitionId].Name,
+                item.CustomerSampleId,
+                item.SampleName,
+                item.Quantity,
+                item.QuantityUnit,
+                tubeSlotId = slot.Id,
+                tubeOrdinal = slot.Ordinal,
+                tubeCount = SampleShippingPackingData.TubeCount(item),
+                totalSampleTubeCount = total,
+                otherShipments,
+                unallocatedTubeCount = pending,
+                registeredSampleTubeId = slot.TubeId,
+                supplierTubeBarcode = slot.TubeId.HasValue ? tubesById[slot.TubeId.Value].SupplierBarcode : null
+            });
+        }
+        return JsonSerializer.Serialize(new
         {
             shipment.Id,
             shipment.ShipmentNumber,
@@ -300,42 +343,10 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
             shipment.AuthorizationReference,
             shipment.AuthorizationName,
             shipment.LabWorkOrderId,
-            samples = shipment.Items
-                .OrderBy(item => item.CustomerSampleId)
-                .SelectMany(item => item.TubeSlots.Count > 0
-                    ? item.TubeSlots.OrderBy(slot => slot.Ordinal).Select(slot => new
-                    {
-                        item.SubmittedSpecimenId,
-                        item.SampleTypeDefinitionId,
-                        sampleTypeName = sampleTypesById[item.SampleTypeDefinitionId].Name,
-                        item.CustomerSampleId,
-                        item.SampleName,
-                        item.Quantity,
-                        item.QuantityUnit,
-                        tubeSlotId = (Guid?)slot.Id,
-                        tubeOrdinal = slot.Ordinal,
-                        tubeCount = item.TubeSlots.Count,
-                        registeredSampleTubeId = slot.RegisteredSampleTubeId,
-                        supplierTubeBarcode = slot.RegisteredSampleTubeId.HasValue
-                            ? tubesById[slot.RegisteredSampleTubeId.Value].SupplierBarcode
-                            : null
-                    })
-                    : new[] { new
-                {
-                    item.SubmittedSpecimenId,
-                    item.SampleTypeDefinitionId,
-                    sampleTypeName = sampleTypesById[item.SampleTypeDefinitionId].Name,
-                    item.CustomerSampleId,
-                    item.SampleName,
-                    item.Quantity,
-                    item.QuantityUnit,
-                    tubeSlotId = (Guid?)null,
-                    tubeOrdinal = 1,
-                    tubeCount = 1,
-                    registeredSampleTubeId = item.RegisteredSampleTubeId,
-                    supplierTubeBarcode = item.RegisteredSampleTubeId.HasValue
-                        ? tubesById[item.RegisteredSampleTubeId.Value].SupplierBarcode
-                        : null
-                } })
+            orderBarcode = SampleShippingIdentity.Order(shipment.AuthorizationSourceId),
+            shipmentBarcode = SampleShippingIdentity.Shipment(shipment.Id),
+            container = SampleShippingPackingData.Container(shipment.ContainerSnapshotJson),
+            samples = rows
         }, SnapshotOptions);
+    }
 }

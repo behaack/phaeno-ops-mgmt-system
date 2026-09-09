@@ -267,7 +267,7 @@
       "title": "Getting started",
       "summary": "Find approved Trials, authorized shipping, curated data, and access for the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -293,7 +293,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -323,9 +323,9 @@
       "locale": "en-US",
       "slug": "sample-shipping",
       "title": "Prepare and ship samples",
-      "summary": "Associate Phaeno-supplied tube barcodes with your sample identifiers, retain the crosswalk, and ship an authorized Trial Project package.",
+      "summary": "Choose compatible containers, scan Phaeno-supplied tubes, and print a manifest for each authorized Trial Project shipment.",
       "order": 25,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "trial-project",
       "contentType": "guide",
       "topicIds": [
@@ -484,7 +484,7 @@
       "title": "Getting started",
       "summary": "Find Customer Jobs, samples, results, curated data, and retained Trials in the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -510,7 +510,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -542,7 +542,7 @@
       "title": "Request laboratory services",
       "summary": "Review configured pricing or a manual quote, then finalize and ship the exact sample roster.",
       "order": 30,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -573,9 +573,9 @@
       "locale": "en-US",
       "slug": "sample-shipping",
       "title": "Prepare and ship samples",
-      "summary": "Match each Phaeno-supplied tube to a finalized sample tube slot, retain the crosswalk, and ship the package.",
+      "summary": "Choose containers for finalized tubes, scan each tube, and track separate shipments and split-sample manifests.",
       "order": 35,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -700,7 +700,7 @@
       "title": "Getting started",
       "summary": "Find reagent orders, Assembly requests, curated data, and retained Trials in the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -726,7 +726,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -1139,7 +1139,7 @@
       "title": "Company access and user administration",
       "summary": "Manage Company access, staged Department readiness, service entitlements, invitations, and membership lifecycle.",
       "order": 25,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "platform-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1593,9 +1593,9 @@
       "slug": "lab-receipt-accession",
       "parentSlug": "lab-operations",
       "title": "Receipt and accession",
-      "summary": "Match a packet and registered tube, continue to explicit receipt and accession, and preserve container lineage.",
+      "summary": "Prepare and dispatch standard kits, locate shipments by barcode, and record receipt and accession for each registered tube.",
       "order": 51,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1807,9 +1807,9 @@
       "locale": null,
       "slug": "configuration-and-recovery",
       "title": "Configuration and file retention",
-      "summary": "Maintain reusable defaults, services, analyses, Partner rules, sample shipping, and released-file retention.",
+      "summary": "Maintain reusable defaults, services, analyses, Partner rules, shipping container sizes and compatibility, and released-file retention.",
       "order": 60,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "platform-operations",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1872,9 +1872,9 @@
       "locale": "en-US",
       "slug": "lab-services",
       "title": "Use Partner Lab services",
-      "summary": "Review configured Lab Service pricing, place a Partner-owned Job, then finalize and ship samples.",
+      "summary": "Review pricing, place a Partner-owned Job, finalize samples, and choose containers and manifests for each shipment.",
       "order": 25,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [

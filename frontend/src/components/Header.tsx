@@ -21,16 +21,13 @@ export default function Header() {
   const selectedDepartment = selectedMembership?.departments?.find(
     (department) => department.departmentId === selectedDepartmentId,
   )
-  const impersonatedCustomer =
-    signedIn && selectedCustomer
-      ? selectedCustomer
-      : signedIn && isExternalOrganizationKind(selectedMembership?.organizationKind)
-        ? selectedMembership
-      : null
+  const showOrganizationContext = signedIn && (
+    Boolean(selectedCustomer) || isExternalOrganizationKind(selectedMembership?.organizationKind)
+  )
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/90 px-2 backdrop-blur md:px-4">
-      <nav className="page-wrap relative flex min-h-[5.25rem] items-center gap-3 py-3">
+      <nav className="page-wrap relative flex min-h-[5.25rem] flex-wrap items-center gap-x-3 gap-y-2 py-3 md:flex-nowrap">
         <div className="m-0 flex-shrink-0 text-base font-semibold">
           <Link
             to="/"
@@ -56,10 +53,10 @@ export default function Header() {
         <div className="ml-auto md:ml-0">
           <UserMenu />
         </div>
-        {impersonatedCustomer ? (
-          <div className="absolute right-1/2 bottom-2 flex max-w-[calc(100%-1rem)] translate-x-1/2 items-center justify-center gap-1 text-center text-[0.6875rem] text-muted-foreground md:right-12 md:max-w-[min(24rem,calc(100%-4rem))] md:translate-x-0 md:justify-start md:text-left">
-            <span className="shrink-0 font-medium">Acting as:</span>
-            <span className="min-w-0 truncate font-medium text-foreground/80">
+        {showOrganizationContext ? (
+          <div className="flex w-full items-start gap-1.5 border-t pt-2 text-xs leading-5 text-muted-foreground md:absolute md:right-12 md:bottom-2 md:w-auto md:max-w-[min(24rem,calc(100%-4rem))] md:items-center md:border-0 md:pt-0 md:text-[0.6875rem] md:leading-normal">
+            <span className="shrink-0 font-medium">Organization:</span>
+            <span className="min-w-0 font-medium break-words text-foreground/80 md:truncate">
               {selectedCustomer?.name ?? selectedMembership?.organizationName}
               {selectedDepartment ? ` · ${selectedDepartment.departmentName}` : ''}
             </span>

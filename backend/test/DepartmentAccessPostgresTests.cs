@@ -1,5 +1,6 @@
 namespace PhaenoPortal.Test;
 
+using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -18,10 +19,67 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Commercial.Relationships.Domain;
+using UglyToad.PdfPig;
 
 [Collection(PostgreSqlReferenceCollection.Name)]
 public sealed class DepartmentAccessPostgresTests
 {
+    [PostgreSqlReferenceFact]
+    public async Task InvitationPreviewShowsOnlyPendingRecipientDetailsWithoutGrantingAccess()
+    {
+        await using var scope = await Scope.Create();
+        var tokens = new PSeq.Operations.Commercial.Accounts.Application.InvitationTokenService();
+        var token = tokens.CreateToken();
+        var invitation = new OrganizationInvitation(scope.Organization.Id, $"preview-{Guid.NewGuid():N}@example.com",
+            "Invited", "Person", false, token.TokenHash, DateTime.UtcNow.AddDays(1));
+        scope.Db.Add(invitation);
+        await scope.Db.SaveChangesAsync();
+        var membershipCount = await scope.Db.OrganizationMemberships.CountAsync();
+        var anonymous = new DefaultHttpContext();
+        var result = Assert.IsType<Ok<InvitationPreviewDto>>(await InvitationEndpoints.PreviewInvitation(
+            new(token.RawToken), anonymous, scope.Db, tokens, default));
+        Assert.Equal(invitation.Email, result.Value!.Email);
+        Assert.Equal("Invited", result.Value.FirstName);
+        Assert.Equal(scope.Organization.Name, result.Value.OrganizationName);
+        Assert.Equal("no-store", anonymous.Response.Headers.CacheControl.ToString());
+        Assert.Equal(InvitationStatus.Pending, invitation.Status);
+        Assert.Equal(membershipCount, await scope.Db.OrganizationMemberships.CountAsync());
+        Assert.False(scope.Db.ChangeTracker.HasChanges());
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task InvitationPreviewRejectsInvalidExpiredConsumedAndInactiveLinksWithoutIdentityDisclosure()
+    {
+        await using var scope = await Scope.Create();
+        var tokens = new PSeq.Operations.Commercial.Accounts.Application.InvitationTokenService();
+        var unavailableTokens = new List<string> { "", "unknown", new('x', 257) };
+        foreach (var state in new[] { "expired", "revoked", "accepted", "declined", "inactive" })
+        {
+            var token = tokens.CreateToken();
+            var invitation = new OrganizationInvitation(scope.Organization.Id, $"{state}-{Guid.NewGuid():N}@example.com",
+                "Invited", "Person", false, token.TokenHash,
+                DateTime.UtcNow.AddDays(state == "expired" ? -1 : 1));
+            if (state == "revoked") invitation.Revoke(scope.Actor.Id, DateTime.UtcNow);
+            if (state == "accepted") invitation.Accept(scope.Actor.Id, DateTime.UtcNow);
+            if (state == "declined") invitation.Decline(scope.Actor.Id, DateTime.UtcNow);
+            scope.Db.Add(invitation);
+            if (state == "inactive") scope.Organization.Deactivate();
+            await scope.Db.SaveChangesAsync();
+            await AssertUnavailable(token.RawToken);
+        }
+        foreach (var token in unavailableTokens)
+            await AssertUnavailable(token);
+
+        async Task AssertUnavailable(string token)
+        {
+            var anonymous = new DefaultHttpContext();
+            var error = await Assert.ThrowsAsync<BadRequestException>(() => InvitationEndpoints.PreviewInvitation(
+                new(token), anonymous, scope.Db, tokens, default));
+            Assert.Equal("This invitation is unavailable. Ask the sender for a new invitation.", error.Message);
+            Assert.Equal("no-store", anonymous.Response.Headers.CacheControl.ToString());
+        }
+    }
+
     [PostgreSqlReferenceFact]
     public async Task OrganizationDefaultsAreVersionedAuditedAndInheritedByOrderContext()
     {
@@ -280,6 +338,174 @@ public sealed class DepartmentAccessPostgresTests
     }
 
     [PostgreSqlReferenceFact]
+    public async Task QuotePdfAllowsOrdinaryMemberAndKeepsStoredCommercialDataUnchanged()
+    {
+        await using var scope = await Scope.Create();
+        var access = scope.UseOrdinaryMember();
+        var order = scope.AddOrder(scope.General, 9);
+        var catalogItemId = Guid.NewGuid();
+        const string internalNote = "Confidential costing review for laboratory operations";
+        var quote = scope.AddQuote(order, QuoteStatus.Issued, catalogItemId, internalNote);
+        await scope.Db.SaveChangesAsync();
+        var before = JsonSerializer.Serialize(await scope.Db.LabServiceQuotes.AsNoTracking().SingleAsync(value => value.Id == quote.Id));
+        var orderVersion = order.Version;
+        var auditCount = await scope.Db.AuditEvents.CountAsync();
+
+        var result = await scope.QuoteController().GetQuotePdf(order.Id, quote.Id, default);
+
+        Assert.False(scope.AdminMembership.IsOrganizationAdmin);
+        Assert.False(access.IsDepartmentAdmin);
+        Assert.Equal("application/pdf", result.ContentType);
+        Assert.Equal($"{order.OrderNumber}-quote-r1.pdf", result.FileDownloadName);
+        Assert.Equal("no-store", scope.Http.Response.Headers.CacheControl.ToString());
+        using var pdf = PdfDocument.Open(result.FileContents);
+        Assert.NotEmpty(pdf.GetPage(1).GetImages());
+        var text = string.Join(" ", pdf.GetPages().Select(page => page.Text));
+        Assert.Contains("Phaeno Inc.", text);
+        Assert.Contains("PSeq Lab Service", text);
+        Assert.Contains("900.00", text);
+        Assert.Contains("USD", text);
+        Assert.DoesNotContain(catalogItemId.ToString(), text);
+        Assert.DoesNotContain(scope.Actor.Id.ToString(), text);
+        Assert.DoesNotContain("private-catalog-reference", text);
+        Assert.DoesNotContain(internalNote, text);
+        Assert.DoesNotContain("linesJson", text);
+        Assert.False(scope.Db.ChangeTracker.HasChanges());
+        Assert.Equal(before, JsonSerializer.Serialize(await scope.Db.LabServiceQuotes.AsNoTracking().SingleAsync(value => value.Id == quote.Id)));
+        Assert.Equal(orderVersion, await scope.Db.LabServiceOrders.Where(value => value.Id == order.Id).Select(value => value.Version).SingleAsync());
+        Assert.Equal(auditCount, await scope.Db.AuditEvents.CountAsync());
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task QuotePdfKeepsIssuedHistoricalRevisionsAvailableToMembers()
+    {
+        await using var scope = await Scope.Create();
+        scope.UseOrdinaryMember();
+        var order = scope.AddOrder(scope.General, 9);
+        var quotes = new[] { QuoteStatus.Issued, QuoteStatus.Accepted, QuoteStatus.Superseded, QuoteStatus.Expired, QuoteStatus.Declined }
+            .Select((status, index) => scope.AddQuote(order, status, revision: index + 1)).ToArray();
+        await scope.Db.SaveChangesAsync();
+        var controller = scope.QuoteController();
+
+        foreach (var quote in quotes)
+        {
+            var result = await controller.GetQuotePdf(order.Id, quote.Id, default);
+            Assert.Equal($"{order.OrderNumber}-quote-r{quote.Revision}.pdf", result.FileDownloadName);
+            using var pdf = PdfDocument.Open(result.FileContents);
+            Assert.NotEmpty(pdf.GetPages());
+        }
+
+        Assert.False(scope.Db.ChangeTracker.HasChanges());
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task QuotePdfUsesFrozenBillingTermsAndReportsMalformedStoredLines()
+    {
+        await using var scope = await Scope.Create();
+        scope.UseOrdinaryMember();
+        var order = scope.AddOrder(scope.General, 9);
+        var quote = scope.AddQuote(order, QuoteStatus.SyncPending);
+        quote.FreezeCommercialTerms(
+            "{\"name\":\"Original Billing Contact\",\"email\":\"original-billing@example.com\"}",
+            "{\"line1\":\"123 Original Street\",\"line2\":\"Suite 4\",\"city\":\"Baltimore\",\"region\":\"MD\",\"postalCode\":\"21201\",\"countryCode\":\"US\"}",
+            45, "{\"decision\":\"NonTaxable\"}", 1);
+        quote.MarkIssued();
+        var currentProfile = new OrganizationCommercialProfile(scope.Organization.Id);
+        currentProfile.UpdateBillingConfiguration("Replacement Billing Contact", "replacement-billing@example.com",
+            "{\"line1\":\"999 Replacement Avenue\"}", 60, EffectiveTaxDecision.NonTaxable, null, null);
+        scope.Db.Add(currentProfile);
+        var malformed = scope.AddQuote(order, QuoteStatus.Issued, revision: 2);
+        scope.Db.Entry(malformed).Property(value => value.LinesJson).CurrentValue = "{\"internalNote\":\"Non-public malformed quote detail\"}";
+        await scope.Db.SaveChangesAsync();
+        var controller = scope.QuoteController();
+
+        var result = await controller.GetQuotePdf(order.Id, quote.Id, default);
+        using var pdf = PdfDocument.Open(result.FileContents);
+        var text = string.Join(" ", pdf.GetPages().Select(page => page.Text));
+        foreach (var expected in new[] { "Original Billing Contact", "original-billing@example.com", "123 Original Street",
+            "Suite 4", "Baltimore", "MD", "21201", "US", "Payment terms: Net 45 days." })
+            Assert.Contains(expected, text);
+        Assert.DoesNotContain("Replacement Billing Contact", text);
+        Assert.DoesNotContain("replacement-billing@example.com", text);
+        Assert.DoesNotContain("999 Replacement Avenue", text);
+        Assert.DoesNotContain("Net 60", text);
+
+        var error = await Assert.ThrowsAsync<OrderManagementException>(() => controller.GetQuotePdf(order.Id, malformed.Id, default));
+        Assert.Equal("quote_document_unavailable", error.ErrorCode);
+        Assert.Equal(StatusCodes.Status409Conflict, error.StatusCode);
+        Assert.DoesNotContain("Non-public", error.Message);
+        Assert.False(scope.Db.ChangeTracker.HasChanges());
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task QuotePdfRejectsOtherTenantDepartmentOrderAndUnavailableRevisions()
+    {
+        await using var scope = await Scope.Create();
+        scope.UseOrdinaryMember();
+        scope.Db.Add(new OrganizationDepartmentMembership(scope.AdminMembership.Id, scope.Research.Id, false));
+        var own = scope.AddOrder(scope.General);
+        var ownQuote = scope.AddQuote(own, QuoteStatus.Issued);
+        var otherOrder = scope.AddOrder(scope.General);
+        var otherOrderQuote = scope.AddQuote(otherOrder, QuoteStatus.Issued);
+        var otherDepartmentOrder = scope.AddOrder(scope.Research);
+        var otherDepartmentQuote = scope.AddQuote(otherDepartmentOrder, QuoteStatus.Issued);
+        var otherOrganization = new Organization($"Other quote tenant {Guid.NewGuid():N}", OrganizationKind.Customer);
+        scope.Db.Add(otherOrganization);
+        var foreignOrder = new LabServiceOrder(otherOrganization.Id, otherOrganization.Departments.Single().Id,
+            $"TEST-{Guid.NewGuid():N}", "Other organization request", null, 1, false, "RNA", "Frozen", "No hazard", "Test instructions");
+        scope.Db.Add(foreignOrder);
+        var foreignQuote = scope.AddQuote(foreignOrder, QuoteStatus.Issued);
+        var draft = scope.AddQuote(own, QuoteStatus.Draft, revision: 2);
+        var pending = scope.AddQuote(own, QuoteStatus.SyncPending, revision: 3);
+        await scope.Db.SaveChangesAsync();
+        var controller = scope.QuoteController();
+
+        await AssertMissing(otherDepartmentOrder.Id, otherDepartmentQuote.Id);
+        await AssertMissing(foreignOrder.Id, foreignQuote.Id);
+        await AssertMissing(own.Id, otherOrderQuote.Id);
+        await AssertMissing(own.Id, draft.Id);
+        await AssertMissing(own.Id, pending.Id);
+        await AssertMissing(own.Id, Guid.NewGuid());
+        await AssertMissing(Guid.NewGuid(), ownQuote.Id);
+        scope.Http.Request.Headers["X-Department-Id"] = scope.Research.Id.ToString();
+        await AssertMissing(own.Id, ownQuote.Id);
+        scope.Http.Request.Headers["X-Organization-Id"] = otherOrganization.Id.ToString();
+        scope.Http.Request.Headers["X-Department-Id"] = otherOrganization.Departments.Single().Id.ToString();
+        await AssertMissing(foreignOrder.Id, foreignQuote.Id);
+        Assert.False(scope.Db.ChangeTracker.HasChanges());
+
+        async Task AssertMissing(Guid orderId, Guid quoteId)
+        {
+            var error = await Assert.ThrowsAsync<OrderManagementException>(() => controller.GetQuotePdf(orderId, quoteId, default));
+            Assert.Equal(StatusCodes.Status404NotFound, error.StatusCode);
+        }
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task QuotePdfRejectsRevokedDepartmentAndOrganizationMemberships()
+    {
+        await using var scope = await Scope.Create();
+        var access = scope.UseOrdinaryMember();
+        var order = scope.AddOrder(scope.General);
+        var quote = scope.AddQuote(order, QuoteStatus.Issued);
+        await scope.Db.SaveChangesAsync();
+        var controller = scope.QuoteController();
+        Assert.Equal("application/pdf", (await controller.GetQuotePdf(order.Id, quote.Id, default)).ContentType);
+
+        access.Deactivate();
+        await scope.Db.SaveChangesAsync();
+        var departmentError = await Assert.ThrowsAsync<OrderManagementException>(() => controller.GetQuotePdf(order.Id, quote.Id, default));
+        Assert.Equal(StatusCodes.Status404NotFound, departmentError.StatusCode);
+
+        access.Reactivate();
+        scope.AdminMembership.Deactivate();
+        await scope.Db.SaveChangesAsync();
+        var organizationError = await Assert.ThrowsAsync<OrderManagementException>(() => controller.GetQuotePdf(order.Id, quote.Id, default));
+        Assert.Equal(StatusCodes.Status404NotFound, organizationError.StatusCode);
+        Assert.False(scope.Db.ChangeTracker.HasChanges());
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task InactiveOrganizationCannotBeManagedThroughDepartmentAdminAssignment()
     {
         await using var scope = await Scope.Create();
@@ -357,13 +583,41 @@ public sealed class DepartmentAccessPostgresTests
             return assignment;
         }
 
-        public LabServiceOrder AddOrder(OrganizationDepartment department)
+        public LabServiceOrder AddOrder(OrganizationDepartment department, int requestedSpecimenCount = 1)
         {
             var order = new LabServiceOrder(Organization.Id, department.Id, $"TEST-{Guid.NewGuid():N}",
-                $"Review {Guid.NewGuid():N}", null, 1, false, "RNA", "Frozen", "No hazard", "Test instructions");
+                $"Review {Guid.NewGuid():N}", null, requestedSpecimenCount, false, "RNA", "Frozen", "No hazard", "Test instructions");
             db.Add(order);
             return order;
         }
+
+        public OrganizationDepartmentMembership UseOrdinaryMember()
+        {
+            AdminMembership.SetOrganizationAdmin(false);
+            var access = new OrganizationDepartmentMembership(AdminMembership.Id, General.Id, false);
+            db.Add(access);
+            return access;
+        }
+
+        public LabServiceQuote AddQuote(LabServiceOrder order, QuoteStatus status,
+            Guid? catalogItemId = null, string? internalNote = null, int revision = 1)
+        {
+            var now = DateTime.UtcNow;
+            var lines = JsonSerializer.Serialize(new[] { new {
+                description = "PSeq Lab Service", quantity = 9, unitPrice = 100,
+                catalogItemId = catalogItemId ?? Guid.NewGuid(), externalItemId = "private-catalog-reference", internalNote
+            } });
+            var quote = new LabServiceQuote(order.Id, revision, QuotePurpose.Initial, lines, 900, 0, "USD", now, now.AddDays(30));
+            quote.RecordPricingDecision(1, 90, 100, internalNote ?? "Private pricing decision", Actor.Id, now);
+            db.Add(quote);
+            // Seed persisted lifecycle states without exercising the separate pricing/acceptance workflow.
+            db.Entry(quote).Property(value => value.Status).CurrentValue = status;
+            return quote;
+        }
+
+        public LabServiceOrdersController QuoteController() => new(db, Context, null!, null!,
+            Options.Create(new PSeqOrderToCashOptions()), null!, null!, null!, null!, null!)
+            { ControllerContext = new() { HttpContext = Http } };
 
         public Invoice AddInvoice(OrganizationDepartment department)
         {

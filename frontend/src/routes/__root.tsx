@@ -39,6 +39,11 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
     ],
     links: [
       {
+        rel: 'icon',
+        type: 'image/png',
+        href: '/favicon.png',
+      },
+      {
         rel: 'stylesheet',
         href: appCss,
       },
@@ -56,7 +61,7 @@ function RootLayout() {
   })
 
   return (
-    <AuthProvider>
+    <AuthProvider isPreSessionRoute={isPreSessionRoute}>
       <MockAdminDataProvider>
         <ContextualDocumentTitle />
         <div className="flex min-h-screen flex-col">

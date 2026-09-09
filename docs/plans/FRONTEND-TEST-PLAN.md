@@ -1,5 +1,268 @@
 # Frontend Test Plan
 
+## Customer transportation-kit ordering and fulfillment — September 8, 2026
+
+Historical checkpoint: the September 8 focused checks passed **42 tests**: 19 Customer cases
+(`TransportationKitsPanel.test.tsx` 14 and `SampleShippingDetailPage.test.tsx` 5),
+plus 23 staff/location and existing Lab receipt/CRM integration cases. Full
+frontend TypeScript and scoped ESLint passed after temporary browser harness
+cleanup and the final visibility fix.
+
+Customer coverage checks confirmation with recommended quantities and included
+delivery, missing-address recovery, required location selection, duplicate-safe
+submission, pending/in-transit/partial receipt states, preparation gates and
+retained legacy access. A completed request retains its receipt summary while
+server-authorized uncovered tubes can start another kit order; the next Pending
+request suppresses duplicate controls again. The stale empty Return kit sidebar
+is hidden only for Customer packing pools, preserving registered-kit details.
+
+Staff/location component coverage checks view-first request and location pages,
+frozen delivery facts, dispatch quantity limits and required physical-kit
+selection, shortages, modal dismissal, scoped organization/Department access,
+and versioned address editing. The return link and supply refresh are implemented;
+the complete location-save-to-order navigation needs the guided journey below.
+The recorded checkpoint also included the generated 56-guide documentation
+corpus. This documentation update does not rerun or expand that checkpoint.
+
+### Reusable transportation-kit frontend scenarios
+
+Keep the `KIT-Fxx` IDs stable when adding regression tests or recording acceptance.
+Use an accepted, active Customer Lab Job with a finalized sample list, compatible
+kit definitions, and organization/Department-scoped identities. Use synthetic
+fixtures for component/browser checks. The [guided E2E plan](E2E-TEST-PLAN.md)
+owns the one-step-at-a-time Customer-to-Phaeno journey and permission boundaries
+for any real order, notification, dispatch or receipt.
+
+"Automated" below means existing component assertions with mocked API/session
+boundaries. "Browser evidence" means the recorded actual-component synthetic
+review, not a persistent authenticated E2E test. "Gap" is a remaining assertion
+or acceptance check, not a failed result.
+
+| ID | Scenario and expected behavior | Existing evidence and remaining coverage |
+| --- | --- | --- |
+| KIT-F01 | Unknown inventory offers Order transportation kits without claiming verified zero; the explicit existing-kit path remains available only when preparation is permitted. | Automated: [Customer kit tests]. Browser evidence: unknown-stock fixtures. |
+| KIT-F02 | Confirmation shows recommended sizes/quantities, the default delivery location and included delivery/no additional charge; nothing is ordered before confirmation. | Automated: [Customer kit tests], including submitted location/shipment versions and recommended quantities. Browser evidence: order modal. |
+| KIT-F03 | With no locations, Add a delivery location provides recovery; returning to the shipment reopens confirmation without placing an order. | Automated: [Customer kit tests] cover the setup link and auto-open behavior separately. Gap: real-router save, return context and refreshed location must be verified together in the guided journey. |
+| KIT-F04 | Multiple locations without a default still allow opening confirmation; blank submit shows the required error and focuses the chooser. | Automated: [Customer kit tests]. Browser evidence: no-default fixtures and keyboard selection. |
+| KIT-F05 | Changing the delivery location refreshes the recommendation and submits that location's displayed version, not the prior default. | Automated: [Customer kit tests]. Gap: full route/query-cache refresh after location editing and a stale-location rejection through the order flow. |
+| KIT-F06 | A failed order retains the draft and reuses the same retry key; busy state prevents duplicate submission/dismissal; success shows Kits ordered. | Automated: [Customer kit tests]. Gap: simultaneous browser tabs and sibling-shipment ordering require server/integration evidence; component mocks do not prove deduplication. |
+| KIT-F07 | Pending and dispatched requests suppress another order; tracking is visible; kits on the way do not enable preparation. | Automated: [Customer kit tests]. Browser evidence: pending and in-transit fixtures. Gap: authoritative reload after a real dispatch. |
+| KIT-F08 | Partial receipt leaves undelivered kits On the way and permits preparation only for the server-authorized available portion. | Automated: [Customer kit tests]. Browser evidence: partial-receipt fixture. Gap: actual packing/scanning with only acknowledged physical kits. |
+| KIT-F09 | Receipt requires at least one arrived kit, submits only selected IDs, and preserves the selection/error after declined discard. | Automated: [Customer kit tests]. Browser evidence: receipt selection/validation. Gap: async receipt failure/retry, stale request version and busy receipt dismissal have no dedicated component assertions. |
+| KIT-F10 | A completed Received request retains its summary; server-authorized residual tubes can start an additional order; the new Pending request suppresses duplicates again. | Automated: [Customer kit tests], residual-order regression. The final fix was not rerun in browser fixtures; populated signed-in acceptance remains open. |
+| KIT-F11 | Members remain view-only; Customer administrators manage kits/locations; unauthorized staff or Department viewers do not load protected records. | Automated: [Customer kit tests], [staff kit tests] and [delivery-location tests]. Backend authorization remains authoritative; these UI assertions do not prove tenant isolation. |
+| KIT-F12 | Staff discovery opens a dedicated request record without an embedded dispatch form; list filters/pagination and return-to-list context remain usable. | Automated: [staff kit tests] cover the record link and form-free list. Browser evidence: queue/detail. Gap: explicit filter, pagination, empty/error/retry and restored-list-state assertions. |
+| KIT-F13 | Fulfillment displays the frozen delivery address, explains stock shortages, requires physical-kit selection, and caps choices at remaining quantities. | Automated: [staff kit tests]. Browser evidence: dispatch/shortage fixtures. Gap: dedicated blank carrier/tracking and invalid dispatch-date validation assertions. |
+| KIT-F14 | Partial dispatch sends exact kit IDs/request version and retains carrier/tracking plus retry key after failure; dirty/busy close is guarded. | Automated: [staff kit tests]. Browser evidence: dispatch modal. The read-only detail distinguishes On the way from Received by Customer and suppresses completed dispatch actions. |
+| KIT-F15 | Delivery-location discovery/detail stays view-first; administrators can manage the scoped Department while ordinary members only read. | Automated: [delivery-location tests], including scoped list calls and blocked unrelated Departments. Browser evidence: list/detail and empty-location states. |
+| KIT-F16 | Location editing validates required fields, normalizes optional values/country, preserves the default flag, sends the displayed version, and retains failed dirty edits. | Automated: [delivery-location tests]. Gap: successful create, changing the default, deactivation, busy save, and supply-cache invalidation need dedicated component/integration assertions. |
+| KIT-F17 | Cancellation before dispatch requires deliberate confirmation; cancellation failure retains context, and subsequent ordering is possible only when permitted. | Gap: customer/staff kit-cancellation actions currently have no dedicated behavioral regression. Add coverage for successful cancellation, failed retry and unavailable cancellation after dispatch; verify server rules separately. |
+| KIT-F18 | Desktop/phone and light/dark views preserve readable content, keyboard focus, required errors, modal scrolling, dirty dismissal and usable action footers. | Browser evidence: 24 Customer and 24 staff/location cases. Customer axe checks passed. Gap: populated Firefox/screen-reader acceptance and the final residual-order visibility change in a browser. |
+
+[Customer kit tests]: ../../frontend/src/features/sample-shipping/TransportationKitsPanel.test.tsx
+[staff kit tests]: ../../frontend/src/features/orders/kit-requests/KitRequests.test.tsx
+[delivery-location tests]: ../../frontend/src/features/organizations/delivery-locations/DeliveryLocations.test.tsx
+
+Recorded browser artifacts are
+[`transportation-kit-customer-review/review.json`](../../artifacts/transportation-kit-customer-review/review.json)
+and [`kit-request-staff-review/review.json`](../../artifacts/kit-request-staff-review/review.json).
+They used synthetic records with no live API writes or external notifications;
+temporary harnesses were removed. The existing five
+[`SampleShippingDetailPage.test.tsx`](../../frontend/src/features/sample-shipping/SampleShippingDetailPage.test.tsx)
+cases protect legacy packet/tube behavior, not a complete new Customer kit journey.
+
+Keep actual fulfillment-notification delivery, signed-in Customer reload/return,
+carrier tracking, physical arrival, receipt acknowledgement, and subsequent
+sample preparation in the [guided E2E acceptance record](E2E-TEST-PLAN.md).
+Do not count a mock response or an empty signed-in staff queue as that proof.
+Cross-Job inventory, stock corrections, warehouse reservations and replenishment
+remain proposed scope in the [shipping plan](SAMPLE-SHIPPING-AND-INTAKE-PLAN.md),
+not implemented workflows or silently assumed passing tests.
+
+## Container-size editor layout — September 8, 2026
+
+The 12 `ShippingContainers.test.tsx` cases passed after aligning paired desktop
+fields and grouping the form. Shared helper-before-control order is preserved;
+other consumers retain the existing default field layout. Supplier and packing
+details collapse when empty, open for populated revisions, and automatically
+reopen and focus an invalid optional field without losing values or saving.
+That recovery has a focused regression; the layout itself adds no cosmetic
+unit assertions. Full TypeScript, scoped ESLint and whitespace checks passed.
+Phaeno help describes the optional section and Availability group; the generated
+56-guide corpus is current. Responsive and signed-in review is in the E2E plan.
+
+## Standard containers, tube scanning and split receipt — September 8, 2026
+
+The focused component checkpoint passed 59 tests: 34 Customer/receipt/barcode
+cases and 25 Phaeno catalog/stock/scanner cases. Full frontend TypeScript and
+scoped ESLint passed. Generated documentation contains 56 current guides.
+
+Focused component coverage now includes the container catalog and view-first
+record, immutable SKU revisions and deactivation, hypothetical draft preview,
+availability constraints, stock-kit preparation/registration/dispatch, dirty
+modal dismissal and duplicate barcodes. Customer tests cover packing selection,
+custom per-container tube counts, spare capacity, exact allocation validation,
+save-before-advance scanning, retained rejected scans, and split manifests.
+Related-shipment tests cover source-scoped retrieval and exhausted packing
+pools. Lab receipt tests send the exact packet/tube pair and distinguish one
+physical tube's receipt from the sample's aggregate progress.
+
+The barcode encoder covers readable exact supplier values, including underscores,
+valid Code 128 symbols/checksums, and unavailable-graphic fallback. These checks
+do not qualify real label stock, printers or barcode-scanner hardware. Desktop,
+phone, theme, modal, keyboard and print evidence belongs in the E2E plan.
+No transport stock, operational SKU or Customer fixture was seeded for UI tests.
+
+## Finalization review grouping and sorting — September 8, 2026
+
+The existing seven `LabJobSamplesPanel.test.tsx` cases passed after the review
+was grouped and naturally sorted, and again after correcting initial focus.
+Full TypeScript and scoped ESLint passed. No cosmetic unit tests were added.
+The eight synthetic browser cases in the E2E plan verify natural numeric IDs,
+preserved input-array order, sample/tube totals, no-PHI gating and keyboard
+focus/scroll behavior, including long lists. Customer and Partner help now
+describes the ordering and review totals; generated documentation is current.
+
+## Grouped samples, source capacity and import safeguard — September 8, 2026
+
+Focused checks passed 24 cases: seven `LabJobSamplesPanel.test.tsx` cases and
+17 across `LabSampleDialog.test.tsx` and `sample-source-capacity.test.ts`.
+The panel verifies accepted/empty/unmatched groups, record counts rather than
+tube counts, retained excess records and their repair warnings, group-specific
+Add context and full-group blocking, exact composition despite a stale server
+finalize flag, disabled populated-list import with template still available,
+and separate empty-roster import/no-PHI finalization confirmation.
+The final panel rerun also verifies the accessible completion check appears
+only for exact overall and per-source composition, staying absent for partial
+or wrongly mixed lists. Count completion does not skip finalization consent.
+
+The dialog/helper checks cover the clicked Add group's fixed source without
+a source field, no fallback when that group becomes full, accepted-source
+validation, original-source edit recovery, unavailable full destinations,
+case/space normalization, retained unknown entries, background refresh without
+losing typed values, and the existing dirty-dismissal behavior. Source quotas
+count sample records independently of tube quantity. Full TypeScript, scoped
+ESLint, generated-documentation and whitespace checks passed. Responsive and
+keyboard evidence is recorded separately in the E2E plan.
+
+## Compact sample rows and icon actions — September 8, 2026
+
+The two existing `LabJobSamplesPanel.test.tsx` import/finalization cases passed
+after the presentation change. Full TypeScript, focused ESLint, documentation
+and whitespace checks passed. No cosmetic unit tests were added. Browser
+review verifies sample-specific pencil/trash accessible names and tooltips,
+correct sample edit context, unchanged removal confirmation, responsive rows,
+tube singular/plural, and Expected visibility only after finalization.
+Other statuses remain visible before finalization. No backend change or test
+run was needed. Customer and Partner guides describe the icon actions.
+
+## Add/Edit sample presentation — September 8, 2026
+
+The sample dialog now uses the shared compact width and padded body, a single
+column, concise RNA introduction, persistent field-specific privacy/source
+guidance and a compact tube-count control. The scientific fields, default
+values, accepted-source choices, payload and validation are unchanged.
+Browser verification found that the existing dirty-state guard did not subscribe
+during render. The correction is covered by four passing
+`LabSampleDialog.test.tsx` regressions: Add/Edit each preserve entered IDs after
+declined Cancel/Close/Escape discard, close after confirmed discard, and allow
+pristine Cancel without a warning. No API or saved callback was invoked.
+The single accepted source is now visible as read-only context. Customer and
+Partner guides describe the fields and discard protection.
+
+Full TypeScript, scoped ESLint, documentation and whitespace checks passed.
+No cosmetic unit tests or broad suite were added/run. Synthetic responsive
+and keyboard evidence is recorded in the E2E plan.
+
+## Quote decline reason dropdown — September 8, 2026
+
+Focused verification passed 45 cases across `LabQuoteDeclineDialog.test.tsx`
+(12), `LabQuoteExtension.test.tsx` (19), `ExternalOrderDecisionDialogs.test.tsx`
+(10), and `LabQuoteDownload.test.tsx` (4). The initial 43-case batch passed;
+two additional parent integration cases passed in the 19-case affected-file
+rerun. Coverage verifies every named reason, blank and Other validation,
+trimmed explanation and 2,000-character serialized boundary, hidden-text
+retention/exclusion, duplicate submission, error/retry, dirty discard/reset,
+and the existing withdrawal payload through the detail page. Prequote and
+postacceptance decision behavior remains covered. Full TypeScript, scoped
+ESLint and whitespace checks passed; no backend tests were needed for this
+frontend-only change. Browser evidence is recorded in the E2E plan.
+
+## Quote expiration, extension and action placement — September 8, 2026
+
+All 33 focused Customer/Partner quote, PDF, decision and deadline cases passed.
+Coverage includes local deadline crossing, disabled acceptance and explanation,
+Member guidance, optional-reason extension requests, duplicate prevention,
+safe retries, preserved dirty inputs, accepted-history precedence, and stale
+acceptance confirmation. Quote actions appear once in Accept / Decline /
+Download order beneath the total, with prequote withdrawal retained in the
+header. The final action-row change passed the same focused suite. Contextual
+decline/withdraw confirmation wording is covered by the decision tests; the
+existing closure endpoint and authorization remain unchanged.
+
+The approved Decline quote wording adds a decision-dialog regression for the
+named request, explicit closure consequence, required reason, busy/error state,
+and dirty dismissal. Prequote withdrawal keeps its separate wording.
+
+All 26 staff quote-dialog, intake and extension-review cases passed: pending
+markers, saved-price reissue, required future expiration, bound source revision,
+commercial capabilities, refresh failure and dirty/retry recovery. TypeScript
+and scoped ESLint passed. Browser evidence and its synthetic limits are recorded
+in the E2E plan; the owner's live Firefox walkthrough is separate.
+
+## Branded quote PDF download — September 8, 2026
+
+`LabQuoteDownload.test.tsx` exercises the detail page through the mocked HTTP
+boundary: the displayed issued quote ID/revision determines the PDF request and
+filename, an ordinary Member can download without accepting, pending blocks
+duplicate clicks, JSON-blob and non-JSON errors remain retryable, and request
+revision snapshots remain JSON. All 4 cases passed, together with the existing
+invoice-capability and external-decision-dialog coverage (16 passed total).
+TypeScript, scoped ESLint, and generated Customer/Partner documentation checks
+passed. The owner's real Firefox PDF download remains a separate acceptance step.
+
+## Account menu and external dashboard presentation — September 8, 2026
+
+Presentation-only changes improve menu identity/spacing, display selection,
+viewport fit, and the adaptive external dashboard card grid and border. No new
+unit tests were added for styling. TypeScript and focused ESLint passed; the
+existing desktop/mobile menu browser scenario is recorded in the E2E plan.
+
+## Invitation completion continuity — September 8, 2026
+
+`AcceptInviteSession.test.tsx` uses the real session provider to verify acceptance
+through initial organization and General department selection, with the welcome
+message and Open Portal action retained and no repeated acceptance or preview
+of the consumed token. It also verifies that identity changes reset pre-session
+state and organization/department changes reset ordinary workspace state. All
+3 regressions and the existing 15 invitation/authentication cases passed.
+
+## Invitation identity and direct verification — September 8, 2026
+
+`AcceptInvitePage.test.tsx` covers recipient preview, URL-token capture and
+reload recovery, fixed-email authentication handoff, verified secondary email,
+wrong/unverified account blocking, expired-link recovery, explicit acceptance
+and decline, and token retention after a failed acceptance (9 cases).
+`InvitationAuthentication.test.tsx` covers skipping email entry, one code send,
+resend cooldown, existing-user verification, authenticator/backup requirements,
+verified first-time signup transfer with known names, wrong-code rejection,
+changed-identifier rejection, and preparation retry (6 cases). All 15 passed.
+Authentication uses current Clerk hooks, not the editable prebuilt email form.
+TypeScript, focused ESLint, and generated documentation checks passed. The
+6 authentication cases passed again after the final first-time password wording.
+
+The approved single password field now has a Show/Hide password action. It
+starts masked and returns to masked on submission or a step change. Password
+manager autofill and the field value are preserved. The existing 6 authentication
+cases, TypeScript, and focused ESLint passed; no new test was added for this
+small presentation control.
+
+## Invitation branding — September 8, 2026
+
+The root document now explicitly declares the existing Phaeno PNG favicon for
+all routes, including invitation acceptance. TypeScript passed. No new unit
+test was added for this static metadata change.
+
 Invitation readiness follow-up: updated existing validation/recovery checks to assert Send invitation is disabled immediately for empty or unavailable Department selections and re-enabled for valid selections. All four existing invitation tests passed; focused lint passed.
 
 ## Invitation clarity — September 8, 2026

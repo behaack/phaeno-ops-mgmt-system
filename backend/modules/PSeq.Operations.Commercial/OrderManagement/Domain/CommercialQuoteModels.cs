@@ -91,6 +91,9 @@ public sealed class LabServiceQuote : IAudit, IConcurrency
         ExpiresAt = expiresAt;
     }
 
+    public QuoteStatus EffectiveStatus(DateTime utcNow)
+        => Status == QuoteStatus.Issued && AcceptedAt is null && ExpiresAt <= utcNow ? QuoteStatus.Expired : Status;
+
     public void MarkIssued() { if (Status != QuoteStatus.SyncPending) throw new InvalidOperationException(); Status = QuoteStatus.Issued; }
 
     public void FreezeCommercialTerms(

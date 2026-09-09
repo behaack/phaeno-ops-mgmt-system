@@ -15,13 +15,18 @@ public sealed class SampleShippingWorkflowReader(PSeqOperationsDbContext dbConte
     public async Task<IReadOnlyList<SampleShipmentWorkflowDto>> ListAsync(
         Guid? organizationId,
         Guid? departmentId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Guid? sourceId = null)
     {
         var query = dbContext.SampleShipments.AsNoTracking();
         if (organizationId.HasValue)
             query = query.Where(item => item.OrganizationId == organizationId.Value);
         if (departmentId.HasValue)
             query = query.Where(item => item.DepartmentId == departmentId.Value);
+        if (sourceId.HasValue)
+            query = query.Where(item => item.AuthorizationSourceId == sourceId.Value);
+        else
+            query = query.OrderByDescending(item => item.CreatedAt).Take(250);
 
         var shipments = await query
             .Include(item => item.Items)
@@ -30,7 +35,6 @@ public sealed class SampleShippingWorkflowReader(PSeqOperationsDbContext dbConte
             .Include(item => item.ReturnKit)
                 .ThenInclude(item => item!.Tubes)
             .OrderByDescending(item => item.CreatedAt)
-            .Take(250)
             .ToListAsync(cancellationToken);
         return await MapAsync(shipments, cancellationToken);
     }
@@ -113,10 +117,32 @@ public sealed class SampleShippingWorkflowReader(PSeqOperationsDbContext dbConte
             .Where(item => sampleTypeIds.Contains(item.Id))
             .ToDictionaryAsync(item => item.Id, item => item.Name, cancellationToken);
 
+        var authorizationIds = shipments.Select(item => item.AuthorizationSourceId).Distinct().ToArray();
+        var related = await dbContext.SampleShipments.AsNoTracking().Include(item => item.Items).ThenInclude(item => item.TubeSlots)
+            .Include(item => item.ReturnKit)
+            .Where(item => organizationIds.Contains(item.OrganizationId) && authorizationIds.Contains(item.AuthorizationSourceId)
+                && item.Status != SampleShipmentStatus.Cancelled).ToListAsync(cancellationToken);
+        var allTubeIds = related.SelectMany(item => item.Items).SelectMany(SampleShippingPackingData.TubeIds).Distinct().ToArray();
+        var registeredTubes = await dbContext.RegisteredSampleTubes.AsNoTracking().Where(item => allTubeIds.Contains(item.Id))
+            .ToDictionaryAsync(item => item.Id, cancellationToken);
+        bool Received(Guid id) => registeredTubes.TryGetValue(id, out var tube) && (tube.ReceivedAt.HasValue || tube.AccessionedAt.HasValue);
+        bool Unallocated(SampleShipment value) => value.IsPackingPool
+            || (value.ContainerDefinitionId is null && value.ReturnKit is null && value.Status == SampleShipmentStatus.Preparing);
+
         return shipments.Select(shipment =>
         {
-            var tubes = shipment.ReturnKit?.Tubes.ToDictionary(item => item.Id)
-                ?? new Dictionary<Guid, RegisteredSampleTube>();
+            var tubes = registeredTubes;
+            var family = related.Where(value => value.OrganizationId == shipment.OrganizationId && value.DepartmentId == shipment.DepartmentId
+                && value.AuthorizationSource == shipment.AuthorizationSource && value.AuthorizationSourceId == shipment.AuthorizationSourceId).ToArray();
+            int Total(Guid id) => family.SelectMany(value => value.Items).Where(value => value.SubmittedSpecimenId == id).Sum(SampleShippingPackingData.TubeCount);
+            int SampleReceived(Guid id) => family.SelectMany(value => value.Items).Where(value => value.SubmittedSpecimenId == id)
+                .SelectMany(SampleShippingPackingData.TubeIds).Distinct().Count(Received);
+            int Pending(Guid id) => family.Where(Unallocated).SelectMany(value => value.Items)
+                .Where(value => value.SubmittedSpecimenId == id).Sum(SampleShippingPackingData.TubeCount);
+            IReadOnlyList<SampleOtherShipmentDto> Others(Guid id) => family.Where(value => value.Id != shipment.Id && !Unallocated(value))
+                .Select(value => new SampleOtherShipmentDto(value.Id, value.ShipmentNumber,
+                    value.Items.Where(item => item.SubmittedSpecimenId == id).Sum(SampleShippingPackingData.TubeCount)))
+                .Where(value => value.TubeCount > 0).OrderBy(value => value.ShipmentNumber).ToArray();
             var crosswalk = shipment.Items
                 .OrderBy(item => item.CustomerSampleId)
                 .SelectMany(item =>
@@ -132,7 +158,10 @@ public sealed class SampleShippingWorkflowReader(PSeqOperationsDbContext dbConte
                             sampleTypes.GetValueOrDefault(item.SampleTypeDefinitionId, "Unavailable sample type"),
                             item.Quantity, item.QuantityUnit, item.RegisteredSampleTubeId,
                             hasLegacyTube ? legacyTube!.SupplierBarcode : null,
-                            hasLegacyTube ? legacyTube!.Status.ToString() : "Unassigned", item.Version) };
+                            hasLegacyTube ? legacyTube!.Status.ToString() : "Unassigned", item.Version,
+                            null, 1, 1, SampleShippingIdentity.Sample(item.SubmittedSpecimenId), Total(item.SubmittedSpecimenId),
+                            Others(item.SubmittedSpecimenId), SampleReceived(item.SubmittedSpecimenId), Pending(item.SubmittedSpecimenId),
+                            item.RegisteredSampleTubeId.HasValue && Received(item.RegisteredSampleTubeId.Value)) };
                     }
 
                     return slots.Select(slot =>
@@ -146,7 +175,9 @@ public sealed class SampleShippingWorkflowReader(PSeqOperationsDbContext dbConte
                             item.Quantity, item.QuantityUnit, slot.RegisteredSampleTubeId,
                             hasTube ? tube!.SupplierBarcode : null,
                             hasTube ? tube!.Status.ToString() : "Unassigned", slot.Version,
-                            slot.Id, slot.Ordinal, slots.Count);
+                            slot.Id, slot.Ordinal, slots.Count, SampleShippingIdentity.Sample(item.SubmittedSpecimenId),
+                            Total(item.SubmittedSpecimenId), Others(item.SubmittedSpecimenId), SampleReceived(item.SubmittedSpecimenId), Pending(item.SubmittedSpecimenId),
+                            slot.RegisteredSampleTubeId.HasValue && Received(slot.RegisteredSampleTubeId.Value));
                     });
                 }).ToList();
             var currentPacket = shipment.PacketRevisions
@@ -200,7 +231,13 @@ public sealed class SampleShippingWorkflowReader(PSeqOperationsDbContext dbConte
                 shipment.Version,
                 kit,
                 crosswalk,
-                currentPacket);
+                currentPacket,
+                SampleShippingPackingData.Container(shipment.ContainerSnapshotJson),
+                Unallocated(shipment),
+                SampleShippingPackingData.TubeCount(shipment),
+                shipment.Items.SelectMany(SampleShippingPackingData.TubeIds).Distinct().Count(Received),
+                family.Sum(SampleShippingPackingData.TubeCount),
+                family.SelectMany(value => value.Items).SelectMany(SampleShippingPackingData.TubeIds).Distinct().Count(Received));
         }).ToList();
     }
 }

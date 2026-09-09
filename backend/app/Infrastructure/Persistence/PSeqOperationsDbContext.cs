@@ -123,6 +123,14 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<OrganizationCommercialProfile> OrganizationCommercialProfiles { get; set; }
     public DbSet<OrderSystemConfiguration> OrderSystemConfigurations { get; set; }
     public DbSet<SampleShippingDestination> SampleShippingDestinations { get; set; }
+    public DbSet<SampleShippingContainerType> SampleShippingContainerTypes { get; set; }
+    public DbSet<SampleShippingContainerDefinition> SampleShippingContainerDefinitions { get; set; }
+    public DbSet<SampleShippingContainerCompatibility> SampleShippingContainerCompatibilities { get; set; }
+    public DbSet<SampleShippingStockKit> SampleShippingStockKits { get; set; }
+    public DbSet<SampleShippingStockTube> SampleShippingStockTubes { get; set; }
+    public DbSet<CustomerDeliveryLocation> CustomerDeliveryLocations { get; set; }
+    public DbSet<TransportationKitRequest> TransportationKitRequests { get; set; }
+    public DbSet<TransportationKitRequestLine> TransportationKitRequestLines { get; set; }
     public DbSet<SampleTypeDefinition> SampleTypeDefinitions { get; set; }
     public DbSet<SampleShippingInstructionRule> SampleShippingInstructionRules { get; set; }
     public DbSet<SampleShipment> SampleShipments { get; set; }
@@ -147,6 +155,7 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<LabServiceRequestRevision> LabServiceRequestRevisions { get; set; }
     public DbSet<LabSample> LabSamples { get; set; }
     public DbSet<LabServiceQuote> LabServiceQuotes { get; set; }
+    public DbSet<LabServiceQuoteExtensionRequest> LabServiceQuoteExtensionRequests { get; set; }
     public DbSet<LabResultRelease> LabResultReleases { get; set; }
     public DbSet<ResultOutputPackage> ResultOutputPackages { get; set; }
     public DbSet<ResultArtifact> ResultArtifacts { get; set; }
@@ -524,6 +533,9 @@ public sealed class PSeqOperationsDbContext(
         DataProvisioningModelConfiguration.Configure(modelBuilder);
         FileManagementModelConfiguration.Configure(modelBuilder);
         OrderManagementModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
+        SampleShippingContainerModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
+        CustomerDeliveryLocationModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
+        TransportationKitRequestModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
         KitBundleModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);
         LabServiceBundleModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema, this.persistenceOptions.LaboratorySchema);
         CommercialLabOperationsModelConfiguration.Configure(modelBuilder, this.persistenceOptions.CommercialSchema);

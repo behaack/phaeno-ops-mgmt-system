@@ -314,6 +314,25 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
 
     public bool CanEditSampleRoster => Status == LabServiceOrderStatus.PlacedAwaitingSamples && !SampleRosterFinalizedAt.HasValue;
 
+    public bool HasAcceptedSampleSourceCounts => SourceGroups.Count > 0
+        && Samples.Count == RequestedSpecimenCount
+        && SourceGroups.All(group => Samples.Count(sample =>
+            LabServiceSourceGroup.Normalize(sample.BiologicalSource) == group.NormalizedBiologicalSource) == group.SpecimenCount);
+
+    public void EnsureSampleSourceCapacity(string biologicalSource, Guid? existingSampleId = null)
+    {
+        var normalized = LabServiceSourceGroup.Normalize(biologicalSource);
+        var existing = existingSampleId.HasValue ? Samples.SingleOrDefault(sample => sample.Id == existingSampleId.Value) : null;
+        // Metadata edits must remain possible while a legacy invalid roster is corrected.
+        if (existing is not null && LabServiceSourceGroup.Normalize(existing.BiologicalSource) == normalized) return;
+        var group = SourceGroups.SingleOrDefault(source => source.NormalizedBiologicalSource == normalized)
+            ?? throw new InvalidOperationException("Select a biological source accepted with this Job.");
+        var count = Samples.Count(sample => sample.Id != existingSampleId
+            && LabServiceSourceGroup.Normalize(sample.BiologicalSource) == normalized);
+        if (count >= group.SpecimenCount)
+            throw new InvalidOperationException($"'{group.BiologicalSource}' already has {count} of {group.SpecimenCount} accepted samples. Choose a source with space or correct the existing samples.");
+    }
+
     public void EnsureSampleRosterEditable()
     {
         if (!CanEditSampleRoster)
@@ -325,6 +344,8 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         EnsureSampleRosterEditable();
         if (Samples.Count != RequestedSpecimenCount)
             throw new InvalidOperationException($"Enter exactly {RequestedSpecimenCount} samples before finalizing the sample list.");
+        if (SourceGroups.Count == 0)
+            throw new InvalidOperationException("The accepted biological-source counts are unavailable. Contact Phaeno before finalizing the sample list.");
         var duplicate = Samples.GroupBy(sample => sample.CustomerSampleId.Trim(), StringComparer.OrdinalIgnoreCase)
             .FirstOrDefault(group => group.Count() > 1);
         if (duplicate is not null)

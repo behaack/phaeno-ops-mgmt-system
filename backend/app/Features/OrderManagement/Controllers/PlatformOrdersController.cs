@@ -31,7 +31,8 @@ public sealed class PlatformOrdersController(
         [FromQuery] DateTime? updatedTo = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        [FromQuery] bool quoteExtensionRequested = false)
     {
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         page = Math.Max(1, page);
@@ -76,7 +77,8 @@ public sealed class PlatformOrdersController(
                     && item.Status != LabServiceOrderStatus.Completed
                     && item.Status != LabServiceOrderStatus.Cancelled
                     && item.Status != LabServiceOrderStatus.Declined,
-                item.ProposedUnitPrice, item.ProposedUnitPrice == null ? null : "USD")).ToListAsync(cancellationToken));
+                item.ProposedUnitPrice, item.ProposedUnitPrice == null ? null : "USD",
+                item.Status == LabServiceOrderStatus.QuoteIssued && dbContext.LabServiceQuoteExtensionRequests.Any(request => request.LabServiceOrderId == item.Id && request.ResolvedAt == null))).ToListAsync(cancellationToken));
         }
 
         if (Includes(normalizedType, "PSeqKit"))
@@ -155,6 +157,7 @@ public sealed class PlatformOrdersController(
             items = items.Where(item => string.Equals(item.Status, status.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
+        if (quoteExtensionRequested) items = items.Where(item => item.HasPendingQuoteExtension).ToList();
         var ordered = items.OrderByDescending(item => item.UpdatedAt).ToList();
         return new PagedResult<CommercialOrderListItemDto>(
             ordered.Skip((page - 1) * pageSize).Take(pageSize).ToList(),

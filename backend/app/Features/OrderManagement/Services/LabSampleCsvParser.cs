@@ -106,25 +106,45 @@ public static class LabSampleCsvParser
                 rows.Add(new LabSampleImportRowDto(rowNumber, customerSampleId, biologicalSource, tubeCount));
         }
 
-        foreach (var duplicate in rows.GroupBy(row => row.CustomerSampleId, StringComparer.OrdinalIgnoreCase)
+        errors.AddRange(ValidateRows(rows, order));
+        var sourceCounts = rows.GroupBy(row => row.BiologicalSource, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.Count(), StringComparer.OrdinalIgnoreCase);
+        return new LabSampleCsvParseResult(rows, errors, blankRows, sourceCounts);
+    }
+
+    public static IReadOnlyList<LabSampleImportErrorDto> ValidateRows(IReadOnlyList<LabSampleImportRowDto> rows, LabServiceOrder order)
+    {
+        var errors = new List<LabSampleImportErrorDto>();
+        foreach (var row in rows)
+        {
+            if (string.IsNullOrWhiteSpace(row.CustomerSampleId) || row.CustomerSampleId.Trim().Length > 255)
+                errors.Add(new LabSampleImportErrorDto(row.RowNumber, "customer_sample_id", "Enter a Customer sample ID between 1 and 255 characters."));
+            if (row.TubeCount is < 1 or > 100)
+                errors.Add(new LabSampleImportErrorDto(row.RowNumber, "tube_count", "Tube count must be a whole number between 1 and 100."));
+            if (string.IsNullOrWhiteSpace(row.BiologicalSource) || !order.SourceGroups.Any(group =>
+                group.NormalizedBiologicalSource == LabServiceSourceGroup.Normalize(row.BiologicalSource)))
+                errors.Add(new LabSampleImportErrorDto(row.RowNumber, "biological_source", "This biological source is not part of the accepted Job."));
+        }
+        foreach (var duplicate in rows.GroupBy(row => row.CustomerSampleId?.Trim(), StringComparer.OrdinalIgnoreCase)
                      .Where(group => group.Count() > 1))
             foreach (var row in duplicate)
                 errors.Add(new LabSampleImportErrorDto(row.RowNumber, "customer_sample_id",
                     $"Customer sample ID '{row.CustomerSampleId}' appears more than once."));
 
-        var sourceCounts = rows.GroupBy(row => row.BiologicalSource, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(group => group.Key, group => group.Count(), StringComparer.OrdinalIgnoreCase);
         if (rows.Count != order.RequestedSpecimenCount)
             errors.Add(new LabSampleImportErrorDto(0, "sample_count",
                 $"The accepted Job requires exactly {order.RequestedSpecimenCount} samples; this file contains {rows.Count} valid rows."));
         foreach (var group in order.SourceGroups)
         {
-            var actual = sourceCounts.GetValueOrDefault(group.BiologicalSource);
+            var actual = rows.Count(row => !string.IsNullOrWhiteSpace(row.BiologicalSource)
+                && LabServiceSourceGroup.Normalize(row.BiologicalSource) == group.NormalizedBiologicalSource);
             if (actual != group.SpecimenCount)
                 errors.Add(new LabSampleImportErrorDto(0, "biological_source",
                     $"{group.BiologicalSource} requires {group.SpecimenCount} samples; this file contains {actual}."));
         }
-        return new LabSampleCsvParseResult(rows, errors, blankRows, sourceCounts);
+        if (order.SourceGroups.Count == 0)
+            errors.Add(new LabSampleImportErrorDto(0, "biological_source", "The accepted biological-source counts are unavailable. Contact Phaeno."));
+        return errors;
     }
 
     private static (List<List<string>> Rows, List<LabSampleImportErrorDto> Errors) ReadRows(string text)

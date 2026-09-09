@@ -140,6 +140,8 @@ builder.Services.AddScoped<CustomWorkRequestService>();
 builder.Services.AddScoped<ManualCommercialReleaseService>();
 builder.Services.AddScoped<SampleShippingPacketService>();
 builder.Services.AddScoped<SampleShippingWorkflowReader>();
+builder.Services.AddScoped<SampleShippingContainerCatalogService>();
+builder.Services.AddScoped<TransportationKitRequestService>();
 builder.Services.AddScoped<PhaenoPortal.App.Features.Trials.Services.TrialAccess>();
 builder.Services.AddScoped<PhaenoPortal.App.Features.Trials.Services.TrialCrmProjection>();
 builder.Services.AddHostedService<PhaenoPortal.App.Features.Trials.Services.TrialCrmProjectionWorker>();

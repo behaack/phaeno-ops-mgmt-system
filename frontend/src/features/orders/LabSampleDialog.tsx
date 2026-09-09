@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect, type ReactNode } from 'react'
-import { useForm } from 'react-hook-form'
+import { useEffect, useRef, type ReactNode } from 'react'
+import { useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
 
 import {
@@ -28,6 +28,7 @@ import {
   RequiredFieldName,
 } from '#/components/ui/required-field'
 import { usePhaenoSession } from '#/features/auth/session-context'
+import { getSampleSourceAvailability, getSampleSourceCapacityError, normalizeBiologicalSource } from './sample-source-capacity'
 
 const sampleSchema = z.object({
   customerSampleId: z
@@ -53,6 +54,7 @@ type LabSampleDialogProps = {
   open: boolean
   order: LabServiceOrder
   sample?: LabSample | null
+  biologicalSource?: string
   onOpenChange: (open: boolean) => void
   onSaved: (order: LabServiceOrder) => void | Promise<void>
 }
@@ -61,6 +63,7 @@ export function LabSampleDialog({
   open,
   order,
   sample,
+  biologicalSource,
   onOpenChange,
   onSaved,
 }: LabSampleDialogProps) {
@@ -69,21 +72,34 @@ export function LabSampleDialog({
   const canEdit =
     Boolean(session?.capabilities.canCreateLabServiceRequests) && order.canEditSamples
   const apiEnabled = authProvider !== 'mock' && canEdit
+  const openedDraft = useRef<string | null>(null)
+  const draftKey = JSON.stringify([order.id, sample?.id ?? null, sample ? null : biologicalSource ?? ''])
   const form = useForm<SampleFormInput, unknown, SampleValues>({
-    resolver: zodResolver(sampleSchema),
-    defaultValues: sampleToForm(null, order),
+    resolver: zodResolver(sampleSchema.superRefine((values, context) => {
+      const error = getSampleSourceCapacityError(order, values.biologicalSource, sample)
+      if (error) context.addIssue({ code: 'custom', path: ['biologicalSource'], message: error })
+    })),
+    defaultValues: sampleToForm(sample, biologicalSource),
   })
+  const selectedSource = useWatch({ control: form.control, name: 'biologicalSource' })
+  const sourceOptions = getSampleSourceAvailability(order, sample)
+  const selectedGroup = sourceOptions.find(group => normalizeBiologicalSource(group.biologicalSource) === normalizeBiologicalSource(selectedSource))
+  const selectedSourceKnown = sourceOptions.some(group => normalizeBiologicalSource(group.biologicalSource) === normalizeBiologicalSource(selectedSource))
+  const originalSourceUnknown = Boolean(sample && !sourceOptions.some(group => normalizeBiologicalSource(group.biologicalSource) === normalizeBiologicalSource(sample.biologicalSource)))
 
   useEffect(() => {
-    if (!open) return
-    form.reset(sampleToForm(sample, order))
-  }, [form, open, order, sample])
+    if (!open) { openedDraft.current = null; return }
+    if (openedDraft.current !== draftKey) {
+      openedDraft.current = draftKey
+      form.reset(sampleToForm(sample, biologicalSource))
+    }
+  }, [biologicalSource, draftKey, form, open, sample])
 
   const mutation = useMutation({
     mutationFn: (values: SampleValues) => {
       const input = {
         customerSampleId: values.customerSampleId,
-        biologicalSource: values.biologicalSource,
+        biologicalSource: order.sourceGroups.find(group => normalizeBiologicalSource(group.biologicalSource) === normalizeBiologicalSource(values.biologicalSource))?.biologicalSource ?? values.biologicalSource,
         tubeCount: values.quantity,
         collectionDate: sample?.collectionDate,
         concentration: sample?.concentration,
@@ -94,7 +110,7 @@ export function LabSampleDialog({
         : addLabSample(order.id, { ...input, orderVersion: order.version })
     },
     onSuccess: async (savedOrder) => {
-      form.reset(sampleToForm(sample, savedOrder))
+      form.reset(sampleToForm(sample, biologicalSource))
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ['lab-service-order', order.id],
@@ -106,20 +122,18 @@ export function LabSampleDialog({
   })
 
   const editing = Boolean(sample)
+  const isDirty = form.formState.isDirty
   const formId = sample ? `lab-sample-${sample.id}` : `lab-sample-new-${order.id}`
 
   return (
     <Dialog open={open} onOpenChange={requestOpenChange}>
-      <DialogContent className="max-w-3xl overflow-hidden p-0 [--dialog-inset:0px]">
-        <DialogHeader className="pt-4 pr-12 pl-4">
+      <DialogContent>
+        <DialogHeader>
           <DialogTitle>{editing ? 'Edit sample details' : 'Add sample'}</DialogTitle>
           <DialogDescription>
-            Sample type: Extracted RNA. Enter the scientific intake information.
-            Storage, safety, and notes are set for the job. Every sample receives
-            the standard data-file set.{' '}
-            Choose one of the biological sources accepted with the Job.{' '}
-            Do not use patient names or direct identifiers.
+            Enter the details for one extracted RNA sample.
           </DialogDescription>
+          {!editing ? <p className="wrap-anywhere text-sm text-muted-foreground">Biological source: <span className="font-medium text-foreground">{selectedSource || 'No source selected'}</span>{selectedGroup?.remaining === 0 ? ' · Full' : ''}</p> : null}
         </DialogHeader>
 
         {mutation.error ? (
@@ -136,24 +150,25 @@ export function LabSampleDialog({
           </DialogFeedback>
         ) : null}
 
-        <div className="px-4">
+        <div>
           <form
             id={formId}
             noValidate
-            className="space-y-5 pb-4"
-            onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
+            className="space-y-4"
+            onSubmit={form.handleSubmit((values) => { if (apiEnabled && !mutation.isPending) mutation.mutate(values) })}
           >
-            <div className="grid gap-4 sm:grid-cols-2">
+            {!editing ? <FieldError id={`${formId}-source-error`} message={form.formState.errors.biologicalSource?.message} /> : null}
+            <div className="space-y-4">
               <Field
                 label="Customer sample ID"
                 id={`${formId}-identifier`}
-                description="Your internal, non-patient identifier for this sample. It must be unique within this job."
-                alignControl
+                description="Use an internal ID unique to this Job. Do not enter patient names or direct identifiers."
                 required
                 error={form.formState.errors.customerSampleId?.message}
               >
                 <Input
                   id={`${formId}-identifier`}
+                  disabled={mutation.isPending}
                   aria-invalid={Boolean(form.formState.errors.customerSampleId)}
                   aria-describedby={fieldDescriptionIds(
                     `${formId}-identifier`,
@@ -162,18 +177,18 @@ export function LabSampleDialog({
                   {...form.register('customerSampleId')}
                 />
               </Field>
-              {order.sourceGroups.length > 1 ? (
+              {editing ? (
                 <Field
                   label="Biological source"
                   id={`${formId}-source`}
-                  description="The organism or species and source tissue or cell type, such as human PBMCs or mouse liver."
-                  alignControl
+                  description="Select one of the biological sources accepted with this Job."
                   required
                   error={form.formState.errors.biologicalSource?.message}
                 >
                   <select
                     id={`${formId}-source`}
-                    className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                    disabled={mutation.isPending}
+                    className="h-9 w-full cursor-pointer rounded-md border border-input bg-transparent px-3 py-1 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
                     aria-invalid={Boolean(form.formState.errors.biologicalSource)}
                     aria-describedby={fieldDescriptionIds(
                       `${formId}-source`,
@@ -182,7 +197,9 @@ export function LabSampleDialog({
                     {...form.register('biologicalSource')}
                   >
                     <option value="">Select a source</option>
-                    {order.sourceGroups.map((group) => <option key={group.id} value={group.biologicalSource}>{group.biologicalSource}</option>)}
+                    {originalSourceUnknown && sample ? <option value={sample.biologicalSource}>{sample.biologicalSource} · Not in the accepted list</option> : null}
+                    {selectedSource && !selectedSourceKnown && (!sample || normalizeBiologicalSource(selectedSource) !== normalizeBiologicalSource(sample.biologicalSource)) ? <option value={selectedSource}>{selectedSource} · Not in the accepted list</option> : null}
+                    {sourceOptions.map((group) => <option key={group.id} value={normalizeBiologicalSource(group.biologicalSource) === normalizeBiologicalSource(selectedSource) ? selectedSource : group.biologicalSource} disabled={group.remaining === 0 && !group.isOriginalSource}>{group.biologicalSource}{group.remaining === 0 ? ' · Full' : ` · ${group.remaining} sample${group.remaining === 1 ? '' : 's'} remaining`}</option>)}
                   </select>
                 </Field>
               ) : null}
@@ -190,12 +207,13 @@ export function LabSampleDialog({
                 label="Quantity (tubes)"
                 id={`${formId}-quantity`}
                 description="The number of tubes you will send for this sample."
-                alignControl={order.sourceGroups.length === 1}
                 required
                 error={form.formState.errors.quantity?.message}
               >
                 <Input
                   id={`${formId}-quantity`}
+                  disabled={mutation.isPending}
+                  className="max-w-32"
                   type="number"
                   min="1"
                   step="1"
@@ -209,10 +227,14 @@ export function LabSampleDialog({
                 />
               </Field>
             </div>
+            <p className="border-t pt-4 text-xs text-muted-foreground">
+              Storage, safety, and notes are set for the Job. Each sample receives
+              the standard data-file set.
+            </p>
           </form>
         </div>
 
-        <RequiredDialogFooter className="border-t bg-muted/40 px-4 py-3">
+        <RequiredDialogFooter>
           <Button
             type="button"
             variant="outline"
@@ -241,7 +263,7 @@ export function LabSampleDialog({
     if (!nextOpen && mutation.isPending) return
     if (
       !nextOpen &&
-      form.formState.isDirty &&
+      isDirty &&
       !mutation.isPending &&
       !window.confirm('Discard the unsaved sample details?')
     ) {
@@ -253,12 +275,11 @@ export function LabSampleDialog({
 
 function sampleToForm(
   sample: LabSample | null | undefined,
-  order: LabServiceOrder,
+  biologicalSource?: string,
 ): SampleFormInput {
   return {
     customerSampleId: sample?.customerSampleId ?? '',
-    biologicalSource:
-      sample?.biologicalSource ?? order.sourceGroups[0]?.biologicalSource ?? order.sharedBiologicalSource ?? '',
+    biologicalSource: sample?.biologicalSource ?? biologicalSource ?? '',
     quantity: sample?.quantity ?? 1,
   }
 }
@@ -267,7 +288,6 @@ function Field({
   label,
   id,
   description,
-  alignControl,
   required,
   error,
   children,
@@ -275,7 +295,6 @@ function Field({
   label: string
   id: string
   description: string
-  alignControl?: boolean
   required?: boolean
   error?: string
   children: ReactNode
@@ -287,7 +306,7 @@ function Field({
       </Label>
       <p
         id={`${id}-help`}
-        className={`mt-1 text-xs text-muted-foreground${alignControl ? ' sm:min-h-8' : ''}`}
+        className="mt-1 text-xs text-muted-foreground"
       >
         {description}
       </p>

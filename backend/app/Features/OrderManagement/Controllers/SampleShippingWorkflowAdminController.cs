@@ -19,10 +19,11 @@ public sealed class SampleShippingWorkflowAdminController(
     SampleShippingWorkflowReader reader) : ControllerBase
 {
     [HttpGet("shipments")]
-    public async Task<IReadOnlyList<SampleShipmentWorkflowDto>> Shipments(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<SampleShipmentWorkflowDto>> Shipments(CancellationToken cancellationToken,
+        [FromQuery] Guid? sourceId = null)
     {
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
-        return await reader.ListAsync(null, cancellationToken);
+        return await reader.ListAsync(null, null, cancellationToken, sourceId);
     }
 
     [HttpGet("shipments/{shipmentId:guid}")]
@@ -78,6 +79,8 @@ public sealed class SampleShippingWorkflowAdminController(
         CancellationToken cancellationToken)
     {
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext,
+            $"legacy-kit:{kitId}", cancellationToken);
         var kit = await dbContext.SampleReturnKits.Include(item => item.Tubes)
             .SingleOrDefaultAsync(item => item.Id == kitId, cancellationToken)
             ?? throw Missing("sample_return_kit_not_found", "The return kit was not found.");
@@ -96,15 +99,21 @@ public sealed class SampleShippingWorkflowAdminController(
         }
         if (normalized.Count == 0)
             throw Invalid("supplier_tube_barcode_required", "Scan at least one supplier tube barcode.");
+        foreach (var barcode in normalized.Order(StringComparer.Ordinal))
+            await SampleShippingPackingData.LockAsync(dbContext, $"supplier-tube:{barcode}", cancellationToken);
         if (kit.Tubes.Count + normalized.Count > kit.RequiredTubeCount)
             throw Conflict("sample_return_kit_tube_count_exceeded", $"This kit requires exactly {kit.RequiredTubeCount} tubes.");
         if (kit.Tubes.Any(item => normalized.Contains(item.SupplierBarcode))
+            || await dbContext.SampleShippingStockTubes.AsNoTracking()
+                .AnyAsync(item => normalized.Contains(item.SupplierBarcode), cancellationToken)
             || await dbContext.RegisteredSampleTubes.AsNoTracking()
                 .AnyAsync(item => normalized.Contains(item.SupplierBarcode), cancellationToken))
             throw Conflict("supplier_tube_barcode_duplicate", "A scanned tube barcode is already registered.");
         foreach (var barcode in normalized)
             dbContext.RegisteredSampleTubes.Add(new RegisteredSampleTube(kit.Id, barcode));
+        dbContext.Entry(kit).Property(item => item.Version).IsModified = true;
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         return await reader.ReadAsync(kit.SampleShipmentId, null, cancellationToken);
     }
 
@@ -132,13 +141,10 @@ public sealed class SampleShippingWorkflowAdminController(
         CancellationToken cancellationToken)
     {
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
-        if (!SampleShippingBarcode.TryNormalize(packetBarcode, out var normalizedPacket))
-            throw Invalid("sample_shipping_barcode_invalid", "Scan or enter a complete Phaeno shipment-packet barcode.");
         if (!SupplierTubeBarcode.TryNormalize(supplierTubeBarcode, out var normalizedTube))
             throw Invalid("supplier_tube_barcode_invalid", "Scan or enter a complete supplier tube barcode.");
-        var packet = await dbContext.SampleShippingPacketRevisions.AsNoTracking()
-            .SingleOrDefaultAsync(item => item.Barcode == normalizedPacket, cancellationToken)
-            ?? throw Missing("sample_shipping_packet_not_found", "No shipment packet matches this barcode.");
+        var packet = await SampleShippingPackingData.ResolvePacketAsync(dbContext, packetBarcode, cancellationToken);
+        var normalizedPacket = packet.Barcode;
         if (packet.IsVoided)
             return new RegisteredSampleTubeScanDto(normalizedPacket, normalizedTube, false, null, null, null, null, null, false, "PacketVoided");
         var tube = await dbContext.RegisteredSampleTubes.AsNoTracking()
@@ -158,7 +164,8 @@ public sealed class SampleShippingWorkflowAdminController(
         return new RegisteredSampleTubeScanDto(normalizedPacket, normalizedTube, true, item.Id,
             item.SubmittedSpecimenId, item.CustomerSampleId, item.SampleName, tube.Status.ToString(),
             tube.Status == RegisteredSampleTubeStatus.Accessioned,
-            tube.Status == RegisteredSampleTubeStatus.Accessioned ? "AlreadyAccessioned" : "Expected");
+            tube.Status == RegisteredSampleTubeStatus.Accessioned ? "AlreadyAccessioned" : "Expected",
+            tube.ReceivedAt.HasValue || tube.AccessionedAt.HasValue);
     }
 
     private static DateTime RequireUtc(DateTime value, string label)

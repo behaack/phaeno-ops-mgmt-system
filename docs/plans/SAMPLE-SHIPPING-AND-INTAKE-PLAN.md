@@ -1,5 +1,418 @@
 # Sample Shipping and Intake Plan
 
+## 2026-09-08 implementation: Customer transportation-kit ordering
+
+The owner approved a short ordering flow from an accepted Customer Lab Job:
+when no usable kits are recorded, Order transportation kits is the primary
+action. It opens a confirmation prefilled with the recommended SKU/common name
+and quantities plus the Customer/Department delivery location. Kits and outbound
+delivery are included with the accepted laboratory order at no additional
+charge. Confirmation creates a durable Job-scoped order in Phaeno fulfillment;
+retries, multiple tabs and sibling sample shipments must not create duplicates.
+
+Delivery locations are Customer/Department-owned records managed from the
+Customer/Department workspace, with bounded create/edit modals and a default
+location. The order freezes the confirmed address and container revisions.
+Missing address setup must be explicit; the general CRM address and Phaeno's
+inbound sample destinations must not be silently substituted.
+
+The confirmed fulfillment sequence is:
+
+1. A new kit order queues one notification to the responsible Phaeno fulfillment
+   recipient. A successful retry does not queue another notice.
+2. Staff fulfill from registered compatible physical stock, using the order's
+   frozen delivery address, and record carrier/tracking. Partial dispatch is
+   supported and does not imply completion of every requested line.
+3. Dispatched kits provisionally increase the Customer's recorded inventory as
+   On the way. They do not count as usable stock yet.
+4. The Customer acknowledges the kits actually received. Those kits become
+   Available; receipt unlocks sample preparation and shipment using those kits.
+   Partial receipt never makes undelivered kits available.
+
+New request-linked kits enforce the receipt prerequisite on the server as well
+as the screen. Existing legacy shipping data keeps its established workflow.
+Unknown physical stock is distinguished from verified zero; duplicate ordering
+is suppressed while the Job already has outstanding kit supply. Initial support
+is scoped to accepted Customer Lab Jobs; no new Trial/Partner commercial terms
+are inferred. General inventory corrections, cross-Job reuse, replenishment
+thresholds and warehouse reservations remain in the broader scope below.
+
+The ordering/dispatch/receipt slice is implemented locally. Initial fulfillment
+notifications use the existing Phaeno administrator recipient routing; the
+owner has not named a separate fulfillment recipient. Customer and Phaeno help
+guides describe the implemented flow, and the 56-guide generated corpus is
+current. General inventory functionality listed below remains separate.
+
+The backend checkpoint passed 53 focused cases, including authorization and
+Department isolation, frozen snapshots, duplicate/concurrent ordering and
+notifications, partial dispatch/receipt, receipt-gated packing/scanning and
+location-specific residual capacity. The solution builds without warnings or
+errors. Customer/staff actual-component browser review passed 48 desktop/phone
+and light/dark cases; focused component evidence is recorded in the frontend
+test plan. No external delivery was exercised by those tests.
+
+Migration `20260909013740_AddCustomerTransportationKitOrdering` was applied to
+localhost `phaeno_ops` after isolated PostgreSQL verification. The generated ERD
+is current and EF reports no model drift. Exact before/after evidence preserves
+HS5Y7DB7's order state, nine samples, 18 tubes and existing shipment identities
+and versions. The updated local API returns health 200, and signed-in Phaeno
+Receipt & accession displays the new empty Kit requests queue alongside this
+Job. No kit requests, customer addresses or stock records were invented for the
+walkthrough. The next Customer acceptance step is to save a real Department
+delivery location, return to the shipment and review the included-cost kit
+order before confirming it. Mailbox and physical delivery/receipt acceptance
+remain outstanding; no production deployment occurred.
+
+### Test-plan coverage and walkthrough handoff
+
+The [transportation-kit manual module](../testing/11-transportation-kits.md)
+defines SHP-01–14 for this full sequence. The current local walkthrough resumes
+at SHP-02 (Department delivery location) then SHP-03 (included-cost confirmation)
+without changing HS5Y7DB7's finalized roster. Separate prepared fixtures cover
+30 tubes, alternate sizes, partial supply, split samples, replay/conflict and
+unauthorized operations. The [E2E plan](E2E-TEST-PLAN.md) links those role handoffs;
+the [backend](BACKEND-TEST-PLAN.md) and [frontend](FRONTEND-TEST-PLAN.md) matrices
+map current assertions and explicit gaps. All newly authored manual cases are
+Not run; implementation checkpoint totals are not their acceptance results.
+The [run template](../testing/RUN-RECORD.md) retains request, location, physical
+kit, quantity, shipment and manifest evidence at each handoff. This documentation
+update changes no implementation, test result, database or runtime.
+
+## 2026-09-08 additional planning scope: transportation-kit inventory and fulfillment
+
+The owner requested this addition during implementation of container selection
+and scanning. The ordering slice above supplies Job-scoped location records and
+dispatch/receipt evidence. This section tracks the broader inventory scope:
+cross-Job customer-location balances, reservations, corrections and automatic
+order-driven replenishment are not supplied by standard-stock registration or
+the initial transportation-kit ordering flow alone.
+
+### Required product outcome
+
+Phaeno must know which transportation kits it holds and which kits are available
+at each customer location. When an order arrives, the workflow should identify
+whether the customer needs kits and what Phaeno needs to fulfill. Inventory is
+identified by container SKU/common name, with the physical kit and enclosed
+permanent tube identities retained where registered.
+
+### Inventory and movement requirements
+
+- Track separate Phaeno stock locations and customer receiving/storage
+  locations, within the appropriate organization and Department access scope.
+  Do not treat one customer's stock as available to another location by default.
+- Manage customer kit-delivery locations from the Customer workspace, owned by
+  that Customer and linked to the applicable Department. Keep these distinct
+  from the Phaeno receiving destinations used for inbound sample shipments.
+- Distinguish available, reserved, outbound/in transit, received at the customer,
+  consumed in a sample-return shipment, damaged/lost and adjusted quantities.
+  Quantities in transit are expected supply, not confirmed stock on hand.
+- Retain who recorded each movement, when, its source and destination,
+  kit/SKU quantities and the related fulfillment/order references. Correct
+  discrepancies through explained adjustments rather than rewriting history.
+- Retain customer confirmation or the relevant evidence of receipt. Show the
+  last confirmed balance and whether it needs reconciliation; unknown inventory
+  is not zero and must not be presented as verified available stock.
+- Reserve stock for a packing/fulfillment plan to prevent two orders from
+  relying on the same kit. Release unused reservations when plans change or
+  orders are cancelled. A partly filled returned container consumes that
+  physical container; remaining unused tubes are a separate supply balance.
+- Keep standardized kit definitions, assembled physical kits, individual tube
+  supplies and physical shipping containers distinct. Record any split or
+  reassembly of a kit explicitly so its original enclosed barcode roster is
+  not mistaken for its current contents.
+
+### Order readiness and fulfillment
+
+1. At order intake, compare the anticipated transport need with compatible,
+   unreserved stock at the customer's selected location. If exact tube counts
+   are not yet known, label the check preliminary; quoted sample count is not
+   automatically the final physical tube count.
+2. Recheck when sample entry/finalization establishes the exact tube count and
+   when destination, handling, available stock or packing selection changes.
+3. Show a clear outcome: kits available, kits needed, kits on the way, or stock
+   confirmation needed. Show required, available, reserved and shortfall
+   quantities by SKU with links to the supporting inventory/fulfillment records.
+4. Use the customer's usable stock to recommend a packing combination. When
+   additional kits are required, determine the shortage and create or update
+   one linked fulfillment work item rather than duplicate requests on refresh.
+5. Phaeno reserves/picks registered kits, confirms the destination and records
+   dispatch/tracking. Customer receipt moves supply into available stock at
+   that location; the order readiness view reflects the same movement history.
+6. Link later sample-return use to the supplied/reserved kit and decrement the
+   correct inventory once. Preserve partial-order and multiple-shipment progress.
+
+### Decisions and acceptance work for this scope
+
+Define the supported customer-location model, who confirms customer balances
+and adjustments, reconciliation rules and reservation expiry before this scope
+is implemented. Do not infer a new kit charge, reorder fee, automatic outbound
+shipment or transport policy from an inventory shortage.
+
+Acceptance must cover stock at multiple customer locations, insufficient or
+unknown stock, in-transit supply, simultaneous orders competing for stock,
+partial dispatch/receipt, cancellations and released reservations, lost or
+damaged materials, customer balance corrections and duplicate readiness checks.
+Order-intake estimates must visibly become confirmed needs after exact tube
+counts are available. Extend audience guides and living test plans alongside
+implementation of these behaviors.
+
+## 2026-09-08 product direction: container configuration and guided packing
+
+Status: implemented locally on September 8, 2026. This section supersedes the
+earlier requirement to prepare a separate kit from scratch for every order.
+Production release and a physical scanner/printer walkthrough remain separate
+acceptance steps. Broader cross-Job location inventory and automatic
+replenishment remain the additional planning scope above; the newer ordering
+slice records only supply and receipt associated with the selected Job.
+
+### Implementation checkpoint
+
+The subsequent container-editor layout review aligns paired controls while
+preserving helper text before inputs, groups dates/activation under Availability,
+and places optional product details in Supplier and packing. Populated details
+and validation errors open that section automatically. Twelve focused tests
+and six desktop/phone/theme browser cases passed; the signed-in form was also
+reviewed without changing the approved draft definitions.
+
+Container row action menus size to their option text, with a viewport width
+limit, so Preview recommendation remains readable without a cramped menu.
+
+- Phaeno can configure versioned container types with immutable unique SKUs,
+  common names, usable tube capacities and controlled compatibility rules;
+  preview recommendations; and explicitly deactivate future use.
+- Standard stock kits can be prepared, registered with permanent tube barcodes
+  and dispatched for an authorized Job. The first Customer scan binds the
+  dispatched physical kit to a compatible return shipment, using the existing
+  fulfillment safeguards. Required ownership relationships remain intact.
+- Preparation recommends the fewest containers and then the least unused
+  capacity. Available quantities constrain the recommendation. Customers can
+  choose alternatives and set each container's tube allocation, including
+  15 + 15 in two 20-tube containers or 10 + 10 + 10 in three. Empty selected
+  containers create no shipments; a shortfall stays in an explicit packing pool.
+- Physical tube identities and sample ordinals survive allocation across
+  shipments. Inline scans save before advancing, retain errors on the current
+  tube, and show readable values with Code 128 graphics. One stock kit cannot
+  bind to two shipments and a registered tube cannot be reused or duplicated.
+- Each immutable manifest includes order, shipment, sample and physical tube
+  barcodes, its selected container facts, and separate references/counts for
+  tubes in other shipments or still unallocated. Packet corrections retain
+  the prior voided revision. Receipt resolves the current shipment manifest
+  and records each physical tube independently, with shipment and order totals.
+- Existing fulfilled kits remain usable. Repacking after a kit is bound or
+  a tube is assigned is blocked; existing explicit tube-correction safeguards
+  remain available before physical receipt. Unused tubes from a partly filled
+  returned kit are not yet a reusable customer inventory balance.
+
+Verification: 44 focused backend cases passed, including real PostgreSQL
+transactions, concurrent packing and kit binding, invalid/cross-scope scans,
+custom allocations, current/void manifest lookup and partial tube receipt.
+Source-specific lists retain all 261 packages in the large-order regression.
+Completing a residual pool preserves earlier container identities. Complete
+physical receipt reconciles shipment status even when Customer dispatch was
+not recorded, without inventing carrier facts. Legacy whole-sample endpoints
+redirect Lab-owned shipping samples to the authoritative Lab workflow while
+preserving their existing behavior for unowned legacy samples.
+The additive migration
+`20260908234930_AddSampleShippingContainerPackingAndStock` was applied only to
+the verified local `phaeno_ops` database. Before/after evidence confirms the
+walkthrough Job HS5Y7DB7 retains exactly its original 9 samples, 18 tubes,
+IDs, versions and Preparing shipment. Temporary test databases were removed
+and synthetic notification counts were zero. See the living backend, frontend
+and E2E test plans for detailed evidence and remaining acceptance boundaries.
+
+Initial implementation seeded no container sizes, stock kits or Customer
+shipments. In the subsequent September 8 walkthrough, the owner explicitly
+requested three sizes and approved these internal SKUs/common names:
+
+| SKU | Common name | Tube capacity | Local state |
+| --- | --- | --- | --- |
+| TRANS-20 | 20-tube transportation kit | 20 | Active, revision 2; original draft retained |
+| TRANS-10 | 10-tube transportation kit | 10 | Active, revision 2; original draft retained |
+| TRANS-05 | 5-tube transportation kit | 5 | Active, revision 2; original draft retained |
+
+All three were saved through the signed-in configuration screen against the
+existing Reference extracted RNA / Reference receiving rule. The continued
+local walkthrough encountered no eligible sizes because they were drafts;
+active revision 2 was then created for each size, preserving revision 1.
+Supplier details and additional packing instructions remain unspecified.
+These are local test definitions, not physical stock or an assertion that
+materials/scanners have been qualified. Stock preparation remains a later
+walkthrough step; the owner's Job and sample records were not changed by
+configuration.
+The signed-in Phaeno preview for 18 tubes and the Reference handling context
+returned one TRANS-20 container, 18 assigned tubes and 2 unused slots. Customer
+screen refresh/review remains the next acceptance step; the connected Phaeno
+session cannot enter the Customer shipment workspace directly.
+
+### Confirmed product requirements
+
+- Supply standard kits with permanently barcoded tubes instead of configuring
+  the contents of every outbound kit from scratch for each order.
+- Support multiple shipping-container sizes. Phaeno maintains those sizes and
+  their usable tube capacities in a configuration screen. Customer preparation
+  recommends a size or combination of sizes for the tubes being shipped.
+- Every container type has a required SKU number and common name. Identify the
+  recommended/selected physical kit using both values, together with capacity.
+- Container recommendations are advisory. Customers can select the compatible
+  sizes and quantities they actually have, including more containers or more
+  spare capacity than the default recommendation. A valid alternative needs no
+  exception approval or justification.
+- An order can require multiple shipments according to tube count, container
+  capacity and applicable handling requirements. Each physical shipping
+  container has its own shipment identity and manifest.
+- The Customer works down the sample list, scanning each physical tube. Each
+  successful assignment displays the exact scanned value with its barcode
+  graphic beside it. A sample with several tubes has several tube assignments.
+- Print an order barcode, a shipment barcode and a barcode identifying each
+  sample in that shipment. Preserve the distinct permanent identity of every
+  tube; a sample identifier does not replace its individual tube barcodes.
+- Tubes from the same sample MAY occupy different shipping containers. Sample
+  co-location is not a packing requirement or a reason to reject a valid plan.
+  This supersedes the earlier discussion recommendation to keep them together.
+- A split-sample manifest identifies the sample's total tube count, the tubes
+  inside this container and the other shipment references/counts. References
+  to other containers are separate from this manifest's physical contents.
+
+### Configuration screen
+
+Extend POMS **Order configuration > Sample shipping** with **Container sizes**.
+Use a discovery list, a dedicated view-first record and bounded create/edit
+dialogs following the shared record-management policy. Restrict management to
+the existing authorized Phaeno configuration users.
+
+Each container definition records:
+
+- required unique SKU number, preserved as an identifier rather than a numeric
+  quantity (including any leading zeros, letters or separators);
+- required common name used as the primary customer-facing label;
+- positive whole-number usable tube capacity for the supported tube/packing
+  configuration, accounting for the required packing materials;
+- compatible tube/sample definitions and handling profiles, reusing the
+  controlled shipping rules rather than relying on free-text matching;
+- supplier/product reference and packing instructions where applicable;
+- active/effective revision and display order.
+
+Actual names, capacities and compatible packing configurations are operational
+inputs supplied by Phaeno. Do not seed invented capacities or infer usable
+capacity from exterior dimensions. New definitions default to inactive.
+SKU uniqueness applies to the container type across its revisions; the SKU is
+distinct from an optional supplier's product number. Display common name, SKU
+and capacity in the configuration list, packing recommendation and selection.
+Include the chosen container's common name and SKU on its manifest.
+Version changes must not rewrite the container facts frozen on an existing
+confirmed shipment or printed manifest. A standard definition, a physical kit
+and a Customer's sample-return shipment remain distinct records/concepts.
+
+Include a **Preview recommendation** action so Phaeno can enter a tube count
+and applicable sample/handling context, optionally limit the available quantity
+of each size, then see the recommended containers, allocation, spare capacity
+and explanation before activating a definition.
+Preview is read-only; it does not create kits, reserve stock or create shipments.
+
+### Preparation and recommendation behavior
+
+The recommendation policy below is the implemented default, not a claim that
+package count is a proxy for shipping cost:
+
+1. Resolve the unallocated physical tubes for the selected dispatch. Count
+   tubes, not unique samples, and honor destination/handling separation rules.
+2. Consider only active, effective, compatible container definitions. Capacity
+   alone cannot make an incompatible container eligible. Let the Customer
+   identify the sizes and quantities available for this dispatch; an entered
+   zero excludes that size. Unknown availability must not be presented as
+   verified stock. Entering availability does not change global configuration
+   or imply that organization-wide inventory tracking already exists.
+3. Prefer the fewest containers that accommodate those tubes; among equally
+   sized sets, prefer the least unused tube capacity. Respect any entered
+   availability limits and use a stable tie-breaker. Do not claim a cheapest
+   option without a separately defined cost model. Available quantities are
+   upper limits, not a requirement to use every container on hand.
+4. Explain the recommendation in plain language, showing each container's size,
+   assigned tubes and capacity. Provide an **Adjust containers** action to
+   select compatible types by common name/SKU and enter their quantities. The
+   Customer may confirm another valid plan without a warning or an approval
+   merely because it differs from the recommendation. Show total tubes,
+   containers, usable capacity, unused slots and any unallocated tubes.
+   Recalculate the allocation preview when the selection changes; exceeding
+   capacity, availability limits or duplicate tube allocation remain invalid.
+5. After the user confirms the actual containers, scan through the sample/tube
+   rows in the active shipment. Save successful scans before advancing focus;
+   keep failures on the current row with an actionable message. Show progress
+   per shipment and across the order without requiring a modal for every tube.
+6. Review and confirm each shipment's contents before printing its manifest.
+   A partly filled container is valid when its declared contents are complete;
+   unused slots do not create expected samples or expected returns.
+
+The owner's example is 30 tubes with configured compatible container sizes of
+20, 10 and 5. All of these are valid packing plans:
+
+| Containers selected | Example tube allocation | Unused capacity |
+| --- | --- | --- |
+| One 20 and one 10 | 20 + 10 | 0 |
+| Two 20s | 20 + 10 (15 + 15 is also valid) | 10 |
+| Six 5s | 5 + 5 + 5 + 5 + 5 + 5 | 0 |
+
+The first is the default recommendation when those containers are available.
+If only two 20s are available, recommend that combination; if only six 5s are
+available, recommend those. More shipments or unused capacity alone must not
+block the Customer. These are acceptance examples, not seeded product records.
+Unused capacity means empty permitted slots, not missing sample tubes; it is
+also distinct from any actual unused supply tubes remaining in a physical kit.
+
+If the chosen compatible containers cannot hold every tube selected for this
+dispatch, show the exact shortfall and leave the plan incomplete. Do not invent
+additional available containers or silently omit tubes. A container whose own
+declared contents are complete can be prepared independently; outstanding
+tubes remain explicit on the order and in applicable split-sample references.
+Unused or empty selected containers do not become empty shipments/manifests.
+
+Configuration revisions or a changed recommendation must not silently move
+already assigned tubes, alter a dispatched shipment or change accepted sample
+counts/pricing. Repacking before dispatch must explicitly reconcile affected
+assignments and invalidate/reissue affected manifest revisions as appropriate.
+
+### Manifest and receiving acceptance criteria
+
+- Each physical tube is allocated to at most one active shipment. Duplicate,
+  unknown, ineligible and already-used barcodes cannot advance scanning.
+- Order, shipment, sample and tube identities remain distinct and unambiguous.
+  Scanning a printed identifier resolves its context; it is not proof that the
+  corresponding physical material arrived.
+- Each manifest lists only its container's contents, with readable identifiers
+  and scannable graphics. A sample spanning shipments shows, for example,
+  "2 of 4 tubes in this shipment" and references the remaining allocations.
+- If remaining tubes are not yet assigned to a shipment, communicate that
+  explicitly instead of inventing a shipment reference. The printed statement
+  reflects the confirmed manifest revision; the Portal shows current progress.
+- Sample and order receipt summaries aggregate physical tubes across shipments
+  without treating the first package received as receipt of the entire sample.
+  This does not define a new scientific rule for when laboratory work may start.
+- Scanning is keyboard-friendly and resumable, with visible focus, accessible
+  success/error feedback and usable desktop/mobile layouts. Test long sample
+  lists, multiple tubes per sample and multiple containers without page growth.
+- Before implementation is declared complete, cover exact fit, partial fill,
+  mixed sizes, user-selected alternatives, limited/zero availability, an exact
+  capacity shortfall, no eligible container, inactive/revised definitions,
+  concurrent assignment, split samples, partial receipt and stale/reissued
+  printouts in the owning automated and manual verification plans.
+
+### Remaining operational inputs and acceptance
+
+Customer finalization retains a single unallocated roster initially; guided
+packing allocates its physical tubes into separate container shipments. The
+legacy return-kit ownership model remains intact, with standard stock recorded
+separately and bound through the existing fulfillment rules. Printed manifests
+now include the requested distinct order, shipment, sample and tube graphics.
+
+Actual container specifications and the policy for customers holding unused
+kits/tubes for future orders remain operational inputs. The inventory and
+fulfillment scope above will add confirmed location balances, reservations and
+order-driven shortages. Current availability entries are user-supplied planning
+limits only. Sample splitting is settled and must not be reopened as a
+mandatory co-location rule. Customer, Prospect, Partner and Phaeno guides
+describe the implemented workflow; physical packing, representative barcode
+scanners/printers and the real materials still need operational acceptance.
+
 ## 2026-09-07 follow-up consistency review
 
 Packet confirmation distinguishes unique samples from tube slots. Packet issue

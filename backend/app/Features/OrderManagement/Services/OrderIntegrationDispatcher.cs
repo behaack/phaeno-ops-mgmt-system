@@ -154,6 +154,8 @@ public sealed class OrderIntegrationDispatcher(
     {
         var payload = JsonSerializer.Deserialize<OrderDocumentOutboxPayload>(message.PayloadJson, JsonOptions)
             ?? throw new InvalidOperationException("The document outbox payload is invalid.");
+        if (isEstimate && message.WorkflowType == OrderWorkflowTypes.LabService)
+            await new OrderIdempotencyService(dbContext).AcquireOrderLockAsync($"lab-order:{message.WorkflowId}", cancellationToken);
         var link = await dbContext.CommercialDocumentLinks.FirstAsync(candidate => candidate.Id == payload.CommercialDocumentLinkId, cancellationToken);
         var request = new QuickBooksDocumentRequest(payload.CustomerExternalId, payload.ReferenceNumber, payload.PurchaseOrderNumber, payload.Currency, payload.Lines, payload.LinkedEstimateExternalId);
         var result = isEstimate
@@ -169,6 +171,9 @@ public sealed class OrderIntegrationDispatcher(
                 var order = await dbContext.LabServiceOrders.FirstAsync(candidate => candidate.Id == message.WorkflowId, cancellationToken);
                 quote.MarkIssued();
                 order.MarkQuoteIssued(quote.Id);
+                var pendingExtensions = await dbContext.LabServiceQuoteExtensionRequests
+                    .Where(item => item.LabServiceOrderId == order.Id && item.ResolvedAt == null).ToListAsync(cancellationToken);
+                foreach (var extension in pendingExtensions) extension.Resolve(quote.Id, DateTime.UtcNow);
             }
             else if (message.WorkflowType == OrderWorkflowTypes.DataAssembly && payload.QuoteId.HasValue)
             {

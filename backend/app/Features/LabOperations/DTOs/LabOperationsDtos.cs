@@ -177,7 +177,8 @@ public sealed record UpdateServiceWorkflowVersionRequest(
     IReadOnlyList<ServiceWorkflowStageRequest> Stages, long WorkflowVersion);
 public sealed record ServiceWorkflowTransitionRequest(string Action, long WorkflowVersion);
 public sealed record WorkMilestoneRequest(string Status, long Version);
-public sealed record SpecimenReceiptRequest(DateTime ReceivedAtUtc, string? ReceiptCondition, string? CurrentLocation, long Version);
+public sealed record SpecimenReceiptRequest(DateTime ReceivedAtUtc, string? ReceiptCondition, string? CurrentLocation, long Version,
+    string? SampleShippingPacketBarcode = null, string? SupplierTubeBarcode = null);
 public sealed record SpecimenAccessionRequest(string AccessionNumber, string Label, string Location,
     decimal? Quantity, string? QuantityUnit, DateTime? RetainUntilUtc, long Version,
     string? SampleShippingPacketBarcode = null, string? SupplierTubeBarcode = null);

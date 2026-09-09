@@ -4690,6 +4690,125 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("commercial_sale_summaries", "commercial_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.CustomerDeliveryLocation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("city");
+
+                    b.Property<string>("CountryCode")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("country_code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("DeliveryInstructions")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("delivery_instructions");
+
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_default");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("label");
+
+                    b.Property<string>("Line1")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("line1");
+
+                    b.Property<string>("Line2")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("line2");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("phone");
+
+                    b.Property<string>("PostalCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("postal_code");
+
+                    b.Property<string>("Recipient")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("recipient");
+
+                    b.Property<string>("Region")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("region");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("OrganizationId", "DepartmentId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_customer_delivery_location_default")
+                        .HasFilter("is_active = TRUE AND is_default = TRUE");
+
+                    b.HasIndex("OrganizationId", "DepartmentId", "IsActive");
+
+                    b.ToTable("customer_delivery_locations", "commercial_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.DataAssemblyQuote", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5343,6 +5462,77 @@ namespace PSeq.Operations.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("lab_service_quotes", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceQuoteExtensionRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("LabServiceOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_service_order_id");
+
+                    b.Property<Guid>("QuoteId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("quote_id");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("reason");
+
+                    b.Property<Guid?>("ReplacementQuoteId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("replacement_quote_id");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("resolved_at");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuoteId")
+                        .IsUnique();
+
+                    b.HasIndex("ReplacementQuoteId");
+
+                    b.HasIndex("RequestedByUserId");
+
+                    b.HasIndex("LabServiceOrderId", "ResolvedAt");
+
+                    b.ToTable("lab_service_quote_extension_requests", "commercial_ops");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceRequestRevision", b =>
@@ -7507,6 +7697,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
 
+                    b.Property<DateTime?>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("received_at");
+
                     b.Property<Guid>("SampleReturnKitId")
                         .HasColumnType("uuid")
                         .HasColumnName("sample_return_kit_id");
@@ -8084,6 +8278,14 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("carrier");
 
+                    b.Property<Guid?>("ContainerDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("container_definition_id");
+
+                    b.Property<string>("ContainerSnapshotJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("container_snapshot_json");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -8103,6 +8305,12 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid>("DestinationId")
                         .HasColumnType("uuid")
                         .HasColumnName("destination_id");
+
+                    b.Property<bool>("IsPackingPool")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_packing_pool");
 
                     b.Property<Guid>("LabWorkOrderId")
                         .HasColumnType("uuid")
@@ -8151,6 +8359,8 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnName("version");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ContainerDefinitionId");
 
                     b.HasIndex("DepartmentId");
 
@@ -8308,6 +8518,191 @@ namespace PSeq.Operations.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("sample_shipment_tube_slots", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerCompatibility", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ContainerDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("container_definition_id");
+
+                    b.Property<Guid>("InstructionRuleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("instruction_rule_id");
+
+                    b.Property<Guid>("SampleTypeDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sample_type_definition_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstructionRuleId");
+
+                    b.HasIndex("SampleTypeDefinitionId");
+
+                    b.HasIndex("ContainerDefinitionId", "SampleTypeDefinitionId", "InstructionRuleId")
+                        .IsUnique();
+
+                    b.ToTable("sample_shipping_container_compatibilities", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerDefinition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CommonName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("common_name");
+
+                    b.Property<Guid>("ContainerTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("container_type_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTime?>("DeactivatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deactivated_at");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("display_order");
+
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("effective_from");
+
+                    b.Property<DateTime?>("EffectiveTo")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("effective_to");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("PackingInstructions")
+                        .HasMaxLength(8000)
+                        .HasColumnType("character varying(8000)")
+                        .HasColumnName("packing_instructions");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<Guid?>("SupersedesDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supersedes_definition_id");
+
+                    b.Property<string>("SupplierName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("supplier_name");
+
+                    b.Property<string>("SupplierProductNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("supplier_product_number");
+
+                    b.Property<int>("TubeCapacity")
+                        .HasColumnType("integer")
+                        .HasColumnName("tube_capacity");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("SupersedesDefinitionId")
+                        .IsUnique();
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("ContainerTypeId", "Revision")
+                        .IsUnique();
+
+                    b.HasIndex("IsActive", "EffectiveFrom", "EffectiveTo");
+
+                    b.ToTable("sample_shipping_container_definitions", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("NormalizedSku")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("normalized_sku");
+
+                    b.Property<string>("Sku")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("sku");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("NormalizedSku")
+                        .IsUnique();
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.ToTable("sample_shipping_container_types", "commercial_ops");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingDestination", b =>
@@ -8707,6 +9102,187 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("sample_shipping_packet_revisions", "commercial_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingStockKit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AuthorizationSource")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("authorization_source");
+
+                    b.Property<Guid?>("AuthorizationSourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("authorization_source_id");
+
+                    b.Property<Guid?>("BoundSampleShipmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("bound_sample_shipment_id");
+
+                    b.Property<Guid>("ContainerDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("container_definition_id");
+
+                    b.Property<string>("ContainerSnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("container_snapshot_json");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid?>("CustomerDeliveryLocationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_delivery_location_id");
+
+                    b.Property<DateTime?>("CustomerReceivedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("customer_received_at");
+
+                    b.Property<Guid?>("CustomerReceivedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_received_by_user_id");
+
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
+                    b.Property<DateTime?>("FulfilledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("fulfilled_at");
+
+                    b.Property<string>("KitNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("kit_number");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<string>("OutboundCarrier")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("outbound_carrier");
+
+                    b.Property<string>("OutboundTrackingNumber")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("outbound_tracking_number");
+
+                    b.Property<string>("ShipperProductNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("shipper_product_number");
+
+                    b.Property<string>("ShipperSupplierName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("shipper_supplier_name");
+
+                    b.Property<Guid?>("TransportationKitRequestLineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("transportation_kit_request_line_id");
+
+                    b.Property<int>("TubeCapacity")
+                        .HasColumnType("integer")
+                        .HasColumnName("tube_capacity");
+
+                    b.Property<string>("TubeLotNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("tube_lot_number");
+
+                    b.Property<string>("TubeProductNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("tube_product_number");
+
+                    b.Property<string>("TubeSupplierName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("tube_supplier_name");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BoundSampleShipmentId")
+                        .IsUnique();
+
+                    b.HasIndex("ContainerDefinitionId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("CustomerDeliveryLocationId");
+
+                    b.HasIndex("CustomerReceivedByUserId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("KitNumber")
+                        .IsUnique();
+
+                    b.HasIndex("TransportationKitRequestLineId");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("OrganizationId", "DepartmentId", "AuthorizationSource", "AuthorizationSourceId");
+
+                    b.ToTable("sample_shipping_stock_kits", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingStockTube", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("SampleShippingStockKitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sample_shipping_stock_kit_id");
+
+                    b.Property<string>("SupplierBarcode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("supplier_barcode");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SampleShippingStockKitId");
+
+                    b.HasIndex("SupplierBarcode")
+                        .IsUnique();
+
+                    b.ToTable("sample_shipping_stock_tubes", "commercial_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleTubeAssignmentEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -8929,6 +9505,135 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasIndex("IsActive", "EffectiveFrom", "EffectiveTo");
 
                     b.ToTable("sample_type_definitions", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.TransportationKitRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("cancellation_reason");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("closed_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("DeliveryAddressSnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("delivery_address_snapshot_json");
+
+                    b.Property<Guid>("DeliveryLocationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("delivery_location_id");
+
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
+                    b.Property<Guid>("LabServiceOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_service_order_id");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("DeliveryLocationId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("LabServiceOrderId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_transportation_kit_request_open_job")
+                        .HasFilter("closed_at IS NULL");
+
+                    b.HasIndex("RequestedByUserId");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("OrganizationId", "DepartmentId", "RequestedAt");
+
+                    b.ToTable("transportation_kit_requests", "commercial_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.TransportationKitRequestLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ContainerDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("container_definition_id");
+
+                    b.Property<string>("ContainerSnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("container_snapshot_json");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.Property<Guid>("TransportationKitRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("transportation_kit_request_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContainerDefinitionId");
+
+                    b.HasIndex("TransportationKitRequestId", "ContainerDefinitionId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_transportation_kit_request_line_size");
+
+                    b.ToTable("transportation_kit_request_lines", "commercial_ops");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.Relationships.Domain.OrganizationServiceEntitlement", b =>
@@ -14856,6 +15561,35 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.CustomerDeliveryLocation", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_customer_delivery_location_created_by");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_customer_delivery_location_department");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_customer_delivery_location_organization");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_customer_delivery_location_updated_by");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.DataAssemblyQuote", b =>
                 {
                     b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.DataAssemblyRequest", null)
@@ -14935,6 +15669,32 @@ namespace PSeq.Operations.Api.Migrations
                         .WithMany()
                         .HasForeignKey("SupersededByQuoteId")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceQuoteExtensionRequest", b =>
+                {
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabServiceOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceQuote", null)
+                        .WithMany()
+                        .HasForeignKey("QuoteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceQuote", null)
+                        .WithMany()
+                        .HasForeignKey("ReplacementQuoteId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("RequestedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.LabServiceRequestRevision", b =>
@@ -15332,6 +16092,12 @@ namespace PSeq.Operations.Api.Migrations
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipment", b =>
                 {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("ContainerDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_sample_shipment_container_revision");
+
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
                         .WithMany()
                         .HasForeignKey("DepartmentId")
@@ -15385,6 +16151,75 @@ namespace PSeq.Operations.Api.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerCompatibility", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerDefinition", null)
+                        .WithMany("Compatibilities")
+                        .HasForeignKey("ContainerDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_shipping_container_compat_revision");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingInstructionRule", null)
+                        .WithMany()
+                        .HasForeignKey("InstructionRuleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_shipping_container_compat_rule");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleTypeDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("SampleTypeDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_shipping_container_compat_sample_type");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerDefinition", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerType", "ContainerType")
+                        .WithMany("Definitions")
+                        .HasForeignKey("ContainerTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_shipping_container_revision_type");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_container_revision_created_by");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("SupersedesDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_container_revision_predecessor");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_container_revision_updated_by");
+
+                    b.Navigation("ContainerType");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerType", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_container_type_created_by");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_container_type_updated_by");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingDestination", b =>
                 {
                     b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingDestination", null)
@@ -15427,6 +16262,74 @@ namespace PSeq.Operations.Api.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingStockKit", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipment", null)
+                        .WithMany()
+                        .HasForeignKey("BoundSampleShipmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_kit_bound_shipment");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("ContainerDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_shipping_stock_kit_container_revision");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_kit_created_by");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.CustomerDeliveryLocation", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerDeliveryLocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_kit_delivery_location");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerReceivedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_kit_received_by");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_kit_department");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_kit_organization");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.TransportationKitRequestLine", null)
+                        .WithMany()
+                        .HasForeignKey("TransportationKitRequestLineId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_kit_transport_request_line");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_kit_updated_by");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingStockTube", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingStockKit", null)
+                        .WithMany("Tubes")
+                        .HasForeignKey("SampleShippingStockKitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_shipping_stock_tube_kit");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleTubeAssignmentEvent", b =>
                 {
                     b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.RegisteredSampleTube", null)
@@ -15459,6 +16362,70 @@ namespace PSeq.Operations.Api.Migrations
                         .WithMany()
                         .HasForeignKey("SupersedesSampleTypeId")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.TransportationKitRequest", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_transportation_kit_request_created_by");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.CustomerDeliveryLocation", null)
+                        .WithMany()
+                        .HasForeignKey("DeliveryLocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_transportation_kit_request_location");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabServiceOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("RequestedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_transportation_kit_request_requester");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_transportation_kit_request_updated_by");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.TransportationKitRequestLine", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("ContainerDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_transportation_kit_line_container");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.TransportationKitRequest", null)
+                        .WithMany("Lines")
+                        .HasForeignKey("TransportationKitRequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_transportation_kit_line_request");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.Relationships.Domain.OrganizationServiceEntitlement", b =>
@@ -16616,6 +17583,26 @@ namespace PSeq.Operations.Api.Migrations
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipmentItem", b =>
                 {
                     b.Navigation("TubeSlots");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerDefinition", b =>
+                {
+                    b.Navigation("Compatibilities");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerType", b =>
+                {
+                    b.Navigation("Definitions");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingStockKit", b =>
+                {
+                    b.Navigation("Tubes");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.TransportationKitRequest", b =>
+                {
+                    b.Navigation("Lines");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.Relationships.Domain.PortalIntegrationRequest", b =>

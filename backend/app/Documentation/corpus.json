@@ -143,7 +143,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -168,7 +168,7 @@
       "publicationStatus": "published",
       "id": "customer/en-US/account-and-access",
       "route": "/docs/customer/account-and-access",
-      "contentHash": "a4e3e1ea70ab4baa44473b3d3880d375322e44d0b369f403e59397f57a4dbe66",
+      "contentHash": "d5d284f7efb8921eb1e6a19a772d838dc512ca323ec258ce872f035c642bb5bb",
       "sections": [
         {
           "heading": "Account and access",
@@ -178,7 +178,7 @@
         {
           "heading": "Accept an invitation",
           "anchor": "accept-an-invitation",
-          "text": "Open the newest invitation link sent for your organization. Sign in with the same email address that received the invitation. Review the organization, your name, and the offered role. Accept or decline the invitation. If another account is signed in, select Sign out and use invited email. After sign-in, use Continue invitation if shown, then review and accept the saved invitation. An invitation link is private and can expire, be revoked, or be replaced by a newer link. Do not forward it. Phaeno tracks whether the invitation email was queued, delivered, bounced, or needs attention separately from whether the invitation is still pending or accepted. If an address hard-bounces, Phaeno must revoke the invitation and issue a new one to the corrected address. The portal does not collect or reset your sign-in password. Complete sign-in and account recovery through the identity service shown on the sign-in page."
+          "text": "Open the newest invitation link sent for your organization. Review your name, organization, and invited email on the invitation page. Select Continue with your email. This goes directly to verification for the invited address; the email cannot be edited. Complete any required password or authenticator steps. Select Accept invitation to join, or Decline invitation. Known names do not need to be entered again. After accepting, the welcome message confirms your organization. Select Open Portal to continue. When creating your password, enter it once and use Show password or Hide password to check your entry. If another account is signed in, select Switch account. After sign-in, use Continue invitation if shown, then review and accept the saved invitation. An invitation link is private and can expire, be revoked, or be replaced by a newer link. Do not forward it. Phaeno tracks whether the invitation email was queued, delivered, bounced, or needs attention separately from whether the invitation is still pending or accepted. If an address hard-bounces, Phaeno must revoke the invitation and issue a new one to the corrected address. The identity service handles password verification and recovery. Complete the secure sign-in steps shown in Portal, and use Forgot password? when offered to recover access."
         },
         {
           "heading": "Protect your account",
@@ -188,7 +188,7 @@
         {
           "heading": "Confirm the current organization",
           "anchor": "confirm-the-current-organization",
-          "text": "The user menu shows the organization active in your current session. That organization scopes every portal read and action. Self-service switching between multiple external organization memberships is not currently available. If the wrong organization is shown, stop before opening a job or Data Library record and contact Phaeno. If an expected record or action is missing, confirm the current organization before reporting a problem."
+          "text": "The header shows the organization active in your current session. That organization scopes every portal read and action. Self-service switching between multiple external organization memberships is not currently available. If the wrong organization is shown, stop before opening a job or Data Library record and contact Phaeno. If an expected record or action is missing, confirm the current organization before reporting a problem."
         },
         {
           "heading": "Work within a department",
@@ -246,7 +246,7 @@
       "publicationStatus": "published",
       "id": "customer/en-US/data-and-organization",
       "route": "/docs/customer/data-and-organization",
-      "contentHash": "d6a2c6d4ef838e01d12504e2112bd300032171fe4b5c7c032b90bee10079ed13",
+      "contentHash": "12f592d84a7c815b1a98b5b69539d1ff9a47920c7ddf5b8e379398fce3826b10",
       "sections": [
         {
           "heading": "Data Library and organization access",
@@ -271,7 +271,12 @@
         {
           "heading": "Manage organization members",
           "anchor": "manage-organization-members",
-          "text": "Organization administrators use User management to invite people, review Department access, and manage organization membership. Department administrators use Departments for member access and settings within their assigned Departments. See Account and access for the role boundaries and invitation steps. The User management screen saves invitations, eligible role changes, and membership deactivation to the Portal account system. Deactivation ends portal access without deleting the person or audit history, and restoring an inactive membership requires a fresh invitation. Phaeno administrators handle global account disablement and organization status. Every user should have their own account. Do not share sign-in credentials or use a shared mailbox as a substitute for an accountable user. Safety and withdrawal instructions about previously supplied data continue to go to current organization administrators during an organization suspension. These notices do not restore Portal access. Contact Phaeno if you cannot record a required response in the portal."
+          "text": "Organization administrators use User management to invite people, review Department access, and manage organization membership. Department administrators use Departments for member access and settings within their assigned Departments. See Account and access for the role boundaries and invitation steps. The User management screen saves invitations, eligible role changes, and membership deactivation to the Portal account system. Deactivation ends portal access without deleting the person or audit history, and restoring an inactive membership requires a fresh invitation. Phaeno administrators handle global account disablement and organization status. Every user should have their own account. Do not share sign-in credentials or use a shared mailbox as a substitute for an accountable user."
+        },
+        {
+          "heading": "Manage delivery locations",
+          "anchor": "manage-delivery-locations",
+          "text": "From Departments, open Delivery locations for the relevant Department. Organization administrators can manage all their Departments' locations; Department administrators manage only their assigned Departments. Open a location to review its address, contact and delivery instructions. Use Add delivery location or Edit location for changes, and select a default when appropriate. These addresses are for kits Phaeno sends to your organization. They are separate from the laboratory destinations used when you return samples. A confirmed transportation-kit order keeps the delivery address shown at confirmation; later edits or deactivation do not rewrite that saved address. See Prepare and ship samples for ordering, tracking and receipt acknowledgment. Safety and withdrawal instructions about previously supplied data continue to go to current organization administrators during an organization suspension. These notices do not restore Portal access. Contact Phaeno if you cannot record a required response in the portal."
         }
       ]
     },
@@ -282,7 +287,7 @@
       "title": "Getting started",
       "summary": "Find Customer Jobs, samples, results, curated data, and retained Trials in the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -301,7 +306,7 @@
       "publicationStatus": "published",
       "id": "customer/en-US/getting-started",
       "route": "/docs/customer/getting-started",
-      "contentHash": "ee168abb3cc0c8275774866f15f753f3954b55278ebf20907cde9a0b38936c9f",
+      "contentHash": "f99bdc6b91717e37cbcd6143f42dfdb4377deb21bd31aef4b397528f90d6ec3a",
       "sections": [
         {
           "heading": "Getting started",
@@ -316,12 +321,12 @@
         {
           "heading": "Confirm the current organization",
           "anchor": "confirm-the-current-organization",
-          "text": "The user menu shows the organization active in your current session. That organization controls which records and actions you can see. Customer information never carries across organizations. Self-service switching between multiple external organization memberships is not currently available. If the wrong organization is active, or your account belongs to more than one external organization, contact Phaeno before continuing."
+          "text": "The header shows the organization active in your current session. That organization controls which records and actions you can see. Customer information never carries across organizations. Self-service switching between multiple external organization memberships is not currently available. If the wrong organization is active, or your account belongs to more than one external organization, contact Phaeno before continuing."
         },
         {
           "heading": "Know your access level",
           "anchor": "know-your-access-level",
-          "text": "Customer organization administrators and department administrators can create and submit laboratory requests, accept quotes, and request cancellations within their operational Department. Organization administrators manage organization-wide invitations and roles. Other active members can review their organization’s jobs, follow progress, and download results that have been released. If an expected action is missing, first confirm the organization shown in the user menu. Your organization administrator can then check your membership."
+          "text": "Customer organization administrators and department administrators can create and submit laboratory requests, accept quotes, and request cancellations within their operational Department. Organization administrators manage organization-wide invitations and roles. Other active members can review their organization’s jobs, follow progress, and download results that have been released. If an expected action is missing, first confirm the organization shown in the header. Your organization administrator can then check your membership."
         },
         {
           "heading": "Find your work",
@@ -357,7 +362,7 @@
       "title": "Request laboratory services",
       "summary": "Review configured pricing or a manual quote, then finalize and ship the exact sample roster.",
       "order": 30,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -383,7 +388,7 @@
       "publicationStatus": "published",
       "id": "customer/en-US/lab-services",
       "route": "/docs/customer/lab-services",
-      "contentHash": "e789e2d8619b57e81a9654879600051f7cda54e668cad1e0217c0761c37787f7",
+      "contentHash": "4330215fdd03eda01673465dbe30d4ed2ebd4a480c445927cead33a46032a7e1",
       "sections": [
         {
           "heading": "Request laboratory services",
@@ -413,12 +418,17 @@
         {
           "heading": "Review and accept a quote",
           "anchor": "review-and-accept-a-quote",
-          "text": "Laboratory services are priced per job. Phaeno issues an itemized, immutable Portal quote for the accepted scope. When your approved billing and tax information is available, the quote includes calculated tax and freezes those commercial terms. Otherwise the quote is labeled Pre-tax total, and applicable tax is calculated when the invoice is issued. A zero tax amount is valid for an exempt, non-taxable, or zero-rate determination. The quote is available after all non-billing readiness items are complete and a Customer administrator is active; billing must be complete before invoicing. Before accepting, confirm the committed sample count, biological-source composition, standard service scope, price, currency, expiration date, and whether the displayed amount includes tax or is pre-tax. A Customer organization administrator or an administrator of the selected Department can accept the current unexpired quote. If the scope changes after acceptance, Phaeno issues a separate change quote. Added work does not begin until the applicable change is accepted. If accepting, withdrawing, or requesting cancellation fails, review the message in the open dialog. Your entries remain available to correct and retry. Closing the dialog does not confirm the action. You are asked before discarding changed entries. While saving, the dialog stays open and its entries and actions are unavailable until the save finishes."
+          "text": "In Quote and billing, select Download quote PDF to save a Phaeno-branded copy of the displayed quote. It includes the Job, quote revision and dates, itemized prices, and any billing details and payment terms saved with that quote. Members can download quotes for their assigned Department; downloading does not accept a quote. If the download fails, select Download quote PDF again to retry. Laboratory services are priced per job. Phaeno issues an itemized, immutable Portal quote for the accepted scope. When your approved billing and tax information is available, the quote includes calculated tax and freezes those commercial terms. Otherwise the quote is labeled Pre-tax total, and applicable tax is calculated when the invoice is issued. A zero tax amount is valid for an exempt, non-taxable, or zero-rate determination. The quote is available after all non-billing readiness items are complete and a Customer administrator is active; billing must be complete before invoicing. Before accepting, confirm the committed sample count, biological-source composition, standard service scope, price, currency, expiration date, and whether the displayed amount includes tax or is pre-tax. A Customer organization administrator or an administrator of the selected Department can accept the current unexpired quote. If the scope changes after acceptance, Phaeno issues a separate change quote. Added work does not begin until the applicable change is accepted. Accept quote, Decline quote, and Download quote PDF are grouped beneath the quote total. Declining a quote closes the entire request; the confirmation explains this before you proceed. Before a quote is available, use Withdraw request to close your request. After acceptance, use Request cancellation for Phaeno review. When declining, choose a reason: Our needs changed, Cost is too high, Selected another vendor, Prefer not to say, or Other. Only Other requires an explanation in the multiline Please explain field. The selected reason is recorded with the request closure. If accepting, declining, withdrawing, or requesting cancellation fails, review the message in the open dialog. Your entries remain available to correct and retry. Closing the dialog does not confirm the action. You are asked before discarding changed entries. While saving, the dialog stays open and its entries and actions are unavailable until the save finishes."
+        },
+        {
+          "heading": "Expired quotes and extension requests",
+          "anchor": "expired-quotes-and-extension-requests",
+          "text": "An unaccepted quote shows Expired and its expiration date once its deadline passes. Accept quote is beside Quote and billing for organization and department administrators; it is disabled with an explanation when acceptance is unavailable. Members can review and download the quote, and should ask an administrator to accept it. For the current expired quote, an organization or department administrator can select Request extension, optionally explain why more time is needed, and submit the request. Extension requested confirms that Phaeno has the request; another request for the same quote is unnecessary. If saving fails, the dialog keeps the entered reason so you can retry. If Phaeno issues a new revision, review its price, terms and new expiration date before accepting. An extension request does not accept a quote or automatically extend its deadline. The original revision remains in the history, and its PDF stays available. An accepted quote remains Accepted when its former expiration date passes."
         },
         {
           "heading": "Ship and track samples",
           "anchor": "ship-and-track-samples",
-          "text": "After placing the standard order or accepting the manual quote, return to Samples and shipping. Use Add sample, Edit sample, and Remove sample, or Download CSV template and Import sample list. The CSV accepts exactly customer_sample_id, biological_source, and tube_count; it does not accept barcodes. Previewing a CSV does not change the Job. Confirming a valid preview atomically replaces the editable draft list. Do not ship physical samples before the order is commercially committed and the exact roster is finalized. An early or unmatched package is quarantined and escalated by Phaeno; it is not accessioned or attached to active Job work. The final list must contain exactly the accepted number of unique non-PHI sample IDs, match every accepted source-group count, and give each sample a positive whole-number tube count. Select Review and finalize list, review every sample, and affirm the no-PHI confirmation before selecting Finalize sample list. Finalization authorizes the specimen-specific Lab work and lets Phaeno prepare the registered return kit. In Return kit and shipment, open the related shipment. When the kit is fulfilled, match every physical Phaeno-supplied tube to the displayed tube slot. A sample with multiple tubes appears once per tube as Tube 1 of N, Tube 2 of N, and so on. Review the packet and record carrier details after the package leaves your organization. Record the shipment once in its packet workflow; carrier and tracking details stay connected to all included samples. Back to lab job returns to the owning Job. The Portal tracks receipt, accessioning, processing, external sequencing, data processing, scientific review, holds, and readiness for release. A job can remain in progress while different samples move through laboratory work. If Phaeno needs replacement material or clarification, the job shows a Customer-safe action and the current schedule health. Internal scientific investigation details are not shown. Ready for release means Phaeno's scientific review is complete and the final deliverable package is complete, checksummed, and malware-clean. It does not mean a file is downloadable until an authorized Result Release Manager publishes that sample. Invoice balance and credit status never gate PSeq result release."
+          "text": "After placing the standard order or accepting the manual quote, return to Samples and shipping. Use + Add within the appropriate source group to enter samples individually, or Download CSV template and Import sample list to enter the complete list together. Import is available only while the list is empty; remove all entries first if you need to start again with a CSV. Download CSV template remains available after samples are entered. The CSV accepts exactly customer_sample_id, biological_source, and tube_count; it does not accept barcodes. Previewing a CSV does not change the Job. Confirming a valid preview saves the complete list as one operation. Samples are grouped by Biological source. Each heading shows the entered and accepted sample counts, including sources with no entries yet. These counts measure samples, not tubes. Long lists scroll within the sample area, with the current group heading kept visible; the overall count and main controls stay above the list. Each sample appears in a compact row within its group. Use its pencil icon to Edit sample or its trash-can icon to Remove sample; hovering or focusing the icon shows its label and sample ID. Removal requires confirmation. After finalization, Expected indicates that the lab has not received the sample. This routine status is hidden while preparing the list; other statuses remain visible. In Add sample or Edit sample, use a Customer sample ID unique to the Job and enter Quantity (tubes) as a positive whole number. Add sample inherits the source from the group where you selected + Add, so there is no source field to complete. A group's Add button is disabled when its accepted count is reached or the overall list is full. In Edit sample, you can correct the biological source by selecting another accepted source with room. Do not enter patient names or direct identifiers. Closing an edited form asks before discarding its unsaved changes. If an existing group exceeds its accepted count, such as 2 of 1, it shows a red warning. Its samples remain available to review and correct. Edit a sample's source only when another accepted source accurately describes it and has room, or remove an extra entry with confirmation. Samples with a source outside the accepted list are also shown for correction. The list cannot be finalized until its total and every source count match the accepted scope. Do not ship physical samples before the order is commercially committed and the exact roster is finalized. An early or unmatched package is quarantined and escalated by Phaeno; it is not accessioned or attached to active Job work. The final list must contain exactly the accepted number of unique non-PHI sample IDs, match every accepted source-group count, and give each sample a positive whole-number tube count. A green check beside the overall counter means the total and source counts are complete; it does not finalize the list. Select Review and finalize list. The review follows the same biological-source grouping as the sample area. Both views sort sample IDs in natural numeric order within each group, such as TEST-2 before TEST-10. The review shows source counts and the overall sample and tube totals. Review every sample and affirm the no-PHI confirmation before selecting Finalize sample list. Finalization authorizes the specimen-specific Lab work and opens shipment preparation. In Return kit and shipment, open the related shipment. Choose compatible containers using the recommendation or the sizes and quantities you have. Each nonempty container becomes a separate shipment; a sample's tubes may be split across them. Scan each permanent Phaeno-supplied tube barcode into its displayed slot. The first scan connects the registered, dispatched kit to that shipment. Review and print a manifest for each package, then record its carrier details after it leaves your organization. Each manifest distinguishes its contents from tubes in other shipments or still awaiting a container. Back to lab job returns to the owning Job. See Prepare and ship samples for the complete packing and scanning steps. The Portal tracks receipt, accessioning, processing, external sequencing, data processing, scientific review, holds, and readiness for release. A job can remain in progress while different samples move through laboratory work. If Phaeno needs replacement material or clarification, the job shows a Customer-safe action and the current schedule health. Internal scientific investigation details are not shown. Ready for release means Phaeno's scientific review is complete and the final deliverable package is complete, checksummed, and malware-clean. It does not mean a file is downloadable until an authorized Result Release Manager publishes that sample. Invoice balance and credit status never gate PSeq result release."
         },
         {
           "heading": "Understand turnaround",
@@ -433,7 +443,7 @@
         {
           "heading": "Find and resume work",
           "anchor": "find-and-resume-work",
-          "text": "Search and filter by status, dates, or Submitted by me. Previous and Next show the complete matching result set. Opening a Job and returning keeps the filters and page. Clear all removes them. An empty filtered result is distinct from a failed load; use Retry records when loading fails."
+          "text": "Search and filter by status, dates, or Submitted by me. Previous and Next show the complete matching result set. From a Job, select Back to lab services to return with the filters and page retained. Clear all removes them. An empty filtered result is distinct from a failed load; use Retry records when loading fails."
         }
       ]
     },
@@ -515,9 +525,9 @@
       "locale": "en-US",
       "slug": "sample-shipping",
       "title": "Prepare and ship samples",
-      "summary": "Match each Phaeno-supplied tube to a finalized sample tube slot, retain the crosswalk, and ship the package.",
+      "summary": "Choose containers for finalized tubes, scan each tube, and track separate shipments and split-sample manifests.",
       "order": 35,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -543,22 +553,37 @@
       "publicationStatus": "published",
       "id": "customer/en-US/sample-shipping",
       "route": "/docs/customer/sample-shipping",
-      "contentHash": "505caeb070a6986b300b9b3a369044e8ca65ef0ab289d3dfdbb0fa73696768f8",
+      "contentHash": "54d0e338444fcef533e283ca639fe18cbbf0b7a42d353470320b4c64e46cc2a1",
       "sections": [
         {
           "heading": "Prepare and ship samples",
           "anchor": "prepare-and-ship-samples",
-          "text": "For a normal Lab Service Job, sample entry begins after the price is accepted. Shipping and laboratory authorization begin after the exact sample list is finalized. Open the owning Job under Lab services, then use Samples and shipping → Return kit and shipment to open the return kit, expected tube slots, destination, and packet status."
+          "text": "For a normal Lab Service Job, sample entry begins after the price is accepted. Shipping and laboratory authorization begin after the exact sample list is finalized. Open the owning Job under Lab services, then use Samples and shipping → Shipping containers. An organization administrator or an administrator of the selected Department prepares containers, matches tubes, confirms packets and records dispatch. Members can review the shipments available to their Department."
         },
         {
-          "heading": "Keep your records connected to the tubes",
-          "anchor": "keep-your-records-connected-to-the-tubes",
-          "text": "Each Phaeno-supplied tube has a permanent manufacturer barcode. Your organization or department administrator scans or enters that barcode beside the correct Customer sample and tube slot before anything is shipped. A sample may own more than one slot, shown as Tube 1 of N. Use a stable, non-PHI identifier that your organization can connect to its own sample record. Do not enter a patient name, medical-record number, date of birth, or other direct identifier. Phaeno preserves the tube-to-sample crosswalk in the Portal and in the shipment packet. Download the CSV or print the packet for your records. Your organization remains responsible for knowing what its Customer sample identifier means; Phaeno is responsible for retaining the identifier-to-tube association used for shipping and intake. If the wrong tube was assigned, an organization or department administrator can scan the replacement tube and record why the assignment changed. The earlier association remains in history. If a packet was already confirmed, saving the correction before shipment voids that packet and issues a corrected revision; destroy any unused copy of the old packet and print the replacement. Do not cover, alter, or remove the manufacturer barcode."
+          "heading": "Order and receive transportation kits",
+          "anchor": "order-and-receive-transportation-kits",
+          "text": "Open Choose containers for the tubes awaiting containers. If no usable kits are recorded, use Order transportation kits. The confirmation starts with the recommended kit sizes and quantities and your Department's default delivery location, when one is saved. Review the delivery address, then select Confirm kit order. Transportation kits and outbound delivery are included with the accepted laboratory order at no additional charge. Use Add a delivery location or Manage delivery locations when an address needs setup or correction. Delivery locations belong to your organization and Department. Administrators can maintain them from the Department workspace. The confirmed order retains the address shown at confirmation even if the saved location changes later. Kits ordered means Phaeno has received the order for fulfillment. Reopening the page or repeating the same confirmation does not place a second order. An order can be cancelled before any of its kits are dispatched. Once dispatched, the kit number, carrier and tracking appear as On the way. This is provisional inventory and is not yet available for preparing samples. When the kits arrive, select Confirm kits received and acknowledge only those you have actually received. Each acknowledged kit becomes available for sample preparation. If delivery is partial, use the received kits while the remaining kits stay outstanding. An organization or Department administrator records receipt; ordinary members can review the status. The recorded inventory covers kits supplied for this Job and delivery location. An absent inventory record does not prove there are no physical kits on site. I already have kits retains the existing preparation route when no outstanding kit order blocks it; Phaeno must have registered those physical kits and their permanent tube barcodes before they can be used."
         },
         {
-          "heading": "Confirm and ship",
-          "anchor": "confirm-and-ship",
-          "text": "Assign exactly one registered tube from the displayed return kit to every expected tube slot. Confirm the crosswalk only after checking every row. The Portal then freezes the destination, instructions, manifest, packet barcode, and tube-to-sample crosswalk for that packet revision. Print the full packet. Follow the preparation and packing instructions, place the manifest inside the package, and use the ship-to page with the carrier label. The Phaeno packet barcode does not buy postage and is not a tube barcode. Confirmation shows both the number of samples and the number of tubes. View packet checks the current revision before offering Print packet; reconnect or use Try again if it cannot be checked. A correction or replacement refreshes the packet. If saving fails, the message appears in the open dialog and your entries stay available for review. After handing the package to the carrier, record the carrier, tracking number, and shipment time in the related shipment. Record it once; the Job shows the same shipping facts for its samples. If a tube cannot be matched confidently or its barcode will not scan, stop and contact Phaeno instead of guessing. Use Back to lab job for the owning Job or All shipments for your authorized shipment list."
+          "heading": "Choose the containers you have",
+          "anchor": "choose-the-containers-you-have",
+          "text": "After confirming kit receipt, use Prepare samples to choose containers. The Portal recommends compatible sizes using the fewest containers, then the least spare capacity. Each size shows its common name, SKU number and usable tube capacity. A recommendation does not reserve materials or prove that unrecorded kits are available. Use Adjust containers to enter the number of each size you will use. You may also enter Available to you as an upper limit; leave it blank when unknown, or enter zero to exclude a size. Use recommendation for these quantities recalculates within those limits. Another compatible choice needs no approval or explanation. For example, when configured sizes permit 30 tubes, one 20-tube and one 10-tube container, two 20-tube containers, or six 5-tube containers are all valid. The preview shows tubes, containers, usable capacity, spare slots and unallocated tubes. Confirm containers creates a shipment for each container that has allocated tubes. Empty containers do not become shipments. If there is insufficient capacity, the exact shortfall remains visible; Prepare available containers prepares the allocated tubes while the others remain awaiting containers. Spare slots are empty capacity, not missing samples. A sample's tubes may be split among shipments. Container choices do not change accepted sample counts or pricing. Assigned tubes and confirmed packets are not silently rearranged if configuration changes. Contact Phaeno when existing assignments or a dispatched shipment need reconciliation. Tubes in each container lets you adjust the distribution, such as 15 + 15 across two 20-tube containers. Each count must fit its container, and the combined count must equal the tubes allocated in the preview. Enter zero for a selected container you will leave empty; it will not create a shipment."
+        },
+        {
+          "heading": "Scan and retain tube identities",
+          "anchor": "scan-and-retain-tube-identities",
+          "text": "Use a stable Customer sample ID that your organization can connect to its own sample record. Do not enter patient names, medical-record numbers, dates of birth or other direct identifiers. Open a prepared shipment and work through Scan tubes into this shipment. For the displayed sample and tube number, scan its permanent manufacturer barcode and press Enter or Save scan. A successful match displays the exact saved number and barcode graphic, updates progress, and moves focus to the next tube. Each match is saved separately, so returning later resumes at the next unmatched tube. Long lists have Previous tubes and Next tubes controls. Use registered tubes from a fulfilled kit supplied for this Job. The first successful scan connects the physical kit to the selected container; its remaining tubes must come from that same kit. An unknown, ineligible, duplicate or already-used barcode cannot advance the step. A failed scan keeps the entered value and current sample available for correction and retry. Do not cover, alter or remove the manufacturer barcode. If the wrong tube was assigned, use Change tube or Correct tube and record why the assignment changed. The earlier association remains in history. A correction after packet confirmation, but before dispatch, voids that packet and issues a corrected revision. Destroy unused copies of the old packet and print the replacement."
+        },
+        {
+          "heading": "Confirm each shipment and print its packet",
+          "anchor": "confirm-each-shipment-and-print-its-packet",
+          "text": "Review every physical tube in the container, then select Review and confirm packet. Confirmation shows separate sample and tube counts and freezes the destination, instructions, manifest and crosswalk for that revision. A container can be partly filled when all its declared tubes are matched; spare capacity does not require extra tubes. Print the full packet and follow its preparation and packing instructions. Put that container's manifest inside the package. It includes the frozen container name, SKU and capacity, distinct order, shipment and sample barcodes, and every permanent tube barcode for its physical contents. A split sample shows how many of its total tubes are inside, with other shipment references or unallocated tubes listed separately. Those references reflect the confirmed revision; the Portal shows current progress. Scanning a printed identifier does not prove physical receipt. View packet checks the current revision before offering Print packet. Reconnect or use Try again if it cannot be checked. If confirmation fails, the message appears in the open dialog and your entries remain available. Retain the packet or Crosswalk CSV so your organization can connect its own identifiers to the permanent tubes. The packet does not buy postage or replace the carrier label."
+        },
+        {
+          "heading": "Record dispatch and follow receipt",
+          "anchor": "record-dispatch-and-follow-receipt",
+          "text": "After handing each package to the carrier, record its carrier, tracking number and shipment time. Repeat for each physical shipment. Receipt progress shows tubes received per shipment, across the Job and for each sample. A sample split across containers remains partly received until all its expected tubes have been recorded; receiving the first package does not mark the entire sample received. Use Back to lab job for the owning Job or All shipments for your authorized list. If a tube cannot be matched confidently, a printed barcode cannot be read, or there is no compatible container, contact Phaeno with the Job and shipment references instead of guessing."
         }
       ]
     },
@@ -668,7 +693,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -693,7 +718,7 @@
       "publicationStatus": "published",
       "id": "partner/en-US/account-and-access",
       "route": "/docs/partner/account-and-access",
-      "contentHash": "17158bde3712ff7ff6d336dead0c3d2399144167fba0b77db4e4dab789ad9745",
+      "contentHash": "07f86317b7797e8af8c27e7ca7e78a7e00858925801a9e0c2275a31bd4036b00",
       "sections": [
         {
           "heading": "Account and access",
@@ -703,7 +728,7 @@
         {
           "heading": "Accept an invitation",
           "anchor": "accept-an-invitation",
-          "text": "Open the newest invitation link sent for your Partner organization. Sign in with the same email address that received the invitation. Review the organization, your name, and the offered role. Accept or decline the invitation. The invitation page shows the email address currently signed in. If it is not the invited email, choose Sign out and use invited email, then sign in with the correct account. The invitation remains available in that browser while you switch accounts, and the identity service returns you to the invitation page after sign-in or account creation. Invitation links are private. A link can expire, be revoked, or be replaced by a newer invitation. If it is unavailable, ask your Partner administrator or Phaeno to send a new invitation. The portal does not collect or reset your sign-in password. Use the account recovery offered by the identity service on the sign-in page."
+          "text": "Open the newest invitation link sent for your Partner organization. Review your name, organization, and invited email on the invitation page. Select Continue with your email. This goes directly to verification for the invited address; the email cannot be edited. Complete any required password or authenticator steps. Select Accept invitation to join, or Decline invitation. Known names do not need to be entered again. After accepting, the welcome message confirms your organization. Select Open Portal to continue. When creating your password, enter it once and use Show password or Hide password to check your entry. The invitation page shows the email address currently signed in. If it is not the invited email, choose Switch account, then sign in with the correct account. The invitation remains available in that browser while you switch accounts, and the identity service returns you to the invitation page after sign-in or account creation. Invitation links are private. A link can expire, be revoked, or be replaced by a newer invitation. If it is unavailable, ask your Partner administrator or Phaeno to send a new invitation. The identity service handles password verification and recovery. Complete the secure sign-in steps shown in Portal, and use Forgot password? when offered to recover access."
         },
         {
           "heading": "Protect your account",
@@ -713,7 +738,7 @@
         {
           "heading": "Confirm the current Partner organization",
           "anchor": "confirm-the-current-partner-organization",
-          "text": "The user menu shows the organization active in your current session. That organization controls the offerings, negotiated prices, addresses, orders, assembly requests, data grants, and users you can see. Self-service switching between multiple external organization memberships is not currently available. If the wrong organization is shown, stop before opening or creating work and contact Phaeno. Information and commercial terms never carry from one Partner organization to another."
+          "text": "The header shows the organization active in your current session. That organization controls the offerings, negotiated prices, addresses, orders, assembly requests, data grants, and users you can see. Self-service switching between multiple external organization memberships is not currently available. If the wrong organization is shown, stop before opening or creating work and contact Phaeno. Information and commercial terms never carry from one Partner organization to another."
         },
         {
           "heading": "Work within a department",
@@ -875,7 +900,7 @@
       "title": "Getting started",
       "summary": "Find reagent orders, Assembly requests, curated data, and retained Trials in the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -894,7 +919,7 @@
       "publicationStatus": "published",
       "id": "partner/en-US/getting-started",
       "route": "/docs/partner/getting-started",
-      "contentHash": "7c8150a5f6fc1b65b0db3ec04b216365209e370fc7b362a6b164e12cfd63902e",
+      "contentHash": "628dac0236ddbf41ac72d8f70fb4f37f64ed47ff28aa598ef7a99f155e89c6c8",
       "sections": [
         {
           "heading": "Getting started",
@@ -909,7 +934,7 @@
         {
           "heading": "Confirm the current Partner organization",
           "anchor": "confirm-the-current-partner-organization",
-          "text": "The user menu shows the organization active in your current session. Prices, offerings, requests, files, and permissions always come from that organization. A Partner cannot see another Partner’s negotiated prices or work. Self-service switching between multiple external organization memberships is not currently available. If the wrong organization is active, or your account belongs to more than one external organization, contact Phaeno before continuing."
+          "text": "The header shows the organization active in your current session. Prices, offerings, requests, files, and permissions always come from that organization. A Partner cannot see another Partner’s negotiated prices or work. Self-service switching between multiple external organization memberships is not currently available. If the wrong organization is active, or your account belongs to more than one external organization, contact Phaeno before continuing."
         },
         {
           "heading": "Know your access level",
@@ -948,9 +973,9 @@
       "locale": "en-US",
       "slug": "lab-services",
       "title": "Use Partner Lab services",
-      "summary": "Review configured Lab Service pricing, place a Partner-owned Job, then finalize and ship samples.",
+      "summary": "Review pricing, place a Partner-owned Job, finalize samples, and choose containers and manifests for each shipment.",
       "order": 25,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [
@@ -976,7 +1001,7 @@
       "publicationStatus": "published",
       "id": "partner/en-US/lab-services",
       "route": "/docs/partner/lab-services",
-      "contentHash": "f40aa4245dc15bcca6defdde257575390e38b14f749abf2ae728c4b11d330a12",
+      "contentHash": "5394fcfa6ed56b3ce5588b6ea382f9bd0a159489ff022199e54176704e3763da",
       "sections": [
         {
           "heading": "Use Partner Lab services",
@@ -1006,12 +1031,17 @@
         {
           "heading": "Review and accept a quote",
           "anchor": "review-and-accept-a-quote",
-          "text": "Laboratory services are priced per job. Phaeno issues an itemized, immutable Portal quote for the accepted scope. When your approved billing and tax information is available, the quote includes calculated tax and freezes those commercial terms. Otherwise the quote is labeled Pre-tax total, and applicable tax is calculated when the invoice is issued. A zero tax amount is valid for an exempt, non-taxable, or zero-rate determination. The quote is available after all non-billing readiness items are complete and a Partner administrator is active; billing must be complete before invoicing. Before accepting, confirm the committed sample count, biological-source composition, standard service scope, price, currency, expiration date, and whether the displayed amount includes tax or is pre-tax. A Partner organization administrator or an administrator of the selected Department can accept the current unexpired quote. If the scope changes after acceptance, Phaeno issues a separate change quote. Added work does not begin until the applicable change is accepted. If accepting, withdrawing, or requesting cancellation fails, review the message in the open dialog. Your entries remain available to correct and retry. Closing the dialog does not confirm the action. You are asked before discarding changed entries. While saving, the dialog stays open and its entries and actions are unavailable until the save finishes."
+          "text": "In Quote and billing, select Download quote PDF to save a Phaeno-branded copy of the displayed quote for your Partner organization. It includes the Job, quote revision and dates, itemized prices, and any billing details and payment terms saved with that quote. Members can download quotes for their assigned Department; downloading does not accept a quote. If the download fails, select Download quote PDF again to retry. Laboratory services are priced per job. Phaeno issues an itemized, immutable Portal quote for the accepted scope. When your approved billing and tax information is available, the quote includes calculated tax and freezes those commercial terms. Otherwise the quote is labeled Pre-tax total, and applicable tax is calculated when the invoice is issued. A zero tax amount is valid for an exempt, non-taxable, or zero-rate determination. The quote is available after all non-billing readiness items are complete and a Partner administrator is active; billing must be complete before invoicing. Before accepting, confirm the committed sample count, biological-source composition, standard service scope, price, currency, expiration date, and whether the displayed amount includes tax or is pre-tax. A Partner organization administrator or an administrator of the selected Department can accept the current unexpired quote. If the scope changes after acceptance, Phaeno issues a separate change quote. Added work does not begin until the applicable change is accepted. Accept quote, Decline quote, and Download quote PDF are grouped beneath the quote total. Declining a quote closes the entire request; the confirmation explains this before you proceed. Before a quote is available, use Withdraw request to close your request. After acceptance, use Request cancellation for Phaeno review. When declining, choose a reason: Our needs changed, Cost is too high, Selected another vendor, Prefer not to say, or Other. Only Other requires an explanation in the multiline Please explain field. The selected reason is recorded with the request closure. If accepting, declining, withdrawing, or requesting cancellation fails, review the message in the open dialog. Your entries remain available to correct and retry. Closing the dialog does not confirm the action. You are asked before discarding changed entries. While saving, the dialog stays open and its entries and actions are unavailable until the save finishes."
+        },
+        {
+          "heading": "Expired quotes and extension requests",
+          "anchor": "expired-quotes-and-extension-requests",
+          "text": "An unaccepted Partner Lab Service quote shows Expired and its expiration date once its deadline passes. Accept quote is beside Quote and billing for organization and department administrators; it is disabled with an explanation when acceptance is unavailable. Members can review and download the quote, and should ask an administrator to accept it. For the current expired quote, an organization or department administrator can select Request extension, optionally explain why more time is needed, and submit the request. Extension requested confirms that Phaeno has the request; another request for the same quote is unnecessary. If saving fails, the dialog keeps the entered reason so you can retry. If Phaeno issues a new revision, review its price, terms and new expiration date before accepting. An extension request does not accept a quote or automatically extend its deadline. The original revision remains in the history, and its PDF stays available. An accepted quote remains Accepted when its former expiration date passes."
         },
         {
           "heading": "Ship and track samples",
           "anchor": "ship-and-track-samples",
-          "text": "After placing the standard order or accepting the manual quote, return to Samples and shipping. Use Add sample, Edit sample, and Remove sample, or Download CSV template and Import sample list. The CSV accepts exactly customer_sample_id, biological_source, and tube_count; it does not accept barcodes. Previewing a CSV does not change the Job. Confirming a valid preview atomically replaces the editable draft list. Do not ship physical samples before the order is commercially committed and the exact roster is finalized. An early or unmatched package is quarantined and escalated by Phaeno; it is not accessioned or attached to active Job work. The final list must contain exactly the accepted number of unique non-PHI sample IDs, match every accepted source-group count, and give each sample a positive whole-number tube count. Select Review and finalize list, review every sample, and affirm the no-PHI confirmation before selecting Finalize sample list. Finalization authorizes the specimen-specific Lab work and lets Phaeno prepare the registered return kit. In Return kit and shipment, open the related shipment. When the kit is fulfilled, match every physical Phaeno-supplied tube to the displayed tube slot. A sample with multiple tubes appears once per tube as Tube 1 of N, Tube 2 of N, and so on. Review the packet and record carrier details after the package leaves your organization. Record the shipment once in its packet workflow; carrier and tracking details stay connected to all included samples. Back to lab job returns to the owning Job. The Portal tracks receipt, accessioning, processing, external sequencing, data processing, scientific review, holds, and readiness for release. A job can remain in progress while different samples move through laboratory work. If Phaeno needs replacement material or clarification, the job shows a Partner-safe action and the current schedule health. Internal scientific investigation details are not shown. Ready for release means Phaeno's scientific review is complete and the final deliverable package is complete, checksummed, and malware-clean. It does not mean a file is downloadable until an authorized Result Release Manager publishes that sample. Invoice balance and credit status never gate PSeq result release."
+          "text": "After placing the standard order or accepting the manual quote, return to Samples and shipping. Use + Add within the appropriate source group to enter samples individually, or Download CSV template and Import sample list to enter the complete list together. Import is available only while the list is empty; remove all entries first if you need to start again with a CSV. Download CSV template remains available after samples are entered. The CSV accepts exactly customer_sample_id, biological_source, and tube_count; it does not accept barcodes. Previewing a CSV does not change the Job. Confirming a valid preview saves the complete list as one operation. Samples are grouped by Biological source. Each heading shows the entered and accepted sample counts, including sources with no entries yet. These counts measure samples, not tubes. Long lists scroll within the sample area, with the current group heading kept visible; the overall count and main controls stay above the list. Each sample appears in a compact row within its group. Use its pencil icon to Edit sample or its trash-can icon to Remove sample; hovering or focusing the icon shows its label and sample ID. Removal requires confirmation. After finalization, Expected indicates that the lab has not received the sample. This routine status is hidden while preparing the list; other statuses remain visible. In Add sample or Edit sample, use a Customer sample ID unique to the Job and enter Quantity (tubes) as a positive whole number. Add sample inherits the source from the group where you selected + Add, so there is no source field to complete. A group's Add button is disabled when its accepted count is reached or the overall list is full. In Edit sample, you can correct the biological source by selecting another accepted source with room. Do not enter patient names or direct identifiers. Closing an edited form asks before discarding its unsaved changes. If an existing group exceeds its accepted count, such as 2 of 1, it shows a red warning. Its samples remain available to review and correct. Edit a sample's source only when another accepted source accurately describes it and has room, or remove an extra entry with confirmation. Samples with a source outside the accepted list are also shown for correction. The list cannot be finalized until its total and every source count match the accepted scope. Do not ship physical samples before the order is commercially committed and the exact roster is finalized. An early or unmatched package is quarantined and escalated by Phaeno; it is not accessioned or attached to active Job work. The final list must contain exactly the accepted number of unique non-PHI sample IDs, match every accepted source-group count, and give each sample a positive whole-number tube count. A green check beside the overall counter means the total and source counts are complete; it does not finalize the list. Select Review and finalize list. The review follows the same biological-source grouping as the sample area. Both views sort sample IDs in natural numeric order within each group, such as TEST-2 before TEST-10. The review shows source counts and the overall sample and tube totals. Review every sample and affirm the no-PHI confirmation before selecting Finalize sample list. Finalization authorizes the specimen-specific Lab work and lets Phaeno prepare the registered return kit. In Shipping containers, open Choose containers for the tubes awaiting allocation. Review compatible sizes by common name, SKU and usable tube capacity. The recommendation prefers the fewest containers and then the least spare capacity; it does not verify or reserve stock. Adjust containers lets an organization or Department administrator select the sizes and quantities actually available. An optional Available to you quantity limits the recommendation; blank means unknown and zero excludes a size. Any compatible alternative is allowed without approval or justification. Review tubes, containers, usable capacity, spare slots and unallocated tubes. Confirm containers creates a shipment for each container with allocated tubes. Empty containers are not created. A partly filled container is valid; spare slots are not missing sample tubes. If capacity is insufficient, Prepare available containers leaves the exact outstanding tube count visible while preparing allocated tubes. Tubes from a single sample may be split across containers, without changing accepted counts or price. Tubes in each container lets you adjust the distribution, such as 15 + 15 across two 20-tube containers. Each count must fit its container, and the combined count must equal the tubes allocated in the preview. Enter zero for a selected container you will leave empty; it will not create a shipment. In a prepared shipment, work through Scan tubes into this shipment. Scan the permanent tube barcode for the current sample and tube number, then press Enter or Save scan. A successful match displays the exact saved number and barcode graphic and advances to the next tube. Each match is saved before advancing, so the workflow is resumable. Use Previous tubes and Next tubes to review long lists. Failed, unknown, ineligible, duplicate or already-used scans retain the entered value and current sample for review and retry. Use tubes from a fulfilled kit registered for this Partner Job. The first successful scan associates that physical kit with the shipping container; its other tubes must come from the same kit. Do not cover or alter permanent tube barcodes. Change tube or Correct tube requires a correction reason and preserves history. A correction to a confirmed packet before dispatch voids the old revision and issues a corrected one; destroy unused old copies. Select Review and confirm packet after verifying every declared tube. Print a separate packet for each physical container. Its frozen manifest includes the container name, SKU and capacity; distinct order, shipment and sample barcodes; and every physical tube barcode in that container. A split sample identifies its total tubes and tubes in this shipment, with other shipment references or unallocated tubes listed separately. Those references reflect the printed revision; current progress remains in the Portal. View packet verifies the current revision before enabling Print packet. Reconnect or use Try again if verification fails. Confirmation failures keep the dialog entries available. Retain the packet or Crosswalk CSV for your organization's sample records. Record each shipment's carrier, tracking number and shipment time after handoff to the carrier. Receipt progress counts tubes per shipment and across the Job; a sample stays partly received until all of its tubes are recorded. Scanning an identifier is not proof of physical receipt. Back to lab job returns to the owning Job. The Portal tracks receipt, accessioning, processing, external sequencing, data processing, scientific review, holds, and readiness for release. A job can remain in progress while different samples move through laboratory work. If Phaeno needs replacement material or clarification, the job shows a Partner-safe action and the current schedule health. Internal scientific investigation details are not shown. Ready for release means Phaeno's scientific review is complete and the final deliverable package is complete, checksummed, and malware-clean. It does not mean a file is downloadable until an authorized Result Release Manager publishes that sample. Invoice balance and credit status never gate PSeq result release."
         },
         {
           "heading": "Understand turnaround",
@@ -1026,7 +1056,7 @@
         {
           "heading": "Find and resume work",
           "anchor": "find-and-resume-work",
-          "text": "Search and filter by status, dates, or Submitted by me. Previous and Next show the complete matching result set. Opening a Job and returning keeps the filters and page. Clear all removes them. An empty filtered result is distinct from a failed load; use Retry records when loading fails."
+          "text": "Search and filter by status, dates, or Submitted by me. Previous and Next show the complete matching result set. From a Job, select Back to lab services to return with the filters and page retained. Clear all removes them. An empty filtered result is distinct from a failed load; use Retry records when loading fails."
         }
       ]
     },
@@ -1208,9 +1238,9 @@
       "locale": null,
       "slug": "configuration-and-recovery",
       "title": "Configuration and file retention",
-      "summary": "Maintain reusable defaults, services, analyses, Partner rules, sample shipping, and released-file retention.",
+      "summary": "Maintain reusable defaults, services, analyses, Partner rules, shipping container sizes and compatibility, and released-file retention.",
       "order": 60,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "platform-operations",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1236,7 +1266,7 @@
       "publicationStatus": "published",
       "id": "phaeno/configuration-and-recovery",
       "route": "/docs/phaeno/configuration-and-recovery",
-      "contentHash": "1f31ce6d560d16f4256a0de98752f256b607666b4ff4a29e5e5b0f718da75b49",
+      "contentHash": "6f1fed6f0baef63eac21ffca1a98b6df2164733370816c05a130721573d48b39",
       "sections": [
         {
           "heading": "Configuration and file retention",
@@ -1261,7 +1291,7 @@
         {
           "heading": "Maintain sample-shipping configuration",
           "anchor": "maintain-sample-shipping-configuration",
-          "text": "Use Sample shipping to maintain three controlled record sets: ship-to destinations with the full address, receiving team, receiving hours and time zone, closure guidance, delivery directions, and carrier restrictions; sample types with material, quantity, primary-container, temperature, packaging, customer-label, prohibited-identifier, safety, and transit requirements; and one instruction rule for an exact destination revision and sample-type revision, including compatibility grouping, packing, carrier, dispatch, delivery, required-document, exception, and optional customs instructions. New records default to inactive. Activate a revision only after the address and scientific and operational instructions are approved. Selecting Create revision copies the current content into a new record and ends the prior revision when the new revision becomes effective; it does not rewrite history or any packet snapshot already issued. Use Instruction preview before operational use. Select an exact destination revision, one or more sample-type revisions, and the time to evaluate. POMS displays the full resolved ship-to and detailed preparation instructions. If a required combination rule is missing, compatibility groups differ, or a type requires its own package, POMS blocks a combined preview so the work can be corrected or split. This configuration is shared infrastructure only. It does not create a Prospect Trial Project, grant a Customer promotion, place an order, or activate any real destination or sample type on its own. Return-kit fulfillment is operated from Lab Ops. Orders and Trials link to their own kit and shipment. The fulfillment record preserves shipper product/lot facts, the exact registered supplier-tube inventory, and outbound tracking. The current Corning vial and Therapak shipper values are pilot candidates only; activate real work only after representative tubes, shipper fit, returned volume, seal, freezing, dry-ice handling, barcode scanning, and degraded-mode procedures pass the physical validation gate."
+          "text": "The ship-to destinations in this configuration are laboratory receiving locations for samples sent to Phaeno. Customer delivery addresses for outbound kits are maintained separately under the Customer's Departments & services → Delivery locations. Confirmed kit orders retain their saved address even when a delivery-location record changes later. Use Sample shipping to maintain four controlled record sets: ship-to destinations with the full address, receiving team, receiving hours and time zone, closure guidance, delivery directions, and carrier restrictions; sample types with material, quantity, primary-container, temperature, packaging, customer-label, prohibited-identifier, safety, and transit requirements; one instruction rule for an exact destination revision and sample-type revision, including compatibility grouping, packing, carrier, dispatch, delivery, required-document, exception, and optional customs instructions; and container sizes with a required SKU, common name, approved usable tube capacity, exact compatible sample-and-rule choices, supplier product references, packing instructions, effective dates, and display order. New records default to inactive. Activate a revision only after the address and scientific and operational instructions are approved. Selecting Create revision copies the current content into a new record; it does not rewrite history or any packet snapshot already issued. A new active revision replaces its predecessor when it becomes effective. The Container sizes list supports search and status filtering. Open a common name to review its details and revision history. Use Add container size or Create revision for bounded changes. The SKU stays fixed across revisions, including leading zeros and separators. Saving an inactive container revision creates a draft and leaves the preceding active revision available. To stop an active revision from future selection, open its detail page and choose Actions → Deactivate revision. Existing kits and manifests retain the container facts recorded when they were prepared. In the size editor, expand Supplier and packing for optional product references and packing instructions. Existing details and validation errors open that section automatically. Availability groups the effective dates and activation setting. Use Preview recommendation to enter a tube count, select the exact sample and handling context, and optionally enter available quantities. Blank quantities mean availability is unknown; zero excludes that size. The result favors fewer containers, then less unused capacity, and shows any unallocated tubes. A preview from a container detail page can include that draft revision. Previewing does not reserve stock, create a shipment, or estimate shipping cost. Use Instruction preview before operational use. Select an exact destination revision, one or more sample-type revisions, and the time to evaluate. POMS displays the full resolved ship-to and detailed preparation instructions. If a required combination rule is missing, compatibility groups differ, or a type requires its own package, POMS blocks a combined preview so the work can be corrected or split. This configuration is shared infrastructure only. It does not create a Prospect Trial Project, grant a Customer promotion, place an order, or activate any real destination or sample type on its own. Prepare and register Standard kits in Lab operations → Receipt & accession before assigning them to Customer Jobs. Staff choose a configured container size, record the actual tube and shipper products, register the full configured tube capacity, and then record outbound dispatch. Previously prepared shipment-specific kits remain in Existing return kits. These records retain product and lot facts, permanent tube identities, and outbound tracking. Qualify the physical tubes, container fit, seals, temperature handling, and readable barcodes before using a container size operationally."
         },
         {
           "heading": "Maintain released-deliverable retention",
@@ -2535,9 +2565,9 @@
       "slug": "lab-receipt-accession",
       "parentSlug": "lab-operations",
       "title": "Receipt and accession",
-      "summary": "Match a packet and registered tube, continue to explicit receipt and accession, and preserve container lineage.",
+      "summary": "Prepare and dispatch standard kits, locate shipments by barcode, and record receipt and accession for each registered tube.",
       "order": 51,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -2574,7 +2604,7 @@
       "publicationStatus": "published",
       "id": "phaeno/lab-receipt-accession",
       "route": "/docs/phaeno/lab-receipt-accession",
-      "contentHash": "23b7d008915bf62cf6323431605a233d60c61d41ea84cf2679f2c8d14141bbcf",
+      "contentHash": "2c58d80e1bd7b547ecf6334f9fa04058aa1adc8bc745cdf0dab6f4016c3b6845",
       "sections": [
         {
           "heading": "Receipt and accession",
@@ -2582,9 +2612,19 @@
           "text": "Receipt and accession connect the Customer’s submitted specimen identity to the physical material handled in the laboratory. Record these steps in sequence and never create an unlinked laboratory specimen."
         },
         {
+          "heading": "Fulfill Customer transportation-kit orders",
+          "anchor": "fulfill-customer-transportation-kit-orders",
+          "text": "Open Lab operations → Receipt & accession → Kit requests to review Customer transportation-kit orders. New orders notify Phaeno administrators for fulfillment. Open a request to review its Customer, Department, Job, requested sizes and quantities, and the delivery address saved when the Customer confirmed. Transportation kits and outbound delivery are included with the accepted laboratory order; this action creates no additional quote, invoice or payment step. Use Fulfill request to choose matching, fully registered physical kits and record the carrier, tracking number and dispatch time. If there is insufficient prepared stock, prepare and register more standard kits before dispatch. A partial dispatch leaves the remaining requested quantities outstanding. The kit order and saved delivery address remain linked to each dispatched kit. Dispatch adds those kits to the Customer's provisional inventory as On the way. The Customer acknowledges the kits that arrive, moving them to Available and enabling sample preparation with those kits. Customer acknowledgment is separate from the laboratory's later receipt of returned samples. Kits not yet acknowledged remain unavailable for the new request-based sample-shipping workflow. Maintain delivery locations from the Customer's Departments & services workspace or the Department's delivery-location screen. They belong to the Customer and Department, and are separate from global lab receiving destinations. Changing a saved location does not rewrite a confirmed kit order's delivery address."
+        },
+        {
+          "heading": "Prepare and send standard kits",
+          "anchor": "prepare-and-send-standard-kits",
+          "text": "Open Lab operations → Receipt & accession → Standard kits. Search by kit number, size, SKU, or Customer Job, or filter by preparation and dispatch status. Open the kit number to review its products, registered tubes, and outbound tracking. Choose Prepare standard kit, select an active configured container size, and record the actual tube supplier, product, optional lot, and shipper product. The configured size supplies the usable tube capacity and available shipper references. A new kit does not yet belong to a Customer Job. Open the kit and choose Register tubes. Scan each permanent supplier barcode on its own line. A kit must contain exactly its full configured tube capacity before dispatch; duplicate scans and excess tubes are rejected. When the kit is full, choose Record dispatch, select the receiving Customer Job, and enter the carrier, tracking number, and dispatch time. The dispatched tube membership is frozen. The customer's first scan of a matching kit binds it to the selected physical return container. Sent to customer means dispatch was recorded; Assigned to return container means the kit was subsequently bound to a return shipment. For new transportation-kit orders, the linked request also tracks customer receipt and distinguishes provisional from available stock at the saved delivery location. Legacy stock dispatch without a kit order does not establish those location balances. Complete older shipment-specific kits through Existing return kits. Use the configuration workflow to qualify or revise container sizes rather than changing a kit's capacity."
+        },
+        {
           "heading": "Record receipt",
           "anchor": "record-receipt",
-          "text": "Open the authorized Lab work order and confirm the expected submitted specimen, service, and Customer-safe identifiers. Record when and where the physical item arrived and any intake observation permitted by the approved procedure. Receipt does not accept the specimen for processing. It establishes custody and allows accession to begin. If the physical item cannot be matched safely to the expected specimen, stop and record an exception rather than guessing. When an incoming package includes a Phaeno shipment packet, open Lab operations > Receipt & accession and scan the packet and each registered supplier tube first. That comparison identifies the exact expected sample and linked Lab work but does not record receipt. After a tube matches, choose Continue to receipt and accession. POMS carries the packet and tube into the work order, checks them again, and shows the matched Customer sample. Record receipt, then confirm accession in the next dialog. The known sample label, tube quantity and unit, packet, tube barcode, and recorded location are carried forward for review. The packet barcode is not a specimen or container barcode and must not be copied into an accession or container field."
+          "text": "Open the authorized Lab work order and confirm the expected submitted specimen, service, and Customer-safe identifiers. Record when and where the physical item arrived and any intake observation permitted by the approved procedure. Receipt does not accept the specimen for processing. It establishes custody and allows accession to begin. If the physical item cannot be matched safely to the expected specimen, stop and record an exception rather than guessing. When an incoming package includes a Phaeno shipment packet, open Lab operations > Receipt & accession and scan the packet and each registered supplier tube first. That comparison identifies the exact expected sample and linked Lab work but does not record receipt. After a tube matches, choose Continue to receipt and accession. POMS carries the packet and tube into the work order, checks them again, and shows the matched Customer sample. Record receipt, then confirm accession in the next dialog. The known sample label, tube quantity and unit, packet, tube barcode, and recorded location are carried forward for review. The packet barcode is not a specimen or container barcode and must not be copied into an accession or container field. The Shipping barcode field also accepts the Customer Job, sample, and shipment identities printed on a manifest. A Job or sample lookup lists its related shipments; choose Open manifest to compare that shipment's tubes. Lookup alone never records custody, receipt, or accession. A shipment without a confirmed manifest is shown as such and cannot start manifest-based comparison."
         },
         {
           "heading": "Accession the specimen",
@@ -3036,7 +3076,7 @@
       "publicationStatus": "published",
       "id": "phaeno/order-operations",
       "route": "/docs/phaeno/order-operations",
-      "contentHash": "de3616f50af4ad56a92db3752f09beb1070dfa14013854b74d4cd34eafd63e8e",
+      "contentHash": "cfd0c85e1f5258fb509ec2301071cda35320b5aadb07246b17d83080aecdf1e7",
       "sections": [
         {
           "heading": "Order operations",
@@ -3047,6 +3087,11 @@
           "heading": "Enter and find orders",
           "anchor": "enter-and-find-orders",
           "text": "Order intake covers Customer and Partner commercial requests through review, pricing, quote issuance, and Customer acceptance. Held orders remain in active intake. Use On hold to focus on blockers and All orders and history to find accepted, completed or cancelled work. Laboratory execution continues in Lab Ops. PSeq kits shows commercial status and opens the same order in Lab Ops for review, substitutions, backorders, shipments and fulfillment. Assembly shows commercial context and opens the same request in Lab Ops for processing, quality review and output release. Attention owns invitation, readiness, staged-order, projection/scan, unreleased-result, overdue-invoice, unapplied-cash, and reconciliation-difference exceptions. Result release publishes a scientifically approved, complete PSeq package per sample without a payment gate. Finance owns PSeq invoices, receipts/import, explicit allocation, aging, and reconciliation. Legacy integrations covers retained accounting-connector and notification recovery outside the active native PSeq AR workflow. Search Order intake by order, Job, Company, or request number. Order search runs across all matching records, with 25 orders per page. Pending CRM handoffs appear on the first active-intake page. The view, search and page stay in the address so you can return to the same queue. Clear filters restores active intake. A PSeq Lab Service row identifies an optional proposed price so Commercial users can find pricing decisions without opening every record. On the order, Review proposed price compares the proposed USD price per specimen with the active catalog price, requested quantity, difference, and subtotal. Approve price and issue quote preserves the proposal unchanged; Amend price and issue quote requires an internal reason. Tax is system-calculated: include and freeze it when the billing and tax profile is complete and Finance-approved, or issue an explicitly pre-tax quote and calculate tax at invoicing. The issued quote, not the proposal, is the offer a Customer administrator may accept. The operational detail shows the current quote value, revision, and status. Internal context in the audit timeline explains Phaeno-only decisions; it is informational, not a Customer-facing warning. Assign an owner and due date when the workflow supports them. A queue assignment coordinates work; it does not grant authorization or change the workflow state."
+        },
+        {
+          "heading": "Review quote extension requests",
+          "anchor": "review-quote-extension-requests",
+          "text": "An Extension requested marker in active Order intake identifies a Lab Service quote that needs review. Open the Job to read the request and its optional reason. A Phaeno user with Order Operations access and quote-issuance authority can select Review extension to prepare a new quote revision. Reissue quote is also available while an issued manual quote awaits the organization's decision. Reissuing starts with the saved quote's line items and unit prices. Review them, choose a future expiration date, and issue the new revision through the normal commercial review. POMS checks that the source quote and Job are still current. Successful issuance resolves the extension request and supersedes the old quote while preserving its original facts. The organization receives the normal quote-ready notice and must review and accept the new revision separately. A request never changes the old deadline or grants automatic acceptance."
         },
         {
           "heading": "Review configured bundles",
@@ -3155,7 +3200,7 @@
       "title": "Company access and user administration",
       "summary": "Manage Company access, staged Department readiness, service entitlements, invitations, and membership lifecycle.",
       "order": 25,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "platform-operations",
       "contentType": "guide",
       "topicIds": [
@@ -3180,7 +3225,7 @@
       "publicationStatus": "published",
       "id": "phaeno/organization-and-user-administration",
       "route": "/docs/phaeno/organization-and-user-administration",
-      "contentHash": "168412bb1d6e8146250e4b0fdb844516442e0a7c6f3f8302dc6bd189db7bbb5e",
+      "contentHash": "5947b2d6357f519f05c69ca5631ddfa92c6a96f8c33357f21e5a6fe19fa6b3e7",
       "sections": [
         {
           "heading": "Company access and user administration",
@@ -3205,7 +3250,7 @@
         {
           "heading": "Invite administrators and members",
           "anchor": "invite-administrators-and-members",
-          "text": "From Company detail, open People. Use New person to create and associate a Contact in one save, or Add existing person to associate an existing Contact. Select Invite to Portal and choose Organization administrator or explicit Department membership and Department-admin roles. The Contact identity is filled in; edit the Contact first if its email or name is incorrect. Assign organization-wide administrator access only when the person must govern every Department; otherwise use Department membership and grant Department administrator access only where needed. A CRM Contact remains separate from a Portal user and grants no access until the invitation is accepted. Ask the recipient to sign in with the invited email and accept the Portal invitation. Use Manage access on the person to change their Organization role, add or remove Department access, change Department-admin roles, deactivate membership, and resend or revoke a pending invitation. Each change identifies the person and consequence before confirmation. Use Edit relationship to change their Company-specific title, commercial role, or effective dates. Use Departments & services to create or rename operational units, choose the default, and record typed configuration overrides. Every Organization begins with General. Organization administrators can edit the five Organization defaults for PO, billing and notification email, shipping, and result instructions. A blank Department override inherits the Organization default, then the commercial profile or system rule. The system PO rule is not required; either level can explicitly require or waive it. Existing saved shipping and accepted-quote snapshots retain their values. Result-delivery instructions are retained with the commercial commitment, not an automatic change to storage destinations. Organization administrators can access every active Department; other users must retain at least one active Department assignment. When one business unit must not be discoverable or governed by another—or it has separate contracting, tax, legal, ownership, or retention obligations—create a separate Company/Organization instead of a Department. External Organization and Department administrators can use Departments in the user menu. Organization administrators own structure, default selection, lifecycle, organization defaults, new invitations, and organization roles. Department administrators own settings and member access only within assigned Departments. Add existing members by exact email lookup; review each assignment or role change. One person may administer Research, belong to Operations as a member, and have no Finance access. Rights remain independent in each Organization. Department changes use review dialogs. Deactivation requires affected active members to have another Department assignment and retains historical records. Reactivation does not restore revoked assignments automatically. Changing the default affects future default selections, not existing records or memberships. A conflict reloads the latest Department version while preserving your form entries for review. Contact invitation access must still be valid when the invitation is resent or accepted; if the Contact or Department changed, review and reissue the invitation. Service entitlements and curated-data packages may be organization-wide or limited to one Department. A Department-specific service entitlement takes precedence over the Organization default for that Department. In Data provisioning, choose an explicit access scope when assigning a package; users in other Departments cannot list or download that Department's grant. Users with more than one available Department select the working Department from the user menu. The header shows the Organization and Department currently in force. Do not rely on a browser URL or a previously opened page to establish access; the API validates both scopes on every protected operation. Do not create a normal membership directly. Invitation acceptance provides the user-facing consent point and the audit link between invitation, user, and membership. For an internal employee, select the Phaeno organization and open User management. Use Add Phaeno user, enter the person’s first name, last name, and exact sign-in email, and select the narrowest roles needed for their work. Grant Platform administrator only when platform-wide administration is required. The card remains marked Pending invitation until acceptance; afterward, open its actions menu and choose Edit whenever the profile or roles must change. To follow up before acceptance, find the card marked Pending invitation, open its actions menu, and choose Resend invitation. Resending rotates the private link and is subject to a cooldown. Revoke an invitation that should not be accepted."
+          "text": "When creating their password, recipients enter it once and can use Show password or Hide password to check their entry. After accepting, recipients see a welcome message naming their organization and select Open Portal to continue. The Company People view shows their Portal access as active. From Company detail, open People. Use New person to create and associate a Contact in one save, or Add existing person to associate an existing Contact. Select Invite to Portal and choose Organization administrator or explicit Department membership and Department-admin roles. The Contact identity is filled in; edit the Contact first if its email or name is incorrect. Assign organization-wide administrator access only when the person must govern every Department; otherwise use Department membership and grant Department administrator access only where needed. A CRM Contact remains separate from a Portal user and grants no access until the invitation is accepted. The invitation page shows the invited name, organization, and email before sign-in. The recipient selects Continue with their email, completes verification for that fixed address without entering or editing the email, and then selects Accept invitation. If another account is signed in, Switch account preserves the invitation while they sign in with the invited address. Viewing the invitation grants no access. Use Manage access on the person to change their Organization role, add or remove Department access, change Department-admin roles, deactivate membership, and resend or revoke a pending invitation. Each change identifies the person and consequence before confirmation. Use Edit relationship to change their Company-specific title, commercial role, or effective dates. Use Departments & services to create or rename operational units, choose the default, and record typed configuration overrides. Every Organization begins with General. Organization administrators can edit the five Organization defaults for PO, billing and notification email, shipping, and result instructions. A blank Department override inherits the Organization default, then the commercial profile or system rule. The system PO rule is not required; either level can explicitly require or waive it. Existing saved shipping and accepted-quote snapshots retain their values. Result-delivery instructions are retained with the commercial commitment, not an automatic change to storage destinations. Organization administrators can access every active Department; other users must retain at least one active Department assignment. When one business unit must not be discoverable or governed by another—or it has separate contracting, tax, legal, ownership, or retention obligations—create a separate Company/Organization instead of a Department. External Organization and Department administrators can use Departments in the user menu. Organization administrators own structure, default selection, lifecycle, organization defaults, new invitations, and organization roles. Department administrators own settings and member access only within assigned Departments. Add existing members by exact email lookup; review each assignment or role change. One person may administer Research, belong to Operations as a member, and have no Finance access. Rights remain independent in each Organization. Department changes use review dialogs. Deactivation requires affected active members to have another Department assignment and retains historical records. Reactivation does not restore revoked assignments automatically. Changing the default affects future default selections, not existing records or memberships. A conflict reloads the latest Department version while preserving your form entries for review. Contact invitation access must still be valid when the invitation is resent or accepted; if the Contact or Department changed, review and reissue the invitation. Service entitlements and curated-data packages may be organization-wide or limited to one Department. A Department-specific service entitlement takes precedence over the Organization default for that Department. In Data provisioning, choose an explicit access scope when assigning a package; users in other Departments cannot list or download that Department's grant. Users with more than one available Department select the working Department from the user menu. The header shows the Organization and Department currently in force. Do not rely on a browser URL or a previously opened page to establish access; the API validates both scopes on every protected operation. Do not create a normal membership directly. Invitation acceptance provides the user-facing consent point and the audit link between invitation, user, and membership. For an internal employee, select the Phaeno organization and open User management. Use Add Phaeno user, enter the person’s first name, last name, and exact sign-in email, and select the narrowest roles needed for their work. Grant Platform administrator only when platform-wide administration is required. The card remains marked Pending invitation until acceptance; afterward, open its actions menu and choose Edit whenever the profile or roles must change. To follow up before acceptance, find the card marked Pending invitation, open its actions menu, and choose Resend invitation. Resending rotates the private link and is subject to a cooldown. Revoke an invitation that should not be accepted."
         },
         {
           "heading": "Convert a Prospect",
@@ -3261,7 +3306,7 @@
       "publicationStatus": "published",
       "id": "phaeno/statuses-and-recovery",
       "route": "/docs/phaeno/statuses-and-recovery",
-      "contentHash": "7ebbe479ebfc71575c234b0ee91863efead9773f7702c912b38e5319b78585e9",
+      "contentHash": "0622d9ae71c3d57c7b55ac58287cf523505fafa3ca76f9d10e80267750d493f2",
       "sections": [
         {
           "heading": "Statuses and recovery",
@@ -3291,7 +3336,7 @@
         {
           "heading": "Respect retained history",
           "anchor": "respect-retained-history",
-          "text": "Expired quotes require a current quote. Cancelled work, closed Trials, withdrawn files, completed Tasks, and expired downloads retain their history; follow the applicable new request, replacement, reissue, or correction workflow. Retention holds preserve or quarantine a release without extending its dates. Escalate with the record number, status, safe error, time, and action attempted. Keep credentials, invitation tokens, patient identifiers, investigations, and scientific files out of ordinary support notes."
+          "text": "Expired quotes require a current quote. Customer and Partner organization or department administrators can request an extension of a current expired Lab Service quote. Review Extension requested in Order intake and issue a new revision when approved. Accepted quotes keep their accepted status after their former deadline. Cancelled work, closed Trials, withdrawn files, completed Tasks, and expired downloads retain their history; follow the applicable new request, replacement, reissue, or correction workflow. Retention holds preserve or quarantine a release without extending its dates. Escalate with the record number, status, safe error, time, and action attempted. Keep credentials, invitation tokens, patient identifiers, investigations, and scientific files out of ordinary support notes."
         }
       ]
     },
@@ -3375,7 +3420,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -3400,7 +3445,7 @@
       "publicationStatus": "published",
       "id": "prospect/en-US/account-and-access",
       "route": "/docs/prospect/account-and-access",
-      "contentHash": "fcbd7b6ff0ec8dee4c99fed8772eca2fd894581c0aa2bd510af279da45acaa81",
+      "contentHash": "fbfcf424e60fe7dcfea8311b8efbd1a15ab8c1d2237a4c213a2d06d7c9baad1d",
       "sections": [
         {
           "heading": "Account and access",
@@ -3410,7 +3455,7 @@
         {
           "heading": "Accept an invitation",
           "anchor": "accept-an-invitation",
-          "text": "Open the newest invitation link sent for your Prospect organization. Sign in with the same email address that received the invitation. Review the organization, your name, and the offered role. Accept or decline the invitation. The invitation page shows the email address currently signed in. If it is not the invited email, choose Sign out and use invited email, then sign in with the correct account. The invitation remains available in that browser while you switch accounts, and the identity service returns you to the invitation page after sign-in or account creation. Invitation links are private. A link can expire, be revoked, or be replaced by a newer invitation. If it is unavailable, ask your organization administrator or Phaeno to send a new invitation. The portal does not collect or reset your sign-in password. Use the account recovery offered by the identity service on the sign-in page."
+          "text": "Open the newest invitation link sent for your Prospect organization. Review your name, organization, and invited email on the invitation page. Select Continue with your email. This goes directly to verification for the invited address; the email cannot be edited. Complete any required password or authenticator steps. Select Accept invitation to join, or Decline invitation. Known names do not need to be entered again. After accepting, the welcome message confirms your organization. Select Open Portal to continue. When creating your password, enter it once and use Show password or Hide password to check your entry. The invitation page shows the email address currently signed in. If it is not the invited email, choose Switch account, then sign in with the correct account. The invitation remains available in that browser while you switch accounts, and the identity service returns you to the invitation page after sign-in or account creation. Invitation links are private. A link can expire, be revoked, or be replaced by a newer invitation. If it is unavailable, ask your organization administrator or Phaeno to send a new invitation. The identity service handles password verification and recovery. Complete the secure sign-in steps shown in Portal, and use Forgot password? when offered to recover access."
         },
         {
           "heading": "Protect your account",
@@ -3420,7 +3465,7 @@
         {
           "heading": "Confirm the current organization",
           "anchor": "confirm-the-current-organization",
-          "text": "The user menu shows the organization active in your current session. Every package, download, and administrative view is scoped to it. Self-service switching between multiple external organization memberships is not currently available. If the wrong organization is shown, stop and contact Phaeno before opening or downloading data."
+          "text": "The header shows the organization active in your current session. Every package, download, and administrative view is scoped to it. Self-service switching between multiple external organization memberships is not currently available. If the wrong organization is shown, stop and contact Phaeno before opening or downloading data."
         },
         {
           "heading": "Work within a department",
@@ -3564,7 +3609,7 @@
       "title": "Getting started",
       "summary": "Find approved Trials, authorized shipping, curated data, and access for the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -3583,7 +3628,7 @@
       "publicationStatus": "published",
       "id": "prospect/en-US/getting-started",
       "route": "/docs/prospect/getting-started",
-      "contentHash": "6eb618a04bb21151df7b0fef8fc16e01b4e6467d855966423cd4dcc457b5470a",
+      "contentHash": "d01d6a438c321ddef246ea513e34a13d6df4be77189856804e6557f6829ff0d0",
       "sections": [
         {
           "heading": "Getting started",
@@ -3598,7 +3643,7 @@
         {
           "heading": "Confirm the current organization",
           "anchor": "confirm-the-current-organization",
-          "text": "The user menu shows the organization active in your current session. That organization controls every record and action you can see, and information never carries between organizations. Self-service switching between multiple external organization memberships is not currently available. If the wrong organization is active, or your account belongs to more than one external organization, contact Phaeno before continuing."
+          "text": "The header shows the organization active in your current session. That organization controls every record and action you can see, and information never carries between organizations. Self-service switching between multiple external organization memberships is not currently available. If the wrong organization is active, or your account belongs to more than one external organization, contact Phaeno before continuing."
         },
         {
           "heading": "Know your access level",
@@ -3683,9 +3728,9 @@
       "locale": "en-US",
       "slug": "sample-shipping",
       "title": "Prepare and ship samples",
-      "summary": "Associate Phaeno-supplied tube barcodes with your sample identifiers, retain the crosswalk, and ship an authorized Trial Project package.",
+      "summary": "Choose compatible containers, scan Phaeno-supplied tubes, and print a manifest for each authorized Trial Project shipment.",
       "order": 25,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-08",
       "navigationGroup": "trial-project",
       "contentType": "guide",
       "topicIds": [
@@ -3711,22 +3756,27 @@
       "publicationStatus": "published",
       "id": "prospect/en-US/sample-shipping",
       "route": "/docs/prospect/sample-shipping",
-      "contentHash": "80df269beff5870d30bff79eddea5ba55b2231fa7c14e8620dc79727474c012e",
+      "contentHash": "a9d82033dea8b22c137f4527f6c79b448eddeedd530bca854ad1c59fcb3277c5",
       "sections": [
         {
           "heading": "Prepare and ship Trial Project samples",
           "anchor": "prepare-and-ship-trial-project-samples",
-          "text": "Open the Trial and its Return kit and shipment section to find related shipments. The shared Samples & shipping list also shows authorized shipments across your Department. The shipment shows the Phaeno return kit, expected samples, destination, and current packet status. Phaeno creates and approves scope in Trial Projects. A Prospect organization administrator accepts it and submits coded samples there before this shared shipment is authorized. See Trial Projects."
+          "text": "Open the approved Trial and its Shipping containers section. Phaeno creates and approves the Trial scope. A Prospect organization administrator accepts it and submits coded samples before shipping is authorized. Organization and Department administrators may prepare the resulting shipments; these shipping permissions do not grant permission to accept Trial scope or submit its original samples. See Trial Projects."
         },
         {
-          "heading": "Keep your records connected to the tubes",
-          "anchor": "keep-your-records-connected-to-the-tubes",
-          "text": "Each Phaeno-supplied tube has a permanent manufacturer barcode. Your organization or department administrator scans or enters that barcode beside the correct Customer sample identifier before anything is shipped. Use a stable, non-PHI identifier that your organization can connect to its own sample record. Do not enter a patient name, medical-record number, date of birth, or other direct identifier. Phaeno preserves the tube-to-sample crosswalk in the Portal and in the shipment packet. Download the CSV or print the packet for your records. Your organization remains responsible for knowing what its Customer sample identifier means; Phaeno is responsible for retaining the identifier-to-tube association used for shipping and intake. If the wrong tube was assigned, an organization or department administrator can scan the replacement tube and record why the assignment changed. The earlier association remains in history. If a packet was already confirmed, saving the correction before shipment voids that packet and issues a corrected revision; destroy any unused copy of the old packet and print the replacement. Do not cover, alter, or remove the manufacturer barcode."
+          "heading": "Choose compatible containers",
+          "anchor": "choose-compatible-containers",
+          "text": "Open Choose containers for tubes awaiting allocation. Review the recommended sizes by common name, SKU and usable tube capacity. The recommendation prefers the fewest containers and then the least spare capacity; it does not verify or reserve stock. Use Adjust containers to enter the sizes and quantities you actually have. Available to you is an optional upper limit; blank means unknown and zero excludes that size. Use recommendation for these quantities recalculates within those limits. Any compatible alternative is allowed without an explanation. The preview shows the tube count, container count, capacity, spare slots and exact unallocated tube count. Confirm containers creates one shipment for each container with allocated tubes. A partly filled container is valid and empty containers do not become shipments. If capacity is insufficient, Prepare available containers prepares the allocated tubes while the remaining tubes stay visible. The accepted Trial sample count and no-charge scope do not change. Tubes from one sample may occupy different containers. Tubes in each container lets you adjust the distribution, such as 15 + 15 across two 20-tube containers. Each count must fit its container, and the combined count must equal the tubes allocated in the preview. Enter zero for a selected container you will leave empty; it will not create a shipment."
         },
         {
-          "heading": "Confirm and ship",
-          "anchor": "confirm-and-ship",
-          "text": "Assign exactly one registered tube from the displayed return kit to every expected tube slot. A sample with multiple tubes has one slot per tube, shown as Tube 1 of N. Confirm the crosswalk only after checking every row. The Portal then freezes the destination, instructions, manifest, packet barcode, and tube-to-sample crosswalk for that packet revision. Print the full packet. Follow the preparation and packing instructions, place the manifest inside the package, and use the ship-to page with the carrier label. The Phaeno packet barcode does not buy postage and is not a tube barcode. Confirmation shows both the number of samples and the number of tubes. View packet checks the current revision before offering Print packet; reconnect or use Try again if it cannot be checked. A correction or replacement refreshes the packet. If saving fails, the message appears in the open dialog and your entries stay available for review. After handing the package to the carrier, record the carrier, tracking number, and shipment time in Samples & shipping. If a tube cannot be matched confidently or its barcode will not scan, stop and contact Phaeno instead of guessing. Use Back to Trial from the shipment to return to its approved scope and sample progress, or All shipments for your authorized shipment list. Shipping administration may be performed by the Department administrator; accepting Trial scope and submitting original samples remain organization-administrator actions."
+          "heading": "Scan permanent tube barcodes",
+          "anchor": "scan-permanent-tube-barcodes",
+          "text": "Your organization must retain the connection between each coded sample ID and its own sample record. Do not enter patient names, medical-record numbers, dates of birth or other direct identifiers. Phaeno retains the permanent-tube-to-sample crosswalk used for shipping and intake. Open a prepared shipment and use Scan tubes into this shipment. Scan the physical tube for the displayed sample and tube number, then press Enter or Save scan. A successful match shows the saved number and barcode graphic, updates progress and advances to the next tube. Saved matches survive leaving the page. Previous tubes and Next tubes review long lists without expanding the whole page. Use tubes registered in a fulfilled kit for this Trial. The first successful scan associates the physical kit with this container; subsequent tubes must come from that kit. Unknown, ineligible, duplicate and already-used barcodes cannot advance scanning. A failed scan retains the barcode and current sample for correction and retry. Do not cover, alter or remove a permanent manufacturer barcode. Use Change tube or Correct tube to fix an assignment before dispatch and explain the correction. History is retained. When a packet has already been confirmed, the correction voids it and issues a corrected revision. Destroy unused copies of the old packet."
+        },
+        {
+          "heading": "Confirm, print and dispatch each shipment",
+          "anchor": "confirm-print-and-dispatch-each-shipment",
+          "text": "Review every declared tube, then select Review and confirm packet. Confirmation distinguishes samples from tubes and freezes that shipment's destination, packing instructions and crosswalk. Spare slots do not create expected returns. Print the full packet and place its manifest inside the corresponding container. The frozen container name, SKU and capacity identify the selected size. Order/Trial, shipment and sample barcodes identify records; separate permanent tube barcodes identify each physical tube. The manifest lists only this container's physical contents. A split sample shows its total tubes, this container's tubes, and other shipment references or still-unallocated tubes in a separate section. References reflect the confirmed revision; current progress remains in the Portal. View packet checks the current revision before offering Print packet. Reconnect or choose Try again if the revision cannot be verified. Failed confirmation keeps the dialog entries for retry. Retain the packet or Crosswalk CSV for your records. The packet does not purchase postage or replace the carrier label. After handing each package to the carrier, record its carrier, tracking number and shipment time. Receipt progress aggregates tubes across shipments. The first received package does not mark all tubes of a split sample received, and a barcode lookup is not proof that physical material arrived. Use Back to Trial for approved scope and current progress or All shipments for your authorized shipment list. Contact Phaeno with the Trial and shipment references if no compatible container exists, a tube cannot be matched confidently, or existing assignments need repacking. Do not guess a tube identity or change approved scope through shipping."
         }
       ]
     },
@@ -3840,5 +3890,5 @@
       ]
     }
   ],
-  "corpusHash": "805b9bb1e78fc575e9cf775d3350c810b3635892d784b900a430be73151f8656"
+  "corpusHash": "4e962090cb26b932184f3c78a334f2fdc402a83cc2e84e0725ee4af0feba7546"
 }

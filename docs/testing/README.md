@@ -6,7 +6,7 @@ Prepared September 8, 2026 from the current repository. These are **manual accep
 
 1. Copy [RUN-RECORD.md](RUN-RECORD.md) for the run. Record Portal/API/Website addresses and exact revisions, date, browser, tester, and environment. Test matching API/UI versions.
 2. Use an isolated acceptance environment and dedicated test identities. Have its administrator prepare the prerequisites in [TEST-DATA.md](TEST-DATA.md). Use separate browser profiles for separate people; POMS does not provide an act-as control or a general external organization switcher.
-3. Follow the modules below in order. Preserve the linked record IDs when handing work between roles. A pre-staged record can replace an upstream case only when its state, lineage, and setup evidence are recorded.
+3. Follow the connected journey recipes and each module's prerequisites. Preserve the linked record IDs when handing work between roles. A pre-staged record can replace an upstream case only when its state, lineage, and setup evidence are recorded.
 4. For each step record the actual result and evidence. Run negative variants on separate copies so they do not corrupt the main journey. Refresh or reopen committed records to establish persistence.
 5. Use **Pass**, **Fail**, **Blocked**, **Not run**, or **Not applicable**. A case passes only when every required step and variant passes. Missing roles, configuration, fixtures, physical evidence, or a disabled prerequisite produce Blocked, with an owner and next action. Not applicable needs an agreed scope reason.
 6. Keep credentials, invitation links, MFA codes, personal information, scientific file contents, and real payment details out of the run record. Use redacted screenshots and safe record references.
@@ -27,12 +27,16 @@ Expected controls reflect the current code and audience guides. If a control or 
 | [08 — Files, curated data and retention](08-data-files.md) | DAT-01–06 | File/provisioning admin, external members | Governed publication, access and retained receipts |
 | [09 — Website, notifications and help](09-website-help.md) | WEB-01–06 | Visitor, platform admin, each Portal audience | Public intake, recoverable delivery and scoped help |
 | [10 — Recovery and cross-system checks](10-recovery.md) | SYS-01–06 | Tester with engineering/operations support | Conflict, outage, access, UI and restore acceptance |
+| [11 — Transportation kits and sample shipping](11-transportation-kits.md) | SHP-01–14 | Customer/Department admin, Phaeno fulfillment admin, Lab receiver | Included-cost kit order, dispatch, customer receipt, container packing and split sample intake |
 
-There are 60 cases. Each contains setup, executable human steps, observable expected results, and a cleanup/handoff instruction. They cover the major workflow families, not every field permutation or every existing automated assertion.
+There are 74 cases. Each contains setup, executable human steps, observable expected results, and a cleanup/handoff instruction. They cover the major workflow families, not every field permutation or every existing automated assertion. SHP cases concern transportation supplies; KIT cases concern purchased Partner Kits and their included Assembly work.
+
+For the current HS5Y7DB7 walkthrough, use the [transportation-kit resume instructions](11-transportation-kits.md#resume-the-current-local-walkthrough). The recorded checkpoint has nine finalized samples and 18 tubes. Begin with Department delivery-location setup and kit-order confirmation; do not repeat quote acceptance or modify the finalized list. New manual cases remain Not run despite earlier automated and screenshot evidence.
 
 ### Connected journey recipes
 
-- **Customer order to cash:** CRM-01/05 → ACC-01/03 → ORD-01/02 → ORD-04/05 → LAB-02–06 → FIN-01–05 and DAT-04. Run Finance and scientific release independently; an unpaid Customer Lab invoice must not block scientifically authorized results.
+- **Customer order to cash:** CRM-01/05 → ACC-01/03 → ORD-01/02 (or manual quote ORD-03) → ORD-04 → SHP-01–03 → SHP-05–13 → LAB-02–06 → FIN-01–05 and DAT-04. ORD-05 provides the shipping overview. Run SHP-04/14 and alternate/partial variants on separate fixtures. Run Finance and scientific release independently; an unpaid Customer Lab invoice must not block scientifically authorized results.
+- **Transportation kit fulfillment and partial supply:** SHP-02/03 → SHP-05/06 → SHP-07 partial dispatch → SHP-08 partial customer receipt → SHP-09 prepare available containers → SHP-10–13. Finish the remaining kit delivery/receipt and residual packing pool without changing earlier container identities. Record provisional, available and allocated quantities separately.
 - **Prospect evaluation to relationship decision:** CRM-01/03/05 → ACC-01 → TRI-01–03 → ORD-05 → LAB-02–06 → TRI-05/06. Exercise replacement/amendment with TRI-04 on a separate Trial.
 - **Partner Kit to included output:** CRM-05 and entitlement setup → KIT-01/02 → KIT-04/05 → DAT-04. Run KIT-03/06 on sibling cases. Track the original shipment billing reference throughout.
 - **Curated data to governed withdrawal:** DAT-01 → DAT-02 (including external downloads) → DAT-03. Test operational release transfers separately under DAT-04 and policy/deletion only on disposable operational releases under DAT-05/06.
@@ -47,6 +51,7 @@ No short recipe replaces the full pack. For a rapid first pass, use ACC-01, CRM-
 - Partner Finance remains a separate scope gate. Test Partner Lab commitment with administrator-prepared, approved billing prerequisites; do not expect a Partner Finance workspace or an automatic Partner custom-work-to-order handoff.
 - The Kit expiry/payment lifecycle worker is disabled by default. Scheduled retention processing, enforcement, cleanup, operational attention queues, real offerings, scientific/provider readiness, and coordinated backup activation must each be recorded for the tested environment. A deployed page does not prove an enabled process.
 - Real bench work requires the [Lab bench validation plan](../plans/LAB-OPERATIONS-BENCH-VALIDATION.md). Browser simulation cannot validate tube fit, labels, scanning hardware, packaging, scientific thresholds, or provider receipt.
+- Current Customer transportation-kit ordering includes kits/outbound delivery, frozen Department delivery locations, Phaeno administrator notifications and receipt-gated Job-specific supply. Cross-Job inventory, warehouse reservations, corrections and automatic replenishment remain planned in the [shipping plan](../plans/SAMPLE-SHIPPING-AND-INTAKE-PLAN.md). Do not mark these as implemented or substitute legacy direct kit dispatch for the new request/receipt path.
 - POMS tracks NGS custody and final-package lineage; it does not implement raw NGS ingestion, upstream pipeline orchestration, or intermediate scientific storage. HubSpot, connected CRM email/calendar capture, and promotional freebie parent issuance are outside the implemented acceptance scope.
 
 ## Completion and evidence

@@ -37,7 +37,7 @@ const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSec
   },
   { value: 'catalog', label: 'Service catalog', description: 'Active offerings and sales units', icon: BookOpen },
   { value: 'lab-service-offerings', label: 'Lab Service offerings', description: 'Included scope and published turnaround', icon: ChartSpline },
-  { value: 'shipping', label: 'Sample shipping', description: 'Destinations, sample types and instructions', icon: Truck },
+  { value: 'shipping', label: 'Sample shipping', description: 'Container sizes, destinations and handling', icon: Truck },
   {
     value: 'analyses',
     label: 'Analyses',

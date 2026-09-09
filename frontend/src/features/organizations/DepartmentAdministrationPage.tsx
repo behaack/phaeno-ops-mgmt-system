@@ -19,6 +19,7 @@ export function DepartmentAdministrationPage() {
       organizationId={selectedOrganizationId}
       organizationAdmin={Boolean(membership?.isOrganizationAdmin)}
       managedDepartmentIds={managedDepartmentIds}
+      deliveryLocations={membership?.organizationKind === 'Customer'}
     /> : null}
   </main>
 }

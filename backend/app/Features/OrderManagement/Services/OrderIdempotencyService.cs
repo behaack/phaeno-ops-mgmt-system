@@ -38,6 +38,9 @@ public sealed class OrderIdempotencyService(PSeqOperationsDbContext dbContext)
             cancellationToken);
     }
 
+    public Task AcquireOrderLockAsync(string concurrencyScope, CancellationToken cancellationToken)
+        => AcquireTransactionLockAsync($"order-operation|{concurrencyScope}", cancellationToken);
+
     public async Task<OrderIdempotencyExecution<T>> ExecuteAsync<T>(
         Guid actorUserId,
         string scope,

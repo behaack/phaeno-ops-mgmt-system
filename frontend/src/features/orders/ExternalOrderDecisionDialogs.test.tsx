@@ -42,7 +42,7 @@ vi.mock('./ReleasedDeliverableRetentionNotice', () => ({ ReleasedDeliverableRete
 const record = {
   id: 'order-1', version: 3, orderNumber: 'ORDER-1', requestNumber: 'ASSEMBLY-1', projectReference: 'Assembly project',
   status: 'Quoted', updatedAt: '2026-09-07T12:00:00Z', metadataJson: '{}', shippingAddressSnapshotJson: null,
-  canAcceptQuote: true, canRequestCancellation: true,
+  canAcceptQuote: true, canRequestCancellation: true, canWithdraw: true,
   samples: [], resultFiles: [], resultReleases: [], inputRevisions: [], inputFiles: [], outputReleases: [],
   lines: [], timeline: [], documents: [], adjustments: [], shipments: [],
   quotes: [{ id: 'quote-1', revision: 1, status: 'Issued', expiresAt: '2026-10-07T12:00:00Z',

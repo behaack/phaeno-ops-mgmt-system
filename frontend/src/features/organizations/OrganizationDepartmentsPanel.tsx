@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { Ellipsis, Pencil, Plus, Star, UsersRound } from 'lucide-react'
 import { useState } from 'react'
 import { isAxiosError } from 'axios'
@@ -23,10 +24,12 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 
-export function OrganizationDepartmentsPanel({ organizationId, organizationAdmin = true, managedDepartmentIds = [] }: {
+export function OrganizationDepartmentsPanel({ organizationId, organizationAdmin = true, managedDepartmentIds = [], deliveryLocations = false, companyId }: {
   organizationId: string
   organizationAdmin?: boolean
   managedDepartmentIds?: string[]
+  deliveryLocations?: boolean
+  companyId?: string
 }) {
   const client = useQueryClient()
   const [editTarget, setEditTarget] = useState<Department | 'new' | null>(null)
@@ -114,6 +117,7 @@ export function OrganizationDepartmentsPanel({ organizationId, organizationAdmin
                   <p className="mt-2 text-xs text-muted-foreground">
                     {m.activeMembers(department.activeMemberCount)} · {overrideSummary(department)}
                   </p>
+                  {deliveryLocations && department.isActive ? <Button asChild variant="link" className="mt-2 h-auto p-0"><Link to="/delivery-locations" search={{ organizationId, departmentId: department.id, companyId }}>Delivery locations</Link></Button> : null}
                 </div>
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>

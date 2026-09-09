@@ -1,5 +1,73 @@
 # Auth and User System Plan
 
+## 2026-09-08 signed-in menu and dashboard polish
+
+The owner completed dashboard entry as the invited Customer member. The header
+confirmed Johns Hopkins University and General; the menu showed the invited
+name/email and omitted administration actions. The owner then requested visual
+polish during the walkthrough: readable account identity, consistent menu
+spacing, grouped display choices with distinct selection/focus, neutral sign-out
+styling, and external dashboard cards that use the available row width with
+less vertical whitespace. Use the existing semantic border for the complete
+card outline, including the footer. Preserve all role filtering, destinations,
+department selection, theme settings, and Radix menu keyboard behavior. Guide
+steps do not change for this presentation work. The mobile header places the
+organization and department in a left-aligned row beneath the toolbar, with
+wrapping names and the label **Organization**. The former **Acting as** label
+implied impersonation even for the member's own account. Related Customer,
+Partner and Prospect guides now correctly direct users to the header to check
+their active organization.
+
+## 2026-09-08 invitation acceptance experience
+
+Approved scope: an invited recipient sees their name, organization, and email
+before authentication, continues directly with the fixed invited email, then
+explicitly accepts access. Replace the modal with branded, invitation-bound Clerk
+authentication. The email is read-only; there is no email-entry or edit step. Show a clear account mismatch and Switch account recovery.
+
+Implementation: add a rate-limited anonymous POST preview that requires the
+secret invitation token, returns only recipient/organization/expiry display
+fields for pending, unexpired invitations to active organizations, and sets
+Cache-Control: no-store. Invalid links return a generic recovery message.
+Preview creates no identity or membership and does not consume the invitation.
+Keep tokens out of the visible URL and query-cache keys. Acceptance/decline
+retain server-side verified-email and membership checks. Preserve the existing
+environment-specific Clerk signup policy and provider configuration; no new
+dependencies, database changes, or production configuration changes.
+
+The owner further clarified that prefilled editable email is unacceptable.
+The invitation now uses Clerk's current headless API: Continue binds the
+identifier from the preview and starts the configured email-code/password
+challenge directly. Development uses `signUpIfMissing` and transfers to
+first-time setup only after successful email verification. Existing password,
+TOTP, backup-code, device-trust and required MFA setup remain enforced.
+MFA setup returns to the saved invitation. No provider settings were changed.
+The local Clerk settings were read to confirm email-code first factor and
+required password/MFA setup for new accounts. Production continues to disable
+new-account transfer, preserving the existing signup policy.
+
+The owner explicitly chose to keep the password requirement. First-time setup
+says **Create your password** and labels its field **Password**; **New password**
+is reserved for an actual reset. No Clerk settings are to be changed.
+Use one password field with **Show password** / **Hide password** so the recipient
+can check their entry; do not add a confirmation field. Keep the entry hidden
+initially and preserve password-manager support.
+
+Acceptance checks: known details require no re-entry; valid verified secondary
+emails also qualify; another account cannot accept; sign-in returns to the
+same invitation; expired/revoked/missing links have useful recovery; mobile,
+keyboard and light/dark presentation remain usable. Focused tests and local
+browser verification precede returning to the user's invitation step.
+
+The owner's Firefox walkthrough confirmed acceptance and active General access,
+but exposed a lost confirmation: the initial organization/department selection
+remounted the invitation page after its token was cleared. Keep pre-session
+pages mounted across tenant selection while still resetting them when the
+signed-in identity changes; ordinary workspaces retain their tenant reset.
+Record the successful response before refreshing access, stop previewing the
+consumed invitation, and preserve **Welcome to Portal** with **Open Portal**.
+The earlier post-sign-in access-gate detour remains a separate observed issue.
+
 ## 2026-08-29 PSeq order-to-cash implementation update
 
 `PSEQ-ORDER-TO-CASH-GAP-CLOSURE-PLAN.md` is now authoritative for PSeq

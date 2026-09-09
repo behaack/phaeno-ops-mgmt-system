@@ -32,19 +32,28 @@ Deactivate configuration that must not be used for new work. Existing orders kee
 
 ## Maintain sample-shipping configuration
 
-Use **Sample shipping** to maintain three controlled record sets:
+The ship-to destinations in this configuration are laboratory receiving locations for samples sent to Phaeno. Customer delivery addresses for outbound kits are maintained separately under the Customer's **Departments & services → Delivery locations**. Confirmed kit orders retain their saved address even when a delivery-location record changes later.
+
+Use **Sample shipping** to maintain four controlled record sets:
 
 - ship-to destinations with the full address, receiving team, receiving hours and time zone, closure guidance, delivery directions, and carrier restrictions;
-- sample types with material, quantity, primary-container, temperature, packaging, customer-label, prohibited-identifier, safety, and transit requirements; and
-- one instruction rule for an exact destination revision and sample-type revision, including compatibility grouping, packing, carrier, dispatch, delivery, required-document, exception, and optional customs instructions.
+- sample types with material, quantity, primary-container, temperature, packaging, customer-label, prohibited-identifier, safety, and transit requirements;
+- one instruction rule for an exact destination revision and sample-type revision, including compatibility grouping, packing, carrier, dispatch, delivery, required-document, exception, and optional customs instructions; and
+- container sizes with a required SKU, common name, approved usable tube capacity, exact compatible sample-and-rule choices, supplier product references, packing instructions, effective dates, and display order.
 
-New records default to inactive. Activate a revision only after the address and scientific and operational instructions are approved. Selecting **Create revision** copies the current content into a new record and ends the prior revision when the new revision becomes effective; it does not rewrite history or any packet snapshot already issued.
+New records default to inactive. Activate a revision only after the address and scientific and operational instructions are approved. Selecting **Create revision** copies the current content into a new record; it does not rewrite history or any packet snapshot already issued. A new active revision replaces its predecessor when it becomes effective.
+
+The **Container sizes** list supports search and status filtering. Open a common name to review its details and revision history. Use **Add container size** or **Create revision** for bounded changes. The SKU stays fixed across revisions, including leading zeros and separators. Saving an inactive container revision creates a draft and leaves the preceding active revision available. To stop an active revision from future selection, open its detail page and choose **Actions → Deactivate revision**. Existing kits and manifests retain the container facts recorded when they were prepared.
+
+In the size editor, expand **Supplier and packing** for optional product references and packing instructions. Existing details and validation errors open that section automatically. **Availability** groups the effective dates and activation setting.
+
+Use **Preview recommendation** to enter a tube count, select the exact sample and handling context, and optionally enter available quantities. Blank quantities mean availability is unknown; zero excludes that size. The result favors fewer containers, then less unused capacity, and shows any unallocated tubes. A preview from a container detail page can include that draft revision. Previewing does not reserve stock, create a shipment, or estimate shipping cost.
 
 Use **Instruction preview** before operational use. Select an exact destination revision, one or more sample-type revisions, and the time to evaluate. POMS displays the full resolved ship-to and detailed preparation instructions. If a required combination rule is missing, compatibility groups differ, or a type requires its own package, POMS blocks a combined preview so the work can be corrected or split.
 
 This configuration is shared infrastructure only. It does not create a Prospect Trial Project, grant a Customer promotion, place an order, or activate any real destination or sample type on its own.
 
-Return-kit fulfillment is operated from **Lab Ops**. Orders and Trials link to their own kit and shipment. The fulfillment record preserves shipper product/lot facts, the exact registered supplier-tube inventory, and outbound tracking. The current Corning vial and Therapak shipper values are pilot candidates only; activate real work only after representative tubes, shipper fit, returned volume, seal, freezing, dry-ice handling, barcode scanning, and degraded-mode procedures pass the physical validation gate.
+Prepare and register **Standard kits** in **Lab operations → Receipt & accession** before assigning them to Customer Jobs. Staff choose a configured container size, record the actual tube and shipper products, register the full configured tube capacity, and then record outbound dispatch. Previously prepared shipment-specific kits remain in **Existing return kits**. These records retain product and lot facts, permanent tube identities, and outbound tracking. Qualify the physical tubes, container fit, seals, temperature handling, and readable barcodes before using a container size operationally.
 
 ## Maintain released-deliverable retention
 

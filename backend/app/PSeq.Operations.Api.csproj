@@ -41,6 +41,11 @@
                       WithCulture="false" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="QuoteDocuments\*.ttf" LogicalName="QuoteDocuments/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="QuoteDocuments\*.png" LogicalName="QuoteDocuments/%(Filename)%(Extension)" />
+    <Content Include="QuoteDocuments\Ubuntu-FONT-LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
     <Content Update="Documentation/corpus.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

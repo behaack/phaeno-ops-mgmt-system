@@ -4,6 +4,7 @@ import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PlatformQuoteDialog } from "./PlatformQuoteDialog";
+import type { Quote } from "#/api/order-management";
 
 const api = vi.hoisted(() => ({
   getPlatformOrder: vi.fn(),
@@ -94,6 +95,41 @@ describe("PlatformQuoteDialog", () => {
     expect(
       within(catalogItems[1]).getByRole("option", { name: "Specimen handling fee" }),
     ).toBeTruthy();
+  });
+
+  it("reissues saved line prices and requires an explicit future expiration", async () => {
+    const sourceQuote = savedQuote();
+    renderDialog([canonicalItem, unrelatedSpecimenItem], undefined, undefined, undefined, sourceQuote);
+
+    expect(screen.getByText("Reissue laboratory quote")).toBeTruthy();
+    expect(screen.getAllByLabelText(/Unit price/).map(input => (input as HTMLInputElement).value)).toEqual(["100", "15"]);
+    expect(screen.getAllByLabelText(/Description/).map(input => (input as HTMLInputElement).value)).toEqual(["Previously agreed PSeq service", "Previously agreed handling"]);
+    expect(screen.getByText("$330.00")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Issue new revision" }));
+    expect(await screen.findByText("Choose a future expiration date for the replacement quote.")).toBeTruthy();
+    expect(api.issuePlatformQuote).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText(/Expiration date/), { target: { value: "2020-01-01" } });
+    fireEvent.click(screen.getByRole("button", { name: "Issue new revision" }));
+    expect(await screen.findByText("Choose a future expiration date.")).toBeTruthy();
+    expect(api.issuePlatformQuote).not.toHaveBeenCalled();
+
+    const futureDate = new Date(Date.now() + 45 * 86400000).toISOString().slice(0, 10);
+    fireEvent.change(screen.getByLabelText(/Expiration date/), { target: { value: futureDate } });
+    fireEvent.click(screen.getByRole("button", { name: "Issue new revision" }));
+    await waitFor(() => expect(api.issuePlatformQuote).toHaveBeenCalledWith("lab", "22222222-2222-4222-8222-222222222222", expect.objectContaining({
+      sourceQuoteId: sourceQuote.id, purpose: "Initial", expiresAt: futureDate,
+      currency: "USD", version: 7,
+      lines: [expect.objectContaining({ unitPrice: 100, quantity: 3 }), expect.objectContaining({ unitPrice: 15, quantity: 2 })],
+    })));
+  });
+
+  it("does not substitute catalog prices when saved quote lines are unreadable", () => {
+    renderDialog([canonicalItem], undefined, undefined, undefined, { ...savedQuote(), linesJson: "{invalid" });
+    expect(screen.getByText("Saved quote lines could not be loaded")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Issue new revision" })).toHaveProperty("disabled", true);
+    expect(screen.queryByLabelText(/Unit price/)).toBeNull();
+    expect(api.issuePlatformQuote).not.toHaveBeenCalled();
   });
 
   it("pauses quote issuance when the canonical catalog item is unavailable", () => {
@@ -257,6 +293,7 @@ function renderDialog(
   priceProposal?: { unitPrice: number; currency: string; note?: string | null },
   onSaved = vi.fn().mockResolvedValue(undefined),
   onOpenChange = vi.fn(),
+  sourceQuote?: Quote,
 ) {
   const client = new QueryClient({
     defaultOptions: {
@@ -272,10 +309,23 @@ function renderDialog(
         recordId="22222222-2222-4222-8222-222222222222"
         defaultQuantity={3}
         priceProposal={priceProposal}
+        sourceQuote={sourceQuote}
         catalogItems={catalogItems}
         onOpenChange={onOpenChange}
         onSaved={onSaved}
       />
     </QueryClientProvider>,
   );
+}
+
+function savedQuote(): Quote {
+  return {
+    id: "44444444-4444-4444-8444-444444444444", revision: 2, purpose: "Initial", status: "Issued",
+    linesJson: JSON.stringify([
+      { catalogItemId: canonicalItem.id, description: "Previously agreed PSeq service", quantity: 3, unitPrice: 100 },
+      { catalogItemId: unrelatedSpecimenItem.id, description: "Previously agreed handling", quantity: 2, unitPrice: 15 },
+    ]),
+    subtotal: 330, tax: 0, total: 330, currency: "USD", issuedAt: "2020-01-01T00:00:00Z",
+    expiresAt: "2020-02-01T00:00:00Z", acceptedAt: null, version: 1,
+  };
 }

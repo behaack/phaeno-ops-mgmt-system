@@ -127,6 +127,24 @@ Keep environment-specific values outside source control. `appsettings.Developmen
 
 Never copy local passwords, Clerk secrets, QuickBooks credentials, Mailgun API or webhook-signing keys, webhook tokens, or connection strings into documentation, logs, audit events, support messages, or committed configuration. Rotate any credential that is accidentally shared.
 
+Mailgun template ownership (2026-09-08): all twelve templates now belong to the
+US sending domain `mg.phaenobiotech.com`; the account-level inventory is empty.
+The three Website templates retain their existing names and content. The eight
+localized technical-brief variants and `organization-invitation.en-us` retain
+their original names after migration from account scope. Template IDs changed;
+maintain name-based references. The invitation's active domain version is
+`branded-20260908`; `initial` remains available for rollback. Its reviewable HTML
+source lives in `backend/app/EmailTemplates/organization-invitation.en-US.html`.
+Keep that source and the deployed domain version aligned when editing branding.
+The local sender uses the domain template with private `t:variables`; releasing
+that application change remains separate from the completed Mailgun changes.
+
+At the owner's request, automatic domain unsubscribe-footer injection is off.
+Existing suppressions and template-authored unsubscribe links were not removed.
+Marketing/subscription templates must still supply their own appropriate
+unsubscribe controls. Local development senders require their actual outbound
+public IP in Mailgun's allowlist; correct credentials alone do not suffice.
+
 ## Database migrations
 
 The authoritative migration inventory is [backend/app/Migrations](../backend/app/Migrations),

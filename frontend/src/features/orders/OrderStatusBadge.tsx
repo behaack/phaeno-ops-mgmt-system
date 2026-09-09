@@ -2,7 +2,7 @@ import { Badge } from '#/components/ui/badge'
 
 export function OrderStatusBadge({ status }: { status: string }) {
   const normalized = status.toLowerCase()
-  const variant = normalized.includes('cancel') || normalized.includes('reject') || normalized.includes('declin')
+  const variant = normalized.includes('cancel') || normalized.includes('reject') || normalized.includes('declin') || normalized.includes('expired')
     ? 'destructive'
     : normalized.includes('hold') || normalized.includes('pending') || normalized.includes('review')
       ? 'outline'

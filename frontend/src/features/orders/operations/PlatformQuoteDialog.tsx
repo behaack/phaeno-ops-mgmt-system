@@ -11,6 +11,7 @@ import {
   isOrderConcurrencyError,
   issuePlatformQuote,
   type OrderConfiguration,
+  type Quote,
 } from "#/api/order-management";
 import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
@@ -32,10 +33,14 @@ import {
 import { Textarea } from "#/components/ui/textarea";
 
 const schema = z.object({
+  sourceQuoteId: z.string().uuid().optional(),
   purpose: z.enum(["Initial", "Change"]),
   currency: z.string().trim().length(3),
   tax: z.coerce.number().nonnegative(),
-  expiresAt: z.string(),
+  expiresAt: z.string().refine(
+    (value) => !value || isFutureExpiration(value),
+    "Choose a future expiration date.",
+  ),
   lines: z
     .array(
       z.object({
@@ -67,6 +72,7 @@ export function PlatformQuoteDialog({
   recordId,
   defaultQuantity,
   priceProposal,
+  sourceQuote,
   catalogItems,
   onOpenChange,
   onSaved,
@@ -82,6 +88,7 @@ export function PlatformQuoteDialog({
     proposedByUserId?: string | null;
     proposedAt?: string | null;
   } | null;
+  sourceQuote?: Quote | null;
   catalogItems: OrderConfiguration["catalogItems"];
   onOpenChange: (open: boolean) => void;
   onSaved: () => Promise<void>;
@@ -96,11 +103,13 @@ export function PlatformQuoteDialog({
       ? canonicalLabItem
       : undefined;
   const proposedUnitPrice = workflow === "lab" ? priceProposal?.unitPrice : undefined;
+  const savedQuoteUnavailable = Boolean(sourceQuote && readSavedQuoteLines(sourceQuote).length === 0);
   const defaultValues = createDefaultValues(
     workflow,
     defaultQuantity,
     requiredLabItem,
     proposedUnitPrice,
+    sourceQuote,
   );
   const form = useForm<FormValues, unknown, Values>({
     resolver: zodResolver(schema),
@@ -180,7 +189,7 @@ export function PlatformQuoteDialog({
 
   useEffect(() => {
     if (!open || form.formState.isDirty) return;
-    form.reset(createDefaultValues(workflow, defaultQuantity, requiredLabItem, proposedUnitPrice));
+    form.reset(createDefaultValues(workflow, defaultQuantity, requiredLabItem, proposedUnitPrice, sourceQuote));
   }, [
     defaultQuantity,
     form,
@@ -188,6 +197,7 @@ export function PlatformQuoteDialog({
     open,
     proposedUnitPrice,
     requiredLabItem,
+    sourceQuote,
     workflow,
   ]);
 
@@ -212,7 +222,7 @@ export function PlatformQuoteDialog({
     mutation.reset();
     setConfirmDiscard(false);
     setRecordRefreshed(false);
-    form.reset(createDefaultValues(workflow, defaultQuantity, requiredLabItem, proposedUnitPrice));
+    form.reset(createDefaultValues(workflow, defaultQuantity, requiredLabItem, proposedUnitPrice, sourceQuote));
     onOpenChange(false);
   }
 
@@ -236,9 +246,14 @@ export function PlatformQuoteDialog({
   }
 
   function submit(values: Values) {
-    if (mutation.isPending || confirmDiscard) return;
+    if (mutation.isPending || confirmDiscard || savedQuoteUnavailable) return;
     setRecordRefreshed(false);
     form.clearErrors("root");
+    if (sourceQuote && !values.expiresAt) {
+      form.setError("expiresAt", { type: "manual", message: "Choose a future expiration date for the replacement quote." });
+      form.setFocus("expiresAt");
+      return;
+    }
     if (workflow === "lab") {
       if (!requiredLabItem) {
         form.setError("root", {
@@ -304,12 +319,16 @@ export function PlatformQuoteDialog({
       >
         <DialogHeader>
           <DialogTitle>
-            {workflow === "lab" && proposedUnitPrice !== undefined
+            {sourceQuote
+              ? "Reissue laboratory quote"
+              : workflow === "lab" && proposedUnitPrice !== undefined
               ? "Review proposed laboratory price"
               : `Issue ${workflow === "lab" ? "laboratory" : "data-assembly"} quote`}
           </DialogTitle>
           <DialogDescription>
-            {workflow === "lab" && proposedUnitPrice !== undefined
+            {sourceQuote
+              ? `Start from revision ${sourceQuote.revision}'s saved prices, review the terms, and choose a future expiration date. Issuing creates a new revision for the Customer and preserves the original.`
+              : workflow === "lab" && proposedUnitPrice !== undefined
               ? "Approve the proposed price unchanged or amend it. Either decision issues the final quote to the Customer immediately."
               : "Use active Phaeno commercial catalog items, then set the job-specific quantities and prices. Issuing the quote makes it available to the Customer immediately."}
           </DialogDescription>
@@ -325,6 +344,7 @@ export function PlatformQuoteDialog({
             </section>
           </DialogFeedback>
         ) : null}
+        {savedQuoteUnavailable ? <Alert variant="destructive"><AlertTitle>Saved quote lines could not be loaded</AlertTitle><AlertDescription>Reload the Job before reissuing this quote. The stored prices must be available for review.</AlertDescription></Alert> : null}
         {workflow === "lab" && !requiredLabItem ? (
           <Alert variant="destructive">
             <AlertTitle>PSeq Lab Service item is not ready</AlertTitle>
@@ -378,14 +398,14 @@ export function PlatformQuoteDialog({
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
             <div>
               <Label htmlFor="quotePurpose">Purpose *</Label>
-              <select
+              {sourceQuote ? <><Input id="quotePurpose" className="mt-2 h-9 bg-muted/30" readOnly value={sourceQuote.purpose === "Change" ? "Scope change" : "Initial"} /><input type="hidden" {...form.register("purpose")} /></> : <select
                 id="quotePurpose"
                 {...form.register("purpose")}
                 className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm"
               >
                 <option value="Initial">Initial</option>
                 <option value="Change">Scope change</option>
-              </select>
+              </select>}
             </div>
             <div>
               <Label htmlFor="quoteCurrency">Currency *</Label>
@@ -433,16 +453,20 @@ export function PlatformQuoteDialog({
               </div>
             )}
             <div>
-              <Label htmlFor="quoteExpiresAt">Expiration override</Label>
+              <Label htmlFor="quoteExpiresAt">{sourceQuote ? <RequiredFieldName>Expiration date</RequiredFieldName> : "Expiration override"}</Label>
               <Input
                 id="quoteExpiresAt"
                 type="date"
+                min={nextUtcDate()}
                 className="mt-2 h-9"
+                aria-invalid={Boolean(form.formState.errors.expiresAt)}
+                aria-describedby={`quote-expiration-help${form.formState.errors.expiresAt ? " quote-expiration-error" : ""}`}
                 {...form.register("expiresAt")}
               />
-              <p className="mt-1 text-xs text-muted-foreground">
-                Leave blank to use the configured default validity.
+              <p id="quote-expiration-help" className="mt-1 text-xs text-muted-foreground">
+                {sourceQuote ? "Required for the new revision. The original expiration is preserved." : "Leave blank to use the configured default validity."}
               </p>
+              <FieldError id="quote-expiration-error">{form.formState.errors.expiresAt?.message}</FieldError>
             </div>
           </div>
           <fieldset>
@@ -683,12 +707,14 @@ export function PlatformQuoteDialog({
             type="submit"
             form="platform-quote-form"
             disabled={
-              isSubmitting || confirmDiscard || (workflow === "lab" && !requiredLabItem)
+              isSubmitting || confirmDiscard || (workflow === "lab" && !requiredLabItem) || savedQuoteUnavailable
             }
           >
             {mutation.isPending
               ? "Issuing…"
-              : workflow === "lab" && proposedUnitPrice !== undefined
+              : sourceQuote
+                ? "Issue new revision"
+                : workflow === "lab" && proposedUnitPrice !== undefined
                 ? amendsProposedPrice
                   ? "Amend price and issue quote"
                   : "Approve price and issue quote"
@@ -705,7 +731,19 @@ function createDefaultValues(
   defaultQuantity: number | undefined,
   requiredLabItem: CatalogItem | undefined,
   proposedUnitPrice: number | undefined,
+  sourceQuote?: Quote | null,
 ): FormValues {
+  if (sourceQuote) {
+    return {
+      sourceQuoteId: sourceQuote.id,
+      purpose: sourceQuote.purpose === "Change" ? "Change" : "Initial",
+      currency: sourceQuote.currency,
+      tax: sourceQuote.tax,
+      expiresAt: "",
+      lines: readSavedQuoteLines(sourceQuote),
+      pricingDecisionReason: "",
+    };
+  }
   const item = workflow === "lab" ? requiredLabItem : undefined;
   return {
     purpose: "Initial",
@@ -722,6 +760,28 @@ function createDefaultValues(
     ],
     pricingDecisionReason: "",
   };
+}
+
+function readSavedQuoteLines(quote: Quote): FormValues["lines"] {
+  try {
+    const parsed = schema.shape.lines.safeParse(JSON.parse(quote.linesJson));
+    return parsed.success ? parsed.data : [];
+  } catch {
+    return [];
+  }
+}
+
+function isFutureExpiration(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const timestamp = Date.parse(`${value}T00:00:00.000Z`);
+  return Number.isFinite(timestamp) && timestamp > Date.now()
+    && new Date(timestamp).toISOString().startsWith(value);
+}
+
+function nextUtcDate() {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + 1);
+  return date.toISOString().slice(0, 10);
 }
 
 function roundMoney(value: number) {

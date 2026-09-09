@@ -150,6 +150,19 @@ describe("Commercial order intake CRM handoffs", () => {
     ).toBeNull();
   });
 
+  it("makes pending quote extension requests visible in active intake", async () => {
+    apiMocks.handoffs.mockResolvedValue([]);
+    apiMocks.orders.mockResolvedValue({ items: [{
+      id: "order-extension", orderType: "PSeqLabService", number: "JOB-EXT", reference: "Extension review",
+      organizationId: "customer-1", status: "QuoteIssued", updatedAt: "2026-09-08T12:00:00Z",
+      hasPendingQuoteExtension: true,
+    }], totalCount: 1, page: 1, pageSize: 25 });
+    renderIntake();
+    expect(await screen.findByText("Extension requested")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Extension review" })).toBeTruthy();
+    expect(screen.getByText("Quote Issued")).toBeTruthy();
+  });
+
   it("restores the On hold view and search from the URL without adding pending CRM handoffs", async () => {
     router.search = { intakeView: "holds", intakeSearch: " Atlas " };
     renderIntake();

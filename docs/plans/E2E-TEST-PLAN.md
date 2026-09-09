@@ -1,5 +1,367 @@
 # Playwright E2E Test Plan
 
+## Active transportation-kit acceptance sequence — September 8, 2026
+
+The executable human steps now live in
+[11 — Transportation kits and sample shipping](../testing/11-transportation-kits.md)
+as **SHP-01–14**, with prerequisites, role handoffs, expected results, negative
+variants and cleanup. All new manual cases are **Not run**. This documentation
+update runs no application tests or business workflow. Dated checkpoints below
+retain historical evidence; their older "next step" and draft-configuration
+notes do not supersede the module's current resume instructions.
+
+| Stage | Manual cases | Required connected evidence |
+| --- | --- | --- |
+| Configuration and destination | SHP-01/02 | Effective 20/10/5-tube definitions; Customer/Department delivery location; save-to-shipment return without ordering. |
+| Order and fulfillment handoff | SHP-03–06 | Reviewed included-cost request, one logical order/notice, staff queue, full-capacity registered physical stock. Queue, provider and inbox receipt are distinct. |
+| Kit dispatch and Customer receipt | SHP-07/08 | Per-SKU partial dispatch, tracking and provisional On the way counts; only acknowledged kits become available. |
+| Packing and identity | SHP-09–11 | 20+10/two-20/six-5 alternatives from actual acknowledged stock; residual capacity; exact saved tube scans; branded split-sample manifests. |
+| Sample return and Lab intake | SHP-12/13 → LAB-02 | Separate shipment facts per container; current packet comparison; per-tube receipt with correct sample/Job totals and no duplicate accession. |
+| Access and recovery | SHP-04/14 | Department/member boundaries, stale/failed retries, duplicate protection, long lists, keyboard/phone/theme behavior. |
+
+Resume HS5Y7DB7 at **SHP-02**, using its recorded nine finalized samples and 18
+tubes. Review one TRANS-20 at SHP-03 after saving the actual Department delivery
+location. Use separate 30-tube/split/failure fixtures from
+[TEST-DATA.md](../testing/TEST-DATA.md); preserve the accepted quote and finalized
+roster. Record observations and stock/request/shipment identities in
+[RUN-RECORD.md](../testing/RUN-RECORD.md), rather than promoting prior screenshots
+or a synthetic browser result to a live journey pass.
+
+The [backend KIT-B matrix](BACKEND-TEST-PLAN.md#reusable-transportation-kit-scenarios)
+and [frontend KIT-F matrix](FRONTEND-TEST-PLAN.md#reusable-transportation-kit-frontend-scenarios)
+identify exact current tests and remaining regression gaps. General cross-Job
+balances, warehouse reservations, loss/damage corrections and automatic
+replenishment are planned scope; they are not implemented acceptance claims.
+
+## Customer transportation-kit ordering and fulfillment — September 8, 2026
+
+At the implementation checkpoint, actual-component browser review passed **48 cases**: 24 Customer cases and 24
+staff/location cases, using synthetic records. Coverage spans 1280px desktop and
+390px phone widths in light/dark themes, plus short-height staff dialogs. The
+Customer cases cover unknown stock, missing delivery locations, multiple
+locations without a default, pending orders, in-transit kits and partial receipt.
+The staff cases cover the request queue/detail, delivery-location list/detail/
+editor, dispatch selection, empty stock and location states. Keyboard review
+checks required-field focus, bounded modal scrolling, fixed action footers,
+dirty dismissal and quantity limits. Customer axe checks passed; neither suite
+recorded live data writes or external calls. Temporary harnesses and servers
+were removed, leaving the existing local Portal server running.
+
+Evidence is in `artifacts/transportation-kit-customer-review/review.json` and
+`artifacts/kit-request-staff-review/review.json` with settled screenshots. Root
+visually reviewed representative phone and desktop captures. After the local
+migration/API restart, the signed-in Phaeno Receipt & accession page loaded the
+new empty Kit requests queue and retained HS5Y7DB7 with nine expected specimens.
+API health returned 200. The Customer session is not exposed to this browser
+automation surface; populated signed-in Customer acceptance, mailbox delivery,
+and physical kit delivery/receipt remain user walkthrough gates.
+
+The final bounded visibility correction (additional ordering after a completed
+request with uncovered tubes, and removal of the empty Customer packing-pool
+Return kit card) was checked by the focused component suite and TypeScript/lint.
+The browser fixtures were not recreated for that final correction.
+
+## Container-size editor layout — September 8, 2026
+
+Six actual-component cases passed at 688x835, 390x835 and 390x480 in light/dark
+themes. All core controls fit the desktop-sized example with optional details
+collapsed. Paired inputs align despite wrapped helper text; phones retain a
+single column and bounded body scrolling with fixed header/footer. Optional
+details can be expanded, and a hidden invalid Supplier field reopens with
+focus and its entered value retained. Review also covers dirty Escape and
+access to Availability at short heights. Nineteen settled captures and results
+are in `artifacts/container-editor-layout-review`; temporary fixtures and the
+isolated server were removed. No save or operational write occurred.
+
+Root visually verified the final editor in the signed-in local Portal, then
+cancelled the pristine form. The three previously authorized transportation-kit
+drafts remain the only configuration records created during this walkthrough.
+
+## Standard containers, stock kits and physical shipments — September 8, 2026
+
+The synthetic checkpoint passed 44 cases: 12 Customer and 32 Phaeno cases.
+Actual-component synthetic browser review covers Customer packing, inline tube
+scanning and split manifests at 1280/390px in light/dark themes. It verifies a
+15 + 15 allocation, rejected scan retention, save-before-advance focus, explicit
+other-shipment/unallocated references, and bounded responsive layouts. Phaeno
+review covers the catalog and stock lists/details, create/prepare/register/
+dispatch/preview modals, dirty Escape, duplicate validation, fixed modal
+header/footer at short heights, keyboard scrolling and create-to-detail return.
+
+Evidence lives under `artifacts/sample-shipping-customer-review` and
+`artifacts/shipping-container-staff-review`. These fixtures intercept API calls;
+they do not prove a signed-in populated API journey or a physical scanner.
+No real stock, Customer sample or shipment was created or changed. Manifest
+review includes a generated Letter PDF and rendered-page inspection; physical
+barcode readability remains an operational acceptance step.
+
+Root also verified the signed-in local Phaeno navigation through **Order
+configuration > Sample shipping**, with the real API returning the empty
+container catalog and the existing destination/type/rule records. The live
+screen exposes **Add container size** and **Preview recommendation** correctly.
+This read-only check did not create configuration or stock. The local API
+health endpoint returned HTTP 200; the frontend returned HTTP 200 after its
+development server was refreshed. These are local checks, not a release.
+The signed-in **Lab ops > Receipt & accession** workspace also loaded the
+empty Standard kits list. Entering the walkthrough Job's order barcode
+resolved HS5Y7DB7 and SHP-20260908-7437F875A7D as Preparing with no confirmed
+manifest; lookup left receipt and custody unchanged. The Portal was returned
+to container setup for the next walkthrough.
+
+After the owner separately requested configuration and approved the identifiers,
+root used the real signed-in create flow to save TRANS-20, TRANS-10 and TRANS-05
+as revision-1 drafts with capacities 20/10/5 and the approved transportation-kit
+names. Each save opened its detail page with the expected Draft status, SKU,
+capacity and existing RNA/receiving compatibility. Return-to-list showed exactly
+three sizes in display order. No activation, physical stock creation or Customer
+shipment change was performed. This authorized configuration evidence is
+separate from the earlier read-only and synthetic checks.
+
+The final branded two-tube manifest fits one Letter page. A 26-tube manifest
+with three samples spans three pages; physical tube rows keep their barcode
+and caption together, include the sample ID, and repeat packet/shipment
+identification in each page footer. Rendered pages were visually inspected.
+
+The local migration independently preserved the walkthrough Job's exact nine
+samples and 18 tubes; before/after snapshots are byte-identical. Continue the
+populated walkthrough only after Phaeno supplies actual supported container
+SKUs, common names, capacities and compatible packing requirements. Customer
+location balances, reservations and automatic kit-shortage fulfillment remain
+the additional planning scope, not claims of current end-to-end acceptance.
+
+## Finalization review sorting and completion — September 8, 2026
+
+Eight final actual-component cases passed: a mixed six-sample/13-tube roster
+and a long 36-sample/70-tube roster, each at 1280/390px in light/dark themes.
+The review preserves accepted source order, naturally sorts IDs such as TEST-1,
+TEST-2 and TEST-10, shows exact group/overall counts and tube quantities, and
+does not reorder the input data. No-PHI confirmation still gates finalization
+and resets on reopen; Cancel/Escape restore the opener without a save.
+
+The first long-list review found off-screen initial checkbox focus. Focusing
+the visible summary inside the scroll body corrected it. All eight final cases
+verified initial scrollTop zero and visible focus, PageDown scrolling, Tab
+bringing the checkbox into view, fixed header/footer and usable actions at
+480px viewport height. No horizontal overflow, browser errors, API adapter
+calls, network attempts or real writes occurred. Temporary fixtures and the
+server on port 3153 were removed. Evidence is in
+`artifacts/sample-finalize-review/review.json` and 16 final screenshots;
+`initial-long-390-light.png` is a
+pre-fix diagnostic, not final evidence.
+
+The owner's Firefox screenshot independently confirms the approved 9-sample/
+18-tube grouped review. After the owner finalized, a guarded read-only query
+of local HS5Y7DB7 confirmed nine unique records/IDs, exact 1/5/3 source counts,
+18 tubes, finalized timestamp 3:53:25 PM PDT and Preparing shipment
+SHP-20260908-7437F875A7D with nine items and 18 unassigned tube slots. No return
+kit has been registered and no shipping/receipt dates are set. Phaeno kit
+preparation and the resulting user-facing shipment walkthrough remain next.
+
+## Grouped samples, completion and bounded scrolling — September 8, 2026
+
+The final actual-component browser review passed 24 synthetic cases, with
+55 captures and `review-final.json` under `artifacts/sample-source-capacity-review`.
+Empty, partial, excess and complete rosters ran at 1280px and 390px in both
+themes. Read-only long details, long group names, an incorrect 9-of-9 source
+mix and a 36-row roster received focused desktop/light and phone/dark checks.
+
+Verified + Add placement beside each group count, full-group blocking,
+inherited Add source with no source control, source-capacity edit recovery,
+populated-list Import disabling with visible help, available CSV template,
+group and overall completion icons only for exact counts, retained excess and
+unmatched rows, accessible pencil/trash labels/tooltips, and keyboard/focus/
+dirty/busy behavior. The bounded scroll region supports End/Home navigation,
+keeps opaque group bands sticky and leaves overall controls and shipment
+content outside. No horizontal overflow or browser errors occurred.
+
+One intercepted in-memory save was held/rejected to examine busy behavior;
+there were no real network operations or persisted writes. Root visually
+reviewed representative desktop/phone and long-roster captures. The temporary
+fixture files and review server on port 3152 were removed. Browser proof is
+synthetic; the owner's Firefox screenshots remain separate manual evidence.
+
+## Compact sample rows, icons and Expected status — September 8, 2026
+
+Sixteen synthetic cases checked editable/read-only rows at 1280/390/360/320px
+in light/dark themes using the actual Lab Job grid and samples panel. Ordinary
+desktop rows fit on one line; narrow screens wrap as needed. Long sample IDs,
+sources, accession details and customer-visible reasons remain readable.
+Keyboard/hover tooltips identify the sample; pencil opens the right sample,
+Cancel restores focus, and cancelling the named removal confirmation makes no
+API call. Singular/plural tube labels and role-based action visibility passed.
+
+The owner then approved hiding Expected before finalization. Twenty-four
+additional cases checked that final state across the same widths/themes:
+preparing Expected hidden, finalized Expected visible, and Received visible
+before finalization. Root reviewed final desktop/phone captures under
+`artifacts/sample-list-row-review`; `review-final-status.json` and `final-*`
+images supersede the earlier normal-row Expected screenshots. No overflow,
+runtime errors, API attempts or real mutations occurred. Disposable fixtures
+and port 3151 were removed. The owner's saved TEST-001 remains the only observed
+real sample in the guided walkthrough, and Edit sample is the next manual step.
+
+## Sample entry layout and discard protection — September 8, 2026
+
+The owner's Firefox screenshots confirm HS5Y7DB7 quote revision 1 was accepted
+at USD900 pre-tax and individual sample entry became available at 0 of 9.
+Opening Add sample exposed the layout issue addressed in this checkpoint.
+
+Final synthetic browser review of the actual `LabSampleDialog` passed 20 cases:
+Add with multiple sources, Add with one source, populated Edit, three field
+errors, and a long single source, each at 1280/390px in light/dark. Every case
+also ran at a short viewport (420px desktop / 480px phone height), producing
+40 screenshots under `artifacts/lab-sample-layout-review` plus `review.json`.
+Checks covered single-column alignment, compact tube input, default/edit
+values, single-source context, validation focus, keyboard source selection,
+dirty-discard cancellation/confirmation and restored opener focus. Header and
+footer remain fixed while the body scrolls. No overflow, browser errors, API
+attempts or real sample saves occurred. Root reviewed representative desktop,
+phone and short-height error captures; the disposable fixture and port 3150
+server were removed.
+
+The first synthetic run discovered that dirty dismissal did not ask before
+discarding values. Subscribing to dirty state during render corrected it;
+all final browser cases and four focused component regressions passed. The
+owner's next Firefox step is to refresh and reopen Add sample before entering
+the first test sample. Sample creation/finalization remains unverified manually.
+
+## Quote decline reason dropdown — September 8, 2026
+
+Four synthetic browser cases passed with the actual `LabQuoteDeclineDialog`
+at 1280/390px in light/dark themes. The available installed Playwright runtime
+was used because agent-browser was unavailable. Checks covered the initial
+blank selection, native keyboard selection, Other's conditional required field,
+validation focus, hidden-text retention, trapped dialog focus, cancelled and
+confirmed dirty discard, focus restoration, and canonical serialized values.
+There were no browser errors, horizontal overflow, or external/API requests.
+All submissions used a synthetic callback; no real quote was declined.
+
+Twenty captures and `review.json` are retained in
+`artifacts/quote-decline-reason-review`; root reviewed desktop blank, mobile
+Other validation and dark Other-filled layouts. The disposable fixture and
+port 3149 server were removed. Owner Firefox acceptance remains the next
+guided step: choose Other and inspect the required multiline field without
+submitting a real decline.
+
+## Quote expiration and extension review — September 8, 2026
+
+Synthetic browser review exercised the actual Customer Job detail and Phaeno
+commercial controls through in-memory HTTP responses: 20 scenarios across five
+states, desktop/phone widths (1280/390), and light/dark themes. Checks covered
+expired and pending states, Member guidance, valid acceptance, extension and
+reissue dialogs, keyboard focus/trapping/Escape/return focus, dirty values,
+mobile pricing scroll and fixed-footer clearance. No horizontal overflow or
+browser errors were observed, and no real Clerk, API or email operation ran.
+Screenshots and `review.json` are in `artifacts/quote-extension-review`.
+The temporary fixture and isolated port 3142 server were removed.
+
+Those captures precede the final action-row grouping. A separate synthetic
+review used the shared Button/Card components and actual row markup at seven
+widths (320–1440px). All three actions fit at 1280px and above; the download
+wraps below the decision actions on narrower cards, with no overflow or browser
+errors. Root visually reviewed desktop and phone captures under the same
+artifact folder (`final-actions-*`). These captures precede the approved
+Withdraw-to-Decline wording refinement, covered by focused component checks.
+Live Firefox acceptance of
+expiration/request/reissue is still pending. Do not modify HS5Y7DB7's actual
+October 4 expiration merely to simulate expiry in the guided walkthrough.
+
+## Guided quote download checkpoint — September 8, 2026
+
+The owner's Firefox walkthrough confirmed ordinary Member access to Lab services
+and job HS5Y7DB7, with quote revision 1, 9 specimens at USD100 each, and a USD900
+pre-tax total. The original **Download quote** returned the internal JSON object.
+The authorized local correction replaces it with a branded **Download quote PDF**.
+The owner saw the new retryable error while the old API was still running;
+that is not successful PDF acceptance. Focused component/HTTP and PostgreSQL
+checks cover the download contract separately. Resume with the same button after
+the local API restart and verify the downloaded file in Firefox; no quote
+acceptance, order mutation, or fresh invitation is required for this step.
+
+The owner's subsequent Firefox screenshot confirms that the branded PDF opens
+with Johns Hopkins University, General, HS5Y7DB7, revision 1, and the expected
+9 x USD100 = USD900 pre-tax price. Download/render acceptance is now observed.
+The owner requested a follow-up to balance PDF spacing; its visual approval is
+the next checkpoint before resuming the request-revision snapshot test.
+
+## Account menu and dashboard polish — September 8, 2026
+
+The existing `home.spec.ts` scenario **keeps workspace navigation concise and
+groups the user menu** passed on desktop Chromium and mobile Chrome (2 cases)
+on the isolated mock server at port 3108. It covers navigation placement,
+radio selection, keyboard traversal, focus distinction, Escape, and background
+scroll locking. Desktop screenshots confirmed the updated identity hierarchy,
+grouped display controls and neutral session-exit row. No real account action
+was taken. The owner's Firefox screenshots independently confirmed dashboard
+entry and the ordinary member menu; the resized two-card layout was approved,
+with a follow-up to strengthen the bottom outline.
+
+Final synthetic Customer verification rendered the actual Header, UserMenu and
+DashboardPage with preseeded summaries and no Clerk or API requests. At 1280px,
+two equal 566x179px cards fill the row; at 390px, both cards are 358px wide and
+stacked. Desktop/phone light/dark screenshots verified the complete semantic
+card outline, the separate wrapping mobile organization row, and a long menu
+email within the viewport. No horizontal overflow or browser errors occurred.
+The temporary fixture and isolated server were removed. Screenshots and the
+geometry report remain under artifacts/user-menu-dashboard-polish. This proves
+presentation only; the live owner walkthrough remains the account evidence.
+
+## Owner Firefox acceptance — September 8, 2026
+
+The owner completed sign-in in Firefox, resumed the saved invitation with
+**Continue invitation**, reviewed Joe Blow's fixed identity, and selected
+**Accept invitation**. The resulting header showed Johns Hopkins University
+and General; the administrator's Company People view independently confirmed
+**Portal active**, the linked Contact/Portal user, and General access.
+
+The confirmation page incorrectly changed to **Open your invitation email**
+when session refresh selected the initial organization and department. A local
+fix preserves invitation completion across that transition. Automated provider
+regression evidence is separate from a fresh Firefox replay of the corrected
+confirmation, which remains unverified; Joe's accepted invitation must not be
+reissued merely to repeat this check. Dashboard entry is the next guided step.
+The earlier post-sign-in access-gate detour remains an observed follow-up.
+
+## Invitation acceptance UX checkpoint — September 8, 2026
+
+Local browser verification used a temporary Alex Review invitation and Clerk's
+reserved `+clerk_test` email address. The branded page loads recipient and
+organization before sign-in, removes the token from the visible URL, and goes
+directly from Continue to the verification-code field with no editable email.
+The temporary record is separate from Joe Blow's pending owner walkthrough.
+The temporary local invitation was deleted after verification; no Portal user
+or membership was created for it. The test did not complete password/MFA setup.
+No real email delivery or organization membership was requested by this check.
+The owner observed the subsequent new-password prompt: current Clerk
+development settings require password and authenticator setup for new accounts,
+while ordinary sign-in uses email codes. Removing the password requirement is
+a separate product decision. The owner chose to keep it and clarified first-time
+copy: **Create your password**, with a **Password** field. **New password** is
+reserved for a reset. No provider settings changed in this checkpoint.
+
+Desktop presentation and 390px reflow were checked (390px page, 358px card,
+no horizontal overflow); keyboard progression and visible focus were inspected.
+No browser console errors were observed. Focused component tests cover existing
+account, first-time transfer, wrong-account and failure paths. Full real-account
+password/MFA completion was outside this synthetic check. The later owner
+acceptance checkpoint above supersedes the previously pending invitation step.
+No broad E2E suite, deployment, or migration was run.
+
+## Mailgun invitation walkthrough — September 8, 2026
+
+The owner confirmed receipt of Joe Blow's local Portal invitation after adding
+the development network to Mailgun's IP allowlist. Sending never grants access;
+the invitation was pending at this earlier checkpoint. The
+legacy Portal delivery label incorrectly remains Not sent after provider
+acceptance; this display defect is not a failed-send signal and is a follow-up.
+Domain-template consolidation and automatic unsubscribe-footer removal were
+verified through Mailgun readback. The rebuilt local API sent the branded domain
+template at 11:06 AM Pacific; Mailgun accepted and delivered events were verified
+for the exact provider message ID, and the invitation remained Pending.
+Mailgun message-body retrieval is disabled for this domain; that privacy setting
+was preserved. Branded-email inbox appearance is a separate owner checkpoint
+from the original email receipt. No broad Playwright suite was run.
+
 Invitation readiness follow-up: signed-in desktop verification confirmed General unchecked immediately shows the required-Department explanation and disables Send invitation. The fixed footer remains intact; General is left unchecked for user review. Automated checks cover re-enabling valid selections. No invitation was sent.
 
 ## Invitation clarity — September 8, 2026
@@ -21,8 +383,8 @@ physical receipt and enforcement at future enqueue/dispatch remain unverified.
 
 ## Manual major-workflow companion — September 8, 2026
 
-The [major-workflow acceptance pack](../testing/README.md) provides 60 human-run
-scripts, reusable role/data prerequisites, connected journey sequences, expected
+The [major-workflow acceptance pack](../testing/README.md) now provides 74 human-run
+scripts (the original 60 plus SHP-01–14), reusable role/data prerequisites, connected journey sequences, expected
 results, cleanup/handoffs and a [run record](../testing/RUN-RECORD.md).
 The [owning plan](MAJOR-WORKFLOW-ACCEPTANCE-PLAN.md) distinguishes connected
 application, intercepted browser, provider, destination receipt, physical bench
@@ -485,7 +847,7 @@ the protected deployed-Preview acceptance above.
   desktop and mobile omit the retired Portal Accounts destination and expose
   the remaining grouped administration/resources in the user menu,
   and the three display choices share one compact row directly
-  after user identification with a brand-accent selected treatment distinct
+  after user identification with a raised selected surface distinct
   from active navigation and a separate focus-ring treatment;
   the user menu omits organization-context search and act-as controls, Arrow
   Up/Down traverses the remaining menu items, Escape closes the menu, and the

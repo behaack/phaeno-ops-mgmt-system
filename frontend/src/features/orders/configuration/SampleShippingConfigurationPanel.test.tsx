@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { SampleShippingConfigurationPanel } from './SampleShippingConfigurationPanel'
 
+vi.mock('./ContainerSizesPanel', () => ({ ContainerSizesPanel: () => <div>Container sizes</div> }))
+
 const apiMocks = vi.hoisted(() => ({
   createDestination: vi.fn(),
   createRule: vi.fn(),

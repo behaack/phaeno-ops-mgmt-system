@@ -41,23 +41,45 @@ When corrections are requested, create and submit a new revision. The prior revi
 
 ## Review and accept a quote
 
+In **Quote and billing**, select **Download quote PDF** to save a Phaeno-branded copy of the displayed quote. It includes the Job, quote revision and dates, itemized prices, and any billing details and payment terms saved with that quote. Members can download quotes for their assigned Department; downloading does not accept a quote. If the download fails, select **Download quote PDF** again to retry.
+
 Laboratory services are priced per job. Phaeno issues an itemized, immutable Portal quote for the accepted scope. When your approved billing and tax information is available, the quote includes calculated tax and freezes those commercial terms. Otherwise the quote is labeled **Pre-tax total**, and applicable tax is calculated when the invoice is issued. A zero tax amount is valid for an exempt, non-taxable, or zero-rate determination. The quote is available after all non-billing readiness items are complete and a Customer administrator is active; billing must be complete before invoicing.
 
 Before accepting, confirm the committed sample count, biological-source composition, standard service scope, price, currency, expiration date, and whether the displayed amount includes tax or is pre-tax. A Customer organization administrator or an administrator of the selected Department can accept the current unexpired quote.
 
 If the scope changes after acceptance, Phaeno issues a separate change quote. Added work does not begin until the applicable change is accepted.
 
-If accepting, withdrawing, or requesting cancellation fails, review the message in the open dialog. Your entries remain available to correct and retry. Closing the dialog does not confirm the action. You are asked before discarding changed entries. While saving, the dialog stays open and its entries and actions are unavailable until the save finishes.
+**Accept quote**, **Decline quote**, and **Download quote PDF** are grouped beneath the quote total. Declining a quote closes the entire request; the confirmation explains this before you proceed. Before a quote is available, use **Withdraw request** to close your request. After acceptance, use **Request cancellation** for Phaeno review.
+
+When declining, choose a reason: **Our needs changed**, **Cost is too high**, **Selected another vendor**, **Prefer not to say**, or **Other**. Only **Other** requires an explanation in the multiline **Please explain** field. The selected reason is recorded with the request closure.
+
+If accepting, declining, withdrawing, or requesting cancellation fails, review the message in the open dialog. Your entries remain available to correct and retry. Closing the dialog does not confirm the action. You are asked before discarding changed entries. While saving, the dialog stays open and its entries and actions are unavailable until the save finishes.
+
+## Expired quotes and extension requests
+
+An unaccepted quote shows **Expired** and its expiration date once its deadline passes. **Accept quote** is beside **Quote and billing** for organization and department administrators; it is disabled with an explanation when acceptance is unavailable. Members can review and download the quote, and should ask an administrator to accept it.
+
+For the current expired quote, an organization or department administrator can select **Request extension**, optionally explain why more time is needed, and submit the request. **Extension requested** confirms that Phaeno has the request; another request for the same quote is unnecessary. If saving fails, the dialog keeps the entered reason so you can retry.
+
+If Phaeno issues a new revision, review its price, terms and new expiration date before accepting. An extension request does not accept a quote or automatically extend its deadline. The original revision remains in the history, and its PDF stays available. An accepted quote remains **Accepted** when its former expiration date passes.
 
 ## Ship and track samples
 
-After placing the standard order or accepting the manual quote, return to **Samples and shipping**. Use **Add sample**, **Edit sample**, and **Remove sample**, or **Download CSV template** and **Import sample list**. The CSV accepts exactly `customer_sample_id`, `biological_source`, and `tube_count`; it does not accept barcodes. Previewing a CSV does not change the Job. Confirming a valid preview atomically replaces the editable draft list.
+After placing the standard order or accepting the manual quote, return to **Samples and shipping**. Use **+ Add** within the appropriate source group to enter samples individually, or **Download CSV template** and **Import sample list** to enter the complete list together. Import is available only while the list is empty; remove all entries first if you need to start again with a CSV. Download CSV template remains available after samples are entered. The CSV accepts exactly `customer_sample_id`, `biological_source`, and `tube_count`; it does not accept barcodes. Previewing a CSV does not change the Job. Confirming a valid preview saves the complete list as one operation.
+
+Samples are grouped by **Biological source**. Each heading shows the entered and accepted sample counts, including sources with no entries yet. These counts measure samples, not tubes. Long lists scroll within the sample area, with the current group heading kept visible; the overall count and main controls stay above the list. Each sample appears in a compact row within its group. Use its pencil icon to **Edit sample** or its trash-can icon to **Remove sample**; hovering or focusing the icon shows its label and sample ID. Removal requires confirmation. After finalization, **Expected** indicates that the lab has not received the sample. This routine status is hidden while preparing the list; other statuses remain visible.
+
+In **Add sample** or **Edit sample**, use a **Customer sample ID** unique to the Job and enter **Quantity (tubes)** as a positive whole number. Add sample inherits the source from the group where you selected **+ Add**, so there is no source field to complete. A group's Add button is disabled when its accepted count is reached or the overall list is full. In Edit sample, you can correct the biological source by selecting another accepted source with room. Do not enter patient names or direct identifiers. Closing an edited form asks before discarding its unsaved changes.
+
+If an existing group exceeds its accepted count, such as **2 of 1**, it shows a red warning. Its samples remain available to review and correct. Edit a sample's source only when another accepted source accurately describes it and has room, or remove an extra entry with confirmation. Samples with a source outside the accepted list are also shown for correction. The list cannot be finalized until its total and every source count match the accepted scope.
 
 Do not ship physical samples before the order is commercially committed and the exact roster is finalized. An early or unmatched package is quarantined and escalated by Phaeno; it is not accessioned or attached to active Job work.
 
-The final list must contain exactly the accepted number of unique non-PHI sample IDs, match every accepted source-group count, and give each sample a positive whole-number tube count. Select **Review and finalize list**, review every sample, and affirm the no-PHI confirmation before selecting **Finalize sample list**. Finalization authorizes the specimen-specific Lab work and lets Phaeno prepare the registered return kit.
+The final list must contain exactly the accepted number of unique non-PHI sample IDs, match every accepted source-group count, and give each sample a positive whole-number tube count. A green check beside the overall counter means the total and source counts are complete; it does not finalize the list.
 
-In **Return kit and shipment**, open the related shipment. When the kit is fulfilled, match every physical Phaeno-supplied tube to the displayed tube slot. A sample with multiple tubes appears once per tube as **Tube 1 of N**, **Tube 2 of N**, and so on. Review the packet and record carrier details after the package leaves your organization. Record the shipment once in its packet workflow; carrier and tracking details stay connected to all included samples. **Back to lab job** returns to the owning Job.
+Select **Review and finalize list**. The review follows the same biological-source grouping as the sample area. Both views sort sample IDs in natural numeric order within each group, such as TEST-2 before TEST-10. The review shows source counts and the overall sample and tube totals. Review every sample and affirm the no-PHI confirmation before selecting **Finalize sample list**. Finalization authorizes the specimen-specific Lab work and opens shipment preparation.
+
+In **Return kit and shipment**, open the related shipment. Choose compatible containers using the recommendation or the sizes and quantities you have. Each nonempty container becomes a separate shipment; a sample's tubes may be split across them. Scan each permanent Phaeno-supplied tube barcode into its displayed slot. The first scan connects the registered, dispatched kit to that shipment. Review and print a manifest for each package, then record its carrier details after it leaves your organization. Each manifest distinguishes its contents from tubes in other shipments or still awaiting a container. **Back to lab job** returns to the owning Job. See **Prepare and ship samples** for the complete packing and scanning steps.
 
 The Portal tracks receipt, accessioning, processing, external sequencing, data processing, scientific review, holds, and readiness for release. A job can remain in progress while different samples move through laboratory work.
 
@@ -77,4 +99,4 @@ A draft can be discarded before submission. Before Phaeno accepts work, an admin
 
 ## Find and resume work
 
-Search and filter by status, dates, or **Submitted by me**. **Previous** and **Next** show the complete matching result set. Opening a Job and returning keeps the filters and page. **Clear all** removes them. An empty filtered result is distinct from a failed load; use **Retry records** when loading fails.
+Search and filter by status, dates, or **Submitted by me**. **Previous** and **Next** show the complete matching result set. From a Job, select **Back to lab services** to return with the filters and page retained. **Clear all** removes them. An empty filtered result is distinct from a failed load; use **Retry records** when loading fails.

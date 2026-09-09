@@ -313,7 +313,7 @@ function OperationalSummary({ workflow, item }: { workflow: Workflow; item: LabS
   )
 }
 
-function CommercialControlPanel({
+export function CommercialControlPanel({
   workflow,
   item,
   catalogItems,
@@ -328,13 +328,26 @@ function CommercialControlPanel({
 }) {
   const [quoteOpen, setQuoteOpen] = useState(false)
   const [quoteOpening, setQuoteOpening] = useState(false)
-  const mayQuote = (workflow === 'lab' || workflow === 'assembly' && !('isIncludedAssembly' in item && item.isIncludedAssembly)) && item.status === 'QuoteInPreparation'
+  const [quoteOpeningError, setQuoteOpeningError] = useState<string | null>(null)
+  const { session } = usePhaenoSession()
+  const canOperate = Boolean(session?.capabilities?.canOperateCommercialWork)
+  const labOrder = workflow === 'lab' && 'quotes' in item && 'requestedSpecimenCount' in item ? item : null
+  const issuedQuote = labOrder && item.status === 'QuoteIssued'
+    ? latestQuote(labOrder.quotes.filter(quote => quote.status === 'Issued' || quote.status === 'Expired'))
+    : undefined
+  const extensionRequest = issuedQuote?.extensionRequest?.status === 'Pending' ? issuedQuote.extensionRequest : null
+  const mayQuote = canOperate && (labOrder
+    ? labOrder.canManageQuotes && ['QuoteInPreparation', 'QuoteIssued'].includes(item.status)
+    : workflow === 'assembly' && !('isIncludedAssembly' in item && item.isIncludedAssembly) && item.status === 'QuoteInPreparation')
   const workflowPath = workflow === 'lab' ? 'lab-service-orders' : workflow === 'reagent' ? 'reagent-orders' : 'data-assembly-requests'
   async function openQuote() {
     setQuoteOpening(true)
+    setQuoteOpeningError(null)
     try {
       await onSaved()
       setQuoteOpen(true)
+    } catch (error) {
+      setQuoteOpeningError(getOrderErrorMessage(error, 'Refresh the Job and try again.'))
     } finally {
       setQuoteOpening(false)
     }
@@ -353,13 +366,15 @@ function CommercialControlPanel({
               </CardDescription>
             </div>
             <div className="flex flex-wrap gap-2">
-              {mayQuote ? <Button type="button" disabled={quoteOpening} onClick={() => void openQuote()}>{quoteOpening ? 'Refreshing…' : workflow === 'lab' && 'proposedUnitPrice' in item && item.proposedUnitPrice != null ? 'Review proposed price' : 'Issue quote'}</Button> : null}
+              {mayQuote ? <Button type="button" disabled={quoteOpening} onClick={() => void openQuote()}>{quoteOpening ? 'Refreshing…' : extensionRequest ? 'Review extension' : issuedQuote ? 'Reissue quote' : workflow === 'lab' && 'proposedUnitPrice' in item && item.proposedUnitPrice != null ? 'Review proposed price' : 'Issue quote'}</Button> : null}
               {workflow === 'lab' && labWorkOrderId ? <Button asChild variant="outline"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: labWorkOrderId }} search={{ section: undefined }}>Open Lab work</Link></Button> : null}
             </div>
           </div>
         </CardHeader>
+        {quoteOpeningError ? <CardContent><Alert variant="destructive"><AlertTitle>Quote could not be opened</AlertTitle><AlertDescription>{quoteOpeningError}</AlertDescription></Alert></CardContent> : null}
         {workflow === 'lab' ? (
           <CardContent>
+            {extensionRequest ? <Alert className="mb-4"><AlertTitle>Quote extension requested</AlertTitle><AlertDescription><p>Revision {issuedQuote?.revision} · Requested {formatDateTime(extensionRequest.requestedAt)}</p>{extensionRequest.reason ? <p className="whitespace-pre-wrap break-words">{extensionRequest.reason}</p> : null}<p>{mayQuote ? 'Review the request and issue a new quote revision with a future expiration date. The request closes when that revision is issued.' : 'An authorized Commercial Operator must review this request.'}</p></AlertDescription></Alert> : null}
             <p className="text-sm text-muted-foreground">
               {labWorkOrderId
                 ? 'The commercial order remains the source record; Lab operations owns all authorized physical and scientific work.'
@@ -382,6 +397,7 @@ function CommercialControlPanel({
           workflow={workflow}
           recordId={item.id}
           defaultQuantity={workflow === 'lab' && 'requestedSpecimenCount' in item ? item.requestedSpecimenCount : undefined}
+          sourceQuote={issuedQuote}
           priceProposal={workflow === 'lab' && 'proposedUnitPrice' in item && item.proposedUnitPrice != null ? {
             unitPrice: item.proposedUnitPrice,
             currency: item.proposedCurrency ?? 'USD',

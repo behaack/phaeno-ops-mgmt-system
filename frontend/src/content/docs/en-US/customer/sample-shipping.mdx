@@ -1,23 +1,51 @@
 # Prepare and ship samples
 
-For a normal Lab Service Job, sample entry begins after the price is accepted. Shipping and laboratory authorization begin after the exact sample list is finalized. Open the owning Job under **Lab services**, then use **Samples and shipping** → **Return kit and shipment** to open the return kit, expected tube slots, destination, and packet status.
+For a normal Lab Service Job, sample entry begins after the price is accepted. Shipping and laboratory authorization begin after the exact sample list is finalized. Open the owning Job under **Lab services**, then use **Samples and shipping** → **Shipping containers**. An organization administrator or an administrator of the selected Department prepares containers, matches tubes, confirms packets and records dispatch. Members can review the shipments available to their Department.
 
-## Keep your records connected to the tubes
+## Order and receive transportation kits
 
-Each Phaeno-supplied tube has a permanent manufacturer barcode. Your organization or department administrator scans or enters that barcode beside the correct Customer sample and tube slot before anything is shipped. A sample may own more than one slot, shown as **Tube 1 of N**. Use a stable, non-PHI identifier that your organization can connect to its own sample record. Do not enter a patient name, medical-record number, date of birth, or other direct identifier.
+Open **Choose containers** for the tubes awaiting containers. If no usable kits are recorded, use **Order transportation kits**. The confirmation starts with the recommended kit sizes and quantities and your Department's default delivery location, when one is saved. Review the delivery address, then select **Confirm kit order**. Transportation kits and outbound delivery are included with the accepted laboratory order at no additional charge.
 
-Phaeno preserves the tube-to-sample crosswalk in the Portal and in the shipment packet. Download the CSV or print the packet for your records. Your organization remains responsible for knowing what its Customer sample identifier means; Phaeno is responsible for retaining the identifier-to-tube association used for shipping and intake.
+Use **Add a delivery location** or **Manage delivery locations** when an address needs setup or correction. Delivery locations belong to your organization and Department. Administrators can maintain them from the Department workspace. The confirmed order retains the address shown at confirmation even if the saved location changes later.
 
-If the wrong tube was assigned, an organization or department administrator can scan the replacement tube and record why the assignment changed. The earlier association remains in history. If a packet was already confirmed, saving the correction before shipment voids that packet and issues a corrected revision; destroy any unused copy of the old packet and print the replacement. Do not cover, alter, or remove the manufacturer barcode.
+**Kits ordered** means Phaeno has received the order for fulfillment. Reopening the page or repeating the same confirmation does not place a second order. An order can be cancelled before any of its kits are dispatched. Once dispatched, the kit number, carrier and tracking appear as **On the way**. This is provisional inventory and is not yet available for preparing samples.
 
-## Confirm and ship
+When the kits arrive, select **Confirm kits received** and acknowledge only those you have actually received. Each acknowledged kit becomes available for sample preparation. If delivery is partial, use the received kits while the remaining kits stay outstanding. An organization or Department administrator records receipt; ordinary members can review the status.
 
-Assign exactly one registered tube from the displayed return kit to every expected tube slot. Confirm the crosswalk only after checking every row. The Portal then freezes the destination, instructions, manifest, packet barcode, and tube-to-sample crosswalk for that packet revision.
+The recorded inventory covers kits supplied for this Job and delivery location. An absent inventory record does not prove there are no physical kits on site. **I already have kits** retains the existing preparation route when no outstanding kit order blocks it; Phaeno must have registered those physical kits and their permanent tube barcodes before they can be used.
 
-Print the full packet. Follow the preparation and packing instructions, place the manifest inside the package, and use the ship-to page with the carrier label. The Phaeno packet barcode does not buy postage and is not a tube barcode.
+## Choose the containers you have
 
-Confirmation shows both the number of samples and the number of tubes. **View packet** checks the current revision before offering **Print packet**; reconnect or use **Try again** if it cannot be checked. A correction or replacement refreshes the packet. If saving fails, the message appears in the open dialog and your entries stay available for review.
+After confirming kit receipt, use **Prepare samples** to choose containers. The Portal recommends compatible sizes using the fewest containers, then the least spare capacity. Each size shows its common name, SKU number and usable tube capacity. A recommendation does not reserve materials or prove that unrecorded kits are available.
 
-After handing the package to the carrier, record the carrier, tracking number, and shipment time in the related shipment. Record it once; the Job shows the same shipping facts for its samples. If a tube cannot be matched confidently or its barcode will not scan, stop and contact Phaeno instead of guessing.
+Use **Adjust containers** to enter the number of each size you will use. You may also enter **Available to you** as an upper limit; leave it blank when unknown, or enter zero to exclude a size. **Use recommendation for these quantities** recalculates within those limits. Another compatible choice needs no approval or explanation. For example, when configured sizes permit 30 tubes, one 20-tube and one 10-tube container, two 20-tube containers, or six 5-tube containers are all valid.
 
-Use **Back to lab job** for the owning Job or **All shipments** for your authorized shipment list.
+The preview shows tubes, containers, usable capacity, spare slots and unallocated tubes. **Confirm containers** creates a shipment for each container that has allocated tubes. Empty containers do not become shipments. If there is insufficient capacity, the exact shortfall remains visible; **Prepare available containers** prepares the allocated tubes while the others remain awaiting containers. Spare slots are empty capacity, not missing samples.
+
+A sample's tubes may be split among shipments. Container choices do not change accepted sample counts or pricing. Assigned tubes and confirmed packets are not silently rearranged if configuration changes. Contact Phaeno when existing assignments or a dispatched shipment need reconciliation.
+
+**Tubes in each container** lets you adjust the distribution, such as 15 + 15 across two 20-tube containers. Each count must fit its container, and the combined count must equal the tubes allocated in the preview. Enter zero for a selected container you will leave empty; it will not create a shipment.
+
+## Scan and retain tube identities
+
+Use a stable **Customer sample ID** that your organization can connect to its own sample record. Do not enter patient names, medical-record numbers, dates of birth or other direct identifiers.
+
+Open a prepared shipment and work through **Scan tubes into this shipment**. For the displayed sample and tube number, scan its permanent manufacturer barcode and press Enter or **Save scan**. A successful match displays the exact saved number and barcode graphic, updates progress, and moves focus to the next tube. Each match is saved separately, so returning later resumes at the next unmatched tube. Long lists have **Previous tubes** and **Next tubes** controls.
+
+Use registered tubes from a fulfilled kit supplied for this Job. The first successful scan connects the physical kit to the selected container; its remaining tubes must come from that same kit. An unknown, ineligible, duplicate or already-used barcode cannot advance the step. A failed scan keeps the entered value and current sample available for correction and retry. Do not cover, alter or remove the manufacturer barcode.
+
+If the wrong tube was assigned, use **Change tube** or **Correct tube** and record why the assignment changed. The earlier association remains in history. A correction after packet confirmation, but before dispatch, voids that packet and issues a corrected revision. Destroy unused copies of the old packet and print the replacement.
+
+## Confirm each shipment and print its packet
+
+Review every physical tube in the container, then select **Review and confirm packet**. Confirmation shows separate sample and tube counts and freezes the destination, instructions, manifest and crosswalk for that revision. A container can be partly filled when all its declared tubes are matched; spare capacity does not require extra tubes.
+
+Print the full packet and follow its preparation and packing instructions. Put that container's manifest inside the package. It includes the frozen container name, SKU and capacity, distinct order, shipment and sample barcodes, and every permanent tube barcode for its physical contents. A split sample shows how many of its total tubes are inside, with other shipment references or unallocated tubes listed separately. Those references reflect the confirmed revision; the Portal shows current progress. Scanning a printed identifier does not prove physical receipt.
+
+**View packet** checks the current revision before offering **Print packet**. Reconnect or use **Try again** if it cannot be checked. If confirmation fails, the message appears in the open dialog and your entries remain available. Retain the packet or **Crosswalk CSV** so your organization can connect its own identifiers to the permanent tubes. The packet does not buy postage or replace the carrier label.
+
+## Record dispatch and follow receipt
+
+After handing each package to the carrier, record its carrier, tracking number and shipment time. Repeat for each physical shipment. Receipt progress shows tubes received per shipment, across the Job and for each sample. A sample split across containers remains partly received until all its expected tubes have been recorded; receiving the first package does not mark the entire sample received.
+
+Use **Back to lab job** for the owning Job or **All shipments** for your authorized list. If a tube cannot be matched confidently, a printed barcode cannot be read, or there is no compatible container, contact Phaeno with the Job and shipment references instead of guessing.

@@ -411,7 +411,7 @@ public static class SampleShippingCompatibilityResolver
     }
 }
 
-public sealed class SampleReturnKit : IAudit, IConcurrency
+public sealed partial class SampleReturnKit : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public string KitNumber { get; private set; } = null!;
@@ -507,7 +507,7 @@ public sealed class SampleReturnKit : IAudit, IConcurrency
     public void IncrementVersion() => Version++;
 }
 
-public sealed class RegisteredSampleTube : IAudit, IConcurrency
+public sealed partial class RegisteredSampleTube : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid SampleReturnKitId { get; private set; }
@@ -543,6 +543,8 @@ public sealed class RegisteredSampleTube : IAudit, IConcurrency
 
     public void MarkAvailable()
     {
+        if (ReceivedAt.HasValue)
+            throw new InvalidOperationException("A physically received tube cannot be reassigned to another sample or shipment.");
         if (Status != RegisteredSampleTubeStatus.Assigned)
             throw new InvalidOperationException("Only an assigned tube can be returned to the available kit inventory.");
         Status = RegisteredSampleTubeStatus.Registered;
@@ -626,7 +628,7 @@ public sealed class SampleTubeAssignmentEvent
     }
 }
 
-public sealed class SampleShipment : IAudit, IConcurrency
+public sealed partial class SampleShipment : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public string ShipmentNumber { get; private set; } = null!;
@@ -709,8 +711,8 @@ public sealed class SampleShipment : IAudit, IConcurrency
 
     public void MarkReceived(DateTime receivedAt)
     {
-        if (Status is not (SampleShipmentStatus.Shipped or SampleShipmentStatus.Delivered))
-            throw new InvalidOperationException("Only an in-transit or delivered sample shipment can be received.");
+        if (Status is not (SampleShipmentStatus.ReadyToShip or SampleShipmentStatus.Shipped or SampleShipmentStatus.Delivered))
+            throw new InvalidOperationException("Only a confirmed or dispatched sample shipment can be received.");
         if (ShippedAt.HasValue && receivedAt < ShippedAt.Value)
             throw new ArgumentException("Receipt cannot precede shipment.", nameof(receivedAt));
         ReceivedAt = receivedAt;
@@ -729,7 +731,7 @@ public sealed class SampleShipment : IAudit, IConcurrency
     public void IncrementVersion() => Version++;
 }
 
-public sealed class SampleShipmentItem : IAudit, IConcurrency
+public sealed partial class SampleShipmentItem : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid SampleShipmentId { get; private set; }
@@ -794,7 +796,7 @@ public sealed class SampleShipmentItem : IAudit, IConcurrency
     public void IncrementVersion() => Version++;
 }
 
-public sealed class SampleShipmentTubeSlot : IAudit, IConcurrency
+public sealed partial class SampleShipmentTubeSlot : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid SampleShipmentItemId { get; private set; }

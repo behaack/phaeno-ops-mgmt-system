@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="9fcab3d7-0f78-4dc5-883e-3c984083b842" name="bhaac@HAACK-DESKTOP 2026-09-08 13:52:39" runUser="HAACK-DESKTOP\bhaac" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-09-08T13:52:39.9656336-07:00" queuing="2026-09-08T13:52:39.9656340-07:00" start="2026-09-08T13:52:33.9731346-07:00" finish="2026-09-08T13:52:41.4262730-07:00" />
+  <TestSettings name="default" id="d84e3545-8e8a-4c01-abe0-8376a4ef1aff">
+    <Deployment runDeploymentRoot="bhaac_HAACK-DESKTOP_2026-09-08_13_52_39" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="e3c1e4d0-6a05-489a-ab5e-d0c6ac415809" testId="489b4b03-74f3-0ed4-ea31-186b7dfd3100" testName="PhaenoPortal.Test.LabOperationsCommercialHandoffPostgresTests.QuoteExtensionRequestIsDurableDuplicateSafeAndDoesNotAlterOriginalTerms" computerName="HAACK-DESKTOP" duration="00:00:00.1426478" startTime="2026-09-08T13:52:41.0774486-07:00" endTime="2026-09-08T13:52:41.2203304-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e3c1e4d0-6a05-489a-ab5e-d0c6ac415809" />
+    <UnitTestResult executionId="cb9f593b-df5b-4011-930a-6686c5cd291d" testId="4a6a8327-1d50-d24d-9417-1d476d70490a" testName="PhaenoPortal.Test.LabOperationsCommercialHandoffPostgresTests.QuoteExtensionReissueResolvesRequestAndPreservesOriginalRevision" computerName="HAACK-DESKTOP" duration="00:00:00.5582780" startTime="2026-09-08T13:52:40.3340899-07:00" endTime="2026-09-08T13:52:40.8916199-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cb9f593b-df5b-4011-930a-6686c5cd291d" />
+    <UnitTestResult executionId="578da29d-b7da-4293-b831-777156a2d1e9" testId="fae224ea-6fba-a934-440e-ec219d3bf0d7" testName="PhaenoPortal.Test.LabOperationsCommercialHandoffPostgresTests.QuoteExtensionNeverExpiresAcceptedQuoteAndRejectsPastDatedReissue" computerName="HAACK-DESKTOP" duration="00:00:00.1273117" startTime="2026-09-08T13:52:41.2205787-07:00" endTime="2026-09-08T13:52:41.3479989-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="578da29d-b7da-4293-b831-777156a2d1e9" />
+    <UnitTestResult executionId="aa57a449-614b-47db-a45f-e84c65484669" testId="e16cff81-5700-bf18-4a82-63e83af65c68" testName="PhaenoPortal.Test.LabOperationsCommercialHandoffPostgresTests.QuoteExtensionRejectsCurrentUnexpiredWrongQuoteWrongTenantAndStaleCommands" computerName="HAACK-DESKTOP" duration="00:00:00.1851552" startTime="2026-09-08T13:52:40.8919347-07:00" endTime="2026-09-08T13:52:41.0772199-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="aa57a449-614b-47db-a45f-e84c65484669" />
+    <UnitTestResult executionId="a14538e3-f64e-44f8-87b6-1ea88e91db3b" testId="9a41612f-4290-f24a-3727-ac90f2b418a0" testName="PhaenoPortal.Test.LabOperationsCommercialHandoffPostgresTests.QuoteExtensionExpiresOnReadWithoutChangingStoredQuoteAndBlocksAcceptance" computerName="HAACK-DESKTOP" duration="00:00:05.2295450" startTime="2026-09-08T13:52:34.6879283-07:00" endTime="2026-09-08T13:52:39.9279671-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a14538e3-f64e-44f8-87b6-1ea88e91db3b" />
+    <UnitTestResult executionId="8e10b30a-2a56-429d-8211-e416812c202d" testId="db5d4ae2-1722-07d8-a21e-3a0d5ab19768" testName="PhaenoPortal.Test.LabOperationsCommercialHandoffPostgresTests.QuoteExtensionRequiresActiveScopedAdministratorAndAllowsDepartmentAdministrator" computerName="HAACK-DESKTOP" duration="00:00:00.4023401" startTime="2026-09-08T13:52:39.9490800-07:00" endTime="2026-09-08T13:52:40.3329674-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8e10b30a-2a56-429d-8211-e416812c202d" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="PhaenoPortal.Test.LabOperationsCommercialHandoffPostgresTests.QuoteExtensionRequestIsDurableDuplicateSafeAndDoesNotAlterOriginalTerms" storage="d:\__dev\phaeno-portal\artifacts\quote-pdf-access-tests\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="489b4b03-74f3-0ed4-ea31-186b7dfd3100">
+      <Execution id="e3c1e4d0-6a05-489a-ab5e-d0c6ac415809" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\artifacts\quote-pdf-access-tests\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabOperationsCommercialHandoffPostgresTests" name="QuoteExtensionRequestIsDurableDuplicateSafeAndDoesNotAlterOriginalTerms" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabOperationsCommercialHandoffPostgresTests.QuoteExtensionReissueResolvesRequestAndPreservesOriginalRevision" storage="d:\__dev\phaeno-portal\artifacts\quote-pdf-access-tests\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="4a6a8327-1d50-d24d-9417-1d476d70490a">
+      <Execution id="cb9f593b-df5b-4011-930a-6686c5cd291d" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\artifacts\quote-pdf-access-tests\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabOperationsCommercialHandoffPostgresTests" name="QuoteExtensionReissueResolvesRequestAndPreservesOriginalRevision" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabOperationsCommercialHandoffPostgresTests.QuoteExtensionNeverExpiresAcceptedQuoteAndRejectsPastDatedReissue" storage="d:\__dev\phaeno-portal\artifacts\quote-pdf-access-tests\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="fae224ea-6fba-a934-440e-ec219d3bf0d7">
+      <Execution id="578da29d-b7da-4293-b831-777156a2d1e9" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\artifacts\quote-pdf-access-tests\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabOperationsCommercialHandoffPostgresTests" name="QuoteExtensionNeverExpiresAcceptedQuoteAndRejectsPastDatedReissue" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabOperationsCommercialHandoffPostgresTests.QuoteExtensionExpiresOnReadWithoutChangingStoredQuoteAndBlocksAcceptance" storage="d:\__dev\phaeno-portal\artifacts\quote-pdf-access-tests\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="9a41612f-4290-f24a-3727-ac90f2b418a0">
+      <Execution id="a14538e3-f64e-44f8-87b6-1ea88e91db3b" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\artifacts\quote-pdf-access-tests\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabOperationsCommercialHandoffPostgresTests" name="QuoteExtensionExpiresOnReadWithoutChangingStoredQuoteAndBlocksAcceptance" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabOperationsCommercialHandoffPostgresTests.QuoteExtensionRequiresActiveScopedAdministratorAndAllowsDepartmentAdministrator" storage="d:\__dev\phaeno-portal\artifacts\quote-pdf-access-tests\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="db5d4ae2-1722-07d8-a21e-3a0d5ab19768">
+      <Execution id="8e10b30a-2a56-429d-8211-e416812c202d" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\artifacts\quote-pdf-access-tests\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabOperationsCommercialHandoffPostgresTests" name="QuoteExtensionRequiresActiveScopedAdministratorAndAllowsDepartmentAdministrator" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabOperationsCommercialHandoffPostgresTests.QuoteExtensionRejectsCurrentUnexpiredWrongQuoteWrongTenantAndStaleCommands" storage="d:\__dev\phaeno-portal\artifacts\quote-pdf-access-tests\bin\pseq.operations.test\debug\pseq.operations.test.dll" id="e16cff81-5700-bf18-4a82-63e83af65c68">
+      <Execution id="aa57a449-614b-47db-a45f-e84c65484669" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\artifacts\quote-pdf-access-tests\bin\PSeq.Operations.Test\debug\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabOperationsCommercialHandoffPostgresTests" name="QuoteExtensionRejectsCurrentUnexpiredWrongQuoteWrongTenantAndStaleCommands" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="489b4b03-74f3-0ed4-ea31-186b7dfd3100" executionId="e3c1e4d0-6a05-489a-ab5e-d0c6ac415809" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4a6a8327-1d50-d24d-9417-1d476d70490a" executionId="cb9f593b-df5b-4011-930a-6686c5cd291d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="fae224ea-6fba-a934-440e-ec219d3bf0d7" executionId="578da29d-b7da-4293-b831-777156a2d1e9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e16cff81-5700-bf18-4a82-63e83af65c68" executionId="aa57a449-614b-47db-a45f-e84c65484669" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9a41612f-4290-f24a-3727-ac90f2b418a0" executionId="a14538e3-f64e-44f8-87b6-1ea88e91db3b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="db5d4ae2-1722-07d8-a21e-3a0d5ab19768" executionId="8e10b30a-2a56-429d-8211-e416812c202d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="6" executed="6" passed="6" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.11)&#xD;
+[xUnit.net 00:00:00.13]   Discovering: PSeq.Operations.Test&#xD;
+[xUnit.net 00:00:00.23]   Discovered:  PSeq.Operations.Test&#xD;
+[xUnit.net 00:00:00.25]   Starting:    PSeq.Operations.Test&#xD;
+[xUnit.net 00:00:06.94]   Finished:    PSeq.Operations.Test&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

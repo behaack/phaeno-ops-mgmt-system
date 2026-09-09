@@ -21,7 +21,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 
 [Collection(PostgreSqlReferenceCollection.Name)]
-public class SampleShippingPostgresTests
+public partial class SampleShippingPostgresTests
 {
     [PostgreSqlReferenceFact]
     public async Task ConfigurationRevisionsClosePredecessorsAndRejectOverlappingRules()
@@ -222,10 +222,15 @@ public class SampleShippingPostgresTests
         var received = await lab.ReceiveSpecimen(
             fixture.WorkOrder.Id,
             fixture.Specimen.Id,
-            new SpecimenReceiptRequest(DateTime.UtcNow, "Frozen and intact", "Intake", fixture.Specimen.Version),
+            new SpecimenReceiptRequest(DateTime.UtcNow, "Frozen and intact", "Intake", fixture.Specimen.Version, packet.Barcode, firstTubeBarcode),
             CancellationToken.None);
         scope.ClearTrackedState();
         var receivedSpecimen = received.Specimens.Single(item => item.Id == fixture.Specimen.Id);
+        var receivedShipment = await customerWorkflow.Shipment(fixture.Shipment.Id, CancellationToken.None);
+        Assert.Equal("Received", receivedShipment.Status);
+        Assert.Null(receivedShipment.Carrier);
+        Assert.Null(receivedShipment.TrackingNumber);
+        Assert.Null(receivedShipment.ShippedAt);
         var accessioned = await lab.AccessionSpecimen(
             fixture.WorkOrder.Id,
             fixture.Specimen.Id,
@@ -355,7 +360,7 @@ public class SampleShippingPostgresTests
         }
     }
 
-    private sealed class ShippingTestScope : IAsyncDisposable
+    private sealed partial class ShippingTestScope : IAsyncDisposable
     {
         private const string ConnectionEnvironmentVariable = "PSEQ_OPERATIONS_REFERENCE_CONNECTION";
         private readonly string connectionString;
@@ -717,6 +722,9 @@ public class SampleShippingPostgresTests
                     .Select(item => item.Id)
                     .ToArrayAsync();
 
+                await CleanupContainerStockAsync();
+                await CleanupTransportationRequestsAsync(organizationIds);
+
                 await DbContext.LabWorkEvents.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabContainers.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
                 await DbContext.SampleTubeAssignmentEvents.Where(item => shipmentIds.Contains(item.SampleShipmentId)).ExecuteDeleteAsync();
@@ -735,6 +743,7 @@ public class SampleShippingPostgresTests
                 await DbContext.SampleShipments.Where(item => shipmentIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await DbContext.LabSpecimens.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabWorkOrders.Where(item => workOrderIds.Contains(item.Id)).ExecuteDeleteAsync();
+                await CleanupContainerDefinitionsAsync();
 
                 var rules = await DbContext.SampleShippingInstructionRules
                     .Where(item => destinationIds.Contains(item.DestinationId)

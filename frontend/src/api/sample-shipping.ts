@@ -1,4 +1,5 @@
 import { api } from './client'
+import type { ContainerRecommendation, ShippingContainerDefinition } from './shipping-containers'
 
 type ApiEnvelope<T> = {
   success: boolean
@@ -184,6 +185,11 @@ export type SampleShippingCrosswalkItem = {
   tubeSlotId?: string | null
   tubeOrdinal?: number
   tubeCount?: number
+  sampleBarcode?: string
+  totalSampleTubeCount?: number
+  otherShipments?: Array<{ shipmentId: string; shipmentNumber: string; tubeCount: number }>
+  unallocatedTubeCount?: number
+  receivedTubeCount?: number
 }
 
 export type RegisteredSampleTube = {
@@ -233,6 +239,12 @@ export type SampleShipmentWorkflow = {
   trackingNumber: string | null
   shippedAt: string | null
   version: number
+  container?: { definitionId: string; sku: string; commonName: string; capacity: number } | null
+  isPackingPool?: boolean
+  expectedTubeCount?: number
+  receivedTubeCount?: number
+  orderExpectedTubeCount?: number
+  orderReceivedTubeCount?: number
   returnKit: SampleReturnKit | null
   crosswalk: SampleShippingCrosswalkItem[]
   currentPacket: {
@@ -243,6 +255,40 @@ export type SampleShipmentWorkflow = {
     issuedAt: string
     isVoided: boolean
   } | null
+}
+
+export type SampleShipmentPacking = {
+  shipmentId: string
+  version: number
+  tubeCount: number
+  containerTypes: ShippingContainerDefinition[]
+  canPack: boolean
+  blockedReason: string | null
+}
+
+export type SampleContainerQuantity = { containerDefinitionId: string; quantity: number }
+
+export async function getSampleShipmentPacking(shipmentId: string) {
+  const response = await api.get<ApiEnvelope<SampleShipmentPacking>>(`/sample-shipping/${shipmentId}/packing`)
+  return unwrap(response.data)
+}
+
+export async function previewSampleShipmentPacking(shipmentId: string, input: {
+  availability?: SampleContainerQuantity[]
+  selection?: SampleContainerQuantity[]
+}) {
+  const response = await api.post<ApiEnvelope<ContainerRecommendation>>(`/sample-shipping/${shipmentId}/packing/preview`, input)
+  return unwrap(response.data)
+}
+
+export async function confirmSampleShipmentPacking(shipmentId: string, input: {
+  version: number
+  containers: SampleContainerQuantity[]
+  availability?: SampleContainerQuantity[]
+  containerTubeCounts?: number[]
+}) {
+  const response = await api.post<ApiEnvelope<SampleShipmentWorkflow[]>>(`/sample-shipping/${shipmentId}/packing`, input)
+  return unwrap(response.data)
 }
 
 export type SampleShippingPacketDocument = {
@@ -262,6 +308,7 @@ export type RegisteredSampleTubeScan = {
   sampleName: string | null
   tubeStatus: string | null
   isAccessioned: boolean
+  isReceived?: boolean
   outcome: 'Expected' | 'AlreadyAccessioned' | 'PacketVoided' | 'TubeNotRegistered' | 'TubeNotExpectedForPacket'
 }
 
@@ -303,6 +350,12 @@ export async function scanSampleShippingPacket(barcode: string) {
 
 export async function getSampleShipments() {
   const response = await api.get<ApiEnvelope<SampleShipmentWorkflow[]>>('/sample-shipping')
+  return unwrap(response.data)
+}
+
+export async function getSourceSampleShipments(sourceId: string, staff = false) {
+  const path = staff ? '/platform/lab-operations/sample-shipping/workflow/shipments' : '/sample-shipping'
+  const response = await api.get<ApiEnvelope<SampleShipmentWorkflow[]>>(path, { params: { sourceId } })
   return unwrap(response.data)
 }
 

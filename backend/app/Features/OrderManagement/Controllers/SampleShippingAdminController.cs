@@ -346,12 +346,7 @@ public sealed class SampleShippingAdminController(
         CancellationToken cancellationToken)
     {
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
-        if (!SampleShippingBarcode.TryNormalize(barcode, out var normalized))
-            throw Invalid("sample_shipping_barcode_invalid", "Scan or enter a complete Phaeno shipment-packet barcode.");
-
-        var packet = await dbContext.SampleShippingPacketRevisions.AsNoTracking()
-            .FirstOrDefaultAsync(item => item.Barcode == normalized, cancellationToken)
-            ?? throw Missing("sample_shipping_packet_not_found", "No shipment packet matches this barcode.");
+        var packet = await SampleShippingPackingData.ResolvePacketAsync(dbContext, barcode, cancellationToken);
         var shipment = await dbContext.SampleShipments.AsNoTracking()
             .FirstAsync(item => item.Id == packet.SampleShipmentId, cancellationToken);
         var organizationName = await dbContext.Organizations.AsNoTracking()
@@ -392,6 +387,13 @@ public sealed class SampleShippingAdminController(
                 .FirstOrDefaultAsync(cancellationToken)
             : null;
         var workflow = await workflowReader.ReadAsync(shipment.Id, null, cancellationToken);
+        if (workflow.Crosswalk.Any(item => item.RegisteredSampleTubeId.HasValue))
+        {
+            receivedSampleCount = workflow.Crosswalk.GroupBy(item => item.SubmittedSpecimenId).Count(group => group.All(item => item.IsReceived));
+            awaitingReceiptSampleCount = workflow.Crosswalk.GroupBy(item => item.SubmittedSpecimenId).Count(group => group.All(item => !item.IsReceived));
+            if (receiptState is not ("Cancelled" or "SubmissionMismatch")) receiptState = workflow.ReceivedTubeCount == 0
+                ? "AwaitingReceipt" : workflow.ReceivedTubeCount == workflow.ExpectedTubeCount ? "ReceiptRecorded" : "PartiallyReceived";
+        }
 
         return new SampleShippingPacketScanDto(
             packet.Id,
@@ -423,7 +425,8 @@ public sealed class SampleShippingAdminController(
             awaitingReceiptSampleCount,
             receiptState,
             packet.IssuedAt,
-            workflow.Crosswalk);
+            workflow.Crosswalk, workflow.ExpectedTubeCount, workflow.ReceivedTubeCount,
+            workflow.OrderExpectedTubeCount, workflow.OrderReceivedTubeCount);
     }
 
     private static string ResolveReceiptState(

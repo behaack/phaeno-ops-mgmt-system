@@ -19,7 +19,8 @@ public sealed record OrderListItemDto(
     string? TenantSafeReason,
     Guid? AssignedToUserId = null,
     DateTime? DueAt = null,
-    bool IsOverdue = false);
+    bool IsOverdue = false,
+    bool HasPendingQuoteExtension = false);
 
 public sealed record CommercialOrderListItemDto(
     Guid Id,
@@ -36,7 +37,8 @@ public sealed record CommercialOrderListItemDto(
     DateTime? DueAt = null,
     bool IsOverdue = false,
     decimal? ProposedUnitPrice = null,
-    string? ProposedCurrency = null);
+    string? ProposedCurrency = null,
+    bool HasPendingQuoteExtension = false);
 
 public sealed record LabIntakeDto(
     Guid OrderId,
@@ -111,6 +113,10 @@ public sealed record CancellationRequestDto(
     DateTime? DecidedAt,
     long Version);
 
+public sealed record QuoteExtensionRequestDto(
+    Guid Id, Guid QuoteId, string Status, string? Reason, DateTime RequestedAt,
+    DateTime? ResolvedAt, Guid? ReplacementQuoteId);
+
 public sealed record QuoteDto(
     Guid Id,
     int Revision,
@@ -134,7 +140,8 @@ public sealed record QuoteDto(
     decimal? ProposedUnitPriceSnapshot = null,
     string? PricingDecision = null,
     Guid? PricingDecidedByUserId = null,
-    DateTime? PricingDecidedAt = null);
+    DateTime? PricingDecidedAt = null,
+    QuoteExtensionRequestDto? ExtensionRequest = null);
 
 public sealed record LabSampleDto(
     Guid Id,
@@ -275,7 +282,10 @@ public sealed record LabServiceOrderDto(
     string EntryMode = "ManualQuote",
     LabServiceCommercialSnapshotDto? StandardCommercialSnapshot = null,
     bool CanPlaceStandardOrder = false,
-    LabServiceTimingDto? Timing = null);
+    LabServiceTimingDto? Timing = null,
+    bool CanRequestQuoteExtension = false,
+    bool CanManageQuotes = false,
+    string? QuoteAcceptanceBlockedReason = null);
 
 public sealed record ReagentOrderLineDto(
     Guid Id,
@@ -635,7 +645,8 @@ public sealed record LabSampleReceiptRequest(long Version, DateTime ReceivedAt, 
 public sealed record LabSampleAccessionRequest(long Version, string AccessionId);
 public sealed record LabSampleTransitionRequest(long Version, string Status, string? Reason, string? InternalNote);
 public sealed record QuoteLineRequest(Guid CatalogItemId, string Description, decimal Quantity, decimal UnitPrice);
-public sealed record IssueQuoteRequest(long Version, IReadOnlyList<QuoteLineRequest> Lines, decimal Tax, string Currency, DateTime? ExpiresAt, string Purpose = "Initial", string? PricingDecisionReason = null);
+public sealed record IssueQuoteRequest(long Version, IReadOnlyList<QuoteLineRequest> Lines, decimal Tax, string Currency, DateTime? ExpiresAt, string Purpose = "Initial", string? PricingDecisionReason = null, Guid? SourceQuoteId = null);
+public sealed record QuoteExtensionRequestBody(long Version, string? Reason = null);
 public sealed record AcceptQuoteRequest(long Version, Guid QuoteId, string? PurchaseOrderNumber = null);
 
 public sealed record ReagentLineWriteRequest(Guid OfferingId, decimal Quantity, string? Note);
@@ -730,14 +741,17 @@ public static class OrderManagementMappings
         item.Id, item.FromStatus, item.ToStatus, item.TenantSafeReason,
         platform ? item.InternalNote : null, item.ActorUserId, item.OccurredAt);
 
-    public static QuoteDto ToDto(this LabServiceQuote quote) => new(
-        quote.Id, quote.Revision, quote.Purpose.ToString(), quote.Status.ToString(), quote.LinesJson,
+    public static QuoteDto ToDto(this LabServiceQuote quote, LabServiceQuoteExtensionRequest? extensionRequest = null) => new(
+        quote.Id, quote.Revision, quote.Purpose.ToString(), quote.EffectiveStatus(DateTime.UtcNow).ToString(), quote.LinesJson,
         quote.Subtotal, quote.Tax, quote.Total, quote.Currency, quote.IssuedAt, quote.ExpiresAt,
         quote.AcceptedAt, quote.Version, quote.BillingContactSnapshotJson,
         quote.BillingAddressSnapshotJson, quote.PaymentTermsDaysSnapshot,
         quote.TaxDecisionSnapshotJson, quote.CommercialConfigurationVersion,
         quote.SourceRequestRevision, quote.ProposedUnitPriceSnapshot, quote.PricingDecision?.ToString(),
-        quote.PricingDecidedByUserId, quote.PricingDecidedAt);
+        quote.PricingDecidedByUserId, quote.PricingDecidedAt,
+        extensionRequest is null ? null : new QuoteExtensionRequestDto(extensionRequest.Id,
+            extensionRequest.QuoteId, extensionRequest.ResolvedAt.HasValue ? "Resolved" : "Pending",
+            extensionRequest.Reason, extensionRequest.RequestedAt, extensionRequest.ResolvedAt, extensionRequest.ReplacementQuoteId));
 
     public static QuoteDto ToDto(this DataAssemblyQuote quote) => new(
         quote.Id, quote.Revision, quote.Purpose.ToString(), quote.Status.ToString(), quote.LinesJson,

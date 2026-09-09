@@ -5,6 +5,7 @@ import { useRef, useState } from 'react'
 
 import { getOrderErrorMessage } from '#/api/order-management'
 import { scanRegisteredSampleTube, scanSampleShippingPacket } from '#/api/sample-shipping'
+import { scanShippingIdentity } from '#/api/shipping-containers'
 import type { LabWorkOrderSummary } from '#/api/lab-operations'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
@@ -14,6 +15,8 @@ import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { OrderStatusBadge } from '#/features/orders/OrderStatusBadge'
 import { ReturnKitFulfillmentPanel } from '#/features/orders/ReturnKitFulfillmentPanel'
+import { StandardKitInventoryPanel } from '#/features/orders/stock-kits/StandardKitInventoryPanel'
+import { KitRequestsPanel } from '#/features/orders/kit-requests/KitRequestsPanel'
 
 export function LabReceiptAccessionPanel({
   apiEnabled,
@@ -28,9 +31,15 @@ export function LabReceiptAccessionPanel({
   const tubeBarcodeInput = useRef<HTMLInputElement>(null)
   const [packetBarcode, setPacketBarcode] = useState('')
   const [tubeBarcode, setTubeBarcode] = useState('')
+  const identityScan = useMutation({
+    mutationFn: scanShippingIdentity,
+    onMutate: () => { packetScan.reset(); tubeScan.reset(); setTubeBarcode('') },
+    onSettled: () => { setPacketBarcode(''); window.requestAnimationFrame(() => packetBarcodeInput.current?.focus()) },
+  })
   const packetScan = useMutation({
     mutationFn: scanSampleShippingPacket,
     onMutate: () => {
+      identityScan.reset()
       setTubeBarcode('')
       tubeScan.reset()
     },
@@ -59,6 +68,8 @@ export function LabReceiptAccessionPanel({
         </CardHeader>
       </Card>
 
+      <KitRequestsPanel apiEnabled={apiEnabled} />
+      <StandardKitInventoryPanel apiEnabled={apiEnabled} shipmentId={shipmentId} />
       <ReturnKitFulfillmentPanel apiEnabled={apiEnabled} shipmentId={shipmentId} />
 
       <Card>
@@ -66,9 +77,9 @@ export function LabReceiptAccessionPanel({
           <div className="flex items-start gap-3">
             <ScanLine className="mt-0.5 size-5 text-primary" />
             <div>
-              <CardTitle>Scan shipment packet</CardTitle>
+              <CardTitle>Look up a shipping barcode</CardTitle>
               <CardDescription>
-                Scan the Phaeno barcode enclosed with the shipment. Lookup and tube comparison do not record custody, receipt, or accession.
+                Scan a manifest, shipment, Customer Job, or sample barcode. Lookup and tube comparison do not record custody, receipt, or accession.
               </CardDescription>
             </div>
           </div>
@@ -79,11 +90,14 @@ export function LabReceiptAccessionPanel({
             onSubmit={(event) => {
               event.preventDefault()
               const value = packetBarcode.trim()
-              if (value) packetScan.mutate(value)
+              if (value && !packetScan.isPending && !identityScan.isPending) {
+                if (/^\*?PH-[OM]-/i.test(value)) identityScan.mutate(value)
+                else packetScan.mutate(value)
+              }
             }}
           >
             <div className="w-full max-w-xl">
-              <Label htmlFor="shipment-packet-barcode">Shipment-packet barcode</Label>
+              <Label htmlFor="shipment-packet-barcode">Shipping barcode</Label>
               <Input
                 ref={packetBarcodeInput}
                 id="shipment-packet-barcode"
@@ -92,14 +106,16 @@ export function LabReceiptAccessionPanel({
                 onChange={(event) => setPacketBarcode(event.target.value)}
                 autoComplete="off"
                 spellCheck={false}
-                placeholder="PH-P-XXXXXXXXXX-X"
+                placeholder="Scan the Phaeno barcode"
               />
             </div>
-            <Button type="submit" disabled={!apiEnabled || !packetBarcode.trim() || packetScan.isPending}>
+            <Button type="submit" disabled={!apiEnabled || !packetBarcode.trim() || packetScan.isPending || identityScan.isPending}>
               <ScanLine data-icon="inline-start" />
-              {packetScan.isPending ? 'Looking up…' : 'Look up packet'}
+              {packetScan.isPending || identityScan.isPending ? 'Looking up…' : 'Look up barcode'}
             </Button>
           </form>
+          {identityScan.error ? <Alert variant="destructive"><AlertTitle>Shipping identity was not found</AlertTitle><AlertDescription>{getOrderErrorMessage(identityScan.error, 'Check the complete barcode and scan again.')}</AlertDescription></Alert> : null}
+          {identityScan.data ? <section aria-live="polite" className="rounded-lg border p-4"><h3 className="wrap-anywhere font-medium">{identityScan.data.kind === 'Order' ? 'Customer Job' : 'Sample'} {identityScan.data.reference}</h3><p className="mt-1 text-xs text-muted-foreground">Choose the shipment manifest to compare its registered tubes. This lookup did not record receipt.</p><div className="mt-3 divide-y">{identityScan.data.shipments.map(shipment => <div key={shipment.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div className="min-w-0"><p className="wrap-anywhere text-sm font-medium">{shipment.shipmentNumber}</p><p className="wrap-anywhere text-xs text-muted-foreground">{shipment.organizationName} · {shipment.destinationName} · {formatCompactStatus(shipment.status)}</p></div>{shipment.currentPacket ? <Button size="sm" variant="outline" disabled={packetScan.isPending} onClick={() => packetScan.mutate(shipment.currentPacket!.barcode)}>Open manifest {shipment.currentPacket.packetNumber}</Button> : <span className="text-xs text-muted-foreground">No confirmed manifest</span>}</div>)}</div>{!identityScan.data.shipments.length ? <p className="mt-3 text-sm text-muted-foreground">No shipments are available for this identity.</p> : null}</section> : null}
           {packetScan.error ? (
             <Alert variant="destructive">
               <AlertTitle>Shipment packet was not found</AlertTitle>

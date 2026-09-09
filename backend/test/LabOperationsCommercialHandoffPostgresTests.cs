@@ -1439,14 +1439,14 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 rule.Id);
         }
 
-        public async Task<QuotedOrderFixture> CreateQuotedOrderAsync()
+        public async Task<QuotedOrderFixture> CreateQuotedOrderAsync(string jobName = "reference-handoff")
         {
             var now = DateTime.UtcNow;
             var order = new LabServiceOrder(
                 CustomerOrganization.Id,
                 CustomerOrganization.Departments.Single(department => department.IsDefault).Id,
                 OrderNumberGenerator.Lab(),
-                "reference-handoff",
+                jobName,
                 null,
                 1,
                 false,
@@ -1852,7 +1852,9 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 await DbContext.LabResultReleases.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
                 await DbContext.ManagedOperationalFiles.Where(item => orderIds.Contains(item.WorkflowId)).ExecuteDeleteAsync();
                 await DbContext.LabServiceRequestRevisions.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
+                await DbContext.LabServiceQuoteExtensionRequests.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabServiceQuotes.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
+                await DbContext.LabSampleImportPreviews.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabSamples.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabServiceSourceGroups.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabServiceOrders.Where(item => orderIds.Contains(item.Id)).ExecuteDeleteAsync();

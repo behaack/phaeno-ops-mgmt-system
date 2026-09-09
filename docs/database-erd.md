@@ -13,10 +13,10 @@ Generated from [PSeqOperationsDbContextModelSnapshot.cs](../backend/app/Migratio
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 127 | 2057 | 305 |
+| `commercial_ops` | 136 | 2176 | 342 |
 | `lab_ops` | 31 | 363 | 46 |
 | `website` | 5 | 49 | 4 |
-| **Total** | **164** | **2471** | **355** |
+| **Total** | **173** | **2590** | **392** |
 
 ## `public` schema
 
@@ -1533,6 +1533,72 @@ erDiagram
 
 ```mermaid
 erDiagram
+    customer_delivery_locations {
+        uuid id PK "not null"
+        character_varying_255 city "not null"
+        character_varying_2 country_code "not null"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id FK "nullable"
+        character_varying_4000 delivery_instructions "nullable"
+        uuid department_id FK,UK "not null"
+        boolean is_active "not null"
+        boolean is_default "not null"
+        character_varying_100 label "not null"
+        character_varying_255 line1 "not null"
+        character_varying_255 line2 "nullable"
+        uuid organization_id FK,UK "not null"
+        character_varying_100 phone "nullable"
+        character_varying_50 postal_code "not null"
+        character_varying_255 recipient "not null"
+        character_varying_255 region "not null"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id FK "nullable"
+        bigint version "not null"
+    }
+    transportation_kit_request_lines {
+        uuid id PK "not null"
+        uuid container_definition_id FK,UK "not null"
+        jsonb container_snapshot_json "not null"
+        integer quantity "not null"
+        uuid transportation_kit_request_id FK,UK "not null"
+    }
+    transportation_kit_requests {
+        uuid id PK "not null"
+        character_varying_2000 cancellation_reason "nullable"
+        timestamp_with_time_zone closed_at "nullable"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id FK "nullable"
+        jsonb delivery_address_snapshot_json "not null"
+        uuid delivery_location_id FK "not null"
+        uuid department_id FK "not null"
+        uuid lab_service_order_id FK,UK "not null"
+        uuid organization_id FK "not null"
+        timestamp_with_time_zone requested_at "not null"
+        uuid requested_by_user_id FK "not null"
+        character_varying_40 status "not null"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id FK "nullable"
+        bigint version "not null"
+    }
+    users o|--o{ customer_delivery_locations : "created_by_user_id"
+    organization_departments ||--o{ customer_delivery_locations : "department_id"
+    organizations ||--o{ customer_delivery_locations : "organization_id"
+    users o|--o{ customer_delivery_locations : "updated_by_user_id"
+    sample_shipping_container_definitions ||--o{ transportation_kit_request_lines : "container_definition_id"
+    transportation_kit_requests ||--o{ transportation_kit_request_lines : "transportation_kit_request_id"
+    users o|--o{ transportation_kit_requests : "created_by_user_id"
+    customer_delivery_locations ||--o{ transportation_kit_requests : "delivery_location_id"
+    organization_departments ||--o{ transportation_kit_requests : "department_id"
+    lab_service_orders ||--o{ transportation_kit_requests : "lab_service_order_id"
+    organizations ||--o{ transportation_kit_requests : "organization_id"
+    users ||--o{ transportation_kit_requests : "requested_by_user_id"
+    users o|--o{ transportation_kit_requests : "updated_by_user_id"
+```
+
+### OrderManagement (1)
+
+```mermaid
+erDiagram
     commercial_sale_summaries {
         uuid id PK "not null"
         integer attempt_count "not null"
@@ -1617,6 +1683,21 @@ erDiagram
         uuid updated_by_user_id "nullable"
         bigint version "not null"
     }
+    lab_service_quote_extension_requests {
+        uuid id PK "not null"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id "nullable"
+        uuid lab_service_order_id FK "not null"
+        uuid quote_id FK,UK "not null"
+        character_varying_2000 reason "nullable"
+        uuid replacement_quote_id FK "nullable"
+        timestamp_with_time_zone requested_at "not null"
+        uuid requested_by_user_id FK "not null"
+        timestamp_with_time_zone resolved_at "nullable"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
     operational_download_commit_evidence {
         uuid id PK "not null"
         timestamp_with_time_zone admission_cutoff_at_utc "nullable"
@@ -1650,6 +1731,43 @@ erDiagram
         uuid updated_by_user_id FK "nullable"
         bigint version "not null"
     }
+    sample_shipping_container_compatibilities {
+        uuid id PK "not null"
+        uuid container_definition_id FK,UK "not null"
+        uuid instruction_rule_id FK,UK "not null"
+        uuid sample_type_definition_id FK,UK "not null"
+    }
+    sample_shipping_container_definitions {
+        uuid id PK "not null"
+        character_varying_255 common_name "not null"
+        uuid container_type_id FK,UK "not null"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id FK "nullable"
+        timestamp_with_time_zone deactivated_at "nullable"
+        integer display_order "not null"
+        timestamp_with_time_zone effective_from "not null"
+        timestamp_with_time_zone effective_to "nullable"
+        boolean is_active "not null"
+        character_varying_8000 packing_instructions "nullable"
+        integer revision UK "not null"
+        uuid supersedes_definition_id FK,UK "nullable"
+        character_varying_255 supplier_name "nullable"
+        character_varying_100 supplier_product_number "nullable"
+        integer tube_capacity "not null"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id FK "nullable"
+        bigint version "not null"
+    }
+    sample_shipping_container_types {
+        uuid id PK "not null"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id FK "nullable"
+        character_varying_100 normalized_sku UK "not null"
+        character_varying_100 sku "not null"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id FK "nullable"
+        bigint version "not null"
+    }
     users ||--o{ commercial_sale_summaries : "commitment_actor_user_id"
     crm_opportunities o|--o{ commercial_sale_summaries : "opportunity_id"
     organizations ||--o{ commercial_sale_summaries : "organization_id"
@@ -1670,6 +1788,10 @@ erDiagram
     kit_assembly_cases ||--o{ kit_case_events : "kit_assembly_case_id"
     partner_kit_units o|--o{ kit_case_events : "previous_kit_unit_id"
     qbo_catalog_items ||--o{ lab_service_offerings : "catalog_item_id"
+    lab_service_orders ||--o{ lab_service_quote_extension_requests : "lab_service_order_id"
+    lab_service_quotes ||--o{ lab_service_quote_extension_requests : "quote_id"
+    lab_service_quotes o|--o{ lab_service_quote_extension_requests : "replacement_quote_id"
+    users ||--o{ lab_service_quote_extension_requests : "requested_by_user_id"
     operational_file_downloads ||--o{ operational_download_commit_evidence : "operational_file_download_id"
     users o|--o{ partner_kit_units : "created_by_user_id"
     organization_departments ||--o{ partner_kit_units : "department_id"
@@ -1680,6 +1802,65 @@ erDiagram
     partner_kit_units o|--o{ partner_kit_units : "replaced_by_kit_unit_id"
     partner_kit_units o|--o{ partner_kit_units : "replaces_kit_unit_id"
     users o|--o{ partner_kit_units : "updated_by_user_id"
+    sample_shipping_container_definitions ||--o{ sample_shipping_container_compatibilities : "container_definition_id"
+    sample_shipping_instruction_rules ||--o{ sample_shipping_container_compatibilities : "instruction_rule_id"
+    sample_type_definitions ||--o{ sample_shipping_container_compatibilities : "sample_type_definition_id"
+    sample_shipping_container_types ||--o{ sample_shipping_container_definitions : "container_type_id"
+    users o|--o{ sample_shipping_container_definitions : "created_by_user_id"
+    sample_shipping_container_definitions o|--o{ sample_shipping_container_definitions : "supersedes_definition_id"
+    users o|--o{ sample_shipping_container_definitions : "updated_by_user_id"
+    users o|--o{ sample_shipping_container_types : "created_by_user_id"
+    users o|--o{ sample_shipping_container_types : "updated_by_user_id"
+```
+
+### OrderManagement (2)
+
+```mermaid
+erDiagram
+    sample_shipping_stock_kits {
+        uuid id PK "not null"
+        character_varying_50 authorization_source "nullable"
+        uuid authorization_source_id "nullable"
+        uuid bound_sample_shipment_id FK,UK "nullable"
+        uuid container_definition_id FK "not null"
+        jsonb container_snapshot_json "not null"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id FK "nullable"
+        uuid customer_delivery_location_id FK "nullable"
+        timestamp_with_time_zone customer_received_at "nullable"
+        uuid customer_received_by_user_id FK "nullable"
+        uuid department_id FK "nullable"
+        timestamp_with_time_zone fulfilled_at "nullable"
+        character_varying_100 kit_number UK "not null"
+        uuid organization_id FK "nullable"
+        character_varying_255 outbound_carrier "nullable"
+        character_varying_255 outbound_tracking_number "nullable"
+        character_varying_100 shipper_product_number "not null"
+        character_varying_255 shipper_supplier_name "not null"
+        uuid transportation_kit_request_line_id FK "nullable"
+        integer tube_capacity "not null"
+        character_varying_100 tube_lot_number "nullable"
+        character_varying_100 tube_product_number "not null"
+        character_varying_255 tube_supplier_name "not null"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id FK "nullable"
+        bigint version "not null"
+    }
+    sample_shipping_stock_tubes {
+        uuid id PK "not null"
+        uuid sample_shipping_stock_kit_id FK "not null"
+        character_varying_100 supplier_barcode UK "not null"
+    }
+    sample_shipments o|--o{ sample_shipping_stock_kits : "bound_sample_shipment_id"
+    sample_shipping_container_definitions ||--o{ sample_shipping_stock_kits : "container_definition_id"
+    users o|--o{ sample_shipping_stock_kits : "created_by_user_id"
+    customer_delivery_locations o|--o{ sample_shipping_stock_kits : "customer_delivery_location_id"
+    users o|--o{ sample_shipping_stock_kits : "customer_received_by_user_id"
+    organization_departments o|--o{ sample_shipping_stock_kits : "department_id"
+    organizations o|--o{ sample_shipping_stock_kits : "organization_id"
+    transportation_kit_request_lines o|--o{ sample_shipping_stock_kits : "transportation_kit_request_line_id"
+    users o|--o{ sample_shipping_stock_kits : "updated_by_user_id"
+    sample_shipping_stock_kits ||--o{ sample_shipping_stock_tubes : "sample_shipping_stock_kit_id"
 ```
 
 ### PSeq accounts receivable and operational attention
@@ -2291,6 +2472,7 @@ erDiagram
         timestamp_with_time_zone assigned_at "nullable"
         timestamp_with_time_zone created_at "not null"
         uuid created_by_user_id "nullable"
+        timestamp_with_time_zone received_at "nullable"
         uuid sample_return_kit_id FK "not null"
         character_varying_100 status "not null"
         character_varying_100 supplier_barcode UK "not null"
@@ -2357,11 +2539,14 @@ erDiagram
         character_varying_100 authorization_source "not null"
         uuid authorization_source_id "not null"
         character_varying_255 carrier "nullable"
+        uuid container_definition_id FK "nullable"
+        jsonb container_snapshot_json "nullable"
         timestamp_with_time_zone created_at "not null"
         uuid created_by_user_id "nullable"
         timestamp_with_time_zone delivered_at "nullable"
         uuid department_id FK "not null"
         uuid destination_id FK "not null"
+        boolean is_packing_pool "not null"
         uuid lab_work_order_id "not null"
         uuid organization_id FK "not null"
         timestamp_with_time_zone received_at "nullable"
@@ -2501,6 +2686,7 @@ erDiagram
     sample_type_definitions ||--o{ sample_shipment_items : "sample_type_definition_id"
     registered_sample_tubes o|--o{ sample_shipment_tube_slots : "registered_sample_tube_id"
     sample_shipment_items ||--o{ sample_shipment_tube_slots : "sample_shipment_item_id"
+    sample_shipping_container_definitions o|--o{ sample_shipments : "container_definition_id"
     organization_departments ||--o{ sample_shipments : "department_id"
     sample_shipping_destinations ||--o{ sample_shipments : "destination_id"
     organizations ||--o{ sample_shipments : "organization_id"

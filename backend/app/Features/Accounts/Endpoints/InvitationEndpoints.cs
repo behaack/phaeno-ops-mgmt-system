@@ -17,6 +17,34 @@ using PSeq.Operations.Laboratory.Domain;
 
 public static class InvitationEndpoints
 {
+    public static async Task<IResult> PreviewInvitation(
+        [FromBody] InvitationPreviewRequest request,
+        HttpContext httpContext,
+        PSeqOperationsDbContext dbContext,
+        InvitationTokenService tokenService,
+        CancellationToken cancellationToken)
+    {
+        httpContext.Response.Headers.CacheControl = "no-store";
+        if (string.IsNullOrWhiteSpace(request.Token) || request.Token.Length > 256)
+        {
+            throw new BadRequestException("This invitation is unavailable. Ask the sender for a new invitation.");
+        }
+
+        var tokenHash = tokenService.HashToken(request.Token);
+        var invitation = await dbContext.OrganizationInvitations.AsNoTracking()
+            .Include(value => value.Organization)
+            .FirstOrDefaultAsync(value => value.TokenHash == tokenHash, cancellationToken);
+        if (invitation == null || !invitation.CanBeAccepted(DateTime.UtcNow)
+            || invitation.Organization?.IsActive != true)
+        {
+            throw new BadRequestException("This invitation is unavailable. Ask the sender for a new invitation.");
+        }
+
+        return TypedResults.Ok(new InvitationPreviewDto(
+            invitation.Email, invitation.FirstName, invitation.LastName,
+            invitation.Organization.Name, invitation.ExpiresAt));
+    }
+
     public static async Task<IResult> CreateInvitation(
         [FromBody] CreateInvitationRequest request,
         HttpContext httpContext,
@@ -1158,6 +1186,14 @@ public static class InvitationEndpoints
         var group = app.MapGroup("/api/invitations")
             .WithTags("Invitations")
             .RequireAuthorization();
+
+        group.MapPost("/preview", PreviewInvitation)
+            .AllowAnonymous()
+            .RequireRateLimiting("api")
+            .WithName("PreviewInvitation")
+            .WithSummary("Preview a pending invitation using its secret link token")
+            .Produces<InvitationPreviewDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest);
 
         group.MapPost("/", CreateInvitation)
             .WithName("CreateInvitation")

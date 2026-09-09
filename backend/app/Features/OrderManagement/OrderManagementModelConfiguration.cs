@@ -860,6 +860,20 @@ public static class OrderManagementModelConfiguration
             Audit(entity);
         });
 
+        modelBuilder.Entity<LabServiceQuoteExtensionRequest>(entity =>
+        {
+            entity.ToTable("lab_service_quote_extension_requests", commercialSchema);
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.Reason), 2000, false);
+            entity.HasIndex(e => e.QuoteId).IsUnique();
+            entity.HasIndex(e => new { e.LabServiceOrderId, e.ResolvedAt });
+            entity.HasOne<LabServiceOrder>().WithMany().HasForeignKey(e => e.LabServiceOrderId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabServiceQuote>().WithMany().HasForeignKey(e => e.QuoteId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabServiceQuote>().WithMany().HasForeignKey(e => e.ReplacementQuoteId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<User>().WithMany().HasForeignKey(e => e.RequestedByUserId).OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+
         modelBuilder.Entity<LabResultRelease>(entity =>
         {
             entity.ToTable("lab_result_releases", commercialSchema);

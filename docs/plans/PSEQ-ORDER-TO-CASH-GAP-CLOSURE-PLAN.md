@@ -1,5 +1,40 @@
 # PSeq Order-to-Cash Gap-Closure Plan
 
+## Invitation branding and Mailgun consolidation — 2026-09-08
+
+The owner approved branded invitation email and consolidation of all existing
+Mailgun templates under `mg.phaenobiotech.com`. Nine account templates (eight
+localized technical-brief variants and the invitation) were backed up with all
+versions and moved into the domain, preserving their original names, content,
+active version tags, and nonempty headers. Three existing Website domain
+templates were retained unchanged. The final inventory is zero account-level
+and twelve domain-level templates. Mailgun rejects cross-level duplicate names;
+verified temporary domain copies allowed the original names to be preserved.
+
+The domain invitation has a new active `branded-20260908` version with the public
+Phaeno PNG logo, navy action, readable fallback URL, and company footer. Its
+`initial` version remains available for rollback. The repository HTML is the
+reviewable source; Mailgun stores the deployed domain template. The local sender
+now selects `organization-invitation.en-us` and sends private template variables
+through `t:variables`, with a plain-text fallback and click/open tracking off.
+No additional invitation locale is claimed. The Portal explicitly declares its
+existing PNG favicon, including on the invitation acceptance route.
+
+The owner explicitly approved disabling Mailgun's automatically appended
+unsubscribe footer for the domain. Suppression records and any explicitly
+authored template unsubscribe links remain unchanged. Local sending was restored
+after the owner added the development network's public IP to Mailgun's allowlist.
+Provider acceptance and user-confirmed inbox receipt were verified for the
+original invitation; the Portal's legacy delivery label still incorrectly says
+Not sent and remains a separate follow-up. Acceptance has not been exercised.
+
+Focused verification: four Mailgun sender/renderer/webhook tests passed, frontend
+TypeScript passed, and the API build passed with zero warnings/errors. The local
+API restarted healthy and Mailgun accepted and delivered a refreshed branded
+invitation at 11:06 AM Pacific; owner inbox appearance review is pending. Mailgun
+template/settings changes are live; application changes are local only, with no
+Git mutation, deployment, migration, or Gmail sender-logo/BIMI change.
+
 ## Intake consolidation - 2026-09-07
 
 Order intake > New Customer order replaces the separate Order staging screen. The same pricing form serves direct creation and CRM handoffs. All active Customers are visible; selected-Department readiness separates pricing blockers from additional quote and invoice requirements. The legacy staging API remains for compatibility but has no frontend entry point. Readiness offering checks now match the canonical specimen service used by order creation, and missing system configuration reports incomplete setup.

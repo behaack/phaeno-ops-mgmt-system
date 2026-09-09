@@ -6,16 +6,20 @@ import { getSampleShippingPacket } from '#/api/sample-shipping'
 import { apiErrorMessage } from '#/api/organization-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
-import { Code39Barcode } from '#/features/lab-operations/Code39Barcode'
+import { ShippingBarcode } from './ShippingBarcode'
+import './sample-shipping-packet.css'
 
 type JsonObject = Record<string, unknown>
 type FrozenSample = {
+  id: string
   customerSampleId: string
   sampleName: string
   sampleTypeName: string
-  quantity: string
-  quantityUnit: string
-  supplierTubeBarcode: string
+  sampleBarcode: string
+  totalTubeCount: number
+  unallocatedTubeCount: number
+  otherShipments: Array<{ shipmentNumber: string; tubeCount: number }>
+  tubes: Array<{ barcode: string; ordinal: string; quantity: string; quantityUnit: string }>
 }
 
 export function SampleShippingPacketPage({ shipmentId }: { shipmentId: string }) {
@@ -50,13 +54,15 @@ export function SampleShippingPacketPage({ shipmentId }: { shipmentId: string })
 
   const { shipment } = query.data
   const packet = shipment.currentPacket
+  if (!packet || packet.isVoided) return <main className="page-wrap space-y-5 px-4 py-8"><PacketReturnLink shipmentId={shipmentId} /><Alert><AlertTitle>Packet no longer current</AlertTitle><AlertDescription>Return to the shipment to review its current contents and packet revision before printing.</AlertDescription></Alert><Button variant="outline" onClick={() => void query.refetch()}>Try again</Button></main>
   const destination = parseObject(query.data.destinationSnapshotJson)
   const instructions = parseObject(query.data.instructionSnapshotJson)
   const manifest = parseObject(query.data.manifestSnapshotJson)
   const frozenSamples = readFrozenSamples(manifest)
 
   return (
-    <main className="page-wrap px-4 py-8 print:max-w-none print:px-0 print:py-0">
+    <main className="shipping-packet-page page-wrap px-4 py-8 print:max-w-none print:px-0 print:py-0">
+      <style>{`@media print { @page { margin: 10mm 12mm 15mm !important; @bottom-left { content: ${JSON.stringify(`Packet ${packet.packetNumber} · Barcode ${packet.barcode} · Shipment ${shipment.shipmentNumber}`)}; font: 8pt Arial, sans-serif; color: black; } } }`}</style>
       <div className="mb-6 flex items-center justify-between gap-3 print:hidden">
         <PacketReturnLink shipmentId={shipmentId} />
         <Button onClick={() => window.print()}>
@@ -65,22 +71,24 @@ export function SampleShippingPacketPage({ shipmentId }: { shipmentId: string })
         </Button>
       </div>
 
-      <article className="mx-auto max-w-4xl space-y-8 bg-background pb-16 text-foreground print:max-w-none">
-        <header className="break-inside-avoid border-b pb-5">
-          <p className="text-sm font-medium uppercase tracking-wide">Phaeno sample shipment</p>
+      <article className="shipping-packet mx-auto max-w-4xl space-y-8 bg-background pb-16 text-foreground print:max-w-none print:bg-white print:text-black">
+        <header className="packet-header break-inside-avoid border-b pb-5">
+          <div className="flex items-center justify-between gap-4"><img src="/phaeno124x40.webp" alt="Phaeno" width={124} height={40} /><p className="text-sm font-medium uppercase tracking-wide">Sample shipment</p></div>
           <h1 className="mt-2 text-3xl font-semibold">{packet?.packetNumber}</h1>
           {packet ? (
-            <div className="mt-4 max-w-2xl">
-              <Code39Barcode value={packet.barcode} />
-              <p className="mt-1 text-center font-mono text-base tracking-wider">{packet.barcode}</p>
+            <div className="packet-revision mt-4 max-w-2xl">
+              <ShippingBarcode value={packet.barcode} label="Packet revision barcode" />
             </div>
           ) : null}
           <p className="mt-3 text-sm">
             Shipment {shipment.shipmentNumber} · {shipment.authorizationReference} · Revision {packet?.revision}
           </p>
+          {text(manifest.orderBarcode) ? <div className="packet-identity mt-5 space-y-2"><p className="text-sm font-medium">Order {shipment.authorizationReference}</p><ShippingBarcode value={text(manifest.orderBarcode)} label="Order barcode" /></div> : null}
+          {text(manifest.shipmentBarcode) ? <div className="packet-identity mt-5 space-y-2"><p className="text-sm font-medium">Shipment {shipment.shipmentNumber}</p><ShippingBarcode value={text(manifest.shipmentBarcode)} label="Shipment barcode" /></div> : null}
+          {text(asObject(manifest.container).sku) ? <p className="mt-4 text-sm"><strong>{text(asObject(manifest.container).commonName)}</strong> · SKU {text(asObject(manifest.container).sku)} · Capacity {text(asObject(manifest.container).capacity)} tubes</p> : null}
         </header>
 
-        <section className="break-inside-avoid">
+        <section className="packet-destination break-inside-avoid">
           <h2 className="text-xl font-semibold">Ship to</h2>
           <div className="mt-3 text-sm leading-6">
             <p className="font-medium">{text(destination.recipientName)}</p>
@@ -100,7 +108,7 @@ export function SampleShippingPacketPage({ shipmentId }: { shipmentId: string })
           <Instruction label="Carrier restrictions" value={destination.carrierRestrictions} />
         </section>
 
-        <section>
+        <section className="packet-instructions">
           <h2 className="text-xl font-semibold">Preparation, packing, and delivery instructions</h2>
           <p className="mt-2 text-sm text-muted-foreground">
             Follow every instruction for each sample type in this packet. Contact Phaeno before shipping if any requirement cannot be met.
@@ -112,42 +120,23 @@ export function SampleShippingPacketPage({ shipmentId }: { shipmentId: string })
           </div>
         </section>
 
-        <section>
+        <section className="packet-manifest">
           <h2 className="text-xl font-semibold">Submission manifest and retained tube crosswalk</h2>
           <p className="mt-2 text-sm text-muted-foreground">
             Keep a copy for your records and place this manifest inside the package.
           </p>
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full border-collapse text-left text-sm">
-              <thead>
-                <tr>
-                  <th className="border p-2">Customer sample ID</th>
-                  <th className="border p-2">Sample</th>
-                  <th className="border p-2">Declared quantity</th>
-                  <th className="border p-2">Supplier tube barcode</th>
-                </tr>
-              </thead>
-              <tbody>
-                {frozenSamples.map((item) => (
-                  <tr key={`${item.customerSampleId}-${item.supplierTubeBarcode}`} className="break-inside-avoid">
-                    <td className="border p-2 font-medium">{item.customerSampleId}</td>
-                    <td className="border p-2">
-                      {item.sampleName}
-                      {item.sampleTypeName ? <><br /><span className="text-xs">{item.sampleTypeName}</span></> : null}
-                    </td>
-                    <td className="border p-2">{item.quantity} {item.quantityUnit}</td>
-                    <td className="border p-2 font-mono">{item.supplierTubeBarcode}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <div className="packet-samples mt-4 space-y-5">{frozenSamples.map(item => <article key={item.id} className="packet-sample rounded-md border p-4">
+            <header className="break-inside-avoid space-y-2"><h3 className="wrap-anywhere font-semibold">{item.customerSampleId}</h3><p className="text-sm">{item.sampleName}{item.sampleTypeName ? ` · ${item.sampleTypeName}` : ''}</p><p className="text-sm font-medium">{item.tubes.length} of {item.totalTubeCount} tubes in this shipment</p>{item.sampleBarcode ? <div className="max-w-2xl"><ShippingBarcode value={item.sampleBarcode} label="Sample barcode" /></div> : null}</header>
+            <h4 className="mt-4 text-sm font-semibold">Physical tubes in this container</h4>
+            <ul className="mt-2 divide-y">{item.tubes.map((tube, index) => <li key={`${tube.barcode}-${index}`} className="packet-tube break-inside-avoid space-y-2 py-3"><p className="text-sm"><span className="hidden wrap-anywhere font-medium print:block">{item.customerSampleId}</span>Tube {tube.ordinal || index + 1}{tube.quantity ? ` · ${tube.quantity} ${tube.quantityUnit}` : ''}</p>{tube.barcode ? <div className="max-w-2xl"><ShippingBarcode value={tube.barcode} label="Permanent tube barcode" /></div> : <p className="text-sm">No tube barcode recorded in this revision.</p>}</li>)}</ul>
+            {item.otherShipments.length || item.unallocatedTubeCount > 0 ? <aside className="mt-3 break-inside-avoid border-t pt-3 text-sm"><h4 className="font-semibold">Other tubes for this sample — not in this container</h4><ul className="mt-2 space-y-1">{item.otherShipments.map(other => <li key={other.shipmentNumber}>{other.tubeCount} {other.tubeCount === 1 ? 'tube' : 'tubes'} in shipment {other.shipmentNumber}</li>)}{item.unallocatedTubeCount > 0 ? <li>{item.unallocatedTubeCount} {item.unallocatedTubeCount === 1 ? 'tube is' : 'tubes are'} not yet allocated to a shipment.</li> : null}</ul><p className="mt-2 text-xs">These references reflect this confirmed manifest revision. Check the Portal for current progress.</p></aside> : null}
+          </article>)}</div>
         </section>
 
-        <section className="break-inside-avoid border p-4 text-sm">
+        <section className="packet-privacy break-inside-avoid border p-4 text-sm">
           <h2 className="font-semibold">Identity and privacy</h2>
           <p className="mt-2">
-            The packet barcode identifies this package. It is not a tube barcode or accession number. Do not place patient names, dates of birth, medical record numbers, or other PHI on the packet or tubes.
+            The order, shipment and sample barcodes identify their records. The packet barcode identifies this confirmed revision. Each permanent tube barcode identifies one physical tube. Scanning an identifier does not confirm receipt of material. Do not place patient names, dates of birth, medical record numbers, or other PHI on the packet or tubes.
           </p>
         </section>
 
@@ -187,14 +176,17 @@ function SampleInstructions({ entry, index }: { entry: JsonObject; index: number
 }
 
 function readFrozenSamples(manifest: JsonObject): FrozenSample[] {
-  return asObjects(manifest.samples).map((item) => ({
-    customerSampleId: text(item.customerSampleId),
-    sampleName: text(item.sampleName),
-    sampleTypeName: text(item.sampleTypeName),
-    quantity: text(item.quantity),
-    quantityUnit: text(item.quantityUnit),
-    supplierTubeBarcode: text(item.supplierTubeBarcode),
-  }))
+  const groups = new Map<string, FrozenSample>()
+  for (const item of asObjects(manifest.samples)) {
+    const id = text(item.submittedSpecimenId) || JSON.stringify([item.customerSampleId, item.sampleName])
+    let group = groups.get(id)
+    if (!group) {
+      group = { id, customerSampleId: text(item.customerSampleId), sampleName: text(item.sampleName), sampleTypeName: text(item.sampleTypeName), sampleBarcode: text(item.sampleBarcode), totalTubeCount: Number(item.totalSampleTubeCount) || 0, unallocatedTubeCount: Number(item.unallocatedTubeCount) || 0, otherShipments: asObjects(item.otherShipments).map(other => ({ shipmentNumber: text(other.shipmentNumber), tubeCount: Number(other.tubeCount) || 0 })), tubes: [] }
+      groups.set(id, group)
+    }
+    group.tubes.push({ barcode: text(item.supplierTubeBarcode), ordinal: text(item.tubeOrdinal), quantity: text(item.quantity), quantityUnit: text(item.quantityUnit) })
+  }
+  return [...groups.values()].map(group => ({ ...group, totalTubeCount: group.totalTubeCount || group.tubes.length }))
 }
 
 function quantityRange(sampleType: JsonObject) {
