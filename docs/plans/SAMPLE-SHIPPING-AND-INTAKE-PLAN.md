@@ -1,5 +1,15 @@
 # Sample Shipping and Intake Plan
 
+## September 9 production release and next acceptance step
+
+The shipping implementation is deployed on matching API/UI source `f06f4530`,
+including all four reviewed additive migrations. Backup/restore verification,
+deployment identities and passing public health checks are recorded in the
+[release record](PORTAL-SHIPPING-RELEASE-2026-09-08.md#september-9-production-release--completed).
+Production configuration and signed-in/physical acceptance remain separate from
+deployment. Resume the local HS5Y7DB7 walkthrough at Customer receipt for Request
+D20018AA; no test records or receipt acknowledgement were imported into production.
+
 ## End-of-day acceptance handoff — September 8, 2026
 
 The [local walkthrough handoff](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md#end-of-day-handoff--resume-september-9-2026)

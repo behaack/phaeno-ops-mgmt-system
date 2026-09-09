@@ -15,8 +15,9 @@ that a release has been deployed. Production release evidence is maintained
 separately from this acceptance run.
 
 The [end-of-day release record](../../plans/PORTAL-SHIPPING-RELEASE-2026-09-08.md)
-records committed/pushed application source and a READY held UI build. Production
-migration approval remains pending; production has not switched to this release.
+records the completed September 9 production API/UI switch at `f06f4530`, with
+four migrations applied and public health checks passing. The local walkthrough
+records remain local; deployment did not acknowledge receipt or import test data.
 
 | Record | Latest verified stopping point |
 | --- | --- |

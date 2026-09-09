@@ -1,5 +1,15 @@
 # Playwright E2E Test Plan
 
+## September 9 production release boundary
+
+Matching API/UI source `f06f4530` is deployed with the four reviewed migrations.
+The [release record](PORTAL-SHIPPING-RELEASE-2026-09-08.md#september-9-production-release--completed)
+contains backup/restore verification, public health/asset checks and empty bounded
+runtime-error/5xx scans. Connected production browser smoke was unavailable; these
+observations do not complete authenticated or physical acceptance. The existing
+local walkthrough still resumes at Customer kit receipt, and no local synthetic
+data was copied to production.
+
 ## September 9 connected walkthrough resume
 
 Continue **SHP-08 Customer kit receipt** from the

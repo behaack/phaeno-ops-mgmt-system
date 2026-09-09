@@ -11,11 +11,13 @@ container catalog/packing/stock, Customer delivery locations and kit ordering,
 receipt gates, container reset/selection and synchronized dispatch fulfillment.
 The public Website has no change in this release.
 
-Documentation and local verification are complete and the application source is
-committed/pushed as `989830a62cfcba2deb4d3b5f0d86ea6ece9025dc`. The matching Vercel
-production-settings build is READY with live-domain promotion held. Production
-migration approval was requested separately under `AGENTS.md:67` and is still
-pending; no production database migration or API/domain switch occurred. Existing storage/scanning providers, Clerk
+Documentation and local verification are complete. The Product Owner approved
+the pending production migration/switch on September 9 by replying **Switch**.
+The selected matching API/UI release source is
+`f06f4530bd28a18f611c84ebc8e0230700c5fa7c`, containing application commit `989830a`
+and its final handoff documentation. Both API and Portal UI are now deployed to
+production at that exact revision, with all four migrations applied and public
+health checks passing. Existing storage/scanning providers, Clerk
 identity configuration and independent processing/retention flags are preserved.
 
 ## Tomorrow's starting point
@@ -103,7 +105,7 @@ These checks do not establish production role workflows, physical delivery,
 scientific acceptance or notification inbox receipt. No synthetic fixture is
 provisioned in production by this release.
 
-## Deployment evidence
+## September 8 preparation evidence (historical)
 
 - Application commit `989830a62cfcba2deb4d3b5f0d86ea6ece9025dc` was pushed to
   `codex/portal-documentation-search-release`; it includes all final source,
@@ -113,22 +115,64 @@ provisioned in production by this release.
   production, built from the exact application commit above:
   `phaeno-ops-mgmt-system-jvm9ye8vr-cadexgenomics.vercel.app`.
   `autoAssignCustomDomains=false`; this is a held release, not a live promotion.
-- The alias API independently confirms `portal.phaenobiotech.com` still points to
+- At the preparation checkpoint, the alias API confirmed `portal.phaenobiotech.com` pointed to
   `dpl_3YWXWbw8GQiobhnpuXrDzkLxf9G9`, the existing `00959f5` release.
-  Current production API health is 200, database ping 204 and Portal root 200.
+  Production API health was 200, database ping 204 and Portal root 200.
   The Vercel connector could not see the new deployment; the authenticated CLI
   that created it verified both candidate and live alias.
-- No new **Deploy Portal Green** run was started: explicit approval for the four
-  reviewed production migrations is still pending. Do not promote the candidate
-  against the old API/schema. After approval, deploy matching API/UI source and
-  record backup verification, applied migration IDs and final runtime checks.
-  If the selected source changes, build a matching new UI candidate rather than
-  treating the held `989830a` build as that newer revision.
+- No new **Deploy Portal Green** run was started at that checkpoint because
+  explicit migration approval was pending. The September 9 approval and completed
+  switch below supersede that hold. The earlier `989830a` UI candidate was never
+  promoted; a matching `f06f4530` candidate was built for the final switch.
 - Release evidence files are under `artifacts/end-of-day-release-preflight/`:
   `create-ui-deployment.json`, `ui-deployment-created.json`,
   `ui-deployment-status.json`, `production-alias.json`, and preflight build/check
   logs. The read-only migration review is under
   `artifacts/release-migration-audit-20260908/`.
 
-The only remaining release authorization is the production migration approval.
-Customer receipt testing remains tomorrow's separate local workflow step.
+## September 9 production release — completed
+
+The Product Owner's **Switch** response approves the previously described four
+production migrations and matching API/UI release. Workflow
+[34360242317](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/34360242317)
+completed successfully for source `f06f4530bd28a18f611c84ebc8e0230700c5fa7c` with
+`apply_migrations=true`, storage/scanner **Preserve**, and Clerk cutover disabled.
+
+- Pre-migration backup:
+  `/var/backups/phaeno-portal-deploy/pre-migration-20260909T135930Z-f06f4530bd28`.
+  Isolated restoration verified four schemas and the prior migration identity;
+  restoration check and cleanup passed. The encrypted dump and wrapped key
+  checksums passed before migration. No plaintext backup was retained by the
+  workflow. This does not activate a new recurring/off-server backup schedule.
+- All four reviewed migration IDs above were applied successfully at
+  **13:59:38–39 UTC**. No test/catalog/business data was imported.
+- API deployment succeeded at **13:59:49 UTC**, with image
+  `sha-f06f4530bd28-run-34360242317-1` and release path
+  `/opt/phaeno.portal-green/releases/f06f4530bd28a18f611c84ebc8e0230700c5fa7c-34360242317-1`.
+  The solution build had zero warnings/errors; all workflow steps and temporary
+  cleanup completed successfully. Nonblocking action/Node deprecation and missing
+  optional Compose buildx warnings did not prevent deployment.
+- The matching Vercel deployment **`dpl_GViUqZ2XhUnxZ3rjjyW9xuzbfFCf`** is
+  **READY / PROMOTED**. Both Git source fields equal the API source above. The
+  alias API independently confirms `portal.phaenobiotech.com` points to this
+  deployment, URL `phaeno-ops-mgmt-system-q0xlsbcsr-cadexgenomics.vercel.app`.
+- Independent live probes returned API health **200**, database ping **204**,
+  Portal root **200**, and four sampled current JavaScript/CSS assets **200**.
+  Bounded new-deployment runtime-error and HTTP 5xx queries returned zero entries.
+  These are post-release health observations, not full signed-in workflow proof.
+- A connected production browser smoke could not be completed: the browser
+  connector could not open the production tab, and native window observation was
+  unavailable. No authentication setting was changed and no production business
+  record was submitted. Authenticated role journeys, operational catalog setup,
+  mailbox/physical delivery and scanner/printer acceptance remain separate.
+- Final evidence is under `artifacts/shipping-production-release-20260909/`:
+  `api-deployment.log`, `api-run.json`, `api-release-evidence.json`,
+  `public-api-probes.json`, `ui-promotion.log`, `ui-production-status-final.json`,
+  `production-alias-final.json`, `public-ui-probes.json`,
+  `ui-runtime-errors.jsonl` and `ui-http-5xx.jsonl`.
+
+The previous UI deployment remains identifiable as
+`dpl_3YWXWbw8GQiobhnpuXrDzkLxf9G9`. A UI rollback alone does not reverse the
+completed database migrations or API deployment. No down migration or restore
+was performed. Customer receipt testing remains the next separate **local**
+workflow step; the synthetic walkthrough records were not copied to production.

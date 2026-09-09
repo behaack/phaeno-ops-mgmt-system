@@ -3,9 +3,10 @@
 ## Repository implementation and rollout evidence
 
 The [September 8 shipping release and overnight handoff](plans/PORTAL-SHIPPING-RELEASE-2026-09-08.md)
-records the complete next release, including four additive migrations after the
-last successful production source. Its deployment evidence is authoritative for
-that release's status. The local walkthrough resumes at Customer receipt; local
+records the completed matching API/UI production release at `f06f4530`, including
+four additive migrations with restore-verified encrypted backup and passing public
+health checks. Its deployment evidence is authoritative for that release's status.
+Signed-in and physical acceptance remain open. The local walkthrough resumes at Customer receipt; local
 synthetic kit records are not production inventory. New Customer shipping needs
 approved production catalog/compatibility and fulfillment setup after migration.
 
