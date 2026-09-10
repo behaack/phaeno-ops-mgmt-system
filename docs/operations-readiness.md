@@ -6,8 +6,13 @@ The [September 8 shipping release and overnight handoff](plans/PORTAL-SHIPPING-R
 records the completed matching API/UI production release at `f06f4530`, including
 four additive migrations with restore-verified encrypted backup and passing public
 health checks. Its deployment evidence is authoritative for that release's status.
-Signed-in and physical acceptance remain open. The local walkthrough resumes at Customer receipt; local
-synthetic kit records are not production inventory. New Customer shipping needs
+Signed-in and physical acceptance remain open. The local walkthrough has completed
+simulated Customer receipt and resumes at container preparation; local synthetic
+kit records are not production inventory. The September 9
+[location-inventory correction](plans/TRANSPORTATION-KIT-LOCATION-INVENTORY-PLAN.md)
+is implemented locally and is not included in that production release. Its
+additional reservation/departure-location migration requires separately approved
+shared/production application. New Customer shipping needs
 approved production catalog/compatibility and fulfillment setup after migration.
 
 The repository implements first-party CRM, durable invitation delivery, derived

@@ -11,6 +11,14 @@ vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ a
 
 describe('related shipment receipt summary', () => {
   beforeEach(() => mocks.list.mockReset())
+  it('separates retired physical containers from active preparation and its counts', async () => {
+    mocks.list.mockResolvedValue([shippingFixture, { ...shippingFixture, id: 'retired', shipmentNumber: 'OLD-CONTAINER', status: 'Cancelled', crosswalk: [], orderExpectedTubeCount: 999, orderReceivedTubeCount: 999 }])
+    render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><RelatedSampleShipments sourceId={shippingFixture.authorizationSourceId} /></QueryClientProvider>)
+    expect(await screen.findByRole('link', { name: 'Open shipment, tubes and packet' })).toBeTruthy()
+    expect(screen.getByText('Retired container configurations (1)')).toBeTruthy()
+    expect(screen.getByText('View history · OLD-CONTAINER')).toBeTruthy()
+    expect(screen.queryByText(/999/)).toBeNull()
+  })
   it('aggregates a split sample once and keeps unallocated tubes visible', async () => {
     const tube = shippingTube(1, { totalSampleTubeCount: 4, receivedTubeCount: 1 })
     mocks.list.mockResolvedValue([

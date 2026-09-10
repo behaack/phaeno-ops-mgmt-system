@@ -12,7 +12,8 @@ export function RelatedSampleShipments({ sourceId, staff = false }: { sourceId: 
     queryFn: () => getSourceSampleShipments(sourceId, staff),
     enabled: allowed && authProvider !== 'mock',
   })
-  const related = shipments.data?.filter(value => value.authorizationSourceId === sourceId && !(value.isPackingPool && (value.status === 'Cancelled' || value.crosswalk.length === 0))) ?? []
+  const retired = shipments.data?.filter(value => value.authorizationSourceId === sourceId && value.status === 'Cancelled' && !value.isPackingPool) ?? []
+  const related = shipments.data?.filter(value => value.authorizationSourceId === sourceId && value.status !== 'Cancelled' && !(value.isPackingPool && value.crosswalk.length === 0)) ?? []
   const unallocated = related.filter(value => value.isPackingPool).reduce((sum, value) => sum + value.crosswalk.length, 0)
   const receipt = related.find(value => value.orderExpectedTubeCount !== undefined)
   const samples = new Map<string, { name: string; total: number; received: number }>()
@@ -39,5 +40,6 @@ export function RelatedSampleShipments({ sourceId, staff = false }: { sourceId: 
           </li>)}</ul>
           {receipt && samples.size ? <details><summary className="cursor-pointer text-sm font-medium">Sample receipt progress</summary><ul className="mt-2 max-h-60 space-y-2 overflow-y-auto text-sm">{[...samples.entries()].map(([id, item]) => <li key={id}><span className="font-medium">{item.name}</span> · {item.received} of {item.total} tubes received{item.received > 0 && item.received < item.total ? ' · Partially received' : item.received >= item.total ? ' · Complete' : ' · Awaiting receipt'}</li>)}</ul></details> : null}
           </> : <p className="text-sm text-muted-foreground">Container preparation appears after the sample list is authorized. Phaeno supplies registered, permanently barcoded tubes.</p>}
+    {allowed && retired.length > 0 ? <details><summary className="cursor-pointer text-sm font-medium">Retired container configurations ({retired.length})</summary><p className="mt-2 text-xs text-muted-foreground">Previous configurations are retained as history.</p><ul className="mt-2 space-y-2 text-sm">{retired.map(shipment => <li key={shipment.id}>{staff ? <span>{shipment.shipmentNumber}</span> : <Link to="/sample-shipping/$shipmentId" params={{ shipmentId: shipment.id }} className="text-primary underline">View history · {shipment.shipmentNumber}</Link>}</li>)}</ul></details> : null}
   </section>
 }

@@ -8302,6 +8302,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("department_id");
 
+                    b.Property<Guid?>("DepartureDeliveryLocationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("departure_delivery_location_id");
+
                     b.Property<Guid>("DestinationId")
                         .HasColumnType("uuid")
                         .HasColumnName("destination_id");
@@ -8363,6 +8367,8 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasIndex("ContainerDefinitionId");
 
                     b.HasIndex("DepartmentId");
+
+                    b.HasIndex("DepartureDeliveryLocationId");
 
                     b.HasIndex("DestinationId");
 
@@ -9179,6 +9185,18 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("outbound_tracking_number");
 
+                    b.Property<DateTime?>("ReservedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reserved_at");
+
+                    b.Property<Guid?>("ReservedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reserved_by_user_id");
+
+                    b.Property<Guid?>("ReservedSampleShipmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reserved_sample_shipment_id");
+
                     b.Property<string>("ShipperProductNumber")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -9247,9 +9265,16 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasIndex("KitNumber")
                         .IsUnique();
 
+                    b.HasIndex("ReservedByUserId");
+
+                    b.HasIndex("ReservedSampleShipmentId")
+                        .IsUnique();
+
                     b.HasIndex("TransportationKitRequestLineId");
 
                     b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("OrganizationId", "DepartmentId", "CustomerDeliveryLocationId");
 
                     b.HasIndex("OrganizationId", "DepartmentId", "AuthorizationSource", "AuthorizationSourceId");
 
@@ -16104,6 +16129,12 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.CustomerDeliveryLocation", null)
+                        .WithMany()
+                        .HasForeignKey("DepartureDeliveryLocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_sample_shipment_departure_location");
+
                     b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingDestination", null)
                         .WithMany()
                         .HasForeignKey("DestinationId")
@@ -16306,6 +16337,18 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_shipping_stock_kit_organization");
+
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("ReservedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_reserved_by");
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipment", null)
+                        .WithMany()
+                        .HasForeignKey("ReservedSampleShipmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_stock_reserved_shipment");
 
                     b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.TransportationKitRequestLine", null)
                         .WithMany()

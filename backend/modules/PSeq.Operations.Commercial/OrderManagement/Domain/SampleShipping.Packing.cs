@@ -5,6 +5,14 @@ public sealed partial class SampleShipment
     public Guid? ContainerDefinitionId { get; private set; }
     public string? ContainerSnapshotJson { get; private set; }
     public bool IsPackingPool { get; private set; }
+    public Guid? DepartureDeliveryLocationId { get; private set; }
+
+    public void SetDepartureLocation(Guid locationId)
+    {
+        EnsureUnpacked();
+        if (locationId == Guid.Empty) throw new ArgumentException("Choose a departure delivery location.");
+        DepartureDeliveryLocationId = locationId;
+    }
 
     public void SelectContainer(Guid definitionId, string snapshotJson)
     {

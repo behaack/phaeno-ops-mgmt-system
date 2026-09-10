@@ -5,7 +5,9 @@ public sealed record ShipmentKitSupplyDto(Guid ShipmentId, long ShipmentVersion,
     int TubeCount, Guid? DeliveryLocationId, IReadOnlyList<CustomerDeliveryLocationDto> Locations,
     ContainerPackingPreviewDto Recommendation, IReadOnlyList<RecordedTransportationKitStockDto> RecordedStock,
     string InventoryStatus, TransportationKitRequestDto? Request, bool CanRequestKits, string? RequestBlockedReason,
-    bool CanPrepareSamples, string? PreparationBlockedReason);
+    bool CanPrepareSamples, string? PreparationBlockedReason,
+    IReadOnlyList<LocationStockKitDto>? InventoryKits = null, bool CanManageInventory = false,
+    IReadOnlyList<SampleShippingContainerDefinitionDto>? ContainerTypes = null);
 public sealed record TransportationKitRequestLineDto(Guid Id, Guid ContainerDefinitionId, string Sku, string CommonName,
     int TubeCapacity, int RequestedQuantity, int DispatchedQuantity, int ReceivedQuantity);
 public sealed record TransportationKitDispatchDto(Guid StockKitId, string KitNumber, Guid RequestLineId,

@@ -89,6 +89,14 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
     public async Task<StockKitDto> Dispatch(Guid id, [FromBody] DispatchStockKitRequest request, CancellationToken ct)
     {
         var actor = await context.RequirePlatformAdminAsync(HttpContext, ct);
+        if (request.DeliveryLocationId.HasValue || request.RequestId.HasValue)
+        {
+            await using var locationTransaction = await SampleShippingPackingData.BeginAsync(db, $"location-dispatch:{request.DeliveryLocationId}", ct);
+            await requestService.DispatchLocationAsync(id, actor.Id, request, ct);
+            if (locationTransaction is not null) await locationTransaction.CommitAsync(ct);
+            return await ReadAsync(id, ct);
+        }
+        if (!request.ShipmentId.HasValue) throw Invalid("Choose a Customer delivery location or an authorized legacy Job.");
         var shipment = await db.SampleShipments.AsNoTracking().Include(item => item.Items).ThenInclude(item => item.TubeSlots)
             .SingleOrDefaultAsync(item => item.Id == request.ShipmentId, ct) ?? throw Missing();
         if (await TransportationKitSupplyGuard.RequiresOrderedKitsAsync(db, shipment, ct))
@@ -125,15 +133,28 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
 
     private async Task<IReadOnlyList<StockKitDto>> MapAsync(IReadOnlyList<SampleShippingStockKit> kits, CancellationToken ct)
     {
+        var inventory = (await TransportationKitInventory.MapAsync(db, kits, ct)).ToDictionary(item => item.StockKitId);
+        var organizationIds = kits.Where(item => item.OrganizationId.HasValue).Select(item => item.OrganizationId!.Value).Distinct().ToArray();
+        var departmentIds = kits.Where(item => item.DepartmentId.HasValue).Select(item => item.DepartmentId!.Value).Distinct().ToArray();
+        var locationIds = kits.Where(item => item.CustomerDeliveryLocationId.HasValue).Select(item => item.CustomerDeliveryLocationId!.Value).Distinct().ToArray();
+        var organizations = await db.Organizations.Where(item => organizationIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, item => item.Name, ct);
+        var departments = await db.OrganizationDepartments.Where(item => departmentIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, item => item.Name, ct);
+        var locations = await db.CustomerDeliveryLocations.Where(item => locationIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, item => item.Label, ct);
         var ids = kits.Where(item => item.AuthorizationSourceId.HasValue).Select(item => item.AuthorizationSourceId!.Value).Distinct().ToArray();
         var references = await db.SampleShipments.AsNoTracking().Where(item => ids.Contains(item.AuthorizationSourceId))
             .Select(item => new { item.AuthorizationSourceId, item.AuthorizationReference }).Distinct().ToListAsync(ct);
         return kits.Select(kit => new StockKitDto(kit.Id, kit.KitNumber, SampleShippingPackingData.Container(kit.ContainerSnapshotJson)!,
             kit.TubeSupplierName, kit.TubeProductNumber, kit.TubeLotNumber, kit.ShipperSupplierName, kit.ShipperProductNumber,
-            kit.BoundSampleShipmentId.HasValue ? "Bound" : kit.FulfilledAt.HasValue ? "Fulfilled" : "Preparing",
+            inventory[kit.Id].Status,
             kit.OrganizationId, kit.AuthorizationSourceId, references.FirstOrDefault(item => item.AuthorizationSourceId == kit.AuthorizationSourceId)?.AuthorizationReference,
             kit.BoundSampleShipmentId, kit.OutboundCarrier, kit.OutboundTrackingNumber, kit.FulfilledAt, kit.Version,
-            kit.Tubes.OrderBy(item => item.SupplierBarcode).Select(item => new StockKitTubeDto(item.Id, item.SupplierBarcode)).ToArray())).ToArray();
+            kit.Tubes.OrderBy(item => item.SupplierBarcode).Select(item => new StockKitTubeDto(item.Id, item.SupplierBarcode)).ToArray(),
+            kit.DepartmentId, kit.CustomerDeliveryLocationId, kit.CustomerDeliveryLocationId.HasValue ? locations.GetValueOrDefault(kit.CustomerDeliveryLocationId.Value) : null,
+            inventory[kit.Id].RequestId, kit.AuthorizationSourceId, inventory[kit.Id].OriginatingJobNumber,
+            kit.CustomerReceivedAt, kit.ReservedSampleShipmentId, inventory[kit.Id].AssignedJobId, inventory[kit.Id].AssignedJobNumber,
+            kit.OrganizationId.HasValue ? organizations.GetValueOrDefault(kit.OrganizationId.Value) : null,
+            kit.DepartmentId.HasValue ? departments.GetValueOrDefault(kit.DepartmentId.Value) : null,
+            inventory[kit.Id].Status == "NeedsReview" ? "Record the verified Customer delivery location before this container can become available." : null)).ToArray();
     }
 
     private static void Version(long actual, long expected) { if (actual != expected) throw Conflict("This kit changed. Refresh before continuing."); }

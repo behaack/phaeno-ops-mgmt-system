@@ -19,6 +19,9 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
     public SampleShipmentAuthorizationSource? AuthorizationSource { get; private set; }
     public Guid? AuthorizationSourceId { get; private set; }
     public Guid? BoundSampleShipmentId { get; private set; }
+    public Guid? ReservedSampleShipmentId { get; private set; }
+    public DateTime? ReservedAt { get; private set; }
+    public Guid? ReservedByUserId { get; private set; }
     public Guid? TransportationKitRequestLineId { get; private set; }
     public Guid? CustomerDeliveryLocationId { get; private set; }
     public DateTime? CustomerReceivedAt { get; private set; }
@@ -79,10 +82,43 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
         if (TransportationKitRequestLineId.HasValue && !CustomerReceivedAt.HasValue)
             throw new InvalidOperationException("Confirm receipt of the transportation kit before preparing its sample shipment.");
         if (shipment.OrganizationId != OrganizationId || shipment.DepartmentId != DepartmentId
-            || shipment.AuthorizationSource != AuthorizationSource || shipment.AuthorizationSourceId != AuthorizationSourceId
-            || shipment.ContainerDefinitionId != ContainerDefinitionId)
+            || shipment.ContainerDefinitionId != ContainerDefinitionId
+            || (ReservedSampleShipmentId.HasValue ? ReservedSampleShipmentId != shipment.Id
+                : shipment.AuthorizationSource != AuthorizationSource || shipment.AuthorizationSourceId != AuthorizationSourceId))
             throw new InvalidOperationException("This kit does not match the selected job and container type.");
         BoundSampleShipmentId = shipment.Id;
+    }
+
+    public void Reserve(SampleShipment shipment, Guid actorId, DateTime utcNow)
+    {
+        if (!CustomerReceivedAt.HasValue || BoundSampleShipmentId.HasValue || ReservedSampleShipmentId.HasValue
+            || actorId == Guid.Empty || utcNow.Kind != DateTimeKind.Utc
+            || shipment.Status != SampleShipmentStatus.Preparing
+            || shipment.OrganizationId != OrganizationId || shipment.DepartmentId != DepartmentId
+            || shipment.DepartureDeliveryLocationId != CustomerDeliveryLocationId
+            || shipment.ContainerDefinitionId != ContainerDefinitionId)
+            throw new InvalidOperationException("This container is not available at the selected delivery location. Refresh and scan an available container.");
+        ReservedSampleShipmentId = shipment.Id; ReservedAt = utcNow; ReservedByUserId = actorId;
+    }
+
+    public void ReleaseReservation()
+    {
+        if (BoundSampleShipmentId.HasValue) throw new InvalidOperationException("A container in use cannot be released.");
+        ReservedSampleShipmentId = null; ReservedAt = null; ReservedByUserId = null;
+    }
+
+    public void DispatchToLocation(CustomerDeliveryLocation location, string carrier, string trackingNumber, DateTime fulfilledAt)
+    {
+        if (FulfilledAt.HasValue || OrganizationId.HasValue || !location.IsActive)
+            throw new InvalidOperationException("Choose an active delivery location for an undispatched container.");
+        if (Tubes.Count != TubeCapacity || Tubes.Select(tube => tube.SupplierBarcode).Distinct().Count() != TubeCapacity)
+            throw new InvalidOperationException($"Register exactly {TubeCapacity} unique tubes before dispatch.");
+        if (fulfilledAt.Kind != DateTimeKind.Utc || fulfilledAt > DateTime.UtcNow.AddMinutes(5) || fulfilledAt < CreatedAt.AddMinutes(-1))
+            throw new ArgumentException("Enter a valid dispatch time after the kit was prepared.");
+        OrganizationId = location.OrganizationId; DepartmentId = location.DepartmentId; CustomerDeliveryLocationId = location.Id;
+        OutboundCarrier = OrderText.Required(carrier, nameof(carrier), 255);
+        OutboundTrackingNumber = OrderText.Required(trackingNumber, nameof(trackingNumber), 255);
+        FulfilledAt = fulfilledAt;
     }
 
     public void LinkTransportationRequest(TransportationKitRequest request, TransportationKitRequestLine line)
@@ -90,13 +126,16 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
         if (TransportationKitRequestLineId.HasValue || !FulfilledAt.HasValue || BoundSampleShipmentId.HasValue
             || line.TransportationKitRequestId != request.Id || line.ContainerDefinitionId != ContainerDefinitionId
             || request.OrganizationId != OrganizationId || request.DepartmentId != DepartmentId
-            || request.LabServiceOrderId != AuthorizationSourceId || AuthorizationSource != SampleShipmentAuthorizationSource.CustomerLabServiceOrder)
+            || (AuthorizationSourceId.HasValue && (request.LabServiceOrderId != AuthorizationSourceId
+                || AuthorizationSource != SampleShipmentAuthorizationSource.CustomerLabServiceOrder))
+            || (CustomerDeliveryLocationId.HasValue && CustomerDeliveryLocationId != request.DeliveryLocationId))
             throw new InvalidOperationException("Dispatch this unused kit for the matching transportation-kit request.");
         TransportationKitRequestLineId = line.Id; CustomerDeliveryLocationId = request.DeliveryLocationId;
+        AuthorizationSource = SampleShipmentAuthorizationSource.CustomerLabServiceOrder; AuthorizationSourceId = request.LabServiceOrderId;
     }
     public void ConfirmCustomerReceipt(Guid actorUserId, DateTime utcNow)
     {
-        if (!TransportationKitRequestLineId.HasValue || !FulfilledAt.HasValue || actorUserId == Guid.Empty
+        if (!CustomerDeliveryLocationId.HasValue || !FulfilledAt.HasValue || actorUserId == Guid.Empty
             || utcNow.Kind != DateTimeKind.Utc || utcNow < FulfilledAt.Value)
             throw new InvalidOperationException("Only a dispatched transportation kit can be acknowledged as received.");
         if (CustomerReceivedAt.HasValue) return;

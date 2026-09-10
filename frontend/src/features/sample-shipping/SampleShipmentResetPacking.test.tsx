@@ -78,7 +78,7 @@ describe('changing a confirmed container plan', () => {
     const dialog = await openReview()
     expect(dialog.textContent).toContain('All 2 selected containers will be removed. All 30 tubes will return to container selection.')
     expect(dialog.textContent).toContain('Your finalized sample list will stay unchanged.')
-    expect(dialog.textContent).toContain('cannot be undone after tube scanning starts or a kit is assigned')
+    expect(dialog.textContent).toContain('cannot be undone after tube scanning starts')
     fireEvent.click(within(dialog).getByRole('button', { name: 'Keep containers' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     expect(mocks.reset).not.toHaveBeenCalled()

@@ -42,6 +42,8 @@ public sealed class SampleShipmentPackingResetService(PSeqOperationsDbContext db
                 reviewed.ShipmentId == item.Id && reviewed.Version == item.Version)))
             throw Conflict("The containers changed after you reviewed them. Refresh and review the current containers before continuing.");
 
+        await TransportationKitInventory.ReleaseAsync(db, active.Select(item => item.Id).ToArray(), ct);
+
         var keys = await ReadPoolKeysAsync(active, ct);
         var invokingItem = family.Current.Items.OrderBy(item => item.CustomerSampleId, StringComparer.OrdinalIgnoreCase).First();
         var returnKey = keys[invokingItem.Id];

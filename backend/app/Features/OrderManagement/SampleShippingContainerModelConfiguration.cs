@@ -51,6 +51,7 @@ public static class SampleShippingContainerModelConfiguration
             entity.Property(item => item.ContainerSnapshotJson).HasColumnType("jsonb");
             entity.Property(item => item.IsPackingPool).HasDefaultValue(false);
             entity.HasOne<SampleShippingContainerDefinition>().WithMany().HasForeignKey(item => item.ContainerDefinitionId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_sample_shipment_container_revision");
+            entity.HasOne<CustomerDeliveryLocation>().WithMany().HasForeignKey(item => item.DepartureDeliveryLocationId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_sample_shipment_departure_location");
         });
         builder.Entity<SampleShippingStockKit>(entity =>
         {
@@ -68,6 +69,10 @@ public static class SampleShippingContainerModelConfiguration
             entity.Property(item => item.AuthorizationSource).HasConversion<string>().HasMaxLength(50);
             entity.HasIndex(item => item.KitNumber).IsUnique();
             entity.HasIndex(item => item.BoundSampleShipmentId).IsUnique();
+            entity.HasIndex(item => item.ReservedSampleShipmentId).IsUnique();
+            entity.HasIndex(item => new { item.OrganizationId, item.DepartmentId, item.CustomerDeliveryLocationId });
+            entity.HasOne<SampleShipment>().WithMany().HasForeignKey(item => item.ReservedSampleShipmentId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_shipping_stock_reserved_shipment");
+            entity.HasOne<User>().WithMany().HasForeignKey(item => item.ReservedByUserId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_shipping_stock_reserved_by");
             entity.HasIndex(item => new { item.OrganizationId, item.DepartmentId, item.AuthorizationSource, item.AuthorizationSourceId });
             entity.HasOne<SampleShippingContainerDefinition>().WithMany().HasForeignKey(item => item.ContainerDefinitionId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_shipping_stock_kit_container_revision");
             entity.HasOne<SampleShipment>().WithMany().HasForeignKey(item => item.BoundSampleShipmentId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_shipping_stock_kit_bound_shipment");

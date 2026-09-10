@@ -108,7 +108,8 @@ public static class SampleShippingPackingData
         var stock = await db.SampleShippingStockKits.Include(item => item.Tubes)
             .SingleOrDefaultAsync(item => item.Tubes.Any(tube => tube.SupplierBarcode == scannedBarcode)
                 && item.OrganizationId == shipment.OrganizationId && item.DepartmentId == shipment.DepartmentId
-                && item.AuthorizationSource == shipment.AuthorizationSource && item.AuthorizationSourceId == shipment.AuthorizationSourceId, ct)
+                && (item.ReservedSampleShipmentId == shipment.Id || (!item.ReservedSampleShipmentId.HasValue
+                    && item.AuthorizationSource == shipment.AuthorizationSource && item.AuthorizationSourceId == shipment.AuthorizationSourceId)), ct)
             ?? throw new OrderManagementException("supplier_tube_not_dispatched", "This tube is not in a registered kit dispatched for this job.", 409);
         await LockAsync(db, $"stock-kit:{stock.Id}", ct);
         await db.Entry(stock).ReloadAsync(ct);

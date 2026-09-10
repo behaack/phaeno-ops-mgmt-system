@@ -207,6 +207,8 @@ public sealed record SampleShippingPacketScanDto(
     int OrderExpectedTubeCount = 0,
     int OrderReceivedTubeCount = 0);
 
+public sealed record SampleContainerKitIdentityDto(Guid Id, string KitNumber, string Barcode);
+
 public sealed record SampleShippingCrosswalkItemDto(
     Guid ShipmentItemId,
     Guid SubmittedSpecimenId,
@@ -282,7 +284,9 @@ public sealed record SampleShipmentWorkflowDto(
     int ExpectedTubeCount = 0,
     int ReceivedTubeCount = 0,
     int OrderExpectedTubeCount = 0,
-    int OrderReceivedTubeCount = 0);
+    int OrderReceivedTubeCount = 0,
+    Guid? DepartureDeliveryLocationId = null,
+    LocationStockKitDto? AssignedContainer = null, string? OrganizationKind = null);
 
 public sealed record SampleShippingPacketSummaryDto(
     Guid Id,

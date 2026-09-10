@@ -13,6 +13,12 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 public sealed class TransportationKitRequestsController(OrderRequestContext context,
     OrderIdempotencyService idempotency, TransportationKitRequestService service) : ControllerBase
 {
+    [HttpGet("api/transportation-kit-requests/{id:guid}")]
+    public async Task<TransportationKitRequestDto> Read(Guid id, CancellationToken ct)
+    {
+        var tenant = await context.RequireTenantAsync(HttpContext, OrganizationKind.Customer, false, ct);
+        return await service.MapAsync(await service.LoadAsync(id, tenant.Organization.Id, tenant.Department.Id, ct), tenant.IsDepartmentAdmin, false, ct);
+    }
     [HttpGet("api/sample-shipping/{shipmentId:guid}/kit-supply")]
     public async Task<ShipmentKitSupplyDto> Supply(Guid shipmentId, [FromQuery] Guid? deliveryLocationId, CancellationToken ct)
         => await service.SupplyAsync(shipmentId, await context.RequireTenantAsync(HttpContext, OrganizationKind.Customer, false, ct), deliveryLocationId, ct);

@@ -1,5 +1,46 @@
 # Backend Test Plan
 
+## Location inventory correction — September 9, 2026
+
+The [location-inventory plan](TRANSPORTATION-KIT-LOCATION-INVENTORY-PLAN.md)
+supersedes the same-Job stock restriction below. The final isolated PostgreSQL
+checkpoint passed **76/76** shipping, kit, location, packing, reset and cancellation
+cases; the solution build passed with zero warnings/errors. Six new cases in
+`TransportationKitLocationInventoryPostgresTests.cs` establish:
+
+- Receipt after origin Job cancellation and exact reservation for another Job at
+  the same Customer/Department/location, with no repeated receipt or delivery.
+- Concurrent Jobs produce exactly one container reservation without losing tubes.
+- Pre-scan reset releases the container; a wrong-container tube fails; first
+  successful scan locks reset and freezes the physical barcode into the packet.
+- Receipt, tenant, Department, location and Member write restrictions are enforced.
+- Ordinary catalog supersession retains compatible physical stock, while explicit
+  withdrawal blocks it.
+- Pending and declined cancellation retain reservations; approved cancellation
+  releases only unused reservations and preserves fulfillment history. Scanned
+  containers remain bound. Existing native Lab approval/veto tests also pass.
+
+Existing partial-receipt, dispatch and scan tests now use exact reservations.
+The first 73-case checkpoint exposed a dispatch-replay comparison between .NET
+100-nanosecond ticks and PostgreSQL microseconds. Matching now compares at the
+persisted precision; the regression deliberately supplies a finer-grained time.
+The final 76-case run passed, its scratch database was removed, and zero synthetic
+notification rows remained. Counts overlap earlier checkpoints and are not additive.
+
+Migration `20260909153238_AddTransportationKitLocationReservations` adds four
+nullable fields, four indexes and three restrictive foreign keys; no record
+backfill or repair is included. The complete ERD is updated. Shared/production
+application is not part of this local implementation. Automatic cancellation of
+unshipped requests remains a pending product decision.
+
+Evidence: `artifacts/location-inventory-tests/location-inventory.trx` and
+`latest-run.log`. Applied the migration only to verified local
+`localhost/phaeno_ops`; API restarted from `artifacts/location-inventory-runtime`
+with health HTTP 200. `local-preservation.json` confirms all six before/after
+state hashes match: the saved Job still has nine samples and 18 unmatched tubes;
+its received kit is version 5, unreserved and unbound. No walkthrough data repair
+or consumption occurred.
+
 ## Customer Job kit requirement and dispatch synchronization — September 8, 2026
 
 The final isolated checkpoint passed **68/68** shipping, kit, location, packing,

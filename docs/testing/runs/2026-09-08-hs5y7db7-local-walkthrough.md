@@ -5,11 +5,117 @@ The [run-record template](../RUN-RECORD.md) remains unchanged. User reports,
 read-only database evidence and unexecuted variants are recorded separately;
 no full manual case is marked Pass from these partial steps.
 
+## Current implementation checkpoint — September 9
+
+The adjusted location-inventory workflow is implemented and active locally.
+Migration `20260909153238_AddTransportationKitLocationReservations` was applied
+only to verified `localhost/phaeno_ops`; the replacement API reports health 200.
+The isolated backend checkpoint passed 76/76; Customer and staff component,
+browser, type and documentation checks are recorded in the owning plans.
+
+Read-only preservation evidence (`artifacts/location-inventory-tests/local-preservation.json`)
+confirms all six before/after hashes match: Job, samples, request, original kit
+facts, registered tube roster and original shipment facts are preserved.
+There was no data repair, repeat receipt, container assignment or tube scan.
+
+Connected browser observations after local activation:
+
+- **Portal location:** Main laboratory shows Available 1, On the way 0,
+  Assigned 0 and In use 0. The kit retains originating Job HS5Y7DB7.
+- **Portal preparation:** current pool SHP-20260909-661C60414B7 has 18 tubes,
+  recommends the existing TRANS-20 with two spare slots, and enables
+  **Adjust containers** with departure location Main laboratory.
+- **POMS kit:** Available, Main laboratory, Assigned Job **Not assigned**;
+  Request D20018AA, original FedEx dispatch, Customer receipt and all 20
+  registered synthetic tube barcodes remain visible.
+
+**Resume at SHP-09:** open **Adjust containers**, scan
+`KIT-58073414ED6C47109A3E073EE5F9311F`, review 18 tubes in the 20-tube kit, and
+confirm. Confirmation reserves this physical container. Complete any desired
+reset/release check before scanning a tube. First successful tube matching locks
+ordinary reset. Use the registered `TEST-HS5Y7DB7-001` through `-020` identities
+when continuing the synthetic walkthrough; do not repeat order, dispatch or receipt.
+
+The main walkthrough remains at nine samples / 18 unmatched tubes, kit version 5,
+unreserved and unbound. Alternate sizes, split shipments and full manual variants
+remain separate fixtures. This is local technical and read-only browser evidence,
+not physical fulfillment/scanner qualification or a production deployment.
+Automatic cancellation of unshipped requests remains an outstanding product decision.
+
+Final connected checks also verified the location return link opens the shipment
+without starting another kit order. The live **Adjust containers** dialog showed
+one TRANS-20, 18 allocated tubes, two spare slots and an empty required
+**Container 1 barcode** field. No value was entered or confirmation submitted.
+Browser automation timed out while closing that unsubmitted draft and its
+discard prompt; the prompt may remain open in Chrome. Close/discard the draft
+before resuming. Edge is on the physical kit detail with its barcode visible.
+
+## Earlier planning pause — revise location inventory before preparation
+
+The Product Owner has superseded the mandatory same-Job kit rule. Containers
+are to be supplied to Customer locations and assigned to Jobs during preparation
+by scanning their permanent container barcodes. The
+[location-inventory plan](../../plans/TRANSPORTATION-KIT-LOCATION-INVENTORY-PLAN.md)
+records the agreed direction and remaining cancellation decision. At this earlier
+checkpoint the correction was not implemented; the fixture was paused before
+container assignment or a successful tube scan. The implementation checkpoint
+above supersedes that pause without repeating order, dispatch or receipt.
+
+The misleading receipt footer was removed locally. A connected Chrome read on
+the same historical shipment independently found **Kits received** and no
+**Confirm which kits have arrived before configuring containers or scanning
+tubes.** The existing 29 transportation-panel tests passed. Chrome was returned
+to the current **Tubes awaiting containers** pool, SHP-20260909-661C60414B7.
+
+The owner's cancellation question is explained by the audit: predecessor
+SHP-20260909-28314D28480 (`e9eccecd-8076-4e08-b67f-be0d01c5576e`) changed from
+Preparing to Cancelled on **September 8 at 20:54:04.850151 PDT**, when the
+replacement pool was created in the same request. This was the earlier
+container reset, not today's kit receipt or a Lab Job cancellation. The Job
+page then offered cancelled physical-container links as normal actions; the
+implemented correction now separates those records into retired history.
+
+## Current checkpoint — September 9 Customer kit receipt
+
+The owner reported completing the one-kit **simulated local receipt** for Job HS5Y7DB7 /
+Request D20018AA. The Customer screenshot shows **Kits received** and the kit's
+**Received** state. Independent post-receipt verification confirms Request v3,
+one requested/sent/received kit and kit v5, received at **07:47:28 PDT**. The
+stock kit remains unbound: one available, zero in transit and zero bound. The
+active pool retains nine samples / 18 slots with zero matches or packets.
+These are the existing explicitly synthetic TRANS-20 kit and
+barcodes, not a physical FedEx-delivery or production-acceptance assertion.
+
+| SHP-08 check | Observation and evidence type | Scope of result |
+| --- | --- | --- |
+| Submit without selecting an arrived kit | **SCREENSHOT:** the receipt dialog displays **Select the kits that have arrived.** | Required-selection feedback observed. No separate persistence assertion from this screenshot. |
+| Select the kit, cancel, then reopen | **USER-REPORTED:** owner replied **Success** for cancellation and a cleared selection on reopening. | Cancellation/reset behavior reported successful; not independent database proof. |
+| Confirm the one arrived test kit | **USER-REPORTED + SCREENSHOT + READ-ONLY BACKEND:** successful simulated receipt; Customer view displays **Kits received** and the kit **Received**; persisted request/kit receipt corroborated above. | Core one-kit receipt observed; other SHP-08 variants remain incomplete. |
+| Refresh POMS | **USER-REPORTED, THEN CONNECTED BROWSER:** a later staff read initially retained Dispatched; explicit reload showed **Received, 1 requested · 1 sent · 1 received**, with the Customer receipt timestamp. | Refreshed POMS and Customer receipt agree. Automatic cross-browser synchronization was not established. |
+
+**Feedback defect corrected locally:** despite the received state, the Customer
+screenshot still displays **Confirm which kits have arrived before configuring
+containers or scanning tubes.** This is contradictory post-receipt guidance.
+The generic fallback was removed and verified as recorded above. Specific
+server-provided preparation restrictions remain. No second receipt was recorded.
+
+**Next at that receipt checkpoint (now implemented):** verify the revised location-inventory model, then resume
+container barcode assignment for the 18-tube roster using the unused TRANS-20.
+Use separate fixtures for cross-Job reuse after cancellation, split shipments
+and alternate sizes. Complete reset/release checks before the first tube scan.
+Full **SHP-08 is not Pass**: partial receipt, repeated/idempotent confirmation,
+other-kit/Job/location, role and remaining recovery variants are untested in
+this connected run. No tests or application writes were performed by this
+documentation update.
+
 ## End-of-day handoff — resume September 9, 2026
+
+Historical handoff, superseded by the current receipt checkpoint above. The
+identities and earlier evidence below remain preserved as recorded.
 
 **Resume with Customer kit receipt. Do not place another kit order, register
 another kit, repeat dispatch or repeat the completed request-link correction.**
-This is the local connected walkthrough, using explicitly synthetic kit products
+This was the local connected walkthrough handoff, using explicitly synthetic kit products
 and barcodes. It is not a production fixture, a real delivery assertion or proof
 that a release has been deployed. Production release evidence is maintained
 separately from this acceptance run.
@@ -62,8 +168,28 @@ are not promoted to Pass. SHP-08 receipt is the immediate next step; successful
 SHP-10 scanning remains blocked until that receipt is acknowledged.
 
 The chronology below preserves earlier failures and snapshots. Its dated
-"next step" notes describe that earlier moment; this handoff is the current
-resume point.
+"next step" notes describe that earlier moment; the current receipt checkpoint
+at the top is the resume point.
+
+## Resume checkpoint — September 9, 2026
+
+The read-only backend check at **07:40:12 PDT** confirmed Request D20018AA
+remains **Dispatched, 1 sent, 0 received**. The kit's original dispatch and
+20 registered barcodes are unchanged; Customer receipt and shipment binding
+remain unset. The finalized Job still has nine samples and 18 tubes with no
+successful scans. Its current preparation pool is
+`549e467c-d8a2-4190-a458-e043e10204e5` / **SHP-20260909-661C60414B7**,
+Preparing version 1, with no selected container.
+
+The connected Phaeno request page independently displays **1 requested ·
+1 sent · 0 received** and **On the way**. The owner has POMS in Edge and the
+local Customer Portal in Chrome side by side; the supplied screenshot confirms
+the Customer dashboard is scoped to Johns Hopkins University / General.
+
+Next, open **Confirm kits received** from the Customer Job's shipping area.
+Check the SHP-08 empty-selection and cancel behavior before acknowledging the
+one synthetic TRANS-20 kit. No receipt or scan was performed during this
+resume checkpoint, and no full manual case is marked Pass.
 
 ## Initial run identity and scope
 

@@ -184,7 +184,7 @@ public partial class SampleShippingPostgresTests
         var registered = await stock.Register(created.Id, new(codes, created.Version), default);
         scope.ClearTrackedState();
         var dispatched = await stock.Dispatch(created.Id, new(fixture.Shipment.Id, registered.Version, "Reference carrier", "TEST-OUTBOUND", DateTime.UtcNow), default);
-        Assert.Equal("Fulfilled", dispatched.Status);
+        Assert.Equal("NeedsReview", dispatched.Status);
         scope.ClearTrackedState();
         var packed = await scope.PackingController().Confirm(fixture.Shipment.Id, new(fixture.Shipment.Version, [new(definition.Id, 2)]), default);
         scope.ClearTrackedState();
@@ -198,7 +198,7 @@ public partial class SampleShippingPostgresTests
         await scope.CreateCustomerWorkflowController().AssignTube(partial.Id, row.Id, new(codes[0], null, slot.Version, TubeSlotId: slot.Id), default);
         scope.ClearTrackedState();
         var bound = await stock.Read(created.Id, default);
-        Assert.Equal("Bound", bound.Status); Assert.Equal(partial.Id, bound.BoundSampleShipmentId);
+        Assert.Equal("InUse", bound.Status); Assert.Equal(partial.Id, bound.BoundSampleShipmentId);
         var legacyKit = await scope.DbContext.SampleReturnKits.AsNoTracking().Include(item => item.Tubes).SingleAsync(item => item.SampleShipmentId == partial.Id);
         Assert.Equal(SampleReturnKitStatus.Fulfilled, legacyKit.Status);
         Assert.Equal(20, legacyKit.Tubes.Count);

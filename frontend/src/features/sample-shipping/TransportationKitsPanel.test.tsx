@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CustomerDeliveryLocation } from '#/api/customer-delivery-locations'
 import type { ShipmentKitSupply, TransportationKitRequest } from '#/api/transportation-kit-requests'
-import { packingRecommendation, shippingFixture, shippingTube } from '#/test-helpers/sample-shipping'
+import { packingRecommendation, shippingContainers, shippingFixture, shippingTube } from '#/test-helpers/sample-shipping'
 import { KitReceiptDialog, TransportationKitOrderDialog, TransportationKitsPanel } from './TransportationKitsPanel'
 
 const mocks = vi.hoisted(() => ({ supply: vi.fn(), order: vi.fn(), receive: vi.fn(), cancel: vi.fn(), confirm: vi.fn(), close: vi.fn() }))
@@ -22,11 +22,30 @@ function panel(canManage = true, isPackingPool = true) { return render(provider(
 function dialog(initial = supply, busy = false, error: unknown = null) { return render(provider(<TransportationKitOrderDialog shipmentId={shippingFixture.id} organizationId="org-1" departmentId="department-1" initial={initial} busy={busy} error={error} onClose={mocks.close} onConfirm={mocks.confirm} />)) }
 
 describe('customer transportation kits', () => {
+  it('offers optional compatible kit sizes and preserves draft quantities when returning to the recommendation', async () => {
+    const customSupply = { ...supply, containerTypes: shippingContainers }
+    mocks.supply.mockResolvedValue(customSupply)
+    dialog(customSupply)
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Confirm kit order' })).toHaveProperty('disabled', false))
+    fireEvent.click(screen.getByRole('button', { name: 'Adjust kit sizes' }))
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Quantity of 20-tube container' }), { target: { value: '0' } })
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Quantity of 10-tube container' }), { target: { value: '0' } })
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Quantity of 5-tube container' }), { target: { value: '6' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm kit order' }))
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ containers: [{ containerDefinitionId: 'container-5', quantity: 6 }] })))
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Quantity of 5-tube container' }), { target: { value: '-1' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Use recommended sizes' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm kit order' }))
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(2))
+    expect(mocks.confirm.mock.calls[1][0].containers).toEqual([{ containerDefinitionId: 'container-20', quantity: 1 }, { containerDefinitionId: 'container-10', quantity: 1 }])
+    fireEvent.click(screen.getByRole('button', { name: 'Adjust kit sizes' }))
+    expect(screen.getByRole('spinbutton', { name: 'Quantity of 5-tube container' })).toHaveProperty('value', '-1')
+  })
   it('keeps cancelled ordering separate from received stock and exposes the direct-link order path', async () => {
     mocks.supply.mockResolvedValue({ ...supply, request: { ...request, status: 'Cancelled' }, canPrepareSamples: true })
     panel(true, false)
     expect(await screen.findByText('Kit order cancelled.')).toBeTruthy()
-    expect(screen.queryByText('Sample preparation controls')).toBeNull()
+    expect(screen.getByText('Sample preparation controls')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Order transportation kits' }))
     expect(screen.getByRole('dialog', { name: 'Order transportation kits' })).toBeTruthy()
     expect(mocks.order).not.toHaveBeenCalled()
@@ -46,29 +65,29 @@ describe('customer transportation kits', () => {
     expect(screen.queryByRole('button', { name: 'Order transportation kits' })).toBeNull()
   })
 
-  it('blocks preparation when the server rejects otherwise available recorded Job kits', async () => {
+  it('retains read-only preparation while server preparation is blocked', async () => {
     mocks.supply.mockResolvedValue({ ...supply, recordedStock: [{ containerDefinitionId: 'container-20', availableQuantity: 1, inTransitQuantity: 0 }] })
     panel()
     await screen.findByRole('button', { name: 'Order transportation kits' })
-    expect(screen.queryByText('Sample preparation controls')).toBeNull()
+    expect(screen.getByText('Sample preparation controls')).toBeTruthy()
   })
 
-  it('offers only ordering for unrecorded inventory, even with a stale permissive server flag', async () => {
+  it('offers ordering for unrecorded inventory without unmounting the preparation view', async () => {
     mocks.supply.mockResolvedValue({ ...supply, canPrepareSamples: true })
     panel()
     expect(await screen.findByRole('button', { name: 'Order transportation kits' })).toBeTruthy()
-    expect(screen.getByText(/Order transportation kits for this Job, then confirm their arrival/)).toBeTruthy()
+    expect(screen.getByText(/No compatible received kits are currently available at this location/)).toBeTruthy()
     expect(screen.queryByText(/No usable registered kits/)).toBeNull()
-    expect(screen.queryByText('Sample preparation controls')).toBeNull()
+    expect(screen.getByText('Sample preparation controls')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'I already have kits' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Prepare samples' })).toBeNull()
   })
 
-  it.each(['Unknown', 'RecordedForThisJob'] as const)('offers ordering and blocks scanning for an unbound eighteen-tube deep link when inventory is %s', async inventoryStatus => {
+  it.each(['Unknown', 'RecordedForThisJob'] as const)('offers ordering and preserves the view for an unbound eighteen-tube deep link when inventory is %s', async inventoryStatus => {
     mocks.supply.mockResolvedValue({ ...supply, tubeCount: 18, inventoryStatus, recordedStock: [], canPrepareSamples: true })
     render(provider(<TransportationKitsPanel shipment={{ ...shippingFixture, crosswalk: Array.from({ length: 18 }, (_, index) => shippingTube(index + 1)) }} canManage autoOpenOrder><p>Sample preparation controls</p></TransportationKitsPanel>))
     expect(await screen.findByRole('dialog', { name: 'Order transportation kits' })).toBeTruthy()
-    expect(screen.queryByText('Sample preparation controls')).toBeNull()
+    expect(screen.getByText('Sample preparation controls')).toBeTruthy()
     expect(screen.queryByText('Transportation kits')).toBeNull()
     expect(screen.getByText('Kit delivery')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Keep reviewing' }))
@@ -84,7 +103,7 @@ describe('customer transportation kits', () => {
     expect(await screen.findByText('Sample preparation controls')).toBeTruthy()
     expect(screen.queryByText('Kits received')).toBeNull()
     expect(screen.queryByText('Transportation kits')).toBeNull()
-    expect(screen.queryByText('Kit delivery')).toBeNull()
+    await waitFor(() => expect(screen.queryByText('Kit delivery')).toBeNull())
     expect(screen.queryByRole('button', { name: 'Order transportation kits' })).toBeNull()
   })
 
@@ -96,7 +115,7 @@ describe('customer transportation kits', () => {
     expect(await screen.findByText(expectedStatus)).toBeTruthy()
     expect(screen.getByText('Kit delivery')).toBeTruthy()
     expect(screen.getByText('Confirm kit receipt before preparing samples.')).toBeTruthy()
-    expect(screen.queryByText('Sample preparation controls')).toBeNull()
+    expect(screen.getByText('Sample preparation controls')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Order transportation kits' })).toBeNull()
     if (status !== 'Pending') {
       fireEvent.click(screen.getByRole('button', { name: 'Confirm kits received' }))
@@ -111,22 +130,22 @@ describe('customer transportation kits', () => {
     mocks.supply.mockResolvedValue({ ...supply, request: partial, canRequestKits: true, canPrepareSamples: true, recordedStock: [{ containerDefinitionId: 'container-20', availableQuantity: 1, inTransitQuantity: 0 }] })
     panel(true, false)
     expect(await screen.findByText('Sample preparation controls')).toBeTruthy()
-    expect(screen.getByText('Some kits are on the way')).toBeTruthy()
+    expect(await screen.findByText('Some kits are on the way')).toBeTruthy()
     expect(screen.getByText('KIT-2 · On the way')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Confirm kits received' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Order transportation kits' })).toBeNull()
     expect(screen.queryByText(/Our records indicate you have no transportation kits/)).toBeNull()
   })
 
-  it('keeps selected-container scanning blocked when kit information cannot be checked', async () => {
+  it('retains the selected-container view when kit information cannot be checked', async () => {
     mocks.supply.mockRejectedValueOnce(new Error('Kit records could not be reached.'))
     panel(true, false)
     expect(await screen.findByText('Kit information unavailable')).toBeTruthy()
-    expect(screen.queryByText('Sample preparation controls')).toBeNull()
+    expect(screen.getByText('Sample preparation controls')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Order transportation kits' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Retry kit information' }))
     expect(await screen.findByRole('button', { name: 'Order transportation kits' })).toBeTruthy()
-    expect(screen.queryByText('Sample preparation controls')).toBeNull()
+    expect(screen.getByText('Sample preparation controls')).toBeTruthy()
   })
 
   it('prefills recommended quantities and the default location, retains the idempotency key on retry, then shows durable ordered status', async () => {
@@ -149,13 +168,13 @@ describe('customer transportation kits', () => {
     expect(screen.queryByRole('button', { name: 'I already have kits' })).toBeNull()
   })
 
-  it.each(['Pending', 'Dispatched'] as const)('uses server authority to block preparation and duplicate ordering for %s kits', async status => {
+  it.each(['Pending', 'Dispatched'] as const)('explains server preparation gates and suppresses duplicate ordering for %s kits', async status => {
     mocks.supply.mockResolvedValue({ ...supply, request: status === 'Pending' ? request : dispatched, canRequestKits: false, canPrepareSamples: false, preparationBlockedReason: 'Confirm kit receipt before preparing samples.' })
     panel()
     await screen.findByText(status === 'Pending' ? 'Kits ordered' : 'Kits on the way')
     expect(screen.queryByRole('button', { name: 'Order transportation kits' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'I already have kits' })).toBeNull()
-    expect(screen.queryByText('Sample preparation controls')).toBeNull()
+    expect(screen.getByText('Sample preparation controls')).toBeTruthy()
     if (status === 'Dispatched') expect(screen.getByText(/Tracking TRACK-1/)).toBeTruthy()
   })
 
@@ -165,7 +184,7 @@ describe('customer transportation kits', () => {
     panel()
     expect(await screen.findByText('Sample preparation controls')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Prepare samples' })).toBeNull()
-    expect(screen.getByText('KIT-1 · Received')).toBeTruthy()
+    expect(await screen.findByText('KIT-1 · Received')).toBeTruthy()
     expect(screen.getByText('KIT-2 · On the way')).toBeTruthy()
   })
 
@@ -174,7 +193,7 @@ describe('customer transportation kits', () => {
     mocks.supply.mockResolvedValue({ ...supply, request: received, inventoryStatus: 'RecordedForThisJob', recordedStock: [{ containerDefinitionId: 'container-20', availableQuantity: 0, inTransitQuantity: 0 }], canRequestKits: true })
     panel()
     expect(await screen.findByText('Kits received')).toBeTruthy()
-    expect(screen.getByText('KIT-1 · Received')).toBeTruthy()
+    expect(await screen.findByText('KIT-1 · Received')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Order transportation kits' }))
     const modal = screen.getByRole('dialog', { name: 'Order transportation kits' })
     const submit = within(modal).getByRole('button', { name: 'Confirm kit order' })

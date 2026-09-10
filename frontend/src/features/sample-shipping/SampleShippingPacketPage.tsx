@@ -86,6 +86,7 @@ export function SampleShippingPacketPage({ shipmentId }: { shipmentId: string })
           {text(manifest.orderBarcode) ? <div className="packet-identity mt-5 space-y-2"><p className="text-sm font-medium">Order {shipment.authorizationReference}</p><ShippingBarcode value={text(manifest.orderBarcode)} label="Order barcode" /></div> : null}
           {text(manifest.shipmentBarcode) ? <div className="packet-identity mt-5 space-y-2"><p className="text-sm font-medium">Shipment {shipment.shipmentNumber}</p><ShippingBarcode value={text(manifest.shipmentBarcode)} label="Shipment barcode" /></div> : null}
           {text(asObject(manifest.container).sku) ? <p className="mt-4 text-sm"><strong>{text(asObject(manifest.container).commonName)}</strong> · SKU {text(asObject(manifest.container).sku)} · Capacity {text(asObject(manifest.container).capacity)} tubes</p> : null}
+          {text(asObject(manifest.containerKit).barcode) ? <div className="packet-identity mt-5 space-y-2"><p className="text-sm font-medium">Physical container</p><ShippingBarcode value={text(asObject(manifest.containerKit).barcode)} label="Container barcode" /></div> : null}
         </header>
 
         <section className="packet-destination break-inside-avoid">
@@ -136,7 +137,7 @@ export function SampleShippingPacketPage({ shipmentId }: { shipmentId: string })
         <section className="packet-privacy break-inside-avoid border p-4 text-sm">
           <h2 className="font-semibold">Identity and privacy</h2>
           <p className="mt-2">
-            The order, shipment and sample barcodes identify their records. The packet barcode identifies this confirmed revision. Each permanent tube barcode identifies one physical tube. Scanning an identifier does not confirm receipt of material. Do not place patient names, dates of birth, medical record numbers, or other PHI on the packet or tubes.
+            The order, shipment and sample barcodes identify their records. The packet barcode identifies this confirmed revision. The container barcode identifies the physical container, and each permanent tube barcode identifies one physical tube. Scanning an identifier does not confirm receipt of material. Do not place patient names, dates of birth, medical record numbers, or other PHI on the packet or tubes.
           </p>
         </section>
 

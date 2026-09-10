@@ -13,10 +13,10 @@ Generated from [PSeqOperationsDbContextModelSnapshot.cs](../backend/app/Migratio
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 136 | 2176 | 342 |
+| `commercial_ops` | 136 | 2180 | 345 |
 | `lab_ops` | 31 | 363 | 46 |
 | `website` | 5 | 49 | 4 |
-| **Total** | **173** | **2590** | **392** |
+| **Total** | **173** | **2594** | **395** |
 
 ## `public` schema
 
@@ -1835,6 +1835,9 @@ erDiagram
         uuid organization_id FK "nullable"
         character_varying_255 outbound_carrier "nullable"
         character_varying_255 outbound_tracking_number "nullable"
+        timestamp_with_time_zone reserved_at "nullable"
+        uuid reserved_by_user_id FK "nullable"
+        uuid reserved_sample_shipment_id FK,UK "nullable"
         character_varying_100 shipper_product_number "not null"
         character_varying_255 shipper_supplier_name "not null"
         uuid transportation_kit_request_line_id FK "nullable"
@@ -1858,6 +1861,8 @@ erDiagram
     users o|--o{ sample_shipping_stock_kits : "customer_received_by_user_id"
     organization_departments o|--o{ sample_shipping_stock_kits : "department_id"
     organizations o|--o{ sample_shipping_stock_kits : "organization_id"
+    users o|--o{ sample_shipping_stock_kits : "reserved_by_user_id"
+    sample_shipments o|--o{ sample_shipping_stock_kits : "reserved_sample_shipment_id"
     transportation_kit_request_lines o|--o{ sample_shipping_stock_kits : "transportation_kit_request_line_id"
     users o|--o{ sample_shipping_stock_kits : "updated_by_user_id"
     sample_shipping_stock_kits ||--o{ sample_shipping_stock_tubes : "sample_shipping_stock_kit_id"
@@ -2545,6 +2550,7 @@ erDiagram
         uuid created_by_user_id "nullable"
         timestamp_with_time_zone delivered_at "nullable"
         uuid department_id FK "not null"
+        uuid departure_delivery_location_id FK "nullable"
         uuid destination_id FK "not null"
         boolean is_packing_pool "not null"
         uuid lab_work_order_id "not null"
@@ -2688,6 +2694,7 @@ erDiagram
     sample_shipment_items ||--o{ sample_shipment_tube_slots : "sample_shipment_item_id"
     sample_shipping_container_definitions o|--o{ sample_shipments : "container_definition_id"
     organization_departments ||--o{ sample_shipments : "department_id"
+    customer_delivery_locations o|--o{ sample_shipments : "departure_delivery_location_id"
     sample_shipping_destinations ||--o{ sample_shipments : "destination_id"
     organizations ||--o{ sample_shipments : "organization_id"
     sample_shipping_destinations o|--o{ sample_shipping_destinations : "supersedes_destination_id"

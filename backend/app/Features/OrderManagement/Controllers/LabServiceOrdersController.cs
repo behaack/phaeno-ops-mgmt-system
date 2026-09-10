@@ -313,12 +313,18 @@ public sealed partial class LabServiceOrdersController(
     public async Task<LabServiceOrderDto> Withdraw(Guid orderId, [FromBody] ReasonRequest request, CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
+        await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext, $"sample-shipping:{orderId}", cancellationToken);
         var order = await ReadOrderAsync(orderId, tenant, cancellationToken);
         EnsureVersion(order.Version, request.Version);
         var before = order.Status.ToString();
         Execute(() => order.WithdrawOrCancel(request.Reason));
+        var shipmentIds = await dbContext.SampleShipments.Where(item => item.AuthorizationSourceId == order.Id
+            && item.OrganizationId == tenant.Organization.Id && item.DepartmentId == tenant.Department.Id)
+            .Select(item => item.Id).ToArrayAsync(cancellationToken);
+        await TransportationKitInventory.ReleaseAsync(dbContext, shipmentIds, cancellationToken);
         dbContext.OrderStatusEvents.Add(NewEvent(order, before, order.Status.ToString(), tenant.Actor.Id, request.Reason));
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         return await MapAsync(order, true, false, cancellationToken);
     }
 

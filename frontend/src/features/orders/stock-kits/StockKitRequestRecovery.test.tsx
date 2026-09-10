@@ -45,6 +45,9 @@ describe('recorded kit dispatch reconciliation', () => {
     expect(matchingUnlinkedKitRequest({ ...kit, status: 'Preparing' }, [request])).toBeNull()
     expect(matchingUnlinkedKitRequest({ ...kit, fulfilledAt: null }, [request])).toBeNull()
     expect(matchingUnlinkedKitRequest({ ...kit, outboundTrackingNumber: null }, [request])).toBeNull()
+    expect(matchingUnlinkedKitRequest({ ...kit, reservedSampleShipmentId: shipment.id }, [request])).toBeNull()
+    expect(matchingUnlinkedKitRequest({ ...kit, deliveryLocationId: 'different-location' }, [request])).toBeNull()
+    expect(matchingUnlinkedKitRequest({ ...kit, departmentId: 'different-department' }, [request])).toBeNull()
   })
 
   it('confirms the existing dispatch exactly and refreshes both queues, supply and Job data', async () => {
@@ -57,11 +60,11 @@ describe('recorded kit dispatch reconciliation', () => {
     expect(within(dialog).getByText(/does not send another kit or confirm Customer receipt/)).toBeTruthy()
     expect(mocks.dispatch).not.toHaveBeenCalled()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Update kit request' }))
-    await waitFor(() => expect(mocks.dispatch).toHaveBeenCalledWith(kit.id, { shipmentId: shipment.id, version: 7, outboundCarrier: 'Original carrier', outboundTrackingNumber: 'SAVED-TRACKING', fulfilledAt: '2026-09-08T20:14:15.123456Z' }))
+    await waitFor(() => expect(mocks.dispatch).toHaveBeenCalledWith(kit.id, { requestId: request.id, deliveryLocationId: request.deliveryLocationId, version: 7, outboundCarrier: 'Original carrier', outboundTrackingNumber: 'SAVED-TRACKING', fulfilledAt: '2026-09-08T20:14:15.123456Z' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     expect(screen.queryByRole('button', { name: 'Update kit request' })).toBeNull()
-    expect(mocks.shipments).toHaveBeenCalledWith(request.jobId, true)
-    for (const key of ['shipping-stock-kit', 'shipping-stock-kits', 'platform-transportation-kit-request', 'platform-transportation-kit-requests', 'transportation-kit-supply', 'sample-shipment-packing', 'lab-service-order', 'platform-order', 'platform-orders']) expect(invalidate).toHaveBeenCalledWith({ queryKey: [key] })
+    expect(mocks.shipments).not.toHaveBeenCalled()
+    for (const key of ['shipping-stock-kit', 'shipping-stock-kits', 'platform-transportation-kit-request', 'platform-transportation-kit-requests', 'transportation-kit-supply', 'location-kit-inventory', 'sample-shipment-packing', 'lab-service-order', 'platform-order', 'platform-orders']) expect(invalidate).toHaveBeenCalledWith({ queryKey: [key] })
     expect(mocks.dispatch).toHaveBeenCalledTimes(1)
   })
 
@@ -71,12 +74,20 @@ describe('recorded kit dispatch reconciliation', () => {
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Keep reviewing' }))
     expect(screen.queryByRole('dialog')).toBeNull(); expect(mocks.dispatch).not.toHaveBeenCalled()
   })
+  it('reconciles an acknowledged unused kit without replacing receipt or requiring an active origin shipment', async () => {
+    const receivedKit = { ...kit, status: 'Available' as const, customerReceivedAt: '2026-09-09T12:00:00Z' }
+    mocks.shipments.mockResolvedValue([])
+    mount(<UpdateKitRequestDialog kit={receivedKit} request={request} onClose={vi.fn()} onSaved={vi.fn()} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Update kit request' })); await waitFor(() => expect(mocks.dispatch).toHaveBeenCalledTimes(1))
+    expect(mocks.dispatch.mock.calls[0][1]).not.toHaveProperty('customerReceivedAt'); expect(mocks.dispatch.mock.calls[0][1]).not.toHaveProperty('shipmentId'); expect(mocks.shipments).not.toHaveBeenCalled()
+    expect(receivedKit.customerReceivedAt).toBe('2026-09-09T12:00:00Z')
+  })
 
   it('blocks duplicate save and dismissal while busy, then retains failed review for exact retry', async () => {
     let reject!: (error: Error) => void
     mocks.dispatch.mockReturnValueOnce(new Promise((_resolve, fail) => { reject = fail }))
     const close = vi.fn(), saved = vi.fn()
-    mount(<UpdateKitRequestDialog kit={kit} request={request} shipmentId={shipment.id} onClose={close} onSaved={saved} />)
+    mount(<UpdateKitRequestDialog kit={kit} request={request} onClose={close} onSaved={saved} />)
     const confirm = screen.getByRole('button', { name: 'Update kit request' })
     fireEvent.click(confirm); fireEvent.click(confirm)
     await screen.findByRole('button', { name: 'Updating…' })

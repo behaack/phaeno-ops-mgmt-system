@@ -4,11 +4,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SampleContainerQuantity, SampleShipmentPacking } from '#/api/sample-shipping'
 import type { ContainerRecommendation } from '#/api/shipping-containers'
 import { packingFixture, packingRecommendation, shippingContainers, shippingFixture } from '#/test-helpers/sample-shipping'
+import { locationKit } from '#/test-helpers/location-kit-inventory'
 import { PackingDialog, SampleShipmentPackingPanel } from './SampleShipmentPackingPanel'
 
 const mocks = vi.hoisted(() => ({ preview: vi.fn(), confirm: vi.fn(), close: vi.fn(), packing: vi.fn() }))
 vi.mock('#/api/sample-shipping', () => ({ previewSampleShipmentPacking: mocks.preview, getSampleShipmentPacking: mocks.packing, confirmSampleShipmentPacking: mocks.confirm }))
-vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn() }))
+vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn(), useBlocker: vi.fn() }))
 
 type PreviewInput = { selection?: SampleContainerQuantity[] }
 let currentPacking = packingFixture
@@ -43,6 +44,59 @@ function show(busy = false, error: unknown = null, packing: SampleShipmentPackin
 function showCount(tubeCount: number, selection: SampleContainerQuantity[]) {
   return show(false, null, { ...packingFixture, tubeCount }, preview({ selection }, tubeCount))
 }
+
+describe('physical location-container confirmation', () => {
+  function physical() {
+    const packing = { ...packingFixture, deliveryLocationId: 'location-1', availableKits: [locationKit(20), locationKit(10)] }
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const quantities = [{ containerDefinitionId: 'container-20', quantity: 1 }, { containerDefinitionId: 'container-10', quantity: 1 }]
+    const view = (blocked = false, value = packing, error: unknown = null) => <QueryClientProvider client={client}><PackingDialog packing={value} initial={packingRecommendation} availableKits={quantities} locationInventory writesBlocked={blocked} busy={false} error={error} onClose={mocks.close} onConfirm={mocks.confirm} /></QueryClientProvider>
+    const rendered = render(view())
+    return { refresh: (blocked = false, value = packing, error: unknown = null) => rendered.rerender(view(blocked, value, error)), packing }
+  }
+  function barcode(index: number) { return screen.getByRole('textbox', { name: `Container ${index} barcode` }) }
+  function scan(index: number, value: string) { fireEvent.change(barcode(index), { target: { value } }); fireEvent.keyDown(barcode(index), { key: 'Enter' }) }
+  it('requires the physical barcode and rejects unknown or wrong-size containers without reserving', async () => {
+    physical()
+    await confirm()
+    expect(await screen.findByText('Scan the barcode on this physical container.')).toBeTruthy()
+    await waitFor(() => expect(document.activeElement).toBe(barcode(1)))
+    scan(1, 'UNKNOWN-CONTAINER')
+    expect(await screen.findByText(/This container is not available at the selected location/)).toBeTruthy()
+    scan(1, 'KIT-10')
+    expect(await screen.findByText(/This barcode belongs to a different container size/)).toBeTruthy()
+    expect(mocks.confirm).not.toHaveBeenCalled()
+  })
+  it('normalizes scanned identities and reserves their exact versions only on confirmation', async () => {
+    physical()
+    scan(1, ' kit-20 ')
+    scan(2, 'kit-10')
+    expect(mocks.confirm).not.toHaveBeenCalled()
+    await confirm()
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ deliveryLocationId: 'location-1', stockKits: [{ stockKitId: 'stock-20', version: 4 }, { stockKitId: 'stock-10', version: 4 }], containerTubeCounts: [20, 10] })))
+  })
+  it('retains barcode and tube drafts while refresh blocks writes, and explains a lost concurrent claim', async () => {
+    const { refresh, packing } = physical()
+    scan(1, 'KIT-20'); scan(2, 'KIT-10')
+    refresh(true)
+    expect(barcode(1)).toHaveProperty('value', 'KIT-20')
+    expect(tubes(1)).toHaveProperty('value', '20')
+    expect(screen.getByRole('button', { name: 'Confirm containers' })).toHaveProperty('disabled', true)
+    refresh(false, { ...packing, availableKits: [locationKit(10)] }, new Error('KIT-20 was claimed by another Job.'))
+    await confirm()
+    expect(await screen.findByText(/This container is not available at the selected location/)).toBeTruthy()
+    expect(barcode(1)).toHaveProperty('value', 'KIT-20')
+    expect(mocks.confirm).not.toHaveBeenCalled()
+  })
+  it('does not identify one physical container twice', async () => {
+    physical()
+    scan(1, 'KIT-20')
+    fireEvent.change(barcode(2), { target: { value: 'KIT-20' } })
+    await confirm()
+    expect(await screen.findByText('This container is already selected in another row.')).toBeTruthy()
+    expect(mocks.confirm).not.toHaveBeenCalled()
+  })
+})
 function container(number: number) { return screen.getByRole('group', { name: `Container ${number}` }) }
 function size(number: number) { return within(container(number)).getByRole('combobox', { name: `Container size for container ${number}` }) }
 function tubes(number: number) { return within(container(number)).getByRole('spinbutton', { name: /^Tubes to pack/ }) }

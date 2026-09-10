@@ -63,6 +63,19 @@ public sealed class SampleShippingContainerCatalogService(PSeqOperationsDbContex
         return Map(definition);
     }
 
+    public async Task<IReadOnlyList<SampleShippingContainerDefinitionDto>> ReadStockCompatibleAsync(
+        IReadOnlyList<ContainerCompatibilityRequest> contexts, IReadOnlyList<Guid> definitionIds, CancellationToken ct)
+    {
+        await ValidateContextsAsync(contexts, ct);
+        var now = DateTime.UtcNow;
+        // Publishing a successor is not a recall of already manufactured stock. Explicit withdrawal still blocks it.
+        var records = await Query().Where(item => definitionIds.Contains(item.Id) && item.IsActive
+            && !item.DeactivatedAt.HasValue && item.EffectiveFrom <= now).ToListAsync(ct);
+        return records.Where(item => contexts.All(context => item.Compatibilities.Any(pair =>
+                pair.SampleTypeDefinitionId == context.SampleTypeDefinitionId && pair.InstructionRuleId == context.InstructionRuleId)))
+            .OrderBy(item => item.DisplayOrder).ThenBy(item => item.ContainerType.NormalizedSku).ThenBy(item => item.Id).Select(Map).ToArray();
+    }
+
     public async Task<SampleShippingContainerDefinitionDto> ReviseAsync(Guid id, ReviseSampleShippingContainerRequest request, CancellationToken cancellationToken)
     {
         await ValidateContextsAsync(request.Compatibilities, cancellationToken);

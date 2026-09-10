@@ -1,5 +1,46 @@
 # Playwright E2E Test Plan
 
+## Location inventory browser verification — September 9, 2026
+
+The [revised workflow](TRANSPORTATION-KIT-LOCATION-INVENTORY-PLAN.md) assigns
+received location stock through physical container barcodes. The persistent
+`transportation-inventory.spec.ts` fixture passed **8/8** cases across desktop
+Chromium and Pixel 5. It uses the real location-inventory, shipment, packing and
+scanner components with intercepted synthetic APIs on an isolated port.
+
+- Location receipt requires a selection, sends exact kit IDs/versions and an
+  idempotency key, and shows Available inventory independently of an origin Job.
+- Packing submits the scanned physical container and departure location; a
+  conflict and a subsequent inventory-refresh failure preserve the barcode and
+  block confirmation. Successful retry opens the prepared container's scanner.
+- Members retain assigned-container and sample history without mutation actions.
+- Wrong-container tube rejection preserves the entered barcode for correction.
+
+The location screen passed light/dark accessibility checks with no horizontal
+overflow. The open packing error/refresh state passed axe checks at both sizes;
+screenshots were visually reviewed. No unexpected network requests occurred.
+Evidence is under `frontend/test-results/transportation-inventory-*`; reproduce
+with `node node_modules/@playwright/test/cli.js test --config playwright.transportation-inventory.config.ts`
+from `frontend/`. The first run found only a missing landmark in the synthetic
+fixture header; it was corrected before the final 8-case pass.
+
+These browser cases simulate API outcomes. Real concurrency, cancellation,
+isolation, reset release and first-scan locking are verified separately in the
+backend plan. The connected HS5Y7DB7 walkthrough remains unconsumed after receipt:
+one unused TRANS-20 and all 18 tubes awaiting preparation. Resume from the
+[run record](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md) after local
+migration/runtime verification; this is not production or physical acceptance.
+
+Staff dispatch and container-barcode dialogs also passed **6/6** bounded browser
+cases at 1280×835 light, 390×835 light and 390×550 dark. Validation, saved-address
+display, keyboard/Escape and dirty dismissal, fixed actions and overflow checks
+passed with zero API writes or page errors. A print-only pagination issue was
+fixed; the resulting barcode PDF is exactly one A4 page and its rendered barcode
+and readable identifier were visually reviewed. Evidence:
+`artifacts/staff-location-inventory-review/review.json`, screenshots and
+`container-barcode-render.png`. Disposable staff fixtures/server were removed.
+This verifies rendering, not physical label/scanner qualification.
+
 ## September 9 production release boundary
 
 Matching API/UI source `f06f4530` is deployed with the four reviewed migrations.
@@ -7,20 +48,37 @@ The [release record](PORTAL-SHIPPING-RELEASE-2026-09-08.md#september-9-productio
 contains backup/restore verification, public health/asset checks and empty bounded
 runtime-error/5xx scans. Connected production browser smoke was unavailable; these
 observations do not complete authenticated or physical acceptance. The existing
-local walkthrough still resumes at Customer kit receipt, and no local synthetic
-data was copied to production.
+local walkthrough has separate receipt/preparation acceptance checkpoints, and
+no local synthetic data was copied to production.
 
 ## September 9 connected walkthrough resume
 
-Continue **SHP-08 Customer kit receipt** from the
-[end-of-day handoff](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md#end-of-day-handoff--resume-september-9-2026).
-Job HS5Y7DB7 has Request D20018AA **Dispatched, 1 sent, 0 received**; its one
-TRANS-20 kit retains all 20 synthetic barcodes and the original FedEx dispatch.
-After acknowledging that test kit, verify received same-Job sizes/quantities,
-then successful scanning and packet generation. Split-shipment/partial-supply
-variants remain separate fixtures and pending connected checks. Do not repeat
-kit ordering, dispatch or the completed reconciliation. This local continuation
-does not prove physical delivery, production fixture readiness or deployment.
+Continue from the
+[Customer receipt checkpoint](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md#current-checkpoint--september-9-customer-kit-receipt).
+For Job HS5Y7DB7 / Request D20018AA, the receipt-validation screenshot displays
+**Select the kits that have arrived.** The owner reported selected cancellation
+and cleared selection on reopening, followed by successful simulated one-kit
+receipt and a POMS refresh. A Customer screenshot shows **Kits received** and
+the kit **Received**. Fresh read-only backend verification confirms Request v3,
+one requested/sent/received kit, and one unbound available TRANS-20. Receipt
+was recorded at **07:47:28 PDT**; the kit is version 5. A later independent staff
+screen read still showed its older cached Dispatched state before reload;
+explicit reload showed **Received, 1 requested · 1 sent · 1 received**. Refreshed
+views agree; automatic cross-browser updates are not established.
+
+The same screenshot still shows the contradictory generic footer **Confirm
+which kits have arrived before configuring containers or scanning tubes.**
+The fallback is now removed locally: a connected Chrome check on the same
+cancelled predecessor found **Kits received** and no stale instruction. The
+existing 29 transportation-panel component tests passed. Further preparation
+is paused for the location-inventory correction above. Full SHP-08 is not Pass:
+partial receipt, replay/idempotent
+confirmation, other-stock/Job/location and remaining role/recovery variants
+are untested in this connected run. Split shipments remain separate fixtures.
+Do not repeat the kit order, dispatch, reconciliation or receipt merely because
+the stale footer remains. This local synthetic continuation does not prove
+physical delivery, production fixture readiness or deployment; this documentation
+update ran no tests or business actions.
 
 ## SHP-07-001 dispatch synchronization recovery — September 8, 2026
 
@@ -175,8 +233,10 @@ notes do not supersede the module's current resume instructions.
 Resume HS5Y7DB7 from the latest
 [local run entry](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md), using
 its recorded nine finalized samples and 18 tubes. Kit dispatch is already
-reconciled; acknowledge Customer receipt next without repeating the order or
-dispatch. Use separate 30-tube/split/failure fixtures from
+reconciled; the one-kit simulated receipt is reported successful and visible
+in the Customer screenshot, with backend confirmation pending. Resume container
+configuration after the stale footer correction; do not repeat the order,
+dispatch or receipt. Use separate 30-tube/split/failure fixtures from
 [TEST-DATA.md](../testing/TEST-DATA.md); preserve the accepted quote and finalized
 roster. Record observations and stock/request/shipment identities in
 [RUN-RECORD.md](../testing/RUN-RECORD.md), rather than promoting prior screenshots

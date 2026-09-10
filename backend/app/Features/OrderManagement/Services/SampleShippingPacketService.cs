@@ -175,6 +175,8 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
         var revision = shipment.PacketRevisions.Select(item => item.Revision).DefaultIfEmpty(0).Max() + 1;
         var packetNumber = $"SP-{issuedAt:yyyyMMdd}-{barcode.Split('-')[2]}";
         var family = await SampleShippingPackingData.FamilyAsync(dbContext, shipment, cancellationToken);
+        var physicalKitId = await dbContext.SampleShippingStockKits.AsNoTracking().Where(item => item.BoundSampleShipmentId == shipment.Id)
+            .Select(item => (Guid?)item.Id).SingleOrDefaultAsync(cancellationToken) ?? returnKit.Id;
         var packet = new SampleShippingPacketRevision(
             shipment.Id,
             revision,
@@ -182,7 +184,8 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
             barcode,
             SerializeDestination(resolution.Destination),
             SerializeInstructions(resolution),
-            SerializeManifest(shipment, tubesById, sampleTypesById, family),
+            SerializeManifest(shipment, tubesById, sampleTypesById, family,
+                new SampleContainerKitIdentityDto(physicalKitId, returnKit.KitNumber, returnKit.KitNumber)),
             issuedAt);
 
         if (currentPacket != null)
@@ -297,7 +300,7 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
         SampleShipment shipment,
         IReadOnlyDictionary<Guid, RegisteredSampleTube> tubesById,
         IReadOnlyDictionary<Guid, SampleTypeDefinition> sampleTypesById,
-        IReadOnlyList<SampleShipment> family)
+        IReadOnlyList<SampleShipment> family, SampleContainerKitIdentityDto? containerKit = null)
     {
         var rows = new List<object>();
         foreach (var item in shipment.Items.OrderBy(value => value.CustomerSampleId))
@@ -346,6 +349,7 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
             orderBarcode = SampleShippingIdentity.Order(shipment.AuthorizationSourceId),
             shipmentBarcode = SampleShippingIdentity.Shipment(shipment.Id),
             container = SampleShippingPackingData.Container(shipment.ContainerSnapshotJson),
+            containerKit,
             samples = rows
         }, SnapshotOptions);
     }

@@ -125,7 +125,7 @@ public partial class SampleShippingPostgresTests
         await Assert.ThrowsAsync<OrderManagementException>(() => scope.PackingController().Preview(fixture.Shipment.Id, new(), default));
         var blocked = await Assert.ThrowsAsync<OrderManagementException>(() => scope.PackingController().Confirm(fixture.Shipment.Id,
             new(fixture.Shipment.Version, [new(twenty.Id, 1)]), default));
-        Assert.Equal("transportation_kit_receipt_required", blocked.ErrorCode);
+        Assert.Equal("transportation_kit_unavailable", blocked.ErrorCode);
         scope.ClearTrackedState();
         var received = await scope.KitCustomer().Receive(created.Id, new(dispatch.Request.Version, [kit20.Id]), default);
         Assert.Equal("PartiallyDispatched", received.Status);
@@ -136,7 +136,9 @@ public partial class SampleShippingPostgresTests
         var partialPreview = await scope.PackingController().Preview(fixture.Shipment.Id, new(), default);
         Assert.Equal(10, partialPreview.UnallocatedTubes);
         Assert.Equal(twenty.Id, Assert.Single(partialPreview.Containers).ContainerDefinitionId);
-        var packed = await scope.PackingController().Confirm(fixture.Shipment.Id, new(fixture.Shipment.Version, [new(twenty.Id, 1)]), default);
+        kit20 = await scope.StockController().Read(kit20.Id, default);
+        var packed = await scope.PackingController().Confirm(fixture.Shipment.Id, new(fixture.Shipment.Version, [new(twenty.Id, 1)],
+            DeliveryLocationId: location.Id, StockKits: [new(kit20.Id, kit20.Version)]), default);
         var residual = packed.Single(item => item.Id == fixture.Shipment.Id);
         var residualSupply = await scope.KitCustomer().Supply(residual.Id, location.Id, default);
         Assert.Equal(created.Id, residualSupply.Request!.Id);
@@ -151,7 +153,9 @@ public partial class SampleShippingPostgresTests
         Assert.Equal("Received", complete.Status);
         Assert.Equal(2, complete.Lines.Sum(item => item.ReceivedQuantity));
         scope.ClearTrackedState();
-        await scope.PackingController().Confirm(residual.Id, new(residual.Version, [new(ten.Id, 1)]), default);
+        kit10 = await scope.StockController().Read(kit10.Id, default);
+        await scope.PackingController().Confirm(residual.Id, new(residual.Version, [new(ten.Id, 1)],
+            DeliveryLocationId: location.Id, StockKits: [new(kit10.Id, kit10.Version)]), default);
         Assert.Equal(2, await scope.DbContext.SampleShipments.CountAsync(item => item.AuthorizationSourceId == complete.JobId && item.Status != SampleShipmentStatus.Cancelled));
         Assert.All(await scope.DbContext.SampleShippingStockKits.Where(item => item.AuthorizationSourceId == complete.JobId).ToArrayAsync(), kit => Assert.Equal(location.Id, kit.CustomerDeliveryLocationId));
     }
@@ -175,18 +179,22 @@ public partial class SampleShippingPostgresTests
         scope.ClearTrackedState();
         var blocked = await Assert.ThrowsAsync<OrderManagementException>(() => scope.CreateCustomerWorkflowController().AssignTube(shipment.Id,
             fixture.Item.Id, new(barcode, null, slot.Version, TubeSlotId: slot.Id), default));
-        Assert.Equal("transportation_kit_receipt_required", blocked.ErrorCode);
+        Assert.Equal("transportation_kit_unavailable", blocked.ErrorCode);
         Assert.False(await scope.DbContext.SampleReturnKits.AnyAsync(item => item.SampleShipmentId == shipment.Id));
         scope.ClearTrackedState();
         await scope.KitCustomer().Receive(created.Id, new(dispatched.Request.Version, [kit.Id]), default);
         scope.ClearTrackedState();
-        await scope.CreateCustomerWorkflowController().AssignTube(shipment.Id, fixture.Item.Id,
-            new(barcode, null, slot.Version, TubeSlotId: slot.Id), default);
+        kit = await scope.StockController().Read(kit.Id, default);
+        var prepared = Assert.Single(await scope.PackingController().Confirm(shipment.Id, new(shipment.Version, [new(size.Id, 1)],
+            DeliveryLocationId: location.Id, StockKits: [new(kit.Id, kit.Version)]), default));
+        var row = prepared.Crosswalk.First();
+        await scope.CreateCustomerWorkflowController().AssignTube(prepared.Id, row.ShipmentItemId,
+            new(barcode, null, row.Version, TubeSlotId: row.TubeSlotId), default);
         scope.ClearTrackedState();
-        var supply = await scope.KitCustomer().Supply(shipment.Id, location.Id, default);
+        var supply = await scope.KitCustomer().Supply(prepared.Id, location.Id, default);
         Assert.True(supply.CanPrepareSamples);
         Assert.Equal(0, supply.RecordedStock.Sum(item => item.AvailableQuantity));
-        Assert.Equal(shipment.Id, (await scope.DbContext.SampleShippingStockKits.AsNoTracking().SingleAsync(item => item.Id == kit.Id)).BoundSampleShipmentId);
+        Assert.Equal(prepared.Id, (await scope.DbContext.SampleShippingStockKits.AsNoTracking().SingleAsync(item => item.Id == kit.Id)).BoundSampleShipmentId);
     }
 
     [PostgreSqlReferenceFact]
@@ -246,13 +254,16 @@ public partial class SampleShippingPostgresTests
             new(fixture.Shipment.Version, secondLocation.Id, secondLocation.Version, [new(size.Id, 1)]), default);
         Assert.NotEqual(first.Id, second.Id);
         var supply = await scope.KitCustomer().Supply(fixture.Shipment.Id, null, default);
-        Assert.Equal(secondLocation.Id, supply.DeliveryLocationId);
-        Assert.Equal(0, supply.RecordedStock.Sum(item => item.AvailableQuantity));
-        Assert.False(supply.CanPrepareSamples);
+        Assert.Equal(firstLocation.Id, supply.DeliveryLocationId);
+        Assert.Equal(1, supply.RecordedStock.Sum(item => item.AvailableQuantity));
+        Assert.True(supply.CanPrepareSamples);
+        var atOtherLocation = await scope.KitCustomer().Supply(fixture.Shipment.Id, secondLocation.Id, default);
+        Assert.False(atOtherLocation.CanPrepareSamples);
+        Assert.Equal(0, atOtherLocation.RecordedStock.Sum(item => item.AvailableQuantity));
         Assert.Equal(1, await scope.DbContext.SampleShippingStockKits.CountAsync(item => item.AuthorizationSourceId == first.JobId && item.CustomerReceivedAt.HasValue));
-        await Assert.ThrowsAsync<OrderManagementException>(() => scope.PackingController().Preview(fixture.Shipment.Id, new(), default));
-        Assert.Equal("transportation_kit_receipt_required", (await Assert.ThrowsAsync<OrderManagementException>(() =>
-            scope.PackingController().Confirm(fixture.Shipment.Id, new(fixture.Shipment.Version, [new(size.Id, 1)]), default))).ErrorCode);
+        await Assert.ThrowsAsync<OrderManagementException>(() => scope.PackingController().Preview(fixture.Shipment.Id, new(DeliveryLocationId: secondLocation.Id), default));
+        Assert.Equal("transportation_kit_unavailable", (await Assert.ThrowsAsync<OrderManagementException>(() =>
+            scope.PackingController().Confirm(fixture.Shipment.Id, new(fixture.Shipment.Version, [new(size.Id, 1)], DeliveryLocationId: secondLocation.Id), default))).ErrorCode);
     }
 
     [PostgreSqlReferenceFact]
@@ -290,21 +301,22 @@ public partial class SampleShippingPostgresTests
 
     private sealed partial class ShippingTestScope
     {
-        public async Task<ShippingFixture> CreateTransportationShipmentAsync(int tubes)
+        public async Task<ShippingFixture> CreateTransportationShipmentAsync(int tubes, ShippingFixture? existingConfiguration = null)
         {
-            var configured = await CreateShipmentAsync();
+            var configured = existingConfiguration ?? await CreateShipmentAsync();
+            var jobSuffix = $"{Suffix}-{Guid.NewGuid():N}";
             var now = DateTime.UtcNow;
             var departmentId = CustomerOrganization.Departments.Single(item => item.IsDefault).Id;
-            var job = new LabServiceOrder(CustomerOrganization.Id, departmentId, OrderNumberGenerator.Lab(), $"KIT-SUPPLY-{Suffix}", null,
+            var job = new LabServiceOrder(CustomerOrganization.Id, departmentId, OrderNumberGenerator.Lab(), $"KIT-SUPPLY-{jobSuffix}", null,
                 1, false, "Synthetic", "Frozen", "No hazards", "Ship cold");
             job.SourceGroups.Add(new(job.Id, "Synthetic", 1)); job.Submit(CustomerUser.Id, now); job.BeginQuotePreparation();
             var quote = new LabServiceQuote(job.Id, 1, QuotePurpose.Initial, "[]", 100, 0, "USD", now, now.AddDays(30));
             quote.MarkIssued(); job.Quotes.Add(quote); job.MarkQuoteIssued(quote.Id); quote.Accept(CustomerUser.Id, now); job.AcceptQuote(quote.Id, now);
-            var sample = new LabSample(job.Id, $"KIT-SAMPLE-{Suffix}", "RNA", "Synthetic", tubes, "tubes", "Frozen", "No hazards", null, null, null, "[]");
+            var sample = new LabSample(job.Id, $"KIT-SAMPLE-{jobSuffix}", "RNA", "Synthetic", tubes, "tubes", "Frozen", "No hazards", null, null, null, "[]");
             job.Samples.Add(sample); job.FinalizeSampleRoster(CustomerUser.Id, now);
             var work = new LabWorkOrder(Guid.NewGuid(), 1, LabAuthorizationSource.CommercialOrder, job.Id, CustomerOrganization.Id, "reference-service", 1, "reference-turnaround", job.OrderNumber);
             var specimen = new LabSpecimen(work.Id, sample.Id); work.Specimens.Add(specimen);
-            var shipment = new SampleShipment($"KIT-SHP-{Suffix}", CustomerOrganization.Id, departmentId,
+            var shipment = new SampleShipment($"KIT-SHP-{jobSuffix}", CustomerOrganization.Id, departmentId,
                 SampleShipmentAuthorizationSource.CustomerLabServiceOrder, job.Id, job.OrderNumber, job.CustomerReference!, work.Id, configured.Destination.Id);
             var row = new SampleShipmentItem(shipment.Id, sample.Id, configured.SampleType.Id, sample.CustomerSampleId, "Synthetic sample", tubes, "tubes");
             for (var ordinal = 1; ordinal <= tubes; ordinal++) row.TubeSlots.Add(new(row.Id, ordinal));
@@ -354,8 +366,10 @@ public partial class SampleShippingPostgresTests
             await DbContext.OrderIdempotencyRecords.Where(item => users.Contains(item.ActorUserId)).ExecuteDeleteAsync();
             await DbContext.TransportationKitRequestLines.Where(item => requests.Contains(item.TransportationKitRequestId)).ExecuteDeleteAsync();
             await DbContext.TransportationKitRequests.Where(item => requests.Contains(item.Id)).ExecuteDeleteAsync();
-            await DbContext.CustomerDeliveryLocations.Where(item => organizationIds.Contains(item.OrganizationId)).ExecuteDeleteAsync();
             var jobs = await DbContext.LabServiceOrders.Where(item => organizationIds.Contains(item.OrganizationId)).Select(item => item.Id).ToArrayAsync();
+            await DbContext.OrderCancellationRequests.Where(item => jobs.Contains(item.WorkflowId)).ExecuteDeleteAsync();
+            await DbContext.OrderNotifications.Where(item => jobs.Contains(item.WorkflowId)).ExecuteDeleteAsync();
+            await DbContext.OrderStatusEvents.Where(item => jobs.Contains(item.WorkflowId)).ExecuteDeleteAsync();
             await DbContext.LabSamples.Where(item => jobs.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
             await DbContext.LabServiceQuotes.Where(item => jobs.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
             await DbContext.LabServiceSourceGroups.Where(item => jobs.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();

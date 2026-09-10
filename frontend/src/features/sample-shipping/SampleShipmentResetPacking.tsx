@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 
 const scanBlockedReason = 'Finish or discard the current tube scan before changing containers.'
 
-export function SampleShipmentResetPacking({ shipment, canManage, scanActive = false }: { shipment: SampleShipmentWorkflow; canManage: boolean; scanActive?: boolean }) {
+export function SampleShipmentResetPacking({ shipment, canManage, scanActive = false, writesBlocked = false }: { shipment: SampleShipmentWorkflow; canManage: boolean; scanActive?: boolean; writesBlocked?: boolean }) {
   const client = useQueryClient()
   const navigate = useNavigate()
   const reasonId = useId()
@@ -27,7 +27,7 @@ export function SampleShipmentResetPacking({ shipment, canManage, scanActive = f
       setReview(null)
       client.setQueryData(['sample-shipment', pool.id], pool)
       await Promise.all([
-        ...['sample-shipment', 'sample-shipments', 'platform-sample-shipments', 'sample-shipment-packing', 'sample-shipment-recommendation', 'sample-packing-preview', 'sample-shipment-packing-reset', 'sample-shipping-packet', 'transportation-kit-supply'].map(key => client.invalidateQueries({ queryKey: [key] })),
+        ...['sample-shipment', 'sample-shipments', 'platform-sample-shipments', 'sample-shipment-packing', 'sample-shipment-recommendation', 'sample-packing-preview', 'sample-shipment-packing-reset', 'sample-shipping-packet', 'transportation-kit-supply', 'location-kit-inventory'].map(key => client.invalidateQueries({ queryKey: [key] })),
         client.invalidateQueries({ queryKey: ['lab-service-order', shipment.authorizationSourceId] }),
         client.invalidateQueries({ queryKey: ['trial-project', shipment.authorizationSourceId] }),
       ])
@@ -38,9 +38,9 @@ export function SampleShipmentResetPacking({ shipment, canManage, scanActive = f
   })
   if (!canManage) return null
 
-  const canReset = Boolean(eligibility.data?.canReset && !eligibility.isFetching && !eligibility.error && !scanActive)
+  const canReset = Boolean(eligibility.data?.canReset && !eligibility.isFetching && !eligibility.error && !scanActive && !writesBlocked)
   const matchesReview = Boolean(review && eligibility.data && reviewSnapshot(review) === reviewSnapshot(eligibility.data))
-  const reason = scanActive ? scanBlockedReason : eligibility.error ? 'Container choices could not be checked.' : eligibility.data?.blockedReason
+  const reason = writesBlocked ? 'Current shipment information must be verified before resetting.' : scanActive ? scanBlockedReason : eligibility.error ? 'Container choices could not be checked.' : eligibility.data?.blockedReason
   const close = () => { if (!reset.isPending && !submitting.current) setReview(null) }
   const retryEligibility = () => eligibility.refetch()
   const confirm = () => {
@@ -63,7 +63,7 @@ export function SampleShipmentResetPacking({ shipment, canManage, scanActive = f
         {review ? <div className="space-y-3 text-sm">
           <p>All {review.containerCount} selected {review.containerCount === 1 ? 'container' : 'containers'} will be removed. All {review.tubeCount} {review.tubeCount === 1 ? 'tube will' : 'tubes will'} return to container selection.</p>
           <p>Your finalized sample list will stay unchanged.</p>
-          <p className="text-muted-foreground">Container selection cannot be undone after tube scanning starts or a kit is assigned.</p>
+          <p className="text-muted-foreground">Unscanned container reservations return to location inventory. Container selection cannot be undone after tube scanning starts.</p>
           {scanActive ? <p role="alert" className="text-destructive">{scanBlockedReason}</p> : null}
           {eligibility.data && !eligibility.data.canReset ? <p role="alert" className="text-destructive">{eligibility.data.blockedReason ?? 'These containers can no longer be changed.'}</p> : null}
           {canReset && !matchesReview ? <div className="space-y-2"><p role="alert">The container choices changed. Review the updated selection before continuing.</p><Button variant="outline" onClick={() => { if (eligibility.data) setReview(eligibility.data) }}>Review updated containers</Button></div> : null}

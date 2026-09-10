@@ -49,11 +49,13 @@ describe('SampleShippingPacketPage', () => {
 
   it('prints frozen order, shipment, sample and individual tube identities with separate split references', async () => {
     const common = { submittedSpecimenId: 'specimen-1', customerSampleId: 'RNA-SPLIT', sampleName: 'Extracted RNA', sampleTypeName: 'RNA', sampleBarcode: 'PH-M-SPECIMEN1', totalSampleTubeCount: 4, tubeCount: 2, otherShipments: [{ shipmentId: 'shipment-2', shipmentNumber: 'SHIP-OTHER', tubeCount: 1 }], unallocatedTubeCount: 1 }
-    api.getPacket.mockResolvedValue({ ...packet, manifestSnapshotJson: JSON.stringify({ orderBarcode: 'PH-O-ORDER1', shipmentBarcode: 'PH-S-SHIPMENT1', container: { definitionId: 'container-20', commonName: 'Frozen container name', sku: '000-20', capacity: 20 }, samples: [{ ...common, tubeOrdinal: 1, supplierTubeBarcode: 'TUBE_0001' }, { ...common, tubeOrdinal: 2, supplierTubeBarcode: 'TUBE_0002' }] }), shipment: { ...packet.shipment, container: { commonName: 'Current revised name', sku: 'CHANGED', capacity: 99 } } })
+    api.getPacket.mockResolvedValue({ ...packet, manifestSnapshotJson: JSON.stringify({ orderBarcode: 'PH-O-ORDER1', shipmentBarcode: 'PH-S-SHIPMENT1', container: { definitionId: 'container-20', commonName: 'Frozen container name', sku: '000-20', capacity: 20 }, containerKit: { id: 'stock-1', kitNumber: 'KIT-FROZEN-001', barcode: 'KIT-FROZEN-001' }, samples: [{ ...common, tubeOrdinal: 1, supplierTubeBarcode: 'TUBE_0001' }, { ...common, tubeOrdinal: 2, supplierTubeBarcode: 'TUBE_0002' }] }), shipment: { ...packet.shipment, container: { commonName: 'Current revised name', sku: 'CHANGED', capacity: 99 }, assignedContainer: { kitNumber: 'KIT-LIVE-OTHER', barcode: 'KIT-LIVE-OTHER' } } })
     show()
     await screen.findByRole('button', { name: 'Print packet' })
     expect(screen.getByRole('img', { name: 'Order barcode PH-O-ORDER1' })).toBeTruthy()
     expect(screen.getByRole('img', { name: 'Shipment barcode PH-S-SHIPMENT1' })).toBeTruthy()
+    expect(screen.getByRole('img', { name: 'Container barcode KIT-FROZEN-001' })).toBeTruthy()
+    expect(screen.queryByText('KIT-LIVE-OTHER')).toBeNull()
     expect(screen.getAllByRole('img', { name: 'Sample barcode PH-M-SPECIMEN1' })).toHaveLength(1)
     expect(screen.getByRole('img', { name: 'Permanent tube barcode TUBE_0001' })).toBeTruthy()
     expect(screen.getByRole('img', { name: 'Permanent tube barcode TUBE_0002' })).toBeTruthy()
@@ -72,6 +74,7 @@ describe('SampleShippingPacketPage', () => {
     await screen.findByRole('button', { name: 'Print packet' })
     expect(screen.getByRole('img', { name: 'Permanent tube barcode LEGACY-TUBE' })).toBeTruthy()
     expect(screen.queryByRole('img', { name: /^Sample barcode/ })).toBeNull()
+    expect(screen.queryByRole('img', { name: /^Container barcode/ })).toBeNull()
   })
 
   it('withholds a voided packet even if a cached response contains it', async () => {

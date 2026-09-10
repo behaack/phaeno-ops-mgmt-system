@@ -19,6 +19,7 @@ public partial class SampleShippingPostgresTests
             new(fixture.Shipment.Version, location.Id, location.Version, [new(size.Id, 1)]), default);
         var kit = await scope.ReadyTransportationKitAsync(size);
         var when = DateTime.UtcNow;
+        when = when.AddTicks(7 - when.Ticks % 10);
         var body = new DispatchStockKitRequest(fixture.Shipment.Id, kit.Version, "Carrier", "SHARED-DISPATCH", when);
         await using var first = scope.CreateAdditionalContext();
         await using var second = scope.CreateAdditionalContext();
@@ -84,7 +85,7 @@ public partial class SampleShippingPostgresTests
     }
 
     [PostgreSqlReferenceFact]
-    public async Task TransportationKitMissingOrCancelledOrderBlocksUnboundPreparationWithoutBlockingOrdering()
+    public async Task TransportationKitMissingReceivedLocationStockBlocksPreparationWithoutBlockingOrdering()
     {
         await using var scope = await ShippingTestScope.CreateAsync();
         var fixture = await scope.CreateTransportationShipmentAsync(18);
@@ -106,17 +107,17 @@ public partial class SampleShippingPostgresTests
             Assert.False((await scope.PackingController().Read(shipment.Id, default)).CanPack);
             await Assert.ThrowsAsync<OrderManagementException>(() => scope.PackingController().Preview(shipment.Id, new(), default));
             scope.ClearTrackedState();
-            Assert.Equal("transportation_kit_order_required", (await Assert.ThrowsAsync<OrderManagementException>(() =>
+            Assert.Equal("transportation_kit_unavailable", (await Assert.ThrowsAsync<OrderManagementException>(() =>
                 scope.PackingController().Confirm(shipment.Id, new(initial.Version, [new(size.Id, 1)]), default))).ErrorCode);
             scope.ClearTrackedState();
-            Assert.Equal("transportation_kit_order_required", (await Assert.ThrowsAsync<OrderManagementException>(() =>
+            Assert.Equal("transportation_kit_unavailable", (await Assert.ThrowsAsync<OrderManagementException>(() =>
                 scope.CreateCustomerWorkflowController().AssignTube(shipment.Id, fixture.Item.Id,
                     new("TEST-UNORDERED-TUBE", null, slot.Version, slot.Id), default))).ErrorCode);
             scope.ClearTrackedState();
-            Assert.Equal("transportation_kit_order_required", (await Assert.ThrowsAsync<OrderManagementException>(() =>
+            Assert.Equal("transportation_kit_unavailable", (await Assert.ThrowsAsync<OrderManagementException>(() =>
                 scope.CreateCustomerWorkflowController().IssuePacket(shipment.Id, new(initial.Version, null), default))).ErrorCode);
             scope.ClearTrackedState();
-            Assert.Equal("transportation_kit_order_required", (await Assert.ThrowsAsync<OrderManagementException>(() =>
+            Assert.Equal("transportation_kit_unavailable", (await Assert.ThrowsAsync<OrderManagementException>(() =>
                 scope.CreateCustomerWorkflowController().RecordShipment(shipment.Id, new("Carrier", "TRACK", DateTime.UtcNow, initial.Version), default))).ErrorCode);
             scope.ClearTrackedState();
             var unchanged = await scope.DbContext.SampleShipments.AsNoTracking().SingleAsync(item => item.Id == shipment.Id);
@@ -137,7 +138,7 @@ public partial class SampleShippingPostgresTests
     }
 
     [PostgreSqlReferenceFact]
-    public async Task TransportationKitReceivedOrderCannotBeBypassedWithUnorderedStockOrLegacyDispatch()
+    public async Task TransportationKitReceivedStockRequiresExplicitReservationAndRetainsLegacyDispatchGuidance()
     {
         await using var scope = await ShippingTestScope.CreateAsync();
         var fixture = await scope.CreateTransportationShipmentAsync(18);
@@ -173,17 +174,21 @@ public partial class SampleShippingPostgresTests
         scope.ClearTrackedState();
         Assert.True((await scope.KitCustomer().Supply(shipment.Id, location.Id, default)).CanPrepareSamples);
         var slot = fixture.Item.TubeSlots.First();
-        Assert.Equal("transportation_kit_order_required", (await Assert.ThrowsAsync<OrderManagementException>(() =>
+        Assert.Equal("container_reservation_required", (await Assert.ThrowsAsync<OrderManagementException>(() =>
             scope.CreateCustomerWorkflowController().AssignTube(shipment.Id, fixture.Item.Id,
                 new(unlinked.Tubes[0].SupplierBarcode, null, slot.Version, slot.Id), default))).ErrorCode);
         scope.ClearTrackedState();
         Assert.Null((await scope.DbContext.SampleShippingStockKits.AsNoTracking().SingleAsync(item => item.Id == unlinked.Id)).BoundSampleShipmentId);
         Assert.False(await scope.DbContext.SampleReturnKits.AnyAsync(item => item.SampleShipmentId == shipment.Id));
-        await scope.CreateCustomerWorkflowController().AssignTube(shipment.Id, fixture.Item.Id,
-            new(ordered.Tubes[0].SupplierBarcode, null, slot.Version, slot.Id), default);
+        ordered = await scope.StockController().Read(ordered.Id, default);
+        var prepared = Assert.Single(await scope.PackingController().Confirm(shipment.Id, new(shipment.Version, [new(size.Id, 1)],
+            DeliveryLocationId: location.Id, StockKits: [new(ordered.Id, ordered.Version)]), default));
+        var preparedRow = prepared.Crosswalk.First();
+        await scope.CreateCustomerWorkflowController().AssignTube(prepared.Id, preparedRow.ShipmentItemId,
+            new(ordered.Tubes[0].SupplierBarcode, null, preparedRow.Version, preparedRow.TubeSlotId), default);
         scope.ClearTrackedState();
-        Assert.Equal(shipment.Id, (await scope.DbContext.SampleShippingStockKits.AsNoTracking().SingleAsync(item => item.Id == ordered.Id)).BoundSampleShipmentId);
-        Assert.True((await scope.KitCustomer().Supply(shipment.Id, location.Id, default)).CanPrepareSamples);
+        Assert.Equal(prepared.Id, (await scope.DbContext.SampleShippingStockKits.AsNoTracking().SingleAsync(item => item.Id == ordered.Id)).BoundSampleShipmentId);
+        Assert.True((await scope.KitCustomer().Supply(prepared.Id, location.Id, default)).CanPrepareSamples);
     }
 
     [PostgreSqlReferenceFact]

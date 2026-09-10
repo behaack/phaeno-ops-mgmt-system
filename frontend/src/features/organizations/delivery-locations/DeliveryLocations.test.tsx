@@ -6,18 +6,38 @@ import { deliveryLocationFixture as location } from '#/test-helpers/transportati
 import { DeliveryLocationEditor } from './DeliveryLocationEditor'
 import { DeliveryLocationDetailPage, DeliveryLocationsPage } from './DeliveryLocationsPage'
 
-const mocks = vi.hoisted(() => ({ list: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), deactivate: vi.fn(), navigate: vi.fn(), staff: false, admin: true, departmentAdmin: false, wrongDepartment: false }))
+const mocks = vi.hoisted(() => ({ list: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), deactivate: vi.fn(), navigate: vi.fn(), inventory: vi.fn(), receive: vi.fn(), staff: false, admin: true, departmentAdmin: false, wrongDepartment: false, shipmentId: undefined as string | undefined }))
+vi.mock('#/api/transportation-kit-requests', () => ({ getLocationKitInventory: mocks.inventory, confirmLocationKitsReceived: mocks.receive }))
 vi.mock('#/api/customer-delivery-locations', () => ({ getCustomerDeliveryLocations: mocks.list, getCustomerDeliveryLocation: mocks.get, createCustomerDeliveryLocation: mocks.create, updateCustomerDeliveryLocation: mocks.update, deactivateCustomerDeliveryLocation: mocks.deactivate }))
 vi.mock('#/api/organization-management', () => ({ listDepartments: async () => [{ id: '10000000-0000-4000-8000-000000000003', name: 'Research' }], getOrganization: async () => ({ name: 'Example Customer' }) }))
-vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ session: { state: 'ready', isPlatformAdmin: mocks.staff, memberships: [{ organizationId: '10000000-0000-4000-8000-000000000002', organizationName: 'Example Customer', organizationKind: 'Customer', isOrganizationAdmin: mocks.admin, departments: mocks.wrongDepartment ? [] : [{ departmentId: '10000000-0000-4000-8000-000000000003', departmentName: 'Research', isDepartmentAdmin: mocks.departmentAdmin }] }] } }) }))
+vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ session: { state: 'ready', isPlatformAdmin: mocks.staff, capabilities: { canManageOrderConfiguration: mocks.staff }, memberships: [{ organizationId: '10000000-0000-4000-8000-000000000002', organizationName: 'Example Customer', organizationKind: 'Customer', isOrganizationAdmin: mocks.admin, departments: mocks.wrongDepartment ? [] : [{ departmentId: '10000000-0000-4000-8000-000000000003', departmentName: 'Research', isDepartmentAdmin: mocks.departmentAdmin }] }] } }) }))
 vi.mock('#/features/orders/use-order-draft-guard', () => ({ useOrderDraftGuard: () => vi.fn() }))
-vi.mock('@tanstack/react-router', () => ({ useNavigate: () => mocks.navigate, useSearch: () => ({ organizationId: '10000000-0000-4000-8000-000000000002', departmentId: '10000000-0000-4000-8000-000000000003' }), Link: ({ children, to, params }: { children: ReactNode; to: string; params?: Record<string, string> }) => <a href={Object.entries(params ?? {}).reduce((path, [key, value]) => path.replace(`$${key}`, value), to)}>{children}</a> }))
+vi.mock('@tanstack/react-router', () => ({ useNavigate: () => mocks.navigate, useSearch: () => ({ organizationId: '10000000-0000-4000-8000-000000000002', departmentId: '10000000-0000-4000-8000-000000000003', shipmentId: mocks.shipmentId }), Link: ({ children, to, params, search }: { children: ReactNode; to: string; params?: Record<string, string>; search?: Record<string, unknown> }) => <a data-search={JSON.stringify(search)} href={Object.entries(params ?? {}).reduce((path, [key, value]) => path.replace(`$${key}`, value), to)}>{children}</a> }))
 function mount(node: ReactNode) { return render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>{node}</QueryClientProvider>) }
 function fill(label: string, value: string) { fireEvent.change(screen.getByLabelText(new RegExp(label)), { target: { value } }) }
 const scope = { organizationId: location.organizationId, departmentId: location.departmentId }
-beforeEach(() => { vi.clearAllMocks(); mocks.staff = false; mocks.admin = true; mocks.departmentAdmin = false; mocks.wrongDepartment = false; mocks.list.mockResolvedValue([location]); mocks.get.mockResolvedValue(location); mocks.create.mockResolvedValue(location); mocks.update.mockResolvedValue(location); mocks.deactivate.mockResolvedValue({ ...location, isActive: false, isDefault: false }) })
+beforeEach(() => { vi.clearAllMocks(); mocks.staff = false; mocks.admin = true; mocks.departmentAdmin = false; mocks.wrongDepartment = false; mocks.shipmentId = undefined; mocks.inventory.mockResolvedValue({ location, kits: [], requests: [], canManageInventory: false }); mocks.list.mockResolvedValue([location]); mocks.get.mockResolvedValue(location); mocks.create.mockResolvedValue(location); mocks.update.mockResolvedValue(location); mocks.deactivate.mockResolvedValue({ ...location, isActive: false, isDefault: false }) })
 
 describe('customer department delivery locations', () => {
+  it('returns from location inventory to the shipment without opening another kit order', async () => {
+    mocks.shipmentId = '30000000-0000-4000-8000-000000000001'
+    mount(<DeliveryLocationDetailPage locationId={location.id} />)
+    await screen.findByText('100 Science Avenue')
+    const link = screen.getByRole('link', { name: 'Return to shipment' })
+    expect(link.getAttribute('href')).toBe(`/sample-shipping/${mocks.shipmentId}`)
+    expect(link.getAttribute('data-search')).toBeNull()
+    expect(mocks.receive).not.toHaveBeenCalled()
+  })
+  it('routes Phaeno staff to their inventory without loading Customer receipt or inventory', async () => {
+    mocks.staff = true
+    mocks.admin = false
+    mount(<DeliveryLocationDetailPage locationId={location.id} />)
+    expect((await screen.findByRole('link', { name: 'View Phaeno kit inventory' })).getAttribute('href')).toBe('/lab-operations')
+    expect(screen.getByText(/The Customer acknowledges arrival at this location/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Confirm kits received' })).toBeNull()
+    expect(mocks.inventory).not.toHaveBeenCalled()
+    expect(mocks.receive).not.toHaveBeenCalled()
+  })
   it('keeps discovery form-free and opens a dedicated location record', async () => { mount(<DeliveryLocationsPage />); expect((await screen.findByRole('link', { name: location.label })).getAttribute('href')).toBe(`/delivery-locations/${location.id}`); expect(screen.queryByLabelText(/Street address/)).toBeNull(); expect(mocks.list).toHaveBeenCalledWith(scope) })
   it.each(['staff', 'departmentAdmin'] as const)('permits the supported %s management entry point', async role => { mocks.admin = false; mocks[role] = true; mount(<DeliveryLocationsPage />); expect(await screen.findByRole('button', { name: 'Add delivery location' })).toBeTruthy() })
   it('keeps an ordinary department member view-only', async () => { mocks.admin = false; mount(<DeliveryLocationDetailPage locationId={location.id} />); expect(await screen.findByText('100 Science Avenue')).toBeTruthy(); expect(screen.queryByRole('button', { name: 'Edit location' })).toBeNull(); expect(screen.queryByRole('button', { name: 'Location actions' })).toBeNull() })

@@ -1,5 +1,10 @@
 # 11 — Transportation kits and sample shipping
 
+**September 9 revised workflow:** these scripts cover
+[Customer location inventory and container barcode assignment](../plans/TRANSPORTATION-KIT-LOCATION-INVENTORY-PLAN.md).
+They supersede earlier same-Job stock restrictions. Revision of a script does
+not mark it Pass; record implementation and execution evidence separately.
+
 Use [shared prerequisites](TEST-DATA.md) and record each case in the
 [run record](RUN-RECORD.md). These 14 manual cases start **Not run**. Historical
 component, browser and PostgreSQL checks are supporting evidence, not a result
@@ -8,28 +13,25 @@ for a connected run of these scripts.
 The primary users are the Customer organization/Department administrator,
 Phaeno fulfillment administrator and laboratory receiving operator. The
 workflow must provide kits without an additional charge, retain their delivery
-and tube identities. Each Customer Job must order its own kits, have Phaeno
-fulfill that order, and acknowledge receipt before configuring containers or
-scanning its supplied tubes. General stock, a legacy kit or another Job's kits
-cannot bypass that sequence, even at the same Customer/location. Partial receipt
-permits only the received same-Job supply. Cross-Job reuse remains deferred;
-Trial and Partner permissions and supply workflows are unchanged.
-For this implemented slice, recorded supply belongs to a **Job and delivery
-location**. It is not a general balance of every kit at the customer site.
+and tube identities. Fulfillment supplies the Customer/Department delivery
+location. Customer receipt makes unused stock available there; preparation
+assigns the exact scanned physical container to a Job and shipment. An originating
+Job reference is provenance, not a restriction on use. Partial receipt permits
+only acknowledged stock. Unreceived, wrong-location/owner or already-used stock
+cannot be claimed. Trial and Partner supply workflows retain their existing rules.
 
 ## Resume the current local walkthrough
 
-**September 9 resume: SHP-08 Customer receipt.** The
-[end-of-day local handoff](runs/2026-09-08-hs5y7db7-local-walkthrough.md#end-of-day-handoff--resume-september-9-2026)
-records Job **HS5Y7DB7**, Request **D20018AA**, **Dispatched: 1 sent, 0 received**,
-and its one TRANS-20 kit with 20 registered synthetic barcodes. The original
-FedEx dispatch and tube identities were preserved when the request link was
-corrected. Sign in as Customer, open the Job's kit-delivery area, and acknowledge
-only that test kit for the local receipt step. Do not repeat ordering,
-registration, dispatch or reconciliation.
+**September 9 resume: SHP-09 container barcode assignment**, after the revised
+implementation passes its focused checks. The
+[local run](runs/2026-09-08-hs5y7db7-local-walkthrough.md)
+records Job **HS5Y7DB7**, Request **D20018AA**, **Received: 1 sent, 1 received**,
+and one unbound TRANS-20 with 20 registered synthetic tube barcodes. Original
+dispatch and tube identities are preserved. Do not repeat ordering, registration,
+dispatch, reconciliation or receipt. The active pool contains all 18 tubes.
 
-After receipt, verify container choices are limited to this Job's received
-kit supply, then continue SHP-09–11 scanning and packets. Complete desired
+Verify location stock, scan the physical container barcode and review its
+assignment, then continue SHP-09–11 scanning and packets. Complete desired
 pre-scan reset checks before the first successful scan. Alternate-size and
 split-shipment fixtures remain separate; full SHP-09 and its variants are not
 complete. The run's test products/barcodes and simulated receipt are local
@@ -42,8 +44,8 @@ with two spare slots. No Customer delivery location, kit request or physical
 stock was created by the implementation verification.
 
 For a new independent fixture, start with **SHP-02/03** and continue through
-fulfillment and receipt. The existing HS5Y7DB7 run resumes at **SHP-08**, then
-SHP-09–13. Preserve its existing Job and sample list.
+fulfillment and receipt. The existing HS5Y7DB7 run resumes at **SHP-09**, then
+SHP-10–13. Preserve its existing Job and sample list.
 Run cancellation, alternate-size, split-container and failure variants on
 separate fixtures; do not reopen the finalized list to manufacture those states.
 Confirm the checkpoint still matches before resuming, and record any later
@@ -84,12 +86,12 @@ second location for isolation checks; do not copy address details into public ev
 ## SHP-03 — Included-cost kit order and confirmation
 
 **Setup:** Finalized accepted LAB-SHIP-18, C-ADMIN or C-DEPT, approved location and
-compatible catalog; no open request. Include separate general-stock, legacy-kit
-and other-Job-stock variants; those do not satisfy this Job's order requirement.
+compatible catalog; no open request. Include separate no-stock, received unused
+stock from another Job, in-transit and wrong-location stock variants.
 
 | Step | Action | Expected result |
 | --- | --- | --- |
-| 1 | Open Choose containers from the Job before it has ordered/received kits. Repeat with general stock or another Job's kits present. | Transportation kits offers Order transportation kits and the required delivery-location recovery. There is no I already have kits action or general-stock route into configuration/scanning. This Job's kit order, fulfillment and receipt are required. |
+| 1 | Open Choose containers and select a departure location. Repeat with no stock, unused received stock originally requested for another Job, and wrong-location stock. | Shortage offers Order transportation kits and location recovery. Eligible received stock covers demand without another Job-specific order. Wrong-location stock cannot be claimed; no manual inventory bypass is offered. |
 | 2 | Select Order transportation kits. Review the recommended quantity/SKU and delivery address. | One TRANS-20 covers 18 tubes. Kits and outbound delivery are included, with no extra quote, invoice, fee or payment action. |
 | 3 | Select Keep reviewing; reopen, choose a different valid location if needed, then Confirm kit order. | Cancel leaves no request. Confirmation creates one Job-linked request with the reviewed quantities and address. |
 | 4 | Refresh and reopen from the Job. | Kits ordered persists. The same request is visible; the accepted price, sample count, tube roster and scientific authorization are unchanged. |
@@ -137,12 +139,13 @@ unused permanent barcodes. Do not invent product facts to make a kit ready.
 | 1 | Under Standard kits select Prepare standard kit, choose an approved size and enter its actual test materials. | A physical kit with its own identity is created at Phaeno; it is not already customer inventory. |
 | 2 | Register permanent tube barcodes until the selected capacity is complete; inspect the Customer request again. | A TRANS-20 requires 20 registered tubes even when the intended sample shipment contains only 18. Registration makes physical stock ready but does not dispatch it: the request remains Pending with zero dispatched until Fulfill request is completed. |
 | 3 | Exercise duplicate, already-used, excess and missing-tube variants. | Invalid registration cannot make incomplete or conflicting stock eligible for fulfillment. Valid saved registration survives refresh. |
-| 4 | Open the pending request's Fulfill request dialog. | Only fully registered, compatible, matching requested-size revisions are offered. A shortage is explicit; no dispatch is invented. |
-| 5 | For an accepted Customer Job, try direct kit dispatch with and without a matching open request. | A matching request is required; direct dispatch cannot bypass it. Valid dispatch updates the kit and request together. Trial/Partner supply behavior is unchanged. This restriction variant is Not run until recorded. |
+| 4 | Open the pending request's Fulfill request dialog; repeat after an ordinary catalog revision. | Fully registered compatible physical stock is offered without stranding preserved revisions solely because an ID changed. A withdrawn incompatible kit remains blocked. A shortage is explicit. |
+| 5 | Open Record dispatch from a stock kit. Review the request and frozen address; compare its resulting state with request-based fulfillment. | Customer dispatch targets the request/location, not a selected sample shipment. Both entries update stock and request once. Trial/Partner legacy supply stays separate. |
+| 6 | Print the physical container barcode and scan it in a read-only preparation preview. | The unique permanent kit number and barcode identify that physical container; no Job assignment exists until preparation confirmation. |
 
 **Handoff:** Record physical kit IDs, SKU/revision and barcode roster for SHP-07.
 Use Fulfill request for the Customer order, or the kit's Record dispatch action
-with that same Job. Either entry must retain the required request linkage.
+with the reviewed request/location. Either entry retains delivery provenance.
 
 ## SHP-07 — Dispatch and provisional customer inventory
 
@@ -151,7 +154,7 @@ plus one TRANS-10; ready matching stock; P-ADMIN; controlled dispatch evidence.
 
 | Step | Action | Expected result |
 | --- | --- | --- |
-| 1 | Open Fulfill request, review the frozen address, select kits, enter observed carrier/tracking/dispatch time and select Record dispatch. | Required fields and requested quantity caps apply. Each dispatched kit links to this request, Job and delivery location. |
+| 1 | Open Fulfill request, review the frozen address, select kits, enter observed carrier/tracking/dispatch time and select Record dispatch. | Required fields and requested quantity caps apply. Each dispatched kit belongs to the destination location; the request/Job remains provenance, with no consuming Job or sample-shipment assignment. |
 | 2 | For the 30-tube variant dispatch only TRANS-20. | Staff state is Partially dispatched; one TRANS-10 is still owed. Customer sees the sent kit On the way. |
 | 3 | Refresh both sessions and attempt sample preparation with that unacknowledged kit. | Dispatch increases provisional supply only; no usable capacity, scan, packet or shipment bypass is granted. |
 | 4 | Retry dispatch and attempt a wrong-size/already-sent kit; change the saved address separately and reopen the request. | No double dispatch, reassignment or excess fulfillment; the original confirmed delivery address remains frozen. |
@@ -171,28 +174,31 @@ labeled simulated receipt evidence; partial 20/10-tube variant from SHP-07.
 | 2 | Confirm only the received TRANS-20 and refresh. | That kit becomes Available. The unreceived or undispatched TRANS-10 stays unavailable; the overall request is not falsely completed. |
 | 3 | Prepare the received capacity, leaving ten tubes pending. Inspect another shipment/pool for the same Job. | The already allocated kit is not counted again. The residual need remains ten tubes; another location's stock does not unlock it. |
 | 4 | Dispatch and acknowledge the remaining TRANS-10, then repeat the receipt confirmation after a lost response. | All received request becomes Received; the remaining kit becomes usable exactly once. Replays do not add stock twice. |
-| 5 | On separate Customer fixtures, try general stock, a legacy unlinked kit and a received kit from another Job or location; attempt configuration/scanning directly as well as through the page. | Only received supply linked to the current Job's kit order permits its preparation. Location similarity or an existing physical kit does not grant access. Existing Trial/Partner flows remain unchanged. This new restriction variant is Not run until separately recorded. |
+| 5 | On a separate fixture, cancel originating Job A after kit dispatch. Open the Customer location, acknowledge receipt, then prepare Job B at that location. | Receipt remains reachable and the unused kit can supply B without a second dispatch. Original request/tracking remains linked as history. No premature physical reuse is claimed. |
+| 6 | Try unreceived stock, unverified legacy stock, and received stock at another Customer/Department/location through UI and direct API calls. | Ownership, receipt, compatibility and location are enforced. Known unused stock from another Job at the same authorized location is allowed; undocumented receipt/location is not assumed. |
 
 **Handoff:** Record receipt actor/time and available, in-transit and allocated
 counts by SKU/location. Customer kit receipt does not record laboratory sample receipt.
 
 ## SHP-09 — Available sizes, alternate packing and residual supply
 
-**Setup:** LAB-SHIP-18 and separate fixtures whose own kit orders were fulfilled
-and received. Use matching supplied sizes for each alternative: 20+10, 10+10+5+5
-or six 5s for 30 tubes, and 10+5+5 for the 18-tube edge case. Prepare each lineage
-independently; catalog compatibility or other-Job stock is not sufficient.
+**Setup:** LAB-SHIP-18 and separate Jobs using registered received location stock.
+Provide physical barcoded containers for alternatives 20+10, 10+10+5+5 or six 5s
+for 30 tubes and 10+5+5 for 18 tubes. Include stock originally requested for a
+cancelled Job. A catalog entry alone does not establish available inventory.
 
 | Step | Action | Expected result |
 | --- | --- | --- |
-| 1 | After acknowledging received supply, review Choose shipping containers and open Adjust containers. | Container setup appears directly, without a Prepare samples toggle. 18 uses one received 20 with two spare slots; 30 uses received 20+10 when available. Containers to use starts with one row per recommended container, each showing a size selector restricted to received same-Job supply, SKU/capacity, tube input and Remove action. |
+| 1 | Select the departure location, review Choose shipping containers and open Adjust containers. Scan each physical container barcode and review its row. | 18 recommends an available 20 with two spare slots; 30 recommends available 20+10. Each selected physical container shows its barcode, SKU, capacity and tube allocation. Draft barcode entry makes no stock reservation. |
 | 2 | For 30 tubes, select 10+5 and use Add container twice; separately build six 5s. Change or remove a targeted row after entering counts in the others. | Add chooses another 10, then 5. A 20 is excluded because it would make the existing 5 redundant. Smaller needed sizes remain selectable; changes/removal preserve the other rows' counts. Desktop and phone keep one container per row. |
-| 3 | For 18 tubes, select 10+5 and inspect the choices for the three remaining tubes. Cover the total capacity, then reduce one tube count and inspect Add again. | Only a 5 is offered for the remaining need, not 10/20. Add is disabled once selected capacity covers the total, even if tube counts are reduced. With 5/10/20 configured, two 20s for 30 is no longer a current editor option. |
+| 3 | For 18 tubes, select 10+5 and inspect choices for three remaining tubes with a 5 available. Separately use 30 tubes where only two 20s are available. | Prefer the available 5 over adding a 10/20. Do not add redundant containers after capacity is covered. Unavoidable spare capacity from actual available sizes is allowed. |
 | 4 | Select Use recommendation after a custom selection. Change a row while its preview is delayed and inspect Summary. | Recommendation explicitly rebuilds the rows/counts. One compact Summary grid stays visible with Updating inside it; no repeated capacity prose, container breakdown or empty spacer bands appear. Confirmation waits for the current preview. No manual availability fields/disclosure appear. |
 | 5 | Enter fractional/negative tube counts, an over-capacity row or an incorrect total; exercise an automatic recorded-stock rejection and partial supply. | Invalid counts or stock use are rejected with actionable errors. Partial capacity leaves explicit unallocated tubes. Empty rows do not create shipments; valid tube totals and per-container capacities remain exact. |
 | 6 | Refresh and finish the residual pool after more supply arrives. On a separate completed-request fixture with uncovered tubes, order additional kits. | Existing container IDs and assignments persist; no kit is double allocated. Received request history remains visible; a new order is offered only when the server permits it, and Pending suppresses duplicates again. |
 | 7 | Use Shipping container at the top of shipment detail to switch between siblings and a pool with remaining tubes. Repeat with an unsaved barcode and a delayed scan save. | The full-width selector is above kit/scanning controls, with name/identifier, tube count and status. It excludes cancelled siblings and empty pools; routes remain in the current Job/Trial. An unsaved scan prompts for discard; saving blocks navigation. There is no repeated bottom related-shipment list on detail, while the owning Job/Trial list remains available. |
-| 8 | Inspect physical containers with no current-Job kit order, a cancelled request, completed same-Job receipt, and outstanding Pending/PartiallyDispatched/Dispatched requests. | Missing order/receipt blocks preparation even on a direct physical-container route; an unbound container offers Order transportation kits for recovery. Received same-Job supply permits scanning; outstanding orders retain Kit delivery status and receipt actions. Loading/error/blocked preparation remains explained. Reset container configuration is beside Shipping container. There is no existing-stock bypass or separate Prepare samples toggle. |
+| 8 | Inspect location inventory and Job preparation with stock from a cancelled originating Job, partial deliveries, unavailable stock and an inventory refresh error. Repeat as a Member. | Unused received location stock is usable independent of origin Job. Receipt actions remain available through the location. Members retain read-only history. Background errors disable affected writes while preserving open drafts. |
+| 9 | Confirm exact scanned containers, then have another Job/user attempt the same claim concurrently. | Exactly one reservation succeeds; the losing save retains its draft and identifies changed availability. Stock is Assigned to the successful Job and is not counted again for any other Job. |
+| 10 | Follow Job shipping links and an old cancelled container URL after reset. | Active preparation is the normal entry point. Retired configurations appear as history with an explanation and route to current preparation; they do not look like cancelled Jobs. |
 
 **Handoff:** Record one shipment per nonempty container, exact tube allocation and
 any residual pool for SHP-10/11. Spare slots are not missing samples or reusable stock.
@@ -206,21 +212,21 @@ Repeat with distinct destination/handling groups and a residual packing pool.
 | Step | Action | Expected result |
 | --- | --- | --- |
 | 1 | As an organization/Department administrator, open Reset container configuration beside the top Shipping container selector, inspect the affected order/container/tube counts, then dismiss. | Server eligibility controls the action. The confirmation clearly covers the whole order's plan; dismissal preserves every prepared container. |
-| 2 | Reopen and confirm before any scan or kit binding. Compare the order, finalized samples and tube ordinals before/after. | The full plan returns to the appropriate selection pool; old prepared shipments remain cancelled in history. No tubes are lost/duplicated, destination/handling groups stay separate, and quotes, kit requests and physical inventory remain unchanged. |
+| 2 | Reopen and confirm with reserved physical containers before any tube scan. Compare the order, finalized samples and tube ordinals before/after. | The full plan returns to the appropriate pool, reservations return to available location inventory, and old configurations remain in history. No tubes are lost/duplicated; quote, original delivery and receipt facts remain unchanged. |
 | 3 | On separate fixtures, try after any scan, ReturnKit/physical-kit binding, packet, dispatch or receipt in a sibling shipment; repeat with scan fields cleared after an immutable scan event. | The entire reset stays blocked once such work starts, including historical scans. There is no bypass through another container or member identity. Clearing a scan cannot make reset available again. |
 | 4 | Start a scan or change the family while confirmation is open; retry a stale or concurrent reset and simulate a failed response. | Reviewed versions and server rechecks prevent partial resets or overwriting newer work. Pending state prevents duplicate UI submission; failure remains explained and reviewable. |
 | 5 | Enter an unsaved barcode and inspect Reset container configuration; discard it before any save. On a separate fixture, delay a scan save and inspect the action again. | Reset is disabled while barcode input is unsaved or saving. Discarding a never-saved entry may restore eligibility; saving a scan locks the plan permanently, even if that scan is later cleared. No reset mutation precedes resolution of the draft/save. |
 
 ## SHP-10 — Scan tubes and retain exact identities
 
-**Setup:** Prepared containers, physical kits ordered/fulfilled/received for this Customer Job,
+**Setup:** Prepared containers explicitly assigned from received Customer location stock,
 administrator and scanner or clearly labeled keyboard simulation.
 
 | Step | Action | Expected result |
 | --- | --- | --- |
-| 1 | Scan the displayed sample's next tube and save. | Exact saved number and barcode graphic appear beside its sample/tube ordinal; advancement occurs only after a successful save. |
+| 1 | Scan the displayed sample's next tube from the assigned physical container and save. | Exact saved number/barcode appears beside its sample/tube ordinal; advancement follows successful save. The assigned container becomes In use and reset locks. |
 | 2 | Refresh midway and navigate a long list. | Saved assignments remain; the next unmatched tube is reachable with paging, without expanding the whole page. |
-| 3 | Try unknown, duplicate, wrong-Job, general/legacy-stock, unreceived-kit and another-kit barcodes; delay/reject a save. | Only this Job's ordered and received kit supply can be scanned. The bad scan remains available to correct; progress does not advance or create a second assignment. One physical kit cannot bind to two containers. |
+| 3 | Try unknown, duplicate, unreceived, unassigned, already-used and another-container tube barcodes; delay/reject a save. | Only tubes registered to the explicitly assigned container can match; the originating delivery Job is irrelevant. A failed scan preserves its value, makes no progress and cannot bind a different container implicitly. |
 | 4 | Correct a pre-dispatch assignment using the supported action and a reason. | History is retained; changed assignments do not silently rewrite a confirmed packet. Repacking a bound/scanned container is rejected. |
 
 **Handoff:** Save the complete crosswalk and kit-to-container binding for SHP-11.
@@ -233,7 +239,7 @@ printer/PDF viewer; long-manifest and correction variants.
 
 | Step | Action | Expected result |
 | --- | --- | --- |
-| 1 | Review and confirm each container's packet; inspect printable output. | Phaeno branding, Job/order, shipment and sample barcodes, permanent tube numbers/barcodes, selected container facts and applicable frozen instructions are legible. |
+| 1 | Review and confirm each container's packet; inspect printable output. | Phaeno branding, Job/order, shipment, sample and physical container barcodes, permanent tube barcodes, container facts and frozen instructions are legible. The physical container barcode comes from the frozen manifest revision. |
 | 2 | Compare both manifests for a sample whose tubes cross a container boundary. | Each lists only its own physical contents and separately identifies the sample's total tubes, other shipment references/counts and any unallocated tubes. |
 | 3 | Review a multipage manifest and print/scan representative barcodes. | Rows and barcode captions remain together, pages retain shipment identification, and order/shipment/sample/tube identities are distinguishable. |
 | 4 | Repeat first packet confirmation; on a correction variant change a tube with a reason and inspect old/new packet references. | No competing first packet; correction retains the voided prior revision and current crosswalk. Configuration changes do not rewrite issued documents. |
@@ -290,19 +296,21 @@ request failures. Repeat relevant SHP-02–13 actions on disposable variants.
 supported actions. Retain dispatch/receipt/audit history and the main walkthrough.
 Have the environment owner reconcile test mail and physical stock separately.
 
-## Planned inventory coverage outside this implemented slice
+## Inventory work outside this implementation
 
-Keep these as **planned product/implementation gaps**, not failed assertions
-against the current Job-specific supply model or already-passed tests:
+Location inventory, cross-Job use of available containers, atomic reservation,
+and release before tube scanning are covered by SHP-08–10 above. The following
+remain separate product or implementation work; they are not passed tests:
 
 | Future scenario | Required eventual acceptance |
 | --- | --- |
-| Cross-Job customer and Phaeno location balances | Correct on-hand, reserved, in-transit and consumed stock per SKU/location across Jobs. |
-| Competing orders and replenishment | No double reservation; preliminary order-intake need becomes exact after final tube counts; shortage processing creates no duplicate fulfillment. |
-| Reservation release, loss, damage and corrections | Explained, audited movements and reconciliation; cancellation releases only eligible reservations. |
+| Preliminary order-intake need and automatic replenishment | Forecast shortages before final tube counts without reserving containers or creating duplicate requests. |
+| Transfers, loss, damage and inventory corrections | Explicit, explained and audited movements between locations; no implicit transfer during preparation. |
+| Automatic cancellation of an unshipped kit request | Product decision remains pending. Preserve the existing request-cancellation behavior until settled; releasing an unused Job reservation is a separate action. |
 | Spare tubes and kit reassembly | Explicit tube versus container balances and barcode lineage; no automatic reuse of spare slots or partially returned kit contents. |
 
 See the [shipping implementation plan](../plans/SAMPLE-SHIPPING-AND-INTAKE-PLAN.md)
+and the [location inventory plan](../plans/TRANSPORTATION-KIT-LOCATION-INVENTORY-PLAN.md)
 for those decisions. Expand these scripts when the related behavior is implemented.
 
 **Sources:** [Customer shipping guide](../../frontend/src/content/docs/en-US/customer/sample-shipping.mdx),

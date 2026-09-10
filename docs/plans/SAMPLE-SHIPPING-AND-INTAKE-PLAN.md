@@ -1,5 +1,29 @@
 # Sample Shipping and Intake Plan
 
+## Current direction — location inventory and container barcode assignment
+
+The September 9 Product Owner correction supersedes the same-Job kit requirement
+below. Ship containers to Customer locations; keep unused received stock usable
+after an originating Job is cancelled. Assign a physical container to a Job and
+shipment during Customer preparation using its permanent barcode. The
+[location-inventory plan](TRANSPORTATION-KIT-LOCATION-INVENTORY-PLAN.md) records
+the workflow, reservation/reset rules, implementation work and acceptance gates.
+The correction is implemented locally, with focused verification tracked in the
+linked plan. It has not been deployed to production. The saved local walkthrough
+remains after successful simulated kit receipt, before container/tube assignment.
+
+## September 9 receipt feedback correction
+
+The local Customer walkthrough completed simulated receipt of the one TRANS-20
+kit for HS5Y7DB7. A cancelled predecessor container page still displayed the
+generic instruction to confirm arrival, despite showing **Kits received**.
+The delivery panel now renders only a specific server-provided preparation
+reason; absence of a preparation action is not treated as missing receipt.
+Existing receipt and preparation permissions are unchanged. Continue the local
+walkthrough using **Tubes awaiting containers** in the shipment selector; the
+cancelled predecessor remains available as history. See the
+[current run record](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md).
+
 ## September 9 production release and next acceptance step
 
 The shipping implementation is deployed on matching API/UI source `f06f4530`,

@@ -719,14 +719,14 @@ public sealed class PlatformLabServiceOrdersController(
     public async Task<LabServiceOrderDto> DecideCancellation(Guid orderId, Guid cancellationId, [FromBody] CancellationDecisionRequest request, CancellationToken cancellationToken)
     {
         var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        await SampleShippingPackingData.LockAsync(dbContext, $"sample-shipping:{orderId}", cancellationToken);
         var order = await ReadAsync(orderId, cancellationToken);
         EnsureVersion(order.Version, request.Version);
         var cancellation = await dbContext.OrderCancellationRequests.FirstOrDefaultAsync(item => item.Id == cancellationId
             && item.WorkflowType == OrderWorkflowTypes.LabService && item.WorkflowId == orderId, cancellationToken) ?? throw Missing();
         if (!Enum.TryParse<CancellationRequestStatus>(request.Status, true, out var decision) || decision == CancellationRequestStatus.Pending)
             throw Invalid("cancellation_decision_invalid", "A final cancellation decision is required.");
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(
-            IsolationLevel.Serializable, cancellationToken);
         var before = order.Status.ToString();
         if (decision == CancellationRequestStatus.Approved)
         {
@@ -753,6 +753,13 @@ public sealed class PlatformLabServiceOrdersController(
         }
         cancellation.Decide(decision, request.Reason, actor.Id, DateTime.UtcNow);
         Execute(() => order.ResolveCancellation(decision is CancellationRequestStatus.Approved, request.Reason, null));
+        if (decision == CancellationRequestStatus.Approved)
+        {
+            var shipmentIds = await dbContext.SampleShipments.Where(item => item.AuthorizationSourceId == order.Id
+                && item.OrganizationId == order.OrganizationId && item.DepartmentId == order.DepartmentId)
+                .Select(item => item.Id).ToArrayAsync(cancellationToken);
+            await TransportationKitInventory.ReleaseAsync(dbContext, shipmentIds, cancellationToken);
+        }
         Event(order, before, order.Status.ToString(), actor.Id, request.Reason);
         if (decision == CancellationRequestStatus.Approved)
         {

@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { usePhaenoSession } from '#/features/auth/session-context'
+import { LocationKitInventoryPanel } from '#/features/sample-shipping/LocationKitInventoryPanel'
 import { DeliveryLocationAddress } from './DeliveryLocationAddress'
 import { DeliveryLocationEditor } from './DeliveryLocationEditor'
 import { parseDeliveryLocationSearch, type DeliveryLocationSearch } from './delivery-location-navigation'
@@ -30,7 +31,7 @@ function useLocationContext() {
   const canManage = Boolean(canRead && (staff || membership?.isOrganizationAdmin || department?.isDepartmentAdmin))
   const departments = useQuery({ queryKey: ['organization-departments', organizationId, true], queryFn: () => listDepartments(organizationId), enabled: Boolean(canRead) })
   const organization = useQuery({ queryKey: ['organization', organizationId], queryFn: () => getOrganization(organizationId), enabled: Boolean(canRead && staff) })
-  return { scope: { organizationId, departmentId }, search: { ...search, organizationId, departmentId }, canRead: Boolean(canRead), canManage, isStaff: staff,
+  return { scope: { organizationId, departmentId }, search: { ...search, organizationId, departmentId }, canRead: Boolean(canRead), canManage, isStaff: staff, canViewStaffKitInventory: staff && Boolean(session?.capabilities?.canManageOrderConfiguration),
     departmentName: departments.data?.find(value => value.id === departmentId)?.name ?? department?.departmentName ?? 'this department',
     organizationName: organization.data?.name ?? membership?.organizationName ?? 'Customer',
   }
@@ -73,7 +74,8 @@ export function DeliveryLocationDetailPage({ locationId }: { locationId: string 
   async function saved(value: CustomerDeliveryLocation) { setEditing(null); setDeactivating(null); client.setQueryData(['customer-delivery-location', locationId, context.scope.organizationId, context.scope.departmentId], value); await Promise.all([client.invalidateQueries({ queryKey: ['customer-delivery-locations'] }), client.invalidateQueries({ queryKey: ['transportation-kit-supply'] }), query.refetch()]) }
   const deactivate = useMutation({ mutationFn: (value: CustomerDeliveryLocation) => deactivateCustomerDeliveryLocation(value.id, value.version), onSuccess: saved })
   return <main className="page-wrap space-y-5 px-4 py-8"><div className="flex flex-wrap gap-2"><Button asChild variant="ghost" size="sm"><Link to="/delivery-locations" search={context.search}><ArrowLeft aria-hidden="true" />Back to delivery locations</Link></Button>{context.search.shipmentId ? <LocationReturn search={context.search} /> : null}</div>
-    {!context.canRead ? <Unavailable /> : query.error ? <LocationError error={query.error} retry={() => void query.refetch()} /> : query.isLoading ? <p role="status">Loading delivery location…</p> : !location ? <Unavailable /> : <>
+    {!context.canRead ? <Unavailable /> : query.isLoading ? <p role="status">Loading delivery location…</p> : !location ? query.error ? <LocationError error={query.error} retry={() => void query.refetch()} /> : <Unavailable /> : <>
+      {query.error ? <LocationError error={query.error} retry={() => void query.refetch()} /> : null}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h1 className="text-2xl font-semibold wrap-anywhere">{location.label}</h1>{location.isDefault ? <Badge variant="outline">Default</Badge> : null}{!location.isActive ? <Badge variant="outline">Inactive</Badge> : null}</div><p className="mt-1 text-sm text-muted-foreground">{context.organizationName} · {context.departmentName}</p></div>
         {context.canManage && location.isActive ? <DropdownMenu>
@@ -88,13 +90,14 @@ export function DeliveryLocationDetailPage({ locationId }: { locationId: string 
         <CardHeader><CardTitle>Delivery address</CardTitle><CardDescription>{context.isStaff ? 'Used for transportation-kit deliveries to this customer department.' : 'Phaeno will send your department’s transportation kits to this address.'}</CardDescription></CardHeader>
         <CardContent><DeliveryLocationAddress location={location} /></CardContent>
       </Card>
+      {context.isStaff ? <Card><CardHeader><CardTitle>Transportation kits</CardTitle><CardDescription>Review delivery and inventory in Phaeno’s standard-kit records. The Customer acknowledges arrival at this location.</CardDescription></CardHeader>{context.canViewStaffKitInventory ? <CardContent><Button asChild variant="outline"><Link to="/lab-operations" search={{ section: 'receipt', kitSearch: location.label }} hash="standard-kits">View Phaeno kit inventory</Link></Button></CardContent> : null}</Card> : <LocationKitInventoryPanel locationId={location.id} organizationId={location.organizationId} departmentId={location.departmentId} canManage={context.canManage} />}
       {editing ? <DeliveryLocationEditor scope={context.scope} source={editing} departmentName={context.departmentName} onClose={() => setEditing(null)} onSaved={saved} /> : null}
     </>}
     <Dialog open={Boolean(deactivating)} onOpenChange={open => { if (!open && !deactivate.isPending) setDeactivating(null) }}><DialogContent><DialogHeader><DialogTitle>Deactivate delivery location</DialogTitle><DialogDescription>{deactivating?.label} will no longer be offered for new kit requests. Existing requests keep their saved delivery address.</DialogDescription></DialogHeader>{deactivate.error ? <LocationError error={deactivate.error} /> : null}<DialogFooter><Button variant="outline" disabled={deactivate.isPending} onClick={() => setDeactivating(null)}>Cancel</Button><Button variant="destructive" disabled={deactivate.isPending} onClick={() => { if (deactivating) deactivate.mutate(deactivating) }}>{deactivate.isPending ? 'Deactivating…' : 'Deactivate location'}</Button></DialogFooter></DialogContent></Dialog>
   </main>
 }
 function LocationReturn({ search }: { search: DeliveryLocationSearch }) {
-  return <div className="flex flex-wrap gap-2">{search.shipmentId ? <Button asChild size="sm" variant="ghost"><Link to="/sample-shipping/$shipmentId" params={{ shipmentId: search.shipmentId }} search={{ orderKits: true }}><ArrowLeft aria-hidden="true" />Return to shipment</Link></Button> : search.companyId ? <Button asChild size="sm" variant="ghost"><Link to="/crm/companies/$companyId" params={{ companyId: search.companyId }}><ArrowLeft aria-hidden="true" />Back to customer</Link></Button> : <Button asChild size="sm" variant="ghost"><Link to="/departments"><ArrowLeft aria-hidden="true" />Back to departments</Link></Button>}</div>
+  return <div className="flex flex-wrap gap-2">{search.shipmentId ? <Button asChild size="sm" variant="ghost"><Link to="/sample-shipping/$shipmentId" params={{ shipmentId: search.shipmentId }}><ArrowLeft aria-hidden="true" />Return to shipment</Link></Button> : search.companyId ? <Button asChild size="sm" variant="ghost"><Link to="/crm/companies/$companyId" params={{ companyId: search.companyId }}><ArrowLeft aria-hidden="true" />Back to customer</Link></Button> : <Button asChild size="sm" variant="ghost"><Link to="/departments"><ArrowLeft aria-hidden="true" />Back to departments</Link></Button>}</div>
 }
 function Unavailable() { return <Alert><AlertTitle>Delivery locations unavailable</AlertTitle><AlertDescription>Open a Customer department that you have permission to access.</AlertDescription></Alert> }
 function LocationError({ error, retry }: { error: unknown; retry?: () => void }) { return <Alert variant="destructive"><AlertTitle>Delivery location unavailable</AlertTitle><AlertDescription>{getOrderErrorMessage(error, 'Try again.')}{retry ? <Button className="ml-2" size="sm" variant="outline" onClick={retry}>Retry</Button> : null}</AlertDescription></Alert> }

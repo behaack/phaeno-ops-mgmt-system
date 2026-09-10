@@ -542,7 +542,7 @@
       "title": "Request laboratory services",
       "summary": "Review configured pricing or a manual quote, then finalize and ship the exact sample roster.",
       "order": 30,
-      "reviewedAt": "2026-09-08",
+      "reviewedAt": "2026-09-09",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -573,9 +573,9 @@
       "locale": "en-US",
       "slug": "sample-shipping",
       "title": "Prepare and ship samples",
-      "summary": "Order kits during preparation, reset container configuration before scanning, and track shipments and split-sample manifests.",
+      "summary": "Receive kits into location inventory, assign physical containers by barcode, and track tubes and split-sample manifests.",
       "order": 35,
-      "reviewedAt": "2026-09-08",
+      "reviewedAt": "2026-09-09",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -640,9 +640,9 @@
       "locale": "en-US",
       "slug": "data-and-organization",
       "title": "Data Library and organization access",
-      "summary": "Distinguish Job results from curated data and manage organization and Department access.",
+      "summary": "Distinguish Job results from curated data, manage organization access, and track transportation kits at delivery locations.",
       "order": 50,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-09",
       "navigationGroup": "data-and-access",
       "contentType": "guide",
       "topicIds": [
@@ -1593,9 +1593,9 @@
       "slug": "lab-receipt-accession",
       "parentSlug": "lab-operations",
       "title": "Receipt and accession",
-      "summary": "Prepare and dispatch standard kits, locate shipments by barcode, and record receipt and accession for each registered tube.",
+      "summary": "Dispatch barcoded containers to Customer locations, track inventory and assignments, and record receipt and accession for each registered tube.",
       "order": 51,
-      "reviewedAt": "2026-09-08",
+      "reviewedAt": "2026-09-09",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1809,7 +1809,7 @@
       "title": "Configuration and file retention",
       "summary": "Maintain reusable defaults, services, analyses, Partner rules, shipping container sizes and compatibility, and released-file retention.",
       "order": 60,
-      "reviewedAt": "2026-09-08",
+      "reviewedAt": "2026-09-09",
       "navigationGroup": "platform-operations",
       "contentType": "troubleshooting",
       "topicIds": [

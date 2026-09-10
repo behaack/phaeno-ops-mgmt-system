@@ -1,5 +1,7 @@
 import { api } from './client'
 import type { ContainerRecommendation, ShippingContainerDefinition } from './shipping-containers'
+import type { CustomerDeliveryLocation } from './customer-delivery-locations'
+import type { LocationStockKit } from './transportation-kit-requests'
 
 type ApiEnvelope<T> = {
   success: boolean
@@ -227,6 +229,7 @@ export type SampleShipmentWorkflow = {
   shipmentNumber: string
   organizationId: string
   organizationName: string
+  organizationKind?: string
   authorizationSource: 'ProspectTrialProject' | 'CustomerPromotionalOrder' | 'CustomerLabServiceOrder'
   authorizationSourceId: string
   authorizationReference: string
@@ -240,6 +243,8 @@ export type SampleShipmentWorkflow = {
   shippedAt: string | null
   version: number
   container?: { definitionId: string; sku: string; commonName: string; capacity: number } | null
+  departureDeliveryLocationId?: string | null
+  assignedContainer?: LocationStockKit | null
   isPackingPool?: boolean
   expectedTubeCount?: number
   receivedTubeCount?: number
@@ -264,6 +269,9 @@ export type SampleShipmentPacking = {
   containerTypes: ShippingContainerDefinition[]
   canPack: boolean
   blockedReason: string | null
+  deliveryLocationId?: string | null
+  locations?: CustomerDeliveryLocation[]
+  availableKits?: LocationStockKit[]
 }
 
 export type SampleContainerQuantity = { containerDefinitionId: string; quantity: number }
@@ -286,12 +294,13 @@ export async function resetSampleShipmentPacking(shipmentId: string, input: Pick
   return unwrap(response.data)
 }
 
-export async function getSampleShipmentPacking(shipmentId: string) {
-  const response = await api.get<ApiEnvelope<SampleShipmentPacking>>(`/sample-shipping/${shipmentId}/packing`)
+export async function getSampleShipmentPacking(shipmentId: string, deliveryLocationId?: string) {
+  const response = await api.get<ApiEnvelope<SampleShipmentPacking>>(`/sample-shipping/${shipmentId}/packing`, { params: { deliveryLocationId } })
   return unwrap(response.data)
 }
 
 export async function previewSampleShipmentPacking(shipmentId: string, input: {
+  deliveryLocationId?: string
   availability?: SampleContainerQuantity[]
   selection?: SampleContainerQuantity[]
 }) {
@@ -300,6 +309,8 @@ export async function previewSampleShipmentPacking(shipmentId: string, input: {
 }
 
 export async function confirmSampleShipmentPacking(shipmentId: string, input: {
+  deliveryLocationId?: string
+  stockKits?: { stockKitId: string; version: number }[]
   version: number
   containers: SampleContainerQuantity[]
   availability?: SampleContainerQuantity[]

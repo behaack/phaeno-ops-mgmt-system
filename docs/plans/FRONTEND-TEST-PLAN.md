@@ -1,5 +1,58 @@
 # Frontend Test Plan
 
+## Location inventory correction — September 9, 2026
+
+Customer implementation of the [revised workflow](TRANSPORTATION-KIT-LOCATION-INVENTORY-PLAN.md)
+passed **108/108 tests across nine focused component files**. Evidence:
+`artifacts/customer-location-tests.json`. Coverage includes independent location
+receipt, exact physical-container barcode claims, alternative kit sizes,
+preservation of drafts during inventory failures, assigned-container scan
+gating, Member history and separate retired-configuration navigation. Scoped
+lint passed for the Customer API/components/tests.
+
+Frozen physical-container barcode rendering and legacy packet compatibility
+passed **8/8** cases in `SampleShippingPacketPage.test.tsx` and
+`ShippingBarcode.test.tsx`. The packet reads the frozen manifest identity even
+when live workflow data names a different container; legacy packets do not gain
+an invented barcode. These counts are separate from the Customer checkpoint.
+
+The actual-component desktop/mobile browser suite passed **8/8**, including
+conflict recovery and failed inventory refresh with a retained barcode, as
+recorded in the [E2E plan](E2E-TEST-PLAN.md). Historical same-Job restriction
+assertions below are superseded, not current product requirements.
+
+Staff fulfillment passed **47 focused cases across five files**, including
+request/address dispatch, readiness, original dispatch reconciliation, barcode
+printing and refresh-failure draft preservation. Scoped lint passed. The full
+combined frontend TypeScript check passed after removing duplicate optional DTO
+fields introduced during integration.
+
+A final review found the shared delivery-location detail was mounting the
+Customer receipt panel for Phaeno staff. It now links staff to Phaeno inventory
+and never calls Customer inventory/receipt endpoints in that context. The two
+affected suites passed **13/13** including the added real-detail regression;
+their totals overlap the earlier Customer checkpoint. The supply status contract
+was also aligned to `RecordedForLocation`.
+
+Connected review found two final presentation issues: the location inventory
+return link unnecessarily opened a kit-order dialog, and the recommendation
+still described manually entered availability. Return now opens the shipment
+view, and the Customer summary explains that it uses received location stock.
+The affected delivery-location suite passed **10/10** and packing suite **29/29**;
+counts overlap the earlier checkpoints. No inventory writes were involved.
+
+## Completed kit receipt feedback — September 9, 2026
+
+The Customer delivery panel no longer invents a receipt instruction when a
+preparation action is unavailable without a server-provided reason. This fixes
+the contradictory **Kits received** / **Confirm which kits have arrived** state
+on an old cancelled container link, while retaining specific preparation
+restrictions and outstanding receipt actions. The existing 29
+`TransportationKitsPanel.test.tsx` cases passed. The connected Customer page
+shows the received TRANS-20 and the current 18-tube preparation pool; the
+[manual run record](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md)
+separates screenshots and user reports from full-case acceptance.
+
 ## Stock-kit dispatch and request synchronization — September 8, 2026
 
 Both staff dispatch entry points refresh stock, request, Job and Customer supply

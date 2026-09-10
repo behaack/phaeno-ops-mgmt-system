@@ -48,11 +48,11 @@ describe('SampleShippingDetailPage', () => {
     api.getKitSupply.mockResolvedValue({ shipmentId: shipment.id, jobId: shipment.authorizationSourceId, request: null, recordedStock: [], inventoryStatus: 'Unknown', canRequestKits: true, canPrepareSamples: true, preparationBlockedReason: 'Order kits for this Job first.', locations: [], recommendation: { containers: [] } })
   })
 
-  it('blocks Customer Lab container scanning without received Job kits even with a stale permissive flag', async () => {
+  it('blocks Customer Lab scanning until a physical container is assigned', async () => {
     api.getSampleShipment.mockResolvedValue({ ...shipment, authorizationSource: 'CustomerLabServiceOrder', status: 'Preparing', currentPacket: null, returnKit: null })
     renderPage()
     expect(await screen.findByRole('button', { name: 'Order transportation kits' })).toBeTruthy()
-    expect(screen.getByText('Order kits for this Job first.')).toBeTruthy()
+    expect(screen.getByText('Confirm a received container before scanning its tubes.')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Correct tube' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Review and confirm packet' })).toBeNull()
     expect(api.assignSampleTube).not.toHaveBeenCalled()

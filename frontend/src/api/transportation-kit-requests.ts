@@ -1,6 +1,15 @@
 import { api } from './client'
 import type { CustomerDeliveryLocation } from './customer-delivery-locations'
-import type { ContainerQuantity, ContainerRecommendation } from './shipping-containers'
+import type { ContainerQuantity, ContainerRecommendation, ShippingContainerDefinition } from './shipping-containers'
+
+export type LocationStockKit = {
+  stockKitId: string; kitNumber: string; container: { definitionId: string; sku: string; commonName: string; capacity: number }; version: number
+  status: 'OnTheWay' | 'Available' | 'Assigned' | 'InUse' | 'NeedsReview'; deliveryLocationId: string
+  requestId: string | null; originatingJobId: string | null; originatingJobNumber: string | null
+  assignedJobId: string | null; assignedJobNumber: string | null; reservedShipmentId: string | null; boundShipmentId: string | null
+  dispatchedAt: string | null; receivedAt: string | null
+}
+export type LocationKitInventory = { location: CustomerDeliveryLocation; kits: LocationStockKit[]; requests: TransportationKitRequest[]; canManageInventory: boolean }
 
 type Envelope<T> = { success: boolean; data: T; error: { message: string } | null }
 export type TransportationKitRequestLine = { id: string; containerDefinitionId: string; sku: string; commonName: string; tubeCapacity: number; requestedQuantity: number; dispatchedQuantity: number; receivedQuantity: number }
@@ -17,11 +26,22 @@ export type ShipmentKitSupply = {
   shipmentId: string; shipmentVersion: number; jobId: string; jobNumber: string; tubeCount: number
   deliveryLocationId: string | null; locations: CustomerDeliveryLocation[]; recommendation: ContainerRecommendation
   recordedStock: Array<{ containerDefinitionId: string; availableQuantity: number; inTransitQuantity: number }>
-  inventoryStatus: 'Unknown' | 'RecordedForThisJob'; request: TransportationKitRequest | null
+  inventoryStatus: 'Unknown' | 'RecordedForThisJob' | 'RecordedForLocation'; request: TransportationKitRequest | null
+  inventoryKits?: LocationStockKit[]; canManageInventory?: boolean
+  containerTypes?: ShippingContainerDefinition[]
   canRequestKits: boolean; requestBlockedReason: string | null; canPrepareSamples: boolean; preparationBlockedReason: string | null
 }
 export type TransportationKitOrderInput = { shipmentVersion: number; deliveryLocationId: string; deliveryLocationVersion: number; containers: ContainerQuantity[] }
 function read<T>(value: Envelope<T>): T { if (!value.success) throw new Error(value.error?.message ?? 'The transportation kit request could not be completed.'); return value.data }
+export async function getLocationKitInventory(locationId: string) {
+  return read((await api.get<Envelope<LocationKitInventory>>(`/customer-delivery-locations/${locationId}/transportation-kits`)).data)
+}
+export async function confirmLocationKitsReceived(locationId: string, input: { kits: { stockKitId: string; version: number }[] }, idempotencyKey: string) {
+  return read((await api.post<Envelope<LocationKitInventory>>(`/customer-delivery-locations/${locationId}/transportation-kits/received`, input, { headers: { 'Idempotency-Key': idempotencyKey } })).data)
+}
+export async function getTransportationKitRequest(id: string) {
+  return read((await api.get<Envelope<TransportationKitRequest>>(`/transportation-kit-requests/${id}`)).data)
+}
 export async function getShipmentKitSupply(shipmentId: string, deliveryLocationId?: string) {
   return read((await api.get<Envelope<ShipmentKitSupply>>(`/sample-shipping/${shipmentId}/kit-supply`, { params: { deliveryLocationId } })).data)
 }

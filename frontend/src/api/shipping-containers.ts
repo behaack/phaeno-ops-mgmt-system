@@ -89,7 +89,7 @@ export type ShippingStockKit = {
   tubeLotNumber: string | null
   shipperSupplierName: string
   shipperProductNumber: string
-  status: 'Preparing' | 'Fulfilled' | 'Bound'
+  status: 'Preparing' | 'OnTheWay' | 'Available' | 'Assigned' | 'InUse' | 'NeedsReview' | 'Fulfilled' | 'Bound'
   organizationId: string | null
   authorizationSourceId: string | null
   authorizationReference: string | null
@@ -97,11 +97,24 @@ export type ShippingStockKit = {
   outboundCarrier: string | null
   outboundTrackingNumber: string | null
   fulfilledAt: string | null
+  departmentId?: string | null
+  deliveryLocationId?: string | null
+  deliveryLocationLabel?: string | null
+  transportationKitRequestId?: string | null
+  originatingJobId?: string | null
+  originatingJobNumber?: string | null
+  customerReceivedAt?: string | null
+  reservedSampleShipmentId?: string | null
+  assignedJobId?: string | null
+  assignedJobNumber?: string | null
+  organizationName?: string | null
+  departmentName?: string | null
+  inventoryBlockedReason?: string | null
   version: number
   tubes: Array<{ id: string; supplierBarcode: string }>
 }
 export type ShippingStockKitWrite = Pick<ShippingStockKit, 'tubeSupplierName' | 'tubeProductNumber' | 'tubeLotNumber' | 'shipperSupplierName' | 'shipperProductNumber'> & { containerDefinitionId: string }
-export type ShippingStockKitDispatch = { shipmentId: string; version: number; outboundCarrier: string; outboundTrackingNumber: string; fulfilledAt: string }
+export type ShippingStockKitDispatch = { shipmentId?: string; requestId?: string; deliveryLocationId?: string; version: number; outboundCarrier: string; outboundTrackingNumber: string; fulfilledAt: string }
 const stockPath = '/platform/sample-shipping/stock-kits'
 export async function getShippingStockKits() { return read((await api.get<Envelope<ShippingStockKit[]>>(stockPath)).data) }
 export async function getShippingStockKit(id: string) { return read((await api.get<Envelope<ShippingStockKit>>(`${stockPath}/${id}`)).data) }

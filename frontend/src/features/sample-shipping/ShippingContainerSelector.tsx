@@ -36,6 +36,7 @@ export function ShippingContainerSelector({ shipment, action }: { shipment: Samp
     </select>
     {action}
     </div>
+    {shipment.status === 'Cancelled' && related.some(item => item.status !== 'Cancelled') ? <Button variant="outline" disabled={query.isFetching || Boolean(query.error)} onClick={() => switchContainer((related.find(item => item.status !== 'Cancelled' && item.isPackingPool) ?? related.find(item => item.status !== 'Cancelled'))!.id)}>Open current preparation</Button> : null}
     {query.error ? <p id="shipping-container-selector-error" role="alert" className="text-sm">Containers could not be loaded. <Button size="sm" variant="outline" onClick={() => void query.refetch()}>Retry containers</Button></p> : navigationFailed ? <p id="shipping-container-selector-error" role="alert" className="text-sm">That container could not be opened. Try selecting it again.</p> : null}
   </section>
 }

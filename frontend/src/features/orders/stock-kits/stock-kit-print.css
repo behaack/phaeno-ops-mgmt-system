@@ -1,0 +1,32 @@
+@media print {
+  body:has(.stock-kit-print-dialog) { background: white !important; height: auto !important; margin: 0 !important; overflow: visible !important; }
+  body:has(.stock-kit-print-dialog) > :not(.stock-kit-print-dialog) { display: none !important; }
+  .stock-kit-print-dialog {
+    position: static !important;
+    inset: auto !important;
+    translate: none !important;
+    transform: none !important;
+    display: block !important;
+    width: 100mm;
+    max-width: 100%;
+    max-height: none;
+    overflow: visible;
+    border: 0;
+    box-shadow: none;
+    background: white;
+    color: black;
+  }
+  .stock-kit-print-dialog > :not([data-slot="dialog-body"]) { display: none !important; }
+  .stock-kit-print-dialog [data-slot="dialog-body"] { display: block; padding: 0; overflow: visible; }
+  .stock-kit-print-dialog [data-slot="dialog-body"] > :not(.stock-kit-print-surface) { display: none !important; }
+  .stock-kit-print-surface {
+    width: 100mm;
+    max-width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 5mm;
+    border: 0;
+    break-inside: avoid;
+  }
+  .stock-kit-print-surface .shipping-barcode svg { height: 12mm; }
+}

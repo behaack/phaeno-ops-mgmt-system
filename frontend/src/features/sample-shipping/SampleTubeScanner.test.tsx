@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SampleShipmentWorkflow } from '#/api/sample-shipping'
 import { shippingFixture, shippingTube } from '#/test-helpers/sample-shipping'
+import { locationKit } from '#/test-helpers/location-kit-inventory'
 import { SampleTubeScanner } from './SampleTubeScanner'
 
 const mocks = vi.hoisted(() => ({ assign: vi.fn(), correct: vi.fn(), blocker: vi.fn(), activity: vi.fn() }))
@@ -22,6 +23,35 @@ function show(initial = shippingFixture, canManage = true) {
 }
 
 describe('guided tube scanning', () => {
+  it('requires an assigned physical container for Customer preparation and keeps Members history visible', () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const view = (assigned = false, canManage = true) => <QueryClientProvider client={client}><SampleTubeScanner shipment={{ ...shippingFixture, assignedContainer: assigned ? locationKit(20, { status: 'Assigned' }) : null }} requiresAssignedContainer canManage={canManage} onAssign={mocks.assign} onCorrect={mocks.correct} /></QueryClientProvider>
+    const rendered = render(view())
+    expect(screen.queryByRole('button', { name: 'Save scan' })).toBeNull()
+    expect(screen.getByText('Confirm a received container before scanning its tubes.')).toBeTruthy()
+    rendered.rerender(view(true, false))
+    expect(screen.getByText('KIT-20')).toBeTruthy()
+    expect(screen.getByText('RNA-1')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Save scan' })).toBeNull()
+    expect(mocks.assign).not.toHaveBeenCalled()
+  })
+  it('retains the scan during refresh failure, blocks saving, and keeps wrong-container rejection on the same tube', async () => {
+    const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } })
+    const view = (blocked: boolean) => <QueryClientProvider client={client}><SampleTubeScanner shipment={{ ...shippingFixture, assignedContainer: locationKit(20, { status: 'Assigned' }) }} requiresAssignedContainer writesBlocked={blocked} canManage onAssign={mocks.assign} onCorrect={mocks.correct} /></QueryClientProvider>
+    const rendered = render(view(false))
+    fireEvent.change(screen.getByLabelText(/Scan tube barcode/), { target: { value: 'OTHER-CONTAINER-TUBE' } })
+    rendered.rerender(view(true))
+    expect(screen.getByLabelText(/Scan tube barcode/)).toHaveProperty('value', 'OTHER-CONTAINER-TUBE')
+    expect(screen.getByRole('button', { name: 'Save scan' })).toHaveProperty('disabled', true)
+    fireEvent.submit(screen.getByLabelText(/Scan tube barcode/).closest('form')!)
+    await waitFor(() => expect(mocks.assign).not.toHaveBeenCalled())
+    mocks.assign.mockRejectedValue(new Error('This tube belongs to another container.'))
+    rendered.rerender(view(false))
+    fireEvent.click(screen.getByRole('button', { name: 'Save scan' }))
+    expect(await screen.findByText(/This tube belongs to another container/)).toBeTruthy()
+    expect(screen.getByLabelText(/Scan tube barcode/)).toHaveProperty('value', 'OTHER-CONTAINER-TUBE')
+    expect(screen.getByRole('heading', { name: 'RNA-1' })).toBeTruthy()
+  })
   it('saves before advancing, shows the exact permanent barcode and focuses the next tube', async () => {
     let resolve!: (shipment: SampleShipmentWorkflow) => void
     mocks.assign.mockImplementation(() => new Promise<SampleShipmentWorkflow>(done => { resolve = done }))

@@ -103,6 +103,11 @@ public sealed class SampleShippingWorkflowReader(PSeqOperationsDbContext dbConte
         CancellationToken cancellationToken)
     {
         if (shipments.Count == 0) return [];
+        var shipmentIds = shipments.Select(item => item.Id).ToArray();
+        var physicalStock = await dbContext.SampleShippingStockKits.AsNoTracking().Where(item =>
+            (item.ReservedSampleShipmentId.HasValue && shipmentIds.Contains(item.ReservedSampleShipmentId.Value))
+            || (item.BoundSampleShipmentId.HasValue && shipmentIds.Contains(item.BoundSampleShipmentId.Value))).ToArrayAsync(cancellationToken);
+        var containers = await TransportationKitInventory.MapAsync(dbContext, physicalStock, cancellationToken);
         var organizationIds = shipments.Select(item => item.OrganizationId).Distinct().ToList();
         var destinationIds = shipments.Select(item => item.DestinationId).Distinct().ToList();
         var sampleTypeIds = shipments.SelectMany(item => item.Items)
@@ -116,6 +121,8 @@ public sealed class SampleShippingWorkflowReader(PSeqOperationsDbContext dbConte
         var sampleTypes = await dbContext.SampleTypeDefinitions.AsNoTracking()
             .Where(item => sampleTypeIds.Contains(item.Id))
             .ToDictionaryAsync(item => item.Id, item => item.Name, cancellationToken);
+        var organizationKinds = await dbContext.Organizations.AsNoTracking().Where(item => organizationIds.Contains(item.Id))
+            .ToDictionaryAsync(item => item.Id, item => item.Kind.ToString(), cancellationToken);
 
         var authorizationIds = shipments.Select(item => item.AuthorizationSourceId).Distinct().ToArray();
         var related = await dbContext.SampleShipments.AsNoTracking().Include(item => item.Items).ThenInclude(item => item.TubeSlots)
@@ -237,7 +244,10 @@ public sealed class SampleShippingWorkflowReader(PSeqOperationsDbContext dbConte
                 SampleShippingPackingData.TubeCount(shipment),
                 shipment.Items.SelectMany(SampleShippingPackingData.TubeIds).Distinct().Count(Received),
                 family.Sum(SampleShippingPackingData.TubeCount),
-                family.SelectMany(value => value.Items).SelectMany(SampleShippingPackingData.TubeIds).Distinct().Count(Received));
+                family.SelectMany(value => value.Items).SelectMany(SampleShippingPackingData.TubeIds).Distinct().Count(Received),
+                shipment.DepartureDeliveryLocationId,
+                containers.SingleOrDefault(item => (item.BoundShipmentId ?? item.ReservedShipmentId) == shipment.Id),
+                organizationKinds.GetValueOrDefault(shipment.OrganizationId));
         }).ToList();
     }
 }
