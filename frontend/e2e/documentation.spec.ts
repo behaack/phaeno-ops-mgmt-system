@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 
 test('shows Customer guide navigation and denies a cross-audience route', async ({ page }) => {
   await selectOrganization(page, 'northline-labs')
-  await page.goto('/docs')
+  await openDocumentationFromUserMenu(page)
 
   await expect(
     page.getByRole('heading', { name: 'Customer documentation' }),
@@ -22,7 +22,7 @@ test('shows Customer guide navigation and denies a cross-audience route', async 
 
 test('shows Partner guides and renders MDX content', async ({ page }) => {
   await selectOrganization(page, 'genome-partner')
-  await page.goto('/docs')
+  await openDocumentationFromUserMenu(page)
 
   await expect(
     page.getByRole('heading', { name: 'Partner documentation' }),
@@ -38,7 +38,7 @@ test('shows Partner guides and renders MDX content', async ({ page }) => {
 
 test('shows only Phaeno guides in expandable topic groups', async ({ page }) => {
   await selectOrganization(page, 'phaeno')
-  await page.goto('/docs')
+  await openDocumentationFromUserMenu(page)
 
   await expect(
     page.getByRole('heading', { name: 'Phaeno documentation' }),
@@ -131,7 +131,7 @@ test('shows only Phaeno guides in expandable topic groups', async ({ page }) => 
 
 test('shows Prospect guides and denies a cross-audience route', async ({ page }) => {
   await selectOrganization(page, '7dbd474b-c73f-4df4-a9c9-9f1a72b5341b')
-  await page.goto('/docs')
+  await openDocumentationFromUserMenu(page)
 
   await expect(
     page.getByRole('heading', { name: 'Prospect documentation' }),
@@ -148,6 +148,24 @@ test('shows Prospect guides and denies a cross-audience route', async ({ page })
     page.getByRole('heading', { name: 'Documentation unavailable' }),
   ).toBeVisible()
 })
+
+async function openDocumentationFromUserMenu(page: import('@playwright/test').Page) {
+  await page.goto('/')
+  await expect(page.locator('header').getByRole('link', {
+    name: /^(Docs|Documentation)$/,
+  })).toHaveCount(0)
+  const trigger = page.getByRole('button', { name: 'Open user menu' })
+  await trigger.focus()
+  await trigger.press('Enter')
+  const documentation = page.getByRole('menuitem', {
+    name: 'Documentation', exact: true,
+  })
+  await expect(documentation).toHaveCount(1)
+  await expect(documentation).toBeVisible()
+  await documentation.focus()
+  await documentation.press('Enter')
+  await expect(page.getByRole('menu')).toHaveCount(0)
+}
 
 async function selectOrganization(
   page: import('@playwright/test').Page,

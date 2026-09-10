@@ -808,13 +808,18 @@ remain incomplete production-activation gates.
 - [x] `frontend/src/components/navigation.test.ts` - Samples & shipping appears
   as a standalone destination only for authorized Prospect contexts; Customer
   shipping remains inside Lab services and Partner contexts remain excluded.
-- [x] `frontend/src/components/navigation.test.ts` - Docs navigation is
-  available as a primary workspace destination in Prospect, Customer, Partner,
-  and Phaeno organization contexts.
-- [x] `frontend/src/components/navigation.test.ts` - frequent workspace routes,
-  including Docs, remain in the desktop toolbar while Data provisioning and
+- [x] `frontend/src/components/navigation.test.ts` - Documentation is available
+  under Resources in the user dropdown, and absent from primary workspace
+  navigation, in Prospect, Customer, Partner, and Phaeno organization contexts.
+- [x] `frontend/src/components/navigation.test.ts` - frequent workspace routes
+  remain in the desktop toolbar while Documentation, Data provisioning and
   other administration or resource routes move to the user dropdown without
   changing permission filtering; there is no separate Portal Accounts item.
+
+September 9 navigation update: these existing assertions were revised for the
+Documentation menu placement. Tests were not run for this change, per the
+repository's requested-checks policy.
+
 - [x] `frontend/src/components/application-branding.test.ts` - the selected
   Phaeno organization resolves to POMS, external organization kinds resolve to
   Portal, and the pre-selection fallback is Portal.

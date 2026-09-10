@@ -170,10 +170,10 @@ export const mainMenuItems: readonly MainMenuItem[] = [
       Boolean(session?.capabilities.canManageFileManagementConfiguration),
   },
   {
-    label: 'Docs',
+    label: 'Documentation',
     to: '/docs',
     icon: BookOpenText,
-    group: 'workspace',
+    group: 'resources',
     visibleWhen: (_session, context) =>
       isExternalOrganizationKind(context.selectedOrganizationKind) ||
       context.selectedOrganizationKind === 'Phaeno',

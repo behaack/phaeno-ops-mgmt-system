@@ -6,6 +6,18 @@ on 2026-09-05. Release preparation is recorded below.
 
 Updated: 2026-09-05.
 
+## September 9 navigation refinement
+
+The Product Owner requested moving Docs into the user dropdown for every user
+type and expanding the label to **Documentation**. It now uses the existing
+Resources group on desktop and mobile, with no duplicate primary-toolbar link.
+Prospect, Customer, Partner, and Phaeno contexts retain their existing `/docs`
+destination and audience eligibility. Success means one consistently named menu
+entry reaches the current audience's guides at both viewport sizes. Existing
+navigation and audience-journey assertions cover this placement; test execution
+is deferred unless requested. This refinement does not approve the pending
+transportation-kit production migration or switch the held release live.
+
 ## Product intent and decisions
 
 The Product Owner requested a new search system exclusively for Portal

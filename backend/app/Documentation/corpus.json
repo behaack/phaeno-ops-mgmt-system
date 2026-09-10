@@ -287,7 +287,7 @@
       "title": "Getting started",
       "summary": "Find Customer Jobs, samples, results, curated data, and retained Trials in the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-09-08",
+      "reviewedAt": "2026-09-09",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -306,7 +306,7 @@
       "publicationStatus": "published",
       "id": "customer/en-US/getting-started",
       "route": "/docs/customer/getting-started",
-      "contentHash": "f99bdc6b91717e37cbcd6143f42dfdb4377deb21bd31aef4b397528f90d6ec3a",
+      "contentHash": "b549dabaf97df345b75b4255c918b0c7997509401bd5d7099396de730cc8050b",
       "sections": [
         {
           "heading": "Getting started",
@@ -316,7 +316,7 @@
         {
           "heading": "Navigate the help center",
           "anchor": "navigate-the-help-center",
-          "text": "Guide navigation opens beneath the toolbar from the far-left edge of the screen. Its header identifies Documentation and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the tab. Choosing a guide closes an unpinned sidebar and displays the article."
+          "text": "Open the user dropdown menu in the toolbar and choose Documentation under Resources. This entry is available on both wide and narrow screens. Guide navigation opens beneath the toolbar from the far-left edge of the screen. Its header identifies Documentation and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the tab. Choosing a guide closes an unpinned sidebar and displays the article."
         },
         {
           "heading": "Confirm the current organization",
@@ -331,7 +331,7 @@
         {
           "heading": "Find your work",
           "anchor": "find-your-work",
-          "text": "Dashboard summarizes laboratory Jobs, assigned data, and any retained Trial history for the selected Department. Follow its links to the owning records; administrators also have a User management starting point. Lab services contains each job from request and pricing through sample preparation, shipping, laboratory progress, and results. Data Library contains Phaeno-curated packages assigned to your organization or Department. Each lab Job owns its Files and results section. For organization administrators, User management manages durable invitations, Member or Organization administrator roles, and membership deactivation. Docs opens these guides."
+          "text": "Dashboard summarizes laboratory Jobs, assigned data, and any retained Trial history for the selected Department. Follow its links to the owning records; administrators also have a User management starting point. Lab services contains each job from request and pricing through sample preparation, shipping, laboratory progress, and results. Data Library contains Phaeno-curated packages assigned to your organization or Department. Each lab Job owns its Files and results section. For organization administrators, User management manages durable invitations, Member or Organization administrator roles, and membership deactivation. Documentation in the user dropdown menu opens these guides."
         },
         {
           "heading": "Keep submissions safe",
@@ -351,7 +351,7 @@
         {
           "heading": "Search and browse guides",
           "anchor": "search-and-browse-guides",
-          "text": "Use Search documentation at the top of Docs to find a guide or a matching section. Results update after a short pause; use at least two characters. Try “sample shipping” or “results and billing”. Choose Filters to narrow results by Topic, Workflow, or Guide type. Clear filters removes those selections. Browse by topic opens guides for a topic without requiring search words. Workflow links and Related guides at the end of an article provide other ways to find relevant instructions. Select a result title to open its matching section. Your browser’s Back action restores the search and filters. Search uses the guides for your current organization; it does not include the public Website or operational records. A guide’s instructions do not change your account permissions. If no guides match, try fewer words or clear the filters. If search is temporarily unavailable, use Try again or Browse all guides. A documentation update may require Refresh page; guide browsing remains available while the update finishes."
+          "text": "Use Search documentation at the top of Documentation to find a guide or a matching section. Results update after a short pause; use at least two characters. Try “sample shipping” or “results and billing”. Choose Filters to narrow results by Topic, Workflow, or Guide type. Clear filters removes those selections. Browse by topic opens guides for a topic without requiring search words. Workflow links and Related guides at the end of an article provide other ways to find relevant instructions. Select a result title to open its matching section. Your browser’s Back action restores the search and filters. Search uses the guides for your current organization; it does not include the public Website or operational records. A guide’s instructions do not change your account permissions. If no guides match, try fewer words or clear the filters. If search is temporarily unavailable, use Try again or Browse all guides. A documentation update may require Refresh page; guide browsing remains available while the update finishes."
         }
       ]
     },
@@ -900,7 +900,7 @@
       "title": "Getting started",
       "summary": "Find reagent orders, Assembly requests, curated data, and retained Trials in the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-09-08",
+      "reviewedAt": "2026-09-09",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -919,7 +919,7 @@
       "publicationStatus": "published",
       "id": "partner/en-US/getting-started",
       "route": "/docs/partner/getting-started",
-      "contentHash": "628dac0236ddbf41ac72d8f70fb4f37f64ed47ff28aa598ef7a99f155e89c6c8",
+      "contentHash": "9b8b1bfa3fdc78ef90e8185845bcab2c10548ae4b6446d3e5a60fc1a77dc25a9",
       "sections": [
         {
           "heading": "Getting started",
@@ -929,7 +929,7 @@
         {
           "heading": "Navigate the help center",
           "anchor": "navigate-the-help-center",
-          "text": "Guide navigation opens beneath the toolbar from the far-left edge of the screen. Its header identifies Documentation and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the tab. Choosing a guide closes an unpinned sidebar and displays the article."
+          "text": "Open the user dropdown menu in the toolbar and choose Documentation under Resources. This entry is available on both wide and narrow screens. Guide navigation opens beneath the toolbar from the far-left edge of the screen. Its header identifies Documentation and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the tab. Choosing a guide closes an unpinned sidebar and displays the article."
         },
         {
           "heading": "Confirm the current Partner organization",
@@ -944,7 +944,7 @@
         {
           "heading": "Find your work",
           "anchor": "find-your-work",
-          "text": "Dashboard summarizes reagent orders and data-assembly requests, assigned data, and any retained Trial history for the selected Department. Follow its links to the owning records; administrators also have a User management starting point. PSeq Kit orders contains the organization’s available products, drafts, placed orders, substitutions, and shipments. Assembly cases contains included input revisions, processing status and outputs, plus historical standalone requests. Lab services contains Lab Jobs, configured offering reviews, samples, shipping and released PSeq results. See Partner Lab services. Data Library contains Phaeno-curated packages explicitly assigned to the Partner. For organization administrators, User management manages durable invitations, Member or Organization administrator roles, and membership deactivation. Docs opens the Partner guides."
+          "text": "Dashboard summarizes reagent orders and data-assembly requests, assigned data, and any retained Trial history for the selected Department. Follow its links to the owning records; administrators also have a User management starting point. PSeq Kit orders contains the organization’s available products, drafts, placed orders, substitutions, and shipments. Assembly cases contains included input revisions, processing status and outputs, plus historical standalone requests. Lab services contains Lab Jobs, configured offering reviews, samples, shipping and released PSeq results. See Partner Lab services. Data Library contains Phaeno-curated packages explicitly assigned to the Partner. For organization administrators, User management manages durable invitations, Member or Organization administrator roles, and membership deactivation. Documentation in the user dropdown menu opens the Partner guides."
         },
         {
           "heading": "Protect submitted data",
@@ -964,7 +964,7 @@
         {
           "heading": "Search and browse guides",
           "anchor": "search-and-browse-guides",
-          "text": "Use Search documentation at the top of Docs to find a guide or a matching section. Results update after a short pause; use at least two characters. Try “reagent orders” or “data assembly”. Choose Filters to narrow results by Topic, Workflow, or Guide type. Clear filters removes those selections. Browse by topic opens guides for a topic without requiring search words. Workflow links and Related guides at the end of an article provide other ways to find relevant instructions. Select a result title to open its matching section. Your browser’s Back action restores the search and filters. Search uses the guides for your current organization; it does not include the public Website or operational records. A guide’s instructions do not change your account permissions. If no guides match, try fewer words or clear the filters. If search is temporarily unavailable, use Try again or Browse all guides. A documentation update may require Refresh page; guide browsing remains available while the update finishes."
+          "text": "Use Search documentation at the top of Documentation to find a guide or a matching section. Results update after a short pause; use at least two characters. Try “reagent orders” or “data assembly”. Choose Filters to narrow results by Topic, Workflow, or Guide type. Clear filters removes those selections. Browse by topic opens guides for a topic without requiring search words. Workflow links and Related guides at the end of an article provide other ways to find relevant instructions. Select a result title to open its matching section. Your browser’s Back action restores the search and filters. Search uses the guides for your current organization; it does not include the public Website or operational records. A guide’s instructions do not change your account permissions. If no guides match, try fewer words or clear the filters. If search is temporarily unavailable, use Try again or Browse all guides. A documentation update may require Refresh page; guide browsing remains available while the update finishes."
         }
       ]
     },
@@ -2165,7 +2165,7 @@
       "title": "Phaeno operations guide",
       "summary": "Find each workflow, its owning workspace, reusable configuration, and the roles needed to act.",
       "order": 10,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-09",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -2184,7 +2184,7 @@
       "publicationStatus": "published",
       "id": "phaeno/getting-started",
       "route": "/docs/phaeno/getting-started",
-      "contentHash": "09bec4aa1d9d69dd9326c58bd183e0e5db968b4d3b8347d819fe7233497783ff",
+      "contentHash": "8b5ee615c256a25ab86a96554401fc5710bc970edfd9ffb79de2f59f0ef830d8",
       "sections": [
         {
           "heading": "Phaeno operations guide",
@@ -2194,7 +2194,7 @@
         {
           "heading": "Navigate workspaces and guides",
           "anchor": "navigate-workspaces-and-guides",
-          "text": "The POMS dashboard, CRM, Lab operations, Order operations, Data provisioning, and Documentation use a shared sidebar anchored beneath the toolbar at the far-left edge of the screen. Its header identifies the current workspace and, on wider screens, provides the pin or unpin icon. The sidebar is pinned by default, leaves a centered page in place when the left margin has room, and reflows the page only to prevent overlap. Pointer users can preview an unpinned sidebar by approaching the edge; keyboard and touch users open the same non-modal rail from the tab. Documentation automatically lists only the guides for the current organization, with an icon identifying each topic. CRM, Data provisioning, Order operations, and Laboratory operations expand to show an overview and detailed workflow guides. The group containing the current guide opens automatically; use its disclosure button to expand or collapse it."
+          "text": "Open the user dropdown menu in the toolbar and choose Documentation under Resources. This entry is available on both wide and narrow screens. The POMS dashboard, CRM, Lab operations, Order operations, Data provisioning, and Documentation use a shared sidebar anchored beneath the toolbar at the far-left edge of the screen. Its header identifies the current workspace and, on wider screens, provides the pin or unpin icon. The sidebar is pinned by default, leaves a centered page in place when the left margin has room, and reflows the page only to prevent overlap. Pointer users can preview an unpinned sidebar by approaching the edge; keyboard and touch users open the same non-modal rail from the tab. Documentation automatically lists only the guides for the current organization, with an icon identifying each topic. CRM, Data provisioning, Order operations, and Laboratory operations expand to show an overview and detailed workflow guides. The group containing the current guide opens automatically; use its disclosure button to expand or collapse it."
         },
         {
           "heading": "Work in the Phaeno context",
@@ -2209,7 +2209,7 @@
         {
           "heading": "Find platform work",
           "anchor": "find-platform-work",
-          "text": "Dashboard uses the sidebar to show one Order Operations, Lab Operations, Customer access, or Web Operations panel at a time. The selected panel stays in the page address, so refresh and browser Back retain your place. Counts summarize the work or intake represented by each panel. CRM opens the complete first-party relationship, sales, and customer-access workspace. Its sidebar groups Companies and Contacts under Relationships; Leads and Opportunities under Sales; Tasks and Requests under Follow-up; Reports under Insights; and configuration under Administration. The Company is the canonical Customer, Partner, or Prospect record. Its workspace separates Overview, People, Sales, Departments & services, Requests, and Activity so you can focus on one kind of work at a time. Creating a Company does not grant access. Use the central Requests queue to review Needs decision, carry out Approved / needs work, and review Completed / history; use People for Company contacts, Portal identities, invitations, and reviewed access, and Departments & services for departments, readiness, services, and retention. Online-access approval creates only the internal tenant scope required for sign-in; product and service entitlements are managed separately, and approval never creates another customer record or a user. Web Operations is a Phaeno-administrator view of active public Website intake. Use Mailing List, Demo Requests, or Email delivery to select one panel at a time. Mailing List shows the newest active signups and identifies technical-brief requests; use Unsubscribe and confirm to remove a contact from that active list. Demo Requests shows the inquiry contact, organization, email, and submitted description; use Mark complete and confirm after the inquiry has been handled. Completed or unsubscribed items leave their active list immediately, but the original Website intake and action audit remain in POMS. Each panel paginates independently in groups of 10; its footer paginator appears only when the list has more than one page. These actions preserve Website intake history; create a CRM Company or Company request separately when commercial follow-up requires one. User management is the durable employee-access workspace. Invite a named Phaeno user with their intended Platform administrator and additive laboratory roles, edit accepted users and their roles, deactivate or reactivate accounts, and manage pending invitations there. Data provisioning manages source samples, curated packages, grants, and governance. Order operations contains Order intake, Trial projects, PSeq kits, Assembly, Attention, Result release, Finance, and Legacy integrations. Start each Customer Job from Order intake → New Customer order. Company request decisions remain in CRM; receipt and laboratory execution remain in Lab operations. Lab operations contains Phaeno-only work orders for receipt, accession, protocol execution, materials and equipment, libraries and batches, outsourced sequencing, exceptions, and scientific approval. Its sidebar contains operational work rather than role administration. Access requires an effective Lab role or platform-administrator bootstrap access. Order configuration maintains reusable defaults, the Service catalog, Analyses, Sample shipping, PSeq kits, Assembly, and Legacy links. File retention sets policies for future releases. Trial configuration is reached from Trial projects and owns Trial approvers and deliverable definitions. Docs opens the guide set for the current organization."
+          "text": "Dashboard uses the sidebar to show one Order Operations, Lab Operations, Customer access, or Web Operations panel at a time. The selected panel stays in the page address, so refresh and browser Back retain your place. Counts summarize the work or intake represented by each panel. CRM opens the complete first-party relationship, sales, and customer-access workspace. Its sidebar groups Companies and Contacts under Relationships; Leads and Opportunities under Sales; Tasks and Requests under Follow-up; Reports under Insights; and configuration under Administration. The Company is the canonical Customer, Partner, or Prospect record. Its workspace separates Overview, People, Sales, Departments & services, Requests, and Activity so you can focus on one kind of work at a time. Creating a Company does not grant access. Use the central Requests queue to review Needs decision, carry out Approved / needs work, and review Completed / history; use People for Company contacts, Portal identities, invitations, and reviewed access, and Departments & services for departments, readiness, services, and retention. Online-access approval creates only the internal tenant scope required for sign-in; product and service entitlements are managed separately, and approval never creates another customer record or a user. Web Operations is a Phaeno-administrator view of active public Website intake. Use Mailing List, Demo Requests, or Email delivery to select one panel at a time. Mailing List shows the newest active signups and identifies technical-brief requests; use Unsubscribe and confirm to remove a contact from that active list. Demo Requests shows the inquiry contact, organization, email, and submitted description; use Mark complete and confirm after the inquiry has been handled. Completed or unsubscribed items leave their active list immediately, but the original Website intake and action audit remain in POMS. Each panel paginates independently in groups of 10; its footer paginator appears only when the list has more than one page. These actions preserve Website intake history; create a CRM Company or Company request separately when commercial follow-up requires one. User management is the durable employee-access workspace. Invite a named Phaeno user with their intended Platform administrator and additive laboratory roles, edit accepted users and their roles, deactivate or reactivate accounts, and manage pending invitations there. Data provisioning manages source samples, curated packages, grants, and governance. Order operations contains Order intake, Trial projects, PSeq kits, Assembly, Attention, Result release, Finance, and Legacy integrations. Start each Customer Job from Order intake → New Customer order. Company request decisions remain in CRM; receipt and laboratory execution remain in Lab operations. Lab operations contains Phaeno-only work orders for receipt, accession, protocol execution, materials and equipment, libraries and batches, outsourced sequencing, exceptions, and scientific approval. Its sidebar contains operational work rather than role administration. Access requires an effective Lab role or platform-administrator bootstrap access. Order configuration maintains reusable defaults, the Service catalog, Analyses, Sample shipping, PSeq kits, Assembly, and Legacy links. File retention sets policies for future releases. Trial configuration is reached from Trial projects and owns Trial approvers and deliverable definitions. Documentation in the user dropdown menu opens the guide set for the current organization."
         },
         {
           "heading": "Recover Website email",
@@ -2224,12 +2224,12 @@
         {
           "heading": "Support users safely",
           "anchor": "support-users-safely",
-          "text": "Confirm the selected organization, user membership, capability, record reference, and visible status before changing data. Ask the caller which action and status their own audience guide and workspace show. Phaeno Docs remains in the Phaeno audience; it does not offer an external-audience selector or impersonation. Do not ask users to share credentials or authentication tokens."
+          "text": "Confirm the selected organization, user membership, capability, record reference, and visible status before changing data. Ask the caller which action and status their own audience guide and workspace show. Phaeno Documentation remains in the Phaeno audience; it does not offer an external-audience selector or impersonation. Do not ask users to share credentials or authentication tokens."
         },
         {
           "heading": "Search and browse guides",
           "anchor": "search-and-browse-guides",
-          "text": "Use Search documentation at the top of Docs to find a guide or a matching section. Results update after a short pause; use at least two characters. Try “scientific approval” or “Department administrator”. Choose Filters to narrow results by Topic, Workflow, or Guide type. Clear filters removes those selections. Browse by topic opens guides for a topic without requiring search words. Workflow links and Related guides at the end of an article provide other ways to find relevant instructions. Select a result title to open its matching section. Your browser’s Back action restores the search and filters. Search uses the guides for your current organization; it does not include the public Website or operational records. A guide’s instructions do not change your account permissions. If no guides match, try fewer words or clear the filters. If search is temporarily unavailable, use Try again or Browse all guides. A documentation update may require Refresh page; guide browsing remains available while the update finishes."
+          "text": "Use Search documentation at the top of Documentation to find a guide or a matching section. Results update after a short pause; use at least two characters. Try “scientific approval” or “Department administrator”. Choose Filters to narrow results by Topic, Workflow, or Guide type. Clear filters removes those selections. Browse by topic opens guides for a topic without requiring search words. Workflow links and Related guides at the end of an article provide other ways to find relevant instructions. Select a result title to open its matching section. Your browser’s Back action restores the search and filters. Search uses the guides for your current organization; it does not include the public Website or operational records. A guide’s instructions do not change your account permissions. If no guides match, try fewer words or clear the filters. If search is temporarily unavailable, use Try again or Browse all guides. A documentation update may require Refresh page; guide browsing remains available while the update finishes."
         }
       ]
     },
@@ -3609,7 +3609,7 @@
       "title": "Getting started",
       "summary": "Find approved Trials, authorized shipping, curated data, and access for the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-09-08",
+      "reviewedAt": "2026-09-09",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -3628,7 +3628,7 @@
       "publicationStatus": "published",
       "id": "prospect/en-US/getting-started",
       "route": "/docs/prospect/getting-started",
-      "contentHash": "d01d6a438c321ddef246ea513e34a13d6df4be77189856804e6557f6829ff0d0",
+      "contentHash": "7b3c016f09073999e4340b2149ea6c4058d37fcf1f768a211c366960d9573fbf",
       "sections": [
         {
           "heading": "Getting started",
@@ -3638,7 +3638,7 @@
         {
           "heading": "Navigate the help center",
           "anchor": "navigate-the-help-center",
-          "text": "Guide navigation opens beneath the toolbar from the far-left edge of the screen. Its header identifies Documentation and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the tab. Choosing a guide closes an unpinned sidebar and displays the article."
+          "text": "Open the user dropdown menu in the toolbar and choose Documentation under Resources. This entry is available on both wide and narrow screens. Guide navigation opens beneath the toolbar from the far-left edge of the screen. Its header identifies Documentation and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the tab. Choosing a guide closes an unpinned sidebar and displays the article."
         },
         {
           "heading": "Confirm the current organization",
@@ -3653,7 +3653,7 @@
         {
           "heading": "Find your work",
           "anchor": "find-your-work",
-          "text": "Dashboard shows current Trial acceptance or sample-submission attention, Trial history, assigned data, authorized shipments, and administrator user access for the selected Department. Trial Projects opens approved scope, sample submission, laboratory progress, released results, and retention receipts. Read Trial Projects before accepting a scope. Data Library contains curated package versions explicitly granted to the Prospect. Samples & shipping contains authorized Trial Project return kits, tube matching, and shipping packets when Phaeno has prepared a shipment. For organization administrators, User management manages organization invitations, roles, and memberships. Docs opens these Prospect guides. Prospect organizations do not receive order or service workspaces. Phaeno alone can change the organization relationship after business approval."
+          "text": "Dashboard shows current Trial acceptance or sample-submission attention, Trial history, assigned data, authorized shipments, and administrator user access for the selected Department. Trial Projects opens approved scope, sample submission, laboratory progress, released results, and retention receipts. Read Trial Projects before accepting a scope. Data Library contains curated package versions explicitly granted to the Prospect. Samples & shipping contains authorized Trial Project return kits, tube matching, and shipping packets when Phaeno has prepared a shipment. For organization administrators, User management manages organization invitations, roles, and memberships. Documentation in the user dropdown menu opens these Prospect guides. Prospect organizations do not receive order or service workspaces. Phaeno alone can change the organization relationship after business approval."
         },
         {
           "heading": "Get help safely",
@@ -3663,7 +3663,7 @@
         {
           "heading": "Search and browse guides",
           "anchor": "search-and-browse-guides",
-          "text": "Use Search documentation at the top of Docs to find a guide or a matching section. Results update after a short pause; use at least two characters. Try “Trial acceptance” or “download grace”. Choose Filters to narrow results by Topic, Workflow, or Guide type. Clear filters removes those selections. Browse by topic opens guides for a topic without requiring search words. Workflow links and Related guides at the end of an article provide other ways to find relevant instructions. Select a result title to open its matching section. Your browser’s Back action restores the search and filters. Search uses the guides for your current organization; it does not include the public Website or operational records. A guide’s instructions do not change your account permissions. If no guides match, try fewer words or clear the filters. If search is temporarily unavailable, use Try again or Browse all guides. A documentation update may require Refresh page; guide browsing remains available while the update finishes."
+          "text": "Use Search documentation at the top of Documentation to find a guide or a matching section. Results update after a short pause; use at least two characters. Try “Trial acceptance” or “download grace”. Choose Filters to narrow results by Topic, Workflow, or Guide type. Clear filters removes those selections. Browse by topic opens guides for a topic without requiring search words. Workflow links and Related guides at the end of an article provide other ways to find relevant instructions. Select a result title to open its matching section. Your browser’s Back action restores the search and filters. Search uses the guides for your current organization; it does not include the public Website or operational records. A guide’s instructions do not change your account permissions. If no guides match, try fewer words or clear the filters. If search is temporarily unavailable, use Try again or Browse all guides. A documentation update may require Refresh page; guide browsing remains available while the update finishes."
         }
       ]
     },
@@ -3890,5 +3890,5 @@
       ]
     }
   ],
-  "corpusHash": "e1df452ece0e53261686b3534930aee555807caef499ac95b57c80772cd71ffc"
+  "corpusHash": "e1c2f0e9ca8c6f586f49cca6789bda7ef00c0f15e160d1a76b4f15b20e38d95d"
 }

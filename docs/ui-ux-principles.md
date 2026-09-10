@@ -39,7 +39,7 @@ Phaeno Portal is desktop-first and fully responsive.
 - Optimize complex creation, editing, analysis, and record management for laptops and desktops.
 - Keep tablets fully functional.
 - On phones, prioritize lookup, status review, notifications, and simple actions instead of compressing complex tables and long forms into unusable replicas.
-- Render navigation once per viewport: inline when wide and in the menu when narrow.
+- Render primary navigation once per viewport: inline when wide and in the menu when narrow. Documentation stays in the user dropdown menu at every screen size.
 - Preserve information and functionality during zoom and reflow. Allow two-dimensional scrolling only where the content genuinely requires it, such as a complex data table or scientific visualization.
 
 ## Information architecture and navigation
@@ -63,6 +63,7 @@ Use task-oriented entry points with record-centered workspaces.
   selector.
 - Work queues surface pending tasks, exceptions, recent activity, and important status changes.
 - Primary navigation uses recognizable business and scientific areas rather than technical modules.
+- Place **Documentation** under **Resources** in the user dropdown menu for Prospect, Customer, Partner, and Phaeno users at every screen size. It opens the guides for the current organization and retains the existing audience access rules.
 - Do not expose an organization-context search or act-as switcher in the user
   menu. Phaeno users manage external organizations through the Accounts
   workspace, while external users remain in the organization context

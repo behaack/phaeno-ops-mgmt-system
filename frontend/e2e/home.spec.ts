@@ -131,7 +131,6 @@ test('keeps workspace navigation concise and groups the user menu', async ({
     await expect(
       header.getByRole('link', { name: 'Order ops' }),
     ).toBeVisible()
-    await expect(header.getByRole('link', { name: 'Docs' })).toBeVisible()
     await expect(
       header.getByRole('link', { name: 'Portal accounts' }),
     ).toHaveCount(0)
@@ -140,13 +139,14 @@ test('keeps workspace navigation concise and groups the user menu', async ({
     ).toHaveCount(0)
   }
 
+  await expect(header.getByRole('link', { name: /^(Docs|Documentation)$/ })).toHaveCount(0)
+
   const userMenuTrigger = page.getByRole('button', { name: 'Open user menu' })
   await userMenuTrigger.focus()
   await userMenuTrigger.press('Enter')
 
   if (isMobile) {
     await expect(page.getByText('Workspace', { exact: true })).toBeVisible()
-    await expect(page.getByRole('menuitem', { name: 'Docs' })).toBeVisible()
   }
 
   await expect(page.getByText('Administration', { exact: true })).toBeVisible()
@@ -160,9 +160,9 @@ test('keeps workspace navigation concise and groups the user menu', async ({
   await expect(
     page.getByRole('menuitem', { name: 'Data provisioning' }),
   ).toBeVisible()
-  if (!isMobile) {
-    await expect(page.getByRole('menuitem', { name: 'Docs' })).toHaveCount(0)
-  }
+  await expect(page.getByRole('menuitem', { name: 'Documentation', exact: true })).toHaveCount(1)
+  await expect(page.getByRole('menuitem', { name: 'Documentation', exact: true })).toBeVisible()
+  await expect(page.getByRole('menuitem', { name: 'Docs', exact: true })).toHaveCount(0)
 
   const displayChoices = page.getByRole('menuitemradio')
   await expect(displayChoices).toHaveCount(3)

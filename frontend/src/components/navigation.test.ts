@@ -108,17 +108,24 @@ describe('order navigation permissions', () => {
 
 describe('documentation navigation permissions', () => {
   it.each<OrganizationKind>(['Prospect', 'Customer', 'Partner', 'Phaeno'])(
-    'shows Docs for an active %s organization context',
+    'places Documentation in user-menu resources for an active %s organization context',
     (kind) => {
       const session = createSession(kind, {})
 
-      const labels = getVisibleMainMenuItems(session, {
+      const context = {
         selectedOrganizationKind: kind,
         selectedMembership:
           kind === 'Phaeno' ? session.memberships[0] : session.memberships[1],
-      }).map((item) => item.label)
+      }
 
-      expect(labels).toContain('Docs')
+      expect(getVisibleMainMenuItems(session, context, 'resources')).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ label: 'Documentation', to: '/docs' }),
+        ]),
+      )
+      expect(getVisibleMainMenuItems(session, context, 'workspace').map(
+        (item) => item.to,
+      )).not.toContain('/docs')
     },
   )
 })
@@ -177,7 +184,7 @@ describe('navigation placement', () => {
       getVisibleMainMenuItems(session, context, 'workspace').map(
         (item) => item.label,
       ),
-    ).toEqual(['Dashboard', 'CRM', 'Order ops', 'Lab ops', 'Docs'])
+    ).toEqual(['Dashboard', 'CRM', 'Order ops', 'Lab ops'])
     expect(
       getVisibleMainMenuItems(session, context, 'administration').map(
         (item) => item.label,
@@ -187,7 +194,7 @@ describe('navigation placement', () => {
       getVisibleMainMenuItems(session, context, 'resources').map(
         (item) => item.label,
       ),
-    ).toEqual(['Data provisioning'])
+    ).toEqual(['Data provisioning', 'Documentation'])
   })
 })
 

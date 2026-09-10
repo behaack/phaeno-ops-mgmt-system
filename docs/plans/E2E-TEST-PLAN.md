@@ -1058,7 +1058,8 @@ the protected deployed-Preview acceptance above.
   services as separate starting points while omitting a peer sample-shipping
   card because shipping is part of each lab job.
 - [x] `frontend/e2e/home.spec.ts` - desktop keeps frequent workspace routes in
-  the toolbar, including Docs, while Data provisioning appears under Resources;
+  the toolbar, while Documentation and Data provisioning appear under Resources
+  in the user dropdown on desktop and mobile;
   desktop and mobile omit the retired Portal Accounts destination and expose
   the remaining grouped administration/resources in the user menu,
   and the three display choices share one compact row directly
@@ -1067,6 +1068,15 @@ the protected deployed-Preview acceptance above.
   the user menu omits organization-context search and act-as controls, Arrow
   Up/Down traverses the remaining menu items, Escape closes the menu, and the
   open menu locks background scrolling.
+- [x] `frontend/e2e/documentation.spec.ts` - Prospect, Customer, Partner, and
+  Phaeno guide journeys enter through the single Documentation user-menu item
+  using the keyboard, without a toolbar duplicate, before checking their existing
+  audience-specific content and cross-audience denial on desktop and mobile.
+
+September 9 navigation update: these existing scenarios were revised for the
+Documentation menu placement. Browser tests were not run for this change, per
+the repository's requested-checks policy.
+
 - [x] `frontend/e2e/home.spec.ts` - shared modal dialogs lock background page
   scrolling and restore it when closed.
 - [x] `frontend/e2e/data-provisioning.spec.ts` - Phaeno mock context exposes the

@@ -47,7 +47,7 @@ guides call the internal application **POMS**, meaning **Phaeno Operations
 Management System**. Do not use the retired shared UI name "Phaeno Portal" in
 audience-facing help.
 
-**Docs** is a primary menu-bar destination on wide screens and moves into the user menu with other primary navigation on narrow screens. The help shell places the current organization's guide navigation in the shared far-left sidebar beneath the primary toolbar. It does not provide an audience selector or a redundant audience heading. Each guide link has a topic-specific icon.
+**Documentation** is available under **Resources** in the user dropdown menu on every screen size for Prospect, Customer, Partner, and Phaeno users. The help shell places the current organization's guide navigation in the shared far-left sidebar beneath the primary toolbar. It does not provide an audience selector or a redundant audience heading. Each guide link has a topic-specific icon.
 
 Phaeno operational guides use one expandable level for **CRM**, **Data provisioning**, **Order operations**, and **Laboratory operations**. Each group contains an overview plus substantive workflow-specific guide pages. The active group opens automatically, and users may expand or collapse a group with its labeled disclosure button. Opening a group collapses the previously open group so only one documentation subject is expanded at a time. Do not add a second nesting level.
 
