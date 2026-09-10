@@ -41,11 +41,20 @@ variants, physical scanner/material qualification and full SHP-10 acceptance
 remain outstanding as detailed below. Retained URL evidence alone is not a passing
 print test.
 
-**Release status:** the owner requested commit, push and deployment of the latest
-changes while preserving this paused acceptance checkpoint. Release work is in
-progress; exact revisions, deployment outcomes and any outstanding release gates
-will be recorded after verification. A software release does not complete these
-remaining manual or physical acceptance checks.
+**Release status — completed, manual testing still paused:** matching API/UI
+source `11699745825e17f6f16d67be1a678e78ea3b3578` is deployed. API workflow
+`34431957400` succeeded at `2026-09-10T03:09:31Z`; UI deployment
+`dpl_DzwKyZ5yiw3Zb69B3nBzeF8ZXWGP` was promoted from that revision. The separately
+approved migration `20260909153238_AddTransportationKitLocationReservations` was
+applied after verified encrypted backup and isolated restoration/cleanup.
+Production API/Portal HTTP 200, database ping HTTP 204, matching prepared/live
+CSS/JS assets and empty 15-minute runtime-error/5xx queries passed. The
+[release record](../../plans/PORTAL-SHIPPING-RELEASE-2026-09-08.md#september-9-location-inventory-and-shipping-insert-release--completed)
+contains exact backup/image identities and source-check evidence. No automated
+suites were rerun for this release. The public Website and local synthetic
+records are unchanged. This deployment does not complete the outstanding print
+confirmation, physical output, paging or remaining manual acceptance checks, and
+does not update the independently running local Visual Studio API.
 
 ## Manual plan resumed — September 9
 

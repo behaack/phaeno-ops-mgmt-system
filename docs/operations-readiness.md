@@ -2,18 +2,24 @@
 
 ## Repository implementation and rollout evidence
 
-The [September 8 shipping release and overnight handoff](plans/PORTAL-SHIPPING-RELEASE-2026-09-08.md)
-records the completed matching API/UI production release at `f06f4530`, including
-four additive migrations with restore-verified encrypted backup and passing public
-health checks. Its deployment evidence is authoritative for that release's status.
-Signed-in and physical acceptance remain open. The local walkthrough has completed
-simulated Customer receipt and resumes at container preparation; local synthetic
-kit records are not production inventory. The September 9
-[location-inventory correction](plans/TRANSPORTATION-KIT-LOCATION-INVENTORY-PLAN.md)
-is implemented locally and is not included in that production release. Its
-additional reservation/departure-location migration requires separately approved
-shared/production application. New Customer shipping needs
-approved production catalog/compatibility and fulfillment setup after migration.
+The [September 9 location inventory and shipping insert release](plans/PORTAL-SHIPPING-RELEASE-2026-09-08.md#september-9-location-inventory-and-shipping-insert-release--completed)
+records matching API/UI production source `11699745825e17f6f16d67be1a678e78ea3b3578`,
+successful API workflow `34431957400` and promoted UI deployment
+`dpl_DzwKyZ5yiw3Zb69B3nBzeF8ZXWGP`. The separately approved migration
+`20260909153238_AddTransportationKitLocationReservations` was applied after
+encrypted-backup checksum and isolated restore/cleanup verification. API/Portal
+HTTP 200, database ping HTTP 204, the prepared candidate's exact live CSS/JS assets
+and empty 15-minute runtime-error/5xx queries were verified. Earlier release
+evidence is retained in that record.
+
+The [location-inventory correction](plans/TRANSPORTATION-KIT-LOCATION-INVENTORY-PLAN.md)
+is included in this production release. The local manual walkthrough remains
+[paused at 18 of 18 matched, ReadyToShip, with shipping insert revision 1](testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md#saved-pause-and-resume-checkpoint--september-9-2026).
+Print-dialog cancellation/recovery, physical printing, explicit tube-list paging
+and remaining manual acceptance are outstanding. Local synthetic kit records are
+not production inventory. Signed-in and physical production acceptance remain
+open; new Customer shipping still needs approved production catalog/compatibility
+and fulfillment setup.
 
 The repository implements first-party CRM, durable invitation delivery, derived
 readiness, internal order staging, business roles, dual-control review, governed

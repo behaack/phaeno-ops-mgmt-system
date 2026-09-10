@@ -8,8 +8,13 @@ after an originating Job is cancelled. Assign a physical container to a Job and
 shipment during Customer preparation using its permanent barcode. The
 [location-inventory plan](TRANSPORTATION-KIT-LOCATION-INVENTORY-PLAN.md) records
 the workflow, reservation/reset rules, implementation work and acceptance gates.
-The correction is implemented locally, with focused verification tracked in the
-linked plan. It has not been deployed to production. The local walkthrough has
+The correction is deployed on matching API/UI source
+`11699745825e17f6f16d67be1a678e78ea3b3578`, including the separately approved
+location-reservation migration. Exact workflow, backup/restore, deployment and
+runtime evidence is in the
+[September 9 release record](PORTAL-SHIPPING-RELEASE-2026-09-08.md#september-9-location-inventory-and-shipping-insert-release--completed).
+The local walkthrough remains paused at its saved 18/18 ReadyToShip checkpoint;
+deployment does not complete outstanding print or physical acceptance. It has
 completed container configuration and reset/reselection checks; user screenshots
 showed five saved synthetic tubes after duplicate rejection and recovery. The
 owner's screenshots confirm **18 of 18 matched**, the packet confirmation review
@@ -211,15 +216,16 @@ walkthrough using **Tubes awaiting containers** in the shipment selector; the
 cancelled predecessor remains available as history. See the
 [current run record](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md).
 
-## September 9 production release and next acceptance step
+## Earlier September 9 production release and acceptance step (historical)
 
-The shipping implementation is deployed on matching API/UI source `f06f4530`,
+The earlier shipping release deployed matching API/UI source `f06f4530`,
 including all four reviewed additive migrations. Backup/restore verification,
 deployment identities and passing public health checks are recorded in the
 [release record](PORTAL-SHIPPING-RELEASE-2026-09-08.md#september-9-production-release--completed).
 Production configuration and signed-in/physical acceptance remain separate from
-deployment. Resume the local HS5Y7DB7 walkthrough at Customer receipt for Request
-D20018AA; no test records or receipt acknowledgement were imported into production.
+deployment. At that checkpoint, the local HS5Y7DB7 walkthrough resumed at Customer
+receipt for Request D20018AA; no test records or receipt acknowledgement were
+imported into production. The saved pause checkpoint supersedes that older step.
 
 ## End-of-day acceptance handoff — September 8, 2026
 

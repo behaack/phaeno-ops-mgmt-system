@@ -1,6 +1,48 @@
 # Portal shipping release and overnight handoff — September 8, 2026
 
-## Scope and current release status
+## September 9 location inventory and shipping insert release — completed
+
+The Product Owner requested commit, push and deployment of the latest changes,
+then separately approved the production location-reservation migration. API and
+Portal UI are deployed from the same source
+`11699745825e17f6f16d67be1a678e78ea3b3578`. This release includes Customer location
+inventory and physical-container reservations, Documentation in the user menu,
+compact tube scanning, grouped shipment actions, corrected reset explanations,
+and same-page **Print shipping insert**. The public Website is unchanged.
+
+| Release evidence | Verified result |
+| --- | --- |
+| API deployment | [Deploy Portal Green, run 34431957400](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/34431957400) succeeded; completed `2026-09-10T03:09:31Z` (September 9 PDT). |
+| API source/image | `11699745825e17f6f16d67be1a678e78ea3b3578`; image `sha-11699745825e-run-34431957400-1`. |
+| Applied migration | Exactly `20260909153238_AddTransportationKitLocationReservations`; additive reservation/departure-location fields, indexes and foreign keys. |
+| Pre-migration backup | Encrypted backup `pre-migration-20260910T030907Z-11699745825e`; encrypted dump and key checksums passed. |
+| Restore verification | Isolated restoration passed for four schemas, migration history and row counts; cleanup passed. |
+| Portal UI | Vercel deployment `dpl_DzwKyZ5yiw3Zb69B3nBzeF8ZXWGP` promoted to production from the same source revision. |
+| Runtime probes | Production API HTTP 200; database ping HTTP 204; Portal HTTP 200. |
+| Portal assets | `/assets/styles-Cjj2IAbW.css` and `/assets/index-CoYON4Fm.js` both returned HTTP 200 and match the prepared candidate's exact filenames. |
+| Bounded runtime review | Fifteen-minute deployment runtime-error and 5xx queries each returned no entries. |
+| Source/documentation checks | Backend Release build: zero warnings/errors; full frontend TypeScript and scoped ESLint passed; 56-guide documentation corpus generation/check passed, version `a2fe065e0d6d`. No automated suites were rerun for this release. |
+
+The deployed application source remains the exact `11699745825e17f6f16d67be1a678e78ea3b3578`
+revision. A subsequent documentation-only release-evidence commit records these
+results; it does not change the deployed application revision or require another
+application deployment.
+
+The [saved local acceptance checkpoint](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md#saved-pause-and-resume-checkpoint--september-9-2026)
+remains paused: **HS5Y7DB7**, shipment **SHP-20260910-9BD8FCFC610**, **ReadyToShip**,
+**18 of 18 tubes matched**, shipping insert **SP-20260910-TJHAQYMGKQ, revision 1**.
+The next step is the outstanding print-dialog cancellation/same-page recovery
+confirmation, not another scan, issuance, receipt or dispatch. Physical output,
+full print review, explicit tube-list paging and remaining manual variants are
+not completed by deployment. Local synthetic records remain local; production
+catalog/compatibility and fulfillment setup and signed-in/physical acceptance
+retain their separate gates. The independently running local Visual Studio API
+is not updated by this production release.
+
+The sections below retain the earlier release and local handoff evidence. Their
+older starting points do not replace the saved paused checkpoint above.
+
+## September 8 release scope and status (historical)
 
 The Product Owner requested that the day's documentation be completed and all
 changes committed, pushed and deployed. The complete release includes previously

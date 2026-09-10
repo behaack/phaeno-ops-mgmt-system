@@ -43,13 +43,18 @@ This verifies rendering, not physical label/scanner qualification.
 
 ## September 9 production release boundary
 
-Matching API/UI source `f06f4530` is deployed with the four reviewed migrations.
-The [release record](PORTAL-SHIPPING-RELEASE-2026-09-08.md#september-9-production-release--completed)
-contains backup/restore verification, public health/asset checks and empty bounded
-runtime-error/5xx scans. Connected production browser smoke was unavailable; these
-observations do not complete authenticated or physical acceptance. The existing
-local walkthrough has separate receipt/preparation acceptance checkpoints, and
-no local synthetic data was copied to production.
+Matching API/UI source `11699745825e17f6f16d67be1a678e78ea3b3578` is deployed after
+the separately approved location-reservation migration. The
+[release record](PORTAL-SHIPPING-RELEASE-2026-09-08.md#september-9-location-inventory-and-shipping-insert-release--completed)
+records successful API workflow `34431957400`, promoted UI deployment
+`dpl_DzwKyZ5yiw3Zb69B3nBzeF8ZXWGP`, verified encrypted backup/isolated restoration,
+API/Portal HTTP 200, database ping HTTP 204, matching prepared/live CSS/JS assets
+and empty 15-minute runtime-error/5xx queries. These checks do not complete authenticated or physical acceptance, and
+no automated suite was rerun for this release. The existing local walkthrough
+remains paused at ReadyToShip, 18/18 matches and insert revision 1, with print
+cancellation/recovery, physical output, paging and other variants outstanding.
+No local synthetic data was copied to production. Earlier `f06f4530` deployment
+evidence remains historical in the same release record.
 
 ## September 9 connected walkthrough resume
 

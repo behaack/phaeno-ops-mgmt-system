@@ -2,11 +2,17 @@
 
 ## Status and decision — September 9, 2026
 
-Product direction confirmed and implemented in the local working tree. This plan
-supersedes the September 8 requirement that Customer containers must have been
-ordered and fulfilled for the same Lab Job. The currently deployed implementation
-still enforces that older requirement. Local verification and migration evidence
-are recorded below; this correction has not been deployed to production.
+Product direction is implemented and deployed to production on matching API/UI
+source `11699745825e17f6f16d67be1a678e78ea3b3578`. This plan supersedes the September
+8 requirement that Customer containers must have been ordered and fulfilled for
+the same Lab Job. The separately approved production migration
+`20260909153238_AddTransportationKitLocationReservations` was applied by successful
+API workflow `34431957400`; UI deployment `dpl_DzwKyZ5yiw3Zb69B3nBzeF8ZXWGP` was
+promoted from the same revision. Backup/restore, migration, health and bounded
+runtime-review evidence is in the
+[release record](PORTAL-SHIPPING-RELEASE-2026-09-08.md#september-9-location-inventory-and-shipping-insert-release--completed).
+The local manual walkthrough remains paused at 18/18 with its issued insert;
+physical and remaining manual acceptance are separate from deployment.
 
 The owner identified the failure in that model: cancelling the originating Job
 must not strand physical containers already delivered to the Customer. Phaeno
@@ -125,7 +131,9 @@ not implemented by this manual testing checkpoint.
   claim must retain the Customer draft and explain which container changed.
 - Add reviewed EF migrations, update the complete ERD and verify/apply locally
   during authorized implementation. Shared/production migrations require separate
-  explicit approval. Do not alter the running production schema for this plan.
+  explicit approval. Production schema changes were excluded from the original
+  local implementation checkpoint; the separately approved application is now
+  recorded in the release evidence above.
 
 ### Customer and staff screens
 
@@ -178,7 +186,7 @@ Track focused backend, frontend and manual/E2E results in their living plans.
 Production release checks, synthetic acceptance and physical scanner/material
 qualification remain separate evidence.
 
-## Implementation and verification checkpoint — September 9
+## Local implementation and verification checkpoint — September 9 (historical)
 
 Implemented location-owned inventory and receipt; departure-location selection;
 atomic physical-container reservations; first-tube binding; reset and effective
