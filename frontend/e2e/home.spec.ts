@@ -79,9 +79,11 @@ test('uses Portal branding in an external organization context', async ({ page }
   await expect(
     page.getByText(/Copyright © \d{4} Phaeno Inc\./),
   ).toBeVisible()
-  await expect(
-    page.getByText('Support and policy links coming soon.'),
-  ).toBeVisible()
+  const documentationLink = page.getByRole('contentinfo').getByRole('link', {
+    name: 'Help and documentation',
+  })
+  await expect(documentationLink).toBeVisible()
+  await expect(documentationLink).toHaveAttribute('href', '/docs')
   await expect(
     page.getByText('TanStack Start, Query, Shadcn, Axios'),
   ).toHaveCount(0)
@@ -262,6 +264,7 @@ test('keeps workspace navigation concise and groups the user menu', async ({
   await darkThemeChoice.focus()
   await darkThemeChoice.press('Escape')
   await expect(page.getByRole('menu')).toHaveCount(0)
+  await expect(userMenuTrigger).toBeFocused()
   await expect
     .poll(() =>
       page.locator('body').evaluate((body) => getComputedStyle(body).overflow),

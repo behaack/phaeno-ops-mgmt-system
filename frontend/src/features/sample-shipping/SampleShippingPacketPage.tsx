@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { ArrowLeft, Printer } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 
 import { getSampleShippingPacket } from '#/api/sample-shipping'
 import { apiErrorMessage } from '#/api/organization-management'
@@ -22,19 +23,40 @@ type FrozenSample = {
   tubes: Array<{ barcode: string; ordinal: string; quantity: string; quantityUnit: string }>
 }
 
-export function SampleShippingPacketPage({ shipmentId }: { shipmentId: string }) {
+export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAutoPrint, onFailure, embedded = false }: { shipmentId: string; autoPrint?: boolean; onAutoPrint?: () => void; onFailure?: (message: string) => void; embedded?: boolean }) {
+  const autoPrintHandled = useRef(false)
   const query = useQuery({
     queryKey: ['sample-shipping-packet', shipmentId],
     queryFn: () => getSampleShippingPacket(shipmentId),
     refetchOnMount: 'always',
+    refetchOnWindowFocus: !embedded,
+    refetchOnReconnect: !embedded,
   })
+  const currentPacket = query.data?.shipment.currentPacket
+  const printable = !query.isLoading && !query.isFetching && query.fetchStatus !== 'paused' && !query.error && Boolean(currentPacket && !currentPacket.isVoided)
+  const failure = query.fetchStatus === 'paused'
+    ? 'Reconnect so the Portal can check the current shipping insert before printing.'
+    : !query.isLoading && !query.isFetching
+      ? query.error ? apiErrorMessage(query.error) : !currentPacket || currentPacket.isVoided ? 'The shipping insert is no longer current. Refresh the shipment and try again.' : null
+      : null
+  useEffect(() => { if (failure) onFailure?.(failure) }, [failure, onFailure])
+  useEffect(() => {
+    if (!autoPrint) { autoPrintHandled.current = false; return }
+    if (!printable || autoPrintHandled.current) return
+    const frame = window.requestAnimationFrame(() => {
+      autoPrintHandled.current = true
+      if (onAutoPrint) onAutoPrint()
+      else window.print()
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [autoPrint, onAutoPrint, printable])
 
   if (query.isLoading || query.isFetching) {
-    return <main className="page-wrap space-y-5 px-4 py-8"><PacketReturnLink shipmentId={shipmentId} /><p role="status">Checking the current shipping packet…</p></main>
+    return <main className="page-wrap space-y-5 px-4 py-8"><PacketReturnLink shipmentId={shipmentId} /><p role="status">Checking the current shipping insert…</p></main>
   }
 
   if (query.fetchStatus === 'paused') {
-    return <main className="page-wrap space-y-5 px-4 py-8"><PacketReturnLink shipmentId={shipmentId} /><Alert><AlertTitle>Connection needed</AlertTitle><AlertDescription>Reconnect so the Portal can check the current packet revision before printing.</AlertDescription></Alert></main>
+    return <main className="page-wrap space-y-5 px-4 py-8"><PacketReturnLink shipmentId={shipmentId} /><Alert><AlertTitle>Connection needed</AlertTitle><AlertDescription>Reconnect so the Portal can check the current shipping insert revision before printing.</AlertDescription></Alert></main>
   }
 
   if (query.error || !query.data) {
@@ -42,9 +64,9 @@ export function SampleShippingPacketPage({ shipmentId }: { shipmentId: string })
       <main className="page-wrap space-y-5 px-4 py-8">
         <PacketReturnLink shipmentId={shipmentId} />
         <Alert variant="destructive">
-          <AlertTitle>Packet unavailable</AlertTitle>
+          <AlertTitle>Shipping insert unavailable</AlertTitle>
           <AlertDescription>
-            {query.error ? apiErrorMessage(query.error) : 'The packet was not found.'}
+            {query.error ? apiErrorMessage(query.error) : 'The shipping insert was not found.'}
           </AlertDescription>
         </Alert>
         <Button variant="outline" onClick={() => void query.refetch()}>Try again</Button>
@@ -54,7 +76,7 @@ export function SampleShippingPacketPage({ shipmentId }: { shipmentId: string })
 
   const { shipment } = query.data
   const packet = shipment.currentPacket
-  if (!packet || packet.isVoided) return <main className="page-wrap space-y-5 px-4 py-8"><PacketReturnLink shipmentId={shipmentId} /><Alert><AlertTitle>Packet no longer current</AlertTitle><AlertDescription>Return to the shipment to review its current contents and packet revision before printing.</AlertDescription></Alert><Button variant="outline" onClick={() => void query.refetch()}>Try again</Button></main>
+  if (!packet || packet.isVoided) return <main className="page-wrap space-y-5 px-4 py-8"><PacketReturnLink shipmentId={shipmentId} /><Alert><AlertTitle>Shipping insert no longer current</AlertTitle><AlertDescription>Return to the shipment to review its current contents and shipping insert revision before printing.</AlertDescription></Alert><Button variant="outline" onClick={() => void query.refetch()}>Try again</Button></main>
   const destination = parseObject(query.data.destinationSnapshotJson)
   const instructions = parseObject(query.data.instructionSnapshotJson)
   const manifest = parseObject(query.data.manifestSnapshotJson)
@@ -62,22 +84,22 @@ export function SampleShippingPacketPage({ shipmentId }: { shipmentId: string })
 
   return (
     <main className="shipping-packet-page page-wrap px-4 py-8 print:max-w-none print:px-0 print:py-0">
-      <style>{`@media print { @page { margin: 10mm 12mm 15mm !important; @bottom-left { content: ${JSON.stringify(`Packet ${packet.packetNumber} · Barcode ${packet.barcode} · Shipment ${shipment.shipmentNumber}`)}; font: 8pt Arial, sans-serif; color: black; } } }`}</style>
-      <div className="mb-6 flex items-center justify-between gap-3 print:hidden">
+      <style>{`@media print { @page { margin: 10mm 12mm 15mm !important; @bottom-left { content: ${JSON.stringify(`Shipping insert ${packet.packetNumber} · Barcode ${packet.barcode} · Shipment ${shipment.shipmentNumber}`)}; font: 8pt Arial, sans-serif; color: black; } } }`}</style>
+      {!embedded ? <div className="mb-6 flex items-center justify-between gap-3 print:hidden">
         <PacketReturnLink shipmentId={shipmentId} />
         <Button onClick={() => window.print()}>
           <Printer data-icon="inline-start" />
-          Print packet
+          Print shipping insert
         </Button>
-      </div>
+      </div> : null}
 
       <article className="shipping-packet mx-auto max-w-4xl space-y-8 bg-background pb-16 text-foreground print:max-w-none print:bg-white print:text-black">
         <header className="packet-header break-inside-avoid border-b pb-5">
-          <div className="flex items-center justify-between gap-4"><img src="/phaeno124x40.webp" alt="Phaeno" width={124} height={40} /><p className="text-sm font-medium uppercase tracking-wide">Sample shipment</p></div>
+          <div className="flex items-center justify-between gap-4"><img src="/phaeno124x40.webp" alt="Phaeno" width={124} height={40} /><p className="text-sm font-medium uppercase tracking-wide">Shipping insert</p></div>
           <h1 className="mt-2 text-3xl font-semibold">{packet?.packetNumber}</h1>
           {packet ? (
             <div className="packet-revision mt-4 max-w-2xl">
-              <ShippingBarcode value={packet.barcode} label="Packet revision barcode" />
+              <ShippingBarcode value={packet.barcode} label="Shipping insert revision barcode" />
             </div>
           ) : null}
           <p className="mt-3 text-sm">
@@ -112,7 +134,7 @@ export function SampleShippingPacketPage({ shipmentId }: { shipmentId: string })
         <section className="packet-instructions">
           <h2 className="text-xl font-semibold">Preparation, packing, and delivery instructions</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Follow every instruction for each sample type in this packet. Contact Phaeno before shipping if any requirement cannot be met.
+            Follow every instruction for each sample type in this shipping insert. Contact Phaeno before shipping if any requirement cannot be met.
           </p>
           <div className="mt-5 space-y-6">
             {asObjects(instructions.samples).map((entry, index) => (
@@ -122,9 +144,9 @@ export function SampleShippingPacketPage({ shipmentId }: { shipmentId: string })
         </section>
 
         <section className="packet-manifest">
-          <h2 className="text-xl font-semibold">Submission manifest and retained tube crosswalk</h2>
+          <h2 className="text-xl font-semibold">Sample and tube list</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Keep a copy for your records and place this manifest inside the package.
+            Keep a copy for your records and place this shipping insert inside the package.
           </p>
           <div className="packet-samples mt-4 space-y-5">{frozenSamples.map(item => <article key={item.id} className="packet-sample rounded-md border p-4">
             <header className="break-inside-avoid space-y-2"><h3 className="wrap-anywhere font-semibold">{item.customerSampleId}</h3><p className="text-sm">{item.sampleName}{item.sampleTypeName ? ` · ${item.sampleTypeName}` : ''}</p><p className="text-sm font-medium">{item.tubes.length} of {item.totalTubeCount} tubes in this shipment</p>{item.sampleBarcode ? <div className="max-w-2xl"><ShippingBarcode value={item.sampleBarcode} label="Sample barcode" /></div> : null}</header>
@@ -137,12 +159,12 @@ export function SampleShippingPacketPage({ shipmentId }: { shipmentId: string })
         <section className="packet-privacy break-inside-avoid border p-4 text-sm">
           <h2 className="font-semibold">Identity and privacy</h2>
           <p className="mt-2">
-            The order, shipment and sample barcodes identify their records. The packet barcode identifies this confirmed revision. The container barcode identifies the physical container, and each permanent tube barcode identifies one physical tube. Scanning an identifier does not confirm receipt of material. Do not place patient names, dates of birth, medical record numbers, or other PHI on the packet or tubes.
+            The order, shipment and sample barcodes identify their records. The shipping insert barcode identifies this confirmed revision. The container barcode identifies the physical container, and each permanent tube barcode identifies one physical tube. Scanning an identifier does not confirm receipt of material. Do not place patient names, dates of birth, medical record numbers, or other PHI on the shipping insert or tubes.
           </p>
         </section>
 
         <footer className="border-t bg-background pt-4 text-xs print:fixed print:inset-x-0 print:bottom-0 print:px-4 print:pb-2">
-          <p>Packet {packet?.packetNumber} · Barcode {packet?.barcode} · Shipment {shipment.shipmentNumber}</p>
+          <p>Shipping insert {packet?.packetNumber} · Barcode {packet?.barcode} · Shipment {shipment.shipmentNumber}</p>
         </footer>
       </article>
     </main>

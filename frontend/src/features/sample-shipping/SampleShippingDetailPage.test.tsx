@@ -22,6 +22,9 @@ const api = vi.hoisted(() => ({
   getKitSupply: vi.fn(),
 }))
 vi.mock('#/api/transportation-kit-requests', () => ({ getShipmentKitSupply: api.getKitSupply, orderTransportationKits: vi.fn(), confirmTransportationKitsReceived: vi.fn(), cancelTransportationKitRequest: vi.fn() }))
+vi.mock('./ShippingInsertPrintFrame', () => ({
+  ShippingInsertPrintFrame: ({ onFinished, onFailure }: { onFinished: () => void; onFailure: (message: string) => void }) => <div data-testid="shipping-insert-print-frame"><button onClick={onFinished}>Close print dialog</button><button onClick={() => onFailure('Current shipping insert unavailable.')}>Fail print preparation</button></div>,
+}))
 
 vi.mock('@tanstack/react-router', () => ({
   useBlocker: vi.fn(),
@@ -54,7 +57,7 @@ describe('SampleShippingDetailPage', () => {
     expect(await screen.findByRole('button', { name: 'Order transportation kits' })).toBeTruthy()
     expect(screen.getByText('Confirm a received container before scanning its tubes.')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Correct tube' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Review and confirm packet' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Review and confirm shipping insert' })).toBeNull()
     expect(api.assignSampleTube).not.toHaveBeenCalled()
   })
 
@@ -78,14 +81,14 @@ describe('SampleShippingDetailPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Correct tube' }))
     const dialog = screen.getByRole('dialog', { name: 'Change tube assignment' })
-    expect(dialog.textContent).toContain('voids the current packet and issues a corrected revision')
+    expect(dialog.textContent).toContain('voids the current shipping insert and issues a corrected version')
     fireEvent.change(within(dialog).getByLabelText(/Supplier tube barcode/), {
       target: { value: 'TUBE-0002' },
     })
     fireEvent.change(within(dialog).getByLabelText(/Correction reason/), {
       target: { value: 'Customer moved the sample to the unused registered tube.' },
     })
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Save and replace packet' }))
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save and update insert' }))
 
     await waitFor(() => expect(api.assignSampleTube).toHaveBeenCalledWith(
       shipment.id,
@@ -99,43 +102,55 @@ describe('SampleShippingDetailPage', () => {
     ))
   })
 
-  it('requires a reason before replacing an issued packet', async () => {
+  it('groups issued-shipment actions without offering standalone packet replacement', async () => {
     renderPage()
 
     await screen.findByRole('heading', { name: shipment.shipmentNumber })
-    fireEvent.click(screen.getByRole('button', { name: 'Replace packet' }))
-    const dialog = screen.getByRole('dialog', { name: 'Replace shipping packet' })
-    const replace = within(dialog).getByRole('button', { name: 'Void and replace packet' })
-    expect((replace as HTMLButtonElement).disabled).toBe(true)
-
-    fireEvent.change(within(dialog).getByLabelText(/Replacement reason/), {
-      target: { value: 'Reprinted after the original packet was damaged.' },
-    })
-    fireEvent.click(replace)
-
-    await waitFor(() => expect(api.issueSampleShippingPacket).toHaveBeenCalledWith(
-      shipment.id,
-      {
-        version: shipment.version,
-        replacementReason: 'Reprinted after the original packet was damaged.',
-      },
-    ))
+    expect(screen.queryByRole('button', { name: 'Record shipment' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Replace packet' })).toBeNull()
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions' }), { button: 0, ctrlKey: false })
+    expect(await screen.findByRole('menuitem', { name: 'Download tube list (CSV)' })).toBeTruthy()
+    expect(screen.getByRole('menuitem', { name: 'Record shipment' })).toBeTruthy()
+    expect(screen.queryByRole('menuitem', { name: 'Replace packet' })).toBeNull()
+    expect(api.issueSampleShippingPacket).not.toHaveBeenCalled()
   })
 
   it('shows packet failures inside the dialog and clears them when starting a new attempt', async () => {
+    api.getSampleShipment.mockResolvedValue({ ...shipment, status: 'Preparing', currentPacket: null })
     api.issueSampleShippingPacket.mockRejectedValueOnce(new Error('Packet changed. Review the current revision.'))
     renderPage()
     await screen.findByRole('heading', { name: shipment.shipmentNumber })
-    fireEvent.click(screen.getByRole('button', { name: 'Replace packet' }))
-    const dialog = screen.getByRole('dialog', { name: 'Replace shipping packet' })
-    fireEvent.change(within(dialog).getByLabelText(/Replacement reason/), { target: { value: 'Damaged paper copy.' } })
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Void and replace packet' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Review and confirm shipping insert' }))
+    const dialog = screen.getByRole('dialog', { name: 'Confirm shipping insert' })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Confirm and issue shipping insert' }))
 
     expect(await within(dialog).findByRole('alert')).toBeTruthy()
-    expect((within(dialog).getByLabelText(/Replacement reason/) as HTMLInputElement).value).toBe('Damaged paper copy.')
     fireEvent.click(within(dialog).getByRole('button', { name: 'Keep reviewing' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Replace packet' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Review and confirm shipping insert' }))
     expect(within(screen.getByRole('dialog')).queryByRole('alert')).toBeNull()
+  })
+
+  it('prints from the shipment workspace and permits retry after a preparation failure', async () => {
+    renderPage()
+    await screen.findByRole('heading', { name: shipment.shipmentNumber })
+    const originalUrl = window.location.href
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions' }), { button: 0, ctrlKey: false })
+    const printAction = await screen.findByRole('menuitem', { name: 'Print shipping insert' })
+    expect(printAction.tagName).not.toBe('A')
+    fireEvent.click(printAction)
+    expect(await screen.findByTestId('shipping-insert-print-frame')).toBeTruthy()
+    expect(window.location.href).toBe(originalUrl)
+    expect(screen.getByRole('heading', { name: shipment.shipmentNumber })).toBeTruthy()
+    expect(api.issueSampleShippingPacket).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Fail print preparation' }))
+    expect(screen.queryByTestId('shipping-insert-print-frame')).toBeNull()
+    expect(screen.getByText('Shipping insert could not be printed')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(screen.queryByText('Shipping insert could not be printed')).toBeNull()
+    expect(screen.getByTestId('shipping-insert-print-frame')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Close print dialog' }))
+    expect(screen.queryByTestId('shipping-insert-print-frame')).toBeNull()
+    expect(window.location.href).toBe(originalUrl)
   })
 
   it('counts one sample with multiple tube slots once in packet confirmation', async () => {
@@ -145,19 +160,20 @@ describe('SampleShippingDetailPage', () => {
     ] })
     renderPage()
     await screen.findByRole('heading', { name: shipment.shipmentNumber })
-    fireEvent.click(screen.getByRole('button', { name: 'Review and confirm packet' }))
-    expect(screen.getByRole('dialog', { name: 'Confirm shipping packet' }).textContent).toContain('1 sample across 2 tubes')
+    expect(screen.queryByRole('button', { name: 'Actions' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Review and confirm shipping insert' }))
+    expect(screen.getByRole('dialog', { name: 'Confirm shipping insert' }).textContent).toContain('1 sample across 2 tubes')
   })
 
-  it('invalidates an earlier packet preview after issuing a replacement', async () => {
+  it('invalidates an earlier packet preview after confirming a packet', async () => {
+    api.getSampleShipment.mockResolvedValue({ ...shipment, status: 'Preparing', currentPacket: null })
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
     queryClient.setQueryData(['sample-shipping-packet', shipment.id], { revision: 1 })
     renderPage(queryClient)
     await screen.findByRole('heading', { name: shipment.shipmentNumber })
-    fireEvent.click(screen.getByRole('button', { name: 'Replace packet' }))
-    const dialog = screen.getByRole('dialog', { name: 'Replace shipping packet' })
-    fireEvent.change(within(dialog).getByLabelText(/Replacement reason/), { target: { value: 'Damaged paper copy.' } })
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Void and replace packet' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Review and confirm shipping insert' }))
+    const dialog = screen.getByRole('dialog', { name: 'Confirm shipping insert' })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Confirm and issue shipping insert' }))
     await waitFor(() => expect(queryClient.getQueryState(['sample-shipping-packet', shipment.id])?.isInvalidated).toBe(true))
   })
 })

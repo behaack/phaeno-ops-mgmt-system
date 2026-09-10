@@ -9,6 +9,7 @@ import { Button } from '#/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 
 const scanBlockedReason = 'Finish or discard the current tube scan before changing containers.'
+const issuedInsertBlockedReason = 'Containers cannot be changed because a shipping insert has already been issued for this job.'
 
 export function SampleShipmentResetPacking({ shipment, canManage, scanActive = false, writesBlocked = false }: { shipment: SampleShipmentWorkflow; canManage: boolean; scanActive?: boolean; writesBlocked?: boolean }) {
   const client = useQueryClient()
@@ -40,7 +41,11 @@ export function SampleShipmentResetPacking({ shipment, canManage, scanActive = f
 
   const canReset = Boolean(eligibility.data?.canReset && !eligibility.isFetching && !eligibility.error && !scanActive && !writesBlocked)
   const matchesReview = Boolean(review && eligibility.data && reviewSnapshot(review) === reviewSnapshot(eligibility.data))
-  const reason = writesBlocked ? 'Current shipment information must be verified before resetting.' : scanActive ? scanBlockedReason : eligibility.error ? 'Container choices could not be checked.' : eligibility.data?.blockedReason
+  const issuedInsertLocksCurrentContainer = eligibility.data?.canReset === false && shipment.currentPacket
+    && shipment.status !== 'Cancelled' && shipment.container && !shipment.isPackingPool && shipment.crosswalk.length > 0
+  // Explain the issued insert from current shipment facts without changing the server's reset decision.
+  const blockedReason = issuedInsertLocksCurrentContainer ? issuedInsertBlockedReason : eligibility.data?.blockedReason
+  const reason = writesBlocked ? 'Current shipment information must be verified before resetting.' : scanActive ? scanBlockedReason : eligibility.error ? 'Container choices could not be checked.' : eligibility.isFetching ? 'Checking current containers…' : blockedReason
   const close = () => { if (!reset.isPending && !submitting.current) setReview(null) }
   const retryEligibility = () => eligibility.refetch()
   const confirm = () => {
@@ -65,7 +70,7 @@ export function SampleShipmentResetPacking({ shipment, canManage, scanActive = f
           <p>Your finalized sample list will stay unchanged.</p>
           <p className="text-muted-foreground">Unscanned container reservations return to location inventory. Container selection cannot be undone after tube scanning starts.</p>
           {scanActive ? <p role="alert" className="text-destructive">{scanBlockedReason}</p> : null}
-          {eligibility.data && !eligibility.data.canReset ? <p role="alert" className="text-destructive">{eligibility.data.blockedReason ?? 'These containers can no longer be changed.'}</p> : null}
+          {eligibility.data && !eligibility.data.canReset && !eligibility.isFetching ? <p role="alert" className="text-destructive">{reason ?? 'These containers can no longer be changed.'}</p> : null}
           {canReset && !matchesReview ? <div className="space-y-2"><p role="alert">The container choices changed. Review the updated selection before continuing.</p><Button variant="outline" onClick={() => { if (eligibility.data) setReview(eligibility.data) }}>Review updated containers</Button></div> : null}
           {eligibility.isFetching && !reset.isPending ? <p role="status">Checking current containers…</p> : null}
         </div> : null}

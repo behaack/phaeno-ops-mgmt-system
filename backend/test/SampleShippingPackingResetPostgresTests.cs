@@ -35,7 +35,9 @@ public partial class SampleShippingPostgresTests
             Assert.All(retired, item => { Assert.Equal(SampleShipmentStatus.Cancelled, item.Status); Assert.Equal(definition.Id, item.ContainerDefinitionId); Assert.NotNull(item.ContainerSnapshotJson); });
             var specimenAfter = await scope.DbContext.LabSpecimens.AsNoTracking().SingleAsync(item => item.Id == fixture.Specimen.Id);
             Assert.Equal(specimenBefore.Version, specimenAfter.Version); Assert.Equal(specimenBefore.SubmittedSpecimenId, specimenAfter.SubmittedSpecimenId);
-            Assert.False((await scope.PackingController().ReadReset(containers[0].Id, default)).CanReset);
+            var retiredReview = await scope.PackingController().ReadReset(containers[0].Id, default);
+            Assert.False(retiredReview.CanReset);
+            Assert.Equal("This container selection is no longer active. Open a current prepared container to change the containers for this job.", retiredReview.BlockedReason);
             Assert.Equal(409, (await Assert.ThrowsAsync<OrderManagementException>(() => scope.PackingController().Reset(containers[0].Id, new(review.Shipments), default))).StatusCode);
             // A retired URL cannot unwind a later replacement plan.
             var replacement = await scope.PackingController().Confirm(result.Id, new(result.Version, [new(definition.Id, 2)]), default);
@@ -130,7 +132,7 @@ public partial class SampleShippingPostgresTests
     [PostgreSqlReferenceFact]
     public async Task ContainerResetBlocksScanningClearedMatchesCancelledHistoryAndShipmentProgress()
     {
-        foreach (var evidence in new[] { "scan", "cleared", "cancelled", "kit", "voided-packet", "shipped", "received", "bound-stock" })
+        foreach (var evidence in new[] { "scan", "cleared", "cancelled", "kit", "voided-packet", "ready-to-ship", "shipped", "delivered", "received", "bound-stock" })
         {
             await using var scope = await ShippingTestScope.CreateAsync();
             var fixture = await scope.CreateShipmentAsync(30);
@@ -139,12 +141,19 @@ public partial class SampleShippingPostgresTests
             scope.ClearTrackedState();
             var reviewed = await scope.PackingController().ReadReset(packed[0].Id, default);
             var changed = await scope.DbContext.SampleShipments.Include(item => item.Items).ThenInclude(item => item.TubeSlots).SingleAsync(item => item.Id == packed[1].Id);
-            if (evidence is "voided-packet" or "shipped" or "received")
+            var packetEvidence = evidence is "voided-packet" or "ready-to-ship" or "shipped" or "delivered" or "received";
+            if (packetEvidence)
             {
                 var packet = new SampleShippingPacketRevision(changed.Id, 1, $"RESET-PACKET-{scope.Suffix}", SampleShippingBarcode.Create(), "{}", "{}", "{}", DateTime.UtcNow);
                 changed.PacketRevisions.Add(packet); scope.DbContext.SampleShippingPacketRevisions.Add(packet);
                 if (evidence == "voided-packet") packet.Void(DateTime.UtcNow, "Reference correction", null);
-                else { changed.MarkReadyToShip(); changed.RecordShipment("Reference carrier", "REFERENCE", DateTime.UtcNow); if (evidence == "received") changed.MarkReceived(DateTime.UtcNow); }
+                else
+                {
+                    changed.MarkReadyToShip();
+                    if (evidence != "ready-to-ship") changed.RecordShipment("Reference carrier", "REFERENCE", DateTime.UtcNow);
+                    if (evidence == "delivered") changed.MarkDelivered(DateTime.UtcNow);
+                    if (evidence == "received") changed.MarkReceived(DateTime.UtcNow);
+                }
             }
             else if (evidence == "bound-stock")
             {
@@ -173,8 +182,20 @@ public partial class SampleShippingPostgresTests
             }
             await scope.DbContext.SaveChangesAsync(); scope.ClearTrackedState();
             var before = await scope.ResetFamilySlotsAsync(fixture);
-            Assert.False((await scope.PackingController().ReadReset(packed[0].Id, default)).CanReset);
+            var expectedReason = packetEvidence
+                ? "Containers cannot be changed because a shipping insert has already been issued for this job."
+                : "Containers cannot be changed after tube scanning, kit registration or shipment preparation has started for this job.";
+            var blocked = await scope.PackingController().ReadReset(packed[0].Id, default);
+            Assert.False(blocked.CanReset); Assert.Equal(expectedReason, blocked.BlockedReason);
             Assert.Equal(409, (await Assert.ThrowsAsync<OrderManagementException>(() => scope.PackingController().Reset(packed[0].Id, new(reviewed.Shipments), default))).StatusCode);
+            // A current shipment past Preparing stays active and explains its lock rather than directing the user elsewhere.
+            var changedReview = await scope.PackingController().ReadReset(changed.Id, default);
+            var changedReason = evidence == "cancelled"
+                ? "This container selection is no longer active. Open a current prepared container to change the containers for this job."
+                : expectedReason;
+            Assert.False(changedReview.CanReset); Assert.Equal(changedReason, changedReview.BlockedReason);
+            var changedConflict = await Assert.ThrowsAsync<OrderManagementException>(() => scope.PackingController().Reset(changed.Id, new(reviewed.Shipments), default));
+            Assert.Equal(409, changedConflict.StatusCode); Assert.Equal(changedReason, changedConflict.Message);
             Assert.Equal(before, await scope.ResetFamilySlotsAsync(fixture));
             Assert.Equal(SampleShipmentStatus.Preparing, (await scope.DbContext.SampleShipments.AsNoTracking().SingleAsync(item => item.Id == packed[0].Id)).Status);
         }

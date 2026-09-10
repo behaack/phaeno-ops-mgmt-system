@@ -23,7 +23,12 @@ test('search stays focused, uses only documentation API, links to a section, and
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   const requests: string[] = []
-  page.on('request', request => { if (request.url().includes('/api/')) requests.push(request.url()) })
+  page.on('request', request => {
+    const pathname = new URL(request.url()).pathname
+    if (['fetch', 'xhr'].includes(request.resourceType()) && pathname.startsWith('/api/')) {
+      requests.push(pathname)
+    }
+  })
   await page.route('**/api/documentation/search?*', async route => {
     expect(route.request().headers()['x-organization-id']).toBe('northline-labs')
     const url = new URL(route.request().url())
@@ -52,7 +57,8 @@ test('search stays focused, uses only documentation API, links to a section, and
   await page.goBack()
   await expect(input).toHaveValue('samples')
   await expect(page.getByLabel('Topic', { exact: true })).toHaveValue('shipping')
-  expect(requests.filter(url => url.includes('web-ops'))).toEqual([])
+  expect(requests).toContain('/api/documentation/search')
+  expect(requests.filter(pathname => /^\/api\/(?:v\d+\/)?web-ops(?:\/|$)/.test(pathname))).toEqual([])
   expect(errors).toEqual([])
 })
 

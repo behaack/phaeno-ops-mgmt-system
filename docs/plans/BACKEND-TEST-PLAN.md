@@ -105,6 +105,33 @@ See the [incident run record](../testing/runs/2026-09-08-hs5y7db7-local-walkthro
 
 ## Reset container configuration before scanning — September 8, 2026
 
+September 9 explanation correction: an active **ReadyToShip** shipment was
+incorrectly described as an inactive container selection. The reset service now
+reserves that reason for cancelled/unconfigured, preparation-pool and empty
+records, then identifies any issued packet in the shipment family before the
+existing scan/history and progress blockers. The packet reason reads
+**Containers cannot be changed because a shipping insert has already been issued
+for this job.** Eligibility and the 409 rejection remain intact; no schema or
+contract-shape change is involved.
+
+The existing PostgreSQL
+`ContainerResetBlocksScanningClearedMatchesCancelledHistoryAndShipmentProgress`
+case now includes ReadyToShip and Delivered alongside Shipped and Received,
+checks the current-record blocked reason and verifies rejection. The retired
+identity case also checks that a truly retired selection retains the inactive
+reason. These additions have not been executed and are separate from the older
+passing checkpoints below.
+
+The active Visual Studio API still runs the older source, so the corrected
+backend explanation is not yet verified at runtime. A narrow frontend fallback
+provides the issued-insert explanation when a current insert exists and the
+server already disallows reset; it does not change backend eligibility or the
+409 response. Runtime activation and the new backend assertions remain pending.
+
+The final backend Release solution build passed with zero warnings and zero
+errors in 41.65 seconds. No automated suite was run; this build result does not
+execute the added reset-reason assertions or activate the running API.
+
 The focused checkpoint passed **61/61**, including **eight reset cases** in
 addition to the previous 53 shipping/kit/location cases. The order-wide packing
 reset checks target the new eligibility/read and versioned confirmation/write

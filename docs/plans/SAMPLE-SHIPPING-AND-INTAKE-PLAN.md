@@ -9,8 +9,195 @@ shipment during Customer preparation using its permanent barcode. The
 [location-inventory plan](TRANSPORTATION-KIT-LOCATION-INVENTORY-PLAN.md) records
 the workflow, reservation/reset rules, implementation work and acceptance gates.
 The correction is implemented locally, with focused verification tracked in the
-linked plan. It has not been deployed to production. The saved local walkthrough
-remains after successful simulated kit receipt, before container/tube assignment.
+linked plan. It has not been deployed to production. The local walkthrough has
+completed container configuration and reset/reselection checks; user screenshots
+showed five saved synthetic tubes after duplicate rejection and recovery. The
+owner's screenshots confirm **18 of 18 matched**, the packet confirmation review
+for the correct shipment, nine samples and 18 tubes, and subsequently the
+post-issuance actions **View packet**, **Crosswalk CSV**, **Replace packet** and
+**Record shipment**. A subsequent screenshot confirms that the document page
+opens for **SP-20260910-TJHAQYMGKQ, revision 1**, for the same 18-tube shipment.
+This establishes document rendering, not physical printing or a complete
+content/print review. No sample-return dispatch has been reported.
+Remaining acceptance checks are recorded in the
+[current run record](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md).
+
+## September 9 shipment header actions
+
+The Product Owner requested a compact shipment header after packet issuance
+displayed four separate actions and wrapped the shipment identity. In the shared
+shipment detail workspace, show one eligible header action directly. When more
+than one action is present, put every header action, including the primary
+workflow action, in one **Actions** dropdown. With no eligible header actions,
+show no action control. Count visible actions even when temporarily disabled.
+
+This is a scoped exception to the default primary-action-plus-secondary-menu
+pattern in [UI/UX principles](../ui-ux-principles.md#record-detail-workspaces).
+It applies to this shared shipment header for each permitted audience, not to
+other record pages, the container selector, scanner rows or dialog footers.
+Keep permissions, pending and disabled states, links, downloads, confirmation
+dialogs and workflow behavior. The label and replacement-action refinements below
+apply to the final menu. The menu must support keyboard
+navigation, visible focus, Escape dismissal and focus restoration; its trigger
+must remain compact on narrow screens.
+
+Acceptance checks cover zero, one and multiple header actions, the issued-packet
+menu, unchanged action destinations and confirmations, and desktop/narrow
+light/dark presentation. Connected Portal verification confirms the three-item
+issued-insert menu, absence of standalone replacement, Escape dismissal and
+focus restoration to **Actions**. **Record shipment** opens with Carrier focused;
+Cancel returns focus to Actions while preserving ReadyToShip and 18/18 matches,
+without a submission. Zero/one-action states, narrow/theme coverage and the final
+same-page print behavior remain pending. Existing component assertions are updated for the menu, absence of
+a standalone replacement action, and first-confirmation error/recovery and
+invalidation; they have not been run. Customer,
+Prospect and Partner guides describe the menu without changing their distinct
+workflow or permission instructions. Complete document/print review and dispatch remain
+separate manual acceptance steps.
+
+The three audience guides and their review metadata are updated. Documentation
+generation and corpus checking passed for all 56 guides. Application and browser
+verification remain separate from these documentation checks.
+
+The subsequent screenshot explicitly shows **ReadyToShip**, but its disabled
+reset explanation incorrectly says the container selection is no longer active.
+The reset eligibility service treated every non-Preparing status as inactive
+before examining the issued-packet lock. The local correction preserves the lock
+and reserves inactive wording for cancelled or unconfigured records, preparation
+pools and empty selections. A packet revision anywhere in the shipment family
+now explains **Containers cannot be changed because a shipping insert has already
+been issued for this job.** Existing scan/history and shipment-progress safeguards
+remain enforced. Added backend coverage has not been executed.
+
+The owner later reported that the old inactive-selection helper still appears.
+The active Visual Studio API is running the older backend code. The immediate
+frontend correction therefore derives the issued-insert explanation from the
+current shipment only when the server already disallows reset. It changes the
+reason presented to the user, not server eligibility or any reset operation.
+Connected Portal DOM verification now confirms the exact issued-insert explanation
+on shipment `b3fa2a0e-bd7a-4460-8376-b1658ec43b71`, with the same URL and 18/18
+matches. The backend source correction still requires activation in the running API.
+
+The owner also reported that **View packet** does nothing and found **Crosswalk
+CSV** and **Replace packet** unclear. Rename the CSV action to **Download tube
+list (CSV)** so the export is recognizable. Source inspection found that the
+packet child route was registered, but its parent did not render the child
+outlet. The local route correction now renders the packet child. The owner's
+subsequent screenshot confirms that the document page opens with identifier
+**SP-20260910-TJHAQYMGKQ, revision 1** for the same 18-tube shipment. It does not
+establish complete document review, print-dialog behavior or physical printing.
+
+The Product Owner chose to remove the standalone **Replace packet** header
+action. The later terminology refinement replaces **View packet** with **Print
+shipping insert**. After issuance, the manager's menu contains **Print shipping
+insert**, **Download tube list (CSV)** and **Record shipment**; read-only users
+retain the first two. Existing permitted tube
+corrections still void the prior packet and issue the corrected revision with
+history retained. This does not remove backend revision behavior or record a
+replacement packet or dispatch.
+
+## September 9 shipping insert wording and direct printing
+
+The Product Owner named the frozen preparation/manifest document **shipping
+insert** and requested **Print shipping insert** to open printing directly.
+Use that terminology in the shared shipment header, confirmation, scanner,
+document page and affected Customer, Prospect and Partner guides. Existing
+packet route/API names, identifiers, barcodes, persisted revisions and history
+remain unchanged.
+
+The owner then explicitly required **Do not change page when selecting print**.
+The final design keeps the shipment route, content and scan state in place while
+validating and printing through a hidden same-origin document frame. Only the
+browser print dialog should appear. A stale, void or unverified revision must
+not print; errors and retry remain on the shipment page. Printing another copy
+must not issue a new revision. Dismissing the print dialog returns to the same
+shipment, and a refresh must not reopen printing automatically.
+
+This supersedes the earlier design that navigated to the printable page before
+opening the print dialog. The observed revision-1 page proves the earlier
+navigation fix, not this new same-page printing behavior or physical scanner
+qualification. Same-page printing is implemented locally. Failures show **Shipping
+insert could not be printed**, details and **Try again** on the original shipment;
+preparation times out after 20 seconds. Direct-print cancellation/retry and
+physical-print acceptance are pending. The final same-page wording is published
+in the three affected guides; documentation generation/check passed for all 56 guides.
+
+Final scoped ESLint and frontend TypeScript checks passed. The backend Release
+solution build passed with zero warnings/errors in 41.65 seconds; automated
+suites were not run. A connected **Actions → Print shipping insert** attempt was
+followed by a browser-inspection timeout, consistent with a blocking native print
+dialog but insufficient to prove its contents or the cancellation outcome. The
+owner is checking cancellation, the unchanged shipment/18 matches and restored
+print action. This remains pending manual confirmation, not print acceptance.
+Read-only Chrome tab inventory after the attempt confirms the exact shipment
+URL is retained without `/packet` navigation. Dialog contents, scroll/matches
+after cancellation and the restored print action remain unverified.
+
+## September 9 first-scan feedback refinement
+
+After the successful first synthetic tube scan, the Product Owner requested a
+smaller, less repetitive scanning view. Remove the separate **Saved** card and
+its duplicate barcode. Keep each saved tube's exact readable identity and a
+smaller barcode graphic in its sample/tube row, alongside **Change tube** or
+**Correct tube** when permitted. Progress and advancement to the next tube remain
+the visible save feedback; preserve an accessible success announcement and focus
+on the next scan field.
+
+This is a shared scanner presentation change. It does not alter matching,
+per-scan saving, physical-container assignment, reset eligibility, correction
+history, packet printing or barcode identity. Acceptance requires one visible
+saved barcode per matched row, readable compact graphics without overflow, and
+unchanged successful-save progression, failure retention and keyboard focus.
+Printed barcode sizing and physical scanner qualification are separate.
+
+Implemented locally in the shared scanner. The separate visual Saved card is
+removed, its success message remains a screen-reader announcement, and row
+barcodes are capped at 12rem wide while retaining readable identifiers. Connected
+Portal and the owner's accepted screenshot confirmed the initial 2rem-high bars
+at the preserved first-scan checkpoint. Existing Customer/Prospect guide
+instructions remain accurate because saved identities, graphic, progress and
+advancement are still shown. The existing scanner assertion now checks the single
+row barcode.
+
+At five saved tubes, the owner requested that matched rows have the same height
+as unmatched rows. Reduce the scanner's on-screen bars from 2rem to 1rem, keeping
+the 12rem width cap, 4px caption gap and readable identifier text. Retain 7mm
+printed bars. Row height remains content-driven so longer identifiers, labels
+and narrow layouts can grow without clipping. Acceptance requires equal matched
+and unmatched row heights for the current desktop fixture. The 1rem refinement
+is implemented locally. The owner's latest screenshot confirms the compact
+16px bars and rows, but all tubes are now matched, so it does not provide an
+unmatched row for a direct comparison. Precise matched/unmatched measurements
+were not completed after the browser inspection lost its connection. Scoped
+ESLint and the whitespace check passed; automated suites were not run for this
+sizing change. Customer and Prospect scanning instructions remain accurate.
+
+The local checkpoint reached **18 of 18 matched**, followed by **Confirm shipping
+packet**. The owner's screenshot confirms the expected shipment, nine samples
+across 18 tubes, and the explanation of frozen crosswalk revisions. After the
+instruction to confirm once, the next screenshot shows the issued-packet actions
+for the same shipment. The packet document itself has not been reviewed. The preceding
+screenshot confirms the post-scan reset lock. At the earlier
+first-scan checkpoint, the owner confirmed that refresh preserved the 1-of-18
+count, exact first barcode, next unmatched tube and disabled reset action. This
+is user-reported manual refresh acceptance;
+no independent post-refresh browser capture or database audit was performed.
+The owner also reported the expected duplicate-rejection message after trying
+the first saved barcode against TEST-002, followed by successful recovery using
+`TEST-HS5Y7DB7-002` and Enter. A further success report and screenshot confirm
+TEST-002's four exact saved identities and advancement to TEST-003. Next verify
+list paging preserves scanner context and saved assignments. A later read-only
+Portal check during the row-sizing refinement shows that the owner advanced
+through TEST-003 with `TEST-HS5Y7DB7-006` and `TEST-HS5Y7DB7-007`; the same
+shipment and kit now show seven matches and an empty focused field at TEST-004,
+Tube 1 of 2. Reset remains disabled. No paging action was performed by Codex or
+confirmed by the owner. Later screenshots show eight matches, then completion
+at 18 of 18. The latest screenshot retains the same shipment and kit, shows
+**Every declared tube is matched**, and displays **Tubes 17–18 of 18** with
+TEST-009's two tubes saved as `TEST-HS5Y7DB7-017` and `TEST-HS5Y7DB7-018`.
+Automatic advancement reached the last page; explicit Previous/Next navigation
+and remaining negative variants are still outstanding. Preserve the saved
+assignments and existing shipment when continuing to packet review.
 
 ## September 9 receipt feedback correction
 

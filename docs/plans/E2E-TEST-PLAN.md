@@ -53,6 +53,76 @@ no local synthetic data was copied to production.
 
 ## September 9 connected walkthrough resume
 
+The latest [run record](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md#manual-plan-resumed--september-9)
+supersedes the receipt checkpoint below: the owner completed 18 synthetic tube
+matches, reviewed confirmation for nine samples across 18 tubes, and supplied
+a screenshot of the same shipment's post-issuance actions. The owner later
+confirmed the document page opens, showing **SP-20260910-TJHAQYMGKQ, revision 1**
+for the same 18-tube shipment. Complete document/print review and sample-return
+dispatch remain unreported.
+
+The requested shipment-header refinement groups all header actions into one
+**Actions** menu when more than one is visible; one stays direct and none renders
+no action control. Connected Portal verification confirms the three actions
+**Print shipping insert**, **Download tube list (CSV)** and **Record shipment**,
+with no standalone replacement entry. Escape closes the menu and restores focus
+to Actions. Record shipment opens with Carrier focused; Cancel without entry or
+submission returns focus to Actions and preserves ReadyToShip and 18/18 matches.
+Zero/one-action states, download behavior, the final print behavior and narrow/theme
+coverage remain pending. The change applies to the shared shipment detail page across permitted audiences.
+Existing permissions and disabled/pending states must remain intact. No automated
+browser suite is added or run for this presentation change. The subsequent
+**Actions → Print shipping insert** refinement must preserve the existing
+revision and scans; do not record dispatch as part of menu verification.
+
+The owner subsequently reported that **View packet** does nothing; opening the
+existing packet was initially an unresolved manual acceptance issue. Source
+inspection found that the registered packet child route's parent did not render
+its outlet. The owner's later revision-1 screenshot verifies that navigation
+correction. A further screenshot
+explicitly shows ReadyToShip with a misleading inactive-selection reset reason.
+The local explanation correction must retain the disabled reset action while
+explaining that a shipping insert has already been issued for the Job. Verify
+the corrected reset reason after the fix is active. The CSV action is clarified
+to **Download tube list (CSV)**.
+
+The owner later reported the old reset reason remains because the active Visual
+Studio API still runs older code. A frontend presentation fallback now targets a
+current issued insert with server reset eligibility already false. Verify the
+issued-insert reason appears while reset stays disabled; unrelated server reasons
+must remain intact. Connected DOM verification now confirms **Containers cannot
+be changed because a shipping insert has already been issued for this job.**
+on the same shipment URL with 18/18 matches. The backend fix's runtime activation
+and excluded-state variants remain separate.
+
+The Product Owner chose to remove standalone **Replace packet**. Verify that the
+issued-document manager menu contains **Print shipping insert**, **Download tube
+list (CSV)** and **Record shipment**, with only the first two for read-only users.
+The final print action must validate the current document before opening the
+browser print dialog while leaving the shipment route, page content and scan
+state unchanged. Retain same-page retry recovery on validation failure, prevent
+stale/void printing and avoid issuing a new revision when reprinting. These checks
+are pending; the document-page screenshot is not same-page print or physical print
+evidence. Print-dialog cancellation must leave the original shipment available;
+refreshing must not open printing automatically. **Print shipping insert** should
+allow another attempt without navigating the parent page.
+Existing permitted tube corrections retain
+automatic corrected revisions and history. Menu verification must not submit a
+correction, issue a replacement or record dispatch.
+
+The connected **Actions → Print shipping insert** attempt was followed by a
+browser-inspection timeout. A blocking native print dialog is a possible cause,
+not verified evidence of the dialog or its contents. The owner is checking
+cancellation, the same shipment with 18/18 matches and the print action becoming
+available again. Keep this attempt pending manual confirmation; physical output
+and complete print review remain unverified. Final scoped ESLint, frontend
+TypeScript and a zero-warning/error backend Release build passed; no automated
+browser or application suite was run for these final changes.
+Subsequent read-only Chrome tab inventory confirms the exact shipment URL is
+retained without `/packet` navigation. This is narrow URL-preservation evidence;
+dialog contents, scroll and matches after cancellation, and the restored print
+action remain pending the owner's report.
+
 Continue from the
 [Customer receipt checkpoint](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md#current-checkpoint--september-9-customer-kit-receipt).
 For Job HS5Y7DB7 / Request D20018AA, the receipt-validation screenshot displays

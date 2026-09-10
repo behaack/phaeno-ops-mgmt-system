@@ -1,9 +1,297 @@
 # HS5Y7DB7 local shipping walkthrough — September 8, 2026
 
-Active, partial run of [transportation kits and sample shipping](../11-transportation-kits.md).
+Paused, partial run of [transportation kits and sample shipping](../11-transportation-kits.md).
 The [run-record template](../RUN-RECORD.md) remains unchanged. User reports,
 read-only database evidence and unexecuted variants are recorded separately;
 no full manual case is marked Pass from these partial steps.
+
+## Saved pause and resume checkpoint — September 9, 2026
+
+**The manual Test plan is paused here. This checkpoint supersedes older resume
+instructions below.** The owner's latest **Okay** acknowledged the pause; it
+does not confirm printing or the state after cancelling the print dialog.
+
+| Item | Preserve this exact checkpoint |
+| --- | --- |
+| Job | **HS5Y7DB7** |
+| Shipment | **SHP-20260910-9BD8FCFC610** |
+| Shipment ID | `b3fa2a0e-bd7a-4460-8376-b1658ec43b71` |
+| Local Portal page | `https://localhost:3000/sample-shipping/b3fa2a0e-bd7a-4460-8376-b1658ec43b71` |
+| Status and matches | **ReadyToShip — 18 of 18 tubes matched**, nine samples |
+| Physical container | `KIT-58073414ED6C47109A3E073EE5F9311F`, received TRANS-20 at Main laboratory |
+| Shipping insert | **SP-20260910-TJHAQYMGKQ — revision 1** |
+| Most recent action | Selected **Actions → Print shipping insert**; later read-only tab inventory confirmed the same shipment URL without `/packet` navigation. |
+| Still awaiting confirmation | Native print-dialog contents; cancellation leaves the same shipment, scroll position and 18/18 matches; **Print shipping insert** becomes available again. |
+
+**First step on resume:** if the print dialog is still open, cancel it. Confirm
+that the original shipment page remains at the same URL with **18 of 18 matched**
+and **Print shipping insert** available again. Record the owner's result before
+continuing the manual Test plan. Do not launch another print attempt while the
+earlier dialog may still be open.
+
+Preserve the issued revision, all saved assignments and the existing shipment.
+Do not issue another shipping insert, scan a tube again, record sample-return
+dispatch, repeat the kit order/dispatch/receipt or create replacement fixtures
+merely to resume. The existing kit request is **D20018AA** and has already been
+fulfilled and received. Continue later workflow steps only from this saved state.
+
+Physical printing and full printed-content review remain unverified. Explicit
+**Previous tubes / Next tubes** navigation, remaining negative and separate-fixture
+variants, physical scanner/material qualification and full SHP-10 acceptance
+remain outstanding as detailed below. Retained URL evidence alone is not a passing
+print test.
+
+**Release status:** the owner requested commit, push and deployment of the latest
+changes while preserving this paused acceptance checkpoint. Release work is in
+progress; exact revisions, deployment outcomes and any outstanding release gates
+will be recorded after verification. A software release does not complete these
+remaining manual or physical acceptance checks.
+
+## Manual plan resumed — September 9
+
+The owner clarified that continuing testing means this manual Test plan.
+Connected Customer Chrome was returned from Documentation to Job HS5Y7DB7 and
+current pool SHP-20260909-661C60414B7. The page shows nine finalized samples,
+18 tubes awaiting containers, Main laboratory, the original received TRANS-20,
+and a recommendation of one 20-tube container with two spare slots.
+
+**Adjust containers** was opened with 18 tubes, one container, capacity 20, two
+spare slots, zero unallocated tubes and an empty **Container 1 barcode** field.
+No order, dispatch, receipt, reservation or scan was submitted while resuming.
+The owner submitted with the barcode empty and reported **Scan the barcode on
+this physical container.** A fresh connected browser read independently confirms
+that exact field error, an empty barcode, the still-open dialog and unchanged
+18/1/20/2/0 summary. Required-field validation is observed; no independent
+database read was performed to establish reservation state for this check.
+The owner entered the existing synthetic container barcode, confirmed and
+reported **Success**. Connected Portal readback shows new Preparing shipment
+`2b70d9f4-7bc7-4b3d-9032-455204fbf9ad`, reference
+**SHP-20260910-72A58873DA8**, for Job HS5Y7DB7. It shows the exact container
+`KIT-58073414ED6C47109A3E073EE5F9311F`, TRANS-20, 18 tubes, 20 usable slots,
+two spare slots, **0 of 18 tubes matched**, and **Reset container configuration**
+available. The owner's screenshot independently corroborates the container
+barcode and the empty scan field for TEST-001, Tube 1 of 1. This is connected UI
+evidence of successful configuration, not a separate database reservation audit.
+
+The owner subsequently supplied a screenshot showing completed reset to
+**SHP-20260910-905E7A245E6**. Connected Portal readback confirms preparation pool
+`a82ed8b6-3cc7-41d7-89bb-940315b9ce57`, all 18 tubes awaiting containers, Main
+laboratory and the same received kit/delivery information. A fresh location
+inventory read shows **Available 1 / On the way 0 / Assigned 0 / In use 0** and
+the exact kit marked Available. The connected reset/release outcome is observed;
+no independent database lineage comparison or Keep containers dismissal result
+was established in this step. No tube scan was performed by Codex.
+
+The owner's next screenshot confirms reconfiguration to Preparing shipment
+**SHP-20260910-9BD8FCFC610** with the same physical kit, one TRANS-20 containing
+18 tubes, **0 of 18 tubes matched**, and an empty scan field at TEST-001.
+**Reset container configuration** remains available. This is screenshot evidence
+of successful reselection after release; no separate database read was performed.
+
+The owner reported **Done** after opening the reset review and choosing
+**Keep containers**. Fresh connected Portal readback confirms that the dialog is
+closed and the same Preparing shipment **SHP-20260910-9BD8FCFC610**
+(`b3fa2a0e-bd7a-4460-8376-b1658ec43b71`), exact container barcode, 18/20/two-spare
+capacity, **0 of 18 tubes matched** and TEST-001 Tube 1 of 1 are retained.
+The dismissal outcome is observed through user report plus connected UI;
+the review-dialog counts were user-checked, not independently captured.
+
+Full SHP-09 remains incomplete because separate-fixture variants are outstanding.
+
+### SHP-10 first scan — user report and screenshot evidence
+
+The owner reported **Worked** after saving the instructed synthetic tube barcode
+`TEST-HS5Y7DB7-001`. The supplied screenshots show that exact saved identity for
+**TEST-001, Tube 1 of 1**, **1 of 18 tubes matched**, and advancement to
+**TEST-002, Tube 1 of 4**, with an empty, focused scan field. The exact saved
+identity is visible both in a **Saved** card and in the corresponding tube row.
+This establishes the visible first-scan outcome from user report and screenshots;
+it does not independently establish database persistence, the container's In use
+state or the post-scan reset lock, which are not visible in these screenshots.
+
+The owner requested two presentation refinements before continuing: remove the
+redundant **Saved** card and reduce the barcode graphic in each matched tube row.
+Keep the exact readable identity, progress, next-tube focus and correction action.
+These refinements are tracked in the
+[owning plan](../../plans/SAMPLE-SHIPPING-AND-INTAKE-PLAN.md#september-9-first-scan-feedback-refinement).
+
+The refinement is implemented locally. A connected Portal read and the owner's
+follow-up screenshot show one compact barcode in the saved tube row and no
+separate Saved card; the owner replied **Good**. The exact saved barcode remains
+`TEST-HS5Y7DB7-001`, progress is 1 of 18, and TEST-002 Tube 1 of 4 remains active
+with an empty focused input. Connected Portal also shows Reset disabled with
+the post-scan explanation. These are current UI observations. Success feedback
+remains available to screen readers; packet barcode sizing is unchanged.
+
+The owner then refreshed the Portal page and replied **Confirmed** to all four
+requested checks: **1 of 18 tubes matched** remains, TEST-001 retains
+`TEST-HS5Y7DB7-001`, the scanner resumes at **TEST-002, Tube 1 of 4**, and
+**Reset container configuration** remains disabled. This establishes the refresh
+recovery subcheck through user-reported manual acceptance. No independent
+post-refresh browser capture or database audit was performed; long-list navigation
+and the remaining SHP-10 variants are still outstanding.
+
+The owner next tried the already-saved `TEST-HS5Y7DB7-001` against TEST-002,
+Tube 1 of 4 and reported **Success**, quoting **Tube was not matched** and
+**That tube is already matched to another tube slot in this shipment. Review the
+barcode and try again.** The duplicate-rejection message matches the expected
+SHP-10 negative result. The report does not separately describe progress, retained
+input or focus; no independent browser capture or database audit was performed.
+
+The owner then reported **Success** after replacing the rejected duplicate with
+registered synthetic barcode `TEST-HS5Y7DB7-002` and pressing Enter. The instructed
+acceptance checks were **2 of 18 tubes matched**, advancement to **TEST-002,
+Tube 2 of 4**, a cleared error and an empty focused scan field. Successful
+recovery and keyboard saving are recorded as user-reported manual acceptance;
+no independent browser capture or database audit was performed for this step.
+
+The owner reported **Success** after completing TEST-002's remaining three tubes.
+The supplied screenshot shows TEST-001 retaining `TEST-HS5Y7DB7-001` and TEST-002
+tubes 1 through 4 matched to `TEST-HS5Y7DB7-002` through `TEST-HS5Y7DB7-005`,
+respectively. The active scanner has advanced to **TEST-003, Tube 1 of 2**, with
+an empty input, and both TEST-003 rows are unmatched. The exact assigned kit is
+unchanged. Five saved rows are visible; the overall progress label is outside
+the screenshot. Compact row barcodes and the bounded scrolling list are visible;
+no paging action or independent database audit was performed for this evidence.
+
+Before reporting the instructed paging check, the owner supplied another
+screenshot and requested smaller barcodes so scanned and unscanned rows have
+the same height. It shows the same five saved identities and two unmatched
+TEST-003 rows; it does not establish any paging action. The further presentation
+refinement reduces on-screen bars from 2rem to 1rem while retaining the 12rem
+width cap, 4px caption gap, readable identifiers and 7mm printed bars. Rows remain
+content-driven to allow longer text and narrow layouts to grow. The change is
+implemented locally. A later owner screenshot confirms compact 16px bars and
+rows, although all rows are then matched and an unmatched comparison row is
+unavailable. Precise matched/unmatched height measurements were not completed
+because the browser inspection lost its connection. Scoped ESLint and whitespace
+checks passed; automated suites were not run for this sizing change. Codex
+performed no scan or operational action for this request.
+
+A later connected read-only Portal check during the sizing refinement shows that
+the owner has advanced since the supplied screenshot: **7 of 18 tubes matched**,
+with TEST-003 tubes 1 and 2 saved as `TEST-HS5Y7DB7-006` and
+`TEST-HS5Y7DB7-007`, respectively. The active scanner is **TEST-004, Tube 1 of 2**
+with an empty focused field. The same shipment and physical kit remain selected,
+and Reset remains disabled. This is connected UI evidence of the current state;
+Codex did not scan a tube or perform any paging action.
+
+A subsequent connected screenshot shows **8 of 18 tubes matched**, with
+**TEST-004, Tube 2 of 2** active and an empty focused field. The owner continued
+scanning while Codex refined the row presentation; Codex did not submit a scan.
+The owner then supplied a screenshot showing completion at **18 of 18 tubes
+matched** and **Every declared tube is matched**. The same shipment and physical
+kit remain selected. The visible final page is **Tubes 17–18 of 18**: TEST-009,
+Tube 1 of 2 retains `TEST-HS5Y7DB7-017`, and Tube 2 of 2 retains
+`TEST-HS5Y7DB7-018`. **Review and confirm packet** is available and Reset remains
+disabled. The compact barcode presentation is visible. This screenshot supplies
+the latest completion evidence despite the lost browser inspection connection.
+
+The owner's next screenshot shows **Confirm shipping packet** open for
+**SHP-20260910-9BD8FCFC610**. It explicitly describes freezing the crosswalk of
+**9 samples across 18 tubes** and explains that a later correction voids this
+packet and issues a new revision. **Keep reviewing** and **Confirm and issue
+packet** are available. This verifies the confirmation review's shipment identity,
+counts and revision explanation from screenshot evidence; it does not establish
+that a packet has been issued.
+
+After the instruction to select **Confirm and issue packet** once, the owner's
+next screenshot shows the same shipment **SHP-20260910-9BD8FCFC610** with
+**View packet**, **Crosswalk CSV**, **Replace packet** and **Record shipment**.
+This establishes the visible post-issuance action state. At that checkpoint, the
+packet document, revision details and downloaded crosswalk had not been reviewed; no independent
+database issuance audit or sample-return dispatch was performed. The owner
+requested that multiple header actions be placed in one dropdown, tracked in the
+[shipment header refinement](../../plans/SAMPLE-SHIPPING-AND-INTAKE-PLAN.md#september-9-shipment-header-actions).
+
+The subsequent owner screenshot explicitly shows **ReadyToShip** for the same
+shipment. Reset remains disabled, but its helper incorrectly describes the
+container selection as no longer active. This is a misleading reason after
+packet issuance, not evidence that the shipment or saved tubes disappeared.
+The local correction changes the explanation to the issued-packet lock while
+preserving reset rejection; its new backend assertions have not been run.
+
+The owner then reported that **View packet** does nothing and questioned the
+meaning of **Crosswalk CSV** and **Replace packet**. Packet opening was therefore
+an unresolved manual acceptance issue at that checkpoint. The CSV
+action is being clarified to **Download tube list (CSV)**. Source inspection found
+the registered packet route's parent lacked a child outlet; the local route
+correction adds it. The owner
+chose to remove the standalone replacement action; another copy is printed
+through **View packet → Print packet**, while a permitted tube correction still
+issues a corrected revision automatically. The intended manager menu now contains
+**View packet**, **Download tube list (CSV)** and **Record shipment**. No replacement
+packet or sample-return dispatch has been requested or recorded by Codex.
+
+The owner subsequently confirmed that **View packet** works and supplied a
+screenshot of document **SP-20260910-TJHAQYMGKQ, revision 1**, for the same
+18-tube shipment. This establishes that the issued document renders after the
+route correction. It does not establish a complete review of every page,
+successful printing, physical scanner acceptance or sample-return dispatch.
+
+The owner named this document **shipping insert** and requested a direct
+**Print shipping insert** action. The local refinement now uses that terminology
+in the header, confirmation, scanner and document page. The intended print action
+validates the current revision before opening the browser print dialog. Existing
+packet identifiers, barcodes and revision history remain intact, and reprinting
+must not issue a new revision. Direct-print behavior is pending verification.
+
+The owner then explicitly requested that selecting print must not change the
+page. The revised design prints through a hidden same-origin document frame
+after validating the current insert, leaving the shipment route, content and
+18 saved matches in place. Only the browser print dialog should appear; errors
+and retry stay on the shipment page. This supersedes the navigated print-page
+design and is not yet verified by the owner's revision-1 document screenshot.
+
+The owner also reported that the old inactive-selection reset helper persists.
+The active Visual Studio API has not loaded the corrected backend source. An
+immediate frontend explanation correction uses the current issued insert only
+when the server already disallows reset; it does not unlock reset or change
+records. Connected DOM verification now confirms the exact explanation
+**Containers cannot be changed because a shipping insert has already been issued
+for this job.** on the same shipment URL, with 18/18 matches retained. The backend
+source fix has not been activated in the older running API.
+
+Connected Portal verification confirms the three-item **Actions** menu contains
+**Print shipping insert**, **Download tube list (CSV)** and **Record shipment**,
+with no standalone replacement action. Escape closes the menu and restores focus
+to Actions. Opening **Record shipment** focuses Carrier; selecting Cancel without
+entering or submitting anything returns focus to Actions. The same shipment
+remains **ReadyToShip, 18 of 18 matched**. No shipment was recorded. This checks
+menu/dialog navigation and dismissal. The corrected reset explanation is
+independently confirmed above.
+
+Codex then selected **Actions → Print shipping insert** in the connected Portal.
+The subsequent browser inspection timed out. That is consistent with a blocking
+native print dialog, but it does not establish the dialog contents, its successful
+opening or the state after cancellation. The owner was asked to cancel and
+confirm the same shipment with **18 of 18 matched** and **Print shipping insert**
+available again. This print attempt remains **pending manual confirmation**, not
+Pass. Physical output and full printed-content review remain unverified.
+
+A subsequent read-only Chrome tab inventory confirms the URL still points to
+shipment `b3fa2a0e-bd7a-4460-8376-b1658ec43b71`, without navigation to `/packet`.
+This establishes retained parent-page URL only. Native dialog content, scroll
+position and matches after cancellation, and the restored print action still
+await the owner's report.
+
+Final scoped ESLint and the full frontend TypeScript check passed. The backend
+Release solution build passed with zero warnings and zero errors in 41.65 seconds.
+No automated test suite was run for these final changes. Build and static-check
+results do not establish native print behavior or activation of the backend fix
+in the older running API.
+
+**Resume with shipping insert SP-20260910-TJHAQYMGKQ revision 1 and 18 saved tube
+matches.** Verify **Actions → Print shipping insert**, including current-revision
+validation before the browser print dialog, with the shipment page and route
+unchanged. The current attempt is awaiting the owner's cancellation/result
+confirmation; do not launch another print attempt while that dialog may be open.
+Review its contents without issuing another revision. Do not select **Record shipment** yet.
+Automatic advancement reached the last list page, but explicit **Previous tubes**
+/ **Next tubes** navigation is not yet reported; no paging action was performed
+by Codex. Preserve the saved assignments and current shipment. Full SHP-10
+remains incomplete; no application write was performed by Codex while recording
+this evidence.
 
 ## Current implementation checkpoint — September 9
 

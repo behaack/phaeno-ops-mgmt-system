@@ -22,7 +22,7 @@ Before scanning starts, an organization or Department administrator can use **Re
 
 **Reset container configuration** is also unavailable while a barcode entry is unsaved or saving. Discard an unsaved entry before revising the plan; saving the first scan locks the plan as described below.
 
-The action is locked once any container in that plan has a scan, linked physical kit, packet, dispatch or receipt. Clearing a scan does not restore it. If work starts while your confirmation is open, the change is rejected; refresh and review the current state. A successful change returns you to container selection while preserving approved Trial scope, tube identities and physical kit inventory.
+The action is locked once any container in that plan has a scan, linked physical kit, shipping insert, dispatch or receipt. Clearing a scan does not restore it. If work starts while your confirmation is open, the change is rejected; refresh and review the current state. A successful change returns you to container selection while preserving approved Trial scope, tube identities and physical kit inventory.
 
 Your organization must retain the connection between each coded sample ID and its own sample record. Do not enter patient names, medical-record numbers, dates of birth or other direct identifiers. Phaeno retains the permanent-tube-to-sample crosswalk used for shipping and intake.
 
@@ -30,15 +30,17 @@ Open a prepared shipment and use **Scan tubes into this shipment**. Scan the phy
 
 Use tubes registered in a fulfilled kit for this Trial. The first successful scan associates the physical kit with this container; subsequent tubes must come from that kit. Unknown, ineligible, duplicate and already-used barcodes cannot advance scanning. A failed scan retains the barcode and current sample for correction and retry. Do not cover, alter or remove a permanent manufacturer barcode.
 
-Use **Change tube** or **Correct tube** to fix an assignment before dispatch and explain the correction. History is retained. When a packet has already been confirmed, the correction voids it and issues a corrected revision. Destroy unused copies of the old packet.
+Use **Change tube** or **Correct tube** to fix an assignment before dispatch and explain the correction. History is retained. When a shipping insert has already been confirmed, the correction voids it and issues a corrected revision. Destroy unused copies of the old shipping insert.
 
 ## Confirm, print and dispatch each shipment
 
-Review every declared tube, then select **Review and confirm packet**. Confirmation distinguishes samples from tubes and freezes that shipment's destination, packing instructions and crosswalk. Spare slots do not create expected returns.
+When the shipment header has more than one action, open **Actions** to find them, including **Print shipping insert**, **Download tube list (CSV)** and **Record shipment** when permitted. If only one header action is available, it appears directly. Your permissions and the shipment's stage determine which actions appear. Use **Print shipping insert** again if you need another copy of the current revision.
 
-Print the full packet and place its manifest inside the corresponding container. The frozen container name, SKU and capacity identify the selected size. Order/Trial, shipment and sample barcodes identify records; separate permanent tube barcodes identify each physical tube. The manifest lists only this container's physical contents. A split sample shows its total tubes, this container's tubes, and other shipment references or still-unallocated tubes in a separate section. References reflect the confirmed revision; current progress remains in the Portal.
+Review every declared tube, then select **Review and confirm shipping insert**. Confirmation distinguishes samples from tubes and freezes that shipment's destination, packing instructions and crosswalk. Spare slots do not create expected returns.
 
-**View packet** checks the current revision before offering **Print packet**. Reconnect or choose **Try again** if the revision cannot be verified. Failed confirmation keeps the dialog entries for retry. Retain the packet or **Crosswalk CSV** for your records. The packet does not purchase postage or replace the carrier label.
+Print the full shipping insert and place its manifest inside the corresponding container. The frozen container name, SKU and capacity identify the selected size. Order/Trial, shipment and sample barcodes identify records; separate permanent tube barcodes identify each physical tube. The manifest lists only this container's physical contents. A split sample shows its total tubes, this container's tubes, and other shipment references or still-unallocated tubes in a separate section. References reflect the confirmed revision; current progress remains in the Portal.
+
+**Print shipping insert** checks the current revision, then opens the browser print dialog while keeping your shipment page open. Cancelling printing leaves you on the same shipment with your saved tube matches intact. If the insert cannot be checked, review the message on the shipment page, reconnect if needed and select **Try again**. Failed confirmation keeps the dialog entries for retry. Retain the shipping insert or use **Download tube list (CSV)** for your records. The shipping insert does not purchase postage or replace the carrier label.
 
 After handing each package to the carrier, record its carrier, tracking number and shipment time. Receipt progress aggregates tubes across shipments. The first received package does not mark all tubes of a split sample received, and a barcode lookup is not proof that physical material arrived.
 

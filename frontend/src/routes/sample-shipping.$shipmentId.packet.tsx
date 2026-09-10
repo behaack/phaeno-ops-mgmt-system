@@ -6,5 +6,5 @@ export const Route = createFileRoute('/sample-shipping/$shipmentId/packet')({ co
 
 function SampleShippingPacketRoute() {
   const { shipmentId } = Route.useParams()
-  return <SampleShippingPacketPage shipmentId={shipmentId} />
+  return <SampleShippingPacketPage key={shipmentId} shipmentId={shipmentId} />
 }

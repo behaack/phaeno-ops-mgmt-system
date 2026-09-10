@@ -21,11 +21,11 @@ beforeEach(() => {
   mocks.reset.mockReset().mockResolvedValue(pool)
 })
 
-function show(canManage = true, scanActive = false) {
+function show(canManage = true, scanActive = false, initialShipment = shippingFixture, writesBlocked = false) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
-  const view = (shipment = shippingFixture, active = scanActive) => <QueryClientProvider client={client}><SampleShipmentResetPacking shipment={shipment} canManage={canManage} scanActive={active} /></QueryClientProvider>
+  const view = (shipment = initialShipment, active = scanActive) => <QueryClientProvider client={client}><SampleShipmentResetPacking shipment={shipment} canManage={canManage} scanActive={active} writesBlocked={writesBlocked} /></QueryClientProvider>
   const rendered = render(view())
-  return { client, refresh: (shipment: SampleShipmentWorkflow) => rendered.rerender(view(shipment)), setScanActive: (active: boolean) => rendered.rerender(view(shippingFixture, active)) }
+  return { client, refresh: (shipment: SampleShipmentWorkflow) => rendered.rerender(view(shipment)), setScanActive: (active: boolean) => rendered.rerender(view(initialShipment, active)) }
 }
 async function openReview() {
   const action = screen.getByRole('button', { name: 'Reset container configuration' })
@@ -70,6 +70,49 @@ describe('changing a confirmed container plan', () => {
     expect(await screen.findByText(reason)).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Reset container configuration' })).toHaveProperty('disabled', true)
     expect(screen.queryByRole('dialog')).toBeNull()
+    expect(mocks.reset).not.toHaveBeenCalled()
+  })
+
+  const inactiveReason = 'This container selection is no longer active. Open a current prepared container to change the containers for this job.'
+  const insertReason = 'Containers cannot be changed because a shipping insert has already been issued for this job.'
+  const issuedShipment: SampleShipmentWorkflow = {
+    ...shippingFixture, status: 'ReadyToShip',
+    currentPacket: { id: 'insert-1', revision: 1, packetNumber: 'INSERT-1', barcode: 'INSERT-BARCODE-1', issuedAt: '2026-09-10T01:00:00Z', isVoided: false },
+  }
+
+  it.each(['ReadyToShip', 'Shipped', 'Delivered', 'Received'])('explains the issued insert on a current %s container while preserving the server block', async status => {
+    mocks.get.mockResolvedValue({ ...eligible, canReset: false, blockedReason: inactiveReason })
+    show(true, false, { ...issuedShipment, status })
+    expect(await screen.findByText(insertReason)).toBeTruthy()
+    expect(screen.queryByText(inactiveReason)).toBeNull()
+    expect(screen.getByRole('button', { name: 'Reset container configuration' })).toHaveProperty('disabled', true)
+    expect(mocks.reset).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    { name: 'cancelled', shipment: { ...issuedShipment, status: 'Cancelled' } },
+    { name: 'unconfigured', shipment: { ...issuedShipment, container: null } },
+    { name: 'packing pool', shipment: { ...issuedShipment, isPackingPool: true } },
+    { name: 'empty', shipment: { ...issuedShipment, crosswalk: [] } },
+  ])('retains the server explanation for a $name selection even with retained insert information', async ({ shipment }) => {
+    mocks.get.mockResolvedValue({ ...eligible, canReset: false, blockedReason: inactiveReason })
+    show(true, false, shipment)
+    expect(await screen.findByText(inactiveReason)).toBeTruthy()
+    expect(screen.queryByText(insertReason)).toBeNull()
+    expect(screen.getByRole('button', { name: 'Reset container configuration' })).toHaveProperty('disabled', true)
+    expect(mocks.reset).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    { scanActive: true, writesBlocked: false, reason: 'Finish or discard the current tube scan before changing containers.' },
+    { scanActive: true, writesBlocked: true, reason: 'Current shipment information must be verified before resetting.' },
+  ])('keeps the temporary block ahead of the issued-insert explanation: $reason', async ({ scanActive, writesBlocked, reason }) => {
+    mocks.get.mockResolvedValue({ ...eligible, canReset: false, blockedReason: inactiveReason })
+    show(true, scanActive, issuedShipment, writesBlocked)
+    await waitFor(() => expect(mocks.get).toHaveBeenCalled())
+    expect(screen.getByText(reason)).toBeTruthy()
+    expect(screen.queryByText(insertReason)).toBeNull()
+    expect(screen.getByRole('button', { name: 'Reset container configuration' })).toHaveProperty('disabled', true)
     expect(mocks.reset).not.toHaveBeenCalled()
   })
 

@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { SampleShippingPacketPage } from './SampleShippingPacketPage'
 
@@ -17,32 +17,46 @@ const packet = {
   destinationSnapshotJson: '{}', instructionSnapshotJson: '{}', manifestSnapshotJson: '{}',
 }
 
-function show() {
+function show(autoPrint = false, onAutoPrint?: () => void) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } })
   client.setQueryData(['sample-shipping-packet', 'shipment-1'], packet)
-  render(<QueryClientProvider client={client}><SampleShippingPacketPage shipmentId="shipment-1" /></QueryClientProvider>)
+  render(<QueryClientProvider client={client}><SampleShippingPacketPage shipmentId="shipment-1" autoPrint={autoPrint} onAutoPrint={onAutoPrint} /></QueryClientProvider>)
+  return client
 }
 
 describe('SampleShippingPacketPage', () => {
-  beforeEach(() => { api.getPacket.mockReset() })
+  beforeEach(() => { api.getPacket.mockReset(); vi.spyOn(window, 'print').mockImplementation(() => undefined) })
+  afterEach(() => { vi.restoreAllMocks() })
 
-  it('checks even a fresh cached packet before allowing it to be printed', async () => {
+  it('checks a fresh cached packet and renders the current revision before printing once', async () => {
     let resolvePacket!: (value: typeof packet) => void
     api.getPacket.mockImplementation(() => new Promise<typeof packet>((resolve) => { resolvePacket = resolve }))
-    show()
-    expect(screen.queryByRole('button', { name: 'Print packet' })).toBeNull()
+    const printDocument = vi.fn(() => window.print())
+    const client = show(true, printDocument)
+    expect(screen.queryByRole('button', { name: 'Print shipping insert' })).toBeNull()
+    expect(window.print).not.toHaveBeenCalled()
     expect(screen.getByRole('link', { name: 'Back to shipment' })).toBeTruthy()
     await waitFor(() => expect(api.getPacket).toHaveBeenCalledWith('shipment-1'))
-    resolvePacket({ ...packet, shipment: { ...packet.shipment, currentPacket: { ...packet.shipment.currentPacket, revision: 2 } } })
-    expect(await screen.findByRole('button', { name: 'Print packet' })).toBeTruthy()
+    const current = { ...packet, shipment: { ...packet.shipment, currentPacket: { ...packet.shipment.currentPacket, revision: 2 } } }
+    vi.mocked(window.print).mockImplementation(() => { expect(screen.getByText(/Revision 2/)).toBeTruthy() })
+    resolvePacket(current)
+    expect(await screen.findByRole('button', { name: 'Print shipping insert' })).toBeTruthy()
     expect(screen.getByText(/Revision 2/)).toBeTruthy()
+    await waitFor(() => expect(window.print).toHaveBeenCalledTimes(1))
+    expect(printDocument).toHaveBeenCalledTimes(1)
+    api.getPacket.mockResolvedValue(current)
+    await act(async () => { await client.refetchQueries({ queryKey: ['sample-shipping-packet', 'shipment-1'] }) })
+    expect(window.print).toHaveBeenCalledTimes(1)
+    fireEvent.click(await screen.findByRole('button', { name: 'Print shipping insert' }))
+    expect(window.print).toHaveBeenCalledTimes(2)
   })
 
   it('keeps an old cached packet unprintable when the current revision cannot be checked', async () => {
     api.getPacket.mockRejectedValue(new Error('Current packet is unavailable.'))
-    show()
-    expect(await screen.findByText('Packet unavailable')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Print packet' })).toBeNull()
+    show(true)
+    expect(await screen.findByText('Shipping insert unavailable')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Print shipping insert' })).toBeNull()
+    expect(window.print).not.toHaveBeenCalled()
     expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Back to shipment' })).toBeTruthy()
   })
@@ -51,7 +65,8 @@ describe('SampleShippingPacketPage', () => {
     const common = { submittedSpecimenId: 'specimen-1', customerSampleId: 'RNA-SPLIT', sampleName: 'Extracted RNA', sampleTypeName: 'RNA', sampleBarcode: 'PH-M-SPECIMEN1', totalSampleTubeCount: 4, tubeCount: 2, otherShipments: [{ shipmentId: 'shipment-2', shipmentNumber: 'SHIP-OTHER', tubeCount: 1 }], unallocatedTubeCount: 1 }
     api.getPacket.mockResolvedValue({ ...packet, manifestSnapshotJson: JSON.stringify({ orderBarcode: 'PH-O-ORDER1', shipmentBarcode: 'PH-S-SHIPMENT1', container: { definitionId: 'container-20', commonName: 'Frozen container name', sku: '000-20', capacity: 20 }, containerKit: { id: 'stock-1', kitNumber: 'KIT-FROZEN-001', barcode: 'KIT-FROZEN-001' }, samples: [{ ...common, tubeOrdinal: 1, supplierTubeBarcode: 'TUBE_0001' }, { ...common, tubeOrdinal: 2, supplierTubeBarcode: 'TUBE_0002' }] }), shipment: { ...packet.shipment, container: { commonName: 'Current revised name', sku: 'CHANGED', capacity: 99 }, assignedContainer: { kitNumber: 'KIT-LIVE-OTHER', barcode: 'KIT-LIVE-OTHER' } } })
     show()
-    await screen.findByRole('button', { name: 'Print packet' })
+    await screen.findByRole('button', { name: 'Print shipping insert' })
+    expect(window.print).not.toHaveBeenCalled()
     expect(screen.getByRole('img', { name: 'Order barcode PH-O-ORDER1' })).toBeTruthy()
     expect(screen.getByRole('img', { name: 'Shipment barcode PH-S-SHIPMENT1' })).toBeTruthy()
     expect(screen.getByRole('img', { name: 'Container barcode KIT-FROZEN-001' })).toBeTruthy()
@@ -71,7 +86,7 @@ describe('SampleShippingPacketPage', () => {
   it('keeps a legacy frozen crosswalk printable without inventing sample identifiers', async () => {
     api.getPacket.mockResolvedValue({ ...packet, manifestSnapshotJson: JSON.stringify({ samples: [{ customerSampleId: 'LEGACY-1', sampleName: 'Legacy RNA', supplierTubeBarcode: 'LEGACY-TUBE' }] }) })
     show()
-    await screen.findByRole('button', { name: 'Print packet' })
+    await screen.findByRole('button', { name: 'Print shipping insert' })
     expect(screen.getByRole('img', { name: 'Permanent tube barcode LEGACY-TUBE' })).toBeTruthy()
     expect(screen.queryByRole('img', { name: /^Sample barcode/ })).toBeNull()
     expect(screen.queryByRole('img', { name: /^Container barcode/ })).toBeNull()
@@ -79,8 +94,9 @@ describe('SampleShippingPacketPage', () => {
 
   it('withholds a voided packet even if a cached response contains it', async () => {
     api.getPacket.mockResolvedValue({ ...packet, shipment: { ...packet.shipment, currentPacket: { ...packet.shipment.currentPacket, isVoided: true } } })
-    show()
-    expect(await screen.findByText('Packet no longer current')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Print packet' })).toBeNull()
+    show(true)
+    expect(await screen.findByText('Shipping insert no longer current')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Print shipping insert' })).toBeNull()
+    expect(window.print).not.toHaveBeenCalled()
   })
 })

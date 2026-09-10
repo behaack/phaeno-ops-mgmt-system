@@ -1,6 +1,6 @@
 # Prepare and ship samples
 
-For a normal Lab Service Job, sample entry begins after the price is accepted. Shipping and laboratory authorization begin after the exact sample list is finalized. Open the owning Job under **Lab services**, then use **Samples and shipping** → **Shipping containers**. An organization administrator or an administrator of the selected Department prepares containers, matches tubes, confirms packets and records dispatch. Members can review the shipments available to their Department.
+For a normal Lab Service Job, sample entry begins after the price is accepted. Shipping and laboratory authorization begin after the exact sample list is finalized. Open the owning Job under **Lab services**, then use **Samples and shipping** → **Shipping containers**. An organization administrator or an administrator of the selected Department prepares containers, matches tubes, confirms shipping inserts and records dispatch. Members can review the shipments available to their Department.
 
 ## Order and receive transportation kits
 
@@ -28,7 +28,7 @@ Use compatible sizes you actually have available. For example, 30 tubes can use 
 
 The preview shows tubes, containers, usable capacity, spare slots and unallocated tubes. **Confirm containers** reserves the exact scanned containers and creates a shipment for each nonempty container. If another user has claimed a selected container, the save fails with an explanation and preserves your draft for correction. Partial preparation leaves the remaining tubes awaiting containers. Spare slots are empty capacity, not missing samples.
 
-A sample's tubes may be split among shipments. Container choices do not change accepted sample counts or pricing. Assigned tubes and confirmed packets are not silently rearranged if configuration changes. Contact Phaeno when existing assignments or a dispatched shipment need reconciliation.
+A sample's tubes may be split among shipments. Container choices do not change accepted sample counts or pricing. Assigned tubes and confirmed shipping inserts are not silently rearranged if configuration changes. Contact Phaeno when existing assignments or a dispatched shipment need reconciliation.
 
 Adjust each row's tube count as needed. Counts must be whole numbers, fit each container and together equal the tubes allocated in the preview. The **Summary** stays visible while updating; confirmation becomes available when the current allocation has been checked.
 
@@ -40,7 +40,7 @@ Before scanning starts, an organization or Department administrator can use **Re
 
 **Reset container configuration** is also unavailable while a barcode entry is unsaved or saving. Discard an unsaved entry before revising the plan; saving the first scan locks the plan as described below.
 
-Before any tube is scanned, a successful reset releases the selected containers back to available inventory at their locations and returns the Job's tubes to preparation. Previous configurations remain in history. The action is locked once any container for the Job has a saved tube scan, bound tube roster, packet, sample-return dispatch or sample receipt. Clearing a scan does not restore it. If another user starts work while your confirmation is open, refresh and review the current state. The finalized sample list, quote, original kit deliveries and their receipts remain intact.
+Before any tube is scanned, a successful reset releases the selected containers back to available inventory at their locations and returns the Job's tubes to preparation. Previous configurations remain in history. The action is locked once any container for the Job has a saved tube scan, bound tube roster, shipping insert, sample-return dispatch or sample receipt. Clearing a scan does not restore it. If another user starts work while your confirmation is open, refresh and review the current state. The finalized sample list, quote, original kit deliveries and their receipts remain intact.
 
 Use a stable **Customer sample ID** that your organization can connect to its own sample record. Do not enter patient names, medical-record numbers, dates of birth or other direct identifiers.
 
@@ -48,15 +48,17 @@ Open a prepared shipment and work through **Scan tubes into this shipment**. For
 
 Use registered tubes belonging to the physical container assigned during preparation. The first successful tube scan changes that container from assigned to in use and locks reset; it does not choose a different container implicitly. A tube from another container, an unknown or duplicate barcode, or an already-used tube cannot advance the step. A failed scan keeps the entered value and current sample available for correction and retry. Do not cover, alter or remove permanent container or tube barcodes.
 
-If the wrong tube was assigned, use **Change tube** or **Correct tube** and record why the assignment changed. The earlier association remains in history. A correction after packet confirmation, but before dispatch, voids that packet and issues a corrected revision. Destroy unused copies of the old packet and print the replacement.
+If the wrong tube was assigned, use **Change tube** or **Correct tube** and record why the assignment changed. The earlier association remains in history. A correction after shipping insert confirmation, but before dispatch, voids that shipping insert and issues a corrected revision. Destroy unused copies of the old shipping insert and print the replacement.
 
-## Confirm each shipment and print its packet
+## Confirm each shipment and print its shipping insert
 
-Review every physical tube in the container, then select **Review and confirm packet**. Confirmation shows separate sample and tube counts and freezes the destination, instructions, manifest and crosswalk for that revision. A container can be partly filled when all its declared tubes are matched; spare capacity does not require extra tubes.
+When the shipment header has more than one action, open **Actions** to find them, including **Print shipping insert**, **Download tube list (CSV)** and **Record shipment** when permitted. If only one header action is available, it appears directly. Your permissions and the shipment's stage determine which actions appear. Use **Print shipping insert** again if you need another copy of the current revision.
 
-Print the full packet and follow its preparation and packing instructions. Put that container's manifest inside the package. It includes the frozen container name, SKU, capacity and physical container barcode, distinct order, shipment and sample barcodes, and every permanent tube barcode for its contents. A split sample shows how many of its total tubes are inside, with other shipment references or unallocated tubes listed separately. Those references reflect the confirmed revision; the Portal shows current progress. Scanning a printed identifier does not prove physical receipt.
+Review every physical tube in the container, then select **Review and confirm shipping insert**. Confirmation shows separate sample and tube counts and freezes the destination, instructions, manifest and crosswalk for that revision. A container can be partly filled when all its declared tubes are matched; spare capacity does not require extra tubes.
 
-**View packet** checks the current revision before offering **Print packet**. Reconnect or use **Try again** if it cannot be checked. If confirmation fails, the message appears in the open dialog and your entries remain available. Retain the packet or **Crosswalk CSV** so your organization can connect its own identifiers to the permanent tubes. The packet does not buy postage or replace the carrier label.
+Print the full shipping insert and follow its preparation and packing instructions. Put that container's manifest inside the package. It includes the frozen container name, SKU, capacity and physical container barcode, distinct order, shipment and sample barcodes, and every permanent tube barcode for its contents. A split sample shows how many of its total tubes are inside, with other shipment references or unallocated tubes listed separately. Those references reflect the confirmed revision; the Portal shows current progress. Scanning a printed identifier does not prove physical receipt.
+
+**Print shipping insert** checks the current revision, then opens the browser print dialog while keeping your shipment page open. Cancelling printing leaves you on the same shipment with your saved tube matches intact. If the insert cannot be checked, review the message on the shipment page, reconnect if needed and select **Try again**. If confirmation fails, the message appears in the open dialog and your entries remain available. Retain the shipping insert or use **Download tube list (CSV)** so your organization can connect its own identifiers to the permanent tubes. The shipping insert does not buy postage or replace the carrier label.
 
 ## Record dispatch and follow receipt
 

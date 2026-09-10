@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Outlet, useRouterState } from '@tanstack/react-router'
 
 import { SampleShippingDetailPage } from '#/features/sample-shipping/SampleShippingDetailPage'
 
@@ -7,5 +7,6 @@ export const Route = createFileRoute('/sample-shipping/$shipmentId')({ validateS
 function SampleShippingDetailRoute() {
   const { shipmentId } = Route.useParams()
   const { orderKits } = Route.useSearch()
-  return <SampleShippingDetailPage shipmentId={shipmentId} autoOpenKitOrder={orderKits} />
+  const isPacketRoute = useRouterState({ select: state => state.matches.some(match => match.routeId === '/sample-shipping/$shipmentId/packet') })
+  return isPacketRoute ? <Outlet /> : <SampleShippingDetailPage shipmentId={shipmentId} autoOpenKitOrder={orderKits} />
 }

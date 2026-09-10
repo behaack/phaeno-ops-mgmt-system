@@ -150,18 +150,24 @@ test('shows Prospect guides and denies a cross-audience route', async ({ page })
 })
 
 async function openDocumentationFromUserMenu(page: import('@playwright/test').Page) {
+  if (test.info().project.name === 'mobile-chrome') {
+    await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
+  }
   await page.goto('/')
+  await page.waitForLoadState('networkidle')
   await expect(page.locator('header').getByRole('link', {
     name: /^(Docs|Documentation)$/,
   })).toHaveCount(0)
   const trigger = page.getByRole('button', { name: 'Open user menu' })
   await trigger.focus()
   await trigger.press('Enter')
+  await expect(page.getByRole('menu')).toBeVisible()
   const documentation = page.getByRole('menuitem', {
     name: 'Documentation', exact: true,
   })
   await expect(documentation).toHaveCount(1)
   await expect(documentation).toBeVisible()
+  await page.screenshot({ path: test.info().outputPath('documentation-menu.png') })
   await documentation.focus()
   await documentation.press('Enter')
   await expect(page.getByRole('menu')).toHaveCount(0)

@@ -127,10 +127,13 @@ public sealed class SampleShipmentPackingResetService(PSeqOperationsDbContext db
 
     private static string? BlockedReason(Family family)
     {
-        if (family.Current.Status != SampleShipmentStatus.Preparing || !family.Current.ContainerDefinitionId.HasValue
+        // Progressed shipments remain current; their milestone history explains why container changes are locked.
+        if (family.Current.Status == SampleShipmentStatus.Cancelled || !family.Current.ContainerDefinitionId.HasValue
             || family.Current.IsPackingPool || family.Current.Items.Count == 0)
             return "This container selection is no longer active. Open a current prepared container to change the containers for this job.";
-        if (family.HasHistory || family.Shipments.Any(item => item.ReturnKit is not null || item.PacketRevisions.Count > 0
+        if (family.Shipments.Any(item => item.PacketRevisions.Count > 0))
+            return "Containers cannot be changed because a shipping insert has already been issued for this job.";
+        if (family.HasHistory || family.Shipments.Any(item => item.ReturnKit is not null
                 || item.ShippedAt.HasValue || item.DeliveredAt.HasValue || item.ReceivedAt.HasValue
                 || item.Carrier is not null || item.TrackingNumber is not null
                 || item.Status is not (SampleShipmentStatus.Preparing or SampleShipmentStatus.Cancelled)

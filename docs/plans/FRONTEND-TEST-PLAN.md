@@ -281,6 +281,74 @@ Phaeno help describes the optional section and Availability group; the generated
 
 ## Standard containers, tube scanning and split receipt — September 8, 2026
 
+September 9 shipment header refinement: the shared detail page puts every
+visible header action in one **Actions** dropdown when there are two or more,
+keeps a single action direct and omits the control when there are none. Visible
+disabled actions count toward grouping. Preserve capability gating,
+pending/disabled behavior, packet links, CSV download and existing confirmation
+dialogs. Rename the CSV action to **Download tube list (CSV)** and remove the
+standalone replacement action as requested. The final **Print shipping insert**
+action validates the current document and opens the browser print dialog while
+keeping the shipment route, page content and scan state unchanged;
+permitted tube corrections still generate the corrected revision. Existing
+component assertions are updated for menu access, no standalone replacement and
+first-confirmation error/recovery and invalidation. They have not been run.
+Connected Portal checks confirm the three-item issued-insert menu and no standalone
+replacement action. Escape closes the menu and returns focus to Actions. Opening
+Record shipment focuses Carrier; cancelling without entry or submission returns
+focus to Actions and preserves ReadyToShip with 18/18 matches. Zero/one-action
+states and responsive/theme checks remain pending. No new automated suite is added.
+The owner's latest screenshot supplies the rendered document page for
+**SP-20260910-TJHAQYMGKQ, revision 1**, for the same 18-tube shipment. This verifies
+the earlier packet-route rendering correction. Direct-print validation,
+cancellation/retry and complete document review remain pending; there is no
+physical print or dispatch acceptance. User-facing document terminology is now
+**shipping insert**, with internal packet contracts and barcode identities
+unchanged.
+
+Final scoped ESLint and the full frontend TypeScript check passed. No automated
+suite was run for the final header, print and reset-explanation changes. The live
+print-action attempt caused subsequent browser inspection to time out; native
+dialog contents and unchanged state after cancellation are awaiting the owner's
+confirmation and must not be counted as a passing print check.
+
+The owner reported the inactive-selection reset explanation still present because
+the Visual Studio API is running the older backend code. The immediate UI
+correction supplies the issued-insert explanation only for a current issued
+insert whose server response already disallows reset. The existing disabled state
+and server authorization remain unchanged. Its guards exclude cancelled records,
+preparation pools, records without a physical container and empty tube lists.
+Write/scan blocking, eligibility load failures and pending state retain priority.
+Focused assertions now cover current status, those exclusions and transient-state
+priority; they have not been run. Verify the explanation with the older API
+response and preserve the normal server reason for unrelated blockers. This
+presentation check now has connected DOM confirmation of the exact issued-insert
+reason on the same shipment URL with 18/18 matches. Excluded-state and transient
+variants remain unrun; the backend source fix is recorded separately.
+
+September 9 presentation refinement: the existing `SampleTubeScanner.test.tsx`
+save/advance assertion now expects one saved barcode in its sample row and no
+duplicate Saved barcode graphic. The visual Saved card is removed, success
+announcement retained for screen readers, and on-screen row barcodes made
+compact without changing printed dimensions. Connected Portal and user-provided
+screenshots verified the current 1-of-18 layout. Automated suites were not rerun
+for this refinement; manual SHP-10 continues in the connected walkthrough.
+
+The owner subsequently requested equal matched and unmatched desktop row heights
+at the five-scan checkpoint. The scanner bar-height refinement is 1rem on screen
+with the existing 12rem width cap, 4px caption gap and readable identifier text;
+printed bars remain 7mm. Rows remain content-driven for longer text and narrow
+layouts. The change is implemented locally. The owner's latest screenshot
+confirms compact 16px bars and rows at **18 of 18 matched**. No unmatched rows
+remain for a direct same-view comparison; precise matched/unmatched measurements
+were not completed because the browser inspection lost its connection. Scoped
+ESLint and whitespace checks passed. No cosmetic unit assertion or automated
+suite run was added for this sizing change. The latest screenshot shows packet
+review available, Reset disabled and automatic advancement to **Tubes 17–18 of
+18**. A later screenshot verifies the nine-sample/18-tube packet confirmation
+review, followed by the post-issuance actions. Explicit Previous/Next paging,
+the packet document and dispatch remain pending.
+
 The focused component checkpoint passed 59 tests: 34 Customer/receipt/barcode
 cases and 25 Phaeno catalog/stock/scanner cases. Full frontend TypeScript and
 scoped ESLint passed. Generated documentation contains 56 current guides.

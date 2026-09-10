@@ -95,6 +95,16 @@ rule that cancels only an unshipped remainder.
    include the physical container barcode. Preserve split-sample references and
    separate shipment/receipt progress for each container.
 
+## Agreed recovery presentation — September 9
+
+Retain the ability to release and revise unused container reservations before
+the first saved tube scan. The owner accepted presenting this as a secondary
+**Change containers** action, with explicit whole-Job scope and affected
+container/tube counts. Preserve finalized samples, delivery/receipt history,
+retired configurations and the existing post-scan lock. The interface currently
+still says **Reset container configuration**; the label refinement is planned,
+not implemented by this manual testing checkpoint.
+
 ## Implementation work
 
 ### Inventory and persistence
