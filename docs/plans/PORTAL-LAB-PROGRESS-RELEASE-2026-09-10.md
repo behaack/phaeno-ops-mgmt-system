@@ -52,4 +52,29 @@ safety notes may continue rather than being clipped to force one page.
 
 ## Deployment
 
-Pending commit, API workflow, held UI candidate and production promotion.
+Completed and pushed application revision:
+`19176c09019e51b3909d59425038bd2a9f5952d4` on
+`codex/portal-documentation-search-release`.
+
+- API [workflow 34541476014](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/34541476014)
+  completed successfully. Runtime release output confirms the exact source
+  revision above and `migrations_requested=false`. Existing file scanning
+  health/clean/EICAR/encrypted/oversize smoke checks passed.
+- UI `dpl_GMFiuez68WwArJF8Kk1KeWe7fctV` reached READY with the same Git SHA.
+  It was held until API completion, then promoted successfully.
+  `portal.phaenobiotech.com` resolves to that deployment. Rollback target remains
+  `dpl_DzwKyZ5yiw3Zb69B3nBzeF8ZXWGP` (UI only).
+- Production verification: Portal `/` HTTP 200; all seven referenced entry
+  assets HTTP 200; API `/api/health` HTTP 200; database ping HTTP 204.
+  Fresh browser sign-in page rendered without page exceptions or observed 5xx.
+  The connected browser required sign-in, so populated authenticated production
+  journeys were not executed. Direct candidate URL protection led to Vercel
+  login and was not counted as application verification.
+- The agent-browser daemon failed to attach during final production inspection;
+  an isolated Playwright browser completed the read-only sign-in smoke check.
+- Local verification scratch database cleanup was independently confirmed: no
+  database matching this release's temporary prefix remains.
+
+Final release evidence is recorded in a documentation-only follow-up commit;
+production application source remains the exact revision above. No Website,
+authentication cutover, EF migration or repeat data repair was performed.
