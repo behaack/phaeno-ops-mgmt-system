@@ -44,13 +44,37 @@ public sealed partial class LabServiceOrdersController
                 quote.Purpose.ToString(), quote.IssuedAt, quote.ExpiresAt, quote.AcceptedAt,
                 lines, quote.Subtotal, quote.Tax, quote.Total, quote.Currency,
                 !string.IsNullOrWhiteSpace(quote.TaxDecisionSnapshotJson), contact?.Name,
-                contact?.Email, addressLines, quote.PaymentTermsDaysSnapshot);
+                contact?.Email, addressLines, quote.PaymentTermsDaysSnapshot, ReadSampleScope());
             var bytes = QuotePdfRenderer.Render(document);
             return File(bytes, "application/pdf", $"{order.OrderNumber}-quote-r{quote.Revision}.pdf");
 
             void AddAddressLine(string? value)
             {
                 if (!string.IsNullOrWhiteSpace(value)) addressLines.Add(value.Trim());
+            }
+
+            QuotePdfScope? ReadSampleScope()
+            {
+                // Request revisions are immutable. Standard orders instead freeze
+                // their scope in the placement snapshot, linked to the accepted quote.
+                var json = quote.SourceRequestRevision is { } revision
+                    ? order.Revisions.SingleOrDefault(value => value.Revision == revision)?.SnapshotJson
+                    : null;
+                if (json is null && quote.SourceRequestRevision is null && order.PlacementSnapshotJson is { } placement)
+                {
+                    using var snapshot = JsonDocument.Parse(placement);
+                    if (snapshot.RootElement.TryGetProperty("quoteId", out var id) && id.GetGuid() == quote.Id)
+                        json = placement;
+                }
+                var scope = ReadQuoteSnapshot<QuotePdfScope>(json);
+                // Legacy quotes without recorded source groups remain downloadable;
+                // today's editable source groups must never replace historical scope.
+                if (scope?.SourceGroups is not { Count: > 0 }) return null;
+                if (scope.RequestedSpecimenCount <= 0 || scope.SourceGroups.Any(source => source is null
+                    || string.IsNullOrWhiteSpace(source.BiologicalSource) || source.SpecimenCount <= 0)
+                    || scope.SourceGroups.Sum(source => (long)source.SpecimenCount) != scope.RequestedSpecimenCount)
+                    throw new JsonException("The saved sample scope is incomplete.");
+                return scope;
             }
         }
         catch (Exception exception) when (exception is JsonException or ArgumentException or NotSupportedException or InvalidOperationException)

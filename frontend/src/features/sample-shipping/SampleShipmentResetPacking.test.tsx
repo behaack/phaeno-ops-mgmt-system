@@ -21,9 +21,9 @@ beforeEach(() => {
   mocks.reset.mockReset().mockResolvedValue(pool)
 })
 
-function show(canManage = true, scanActive = false, initialShipment = shippingFixture, writesBlocked = false) {
+function show(canManage = true, scanActive = false, initialShipment = shippingFixture, writesBlocked = false, onSelectShipment?: (id: string) => Promise<void>) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
-  const view = (shipment = initialShipment, active = scanActive) => <QueryClientProvider client={client}><SampleShipmentResetPacking shipment={shipment} canManage={canManage} scanActive={active} writesBlocked={writesBlocked} /></QueryClientProvider>
+  const view = (shipment = initialShipment, active = scanActive) => <QueryClientProvider client={client}><SampleShipmentResetPacking shipment={shipment} canManage={canManage} scanActive={active} writesBlocked={writesBlocked} onSelectShipment={onSelectShipment} /></QueryClientProvider>
   const rendered = render(view())
   return { client, refresh: (shipment: SampleShipmentWorkflow) => rendered.rerender(view(shipment)), setScanActive: (active: boolean) => rendered.rerender(view(initialShipment, active)) }
 }
@@ -142,6 +142,15 @@ describe('changing a confirmed container plan', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['lab-service-order', shippingFixture.authorizationSourceId] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['trial-project', shippingFixture.authorizationSourceId] })
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('selects the returned pool inside the Job after reset without leaving its workspace', async () => {
+    const select = vi.fn().mockResolvedValue(undefined)
+    show(true, false, shippingFixture, false, select)
+    confirm(await openReview())
+    await waitFor(() => expect(select).toHaveBeenCalledWith(pool.id))
+    expect(mocks.navigate).not.toHaveBeenCalled()
+    expect(mocks.reset).toHaveBeenCalledExactlyOnceWith(shippingFixture.id, { shipments: eligible.shipments })
   })
 
   it('keeps a stale review after failure until the user explicitly reviews the updated containers', async () => {

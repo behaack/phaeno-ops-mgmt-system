@@ -10,13 +10,26 @@ vi.mock('@tanstack/react-router', () => ({ useNavigate: () => mocks.navigate }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider: 'clerk', session: { capabilities: { canViewSampleShipping: mocks.allowed } }, selectedOrganizationId: 'org-1', selectedDepartmentId: 'department-1' }) }))
 
 const second = { ...shippingFixture, id: 'shipment-2', shipmentNumber: 'SHIP-2', crosswalk: [shippingTube(3)] }
-function show() {
+function show(onSelectShipment?: (id: string) => Promise<void>) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  render(<QueryClientProvider client={client}><ShippingContainerSelector shipment={shippingFixture} /></QueryClientProvider>)
+  render(<QueryClientProvider client={client}><ShippingContainerSelector shipment={shippingFixture} onSelectShipment={onSelectShipment} /></QueryClientProvider>)
 }
 beforeEach(() => { vi.resetAllMocks(); mocks.allowed = true; mocks.list.mockResolvedValue([shippingFixture, second]); mocks.navigate.mockResolvedValue(undefined) })
 
 describe('shipping container selector', () => {
+  it('delegates selection to the Job host and retains the controlled value when guarded navigation is cancelled', async () => {
+    const select = vi.fn().mockImplementationOnce(() => new Promise<void>(() => {})).mockResolvedValue(undefined)
+    show(select)
+    const selector = screen.getByRole('combobox', { name: 'Shipping container' })
+    await waitFor(() => expect(selector).toHaveProperty('disabled', false))
+    fireEvent.change(selector, { target: { value: second.id } })
+    expect(select).toHaveBeenCalledWith(second.id)
+    expect(selector).toHaveProperty('value', shippingFixture.id)
+    expect(selector).toHaveProperty('disabled', false)
+    fireEvent.change(selector, { target: { value: second.id } })
+    expect(select).toHaveBeenCalledTimes(2)
+    expect(mocks.navigate).not.toHaveBeenCalled()
+  })
   it('selects the current container and switches directly to another shipment', async () => {
     show()
     const selector = screen.getByRole('combobox', { name: 'Shipping container' })

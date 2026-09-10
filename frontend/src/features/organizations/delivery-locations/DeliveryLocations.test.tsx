@@ -6,19 +6,30 @@ import { deliveryLocationFixture as location } from '#/test-helpers/transportati
 import { DeliveryLocationEditor } from './DeliveryLocationEditor'
 import { DeliveryLocationDetailPage, DeliveryLocationsPage } from './DeliveryLocationsPage'
 
-const mocks = vi.hoisted(() => ({ list: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), deactivate: vi.fn(), navigate: vi.fn(), inventory: vi.fn(), receive: vi.fn(), staff: false, admin: true, departmentAdmin: false, wrongDepartment: false, shipmentId: undefined as string | undefined }))
+const mocks = vi.hoisted(() => ({ list: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), deactivate: vi.fn(), navigate: vi.fn(), inventory: vi.fn(), receive: vi.fn(), staff: false, admin: true, departmentAdmin: false, wrongDepartment: false, shipmentId: undefined as string | undefined, returnOrderId: undefined as string | undefined }))
 vi.mock('#/api/transportation-kit-requests', () => ({ getLocationKitInventory: mocks.inventory, confirmLocationKitsReceived: mocks.receive }))
 vi.mock('#/api/customer-delivery-locations', () => ({ getCustomerDeliveryLocations: mocks.list, getCustomerDeliveryLocation: mocks.get, createCustomerDeliveryLocation: mocks.create, updateCustomerDeliveryLocation: mocks.update, deactivateCustomerDeliveryLocation: mocks.deactivate }))
 vi.mock('#/api/organization-management', () => ({ listDepartments: async () => [{ id: '10000000-0000-4000-8000-000000000003', name: 'Research' }], getOrganization: async () => ({ name: 'Example Customer' }) }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ session: { state: 'ready', isPlatformAdmin: mocks.staff, capabilities: { canManageOrderConfiguration: mocks.staff }, memberships: [{ organizationId: '10000000-0000-4000-8000-000000000002', organizationName: 'Example Customer', organizationKind: 'Customer', isOrganizationAdmin: mocks.admin, departments: mocks.wrongDepartment ? [] : [{ departmentId: '10000000-0000-4000-8000-000000000003', departmentName: 'Research', isDepartmentAdmin: mocks.departmentAdmin }] }] } }) }))
 vi.mock('#/features/orders/use-order-draft-guard', () => ({ useOrderDraftGuard: () => vi.fn() }))
-vi.mock('@tanstack/react-router', () => ({ useNavigate: () => mocks.navigate, useSearch: () => ({ organizationId: '10000000-0000-4000-8000-000000000002', departmentId: '10000000-0000-4000-8000-000000000003', shipmentId: mocks.shipmentId }), Link: ({ children, to, params, search }: { children: ReactNode; to: string; params?: Record<string, string>; search?: Record<string, unknown> }) => <a data-search={JSON.stringify(search)} href={Object.entries(params ?? {}).reduce((path, [key, value]) => path.replace(`$${key}`, value), to)}>{children}</a> }))
+vi.mock('@tanstack/react-router', () => ({ useNavigate: () => mocks.navigate, useSearch: () => ({ organizationId: '10000000-0000-4000-8000-000000000002', departmentId: '10000000-0000-4000-8000-000000000003', shipmentId: mocks.shipmentId, returnOrderId: mocks.returnOrderId }), Link: ({ children, to, params, search }: { children: ReactNode; to: string; params?: Record<string, string>; search?: Record<string, unknown> }) => <a data-search={JSON.stringify(search)} href={Object.entries(params ?? {}).reduce((path, [key, value]) => path.replace(`$${key}`, value), to)}>{children}</a> }))
 function mount(node: ReactNode) { return render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>{node}</QueryClientProvider>) }
 function fill(label: string, value: string) { fireEvent.change(screen.getByLabelText(new RegExp(label)), { target: { value } }) }
 const scope = { organizationId: location.organizationId, departmentId: location.departmentId }
-beforeEach(() => { vi.clearAllMocks(); mocks.staff = false; mocks.admin = true; mocks.departmentAdmin = false; mocks.wrongDepartment = false; mocks.shipmentId = undefined; mocks.inventory.mockResolvedValue({ location, kits: [], requests: [], canManageInventory: false }); mocks.list.mockResolvedValue([location]); mocks.get.mockResolvedValue(location); mocks.create.mockResolvedValue(location); mocks.update.mockResolvedValue(location); mocks.deactivate.mockResolvedValue({ ...location, isActive: false, isDefault: false }) })
+beforeEach(() => { vi.clearAllMocks(); mocks.staff = false; mocks.admin = true; mocks.departmentAdmin = false; mocks.wrongDepartment = false; mocks.shipmentId = undefined; mocks.returnOrderId = undefined; mocks.inventory.mockResolvedValue({ location, kits: [], requests: [], canManageInventory: false }); mocks.list.mockResolvedValue([location]); mocks.get.mockResolvedValue(location); mocks.create.mockResolvedValue(location); mocks.update.mockResolvedValue(location); mocks.deactivate.mockResolvedValue({ ...location, isActive: false, isDefault: false }) })
 
 describe('customer department delivery locations', () => {
+  it('returns to the originating Job and selected container without automatically ordering kits', async () => {
+    mocks.shipmentId = '30000000-0000-4000-8000-000000000001'
+    mocks.returnOrderId = '30000000-0000-4000-8000-000000000002'
+    mount(<DeliveryLocationDetailPage locationId={location.id} />)
+    await screen.findByText('100 Science Avenue')
+    const link = screen.getByRole('link', { name: 'Return to Lab Job' })
+    expect(link.getAttribute('href')).toBe(`/lab-services/${mocks.returnOrderId}`)
+    expect(JSON.parse(link.getAttribute('data-search')!)).toEqual({ shipmentId: mocks.shipmentId, shippingView: 'tubes' })
+    expect(screen.queryByRole('link', { name: 'Return to shipment' })).toBeNull()
+    expect(mocks.receive).not.toHaveBeenCalled()
+  })
   it('returns from location inventory to the shipment without opening another kit order', async () => {
     mocks.shipmentId = '30000000-0000-4000-8000-000000000001'
     mount(<DeliveryLocationDetailPage locationId={location.id} />)

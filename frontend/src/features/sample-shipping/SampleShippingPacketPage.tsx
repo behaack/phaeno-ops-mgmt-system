@@ -8,6 +8,7 @@ import { apiErrorMessage } from '#/api/organization-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { ShippingBarcode } from './ShippingBarcode'
+import type { ShippingInsertIdentity } from './shipping-insert-acknowledgement'
 import './sample-shipping-packet.css'
 
 type JsonObject = Record<string, unknown>
@@ -23,7 +24,7 @@ type FrozenSample = {
   tubes: Array<{ barcode: string; ordinal: string; quantity: string; quantityUnit: string }>
 }
 
-export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAutoPrint, onFailure, embedded = false }: { shipmentId: string; autoPrint?: boolean; onAutoPrint?: () => void; onFailure?: (message: string) => void; embedded?: boolean }) {
+export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAutoPrint, onFailure, embedded = false }: { shipmentId: string; autoPrint?: boolean; onAutoPrint?: (insert: ShippingInsertIdentity) => void; onFailure?: (message: string) => void; embedded?: boolean }) {
   const autoPrintHandled = useRef(false)
   const query = useQuery({
     queryKey: ['sample-shipping-packet', shipmentId],
@@ -42,14 +43,14 @@ export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAuto
   useEffect(() => { if (failure) onFailure?.(failure) }, [failure, onFailure])
   useEffect(() => {
     if (!autoPrint) { autoPrintHandled.current = false; return }
-    if (!printable || autoPrintHandled.current) return
+    if (!printable || !currentPacket || autoPrintHandled.current) return
     const frame = window.requestAnimationFrame(() => {
       autoPrintHandled.current = true
-      if (onAutoPrint) onAutoPrint()
+      if (onAutoPrint) onAutoPrint({ id: currentPacket.id, revision: currentPacket.revision, packetNumber: currentPacket.packetNumber })
       else window.print()
     })
     return () => window.cancelAnimationFrame(frame)
-  }, [autoPrint, onAutoPrint, printable])
+  }, [autoPrint, currentPacket, onAutoPrint, printable])
 
   if (query.isLoading || query.isFetching) {
     return <main className="page-wrap space-y-5 px-4 py-8"><PacketReturnLink shipmentId={shipmentId} /><p role="status">Checking the current shipping insert…</p></main>
@@ -93,23 +94,47 @@ export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAuto
         </Button>
       </div> : null}
 
-      <article className="shipping-packet mx-auto max-w-4xl space-y-8 bg-background pb-16 text-foreground print:max-w-none print:bg-white print:text-black">
+      <article data-packet-id={packet.id} data-packet-revision={packet.revision} className="shipping-packet mx-auto max-w-4xl space-y-8 bg-background pb-16 text-foreground print:max-w-none print:bg-white print:text-black">
         <header className="packet-header break-inside-avoid border-b pb-5">
           <div className="flex items-center justify-between gap-4"><img src="/phaeno124x40.webp" alt="Phaeno" width={124} height={40} /><p className="text-sm font-medium uppercase tracking-wide">Shipping insert</p></div>
           <h1 className="mt-2 text-3xl font-semibold">{packet?.packetNumber}</h1>
-          {packet ? (
-            <div className="packet-revision mt-4 max-w-2xl">
-              <ShippingBarcode value={packet.barcode} label="Shipping insert revision barcode" />
-            </div>
-          ) : null}
-          <p className="mt-3 text-sm">
-            Shipment {shipment.shipmentNumber} · {shipment.authorizationReference} · Revision {packet?.revision}
-          </p>
-          {text(manifest.orderBarcode) ? <div className="packet-identity mt-5 space-y-2"><p className="text-sm font-medium">Order {shipment.authorizationReference}</p><ShippingBarcode value={text(manifest.orderBarcode)} label="Order barcode" /></div> : null}
-          {text(manifest.shipmentBarcode) ? <div className="packet-identity mt-5 space-y-2"><p className="text-sm font-medium">Shipment {shipment.shipmentNumber}</p><ShippingBarcode value={text(manifest.shipmentBarcode)} label="Shipment barcode" /></div> : null}
-          {text(asObject(manifest.container).sku) ? <p className="mt-4 text-sm"><strong>{text(asObject(manifest.container).commonName)}</strong> · SKU {text(asObject(manifest.container).sku)} · Capacity {text(asObject(manifest.container).capacity)} tubes</p> : null}
-          {text(asObject(manifest.containerKit).barcode) ? <div className="packet-identity mt-5 space-y-2"><p className="text-sm font-medium">Physical container</p><ShippingBarcode value={text(asObject(manifest.containerKit).barcode)} label="Container barcode" /></div> : null}
+          <p className="mt-3 text-sm">Revision {packet.revision} · Place inside this container</p>
         </header>
+
+        <section aria-label="Receiving summary" className="packet-summary grid gap-3 text-sm sm:grid-cols-2">
+          <p><strong>Customer</strong><br />{shipment.organizationName}</p>
+          <p><strong>Job / Trial</strong><br />{text(manifest.authorizationReference) || shipment.authorizationReference}</p>
+          <p><strong>Shipment</strong><br />{text(manifest.shipmentNumber) || shipment.shipmentNumber}</p>
+          <p><strong>Contents in this container</strong><br />{frozenSamples.length} {frozenSamples.length === 1 ? 'sample' : 'samples'} · {frozenSamples.reduce((count, sample) => count + sample.tubes.length, 0)} tubes</p>
+          {text(asObject(manifest.container).commonName) ? <p className="sm:col-span-2"><strong>Container</strong><br />{text(asObject(manifest.container).commonName)} · SKU {text(asObject(manifest.container).sku)}</p> : null}
+        </section>
+
+        <section aria-label="Receiving barcodes" className="packet-scan-targets">
+          <div className="packet-scan-target">
+            <h2 className="font-semibold">Scan to receive this shipment</h2>
+            <p className="text-sm">Shipping insert QR code · current revision</p>
+            <ShippingBarcode value={packet.barcode} label="Shipping insert revision barcode" size="receiving" />
+          </div>
+          {text(asObject(manifest.containerKit).barcode) ? <div className="packet-scan-target">
+            <h2 className="font-semibold">Physical container reference</h2>
+            <p className="text-sm">Match to the barcode on the container</p>
+            <ShippingBarcode value={text(asObject(manifest.containerKit).barcode)} label="Container barcode" size="receiving" />
+          </div> : null}
+        </section>
+
+        <section className="packet-receiving-notes space-y-3 text-sm">
+          <h2 className="font-semibold">Receiving notes</h2>
+          {receivingInstructions(instructions).map(value => <p key={value}>{value}</p>)}
+          <p>Open the shipment in POMS for the complete sample and tube list. Accession each physical tube separately.</p>
+          <p><strong>Missing, damaged or unexpected contents?</strong> Record the discrepancy before proceeding.{text(destination.receivingEmail) ? ` Contact: ${text(destination.receivingEmail)}.` : ''}{text(destination.receivingPhone) ? ` Phone: ${text(destination.receivingPhone)}.` : ''}</p>
+        </section>
+
+        <details className="packet-full-details print:hidden">
+          <summary className="cursor-pointer rounded-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-4">Full packing instructions and sample / tube list</summary>
+          <p className="mt-3 text-sm text-muted-foreground">Review these instructions before shipping. Printing produces the receiving sheet above; retain the full tube list using Download tube list (CSV) on the shipment.</p>
+          <div className="mt-6 space-y-8">
+          {text(manifest.orderBarcode) ? <ShippingBarcode value={text(manifest.orderBarcode)} label="Order barcode" /> : null}
+          {text(manifest.shipmentBarcode) ? <ShippingBarcode value={text(manifest.shipmentBarcode)} label="Shipment barcode" /> : null}
 
         <section className="packet-destination break-inside-avoid">
           <h2 className="text-xl font-semibold">Ship to</h2>
@@ -146,7 +171,7 @@ export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAuto
         <section className="packet-manifest">
           <h2 className="text-xl font-semibold">Sample and tube list</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Keep a copy for your records and place this shipping insert inside the package.
+            This confirmed manifest lists only the physical contents of this container. Retain the tube list for your records.
           </p>
           <div className="packet-samples mt-4 space-y-5">{frozenSamples.map(item => <article key={item.id} className="packet-sample rounded-md border p-4">
             <header className="break-inside-avoid space-y-2"><h3 className="wrap-anywhere font-semibold">{item.customerSampleId}</h3><p className="text-sm">{item.sampleName}{item.sampleTypeName ? ` · ${item.sampleTypeName}` : ''}</p><p className="text-sm font-medium">{item.tubes.length} of {item.totalTubeCount} tubes in this shipment</p>{item.sampleBarcode ? <div className="max-w-2xl"><ShippingBarcode value={item.sampleBarcode} label="Sample barcode" /></div> : null}</header>
@@ -163,6 +188,9 @@ export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAuto
           </p>
         </section>
 
+          </div>
+        </details>
+
         <footer className="border-t bg-background pt-4 text-xs print:fixed print:inset-x-0 print:bottom-0 print:px-4 print:pb-2">
           <p>Shipping insert {packet?.packetNumber} · Barcode {packet?.barcode} · Shipment {shipment.shipmentNumber}</p>
         </footer>
@@ -171,29 +199,44 @@ export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAuto
   )
 }
 
+function receivingInstructions(instructions: JsonObject): string[] {
+  const notes = new Set<string>()
+  for (const entry of asObjects(instructions.samples)) {
+    const sampleType = asObject(entry.sampleType)
+    const rule = asObject(entry.instructionRule)
+    for (const value of [sampleType.temperatureRequirements, rule.temperatureInstructions, sampleType.safetyRequirements]) {
+      const note = text(value).trim()
+      if (note) notes.add(note)
+    }
+  }
+  return [...notes]
+}
+
 function SampleInstructions({ entry, index }: { entry: JsonObject; index: number }) {
   const sampleType = asObject(entry.sampleType)
   const rule = asObject(entry.instructionRule)
   return (
-    <article className="break-inside-avoid border-t pt-4">
+    <article className="border-t pt-4">
       <h3 className="font-semibold">{text(sampleType.name) || `Sample type ${index + 1}`}</h3>
-      <Instruction label="Material" value={sampleType.materialClass} />
-      <Instruction label="Required quantity" value={quantityRange(sampleType)} />
-      <Instruction label="Primary container" value={sampleType.primaryContainerRequirements} />
-      <Instruction label="Temperature" value={sampleType.temperatureRequirements} />
-      <Instruction label="Stabilizer" value={sampleType.stabilizerRequirements} />
-      <Instruction label="Sample preparation and packaging" value={sampleType.packagingInstructions} />
-      <Instruction label="Customer labeling" value={sampleType.labelingInstructions} />
-      <Instruction label="Prohibited identifiers" value={sampleType.prohibitedIdentifiers} />
-      <Instruction label="Safety" value={sampleType.safetyRequirements} />
-      <Instruction label="Packing" value={rule.packingInstructions} />
-      <Instruction label="Temperature during transit" value={rule.temperatureInstructions} />
-      <Instruction label="Carrier" value={rule.carrierInstructions} />
-      <Instruction label="Dispatch timing" value={rule.dispatchInstructions} />
-      <Instruction label="Delivery" value={rule.deliveryInstructions} />
-      <Instruction label="Documents to include" value={rule.requiredDocuments} />
-      <Instruction label="Exceptions" value={rule.exceptionInstructions} />
-      <Instruction label="International customs" value={rule.internationalCustomsInstructions} />
+      <div className="packet-instruction-fields">
+        <Instruction label="Material" value={materialClassLabel(sampleType.materialClass)} />
+        <Instruction label="Required quantity" value={quantityRange(sampleType)} />
+        <Instruction label="Primary container" value={sampleType.primaryContainerRequirements} />
+        <Instruction label="Temperature" value={sampleType.temperatureRequirements} />
+        <Instruction label="Stabilizer" value={sampleType.stabilizerRequirements} />
+        <Instruction label="Sample preparation and packaging" value={sampleType.packagingInstructions} />
+        <Instruction label="Customer labeling" value={sampleType.labelingInstructions} />
+        <Instruction label="Prohibited identifiers" value={sampleType.prohibitedIdentifiers} />
+        <Instruction label="Safety" value={sampleType.safetyRequirements} />
+        <Instruction label="Packing" value={rule.packingInstructions} />
+        <Instruction label="Temperature during transit" value={rule.temperatureInstructions} />
+        <Instruction label="Carrier" value={rule.carrierInstructions} />
+        <Instruction label="Dispatch timing" value={rule.dispatchInstructions} />
+        <Instruction label="Delivery" value={rule.deliveryInstructions} />
+        <Instruction label="Documents to include" value={rule.requiredDocuments} />
+        <Instruction label="Exceptions" value={rule.exceptionInstructions} />
+        <Instruction label="International customs" value={rule.internationalCustomsInstructions} />
+      </div>
     </article>
   )
 }
@@ -210,6 +253,11 @@ function readFrozenSamples(manifest: JsonObject): FrozenSample[] {
     group.tubes.push({ barcode: text(item.supplierTubeBarcode), ordinal: text(item.tubeOrdinal), quantity: text(item.quantity), quantityUnit: text(item.quantityUnit) })
   }
   return [...groups.values()].map(group => ({ ...group, totalTubeCount: group.totalTubeCount || group.tubes.length }))
+}
+
+function materialClassLabel(value: unknown) {
+  const materialClass = text(value)
+  return materialClass === 'extracted_rna' ? 'Extracted RNA' : materialClass
 }
 
 function quantityRange(sampleType: JsonObject) {
@@ -252,7 +300,7 @@ function Instruction({ label, value }: { label: string; value: unknown }) {
   const content = text(value)
   if (!content) return null
   return (
-    <div className="mt-3">
+    <div className="mt-3 break-inside-avoid">
       <h4 className="text-sm font-medium">{label}</h4>
       <p className="mt-1 whitespace-pre-wrap text-sm leading-6">{content}</p>
     </div>

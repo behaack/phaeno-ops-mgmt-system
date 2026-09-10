@@ -2,10 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { SampleShippingPacketPage } from './SampleShippingPacketPage'
+import type { ShippingInsertIdentity } from './shipping-insert-acknowledgement'
 
 const frameDocument = '<!doctype html><html><head><meta charset="utf-8"><title>Shipping insert</title></head><body></body></html>'
 
-export function ShippingInsertPrintFrame({ shipmentId, onFinished, onFailure }: { shipmentId: string; onFinished: () => void; onFailure: (message: string) => void }) {
+export function ShippingInsertPrintFrame({ shipmentId, onFinished, onFailure }: { shipmentId: string; onFinished: (insert: ShippingInsertIdentity) => void; onFailure: (message: string) => void }) {
   const iframe = useRef<HTMLIFrameElement>(null)
   const [body, setBody] = useState<HTMLElement | null>(null)
   const stylesReady = useRef<Promise<unknown>>(Promise.resolve())
@@ -42,7 +43,7 @@ export function ShippingInsertPrintFrame({ shipmentId, onFinished, onFailure }: 
     setBody(target.body)
   }
 
-  const print = useCallback(() => {
+  const print = useCallback((insert: ShippingInsertIdentity) => {
     void (async () => {
       const target = iframe.current?.contentWindow
       const targetDocument = iframe.current?.contentDocument
@@ -52,10 +53,11 @@ export function ShippingInsertPrintFrame({ shipmentId, onFinished, onFailure }: 
         await targetDocument.fonts?.ready
         await Promise.all([...targetDocument.images].map(image => image.decode()))
         if (!active.current) return
-        if (!targetDocument.querySelector('.shipping-packet')) throw new Error('The shipping insert changed while it was being prepared. Try again to check its current revision.')
+        const renderedInsert = targetDocument.querySelector<HTMLElement>('.shipping-packet')
+        if (renderedInsert?.dataset.packetId !== insert.id || renderedInsert.dataset.packetRevision !== String(insert.revision)) throw new Error('The shipping insert changed while it was being prepared. Try again to check its current revision.')
         printing.current = true
         clearTimeout(timeout.current)
-        target.addEventListener('afterprint', () => { if (active.current) onFinished() }, { once: true })
+        target.addEventListener('afterprint', () => { if (active.current) onFinished(insert) }, { once: true })
         target.focus()
         target.print()
       } catch (error) {
@@ -65,7 +67,8 @@ export function ShippingInsertPrintFrame({ shipmentId, onFinished, onFailure }: 
   }, [onFailure, onFinished])
 
   return <>
-    <iframe ref={iframe} title="Shipping insert print document" aria-hidden="true" tabIndex={-1} srcDoc={frameDocument} onLoad={prepareFrame} className="pointer-events-none fixed top-0 -left-[10000px] h-[1056px] w-[816px] border-0" />
+    {/* Remove the portal before its iframe, whose removal disposes the target document. */}
     {body ? createPortal(<SampleShippingPacketPage shipmentId={shipmentId} autoPrint embedded onAutoPrint={print} onFailure={onFailure} />, body) : null}
+    <iframe ref={iframe} title="Shipping insert print document" aria-hidden="true" tabIndex={-1} srcDoc={frameDocument} onLoad={prepareFrame} className="pointer-events-none fixed top-0 -left-[10000px] h-[1056px] w-[816px] border-0" />
   </>
 }

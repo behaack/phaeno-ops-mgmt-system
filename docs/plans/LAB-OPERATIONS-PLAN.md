@@ -1,5 +1,46 @@
 # Lab Operations Plan
 
+## Receipt and accession update Job progress — September 10, 2026
+
+The owner authorized fixing Jobs stranded between accession and Work and correcting the two reported local Jobs from saved evidence. Users are Phaeno receiving operators and Customer/Partner users tracking their Jobs. First shipment arrival advances awaiting Lab work to Received and the Commercial Job to In progress. Verified tube receipt updates the sample; Accessioned requires all expected tubes across active shipments. Holds, terminal/later states, scientific acceptance, turnaround targets and physical identities are preserved.
+
+Receipt/accession publish a monotonic intake snapshot in the existing outbox within the physical action transaction. Its additive internal payload contains physical receipt presence, submitted-specimen IDs, receipt timestamps, completed accession IDs and the operator for audit. It excludes storage, receipt notes and scientific decisions. Commercial applies the snapshot under the authorization/organization boundary; projection, Job/sample status, timeline, receipt and acknowledgment commit atomically. Duplicate/older delivery cannot reapply progress. Shipment receipt refreshes Lab Work. No public provider milestone, persisted field or migration changes. Local correction and verification evidence belong in [the intake correction run record](../testing/runs/2026-09-10-intake-progress-correction.md).
+
+## Container receipt and separate accession tab — September 10, 2026
+
+The Product Owner superseded the read-only receiving workflow: Receive shipments now lists all expected physical containers (not dashboard work orders), with Customer/Job, carrier, tracking, destination and tube count. It excludes packing pools, empty placeholders, cancelled configurations and already-arrived containers. Prepared containers may appear before carrier handoff with their actual stage and missing-tracking text.
+
+Submitting a valid current PH-P- insert in Receive shipments explicitly acknowledges physical container arrival. Other barcode kinds cannot write receipt. A separate Accession samples tab lists arrived containers with unaccessioned tubes, supports read-only insert lookup and tube comparison, and opens individual accession. Successful accession establishes the verified tube's intake and Lab container; the container scan does not bulk-receive, accession or accept any tubes. The existing printed shipping insert is unchanged.
+
+Implementation uses existing DeliveredAt/Delivered for container arrival and ReceivedAt/Received for completed tube receipt. A ShipmentReceived Lab work event retains the actor, shipment, scanned revision and time. Receipt is serialized with shipment changes and tube receipt, repeats retain the first timestamp/event, and void/cancelled/preparing scans are rejected. Arrival without reported carrier handoff does not invent carrier, tracking or shipment time. Delivered shipments cannot be cancelled. No persisted model change, migration, backfill or production write is required.
+
+The internal Lab API adds GET shipments/queue and POST shipments/receipt under /api/platform/lab-operations; existing GET packet scan remains read-only and adds optional containerReceivedAt. Reads retain assigned Lab-role access; receipt requires Operator/Supervisor. The source-only change includes updated backend receipt-to-accession and frontend queue/navigation/receipt regression coverage. Automated suites and physical scanner acceptance have not been requested. Local build/static checks and remaining browser/runtime gates are reported separately.
+
+## Shipping and receiving tabs — September 10, 2026
+
+Phaeno staff need to focus on one shipping or intake queue as request and kit
+volumes grow. The owner approved splitting the stacked Receipt & accession
+workspace into **Kit requests**, **Prepare kits**, **Kits sent** and
+**Receive samples** tabs. Receive samples groups shipping-barcode lookup, tube
+comparison and authorized work awaiting specimens. Other Lab operations areas
+retain their current sidebar navigation.
+
+The selected tab is URL-backed, supports Back/Forward and refresh, and preserves
+both request and standard-kit searches, statuses and pages. Record return links
+select their owning tab; existing shipment links open Kits sent and
+old named queue anchors remain supported. Kit-management tabs retain their
+existing configuration capability requirement; other operators start in Receive
+samples. Hidden queues mount only on selection. Scanner drafts and comparison
+results remain available when switching tabs during the same visit. Kits sent now provides an explicit empty state when opened as a tab.
+
+Acceptance: one visible task panel; keyboard-operable tabs; narrow-screen tab
+scrolling without whole-page overflow; preserved query filters and record return
+context; no changed receipt, accession, dispatch, stock or permissions behavior.
+Success is a focused queue with its existing bounded list presentation rather
+than all operational sections rendered together. This changes frontend navigation
+only; server-side paging of currently client-filtered queues remains separate.
+
+
 ## 2026-09-07 follow-up consistency review
 
 Receipt links retain the scanned packet, shipment, exact tube when compared, and
@@ -1051,3 +1092,99 @@ For future Lab Operations changes:
 ## Trial parent integration (2026-09-05)
 
 The distinct Trial workflow now invokes the existing PSeq Lab provider with a frozen approved workflow, creates shared shipments after Prospect acceptance and sample validation, and releases governed packages through the shared retention lifecycle. Complete packages freeze policy and close the Trial; partial packages do not start that clock. Trial holds serialize with scientific writes and byte cleanup. See `PROSPECT-TRIAL-PROJECT-PLAN.md` and `TRIAL-INTEGRATION-CLOSEOUT.md` for evidence and remaining production activation gates. Promotional Customer freebie issuance remains separate.
+
+Verification: 41 focused tests across six suites passed, along with frontend
+TypeScript, scoped ESLint, documentation generation/freshness (56 guides) and
+whitespace checks. Signed-in local browser checks confirmed one visible panel,
+request/stock filter retention, kit detail return, browser Back, refresh and
+keyboard-arrow selection. At a 390 CSS-pixel viewport the tab strip scrolls within
+the page with no horizontal page overflow. Screenshot capture timed out, so this
+records DOM/accessibility and measured reflow evidence, not screenshot review.
+The temporary review tab was closed and viewport restored; no operational writes,
+commit or deployment were performed.
+
+## Kit request next action — September 10, 2026
+
+The owner approved replacing ambiguous Fulfill request / Open standard kits
+controls with a state-based next step. Zero matching ready stock makes Prepare
+kits primary and hides shipment entry. Preparation opens the existing guarded
+stock form for missing requested sizes and returns through the created kit for
+tube registration to the originating request. Matching ready stock exposes
+Record kit shipment; shortages remain separately actionable and partial shipment
+is retained. Missing quantities subtract ready stock as well as previous dispatch.
+Closed requests expose neither action; stale request errors block new actions.
+Existing dispatch concurrency, idempotency and saved-draft checks remain in scope.
+
+Verification: all 23 focused request and stock-kit tests passed, plus frontend
+TypeScript, scoped ESLint, docs generation/freshness (56 guides) and whitespace
+checks. The signed-in local request showed Prepare kits, the missing one 10-tube
+and one 20-tube kit, and no shipment action for zero ready stock. Opening Prepare
+kits offered exactly those two sizes; the form was cancelled without saving.
+Preparation-to-registration return context, partial-stock shipment and dispatch
+retry/draft protections are covered by automated tests. No stock or shipment was
+created during browser verification; no commit or deployment.
+
+### Receiving barcode clarity — September 10, 2026
+
+Receive samples now directs staff to the PH-P- barcode at the top right of the existing shipping insert. The field is labeled Shipping insert barcode, with an explicit complete-code instruction. Expandable guidance distinguishes PH-S- shipment barcodes from SHP shipment references, PH-O-/PH-M- lookups, and physical KIT-/tube barcodes. The printed insert and accepted barcode behavior remain unchanged. Existing receiving test selectors follow the new accessible label. Static checks cover this wording change; automated suites and physical scanner acceptance remain unrun.
+
+Verification: solution build passed with zero warnings/errors using a separate output folder because Visual Studio/IIS Express held the normal output files. Frontend TypeScript, scoped ESLint, documentation freshness (56 guides) and whitespace passed. Read-only signed-in local browser inspection confirmed the separate tabs, two expected container rows with distinct tracking numbers for 69SJN4PA, and a received HS5Y7DB7 container showing 0/18 tubes accessioned. Desktop screenshot review passed. The agent did not submit receipt or accession. Automated suites, narrow/dark layouts, physical scanner and completed tube-accession acceptance remain unrun. The existing shipping insert files have no additional working-tree diff from this work.
+
+## Container accession scan loop — 2026-09-10
+
+- Users: Phaeno laboratory operators and supervisors. Goal: accession every physical tube in a received container without navigating between records.
+- PH-P lookup opens a modal showing the complete expected crosswalk and saved tube count. Tube scan opens a nested freezer-box barcode form. Only saving that form accessions the matched tube; successful save returns focus to the tube scanner until every expected tube is complete. Closing preserves partial progress.
+- Box barcode is required, trimmed, at most 255 characters, stored per tube in existing LabContainer.Location; no freezer registry, box position, model migration, or shipping-insert content change is introduced. Existing specimen accession numbers are retained; otherwise the server allocates a stable unique ACC-prefixed specimen identifier. Tubes remain separate containers under the same specimen.
+- Additive Portal API scope: POST work-orders/{workOrderId}/shipments/{shipmentId}/tubes/accession receives packetBarcode, supplierTubeBarcode and freezerBoxBarcode. It reuses laboratory accession validation, role authorization, trial guards and serialized per-work writes. Same-tube/same-box replay returns the saved result; a different box conflicts instead of relocating. Container arrival is mandatory.
+- Acceptance: correct container modal; wrong/void/unreceived rejection; no write before box submission; separate tube locations; repeated scan/retry without duplicate records; focus returns for the next tube; completion only at all expected tubes; reopen partial progress. Success is completing the container using barcode scans without leaving the modal.
+- Verification: build, typecheck, scoped lint and generated-document checks at completion. Automated tests are maintained but not executed without request; physical scanner and populated save acceptance remain separate gates.
+
+Verification checkpoint: solution build completed with zero warnings/errors; frontend typecheck and scoped lint passed; documentation corpus 07bbdca8fc5f passed docs:check. Read-only signed-in browser check opened a received 18-tube container with all expected rows and focus in the tube field. Browser input automation detached, so nested prompt interaction, physical scanning and saved-tube loop are not claimed as verified. No actual receipt/accession writes or test-suite execution were performed.
+
+## Deferred: freezer-box location and movement history — 2026-09-10
+
+Status: saved at the Product Owner's request for future implementation. This is
+not part of the current accession change and does not authorize implementation.
+
+Problem: accession currently records the freezer-box barcode against each tube
+in LabContainer.Location, but does not identify where the box physically sits.
+Laboratory staff need to locate a tube through its box and retain storage history.
+
+Proposed scope for future discovery and implementation:
+
+- Give each freezer box a record with its unique barcode, physical location
+  (room, freezer, rack, and shelf/position), and contained tubes.
+- During accession, scanning a known box displays its location for confirmation;
+  scanning an unknown box prompts staff to register its location.
+- Record each box movement with the previous location, new location, operator,
+  and timestamp. Moving a box updates the effective location of its contents
+  through their box association while preserving the movement history.
+- Consider capturing each tube's position within the box, such as B4, separately
+  from the box's physical location. Whether grid positions are needed, and the
+  supported box layouts, remain product decisions for future discovery.
+
+Future acceptance should demonstrate locating a tube, registering an unknown
+box, confirming a known box during accession, moving a populated box without
+editing every tube, and reviewing its movement history. Preserve existing tube
+barcodes, specimen accessions, and saved box IDs when introducing box records.
+Keep this proposed behavior out of current user guides until implemented.
+
+
+### QR rendering update - September 10, 2026
+
+The owner requested all Portal-generated barcode graphics use QR codes and
+spacing be adjusted accordingly. This supersedes older Code 39/128 rendering
+and linear-size assertions. Shipping inserts use 32 mm squares with four-module
+quiet zones and a 14 mm gap between target blocks; ordinary displays and stock
+kit prints use 28 mm squares. Lab labels keep 50 x 25 mm stock with an 18 mm QR
+and rearranged human-readable identity/context. Values, checksum normalization,
+manufacturer labels, receipt and accession semantics remain unchanged. No new
+label or successful print is recorded merely by rendering the QR.
+
+Verify exact decoding (including case/underscore), square undistorted rendering,
+quiet zones, current-revision checks, frozen manifests, Letter/A4 one-page
+receiving output and the lab-label print boundary. Preserve the full manifest
+and preparation guidance in the Portal. Physical 2D scanner, printer/stock and
+handling acceptance remain explicit gates; former Code 39-only hardware proof
+cannot establish QR compatibility. The shared renderer is pinned qrcode.react
+4.2.0; no backend model or migration change is required.

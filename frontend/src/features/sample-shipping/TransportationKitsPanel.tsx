@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useBlocker } from '@tanstack/react-router'
 import { PackageCheck, Truck } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
 import type { CustomerDeliveryLocation } from '#/api/customer-delivery-locations'
@@ -18,7 +18,7 @@ import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
-export function TransportationKitsPanel({ shipment, canManage, deliveryLocationId, autoOpenOrder = false, children }: { shipment: SampleShipmentWorkflow; canManage: boolean; deliveryLocationId?: string; autoOpenOrder?: boolean; children?: ReactNode }) {
+export function TransportationKitsPanel({ shipment, canManage, deliveryLocationId, returnOrderId, autoOpenOrder = false, onActivityChange, children }: { shipment: SampleShipmentWorkflow; canManage: boolean; deliveryLocationId?: string; returnOrderId?: string; autoOpenOrder?: boolean; onActivityChange?: (active: boolean) => void; children?: ReactNode }) {
   const client = useQueryClient()
   const { selectedDepartmentId } = usePhaenoSession()
   const [action, setAction] = useState<'order' | 'receive' | 'cancel' | null>(autoOpenOrder ? 'order' : null)
@@ -36,12 +36,16 @@ export function TransportationKitsPanel({ shipment, canManage, deliveryLocationI
       client.invalidateQueries({ queryKey: ['sample-shipment', shipment.id] }),
       client.invalidateQueries({ queryKey: ['sample-shipment-packing', shipment.id] }),
       client.invalidateQueries({ queryKey: ['location-kit-inventory'] }),
+      client.invalidateQueries({ queryKey: ['lab-service-order', shipment.authorizationSourceId] }),
     ])
   }
   const keyFor = (kind: string, payload: unknown) => { const signature = JSON.stringify([kind, payload]); const key = operationKeys.get(signature) ?? crypto.randomUUID(); operationKeys.set(signature, key); return key }
   const order = useMutation({ mutationFn: (input: TransportationKitOrderInput) => orderTransportationKits(shipment.id, input, keyFor('order', input)), onSuccess: refresh })
   const receive = useMutation({ mutationFn: (stockKitIds: string[]) => confirmTransportationKitsReceived(requestSnapshot!.id, { version: operationVersion, stockKitIds }, keyFor('receive', stockKitIds)), onSuccess: refresh })
   const cancel = useMutation({ mutationFn: (reason: string) => cancelTransportationKitRequest(requestSnapshot!.id, { version: operationVersion, reason: reason.trim() || undefined }, keyFor('cancel', reason.trim())), onSuccess: refresh })
+  const active = action === 'order' ? Boolean(canManage && supply.data?.locations.length) : Boolean(action && requestSnapshot)
+  useEffect(() => { onActivityChange?.(active) }, [active, onActivityChange])
+  useEffect(() => () => { onActivityChange?.(false) }, [onActivityChange])
   const request = supply.data?.request
   const activeRequest = request && request.status !== 'Cancelled' ? request : null
   const available = supply.data?.recordedStock.reduce((sum, item) => sum + item.availableQuantity, 0) ?? 0
@@ -60,16 +64,16 @@ export function TransportationKitsPanel({ shipment, canManage, deliveryLocationI
           {request?.status === 'Cancelled' ? <p role="status" className="font-medium">Kit order cancelled.</p> : null}
           <p className="text-sm">{available > 0 ? `${available} received ${available === 1 ? 'kit is' : 'kits are'} available at this location.` : 'No compatible received kits are currently available at this location. Order the recommended sizes if you need supplies.'}</p>
           <KitLines lines={supply.data.recommendation.containers.map(item => ({ ...item, requestedQuantity: item.quantity, tubeCapacity: item.capacity }))} />
-          {canManage ? <><Button disabled={!supply.data.canRequestKits} onClick={() => open('order')}><Truck data-icon="inline-start" />Order transportation kits</Button>{!supply.data.canRequestKits ? <p className="text-sm text-muted-foreground">{supply.data.requestBlockedReason}</p> : null}{!supply.data.locations.length ? <p><Link to="/delivery-locations" search={{ organizationId: shipment.organizationId, departmentId: selectedDepartmentId ?? '', shipmentId: shipment.id }} className="text-sm text-primary underline">Add a delivery location</Link></p> : null}</> : <p className="text-sm text-muted-foreground">An organization or Department administrator can order transportation kits.</p>}
+          {canManage ? <><Button disabled={!supply.data.canRequestKits} onClick={() => open('order')}><Truck data-icon="inline-start" />Order transportation kits</Button>{!supply.data.canRequestKits ? <p className="text-sm text-muted-foreground">{supply.data.requestBlockedReason}</p> : null}{!supply.data.locations.length ? <p><Link to="/delivery-locations" search={{ organizationId: shipment.organizationId, departmentId: selectedDepartmentId ?? '', shipmentId: shipment.id, returnOrderId }} className="text-sm text-primary underline">Add a delivery location</Link></p> : null}</> : <p className="text-sm text-muted-foreground">An organization or Department administrator can order transportation kits.</p>}
         </> : null}
         {canManage && activeRequest?.canConfirmReceipt ? <Button onClick={() => open('receive')}><PackageCheck data-icon="inline-start" />Confirm kits received</Button> : null}
         {canManage && activeRequest?.canCancel ? <Button variant="outline" onClick={() => open('cancel')}>Cancel kit order</Button> : null}
-        {supply.data.deliveryLocationId ? <p><Link to="/delivery-locations/$locationId" params={{ locationId: supply.data.deliveryLocationId }} search={{ organizationId: shipment.organizationId, departmentId: selectedDepartmentId ?? '', shipmentId: shipment.id }} className="text-sm text-primary underline">View location inventory and deliveries</Link></p> : null}
+        {supply.data.deliveryLocationId ? <p><Link to="/delivery-locations/$locationId" params={{ locationId: supply.data.deliveryLocationId }} search={{ organizationId: shipment.organizationId, departmentId: selectedDepartmentId ?? '', shipmentId: shipment.id, returnOrderId }} className="text-sm text-primary underline">View shipping and receiving location</Link></p> : null}
         {!canPrepare && !showOrderOptions && supply.data.preparationBlockedReason ? <p className="text-sm text-muted-foreground">{supply.data.preparationBlockedReason}</p> : null}
       </>}
     </CardContent></Card> : null}
     {children}
-    {action === 'order' && supply.data && canManage && supply.data.locations.length > 0 ? <TransportationKitOrderDialog shipmentId={shipment.id} organizationId={shipment.organizationId} departmentId={selectedDepartmentId ?? ''} initial={supply.data} busy={order.isPending} error={order.error} onClose={() => setAction(null)} onConfirm={input => order.mutate(input)} /> : null}
+    {action === 'order' && supply.data && canManage && supply.data.locations.length > 0 ? <TransportationKitOrderDialog shipmentId={shipment.id} organizationId={shipment.organizationId} departmentId={selectedDepartmentId ?? ''} returnOrderId={returnOrderId} initial={supply.data} busy={order.isPending} error={order.error} onClose={() => setAction(null)} onConfirm={input => order.mutate(input)} /> : null}
     {action === 'receive' && requestSnapshot ? <KitReceiptDialog request={requestSnapshot} busy={receive.isPending} blocked={supply.isFetching || Boolean(supply.error)} error={receive.error} onClose={() => setAction(null)} onConfirm={ids => receive.mutate(ids)} /> : null}
     {action === 'cancel' && requestSnapshot ? <KitCancellationDialog busy={cancel.isPending} error={cancel.error} onClose={() => setAction(null)} onConfirm={reason => { if (!supply.isFetching && !supply.error) cancel.mutate(reason) }} /> : null}
   </div>
@@ -87,7 +91,7 @@ const locationSchema = z.object({ deliveryLocationId: z.string().min(1, 'Select 
   if (!values.adjustSizes) return
   values.sizes.forEach((row, index) => { const quantity = Number(row.quantity); if (!Number.isInteger(quantity) || quantity < 0 || quantity > 10000 || row.quantity === '') context.addIssue({ code: 'custom', path: ['sizes', index, 'quantity'], message: 'Enter a whole number of kits from 0 to 10,000.' }) })
 })
-export function TransportationKitOrderDialog({ shipmentId, organizationId, departmentId, initial, busy, error, onClose, onConfirm }: { shipmentId: string; organizationId: string; departmentId: string; initial: ShipmentKitSupply; busy: boolean; error: unknown; onClose: () => void; onConfirm: (input: TransportationKitOrderInput) => void }) {
+export function TransportationKitOrderDialog({ shipmentId, organizationId, departmentId, returnOrderId, initial, busy, error, onClose, onConfirm }: { shipmentId: string; organizationId: string; departmentId: string; returnOrderId?: string; initial: ShipmentKitSupply; busy: boolean; error: unknown; onClose: () => void; onConfirm: (input: TransportationKitOrderInput) => void }) {
   const [sizes] = useState(() => initial.containerTypes ?? [])
   const form = useForm<z.input<typeof locationSchema>, unknown, z.output<typeof locationSchema>>({ resolver: zodResolver(locationSchema), defaultValues: { deliveryLocationId: initial.deliveryLocationId ?? '', adjustSizes: false, sizes: sizes.map(type => ({ containerDefinitionId: type.id, quantity: initial.recommendation.containers.find(item => item.containerDefinitionId === type.id)?.quantity ?? 0 })) } })
   const adjusting = useWatch({ control: form.control, name: 'adjustSizes' })
@@ -105,12 +109,21 @@ export function TransportationKitOrderDialog({ shipmentId, organizationId, depar
   })
   return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent onEscapeKeyDown={event => { if (busy) event.preventDefault() }} showCloseButton={!busy}><DialogHeader className="pr-[var(--dialog-inset)]"><DialogTitle className="pr-8">Order transportation kits</DialogTitle><DialogDescription className="pr-8">Review the kits and delivery location for {initial.jobNumber}. Transportation kits and outbound delivery are included, with no additional charge.</DialogDescription></DialogHeader>
     <form id="transportation-kit-order" className="space-y-4" noValidate onSubmit={submit}><fieldset disabled={busy} className="space-y-4">
-      <div className="space-y-1.5"><Label htmlFor="kit-delivery-location"><RequiredFieldName>Delivery location</RequiredFieldName></Label><select id="kit-delivery-location" className="h-9 w-full cursor-pointer rounded-md border bg-background px-3 text-sm" aria-invalid={Boolean(form.formState.errors.deliveryLocationId)} aria-describedby="kit-location-error" {...form.register('deliveryLocationId')}><option value="">Select a delivery location</option>{initial.locations.filter(item => item.isActive).map(item => <option key={item.id} value={item.id}>{item.label}{item.isDefault ? ' (default)' : ''}</option>)}</select>{form.formState.errors.deliveryLocationId ? <p id="kit-location-error" role="alert" className="text-sm text-destructive">{form.formState.errors.deliveryLocationId.message}</p> : null}</div>
-      {location ? <DeliveryAddress location={location} /> : <p className="text-sm text-muted-foreground">{initial.locations.length ? 'Choose where Phaeno should deliver these kits.' : 'Add a delivery location before ordering kits.'}</p>}
-      <Link to="/delivery-locations" search={{ organizationId, departmentId, shipmentId }} onClick={event => { if (busy) event.preventDefault() }} aria-disabled={busy} className="text-sm text-primary underline">Manage delivery locations</Link>
-      {sizes.length ? <div className="space-y-3"><Button type="button" variant="outline" aria-expanded={adjusting} onClick={() => { form.setValue('adjustSizes', !adjusting, { shouldDirty: true }); form.clearErrors('root') }}>{adjusting ? 'Use recommended sizes' : 'Adjust kit sizes'}</Button>{adjusting ? <div className="space-y-3">{sizes.map((type, index) => <div key={type.id} className="grid grid-cols-[minmax(0,1fr)_5rem] gap-2"><Label htmlFor={`order-kit-size-${index}`} className="block self-center">{type.commonName}<span className="mt-1 block text-xs font-normal text-muted-foreground">{type.sku} · Capacity {type.tubeCapacity}</span></Label><Input id={`order-kit-size-${index}`} type="number" min="0" max="10000" step="1" aria-label={`Quantity of ${type.commonName}`} aria-invalid={Boolean(form.formState.errors.sizes?.[index]?.quantity)} {...form.register(`sizes.${index}.quantity`)} />{form.formState.errors.sizes?.[index]?.quantity ? <p role="alert" className="col-span-full text-sm text-destructive">{form.formState.errors.sizes[index]?.quantity?.message}</p> : null}</div>)}</div> : null}</div> : null}
+      <div className="space-y-2">
+      <div className="space-y-1.5"><Label htmlFor="kit-delivery-location"><RequiredFieldName>Delivery location</RequiredFieldName></Label><select id="kit-delivery-location" className="h-9 w-full cursor-pointer rounded-md border bg-background px-3 text-sm" aria-invalid={Boolean(form.formState.errors.deliveryLocationId)} aria-describedby={[!location && 'kit-location-help', form.formState.errors.deliveryLocationId && 'kit-location-error'].filter(Boolean).join(' ') || undefined} {...form.register('deliveryLocationId')}><option value="">Select a delivery location</option>{initial.locations.filter(item => item.isActive).map(item => <option key={item.id} value={item.id}>{item.label}{item.isDefault ? ' (default)' : ''}</option>)}</select>{form.formState.errors.deliveryLocationId ? <p id="kit-location-error" role="alert" className="text-sm text-destructive">{form.formState.errors.deliveryLocationId.message}</p> : null}
+      {location ? <DeliveryAddress location={location} /> : <p id="kit-location-help" className="text-sm text-muted-foreground">{initial.locations.length ? 'Choose where Phaeno should deliver these kits.' : 'Add a delivery location before ordering kits.'}</p>}
+      </div>
+      <Link to="/delivery-locations" search={{ organizationId, departmentId, shipmentId, returnOrderId }} onClick={event => { if (busy) event.preventDefault() }} aria-disabled={busy} className="inline-block text-sm text-primary underline">Manage delivery locations</Link>
+      </div>
+      <section aria-labelledby="kit-order-sizes-heading" className="space-y-3 border-t pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+      <h3 id="kit-order-sizes-heading" className="text-sm font-medium">Transportation kits</h3>
+      {sizes.length ? <Button type="button" variant="outline" aria-expanded={adjusting} onClick={() => { form.setValue('adjustSizes', !adjusting, { shouldDirty: true }); form.clearErrors('root') }}>{adjusting ? 'Use recommended sizes' : 'Adjust kit sizes'}</Button> : null}
+      </div>
+      {sizes.length && adjusting ? <div className="space-y-3">{sizes.map((type, index) => <div key={type.id} className="grid grid-cols-[minmax(0,1fr)_5rem] gap-2"><Label htmlFor={`order-kit-size-${index}`} className="block self-center">{type.commonName}<span className="mt-1 block text-xs font-normal text-muted-foreground">{type.sku} · Capacity {type.tubeCapacity}</span></Label><Input id={`order-kit-size-${index}`} type="number" min="0" max="10000" step="1" aria-label={`Quantity of ${type.commonName}`} aria-invalid={Boolean(form.formState.errors.sizes?.[index]?.quantity)} {...form.register(`sizes.${index}.quantity`)} />{form.formState.errors.sizes?.[index]?.quantity ? <p role="alert" className="col-span-full text-sm text-destructive">{form.formState.errors.sizes[index]?.quantity?.message}</p> : null}</div>)}</div> : null}
       {form.formState.errors.root ? <p role="alert" className="text-sm text-destructive">{form.formState.errors.root.message}</p> : null}
       {query.isFetching ? <p role="status" className="text-sm">Checking kits for this location…</p> : query.error ? <Alert variant="destructive"><AlertTitle>Kit recommendation unavailable</AlertTitle><AlertDescription>{apiErrorMessage(query.error)} <Button type="button" variant="outline" onClick={() => void query.refetch()}>Retry recommendation</Button></AlertDescription></Alert> : current ? <>{!adjusting ? <KitLines lines={current.recommendation.containers.map(item => ({ ...item, requestedQuantity: item.quantity, tubeCapacity: item.capacity }))} /> : null}{!current.canRequestKits ? <p role="status" className="text-sm text-muted-foreground">{current.requestBlockedReason}</p> : null}</> : null}
+      </section>
     </fieldset></form>{error ? <Alert variant="destructive" className="min-w-0 self-stretch"><AlertTitle>Kit order could not be saved</AlertTitle><AlertDescription className="min-w-0 wrap-anywhere">{kitOrderErrorMessage(error)}</AlertDescription></Alert> : null}
     <RequiredDialogFooter><Button type="button" variant="outline" disabled={busy} onClick={close}>Keep reviewing</Button><Button type="submit" form="transportation-kit-order" disabled={busy || query.isFetching || Boolean(query.error) || !current?.canRequestKits || !adjusting && !current.recommendation.containerCount}>{busy ? 'Ordering kits…' : 'Confirm kit order'}</Button></RequiredDialogFooter>
   </DialogContent></Dialog>

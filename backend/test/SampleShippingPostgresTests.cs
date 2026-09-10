@@ -219,37 +219,77 @@ public partial class SampleShippingPostgresTests
         Assert.Equal("AwaitingReceipt", packetScanBeforeReceipt.ReceiptState);
 
         var lab = scope.CreateLabController();
-        var received = await lab.ReceiveSpecimen(
-            fixture.WorkOrder.Id,
-            fixture.Specimen.Id,
-            new SpecimenReceiptRequest(DateTime.UtcNow, "Frozen and intact", "Intake", fixture.Specimen.Version, packet.Barcode, firstTubeBarcode),
-            CancellationToken.None);
+        Assert.Contains(await lab.ShipmentQueue(CancellationToken.None), item => item.Id == fixture.Shipment.Id);
+        var wrongBarcode = await Assert.ThrowsAsync<OrderManagementException>(() => lab.ReceiveShipment(
+            new LabShipmentReceiptRequest($"PH-S-{fixture.Shipment.Id:N}"), CancellationToken.None));
+        Assert.Equal("shipping_insert_barcode_required", wrongBarcode.ErrorCode);
+        var beforeArrival = await Assert.ThrowsAsync<OrderManagementException>(() => lab.AccessionShipmentTube(
+            fixture.WorkOrder.Id, fixture.Shipment.Id,
+            new ShipmentTubeAccessionRequest(packet.Barcode, firstTubeBarcode, "BOX-001"), CancellationToken.None));
+        Assert.Equal("shipment_receipt_required", beforeArrival.ErrorCode);
         scope.ClearTrackedState();
-        var receivedSpecimen = received.Specimens.Single(item => item.Id == fixture.Specimen.Id);
+        var receipt = await lab.ReceiveShipment(new LabShipmentReceiptRequest(packet.Barcode), CancellationToken.None);
+        Assert.False(receipt.AlreadyReceived);
+        Assert.Equal("Received", (await lab.WorkOrder(fixture.WorkOrder.Id, CancellationToken.None)).WorkOrder.Status);
+        var receiptProjectionVersion = (await scope.DbContext.LabWorkOrders.AsNoTracking()
+            .SingleAsync(item => item.Id == fixture.WorkOrder.Id)).ProjectionVersion;
+        scope.ClearTrackedState();
+        var replay = await lab.ReceiveShipment(new LabShipmentReceiptRequest(packet.Barcode), CancellationToken.None);
+        Assert.True(replay.AlreadyReceived);
+        Assert.Equal(receiptProjectionVersion, (await scope.DbContext.LabWorkOrders.AsNoTracking()
+            .SingleAsync(item => item.Id == fixture.WorkOrder.Id)).ProjectionVersion);
+        AssertUtcWithinDatabasePrecision(receipt.ReceivedAt, replay.ReceivedAt);
+        Assert.Equal(1, await scope.DbContext.LabWorkEvents.CountAsync(item =>
+            item.LabWorkOrderId == fixture.WorkOrder.Id && item.EventCode == "ShipmentReceived"));
+        Assert.DoesNotContain(await lab.ShipmentQueue(CancellationToken.None), item => item.Id == fixture.Shipment.Id);
+        var awaitingAccession = Assert.Single(await lab.ShipmentQueue(CancellationToken.None, received: true),
+            item => item.Id == fixture.Shipment.Id);
+        Assert.Equal(0, awaitingAccession.AccessionedTubeCount);
+        scope.ClearTrackedState();
+        var receivedSpecimen = await scope.DbContext.LabSpecimens.AsNoTracking().SingleAsync(item => item.Id == fixture.Specimen.Id);
+        Assert.Null(receivedSpecimen.ReceivedAtUtc);
+        Assert.Null(receivedSpecimen.AccessionNumber);
         var receivedShipment = await customerWorkflow.Shipment(fixture.Shipment.Id, CancellationToken.None);
-        Assert.Equal("Received", receivedShipment.Status);
+        Assert.Equal("Delivered", receivedShipment.Status);
         Assert.Null(receivedShipment.Carrier);
         Assert.Null(receivedShipment.TrackingNumber);
         Assert.Null(receivedShipment.ShippedAt);
-        var accessioned = await lab.AccessionSpecimen(
-            fixture.WorkOrder.Id,
-            fixture.Specimen.Id,
-            new SpecimenAccessionRequest(
-                "ACC-REFERENCE-001",
-                fixture.Item.CustomerSampleId,
-                "Intake freezer",
-                fixture.Item.Quantity,
-                fixture.Item.QuantityUnit,
-                null,
-                receivedSpecimen.Version,
-                packet.Barcode,
-                firstTubeBarcode),
-            CancellationToken.None);
+        var missingBox = await Assert.ThrowsAsync<OrderManagementException>(() => lab.AccessionShipmentTube(
+            fixture.WorkOrder.Id, fixture.Shipment.Id,
+            new ShipmentTubeAccessionRequest(packet.Barcode, firstTubeBarcode, "  "), CancellationToken.None));
+        Assert.Equal("freezer_box_barcode_required", missingBox.ErrorCode);
+        var accessioned = await lab.AccessionShipmentTube(fixture.WorkOrder.Id, fixture.Shipment.Id,
+            new ShipmentTubeAccessionRequest(packet.Barcode, firstTubeBarcode, " BOX-001 "), CancellationToken.None);
         scope.ClearTrackedState();
         var container = Assert.Single(accessioned.Containers);
+        Assert.Equal("BOX-001", container.Location);
+        Assert.Equal("Received", accessioned.WorkOrder.Status);
+        var savedWork = await scope.DbContext.LabWorkOrders.Include(item => item.Specimens)
+            .SingleAsync(item => item.Id == fixture.WorkOrder.Id);
+        var intake = await LabIntakeProgress.ReadAsync(scope.DbContext, savedWork, CancellationToken.None);
+        Assert.True(intake.HasPhysicalReceipt);
+        // The duplicate-kit fixture still has an outstanding slot for this specimen.
+        Assert.Null(Assert.Single(intake.Specimens).AccessionNumber);
+        var unusedShipment = await scope.DbContext.SampleShipments.SingleAsync(item => item.Id == duplicateShipment.Id);
+        unusedShipment.Cancel();
+        await scope.DbContext.SaveChangesAsync();
+        intake = await LabIntakeProgress.ReadAsync(scope.DbContext, savedWork, CancellationToken.None);
+        Assert.Equal(accessioned.Specimens.Single().AccessionNumber, Assert.Single(intake.Specimens).AccessionNumber);
+        Assert.Null(savedWork.Specimens.Single().AcceptedAtUtc);
+        Assert.Null(savedWork.ExpectedCompletionAtUtc);
+        Assert.StartsWith("ACC-", accessioned.Specimens.Single(item => item.Id == fixture.Specimen.Id).AccessionNumber);
+        var sameTubeReplay = await lab.AccessionShipmentTube(fixture.WorkOrder.Id, fixture.Shipment.Id,
+            new ShipmentTubeAccessionRequest(packet.Barcode, firstTubeBarcode, "BOX-001"), CancellationToken.None);
+        Assert.Equal(container.Id, Assert.Single(sameTubeReplay.Containers).Id);
+        var differentBox = await Assert.ThrowsAsync<OrderManagementException>(() => lab.AccessionShipmentTube(
+            fixture.WorkOrder.Id, fixture.Shipment.Id,
+            new ShipmentTubeAccessionRequest(packet.Barcode, firstTubeBarcode, "BOX-002"), CancellationToken.None));
+        Assert.Equal("supplier_tube_already_accessioned", differentBox.ErrorCode);
+        Assert.Equal(1, await scope.DbContext.LabWorkEvents.CountAsync(item => item.LabWorkOrderId == fixture.WorkOrder.Id && item.EventCode == "SpecimenAccessioned"));
         Assert.Equal(firstTubeBarcode, container.Barcode);
         Assert.Equal(LabContainerBarcodeSource.RegisteredSupplier.ToString(), container.BarcodeSource);
         Assert.NotNull(container.ExternalBarcodeReferenceId);
+        Assert.DoesNotContain(await lab.ShipmentQueue(CancellationToken.None, received: true), item => item.Id == fixture.Shipment.Id);
         Assert.Equal("AlreadyAccessioned", (await platformWorkflow.ScanTube(
             packet.Barcode, firstTubeBarcode, CancellationToken.None)).Outcome);
 
@@ -726,6 +766,7 @@ public partial class SampleShippingPostgresTests
                 await CleanupTransportationRequestsAsync(organizationIds);
 
                 await DbContext.LabWorkEvents.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
+                await DbContext.LabOperationsOutboxEvents.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabContainers.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
                 await DbContext.SampleTubeAssignmentEvents.Where(item => shipmentIds.Contains(item.SampleShipmentId)).ExecuteDeleteAsync();
                 await DbContext.SampleShippingPacketRevisions

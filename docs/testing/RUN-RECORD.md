@@ -1,6 +1,6 @@
 # Major-workflow acceptance run record
 
-Copy this file for each run; leave this template unchanged. Follow [README.md](README.md) and [TEST-DATA.md](TEST-DATA.md). All 74 cases are initially Not run.
+Copy this file for each run; leave this template unchanged. Follow [README.md](README.md) and [TEST-DATA.md](TEST-DATA.md). All 75 cases are initially Not run.
 
 ## Run identity
 
@@ -73,6 +73,7 @@ Use Pass / Fail / Blocked / Not run / Not applicable. Every required step and va
 | ORD-04 | Exact sample roster, CSV preview and finalization | Not run | | |
 | ORD-05 | Transportation kits, containers, frozen manifests and sample dispatch | Not run | | |
 | ORD-06 | Custom work, sales-assisted intake, timing and cancellation | Not run | | |
+| ORD-07 | Customer laboratory stages and mixed sample progress | Not run | | |
 | KIT-01 | Negotiated Kit draft, review and one purchase | Not run | | |
 | KIT-02 | Commercial acceptance, split shipments and billing lineage | Not run | | |
 | KIT-03 | Substitution, replacement, deadlines and cancellation | Not run | | |
@@ -174,7 +175,7 @@ Add/remove rows to match the case; repeat separately for each role, state or dev
 
 ## Acceptance decision
 
-- Case totals: Pass __ / Fail __ / Blocked __ / Not run __ / Not applicable __ (must total 74):
+- Case totals: Pass __ / Fail __ / Blocked __ / Not run __ / Not applicable __ (must total 75):
 - Connected journeys completed:
 - Remaining failures/blockers and explicit disposition:
 - Missing provider / destination / physical / restore evidence:

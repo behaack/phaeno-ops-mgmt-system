@@ -15,7 +15,7 @@ import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredFieldName, RequiredLegend } from '#/components/ui/required-field'
 
-import { Code39Barcode } from './Code39Barcode'
+import { IdentifierQrCode } from '#/components/identifier-qr-code'
 
 export function LabLabelDialog({
   container,
@@ -64,11 +64,11 @@ export function LabLabelDialog({
 
   return (
     <Dialog open={container !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="lab-label-print-dialog max-w-2xl">
         <DialogHeader>
           <DialogTitle>{container?.labelPrintCount ? 'Reprint container label' : 'Print container label'}</DialogTitle>
           <DialogDescription>
-            POMS renders a Code 39 label through the browser and your installed
+            POMS renders a QR code label through the browser and your installed
             printer driver. Confirm the physical outcome after the system print
             dialog closes.
           </DialogDescription>
@@ -92,10 +92,7 @@ export function LabLabelDialog({
                 <span>{label.data.container.kind}</span>
               </div>
               <p className="mt-1 truncate text-sm font-semibold">{label.data.container.label}</p>
-              <Code39Barcode value={label.data.container.barcode} />
-              <p className="text-center font-mono text-sm font-semibold tracking-wider">
-                {label.data.container.barcode}
-              </p>
+              <IdentifierQrCode value={label.data.container.barcode} label="Container QR code" size="label" />
               <div className="mt-1 grid grid-cols-2 gap-x-3 text-[10px] leading-4">
                 <span>Accession: {label.data.accessionNumber ?? 'Not assigned'}</span>
                 <span>Order: {label.data.commercialOrderNumber ?? 'Internal'}</span>

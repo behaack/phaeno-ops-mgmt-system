@@ -8,13 +8,16 @@ using UglyToad.PdfPig.Fonts.TrueType.Parser;
 using UglyToad.PdfPig.Writer;
 
 public sealed record QuotePdfLine(string Description, decimal Quantity, decimal UnitPrice);
+public sealed record QuotePdfSource(string BiologicalSource, int SpecimenCount);
+public sealed record QuotePdfScope(int RequestedSpecimenCount, IReadOnlyList<QuotePdfSource> SourceGroups);
 
 public sealed record QuotePdfDocument(
     string OrderNumber, string? JobName, string OrganizationName, string DepartmentName,
     int Revision, string Status, string Purpose, DateTime IssuedAt, DateTime ExpiresAt,
     DateTime? AcceptedAt, IReadOnlyList<QuotePdfLine> Lines, decimal Subtotal, decimal Tax,
     decimal Total, string Currency, bool TaxDetermined, string? BillingContactName,
-    string? BillingContactEmail, IReadOnlyList<string> BillingAddress, int? PaymentTermsDays);
+    string? BillingContactEmail, IReadOnlyList<string> BillingAddress, int? PaymentTermsDays,
+    QuotePdfScope? SampleScope = null);
 
 /// <summary>A downloadable presentation of the saved quote, with no commercial recalculation.</summary>
 public static class QuotePdfRenderer
@@ -70,6 +73,7 @@ public static class QuotePdfRenderer
         {
             NewPage();
             Context();
+            SampleScope();
             TableHeader();
             foreach (var line in document.Lines) TableRow(line);
             TotalsAndTerms();
@@ -168,9 +172,58 @@ public static class QuotePdfRenderer
             return top + 3;
         }
 
+        private void SampleScope()
+        {
+            if (document.SampleScope is not { } scope) return;
+            SampleHeader(scope.RequestedSpecimenCount);
+            foreach (var source in scope.SourceGroups)
+            {
+                var lines = Wrap(source.BiologicalSource, 420, 10);
+                var offset = 0;
+                while (offset < lines.Count)
+                {
+                    var available = (int)Math.Floor((y - Bottom - 14) / Leading);
+                    if (available < Math.Min(lines.Count - offset, 34))
+                    {
+                        NewPage();
+                        SampleHeader(scope.RequestedSpecimenCount);
+                        available = (int)Math.Floor((y - Bottom - 14) / Leading);
+                    }
+                    var length = Math.Min(lines.Count - offset, available);
+                    var rowTop = y;
+                    for (var index = offset; index < offset + length; index++)
+                    {
+                        Text(lines[index], Left + 10, y, 10);
+                        y -= Leading;
+                    }
+                    if (offset == 0) RightText(Number(source.SpecimenCount), Right - 10, rowTop, 10);
+                    offset += length;
+                    y -= 4;
+                    Rule(Left, Right, y);
+                    y -= 17;
+                }
+            }
+            y -= 8;
+        }
+
+        private void SampleHeader(int total)
+        {
+            Ensure(100);
+            y -= 9;
+            page.SetTextAndFillColor(242, 247, 249);
+            page.SetStrokeColor(242, 247, 249);
+            page.DrawRectangle(new PdfPoint(Left, y - 18), Right - Left, 29, 0, true);
+            Text($"Sample scope · {Number(total)} samples", Left + 10, y - 6, 11, strong: true);
+            y -= 37;
+            Text("Biological source", Left + 10, y, 9, strong: true);
+            RightText("Samples", Right - 10, y, 9, strong: true);
+            Rule(Left, Right, y - 10);
+            y -= 28;
+        }
+
         private void TableHeader()
         {
-            Ensure(65);
+            Ensure(85);
             page.SetTextAndFillColor(0, 48, 87);
             page.SetStrokeColor(0, 48, 87);
             page.DrawRectangle(new PdfPoint(Left, y - 24), Right - Left, 27, 0, true);

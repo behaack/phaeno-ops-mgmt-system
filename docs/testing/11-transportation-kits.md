@@ -136,7 +136,7 @@ unused permanent barcodes. Do not invent product facts to make a kit ready.
 
 | Step | Action | Expected result |
 | --- | --- | --- |
-| 1 | Under Standard kits select Prepare standard kit, choose an approved size and enter its actual test materials. | A physical kit with its own identity is created at Phaeno; it is not already customer inventory. |
+| 1 | Under Prepare kits select Prepare standard kit, choose an approved size and enter its actual test materials. | A physical kit with its own identity is created at Phaeno; it is not already customer inventory. |
 | 2 | Register permanent tube barcodes until the selected capacity is complete; inspect the Customer request again. | A TRANS-20 requires 20 registered tubes even when the intended sample shipment contains only 18. Registration makes physical stock ready but does not dispatch it: the request remains Pending with zero dispatched until Fulfill request is completed. |
 | 3 | Exercise duplicate, already-used, excess and missing-tube variants. | Invalid registration cannot make incomplete or conflicting stock eligible for fulfillment. Valid saved registration survives refresh. |
 | 4 | Open the pending request's Fulfill request dialog; repeat after an ordinary catalog revision. | Fully registered compatible physical stock is offered without stranding preserved revisions solely because an ID changed. A withdrawn incompatible kit remains blocked. A shortage is explicit. |
@@ -239,9 +239,9 @@ printer/PDF viewer; long-manifest and correction variants.
 
 | Step | Action | Expected result |
 | --- | --- | --- |
-| 1 | Review and confirm each container's packet; inspect printable output. | Phaeno branding, Job/order, shipment, sample and physical container barcodes, permanent tube barcodes, container facts and frozen instructions are legible. The physical container barcode comes from the frozen manifest revision. |
+| 1 | Review and confirm each container's packet; inspect printable output. | One receiving sheet shows Phaeno branding, Customer/Job/shipment references, frozen container totals and handling notes. Large PH-P and physical-container QR codes have separate scan areas. Full instructions and sample/tube QR codes remain in the Portal disclosure; the physical-container identity comes from the frozen revision. |
 | 2 | Compare both manifests for a sample whose tubes cross a container boundary. | Each lists only its own physical contents and separately identifies the sample's total tubes, other shipment references/counts and any unallocated tubes. |
-| 3 | Review a multipage manifest and print/scan representative barcodes. | Rows and barcode captions remain together, pages retain shipment identification, and order/shipment/sample/tube identities are distinguishable. |
+| 3 | Open the full Portal manifest, then print the receiving sheet and scan its QR codes. | Letter and A4 receiving sheets fit one page for representative content. QR codes stay square with white margins, generous separation and readable identifiers. Exact values resolve the expected records; individual tube scans still use physical tube labels. |
 | 4 | Repeat first packet confirmation; on a correction variant change a tube with a reason and inspect old/new packet references. | No competing first packet; correction retains the voided prior revision and current crosswalk. Configuration changes do not rewrite issued documents. |
 
 **Handoff:** Keep each manifest with its own package; retain current and voided

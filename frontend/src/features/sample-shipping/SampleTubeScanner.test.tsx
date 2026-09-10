@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { useState } from 'react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { useState, type ComponentProps } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SampleShipmentWorkflow } from '#/api/sample-shipping'
 import { shippingFixture, shippingTube } from '#/test-helpers/sample-shipping'
@@ -11,12 +11,12 @@ const mocks = vi.hoisted(() => ({ assign: vi.fn(), correct: vi.fn(), blocker: vi
 vi.mock('@tanstack/react-router', () => ({ useBlocker: mocks.blocker }))
 beforeEach(() => vi.clearAllMocks())
 afterEach(() => vi.restoreAllMocks())
-function show(initial = shippingFixture, canManage = true) {
+function show(initial = shippingFixture, canManage = true, context: Pick<ComponentProps<typeof SampleTubeScanner>, 'specimenSources' | 'jobTubeProgress'> = {}) {
   let refresh!: (shipment: SampleShipmentWorkflow) => void
   function Harness() {
     const [shipment, setShipment] = useState(initial)
     refresh = setShipment
-    return <SampleTubeScanner shipment={shipment} canManage={canManage} onScanActivityChange={mocks.activity} onCorrect={mocks.correct} onAssign={async (item, barcode) => { const saved = await mocks.assign(item, barcode) as SampleShipmentWorkflow; setShipment(saved); return saved }} />
+    return <SampleTubeScanner shipment={shipment} canManage={canManage} {...context} onScanActivityChange={mocks.activity} onCorrect={mocks.correct} onAssign={async (item, barcode) => { const saved = await mocks.assign(item, barcode) as SampleShipmentWorkflow; setShipment(saved); return saved }} />
   }
   const rendered = render(<QueryClientProvider client={new QueryClient({ defaultOptions: { mutations: { retry: false } } })}><Harness /></QueryClientProvider>)
   return { refresh: (shipment: SampleShipmentWorkflow) => act(() => refresh(shipment)), unmount: rendered.unmount }
@@ -64,14 +64,14 @@ describe('guided tube scanning', () => {
     await waitFor(() => expect(input).toHaveProperty('disabled', true))
     expect(mocks.activity).toHaveBeenLastCalledWith(true)
     expect(screen.getByRole('heading', { name: 'RNA-1' })).toBeTruthy()
-    expect(screen.getByText('0 of 2 tubes matched')).toBeTruthy()
+    expect(screen.getByText('0 of 2 tubes matched in this container')).toBeTruthy()
     await act(async () => resolve({ ...shippingFixture, crosswalk: [{ ...shippingFixture.crosswalk[0], supplierTubeBarcode: 'TUBE_0001', version: 2 }, shippingFixture.crosswalk[1]] }))
     await waitFor(() => expect(screen.getByRole('heading', { name: 'RNA-2' })).toBeTruthy())
     expect(screen.getAllByRole('img', { name: 'Tube barcode TUBE_0001' })).toHaveLength(1)
     expect(screen.queryByRole('img', { name: 'Saved tube barcode TUBE_0001' })).toBeNull()
     expect(screen.getByLabelText(/Scan tube barcode/)).toHaveProperty('value', '')
     await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText(/Scan tube barcode/)))
-    expect(screen.getByText('1 of 2 tubes matched')).toBeTruthy()
+    expect(screen.getByText('1 of 2 tubes matched in this container')).toBeTruthy()
     expect(mocks.activity).toHaveBeenLastCalledWith(false)
   })
 
@@ -106,6 +106,63 @@ describe('guided tube scanning', () => {
     expect(screen.getByRole('heading', { name: 'RNA-11' })).toBeTruthy()
     expect(screen.getAllByRole('listitem')).toHaveLength(8)
     expect(screen.getByRole('button', { name: 'Next tubes' })).toBeTruthy()
+  })
+
+  it('reviews another page without changing the scan target, then advances past the eighth tube only after saving', async () => {
+    const initial = { ...shippingFixture, crosswalk: Array.from({ length: 18 }, (_, index) => shippingTube(index + 1, { submittedSpecimenId: 'shared-sample', customerSampleId: 'RNA-1', tubeOrdinal: index + 1, totalSampleTubeCount: 18, supplierTubeBarcode: index < 7 ? `SAVED-${index + 1}` : null })) }
+    let resolve!: (shipment: SampleShipmentWorkflow) => void
+    mocks.assign.mockImplementation(() => new Promise<SampleShipmentWorkflow>(done => { resolve = done }))
+    show(initial, true, { specimenSources: { 'shared-sample': 'Human PBMCs' }, jobTubeProgress: { matched: 11, total: 22 } })
+    const input = screen.getByLabelText(/Scan tube barcode/)
+    fireEvent.change(input, { target: { value: 'TUBE-8' } })
+    expect(screen.getByText('7 of 18 tubes matched in this container')).toBeTruthy()
+    expect(screen.getByText('Across this Job: 11 of 22 tubes matched.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Next tubes' }))
+    expect(screen.getByText('Tubes 9–16 of 18 in this container')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'RNA-1' })).toBeTruthy()
+    expect(input).toHaveProperty('value', 'TUBE-8')
+    expect(within(screen.getAllByRole('listitem')[0]).getByText('Tube 9 of 18')).toBeTruthy()
+    expect(within(screen.getAllByRole('listitem')[0]).getByText('Human PBMCs')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Return to active tube' }))
+    expect(screen.getByText('Tubes 1–8 of 18 in this container')).toBeTruthy()
+    expect(document.activeElement).toBe(input)
+    expect(input).toHaveProperty('value', 'TUBE-8')
+    fireEvent.submit(input.closest('form')!)
+    await waitFor(() => expect(mocks.assign).toHaveBeenCalledWith(initial.crosswalk[7], 'TUBE-8'))
+    expect(screen.getByRole('button', { name: 'Next tubes' })).toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: 'Previous tubes' })).toHaveProperty('disabled', true)
+    expect(screen.getByText('Tubes 1–8 of 18 in this container')).toBeTruthy()
+    await act(async () => resolve({ ...initial, crosswalk: initial.crosswalk.map((item, index) => index === 7 ? { ...item, supplierTubeBarcode: 'TUBE-8' } : item) }))
+    expect(screen.getByText('Tubes 9–16 of 18 in this container')).toBeTruthy()
+    expect(screen.getByText('8 of 18 tubes matched in this container')).toBeTruthy()
+    const nextInput = screen.getByLabelText(/Scan tube barcode/)
+    expect(within(nextInput.closest('form')!).getByText(/Tube 9 of 18/)).toBeTruthy()
+    expect(nextInput).toHaveProperty('value', '')
+    await waitFor(() => expect(document.activeElement).toBe(nextInput))
+    expect(screen.queryByRole('button', { name: 'Return to active tube' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Next tubes' }))
+    expect(screen.getByText('Tubes 17–18 of 18 in this container')).toBeTruthy()
+    expect(screen.getAllByRole('listitem')).toHaveLength(2)
+    expect(within(screen.getAllByRole('listitem')[0]).getByText('Tube 17 of 18')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Next tubes' })).toHaveProperty('disabled', true)
+  })
+
+  it('retains a failed barcode and unmapped sample context while browsing and returning to the active tube', async () => {
+    mocks.assign.mockRejectedValue(new Error('This tube belongs to another container.'))
+    show({ ...shippingFixture, crosswalk: Array.from({ length: 10 }, (_, index) => shippingTube(index + 1)) }, true, { specimenSources: {} })
+    const input = screen.getByLabelText(/Scan tube barcode/)
+    fireEvent.change(input, { target: { value: 'WRONG-TUBE' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Next tubes' }))
+    fireEvent.submit(input.closest('form')!)
+    expect(await screen.findByText(/This tube belongs to another container/)).toBeTruthy()
+    expect(screen.getByText('Tubes 9–10 of 10 in this container')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'RNA-1' })).toBeTruthy()
+    expect(within(screen.getAllByRole('listitem')[0]).getByText('Biological source not available · Review sample context.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Return to active tube' }))
+    expect(input).toHaveProperty('value', 'WRONG-TUBE')
+    expect(screen.getByText('Tubes 1–8 of 10 in this container')).toBeTruthy()
+    expect(screen.getByText('Tube was not matched')).toBeTruthy()
+    expect(mocks.assign).toHaveBeenCalledTimes(1)
   })
 
   it('holds the active sample when a background update changes that row', () => {

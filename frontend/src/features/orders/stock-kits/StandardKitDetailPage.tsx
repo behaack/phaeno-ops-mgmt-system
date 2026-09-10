@@ -22,12 +22,12 @@ export function StandardKitDetailPage({ kitId }: { kitId: string }) {
   const { session, authProvider } = usePhaenoSession()
   const canManage = Boolean(session?.capabilities.canManageOrderConfiguration), enabled = canManage && authProvider !== 'mock'
   const rawSearch = useSearch({ strict: false }), client = useQueryClient()
-  const search = { ...parseStockKitListSearch(rawSearch), section: 'receipt' as const, shipmentId: 'shipmentId' in rawSearch ? rawSearch.shipmentId : undefined }
+  const search = { ...rawSearch, ...parseStockKitListSearch(rawSearch), section: 'receipt' as const, receiptTab: 'standard-kits' as const, shipmentId: 'shipmentId' in rawSearch ? rawSearch.shipmentId : undefined }
   const [action, setAction] = useState<{ kind: 'register' | 'dispatch' | 'legacy-dispatch' | 'barcode'; kit: ShippingStockKit } | null>(null)
   const query = useQuery({ queryKey: ['shipping-stock-kit', kitId], queryFn: () => getShippingStockKit(kitId), enabled })
   const shipments = useQuery({ queryKey: ['sample-shipping-workflow'], queryFn: getPlatformSampleShipments, enabled: enabled && action?.kind === 'legacy-dispatch' })
   async function saved() { setAction(null); await refreshStockKitSupply(client) }
-  const back = <Link to="/lab-operations" search={search} hash="standard-kits" className="inline-flex items-center gap-1 text-sm text-primary underline underline-offset-2"><ArrowLeft className="size-4" aria-hidden="true" />Back to standard kits</Link>
+  const back = rawSearch.returnKitRequestId ? <Link to="/lab-operations/kit-requests/$requestId" params={{ requestId: rawSearch.returnKitRequestId }} search={{ ...rawSearch, section: 'receipt', receiptTab: 'kit-requests', returnKitRequestId: undefined }} className="inline-flex items-center gap-1 text-sm text-primary underline underline-offset-2"><ArrowLeft className="size-4" aria-hidden="true" />Back to kit request</Link> : <Link to="/lab-operations" search={search} hash="standard-kits" className="inline-flex items-center gap-1 text-sm text-primary underline underline-offset-2"><ArrowLeft className="size-4" aria-hidden="true" />Back to standard kits</Link>
   if (!canManage) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Standard kits unavailable</AlertTitle><AlertDescription>A Phaeno configuration administrator is required.</AlertDescription></Alert></main>
   if (!enabled) return <main className="page-wrap px-4 py-8"><p>Use a connected Phaeno session to review standard kits.</p></main>
   if (!query.data) return <main className="page-wrap space-y-5 px-4 py-8">{back}{query.isLoading ? <p role="status">Loading standard kit…</p> : <Alert variant="destructive"><AlertTitle>Standard kit unavailable</AlertTitle><AlertDescription>{getOrderErrorMessage(query.error, 'The requested kit could not be loaded.')} <Button variant="outline" onClick={() => void query.refetch()}>Retry</Button></AlertDescription></Alert>}</main>

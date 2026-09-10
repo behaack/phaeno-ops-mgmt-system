@@ -10,7 +10,7 @@ import { KitReceiptDialog, TransportationKitOrderDialog, TransportationKitsPanel
 const mocks = vi.hoisted(() => ({ supply: vi.fn(), order: vi.fn(), receive: vi.fn(), cancel: vi.fn(), confirm: vi.fn(), close: vi.fn() }))
 vi.mock('#/api/transportation-kit-requests', () => ({ getShipmentKitSupply: mocks.supply, orderTransportationKits: mocks.order, confirmTransportationKitsReceived: mocks.receive, cancelTransportationKitRequest: mocks.cancel }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ selectedDepartmentId: 'department-1' }) }))
-vi.mock('@tanstack/react-router', () => ({ useBlocker: vi.fn(), Link: ({ children }: { children: ReactNode }) => <a href="#locations">{children}</a> }))
+vi.mock('@tanstack/react-router', () => ({ useBlocker: vi.fn(), Link: ({ children, search }: { children: ReactNode; search?: Record<string, unknown> }) => <a href="#locations" data-search={JSON.stringify(search)}>{children}</a> }))
 const location: CustomerDeliveryLocation = { id: 'location-1', organizationId: 'org-1', departmentId: 'department-1', label: 'Receiving laboratory', recipient: 'Lab receiving', line1: '100 Example Road', line2: null, city: 'Example', region: 'CA', postalCode: '90000', countryCode: 'US', phone: null, deliveryInstructions: 'Room 10', isDefault: true, isActive: true, version: 2 }
 const request: TransportationKitRequest = { id: 'request-1', jobId: 'order-1', jobNumber: 'JOB-1', organizationId: 'org-1', organizationName: 'Customer', departmentId: 'department-1', departmentName: 'General', deliveryLocationId: location.id, deliveryAddress: location, status: 'Pending', requestedAt: '2026-09-08T12:00:00Z', version: 1, includedInLabOrder: true, lines: packingRecommendation.containers.map(item => ({ id: item.containerDefinitionId, containerDefinitionId: item.containerDefinitionId, sku: item.sku, commonName: item.commonName, tubeCapacity: item.capacity, requestedQuantity: item.quantity, dispatchedQuantity: 0, receivedQuantity: 0 })), kits: [], canConfirmReceipt: false, canCancel: true, cancellationReason: null }
 const supply: ShipmentKitSupply = { shipmentId: shippingFixture.id, shipmentVersion: 3, jobId: 'order-1', jobNumber: 'JOB-1', tubeCount: 30, deliveryLocationId: location.id, locations: [location], recommendation: packingRecommendation, recordedStock: [], inventoryStatus: 'Unknown', request: null, canRequestKits: true, requestBlockedReason: null, canPrepareSamples: false, preparationBlockedReason: 'Order transportation kits for this Job, then confirm their arrival before configuring containers or scanning tubes.' }
@@ -22,6 +22,19 @@ function panel(canManage = true, isPackingPool = true) { return render(provider(
 function dialog(initial = supply, busy = false, error: unknown = null) { return render(provider(<TransportationKitOrderDialog shipmentId={shippingFixture.id} organizationId="org-1" departmentId="department-1" initial={initial} busy={busy} error={error} onClose={mocks.close} onConfirm={mocks.confirm} />)) }
 
 describe('customer transportation kits', () => {
+  it('keeps delivery-location setup reachable when an order intent cannot yet open its dialog', async () => {
+    const active = vi.fn()
+    mocks.supply.mockResolvedValue({ ...supply, locations: [], deliveryLocationId: null })
+    render(provider(<TransportationKitsPanel shipment={{ ...shippingFixture, isPackingPool: true }} canManage autoOpenOrder onActivityChange={active} />))
+    expect(await screen.findByRole('link', { name: 'Add a delivery location' })).toBeTruthy()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(active).toHaveBeenLastCalledWith(false)
+  })
+  it('retains the owning Job and selected shipment through kit-order delivery-location setup', () => {
+    render(provider(<TransportationKitOrderDialog shipmentId={shippingFixture.id} organizationId="org-1" departmentId="department-1" returnOrderId="order-1" initial={supply} busy={false} error={null} onClose={mocks.close} onConfirm={mocks.confirm} />))
+    expect(JSON.parse(screen.getByRole('link', { name: 'Manage delivery locations' }).getAttribute('data-search')!)).toEqual({ organizationId: 'org-1', departmentId: 'department-1', shipmentId: shippingFixture.id, returnOrderId: 'order-1' })
+    expect(mocks.order).not.toHaveBeenCalled()
+  })
   it('offers optional compatible kit sizes and preserves draft quantities when returning to the recommendation', async () => {
     const customSupply = { ...supply, containerTypes: shippingContainers }
     mocks.supply.mockResolvedValue(customSupply)
@@ -88,7 +101,7 @@ describe('customer transportation kits', () => {
     render(provider(<TransportationKitsPanel shipment={{ ...shippingFixture, crosswalk: Array.from({ length: 18 }, (_, index) => shippingTube(index + 1)) }} canManage autoOpenOrder><p>Sample preparation controls</p></TransportationKitsPanel>))
     expect(await screen.findByRole('dialog', { name: 'Order transportation kits' })).toBeTruthy()
     expect(screen.getByText('Sample preparation controls')).toBeTruthy()
-    expect(screen.queryByText('Transportation kits')).toBeNull()
+    expect(screen.queryAllByText('Transportation kits').filter(element => !element.closest('[role="dialog"]'))).toHaveLength(0)
     expect(screen.getByText('Kit delivery')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Keep reviewing' }))
     expect(screen.getByRole('button', { name: 'Order transportation kits' })).toBeTruthy()

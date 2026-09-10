@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import type { ReactNode } from 'react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import type { ComponentProps, ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { SampleShipmentWorkflow } from '#/api/sample-shipping'
@@ -11,6 +11,7 @@ import {
 import { noSessionCapabilities } from '#/test-helpers/session'
 
 import { SampleShippingDetailPage } from './SampleShippingDetailPage'
+import type { ShippingInsertIdentity } from './shipping-insert-acknowledgement'
 
 const api = vi.hoisted(() => ({
   assignSampleTube: vi.fn(),
@@ -20,10 +21,11 @@ const api = vi.hoisted(() => ({
   recordSampleShipment: vi.fn(),
   getSampleShipments: vi.fn(),
   getKitSupply: vi.fn(),
+  printedInsert: { id: '', revision: 0, packetNumber: '' },
 }))
 vi.mock('#/api/transportation-kit-requests', () => ({ getShipmentKitSupply: api.getKitSupply, orderTransportationKits: vi.fn(), confirmTransportationKitsReceived: vi.fn(), cancelTransportationKitRequest: vi.fn() }))
 vi.mock('./ShippingInsertPrintFrame', () => ({
-  ShippingInsertPrintFrame: ({ onFinished, onFailure }: { onFinished: () => void; onFailure: (message: string) => void }) => <div data-testid="shipping-insert-print-frame"><button onClick={onFinished}>Close print dialog</button><button onClick={() => onFailure('Current shipping insert unavailable.')}>Fail print preparation</button></div>,
+  ShippingInsertPrintFrame: ({ onFinished, onFailure }: { onFinished: (insert: ShippingInsertIdentity) => void; onFailure: (message: string) => void }) => <div data-testid="shipping-insert-print-frame"><button onClick={() => onFinished(api.printedInsert)}>Close print dialog</button><button onClick={() => onFailure('Current shipping insert unavailable.')}>Fail print preparation</button></div>,
 }))
 
 vi.mock('@tanstack/react-router', () => ({
@@ -44,11 +46,155 @@ vi.mock('#/api/sample-shipping', () => ({
 describe('SampleShippingDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    window.sessionStorage.clear()
+    api.printedInsert = shipment.currentPacket!
     api.getSampleShipment.mockResolvedValue(shipment)
     api.getSampleShipments.mockResolvedValue([shipment])
     api.assignSampleTube.mockResolvedValue(shipment)
     api.issueSampleShippingPacket.mockResolvedValue(shipment)
     api.getKitSupply.mockResolvedValue({ shipmentId: shipment.id, jobId: shipment.authorizationSourceId, request: null, recordedStock: [], inventoryStatus: 'Unknown', canRequestKits: true, canPrepareSamples: true, preparationBlockedReason: 'Order kits for this Job first.', locations: [], recommendation: { containers: [] } })
+  })
+
+  it('keeps order actions while embedded shipment data is loading and rejects a different Job without revealing its contents', async () => {
+    const renderSendAction = vi.fn(() => null)
+    const embedded = embeddedHost({ sourceId: 'different-job', renderSendAction })
+    api.getSampleShipment.mockImplementation(() => new Promise(() => {}))
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    renderPage(client, customerSession(), embedded)
+    expect(screen.getByRole('button', { name: 'Order action' })).toBeTruthy()
+    expect(screen.getByRole('status').textContent).toContain('Loading sample shipment')
+    expect(renderSendAction).toHaveBeenLastCalledWith(null, expect.anything())
+    client.setQueryData(['sample-shipment', shipment.id], shipment)
+    expect(await screen.findByText(/does not belong to this Lab Job/)).toBeTruthy()
+    expect(screen.queryByText(shipment.shipmentNumber)).toBeNull()
+    expect(screen.queryByText(shipment.crosswalk[0].customerSampleId)).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Print shipping insert' })).toBeNull()
+    expect(api.getKitSupply).not.toHaveBeenCalled()
+    expect(renderSendAction).toHaveBeenLastCalledWith(null, expect.anything())
+  })
+
+  it('retains same-page print and confirmation actions in Samples view without a second scanner or page heading', async () => {
+    const active = vi.fn()
+    renderPage(undefined, customerSession(), embeddedHost({ onActivityChange: active }))
+    const print = await screen.findByRole('button', { name: 'Print shipping insert' })
+    expect(screen.queryByRole('main')).toBeNull()
+    expect(screen.queryByRole('heading', { level: 1 })).toBeNull()
+    expect(screen.queryByRole('combobox', { name: 'Shipping container' })).toBeNull()
+    expect(screen.queryByLabelText(/Scan tube barcode/)).toBeNull()
+    fireEvent.click(print)
+    expect(await screen.findByTestId('shipping-insert-print-frame')).toBeTruthy()
+    await waitFor(() => expect(active).toHaveBeenLastCalledWith(true))
+    fireEvent.click(screen.getByRole('button', { name: 'Close print dialog' }))
+    expect(await screen.findByRole('dialog', { name: 'Confirm printed and packed' })).toBeTruthy()
+    expect(active).toHaveBeenLastCalledWith(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Not yet' }))
+    await waitFor(() => expect(active).toHaveBeenLastCalledWith(false))
+    expect(api.issueSampleShippingPacket).not.toHaveBeenCalled()
+  })
+
+  it('offers intentional scan entry from the Job while preserving complete-container confirmation gates', async () => {
+    api.getSampleShipment.mockResolvedValue({ ...shipment, status: 'Preparing', currentPacket: null, crosswalk: [{ ...shipment.crosswalk[0], supplierTubeBarcode: null }] })
+    const open = vi.fn()
+    renderPage(undefined, customerSession(), embeddedHost({ onOpenPreparation: open }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Start scanning' }))
+    expect(open).toHaveBeenCalledOnce()
+    expect(screen.queryByRole('button', { name: 'Review and confirm shipping insert' })).toBeNull()
+    expect(api.assignSampleTube).not.toHaveBeenCalled()
+  })
+
+  it('keeps Print as the next action after cancelled printing and restores its focus after Not yet', async () => {
+    const navigation = vi.fn()
+    renderPage(undefined, customerSession(), sendHost({ onNavigationLockChange: navigation }))
+    const print = await waitFor(() => currentNext().getByRole('button', { name: 'Print shipping insert' }))
+    await waitFor(() => expect((print as HTMLButtonElement).disabled).toBe(false))
+    fireEvent.click(print)
+    fireEvent.click(await screen.findByRole('button', { name: 'Close print dialog' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Confirm printed and packed' })
+    expect(dialog.textContent).toContain(shipment.currentPacket!.packetNumber)
+    expect(dialog.textContent).toContain('revision 1')
+    expect(navigation).toHaveBeenLastCalledWith(true)
+    expect(api.recordSampleShipment).not.toHaveBeenCalled()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Not yet' }))
+    await waitFor(() => expect(navigation).toHaveBeenLastCalledWith(false))
+    await waitFor(() => expect(currentNext().getByRole('button', { name: 'Print shipping insert' })).toBeTruthy())
+    expect(currentNext().queryByRole('button', { name: 'Record shipment' })).toBeNull()
+    await waitFor(() => expect(document.activeElement).toBe(print))
+  })
+
+  it('requires explicit acknowledgement, keeps it across remount and reprint cancellation, and invalidates it for a new revision', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
+    const view = renderPage(client, customerSession(), sendHost())
+    fireEvent.click(await waitFor(() => currentNext().getByRole('button', { name: 'Print shipping insert' })))
+    fireEvent.click(await screen.findByRole('button', { name: 'Close print dialog' }))
+    const confirmed = await screen.findByRole('button', { name: 'Printed and packed' })
+    await waitFor(() => expect((confirmed as HTMLButtonElement).disabled).toBe(false))
+    fireEvent.click(confirmed)
+    expect(await waitFor(() => currentNext().getByRole('button', { name: 'Record shipment' }))).toBeTruthy()
+    expect(api.recordSampleShipment).not.toHaveBeenCalled()
+    expect(api.issueSampleShippingPacket).not.toHaveBeenCalled()
+
+    view.unmount()
+    renderPage(client, customerSession(), sendHost())
+    await waitFor(() => expect((currentNext().getByRole('button', { name: 'Record shipment' }) as HTMLButtonElement).disabled).toBe(false))
+    fireEvent.click(screen.getByRole('button', { name: 'Print shipping insert' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Close print dialog' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Not yet' }))
+    expect(await waitFor(() => currentNext().getByRole('button', { name: 'Record shipment' }))).toBeTruthy()
+    const revised = { ...shipment, currentPacket: { ...shipment.currentPacket!, id: 'revised-insert', revision: 2 } }
+    api.getSampleShipment.mockResolvedValue(revised)
+    await act(async () => { await client.refetchQueries({ queryKey: ['sample-shipment', shipment.id] }) })
+    await waitFor(() => expect(currentNext().getByRole('button', { name: 'Print shipping insert' })).toBeTruthy())
+    expect(currentNext().queryByRole('button', { name: 'Record shipment' })).toBeNull()
+  })
+
+  it('rechecks after print and only acknowledges the exact revision actually printed', async () => {
+    renderPage(undefined, customerSession(), sendHost())
+    fireEvent.click(await waitFor(() => currentNext().getByRole('button', { name: 'Print shipping insert' })))
+    let resolveRefresh!: (value: SampleShipmentWorkflow) => void
+    api.getSampleShipment.mockImplementation(() => new Promise<SampleShipmentWorkflow>(resolve => { resolveRefresh = resolve }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Close print dialog' }))
+    const affirmative = await screen.findByRole('button', { name: 'Printed and packed' })
+    expect((affirmative as HTMLButtonElement).disabled).toBe(true)
+    await waitFor(() => expect(api.getSampleShipment).toHaveBeenCalledTimes(2))
+    await act(async () => { resolveRefresh({ ...shipment, currentPacket: { ...shipment.currentPacket!, revision: 2 } }) })
+    expect(await screen.findByText('The shipping insert has changed. Print its current revision before confirming it is packed.')).toBeTruthy()
+    expect((affirmative as HTMLButtonElement).disabled).toBe(true)
+    expect(api.recordSampleShipment).not.toHaveBeenCalled()
+  })
+
+  it('accepts a newer validated frame revision only after the shipment refresh confirms it', async () => {
+    renderPage(undefined, customerSession(), sendHost())
+    fireEvent.click(await waitFor(() => currentNext().getByRole('button', { name: 'Print shipping insert' })))
+    api.printedInsert = { ...shipment.currentPacket!, id: 'new-frame-insert', revision: 2 }
+    api.getSampleShipment.mockResolvedValue({ ...shipment, currentPacket: { ...shipment.currentPacket!, ...api.printedInsert } })
+    fireEvent.click(await screen.findByRole('button', { name: 'Close print dialog' }))
+    const affirmative = await screen.findByRole('button', { name: 'Printed and packed' })
+    await waitFor(() => expect((affirmative as HTMLButtonElement).disabled).toBe(false))
+    expect(screen.getByRole('dialog').textContent).toContain('revision 2')
+    fireEvent.click(affirmative)
+    expect(await waitFor(() => currentNext().getByRole('button', { name: 'Record shipment' }))).toBeTruthy()
+  })
+
+  it('leaves Print after a preparation failure and never exposes Record to a read-only member', async () => {
+    const session = customerSession()
+    session.session!.capabilities.canManageSampleShipping = false
+    renderPage(undefined, session, sendHost())
+    fireEvent.click(await waitFor(() => currentNext().getByRole('button', { name: 'Print shipping insert' })))
+    fireEvent.click(await screen.findByRole('button', { name: 'Fail print preparation' }))
+    expect(screen.queryByRole('dialog', { name: 'Confirm printed and packed' })).toBeNull()
+    expect(currentNext().queryByRole('button', { name: 'Record shipment' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Close print dialog' }))
+    expect(screen.queryByRole('dialog', { name: 'Confirm printed and packed' })).toBeNull()
+    expect(currentNext().getByRole('button', { name: 'Print shipping insert' })).toBeTruthy()
+  })
+
+  it('offers direct insert confirmation only for a fully matched eligible container', async () => {
+    api.getSampleShipment.mockResolvedValue({ ...shipment, status: 'Preparing', currentPacket: null })
+    renderPage(undefined, customerSession(), sendHost())
+    fireEvent.click(await waitFor(() => currentNext().getByRole('button', { name: 'Review and confirm shipping insert' })))
+    expect(await screen.findByRole('dialog', { name: 'Confirm shipping insert' })).toBeTruthy()
+    expect(api.issueSampleShippingPacket).not.toHaveBeenCalled()
   })
 
   it('blocks Customer Lab scanning until a physical container is assigned', async () => {
@@ -113,6 +259,23 @@ describe('SampleShippingDetailPage', () => {
     expect(screen.getByRole('menuitem', { name: 'Record shipment' })).toBeTruthy()
     expect(screen.queryByRole('menuitem', { name: 'Replace packet' })).toBeNull()
     expect(api.issueSampleShippingPacket).not.toHaveBeenCalled()
+  })
+
+  it('keeps the header Record action locked while a successful save refreshes the shipment', async () => {
+    api.recordSampleShipment.mockResolvedValue({ ...shipment, status: 'Shipped' })
+    renderPage(undefined, customerSession(), embeddedHost())
+    fireEvent.click(await screen.findByRole('button', { name: 'Record shipment' }))
+    const dialog = screen.getByRole('dialog', { name: 'Record return shipment' })
+    fireEvent.change(within(dialog).getByLabelText(/Carrier/), { target: { value: 'UPS' } })
+    fireEvent.change(within(dialog).getByLabelText(/Tracking number/), { target: { value: 'TRACK-123' } })
+    api.getSampleShipment.mockImplementation(() => new Promise(() => {}))
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Record shipment' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    const headerRecord = screen.getByRole('button', { name: 'Record shipment' }) as HTMLButtonElement
+    expect(headerRecord.disabled).toBe(true)
+    fireEvent.click(headerRecord)
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(api.recordSampleShipment).toHaveBeenCalledOnce()
   })
 
   it('shows packet failures inside the dialog and clears them when starting a new attempt', async () => {
@@ -180,14 +343,24 @@ describe('SampleShippingDetailPage', () => {
 
 function renderPage(queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  }), session = customerSession()) {
+  }), session = customerSession(), embedded?: ComponentProps<typeof SampleShippingDetailPage>['embedded']) {
   return render(
     <QueryClientProvider client={queryClient}>
       <PhaenoSessionContext.Provider value={session}>
-        <SampleShippingDetailPage shipmentId={shipment.id} />
+        <SampleShippingDetailPage shipmentId={shipment.id} embedded={embedded} />
       </PhaenoSessionContext.Provider>
     </QueryClientProvider>,
   )
+}
+
+function embeddedHost(overrides: Partial<NonNullable<ComponentProps<typeof SampleShippingDetailPage>['embedded']>> = {}): NonNullable<ComponentProps<typeof SampleShippingDetailPage>['embedded']> {
+  return { sourceId: shipment.authorizationSourceId, showPreparation: false, onSelectShipment: vi.fn().mockResolvedValue(undefined), onOpenPreparation: vi.fn(), renderActions: actions => <><button>Order action</button>{actions.map(action => <button key={action.label} disabled={action.disabled} onClick={action.onSelect}>{action.label}</button>)}</>, ...overrides }
+}
+
+function currentNext() { return within(screen.getByTestId('next-shipping-action')) }
+
+function sendHost(overrides: Partial<NonNullable<ComponentProps<typeof SampleShippingDetailPage>['embedded']>> = {}) {
+  return embeddedHost({ renderSendAction: (action, ref) => <section data-testid="next-shipping-action">{action ? <button ref={ref} disabled={action.disabled} onClick={action.onSelect}>{action.label}</button> : null}</section>, ...overrides })
 }
 
 function customerSession(): PhaenoSessionContextValue {

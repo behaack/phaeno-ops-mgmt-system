@@ -377,6 +377,72 @@ public sealed class DepartmentAccessPostgresTests
     }
 
     [PostgreSqlReferenceFact]
+    public async Task QuotePdfUsesItsRequestRevisionScopeInsteadOfTheLatestRequest()
+    {
+        await using var scope = await Scope.Create();
+        scope.UseOrdinaryMember();
+        var order = scope.AddOrder(scope.General, 12);
+        var original = new LabServiceRequestRevision(order.Id, 1, null,
+            "{\"requestedSpecimenCount\":7,\"sourceGroups\":[{\"biologicalSource\":\"Heart - original\",\"specimenCount\":4},{\"biologicalSource\":\"Liver - original\",\"specimenCount\":3}]}",
+            null, scope.Actor.Id, DateTime.UtcNow);
+        scope.Db.AddRange(original, new LabServiceRequestRevision(order.Id, 2, original.Id,
+            "{\"requestedSpecimenCount\":12,\"sourceGroups\":[{\"biologicalSource\":\"Replacement scope\",\"specimenCount\":12}]}",
+            "Updated request", scope.Actor.Id, DateTime.UtcNow));
+        var quote = scope.AddQuote(order, QuoteStatus.Superseded);
+        await scope.Db.SaveChangesAsync();
+        var result = await scope.QuoteController().GetQuotePdf(order.Id, quote.Id, default);
+        using var pdf = PdfDocument.Open(result.FileContents);
+        var text = string.Join(" ", pdf.GetPages().Select(page => page.Text));
+        Assert.Contains("7 samples", text);
+        Assert.Contains("Heart - original4", text);
+        Assert.Contains("Liver - original3", text);
+        Assert.DoesNotContain("Replacement scope", text);
+        Assert.DoesNotContain("12 samples", text);
+        Assert.False(scope.Db.ChangeTracker.HasChanges());
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task QuotePdfUsesOnlyItsOwnStandardPlacementAndOmitsUnrecordedLegacyScope()
+    {
+        await using var scope = await Scope.Create();
+        scope.UseOrdinaryMember();
+        var order = scope.AddOrder(scope.General, 9);
+        var quote = scope.AddQuote(order, QuoteStatus.Accepted);
+        var legacy = scope.AddQuote(order, QuoteStatus.Superseded, revision: 2);
+        scope.Db.Entry(quote).Property(value => value.SourceRequestRevision).CurrentValue = null;
+        scope.Db.Entry(legacy).Property(value => value.SourceRequestRevision).CurrentValue = null;
+        scope.Db.Entry(order).Property(value => value.PlacementSnapshotJson).CurrentValue = JsonSerializer.Serialize(new
+        {
+            quoteId = quote.Id, requestedSpecimenCount = 9,
+            sourceGroups = new[] { new { biologicalSource = "Frozen standard source", specimenCount = 9 } }
+        });
+        await scope.Db.SaveChangesAsync();
+        var controller = scope.QuoteController();
+        using var pdf = PdfDocument.Open((await controller.GetQuotePdf(order.Id, quote.Id, default)).FileContents);
+        Assert.Contains("Frozen standard source9", pdf.GetPage(1).Text);
+        using var legacyPdf = PdfDocument.Open((await controller.GetQuotePdf(order.Id, legacy.Id, default)).FileContents);
+        Assert.DoesNotContain("Sample scope", legacyPdf.GetPage(1).Text);
+        Assert.False(scope.Db.ChangeTracker.HasChanges());
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task QuotePdfRejectsInconsistentRecordedSourceCounts()
+    {
+        await using var scope = await Scope.Create();
+        scope.UseOrdinaryMember();
+        var order = scope.AddOrder(scope.General, 9);
+        var quote = scope.AddQuote(order, QuoteStatus.Issued);
+        scope.Db.Add(new LabServiceRequestRevision(order.Id, 1, null,
+            "{\"requestedSpecimenCount\":9,\"sourceGroups\":[{\"biologicalSource\":\"Private malformed scope\",\"specimenCount\":4}]}",
+            null, scope.Actor.Id, DateTime.UtcNow));
+        await scope.Db.SaveChangesAsync();
+        var error = await Assert.ThrowsAsync<OrderManagementException>(() => scope.QuoteController().GetQuotePdf(order.Id, quote.Id, default));
+        Assert.Equal("quote_document_unavailable", error.ErrorCode);
+        Assert.DoesNotContain("Private", error.Message);
+        Assert.False(scope.Db.ChangeTracker.HasChanges());
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task QuotePdfKeepsIssuedHistoricalRevisionsAvailableToMembers()
     {
         await using var scope = await Scope.Create();

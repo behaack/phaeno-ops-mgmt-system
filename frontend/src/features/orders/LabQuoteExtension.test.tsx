@@ -7,7 +7,7 @@ import { bundleLabDraft } from '#/test-helpers/bundled-orders'
 import { LabServiceDetailPage } from './LabServiceDetailPage'
 
 const mocks = vi.hoisted(() => ({ read: vi.fn(), extend: vi.fn(), accept: vi.fn(), withdraw: vi.fn() }))
-vi.mock('@tanstack/react-router', () => ({ Link: ({ children }: { children: ReactNode }) => <a href="#job">{children}</a>, useBlocker: vi.fn() }))
+vi.mock('@tanstack/react-router', () => ({ Link: ({ children }: { children: ReactNode }) => <a href="#job">{children}</a>, useNavigate: () => vi.fn(), useBlocker: vi.fn() }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider: 'clerk', session: { capabilities: { canViewLabServiceOrders: true, canViewLabServiceInvoices: false } } }) }))
 vi.mock('#/api/order-management', async original => ({ ...await original<typeof import('#/api/order-management')>(), getLabOrder: mocks.read, requestLabQuoteExtension: mocks.extend, acceptLabQuote: mocks.accept, withdrawLabOrder: mocks.withdraw }))
 vi.mock('#/api/pseq-order-to-cash', () => ({ listCustomerInvoices: async () => [], listCustomerResultPackages: async () => [], downloadCustomerInvoicePdf: vi.fn(), downloadCustomerResultArtifact: vi.fn() }))
@@ -28,30 +28,55 @@ function show(order = expired) {
   return client
 }
 async function requestDialog() {
-  fireEvent.click(await screen.findByRole('button', { name: 'Request extension' }))
+  fireEvent.click(await headerAction('Request quote extension'))
   return screen.findByRole('dialog', { name: 'Request quote extension' })
 }
 
+async function headerAction(name: string | RegExp) {
+  const existing = screen.queryByRole('menuitem', { name })
+  if (existing) return existing
+  await waitFor(() => expect(screen.queryByRole('button', { name }) ?? screen.queryByRole('button', { name: 'Actions' })).toBeTruthy())
+  const direct = screen.queryByRole('button', { name })
+  if (direct) return direct
+  fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions' }), { button: 0, ctrlKey: false })
+  return screen.findByRole('menuitem', { name })
+}
+
+function actionDisabled(action: HTMLElement) {
+  return action.matches(':disabled') || action.getAttribute('aria-disabled') === 'true'
+}
+
 describe('Lab quote acceptance and extensions', () => {
-  it('places one obvious acceptance action alongside the valid quote for administrators', async () => {
-    show({ ...expired, canAcceptQuote: true, canWithdraw: true, canRequestQuoteExtension: false, quotes: [{ ...quote, status: 'Issued', expiresAt: '2099-10-04T14:00:00Z' }] })
+  it('shows quote decisions beside the source counts, keeps order details open, and hides later work', async () => {
+    show({ ...expired, requestedSpecimenCount: 7, sourceGroups: [{ id: 'heart', biologicalSource: 'Heart tissue', specimenCount: 4, version: 1 }, { id: 'liver', biologicalSource: 'Liver tissue', specimenCount: 3, version: 1 }], canAcceptQuote: true, canWithdraw: true, canRequestQuoteExtension: false, quotes: [{ ...quote, status: 'Issued', expiresAt: '2099-10-04T14:00:00Z' }] })
     const accept = await screen.findByRole('button', { name: 'Accept quote' })
-    expect(screen.getAllByRole('button', { name: 'Accept quote' })).toHaveLength(1)
-    expect(accept).toHaveProperty('disabled', false)
-    expect(accept.closest('[data-slot="card"]')?.textContent).toContain('Quote and billing')
     const actions = screen.getByRole('group', { name: 'Quote actions' })
-    expect(within(actions).getAllByRole('button').map(button => button.textContent)).toEqual(['Accept quote', 'Decline quote', 'Download quote PDF'])
-    expect(screen.getAllByRole('button', { name: /^Decline quote$/ })).toHaveLength(1)
-    expect(screen.queryByRole('button', { name: 'Request extension' })).toBeNull()
+    expect(within(actions).getByRole('button', { name: 'Decline quote' })).toBeTruthy()
+    expect(screen.getAllByRole('button', { name: 'Accept quote' })).toHaveLength(1)
+    expect(accept.closest('[aria-labelledby="order-details-heading"]')).toBe(screen.getByRole('region', { name: 'Order details and billing' }))
+    expect(accept.closest('[data-slot="card"]')).toBeNull()
+    const scope = screen.getByRole('region', { name: 'Samples in this order' })
+    expect(within(scope).getByText('7 samples in this order')).toBeTruthy()
+    expect(within(scope).getByRole('row', { name: 'Heart tissue 4' })).toBeTruthy()
+    expect(within(scope).getByRole('row', { name: 'Liver tissue 3' })).toBeTruthy()
+    const details = screen.getByRole('region', { name: 'Order details and billing' })
+    expect(details.tagName).toBe('SECTION')
+    expect(details.querySelector('summary')).toBeNull()
+    expect(screen.queryByText('Sample submission')).toBeNull()
+    expect(screen.queryByText('Samples and shipping')).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'After you send' })).toBeNull()
+    expect(actionDisabled(accept)).toBe(false)
     fireEvent.click(accept)
     expect(await screen.findByRole('dialog', { name: /Accept quote for/ })).toBeTruthy()
+    expect(mocks.accept).not.toHaveBeenCalled()
   })
 
   it.each(['Issued', 'Expired'])('explains Member permissions for an %s quote without exposing administrator actions', async status => {
     show({ ...expired, canManageQuotes: false, canRequestQuoteExtension: false, quotes: [{ ...quote, status, expiresAt: status === 'Issued' ? '2099-10-04T14:00:00Z' : quote.expiresAt }] })
     expect(await screen.findByText(/An organization or department administrator must accept this quote/)).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Accept quote' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Request extension' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Request quote extension' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Actions' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Download quote PDF' })).toHaveProperty('disabled', false)
   })
 
@@ -61,13 +86,13 @@ describe('Lab quote acceptance and extensions', () => {
     expect(expiredDate.className).toContain('text-destructive')
     expect(expiredDate.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true')
     expect(screen.getByText('Expired').className).toContain('destructive')
-    const accept = screen.getByRole('button', { name: 'Accept quote' })
-    expect(accept).toHaveProperty('disabled', true)
+    const accept = await headerAction('Accept quote')
+    expect(actionDisabled(accept)).toBe(true)
     expect(screen.getByText(/This quote has expired and cannot be accepted/)).toHaveProperty('id', accept.getAttribute('aria-describedby'))
     fireEvent.click(accept)
     expect(mocks.accept).not.toHaveBeenCalled()
-    expect(screen.getByRole('button', { name: 'Download quote PDF' })).toHaveProperty('disabled', false)
-    expect(screen.getByRole('button', { name: 'Request extension' })).toHaveProperty('disabled', false)
+    expect(actionDisabled(await headerAction('Download quote PDF'))).toBe(false)
+    expect(actionDisabled(await headerAction('Request quote extension'))).toBe(false)
   })
 
   it('keeps an accepted quote Accepted after its original expiration date', async () => {
@@ -75,13 +100,13 @@ describe('Lab quote acceptance and extensions', () => {
     expect(await screen.findByText('Accepted')).toBeTruthy()
     expect(screen.queryByText(/Expired on/)).toBeNull()
     expect(screen.queryByRole('button', { name: 'Accept quote' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Request extension' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Request quote extension' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Download quote PDF' })).toBeTruthy()
   })
 
   it.each(['Issued', 'Expired'])('describes quote decline as closing the request for an %s quote', async status => {
     show({ ...expired, canWithdraw: true, quotes: [{ ...quote, status, expiresAt: status === 'Issued' ? '2099-10-04T14:00:00Z' : quote.expiresAt }] })
-    fireEvent.click(await screen.findByRole('button', { name: /^Decline quote$/ }))
+    fireEvent.click(await headerAction(/^Decline quote$/))
     const dialog = await screen.findByRole('dialog', { name: `Decline quote for ${expired.orderNumber}` })
     expect(within(dialog).getByText('Declining this quote will close this request.')).toBeTruthy()
     expect(within(dialog).getByRole('button', { name: 'Decline quote and close request' })).toHaveProperty('disabled', false)
@@ -91,7 +116,7 @@ describe('Lab quote acceptance and extensions', () => {
 
   it('retains request withdrawal wording before a quote is issued', async () => {
     show({ ...expired, status: 'SubmittedForQuote', canWithdraw: true, quotes: [] })
-    fireEvent.click(await screen.findByRole('button', { name: 'Withdraw request' }))
+    fireEvent.click(await headerAction('Withdraw request'))
     const dialog = await screen.findByRole('dialog', { name: `Withdraw ${expired.orderNumber}` })
     expect(within(dialog).getByText('This closes the request before work is placed.')).toBeTruthy()
     expect(within(dialog).getByRole('button', { name: 'Withdraw request' })).toBeTruthy()
@@ -104,7 +129,7 @@ describe('Lab quote acceptance and extensions', () => {
     { reason: 'Other', explanation: '  Approval is delayed.  ', expected: 'Other: Approval is delayed.' },
   ])('passes the selected $reason decline reason through the existing request-withdrawal action', async ({ reason, explanation, expected }) => {
     show({ ...expired, canWithdraw: true })
-    fireEvent.click(await screen.findByRole('button', { name: /^Decline quote$/ }))
+    fireEvent.click(await headerAction(/^Decline quote$/))
     const dialog = await screen.findByRole('dialog', { name: `Decline quote for ${expired.orderNumber}` })
     fireEvent.change(within(dialog).getByRole('combobox', { name: /Reason/ }), { target: { value: reason } })
     if (reason === 'Other') fireEvent.change(within(dialog).getByLabelText(/Please explain/), { target: { value: explanation } })
@@ -139,17 +164,20 @@ describe('Lab quote acceptance and extensions', () => {
     mocks.read.mockResolvedValue(pending)
     mocks.extend.mockResolvedValueOnce(pending)
     fireEvent.click(within(dialog).getByRole('button', { name: 'Request extension' }))
-    const requested = await screen.findByRole('button', { name: 'Extension requested' })
-    expect(requested).toHaveProperty('disabled', true)
+    const requested = await screen.findByText('Extension requested')
+    expect(requested.closest('[role="status"]')).toBeTruthy()
     expect(mocks.extend.mock.calls[1][4]).toBe(key)
-    expect(screen.queryByRole('button', { name: 'Request extension' })).toBeNull()
     expect(screen.queryByRole('dialog')).toBeNull()
+    await headerAction('Download quote PDF')
+    expect(screen.queryByRole('menuitem', { name: 'Request quote extension' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Request quote extension' })).toBeNull()
   })
 
   it('shows a saved pending request to Members without offering a duplicate request', async () => {
     show({ ...pending, canManageQuotes: false })
     expect(await screen.findByText('Extension requested')).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Request extension' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Request quote extension' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Actions' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Extension requested' })).toBeNull()
   })
 
@@ -198,7 +226,7 @@ describe('Lab quote acceptance and extensions', () => {
   it('blocks acceptance when a newer revision arrives while its confirmation is open', async () => {
     const valid = { ...expired, canAcceptQuote: true, canRequestQuoteExtension: false, quotes: [{ ...quote, status: 'Issued', expiresAt: '2099-10-04T14:00:00Z' }] }
     const client = show(valid)
-    fireEvent.click(await screen.findByRole('button', { name: 'Accept quote' }))
+    fireEvent.click(await headerAction('Accept quote'))
     const dialog = await screen.findByRole('dialog', { name: /Accept quote for/ })
     act(() => client.setQueryData(['lab-service-order', expired.id], { ...valid, version: 4, quotes: [{ ...valid.quotes[0], id: 'quote-2', revision: 2 }] }))
     expect(await within(dialog).findByText('The quote changed. Close this dialog and review the current revision.')).toBeTruthy()
@@ -210,7 +238,7 @@ describe('Lab quote acceptance and extensions', () => {
     const now = Date.now()
     const valid = { ...expired, canAcceptQuote: true, canRequestQuoteExtension: false, quotes: [{ ...quote, status: 'Issued', expiresAt: new Date(now + 60_000).toISOString() }] }
     show(valid)
-    fireEvent.click(await screen.findByRole('button', { name: 'Accept quote' }))
+    fireEvent.click(await headerAction('Accept quote'))
     const dialog = await screen.findByRole('dialog', { name: /Accept quote for/ })
     const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(now + 60_001)
     act(() => window.dispatchEvent(new Event('focus')))

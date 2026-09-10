@@ -18,7 +18,7 @@ Adjust each row's tube count as needed. Counts must be whole numbers, fit each c
 
 Use **Shipping container** at the top of the shipment page to switch between this Trial's containers or return to remaining tubes awaiting containers. Each option shows the container identity, tube count and status. Switching with an unsaved scan asks whether to discard it; switching is blocked while saving.
 
-Before scanning starts, an organization or Department administrator can use **Reset container configuration** beside the **Shipping container** selector. The confirmation covers **all containers and tubes for the Trial's shipment plan**, not just the shipment you opened. The submitted sample list stays intact, and the previous containers remain in history. Cancelling the confirmation changes nothing.
+Before scanning starts, an organization or Department administrator can use **Reset container configuration** beside the **Shipping container** selector. The confirmation covers **all containers and tubes for the Trial's shipment plan**, not just the shipment you opened. The submitted sample list stays intact, and the previous configurations remain in the records and audit history for support. Retired configurations are not shown in your **Shipping containers** panel. Cancelling the confirmation changes nothing.
 
 **Reset container configuration** is also unavailable while a barcode entry is unsaved or saving. Discard an unsaved entry before revising the plan; saving the first scan locks the plan as described below.
 
@@ -26,7 +26,7 @@ The action is locked once any container in that plan has a scan, linked physical
 
 Your organization must retain the connection between each coded sample ID and its own sample record. Do not enter patient names, medical-record numbers, dates of birth or other direct identifiers. Phaeno retains the permanent-tube-to-sample crosswalk used for shipping and intake.
 
-Open a prepared shipment and use **Scan tubes into this shipment**. Scan the physical tube for the displayed sample and tube number, then press Enter or **Save scan**. A successful match shows the saved number and barcode graphic, updates progress and advances to the next tube. Saved matches survive leaving the page. **Previous tubes** and **Next tubes** review long lists without expanding the whole page.
+Select **Open shipment** for a prepared container and use **Scan tubes into this shipment**. Scan the physical tube for the displayed sample and tube number, then press Enter or **Save scan**. A successful match shows the saved number and barcode graphic, updates progress and advances to the next tube. Saved matches survive leaving the page. **Previous tubes** and **Next tubes** review long lists without expanding the whole page.
 
 Use tubes registered in a fulfilled kit for this Trial. The first successful scan associates the physical kit with this container; subsequent tubes must come from that kit. Unknown, ineligible, duplicate and already-used barcodes cannot advance scanning. A failed scan retains the barcode and current sample for correction and retry. Do not cover, alter or remove a permanent manufacturer barcode.
 
@@ -38,10 +38,18 @@ When the shipment header has more than one action, open **Actions** to find them
 
 Review every declared tube, then select **Review and confirm shipping insert**. Confirmation distinguishes samples from tubes and freezes that shipment's destination, packing instructions and crosswalk. Spare slots do not create expected returns.
 
-Print the full shipping insert and place its manifest inside the corresponding container. The frozen container name, SKU and capacity identify the selected size. Order/Trial, shipment and sample barcodes identify records; separate permanent tube barcodes identify each physical tube. The manifest lists only this container's physical contents. A split sample shows its total tubes, this container's tubes, and other shipment references or still-unallocated tubes in a separate section. References reflect the confirmed revision; current progress remains in the Portal.
+Print one receiving sheet for each physical container and place it inside that container. It shows the Customer, Job/Trial and shipment references, sample and tube totals, essential handling notes and two widely separated scan targets: the large **Scan to receive this shipment** PH-P- insert barcode and, when assigned, the physical container barcode. Follow the full preparation and packing instructions in the Portal before shipping. **Full packing instructions and sample / tube list** on the insert page retains the confirmed manifest, every sample and tube barcode, and split-sample references; these details do not print with the receiving sheet. Use **Download tube list (CSV)** to retain the complete crosswalk.
 
 **Print shipping insert** checks the current revision, then opens the browser print dialog while keeping your shipment page open. Cancelling printing leaves you on the same shipment with your saved tube matches intact. If the insert cannot be checked, review the message on the shipment page, reconnect if needed and select **Try again**. Failed confirmation keeps the dialog entries for retry. Retain the shipping insert or use **Download tube list (CSV)** for your records. The shipping insert does not purchase postage or replace the carrier label.
 
-After handing each package to the carrier, record its carrier, tracking number and shipment time. Receipt progress aggregates tubes across shipments. The first received package does not mark all tubes of a split sample received, and a barcode lookup is not proof that physical material arrived.
+After handing each package to the carrier, record its carrier, tracking number and shipment time. Receipt progress aggregates tubes across shipments. In the Trial's **Shipping containers** panel, expand **Sample receipt progress** to review each sample. The first received package does not mark all tubes of a split sample received, and a barcode lookup is not proof that physical material arrived.
 
 Use **Back to Trial** for approved scope and current progress or **Shipping container** to move between its containers. Contact Phaeno with the Trial and shipment references if no compatible container exists, a tube cannot be matched confidently, or existing assignments need repacking. Do not guess a tube identity or change approved scope through shipping.
+
+
+Portal-generated identifiers now render as QR codes, with the exact identifier
+printed underneath. Shipping inserts, container labels, kit records and displayed
+sample/tube identifiers use the same format. Use a QR-capable 2D scanner. Existing
+manufacturer labels and older printed barcodes remain valid; do not relabel a
+tube or change its saved identity merely to match the new display. A scan still
+requires the correct workflow and does not by itself confirm receipt or accession.

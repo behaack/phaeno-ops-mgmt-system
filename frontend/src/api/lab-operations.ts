@@ -130,6 +130,7 @@ export const transitionLabServiceWorkflowVersion = (id: string, input: { action:
 export const setLabMilestone = (id: string, status: string, version: number) => post<LabWorkOrderDetail>(`/platform/lab-operations/work-orders/${id}/milestone`, { status, version })
 export const receiveLabSpecimen = (workId: string, specimenId: string, input: object) => post<LabWorkOrderDetail>(`/platform/lab-operations/work-orders/${workId}/specimens/${specimenId}/receipt`, input)
 export const accessionLabSpecimen = (workId: string, specimenId: string, input: object) => post<LabWorkOrderDetail>(`/platform/lab-operations/work-orders/${workId}/specimens/${specimenId}/accession`, input)
+export const accessionShipmentTube = (workId: string, shipmentId: string, input: { packetBarcode: string; supplierTubeBarcode: string; freezerBoxBarcode: string }) => post<LabWorkOrderDetail>(`/platform/lab-operations/work-orders/${workId}/shipments/${shipmentId}/tubes/accession`, input)
 export const setLabSpecimenDisposition = (workId: string, specimenId: string, input: object) => post<LabWorkOrderDetail>(`/platform/lab-operations/work-orders/${workId}/specimens/${specimenId}/disposition`, input)
 export const createLabContainer = (workId: string, input: object) => post<LabContainer>(`/platform/lab-operations/work-orders/${workId}/containers`, input)
 export const scanLabContainer = (barcode: string) => get<LabContainerScan>(`/platform/lab-operations/containers/scan?barcode=${encodeURIComponent(barcode)}`)

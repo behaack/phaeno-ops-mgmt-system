@@ -28,5 +28,5 @@
     border: 0;
     break-inside: avoid;
   }
-  .stock-kit-print-surface .shipping-barcode svg { height: 12mm; }
+  .stock-kit-print-surface .shipping-barcode svg { width: 28mm; height: 28mm; }
 }

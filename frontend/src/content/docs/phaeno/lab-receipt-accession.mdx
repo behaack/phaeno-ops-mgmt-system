@@ -2,45 +2,82 @@
 
 Receipt and accession connect the Customer’s submitted specimen identity to the physical material handled in the laboratory. Record these steps in sequence and never create an unlinked laboratory specimen.
 
+The first recorded shipment arrival moves an awaiting Job into **Lab operations → Work** with the milestone **Received**. Its commercial order moves to **In progress**, while the Customer/Partner Job list displays **Received**. Customer progress uses Received, Library Prep, Sequencing, Data Assembly, Quality Review and Results Available, with current counts and individual sample stages in After you send. Only recorded provider sequencing establishes Sequencing; sendout alone does not. Scientific approval remains distinct from released results. It remains in Work while you accession tubes, including when other containers are outstanding. A completed container leaves the accession queue; its tubes and freezer-box values remain in the Job's **Lineage** tab.
+
+Verified tube receipt updates the sample's receipt progress. The commercial sample becomes **Accessioned** after all its expected tubes across active shipments are accessioned. Order updates can take a few seconds. Receipt and accession do not record scientific acceptance or start the acceptance-based turnaround target. Existing holds and later processing states remain in force.
+
+
+Use the tabs in **Lab operations → Receipt & accession** to focus on one task:
+
+- **Kit requests**: review Customer orders and fulfill requested kits.
+- **Prepare kits**: prepare stock and review kit inventory and deliveries.
+- **Kits sent**: finish previously prepared shipment-specific kits.
+- **Receive shipments**: review expected containers and tracking numbers; scan the PH-P- insert to acknowledge container arrival.
+- **Accession samples**: open a received container, then scan and accession its individual tubes.
+
+Kit requests and Prepare kits require the existing configuration-administrator
+permission. Your selected tab and queue filters stay in the page address; returning
+from a request or kit reopens its queue. Switching tabs during a visit retains the accession lookup draft and its results. Existing shipment links open the
+shipment-specific return-kit tab.
+
 ## Fulfill Customer transportation-kit orders
 
 Open **Lab operations → Receipt & accession → Kit requests** to review Customer transportation-kit orders. New orders notify Phaeno administrators for fulfillment. Open a request to review its Customer, Department, Job, requested sizes and quantities, and the delivery address saved when the Customer confirmed. Transportation kits and outbound delivery are included with the accepted laboratory order; this action creates no additional quote, invoice or payment step.
 
-Use **Fulfill request** to choose matching, fully registered physical kits and enter the carrier, tracking number and dispatch time, then select **Record dispatch**. If there is insufficient prepared stock, prepare and register more standard kits before returning to the request. Registration alone does not fulfill the request: it can still show **Pending** and zero dispatched kits until dispatch is recorded here. A partial dispatch leaves the remaining requested quantities outstanding. The kit order and saved delivery address remain linked to each dispatched kit.
+Use **Record kit shipment** to choose matching, fully registered physical kits and enter the carrier, tracking number and dispatch time, then select **Record dispatch**. If there is insufficient prepared stock, prepare and register more standard kits before returning to the request. Registration alone does not fulfill the request: it can still show **Pending** and zero dispatched kits until dispatch is recorded here. A partial dispatch leaves the remaining requested quantities outstanding. The kit order and saved delivery address remain linked to each dispatched kit.
 
 Dispatch adds those kits to the Customer delivery location's inventory as **On the way**. The Customer acknowledges the containers that arrive, moving them to **Available**. Unused available stock may supply any eligible Job at that Customer/Department/location; the originating Job is delivery history, not a restriction on use. Cancelling the originating Job does not consume delivered unused stock. Customer acknowledgment is separate from the laboratory's later receipt of returned samples. Kits not yet acknowledged remain unavailable, and a partial receipt permits only the received portion.
 
 Maintain delivery locations from the Customer's **Departments & services** workspace or the Department's delivery-location screen. Open a location and use **Actions → Edit location** in the page header. These locations belong to the Customer and Department, and are separate from global lab receiving destinations. Changing a saved location does not rewrite a confirmed kit order's delivery address. The Customer location workspace provides inventory and receipt access even if the originating Job has been cancelled.
 
+
+The request shows what to do next. If no matching kits are ready, choose
+**Prepare kits** to open preparation for the missing sizes. Prepare each physical
+kit, register its tube barcodes, then use **Back to kit request**. Once matching
+kits are ready, **Record kit shipment** selects the kits and records the carrier,
+tracking number and shipment time after handoff. A partially ready request can
+ship its available kits while the remaining sizes are prepared. Preparation does
+not reserve stock or record a shipment.
+
 ## Prepare and register standard kits
 
-Open **Lab operations → Receipt & accession → Standard kits**. Search by kit number, size, SKU, location or Job, or filter by inventory status. Open the kit number to review its products, registered tubes, location, receipt, outbound tracking and any current assignment. Distinguish the originating request's Job from the Job currently using the container.
+Open **Lab operations → Receipt & accession → Prepare kits**. Search by kit number, size, SKU, location or Job, or filter by inventory status. Open the kit number to review its products, registered tubes, location, receipt, outbound tracking and any current assignment. Distinguish the originating request's Job from the Job currently using the container.
 
 Choose **Prepare standard kit**, select an active configured container size, and record the actual tube supplier, product, optional lot, and shipper product. The configured size supplies the usable tube capacity and available shipper references. A new kit does not yet belong to a Customer Job.
 
-Open the kit and choose **Register tubes**. Scan each permanent supplier barcode on its own line. A kit must contain exactly its full configured tube capacity before dispatch; duplicate scans and excess tubes are rejected. The kit's own permanent number is its container barcode; print its label and keep the readable number with the barcode. A fully registered kit is ready stock at Phaeno. Return to **Kit requests**, open the request, and use **Fulfill request** to select that kit and record dispatch to its confirmed address. The kit's **Record dispatch** action also selects a request and displays its frozen delivery address. Both entry points update the same request and stock exactly once. Dispatch supplies the location; the Customer later assigns the container to a Job during preparation by scanning its barcode.
+Open the kit and choose **Register tubes**. Scan each permanent supplier barcode on its own line. A kit must contain exactly its full configured tube capacity before dispatch; duplicate scans and excess tubes are rejected. The kit's own permanent number is its container barcode; print its label and keep the readable number with the barcode. A fully registered kit is ready stock at Phaeno. Return to **Kit requests**, open the request, and use **Record kit shipment** to select that kit and record dispatch to its confirmed address. The kit's **Record dispatch** action also selects a request and displays its frozen delivery address. Both entry points update the same request and stock exactly once. Dispatch supplies the location; the Customer later assigns the container to a Job during preparation by scanning its barcode.
 
 **On the way** means dispatched but not yet acknowledged. **Available** means received and unassigned at the Customer location. **Assigned** means the Customer confirmed this container for a Job/shipment; **In use** means tube scanning has begun. Reset before the first tube scan releases an assignment to available inventory. After scanning, ordinary reset/reassignment remains locked. **Needs review** identifies incomplete location or receipt history that must be resolved before use. The original request, tracking and receipt remain distinct from the consuming Job.
 
 If an older kit is already sent but its request still shows an outstanding quantity, the kit page offers **Update kit request** when the saved dispatch has one eligible matching request. Review the existing carrier, tracking number and dispatch time, then confirm **Update kit request**. This links the existing dispatch; it does not send another kit or confirm Customer receipt. A failed update keeps the confirmation available for review and retry. Existing Trial and Partner supply workflows remain unchanged. Use the configuration workflow to qualify or revise container sizes rather than changing a kit's capacity.
 
-## Record receipt
+## Receive a shipment
 
-Open the authorized Lab work order and confirm the expected submitted specimen, service, and Customer-safe identifiers. Record when and where the physical item arrived and any intake observation permitted by the approved procedure.
+Open **Lab operations → Receipt & accession → Receive shipments**. **Expected shipments** lists each expected container separately, including the Customer, Job, carrier, tracking number and expected tube count. Containers still being prepared remain visible with their current status; missing tracking is shown as not recorded.
 
-Receipt does not accept the specimen for processing. It establishes custody and allows accession to begin. If the physical item cannot be matched safely to the expected specimen, stop and record an exception rather than guessing.
+When a container physically arrives, scan the **PH-P-** barcode under **Scan to receive this shipment** in the body of its shipping insert in **Shipping insert barcode**, then submit with Enter or **Receive shipment**. This action records the container's arrival time and staff audit event. The confirmation identifies the shipment and offers **Accession samples**. Repeating the same scan shows the original receipt without creating another event. Invalid, replaced or cancelled inserts cannot receive a container. A failed response leaves receipt unconfirmed in the screen; scanning again safely checks or completes that receipt.
 
-When an incoming package includes a Phaeno shipment packet, open **Lab operations** > **Receipt & accession** and scan the packet and each registered supplier tube first. That comparison identifies the exact expected sample and linked Lab work but does not record receipt. After a tube matches, choose **Continue to receipt and accession**. POMS carries the packet and tube into the work order, checks them again, and shows the matched Customer sample. Record receipt, then confirm accession in the next dialog. The known sample label, tube quantity and unit, packet, tube barcode, and recorded location are carried forward for review. The packet barcode is not a specimen or container barcode and must not be copied into an accession or container field.
+This receiving field accepts only the shipping insert's PH-P- code. The SHP… shipment reference, PH-S- shipment barcode, PH-O- Order barcode, PH-M- sample barcode, physical KIT- container barcode and individual tube barcodes do not acknowledge container arrival here. Receipt of a container does not accession its tubes or accept its samples for processing.
 
-The **Shipping barcode** field also accepts the Customer Job, sample, and shipment identities printed on a manifest. A Job or sample lookup lists its related shipments; choose **Open manifest** to compare that shipment's tubes. Lookup alone never records custody, receipt, or accession. A shipment without a confirmed manifest is shown as such and cannot start manifest-based comparison.
+## Open a received container
 
-## Accession the specimen
+Choose **Accession samples**. **Received containers awaiting accession** shows containers that have arrived and still have tubes to accession. Open the shipment reference or scan its PH-P- insert. This lookup is read-only. Within this tab, a **PH-S-** barcode opens the shipment's current confirmed insert, and **PH-O-** or **PH-M-** lookups let you choose a related manifest. The readable **SHP…** reference and physical **KIT-** barcode are not accepted by the lookup field.
 
-Opening Lab work from a scanned packet retains that shipment. **Continue to receipt and accession** also carries the matched tube. If checking the current identity fails, use **Try again**; a connection failure is not a tube mismatch. The **Lab operations** return link goes back to the originating section and shipment, including after work status changes or a protocol execution is opened.
+The shipping insert opens a container accession modal with every expected tube and a saved progress count. Scan a physical tube in **Supplier tube barcode** and press Enter or **Scan tube**. A matching, unaccessioned tube opens **Accession tube**, asking for its **Freezer box barcode**. Scan the box where that tube will be stored and press Enter or **Accession tube** to save.
 
-Accession only after receipt. Choose a unique accession number, then record location, quantity and unit when tracked, and an optional retention date. For a shipment with a frozen registered-tube crosswalk, scan both the packet and each matched tube during accession. POMS validates the exact shipment, specimen, and tube-slot association and adopts every qualified permanent supplier barcode as a submitted-container identity. Multiple submitted tubes for one sample use the same specimen accession and create separate containers linked to that specimen. POMS does not create or print a second label for those tubes. For every other submitted specimen, POMS assigns its own authoritative barcode as before.
+After each successful save, the freezer-box prompt closes, the tube list updates, and focus returns to **Supplier tube barcode**. Repeat this loop until all expected tubes are accessioned. Each tube retains its own freezer-box barcode as its storage location. The box barcode is recorded as entered; this workflow does not validate it against a freezer-box registry or assign a position inside the box.
 
-The label window renders the current container identity as a Code 39 barcode through the browser and installed printer driver. Enter the reason, open the system print dialog, and inspect the physical label before choosing **Label printed**. POMS increments the print count only after that confirmation. If the label did not print correctly, enter the failure details and choose **Record failed attempt**; the failure remains in history without falsely counting a usable label.
+POMS assigns a specimen accession number automatically when needed and reuses it for additional tubes from the same sample. Each tube keeps its permanent supplier barcode and its own laboratory container record. No additional tube label is printed. Container receipt and each tube's accession remain separate events; accession does not accept the specimen for processing.
+
+Unknown tubes, tubes belonging to another container, and voided inserts cannot be accessioned through this flow. An already accessioned tube is identified without creating another record. If saving is unconfirmed, retry with the same freezer-box barcode; a completed save is returned without duplication. This workflow does not relocate an already accessioned tube to a different box.
+
+The modal remains open until you choose **Done** or **Close — continue later**. Saved tubes remain accessioned when you close it; reopen the container to finish the remaining tubes. Cancelling a freezer-box entry leaves that tube pending. If container arrival has not been recorded, return to **Receive shipments** first.
+
+## Other specimen and label actions
+
+The Lab work record retains its individual specimen actions for receipt review, accession details, quantity, retention and intake decisions. These actions remain available outside the repeated scanning workflow.
+
+The label window renders the current container identity as a QR code through the browser and installed printer driver. Enter the reason, open the system print dialog, and inspect the physical label before choosing **Label printed**. POMS increments the print count only after that confirmation. If the label did not print correctly, enter the failure details and choose **Record failed attempt**; the failure remains in history without falsely counting a usable label.
 
 Every POMS-generated label reprint requires a reason and renders the same current container identity. A reprint or failed attempt adds a separate history event; it does not replace the barcode or erase an earlier print. Registered supplier tubes have no POMS print action. Verify readable text, barcode, accession, container, and adhesion using the approved bench procedure before processing continues.
 
@@ -57,3 +94,11 @@ Do not reuse a barcode, move material by editing its parent, or delete a contain
 ## Apply the intake decision
 
 After accession, record **Accepted**, **On hold**, or **Rejected**. Holds and rejections require an approved reason code and a safe explanation when Customer action is required. When every expected specimen has an intake decision, the work order reaches **Received**.
+
+
+Portal-generated identifiers now render as QR codes, with the exact identifier
+printed underneath. Shipping inserts, container labels, kit records and displayed
+sample/tube identifiers use the same format. Use a QR-capable 2D scanner. Existing
+manufacturer labels and older printed barcodes remain valid; do not relabel a
+tube or change its saved identity merely to match the new display. A scan still
+requires the correct workflow and does not by itself confirm receipt or accession.

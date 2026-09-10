@@ -54,6 +54,7 @@ import { ServiceWorkflowList } from './ServiceWorkflowList'
 type CreateKind = 'protocol' | 'material' | 'equipment' | 'batch' | null
 type SimpleCreateKind = Exclude<CreateKind, 'material' | 'equipment'>
 export type { LabSection } from './lab-sections'
+import type { LabReceiptTab } from './lab-receipt-tabs'
 import type { LabSection } from './lab-sections'
 
 const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
@@ -67,7 +68,7 @@ const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
   { value: 'batches', label: 'Batches', description: 'Operational and sequencing batches', icon: Layers3 },
 ]
 
-export function LabOperationsPage({ section, shipmentId, onSectionChange }: { section: LabSection; shipmentId?: string; onSectionChange: (section: LabSection) => void }) {
+export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTabChange, onSectionChange }: { section: LabSection; shipmentId?: string; receiptTab?: LabReceiptTab; onReceiptTabChange?: (tab: LabReceiptTab) => void; onSectionChange: (section: LabSection) => void }) {
   const { authProvider, session } = usePhaenoSession()
   const navigate = useNavigate()
   const canView = Boolean(session?.capabilities.canManageLabOperations)
@@ -103,7 +104,7 @@ export function LabOperationsPage({ section, shipmentId, onSectionChange }: { se
           {authProvider === 'mock' ? <Alert className="mb-5"><AlertTitle>Connected Lab operations are paused</AlertTitle><AlertDescription>Use a real Phaeno session to load or change laboratory records.</AlertDescription></Alert> : null}
           {dashboard.error ? <Alert className="mb-5" variant="destructive"><AlertTitle>Lab operations could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(dashboard.error, 'Try refreshing the workspace.')}</AlertDescription></Alert> : null}
           {dashboard.isLoading ? <p role="status">Loading laboratory workspace…</p> : null}
-          {dashboard.data && section === 'receipt' ? <LabReceiptAccessionPanel shipmentId={shipmentId} apiEnabled={apiEnabled} workOrders={dashboard.data.workOrders} /> : null}
+          {dashboard.data && section === 'receipt' ? <LabReceiptAccessionPanel canReceiveShipments={Boolean(session?.capabilities.canOperateLabWork)} tab={receiptTab} onTabChange={onReceiptTabChange} canManageKitSupply={Boolean(session?.capabilities.canManageOrderConfiguration)} shipmentId={shipmentId} apiEnabled={apiEnabled} workOrders={dashboard.data.workOrders} /> : null}
           {dashboard.data && section === 'work' ? <div className="space-y-5"><LabBarcodeLookup /><WorkQueue items={dashboard.data.workOrders.filter((item) => item.status !== 'AwaitingSpecimens')} /></div> : null}
           {section === 'kits' ? <LabManufacturingQueue workflow="reagent" apiEnabled={apiEnabled} /> : null}
           {section === 'assembly' ? <LabManufacturingQueue workflow="assembly" apiEnabled={apiEnabled} /> : null}

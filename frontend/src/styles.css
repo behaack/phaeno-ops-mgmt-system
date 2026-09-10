@@ -271,28 +271,32 @@ html {
     margin: 0;
   }
 
-  body:has(.lab-label-print-surface) * {
-    visibility: hidden !important;
-  }
-
-  .lab-label-print-surface,
-  .lab-label-print-surface * {
-    visibility: visible !important;
-  }
-
   @page lab-label { size: 50mm 25mm; margin: 0; }
+  html:has(.lab-label-print-dialog) { min-width: 0 !important; width: 50mm; }
+  body:has(.lab-label-print-dialog) { min-width: 0 !important; width: 50mm; page: lab-label; background: white !important; height: auto !important; margin: 0 !important; overflow: visible !important; }
+  body:has(.lab-label-print-dialog) > :not(.lab-label-print-dialog) { display: none !important; }
+  .lab-label-print-dialog { page: lab-label; position: static !important; inset: auto !important; translate: none !important; transform: none !important; display: block !important; width: 50mm; max-width: none; max-height: none; overflow: visible; border: 0; padding: 0; gap: 0; box-shadow: none; background: white; color: black; }
+  .lab-label-print-dialog > :not([data-slot="dialog-body"]) { display: none !important; }
+  .lab-label-print-dialog [data-slot="dialog-body"] { display: block; padding: 0; overflow: visible; }
+  .lab-label-print-dialog [data-slot="dialog-body"] > :not(.lab-label-print-surface) { display: none !important; }
 
   .lab-label-print-surface {
     page: lab-label;
-    position: absolute;
-    inset: 0 auto auto 0;
+    position: relative;
     width: 50mm;
     height: 25mm;
-    overflow: hidden;
     border: 0 !important;
     border-radius: 0 !important;
-    padding: 2mm !important;
+    padding: 1mm !important;
   }
+  .lab-label-print-surface > :not(.identifier-qr-code) { width: 28mm; }
+  .lab-label-print-surface > div:first-child { font-size: 5pt; line-height: 2mm; gap: 1mm; }
+  .lab-label-print-surface > p { font-size: 6pt; line-height: 2.4mm; margin: 0; }
+  .lab-label-print-surface > div:last-child { display: flex; flex-direction: column; font-size: 5pt; line-height: 2.3mm; margin: 0; }
+  .lab-label-print-surface .identifier-qr-code { position: absolute; inset: 1mm 1mm auto auto; margin: 0; width: 18mm; }
+  .lab-label-print-surface .identifier-qr-code svg { width: 18mm; height: 18mm; }
+  .lab-label-print-surface .identifier-qr-code figcaption { position: absolute; right: 0; top: 19mm; width: 48mm; font-size: 6pt; line-height: 2.5mm; margin: 0; }
+
 }
 
 @media (prefers-reduced-motion: reduce) {

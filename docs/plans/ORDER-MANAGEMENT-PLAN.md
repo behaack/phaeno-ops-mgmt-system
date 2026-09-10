@@ -1,5 +1,26 @@
 # Order Management Plan
 
+## Order progress and in-page shipping — September 10, 2026
+
+The Product Owner approved execution of the
+[Lab Job progress and shipping workspace plan](LAB-JOB-PROGRESS-AND-SHIPPING-WORKSPACE-PLAN.md).
+The local implementation splits the Job into **Ordering and shipping** and
+**After you send**. The customer steps form a horizontal sequence of icons,
+short labels and completion checks, with the current step highlighted and its
+instructions below. Completion follows saved evidence and explicit responsibility;
+partial shipments can have work in both parts.
+
+The full-width **Samples and shipping** workspace combines the paginated sample
+roster and tube matching in one grouped list, with selected-container commands in
+the Job's **Actions** menu and in-place insert printing. **Accept quote** and
+**Decline quote** appear at the end of the **Order details and billing** heading
+row. Sample submission and shipping appear when relevant after commitment;
+**After you send** appears when shipment, receipt, lab progress or results exist.
+A detailed scientific checklist is deferred.
+The owning plan records scope, navigation guards, meaningful assertions and
+remaining acceptance. No API, database, dependency, Git or release change is
+included. The physical workflow remains at the saved 18/18 ReadyToShip checkpoint.
+
 ## Finalization review sorting — September 8, 2026
 
 The owner reviewed the nine-sample finalization dialog and found its insertion
@@ -2777,3 +2798,24 @@ deployment; the unchecked activation gate above remains binding.
   manual placement price overrides, and offline order imports.
 - Final delivery confirmation from carriers; `Fulfilled` is Phaeno operational
   closeout after all active quantities are shipped or cancelled.
+
+## Quote PDF sample scope — September 10, 2026
+
+The owner requested the same **Biological source / Samples** detail shown in the
+Job's quote card in **Download quote PDF**. The PDF now includes a sample-scope
+table before the saved pricing lines, with **Sample scope · N samples** together
+in a shaded band directly above the source rows. Sources come from the quote's
+immutable request revision; standard orders use only their quote-linked placement
+snapshot. Later request edits cannot change an older quote's source breakdown.
+Legacy quotes without a recorded breakdown omit the table rather than using
+current editable order data. Inconsistent recorded counts fail through the
+existing safe document-unavailable response. Long names wrap, long scopes paginate,
+and source headings repeat. No pricing, authorization, database or API contract
+changes are required.
+
+Local verification: 16 focused renderer and PostgreSQL download tests passed,
+including historical scope and unchanged data. The representative one-page PDF
+and all six pages of the long-source stress PDF were visually reviewed. The
+scope heading and count share a shaded band attached to the source table; pricing
+headers retain room for the first item. Documentation generation and freshness
+checks passed (56 guides); whitespace checks passed. No commit or deployment.

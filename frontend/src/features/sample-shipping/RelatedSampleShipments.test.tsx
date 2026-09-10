@@ -7,17 +7,37 @@ import { RelatedSampleShipments } from './RelatedSampleShipments'
 const mocks = vi.hoisted(() => ({ list: vi.fn() }))
 vi.mock('#/api/sample-shipping', () => ({ getSourceSampleShipments: mocks.list }))
 vi.mock('@tanstack/react-router', () => ({ Link: ({ children }: { children: ReactNode }) => <a href="#shipment">{children}</a> }))
-vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider: 'clerk', session: { capabilities: { canViewSampleShipping: true } }, selectedOrganizationId: 'org-1', selectedDepartmentId: 'department-1' }) }))
+vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider: 'clerk', session: { capabilities: { canViewSampleShipping: true, canManageLabOperations: true } }, selectedOrganizationId: 'org-1', selectedDepartmentId: 'department-1' }) }))
 
 describe('related shipment receipt summary', () => {
   beforeEach(() => mocks.list.mockReset())
-  it('separates retired physical containers from active preparation and its counts', async () => {
+  it('hides retired physical containers from external users and excludes their counts', async () => {
     mocks.list.mockResolvedValue([shippingFixture, { ...shippingFixture, id: 'retired', shipmentNumber: 'OLD-CONTAINER', status: 'Cancelled', crosswalk: [], orderExpectedTubeCount: 999, orderReceivedTubeCount: 999 }])
     render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><RelatedSampleShipments sourceId={shippingFixture.authorizationSourceId} /></QueryClientProvider>)
-    expect(await screen.findByRole('link', { name: 'Open shipment, tubes and packet' })).toBeTruthy()
-    expect(screen.getByText('Retired container configurations (1)')).toBeTruthy()
-    expect(screen.getByText('View history · OLD-CONTAINER')).toBeTruthy()
+    expect(await screen.findByRole('link', { name: 'Open shipment' })).toBeTruthy()
+    expect(screen.queryByText('Retired container configurations (1)')).toBeNull()
+    expect(screen.queryByText(/OLD-CONTAINER/)).toBeNull()
     expect(screen.queryByText(/999/)).toBeNull()
+  })
+  it('preserves retired configuration history for authorized laboratory staff', async () => {
+    mocks.list.mockResolvedValue([shippingFixture, { ...shippingFixture, id: 'retired', shipmentNumber: 'OLD-CONTAINER', status: 'Cancelled', crosswalk: [], orderExpectedTubeCount: 999, orderReceivedTubeCount: 999 }])
+    render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><RelatedSampleShipments sourceId={shippingFixture.authorizationSourceId} staff /></QueryClientProvider>)
+    expect(await screen.findByRole('link', { name: 'Open Lab shipping' })).toBeTruthy()
+    expect(screen.getByText('Retired container configurations (1)')).toBeTruthy()
+    expect(screen.getByText('OLD-CONTAINER')).toBeTruthy()
+    expect(screen.queryByText(/999/)).toBeNull()
+    expect(mocks.list).toHaveBeenCalledWith(shippingFixture.authorizationSourceId, true)
+  })
+  it('keeps Trial receipt details but does not infer zero when either family count is missing', async () => {
+    mocks.list.mockResolvedValue([{ ...shippingFixture, orderExpectedTubeCount: 4, crosswalk: [
+      shippingTube(1, { totalSampleTubeCount: 4, receivedTubeCount: undefined }),
+      shippingTube(2, { totalSampleTubeCount: undefined, receivedTubeCount: 0 }),
+    ] }])
+    render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><RelatedSampleShipments sourceId={shippingFixture.authorizationSourceId} /></QueryClientProvider>)
+    expect(await screen.findByText('Sample receipt progress')).toBeTruthy()
+    expect(screen.getAllByText(/Receipt not available/)).toHaveLength(2)
+    expect(screen.queryByText(/0 of \d+ tubes received/)).toBeNull()
+    expect(screen.queryByText(/Awaiting receipt/)).toBeNull()
   })
   it('aggregates a split sample once and keeps unallocated tubes visible', async () => {
     const tube = shippingTube(1, { totalSampleTubeCount: 4, receivedTubeCount: 1 })
@@ -40,7 +60,7 @@ describe('related shipment receipt summary', () => {
     client.setQueryData(['sample-shipments', 'org-1', 'department-1'], Array.from({ length: 250 }, (_, index) => ({ ...shippingFixture, id: `other-${index}`, authorizationSourceId: 'another-job' })))
     mocks.list.mockResolvedValue([shippingFixture])
     const view = render(<QueryClientProvider client={client}><RelatedSampleShipments sourceId={shippingFixture.authorizationSourceId} /></QueryClientProvider>)
-    expect(await screen.findByRole('link', { name: 'Open shipment, tubes and packet' })).toBeTruthy()
+    expect(await screen.findByRole('link', { name: 'Open shipment' })).toBeTruthy()
     expect(mocks.list).toHaveBeenCalledWith(shippingFixture.authorizationSourceId, false)
     mocks.list.mockResolvedValue([{ ...shippingFixture, id: 'second-job-shipment', authorizationSourceId: 'second-job', shipmentNumber: 'SECOND-JOB-SHIPMENT' }])
     view.rerender(<QueryClientProvider client={client}><RelatedSampleShipments sourceId="second-job" /></QueryClientProvider>)
@@ -56,7 +76,7 @@ describe('related shipment receipt summary', () => {
       { ...shippingFixture, id: 'empty', isPackingPool: true, container: null, crosswalk: [] },
     ])
     render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><RelatedSampleShipments sourceId={shippingFixture.authorizationSourceId} /></QueryClientProvider>)
-    expect(await screen.findByRole('link', { name: 'Open shipment, tubes and packet' })).toBeTruthy()
+    expect(await screen.findByRole('link', { name: 'Open shipment' })).toBeTruthy()
     expect(screen.queryByText('Tubes awaiting containers')).toBeNull()
     expect(screen.queryByRole('link', { name: 'Choose containers' })).toBeNull()
     expect(screen.queryByText('0 unallocated tubes')).toBeNull()

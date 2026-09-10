@@ -11,7 +11,7 @@ import { PackingDialog, PackingSummary, type PackingInput } from './SampleShipme
 
 export { PackingDialog, PackingSummary } from './SampleShipmentPackingDialog'
 
-export function SampleShipmentPackingPanel({ shipment, canManage, availableKits: suppliedQuantities, locationInventory = false, deliveryLocationId, writesBlocked = false, onOpenChange }: { shipment: SampleShipmentWorkflow; canManage: boolean; availableKits?: SampleContainerQuantity[]; locationInventory?: boolean; deliveryLocationId?: string; writesBlocked?: boolean; onOpenChange?: (open: boolean) => void }) {
+export function SampleShipmentPackingPanel({ shipment, canManage, availableKits: suppliedQuantities, locationInventory = false, deliveryLocationId, writesBlocked = false, onOpenChange, onSelectShipment }: { shipment: SampleShipmentWorkflow; canManage: boolean; availableKits?: SampleContainerQuantity[]; locationInventory?: boolean; deliveryLocationId?: string; writesBlocked?: boolean; onOpenChange?: (open: boolean) => void; onSelectShipment?: (id: string) => Promise<void> }) {
   const client = useQueryClient()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
@@ -36,7 +36,10 @@ export function SampleShipmentPackingPanel({ shipment, canManage, availableKits:
         client.invalidateQueries({ queryKey: ['location-kit-inventory'] }),
       ])
       const first = shipments.find(item => !item.isPackingPool && item.crosswalk.length)
-      if (first) await navigate({ to: '/sample-shipping/$shipmentId', params: { shipmentId: first.id } })
+      if (first) {
+        if (onSelectShipment) await onSelectShipment(first.id)
+        else await navigate({ to: '/sample-shipping/$shipmentId', params: { shipmentId: first.id } })
+      }
     },
   })
   return <Card>

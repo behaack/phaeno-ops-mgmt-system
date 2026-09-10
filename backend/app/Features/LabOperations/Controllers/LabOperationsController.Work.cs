@@ -35,7 +35,11 @@ public sealed partial class LabOperationsController
     {
         var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.Operator, LabRole.Supervisor);
-        await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext, $"lab-tube-receipt:{workOrderId}", cancellationToken);
+        await using var transaction = dbContext.Database.CurrentTransaction is null
+            ? await SampleShippingPackingData.BeginAsync(dbContext, $"lab-tube-receipt:{workOrderId}", cancellationToken)
+            : null;
+        if (transaction is null)
+            await SampleShippingPackingData.LockAsync(dbContext, $"lab-tube-receipt:{workOrderId}", cancellationToken);
         var work = await RequireWorkOrderAsync(workOrderId, cancellationToken);
         var specimen = await RequireSpecimenAsync(work.Id, specimenId, cancellationToken);
         EnsureVersion(specimen.Version, request.Version);
@@ -78,6 +82,7 @@ public sealed partial class LabOperationsController
         await dbContext.SaveChangesAsync(cancellationToken);
         if (receivedShipment is not null)
             await SampleShippingPackingData.ReconcileReceiptAsync(dbContext, receivedShipment.Id, cancellationToken);
+        await PublishIntakeProgressAsync(work, actor.User.Id, cancellationToken);
         if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         return await WorkOrder(work.Id, cancellationToken);
     }
@@ -85,16 +90,55 @@ public sealed partial class LabOperationsController
     [HttpPost("work-orders/{workOrderId:guid}/specimens/{specimenId:guid}/accession")]
     public async Task<LabWorkOrderDetailDto> AccessionSpecimen(Guid workOrderId, Guid specimenId,
         [FromBody] SpecimenAccessionRequest request, CancellationToken cancellationToken)
+        => await AccessionSpecimenCore(workOrderId, specimenId, request, cancellationToken);
+
+    [HttpPost("work-orders/{workOrderId:guid}/shipments/{shipmentId:guid}/tubes/accession")]
+    public async Task<LabWorkOrderDetailDto> AccessionShipmentTube(Guid workOrderId, Guid shipmentId,
+        [FromBody] ShipmentTubeAccessionRequest request, CancellationToken cancellationToken)
+    {
+        await requestContext.RequireAsync(HttpContext, cancellationToken, LabRole.Operator, LabRole.Supervisor);
+        if (!SampleShippingBarcode.TryNormalize(request.PacketBarcode, out var packetBarcode))
+            throw Invalid("shipping_insert_barcode_required", "Scan the complete PH-P- shipping insert barcode.");
+        var box = request.FreezerBoxBarcode?.Trim();
+        if (string.IsNullOrWhiteSpace(box) || box.Length > 255 || box.Any(char.IsControl))
+            throw Invalid("freezer_box_barcode_required", "Scan the freezer box barcode (up to 255 characters).");
+        var packet = await SampleShippingPackingData.ResolvePacketAsync(dbContext, packetBarcode, cancellationToken);
+        if (packet.SampleShipmentId != shipmentId || packet.IsVoided)
+            throw Conflict("sample_shipping_packet_invalid", "Scan the current insert for this container.");
+        var shipment = await dbContext.SampleShipments.AsNoTracking().Include(item => item.Items).ThenInclude(item => item.TubeSlots)
+            .SingleOrDefaultAsync(item => item.Id == shipmentId && item.LabWorkOrderId == workOrderId, cancellationToken)
+            ?? throw Conflict("sample_shipping_work_mismatch", "The container does not belong to this laboratory work.");
+        if (!SupplierTubeBarcode.TryNormalize(request.SupplierTubeBarcode, out var tubeBarcode))
+            throw Invalid("supplier_tube_barcode_invalid", "Scan the complete tube barcode.");
+        var tube = await dbContext.RegisteredSampleTubes.AsNoTracking().SingleOrDefaultAsync(item => item.SupplierBarcode == tubeBarcode, cancellationToken)
+            ?? throw Conflict("supplier_tube_not_registered", "This tube is not registered.");
+        var item = shipment.Items.SingleOrDefault(item => SampleShippingPackingData.TubeIds(item).Contains(tube.Id))
+            ?? throw Conflict("supplier_tube_sample_mismatch", "This tube is not expected in this container.");
+        var specimenId = await dbContext.LabSpecimens.AsNoTracking()
+            .Where(specimen => specimen.LabWorkOrderId == workOrderId && specimen.SubmittedSpecimenId == item.SubmittedSpecimenId)
+            .Select(specimen => specimen.Id).SingleAsync(cancellationToken);
+        return await AccessionSpecimenCore(workOrderId, specimenId,
+            new SpecimenAccessionRequest("", tubeBarcode, box, null, null, null, 0, packetBarcode, tubeBarcode),
+            cancellationToken, automaticAccession: true);
+    }
+
+    private async Task<LabWorkOrderDetailDto> AccessionSpecimenCore(Guid workOrderId, Guid specimenId,
+        SpecimenAccessionRequest request, CancellationToken cancellationToken, bool automaticAccession = false)
     {
         var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.Operator, LabRole.Supervisor);
-        await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext, $"lab-tube-receipt:{workOrderId}", cancellationToken);
+        // Trial guards own the surrounding transaction; retain their rollback authority.
+        await using var transaction = dbContext.Database.CurrentTransaction is null
+            ? await SampleShippingPackingData.BeginAsync(dbContext, $"lab-tube-receipt:{workOrderId}", cancellationToken)
+            : null;
+        if (transaction is null)
+            await SampleShippingPackingData.LockAsync(dbContext, $"lab-tube-receipt:{workOrderId}", cancellationToken);
         var work = await RequireWorkOrderAsync(workOrderId, cancellationToken);
         var specimen = await RequireSpecimenAsync(work.Id, specimenId, cancellationToken);
-        EnsureVersion(specimen.Version, request.Version);
-        if (string.IsNullOrWhiteSpace(specimen.AccessionNumber))
-            Execute(() => specimen.AssignAccession(request.AccessionNumber));
-        else if (!string.Equals(specimen.AccessionNumber, request.AccessionNumber?.Trim(), StringComparison.Ordinal))
+        if (automaticAccession)
+            request = request with { AccessionNumber = specimen.AccessionNumber ?? $"ACC-{specimen.Id:N}" };
+        else EnsureVersion(specimen.Version, request.Version);
+        if (!string.IsNullOrWhiteSpace(specimen.AccessionNumber) && !string.Equals(specimen.AccessionNumber, request.AccessionNumber?.Trim(), StringComparison.Ordinal))
             throw Conflict("specimen_accession_mismatch", "Additional tubes for this specimen must use its existing accession number.");
         var hasPacketBarcode = !string.IsNullOrWhiteSpace(request.SampleShippingPacketBarcode);
         var hasSupplierTubeBarcode = !string.IsNullOrWhiteSpace(request.SupplierTubeBarcode);
@@ -120,6 +164,8 @@ public sealed partial class LabOperationsController
             if (shipment.Status is SampleShipmentStatus.Cancelled or SampleShipmentStatus.Preparing)
                 throw Conflict("sample_shipping_state_invalid", "The shipment packet is not ready for accession.");
             accessionShipmentId = shipment.Id;
+            if (automaticAccession && shipment.DeliveredAt is null && shipment.ReceivedAt is null)
+                throw Conflict("shipment_receipt_required", "Receive this container before accessioning its tubes.");
             var shipmentItem = await dbContext.SampleShipmentItems.AsNoTracking()
                 .SingleOrDefaultAsync(item => item.SampleShipmentId == shipment.Id
                     && item.SubmittedSpecimenId == specimen.SubmittedSpecimenId, cancellationToken)
@@ -132,6 +178,15 @@ public sealed partial class LabOperationsController
                     && slot.RegisteredSampleTubeId == registeredTube.Id, cancellationToken);
             if (shipmentItem.RegisteredSampleTubeId != registeredTube.Id && !slotMatches)
                 throw Conflict("supplier_tube_sample_mismatch", "The scanned tube is not matched to this Customer sample on the frozen crosswalk.");
+            var existingContainer = await dbContext.LabContainers.AsNoTracking()
+                .SingleOrDefaultAsync(item => item.Barcode == supplierBarcode, cancellationToken);
+            if (automaticAccession && existingContainer is not null)
+            {
+                if (existingContainer.LabWorkOrderId != work.Id || existingContainer.LabSpecimenId != specimen.Id
+                    || existingContainer.Location != request.Location)
+                    throw Conflict("supplier_tube_already_accessioned", "This tube was already accessioned. Review its recorded freezer box before making changes.");
+                return await WorkOrder(work.Id, cancellationToken);
+            }
             if (registeredTube.Status != RegisteredSampleTubeStatus.Assigned)
                 throw Conflict("supplier_tube_state_invalid", "The registered supplier tube is not available for accession.");
             if (await dbContext.LabContainers.AsNoTracking().AnyAsync(item => item.Barcode == supplierBarcode, cancellationToken))
@@ -139,6 +194,10 @@ public sealed partial class LabOperationsController
             barcode = supplierBarcode;
             barcodeSource = LabContainerBarcodeSource.RegisteredSupplier;
             externalBarcodeReferenceId = registeredTube.Id;
+            // Container arrival is acknowledged separately. A validated physical
+            // tube can now record its individual intake during accession.
+            if (specimen.ReceivedAtUtc is null && (shipment.DeliveredAt ?? shipment.ReceivedAt) is DateTime arrivedAt)
+                Execute(() => specimen.RecordReceipt(arrivedAt, null, request.Location));
         }
         else
         {
@@ -148,6 +207,8 @@ public sealed partial class LabOperationsController
             barcode = await LabBarcodeService.AllocateAsync(
                 dbContext, LabContainerKind.SubmittedSpecimen, cancellationToken);
         }
+        if (string.IsNullOrWhiteSpace(specimen.AccessionNumber))
+            Execute(() => specimen.AssignAccession(request.AccessionNumber ?? string.Empty));
         var container = new LabContainer(work.Id, specimen.Id, null,
             LabContainerKind.SubmittedSpecimen, barcode, request.Label,
             request.Location, request.Quantity, request.QuantityUnit, request.RetainUntilUtc,
@@ -162,6 +223,7 @@ public sealed partial class LabOperationsController
             DateTime.UtcNow, actor.User.Id, JsonSerializer.Serialize(new
             {
                 request.AccessionNumber,
+                freezerBoxBarcode = automaticAccession ? request.Location : null,
                 barcode,
                 barcodeSource,
                 registeredSampleTubeId = externalBarcodeReferenceId
@@ -169,6 +231,7 @@ public sealed partial class LabOperationsController
         await dbContext.SaveChangesAsync(cancellationToken);
         if (accessionShipmentId.HasValue)
             await SampleShippingPackingData.ReconcileReceiptAsync(dbContext, accessionShipmentId.Value, cancellationToken);
+        await PublishIntakeProgressAsync(work, actor.User.Id, cancellationToken);
         if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         return await WorkOrder(work.Id, cancellationToken);
     }

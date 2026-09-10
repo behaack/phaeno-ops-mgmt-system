@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { CircleCheck, Pencil, Plus, Trash2, TriangleAlert } from 'lucide-react'
+import { useBlocker } from '@tanstack/react-router'
+import { ChevronDown, ChevronRight, CircleCheck, Pencil, Plus, Trash2, TriangleAlert } from 'lucide-react'
 import { Tooltip } from 'radix-ui'
 import { useRef, useState, type ReactNode } from 'react'
 import { confirmLabSampleImport, deleteLabSample, downloadLabSampleTemplate, finalizeLabSampleRoster, getOrderErrorMessage, previewLabSampleImport, type LabSample, type LabSampleImportPreview, type LabServiceOrder } from '#/api/order-management'
@@ -11,14 +12,27 @@ import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 import { LabSampleDialog } from './LabSampleDialog'
+import type { SampleShipmentWorkflow } from '#/api/sample-shipping'
+import type { SampleTubeListContext } from '#/features/sample-shipping/SampleTubeScanner'
+import { SampleTubeRow } from '#/features/sample-shipping/SampleTubeRow'
 import { OrderStatusBadge } from './OrderStatusBadge'
 import { RelatedSampleShipments } from '#/features/sample-shipping/RelatedSampleShipments'
+import { useSourceSampleShipments } from '#/features/sample-shipping/use-source-sample-shipments'
 import { getSampleSourceGroups, normalizeBiologicalSource } from './sample-source-capacity'
 
 const sampleIdCollator = new Intl.Collator('en-US', { numeric: true, sensitivity: 'base' })
+const samplePageSize = 10
 
-export function LabJobSamplesPanel({ order }: { order: LabServiceOrder }) {
+export function LabJobSamplesPanel({ order, embedded = false, page, onPageChange, tubeShipments, tubeContext, navigationLocked = false }: {
+  order: LabServiceOrder; embedded?: boolean; page?: number; onPageChange?: (page: number) => void
+  tubeShipments?: SampleShipmentWorkflow[]
+  tubeContext?: SampleTubeListContext
+  navigationLocked?: boolean
+}) {
   const cache = useQueryClient()
+  const { allowed: canViewReceipt, sampleReceipts, sampleMatches, receiptState } = useSourceSampleShipments(order.id)
+  const [localPage, setLocalPage] = useState(0)
+  const [tubeNavigation, setTubeNavigation] = useState<{ activeKey: string | null; page?: number; expanded?: string }>({ activeKey: null })
   const [sample, setSample] = useState<LabSample | null | undefined>(undefined)
   const [addingSource, setAddingSource] = useState<string | undefined>(undefined)
   const [confirm, setConfirm] = useState<'import' | 'finalize' | null>(null)
@@ -50,9 +64,36 @@ export function LabJobSamplesPanel({ order }: { order: LabServiceOrder }) {
     onSuccess: value => setPreview(value),
   })
   const template = useMutation({ mutationFn: () => downloadLabSampleTemplate(order.id, order.orderNumber) })
+  const sampleWorkOpen = sample !== undefined || confirm !== null || change.isPending || upload.isPending
+  useBlocker({ shouldBlockFn: () => sampleWorkOpen, enableBeforeUnload: () => sampleWorkOpen, disabled: !sampleWorkOpen })
   const legacyCleanup = order.canEdit && !order.placedAt && order.samples.length > 0
   const failure = change.error ?? upload.error ?? template.error
   const sourceGroups = groupSampleRows(order)
+  const pageCount = Math.max(1, Math.ceil(order.samples.length / samplePageSize))
+  const activeItem = tubeContext?.activeItem
+  const activeKey = activeItem ? `${tubeContext.shipment.id}:${activeItem.tubeSlotId ?? activeItem.shipmentItemId}` : null
+  const activeSampleIndex = activeItem ? sourceGroups.flatMap(group => group.samples).findIndex(value => value.id === activeItem.submittedSpecimenId) : -1
+  const activeSamplePage = activeSampleIndex < 0 ? null : Math.floor(activeSampleIndex / samplePageSize)
+  if (tubeNavigation.activeKey !== activeKey) {
+    setTubeNavigation(previous => ({ activeKey, page: activeSamplePage ?? previous.page, expanded: activeItem?.submittedSpecimenId ?? previous.expanded }))
+  }
+  const requestedPage = tubeNavigation.page ?? page ?? localPage
+  const visiblePage = Math.min(Math.max(0, Number.isFinite(requestedPage) ? Math.trunc(requestedPage) : 0), pageCount - 1)
+  const pageGroups = paginateSampleGroups(sourceGroups, visiblePage)
+  const changePage = (nextPage: number) => {
+    if (navigationLocked || tubeContext?.pending) return
+    setLocalPage(nextPage)
+    if (tubeShipments) setTubeNavigation(previous => ({ ...previous, page: nextPage }))
+    // Reviewing rows must not navigate away from an entered barcode.
+    if (!activeItem) onPageChange?.(nextPage)
+  }
+  const shipments = tubeShipments?.map(shipment => shipment.id === tubeContext?.shipment.id ? tubeContext.shipment : shipment) ?? []
+  const tubeRows = shipments.flatMap(shipment => shipment.crosswalk.map(item => ({ shipment, item })))
+  const knownSamples = new Set(order.samples.map(value => value.id))
+  const unmatchedRows = tubeRows.filter(row => !knownSamples.has(row.item.submittedSpecimenId))
+  const renderTube = ({ shipment, item }: typeof tubeRows[number]) => shipment.id === tubeContext?.shipment.id
+    ? tubeContext.renderTube(item)
+    : <SampleTubeRow key={`${shipment.id}:${item.tubeSlotId ?? item.shipmentItemId}`} item={item} containerLabel={shipment.isPackingPool ? 'Awaiting container' : [shipment.assignedContainer?.kitNumber, shipment.shipmentNumber].filter(Boolean).join(' · ')} />
   const totalTubes = order.samples.reduce((total, value) => total + value.quantity, 0)
   const hasSourceIssues = sourceGroups.some(group => group.unmatched || group.samples.length > group.specimenCount)
   const totalExceeded = order.samples.length > order.requestedSpecimenCount
@@ -60,9 +101,11 @@ export function LabJobSamplesPanel({ order }: { order: LabServiceOrder }) {
     && sourceGroups.length > 0
     && sourceGroups.every(group => !group.unmatched && group.samples.length === group.specimenCount)
   const rosterHelpId = `${order.id}-sample-roster-help`
-  return <Card id="samples-and-shipping">
-    <CardHeader><CardTitle>Samples and shipping</CardTitle><CardDescription>{order.sampleRosterFinalizedAt ? 'The finalized sample list authorizes laboratory work. Record shipping through its return kit and packet.' : order.canEditSamples ? 'Enter exactly the accepted sample count and biological-source composition, then finalize the list before shipping.' : 'Place the configured standard order or accept the manual quote before entering the individual sample list. Shipping and laboratory work require finalization.'}</CardDescription></CardHeader>
-    <CardContent className="space-y-4">
+  const Container = embedded ? 'div' : Card
+  const Content = embedded ? 'div' : CardContent
+  return <Container id={embedded ? undefined : 'samples-and-shipping'}>
+    {!embedded ? <CardHeader><CardTitle>Samples and shipping</CardTitle><CardDescription>{order.sampleRosterFinalizedAt ? 'Review the saved tube matches and laboratory receipt for every sample in this Job.' : order.canEditSamples ? 'Enter exactly the accepted sample count and biological-source composition, then finalize the list before shipping.' : 'Place the configured standard order or accept the manual quote before entering the individual sample list. Shipping and laboratory work require finalization.'}</CardDescription></CardHeader> : null}
+    <Content className="space-y-4">
       <p className={`flex items-center gap-2 text-sm${totalExceeded ? ' font-medium text-destructive' : ''}`}>
         {exactComposition ? <CircleCheck className="size-4 shrink-0 text-[var(--status-ready)]" role="img" aria-label="All sample counts are complete" /> : null}
         <span>{order.samples.length} of {order.requestedSpecimenCount} samples entered{order.sampleRosterFinalizedAt ? ' · Finalized' : ''}</span>
@@ -78,17 +121,19 @@ export function LabJobSamplesPanel({ order }: { order: LabServiceOrder }) {
         </div>
         {order.samples.length > 0 ? <p id={`${order.id}-sample-import-help`} className="text-xs text-muted-foreground">Remove all samples before importing a new list.</p> : null}
       </div> : null}
+      {activeItem && activeSamplePage !== null && (activeSamplePage !== visiblePage || tubeNavigation.expanded !== activeItem.submittedSpecimenId) ? <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-muted-foreground">Your scan still applies to {activeItem.customerSampleId}, tube {activeItem.tubeOrdinal ?? 1}.</p>
+        <Button variant="outline" size="sm" disabled={navigationLocked || tubeContext?.pending} onClick={() => { setTubeNavigation({ activeKey, page: activeSamplePage, expanded: activeItem.submittedSpecimenId }); tubeContext?.focusActiveTube() }}>Return to active tube</Button>
+      </div> : null}
       <Tooltip.Provider delayDuration={300}>
-      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- Keep the sample list keyboard-scrollable, including when row actions are unavailable. */}
-      <div role="region" aria-label="Samples by biological source" tabIndex={0}
-        className="max-h-[min(24rem,60dvh)] space-y-4 overflow-y-auto overscroll-contain scroll-pt-14 rounded-md pr-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
-      {sourceGroups.map((group, groupIndex) => {
+      <div role="region" aria-label="Samples by biological source" className="space-y-4">
+      {pageGroups.map(group => {
         const excess = group.samples.length - group.specimenCount
         const groupHasIssue = group.unmatched || excess > 0
-        const headingId = `${order.id}-sample-source-${groupIndex}`
+        const headingId = `${order.id}-sample-source-${group.groupIndex}`
         return <section key={group.id} aria-labelledby={headingId}>
-          <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-md bg-muted px-3 py-2 text-sm">
-            <h3 id={headingId} className="min-w-0 wrap-anywhere font-medium">{group.biologicalSource || 'Missing biological source'}</h3>
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-md bg-muted px-3 py-2 text-sm">
+            <h3 id={headingId} className="min-w-0 wrap-anywhere font-medium">{group.biologicalSource || 'Missing biological source'}{group.continued ? ' (continued)' : ''}</h3>
             <div className="ml-auto flex shrink-0 items-center gap-3">
             <span id={`${headingId}-count`} className={`inline-flex items-center gap-1.5${groupHasIssue ? ' font-medium text-destructive' : ' text-muted-foreground'}`}>
               {groupHasIssue ? <TriangleAlert className="size-3.5 shrink-0" aria-hidden="true" /> : null}
@@ -103,15 +148,25 @@ export function LabJobSamplesPanel({ order }: { order: LabServiceOrder }) {
           </div>
           {groupHasIssue ? <p className="px-3 pt-2 text-xs text-destructive">{group.unmatched ? 'This source is not in the accepted list. Choose an accepted source for these samples or remove them.' : `${excess} extra ${excess === 1 ? 'sample' : 'samples'}. Edit the biological source or remove the extra ${excess === 1 ? 'entry' : 'entries'}.`}</p> : null}
           <ul className="divide-y px-3">
-        {group.samples.map(value => (
-          <li key={value.id} className="space-y-2 py-2">
+        {group.visibleSamples.map(value => {
+          const receipt = sampleReceipts.get(value.id)?.counts
+          const matches = sampleMatches.get(value.id)
+          const tubes = tubeRows.filter(row => row.item.submittedSpecimenId === value.id)
+          const expanded = tubeNavigation.expanded === value.id
+          const tubeListId = `${order.id}-sample-tubes-${value.id}`
+          const showLabProgress = !tubeShipments || Boolean(value.accessionId || value.status !== 'Expected' || receipt && receipt.received > 0 || tubes.some(row => row.shipment.shippedAt))
+          return <li key={value.id} className="space-y-2 py-2">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
-              <span className="min-w-0 wrap-anywhere font-medium">{value.customerSampleId}</span>
+              {tubeShipments && tubes.length > 0 ? <Button type="button" variant="ghost" size="sm" className="h-auto min-w-0 justify-start px-1 py-1 font-medium whitespace-normal" aria-label={`${value.customerSampleId} tubes`} aria-expanded={expanded} aria-controls={tubeListId} disabled={navigationLocked || tubeContext?.pending} onClick={() => setTubeNavigation(previous => ({ ...previous, expanded: expanded ? undefined : value.id }))}>
+                {expanded ? <ChevronDown aria-hidden="true" className="shrink-0" /> : <ChevronRight aria-hidden="true" className="shrink-0" />}<span className="wrap-anywhere">{value.customerSampleId}</span><span className="sr-only"> tubes</span>
+              </Button> : <span className="min-w-0 wrap-anywhere font-medium">{value.customerSampleId}</span>}
               <span className="min-w-0 wrap-anywhere text-muted-foreground">
                 {value.quantity} {value.quantity === 1 ? 'tube' : 'tubes'}
                 {value.accessionId ? ` · Accession ${value.accessionId}` : ''}
               </span>
-              {value.status !== 'Expected' || order.sampleRosterFinalizedAt ? <OrderStatusBadge status={value.status} /> : null}
+              {showLabProgress && (value.status !== 'Expected' || order.sampleRosterFinalizedAt) ? <OrderStatusBadge status={value.status} /> : null}
+              {order.sampleRosterFinalizedAt && canViewReceipt ? <span className="text-muted-foreground">Matched: {receiptState === 'loading' ? 'Checking…' : receiptState !== 'ready' || !matches ? 'Not available' : `${matches.matched} of ${matches.total} ${matches.total === 1 ? 'tube' : 'tubes'}`}</span> : null}
+              {order.sampleRosterFinalizedAt && canViewReceipt && showLabProgress ? <span className="text-muted-foreground">Receipt: {receiptState === 'loading' ? 'Checking…' : receiptState !== 'ready' || !receipt ? 'Not available' : `${receipt.received} of ${receipt.total} ${receipt.total === 1 ? 'tube' : 'tubes'} received`}</span> : null}
               {order.canEditSamples || legacyCleanup ? (
                 <div className="ml-auto flex gap-2">
                   {order.canEditSamples ? <SampleRowAction label={`Edit sample ${value.customerSampleId}`} onClick={() => { setAddingSource(undefined); setSample(value) }}><Pencil aria-hidden="true" /></SampleRowAction> : null}
@@ -119,15 +174,21 @@ export function LabJobSamplesPanel({ order }: { order: LabServiceOrder }) {
                 </div>
               ) : null}
             </div>
+            {tubeShipments && tubes.length > 0 ? <div id={tubeListId} hidden={!expanded} className="rounded-md border"><ul aria-label={`Tubes for ${value.customerSampleId}`} className="divide-y">{expanded ? tubes.map(renderTube) : null}</ul></div> : null}
             {value.tenantSafeReason ? <p className="wrap-anywhere text-sm">{value.tenantSafeReason}</p> : null}
           </li>
-        ))}
+        })}
           </ul>
         </section>
       })}
       </div>
       </Tooltip.Provider>
-      <RelatedSampleShipments sourceId={order.id} />
+      {pageCount > 1 ? <nav aria-label="Sample pages" className="flex flex-wrap items-center justify-between gap-2">
+        <p aria-live="polite" className="text-xs text-muted-foreground">Samples {visiblePage * samplePageSize + 1}–{Math.min((visiblePage + 1) * samplePageSize, order.samples.length)} of {order.samples.length}</p>
+        <div className="flex gap-2"><Button variant="outline" size="sm" disabled={visiblePage === 0 || change.isPending || navigationLocked || tubeContext?.pending} onClick={() => changePage(visiblePage - 1)}>Previous samples</Button><Button variant="outline" size="sm" disabled={visiblePage === pageCount - 1 || change.isPending || navigationLocked || tubeContext?.pending} onClick={() => changePage(visiblePage + 1)}>Next samples</Button></div>
+      </nav> : null}
+      {unmatchedRows.length ? <section aria-label="Tubes needing sample review" className="space-y-2"><h3 className="font-medium text-destructive">Tubes needing sample review</h3><p className="text-sm text-muted-foreground">These saved tube slots do not match the current sample list. Review their identities before continuing.</p><ul className="divide-y rounded-md border">{unmatchedRows.map(renderTube)}</ul></section> : null}
+      {!embedded ? <RelatedSampleShipments sourceId={order.id} showSampleReceiptProgress={false} /> : null}
       {sample !== undefined ? <LabSampleDialog open order={order} sample={sample} biologicalSource={addingSource} onOpenChange={open => { if (!open) setSample(undefined) }} onSaved={async saved => { setSample(undefined); await refresh(saved) }} /> : null}
       <Dialog open={confirm !== null} onOpenChange={open => { if (!open && !change.isPending && !upload.isPending) setConfirm(null) }}><DialogContent className={confirm === 'import' ? 'max-w-3xl' : 'max-w-xl'} onOpenAutoFocus={event => {
         if (confirm === 'finalize' && reviewSummaryRef.current) {
@@ -156,8 +217,19 @@ export function LabJobSamplesPanel({ order }: { order: LabServiceOrder }) {
           </div>}
         <RequiredDialogFooter><Button variant="outline" disabled={change.isPending || upload.isPending} onClick={() => setConfirm(null)}>Cancel</Button><Button disabled={change.isPending || upload.isPending || (confirm === 'import' ? order.samples.length > 0 || !preview || preview.version !== order.version || preview.value.errors.length > 0 || !preview.value.validRowCount : confirmedVersion !== order.version || !order.canFinalizeSamples || !exactComposition)} onClick={() => change.mutate({ kind: confirm === 'import' ? 'import' : 'finalize' })}>{change.isPending ? 'Saving…' : confirm === 'import' ? 'Replace draft sample list' : 'Finalize sample list'}</Button></RequiredDialogFooter>
       </DialogContent></Dialog>
-    </CardContent>
-  </Card>
+    </Content>
+  </Container>
+}
+
+function paginateSampleGroups(groups: ReturnType<typeof groupSampleRows>, page: number) {
+  let offset = 0
+  return groups.flatMap((group, groupIndex) => {
+    const start = Math.max(0, page * samplePageSize - offset)
+    const end = Math.min(group.samples.length, (page + 1) * samplePageSize - offset)
+    offset += group.samples.length
+    if (group.samples.length === 0 && page === 0) return [{ ...group, groupIndex, visibleSamples: [], continued: false }]
+    return start < end ? [{ ...group, groupIndex, visibleSamples: group.samples.slice(start, end), continued: start > 0 }] : []
+  })
 }
 
 function groupSampleRows(order: LabServiceOrder) {

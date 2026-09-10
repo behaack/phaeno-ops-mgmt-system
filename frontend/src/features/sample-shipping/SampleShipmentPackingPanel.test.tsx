@@ -117,6 +117,21 @@ async function confirm() {
 
 
 describe('individual shipping-container adjustment', () => {
+  it('selects a confirmed prepared container in the owning Job after refreshing its saved data', async () => {
+    const select = vi.fn().mockResolvedValue(undefined)
+    const prepared = { ...shippingFixture, id: 'prepared-container', isPackingPool: false }
+    mocks.confirm.mockResolvedValueOnce([prepared])
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
+    client.setQueryData(['lab-service-order', shippingFixture.authorizationSourceId], { id: shippingFixture.authorizationSourceId })
+    render(<QueryClientProvider client={client}><SampleShipmentPackingPanel shipment={{ ...shippingFixture, isPackingPool: true }} canManage onSelectShipment={select} /></QueryClientProvider>)
+    const adjust = await screen.findByRole('button', { name: 'Adjust containers' })
+    await waitFor(() => expect(adjust).toHaveProperty('disabled', false))
+    fireEvent.click(adjust)
+    await confirm()
+    await waitFor(() => expect(select).toHaveBeenCalledWith(prepared.id))
+    expect(client.getQueryData(['sample-shipment', prepared.id])).toEqual(prepared)
+    expect(client.getQueryState(['lab-service-order', shippingFixture.authorizationSourceId])?.isInvalidated).toBe(true)
+  })
   it('offers only received Job sizes and never adds more than the received quantity', async () => {
     show(false, null, packingFixture, packingRecommendation, [{ containerDefinitionId: 'container-20', quantity: 1 }, { containerDefinitionId: 'container-10', quantity: 1 }])
     expect(offeredSizes(1)).toEqual([20])

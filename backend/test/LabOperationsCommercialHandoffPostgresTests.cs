@@ -813,6 +813,12 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             specimen = Assert.Single(work.Specimens);
 
             var accessionNumber = $"ACC-{Guid.NewGuid():N}";
+            Assert.Equal("Received", work.WorkOrder.Status);
+            await LabOperationsProjectionDispatcher.DispatchAsync(scope.DbContext, NullLogger.Instance, CancellationToken.None);
+            var receivedOrder = await scope.DbContext.LabServiceOrders.AsNoTracking().Include(item => item.Samples)
+                .SingleAsync(item => item.Id == work.WorkOrder.CommercialOrderId);
+            Assert.Equal(LabServiceOrderStatus.InProgress, receivedOrder.Status);
+            Assert.Equal(LabSampleStatus.Received, Assert.Single(receivedOrder.Samples).Status);
             work = await lab.AccessionSpecimen(
                 workOrderId.Value,
                 specimen.Id,
@@ -826,6 +832,11 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                     specimen.Version),
                 CancellationToken.None);
             specimen = Assert.Single(work.Specimens);
+            await LabOperationsProjectionDispatcher.DispatchAsync(scope.DbContext, NullLogger.Instance, CancellationToken.None);
+            var accessionedSample = await scope.DbContext.LabSamples.AsNoTracking()
+                .SingleAsync(item => item.Id == specimen.SubmittedSpecimenId);
+            Assert.Equal(LabSampleStatus.Accessioned, accessionedSample.Status);
+            Assert.Equal(accessionNumber, accessionedSample.AccessionId);
             work = await lab.SetSpecimenDisposition(
                 workOrderId.Value,
                 specimen.Id,
@@ -925,6 +936,12 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 execution.Id,
                 new ExecutionTransitionRequest("start", null, null, execution.Version),
                 CancellationToken.None);
+            var customerProgress = new LabCustomerProgressService(scope.DbContext);
+            var preparationProgress = await customerProgress.ReadAsync(scope.CustomerOrganization.Id, [fixture.OrderId], CancellationToken.None);
+            Assert.Equal("LibraryPrep", preparationProgress[fixture.OrderId].CurrentStage);
+            Assert.Equal("LibraryPrep", Assert.Single(preparationProgress[fixture.OrderId].Samples).Stage);
+            Assert.Empty(await customerProgress.ReadAsync(Guid.NewGuid(), [fixture.OrderId], CancellationToken.None));
+            Assert.Empty(await customerProgress.ReadAsync(scope.CustomerOrganization.Id, [Guid.NewGuid()], CancellationToken.None));
             await lab.ConsumeMaterial(
                 execution.Id,
                 new ConsumeMaterialRequest(
@@ -1073,6 +1090,9 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                         status.ToString(),
                         batch.SendoutVersion!.Value),
                     CancellationToken.None);
+                var sendoutProgress = (await customerProgress.ReadAsync(scope.CustomerOrganization.Id, [fixture.OrderId], CancellationToken.None))[fixture.OrderId];
+                Assert.Equal(status is LabNgsSendoutStatus.Sequencing or LabNgsSendoutStatus.Complete
+                    ? "Sequencing" : "LibraryPrep", Assert.Single(sendoutProgress.Samples).Stage);
             }
             batch = await lab.TransitionBatch(
                 batch.Id,
@@ -1118,6 +1138,10 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 CancellationToken.None);
             Assert.Equal(LabWorkOrderStatus.ReadyForRelease.ToString(), work.WorkOrder.Status);
             Assert.Single(work.ScientificApprovals);
+            var reviewedProgress = (await customerProgress.ReadAsync(scope.CustomerOrganization.Id,
+                [fixture.OrderId], CancellationToken.None))[fixture.OrderId];
+            Assert.Equal("QualityReview", reviewedProgress.CurrentStage);
+            Assert.DoesNotContain(reviewedProgress.Counts, item => item.Stage == "ResultsAvailable");
 
             await LabOperationsProjectionDispatcher.DispatchAsync(
                 scope.DbContext,

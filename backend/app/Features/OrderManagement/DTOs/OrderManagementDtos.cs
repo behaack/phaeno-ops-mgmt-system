@@ -4,6 +4,7 @@ using PSeq.Operations.Commercial.FileManagement.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.FileManagement.Services;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
+using PhaenoPortal.App.Features.LabOperations.Services;
 
 public sealed record PagedResult<T>(IReadOnlyList<T> Items, int Page, int PageSize, int TotalCount);
 
@@ -20,7 +21,8 @@ public sealed record OrderListItemDto(
     Guid? AssignedToUserId = null,
     DateTime? DueAt = null,
     bool IsOverdue = false,
-    bool HasPendingQuoteExtension = false);
+    bool HasPendingQuoteExtension = false,
+    LabCustomerProgress? LaboratoryProgress = null);
 
 public sealed record CommercialOrderListItemDto(
     Guid Id,
@@ -285,7 +287,8 @@ public sealed record LabServiceOrderDto(
     LabServiceTimingDto? Timing = null,
     bool CanRequestQuoteExtension = false,
     bool CanManageQuotes = false,
-    string? QuoteAcceptanceBlockedReason = null);
+    string? QuoteAcceptanceBlockedReason = null,
+    LabCustomerProgress? LaboratoryProgress = null);
 
 public sealed record ReagentOrderLineDto(
     Guid Id,

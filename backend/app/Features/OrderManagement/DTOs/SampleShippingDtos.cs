@@ -205,7 +205,8 @@ public sealed record SampleShippingPacketScanDto(
     int ExpectedTubeCount = 0,
     int ReceivedTubeCount = 0,
     int OrderExpectedTubeCount = 0,
-    int OrderReceivedTubeCount = 0);
+    int OrderReceivedTubeCount = 0,
+    DateTime? ContainerReceivedAt = null);
 
 public sealed record SampleContainerKitIdentityDto(Guid Id, string KitNumber, string Barcode);
 

@@ -701,8 +701,11 @@ public sealed partial class SampleShipment : IAudit, IConcurrency
 
     public void MarkDelivered(DateTime deliveredAt)
     {
-        if (Status != SampleShipmentStatus.Shipped)
-            throw new InvalidOperationException("Only a shipped sample shipment can be marked delivered.");
+        if (Status is not (SampleShipmentStatus.ReadyToShip or SampleShipmentStatus.Shipped or SampleShipmentStatus.Delivered or SampleShipmentStatus.Received))
+            throw new InvalidOperationException("Only a confirmed or dispatched sample shipment can be marked delivered.");
+        if (DeliveredAt.HasValue || Status == SampleShipmentStatus.Received) return;
+        if (deliveredAt.Kind != DateTimeKind.Utc)
+            throw new ArgumentException("Delivery time must be UTC.", nameof(deliveredAt));
         if (ShippedAt.HasValue && deliveredAt < ShippedAt.Value)
             throw new ArgumentException("Delivery cannot precede shipment.", nameof(deliveredAt));
         DeliveredAt = deliveredAt;
@@ -721,8 +724,8 @@ public sealed partial class SampleShipment : IAudit, IConcurrency
 
     public void Cancel()
     {
-        if (Status is SampleShipmentStatus.Received or SampleShipmentStatus.Cancelled)
-            throw new InvalidOperationException("A received or cancelled shipment cannot be cancelled.");
+        if (Status is SampleShipmentStatus.Delivered or SampleShipmentStatus.Received or SampleShipmentStatus.Cancelled)
+            throw new InvalidOperationException("A delivered, received or cancelled shipment cannot be cancelled.");
         Status = SampleShipmentStatus.Cancelled;
     }
 

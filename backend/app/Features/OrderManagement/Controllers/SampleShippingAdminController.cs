@@ -426,7 +426,7 @@ public sealed class SampleShippingAdminController(
             receiptState,
             packet.IssuedAt,
             workflow.Crosswalk, workflow.ExpectedTubeCount, workflow.ReceivedTubeCount,
-            workflow.OrderExpectedTubeCount, workflow.OrderReceivedTubeCount);
+            workflow.OrderExpectedTubeCount, workflow.OrderReceivedTubeCount, shipment.DeliveredAt ?? shipment.ReceivedAt);
     }
 
     private static string ResolveReceiptState(

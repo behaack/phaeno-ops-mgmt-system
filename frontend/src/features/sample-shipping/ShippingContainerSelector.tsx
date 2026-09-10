@@ -6,7 +6,7 @@ import { Button } from '#/components/ui/button'
 import { Label } from '#/components/ui/label'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
-export function ShippingContainerSelector({ shipment, action }: { shipment: SampleShipmentWorkflow, action?: ReactNode }) {
+export function ShippingContainerSelector({ shipment, action, onSelectShipment }: { shipment: SampleShipmentWorkflow; action?: ReactNode; onSelectShipment?: (id: string) => Promise<void> }) {
   const { authProvider, session, selectedOrganizationId, selectedDepartmentId } = usePhaenoSession()
   const navigate = useNavigate()
   const [navigationFailed, setNavigationFailed] = useState(false)
@@ -26,7 +26,8 @@ export function ShippingContainerSelector({ shipment, action }: { shipment: Samp
     setNavigationFailed(false)
     // A cancelled navigation blocker can leave navigate's promise pending.
     // Keep the controlled selector usable so the user can finish the scan and switch later.
-    void navigate({ to: '/sample-shipping/$shipmentId', params: { shipmentId: id } }).catch(() => setNavigationFailed(true))
+    const selection = onSelectShipment ? onSelectShipment(id) : navigate({ to: '/sample-shipping/$shipmentId', params: { shipmentId: id } })
+    void selection.catch(() => setNavigationFailed(true))
   }
   return <section aria-label="Choose shipping container" className="mb-5 min-w-0 space-y-2">
     <Label htmlFor="shipping-container-selector">Shipping container</Label>

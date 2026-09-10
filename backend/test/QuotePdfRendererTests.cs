@@ -121,6 +121,55 @@ public class QuotePdfRendererTests
     }
 
     [Fact]
+    public void SampleScopeShowsBiologicalSourcesAndCountsAlongsideSavedPrices()
+    {
+        using var pdf = PdfDocument.Open(QuotePdfRenderer.Render(Example() with
+        {
+            SampleScope = new(7, [new("Heart - adfgadgsdfg", 4), new("sdfghsfghdfgh", 3)]),
+            Lines = [new("PSeq Lab Service", 7, 100)], Subtotal = 700, Total = 700
+        }));
+        Assert.Equal(1, pdf.NumberOfPages);
+        var text = pdf.GetPage(1).Text;
+        Assert.Contains("Sample scope · 7 samples", text);
+        Assert.Contains("Biological source", text);
+        Assert.Contains("Samples", text);
+        Assert.Contains("Heart - adfgadgsdfg4", text);
+        Assert.Contains("sdfghsfghdfgh3", text);
+        Assert.Contains("$700.00", text);
+    }
+
+    [Fact]
+    public void ManySourcesAndAnOversizedSourceWrapAndRepeatScopeHeadersWithoutClipping()
+    {
+        var sources = Enumerable.Range(1, 48).Select(index => new QuotePdfSource($"Biological source {index}", index)).ToList();
+        sources.Insert(2, new(string.Join(" ", Enumerable.Repeat("Long biological source description", 180)) + " END OF SOURCE", 4));
+        using var pdf = PdfDocument.Open(QuotePdfRenderer.Render(Example() with
+        {
+            SampleScope = new(sources.Sum(source => source.SpecimenCount), sources)
+        }));
+        Assert.True(pdf.NumberOfPages > 2);
+        var text = string.Join(" ", pdf.GetPages().Select(page => page.Text));
+        Assert.Contains("Biological source 48", text);
+        Assert.Contains("ENDOFSOURCE", string.Concat(text.Where(character => !char.IsWhiteSpace(character))));
+        Assert.Contains("$900.00", text);
+        foreach (var page in pdf.GetPages())
+        {
+            if (page.Text.Contains("biological source", StringComparison.OrdinalIgnoreCase))
+            {
+                Assert.Contains("Sample scope ·", page.Text);
+                Assert.Contains("Samples", page.Text);
+            }
+            Assert.All(page.Letters, letter =>
+            {
+                Assert.InRange(letter.BoundingBox.Left, 47, 565);
+                Assert.InRange(letter.BoundingBox.Right, 47, 565);
+                Assert.InRange(letter.BoundingBox.Bottom, 30, 758);
+                Assert.InRange(letter.BoundingBox.Top, 30, 758);
+            });
+        }
+    }
+
+    [Fact]
     public void UnsupportedCharactersFailClearlyInsteadOfChangingTheCustomerName()
     {
         var exception = Assert.Throws<InvalidOperationException>(() => QuotePdfRenderer.Render(Example() with { OrganizationName = "研究所" }));

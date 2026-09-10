@@ -6,7 +6,7 @@ import { LabServiceDetailPage } from './LabServiceDetailPage'
 import { bundleIds, bundleLabDraft } from '#/test-helpers/bundled-orders'
 
 const mocks = vi.hoisted(() => ({ mayReadInvoices: false, invoices: vi.fn(), get: vi.fn() }))
-vi.mock('@tanstack/react-router', () => ({ Link: ({ children }: { children: ReactNode }) => <a href="#job">{children}</a>, useBlocker: vi.fn() }))
+vi.mock('@tanstack/react-router', () => ({ Link: ({ children }: { children: ReactNode }) => <a href="#job">{children}</a>, useNavigate: () => vi.fn(), useBlocker: vi.fn() }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider: 'clerk', session: { capabilities: { canViewLabServiceOrders: true, canViewLabServiceInvoices: mocks.mayReadInvoices }, selectedOrganization: { organizationId: bundleIds.organization }, selectedDepartment: { departmentId: bundleIds.department } } }) }))
 vi.mock('#/api/order-management', async original => ({ ...await original<typeof import('#/api/order-management')>(), getLabOrder: mocks.get }))
 vi.mock('#/api/pseq-order-to-cash', async original => ({ ...await original<typeof import('#/api/pseq-order-to-cash')>(), listCustomerInvoices: mocks.invoices, listCustomerResultPackages: async () => [] }))

@@ -1,5 +1,24 @@
 # Backend Test Plan
 
+## Customer laboratory stages — September 10, 2026
+
+**Local checkpoint: 4/4 cases passed; 0 skipped.** See the [stage verification record](../testing/runs/2026-09-10-customer-laboratory-stages.md) and [TRX evidence](../../artifacts/customer-progress-test-results/customer-progress.trx). This is a focused run, not a full backend-suite result.
+
+| Coverage | Evidence and result |
+| --- | --- |
+| Preparation, sequencing, assembly, review and release | `LabCustomerProgressTests.PreparedAndAwaitingProviderRemainPreparationUntilSequencingIsRecorded` passed. A DataAvailable status alone and withdrawn output do not establish release. |
+| Mixed sample stages and partial release | `MixedSamplesAndPartialReleaseDoNotAdvanceTheWholeJob` passed. Outstanding receipt/earlier work prevents whole-Job Results Available; all released samples permit it. |
+| Job-wide versus individual progress; holds | `JobWideActivityDoesNotFabricateSampleStageCounts` passed. Global review preserves attributed sample counts; holds remain visible. |
+| Persisted workflow and scope | `LabOperationsCommercialHandoffPostgresTests.AuthorizedOrderCompletesTheDatabaseBackedLabOperatorJourney` passed. Started preparation, provider Shipped/ReceivedByProvider versus Sequencing/Complete, organization/order isolation, and scientific readiness without released results are verified against the local database. |
+
+Remaining coverage: a database fixture with multiple libraries for one sample (only some sequencing), populated Customer and entitled Partner list/detail response checks across Department/member boundaries, and actual partial output release through the complete customer journey. These are **Not run** for this feature; pure mapping tests do not establish persisted release or API authorization acceptance. No test or data migration was executed while updating this plan.
+
+## Intake progress synchronization — September 10, 2026
+
+`LabIntakeProgressTests` covers receipt/accession replay, immutable identity, preserved timestamps, holds and later/terminal statuses. The registered-tube reference journey checks Work progress, projection-version replay, completed accession facts and unchanged scientific acceptance/turnaround. The complete Lab operator journey checks Commercial Job/sample propagation. Existing projection tests cover monotonic replay. Results are recorded in [the intake correction run record](../testing/runs/2026-09-10-intake-progress-correction.md).
+
+**Prior local checkpoint: 3 domain cases and 4 focused PostgreSQL cases passed.** The operator journey above overlaps this checkpoint; do not add these historical totals as unique coverage. The database cases are the registered-tube journey, complete operator journey, replay-safe monotonic projection delivery, and whole-kit/partial-fill case. The corrected fixture expectation for an outstanding second shipment is retained in the run record. Failure-injection coverage for atomic rollback/retry across the projection and Commercial update remains **Not run**. Container arrival advances Lab Work to Received and the Commercial lifecycle to InProgress; the newer customer-facing display says Received. No scientific acceptance, target or tube/storage backfill is implied.
+
 ## Location inventory correction — September 9, 2026
 
 The [location-inventory plan](TRANSPORTATION-KIT-LOCATION-INVENTORY-PLAN.md)
@@ -1557,3 +1576,39 @@ Source review additionally traces held intake visibility, canonical CRM request 
 The production preparation review adds `UnconfiguredQuickBooksGatewayTests`: all unconfigured catalog/create/read operations must fail with `503 quickbooks_not_configured`, and cancellation must remain `OperationCanceledException`. The unconfigured dispatcher immediately records NeedsAttention instead of retrying fabricated success. These two regression cases have not been executed. Release solution compilation passed with zero warnings and zero errors on September 7, 2026; compilation is not test execution.
 
 Final source review adds opt-in `AssemblyUploadPostgresTests` for a failed idempotent save rolling back its input and cleaning up uncommitted bytes, followed by a retry retaining one input. `DepartmentSecondaryPathPostgresTests.RelationshipReadinessUsesPendingConversionWithoutSavingItEarly` verifies readiness uses the authorized tracked Customer conversion while the database still contains the prior Prospect kind. Both preserve transaction boundaries; neither regression has been executed.
+
+## Quote PDF sample-scope verification — September 10, 2026
+
+Focused renderer coverage checks the biological-source names, per-source counts,
+total sample count and saved pricing on the same representative page; many rows
+and a source longer than a page retain all text with repeated headers and bounded
+text. PostgreSQL download coverage checks immutable request-revision selection,
+quote-linked standard placement, omitted unrecorded legacy scope, inconsistent
+count rejection and unchanged tracked data. Existing quote access, historical
+status, commercial immutability, branding and billing tests remain in scope.
+
+Local verification: 16 focused renderer and PostgreSQL download tests passed,
+including historical scope and unchanged data. The representative one-page PDF
+and all six pages of the long-source stress PDF were visually reviewed. The
+scope heading and count share a shaded band attached to the source table; pricing
+headers retain room for the first item. Documentation generation and freshness
+checks passed (56 guides); whitespace checks passed. No commit or deployment.
+
+### Container receipt and accession separation — September 10, 2026
+
+Regression coverage: each expected container has its own tracking row; PH-P- receiving is an explicit write; repeat scans preserve one receipt/event; unrelated identifiers and void/cancelled inserts cannot receive; container arrival leaves tubes unaccessioned; Accession samples uses read-only lookup and individually saves tube accession. Verify queue movement, permissions, multi-container Jobs, missing tracking, retry, tab navigation and final-tube removal. Backend reference journey and frontend navigation assertions updated; automated suites are unrun by request scope. Manual browser and physical scanner acceptance remain pending. No real shipment is received merely to verify this feature.
+
+Verification: solution build passed with zero warnings/errors using a separate output folder because Visual Studio/IIS Express held the normal output files. Frontend TypeScript, scoped ESLint, documentation freshness (56 guides) and whitespace passed. Read-only signed-in local browser inspection confirmed the separate tabs, two expected container rows with distinct tracking numbers for 69SJN4PA, and a received HS5Y7DB7 container showing 0/18 tubes accessioned. Desktop screenshot review passed. The agent did not submit receipt or accession. Automated suites, narrow/dark layouts, physical scanner and completed tube-accession acceptance remain unrun. The existing shipping insert files have no additional working-tree diff from this work.
+
+## Container accession loop — 2026-09-10
+
+Coverage: PH-P opens complete container modal; each tube opens required freezer-box prompt; no accession before valid save; progress and scan focus repeat until completion; wrong tube blocked; same-tube/same-box replay creates one container/event; different-box replay rejected. Component and PostgreSQL coverage updated. Automated suites not run (not requested). Physical scanner, nested-modal keyboard behavior, partial resume and populated save journey remain manual acceptance gates.
+
+
+Release checkpoint (September 10): 87 focused backend cases pass in an isolated
+PostgreSQL database; 315 frontend cases pass across 30 affected suites. Four
+focused browser print checks pass with two intentional mobile-label skips.
+Letter/A4 receiving sheets and 50 x 25 mm lab label output were visually reviewed
+and independently QR-decoded. See
+[release evidence](PORTAL-LAB-PROGRESS-RELEASE-2026-09-10.md) for local fixture
+failures, artifacts and outstanding physical/production acceptance gates.

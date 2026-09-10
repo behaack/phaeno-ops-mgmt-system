@@ -8,7 +8,7 @@ no full manual case is marked Pass from these partial steps.
 ## Saved pause and resume checkpoint — September 9, 2026
 
 **The manual Test plan is paused here. This checkpoint supersedes older resume
-instructions below.** The owner's latest **Okay** acknowledged the pause; it
+instructions below.** The owner's **Okay** at that checkpoint acknowledged the pause; it
 does not confirm printing or the state after cancelling the print dialog.
 
 | Item | Preserve this exact checkpoint |
@@ -55,6 +55,86 @@ suites were rerun for this release. The public Website and local synthetic
 records are unchanged. This deployment does not complete the outstanding print
 confirmation, physical output, paging or remaining manual acceptance checks, and
 does not update the independently running local Visual Studio API.
+
+### September 10 screenshot review addendum
+
+The owner's insert screenshot prompted local presentation corrections: display
+the exact canonical `materialClass` value `extracted_rna` as **Extracted RNA**
+while preserving other configured labels, and add space between instruction
+sections. A further request places preparation/shipping instructions in two
+balanced print columns and starts **Sample and tube list** on a fresh page.
+Print spacing is 6mm between columns, 4mm between main sections and 3mm between
+instruction fields; the 0.5mm label/body gap is retained. The list starts on page
+two when the instructions fit page one. Longer or multiple sample-type
+instructions can continue onto additional pages without clipping, with each
+label/body block kept together.
+
+These are rendering changes only; scientific content, material mapping, saved
+tube assignments and shipping insert **SP-20260910-TJHAQYMGKQ revision 1** remain
+intact. The three affected audience guides remain accurate and received
+metadata-only review dates of September 10. Frontend TypeScript, scoped ESLint and
+documentation checks passed. No new live browser print attempt was made because
+the preceding native print dialog may still be open.
+
+Representative offline layout proof passed with the current React document and
+barcode components and print CSS. The synthetic fixture uses the screenshot's
+exact 15 populated instruction blocks, realistic full barcodes, synthetic
+destination/contacts, nine samples and 18 tubes. Letter and A4 PDFs each contain
+four pages: all instruction text is on page one, **Sample and tube list** starts
+on page two, all 18 tube barcodes appear exactly once and all nine sample IDs are
+retained. Visual review of the first two pages in both paper sizes confirms
+readable columns, spacing and **Extracted RNA**, without clipping. Evidence is in
+`artifacts/shipping-insert-layout-20260910/fit-summary.json` and
+`render-evidence.json`, including the rendered-source hashes. This is isolated
+synthetic PDF evidence with no application API or active user-browser session.
+
+The screenshot does not report print-dialog cancellation or establish physical
+printing. The saved **ReadyToShip, 18 of 18 matched** checkpoint and its pending
+resume checks remain unchanged. This refinement is local, with no new issuance,
+receipt, dispatch, automated suite or deployment recorded for it.
+
+### September 10 related-shipment navigation addendum
+
+The active **Shipping containers** entries now use prominent navigation buttons:
+**Open shipment** for an external user's prepared container, **Choose containers**
+for a preparation pool, and **Open Lab shipping** for staff. This local change
+preserves destinations, eligibility, receipt values/lists and retired-configuration
+visibility. The affected external guides name **Open shipment**; existing assertion
+wording is updated without a new case or suite run.
+Scoped ESLint and the full frontend TypeScript check passed; no live browser
+navigation was performed for this refinement.
+
+At this navigation-only checkpoint, moving actual per-sample received-tube counts
+into the main roster, removing the duplicate receipt list and hiding retired
+configurations from the normal Customer panel were recommendations only. Their
+later accepted bounded implementation is recorded below. The prior offline print proof remains intact, and the
+saved 18/18 ReadyToShip checkpoint, insert revision 1 and unconfirmed live-print
+recovery/physical acceptance are unchanged. No navigation action or operational
+write was performed while documenting this refinement.
+
+### September 10 accepted receipt and history refinement
+
+The owner accepted showing actual per-sample received tubes in the main Lab Job
+roster and hiding retired configurations from the normal external shipping panel.
+Finalized Lab Job rows now provide **Receipt: X of N tubes received**, separate
+from lab status, accession and reason. The count uses the server's per-specimen
+shipment-family totals without summing values repeated across split tube slots.
+Loading shows **Receipt: Checking…**; missing/error counters show **Receipt:
+Not available**, not an invented zero.
+
+The Lab Job's duplicate **Sample receipt progress** disclosure is removed; Trials
+retain their own disclosure because they do not use this consolidated roster.
+External retired configurations are hidden while staff history and underlying
+records/audit history remain intact. Audience guides and focused component
+assertions are updated for these bounded changes. Full frontend TypeScript,
+scoped ESLint and documentation freshness/whitespace checks passed; no automated
+suite ran and browser acceptance remains pending. No new operational result is
+claimed. The separate broader **PLAN** request for an order-progress checklist
+and shipping consolidation remains planning only.
+
+The saved shipment, all 18 tube assignments, insert revision 1, paused print
+confirmation and prior offline print proof are unchanged. No receipt, dispatch,
+new insert or other workflow transition was recorded for this presentation change.
 
 ## Manual plan resumed — September 9
 
@@ -764,3 +844,184 @@ SHP-07-001 is resolved locally. The next connected step is the Customer's receip
 acknowledgement for this dispatched kit, followed by preparation using the received
 Job-specific supply. Remaining SHP-07 variants and physical delivery are not
 marked complete by this recovery.
+
+
+### September 10 approved Job workspace implementation
+
+The Product Owner approved execution of the two-part Job workspace and then
+requested horizontal icons and distinct single-/multiple-shipment wording. This
+supersedes the earlier planned-only checkpoint for that UI work.
+
+The local Job page now provides the horizontal customer preparation sequence,
+next-step guidance, combined order/selected-shipment Actions, grouped Samples
+(ten per page), Scan tubes (eight slots per page), supporting container details,
+and separate After you send tracking/laboratory/results content. Single-shipment
+instructions address one insert/container; known multiple shipments keep their
+counts. A remaining allocation pool prevents false single-shipment completion.
+
+Read-only inspection in the existing signed-in Chrome session confirmed:
+
+- HS5Y7DB7 still has nine finalized samples, all 18 tubes matched and the existing
+  ReadyToShip container. Its first six customer steps are complete; Send is next.
+- All seven icons fit across the approximately 969-pixel viewport. The current
+  step is highlighted with visible state text and instructions below the strip.
+  Final inspection confirms **Send and record your shipment**, a singular shipping
+  insert label and one-container print/carrier instructions for this Job.
+- The Actions menu contains the selected shipment identity, Print shipping
+  insert, Download tube list (CSV), Record shipment, and a separate This order
+  group with Download quote PDF and Request cancellation.
+- Switching to Samples stays on this Job, shows all nine samples with correct
+  complete match quantities and known zero receipt, and retains the same shipping
+  commands in the header. The duplicate receipt list is absent.
+- After you send explicitly says no shipment has been recorded. No print dialog,
+  correction, insert confirmation, dispatch, receipt or other operational write
+  was performed during this inspection.
+
+Static verification is recorded separately from physical acceptance. The full
+frontend TypeScript check and scoped ESLint for changed source/test files passed;
+help generation/freshness validated 56 guides (corpus `2bafbfb69e14`). Whitespace
+checks passed. Focused regression assertions were added and updated, but automated
+suites were not run. Narrow-screen/dark-theme and the complete multi-container
+operational journey still need acceptance. These changes remain local,
+uncommitted and undeployed; no API/database/authentication/dependency change.
+
+Resume the operational test only from the original saved ReadyToShip checkpoint.
+Do not repeat kit procurement/receipt, tube matching or insert issuance. Physical
+print/cancel verification, sample dispatch and laboratory receipt remain pending.
+
+
+### September 10 customer progress refinement
+
+The owner further simplified the sequence after reviewing the seven-icon version:
+**Shipping insert** is now part of **Send**, leaving six steps. Send includes
+reviewing/confirming the current insert, printing and packing it, carrier handoff
+and recording shipment. Issuing an insert does not finish the shipping step.
+
+The icons provide detailed information on hover or keyboard focus without
+navigating away; only the next-step button opens the required work. Completion
+checks and the current highlight replace redundant Complete/Waiting text in the
+strip. Status and responsibility remain available in the detail panel and to
+assistive technology. Single/multiple-shipment guidance remains scope-aware.
+
+The earlier seven-step read-only inspection above is historical UI evidence,
+not the final visible step count. These refinements do not advance the saved
+18/18 ReadyToShip workflow or consume any physical acceptance step.
+
+
+Final read-only browser inspection confirmed the six icons are evenly distributed
+across the full strip with no Complete/Waiting text underneath. A completed-step
+information panel shows its purpose and saved evidence. Keyboard Tab opens the
+next icon's details and Escape dismisses them while retaining the Job URL and
+focus; no workflow command is submitted. Only one panel is shown at a time.
+Five preparation checks and the current Send highlight preserve all 18 saved
+matches. The physical dispatch and receipt checkpoint is unchanged.
+
+The final reviewed help corpus is `43ea45ec2b6c` (56 guides). Full frontend
+TypeScript, scoped ESLint and documentation/whitespace checks passed for this
+local checkpoint. Focused assertions for the merged Send step, single/multiple
+shipments and informational panels were added but were not run as a suite.
+Future-step/multi-container, narrow-screen and dark-theme acceptance remain
+separate from this populated single-shipment browser inspection.
+
+### September 10 direct next-step print and packing acknowledgement follow-up
+
+The Product Owner authorized a direct **Print shipping insert** action in **Your
+next step** when Send is current and the selected eligible shipment has a current
+insert. Printing stays on the Job. After the print dialog returns, an explicit
+confirmation that the current insert was printed and placed in its container
+changes the card's next action to **Record shipment**. Closing or cancelling
+printing, dismissing that confirmation, and print/validation errors must not
+acknowledge success. Reprint remains available in Actions.
+
+This acknowledgement is a browser-tab reminder for the same signed-in user,
+organization, shipment, insert ID and revision. It is not a server print record,
+independent physical proof, dispatch, receipt or completion of Send. A changed
+insert revision requires fresh acknowledgement. Multiple shipments require a
+deliberate current-container selection; the UI must not print or record an
+arbitrary first shipment. The existing sole-container convenience is retained.
+
+The operational checkpoint remains **HS5Y7DB7**, nine finalized samples,
+**18 of 18** saved tube matches, **ReadyToShip**, current insert **revision 1**, and
+no recorded sample dispatch or laboratory receipt. No new physical printing,
+packing acknowledgement, shipment, insert revision or receipt is claimed by this
+documentation update. Resume from these existing records without repeating
+procurement, kit receipt, tube matching or insert issuance.
+
+Direct next-step printing, print cancellation/error, explicit acknowledgement,
+same-tab reload, changed-revision/scope invalidation and multi-container selection
+remain **Not run** acceptance items at this addendum. No automated suite, Git
+operation, deployment or migration was performed for this documentation work.
+Earlier static-check and corpus identities above remain historical evidence;
+the follow-up's implementation and final verification must be recorded separately.
+
+#### Read-only next-step button visibility check
+
+The subsequent live browser inspection confirmed **Print shipping insert** inside
+**Your next step** on [Job HS5Y7DB7](https://localhost:3000/lab-services/88967799-264c-490d-abe2-17e7833c6065).
+The same Job URL and **Samples** view remained open, with **18 of 18** tubes matched
+and no shipment recorded. This verifies the new action's visibility on the saved
+Job; it does not verify printing or the acknowledgement flow.
+
+No native print dialog, printed-and-packed acknowledgement, dispatch or receipt
+was performed. Physical print and acknowledgement acceptance remain the next
+operational checks, followed by the authorized dispatch/receipt walkthrough.
+Preserve the existing ReadyToShip shipment and current insert; do not issue a new
+insert or repeat earlier preparation to continue testing.
+
+Documentation was regenerated for **56 guides**, corpus **`b9effb39497b`**.
+Final frontend TypeScript, scoped lint across the changed frontend source,
+documentation freshness and whitespace checks passed. Added regression assertions
+cover explicit acknowledgement, cancellation/error, exact printed revision,
+scope changes, storage fallback, focus restoration and pending action guards;
+automated suites remain unrun. The final read-only browser check still showed the
+same Job, direct print button, 18 of 18 matched tubes and no recorded shipment.
+
+### September 10 unified samples and stage-relevant ordering verification
+
+The Product Owner approved merging Samples and Scan tubes into one expandable
+sample list, then directed quote decisions to the end of the Order details and
+billing heading row. Quote review remains expanded and shows ordered sample
+source/count details. Sample submission and the sample workspace appear only
+when sample work is relevant; After you send requires recorded tracking,
+receipt, substantive lab progress or released results.
+
+Validation completed locally: **104 tests passed across 10 focused suites**,
+full frontend TypeScript passed, scoped ESLint passed, documentation generation
+and freshness passed for 56 guides (corpus `c43fb0c27b35`), and whitespace passed.
+The suites include the combined scanner/list, legacy standalone scanner, sample
+roster, shipping host/controller, quote decisions/expiry/PDF, invoice permissions,
+order-dialog draft recovery and stage visibility. These results supersede the
+older unrun status for these focused assertions only; they are not a full-suite
+or physical acceptance result.
+
+Signed-in browser inspection verified current Job 69SJN4PA: seven ordered samples
+shown as source counts four and three; Accept quote and Decline quote at the end
+of the fixed heading row; no Sample submission, Samples and shipping or After you
+send during quote review. Neither quote decision was submitted.
+
+Read-only inspection of HS5Y7DB7 verified one grouped list, expandable four-tube
+sample with exact saved barcodes/container identity, keyboard expansion/collapse,
+and the preserved 18/18 ReadyToShip shipment. Its After you send area is hidden
+until tracking becomes relevant. Light/dark and narrow viewport DOM checks found
+no horizontal page overflow, and expanded barcode widths remained about 192 CSS
+pixels. Browser screenshot capture timed out, so these observations are DOM and
+accessibility-tree evidence rather than a completed visual screenshot review.
+The original system-theme preference and viewport were restored.
+
+No new sample match, quote acceptance/decline, kit order/receipt, shipping insert,
+printed-and-packed acknowledgement, dispatch or laboratory receipt was recorded.
+No Git mutation, migration, dependency/auth change or deployment was performed.
+The existing physical print/packing/dispatch/receipt acceptance remains pending.
+
+### Quote PDF source detail and visual grouping — September 10, 2026
+
+The PDF includes frozen biological-source names and counts under a shaded
+**Sample scope · N samples** table heading. Sixteen focused backend tests passed
+with no skips, including historical scope, standard placement linkage, legacy
+omission, count validation and existing access/commercial protections. Reviewed
+the one-page representative and all six long-layout pages. Docs generation and
+freshness passed (56 guides); diff whitespace passed. Rebuilt and restarted the
+local IIS Express API; `/api/health` returned 200 and the website database ping
+returned 204. The owner's Job, quote and shipping state were not mutated. No
+commit or deployment. The final signed-in download click was not verified because
+the browser no longer exposed the prior download button.

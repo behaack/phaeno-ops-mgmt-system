@@ -325,7 +325,7 @@
       "title": "Prepare and ship samples",
       "summary": "Choose Trial containers, retain tube identities, print shipping inserts and record dispatch.",
       "order": 25,
-      "reviewedAt": "2026-09-09",
+      "reviewedAt": "2026-09-10",
       "navigationGroup": "trial-project",
       "contentType": "guide",
       "topicIds": [
@@ -540,9 +540,9 @@
       "locale": "en-US",
       "slug": "lab-services",
       "title": "Request laboratory services",
-      "summary": "Review configured pricing or a manual quote, then finalize and ship the exact sample roster.",
+      "summary": "Complete ordering and shipping on the Job, then follow receipt, laboratory progress and results.",
       "order": 30,
-      "reviewedAt": "2026-09-09",
+      "reviewedAt": "2026-09-10",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -573,9 +573,9 @@
       "locale": "en-US",
       "slug": "sample-shipping",
       "title": "Prepare and ship samples",
-      "summary": "Receive location kits, assign containers and tubes by barcode, print shipping inserts and record dispatch.",
+      "summary": "Use the Job workspace to receive kits, assign containers, scan tubes, print inserts and record dispatch.",
       "order": 35,
-      "reviewedAt": "2026-09-09",
+      "reviewedAt": "2026-09-10",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -1595,7 +1595,7 @@
       "title": "Receipt and accession",
       "summary": "Dispatch barcoded containers to Customer locations, track inventory and assignments, and record receipt and accession for each registered tube.",
       "order": 51,
-      "reviewedAt": "2026-09-09",
+      "reviewedAt": "2026-09-10",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1809,7 +1809,7 @@
       "title": "Configuration and file retention",
       "summary": "Maintain reusable defaults, services, analyses, Partner rules, shipping container sizes and compatibility, and released-file retention.",
       "order": 60,
-      "reviewedAt": "2026-09-09",
+      "reviewedAt": "2026-09-10",
       "navigationGroup": "platform-operations",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1872,9 +1872,9 @@
       "locale": "en-US",
       "slug": "lab-services",
       "title": "Use Partner Lab services",
-      "summary": "Review Partner pricing, finalize samples, prepare containers, print shipping inserts and record dispatch.",
+      "summary": "Complete Partner ordering and shipping on the Job, then track sample receipt and laboratory results.",
       "order": 25,
-      "reviewedAt": "2026-09-09",
+      "reviewedAt": "2026-09-10",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [

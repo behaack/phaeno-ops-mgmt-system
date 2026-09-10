@@ -1,9 +1,20 @@
-import { LabJobSamplesPanel } from './LabJobSamplesPanel'
+import { LabCustomerProgressPanel } from './LabCustomerProgressPanel'
+import { customerLabStatus } from './lab-customer-progress'
+import { LabJobWorkspaceActions } from './LabJobWorkspaceActions'
+import { LabOrderScope } from './LabOrderScope'
+import { labJobVisibility } from './lab-job-visibility'
+import { LabJobShippingWorkspace } from './LabJobShippingWorkspace'
+import { LabJobAfterSend } from './LabJobAfterSend'
+import { LabJobOrderProgress } from './LabJobOrderProgress'
+import type { ChangeLabJobWorkspace, LabJobWorkspaceSearch } from './lab-job-workspace-search'
+import type { ShipmentKitSupply } from '#/api/transportation-kit-requests'
+import type { ShipmentHeaderAction } from '#/features/sample-shipping/SampleShippingDetailPage'
+import { useSourceSampleShipments } from '#/features/sample-shipping/use-source-sample-shipments'
 import { LabManagedResultReleases } from './LabManagedResultReleases'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
+import { Link, useBlocker, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, Download, FileCheck2, TriangleAlert } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { acceptLabQuote, downloadLabQuotePdf, getLabOrder, getOrderErrorMessage, requestLabCancellation, submitLabOrder, type Quote, withdrawLabOrder } from '#/api/order-management'
 import { downloadCustomerInvoicePdf, downloadCustomerResultArtifact, listCustomerInvoices, listCustomerResultPackages, type CustomerResultPackage, type InvoiceReceivable } from '#/api/pseq-order-to-cash'
@@ -24,9 +35,25 @@ import { LabQuoteExtensionDialog } from './LabQuoteExtensionDialog'
 import { LabQuoteDeclineDialog } from './LabQuoteDeclineDialog'
 import { currentLabQuote, quoteStatusAt, useQuoteStatus } from './use-quote-status'
 
-export function LabServiceDetailPage({ orderId }: { orderId: string }) {
+export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, onWorkspaceChange }: { orderId: string; workspace?: LabJobWorkspaceSearch; onWorkspaceChange?: ChangeLabJobWorkspace }) {
   const { authProvider, session } = usePhaenoSession()
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const shipping = useSourceSampleShipments(orderId)
+  const [localWorkspace, setLocalWorkspace] = useState<LabJobWorkspaceSearch>({})
+  const workspace = controlledWorkspace ?? localWorkspace
+  const orderActionRef = useRef<HTMLButtonElement>(null)
+  const [headerTarget, setHeaderTarget] = useState<HTMLDivElement | null>(null)
+  const [sendActionTarget, setSendActionTarget] = useState<HTMLDivElement | null>(null)
+  const [shippingActive, setShippingActive] = useState(false)
+  const [navigationLocked, setNavigationLocked] = useState(false)
+  const [kitSupply, setKitSupply] = useState<ShipmentKitSupply | undefined>(undefined)
+  useBlocker({ shouldBlockFn: () => navigationLocked, enableBeforeUnload: navigationLocked, disabled: !navigationLocked })
+  const changeWorkspace: ChangeLabJobWorkspace = (patch, options) => {
+    if (onWorkspaceChange) return onWorkspaceChange(patch, options)
+    if (!shippingActive) setLocalWorkspace(previous => ({ ...previous, ...patch }))
+    return Promise.resolve()
+  }
   const [dialog, setDialog] = useState<'accept' | 'cancel' | 'withdraw' | 'decline' | null>(null)
   const [cancellationReason, setCancellationReason] = useState('')
   const [purchaseOrderNumber, setPurchaseOrderNumber] = useState('')
@@ -94,24 +121,64 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
   const requiresPurchaseOrder = session?.selectedDepartment?.purchaseOrderRequired === true
   const invoices = canViewInvoices ? invoicesQuery.data?.filter((invoice) => invoice.labServiceOrderId === order.id) ?? [] : []
   const resultPackages = resultPackagesQuery.data ?? []
+  const visibility = labJobVisibility(order, shipping.related, resultPackages.length > 0)
+  const detailsCollapsible = visibility.confirmed && !awaitingQuoteAcceptance
+  const CommercialSection = detailsCollapsible ? 'details' : 'section'
+  const orderActions: ShipmentHeaderAction[] = []
+  if (order.canEdit) orderActions.push({ kind: 'command', label: 'Edit request', disabled: shippingActive || action.isPending, onSelect: () => { void navigate({ to: '/lab-services/$orderId/edit', params: { orderId: order.id }, search: previous => previous }) } })
+  if (order.canSubmit) orderActions.push({ kind: 'command', label: 'Submit for pricing', disabled: shippingActive || action.isPending, onSelect: () => action.mutate('submit') })
+  if (quote && !order.standardCommercialSnapshot) orderActions.push({ kind: 'command', label: 'Download quote PDF', disabled: quoteDownload.isPending || shippingActive, busy: quoteDownload.isPending, onSelect: () => quoteDownload.mutate({ orderNumber: order.orderNumber, quote }) })
+  if (awaitingQuoteAcceptance && !extensionPending && order.canRequestQuoteExtension && quoteStatus === 'Expired' && quote) orderActions.push({ kind: 'command', label: 'Request quote extension', disabled: shippingActive || action.isPending, onSelect: () => setExtensionQuote(quote) })
+  if (order.canWithdraw && !awaitingQuoteAcceptance) orderActions.push({ kind: 'command', label: 'Withdraw request', disabled: shippingActive || action.isPending, onSelect: () => openDecision('withdraw') })
+  if (order.canRequestCancellation) orderActions.push({ kind: 'command', label: 'Request cancellation', disabled: shippingActive || action.isPending, onSelect: () => openDecision('cancel') })
+  const openStep = (step: string) => {
+    const targetId = step === 'confirm-order' ? 'job-commercial' : 'samples-and-shipping'
+    const showTarget = () => { const target = document.getElementById(targetId); target?.scrollIntoView({ block: 'start' }); target?.focus({ preventScroll: true }) }
+    if (step === 'confirm-order') showTarget()
+    else void changeWorkspace({ shippingView: step === 'samples' ? undefined : 'tubes', orderKits: undefined }).then(() => window.requestAnimationFrame(showTarget))
+  }
   return (
     <main className="page-wrap px-4 py-8">
       <section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div><Link to="/lab-services" search={previous => previous} className="inline-flex min-h-6 cursor-pointer items-center gap-1.5 rounded-sm text-sm text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><ArrowLeft className="size-4" aria-hidden="true" />Back to lab services</Link><div className="mt-2 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold">{order.orderNumber}</h1><OrderStatusBadge status={order.status === 'QuoteIssued' && quoteStatus === 'Expired' ? 'QuoteExpired' : order.status} /></div><p className="mt-2 text-sm text-muted-foreground">{order.customerReference || 'No Customer reference'} · Updated {formatDate(order.updatedAt)}</p></div>
-        <div className="flex flex-wrap gap-2">{order.canEdit ? <Button type="button" variant="outline" asChild><Link to="/lab-services/$orderId/edit" params={{ orderId: order.id }} search={previous => previous}>Edit request</Link></Button> : null}{order.canSubmit ? <Button type="button" onClick={() => action.mutate('submit')} disabled={action.isPending}>Submit for pricing</Button> : null}{order.canWithdraw && (!quote || order.standardCommercialSnapshot) ? <Button type="button" variant="outline" onClick={() => openDecision('withdraw')}>Withdraw request</Button> : null}{order.canRequestCancellation ? <Button type="button" variant="outline" onClick={() => openDecision('cancel')}>Request cancellation</Button> : null}</div>
+        <div><Link to="/lab-services" search={previous => previous} className="inline-flex min-h-6 cursor-pointer items-center gap-1.5 rounded-sm text-sm text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><ArrowLeft className="size-4" aria-hidden="true" />Back to lab services</Link><div className="mt-2 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold">{order.orderNumber}</h1><OrderStatusBadge status={order.status === 'QuoteIssued' && quoteStatus === 'Expired' ? 'QuoteExpired' : customerLabStatus(order.status, order.laboratoryProgress)} /></div><p className="mt-2 text-sm text-muted-foreground">{order.customerReference || 'No Customer reference'} · Updated {formatDate(order.updatedAt)}</p></div>
+        <div ref={setHeaderTarget} className="shrink-0">{!visibility.samplesRelevant ? <LabJobWorkspaceActions orderActions={orderActions} triggerRef={orderActionRef} dialogOpen={Boolean(dialog) || Boolean(extensionQuote)} /> : null}</div>
       </section>
       {order.tenantSafeReason ? <Alert className="mb-5"><AlertTitle>Action needed</AlertTitle><AlertDescription>{order.tenantSafeReason}</AlertDescription></Alert> : null}
       {order.labCustomerActionSummary ? <Alert className="mb-5"><AlertTitle>Laboratory action needed</AlertTitle><AlertDescription>{order.labCustomerActionSummary}</AlertDescription></Alert> : null}
       {action.error && !dialog ? <Alert variant="destructive" className="mb-5"><AlertTitle>Order was not updated</AlertTitle><AlertDescription>{getOrderErrorMessage(action.error, 'Reload and try again.')}</AlertDescription></Alert> : null}
-      <StandardLabServicePanel order={order} />
-      <LabServiceTimingPanel orderId={order.id} timing={order.timing} />
-
-      {order.labMilestone ? <Card className="mb-5"><CardHeader><CardTitle>Laboratory progress</CardTitle><CardDescription>Current customer-safe milestone from the laboratory record.</CardDescription></CardHeader><CardContent><div className="flex flex-wrap items-center gap-3"><OrderStatusBadge status={order.labMilestone} />{order.labScheduleHealth ? <span className="text-sm text-muted-foreground">Schedule: {humanizeStatus(order.labScheduleHealth)}</span> : null}{order.labExpectedCompletionAtUtc ? <span className="text-sm text-muted-foreground">Expected {formatDate(order.labExpectedCompletionAtUtc)}</span> : null}</div>{order.labPermittedQcProjectionJson ? <details className="mt-3"><summary className="cursor-pointer text-sm font-medium">Approved QC summary</summary><pre className="mt-2 overflow-x-auto rounded-md bg-muted p-3 text-xs">{prettyJson(order.labPermittedQcProjectionJson)}</pre></details> : null}{order.labReadyForRelease ? <p className="mt-3 text-sm">Scientific review is complete. Phaeno must still complete the Commercial release before any result file appears here.</p> : null}</CardContent></Card> : null}
-
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(18rem,1fr)]">
-        <div className="space-y-5">
-          <LabJobSamplesPanel order={order} />
-
+      {quoteDownload.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Quote could not be downloaded</AlertTitle><AlertDescription>{getOrderErrorMessage(quoteDownload.error, 'Try Download quote PDF again. If the problem continues, contact Phaeno.')}</AlertDescription></Alert> : null}
+      <section id="ordering-and-shipping" className="space-y-5">
+        <LabJobOrderProgress order={order} shipments={shipping.related} shippingState={shipping.receiptState} kitSupply={kitSupply} canManageShipping={session?.capabilities.canManageSampleShipping === true} canAcceptOrder={Boolean(canManageQuotes || order.canPlaceStandardOrder)} onStepSelect={openStep} sendActionTargetRef={setSendActionTarget} />
+        <section id="job-commercial" tabIndex={-1} className="space-y-4 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <StandardLabServicePanel order={order} />
+          <CommercialSection key={visibility.confirmed ? 'confirmed' : 'unconfirmed'} aria-labelledby="order-details-heading" className="rounded-lg border bg-card p-4">
+            {detailsCollapsible ? <summary id="order-details-heading" className="cursor-pointer font-semibold">Order details and billing</summary> : <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 id="order-details-heading" className="font-semibold">Order details and billing</h2>
+              {awaitingQuoteAcceptance && (canManageQuotes || order.canWithdraw) ? <div role="group" aria-label="Quote actions" className="flex flex-wrap gap-2">
+                {canManageQuotes ? <Button disabled={acceptanceBlocked || shippingActive || action.isPending} aria-describedby={acceptanceBlocked ? 'quote-acceptance-help' : undefined} onClick={() => openDecision('accept')}>Accept quote</Button> : null}
+                {order.canWithdraw ? <Button variant="outline" disabled={shippingActive || action.isPending} onClick={() => openDecision('decline')}>Decline quote</Button> : null}
+              </div> : null}
+            </div>}
+            <div className={`mt-4 grid gap-5${visibility.samplesRelevant ? ' lg:grid-cols-2' : ''}`}>
+          <Card><CardHeader><CardTitle>{order.standardCommercialSnapshot ? "Billing" : "Quote and billing"}</CardTitle><CardDescription>{order.standardCommercialSnapshot ? "The accepted standard bundle is recorded above. Issued invoices and audited adjustments remain with this Job." : "Proposed pricing is not a quote. Issued and accepted POMS pricing remains immutable; corrections appear as audited revisions or adjustments."}</CardDescription></CardHeader><CardContent><LabOrderScope order={order} />{order.proposedUnitPrice != null ? <div className={quote ? 'mb-4 border-b pb-4' : 'mb-4'}><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Your proposed price</p><p className="mt-1 font-semibold">{formatMoney(order.proposedUnitPrice, order.proposedCurrency ?? 'USD')} per specimen</p><p className="mt-1 text-sm text-muted-foreground">Proposed subtotal {formatMoney(order.proposedUnitPrice * order.requestedSpecimenCount, order.proposedCurrency ?? 'USD')} for {order.requestedSpecimenCount} specimens. Phaeno may approve or amend this before issuing the quote.</p>{order.priceProposalNote ? <p className="mt-2 text-sm">{order.priceProposalNote}</p> : null}</div> : null}{order.standardCommercialSnapshot ? <p className="text-sm text-muted-foreground">Standard bundle accepted. No separate assembly quote is required.</p> : quote ? <>
+            <QuoteSummary quote={quote} status={quoteStatus ?? quote.status} />
+            {awaitingQuoteAcceptance ? <div className="mt-4 space-y-3">
+              {canManageQuotes ? acceptanceBlocked && acceptanceExplanation ? <p id="quote-acceptance-help" className="text-sm text-muted-foreground">{acceptanceExplanation}</p> : null
+                : <p className="text-sm text-muted-foreground">An organization or department administrator must accept this quote{quoteStatus === 'Expired' ? ' or request an extension' : ''}. Your Member access lets you review and download it.</p>}
+              {extensionPending ? <div className="space-y-1" role="status"><p className="text-sm font-medium">Extension requested</p><p className="text-sm text-muted-foreground">Phaeno is reviewing the request. A new quote revision will appear here if approved.</p></div> : null}
+            </div> : null}
+          </> : <p className="text-sm text-muted-foreground">Phaeno has not issued pricing yet.</p>}{canViewInvoices && invoicesQuery.isLoading ? <p role="status" className="mt-4 border-t pt-4 text-sm text-muted-foreground">Loading invoices…</p> : null}{canViewInvoices && invoicesQuery.isFetching && !invoicesQuery.isLoading ? <p role="status" className="mt-4 text-xs text-muted-foreground">Refreshing invoice status…</p> : null}{canViewInvoices && (invoicesQuery.error || invoiceDownload.error) ? <Alert variant="destructive" className="mt-4"><AlertTitle>Invoice could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(invoicesQuery.error ?? invoiceDownload.error, 'Refresh and try again.')}</AlertDescription></Alert> : null}{invoices.map((invoice) => <div key={invoice.id} className="mt-4 border-t pt-4"><div className="flex items-center justify-between gap-2"><span className="text-sm font-medium">Invoice {invoice.invoiceNumber}</span><OrderStatusBadge status={invoice.status} /></div><p className="mt-1 text-sm text-muted-foreground">Due {formatDate(invoice.dueOn)} · Balance {formatMoney(invoice.balance, invoice.currency)}</p><Button type="button" size="sm" variant="outline" className="mt-2" disabled={invoiceDownload.isPending} onClick={() => invoiceDownload.mutate(invoice)}><Download data-icon="inline-start" />Download invoice PDF</Button></div>)}{canViewInvoices && !invoicesQuery.isLoading && !invoicesQuery.error && !invoices.length ? <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">No POMS invoice has been issued for this order.</p> : null}{!canViewInvoices ? <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">Contact Phaeno for billing records.</p> : null}{order.documents.map((document) => <div key={document.id} className="mt-4 border-t pt-4"><div className="flex items-center justify-between gap-2"><span className="text-sm font-medium">Legacy billing source · {document.kind} {document.documentNumber ?? ''}</span><OrderStatusBadge status={document.syncStatus} /></div><p className="mt-1 text-sm text-muted-foreground">Finance review required · Historical balance {formatMoney(document.balance, document.currency)}</p>{document.documentUrl ? <a href={document.documentUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-primary hover:underline">Open legacy record</a> : null}</div>)}</CardContent></Card>
+          {visibility.samplesRelevant ? <Card><CardHeader><CardTitle>Sample submission</CardTitle></CardHeader><CardContent><p className="whitespace-pre-wrap text-sm leading-6">{order.submissionInstructions || 'Finalize the accepted sample list, then follow the instructions in the shipping insert. Contact Phaeno if instructions are unavailable.'}</p></CardContent></Card> : null}
+            </div>
+          </CommercialSection>
+        </section>
+        {visibility.samplesRelevant ? <LabJobShippingWorkspace order={order} workspace={workspace} onWorkspaceChange={changeWorkspace} headerTarget={headerTarget} sendActionTarget={sendActionTarget} orderActions={orderActions} orderDialogOpen={Boolean(dialog) || Boolean(extensionQuote)} onActivityChange={setShippingActive} navigationLocked={navigationLocked} onNavigationLockChange={setNavigationLocked} onKitSupplyChange={setKitSupply} /> : null}
+      </section>
+      {visibility.trackingRelevant ? <section id="after-you-send" className="mt-8 space-y-5" aria-labelledby="after-send-title">
+        <div><h2 id="after-send-title" className="text-xl font-semibold">After you send</h2><p className="mt-1 text-sm text-muted-foreground">Track your shipments, laboratory progress and results here. We will show any action needed from you above.</p></div>
+        <LabJobAfterSend orderId={order.id} />
+        <LabServiceTimingPanel orderId={order.id} timing={order.timing} />
+      <LabCustomerProgressPanel order={order} />
           <Card id="results">
             <CardHeader>
               <CardTitle>Files and results</CardTitle>
@@ -132,31 +199,15 @@ export function LabServiceDetailPage({ orderId }: { orderId: string }) {
             </CardContent>
           </Card>
 
+      </section> : null}
+      <details className="mt-6 rounded-lg border bg-card p-4">
+        <summary className="cursor-pointer font-semibold">Order history</summary>
+        <div className="mt-4 space-y-5">
           {(order.requestRevisions?.length ?? 0) > 0 ? <Card><CardHeader><CardTitle>Submitted request revisions</CardTitle><CardDescription>Each submission preserves the Customer reference, samples, analyses, and instructions that Phaeno reviewed.</CardDescription></CardHeader><CardContent className="divide-y">{order.requestRevisions?.map((revision) => <div key={revision.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><p className="font-medium">Revision {revision.revision}</p><p className="text-xs text-muted-foreground">Submitted {formatDateTime(revision.submittedAt)}</p>{revision.correctionReason ? <p className="mt-1 text-sm">Correction: {revision.correctionReason}</p> : null}</div><Button type="button" variant="outline" onClick={() => downloadSnapshot(`${order.orderNumber}-request-r${revision.revision}.json`, revision.snapshotJson)}><Download data-icon="inline-start" />Download snapshot</Button></div>)}</CardContent></Card> : null}
 
           <Card><CardHeader><CardTitle>Timeline</CardTitle><CardDescription>Customer-safe milestones and reasons for this request.</CardDescription></CardHeader><CardContent><ol className="space-y-4">{order.timeline.map((item) => <li key={item.id} className="border-l-2 border-border pl-4"><p className="text-sm font-medium">{humanizeStatus(item.toStatus)}</p><p className="text-xs text-muted-foreground">{formatDateTime(item.occurredAt)}</p>{item.reason ? <p className="mt-1 text-sm">{item.reason}</p> : null}</li>)}</ol></CardContent></Card>
         </div>
-
-        <div className="space-y-5">
-          <Card><CardHeader><CardTitle>{order.standardCommercialSnapshot ? "Billing" : "Quote and billing"}</CardTitle><CardDescription>{order.standardCommercialSnapshot ? "The accepted standard bundle is recorded above. Issued invoices and audited adjustments remain with this Job." : "Proposed pricing is not a quote. Issued and accepted POMS pricing remains immutable; corrections appear as audited revisions or adjustments."}</CardDescription></CardHeader><CardContent>{order.proposedUnitPrice != null ? <div className={quote ? 'mb-4 border-b pb-4' : 'mb-4'}><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Your proposed price</p><p className="mt-1 font-semibold">{formatMoney(order.proposedUnitPrice, order.proposedCurrency ?? 'USD')} per specimen</p><p className="mt-1 text-sm text-muted-foreground">Proposed subtotal {formatMoney(order.proposedUnitPrice * order.requestedSpecimenCount, order.proposedCurrency ?? 'USD')} for {order.requestedSpecimenCount} specimens. Phaeno may approve or amend this before issuing the quote.</p>{order.priceProposalNote ? <p className="mt-2 text-sm">{order.priceProposalNote}</p> : null}</div> : null}{order.standardCommercialSnapshot ? <p className="text-sm text-muted-foreground">Standard bundle accepted. No separate assembly quote is required.</p> : quote ? <>
-            <QuoteSummary quote={quote} status={quoteStatus ?? quote.status} />
-            <div role="group" aria-label="Quote actions" className="mt-4 flex flex-wrap items-center gap-2 border-t pt-4">
-              {awaitingQuoteAcceptance && canManageQuotes ? <Button type="button" disabled={acceptanceBlocked || action.isPending} aria-describedby={acceptanceBlocked ? 'quote-acceptance-help' : undefined} onClick={() => openDecision('accept')}>Accept quote</Button> : null}
-              {order.canWithdraw ? <Button type="button" variant="outline" disabled={action.isPending} onClick={() => openDecision(awaitingQuoteAcceptance ? 'decline' : 'withdraw')}>{awaitingQuoteAcceptance ? 'Decline quote' : 'Withdraw request'}</Button> : null}
-              <Button type="button" variant="outline" disabled={quoteDownload.isPending} aria-busy={quoteDownload.isPending} onClick={() => quoteDownload.mutate({ orderNumber: order.orderNumber, quote })}><Download data-icon="inline-start" />{quoteDownload.isPending ? 'Downloading quote...' : 'Download quote PDF'}</Button>
-              {awaitingQuoteAcceptance && extensionPending && canManageQuotes ? <Button type="button" variant="outline" disabled>Extension requested</Button>
-                : awaitingQuoteAcceptance && !extensionPending && order.canRequestQuoteExtension && quoteStatus === 'Expired' ? <Button type="button" variant="outline" onClick={() => setExtensionQuote(quote)}>Request extension</Button> : null}
-            </div>
-            {awaitingQuoteAcceptance ? <div className="mt-3 space-y-2">
-              {canManageQuotes ? acceptanceBlocked && acceptanceExplanation ? <p id="quote-acceptance-help" className="text-sm text-muted-foreground">{acceptanceExplanation}</p> : null
-                : <p className="text-sm text-muted-foreground">An organization or department administrator must accept this quote{quoteStatus === 'Expired' ? ' or request an extension' : ''}. Your Member access lets you review and download it.</p>}
-              {extensionPending ? <div className="space-y-1" role="status">{!canManageQuotes ? <p className="text-sm font-medium">Extension requested</p> : null}<p className="text-sm text-muted-foreground">Phaeno is reviewing the request. A new quote revision will appear here if approved.</p></div> : null}
-            </div> : null}
-            {quoteDownload.error ? <Alert variant="destructive" className="mt-4"><AlertTitle>Quote could not be downloaded</AlertTitle><AlertDescription>{getOrderErrorMessage(quoteDownload.error, 'Try Download quote PDF again. If the problem continues, contact Phaeno.')}</AlertDescription></Alert> : null}
-          </> : <p className="text-sm text-muted-foreground">Phaeno has not issued pricing yet.</p>}{canViewInvoices && invoicesQuery.isLoading ? <p role="status" className="mt-4 border-t pt-4 text-sm text-muted-foreground">Loading invoices…</p> : null}{canViewInvoices && invoicesQuery.isFetching && !invoicesQuery.isLoading ? <p role="status" className="mt-4 text-xs text-muted-foreground">Refreshing invoice status…</p> : null}{canViewInvoices && (invoicesQuery.error || invoiceDownload.error) ? <Alert variant="destructive" className="mt-4"><AlertTitle>Invoice could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(invoicesQuery.error ?? invoiceDownload.error, 'Refresh and try again.')}</AlertDescription></Alert> : null}{invoices.map((invoice) => <div key={invoice.id} className="mt-4 border-t pt-4"><div className="flex items-center justify-between gap-2"><span className="text-sm font-medium">Invoice {invoice.invoiceNumber}</span><OrderStatusBadge status={invoice.status} /></div><p className="mt-1 text-sm text-muted-foreground">Due {formatDate(invoice.dueOn)} · Balance {formatMoney(invoice.balance, invoice.currency)}</p><Button type="button" size="sm" variant="outline" className="mt-2" disabled={invoiceDownload.isPending} onClick={() => invoiceDownload.mutate(invoice)}><Download data-icon="inline-start" />Download invoice PDF</Button></div>)}{canViewInvoices && !invoicesQuery.isLoading && !invoicesQuery.error && !invoices.length ? <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">No POMS invoice has been issued for this order.</p> : null}{!canViewInvoices ? <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">Contact Phaeno for billing records.</p> : null}{order.documents.map((document) => <div key={document.id} className="mt-4 border-t pt-4"><div className="flex items-center justify-between gap-2"><span className="text-sm font-medium">Legacy billing source · {document.kind} {document.documentNumber ?? ''}</span><OrderStatusBadge status={document.syncStatus} /></div><p className="mt-1 text-sm text-muted-foreground">Finance review required · Historical balance {formatMoney(document.balance, document.currency)}</p>{document.documentUrl ? <a href={document.documentUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-primary hover:underline">Open legacy record</a> : null}</div>)}</CardContent></Card>
-          <Card><CardHeader><CardTitle>Sample submission</CardTitle></CardHeader><CardContent><p className="whitespace-pre-wrap text-sm leading-6">{order.submissionInstructions || 'Finalize the accepted sample list, then follow the instructions in the registered shipment packet. Contact Phaeno if instructions are unavailable.'}</p></CardContent></Card>
-        </div>
-      </div>
+      </details>
 
       <Dialog open={dialog === 'accept'} onOpenChange={(open) => { if (!open) closeDecision() }}>
         <DialogContent showCloseButton={!action.isPending} aria-busy={action.isPending}>
@@ -207,4 +258,3 @@ function formatMoney(value: number, currency: string) { return new Intl.NumberFo
 function formatDate(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(new Date(value)) }
 function formatDateTime(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
 function downloadSnapshot(fileName: string, value: string) { const url = URL.createObjectURL(new Blob([value], { type: 'application/json' })); const link = document.createElement('a'); link.href = url; link.download = fileName; link.click(); URL.revokeObjectURL(url) }
-function prettyJson(value: string) { try { return JSON.stringify(JSON.parse(value), null, 2) } catch { return value } }

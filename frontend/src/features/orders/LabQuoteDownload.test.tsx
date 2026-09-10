@@ -8,7 +8,7 @@ import { bundleLabDraft } from '#/test-helpers/bundled-orders'
 import { LabServiceDetailPage } from './LabServiceDetailPage'
 
 const mocks = vi.hoisted(() => ({ getOrder: vi.fn(), getPdf: vi.fn(), createUrl: vi.fn(), revokeUrl: vi.fn() }))
-vi.mock('@tanstack/react-router', () => ({ Link: ({ children }: { children: ReactNode }) => <a href="#job">{children}</a>, useBlocker: vi.fn() }))
+vi.mock('@tanstack/react-router', () => ({ Link: ({ children }: { children: ReactNode }) => <a href="#job">{children}</a>, useNavigate: () => vi.fn(), useBlocker: vi.fn() }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider: 'clerk', session: { capabilities: { canViewLabServiceOrders: true, canViewLabServiceInvoices: false } } }) }))
 vi.mock('#/api/client', () => ({ api: { get: mocks.getPdf } }))
 vi.mock('#/api/order-management', async original => ({ ...await original<typeof import('#/api/order-management')>(), getLabOrder: mocks.getOrder }))
@@ -53,6 +53,7 @@ describe('Customer quote PDF download', () => {
     mocks.getPdf.mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
     show()
     const button = await screen.findByRole('button', { name: 'Download quote PDF' })
+    expect(button.closest('[data-slot="card"]')).toBeNull()
     expect(screen.getByText('Revision 2')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Accept quote' })).toBeNull()
     fireEvent.click(button)
@@ -103,6 +104,7 @@ describe('Customer quote PDF download', () => {
   it('keeps submitted request snapshots as JSON and hides the quote action until a quote exists', async () => {
     mocks.getOrder.mockResolvedValueOnce({ ...job, quotes: [] })
     show()
+    fireEvent.click(await screen.findByText('Order history'))
     fireEvent.click(await screen.findByRole('button', { name: 'Download snapshot' }))
     expect(downloads).toEqual([`${job.orderNumber}-request-r1.json`])
     expect(mocks.createUrl.mock.lastCall?.[0]).toHaveProperty('type', 'application/json')

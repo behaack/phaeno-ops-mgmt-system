@@ -140,6 +140,7 @@ export type SampleShippingPreview = {
 }
 
 export type SampleShippingPacketScan = {
+  containerReceivedAt?: string | null
   packetRevisionId: string
   packetNumber: string
   barcode: string

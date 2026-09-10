@@ -43,6 +43,7 @@ const record = {
   id: 'order-1', version: 3, orderNumber: 'ORDER-1', requestNumber: 'ASSEMBLY-1', projectReference: 'Assembly project',
   status: 'Quoted', updatedAt: '2026-09-07T12:00:00Z', metadataJson: '{}', shippingAddressSnapshotJson: null,
   canAcceptQuote: true, canRequestCancellation: true, canWithdraw: true,
+  requestedSpecimenCount: 7, sourceGroups: [{ id: 'source-1', biologicalSource: 'Human PBMCs', specimenCount: 7, version: 1 }],
   samples: [], resultFiles: [], resultReleases: [], inputRevisions: [], inputFiles: [], outputReleases: [],
   lines: [], timeline: [], documents: [], adjustments: [], shipments: [],
   quotes: [{ id: 'quote-1', revision: 1, status: 'Issued', expiresAt: '2026-10-07T12:00:00Z',
@@ -56,13 +57,26 @@ const cases = [
   { name: 'Partner quote acceptance', page: <DataAssemblyDetailPage requestId={record.id} />, field: /Purchase order number/, open: 'Accept quote', keep: 'Keep reviewing', save: 'Accept quote and queue work' },
 ]
 
+async function headerAction(name: string) {
+  await waitFor(() => expect(screen.queryByRole('button', { name }) ?? screen.queryByRole('button', { name: 'Actions' })).toBeTruthy())
+  const direct = screen.queryByRole('button', { name })
+  if (direct) return direct
+  fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions' }), { button: 0, ctrlKey: false })
+  return screen.findByRole('menuitem', { name })
+}
+
+function decisionBlocker() {
+  // The embedded workspace also registers a navigation lock; exercise the order draft guard.
+  return mocks.blocker.mock.calls.filter(([options]) => typeof options.enableBeforeUnload === 'function').at(-1)![0]
+}
+
 describe.each(cases)('$name decision dialog', ({ page, field, open, keep, save }) => {
   beforeEach(() => { vi.clearAllMocks(); mocks.read.mockResolvedValue(record); mocks.save.mockReset() })
   afterEach(() => { vi.restoreAllMocks() })
 
   async function openDialog() {
     render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>{page}</QueryClientProvider>)
-    fireEvent.click(await screen.findByRole('button', { name: open }))
+    fireEvent.click(await headerAction(open))
     return screen.getByRole('dialog')
   }
 
@@ -76,15 +90,15 @@ describe.each(cases)('$name decision dialog', ({ page, field, open, keep, save }
     fireEvent.keyDown(dialog, { key: 'Escape' })
     expect(screen.getByRole('dialog')).toBe(dialog)
     expect(within(dialog).getByLabelText(field)).toHaveProperty('value', 'Keep this entry')
-    expect(mocks.blocker.mock.lastCall![0].shouldBlockFn()).toBe(true)
-    expect(mocks.blocker.mock.lastCall![0].enableBeforeUnload()).toBe(true)
+    expect(decisionBlocker().shouldBlockFn()).toBe(true)
+    expect(decisionBlocker().enableBeforeUnload()).toBe(true)
     expect(confirm).toHaveBeenCalled()
     confirm.mockReturnValue(true)
     fireEvent.click(within(dialog).getByRole('button', { name: keep }))
     expect(screen.queryByRole('dialog')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: open }))
+    fireEvent.click(await headerAction(open))
     expect(within(screen.getByRole('dialog')).getByLabelText(field)).toHaveProperty('value', '')
-    expect(mocks.blocker.mock.lastCall![0].enableBeforeUnload()).toBe(false)
+    expect(decisionBlocker().enableBeforeUnload()).toBe(false)
   })
 
   it('blocks repeat submission, editing and dismissal while pending, retains a failed draft, and closes after a successful retry', async () => {
@@ -102,8 +116,8 @@ describe.each(cases)('$name decision dialog', ({ page, field, open, keep, save }
     fireEvent.keyDown(dialog, { key: 'Escape' })
     fireEvent.keyDown(input, { key: 'Enter' })
     expect(screen.getByRole('dialog')).toBe(dialog)
-    expect(mocks.blocker.mock.lastCall![0].shouldBlockFn()).toBe(true)
-    expect(mocks.blocker.mock.lastCall![0].enableBeforeUnload()).toBe(true)
+    expect(decisionBlocker().shouldBlockFn()).toBe(true)
+    expect(decisionBlocker().enableBeforeUnload()).toBe(true)
     expect(mocks.save).toHaveBeenCalledOnce()
     await act(async () => rejectSave(new Error('The request failed.')))
     await within(dialog).findByRole('alert')
@@ -113,6 +127,6 @@ describe.each(cases)('$name decision dialog', ({ page, field, open, keep, save }
     fireEvent.click(within(dialog).getByRole('button', { name: save }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     expect(mocks.save).toHaveBeenCalledTimes(2)
-    expect(mocks.blocker.mock.lastCall![0].enableBeforeUnload()).toBe(false)
+    expect(decisionBlocker().enableBeforeUnload()).toBe(false)
   })
 })

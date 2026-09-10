@@ -241,6 +241,14 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         if (Status != LabServiceOrderStatus.ResultsAvailable) SetStatus(LabServiceOrderStatus.InProgress, null, null);
     }
 
+    public void RecordLaboratoryReceipt()
+    {
+        if (Status == LabServiceOrderStatus.PlacedAwaitingSamples) MarkWorkStarted();
+        else if (Status is LabServiceOrderStatus.OnHold or LabServiceOrderStatus.CancellationRequested
+            && ResumeStatus == LabServiceOrderStatus.PlacedAwaitingSamples)
+            ResumeStatus = LabServiceOrderStatus.InProgress;
+    }
+
     public void MarkResultsAvailable()
     {
         EnsureStatus(LabServiceOrderStatus.PlacedAwaitingSamples, LabServiceOrderStatus.InProgress, LabServiceOrderStatus.ResultsAvailable);
@@ -592,6 +600,34 @@ public sealed class LabSample : IAudit, IConcurrency
         EnsureStatus(LabSampleStatus.Received);
         AccessionId = OrderText.Required(accessionId, nameof(accessionId), 100);
         Status = LabSampleStatus.Accessioned;
+    }
+
+    public bool ApplyLaboratoryIntake(DateTime receivedAtUtc, string? accessionId)
+    {
+        if (IsTerminal()) return false;
+        var changed = false;
+        if (!ReceivedAt.HasValue) { ReceivedAt = receivedAtUtc; changed = true; }
+        if (!string.IsNullOrWhiteSpace(accessionId))
+        {
+            var normalized = OrderText.Required(accessionId, nameof(accessionId), 100);
+            if (AccessionId is not null && AccessionId != normalized)
+                throw new InvalidOperationException("The laboratory accession differs from the saved sample identity.");
+            if (AccessionId is null) { AccessionId = normalized; changed = true; }
+        }
+        var current = Status == LabSampleStatus.OnHold ? ResumeStatus : Status;
+        var target = current switch
+        {
+            LabSampleStatus.Expected or LabSampleStatus.Received when AccessionId is not null => LabSampleStatus.Accessioned,
+            LabSampleStatus.Expected => LabSampleStatus.Received,
+            _ => current
+        };
+        if (target != current && target.HasValue)
+        {
+            if (Status == LabSampleStatus.OnHold) ResumeStatus = target;
+            else Status = target.Value;
+            changed = true;
+        }
+        return changed;
     }
 
     public void TransitionTo(LabSampleStatus target, string? tenantSafeReason, string? internalNote)

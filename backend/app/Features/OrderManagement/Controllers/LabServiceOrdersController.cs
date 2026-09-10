@@ -16,6 +16,7 @@ using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.DTOs;
 using PhaenoPortal.App.Features.OrderManagement.Services;
+using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Features.FileManagement.Services;
 using PhaenoPortal.App.Infrastructure.Api;
@@ -82,7 +83,10 @@ public sealed partial class LabServiceOrdersController(
                 order.CustomerReference, order.OrganizationId, order.CreatedAt, order.UpdatedAt,
                 order.Version, order.TenantSafeReason))
             .ToListAsync(cancellationToken);
-        return new PagedResult<OrderListItemDto>(items, page, pageSize, total);
+        var progress = await new LabCustomerProgressService(dbContext).ReadAsync(tenant.Organization.Id,
+            items.Select(item => item.Id).ToArray(), cancellationToken);
+        return new PagedResult<OrderListItemDto>(items.Select(item => item with
+            { LaboratoryProgress = progress.TryGetValue(item.Id, out var value) ? value with { Samples = [] } : null }).ToArray(), page, pageSize, total);
     }
 
     [HttpGet("export")]
@@ -1021,6 +1025,8 @@ public sealed partial class LabServiceOrdersController(
             cancellationRequests.Select(item => item.ToDto()).ToList(), timeline.Select(item => item.ToDto(platform)).ToList(),
             RequestRevisions: order.Revisions.OrderByDescending(item => item.Revision).Select(item => new LabRequestRevisionDto(item.Id,
                 item.Revision, item.PreviousRevisionId, item.SnapshotJson, item.CorrectionReason, item.SubmittedByUserId, item.SubmittedAt)).ToList(),
+            LaboratoryProgress: (await new LabCustomerProgressService(dbContext).ReadAsync(order.OrganizationId,
+                [order.Id], cancellationToken)).GetValueOrDefault(order.Id),
             LabMilestone: projection?.Milestone,
             LabScheduleHealth: timing?.ScheduleHealth ?? projection?.ScheduleHealth,
             LabExpectedCompletionAtUtc: timing?.ExpectedCompletionAtUtc ?? projection?.ExpectedCompletionAtUtc,

@@ -182,6 +182,7 @@ public sealed record SpecimenReceiptRequest(DateTime ReceivedAtUtc, string? Rece
 public sealed record SpecimenAccessionRequest(string AccessionNumber, string Label, string Location,
     decimal? Quantity, string? QuantityUnit, DateTime? RetainUntilUtc, long Version,
     string? SampleShippingPacketBarcode = null, string? SupplierTubeBarcode = null);
+public sealed record ShipmentTubeAccessionRequest(string PacketBarcode, string SupplierTubeBarcode, string FreezerBoxBarcode);
 public sealed record SpecimenDispositionRequest(string Disposition, string? ReasonCode, long Version);
 public sealed record CreateContainerRequest(Guid? LabSpecimenId, Guid? ParentContainerId, string Kind,
     string Label, string Location, decimal? Quantity, string? QuantityUnit, DateTime? RetainUntilUtc);

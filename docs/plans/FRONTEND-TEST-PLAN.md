@@ -1,5 +1,133 @@
 # Frontend Test Plan
 
+## Customer laboratory stages — September 10, 2026
+
+**Local checkpoint: 3/3 cases passed** in [LabCustomerProgressPanel.test.tsx](../../frontend/src/features/orders/LabCustomerProgressPanel.test.tsx); see the [verification record](../testing/runs/2026-09-10-customer-laboratory-stages.md). The cases cover six current-stage counts and partial release, native sample disclosure, unavailable data rather than invented zero counts, and lifecycle-status precedence through the shared list/header selector. They do not mount both complete list/detail pages or prove a signed-in Partner journey.
+
+Frontend typecheck and scoped lint passed. The final numeric sample sorting and focus-ring changes received static checks after the focused component run; no new component-test run is claimed for those final presentation edits. Signed-in desktop inspection confirmed both Customer list rows as Received, HS5Y7DB7's Received header, six stages, nine Received samples and the expanded individual sample list.
+
+**Remaining acceptance: Not run.** Keyboard Enter/Space and visible focus on sample/QC disclosures; 320/375 px reflow, zoom, touch and dark theme; numeric sample sorting in the connected browser; the 7-sample detail of 69SJN4PA; entitled Partner and Department/member views; real partial/mixed stages; and missing/failed progress responses on full pages. Responsive classes and `aria-current` are implementation evidence, not completed browser acceptance. Follow [ORD-07](../testing/04-lab-orders.md#ord-07--customer-laboratory-stages-and-mixed-sample-progress).
+
+## Intake progress synchronization — September 10, 2026
+
+Shipment receipt now invalidates Lab dashboard/work-detail caches alongside shipments. Verify the received Job appears in Work and remains after completed accession. Layout and scientific actions are unchanged. TypeScript/scoped lint and signed-in checks are recorded in [the intake correction run record](../testing/runs/2026-09-10-intake-progress-correction.md); no new frontend suite is required for this cache invalidation change.
+
+The prior signed-in local check confirmed both corrected Jobs remain in Phaeno Work as Received. This did not execute every receipt/cache replay path in a browser. The Customer list now uses the laboratory stage, superseding the earlier In Progress screenshot while retaining the Commercial lifecycle and sample Accessioned values.
+
+## Unified samples and stage-relevant Job workspace - September 10, 2026
+
+The Product Owner approved one expandable sample list with integrated Match tubes,
+quote decisions at the end of the fixed Order details and billing heading row,
+source/count details beside pricing, and stage-relevant sample/tracking sections.
+The new design supersedes the prior Samples / Scan tubes switch described below.
+
+Focused coverage includes split-container identities and Job-wide totals; active
+sample/page expansion; retained failed/dirty scans; pending locks; successful
+advancement and completion; unmapped slots; Member and post-send permissions;
+quote source counts and direct decisions; fixed quote-review details; and tracking
+visibility for partial sends, receipt, lab progress and results. The standalone
+scanner retains eight-slot paging. Older print/scan tests now query the current
+rendered controls after asynchronous refresh rather than detached loading nodes.
+
+
+## Lab Job workspace and horizontal customer progress — September 10, 2026
+
+Implementation approved and completed locally. Focused assertions now cover:
+
+- Evidence-driven six-step progress for configured/manual orders, Members and
+  administrators, current kit supply, partial allocations/matches/inserts/sends,
+  unknown data, cancellation/holds and nonvoid insert requirements. The horizontal
+  icon sequence keeps short labels, completion checks and the current highlight.
+  Detailed hover/focus panels retain purpose, saved evidence and status; completed
+  steps do not infer the actor. Icons do not navigate; the next-step button opens
+  the required work. Shipping insert review, confirmation, printing and packing
+  are part of Send; only recorded dispatch completes Send. Single-shipment labels/reminders require a complete one-container
+  family; multiple/unknown scopes preserve counts and remaining work. Opening
+  print never supplies a physical-print completion fact.
+- `LabJobSamplesPanel`: ten-sample pagination across biological-source groups,
+  natural order, continued headings, whole-family saved match and receipt counts,
+  embedded rendering, restored page and preserved edit/finalization permissions.
+- `SampleTubeScanner`: eight-slot paging, whole-container totals, active target
+  and draft preserved while browsing, return-to-active, pending save lock,
+  successful boundary advancement/focus and failed-save retention.
+- `LabJobShippingWorkspace`, `LabJobWorkspaceActions` and search validation:
+  single and deliberate multiple selection, malformed/foreign/retired selection,
+  permission-aware commands retained in Samples view, loading/retry behavior,
+  combined/direct commands and controlled navigation without scope substitution.
+  Existing quote download, expiry/extension, invoice capability and decision-dialog
+  assertions follow the combined header menu while preserving domain checks.
+  Busy/status feedback and disabled-command descriptions remain accessible.
+- Shared shipment controller and packing/reset/location return: Lab Job source
+  validation, embedded print without navigation, refreshed post-save selection,
+  pending/dirty guards, and preserved standalone Trial/staff entry points.
+
+The approved next-step print follow-up also requires focused coverage for:
+
+- **Send** with a ready current insert offers **Print shipping insert** directly
+  in **Your next step**. Missing or invalid current inserts retain the existing
+  review/confirmation prerequisites and cannot skip to print or dispatch.
+- Returning from print presents explicit printed-and-packed confirmation.
+  Opening, closing or cancelling print, dismissing the confirmation, and print or
+  revision-validation errors never acknowledge success. Only an explicit user
+  acknowledgement changes the card's action to **Record shipment**; this neither
+  completes Send nor invokes a dispatch/receipt API. Reprint remains in Actions.
+- Acknowledgement persists only for the same browser tab, signed-in user, active
+  organization, shipment, insert ID and revision. Reload of that scope may retain
+  it; another tab/user/organization/shipment or changed insert revision must not
+  inherit it. Unavailable storage or incomplete identity cannot manufacture it.
+- A sole eligible container retains automatic selection. With multiple containers,
+  print and record commands require the deliberate selected current container,
+  never the first array element or first unacknowledged shipment. Existing role,
+  pending-write, current-version and full-shipment action gates remain in force.
+
+These added requirements are not a report of executed tests or physical printing.
+
+Static frontend checks are recorded in the owning
+[workspace plan](LAB-JOB-PROGRESS-AND-SHIPPING-WORKSPACE-PLAN.md) and saved run.
+Assertions were added/updated but automated suites were **not run** at this
+checkpoint. Do not treat those cases as passing execution evidence.
+
+## Sample receipt in the Lab Job roster — September 10, 2026
+
+The accepted bounded follow-up adds **Receipt: X of N tubes received** to each
+finalized Lab Job sample row, separately from lab status, accession and review
+reason. It uses the server's per-specimen total/received values across the
+shipment family. Repeated values from split tube slots must not be summed.
+The roster and shipment summary share organization, Department, source and
+capability scoping. Missing counters or failed/loading reads must not manufacture
+a zero: show **Receipt: Checking…** while loading and **Receipt: Not available**
+when the count cannot be shown.
+
+The Lab Job removes its duplicate **Sample receipt progress** disclosure from
+Related shipments; the Trial context keeps its disclosure because it has no
+consolidated Lab Job roster. Retired configurations are hidden from external
+shipping panels, while staff retain their history disclosure and the underlying
+records/audit history remain intact.
+
+Existing component assertions now distinguish a sample's declared tube quantity
+and workflow status from actual received counts, repeated split-shipment values,
+source/specimen identity, unknown/error states versus an explicit zero, Lab Job
+versus Trial disclosure, and external versus staff history. They also cover
+shared-query request reuse. The full frontend TypeScript check, scoped ESLint
+and documentation freshness/whitespace checks passed. No automated suite ran;
+the updated assertions and browser acceptance remain unexecuted.
+The separate broad order-progress checklist and shipping-consolidation request
+remains planning work and is not implemented by this refinement.
+
+## Related-shipment navigation presentation — September 10, 2026
+
+Active `RelatedSampleShipments` navigation now uses prominent primary-style
+buttons while retaining link destinations and permissions. Existing external
+assertions use **Open shipment** instead of **Open shipment, tubes and packet**;
+pool **Choose containers** and staff **Open Lab shipping** labels remain unchanged.
+No new cases or suite run are added for this presentation change. Existing
+source filtering, exhausted-pool, receipt-data and retired-history coverage stays
+in place. At this navigation-only checkpoint, receipt consolidation and hidden
+external retired configurations were proposed follow-up work. Their subsequently
+accepted bounded implementation is tracked above.
+Scoped ESLint and the full frontend TypeScript check passed. No live browser
+navigation was performed for this refinement.
+
 ## Location inventory correction — September 9, 2026
 
 Customer implementation of the [revised workflow](TRANSPORTATION-KIT-LOCATION-INVENTORY-PLAN.md)
@@ -1550,3 +1678,126 @@ Final additions at implementation freeze:
 - `ExternalOrderDecisionDialogs.test.tsx` (**10 parameterized cases**) covers two scenarios across five dialogs: Customer Lab cancellation, Partner Assembly cancellation, Partner Reagent cancellation, Customer Lab quote acceptance and Partner Assembly quote acceptance. Dirty drafts survive declined Close, footer dismissal, Escape and navigation; browser reload protection is checked through the before-unload guard. Confirmed discard resets entries. Pending requests prevent duplicate submission, editing and dismissal; failed requests retain entries and a successful mocked retry closes the dialog and clears navigation protection.
 
 See [the second-pass tracker](PORTAL-POMS-CONSISTENCY-SECOND-PASS-2026-09-07.md) for source and verification status. These suites are authored and **have not been run**. Static checks and direct browser observations are separate evidence; this entry claims no final verification or deployment. Synthetic component coverage does not establish populated Customer/Partner, financial or physical laboratory acceptance.
+
+### Final unified-workspace validation - September 10, 2026
+
+104 tests passed across 10 focused frontend suites; full TypeScript, scoped lint,
+documentation freshness (56 guides, corpus `c43fb0c27b35`) and whitespace passed.
+Signed-in DOM/accessibility checks confirmed the quote-heading actions and
+source counts on 69SJN4PA, the combined 18/18 sample list on HS5Y7DB7, stage-relevant
+section visibility, keyboard disclosures, and light/dark narrow-layout bounds.
+Screenshot capture timed out; screenshot-based visual review and physical
+printing/packing/dispatch/receipt remain separate pending gates. No operational
+records, Git state, deployment or database schema was changed by these checks.
+See the [walkthrough record](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md).
+
+### Kit-order dialog spacing — September 10, 2026
+
+The existing deep-link panel assertion excludes the dialog when checking that the background Transportation kits panel remains hidden; the dialog now has its own Transportation kits section heading. Existing ordering, adjustments, validation and pending-state tests remain the verification scope.
+
+Verification: all 32 transportation-kit tests and scoped ESLint passed. The open dialog accessibility tree confirmed the selected delivery location and separate kit heading/actions; the owner closed the dialog before the screenshot check, so final visual acceptance remains with the next opening. Whitespace checks passed.
+
+## Lab shipping and receiving tabs — September 10, 2026
+
+Verify Kit requests, Prepare kits, Kits sent and Receive samples as
+separate visible panels. Cover capability-aware defaults, shipment-specific
+legacy links, valid/invalid tab parsing, lazy hidden queues, preserved scanner
+drafts and unchanged packet/tube continuation. Exercise keyboard arrows, narrow
+layouts, browser Back/Forward and refresh. Request and stock filters/pages must
+survive tab changes and record detail return links. Existing kit fulfillment,
+stock registration, receiving and location navigation suites remain applicable;
+do not dispatch kits or record receipt merely to test navigation.
+
+Verification: 41 focused tests across six suites passed, along with frontend
+TypeScript, scoped ESLint, documentation generation/freshness (56 guides) and
+whitespace checks. Signed-in local browser checks confirmed one visible panel,
+request/stock filter retention, kit detail return, browser Back, refresh and
+keyboard-arrow selection. At a 390 CSS-pixel viewport the tab strip scrolls within
+the page with no horizontal page overflow. Screenshot capture timed out, so this
+records DOM/accessibility and measured reflow evidence, not screenshot review.
+The temporary review tab was closed and viewport restored; no operational writes,
+commit or deployment were performed.
+
+## Kit request next action — September 10, 2026
+
+The owner approved replacing ambiguous Fulfill request / Open standard kits
+controls with a state-based next step. Zero matching ready stock makes Prepare
+kits primary and hides shipment entry. Preparation opens the existing guarded
+stock form for missing requested sizes and returns through the created kit for
+tube registration to the originating request. Matching ready stock exposes
+Record kit shipment; shortages remain separately actionable and partial shipment
+is retained. Missing quantities subtract ready stock as well as previous dispatch.
+Closed requests expose neither action; stale request errors block new actions.
+Existing dispatch concurrency, idempotency and saved-draft checks remain in scope.
+
+Verification: all 23 focused request and stock-kit tests passed, plus frontend
+TypeScript, scoped ESLint, docs generation/freshness (56 guides) and whitespace
+checks. The signed-in local request showed Prepare kits, the missing one 10-tube
+and one 20-tube kit, and no shipment action for zero ready stock. Opening Prepare
+kits offered exactly those two sizes; the form was cancelled without saving.
+Preparation-to-registration return context, partial-stock shipment and dispatch
+retry/draft protections are covered by automated tests. No stock or shipment was
+created during browser verification; no commit or deployment.
+
+### Sent-shipment insert reprint follow-up — September 10, 2026
+
+Manual acceptance pending: choose among sent containers from the Job, use the visible Reprint shipping insert action, verify the current nonvoid revision, cancel printing and check focus returns to the initiating button. Confirm permitted readers retain access and no insert issuance, dispatch, receipt or printed-and-packed acknowledgement occurs for a sent shipment. Missing or void inserts must not show the new action. Automated suites and physical printing were not requested for this follow-up.
+
+### Receiving barcode clarity — September 10, 2026
+
+Receive samples now directs staff to the PH-P- barcode at the top right of the existing shipping insert. The field is labeled Shipping insert barcode, with an explicit complete-code instruction. Expandable guidance distinguishes PH-S- shipment barcodes from SHP shipment references, PH-O-/PH-M- lookups, and physical KIT-/tube barcodes. The printed insert and accepted barcode behavior remain unchanged. Existing receiving test selectors follow the new accessible label. Static checks cover this wording change; automated suites and physical scanner acceptance remain unrun.
+
+### Container receipt and accession separation — September 10, 2026
+
+Regression coverage: each expected container has its own tracking row; PH-P- receiving is an explicit write; repeat scans preserve one receipt/event; unrelated identifiers and void/cancelled inserts cannot receive; container arrival leaves tubes unaccessioned; Accession samples uses read-only lookup and individually saves tube accession. Verify queue movement, permissions, multi-container Jobs, missing tracking, retry, tab navigation and final-tube removal. Backend reference journey and frontend navigation assertions updated; automated suites are unrun by request scope. Manual browser and physical scanner acceptance remain pending. No real shipment is received merely to verify this feature.
+
+Verification: solution build passed with zero warnings/errors using a separate output folder because Visual Studio/IIS Express held the normal output files. Frontend TypeScript, scoped ESLint, documentation freshness (56 guides) and whitespace passed. Read-only signed-in local browser inspection confirmed the separate tabs, two expected container rows with distinct tracking numbers for 69SJN4PA, and a received HS5Y7DB7 container showing 0/18 tubes accessioned. Desktop screenshot review passed. The agent did not submit receipt or accession. Automated suites, narrow/dark layouts, physical scanner and completed tube-accession acceptance remain unrun. The existing shipping insert files have no additional working-tree diff from this work.
+
+## Container accession loop — 2026-09-10
+
+Coverage: PH-P opens complete container modal; each tube opens required freezer-box prompt; no accession before valid save; progress and scan focus repeat until completion; wrong tube blocked; same-tube/same-box replay creates one container/event; different-box replay rejected. Component and PostgreSQL coverage updated. Automated suites not run (not requested). Physical scanner, nested-modal keyboard behavior, partial resume and populated save journey remain manual acceptance gates.
+
+
+### Minimal receiving sheet - September 10, 2026
+
+Supersedes previous top-right barcode and full-manifest print assertions. Check
+one receiving sheet per container, PH-P target in the body, 20 mm bar height,
+separate container target with 14 mm block gap, readable identifiers and quiet
+zones, frozen sample/tube counts and retained full Portal instructions/crosswalk.
+`SampleShippingPacketPage.test.tsx` covers current-revision refusal, frozen split
+counts, legacy identities and the minimal sheet/full-detail separation.
+`ShippingInsertPrintFrame.test.tsx` covers validated identity, print return and
+changed-document refusal; iframe cleanup now removes its portal first.
+`shipping-insert-print.spec.ts` checks keyboard disclosure, desktop/mobile
+bounds, print-only suppression, barcode spacing, and Letter/A4 PDF artifacts
+using a synthetic 10-sample/20-tube fixture. Physical scanning, paper output and
+populated production receipt remain separate acceptance gates.
+
+
+### QR rendering update - September 10, 2026
+
+The owner requested all Portal-generated barcode graphics use QR codes and
+spacing be adjusted accordingly. This supersedes older Code 39/128 rendering
+and linear-size assertions. Shipping inserts use 32 mm squares with four-module
+quiet zones and a 14 mm gap between target blocks; ordinary displays and stock
+kit prints use 28 mm squares. Lab labels keep 50 x 25 mm stock with an 18 mm QR
+and rearranged human-readable identity/context. Values, checksum normalization,
+manufacturer labels, receipt and accession semantics remain unchanged. No new
+label or successful print is recorded merely by rendering the QR.
+
+Verify exact decoding (including case/underscore), square undistorted rendering,
+quiet zones, current-revision checks, frozen manifests, Letter/A4 one-page
+receiving output and the lab-label print boundary. Preserve the full manifest
+and preparation guidance in the Portal. Physical 2D scanner, printer/stock and
+handling acceptance remain explicit gates; former Code 39-only hardware proof
+cannot establish QR compatibility. The shared renderer is pinned qrcode.react
+4.2.0; no backend model or migration change is required.
+
+
+Release checkpoint (September 10): 87 focused backend cases pass in an isolated
+PostgreSQL database; 315 frontend cases pass across 30 affected suites. Four
+focused browser print checks pass with two intentional mobile-label skips.
+Letter/A4 receiving sheets and 50 x 25 mm lab label output were visually reviewed
+and independently QR-decoded. See
+[release evidence](PORTAL-LAB-PROGRESS-RELEASE-2026-09-10.md) for local fixture
+failures, artifacts and outstanding physical/production acceptance gates.

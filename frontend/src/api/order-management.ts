@@ -16,7 +16,16 @@ export type PagedResult<T> = {
   totalCount: number;
 };
 
+export type LabCustomerProgress = {
+  currentStage: string;
+  jobStage: string | null;
+  hasContainerReceipt: boolean;
+  counts: Array<{ stage: string; count: number }>;
+  samples: Array<{ sampleId: string; stage: string }>;
+};
+
 export type OrderListItem = {
+  laboratoryProgress?: LabCustomerProgress | null;
   id: string;
   number: string;
   status: string;
@@ -244,6 +253,7 @@ export type LabRequestRevision = {
 };
 
 export type LabServiceOrder = {
+  laboratoryProgress?: LabCustomerProgress | null;
   entryMode?: 'ManualQuote' | 'ConfiguredDirect' | 'SalesAssisted';
   standardCommercialSnapshot?: LabServiceCommercialSnapshot | null;
   canPlaceStandardOrder?: boolean;

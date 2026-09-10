@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { Undo2 } from 'lucide-react'
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { apiErrorMessage } from '#/api/organization-management'
 import { getSampleShipmentPackingReset, resetSampleShipmentPacking, type SampleShipmentPackingReset, type SampleShipmentWorkflow } from '#/api/sample-shipping'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
@@ -11,12 +11,15 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 const scanBlockedReason = 'Finish or discard the current tube scan before changing containers.'
 const issuedInsertBlockedReason = 'Containers cannot be changed because a shipping insert has already been issued for this job.'
 
-export function SampleShipmentResetPacking({ shipment, canManage, scanActive = false, writesBlocked = false }: { shipment: SampleShipmentWorkflow; canManage: boolean; scanActive?: boolean; writesBlocked?: boolean }) {
+export function SampleShipmentResetPacking({ shipment, canManage, scanActive = false, writesBlocked = false, onSelectShipment, onActivityChange }: { shipment: SampleShipmentWorkflow; canManage: boolean; scanActive?: boolean; writesBlocked?: boolean; onSelectShipment?: (id: string) => Promise<void>; onActivityChange?: (active: boolean) => void }) {
   const client = useQueryClient()
   const navigate = useNavigate()
   const reasonId = useId()
   const submitting = useRef(false)
   const [review, setReview] = useState<SampleShipmentPackingReset | null>(null)
+  const active = Boolean(review)
+  useEffect(() => { onActivityChange?.(active) }, [active, onActivityChange])
+  useEffect(() => () => { onActivityChange?.(false) }, [onActivityChange])
   const eligibility = useQuery({
     queryKey: ['sample-shipment-packing-reset', shipment.id, shipment.version, shipment.crosswalk.filter(item => item.supplierTubeBarcode).length],
     queryFn: () => getSampleShipmentPackingReset(shipment.id),
@@ -32,7 +35,8 @@ export function SampleShipmentResetPacking({ shipment, canManage, scanActive = f
         client.invalidateQueries({ queryKey: ['lab-service-order', shipment.authorizationSourceId] }),
         client.invalidateQueries({ queryKey: ['trial-project', shipment.authorizationSourceId] }),
       ])
-      await navigate({ to: '/sample-shipping/$shipmentId', params: { shipmentId: pool.id } })
+      if (onSelectShipment) await onSelectShipment(pool.id)
+      else await navigate({ to: '/sample-shipping/$shipmentId', params: { shipmentId: pool.id } })
     },
     onError: async () => { await eligibility.refetch() },
     onSettled: () => { submitting.current = false },

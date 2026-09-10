@@ -22,7 +22,7 @@ export function KitRequestDispatchDialog({ detail, refreshError, onRetryRefresh,
   const { request, availableStockKits } = detail
   const attempt = useRef<{ fingerprint: string; key: string } | null>(null)
   const schema = baseSchema.superRefine((values, context) => {
-    if (values.stockKitIds.some(id => !availableStockKits.some(kit => kit.id === id))) context.addIssue({ code: 'custom', path: ['stockKitIds'], message: 'A selected kit is no longer available. Reopen fulfillment to review the current stock.' })
+    if (values.stockKitIds.some(id => !availableStockKits.some(kit => kit.id === id))) context.addIssue({ code: 'custom', path: ['stockKitIds'], message: 'A selected kit is no longer available. Reopen Record kit shipment to review the current stock.' })
     for (const line of request.lines) {
       const count = values.stockKitIds.filter(id => availableStockKits.some(kit => kit.id === id && kit.containerDefinitionId === line.containerDefinitionId)).length
       if (count > line.requestedQuantity - line.dispatchedQuantity) context.addIssue({ code: 'custom', path: ['stockKitIds'], message: `Select no more than ${line.requestedQuantity - line.dispatchedQuantity} remaining ${line.commonName} kits.` })
@@ -41,7 +41,7 @@ export function KitRequestDispatchDialog({ detail, refreshError, onRetryRefresh,
   const dirty = form.formState.isDirty, allowNavigation = useOrderDraftGuard(dirty, mutation.isPending), errors = form.formState.errors
   function close() { if (!mutation.isPending && (!dirty || window.confirm('Discard the unsaved kit-dispatch details?'))) onClose() }
   function input(name: 'outboundCarrier' | 'outboundTrackingNumber' | 'fulfilledAt', label: string, type = 'text') { return <DispatchField id={`request-${name}`} label={label} error={errors[name]?.message}><Input id={`request-${name}`} type={type} disabled={mutation.isPending} aria-invalid={Boolean(errors[name])} aria-describedby={errors[name] ? `request-${name}-error` : undefined} {...form.register(name)} /></DispatchField> }
-  return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent className="max-w-xl"><DialogHeader><DialogTitle>Fulfill kit request</DialogTitle><DialogDescription>{request.organizationName} · {request.departmentName}. Select the registered physical kits being delivered to {request.deliveryAddress.label}.</DialogDescription></DialogHeader>
+  return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent className="max-w-xl"><DialogHeader><DialogTitle>Record kit shipment</DialogTitle><DialogDescription>{request.organizationName} · {request.departmentName}. Select the registered physical kits being delivered to {request.deliveryAddress.label}.</DialogDescription></DialogHeader>
     {mutation.error ? <Alert variant="destructive"><AlertTitle>Dispatch was not recorded</AlertTitle><AlertDescription>{getOrderErrorMessage(mutation.error, 'Review the kits and try again.')}</AlertDescription></Alert> : null}
     {refreshError ? <Alert variant="destructive"><AlertTitle>Request refresh failed</AlertTitle><AlertDescription>Your entries are retained. Refresh the request before recording dispatch. {onRetryRefresh ? <Button variant="outline" size="sm" disabled={mutation.isPending} onClick={onRetryRefresh}>Retry request check</Button> : null}</AlertDescription></Alert> : null}
     <form id="kit-request-dispatch" className="space-y-4" onSubmit={form.handleSubmit(values => mutation.mutate(values))}>
@@ -57,7 +57,7 @@ export function KitRequestDispatchDialog({ detail, refreshError, onRetryRefresh,
       <div className="grid gap-4 sm:grid-cols-2">{input('outboundCarrier', 'Carrier')}{input('outboundTrackingNumber', 'Tracking number')}</div>{input('fulfilledAt', 'Dispatched at', 'datetime-local')}
       <p className="text-xs text-muted-foreground">{selected.length} {selected.length === 1 ? 'kit' : 'kits'} selected. Kits and outbound shipping are included; no additional charge.</p>
     </form>
-    <RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button form="kit-request-dispatch" type="submit" disabled={mutation.isPending || !detail.canDispatch || Boolean(refreshError)}>{mutation.isPending ? 'Recording…' : 'Record dispatch'}</Button></RequiredDialogFooter>
+    <RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button form="kit-request-dispatch" type="submit" disabled={mutation.isPending || !detail.canDispatch || Boolean(refreshError)}>{mutation.isPending ? 'Recording…' : 'Record kit shipment'}</Button></RequiredDialogFooter>
   </DialogContent></Dialog>
 }
 function DispatchField({ id, label, error, children }: { id: string; label: string; error?: string; children: ReactNode }) { return <div className="min-w-0 space-y-2"><Label htmlFor={id}><RequiredFieldName>{label}</RequiredFieldName></Label>{children}{error ? <p id={`${id}-error`} role="alert" className="text-xs text-destructive">{error}</p> : null}</div> }

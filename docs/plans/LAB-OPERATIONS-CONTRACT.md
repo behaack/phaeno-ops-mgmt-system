@@ -384,6 +384,10 @@ operations.
 
 ## Stable Work Projection
 
+September 10 intake correction: internal durable events also carry a safe intake snapshot (physical receipt present, submitted-specimen ID, actual receipt timestamp, accession ID after all expected tubes are accessioned, and operator for audit). Commercial applies it only with a newer projection version and the matching work authorization/organization. Storage, receipt notes and scientific acceptance stay in Lab. The public provider projection and milestones below remain unchanged.
+
+September 10 customer stages: the approved Customer/Partner list/detail enhancement adds an optional `laboratoryProgress` summary through `LabCustomerProgressService`. This internal read boundary joins only already-authorized Commercial orders to their matching organization/authorization/Lab work, and exposes current stage keys, counts and scoped sample IDs. It reads recorded preparation, sendout and output evidence without returning execution details, storage, provider details or internal QC. This does not change `ILabOperationsProvider`, command/event versions, durable projections or persisted milestones; a replacement provider must supply equivalent safe stage facts before detailed progress can be shown. List responses omit sample IDs; detail responses include them for the authorized roster. Stage availability never authorizes result access.
+
 Commercial Operations stores or refreshes a projection sufficient for customer
 experience, communication, CRM summary, and reconciliation. It is not a
 copy of the Lab execution ledger.

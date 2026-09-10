@@ -128,6 +128,7 @@ public sealed partial class LabOperationsController
             : Enum.Parse<LabScheduleHealth>(work.ScheduleHealth(DateTime.UtcNow));
         var customerSummary = customerActions.OrderBy(item => item.CreatedAt)
             .Select(item => item.CustomerSafeSummary).FirstOrDefault();
+        var intake = await LabIntakeProgress.ReadAsync(dbContext, work, cancellationToken);
         var payload = JsonSerializer.Serialize(new
         {
             authorizationVersion = work.CurrentAuthorizationVersion,
@@ -138,7 +139,9 @@ public sealed partial class LabOperationsController
             customerSafeSummary = customerSummary,
             permittedQcProjectionJson,
             scientificApprovalId,
-            resultOutputPackageId
+            resultOutputPackageId,
+            actorUserId,
+            intake
         }, JsonOptions);
         dbContext.LabOperationsOutboxEvents.Add(new LabOperationsOutboxEvent(
             Guid.NewGuid(), work.AuthorizationId, work.Id, work.ProjectionVersion,
@@ -152,6 +155,17 @@ public sealed partial class LabOperationsController
                 && value.OrganizationId == work.SubmittingOrganizationId, cancellationToken);
             summary?.SetSchedule(expectedCompletionAtUtc ?? work.ExpectedCompletionAtUtc, scheduleHealth.ToString(), DateTime.UtcNow);
         }
+    }
+
+    private async Task PublishIntakeProgressAsync(LabWorkOrder work, Guid actorUserId,
+        CancellationToken cancellationToken)
+    {
+        if (work.Status is LabWorkOrderStatus.Cancelled or LabWorkOrderStatus.ReadyForRelease) return;
+        if (work.Status == LabWorkOrderStatus.AwaitingSpecimens)
+            work.RecordMilestone(LabWorkOrderStatus.Received);
+        else work.AdvanceProjectionVersion();
+        await EmitProjectionAsync(work, actorUserId, "IntakeProgressUpdated", cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private async Task<List<LabProtocolDto>> ReadProtocolsAsync(CancellationToken cancellationToken)
