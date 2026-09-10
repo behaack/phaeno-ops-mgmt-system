@@ -1,0 +1,101 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="e8cf1aed-20c9-4418-9a8c-5ae965e3a0be" name="bhaac@HAACK-DESKTOP 2026-09-10 11:40:48" runUser="HAACK-DESKTOP\bhaac" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-09-10T11:40:48.8256794-07:00" queuing="2026-09-10T11:40:48.8256799-07:00" start="2026-09-10T11:40:42.5537117-07:00" finish="2026-09-10T11:40:50.6475435-07:00" />
+  <TestSettings name="default" id="30cdab91-d5f3-4e07-8a41-e242e8338ca7">
+    <Deployment runDeploymentRoot="bhaac_HAACK-DESKTOP_2026-09-10_11_40_48" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="3b70b4ab-4545-4ba8-98df-33fa75617a76" testId="17e22afa-07c8-520f-a00d-18229d571f60" testName="PhaenoPortal.Test.QuotePdfRendererTests.IssuedQuoteHasBrandingSavedAmountsAndNoInventedTaxOrBillingTerms" computerName="HAACK-DESKTOP" duration="00:00:00.0651470" startTime="2026-09-10T11:40:49.8768109-07:00" endTime="2026-09-10T11:40:49.9410175-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3b70b4ab-4545-4ba8-98df-33fa75617a76" />
+    <UnitTestResult executionId="6db142f6-43dc-498e-8ecc-28bde8440ddb" testId="ef3fc2a1-1319-c0c4-dfb1-017ef5c8474f" testName="PhaenoPortal.Test.QuotePdfRendererTests.UnsupportedCharactersFailClearlyInsteadOfChangingTheCustomerName" computerName="HAACK-DESKTOP" duration="00:00:01.1476554" startTime="2026-09-10T11:40:47.2957111-07:00" endTime="2026-09-10T11:40:48.4145506-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6db142f6-43dc-498e-8ecc-28bde8440ddb" />
+    <UnitTestResult executionId="a52a70af-b687-46fc-b0a7-2cf265bf9321" testId="2be19ba0-8bec-6166-b9f8-fb2ed1570f53" testName="PhaenoPortal.Test.QuotePdfRendererTests.ManySourcesAndAnOversizedSourceWrapAndRepeatScopeHeadersWithoutClipping" computerName="HAACK-DESKTOP" duration="00:00:00.3598535" startTime="2026-09-10T11:40:50.2125207-07:00" endTime="2026-09-10T11:40:50.5710310-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a52a70af-b687-46fc-b0a7-2cf265bf9321" />
+    <UnitTestResult executionId="7df741ca-88b9-4729-b4c0-55cc8cd5ed3b" testId="2c8e5b39-b5aa-84a1-acce-025a02a96674" testName="PhaenoPortal.Test.QuotePdfRendererTests.HistoricalStatusIsVisible(status: &quot;Expired&quot;)" computerName="HAACK-DESKTOP" duration="00:00:00.0614225" startTime="2026-09-10T11:40:50.0906907-07:00" endTime="2026-09-10T11:40:50.1519391-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7df741ca-88b9-4729-b4c0-55cc8cd5ed3b" />
+    <UnitTestResult executionId="64db8a3c-23f3-47f8-b19c-bf9a4831b5c5" testId="bf7fb7f5-d7ff-0f72-1b89-0ee6a7453079" testName="PhaenoPortal.Test.QuotePdfRendererTests.SampleScopeShowsBiologicalSourcesAndCountsAlongsideSavedPrices" computerName="HAACK-DESKTOP" duration="00:00:00.0661805" startTime="2026-09-10T11:40:49.9413772-07:00" endTime="2026-09-10T11:40:50.0154038-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="64db8a3c-23f3-47f8-b19c-bf9a4831b5c5">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.Contains() Failure: Sub-string not found&#xD;
+String:    "QUOTERevision 1 | IssuedPREPARED FORJohns"···&#xD;
+Not found: "Heart - adfgadgsdfg4"</Message>
+          <StackTrace>   at PhaenoPortal.Test.QuotePdfRendererTests.SampleScopeShowsBiologicalSourcesAndCountsAlongsideSavedPrices() in D:\__dev\phaeno-portal\backend\test\QuotePdfRendererTests.cs:line 136&#xD;
+   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)&#xD;
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)&#xD;
+   at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="2f42ce4b-9262-4337-a15f-22ece15489f6" testId="7c4617f6-5262-6e76-1d4b-8a88ae6c156c" testName="PhaenoPortal.Test.QuotePdfRendererTests.LongDescriptionsAndManyLinesPaginateWithRepeatedHeadersAndNoClippedText" computerName="HAACK-DESKTOP" duration="00:00:01.4608406" startTime="2026-09-10T11:40:48.4291908-07:00" endTime="2026-09-10T11:40:49.8758163-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2f42ce4b-9262-4337-a15f-22ece15489f6" />
+    <UnitTestResult executionId="5d132d43-fbd2-44ef-aaf2-4a87b4cfa8f0" testId="e0cc1f93-6266-bfd8-16d4-6bba100fcc6f" testName="PhaenoPortal.Test.QuotePdfRendererTests.DeterminedTaxAndAcceptedSnapshotKeepStoredTotalsAndDecimalPrecision" computerName="HAACK-DESKTOP" duration="00:00:00.0755326" startTime="2026-09-10T11:40:50.0233043-07:00" endTime="2026-09-10T11:40:50.0903302-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5d132d43-fbd2-44ef-aaf2-4a87b4cfa8f0" />
+    <UnitTestResult executionId="b7ef0494-f860-4eae-a61b-4a07cb95711d" testId="15a9f86c-8e79-100b-2ee9-9ad00912059f" testName="PhaenoPortal.Test.QuotePdfRendererTests.HistoricalStatusIsVisible(status: &quot;Superseded&quot;)" computerName="HAACK-DESKTOP" duration="00:00:00.0589255" startTime="2026-09-10T11:40:50.1522092-07:00" endTime="2026-09-10T11:40:50.2121858-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b7ef0494-f860-4eae-a61b-4a07cb95711d" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="PhaenoPortal.Test.QuotePdfRendererTests.HistoricalStatusIsVisible(status: &quot;Expired&quot;)" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="2c8e5b39-b5aa-84a1-acce-025a02a96674">
+      <Execution id="7df741ca-88b9-4729-b4c0-55cc8cd5ed3b" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.QuotePdfRendererTests" name="HistoricalStatusIsVisible" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.QuotePdfRendererTests.SampleScopeShowsBiologicalSourcesAndCountsAlongsideSavedPrices" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="bf7fb7f5-d7ff-0f72-1b89-0ee6a7453079">
+      <Execution id="64db8a3c-23f3-47f8-b19c-bf9a4831b5c5" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.QuotePdfRendererTests" name="SampleScopeShowsBiologicalSourcesAndCountsAlongsideSavedPrices" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.QuotePdfRendererTests.LongDescriptionsAndManyLinesPaginateWithRepeatedHeadersAndNoClippedText" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="7c4617f6-5262-6e76-1d4b-8a88ae6c156c">
+      <Execution id="2f42ce4b-9262-4337-a15f-22ece15489f6" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.QuotePdfRendererTests" name="LongDescriptionsAndManyLinesPaginateWithRepeatedHeadersAndNoClippedText" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.QuotePdfRendererTests.ManySourcesAndAnOversizedSourceWrapAndRepeatScopeHeadersWithoutClipping" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="2be19ba0-8bec-6166-b9f8-fb2ed1570f53">
+      <Execution id="a52a70af-b687-46fc-b0a7-2cf265bf9321" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.QuotePdfRendererTests" name="ManySourcesAndAnOversizedSourceWrapAndRepeatScopeHeadersWithoutClipping" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.QuotePdfRendererTests.UnsupportedCharactersFailClearlyInsteadOfChangingTheCustomerName" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="ef3fc2a1-1319-c0c4-dfb1-017ef5c8474f">
+      <Execution id="6db142f6-43dc-498e-8ecc-28bde8440ddb" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.QuotePdfRendererTests" name="UnsupportedCharactersFailClearlyInsteadOfChangingTheCustomerName" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.QuotePdfRendererTests.IssuedQuoteHasBrandingSavedAmountsAndNoInventedTaxOrBillingTerms" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="17e22afa-07c8-520f-a00d-18229d571f60">
+      <Execution id="3b70b4ab-4545-4ba8-98df-33fa75617a76" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.QuotePdfRendererTests" name="IssuedQuoteHasBrandingSavedAmountsAndNoInventedTaxOrBillingTerms" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.QuotePdfRendererTests.HistoricalStatusIsVisible(status: &quot;Superseded&quot;)" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="15a9f86c-8e79-100b-2ee9-9ad00912059f">
+      <Execution id="b7ef0494-f860-4eae-a61b-4a07cb95711d" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.QuotePdfRendererTests" name="HistoricalStatusIsVisible" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.QuotePdfRendererTests.DeterminedTaxAndAcceptedSnapshotKeepStoredTotalsAndDecimalPrecision" storage="d:\__dev\phaeno-portal\backend\test\bin\debug\net10.0\pseq.operations.test.dll" id="e0cc1f93-6266-bfd8-16d4-6bba100fcc6f">
+      <Execution id="5d132d43-fbd2-44ef-aaf2-4a87b4cfa8f0" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\Debug\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.QuotePdfRendererTests" name="DeterminedTaxAndAcceptedSnapshotKeepStoredTotalsAndDecimalPrecision" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="17e22afa-07c8-520f-a00d-18229d571f60" executionId="3b70b4ab-4545-4ba8-98df-33fa75617a76" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ef3fc2a1-1319-c0c4-dfb1-017ef5c8474f" executionId="6db142f6-43dc-498e-8ecc-28bde8440ddb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2be19ba0-8bec-6166-b9f8-fb2ed1570f53" executionId="a52a70af-b687-46fc-b0a7-2cf265bf9321" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2c8e5b39-b5aa-84a1-acce-025a02a96674" executionId="7df741ca-88b9-4729-b4c0-55cc8cd5ed3b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bf7fb7f5-d7ff-0f72-1b89-0ee6a7453079" executionId="64db8a3c-23f3-47f8-b19c-bf9a4831b5c5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7c4617f6-5262-6e76-1d4b-8a88ae6c156c" executionId="2f42ce4b-9262-4337-a15f-22ece15489f6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e0cc1f93-6266-bfd8-16d4-6bba100fcc6f" executionId="5d132d43-fbd2-44ef-aaf2-4a87b4cfa8f0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="15a9f86c-8e79-100b-2ee9-9ad00912059f" executionId="b7ef0494-f860-4eae-a61b-4a07cb95711d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="8" executed="8" passed="7" failed="1" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.11)&#xD;
+[xUnit.net 00:00:02.11]   Discovering: PSeq.Operations.Test&#xD;
+[xUnit.net 00:00:02.31]   Discovered:  PSeq.Operations.Test&#xD;
+[xUnit.net 00:00:02.36]   Starting:    PSeq.Operations.Test&#xD;
+[xUnit.net 00:00:05.16]       Assert.Contains() Failure: Sub-string not found&#xD;
+[xUnit.net 00:00:05.16]       String:    "QUOTERevision 1 | IssuedPREPARED FORJohns"···&#xD;
+[xUnit.net 00:00:05.16]       Not found: "Heart - adfgadgsdfg4"&#xD;
+[xUnit.net 00:00:05.16]       Stack Trace:&#xD;
+[xUnit.net 00:00:05.16]         D:\__dev\phaeno-portal\backend\test\QuotePdfRendererTests.cs(136,0): at PhaenoPortal.Test.QuotePdfRendererTests.SampleScopeShowsBiologicalSourcesAndCountsAlongsideSavedPrices()&#xD;
+[xUnit.net 00:00:05.16]            at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)&#xD;
+[xUnit.net 00:00:05.16]            at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)&#xD;
+[xUnit.net 00:00:05.16]            at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)&#xD;
+[xUnit.net 00:00:05.72]   Finished:    PSeq.Operations.Test&#xD;
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="HAACK-DESKTOP" outcome="Error" timestamp="2026-09-10T11:40:50.0188365-07:00">
+        <Text>[xUnit.net 00:00:05.16]     PhaenoPortal.Test.QuotePdfRendererTests.SampleScopeShowsBiologicalSourcesAndCountsAlongsideSavedPrices [FAIL]</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>
