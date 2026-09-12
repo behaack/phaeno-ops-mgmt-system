@@ -28,3 +28,25 @@ Forward changes retain existing records; no forward table/column deletion. Deplo
 - Selected frontend tests: initial 53 passed and two failures from an outdated test dashboard missing protocols; fixture corrected, focused rerun two passed. No product workaround added.
 - Previous signed-in UAT evidence: docs/testing/runs/2026-09-12-lab-14-preparation.md. Test-only package approval/denial/handoff is not production acceptance.
 - Production API/UI build, exact revision, migration backup and runtime health: pending deployment.
+
+## Production release completed — September 12, 2026
+
+Owner explicitly approved all seven production migrations after the commit/push request. Application source deployed: 5365a38015e8fd444b6e802b5e5345c1dbe6ab57 (Implement tray-based library preparation and governed lab workflow), on codex/portal-documentation-search-release.
+
+### API and database
+
+[GitHub deployment 34716138359](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/34716138359) completed successfully for that exact headSha. Inputs: apply_migrations=true; file storage/scanning Preserve; Clerk identity cutover=false. Production feature flags and identity policy were not changed to match the local UAT runtime.
+
+Backup verification logged backup_restore_check=PASS and encrypted dump/key checksums OK for pre-migration-20260912T201054Z-5365a38015e8. Encrypted backup is retained by the established server workflow under /var/backups/phaeno-portal-deploy. All seven listed migrations applied, ending at 20260911234552_AddLibraryPreparationBatches. The workflow reported deployment succeeded and source_revision=5365a38015e8fd444b6e802b5e5345c1dbe6ab57, then passed public dial-tone verification.
+
+### Portal UI
+
+Git-built preview dpl_5NLcNg7genzPVtCqfxbKf8tMgRYY was verified against the successful Vercel status on the exact commit. A separate local-upload attempt stalled before creating a production deployment and was stopped. After API success, the verified preview source was rebuilt with the production target using the Vercel CLI.
+
+Production deployment: [dpl_3EJvA2hr3qVj3H1eZCN8mhWeYkXv](https://vercel.com/cadexgenomics/phaeno-ops-mgmt-system/3EJvA2hr3qVj3H1eZCN8mhWeYkXv), Ready, aliased to https://portal.phaenobiotech.com. Deployment URL: https://phaeno-ops-mgmt-system-87a3wltkp-cadexgenomics.vercel.app. The Portal project alone was explicitly deployed; Git integration also produced automatic Website previews, but no public Website production promotion was requested or performed.
+
+### Runtime verification and remaining acceptance
+
+At approximately 20:13 UTC: Portal root returned HTTP 200 HTML; Portal /api/health proxy returned HTTP 200 and healthy; direct API /api/health returned HTTP 200; API /api/v1/web-ops/database-ping returned HTTP 204. Vercel inspection confirmed the production Portal alias targets the deployment above.
+
+No production operational records were created for UAT, no synthetic packages were published, and no local test accounts, credentials, databases or helper files were deployed. The uncommitted local search-index segment change remains excluded. Production signed-in workflow acceptance, real bench/device/provider/file-scanning acceptance and Customer publication remain separate gates; this release proof does not close them. Release-evidence documentation may be committed after the deployed application revision without requiring a second application rollout.

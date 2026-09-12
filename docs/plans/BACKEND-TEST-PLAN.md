@@ -1689,3 +1689,5 @@ September 12 signed-in supplement: actual UI/API approval on separate 3016/7116 
 September 12 HTTP/UI supplement: signed-in contributor approval rejected on separate synthetic LAB-06 work; real database before/after retains ScientificReview/version 1, ReadyForReview/version 1, one original event and zero approvals. Confirms enforced contributor guard through live request with overlapping reviewer/release roles. No new automated test or product change; full lineage/provider cases remain separate.
 
 September 12 release checkpoint: API Release build passed with zero warnings/errors; 66 selected laboratory domain tests passed, zero skipped. Production migration/deployment evidence belongs to LAB-WORKFLOW-RELEASE-2026-09-12.md.
+
+September 12 production release: source 5365a38 deployed by workflow 34716138359 with owner-approved seven migrations, encrypted-backup restore/checksum proof and API/database smoke checks passed. See LAB-WORKFLOW-RELEASE-2026-09-12.md for exact identities and remaining acceptance.
