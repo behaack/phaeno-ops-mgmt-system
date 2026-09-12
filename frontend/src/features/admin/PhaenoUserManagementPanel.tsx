@@ -46,7 +46,7 @@ import {
   DialogTitle,
 } from '#/components/ui/dialog'
 import {
-  DropdownMenu,
+  ActionMenu as DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
@@ -376,7 +376,7 @@ export function PhaenoUserManagementPanel({
                           <Ellipsis aria-hidden="true" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]">
                         <DropdownMenuItem
                           disabled={
                             invitationMutation.isPending ||

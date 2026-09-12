@@ -31,13 +31,37 @@ public sealed partial class LabOperationsController
             .SingleOrDefaultAsync(item => item.Id == executionId, cancellationToken) ?? throw Missing();
         EnsureVersion(execution.Version, request.Version);
         await RequireOpenExecutionWorkAsync(execution.LabWorkOrderId, cancellationToken);
+        var attempt = await RequireExecutionAttemptAsync(execution, cancellationToken);
         var protocol = await dbContext.LabProtocolVersions.AsNoTracking()
             .SingleAsync(item => item.Id == execution.LabProtocolVersionId, cancellationToken);
         var utcNow = DateTime.UtcNow;
+        if (request.Captures is null) throw Invalid("execution_captures_required", "Supply the captured values for this step.");
+        if (attempt is not null)
+        {
+            var definition = RequireProtocolDefinition(protocol.DefinitionJson);
+            var step = definition.Steps.SingleOrDefault(s => s.Key == request.StepKey);
+            var sourceBarcode = await dbContext.LabContainers.Where(t => t.Id == attempt.SourceContainerId)
+                .Select(t => t.Barcode).SingleAsync(cancellationToken);
+            foreach (var capture in step?.Captures.Where(c => c.Type == "barcode") ?? [])
+            {
+                if (!request.Captures.TryGetValue(capture.Key, out var value) || value.ValueKind != JsonValueKind.String) continue;
+                var barcode = value.GetString()?.Trim();
+                if (capture.SourceTube && barcode != sourceBarcode)
+                    throw Invalid("attempt_capture_mismatch", $"{capture.Label}: scan the selected source tube {sourceBarcode}.");
+                var container = await dbContext.LabContainers.AsNoTracking().SingleOrDefaultAsync(t => t.Barcode == barcode, cancellationToken);
+                if (container is not null) await RequireAttemptLineageAsync(container.Id, attempt, cancellationToken);
+            }
+        }
         Execute(() => execution.RecordStep(protocol,
             new(request.StepKey, request.Action, request.Outcome, request.Captures,
                 request.OperatorConfirmed, request.ResourcesConfirmed, request.QcOutcome, request.Reason),
             actor.User.Id, EffectiveExecutionRoles(actor), utcNow));
+        if (attempt is not null)
+        {
+            var work = await RequireWorkOrderAsync(execution.LabWorkOrderId, cancellationToken);
+            var specimen = await RequireSpecimenAsync(work.Id, attempt.LabSpecimenId, cancellationToken);
+            await RefreshAttemptOutcomeAsync(work, specimen, attempt, actor.User.Id, cancellationToken);
+        }
         var record = LabProtocolEvidence.Read(execution.CapturedResultsJson).Records.Last();
         dbContext.LabWorkEvents.Add(new LabWorkEvent(execution.LabWorkOrderId, execution.LabSpecimenId,
             "ExecutionStepRecorded", utcNow, actor.User.Id,
@@ -71,6 +95,11 @@ public sealed partial class LabOperationsController
             evidence = null;
             recoveryMessage = $"{exception.Message} Historical records remain unchanged. Ask a Protocol Administrator to create a valid new version for new work.";
         }
+        var attempt = execution.LabSpecimenAttemptId.HasValue
+            ? await dbContext.LabSpecimenAttempts.AsNoTracking().SingleAsync(a => a.Id == execution.LabSpecimenAttemptId, cancellationToken) : null;
+        var source = attempt is null ? null : await dbContext.LabContainers.AsNoTracking().SingleAsync(t => t.Id == attempt.SourceContainerId, cancellationToken);
+        var preparationBatchId = await dbContext.LabPreparationMembers.AsNoTracking().Where(m => m.LabSpecimenAttemptId == execution.LabSpecimenAttemptId && !m.Removed).Select(m => (Guid?)m.LabPreparationBatchId).SingleOrDefaultAsync(cancellationToken);
+        var attemptOpen = preparationBatchId is null && (attempt is null || (attempt.State is LabSpecimenAttemptState.Planned or LabSpecimenAttemptState.InProgress or LabSpecimenAttemptState.OnHold) && attempt.HoldReason is null);
         var roles = EffectiveExecutionRoles(actor);
         var canOperate = actor.HasAny(LabRole.Operator, LabRole.Supervisor);
         var active = execution.Status is LabExecutionStatus.InProgress or LabExecutionStatus.Blocked;
@@ -81,7 +110,7 @@ public sealed partial class LabOperationsController
             var prior = evidence?.Records.Where(record => record.StepKey == step.Key).ToList() ?? [];
             var precedingBlocker = definition.Steps.TakeWhile(item => item.Key != step.Key)
                 .Select(item => evidence?.StepBlocker(definition, item)).FirstOrDefault(value => value is not null);
-            var canRecord = workOpen && active && recoveryMessage is null && permitted && precedingBlocker is null;
+            var canRecord = attemptOpen && workOpen && active && recoveryMessage is null && permitted && precedingBlocker is null;
             return new LabExecutionStepDto(step, prior,
                 evidence?.StepBlocker(definition, step),
                 canRecord && prior.Count == 0,
@@ -111,13 +140,24 @@ public sealed partial class LabOperationsController
         var completionBlockers = recoveryMessage is null
             ? evidence!.CompletionBlockers(definition!).ToList() : new List<string> { recoveryMessage };
         if (!workOpen) completionBlockers.Insert(0, "The laboratory job is held or finished. Resume a held job before recording work.");
+        var tubeAcceptanceRequired = execution.Status == LabExecutionStatus.Planned && specimen is not null
+            && (source is null ? !await HasAcceptedAvailableTubeAsync(specimen, cancellationToken) : TubeUnavailableReason(specimen, source, null) is not null);
         return new(MapExecution(execution), work.Id, identity.Name, protocol.ProtocolVersion,
             specimen?.AccessionNumber, steps, actors, materialUse, equipmentUse,
             completionBlockers,
-            recoveryMessage, workOpen && canOperate && recoveryMessage is null,
+            recoveryMessage, attemptOpen && workOpen && canOperate && recoveryMessage is null,
             work.Status is not (LabWorkOrderStatus.Cancelled or LabWorkOrderStatus.ReadyForRelease)
-                && canOperate && execution.Status is not (LabExecutionStatus.Completed or LabExecutionStatus.Abandoned));
+                && canOperate && attempt is null && execution.Status is not (LabExecutionStatus.Completed or LabExecutionStatus.Abandoned),
+            tubeAcceptanceRequired, attempt?.Id, attempt?.Sequence, source?.Barcode, attempt?.State.ToString(),
+            execution.Status == LabExecutionStatus.Planned && specimen is not null && attempt is null, preparationBatchId);
     }
+
+    private async Task<bool> HasAcceptedAvailableTubeAsync(LabSpecimen specimen, CancellationToken cancellationToken) =>
+        specimen.IntakeDisposition == LabSpecimenIntakeDisposition.Accepted
+        && await dbContext.LabContainers.AnyAsync(tube => tube.LabWorkOrderId == specimen.LabWorkOrderId
+            && tube.LabSpecimenId == specimen.Id && tube.Kind == LabContainerKind.SubmittedSpecimen
+            && tube.IntakeDisposition == LabSpecimenIntakeDisposition.Accepted
+            && tube.Status == LabContainerStatus.Available, cancellationToken);
 
     private static HashSet<LabRole> EffectiveExecutionRoles(LabOperationsActor actor) =>
         Enum.GetValues<LabRole>().Where(role => actor.HasAny(role)).ToHashSet();

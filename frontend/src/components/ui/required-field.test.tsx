@@ -17,7 +17,7 @@ describe('required field presentation', () => {
 
     const fieldName = container.querySelector('[data-slot="required-field-name"]')
     const marker = fieldName?.querySelector('[data-slot="required-mark"]')
-    expect(fieldName?.textContent).toBe('First name*')
+    expect(fieldName?.textContent).toBe('First name\u00a0*')
     expect(marker?.getAttribute('aria-hidden')).toBe('true')
   })
 

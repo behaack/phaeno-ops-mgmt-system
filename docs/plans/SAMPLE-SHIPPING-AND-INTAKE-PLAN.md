@@ -1,5 +1,23 @@
 # Sample Shipping and Intake Plan
 
+## Inspect before storage and batch acceptance — September 11, 2026
+
+Owner-approved scope: identify and inspect tubes during accessioning; record exceptions first, then accept the remaining identified/undecided tubes in that shipment. A rejected tube retains its expected shipment identity and rejection evidence even when destroyed. Rejection does not require a freezer location and never creates available material. Retained Accepted/On hold material requires a real storage location; a rejected retained tube may optionally record one. No disposal is inferred.
+
+Implementation decisions: retain a Lab tube identity record for rejected receipts with nullable location and physical status Rejected; preserve registered-tube/crosswalk linkage and actual accession/receipt history. Existing locations and decisions are not backfilled. The migration normalizes an existing Rejected intake with physical status Available to physical status Rejected; it does not infer a new decision or quantity. Non-stored rejected receipts do not assert remaining material quantity. Current-dialog scans form an explicit pending selection, protected by a discard prompt; acceptance and individual storage locations are saved atomically only after inspection confirmation. Saved exceptions survive closing the dialog. The bulk endpoint validates the current packet, shipment receipt, exact expected barcodes, undecided state, role and work version; retries retain their request identity and cannot duplicate records. Held, rejected, previously accepted, missing/unidentified and used tubes are excluded or rejected on stale submission.
+
+The job tab becomes Tubes and the received-tube list becomes Received tubes. The identifier opens view-first tube details with lineage and retained intake evidence. Routine Review tube is removed from the list. A Supervisor can correct intake with a required explanation before that tube has been used; restoring a non-stored record to Accepted/On hold requires a real retained-material location. Started-source problems stay with the specimen attempt hold/failure workflow. Customer-requested holds remain blocked.
+
+Implemented locally: nullable storage and rejection availability, exception-first accession, guarded bulk acceptance, tube detail/lineage and supervised intake correction. Migration `20260911205728_AllowRejectedTubeWithoutStorage` applied to localhost `phaeno_ops`; no existing rejections needed availability normalization. ERD, guides, regression sources and LAB-13 manual acceptance are updated. Do not run automated tests without a request; record builds/static checks and any read-only UI verification separately from persisted acceptance. Preserve HS5Y7DB7 and its unstarted execution.
+
+## Attempt-aware tube use — September 11, 2026
+
+The specimen/source workspace is implemented alongside [tube attempts](SPECIMEN-TUBE-ATTEMPT-PLAN.md). Receipt/accession remains physical-tube based; the selected source must be accepted and available. After an attempt starts its source intake is locked, while unused reserve intake can still be completed during accessioning or corrected by a supervisor. Expected unreceived or unresolved available tubes block exhaustion confirmation. No receipt or review automatically selects or starts a reserve. Local migration applied; persisted acceptance remains Not run.
+
+## Multiple tubes per specimen - September 11, 2026
+
+The [specimen tube selection and fallback plan](SPECIMEN-TUBE-ATTEMPT-PLAN.md) retains individual physical receipt/identity and groups eligible source/reserve tubes under one specimen. Receipt does not start all tubes or imply scientific acceptance. Source/attempt handling is now implemented locally.
+
 ## Container receipt and separate accession tab — September 10, 2026
 
 The Product Owner superseded the read-only receiving workflow: Receive shipments now lists all expected physical containers (not dashboard work orders), with Customer/Job, carrier, tracking, destination and tube count. It excludes packing pools, empty placeholders, cancelled configurations and already-arrived containers. Prepared containers may appear before carrier handoff with their actual stage and missing-tracking text.
@@ -2119,3 +2137,10 @@ and preparation guidance in the Portal. Physical 2D scanner, printer/stock and
 handling acceptance remain explicit gates; former Code 39-only hardware proof
 cannot establish QR compatibility. The shared renderer is pinned qrcode.react
 4.2.0; no backend model or migration change is required.
+
+
+### Receipt and accession list contrast — September 11, 2026
+
+All five tabs now use a shaded, bordered list header and separately padded content. Kit requests and Prepare kits keep search/filter controls with the header and present individually bordered, lightly shaded records. Kits sent and both shipment queues retain semantic tables with shaded column headers and lighter body rows. Receiving and accession lookup panels use the same header/content division. Empty/loading/error states stay in the content area.
+
+Local verification: TypeScript, scoped lint and whitespace checks passed. Signed-in desktop inspection covered all five tabs, including two populated kit requests, three prepared kits, three Kits sent rows, and empty receiving/accession queues. No horizontal page overflow was observed. No receipt, accession, fulfillment or saved record was changed. The Phaeno receipt/accession guide was reviewed; instructions remain accurate because this is a visual-only adjustment. Automated suites were not run for this styling change; narrow/dark and populated receiving/accession checks remain acceptance coverage.

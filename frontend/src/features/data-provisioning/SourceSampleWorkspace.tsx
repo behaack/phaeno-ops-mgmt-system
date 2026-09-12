@@ -45,7 +45,7 @@ import {
   DialogTitle,
 } from '#/components/ui/dialog'
 import {
-  DropdownMenu,
+  ActionMenu as DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,

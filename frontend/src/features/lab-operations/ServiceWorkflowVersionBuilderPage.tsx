@@ -50,7 +50,7 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
   const dashboard = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: apiEnabled })
   const workflow = dashboard.data?.serviceWorkflows.find((item) => item.id === workflowId)
   const draft = draftVersionId ? workflow?.versions.find((item) => item.id === draftVersionId) : undefined
-  const openCandidate = workflow?.versions.find((item) => item.status === 'Draft' || item.status === 'Approved')
+  const openCandidate = workflow?.versions.find((item) => item.status === 'Draft' || item.status === 'Approved' || item.status === 'Invalid')
   const controlledSource = workflow?.versions.find((item) => item.status === 'Production')
     ?? workflow?.versions.filter((item) => item.status === 'Retired').slice(-1)[0]
   const formKey = `${workflowId}:${draftVersionId ?? 'new'}`
@@ -72,13 +72,13 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['lab-operations'] })
-      await navigate({ to: '/lab-operations', search: { section: 'protocols' } })
+      await navigate({ to: '/lab-operations', search: { section: 'protocols', configurationTab: 'workflows' } })
     },
   })
 
   useEffect(() => {
     if (!workflow || loadedKey === formKey) return
-    if (draftVersionId && (!draft || draft.status !== 'Draft')) return
+    if (draftVersionId && (!draft || !['Draft', 'Invalid'].includes(draft.status))) return
     if (!draftVersionId && openCandidate) return
     const source = draft ?? controlledSource
     form.reset({ stages: source?.stages.map((stage) => ({
@@ -101,15 +101,15 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
     return () => window.removeEventListener('beforeunload', warn)
   }, [form.formState.isDirty, mutation.isSuccess])
 
-  const leave = () => navigate({ to: '/lab-operations', search: { section: 'protocols' } })
+  const leave = () => navigate({ to: '/lab-operations', search: { section: 'protocols', configurationTab: 'workflows' } })
   if (!canManage) return <PageAlert title="Workflow authoring unavailable" message="An active Protocol Administrator role is required." destructive />
   if (authProvider === 'mock') return <PageAlert title="Workflow authoring is paused" message="Connect a real Phaeno session to create a controlled workflow version." />
   if (dashboard.isLoading) return <main className="page-wrap px-4 py-8"><p role="status">Loading service workflow…</p></main>
   if (dashboard.error || !workflow) return <PageAlert title="Service workflow could not be loaded" message={getLabOperationsError(dashboard.error, 'Return to Lab operations and try again.')} destructive />
-  if (draftVersionId && (!draft || draft.status !== 'Draft')) return <PageAlert title="This workflow version cannot be edited" message="Only the current Draft version can be changed." destructive />
+  if (draftVersionId && (!draft || !['Draft', 'Invalid'].includes(draft.status))) return <PageAlert title="This workflow version cannot be edited" message="Only the current Draft version can be changed." destructive />
   if (!draftVersionId && openCandidate) return <PageAlert title="A workflow candidate is already open" message="Continue, promote, withdraw, or discard the existing candidate first." destructive />
 
-  const protocolOptions = dashboard.data!.protocols.flatMap((protocol) => protocol.versions
+  const protocolOptions = dashboard.data!.protocols.filter((protocol) => !protocol.retiredAtUtc).flatMap((protocol) => protocol.versions
     .filter((version) => version.status === 'Approved' || version.status === 'Active')
     .map((version) => ({ value: version.id, label: `${protocol.name} v${version.protocolVersion} · Approved` })))
 
@@ -117,7 +117,7 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
     <main className="page-wrap px-4 py-8">
       <section className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm text-muted-foreground"><Link to="/lab-operations" search={{ section: 'protocols' }} className="inline-flex items-center gap-1 hover:underline"><ArrowLeft className="size-4" /> Protocols</Link></p>
+          <p className="text-sm text-muted-foreground"><Link to="/lab-operations" search={{ section: 'protocols', configurationTab: 'workflows' }} className="inline-flex items-center gap-1 hover:underline"><ArrowLeft className="size-4" /> Workflows</Link></p>
           <h1 className="mt-2 text-3xl font-semibold">{workflow.name} · workflow v{draft?.workflowVersion ?? workflow.latestVersion + 1}</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">Arrange exact approved protocol versions in operating order. Production jobs retain this complete version even after a replacement is promoted.</p>
         </div>

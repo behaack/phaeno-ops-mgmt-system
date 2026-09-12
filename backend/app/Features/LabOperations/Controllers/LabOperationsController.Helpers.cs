@@ -211,7 +211,7 @@ public sealed partial class LabOperationsController
                     version.Status.ToString(), version.AuthoredByUserId, version.AuthoredAtUtc,
                     version.ApprovedByUserId, version.ApprovedAtUtc, version.ProductionByUserId,
                     version.ProductionAtUtc, stagesByVersion.GetValueOrDefault(version.Id) ?? [],
-                    version.Version)).ToList());
+                    version.Version, version.InvalidatedAtUtc, version.InvalidationReason)).ToList());
         return workflows.Select(workflow => new LabServiceWorkflowDto(workflow.Id,
             workflow.ServiceKey, workflow.Name, workflow.Description, workflow.LatestVersion,
             versionsByWorkflow.GetValueOrDefault(workflow.Id) ?? [], workflow.Version)).ToList();
@@ -310,12 +310,16 @@ public sealed partial class LabOperationsController
             authorization?.CommercialOrderId, commercialOrder?.OrderNumber,
             work.SubmittingOrganizationId, work.ServiceKey, work.Status.ToString(),
             specimenCount, openExceptionCount, work.UpdatedAt, work.Version,
-            work.LabServiceWorkflowVersionId);
+            work.LabServiceWorkflowVersionId,
+            !string.IsNullOrWhiteSpace(commercialOrder?.OrderNumber) ? commercialOrder.OrderNumber
+                : !string.IsNullOrWhiteSpace(work.OpaqueSubmitterReference) ? work.OpaqueSubmitterReference
+                : $"WO-{work.Id}");
     }
 
     private static LabProtocolDto MapProtocol(LabProtocol protocol, IReadOnlyList<LabProtocolVersionDto> versions) =>
         new(protocol.Id, protocol.Key, protocol.Name, protocol.Description,
-            protocol.LatestVersion, versions, protocol.Version);
+            protocol.LatestVersion, versions, protocol.Version,
+            protocol.RetiredAtUtc, protocol.RetiredByUserId, protocol.RetirementReason);
 
     private static LabProtocolVersionDto MapProtocolVersion(LabProtocolVersion version) =>
         new(version.Id, version.ProtocolVersion, version.Status.ToString(), version.DefinitionJson,
@@ -323,7 +327,8 @@ public sealed partial class LabOperationsController
 
     private static LabEquipmentDto MapEquipment(LabEquipment item) =>
         new(item.Id, item.AssetCode, item.Name, item.EquipmentType, item.Location,
-            item.Status.ToString(), item.LastCalibrationOn, item.CalibrationDueOn, item.Version);
+            item.Status.ToString(), item.LastCalibrationOn, item.CalibrationDueOn, item.Version,
+            item.RetirementReason, item.RetiredAtUtc, item.RetiredByUserId);
 
     private static LabBatchDto MapBatch(LabOperationalBatch item, int memberCount, string? sendoutStatus,
         Guid? sendoutId = null, long? sendoutVersion = null) =>
@@ -335,7 +340,9 @@ public sealed partial class LabOperationsController
         new(item.Id, item.LabSpecimenId, item.ParentContainerId, item.Kind.ToString(), item.Barcode,
             item.BarcodeSource.ToString(), item.ExternalBarcodeReferenceId,
             item.Label, item.LabelPrintCount, item.Location, item.Quantity, item.QuantityUnit,
-            item.Status.ToString(), item.RetainUntilUtc, item.Version);
+            item.Status.ToString(), item.RetainUntilUtc, item.Version,
+            item.IntakeDisposition?.ToString(), item.IntakeReasonCode, item.IntakeNotes,
+            item.IntakeReviewedAtUtc, item.IntakeReviewedByUserId);
 
     private static LabExecutionDto MapExecution(LabProtocolExecution item) =>
         new(item.Id, item.LabSpecimenId, item.LabProtocolVersionId, item.AssignedToUserId,

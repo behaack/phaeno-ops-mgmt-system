@@ -472,3 +472,7 @@ Finance now has view-first Invoice, Receipt, Customer and Reconciliation records
 Order configuration exposes Service catalog and Sample shipping. Supported sample/result choices serialize into the existing fields in one atomic defaults write. Readiness uses effective sample types and compatible shipping configuration; unsupported historical JSON does not count as ready. Setup links identify the owning configuration or Finance section. No persisted columns or migration are added.
 
 The configured production malware scanner must be available before activating new manual receipt uploads. Static checks and local browser fixtures do not establish provider, shared-database or real financial acceptance.
+
+## September 12, 2026 — Release queue default
+
+Result release now defaults to ReadyForRelease when no valid package-state filter is supplied, and places that option first. Explicit valid filters remain authoritative and are preserved on return/reload. This resolves the UAT discoverability issue where new scientific approvals were hidden by the ScientificallyApproved default. Publication and authorization behavior are unchanged. Phaeno release guide updated; signed-in default-entry and retained-filter checks passed on isolated 3016.

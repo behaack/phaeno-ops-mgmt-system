@@ -91,7 +91,7 @@ export function WebOpsDashboardContent({
   const demoRequestsHeading = useRef<HTMLHeadingElement | null>(null)
   const hasNotificationPanel = Boolean(notificationPanel)
   const responsiveTabClass = hasNotificationPanel
-    ? 'min-h-11 flex-col gap-0.5 whitespace-normal px-2 py-1.5 sm:min-h-0 sm:flex-row sm:gap-1.5 sm:whitespace-nowrap sm:py-0.5'
+    ? 'flex-col gap-0.5 sm:flex-row sm:gap-1.5'
     : undefined
 
   const closeUnsubscribeDialog = () => {
@@ -167,7 +167,7 @@ export function WebOpsDashboardContent({
       </div>
 
       <Tabs defaultValue="mailing-list">
-        <TabsList aria-label="Web Operations lists" className={hasNotificationPanel ? 'grid w-full grid-cols-3 gap-1 group-data-horizontal/tabs:h-auto sm:w-fit' : undefined}>
+        <TabsList aria-label="Web Operations lists" className={hasNotificationPanel ? 'grid w-full grid-cols-3 sm:w-fit' : undefined}>
           <TabsTrigger value="mailing-list" className={responsiveTabClass}>
             <Mail aria-hidden="true" className={hasNotificationPanel ? 'hidden sm:block' : undefined} />
             <span>Mailing List</span>

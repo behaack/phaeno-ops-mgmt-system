@@ -1,10 +1,25 @@
 # Major workflow acceptance scripts
 
+## Current laboratory coverage and inventory — September 11, 2026
+
+The current pack contains **81 cases**, with matching case rows in the run-record template. Laboratory coverage is LAB-01–10 plus LAB-13–14; LAB-11/12 are unassigned. Newer cases cover retirement/workflow invalidation, promotion, specimen source/reserve attempts, intake decisions and exception-first accession. LAB-13 includes rejection without storage, atomic acceptance of identified remaining tubes, supervised correction, required-marker wrapping and the Library prep sidebar label. LAB-14 records the preparation-tray journey: Lab configurations setup, mixed-job partial trays, shared evidence and tube exceptions, failure/reserve restart, QC reuse and sequencing handoff. Backend, frontend and E2E plans are aligned. Earlier case counts below are historical checkpoints.
+
+All newly added run-template rows remain Not run. Customer-requested hold implementation remains Blocked. Preserve the existing HS5Y7DB7 walkthrough; no operational execution is authorized by this documentation alignment.
+
+
+## Specimen attempts — September 11, 2026
+
+LAB-09 now contains the operator script for order-policy confirmation, explicit source selection, same-attempt holds/repeats, reserve restart after failure, success and exhaustion. Include concurrency/replay, lineage denials, permission gates and legacy Planned adoption. Implementation and local migration are complete; persisted lifecycle acceptance remains Not run. Customer-requested holds remain blocked. Preserve HS5Y7DB7 until the paced walkthrough resumes.
+
 ## Request and outcome
 
 The Product Owner requested testing scripts for all major system workflows on September 8, 2026. The default deliverable is a manual acceptance pack usable by product, commercial, laboratory and operational testers. It provides prerequisites, ordered actions, expected results, negative variants, handoffs and a run record.
 
 The [testing pack](../testing/README.md) contains 74 cases across access, CRM, Trials, Lab orders/shipping, Partner Kits/Assembly, laboratory execution, Finance, files/data/retention, public Website/help, cross-system recovery and transportation-kit fulfillment. [Test data](../testing/TEST-DATA.md) records role separation and connected-journey fixtures. [Run record](../testing/RUN-RECORD.md) is the reusable evidence template.
+
+## Laboratory test-protocol preparation — September 11, 2026
+
+The resumed walkthrough has a [two-protocol TEST ONLY fixture](../testing/fixtures/test-library-preparation-protocol.md) for existing LAB-01/03/04 cases and a [preparation/run record](../testing/runs/2026-09-11-protocol-preparation.md). The owner requested slow, step-by-step authoring and two connected protocols: Extracted RNA readiness, then Library preparation and QC, each with three steps. It adapts the built-in example, with synthetic QC values, explicit conditional/optional resolution, resource traceability and retained corrections. Scientific criteria remain the Lab owner's responsibility. The first execution checkpoint is one existing specimen's identity step, subject to current intake and pinned-workflow eligibility. Draft preparation does not establish controlled approval or acceptance. No acceptance-case IDs are added. The current pack has 75 cases including ORD-07; the 74-case counts below describe the earlier transportation-kit checkpoint.
 
 ## Transportation-kit workflow update — September 8, 2026
 

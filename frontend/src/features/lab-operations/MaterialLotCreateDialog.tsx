@@ -255,7 +255,21 @@ export function MaterialLotCreateDialog({
         if (!nextOpen) close()
       }}>
         <DialogContent className="max-w-2xl">
-          <form noValidate onSubmit={submit}>
+          <form noValidate onSubmit={(event) => {
+            // Native date edits can be visible before the form library receives a change event.
+            // Reconcile that control before validation takes its submission snapshot.
+            const expirationInput = event.currentTarget.elements.namedItem('expirationOrRetestDate')
+            if (expirationInput instanceof HTMLInputElement) {
+              if (!expirationInput.validity.valid) {
+                event.preventDefault()
+                form.setError('expirationOrRetestDate', { message: 'Enter a valid expiration or retest date that is not in the past.' })
+                expirationInput.focus()
+                return
+              }
+              form.setValue('expirationOrRetestDate', expirationInput.value)
+            }
+            void submit(event)
+          }}>
             <DialogHeader>
               <DialogTitle>Create material lot</DialogTitle>
               <DialogDescription>

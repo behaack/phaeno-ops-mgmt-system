@@ -254,24 +254,24 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
       >
         <TabsList
           aria-label="Company workspace sections"
-          className="flex h-auto w-full flex-wrap justify-start"
+          className="flex w-full flex-wrap justify-start"
         >
-          <TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="overview">
+          <TabsTrigger className="min-w-fit flex-none" value="overview">
             Overview
           </TabsTrigger>
-          <TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="people">
+          <TabsTrigger className="min-w-fit flex-none" value="people">
             People
           </TabsTrigger>
-          <TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="sales">
+          <TabsTrigger className="min-w-fit flex-none" value="sales">
             Sales
           </TabsTrigger>
-          {canAdminister ? <><TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="departments">
+          {canAdminister ? <><TabsTrigger className="min-w-fit flex-none" value="departments">
             Departments &amp; services
           </TabsTrigger>
-          <TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="requests">
+          <TabsTrigger className="min-w-fit flex-none" value="requests">
             Requests
           </TabsTrigger></> : null}
-          <TabsTrigger className="min-w-fit flex-none px-3 py-1.5" value="activity">
+          <TabsTrigger className="min-w-fit flex-none" value="activity">
             Activity
           </TabsTrigger>
         </TabsList>

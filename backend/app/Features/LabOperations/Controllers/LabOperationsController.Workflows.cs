@@ -43,7 +43,8 @@ public sealed partial class LabOperationsController
         var hasOpenCandidate = await dbContext.LabServiceWorkflowVersions.AnyAsync(item =>
             item.LabServiceWorkflowId == workflowId
             && (item.Status == LabServiceWorkflowStatus.Draft
-                || item.Status == LabServiceWorkflowStatus.Approved), cancellationToken);
+                || item.Status == LabServiceWorkflowStatus.Approved
+                || item.Status == LabServiceWorkflowStatus.Invalid), cancellationToken);
         if (hasOpenCandidate)
             throw Conflict("service_workflow_candidate_exists",
                 "Continue, promote, withdraw, or discard the open workflow version before creating another.");
@@ -66,7 +67,7 @@ public sealed partial class LabOperationsController
         await requestContext.RequireAsync(HttpContext, cancellationToken, LabRole.ProtocolAdministrator);
         var version = await dbContext.LabServiceWorkflowVersions.SingleOrDefaultAsync(
             item => item.Id == versionId, cancellationToken) ?? throw Missing();
-        if (version.Status != LabServiceWorkflowStatus.Draft)
+        if (version.Status is not (LabServiceWorkflowStatus.Draft or LabServiceWorkflowStatus.Invalid))
             throw Conflict("service_workflow_not_draft", "Only a draft workflow can be edited.");
         var workflow = await dbContext.LabServiceWorkflows.SingleOrDefaultAsync(
             item => item.Id == version.LabServiceWorkflowId, cancellationToken) ?? throw Missing();
@@ -132,6 +133,7 @@ public sealed partial class LabOperationsController
             throw Invalid("service_workflow_stages_required",
                 "Add at least one protocol stage to the workflow.");
         var protocolVersionIds = requests.Select(item => item.LabProtocolVersionId).Distinct().ToList();
+        await RequireCurrentProtocolsAsync(protocolVersionIds, cancellationToken);
         var protocolVersions = await dbContext.LabProtocolVersions.Where(
             item => protocolVersionIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, cancellationToken);
         if (protocolVersions.Count != protocolVersionIds.Count
@@ -175,7 +177,12 @@ public sealed partial class LabOperationsController
             throw Conflict("service_workflow_protocol_not_ready",
                 "Every workflow protocol must still be approved.");
 
-        foreach (var protocol in protocolVersions) RequireProtocolDefinition(protocol.DefinitionJson);
+        Execute(version.RequireIndependentApproval);
+        foreach (var protocol in protocolVersions)
+        {
+            Execute(protocol.RequireIndependentApproval);
+            RequireProtocolDefinition(protocol.DefinitionJson);
+        }
         foreach (var protocolVersion in protocolVersions.Where(item => item.Status == LabProtocolStatus.Approved))
         {
             var current = await dbContext.LabProtocolVersions.Where(item =>
@@ -196,25 +203,14 @@ public sealed partial class LabOperationsController
                         "A protocol being replaced is still used by another production workflow. Version that workflow first.");
                 Execute(previous.Retire);
             }
-            if (protocolVersion.AuthoredByUserId == actorUserId)
-                requestContext.EnforceOrAuditActorConflict(actorUserId,
-                    "protocol_author_activation_conflict",
-                    "A protocol author cannot promote the same protocol version.",
-                    new { protocolVersionId = protocolVersion.Id, workflowVersionId = version.Id });
-            Execute(() => protocolVersion.Activate(actorUserId, requestContext.DualControlEnforced));
+            Execute(() => protocolVersion.Activate(actorUserId));
         }
 
         var previousWorkflowVersions = await dbContext.LabServiceWorkflowVersions.Where(item =>
             item.LabServiceWorkflowId == workflow.Id
             && item.Status == LabServiceWorkflowStatus.Production).ToListAsync(cancellationToken);
         foreach (var previous in previousWorkflowVersions) Execute(previous.Retire);
-        if (version.AuthoredByUserId == actorUserId)
-            requestContext.EnforceOrAuditActorConflict(actorUserId,
-                "service_workflow_author_production_conflict",
-                "A workflow author cannot promote the same workflow version.",
-                new { workflowId = workflow.Id, workflowVersionId = version.Id });
-        Execute(() => version.PromoteToProduction(actorUserId, DateTime.UtcNow,
-            requestContext.DualControlEnforced));
+        Execute(() => version.PromoteToProduction(actorUserId, DateTime.UtcNow));
     }
 
     private async Task<List<LabServiceWorkflowStage>> RequireWorkflowStagesAsync(
@@ -226,6 +222,11 @@ public sealed partial class LabOperationsController
         if (stages.Count == 0)
             throw Conflict("service_workflow_stages_required",
                 "A workflow must contain at least one protocol stage.");
+        var protocolIds = stages.Select(x => x.LabProtocolVersionId).ToList();
+        if (await dbContext.LabProtocolVersions.AnyAsync(x => protocolIds.Contains(x.Id)
+            && x.Status != LabProtocolStatus.Approved && x.Status != LabProtocolStatus.Active, cancellationToken))
+            throw Conflict("workflow_protocol_not_approved", "Every remaining stage must use an approved protocol version before revalidation or approval.");
+        await RequireCurrentProtocolsAsync(stages.Select(x => x.LabProtocolVersionId), cancellationToken);
         return stages;
     }
 

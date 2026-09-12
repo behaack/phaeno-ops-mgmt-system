@@ -2,9 +2,9 @@
 
 Receipt and accession connect the Customer’s submitted specimen identity to the physical material handled in the laboratory. Record these steps in sequence and never create an unlinked laboratory specimen.
 
-The first recorded shipment arrival moves an awaiting Job into **Lab operations → Work** with the milestone **Received**. Its commercial order moves to **In progress**, while the Customer/Partner Job list displays **Received**. Customer progress uses Received, Library Prep, Sequencing, Data Assembly, Quality Review and Results Available, with current counts and individual sample stages in After you send. Only recorded provider sequencing establishes Sequencing; sendout alone does not. Scientific approval remains distinct from released results. It remains in Work while you accession tubes, including when other containers are outstanding. A completed container leaves the accession queue; its tubes and freezer-box values remain in the Job's **Lineage** tab.
+The first recorded shipment arrival moves an awaiting Job into **Lab operations → Lab work** with the milestone **Received**. Its commercial order moves to **In progress**, while the Customer/Partner Job list displays **Received**. Customer progress uses Received, Library Prep, Sequencing, Data Assembly, Quality Review and Results Available, with current counts and individual sample stages in After you send. Only recorded provider sequencing establishes Sequencing; sendout alone does not. Scientific approval remains distinct from released results. It remains in Lab work while you accession tubes, including when other containers are outstanding. A completed container leaves the accession queue; its tubes and freezer-box values remain in the Job's **Tubes** tab.
 
-Verified tube receipt updates the sample's receipt progress. The commercial sample becomes **Accessioned** after all its expected tubes across active shipments are accessioned. Order updates can take a few seconds. Receipt and accession do not record scientific acceptance or start the acceptance-based turnaround target. Existing holds and later processing states remain in force.
+Verified tube receipt updates the sample's receipt progress. The commercial sample becomes **Accessioned** after all its expected tubes across active shipments are accessioned. Order updates can take a few seconds. Container receipt alone does not accept tubes. During tube accession, confirm the receipt checks: Accepted is the normal outcome, with no reason code required. A specimen becomes Accepted when at least one of its tubes is Accepted; its acceptance-based turnaround target starts then. This intake decision is separate from laboratory QC and scientific review.
 
 
 Use the tabs in **Lab operations → Receipt & accession** to focus on one task:
@@ -63,19 +63,23 @@ This receiving field accepts only the shipping insert's PH-P- code. The SHP… s
 
 Choose **Accession samples**. **Received containers awaiting accession** shows containers that have arrived and still have tubes to accession. Open the shipment reference or scan its PH-P- insert. This lookup is read-only. Within this tab, a **PH-S-** barcode opens the shipment's current confirmed insert, and **PH-O-** or **PH-M-** lookups let you choose a related manifest. The readable **SHP…** reference and physical **KIT-** barcode are not accepted by the lookup field.
 
-The shipping insert opens a container accession modal with every expected tube and a saved progress count. Scan a physical tube in **Supplier tube barcode** and press Enter or **Scan tube**. A matching, unaccessioned tube opens **Accession tube**, asking for its **Freezer box barcode**. Scan the box where that tube will be stored and press Enter or **Accession tube** to save.
+The shipping insert opens the accession dialog with every expected tube and its saved intake decision. Inspect tubes before storage. Scan each available physical tube in **Supplier tube barcode** and press Enter or **Identify tube**. Identification selects the tube for this session; it does not save acceptance or a storage location.
 
-After each successful save, the freezer-box prompt closes, the tube list updates, and focus returns to **Supplier tube barcode**. Repeat this loop until all expected tubes are accessioned. Each tube retains its own freezer-box barcode as its storage location. The box barcode is recorded as entered; this workflow does not validate it against a freezer-box registry or assign a position inside the box.
+Record the exceptions first. Choose **Record exception** on the expected tube's row. Select **Rejected** or **On hold** and a predefined reason. Confirm that the received tube or damaged remains match that shipment row. A broken tube whose barcode cannot be scanned can still be rejected against its expected identity. Missing tubes remain outstanding; do not mark them received merely because they appear on the insert.
 
-POMS assigns a specimen accession number automatically when needed and reuses it for additional tubes from the same sample. Each tube keeps its permanent supplier barcode and its own laboratory container record. No additional tube label is printed. Container receipt and each tube's accession remain separate events; accession does not accept the specimen for processing.
+A broken or destroyed rejected tube requires no freezer location and is unavailable for processing. POMS retains its expected-tube link, rejection reason, notes, actor and time. No remaining quantity is asserted for a non-stored rejection. If rejected material is actually retained, its real storage location may be recorded. An internally held tube must have a real retained-material location. Rejection itself does not record disposal.
 
-Unknown tubes, tubes belonging to another container, and voided inserts cannot be accessioned through this flow. An already accessioned tube is identified without creating another record. If saving is unconfirmed, retry with the same freezer-box barcode; a completed save is returned without duplication. This workflow does not relocate an already accessioned tube to a different box.
+After exceptions are saved, choose **Accept all remaining (N)**. This includes only identified tubes with no saved decision. Previously accepted, held, rejected and unidentified tubes are excluded. Review the listed identities, record each actual freezer-box barcode, and confirm inspection. **Accept N tubes** saves the entire batch together. Routine acceptance needs no reason code. Storage is recorded as entered; POMS does not validate a freezer registry or assign a position within the box.
 
-The modal remains open until you choose **Done** or **Close — continue later**. Saved tubes remain accessioned when you close it; reopen the container to finish the remaining tubes. Cancelling a freezer-box entry leaves that tube pending. If container arrival has not been recorded, return to **Receive shipments** first.
+If any selected tube changed, the whole batch is refused. Your entries stay visible; close the acceptance dialog and review the refreshed selection before trying again. For an uncertain connection result, retry the same request. A completed batch is returned without duplicate intake records. Bulk acceptance cannot relocate a previously stored tube.
+
+POMS assigns or reuses the specimen's accession number and preserves each supplier barcode. A rejected received tube completes that tube's receipt handling without becoming acceptable material. The specimen becomes Accepted when at least one tube is Accepted. Complete receipt handling and scientific acceptance are separate facts.
+
+**Clear selection** removes the unsaved identified selection without changing any saved intake decision. Saved exceptions survive closing. Unsaved identified selections and storage entries prompt before being discarded. When all expected tubes have decisions, choose **Done**. Historical tubes with no intake decision are not automatically accepted: identify and inspect them explicitly in this accession dialog, or ask a supervisor to document a correction from the tube details.
 
 ## Other specimen and label actions
 
-The Lab work record retains its individual specimen actions for receipt review, accession details, quantity, retention and intake decisions. These actions remain available outside the repeated scanning workflow.
+The Lab work record retains individual receipt and accession actions for supported legacy intake. Its **Tubes** tab shows **Received tubes**, with clear intake and storage information. Open a tube barcode to see its receipt evidence, storage and lineage. POMS-generated container labels are available from the detail page’s **Actions** menu.
 
 The label window renders the current container identity as a QR code through the browser and installed printer driver. Enter the reason, open the system print dialog, and inspect the physical label before choosing **Label printed**. POMS increments the print count only after that confirmation. If the label did not print correctly, enter the failure details and choose **Record failed attempt**; the failure remains in history without falsely counting a usable label.
 
@@ -83,7 +87,7 @@ Every POMS-generated label reprint requires a reason and renders the same curren
 
 ## Scan and locate a container
 
-Use **Work** > **Scan a container** to find the exact work order, accession, container status, location, parent barcode, and associated library. Place the cursor in the container-barcode field and scan either an adopted registered supplier barcode or a POMS-generated barcode. Code 39 start and stop characters and letter case are normalized; an altered checksum, incomplete barcode, or unknown barcode is rejected without opening another record. The field returns focus after the result so repeated scans remain efficient.
+Use **Library prep** > **Scan a container** to find the exact work order, accession, container status, location, parent barcode, and associated library. Place the cursor in the container-barcode field and scan either an adopted registered supplier barcode or a POMS-generated barcode. Code 39 start and stop characters and letter case are normalized; an altered checksum, incomplete barcode, or unknown barcode is rejected without opening another record. The field returns focus after the result so repeated scans remain efficient.
 
 ## Preserve physical lineage
 
@@ -93,7 +97,13 @@ Do not reuse a barcode, move material by editing its parent, or delete a contain
 
 ## Apply the intake decision
 
-After accession, record **Accepted**, **On hold**, or **Rejected**. Holds and rejections require an approved reason code and a safe explanation when Customer action is required. When every expected specimen has an intake decision, the work order reaches **Received**.
+Acceptance belongs to the physical tube. A specimen is **Accepted** if one or more of its tubes is Accepted, even if another tube is held or rejected. With no accepted tubes, the specimen remains Received (awaiting an acceptable tube), or On hold if a tube is held. Do not use specimen intake to represent a processing hold; job holds and workflow exceptions remain separate.
+
+Routine intake is performed during accessioning. On hold and Rejected require a predefined reason: identity/labeling mismatch, damaged container, leaking container, insufficient material, unacceptable receipt condition, missing information, or Other. Other requires an explanation. POMS retains each decision, stable reason code, notes, reviewer and time. These codes describe intake, not later processing failures.
+
+An authorized Supervisor can open **Tubes → tube barcode → Actions → Correct intake decision** before the tube is used. Every correction requires an explanation; held or rejected decisions still require their reason code. A non-stored record can be restored to Accepted or On hold only when material actually exists and a real storage location is provided. This action does not move stored material. A used source's original intake is locked: handle later problems through the specimen attempt hold or failure actions. Historical processing without a source link retains the earlier specimen-wide lock.
+
+Customer-requested hold management is not available. Internal intake questions and attempt holds remain separate from customer requests. Customer communication uses the existing customer-safe exception workflow.
 
 
 Portal-generated identifiers now render as QR codes, with the exact identifier
@@ -102,3 +112,10 @@ sample/tube identifiers use the same format. Use a QR-capable 2D scanner. Existi
 manufacturer labels and older printed barcodes remain valid; do not relabel a
 tube or change its saved identity merely to match the new display. A scan still
 requires the correct workflow and does not by itself confirm receipt or accession.
+
+
+## Choose which tube to process
+
+Open the sample's identifier in **Specimens** to see its tubes together. The tube-use instruction is **Run one tube per specimen; use a reserve only after failure**. Acceptance and physical availability determine which sources can be selected; receipt itself never starts work. **Tubes** precedes **Execution** in the job navigation.
+
+Once a source attempt starts, that source's intake history is locked. Record an attempt hold or failure when processing cannot continue; unused reserve intake can be completed during accessioning or corrected by a supervisor. A specimen's intake can remain Accepted even when processing ultimately fails. See the protocol execution guide for source selection, explicit failure, reserve restart and confirmed material exhaustion.

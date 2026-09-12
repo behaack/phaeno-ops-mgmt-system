@@ -1,7 +1,7 @@
 import { ChevronDown } from 'lucide-react'
 import type { RefObject } from 'react'
 import { Button } from '#/components/ui/button'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
+import { ActionMenu as DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import type { ShipmentHeaderAction } from '#/features/sample-shipping/SampleShippingDetailPage'
 
 export function LabJobWorkspaceActions({ orderActions, shipmentActions = [], shipmentLabel, triggerRef, dialogOpen = false }: {

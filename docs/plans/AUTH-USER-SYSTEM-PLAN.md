@@ -693,3 +693,9 @@ system/commercial fallback. Saved shipping and accepted-quote snapshots retain
 their values. This does not grant services, select a storage destination, or
 change Clerk authentication. See `PEOPLE-DEPARTMENTS-ACCESS-PLAN.md`
 for local evidence and remaining signed-in/shared-environment gates.
+
+## September 12 invitation menu width
+
+Pending-invitation menus in Phaeno and organization user management use content-sized width with a 12rem minimum and viewport cap. Resend invitation and Revoke invitation fit without unnecessary wrapping. Right alignment and existing actions are unchanged; user guide steps need no change.
+
+Verified the live Phaeno invitation menu at 192 px wide with both action rows 28 px high (single-line labels). Scoped lint and whitespace checks passed. No invitation was resent or revoked.

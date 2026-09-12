@@ -75,7 +75,8 @@ public sealed partial class LabOperationsController(
         var equipment = await dbContext.LabEquipment.AsNoTracking().OrderBy(item => item.AssetCode)
             .Select(item => new LabEquipmentDto(item.Id, item.AssetCode, item.Name, item.EquipmentType,
                 item.Location, item.Status.ToString(), item.LastCalibrationOn,
-                item.CalibrationDueOn, item.Version)).ToListAsync(cancellationToken);
+                item.CalibrationDueOn, item.Version, item.RetirementReason,
+                item.RetiredAtUtc, item.RetiredByUserId)).ToListAsync(cancellationToken);
         var batches = await ReadBatchesAsync(cancellationToken);
         var roles = await ReadRoleAssignmentsAsync(cancellationToken);
 
@@ -107,7 +108,9 @@ public sealed partial class LabOperationsController(
                 item.LabSpecimenId, item.ParentContainerId, item.Kind.ToString(), item.Barcode,
                 item.BarcodeSource.ToString(), item.ExternalBarcodeReferenceId,
                 item.Label, item.LabelPrintCount, item.Location, item.Quantity, item.QuantityUnit,
-                item.Status.ToString(), item.RetainUntilUtc, item.Version)).ToListAsync(cancellationToken);
+                item.Status.ToString(), item.RetainUntilUtc, item.Version,
+                item.IntakeDisposition == null ? null : item.IntakeDisposition.ToString(), item.IntakeReasonCode, item.IntakeNotes,
+                item.IntakeReviewedAtUtc, item.IntakeReviewedByUserId)).ToListAsync(cancellationToken);
         var executions = await dbContext.LabProtocolExecutions.AsNoTracking().Where(item => item.LabWorkOrderId == work.Id)
             .OrderBy(item => item.CreatedAt).Select(item => new LabExecutionDto(item.Id,
                 item.LabSpecimenId, item.LabProtocolVersionId, item.AssignedToUserId,
@@ -301,6 +304,7 @@ public sealed partial class LabOperationsController(
         var protocol = await dbContext.LabProtocols.SingleOrDefaultAsync(item => item.Id == protocolId, cancellationToken)
             ?? throw Missing();
         EnsureVersion(protocol.Version, request.ProtocolVersion);
+        Execute(protocol.RequireCurrent);
         var hasOpenCandidate = await dbContext.LabProtocolVersions.AnyAsync(item =>
             item.LabProtocolId == protocolId
             && item.Status == LabProtocolStatus.Draft,
@@ -332,6 +336,7 @@ public sealed partial class LabOperationsController(
             .SingleOrDefaultAsync(item => item.Id == version.LabProtocolId, cancellationToken)
             ?? throw Missing();
         EnsureVersion(protocol.Version, request.ProtocolVersion);
+        Execute(protocol.RequireCurrent);
         var definition = RequireProtocolDefinition(request.DefinitionJson).ToJson();
         Execute(() => version.UpdateDraft(definition));
         MarkProtocolCandidateChanged(protocol);
@@ -351,6 +356,7 @@ public sealed partial class LabOperationsController(
             .SingleOrDefaultAsync(item => item.Id == version.LabProtocolId, cancellationToken)
             ?? throw Missing();
         EnsureVersion(protocol.Version, request.ProtocolVersion);
+        Execute(protocol.RequireCurrent);
         switch (request.Action.Trim().ToLowerInvariant())
         {
             case "approve":

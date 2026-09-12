@@ -47,7 +47,7 @@ export function LabJobSamplesPanel({ order, embedded = false, page, onPageChange
   const change = useMutation({
     mutationFn: async (action: { kind: 'remove'; sample: LabSample } | { kind: 'finalize' } | { kind: 'import' }) => {
       if (action.kind === 'remove') return deleteLabSample(order.id, action.sample.id, action.sample.version)
-      if (action.kind === 'finalize') return finalizeLabSampleRoster(order.id, order.version)
+      if (action.kind === 'finalize') return finalizeLabSampleRoster(order.id, order.version, true)
       if (order.samples.length > 0) throw new Error('Remove all samples before importing a new list.')
       if (!preview || preview.version !== order.version) throw new Error('The Job changed. Preview the file again before replacing the list.')
       return confirmLabSampleImport(order.id, preview.value.previewId, preview.version)
@@ -213,7 +213,8 @@ export function LabJobSamplesPanel({ order, embedded = false, page, onPageChange
                 </li>)}</ul>
               </section>
             })}</div>
-            <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={confirmedVersion === order.version} disabled={change.isPending} onChange={event => setConfirmedVersion(event.target.checked ? order.version : null)} className="mt-1" /><RequiredFieldName>I confirm this exact sample list contains no patient identifiers or PHI.</RequiredFieldName></label>
+            <p className="text-sm">Run one tube per specimen; use a reserve only after the current attempt fails. Extra tubes remain reserves and do not create extra ordered analyses.</p>
+            <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={confirmedVersion === order.version} disabled={change.isPending} onChange={event => setConfirmedVersion(event.target.checked ? order.version : null)} className="mt-1" /><RequiredFieldName>I confirm this tube-use instruction and that this exact sample list contains no patient identifiers or PHI.</RequiredFieldName></label>
           </div>}
         <RequiredDialogFooter><Button variant="outline" disabled={change.isPending || upload.isPending} onClick={() => setConfirm(null)}>Cancel</Button><Button disabled={change.isPending || upload.isPending || (confirm === 'import' ? order.samples.length > 0 || !preview || preview.version !== order.version || preview.value.errors.length > 0 || !preview.value.validRowCount : confirmedVersion !== order.version || !order.canFinalizeSamples || !exactComposition)} onClick={() => change.mutate({ kind: confirm === 'import' ? 'import' : 'finalize' })}>{change.isPending ? 'Saving…' : confirm === 'import' ? 'Replace draft sample list' : 'Finalize sample list'}</Button></RequiredDialogFooter>
       </DialogContent></Dialog>

@@ -440,6 +440,7 @@ export function LabJobDetailsDialog({
 
         <div className="px-5 py-4">
           <form id={formId} noValidate onSubmit={form.handleSubmit(submit)}>
+            <p className="mb-4 rounded-lg border bg-muted/30 p-3 text-sm"><strong>Tube use:</strong> Run one tube per specimen. Use a reserve only after the current attempt fails. This instruction applies to every specimen in this order.</p>
             {platformMode ? (
               <>
                 {sourceHandoff ? (

@@ -71,7 +71,7 @@ public class PSeqOrderToCashDomainTests
     }
 
     [Fact]
-    public void ProtocolAuthorCannotApproveOrActivateOwnVersion()
+    public void ProtocolAuthorCanActivateAfterIndependentApproval()
     {
         var author = Guid.NewGuid();
         var reviewer = Guid.NewGuid();
@@ -79,22 +79,22 @@ public class PSeqOrderToCashDomainTests
 
         Assert.Throws<InvalidOperationException>(() => version.Approve(author, Now));
         version.Approve(reviewer, Now);
-        Assert.Throws<InvalidOperationException>(() => version.Activate(author));
-        version.Activate(reviewer);
+        version.Activate(author);
+        Assert.Equal(reviewer, version.ApprovedByUserId);
 
         Assert.Equal(LabProtocolStatus.Active, version.Status);
     }
 
     [Fact]
-    public void ProtocolActorSeparationCanRunInAuditOnlyModeBeforeEnforcement()
+    public void AuditOnlySelfApprovalCannotAuthorizeProtocolActivation()
     {
         var author = Guid.NewGuid();
         var version = new LabProtocolVersion(Guid.NewGuid(), 1, LabProtocolTestData.Definition(), author, Now);
 
         version.Approve(author, Now, enforceActorSeparation: false);
-        version.Activate(author, enforceActorSeparation: false);
+        Assert.Throws<InvalidOperationException>(() => version.Activate(author));
 
-        Assert.Equal(LabProtocolStatus.Active, version.Status);
+        Assert.Equal(LabProtocolStatus.Approved, version.Status);
     }
 
     [Fact]

@@ -133,7 +133,7 @@ export function CrmPortalAccessPage() {
       <Card>
         <CardHeader>
           <CardTitle>Company requests</CardTitle><CrmClearFilters />
-          <Tabs value={view} onValueChange={setView}><TabsList className="flex h-auto flex-wrap"><TabsTrigger value="decision">Needs decision ({allRequests.filter(r => r.status === 'PendingReview').length})</TabsTrigger><TabsTrigger value="work">Approved / needs work ({allRequests.filter(r => r.status === 'Approved').length})</TabsTrigger><TabsTrigger value="history">Completed / history</TabsTrigger></TabsList></Tabs>
+          <Tabs value={view} onValueChange={setView}><TabsList className="flex flex-wrap"><TabsTrigger value="decision">Needs decision ({allRequests.filter(r => r.status === 'PendingReview').length})</TabsTrigger><TabsTrigger value="work">Approved / needs work ({allRequests.filter(r => r.status === 'Approved').length})</TabsTrigger><TabsTrigger value="history">Completed / history</TabsTrigger></TabsList></Tabs>
           <CardDescription>
             Requests originate from their owning Company or Opportunity. Open
             the Company for its full relationship, access, service, and user

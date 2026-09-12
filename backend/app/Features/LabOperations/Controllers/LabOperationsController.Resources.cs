@@ -123,6 +123,7 @@ public sealed partial class LabOperationsController
         if (execution.Status is not (LabExecutionStatus.InProgress or LabExecutionStatus.Blocked))
             throw Conflict("execution_not_active", "Materials can be consumed only during active execution.");
         await RequireOpenExecutionWorkAsync(execution.LabWorkOrderId, cancellationToken);
+        var attempt = await RequireExecutionAttemptAsync(execution, cancellationToken);
         var lot = await dbContext.LabMaterialLots.SingleOrDefaultAsync(item => item.Id == request.LabMaterialLotId, cancellationToken)
             ?? throw Missing();
         EnsureVersion(lot.Version, request.LotVersion);
@@ -136,6 +137,8 @@ public sealed partial class LabOperationsController
             .AnyAsync(item => item.Id == request.OutputContainerId
                 && item.LabWorkOrderId == execution.LabWorkOrderId, cancellationToken))
             throw Invalid("output_container_invalid", "The output container must belong to this work order.");
+        if (attempt is not null && request.OutputContainerId.HasValue)
+            await RequireAttemptLineageAsync(request.OutputContainerId.Value, attempt, cancellationToken);
         lot.Consume(request.Quantity);
         dbContext.LabMaterialConsumptions.Add(new LabMaterialConsumption(execution.Id, lot.Id,
             request.OutputContainerId, request.Quantity, request.QuantityUnit, actor.User.Id, DateTime.UtcNow));
@@ -170,6 +173,23 @@ public sealed partial class LabOperationsController
         return MapEquipment(equipment);
     }
 
+    [HttpPost("equipment/{equipmentId:guid}/retire")]
+    public async Task<LabEquipmentDto> RetireEquipment(Guid equipmentId,
+        [FromBody] RetireEquipmentRequest request, CancellationToken cancellationToken)
+    {
+        var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
+            LabRole.Supervisor, LabRole.OperationsAdministrator);
+        var equipment = await dbContext.LabEquipment.SingleOrDefaultAsync(item => item.Id == equipmentId, cancellationToken)
+            ?? throw Missing();
+        EnsureVersion(equipment.Version, request.Version);
+        if (equipment.Status == LabEquipmentStatus.Retired)
+            throw Conflict("equipment_already_retired", "The equipment is already retired.");
+        try { equipment.Retire(request.Reason, actor.User.Id, DateTime.UtcNow); }
+        catch (ArgumentException exception) { throw Invalid("equipment_retirement_invalid", exception.Message); }
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return MapEquipment(equipment);
+    }
+
     [HttpPost("executions/{executionId:guid}/equipment-usages")]
     public async Task<LabExecutionDto> RecordEquipmentUsage(Guid executionId,
         [FromBody] RecordEquipmentUsageRequest request, CancellationToken cancellationToken)
@@ -181,11 +201,13 @@ public sealed partial class LabOperationsController
         if (execution.Status is not (LabExecutionStatus.InProgress or LabExecutionStatus.Blocked))
             throw Conflict("execution_not_active", "Equipment use can be recorded only during active execution.");
         await RequireOpenExecutionWorkAsync(execution.LabWorkOrderId, cancellationToken);
-        var equipment = await dbContext.LabEquipment.AsNoTracking()
+        var attempt = await RequireExecutionAttemptAsync(execution, cancellationToken);
+        var equipment = await dbContext.LabEquipment
             .SingleOrDefaultAsync(item => item.Id == request.LabEquipmentId, cancellationToken) ?? throw Missing();
-        if (equipment.Status != LabEquipmentStatus.Active
-            || equipment.CalibrationDueOn < DateOnly.FromDateTime(request.UsedAtUtc))
-            throw Conflict("equipment_unavailable", "The equipment is out of service or calibration is overdue.");
+        if (!equipment.CanRecordUsage(DateOnly.FromDateTime(request.UsedAtUtc)))
+            throw Conflict("equipment_unavailable", "The equipment is retired, out of service, or calibration is overdue.");
+        // Save usage and the equipment version atomically against concurrent retirement.
+        dbContext.Entry(equipment).Property(item => item.UpdatedAt).IsModified = true;
         dbContext.LabEquipmentUsages.Add(new LabEquipmentUsage(execution.Id, equipment.Id,
             request.UsedAtUtc, actor.User.Id, request.RunReference));
         dbContext.Entry(execution).Property(item => item.UpdatedAt).IsModified = true;
@@ -205,6 +227,7 @@ public sealed partial class LabOperationsController
                 && item.LabWorkOrderId == workOrderId && item.Status == LabExecutionStatus.Completed, cancellationToken)
             ?? throw Conflict("library_execution_required", "A completed preparation execution is required.");
         var containerIds = new[] { request.SourceContainerId, request.LibraryContainerId };
+        if (execution.LabSpecimenAttemptId.HasValue) await RequireOutsidePreparationAsync(execution.LabSpecimenAttemptId.Value, cancellationToken);
         var containers = await dbContext.LabContainers.AsNoTracking()
             .Where(item => containerIds.Contains(item.Id) && item.LabWorkOrderId == workOrderId)
             .ToListAsync(cancellationToken);
@@ -215,6 +238,7 @@ public sealed partial class LabOperationsController
             throw Invalid("library_container_invalid", "The library container must be a Phaeno library container.");
         var library = new LabLibrary(workOrderId, request.LabSpecimenId, request.SourceContainerId,
             request.LibraryContainerId, execution.Id, libraryContainer.Barcode);
+        await RequireLibraryAttemptAsync(library, cancellationToken, requireSuccess: false);
         dbContext.LabLibraries.Add(library);
         await dbContext.SaveChangesAsync(cancellationToken);
         return MapLibrary(library);
@@ -229,6 +253,9 @@ public sealed partial class LabOperationsController
         var library = await dbContext.LabLibraries.SingleOrDefaultAsync(item => item.Id == libraryId, cancellationToken)
             ?? throw Missing();
         EnsureVersion(library.Version, request.Version);
+        if (await dbContext.LabPreparationMembers.AnyAsync(m => m.LabLibraryId == library.Id, cancellationToken))
+            throw Conflict("preparation_qc_authoritative", "This library uses its preparation QC evidence. Open its preparation batch; a second QC entry is not required.");
+        await RequireLibraryAttemptAsync(library, cancellationToken, requireSuccess: false);
         library.RecordQc(request.Passed, NormalizeJson(request.ResultsJson, "library_qc_results_invalid"));
         await dbContext.SaveChangesAsync(cancellationToken);
         return MapLibrary(library);
@@ -264,6 +291,7 @@ public sealed partial class LabOperationsController
                 && item.LabLibraryId == library.Id,
             cancellationToken))
             throw Conflict("batch_member_duplicate", "This library is already in the selected batch.");
+        await RequireLibraryAttemptAsync(library, cancellationToken);
         if (library.Status != LabLibraryStatus.QcPassed)
             throw Conflict("library_qc_required", "Only a QC-passed library can be batched.");
         dbContext.LabBatchMembers.Add(new LabBatchMember(batch.Id, request.LabWorkOrderId, library.Id, DateTime.UtcNow));
@@ -282,6 +310,7 @@ public sealed partial class LabOperationsController
             ?? throw Missing();
         EnsureVersion(batch.Version, request.Version);
         var occurredAtUtc = request.OccurredAtUtc?.ToUniversalTime() ?? DateTime.UtcNow;
+        await RequireBatchAttemptReadinessAsync(batch.Id, cancellationToken);
         switch (request.Action.Trim().ToLowerInvariant())
         {
             case "start": batch.Start(occurredAtUtc); break;

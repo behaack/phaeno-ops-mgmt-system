@@ -1,6 +1,6 @@
 # Major-workflow acceptance run record
 
-Copy this file for each run; leave this template unchanged. Follow [README.md](README.md) and [TEST-DATA.md](TEST-DATA.md). All 75 cases are initially Not run.
+Copy this file for each run; leave this template unchanged. Follow [README.md](README.md) and [TEST-DATA.md](TEST-DATA.md). All 81 cases are initially Not run.
 
 ## Run identity
 
@@ -86,6 +86,12 @@ Use Pass / Fail / Blocked / Not run / Not applicable. Every required step and va
 | LAB-04 | Guided evidence, QC blockers, correction and completion | Not run | | |
 | LAB-05 | Libraries, scan-first batches and external sequencing custody | Not run | | |
 | LAB-06 | Exceptions, independent scientific approval and release candidate | Not run | | |
+| LAB-07 | Protocol retirement, workflow invalidation and revalidation | Not run | | |
+| LAB-08 | Promotion after independent approval | Not run | | |
+| LAB-09 | Specimen tube attempts and reserve fallback | Not run | | |
+| LAB-10 | Tube intake acceptance and controlled reasons | Not run | | |
+| LAB-13 | Inspect at accession; record damaged tubes and accept the remainder | Not run | | |
+| LAB-14 | Preparation trays, shared evidence and sequencing handoff | Not run | | |
 | FIN-01 | Approved billing, frozen invoice and scientific independence | Not run | | |
 | FIN-02 | Receipt evidence, split allocation and overpayment | Not run | | |
 | FIN-03 | Allocation reversal, receipt reversal and invoice adjustments | Not run | | |
@@ -175,7 +181,7 @@ Add/remove rows to match the case; repeat separately for each role, state or dev
 
 ## Acceptance decision
 
-- Case totals: Pass __ / Fail __ / Blocked __ / Not run __ / Not applicable __ (must total 75):
+- Case totals: Pass __ / Fail __ / Blocked __ / Not run __ / Not applicable __ (must total 81):
 - Connected journeys completed:
 - Remaining failures/blockers and explicit disposition:
 - Missing provider / destination / physical / restore evidence:

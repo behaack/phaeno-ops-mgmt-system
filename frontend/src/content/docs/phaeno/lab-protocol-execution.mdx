@@ -2,15 +2,33 @@
 
 Lab Ops uses a controlled service workflow to arrange reusable, versioned protocols into the approved production process. Every laboratory job and execution retains the exact workflow, stage, and protocol versions that governed it.
 
+## Preparation batches
+
+Open **Lab operations → Library prep** to create a preparation batch. Choose an active tray format and an approved workflow whose protocol versions explicitly support preparation batches. POMS generates the batch identifier from the service and creation timestamp in UTC, for example **PSeq-20260912-143052**. A numeric suffix distinguishes batches created at the same time. You do not enter a batch name; add optional notes for context. The identifier stays with the batch through preparation and sequencing handoff. Existing batches retain their original names. Jobs must already have that same workflow version pinned and a confirmed tube-use instruction. The system does not repin jobs to make them fit.
+
+Scan accepted, available source tubes into tray positions. Tubes may come from different jobs, and positions may remain empty. A specimen can reserve only one source at a time. Before starting, tubes can be moved or removed with a reason. **Start preparation** confirms and locks the assembled tray; after start, failed tubes remain in its history and reserves must enter a new batch.
+
+Supervisors and Protocol Administrators manage tray formats in **Lab operations → Lab configurations → Tray formats**. Choose **New tray format** or **Edit tray format** to set rows, columns, position labels and unavailable positions. Preview the layout before saving. Retiring a format prevents its use for new batches while preserving existing batch layouts. Return to **Library prep** to select a format when creating a preparation batch.
+
+Record steps from the batch in workflow order. Each entry lists the covered tubes and requires confirmation. The approved protocol determines whether a value is one shared batch observation, an individual tube measurement, or a shared value with identified tube exceptions. Record an exception reason whenever a tube differs from a shared value or QC outcome. Failed tubes cannot inherit later success. A Hold remains unresolved until permitted repeat/correction or explicit attempt failure; it does not automatically start a reserve.
+
+Use the step actions or the **Actions** menu at the top-right of the stage card to record material and equipment use once for the listed tubes. Resource choices exclude expired material lots and equipment past its calibration due date; POMS rechecks eligibility when you save. Create library outputs from the tube or step context. After all required steps and QC resolve, complete the stage. The confirmation names the batch and stage and explains what completing it will do; no additional data entry is required. The final stage requires a confirmed output barcode for every successful tube and reuses recorded QC to establish library eligibility. Close the preparation batch after every tube has succeeded or explicitly failed, then use its sequencing handoff. Scientific result review remains separate. An output from a failed attempt remains visible for traceability but cannot supply a sequencing library; it does not require output confirmation.
+
+Existing specimen and execution pages link batch-owned work back to its tray. Historical individual executions retain their original entry workflow and evidence.
+
 ## Build the service workflow
 
-In **Lab operations → Protocols**, create one **Controlled service workflow** for each active marketed laboratory service. POMS takes the service identity from the active Commercial catalog; do not type or maintain a separate product key.
+In **Lab operations → Lab configurations**, use the **Protocols**, **Workflows**, and **Tray formats** tabs for controlled procedures, ordered service workflows, and preparation-tray layouts. Protocols is the default tab. Each tab has its own link, so refreshing or returning from the workflow builder restores the relevant tab. Retired protocols are hidden by default; select **Show retired** to include them. Protocols with only discarded versions are excluded from the working list, including when Show retired is selected. Discarded revisions remain labeled **Discarded** in the associated protocol's read-only version history, with no editing or creation actions on those revisions. Newly created protocols without a saved version remain visible.
+
+In the **Workflows** tab, create one **Controlled service workflow** for each active marketed laboratory service. POMS takes the service identity from the active Commercial catalog; do not type or maintain a separate product key.
 
 Choose **Add version** to open the workflow builder. Arrange stages in operating order and select the exact Approved protocol version for each stage. Mark each stage Required, Optional, or Conditional. A Conditional stage requires a plain-language condition. Add handoff criteria when the next stage depends on recorded evidence or a specific state.
 
-Save the Draft, review it, and approve it. **Promote to production** makes the complete workflow available for new laboratory jobs using the exact Approved protocol versions selected in its stages. The previous Production workflow becomes Retired; existing jobs remain pinned to their original workflow and protocol versions. A service has only one Production workflow at a time.
+Save the Draft, then use its **Actions** menu to continue editing or approve it. Approved versions offer **Promote to production** and **Withdraw approval** in **Actions**; Invalid versions offer **Review workflow**, **Revalidate and approve**, and **Discard**. **Promote to production** makes the complete workflow available for new laboratory jobs using the exact Approved protocol versions selected in its stages. The previous Production workflow becomes Retired; existing jobs remain pinned to their original workflow and protocol versions. A service has only one Production workflow at a time. The workflow and every included protocol must have recorded approval by someone other than their respective authors before promotion. Once those independent approvals exist, an authorized Protocol Administrator may promote the workflow even if they authored the workflow or one of its protocols. Promotion records the actor and time and preserves the original approvals.
 
 ## Control protocol versions
+
+For a new preparation-compatible version, select **Use this version for preparation batches** and explicitly choose each capture's evidence scope and each QC gate's scope. Barcode identity captures must use **Tube** scope. Use individual scope for measurements that must be taken separately; shared entries do not represent individual measurements. Older approved versions do not gain scopes automatically. Follow the existing independent approval workflow before using the new version.
 
 A Protocol Administrator creates the protocol by entering its name and optional description, then continues directly to the structured definition builder. POMS derives a readable, immutable protocol key from the name and adds a suffix if that key is already in use. The key remains available in **Edit name and description** before approval when it is useful for support or integration matching, but the working list does not repeat it as user-facing protocol information.
 
@@ -18,25 +36,56 @@ Open the protocol's labeled **Actions** menu. Choose **Edit protocol** to change
 
 An identity without a saved definition is labeled **Setup incomplete**. Choose **Edit protocol** to build its initial Draft; the interface does not present this first definition as a new version. After a version is Approved, choose **Create new version**. The initial definition starts blank and offers an optional library-preparation example. A later version starts with the Approved definition. Build the procedure in execution order and use **Add step**, the move controls, duplicate, and remove actions to maintain that order. Replace example or copied content with the intended laboratory procedure before saving.
 
-For each step, enter a name and operator instructions, then choose whether the step is required, optional, or conditional. Conditional steps require a plain-language condition. Record whether the step may repeat, whether explicit operator confirmation is required, and whether a particular laboratory role is required.
+For each step, enter a name and operator instructions, then choose whether the step is required, optional, or conditional. Conditional steps require a plain-language condition. Record whether the step may repeat, whether explicit confirmation is required, and whether a particular laboratory role is required. **Confirmation required** means the person performing the step must confirm completion; it applies to every permitted role, including Supervisor.
 
-Add captured values only when the approved procedure requires them. Captures may be numbers, text, dates, choices, file references, or barcodes. Number captures may identify a unit, and choice captures require their permitted choices. Input materials, prepared outputs, and equipment types may be entered as comma- or line-separated requirements. A QC gate records explicit Pass, Fail, or Hold outcomes and requires acceptance criteria.
+Add captured values only when the approved procedure requires them. Captures may be numbers, text, dates, choices, file references, or barcodes. Number captures may identify a unit, and choice captures require their permitted choices. For a barcode that identifies the original specimen tube, select **Must match the selected source tube**. POMS then checks it against the attempt source. Existing approved definitions are unchanged; add this setting through a controlled new version when appropriate. Barcodes identifying recorded containers must belong to the current attempt’s lineage. Input materials, prepared outputs, and equipment types may be entered as comma- or line-separated requirements. A QC gate records explicit Pass, Fail, or Hold outcomes and requires acceptance criteria.
 
 Use the collapsed JSON preview only to review or copy the portable representation; do not author protocol JSON directly. **Create protocol draft** validates the complete definition and reserves the next version number. Cancelling after edits warns before discarding the unsaved definition.
 
 Each protocol can have only one Draft. While a Draft exists, **Edit protocol** replaces **Create new version**. Saving returns to the Protocols list, where the state is shown as **Draft vN** and the Actions menu exposes **Review and approve**.
 
-Approval is a formal, irreversible controlled release. **Review and approve** shows the exact ordered definition, requires an explicit attestation, requires an independent Protocol Administrator who did not author the version, and records that approver and timestamp. Approval locks the version and makes it the Approved version for future use. If another version was previously Approved, it becomes Superseded; work and service workflows already pinned to it remain unchanged.
+Approval is a formal, irreversible controlled release. **Review and approve** shows the exact ordered definition, whether preparation batches are enabled, each capture and QC scope, and source-tube matching requirements. Review these scopes to distinguish a shared observation from evidence recorded for each tube. Approval requires an explicit attestation, requires an independent Protocol Administrator who did not author the version, and records that approver and timestamp. Approval locks the version and makes it the Approved version for future use. If another version was previously Approved, it becomes Superseded; work and service workflows already pinned to it remain unchanged.
 
-A Draft may be discarded and remains in version history as Discarded. A protocol that has never been approved may instead be permanently deleted, together with its Draft and Discarded versions, after destructive confirmation. Once any version has been approved, the protocol and its complete version history cannot be deleted. Approved, Superseded, and Discarded versions remain immutable and available to explain protocol history.
+Before any version has been approved, the Actions menu offers **Delete protocol** to permanently remove the protocol and all its Draft or previously Discarded versions after confirmation. It does not offer Discard draft at this stage. Once any version has been approved, deletion is unavailable; **Discard draft** lets you abandon a proposed revision while retaining that version as Discarded in history. Approved, Superseded, and Discarded versions remain immutable and available to explain protocol history. A protocol referenced by a laboratory record cannot be deleted.
 
-## Assign work
+## Select a specimen and source
 
-Choose **Assign protocol** on a laboratory job. POMS offers only stages from that job's pinned service workflow. For a specimen-scoped assignment, complete the earlier Required stages for that same specimen before assigning a later stage; work-order-scoped stages are checked against work-order-scoped executions. Optional and Conditional stages remain explicit choices. Confirm that required inputs exist and that the assigned operator has an effective Lab role. The assignment pins both the workflow stage and its exact protocol version even after a newer workflow enters Production.
+Record actions appear as a named button when only one action is shown, or in **Actions** when multiple options are shown. Instructions written as **Actions → action name** refer to the direct button when it is the only option.
 
+Use **Specimens → Tubes → Execution → Libraries → Exceptions → Review** in that order as work progresses. **Actions → Manage specimen attempts** returns to the specimen list. Each sample opens its own page with recognizable sample ID, received/expected counts, intake decision and separate processing progress.
+
+Complete tube intake during accessioning; **Tubes** shows the recorded decisions. On the specimen page, choose **Actions → Select source tube**, choose an accepted available tube and scan its exact barcode. Saving reserves that source and assigns the first workflow stage together. It does not start processing. Unreceived, unreviewed, held, rejected, unavailable or previously failed tubes cannot be selected. Extra tubes remain reserves.
+
+On an older unstarted job with no recorded tube-use instruction, a Supervisor must first choose **Confirm tube-use instruction**, review the order and record a reason. Selecting the source adopts a matching existing Planned first-stage execution; it does not duplicate it. Historical started work is never assigned a source retrospectively and is flagged for review.
+
+An unstarted attempt can be cancelled with a reason to release its reservation. After start, the source is fixed. Completing one protocol does not release the source: assign the next stage from the same specimen's Actions menu. Complete stages in order within that attempt. Required stages cannot be skipped; Optional and Conditional stages need an explicit decision and reason. A replacement tube starts the pinned workflow again.
+
+## Failure, reserve use and exhaustion
+
+A QC Hold or failed repeatable reading keeps the current attempt unresolved; it does not automatically authorize a reserve. Repeat a permitted step or resolve the evidence in that attempt. **Hold attempt** records a reason and the next action owned by the person recording it. **Resolve attempt hold** requires a resolution before work resumes.
+
+When the attempt cannot continue, choose **Close attempt as failed**. Select a predefined processing-failure reason, a started execution and the evidence/reference. This closes the attempt while retaining completed work, consumed materials, equipment records and output lineage. It does not dispose of the tube. Failed-attempt outputs cannot proceed into a replacement attempt, batching or release.
+
+If another eligible tube remains, choose **Use reserve tube** and explicitly select/scan it. Review the failed source, failure reason and restart point. A new linked attempt begins at the first workflow stage; earlier completed stages do not count for the replacement. Only one attempt may be active, and a successful attempt prevents further source selection.
+
+When no reserve is currently eligible, processing waits **On hold** with a material-resolution explanation and next action. Expected tubes or potentially usable tubes awaiting review must be resolved first. After terminal failure with no material remaining for further permitted analysis, use **Confirm material exhausted**, record evidence and confirm the specimen **Failed** outcome. Its earlier intake acceptance remains intact. Close any resulting follow-up exception separately after review. No receipt, review or exception resolution automatically starts a reserve.
+
+## Retire a protocol
+
+A Protocol Administrator can choose **Actions → Retire protocol** after a protocol has been approved. Enter a retirement reason. Discard any open protocol draft first. Retirement is final and preserves identity, definitions, approvals and execution history. Use **Show retired** to see its reason and date.
+
+The dialog checks affected workflows and work before allowing confirmation:
+
+- If samples are in process, retirement is blocked and the affected jobs are listed. This includes unfinished workflows whose earlier executions have started or completed.
+- If work is assigned but has not started, POMS warns that retirement may strand it. Choose **Proceed anyway** only after reviewing those jobs. Cancel leaves everything unchanged.
+- If workflows use the protocol, POMS warns that they will become invalid. Confirmation retires the protocol and invalidates affected workflows together. Changes to the displayed impact require a fresh review.
+
+POMS creates a new **Invalid** recovery revision with the retired protocol removed and the remaining stages kept in order. Previous versions, stages and approval records remain historical. Open **Review workflow** to inspect or modify the remaining procedure. **Revalidate and approve** checks that at least one stage remains and every stage uses an eligible approved protocol, and applies the normal independent-review rule. Further edits are optional when the remaining procedure is already correct. Explicit **Promote to production** is still required before the revised workflow governs new work.
+
+Queued jobs retain their original assignments and display **Assigned workflow is invalid**. They cannot begin processing under the invalidated version. Review those assignments separately; approving a replacement does not silently move queued work onto a changed procedure.
 ## Record execution
 
-On the laboratory job's **Execution** tab, open the execution link. The dedicated workspace shows its pinned protocol version, specimen, instructions, resource requirements, saved evidence, and remaining completion blockers. Choose **Start execution** before recording work.
+On the laboratory job's **Execution** tab, open the execution link. The dedicated workspace shows its pinned protocol version, specimen, instructions, resource requirements, saved evidence, and remaining completion blockers. For a Planned specimen execution without an accepted available tube, **Tube acceptance required** explains the prerequisite and **Open tubes** opens the job's **Tubes** tab. **Start execution** also requires an explicitly selected source attempt. Use **Open specimen and source** if selection is missing; accepting a tube alone does not select it. Return after accessioning to refresh eligibility. Choose **Actions → Start execution** and scan the selected source barcode again. POMS rechecks current eligibility before recording any start.
 
 Choose **Record** for the next step. Enter the measurements, dates, approved choices, file references, and barcodes required by the procedure. Units appear beside the relevant capture. A file reference records an identifier; it does not upload a file. Confirm performed work when the procedure requires it. POMS checks the saved values against the pinned definition and records your identity and the time.
 
@@ -46,7 +95,7 @@ Record every optional and conditional step explicitly. An allowed **Skip with re
 
 For a QC gate, deliberately choose **Pass**, **Fail**, or **Hold**. Fail and Hold require a reason. They remain visible as saved evidence, mark the execution Blocked, and prevent later steps and completion until resolved through an allowed repeat or correction.
 
-Saved progress remains available when you leave and return. When all steps and QC gates are satisfied, choose **Complete execution**, add an optional deviation note, and confirm completion. POMS rechecks the persisted evidence and locks the completed execution. A held or finished laboratory job cannot accept new execution evidence.
+Saved progress remains available when you leave and return. When all steps and QC gates are satisfied, choose **Actions → Complete execution**, add an optional deviation note, and confirm completion. POMS rechecks the persisted evidence and locks the completed execution. A held or finished laboratory job cannot accept new execution evidence.
 
 ## Recover safely
 
@@ -56,8 +105,8 @@ Do not edit an Approved definition to repair an execution. If a protocol is wron
 
 If another user changes the execution during a save, POMS reloads the current record and preserves your entered values. Review the latest history before saving again. If the original action is no longer available, close the form and use an allowed repeat or correction.
 
-**Abandon execution** requires a reason, stops the execution, and retains its evidence. Arrange a new execution for replacement work. Historical unstructured definitions or results remain preserved with a recovery message; a Protocol Administrator must prepare a valid new approved version for new work. POMS does not silently rewrite controlled history.
+**Abandon execution** remains available for eligible historical, unlinked work and retains its evidence with a reason. For an attempt-linked execution, cancel the unstarted attempt or explicitly close the started attempt as failed from the specimen page; ordinary abandonment cannot authorize reserve use. Historical unstructured definitions or results remain preserved with a recovery message; a Protocol Administrator must prepare a valid new approved version for new work. POMS does not silently rewrite controlled history.
 
-## Assign an operator
+## Who can perform work
 
-When assigning a protocol stage, choose an active laboratory operator, supervisor, or operations administrator by name. Assignment is optional; POMS retains the selected person with the execution. Select the specimen before choosing its eligible workflow stage so earlier required work is checked in the correct specimen scope.
+Source and attempt actions require an effective Operator or Supervisor role. Each protocol step additionally checks its required role. POMS retains the actual person recording each action; an earlier assignment never grants permission to perform a step.

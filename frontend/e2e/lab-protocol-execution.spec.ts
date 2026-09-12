@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
-import { labExecutionFixture, executionId, recordingUserId } from '../src/test-helpers/lab-execution'
+import { labExecutionFixture, recordingUserId } from '../src/test-helpers/lab-execution'
 import type { LabExecutionStepInput } from '../src/api/lab-operations'
 
 async function setup(page: Page, conflict = false) {
@@ -49,11 +49,12 @@ async function setup(page: Page, conflict = false) {
     }
     refresh()
     if (url.pathname.includes('/executions/')) return route.fulfill({ json: envelope(url.pathname.endsWith('/transition') ? data.execution : data) })
+    if (url.pathname.endsWith('/attempts')) return route.fulfill({ json: envelope({ workOrderId: data.workOrderId, jobName: 'TRAINING-JOB', workOrderVersion: 1, policyKey: null, workflowName: 'Training workflow', workflowVersion: 1, canOperate: true, canAdoptPolicy: false, specimens: [], stages: [{ id: data.execution.labServiceWorkflowStageId, sequence: 1, name: 'Synthetic library preparation', requirement: 'Required', protocolVersionId: data.execution.labProtocolVersionId }] }) })
     if (url.pathname.includes('/work-orders/')) return route.fulfill({ json: envelope({ workOrder: { id: data.workOrderId, commercialOrderNumber: 'TRAINING-JOB', status: 'Processing', version: 1, labServiceWorkflowVersionId: 'workflow', serviceKey: 'pseq-lab-service' }, specimens: [], containers: [], executions: [data.execution], libraries: [], exceptions: [], scientificApprovals: [] }) })
     return route.fulfill({ json: envelope({ workOrders: [], protocols: [], serviceWorkflows: [], marketedServices: [], materialLots: [], materialDefinitions: [], suppliers: [], storageLocations: [], equipment: [], batches: [], roleAssignments: [] }) })
   })
   await page.goto('/e2e/fixtures/lab-execution.html')
-  await page.getByRole('link', { name: `Execution ${executionId.slice(0, 8)}` }).click()
+  await page.getByRole('link', { name: 'Synthetic library preparation', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Synthetic library preparation', exact: true })).toBeVisible()
   return { data, bodies }
 }
@@ -63,7 +64,8 @@ test('guided execution preserves typed evidence, QC hold, correction, skip, and 
   page.on('pageerror', error => errors.push(error.message))
   if (info.project.name === 'mobile-chrome') await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
   const { bodies } = await setup(page)
-  await page.getByRole('button', { name: 'Start execution', exact: true }).click()
+  await page.getByRole('button', { name: 'Actions', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Start execution', exact: true }).click()
   await page.getByRole('button', { name: 'Record Verify sample identity' }).click()
   await page.getByRole('button', { name: 'Save step record' }).click()
   await expect(page.getByText('Source barcode is required.')).toBeVisible()
@@ -74,7 +76,7 @@ test('guided execution preserves typed evidence, QC hold, correction, skip, and 
   await page.getByRole('button', { name: 'Save step record' }).click()
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await page.getByRole('link', { name: 'Back to laboratory job' }).click()
-  await page.getByRole('link', { name: `Execution ${executionId.slice(0, 8)}` }).click()
+  await page.getByRole('link', { name: 'Synthetic library preparation', exact: true }).click()
   await expect(page.getByText('Source barcode:', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Record Review library QC' }).click()
   await page.getByLabel('Library concentration', { exact: false }).fill('0')
@@ -86,7 +88,9 @@ test('guided execution preserves typed evidence, QC hold, correction, skip, and 
   await page.screenshot({ path: info.outputPath('typed-step.png'), fullPage: true })
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([])
   await page.getByRole('button', { name: 'Save step record' }).click()
-  await expect(page.getByRole('button', { name: 'Complete execution', exact: true })).toBeDisabled()
+  await page.getByRole('button', { name: 'Actions', exact: true }).click()
+  await expect(page.getByRole('menuitem', { name: 'Complete execution', exact: true })).toHaveAttribute('aria-disabled', 'true')
+  await page.keyboard.press('Escape')
   await expect(page.getByText('QC is hold', { exact: false })).toBeVisible()
   await page.getByRole('button', { name: 'Correct Review library QC' }).click()
   await expect(page.getByLabel('Library concentration', { exact: false })).toHaveValue('0')
@@ -98,7 +102,8 @@ test('guided execution preserves typed evidence, QC hold, correction, skip, and 
   await page.getByLabel('Step decision', { exact: false }).selectOption('skipped')
   await page.getByLabel('Reason or condition assessment', { exact: false }).fill('Supervisor did not request additional review')
   await page.getByRole('button', { name: 'Save step record' }).click()
-  await page.getByRole('button', { name: 'Complete execution', exact: true }).click()
+  await page.getByRole('button', { name: 'Actions', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Complete execution', exact: true }).click()
   await page.getByRole('button', { name: 'Confirm completion' }).click()
   await expect(page.getByText('This execution and its evidence are locked.', { exact: false })).toBeVisible()
   expect(bodies[1].captures.concentration).toBe(0)
@@ -114,7 +119,8 @@ test('guided execution preserves typed evidence, QC hold, correction, skip, and 
 
 test('stale step write reloads its version and preserves entered evidence', async ({ page }) => {
   const { bodies } = await setup(page, true)
-  await page.getByRole('button', { name: 'Start execution', exact: true }).click()
+  await page.getByRole('button', { name: 'Actions', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Start execution', exact: true }).click()
   await page.getByRole('button', { name: 'Record Verify sample identity' }).click()
   await page.getByLabel('Source barcode', { exact: false }).fill('KEEP-THIS-VALUE')
   await page.getByLabel('I performed this step', { exact: false }).check()
@@ -129,7 +135,8 @@ test('stale step write reloads its version and preserves entered evidence', asyn
 
 test('keyboard dismissal protects unsaved evidence and restores focus', async ({ page }) => {
   await setup(page)
-  await page.getByRole('button', { name: 'Start execution', exact: true }).click()
+  await page.getByRole('button', { name: 'Actions', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Start execution', exact: true }).click()
   const recordButton = page.getByRole('button', { name: 'Record Verify sample identity' })
   await recordButton.focus()
   await page.keyboard.press('Enter')

@@ -224,11 +224,11 @@ export function ProtocolVersionBuilderPage({
     )
   }
 
-  if (isEditing && (!draft || draft.status !== 'Draft')) {
+  if (protocol.retiredAtUtc || (isEditing && (!draft || draft.status !== 'Draft'))) {
     return (
       <main className="page-wrap px-4 py-8">
         <Alert variant="destructive">
-          <AlertTitle>Protocol draft is not editable</AlertTitle>
+          <AlertTitle>{protocol.retiredAtUtc ? 'Protocol is retired' : 'Protocol draft is not editable'}</AlertTitle>
           <AlertDescription>
             The selected version may have changed status or no longer be available. Return to Protocols and review its current state.
           </AlertDescription>
@@ -357,6 +357,10 @@ export function ProtocolVersionBuilderPage({
         onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
       >
         <RequiredLegend />
+        <label className="flex cursor-pointer items-start gap-2 text-sm leading-snug">
+          <input type="checkbox" className="mt-0.5 size-4 shrink-0" {...form.register('preparationBatchEnabled')} />
+          <span>Use this version for preparation batches. Choose an explicit scope for every capture and QC gate below.</span>
+        </label>
 
         <Card>
           <CardHeader>
@@ -549,8 +553,8 @@ function ProtocolStepEditor({
           />
           <BooleanField
             id={`step-${index}-confirmation`}
-            label="Operator confirmation required"
-            description="The operator must explicitly confirm completion."
+            label="Confirmation required"
+            description="The person performing this step must explicitly confirm completion."
             control={form}
             name={`steps.${index}.operatorConfirmation`}
           />
@@ -575,35 +579,44 @@ function ProtocolStepEditor({
             const captureType = form.watch(`steps.${index}.captures.${captureIndex}.type`)
             const captureErrors = stepErrors?.captures?.[captureIndex]
             return (
-              <div key={capture.id} className="grid gap-3 rounded-lg bg-muted/40 p-3 lg:grid-cols-[minmax(0,2fr)_minmax(10rem,1fr)_auto_auto] lg:items-start">
-                <Field label="Capture label" id={`step-${index}-capture-${captureIndex}-label`} required error={captureErrors?.label?.message}>
-                  <Input id={`step-${index}-capture-${captureIndex}-label`} {...form.register(`steps.${index}.captures.${captureIndex}.label`)} />
-                </Field>
-                <Field label="Type" id={`step-${index}-capture-${captureIndex}-type`} required error={captureErrors?.type?.message}>
-                  <select id={`step-${index}-capture-${captureIndex}-type`} className={selectClass} {...form.register(`steps.${index}.captures.${captureIndex}.type`)}>
-                    {protocolCaptureTypes.map((value) => <option key={value} value={value}>{sentenceCase(value)}</option>)}
+              <div key={capture.id} className="space-y-3 rounded-lg bg-muted/40 p-3">
+                <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+                  <Field label="Capture label" id={`step-${index}-capture-${captureIndex}-label`} required error={captureErrors?.label?.message}>
+                    <Input id={`step-${index}-capture-${captureIndex}-label`} {...form.register(`steps.${index}.captures.${captureIndex}.label`)} />
+                  </Field>
+                  <Field label="Type" id={`step-${index}-capture-${captureIndex}-type`} required error={captureErrors?.type?.message}>
+                    <select id={`step-${index}-capture-${captureIndex}-type`} className={selectClass} {...form.register(`steps.${index}.captures.${captureIndex}.type`)}>
+                      {protocolCaptureTypes.map((value) => <option key={value} value={value}>{sentenceCase(value)}</option>)}
+                    </select>
+                  </Field>
+                </div>
+                {captureType === 'barcode' ? <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" {...form.register(`steps.${index}.captures.${captureIndex}.sourceTube`)} />Must match the selected source tube</label> : null}
+                {form.watch('preparationBatchEnabled') ? <Field label="Evidence scope" id={`scope-${index}-${captureIndex}`} required error={captureErrors?.scope?.message}>
+                  <select id={`scope-${index}-${captureIndex}`} className={selectClass} {...form.register(`steps.${index}.captures.${captureIndex}.scope`)}>
+                    <option value="">Choose scope…</option><option value="tube">Tube — record individually</option>
+                    {captureType !== 'barcode' ? <><option value="batch">Batch — one shared observation</option><option value="shared">Shared value with tube exceptions</option></> : null}
                   </select>
-                </Field>
-                <BooleanField
-                  id={`step-${index}-capture-${captureIndex}-required`}
-                  label="Required"
-                  control={form}
-                  name={`steps.${index}.captures.${captureIndex}.required`}
-                  compact
-                />
-                <Button type="button" variant="ghost" size="icon" className="mt-6" aria-label={`Remove ${form.watch(`steps.${index}.captures.${captureIndex}.label`) || `capture ${captureIndex + 1}`}`} title="Remove capture" onClick={() => captures.remove(captureIndex)}><Trash2 /></Button>
+                </Field> : null}
                 {captureType === 'number' ? (
                   <Field label="Unit" id={`step-${index}-capture-${captureIndex}-unit`} error={captureErrors?.unit?.message}>
                     <Input id={`step-${index}-capture-${captureIndex}-unit`} {...form.register(`steps.${index}.captures.${captureIndex}.unit`)} placeholder="ng/µL" />
                   </Field>
                 ) : null}
                 {captureType === 'choice' ? (
-                  <div className="lg:col-span-2">
-                    <Field label="Choices" id={`step-${index}-capture-${captureIndex}-choices`} required error={captureErrors?.choices?.message} description="Separate choices with commas or new lines.">
-                      <Input id={`step-${index}-capture-${captureIndex}-choices`} {...form.register(`steps.${index}.captures.${captureIndex}.choices`)} placeholder="Pass, Fail, Hold" />
-                    </Field>
-                  </div>
+                  <Field label="Choices" id={`step-${index}-capture-${captureIndex}-choices`} required error={captureErrors?.choices?.message} description="Separate choices with commas or new lines.">
+                    <Input id={`step-${index}-capture-${captureIndex}-choices`} {...form.register(`steps.${index}.captures.${captureIndex}.choices`)} placeholder="Pass, Fail, Hold" />
+                  </Field>
                 ) : null}
+                <div className="flex items-center justify-between gap-4">
+                  <BooleanField
+                    id={`step-${index}-capture-${captureIndex}-required`}
+                    label="Required"
+                    control={form}
+                    name={`steps.${index}.captures.${captureIndex}.required`}
+                    compact
+                  />
+                  <Button type="button" variant="ghost" size="icon" aria-label={`Remove ${form.watch(`steps.${index}.captures.${captureIndex}.label`) || `capture ${captureIndex + 1}`}`} title="Remove capture" onClick={() => captures.remove(captureIndex)}><Trash2 /></Button>
+                </div>
               </div>
             )
           })}
@@ -639,9 +652,16 @@ function ProtocolStepEditor({
             name={`steps.${index}.qcEnabled`}
           />
           {qcEnabled ? (
+            <>
+            {form.watch('preparationBatchEnabled') ? <Field label="QC scope" id={`qc-scope-${index}`} required error={stepErrors?.qcScope?.message}>
+              <select id={`qc-scope-${index}`} className={selectClass} {...form.register(`steps.${index}.qcScope`)}>
+                <option value="">Choose scope…</option><option value="tube">Tube — assess individually</option><option value="batch">Batch — applies to all covered tubes</option><option value="shared">Shared outcome with tube exceptions</option>
+              </select>
+            </Field> : null}
             <Field label="Acceptance criteria" id={`step-${index}-qc-criteria`} required error={stepErrors?.qcCriteria?.message}>
               <textarea id={`step-${index}-qc-criteria`} className={textareaClass} {...form.register(`steps.${index}.qcCriteria`)} />
             </Field>
+            </>
           ) : null}
         </section>
       </CardContent>
@@ -669,8 +689,8 @@ function BooleanField({
       control={control.control}
       name={name}
       render={({ field }) => (
-        <div className={compact ? 'pt-6' : 'rounded-lg border p-3'}>
-          <div className="flex items-start gap-3">
+        <div className={compact ? 'py-1' : 'rounded-lg border p-3'}>
+          <div className={compact ? 'flex items-center gap-3' : 'flex items-start gap-3'}>
             <Checkbox id={id} checked={field.value} onCheckedChange={(checked) => field.onChange(checked === true)} />
             <div>
               <Label htmlFor={id} className="cursor-pointer text-sm font-medium">{label}</Label>

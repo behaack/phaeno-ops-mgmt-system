@@ -10819,6 +10819,38 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("trial_scopes", "commercial_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabAttemptCommandReceipt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<DateTime>("AppliedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("applied_at_utc");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("request_hash");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabWorkOrderId");
+
+                    b.ToTable("lab_attempt_command_receipts", "lab_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabBatchMember", b =>
                 {
                     b.Property<Guid>("Id")
@@ -10890,11 +10922,38 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("external_barcode_reference_id");
 
+                    b.Property<string>("IntakeDisposition")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("intake_disposition");
+
+                    b.Property<string>("IntakeNotes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("intake_notes");
+
+                    b.Property<string>("IntakeReasonCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("intake_reason_code");
+
+                    b.Property<DateTime?>("IntakeReviewedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("intake_reviewed_at_utc");
+
+                    b.Property<Guid?>("IntakeReviewedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("intake_reviewed_by_user_id");
+
                     b.Property<string>("Kind")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("kind");
+
+                    b.Property<Guid?>("LabSpecimenAttemptId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_specimen_attempt_id");
 
                     b.Property<Guid?>("LabSpecimenId")
                         .HasColumnType("uuid")
@@ -10923,7 +10982,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnName("last_label_printed_by_user_id");
 
                     b.Property<string>("Location")
-                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("location");
@@ -10971,6 +11029,8 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("ExternalBarcodeReferenceId")
                         .IsUnique();
+
+                    b.HasIndex("LabSpecimenAttemptId");
 
                     b.HasIndex("LabSpecimenId");
 
@@ -11077,6 +11137,19 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("name");
 
+                    b.Property<DateTime?>("RetiredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("retired_at_utc");
+
+                    b.Property<Guid?>("RetiredByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("retired_by_user_id");
+
+                    b.Property<string>("RetirementReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("retirement_reason");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -11117,6 +11190,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("lab_equipment_id");
 
+                    b.Property<Guid?>("LabPreparationRecordId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_preparation_record_id");
+
                     b.Property<Guid>("LabProtocolExecutionId")
                         .HasColumnType("uuid")
                         .HasColumnName("lab_protocol_execution_id");
@@ -11137,6 +11214,8 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("LabEquipmentId");
+
+                    b.HasIndex("LabPreparationRecordId");
 
                     b.HasIndex("LabProtocolExecutionId");
 
@@ -11345,6 +11424,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("lab_material_lot_id");
 
+                    b.Property<Guid?>("LabPreparationRecordId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_preparation_record_id");
+
                     b.Property<Guid>("LabProtocolExecutionId")
                         .HasColumnType("uuid")
                         .HasColumnName("lab_protocol_execution_id");
@@ -11374,6 +11457,8 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("LabMaterialLotId");
+
+                    b.HasIndex("LabPreparationRecordId");
 
                     b.HasIndex("LabProtocolExecutionId");
 
@@ -11765,6 +11850,179 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("lab_operations_outbox_events", "lab_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPreparationBatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("CompletedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at_utc");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("LabServiceWorkflowVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_service_workflow_version_id");
+
+                    b.Property<Guid>("LabTrayFormatId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_tray_format_id");
+
+                    b.Property<string>("LayoutJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("layout_json");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("name");
+
+                    b.Property<DateTime?>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at_utc");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabServiceWorkflowVersionId");
+
+                    b.HasIndex("LabTrayFormatId");
+
+                    b.ToTable("lab_preparation_batches", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPreparationMember", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ConfirmedBarcode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("confirmed_barcode");
+
+                    b.Property<Guid?>("LabLibraryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_library_id");
+
+                    b.Property<Guid>("LabPreparationBatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_preparation_batch_id");
+
+                    b.Property<Guid>("LabSpecimenAttemptId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_specimen_attempt_id");
+
+                    b.Property<bool>("OutputConfirmed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("output_confirmed");
+
+                    b.Property<Guid?>("OutputContainerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("output_container_id");
+
+                    b.Property<string>("Position")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("position");
+
+                    b.Property<bool>("Removed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("removed");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabLibraryId");
+
+                    b.HasIndex("LabSpecimenAttemptId")
+                        .IsUnique()
+                        .HasFilter("NOT removed");
+
+                    b.HasIndex("OutputContainerId");
+
+                    b.HasIndex("LabPreparationBatchId", "Position")
+                        .IsUnique()
+                        .HasFilter("NOT removed");
+
+                    b.ToTable("lab_preparation_members", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPreparationRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("action");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<string>("DetailsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("details_json");
+
+                    b.Property<Guid>("LabPreparationBatchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_preparation_batch_id");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("request_hash");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabPreparationBatchId", "RecordedAtUtc");
+
+                    b.ToTable("lab_preparation_records", "lab_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPreparedReagentComponent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -11836,6 +12094,19 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("name");
 
+                    b.Property<DateTime?>("RetiredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("retired_at_utc");
+
+                    b.Property<Guid?>("RetiredByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("retired_by_user_id");
+
+                    b.Property<string>("RetirementReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("retirement_reason");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -11898,6 +12169,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("lab_service_workflow_stage_id");
 
+                    b.Property<Guid?>("LabSpecimenAttemptId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_specimen_attempt_id");
+
                     b.Property<Guid?>("LabSpecimenId")
                         .HasColumnType("uuid")
                         .HasColumnName("lab_specimen_id");
@@ -11936,6 +12211,10 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasIndex("LabServiceWorkflowStageId");
 
                     b.HasIndex("LabSpecimenId");
+
+                    b.HasIndex("LabSpecimenAttemptId", "LabServiceWorkflowStageId")
+                        .IsUnique()
+                        .HasFilter("lab_specimen_attempt_id IS NOT NULL");
 
                     b.HasIndex("LabWorkOrderId", "Status");
 
@@ -12358,6 +12637,15 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
 
+                    b.Property<DateTime?>("InvalidatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("invalidated_at_utc");
+
+                    b.Property<string>("InvalidationReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("invalidation_reason");
+
                     b.Property<Guid>("LabServiceWorkflowId")
                         .HasColumnType("uuid")
                         .HasColumnName("lab_service_workflow_id");
@@ -12453,6 +12741,34 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("original_target_at_utc");
 
+                    b.Property<string>("ProcessingNextAction")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("processing_next_action");
+
+                    b.Property<string>("ProcessingNote")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("processing_note");
+
+                    b.Property<Guid?>("ProcessingOwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("processing_owner_user_id");
+
+                    b.Property<string>("ProcessingReasonCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("processing_reason_code");
+
+                    b.Property<string>("ProcessingState")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("processing_state");
+
+                    b.Property<DateTime?>("ProcessingUpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("processing_updated_at_utc");
+
                     b.Property<string>("ReceiptCondition")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)")
@@ -12491,6 +12807,133 @@ namespace PSeq.Operations.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("lab_specimens", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabSpecimenAttempt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("ClosedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("closed_at_utc");
+
+                    b.Property<Guid?>("ClosedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("closed_by_user_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid?>("FailedExecutionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("failed_execution_id");
+
+                    b.Property<string>("FailureEvidence")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("failure_evidence");
+
+                    b.Property<string>("FailureReasonCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("failure_reason_code");
+
+                    b.Property<string>("HoldNextAction")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("hold_next_action");
+
+                    b.Property<Guid?>("HoldOwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("hold_owner_user_id");
+
+                    b.Property<string>("HoldReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("hold_reason");
+
+                    b.Property<Guid>("LabServiceWorkflowVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_service_workflow_version_id");
+
+                    b.Property<Guid>("LabSpecimenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_specimen_id");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<Guid?>("PreviousAttemptId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("previous_attempt_id");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("integer")
+                        .HasColumnName("sequence");
+
+                    b.Property<Guid>("SourceContainerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_container_id");
+
+                    b.Property<string>("StageSkipsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("stage_skips_json");
+
+                    b.Property<DateTime?>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at_utc");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("state");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FailedExecutionId");
+
+                    b.HasIndex("LabServiceWorkflowVersionId");
+
+                    b.HasIndex("LabSpecimenId")
+                        .IsUnique()
+                        .HasFilter("state IN ('Planned', 'InProgress', 'OnHold', 'Succeeded')");
+
+                    b.HasIndex("LabWorkOrderId");
+
+                    b.HasIndex("PreviousAttemptId");
+
+                    b.HasIndex("SourceContainerId")
+                        .IsUnique()
+                        .HasFilter("state <> 'Cancelled'");
+
+                    b.HasIndex("LabSpecimenId", "Sequence")
+                        .IsUnique();
+
+                    b.ToTable("lab_specimen_attempts", "lab_ops");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabStorageLocation", b =>
@@ -12599,6 +13042,48 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasIndex("IsActive", "Name");
 
                     b.ToTable("lab_suppliers", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabTrayFormat", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("LayoutJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("layout_json");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("lab_tray_formats", "lab_ops");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabWorkAuthorizationVersion", b =>
@@ -12788,6 +13273,19 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid>("SubmittingOrganizationId")
                         .HasColumnType("uuid")
                         .HasColumnName("submitting_organization_id");
+
+                    b.Property<int?>("TubeUsePolicyAuthorizationVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("tube_use_policy_authorization_version");
+
+                    b.Property<string>("TubeUsePolicyKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("tube_use_policy_key");
+
+                    b.Property<int?>("TubeUsePolicyVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("tube_use_policy_version");
 
                     b.Property<string>("TurnaroundPolicyKey")
                         .IsRequired()
@@ -13970,6 +14468,15 @@ namespace PSeq.Operations.Api.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)")
                         .HasColumnName("tenant_safe_reason");
+
+                    b.Property<string>("TubeUsePolicyKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("tube_use_policy_key");
+
+                    b.Property<int?>("TubeUsePolicyVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("tube_use_policy_version");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -16833,6 +17340,15 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabAttemptCommandReceipt", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabBatchMember", b =>
                 {
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabLibrary", null)
@@ -16856,6 +17372,11 @@ namespace PSeq.Operations.Api.Migrations
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabContainer", b =>
                 {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimenAttempt", null)
+                        .WithMany()
+                        .HasForeignKey("LabSpecimenAttemptId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimen", null)
                         .WithMany()
                         .HasForeignKey("LabSpecimenId")
@@ -16894,6 +17415,11 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("LabEquipmentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabPreparationRecord", null)
+                        .WithMany()
+                        .HasForeignKey("LabPreparationRecordId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabProtocolExecution", null)
                         .WithMany()
@@ -16962,6 +17488,11 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabPreparationRecord", null)
+                        .WithMany()
+                        .HasForeignKey("LabPreparationRecordId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabProtocolExecution", null)
                         .WithMany()
                         .HasForeignKey("LabProtocolExecutionId")
@@ -17012,6 +17543,55 @@ namespace PSeq.Operations.Api.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPreparationBatch", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabServiceWorkflowVersion", null)
+                        .WithMany()
+                        .HasForeignKey("LabServiceWorkflowVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabTrayFormat", null)
+                        .WithMany()
+                        .HasForeignKey("LabTrayFormatId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPreparationMember", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabLibrary", null)
+                        .WithMany()
+                        .HasForeignKey("LabLibraryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabPreparationBatch", null)
+                        .WithMany()
+                        .HasForeignKey("LabPreparationBatchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimenAttempt", null)
+                        .WithMany()
+                        .HasForeignKey("LabSpecimenAttemptId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabContainer", null)
+                        .WithMany()
+                        .HasForeignKey("OutputContainerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPreparationRecord", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabPreparationBatch", null)
+                        .WithMany()
+                        .HasForeignKey("LabPreparationBatchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabPreparedReagentComponent", b =>
                 {
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabMaterialLot", null)
@@ -17038,6 +17618,11 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabServiceWorkflowStage", null)
                         .WithMany()
                         .HasForeignKey("LabServiceWorkflowStageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimenAttempt", null)
+                        .WithMany()
+                        .HasForeignKey("LabSpecimenAttemptId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimen", null)
@@ -17107,6 +17692,43 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
                         .WithMany("Specimens")
                         .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabSpecimenAttempt", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabProtocolExecution", null)
+                        .WithMany()
+                        .HasForeignKey("FailedExecutionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabServiceWorkflowVersion", null)
+                        .WithMany()
+                        .HasForeignKey("LabServiceWorkflowVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimen", null)
+                        .WithMany()
+                        .HasForeignKey("LabSpecimenId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimenAttempt", null)
+                        .WithMany()
+                        .HasForeignKey("PreviousAttemptId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabContainer", null)
+                        .WithMany()
+                        .HasForeignKey("SourceContainerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

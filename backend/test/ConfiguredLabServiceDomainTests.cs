@@ -51,10 +51,15 @@ public sealed class ConfiguredLabServiceDomainTests
         var specimen = new LabSpecimen(work.Id, Guid.NewGuid()); work.Specimens.Add(specimen);
         specimen.RecordReceipt(now.AddDays(-2), "Good", "Freezer"); specimen.AssignAccession("LAB-1");
         work.RefreshAcceptedSpecimenTargets(); Assert.Null(work.ExpectedCompletionAtUtc);
-        specimen.RecordIntakeDisposition(LabSpecimenIntakeDisposition.Accepted, null, now);
+        var tube = new LabContainer(work.Id, specimen.Id, null, LabContainerKind.SubmittedSpecimen,
+            "TUBE-1", "Tube", "Freezer", null, null, null);
+        tube.ReviewIntake(LabSpecimenIntakeDisposition.Accepted, null, null, Guid.NewGuid(), now);
+        specimen.RefreshIntakeFromTubes([tube], now);
         work.RefreshAcceptedSpecimenTargets(); Assert.Equal(now.AddDays(14), work.OriginalTargetAtUtc);
-        specimen.RecordIntakeDisposition(LabSpecimenIntakeDisposition.OnHold, "review", now.AddDays(1));
-        specimen.RecordIntakeDisposition(LabSpecimenIntakeDisposition.Accepted, null, now.AddDays(2));
+        tube.ReviewIntake(LabSpecimenIntakeDisposition.OnHold, "missing_information", null, Guid.NewGuid(), now.AddDays(1));
+        specimen.RefreshIntakeFromTubes([tube], now.AddDays(1));
+        tube.ReviewIntake(LabSpecimenIntakeDisposition.Accepted, null, "Information verified", Guid.NewGuid(), now.AddDays(2));
+        specimen.RefreshIntakeFromTubes([tube], now.AddDays(2));
         work.RefreshAcceptedSpecimenTargets(); Assert.Equal(now, specimen.AcceptedAtUtc);
         var later = now.AddDays(20); work.OverrideExpectedCompletion(later); work.RefreshAcceptedSpecimenTargets();
         Assert.Equal(later, work.ExpectedCompletionAtUtc); Assert.Equal(now.AddDays(14), specimen.OriginalTargetAtUtc);

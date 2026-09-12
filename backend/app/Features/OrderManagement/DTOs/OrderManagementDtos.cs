@@ -288,7 +288,7 @@ public sealed record LabServiceOrderDto(
     bool CanRequestQuoteExtension = false,
     bool CanManageQuotes = false,
     string? QuoteAcceptanceBlockedReason = null,
-    LabCustomerProgress? LaboratoryProgress = null);
+    LabCustomerProgress? LaboratoryProgress = null, string? TubeUsePolicyKey = null, int? TubeUsePolicyVersion = null);
 
 public sealed record ReagentOrderLineDto(
     Guid Id,
@@ -570,6 +570,8 @@ public sealed record OrderConfigurationDto(
     IReadOnlyList<CommercialProfileDto> CommercialProfiles);
 
 public sealed record VersionRequest(long Version);
+public sealed record FinalizeLabSampleRosterRequest(long Version,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] bool ConfirmTubeUsePolicy = false);
 public sealed record ReasonRequest(long Version, string Reason, string? InternalNote = null);
 public sealed record CancellationRequestBody(long Version, string Reason, string ScopeJson = "{}");
 public sealed record CancellationLineDecisionRequest(Guid OrderLineId, decimal Quantity);

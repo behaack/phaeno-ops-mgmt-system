@@ -18,6 +18,8 @@ public sealed record LabProtocolDefinition
     };
 
     public required int SchemaVersion { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool PreparationBatchEnabled { get; init; }
     public required IReadOnlyList<LabProtocolStepDefinition> Steps { get; init; }
 
     public static LabProtocolDefinition Parse(string json)
@@ -71,8 +73,14 @@ public sealed record LabProtocolDefinition
                 if (capture is null) throw new ArgumentException("Every capture must contain a definition.");
                 ValidateKey(capture.Key, captureKeys, "Capture");
                 RequiredText(capture.Label, 120, "Capture label");
+                if (PreparationBatchEnabled && capture.Scope is not ("batch" or "tube" or "shared"))
+                    throw new ArgumentException($"{capture.Label}: explicitly choose Batch, Tube or Shared with exceptions scope.");
+                if (PreparationBatchEnabled && capture.Type == "barcode" && capture.Scope != "tube")
+                    throw new ArgumentException("Barcode identity must be confirmed separately for each tube.");
                 if (capture.Type is not ("number" or "text" or "date" or "choice" or "fileReference" or "barcode"))
                     throw new ArgumentException($"{capture.Label}: the capture type is not supported.");
+                if (capture.SourceTube && capture.Type != "barcode")
+                    throw new ArgumentException("Only barcode captures can verify the selected source tube.");
                 if (capture.Unit is not null)
                 {
                     RequiredText(capture.Unit, 50, "Capture unit");
@@ -93,6 +101,8 @@ public sealed record LabProtocolDefinition
             if (step.QcGate is not null)
             {
                 RequiredText(step.QcGate.Criteria, 2000, "QC acceptance criteria");
+                if (PreparationBatchEnabled && step.QcGate.Scope is not ("batch" or "tube" or "shared"))
+                    throw new ArgumentException($"{step.Name}: explicitly choose the QC scope for preparation batches.");
                 if (step.QcGate.Outcomes is null
                     || !step.QcGate.Outcomes.SequenceEqual(new[] { "pass", "fail", "hold" }))
                     throw new ArgumentException("A QC gate must provide Pass, Fail, and Hold outcomes.");
@@ -156,16 +166,20 @@ public sealed record LabProtocolStepDefinition
 
 public sealed record LabProtocolCaptureDefinition
 {
+    public string? Scope { get; init; }
     public required string Key { get; init; }
     public required string Label { get; init; }
     public required string Type { get; init; }
     public required bool Required { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool SourceTube { get; init; }
     public string? Unit { get; init; }
     public IReadOnlyList<string>? Options { get; init; }
 }
 
 public sealed record LabProtocolQcGate
 {
+    public string? Scope { get; init; }
     public required string Criteria { get; init; }
     public required IReadOnlyList<string> Outcomes { get; init; }
 }

@@ -336,6 +336,7 @@ export function StandardLabServicePanel({
                 sample-list preparation; laboratory work and shipping begin only
                 after you finalize the accepted sample list.
               </DialogDescription>
+              <p className="text-sm">Tube use: run one tube per specimen; use a reserve only after the attempt fails.</p>
             </DialogHeader>
             {mutation.error ? (
               <Alert variant="destructive">

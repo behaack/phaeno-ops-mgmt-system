@@ -1,5 +1,73 @@
 # Frontend Test Plan
 
+## LAB-14 approval-review regression — September 12, 2026
+
+Signed-in UAT found that the protocol approval dialog omitted preparation evidence/QC scope and source matching. The display now includes preparation eligibility, each scope and the selected-source requirement. Three focused ProtocolApprovalDialog tests passed: existing attestation and invalid-definition cases, plus the new Batch/Tube/Shared scope regression. Legacy versions remain visibly not enabled for preparation batches. TypeScript/scoped lint and live inspection of the saved draft passed. See the [run checkpoint](../testing/runs/2026-09-12-lab-14-preparation.md); approval remains pending with an independent Protocol Administrator.
+
+## Latest UI acceptance alignment — September 11, 2026
+
+Verify **Library prep** uses the existing work route and opens preparation batches plus the job-history lookup. Verify **Lab configurations** is the last sidebar item with a cog icon and the **Protocols**, **Workflows**, and **Tray formats** tabs. Shared Portal tabs use 36 px minimum triggers and 42 px single-line strips, with consistent padding, selected styling and keyboard focus; wrapped rows may grow. LAB-14 records the connected preparation-batch journey. Verify the shared required marker stays with the final wrapped word and long confirmation checkboxes retain first-line alignment and full width. LAB-13 carries these checks alongside accession behavior; build/read-only evidence is recorded separately from unrun full acceptance. Earlier chronological screenshots describe historical labels, not current expected text.
+
+
+### Accession before storage and bulk acceptance (2026-09-11)
+
+Updated the shared required-label assertion in `required-field.test.tsx` for a nonbreaking space before the marker; wrapped confirmation text keeps the marker on its last line. Updated `LabReceiptAccessionPanel.test.tsx` for exception-first intake: expected broken tube rejection with no box, scan without mutation, explicit inspection and per-tube storage, and bulk containing only identified undecided tubes. Unidentified tubes remain outstanding and saved rejection remains visible. Tests authored, not run.
+
+Manual coverage: keyboard/focus and full-width controls; cancel/navigation protection; changed work preserves entries and requires re-review; Tubes / Received tubes hierarchy; primary barcode opens details with lineage; no routine Review tube in inventory; Supervisor correction requires reason and real storage when restoring retained material; no action for used/closed material. Check both themes and narrow widths.
+
+
+## Implemented specimen workspace — September 11, 2026
+
+Verify readable sample identities/counts, selected source and reserve reasons, dedicated specimen detail, grouped Actions, barcode selection/start, failure evidence choices, explicit exhaustion and legacy instruction confirmation. Same-request retries retain original work/attempt versions; errors preserve form values. Execution/resource mutations invalidate attempt summaries. Verify source capture binding survives draft round-trip, old definitions remain unchanged and only barcode captures expose the binding. Customer/Partner finalization and Trial submission explain the fixed policy. Execution transition actions are grouped under Actions. The existing synthetic execution E2E fixture now supplies attempt-summary metadata and checks the action menu/meaningful execution label. Local read-only UI/static checks are recorded separately; automated and persisted lifecycle cases Not run.
+
+## Tube navigation and start guidance - September 11, 2026
+
+Verify Specimens → Tubes → Execution → Libraries → Exceptions → Review, existing lineage links, keyboard tab navigation and narrow layout. A Planned execution with TubeAcceptanceRequired shows the explanation, disabled Start and Open tubes link; returning after accessioning refreshes eligibility. No warning for job-level, started/completed or accepted-ready executions. Fixture contract updated; automated tests not run for this slice.
+
+## Tube intake forms - September 11, 2026
+
+Shared IntakeReviewFields is used during accession and Supervisor correction: routine Accepted needs no reason, predefined exception reasons, Other explanation, resolution note, loading/retry and accessible required fields. Updated scanner payload expectations. No automated tests run.
+
+## Proposed specimen workspace coverage - September 11, 2026
+
+The [tube-attempt plan](SPECIMEN-TUBE-ATTEMPT-PLAN.md#poms-workspace) defines required order-policy display, specimen/source/reserve summaries, allowed actions, failure confirmation, accessible selection and meaningful execution labels. The full implementation is now local; persisted lifecycle acceptance remains Not run.
+
+## Discarded-draft visibility — September 11, 2026
+
+Updated existing protocol-list.test.ts expectations: discarded-only records remain hidden with Show retired off or on, new identities and mixed current/history records remain visible, and genuinely retired protocols respond to Show retired. Connected Edge verified removal of Show discarded drafts, exclusion of Test 1-2-3 in both filter states, and inclusion of retired records. Discarded revisions retain read-only history rows without actions; mixed-history regression expectations were updated but the automated suite was not run. Prior instructions to test the discarded-drafts filter are superseded.
+
+## Revised retirement and invalidation UI coverage — September 11, 2026
+
+[LAB-07](../testing/06-laboratory.md#lab-07--protocol-retirement-workflow-invalidation-and-revalidation) adds retirement impact loading/error/retry, named active-job blockers, affected-workflow warning, queued-job Proceed anyway warning, cancellation, stale-impact refresh, retained reason, default retired hiding, Invalid and historical Invalidated workflow display, removed retired-stage verification, Review workflow and Revalidate and approve, unchanged and edited recovery, empty recovery error, and queued-job invalid-workflow banner. Include keyboard/focus, narrow view and themes. New cases are Not run until evidence is recorded; previous retirement UI checks do not prove the revised workflow behavior.
+
+## Protocol retirement controls — September 11, 2026
+
+Connected Edge verified reason-required validation, named workflow dependency error with retained input, successful retirement, focus restoration to Show retired, hidden-by-default retired record, inclusion with retained approval/reason/date after Refresh, and absent management actions on retired records. That earlier discarded-draft visibility is superseded: discarded-only records and the Show discarded drafts control are now absent. Workflow selectors and direct protocol builder paths exclude/reject retired identities. TypeScript and scoped lint passed; no new frontend automated tests or suite run. Responsive/theme-specific retirement checks remain unrun.
+
+## Equipment retirement controls — September 11, 2026
+
+Connected Edge verification covered unchecked Show retired by default, required reason validation, saving retirement, hiding the retired asset, revealing it with date/reason, and persistence after refresh. Preparation asset stays Active. Retirement uses a React Hook Form/Zod dialog, preserves error input, and returns focus to the filter after a removed row. Menu width verified at 192px with a one-line label. TypeScript and scoped ESLint passed; no automated frontend suite was run or new frontend test added for this checkpoint. Domain tests were added separately.
+
+## Native material-lot date submission — September 11, 2026
+
+Added MaterialLotCreateDialog.date.test.tsx to stage new reference names, enter a lot, set the native date without a change event, and assert the submission includes that displayed date. This targets the stale form-state scenario; the precise original browser event failure remains unproven. Test added, not run. Scoped ESLint and frontend TypeScript passed. Existing optional-date schema behavior is preserved.
+
+## Protocol tabs and discarded visibility — September 11, 2026
+
+Updated protocol-list.test.ts to replace the prior always-visible expectation with discarded-only default hiding, explicit inclusion, empty-identity visibility, and mixed-history visibility. These tests were updated but not run under the owner's verification policy. Scoped lint and frontend TypeScript passed. Connected Edge confirmed Show discarded restores Test 1-2-3 and clearing it hides that record while retaining the two drafts.
+
+## Role-neutral step confirmation — September 11, 2026
+
+Builder/approval copy now says **Confirmation required**, with role-neutral helper/history text and matching help. This is copy-only: no assertion changes or new tests; existing labels were not referenced by test selectors. Scoped ESLint passed. Connected browser verification found all three new labels; after live-refresh recovery and draft save/reopen, all 55 form values/flags matched the pre-edit snapshot. Approval/history copy was source-reviewed only. See the [run record](../testing/runs/2026-09-11-protocol-preparation.md).
+
+## Protocol capture layout — September 11, 2026
+
+Capture fields now use a responsive label/type row with Required and remove aligned beneath, replacing unconditional vertical offsets. No implementation-mirroring component test was added for this presentation-only correction. Scoped ESLint for both affected Lab pages and the full frontend TypeScript check pass. Connected Edge checks at 375px, the native 950px viewport and 1280px preserve all 19 unsaved field values/flags, keep captures within the page width, and provide keyboard traversal from Type to Required to the named remove button. Number/Choice variant interaction, dark theme and full builder acceptance were not run. See the [run record](../testing/runs/2026-09-11-protocol-preparation.md).
+
+## Laboratory Work tab reflow — September 11, 2026
+
+The local Work page corrects a horizontal fixed-height variant that made a second tab row overlap the panel. It now has an automatic-height grid, 36px minimum targets and two/three/six columns. No component test was added for this CSS-only correction. Connected Edge geometry verifies 122/82/42px tab bars at 375/950/1280px, containing the targets with an 8px gap before the visible panel. ArrowRight moved Execution to Lineage with visible focus. Scoped lint and TypeScript pass. Dark theme and full LAB acceptance remain unrun; see the [paced walkthrough](../testing/runs/2026-09-11-protocol-preparation.md).
+
 ## Customer laboratory stages — September 10, 2026
 
 **Local checkpoint: 3/3 cases passed** in [LabCustomerProgressPanel.test.tsx](../../frontend/src/features/orders/LabCustomerProgressPanel.test.tsx); see the [verification record](../testing/runs/2026-09-10-customer-laboratory-stages.md). The cases cover six current-stage counts and partial release, native sample disclosure, unavailable data rather than invented zero counts, and lifecycle-status precedence through the shared list/header selector. They do not mount both complete list/detail pages or prove a signed-in Partner journey.
@@ -1801,3 +1869,58 @@ Letter/A4 receiving sheets and 50 x 25 mm lab label output were visually reviewe
 and independently QR-decoded. See
 [release evidence](PORTAL-LAB-PROGRESS-RELEASE-2026-09-10.md) for local fixture
 failures, artifacts and outstanding physical/production acceptance gates.
+
+
+Wrapped required-marker follow-up (2026-09-11): shared marker uses inline flow with a nonbreaking separator. Live POMS exception checkbox verification confirmed the asterisk follows the final wrapped word and the checkbox retains 16px width. The existing accessible-name/marker assertion was updated, not executed. Narrow-width/theme coverage remains part of LAB-13.
+
+## Global action-button rule — September 11, 2026
+
+All Portal record action menus now use the shared ActionMenu: zero visible items renders no control; one visible item renders its named button/link; two or more retain Actions. Permission filtering occurs before counting; disabled items remain disabled and count as visible. Preserve confirmation dialogs, trigger refs, link destinations, destructive styling and accessible labels. Navigation/selection menus are unchanged. Six focused shared-component tests passed. Verify representative role/status variants, keyboard activation, modal return focus and narrow/light/dark layouts during UAT. This is not a full application acceptance pass.
+
+Focused execution checkpoint: LabReceiptAccessionPanel, required-field and protocol-list passed 13 tests across three files. These precede the global ActionMenu's six additional passing tests. Full user acceptance remains incomplete; see the September 11 run record.
+
+## Library prep and Results & review navigation — September 11, 2026
+
+Implemented the first navigation slice: Library prep replaces the Lab work sidebar label (existing work URL retained); Results & review follows Sequencing batches and opens the existing job Review tab with section=results return context. Both queues retain received job visibility; no readiness is inferred from inclusion. Preserve the owner's three sidebar dividers and later groups. Shared job history and existing approval gates remain intact. This is not tray-based preparation or a new data-processing pipeline.
+
+Manual verification: Results & review → HS5Y7DB7 opens Review, retains Processing and No scientific approval recorded, and its breadcrumb returns to section=results. Verify Library prep → Specimens and legacy work links, keyboard navigation and narrow layout. No operational writes for this change.
+
+## Preparation-batch verification — September 11, 2026
+
+Protocol-definition tests: 5 passing cases including explicit scope validation and legacy/scoped round-trip. Type checking and scoped lint passed. Five browser journeys run in desktop and mobile cover shared/exception entry, full-width QC, failed-tube exclusion, contextual output creation/selection, uncertain-response command reuse and nested resource entry with retained step values. Shared-entry accessibility scans passed, including dark/reduced-motion mobile. Existing single-action-button behavior is reused.
+
+The owning [Library prep plan](LAB-WORK-JOURNEY-PLAN.md#verification-checkpoint) and [LAB-14 manual journey](../testing/06-laboratory.md#lab-14--preparation-trays-shared-evidence-and-sequencing-handoff) retain remaining acceptance coverage: held/closed Trial races, all staff-role combinations, physical trays/scanners/labels, owner sign-off and production/provider gates. Historical TEST-008 work was not retrofitted or replayed. Customer-requested hold implementation remains blocked.
+
+
+## Receipt and accession list contrast — September 11, 2026
+
+Visual-only update across Kit requests, Prepare kits, Kits sent, Receive shipments and Accession samples: shaded bordered headers, search/filters grouped in the header, separate record rows and table column headers, and consistent empty-state spacing. TypeScript/scoped lint passed. Signed-in desktop inspection covered all tabs, populated requests/kit lists and empty shipment queues without operational writes or page overflow. Automated tests were not added or run for these class/layout changes. Retain narrow/dark and populated shipment-queue checks in manual acceptance; existing navigation, filter, receipt and accession tests are unchanged.
+
+## Lab configurations and application-wide tabs — September 11, 2026
+
+Lab configurations replaces Protocols & workflows in the last sidebar group and uses a cog icon. Protocols, Workflows and Tray formats use URL-backed selection; legacy section links still open Protocols. Tray-format management moved from Library prep, preserving configuration permissions and the existing preview/edit dialog. Library prep retains active format selection and direct setup links. The workflow builder returns to Workflows. Updated the Phaeno guides, generated help and LAB-14 manual steps.
+
+The shared tab component now supplies the minimum height, padding, typography, gaps, rounded selected surface, focus and reduced-motion treatment. Audited all nine Portal consumers and removed local sizing overrides in Lab Operations, CRM, account and Web Operations screens. Responsive wrapping/grids retain readable labels rather than clipping them to a fixed height.
+
+Verification: TypeScript, scoped ESLint and documentation consistency passed. Signed-in desktop inspection confirmed all configuration tabs, the format preview/cancel, Library prep's single create action and the setup link (keyboard activation). Receipt and configurations both render 42 px strips with 36 px triggers and 6 px/12 px padding. Browser inspection of the existing synthetic Web Operations fixture at 1440, 390 and 320 px found no page overflow or runtime errors; arrow-key selection and visible focus worked, including dark/reduced-motion coverage. Wrapped mobile tabs share their row height. No saved operational records changed. No automated test suite was added or run; populated tray-format editing and full role coverage remain in LAB-14.
+
+## September 12 — Preparation batch identifiers
+
+Preparation creation now asks for tray/workflow and optional notes, without Batch name; notes render in the detail workspace. Verify a second identical create intent gets a new request ID while an uncertain retry retains its request ID. Automated form coverage remains pending; TypeScript verification is separate.
+
+
+September 12 LAB-14 follow-up: failed-output scan prompts removed while traceability links remain; terminal specimens use Processing outcome. Live saved-record inspection passed. Failed-output regression passed on desktop/mobile (2); all 11 preparation-domain tests passed, including new repeat reason/history coverage and existing correction invalidation. Manual correction/repeat remains separate and pending; see the active run record.
+
+September 12 LAB-14: Complete stage confirmation has explicit batch/stage context and consequences, no Required legend for a fieldless confirmation. Desktop/mobile browser regression passed; cancellation sends no command. Signed-in correction/repeat evidence is in docs/testing/runs/2026-09-12-lab-14-preparation.md.
+
+September 12 preparation resources: live expired/overdue rejection preserved forms; selectors corrected to exclude invalid dates. Desktop/mobile regression passed (2) for expired lot, overdue/retired equipment exclusion and due-today inclusion. Signed-in role variants remain open.
+
+September 12 LAB-14 role visibility and keyboard: Operator/ScientificReviewer Supervisor-step controls denied (4 desktop/mobile cases); keyboard tab order, Escape and focus restoration passed (2). Live signed-in keyboard and incomplete-stage rejection passed separately; full signed-in staff-account matrix remains open.
+
+September 12 preparation conflict recovery: definite conflict preserves form values and retries with new request/refreshed version; uncertain response reuses original request/version. Paired desktop/mobile tests passed (4). Signed-in multi-session fault injection remains separate.
+
+September 12 LabBarcodeScanner.test.tsx: four cases passed for QC-passed success and specific non-library, Batched and QcFailed rejection. Rejected scans retain value/focus and send no add command. Signed-in duplicate scan now explains existing assignment instead of suggesting missing QC; membership unchanged. Guide and generated help updated.
+
+September 12 release queue default: ReadyForRelease replaces ScientificallyApproved as the missing/invalid-filter fallback and first option. Scoped ESLint passed. Bounded reversible default change verified through signed-in UAT; no new automated test added. Existing explicit-filter behavior retained. Help corpus regenerated (56 guides).
+
+September 12 release checkpoint: 53 selected frontend tests passed; two receipt tests failed because their mock dashboard omitted the newly consumed protocols array. Corrected the fixture only and reran both successfully. Frontend TypeScript check passed. See LAB-WORKFLOW-RELEASE-2026-09-12.md.

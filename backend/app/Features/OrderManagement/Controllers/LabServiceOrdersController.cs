@@ -390,6 +390,7 @@ public sealed partial class LabServiceOrdersController(
                         group.BiologicalSource,
                         group.SpecimenCount
                     }),
+                    order.TubeUsePolicyKey, order.TubeUsePolicyVersion,
                     order.StorageRequirements,
                     order.SafetyDeclaration,
                     serviceKey = OrderServiceKeys.PSeqLabService,
@@ -569,7 +570,7 @@ public sealed partial class LabServiceOrdersController(
     }
 
     [HttpPost("{orderId:guid}/samples/finalize")]
-    public async Task<LabServiceOrderDto> FinalizeSampleRoster(Guid orderId, [FromBody] VersionRequest request,
+    public async Task<LabServiceOrderDto> FinalizeSampleRoster(Guid orderId, [FromBody] FinalizeLabSampleRosterRequest request,
         CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
@@ -585,6 +586,16 @@ public sealed partial class LabServiceOrdersController(
             {
                 var order = await ReadLockedRosterAsync(orderId, tenant, operationCancellationToken);
                 EnsureVersion(order.Version, request.Version);
+                if (order.TubeUsePolicyKey is null)
+                {
+                    if (!request.ConfirmTubeUsePolicy)
+                        throw Conflict("tube_policy_confirmation_required", "Confirm the instruction to run one tube per specimen and use a reserve only after failure before authorizing laboratory work.");
+                    Execute(order.ConfirmTubeUsePolicy);
+                    dbContext.OrderStatusEvents.Add(NewEvent(order, order.Status.ToString(), order.Status.ToString(), tenant.Actor.Id,
+                        "Tube-use instruction confirmed: run one tube per specimen; use a reserve only after failure. Original order snapshots retained."));
+                }
+                if (order.TubeUsePolicyKey != "run_one_with_failure_fallback" || order.TubeUsePolicyVersion != 1)
+                    throw Conflict("tube_policy_unsupported", "Review the unsupported tube-use instruction with Phaeno before authorizing work.");
                 Execute(() => order.FinalizeSampleRoster(tenant.Actor.Id, DateTime.UtcNow));
                 if (await dbContext.CommercialLabAuthorizations.AnyAsync(item => item.CommercialOrderId == order.Id, operationCancellationToken))
                     throw Conflict("lab_authorization_exists", "Laboratory work has already been authorized for this Job.");
@@ -594,13 +605,14 @@ public sealed partial class LabServiceOrdersController(
                 var commandId = Guid.NewGuid();
                 var now = DateTime.UtcNow;
                 var command = new AuthorizeLabWorkCommand(
-                    new LabOperationsCommandMetadata(commandId, authorizationId, now),
+                    new LabOperationsCommandMetadata(commandId, authorizationId, now, LabOperationsContractVersions.V2),
                     authorizationId, 1, LabWorkAuthorizationSource.CommercialOrder, order.Id,
                     order.OrganizationId, OrderServiceKeys.PSeqLabService, 1, "quoted-turnaround", order.OrderNumber,
                     order.Samples.Select(sample => new AuthorizedSpecimen(
                         sample.Id, sample.CustomerSampleId, sample.MaterialType, sample.BiologicalSource,
                         sample.Quantity, sample.QuantityUnit, sample.StorageRequirements, sample.SafetyDeclaration,
                         sample.CollectionDate, sample.Concentration, sample.Notes, [OrderServiceKeys.PSeqLabService])).ToList(),
+                    TubeUsePolicyKey: order.TubeUsePolicyKey, TubeUsePolicyVersion: order.TubeUsePolicyVersion,
                     MinimumTurnaroundDays: order.ReadConfiguredSnapshot()?.MinimumTurnaroundDays,
                     MaximumTurnaroundDays: order.ReadConfiguredSnapshot()?.MaximumTurnaroundDays,
                     IncludedScientificScopeJson: order.ReadConfiguredSnapshot() is { } configured ? JsonSerializer.Serialize(new {
@@ -1034,6 +1046,7 @@ public sealed partial class LabServiceOrdersController(
             LabCustomerActionSummary: projection?.CustomerSafeSummary,
             LabPermittedQcProjectionJson: projection?.PermittedQcProjectionJson,
             LabReadyForRelease: projection?.Milestone == "ReadyForRelease",
+            TubeUsePolicyKey: order.TubeUsePolicyKey, TubeUsePolicyVersion: order.TubeUsePolicyVersion,
             RequestedSpecimenCount: order.RequestedSpecimenCount,
             SourceGroups: order.SourceGroups.OrderBy(group => group.BiologicalSource)
                 .Select(group => new LabServiceSourceGroupDto(group.Id, group.BiologicalSource, group.SpecimenCount, group.Version)).ToList(),
@@ -1075,6 +1088,7 @@ public sealed partial class LabServiceOrdersController(
                 group.BiologicalSource,
                 group.SpecimenCount
             }),
+            order.TubeUsePolicyKey, order.TubeUsePolicyVersion,
             order.StorageRequirements,
             order.SafetyDeclaration,
             proposedUnitPrice = order.ProposedUnitPrice,

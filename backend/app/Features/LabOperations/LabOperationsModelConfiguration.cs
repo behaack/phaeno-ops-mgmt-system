@@ -8,12 +8,47 @@ public static class LabOperationsModelConfiguration
 {
     public static void Configure(ModelBuilder modelBuilder, string laboratorySchema)
     {
+        modelBuilder.Entity<LabSpecimenAttempt>(entity =>
+        {
+            entity.ToTable("lab_specimen_attempts", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.State).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.FailureReasonCode).HasMaxLength(100);
+            entity.Property(e => e.FailureEvidence).HasMaxLength(4000);
+            entity.Property(e => e.HoldReason).HasMaxLength(2000);
+            entity.Property(e => e.HoldNextAction).HasMaxLength(2000);
+            entity.Property(e => e.StageSkipsJson).HasColumnType("jsonb");
+            entity.Property(e => e.Version).IsConcurrencyToken();
+            entity.HasIndex(e => new { e.LabSpecimenId, e.Sequence }).IsUnique();
+            entity.HasIndex(e => e.LabSpecimenId).IsUnique().HasFilter("state IN ('Planned', 'InProgress', 'OnHold', 'Succeeded')");
+            entity.HasIndex(e => e.SourceContainerId).IsUnique().HasFilter("state <> 'Cancelled'");
+            entity.HasOne<LabWorkOrder>().WithMany().HasForeignKey(e => e.LabWorkOrderId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabSpecimen>().WithMany().HasForeignKey(e => e.LabSpecimenId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabContainer>().WithMany().HasForeignKey(e => e.SourceContainerId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabServiceWorkflowVersion>().WithMany().HasForeignKey(e => e.LabServiceWorkflowVersionId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabSpecimenAttempt>().WithMany().HasForeignKey(e => e.PreviousAttemptId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabProtocolExecution>().WithMany().HasForeignKey(e => e.FailedExecutionId).OnDelete(DeleteBehavior.Restrict);
+        });
+        modelBuilder.Entity<LabAttemptCommandReceipt>(entity =>
+        {
+            entity.ToTable("lab_attempt_command_receipts", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.RequestHash).HasMaxLength(64);
+            entity.HasOne<LabWorkOrder>().WithMany().HasForeignKey(e => e.LabWorkOrderId).OnDelete(DeleteBehavior.Restrict);
+        });
+        modelBuilder.Entity<LabProtocolExecution>().HasOne<LabSpecimenAttempt>().WithMany()
+            .HasForeignKey(e => e.LabSpecimenAttemptId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<LabContainer>().HasOne<LabSpecimenAttempt>().WithMany()
+            .HasForeignKey(e => e.LabSpecimenAttemptId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<LabProtocolExecution>().HasIndex(e => new { e.LabSpecimenAttemptId, e.LabServiceWorkflowStageId })
+            .IsUnique().HasFilter("lab_specimen_attempt_id IS NOT NULL");
         modelBuilder.Entity<LabWorkOrder>(entity =>
         {
             entity.ToTable("lab_work_orders", laboratorySchema);
             entity.HasKey(e => e.Id);
             entity.Property(e => e.AuthorizationSource).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.Property(e => e.ServiceKey).HasMaxLength(255).IsRequired();
+            entity.Property(e => e.TubeUsePolicyKey).HasMaxLength(100);
             entity.Property(e => e.TurnaroundPolicyKey).HasMaxLength(255).IsRequired();
             entity.Property(e => e.OpaqueSubmitterReference).HasMaxLength(500);
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
@@ -44,6 +79,10 @@ public static class LabOperationsModelConfiguration
             entity.HasKey(e => e.Id);
             entity.Property(e => e.AccessionNumber).HasMaxLength(100);
             entity.Property(e => e.IntakeDisposition).HasConversion<string>().HasMaxLength(50).IsRequired();
+            entity.Property(e => e.ProcessingState).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.ProcessingReasonCode).HasMaxLength(100);
+            entity.Property(e => e.ProcessingNote).HasMaxLength(4000);
+            entity.Property(e => e.ProcessingNextAction).HasMaxLength(2000);
             entity.Property(e => e.ReceiptCondition).HasMaxLength(1000);
             entity.Property(e => e.IntakeReasonCode).HasMaxLength(100);
             entity.Property(e => e.CurrentLocation).HasMaxLength(255);
@@ -131,6 +170,9 @@ public static class LabOperationsModelConfiguration
 
         modelBuilder.Entity<LabContainer>(entity =>
         {
+            entity.Property(e => e.IntakeDisposition).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.IntakeReasonCode).HasMaxLength(100);
+            entity.Property(e => e.IntakeNotes).HasMaxLength(2000);
             entity.ToTable("lab_containers", laboratorySchema);
             entity.HasKey(e => e.Id);
             ConfigureAudited(entity);
@@ -138,7 +180,7 @@ public static class LabOperationsModelConfiguration
             entity.Property(e => e.Barcode).HasMaxLength(100).IsRequired();
             entity.Property(e => e.BarcodeSource).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.Property(e => e.Label).HasMaxLength(255).IsRequired();
-            entity.Property(e => e.Location).HasMaxLength(255).IsRequired();
+            entity.Property(e => e.Location).HasMaxLength(255);
             entity.Property(e => e.QuantityUnit).HasMaxLength(50);
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.Property(e => e.DispositionReason).HasMaxLength(1000);
@@ -158,6 +200,7 @@ public static class LabOperationsModelConfiguration
             entity.Property(e => e.Key).HasMaxLength(100).IsRequired();
             entity.Property(e => e.Name).HasMaxLength(255).IsRequired();
             entity.Property(e => e.Description).HasMaxLength(2000);
+            entity.Property(e => e.RetirementReason).HasMaxLength(1000);
             entity.HasIndex(e => e.Key).IsUnique();
         });
 
@@ -184,6 +227,7 @@ public static class LabOperationsModelConfiguration
 
         modelBuilder.Entity<LabServiceWorkflowVersion>(entity =>
         {
+            entity.Property(e => e.InvalidationReason).HasMaxLength(2000);
             entity.ToTable("lab_service_workflow_versions", laboratorySchema);
             entity.HasKey(e => e.Id);
             ConfigureAudited(entity);
@@ -313,6 +357,7 @@ public static class LabOperationsModelConfiguration
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.Property(e => e.LastCalibrationOn).HasColumnType("date");
             entity.Property(e => e.CalibrationDueOn).HasColumnType("date");
+            entity.Property(e => e.RetirementReason).HasMaxLength(1000);
             entity.HasIndex(e => e.AssetCode).IsUnique();
             entity.HasIndex(e => new { e.Status, e.CalibrationDueOn });
         });

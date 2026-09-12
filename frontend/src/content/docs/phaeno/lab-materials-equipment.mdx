@@ -33,6 +33,12 @@ Enter the equipment name, then select an equipment type and location already use
 
 POMS assigns the immutable asset code when the equipment is created. Record the **Last calibration date** and **Calibration due date** when applicable. These are date-only laboratory facts; a time of day is not required. The due date cannot be before the last calibration date, and a last calibration date cannot be in the future. Equipment must be active and calibration-current at the time it is used.
 
+## Retire equipment
+
+A Lab Supervisor or Operations Administrator can open an asset's **Actions → Retire equipment**, enter a required retirement reason, and confirm. Retirement prevents new equipment-use records, including backdated entries, while retaining the asset identity, calibration details and existing usage history. POMS records who retired the asset and when. Retirement cannot be undone through this screen.
+
+Retired assets are hidden by default. Select **Show retired** above the Equipment list to include them and read the retirement date and reason. Clear the checkbox to return to current equipment.
+
 ## Record equipment use
 
 Link the exact equipment record to the execution step or run. Confirm that its status and calibration cover the use time. If equipment becomes unavailable or overdue, stop new use, record the issue, and select another qualified item or follow the approved exception path.

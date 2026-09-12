@@ -157,11 +157,12 @@ public sealed class TrialWorkflowService(PSeqOperationsDbContext db, ILabOperati
         trial.AddSamples(samples, now);
         db.TrialSamples.AddRange(samples);
         var authorizationId = Guid.NewGuid();
-        var command = new AuthorizeLabWorkCommand(new(Guid.NewGuid(), authorizationId, now), authorizationId, 1,
+        var command = new AuthorizeLabWorkCommand(new(Guid.NewGuid(), authorizationId, now, LabOperationsContractVersions.V2), authorizationId, 1,
             LabWorkAuthorizationSource.TrialProject, trial.Id, trial.OrganizationId!.Value, OrderServiceKeys.PSeqLabService, 1,
             "trial-schedule-no-sla", trial.Number, samples.Select(value => new AuthorizedSpecimen(value.Id, value.Reference,
                 "Extracted RNA", value.BiologicalSource, value.Quantity, value.QuantityUnit, value.StorageRequirements,
-                value.SafetyDeclaration, null, value.Concentration, null, [OrderServiceKeys.PSeqLabService])).ToList(), values.WorkflowVersionId);
+                value.SafetyDeclaration, null, value.Concentration, null, [OrderServiceKeys.PSeqLabService])).ToList(), values.WorkflowVersionId,
+            TubeUsePolicyKey: "run_one_with_failure_fallback", TubeUsePolicyVersion: 1);
         var acknowledgment = await lab.AuthorizeWorkAsync(command, token);
         if (acknowledgment.Disposition is not (LabCommandDisposition.Accepted or LabCommandDisposition.AlreadyApplied) || !acknowledgment.LabWorkOrderId.HasValue)
             throw Error("trial_lab_authorization_failed", "The Lab could not authorize this submission. No samples or shipment were created.", 409);

@@ -119,10 +119,11 @@ Use tables by default for structured scientific and business records that users 
 Use one coherent, view-first workspace for a major record.
 
 - A compact header shows identity, status, essential context, and actions.
-- Show one dominant primary action; place secondary actions in an `Actions` menu.
+- When a record or version has multiple action options, group them in one `Actions` dropdown. Keep page-level creation and form Save/Cancel controls separate.
 - Present high-value summary information first.
 - Group related information by meaningful user tasks rather than database structure.
 - Use tabs only for substantial areas; keep a small number of fields on the main page.
+- Use the shared Portal tab components for consistent sizing and states: 36 px minimum tab height, 12 px horizontal and 6 px vertical padding, 14 px text with 20 px line height, 3 px list inset and 4 px gaps. A single-line tab strip is 42 px tall. Keep the same rounded corners, selected surface, disabled treatment and visible keyboard focus across workspaces. Let long labels and responsive grids grow without clipping; pages may arrange tabs but must not override their control height, typography or padding. Respect reduced-motion preferences.
 - Use simple rows and dividers for related records instead of layers of nested cards.
 - Keep record identity and essential status visible while users move among related information.
 - Editing is an intentional action. Do not make every field permanently editable.
@@ -171,7 +172,7 @@ Prioritize clarity and error prevention over maximum visual compactness.
   structure and spacing do not drift between forms.
 - Mark genuinely required controls with actual required validation and the
   established ruby-red `*`. Keep the marker visually adjacent to its label,
-  without the standard label-to-control gap. Every form with required controls
+  without the standard label-to-control gap. Required markers flow inline with the label and stay attached to its final word when it wraps; do not place the marker in a separate flex column. Long checkbox labels use readable line spacing and keep the checkbox aligned with the first line. Every form with required controls
   includes a visible `* Required` legend. In modal forms, place that legend in
   the modal footer before the action group in reading order.
 - Prepopulate safe defaults from known context, but never assume consequential scientific or business values silently.
@@ -217,7 +218,7 @@ Each page, modal, or workflow has one visually dominant primary action.
   description. Reserve a full-width card action for a deliberately prominent
   call to action whose width communicates hierarchy rather than compensating
   for layout.
-- Use quieter styling for secondary actions and move infrequent actions into an `Actions` menu.
+- Group multiple record or version actions in an `Actions` dropdown, including status transitions. When exactly one action is shown, surface it as a directly labeled button; do not hide it in an Actions dropdown. Preserve its disabled state when prerequisites are unmet. Keep menus wide enough for clear labels and aligned to the trailing edge of the record or version row.
 - Hide actions the user is never authorized to perform.
 - Disable a temporarily unavailable action only when knowing it exists is useful, and explain the blocking condition.
 - Use destructive styling only for the action that causes harm, not for Cancel or ordinary navigation.

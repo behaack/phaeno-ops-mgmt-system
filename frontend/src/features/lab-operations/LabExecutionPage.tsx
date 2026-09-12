@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useBlocker } from '@tanstack/react-router'
 import axios from 'axios'
+import { ChevronDown } from 'lucide-react'
 import { useRef, useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -11,6 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
+import { ActionMenu as DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { FieldError } from '#/components/ui/field'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
@@ -31,6 +33,7 @@ export function LabExecutionPage({ executionId, returnSection, returnShipmentId 
     await Promise.all([
       client.invalidateQueries({ queryKey: ['lab-work-order', execution.data?.workOrderId] }),
       client.invalidateQueries({ queryKey: ['lab-operations'] }),
+      client.invalidateQueries({ queryKey: ['lab-attempts', execution.data?.workOrderId] }),
     ])
   }
   const recover = async (error: unknown) => {
@@ -45,7 +48,7 @@ export function LabExecutionPage({ executionId, returnSection, returnShipmentId 
     onError: recover,
   })
   const transition = useMutation({
-    mutationFn: ({ action, note }: { action: 'start' | 'complete' | 'abandon'; note?: string }) => transitionLabExecution(executionId, { action, deviationNote: note || null, version: execution.data!.execution.version }),
+    mutationFn: ({ action, note, sourceBarcode }: { action: 'start' | 'complete' | 'abandon'; note?: string; sourceBarcode?: string }) => transitionLabExecution(executionId, { action, deviationNote: note || null, confirmedSourceBarcode: sourceBarcode || null, version: execution.data!.execution.version }),
     onSuccess: async () => { setRecovery(undefined); await execution.refetch(); await refreshRelated() },
     onError: recover,
   })
@@ -56,38 +59,45 @@ export function LabExecutionPage({ executionId, returnSection, returnShipmentId 
   return <LabExecutionWorkspace data={execution.data} pending={record.isPending || transition.isPending}
     error={error ? `${getLabOperationsError(error, 'The laboratory action could not be saved.')} ${recovery ?? ''}` : undefined}
     returnLink={<Link to="/lab-operations/$workOrderId" params={{ workOrderId: execution.data.workOrderId }} search={{ section: returnSection ?? 'work', shipmentId: returnShipmentId, tab: 'execution' }} className="text-sm text-primary underline underline-offset-4">Back to laboratory job</Link>}
+    reviewTubesLink={<Button asChild size="sm"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: execution.data.workOrderId }} search={{ section: returnSection ?? 'work', shipmentId: returnShipmentId, tab: 'lineage' }}>Open tubes</Link></Button>}
+    specimenLink={execution.data.execution.labSpecimenId ? <Button asChild size="sm" variant="outline"><Link to="/lab-operations/$workOrderId/specimens/$specimenId" params={{ workOrderId: execution.data.workOrderId, specimenId: execution.data.execution.labSpecimenId }}>Open specimen and source</Link></Button> : null}
     onRecord={async input => { await record.mutateAsync(input) }}
-    onTransition={async (action, note) => { await transition.mutateAsync({ action, note }) }} />
+    onTransition={async (action, note, sourceBarcode) => { await transition.mutateAsync({ action, note, sourceBarcode }) }} />
 }
 
-export function LabExecutionWorkspace({ data, returnLink, pending, error, onRecord, onTransition }: {
-  data: LabExecutionDetail; returnLink: ReactNode; pending: boolean; error?: string
+export function LabExecutionWorkspace({ data, returnLink, reviewTubesLink, specimenLink, pending, error, onRecord, onTransition }: {
+  data: LabExecutionDetail; returnLink: ReactNode; reviewTubesLink: ReactNode; specimenLink: ReactNode; pending: boolean; error?: string
   onRecord: (input: LabExecutionStepInput) => Promise<void>
-  onTransition: (action: 'start' | 'complete' | 'abandon', note?: string) => Promise<void>
+  onTransition: (action: 'start' | 'complete' | 'abandon', note?: string, sourceBarcode?: string) => Promise<void>
 }) {
   const [target, setTarget] = useState<{ key: string; action: LabExecutionStepInput['action'] } | null>(null)
+  const [confirmStart, setConfirmStart] = useState(false)
   const [finish, setFinish] = useState<'complete' | 'abandon' | null>(null)
   const trigger = useRef<HTMLElement | null>(null)
   const heading = useRef<HTMLHeadingElement>(null)
+  const actionTrigger = useRef<HTMLButtonElement>(null)
   const returnFocus = () => (trigger.current?.isConnected ? trigger.current : heading.current)?.focus()
   const selected = data.steps.find(step => step.definition.key === target?.key)
   const active = ['InProgress', 'Blocked'].includes(data.execution.status)
   const completed = data.execution.status === 'Completed'
   const recorders = new Map(data.recorders.map(actor => [actor.id, actor.name]))
   const open = (key: string, action: LabExecutionStepInput['action']) => { trigger.current = document.activeElement as HTMLElement; setTarget({ key, action }) }
-  const openFinish = (action: 'complete' | 'abandon') => { trigger.current = document.activeElement as HTMLElement; setFinish(action) }
+  const openFinish = (action: 'complete' | 'abandon') => { trigger.current = actionTrigger.current; setFinish(action) }
 
   return <main className="page-wrap space-y-6 px-4 py-8">
+    {data.preparationBatchId ? <div className="rounded-lg border bg-muted/30 p-4 text-sm">Shared preparation evidence is recorded from its tray. <Link className="underline" to="/lab-operations/preparation/$preparationBatchId" params={{ preparationBatchId: data.preparationBatchId }} search={{ section: 'work' }}>Open preparation batch</Link></div> : null}
     {returnLink}
     <header className="flex flex-wrap items-start justify-between gap-4">
       <div className="min-w-0"><h1 ref={heading} tabIndex={-1} className="text-2xl font-semibold break-words">{data.protocolName}</h1><p className="mt-2 text-sm text-muted-foreground">Protocol version {data.protocolVersion}{data.accessionNumber ? ` · Specimen ${data.accessionNumber}` : ' · Job-level execution'}</p><Badge variant="outline" className="mt-2">{data.execution.status === 'InProgress' ? 'In progress' : data.execution.status}</Badge></div>
-      <div className="flex flex-wrap gap-2">
-        {data.canAbandon ? <Button variant="outline" disabled={pending} onClick={() => openFinish('abandon')}>Abandon execution</Button> : null}
-        {data.canOperate && data.execution.status === 'Planned' ? <Button disabled={pending} onClick={() => void onTransition('start').catch(() => {})}>{pending ? 'Starting…' : 'Start execution'}</Button> : null}
-        {data.canOperate && active ? <Button disabled={pending || data.completionBlockers.length > 0} onClick={() => openFinish('complete')}>Complete execution</Button> : null}
-      </div>
+      {data.canAbandon || data.canOperate && (active || data.execution.status === 'Planned') ? <DropdownMenu><DropdownMenuTrigger asChild><Button ref={actionTrigger} variant="outline" disabled={pending}>Actions <ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-40">
+        {data.canOperate && data.execution.status === 'Planned' ? <DropdownMenuItem disabled={pending || data.tubeAcceptanceRequired || data.sourceSelectionRequired} onSelect={() => { if (data.attemptId) { trigger.current = actionTrigger.current; setConfirmStart(true) } else void onTransition('start').catch(() => {}) }}>Start execution</DropdownMenuItem> : null}
+        {data.canOperate && active ? <DropdownMenuItem disabled={pending || data.completionBlockers.length > 0} onSelect={() => openFinish('complete')}>Complete execution</DropdownMenuItem> : null}
+        {data.canAbandon ? <DropdownMenuItem disabled={pending} onSelect={() => openFinish('abandon')}>Abandon execution</DropdownMenuItem> : null}
+      </DropdownMenuContent></DropdownMenu> : null}
     </header>
-    {error && !target && !finish ? <Alert variant="destructive"><AlertTitle>Execution was not updated</AlertTitle><AlertDescription>{error}</AlertDescription></Alert> : null}
+    {data.execution.status === 'Planned' && data.tubeAcceptanceRequired ? <Alert><AlertTitle>Tube acceptance required</AlertTitle><AlertDescription><p id="tube-acceptance-message">At least one available tube for this specimen must be Accepted before processing can start. Complete tube intake during accessioning. Open Tubes to see the recorded decisions.</p><div className="mt-3">{reviewTubesLink}</div></AlertDescription></Alert> : null}
+    {data.attemptId ? <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/30 p-3 text-sm"><p>Attempt {data.attemptNumber} · Source {data.sourceBarcode} · {data.attemptState}</p>{specimenLink}</div> : data.sourceSelectionRequired ? <Alert><AlertTitle>Source tube selection required</AlertTitle><AlertDescription><p>Open the specimen to confirm its tube-use instruction and select the source. This Planned execution will be retained.</p><div className="mt-3">{specimenLink}</div></AlertDescription></Alert> : null}
+    {error && !target && !finish && !confirmStart ? <Alert variant="destructive"><AlertTitle>Execution was not updated</AlertTitle><AlertDescription>{error}</AlertDescription></Alert> : null}
     {data.recoveryMessage ? <Alert variant="destructive"><AlertTitle>Historical record needs review</AlertTitle><AlertDescription>{data.recoveryMessage}</AlertDescription></Alert> : null}
     {(active || data.execution.status === 'Planned' && !data.canOperate) && data.completionBlockers.length > 0 ? <Alert><AlertTitle>Before this execution can complete</AlertTitle><AlertDescription><ul className="list-disc space-y-1 pl-4">{data.completionBlockers.map(blocker => <li key={blocker}>{blocker}</li>)}</ul></AlertDescription></Alert> : null}
     {completed ? <p role="status" className="rounded-lg border p-4 text-sm">Completed {formatTime(data.execution.completedAtUtc)}. This execution and its evidence are locked.</p> : null}
@@ -112,18 +122,19 @@ export function LabExecutionWorkspace({ data, returnLink, pending, error, onReco
             </div> : null}
             {active && step.actionBlocker ? <p className="text-xs text-muted-foreground">{step.actionBlocker}</p> : null}
             <div className="flex flex-wrap gap-2">
-              {step.canRecord ? <Button size="sm" disabled={pending} onClick={() => open(def.key, 'record')}>Record {def.name}</Button> : null}
+              {step.canRecord ? <Button size="sm" disabled={pending} onClick={() => open(def.key, 'record')}>{def.name === 'Record simulated library preparation and traceability' ? 'Record preparation and traceability' : /^record\b/i.test(def.name) ? def.name : `Record ${def.name}`}</Button> : null}
               {step.canRepeat ? <Button size="sm" variant="outline" disabled={pending} onClick={() => open(def.key, 'repeat')}>Repeat {def.name}</Button> : null}
               {step.canCorrect ? <Button size="sm" variant="outline" disabled={pending} onClick={() => open(def.key, 'correct')}>Correct {def.name}</Button> : null}
             </div>
-            {step.records.length > 0 ? <details className="text-sm"><summary className="cursor-pointer font-medium">Step history ({step.records.length})</summary><ol className="mt-3 space-y-3 border-l pl-4">{step.records.map((record, recordIndex) => <li key={record.id} className="space-y-1 break-words"><p className="font-medium">{recordIndex + 1}. {record.action} · {record.outcome}{record.qcOutcome ? ` · QC ${record.qcOutcome}` : ''}</p>{def.captures.filter(capture => record.captures[capture.key] !== undefined).map(capture => <p key={capture.key}>{capture.label}: {String(record.captures[capture.key])}{capture.unit ? ` ${capture.unit}` : ''}</p>)}{record.reason ? <p className="whitespace-pre-wrap">{record.reason}</p> : null}{record.operatorConfirmed ? <p>Operator confirmation recorded.</p> : null}{record.resourcesConfirmed ? <p>Resource traceability confirmed.</p> : null}<p className="text-xs text-muted-foreground">{recorders.get(record.recordedByUserId) ?? 'Recorded operator'} · {formatTime(record.recordedAtUtc)}</p></li>)}</ol></details> : null}
+            {step.records.length > 0 ? <details className="text-sm"><summary className="cursor-pointer font-medium">Step history ({step.records.length})</summary><ol className="mt-3 space-y-3 border-l pl-4">{step.records.map((record, recordIndex) => <li key={record.id} className="space-y-1 break-words"><p className="font-medium">{recordIndex + 1}. {record.action} · {record.outcome}{record.qcOutcome ? ` · QC ${record.qcOutcome}` : ''}</p>{def.captures.filter(capture => record.captures[capture.key] !== undefined).map(capture => <p key={capture.key}>{capture.label}: {String(record.captures[capture.key])}{capture.unit ? ` ${capture.unit}` : ''}</p>)}{record.reason ? <p className="whitespace-pre-wrap">{record.reason}</p> : null}{record.operatorConfirmed ? <p>Step confirmation recorded.</p> : null}{record.resourcesConfirmed ? <p>Resource traceability confirmed.</p> : null}<p className="text-xs text-muted-foreground">{recorders.get(record.recordedByUserId) ?? 'Recorded operator'} · {formatTime(record.recordedAtUtc)}</p></li>)}</ol></details> : null}
           </li>
         })}
       </ol>
     </section>
-    <section className="space-y-3" aria-labelledby="execution-resources"><h2 id="execution-resources" className="text-lg font-semibold">Recorded material and equipment use</h2><p className="text-sm text-muted-foreground">Use Material and Equipment on the laboratory job to record lot quantities, output containers, and equipment use before confirming resources.</p>{[...data.materialUse, ...data.equipmentUse].map(resource => <p key={resource.id} className="text-sm"><strong>{resource.name}</strong> · {resource.details} · {formatTime(resource.recordedAtUtc)}</p>)}{data.materialUse.length + data.equipmentUse.length === 0 ? <p className="text-sm text-muted-foreground">No material or equipment use has been recorded.</p> : null}</section>
+    <section className="space-y-3" aria-labelledby="execution-resources"><h2 id="execution-resources" className="text-lg font-semibold">Recorded material and equipment use</h2><p className="text-sm text-muted-foreground">{data.preparationBatchId ? 'Material and equipment use is recorded in the preparation batch and retained here for review.' : 'Use Material and Equipment on the laboratory job to record lot quantities, output containers, and equipment use before confirming resources.'}</p>{[...data.materialUse, ...data.equipmentUse].map(resource => <p key={resource.id} className="text-sm"><strong>{resource.name}</strong> · {resource.details} · {formatTime(resource.recordedAtUtc)}</p>)}{data.materialUse.length + data.equipmentUse.length === 0 ? <p className="text-sm text-muted-foreground">No material or equipment use has been recorded.</p> : null}</section>
     {data.recoveryMessage ? <details><summary className="cursor-pointer text-sm font-medium">Preserved historical results</summary><pre className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-muted p-3 text-xs">{data.execution.capturedResultsJson}</pre></details> : null}
     {target && selected ? <ExecutionStepDialog key={`${target.key}-${target.action}`} step={selected} action={target.action} version={data.execution.version} pending={pending} error={error} onClose={() => setTarget(null)} onSave={onRecord} onReturnFocus={returnFocus} /> : null}
+    {confirmStart ? <ExecutionStartDialog barcode={data.sourceBarcode!} pending={pending} error={error} onClose={() => setConfirmStart(false)} onReturnFocus={returnFocus} onSave={async barcode => { await onTransition('start', undefined, barcode); setConfirmStart(false) }} /> : null}
     {finish ? <ExecutionFinishDialog action={finish} name={data.protocolName} pending={pending} error={error} onClose={() => setFinish(null)} onReturnFocus={returnFocus} onSave={async note => { await onTransition(finish, note); setFinish(null) }} /> : null}
   </main>
 }
@@ -142,3 +153,10 @@ function ExecutionFinishDialog({ action, name, pending, error, onClose, onSave, 
 }
 
 function formatTime(value: string | null) { return value ? new Date(value).toLocaleString() : '—' }
+
+function ExecutionStartDialog({ barcode, pending, error, onClose, onSave, onReturnFocus }: { barcode: string; pending: boolean; error?: string; onClose: () => void; onSave: (barcode: string) => Promise<void>; onReturnFocus: () => void }) {
+  const form = useForm<{ barcode: string }>({ resolver: zodResolver(z.object({ barcode: z.string().trim().refine(value => value === barcode, 'Scan the selected source tube.') })), defaultValues: { barcode: '' }, mode: 'onBlur' })
+  useBlocker({ shouldBlockFn: () => pending || form.formState.isDirty && !window.confirm('Discard the scanned barcode?'), enableBeforeUnload: () => form.formState.isDirty || pending })
+  const close = () => { if (!pending && (!form.formState.isDirty || window.confirm('Discard the scanned barcode?'))) onClose() }
+  return <Dialog open onOpenChange={open => !open && close()}><DialogContent onCloseAutoFocus={event => { event.preventDefault(); onReturnFocus() }}><DialogHeader><DialogTitle>Confirm source and start</DialogTitle><DialogDescription>Selected source: {barcode}. Scan this tube before starting the pinned protocol.</DialogDescription></DialogHeader>{error ? <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}<form id="start-attempt-execution" onSubmit={form.handleSubmit(async values => { try { await onSave(values.barcode) } catch { /* Keep the barcode and display server feedback. */ } })}><Label htmlFor="execution-source"><RequiredFieldName>Scan source barcode</RequiredFieldName></Label><input id="execution-source" className="mt-1.5 h-9 w-full rounded-lg border bg-background px-3 text-sm" aria-invalid={Boolean(form.formState.errors.barcode)} {...form.register('barcode')} /><FieldError>{form.formState.errors.barcode?.message}</FieldError></form><RequiredDialogFooter><Button variant="outline" disabled={pending} onClick={close}>Cancel</Button><Button type="submit" form="start-attempt-execution" disabled={pending}>{pending ? 'Starting…' : 'Start execution'}</Button></RequiredDialogFooter></DialogContent></Dialog>
+}

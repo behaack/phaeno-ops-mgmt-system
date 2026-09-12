@@ -28,6 +28,7 @@ public sealed partial class LabOperationsController
             .ToListAsync(cancellationToken);
         if (members.Count == 0)
             throw Conflict("batch_members_required", "Add at least one library before creating a sendout.");
+        await RequireBatchAttemptReadinessAsync(batch.Id, cancellationToken);
         using var supplementalDetails = JsonDocument.Parse(NormalizeJson(request.ManifestJson, "sendout_manifest_invalid"));
         var manifest = JsonSerializer.Serialize(new
         {
@@ -53,6 +54,7 @@ public sealed partial class LabOperationsController
         var sendout = await dbContext.LabNgsSendouts.SingleOrDefaultAsync(item => item.Id == sendoutId, cancellationToken)
             ?? throw Missing();
         EnsureVersion(sendout.Version, request.Version);
+        await RequireBatchAttemptReadinessAsync(sendout.LabOperationalBatchId, cancellationToken);
         sendout.SetStatus(status, DateTime.UtcNow);
         var workOrderIds = await dbContext.LabBatchMembers.AsNoTracking()
             .Where(item => item.LabOperationalBatchId == sendout.LabOperationalBatchId)
@@ -162,6 +164,7 @@ public sealed partial class LabOperationsController
         if (await dbContext.LabProtocolExecutions.AnyAsync(item => item.LabWorkOrderId == work.Id
             && item.Status != LabExecutionStatus.Completed && item.Status != LabExecutionStatus.Abandoned, cancellationToken))
             throw Conflict("execution_incomplete", "Every assigned protocol execution must be completed or abandoned before approval.");
+        await RequireSpecimenReviewReadinessAsync(work, cancellationToken);
         var actorContributed = await dbContext.LabWorkEvents.AsNoTracking().AnyAsync(item =>
             item.LabWorkOrderId == work.Id && item.ActorUserId == actor.User.Id
             && item.EventCode != "ScientificApprovalRecorded"
@@ -181,6 +184,7 @@ public sealed partial class LabOperationsController
             outputPackage = await dbContext.ResultOutputPackages.SingleOrDefaultAsync(item =>
                 item.Id == request.ResultOutputPackageId.Value
                 && item.LabWorkOrderId == work.Id, cancellationToken) ?? throw Missing();
+            await RequireSpecimenReviewReadinessAsync(work, cancellationToken, outputPackage.LabSampleId ?? outputPackage.TrialSampleId);
             if (outputPackage.State != ResultOutputPackageState.ReadyForReview)
                 throw Conflict("result_output_package_not_ready", "The output package must be complete, checksummed, and malware-clean before scientific approval.");
         }

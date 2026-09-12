@@ -103,6 +103,7 @@ public enum LabContainerKind
 public enum LabContainerStatus
 {
     Available,
+    Rejected,
     Consumed,
     Failed,
     Disposed
@@ -119,6 +120,14 @@ public sealed class LabContainer : LabAuditedEntity
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid LabWorkOrderId { get; private set; }
     public Guid? LabSpecimenId { get; private set; }
+    public Guid? LabSpecimenAttemptId { get; private set; }
+
+    public void AttachAttempt(LabSpecimenAttempt attempt)
+    {
+        if (LabSpecimenAttemptId.HasValue || attempt.LabWorkOrderId != LabWorkOrderId || attempt.LabSpecimenId != LabSpecimenId || Kind == LabContainerKind.SubmittedSpecimen)
+            throw new InvalidOperationException("Derived material must belong to its specimen attempt.");
+        LabSpecimenAttemptId = attempt.Id;
+    }
     public Guid? ParentContainerId { get; private set; }
     public LabContainerKind Kind { get; private set; }
     public string Barcode { get; private set; } = null!;
@@ -128,20 +137,46 @@ public sealed class LabContainer : LabAuditedEntity
     public int LabelPrintCount { get; private set; }
     public DateTime? LastLabelPrintedAtUtc { get; private set; }
     public Guid? LastLabelPrintedByUserId { get; private set; }
-    public string Location { get; private set; } = null!;
+    public string? Location { get; private set; }
     public decimal? Quantity { get; private set; }
     public string? QuantityUnit { get; private set; }
     public LabContainerStatus Status { get; private set; } = LabContainerStatus.Available;
     public string? DispositionReason { get; private set; }
     public DateTime? RetainUntilUtc { get; private set; }
 
+    public LabSpecimenIntakeDisposition? IntakeDisposition { get; private set; }
+    public string? IntakeReasonCode { get; private set; }
+    public string? IntakeNotes { get; private set; }
+    public DateTime? IntakeReviewedAtUtc { get; private set; }
+    public Guid? IntakeReviewedByUserId { get; private set; }
+
+    public void ReviewIntake(LabSpecimenIntakeDisposition disposition, string? reasonCode,
+        string? notes, Guid actorId, DateTime utcNow)
+    {
+        if (Kind != LabContainerKind.SubmittedSpecimen || !LabSpecimenId.HasValue)
+            throw new InvalidOperationException("Only a submitted specimen tube can receive an intake review.");
+        if (Status is not (LabContainerStatus.Available or LabContainerStatus.Rejected))
+            throw new InvalidOperationException("Consumed, failed or disposed material cannot receive an intake correction.");
+        if (disposition != LabSpecimenIntakeDisposition.Rejected && string.IsNullOrWhiteSpace(Location))
+            throw new InvalidOperationException("Record a real storage location before accepting or holding retained material.");
+        if (actorId == Guid.Empty) throw new ArgumentException("An intake reviewer is required.");
+        LabIntakeReasons.Validate(disposition, reasonCode, notes,
+            IntakeDisposition is LabSpecimenIntakeDisposition.OnHold or LabSpecimenIntakeDisposition.Rejected);
+        Status = disposition == LabSpecimenIntakeDisposition.Rejected ? LabContainerStatus.Rejected : LabContainerStatus.Available;
+        IntakeDisposition = disposition;
+        IntakeReasonCode = reasonCode;
+        IntakeNotes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
+        IntakeReviewedAtUtc = utcNow;
+        IntakeReviewedByUserId = actorId;
+    }
+
     private LabContainer() { }
 
     public LabContainer(Guid labWorkOrderId, Guid? labSpecimenId, Guid? parentContainerId,
-        LabContainerKind kind, string barcode, string label, string location,
+        LabContainerKind kind, string barcode, string label, string? location,
         decimal? quantity, string? quantityUnit, DateTime? retainUntilUtc,
         LabContainerBarcodeSource barcodeSource = LabContainerBarcodeSource.PhaenoGenerated,
-        Guid? externalBarcodeReferenceId = null)
+        Guid? externalBarcodeReferenceId = null, bool rejectedAtIntake = false)
     {
         LabWorkOrderId = labWorkOrderId != Guid.Empty
             ? labWorkOrderId
@@ -158,7 +193,10 @@ public sealed class LabContainer : LabAuditedEntity
         BarcodeSource = barcodeSource;
         ExternalBarcodeReferenceId = externalBarcodeReferenceId;
         Label = Required(label, nameof(label), 255);
-        Location = Required(location, nameof(location), 255);
+        if (rejectedAtIntake && (kind != LabContainerKind.SubmittedSpecimen || !labSpecimenId.HasValue))
+            throw new ArgumentException("Only a submitted specimen tube can be rejected at intake.");
+        Location = rejectedAtIntake ? Optional(location, 255) : Required(location!, nameof(location), 255);
+        if (rejectedAtIntake) Status = LabContainerStatus.Rejected;
         if (quantity is <= 0) throw new ArgumentOutOfRangeException(nameof(quantity));
         Quantity = quantity;
         QuantityUnit = quantity.HasValue ? Required(quantityUnit!, nameof(quantityUnit), 50) : Optional(quantityUnit, 50);
@@ -198,6 +236,24 @@ public sealed class LabProtocol : LabAuditedEntity
     public string Name { get; private set; } = null!;
     public string? Description { get; private set; }
     public int LatestVersion { get; private set; }
+    public DateTime? RetiredAtUtc { get; private set; }
+    public Guid? RetiredByUserId { get; private set; }
+    public string? RetirementReason { get; private set; }
+
+    public void RequireCurrent()
+    {
+        if (RetiredAtUtc.HasValue) throw new InvalidOperationException("The protocol is retired and cannot be changed or used for new work.");
+    }
+
+    public void Retire(string reason, Guid actorUserId, DateTime utcNow)
+    {
+        RequireCurrent();
+        var validatedReason = Required(reason, nameof(reason), 1000);
+        if (actorUserId == Guid.Empty) throw new ArgumentException("A retirement actor is required.", nameof(actorUserId));
+        RetirementReason = validatedReason;
+        RetiredByUserId = actorUserId;
+        RetiredAtUtc = utcNow;
+    }
 
     private LabProtocol() { }
 
@@ -209,12 +265,14 @@ public sealed class LabProtocol : LabAuditedEntity
 
     public void UpdateDetails(string name, string? description)
     {
+        RequireCurrent();
         Name = Required(name, nameof(name), 255);
         Description = Optional(description, 2000);
     }
 
     public void RecordVersion(int version)
     {
+        RequireCurrent();
         if (version != LatestVersion + 1) throw new InvalidOperationException("Protocol versions must be sequential.");
         LatestVersion = version;
     }
@@ -268,12 +326,18 @@ public sealed class LabProtocolVersion
         Status = LabProtocolStatus.Discarded;
     }
 
-    public void Activate(Guid actorUserId, bool enforceActorSeparation = true)
+    public void RequireIndependentApproval()
+    {
+        if (ApprovedByUserId is null || ApprovedByUserId == Guid.Empty
+            || ApprovedByUserId == AuthoredByUserId || ApprovedAtUtc is null)
+            throw new InvalidOperationException("The protocol requires approval by someone other than its author before production use.");
+    }
+
+    public void Activate(Guid actorUserId)
     {
         if (Status != LabProtocolStatus.Approved) throw new InvalidOperationException("Only an approved protocol can be activated.");
         if (actorUserId == Guid.Empty) throw new ArgumentException("An activation actor is required.");
-        if (enforceActorSeparation && actorUserId == AuthoredByUserId)
-            throw new InvalidOperationException("A protocol author cannot activate the same protocol version.");
+        RequireIndependentApproval();
         LabProtocolDefinition.Parse(DefinitionJson);
         Status = LabProtocolStatus.Active;
     }
@@ -303,6 +367,7 @@ public sealed class LabProtocolExecution : LabAuditedEntity
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid LabWorkOrderId { get; private set; }
     public Guid? LabSpecimenId { get; private set; }
+    public Guid? LabSpecimenAttemptId { get; private set; }
     public Guid LabProtocolVersionId { get; private set; }
     public Guid? LabServiceWorkflowStageId { get; private set; }
     public Guid? AssignedToUserId { get; private set; }
@@ -332,6 +397,15 @@ public sealed class LabProtocolExecution : LabAuditedEntity
         if (Status != LabExecutionStatus.Planned) throw new InvalidOperationException("Only planned work can start.");
         Status = LabExecutionStatus.InProgress;
         StartedAtUtc = utcNow;
+    }
+
+    public void AttachAttempt(LabSpecimenAttempt attempt)
+    {
+        if (Status != LabExecutionStatus.Planned || StartedAtUtc.HasValue || LabSpecimenAttemptId.HasValue)
+            throw new InvalidOperationException("Only an unstarted, unlinked execution can be adopted.");
+        if (attempt.LabWorkOrderId != LabWorkOrderId || attempt.LabSpecimenId != LabSpecimenId)
+            throw new ArgumentException("The attempt must belong to this execution's specimen.");
+        LabSpecimenAttemptId = attempt.Id;
     }
 
     public void RecordStep(LabProtocolVersion protocol, LabProtocolStepInput input,
@@ -553,6 +627,7 @@ public sealed class LabPreparedReagentComponent
 
 public sealed class LabMaterialConsumption
 {
+    public Guid? LabPreparationRecordId { get; private set; }
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid LabProtocolExecutionId { get; private set; }
     public Guid LabMaterialLotId { get; private set; }
@@ -565,12 +640,13 @@ public sealed class LabMaterialConsumption
     private LabMaterialConsumption() { }
 
     public LabMaterialConsumption(Guid executionId, Guid lotId, Guid? outputContainerId,
-        decimal quantity, string quantityUnit, Guid actorUserId, DateTime utcNow)
+        decimal quantity, string quantityUnit, Guid actorUserId, DateTime utcNow, Guid? preparationRecordId = null)
     {
         if (executionId == Guid.Empty || lotId == Guid.Empty || actorUserId == Guid.Empty || quantity <= 0)
             throw new ArgumentException("Execution, lot, actor, and positive quantity are required.");
         LabProtocolExecutionId = executionId;
         LabMaterialLotId = lotId;
+        LabPreparationRecordId = preparationRecordId;
         OutputContainerId = outputContainerId;
         Quantity = quantity;
         QuantityUnit = string.IsNullOrWhiteSpace(quantityUnit) ? throw new ArgumentException("A unit is required.") : quantityUnit.Trim();
@@ -594,6 +670,9 @@ public sealed class LabEquipment : LabAuditedEntity
     public string EquipmentType { get; private set; } = null!;
     public string Location { get; private set; } = null!;
     public LabEquipmentStatus Status { get; private set; } = LabEquipmentStatus.Active;
+    public string? RetirementReason { get; private set; }
+    public DateTime? RetiredAtUtc { get; private set; }
+    public Guid? RetiredByUserId { get; private set; }
     public DateOnly? LastCalibrationOn { get; private set; }
     public DateOnly? CalibrationDueOn { get; private set; }
 
@@ -613,10 +692,26 @@ public sealed class LabEquipment : LabAuditedEntity
         LastCalibrationOn = lastCalibrationOn;
         CalibrationDueOn = calibrationDueOn;
     }
+
+    public void Retire(string reason, Guid actorUserId, DateTime retiredAtUtc)
+    {
+        if (Status == LabEquipmentStatus.Retired)
+            throw new InvalidOperationException("The equipment is already retired.");
+        if (actorUserId == Guid.Empty) throw new ArgumentException("A retirement actor is required.");
+        var retirementReason = Required(reason, nameof(reason), 1000);
+        RetirementReason = retirementReason;
+        RetiredByUserId = actorUserId;
+        RetiredAtUtc = retiredAtUtc;
+        Status = LabEquipmentStatus.Retired;
+    }
+
+    public bool CanRecordUsage(DateOnly usedOn) =>
+        Status == LabEquipmentStatus.Active && (!CalibrationDueOn.HasValue || CalibrationDueOn.Value >= usedOn);
 }
 
 public sealed class LabEquipmentUsage
 {
+    public Guid? LabPreparationRecordId { get; private set; }
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid LabProtocolExecutionId { get; private set; }
     public Guid LabEquipmentId { get; private set; }
@@ -627,12 +722,13 @@ public sealed class LabEquipmentUsage
     private LabEquipmentUsage() { }
 
     public LabEquipmentUsage(Guid executionId, Guid equipmentId, DateTime usedAtUtc,
-        Guid usedByUserId, string? runReference)
+        Guid usedByUserId, string? runReference, Guid? preparationRecordId = null)
     {
         if (executionId == Guid.Empty || equipmentId == Guid.Empty || usedByUserId == Guid.Empty)
             throw new ArgumentException("Execution, equipment, and user are required.");
         LabProtocolExecutionId = executionId;
         LabEquipmentId = equipmentId;
+        LabPreparationRecordId = preparationRecordId;
         UsedAtUtc = usedAtUtc;
         UsedByUserId = usedByUserId;
         RunReference = LabAuditedEntity.Optional(runReference, 255);

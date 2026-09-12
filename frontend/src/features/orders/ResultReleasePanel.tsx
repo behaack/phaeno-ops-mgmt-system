@@ -14,12 +14,12 @@ import { usePhaenoSession } from '#/features/auth/session-context'
 import { ReleasedDeliverableDetailPage } from '#/features/file-management/ReleasedDeliverableDetailPage'
 import { humanizeStatus, OrderStatusBadge } from './OrderStatusBadge'
 
-const states = ['ScientificallyApproved', 'ReadyForRelease', 'Released', 'ReadyForReview', 'Failed', 'Withdrawn']
+const states = ['ReadyForRelease', 'ScientificallyApproved', 'Released', 'ReadyForReview', 'Failed', 'Withdrawn']
 
 export function ResultReleasePanel({ apiEnabled }: { apiEnabled: boolean }) {
   const search = useSearch({ strict: false }) as { resultState?: string }
   const navigate = useNavigate()
-  const state = states.includes(search.resultState ?? '') ? search.resultState! : 'ScientificallyApproved'
+  const state = states.includes(search.resultState ?? '') ? search.resultState! : 'ReadyForRelease'
   const query = useQuery({ queryKey: ['pseq-result-packages', state], queryFn: () => listResultPackages(state), enabled: apiEnabled })
   return <Card><CardHeader><CardTitle>Result packages</CardTitle><CardDescription>Open a package to review its Customer, job, sample, scientific approval, and release history.</CardDescription>
     <div className="max-w-sm pt-2"><Label htmlFor="result-package-state">Package state</Label><select id="result-package-state" className="mt-2 h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm" value={state} onChange={(event) => void navigate({ to: '/order-operations', search: (previous) => ({ ...previous, orderSection: 'results', resultState: event.target.value }), replace: true })}>{states.map((value) => <option key={value} value={value}>{humanizeStatus(value)}</option>)}</select></div>

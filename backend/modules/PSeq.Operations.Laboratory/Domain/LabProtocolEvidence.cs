@@ -6,13 +6,13 @@ using System.Text.Json;
 public sealed record LabProtocolStepInput(
     string StepKey, string Action, string Outcome,
     IReadOnlyDictionary<string, JsonElement> Captures,
-    bool OperatorConfirmed, bool ResourcesConfirmed, string? QcOutcome, string? Reason);
+    bool OperatorConfirmed, bool ResourcesConfirmed, string? QcOutcome, string? Reason, Guid? PreparationRecordId = null);
 
 public sealed record LabProtocolStepRecord(
     Guid Id, string StepKey, string Action, string Outcome,
     IReadOnlyDictionary<string, JsonElement> Captures,
     bool OperatorConfirmed, bool ResourcesConfirmed, string? QcOutcome, string? Reason,
-    Guid RecordedByUserId, DateTime RecordedAtUtc);
+    Guid RecordedByUserId, DateTime RecordedAtUtc, Guid? PreparationRecordId = null);
 
 public sealed record LabProtocolEvidence(int SchemaVersion, IReadOnlyList<LabProtocolStepRecord> Records)
 {
@@ -77,7 +77,7 @@ public sealed record LabProtocolEvidence(int SchemaVersion, IReadOnlyList<LabPro
         var record = new LabProtocolStepRecord(Guid.NewGuid(), step.Key, input.Action, input.Outcome,
             input.Captures.ToDictionary(pair => pair.Key, pair => pair.Value.Clone(), StringComparer.Ordinal),
             input.OperatorConfirmed, input.ResourcesConfirmed, input.QcOutcome,
-            string.IsNullOrWhiteSpace(input.Reason) ? null : input.Reason.Trim(), actorId, utcNow);
+            string.IsNullOrWhiteSpace(input.Reason) ? null : input.Reason.Trim(), actorId, utcNow, input.PreparationRecordId);
         return new(1, [.. Records, record]);
     }
 

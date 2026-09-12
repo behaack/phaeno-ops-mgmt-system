@@ -13,11 +13,17 @@ public sealed record LabWorkOrderSummaryDto(
     Guid Id, Guid AuthorizationId, Guid? CommercialOrderId, string? CommercialOrderNumber,
     Guid SubmittingOrganizationId, string ServiceKey, string Status, int SpecimenCount,
     int OpenExceptionCount, DateTime UpdatedAt, long Version,
-    Guid? LabServiceWorkflowVersionId = null);
+    Guid? LabServiceWorkflowVersionId = null, string? DisplayName = null);
 
 public sealed record LabProtocolDto(
     Guid Id, string Key, string Name, string? Description, int LatestVersion,
-    IReadOnlyList<LabProtocolVersionDto> Versions, long Version);
+    IReadOnlyList<LabProtocolVersionDto> Versions, long Version,
+    DateTime? RetiredAtUtc = null, Guid? RetiredByUserId = null, string? RetirementReason = null);
+
+public sealed record RetireProtocolRequest(string Reason, long Version, string? ImpactToken = null, bool ConfirmImpact = false);
+public sealed record ProtocolRetirementWorkDto(Guid Id, string Reference);
+public sealed record ProtocolRetirementImpactDto(string ImpactToken, IReadOnlyList<string> Workflows,
+    IReadOnlyList<ProtocolRetirementWorkDto> ActiveWork, IReadOnlyList<ProtocolRetirementWorkDto> QueuedWork);
 
 public sealed record LabProtocolVersionDto(
     Guid Id, int ProtocolVersion, string Status, string DefinitionJson,
@@ -35,7 +41,8 @@ public sealed record LabServiceWorkflowVersionDto(
     Guid AuthoredByUserId, DateTime AuthoredAtUtc,
     Guid? ApprovedByUserId, DateTime? ApprovedAtUtc,
     Guid? ProductionByUserId, DateTime? ProductionAtUtc,
-    IReadOnlyList<LabServiceWorkflowStageDto> Stages, long Version);
+    IReadOnlyList<LabServiceWorkflowStageDto> Stages, long Version,
+    DateTime? InvalidatedAtUtc = null, string? InvalidationReason = null);
 
 public sealed record LabServiceWorkflowDto(
     Guid Id, string ServiceKey, string Name, string? Description, int LatestVersion,
@@ -62,7 +69,10 @@ public sealed record LabMaterialLotDto(
 
 public sealed record LabEquipmentDto(
     Guid Id, string AssetCode, string Name, string EquipmentType, string Location,
-    string Status, DateOnly? LastCalibrationOn, DateOnly? CalibrationDueOn, long Version);
+    string Status, DateOnly? LastCalibrationOn, DateOnly? CalibrationDueOn, long Version,
+    string? RetirementReason, DateTime? RetiredAtUtc, Guid? RetiredByUserId);
+
+public sealed record RetireEquipmentRequest(string Reason, long Version);
 
 public sealed record LabBatchDto(
     Guid Id, string BatchNumber, string Name, string BatchType, string Status,
@@ -90,8 +100,10 @@ public sealed record LabSpecimenDto(
 public sealed record LabContainerDto(
     Guid Id, Guid? LabSpecimenId, Guid? ParentContainerId, string Kind, string Barcode,
     string BarcodeSource, Guid? ExternalBarcodeReferenceId,
-    string Label, int LabelPrintCount, string Location, decimal? Quantity,
-    string? QuantityUnit, string Status, DateTime? RetainUntilUtc, long Version);
+    string Label, int LabelPrintCount, string? Location, decimal? Quantity,
+    string? QuantityUnit, string Status, DateTime? RetainUntilUtc, long Version,
+    string? IntakeDisposition = null, string? IntakeReasonCode = null, string? IntakeNotes = null,
+    DateTime? IntakeReviewedAtUtc = null, Guid? IntakeReviewedByUserId = null);
 
 public sealed record LabContainerScanDto(
     Guid LabWorkOrderId, string? CommercialOrderNumber, string? AccessionNumber,
@@ -128,7 +140,8 @@ public sealed record LabExecutionDetailDto(
     string? AccessionNumber, IReadOnlyList<LabExecutionStepDto> Steps,
     IReadOnlyList<LabExecutionRecorderDto> Recorders,
     IReadOnlyList<LabExecutionResourceDto> MaterialUse, IReadOnlyList<LabExecutionResourceDto> EquipmentUse,
-    IReadOnlyList<string> CompletionBlockers, string? RecoveryMessage, bool CanOperate, bool CanAbandon);
+    IReadOnlyList<string> CompletionBlockers, string? RecoveryMessage, bool CanOperate, bool CanAbandon,
+    bool TubeAcceptanceRequired, Guid? AttemptId = null, int? AttemptNumber = null, string? SourceBarcode = null, string? AttemptState = null, bool SourceSelectionRequired = false, Guid? PreparationBatchId = null);
 
 public sealed record LabLibraryDto(
     Guid Id, Guid LabSpecimenId, Guid SourceContainerId, Guid LibraryContainerId,
@@ -179,17 +192,22 @@ public sealed record ServiceWorkflowTransitionRequest(string Action, long Workfl
 public sealed record WorkMilestoneRequest(string Status, long Version);
 public sealed record SpecimenReceiptRequest(DateTime ReceivedAtUtc, string? ReceiptCondition, string? CurrentLocation, long Version,
     string? SampleShippingPacketBarcode = null, string? SupplierTubeBarcode = null);
-public sealed record SpecimenAccessionRequest(string AccessionNumber, string Label, string Location,
+public sealed record SpecimenAccessionRequest(string AccessionNumber, string Label, string? Location,
     decimal? Quantity, string? QuantityUnit, DateTime? RetainUntilUtc, long Version,
-    string? SampleShippingPacketBarcode = null, string? SupplierTubeBarcode = null);
-public sealed record ShipmentTubeAccessionRequest(string PacketBarcode, string SupplierTubeBarcode, string FreezerBoxBarcode);
+    string? SampleShippingPacketBarcode = null, string? SupplierTubeBarcode = null,
+    string IntakeDisposition = "Accepted", string? IntakeReasonCode = null, string? IntakeNotes = null);
+public sealed record ShipmentTubeAccessionRequest(string PacketBarcode, string SupplierTubeBarcode, string? FreezerBoxBarcode,
+    string IntakeDisposition = "Accepted", string? IntakeReasonCode = null, string? IntakeNotes = null);
+public sealed record TubeIntakeReviewRequest(string Disposition, string? ReasonCode, string? Notes, long Version, string? RetainedStorageLocation = null);
+public sealed record AcceptRemainingTubesRequest(Guid RequestId, string PacketBarcode, long WorkOrderVersion, bool InspectionConfirmed, IReadOnlyList<AcceptRemainingTube> Tubes);
+public sealed record AcceptRemainingTube(string SupplierTubeBarcode, string FreezerBoxBarcode);
 public sealed record SpecimenDispositionRequest(string Disposition, string? ReasonCode, long Version);
 public sealed record CreateContainerRequest(Guid? LabSpecimenId, Guid? ParentContainerId, string Kind,
     string Label, string Location, decimal? Quantity, string? QuantityUnit, DateTime? RetainUntilUtc);
 public sealed record RecordLabelPrintRequest(string Reason, string Outcome, string? FailureDetails);
 public sealed record CreateExecutionRequest(Guid? LabSpecimenId, Guid LabProtocolVersionId,
     Guid? AssignedToUserId, Guid? LabServiceWorkflowStageId = null);
-public sealed record ExecutionTransitionRequest(string Action, string? CapturedResultsJson, string? DeviationNote, long Version);
+public sealed record ExecutionTransitionRequest(string Action, string? CapturedResultsJson, string? DeviationNote, long Version, string? ConfirmedSourceBarcode = null);
 public sealed record CreatePreparedReagentComponentRequest(
     Guid ComponentMaterialLotId, decimal Quantity, string QuantityUnit);
 public sealed record CreateMaterialLotRequest(

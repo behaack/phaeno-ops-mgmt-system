@@ -124,7 +124,10 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             minimumTurnaroundDays: 7, maximumTurnaroundDays: 14);
         var specimen = new LabSpecimen(work.Id, Guid.NewGuid()); work.Specimens.Add(specimen);
         specimen.RecordReceipt(DateTime.UtcNow.AddDays(-1), "Good", "Freezer"); specimen.AssignAccession($"STD-{Guid.NewGuid():N}");
-        specimen.RecordIntakeDisposition(LabSpecimenIntakeDisposition.Accepted, null);
+        var tube = new LabContainer(work.Id, specimen.Id, null, LabContainerKind.SubmittedSpecimen,
+            "TEST-ACCEPT-" + Guid.NewGuid().ToString("N"), "Tube", "Freezer", null, null, null);
+        tube.ReviewIntake(LabSpecimenIntakeDisposition.Accepted, null, null, Guid.NewGuid(), DateTime.UtcNow);
+        specimen.RefreshIntakeFromTubes([tube], DateTime.UtcNow);
         work.RefreshAcceptedSpecimenTargets(); scope.DbContext.Add(work); await scope.DbContext.SaveChangesAsync();
         var controller = scope.CreatePlatformLabController();
         var expected = DateTime.UtcNow.Date.AddDays(25);

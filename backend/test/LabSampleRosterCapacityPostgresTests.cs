@@ -103,7 +103,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         Assert.Equal(3, detail.Samples.Count);
         Assert.False(detail.CanFinalizeSamples);
         var error = await Assert.ThrowsAsync<OrderManagementException>(() => scope.ExtensionCustomerController().FinalizeSampleRoster(order.Id,
-            new VersionRequest(detail.Version), default));
+            new FinalizeLabSampleRosterRequest(detail.Version, true), default));
         Assert.Contains(error.Message, new[] {
             "Biological source 'Human PBMCs' requires 1 samples; 2 are entered.",
             "Biological source 'Mouse liver' requires 2 samples; 1 are entered." });

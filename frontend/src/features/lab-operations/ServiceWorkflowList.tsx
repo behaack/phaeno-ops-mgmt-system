@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { Plus } from 'lucide-react'
+import { ChevronDown, Plus } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
 import {
@@ -14,6 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
+import { ActionMenu as DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
@@ -100,7 +101,7 @@ export function ServiceWorkflowList({
           ) : null}
           <div className="space-y-4">
             {visibleWorkflows.map((workflow) => {
-              const openCandidate = workflow.versions.find((version) => version.status === 'Draft' || version.status === 'Approved')
+              const openCandidate = workflow.versions.find((version) => version.status === 'Draft' || version.status === 'Approved' || version.status === 'Invalid')
               return (
                 <section key={workflow.id} className="rounded-lg border bg-background p-4 shadow-xs">
                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -124,30 +125,38 @@ export function ServiceWorkflowList({
                           <span className="font-medium">v{version.workflowVersion}</span>
                           <Status value={version.status} />
                           <span className="ml-2 text-muted-foreground">{version.stages.length} stage(s)</span>
+                          {version.invalidationReason ? <p className="mt-1 text-xs text-muted-foreground">{version.invalidationReason}</p> : null}
                         </div>
-                        {canManage ? (
-                          <div className="flex flex-wrap gap-2">
-                            {version.status === 'Draft' ? (
-                              <>
-                                <Button asChild size="sm">
-                                  <Link to="/lab-operations/workflows/$workflowId/versions/$versionId/edit" params={{ workflowId: workflow.id, versionId: version.id }} search={{ section: undefined }}>
-                                    Continue editing
-                                  </Link>
-                                </Button>
-                                <Button type="button" size="sm" variant="outline" disabled={transition.isPending} onClick={() => transition.mutate({ workflow, versionId: version.id, action: 'approve' })}>Approve</Button>
-                                <Button type="button" size="sm" variant="ghost" disabled={transition.isPending} onClick={() => setConfirmation({ workflow, versionId: version.id, workflowVersion: version.workflowVersion, action: 'discard' })}>Discard</Button>
-                              </>
-                            ) : null}
-                            {version.status === 'Approved' ? (
-                              <>
-                                <Button type="button" size="sm" disabled={transition.isPending} onClick={() => setConfirmation({ workflow, versionId: version.id, workflowVersion: version.workflowVersion, action: 'promote' })}>Promote to production</Button>
-                                <Button type="button" size="sm" variant="outline" disabled={transition.isPending} onClick={() => setConfirmation({ workflow, versionId: version.id, workflowVersion: version.workflowVersion, action: 'withdraw' })}>Withdraw approval</Button>
-                              </>
-                            ) : null}
-                            {version.status === 'Production' ? (
-                              <Button type="button" size="sm" variant="ghost" disabled={transition.isPending} onClick={() => setConfirmation({ workflow, versionId: version.id, workflowVersion: version.workflowVersion, action: 'retire' })}>Retire</Button>
-                            ) : null}
-                          </div>
+                        {canManage && ['Draft', 'Invalid', 'Approved'].includes(version.status) ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button type="button" size="sm" variant="outline" disabled={transition.isPending}>
+                                Actions <ChevronDown aria-hidden="true" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-60 max-w-[calc(100vw-2rem)]">
+                              <DropdownMenuLabel>Workflow v{version.workflowVersion} actions</DropdownMenuLabel>
+                              {version.status === 'Draft' || version.status === 'Invalid' ? (
+                                <>
+                                  <DropdownMenuItem asChild>
+                                    <Link to="/lab-operations/workflows/$workflowId/versions/$versionId/edit" params={{ workflowId: workflow.id, versionId: version.id }} search={{ section: undefined }}>
+                                      {version.status === 'Invalid' ? 'Review workflow' : 'Continue editing'}
+                                    </Link>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onSelect={() => transition.mutate({ workflow, versionId: version.id, action: 'approve' })}>{version.status === 'Invalid' ? 'Revalidate and approve' : 'Approve'}</DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem variant="destructive" onSelect={() => setConfirmation({ workflow, versionId: version.id, workflowVersion: version.workflowVersion, action: 'discard' })}>Discard</DropdownMenuItem>
+                                </>
+                              ) : (
+                                <>
+                                  <DropdownMenuItem onSelect={() => setConfirmation({ workflow, versionId: version.id, workflowVersion: version.workflowVersion, action: 'promote' })}>Promote to production</DropdownMenuItem>
+                                  <DropdownMenuItem onSelect={() => setConfirmation({ workflow, versionId: version.id, workflowVersion: version.workflowVersion, action: 'withdraw' })}>Withdraw approval</DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : canManage && version.status === 'Production' ? (
+                          <Button type="button" size="sm" variant="ghost" disabled={transition.isPending} onClick={() => setConfirmation({ workflow, versionId: version.id, workflowVersion: version.workflowVersion, action: 'retire' })}>Retire</Button>
                         ) : null}
                       </div>
                     ))}

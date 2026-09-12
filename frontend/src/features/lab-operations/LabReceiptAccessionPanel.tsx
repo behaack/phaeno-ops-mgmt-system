@@ -80,8 +80,8 @@ export function LabReceiptAccessionPanel({
         <TabsContent value="receiving"><LabShipmentReceiptPanel apiEnabled={apiEnabled} canReceive={canReceiveShipments} onAccession={openAccession} /></TabsContent>
         <TabsContent value="accession" className="space-y-5">
       <LabShipmentQueue apiEnabled={apiEnabled} received onOpen={barcode => packetScan.mutate(barcode)} />
-      <Card>
-        <CardHeader>
+      <Card className="gap-0 py-0">
+        <CardHeader className="border-b bg-muted/50 p-4">
           <div className="flex items-start gap-3">
             <ScanLine className="mt-0.5 size-5 text-primary" />
             <div>
@@ -92,7 +92,7 @@ export function LabReceiptAccessionPanel({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 p-4">
           <form
             className="flex flex-col gap-3 sm:flex-row sm:items-end"
             onSubmit={(event) => {

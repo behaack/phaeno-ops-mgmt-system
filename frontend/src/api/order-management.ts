@@ -253,6 +253,8 @@ export type LabRequestRevision = {
 };
 
 export type LabServiceOrder = {
+  tubeUsePolicyKey?: string | null;
+  tubeUsePolicyVersion?: number | null;
   laboratoryProgress?: LabCustomerProgress | null;
   entryMode?: 'ManualQuote' | 'ConfiguredDirect' | 'SalesAssisted';
   standardCommercialSnapshot?: LabServiceCommercialSnapshot | null;
@@ -844,10 +846,11 @@ export async function confirmLabSampleImport(
 export async function finalizeLabSampleRoster(
   orderId: string,
   version: number,
+  confirmTubeUsePolicy = false,
 ) {
   return post<LabServiceOrder>(
     `/lab-service-orders/${orderId}/samples/finalize`,
-    { version },
+    { version, confirmTubeUsePolicy },
     true,
   );
 }

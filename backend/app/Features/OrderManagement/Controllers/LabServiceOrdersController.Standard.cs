@@ -92,6 +92,7 @@ public sealed partial class LabServiceOrdersController
                         currentTenant.Configuration.ResultDeliveryInstructions },
                     purchaseOrderNumber = purchaseOrder, order.RequestedSpecimenCount,
                     sourceGroups = order.SourceGroups.Select(value => new { value.BiologicalSource, value.SpecimenCount }),
+                    order.TubeUsePolicyKey, order.TubeUsePolicyVersion,
                     order.StorageRequirements, order.SafetyDeclaration, serviceKey = OrderServiceKeys.PSeqLabService,
                     materialType = StandardMaterialType, quantityUnit = StandardQuantityUnit, quoteId = quote.Id,
                     quote.Revision, quote.LinesJson, quote.Total, quote.Currency, acceptedAt = now,

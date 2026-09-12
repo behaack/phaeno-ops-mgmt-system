@@ -30,9 +30,11 @@ public class LabOperationsDomainTests
             "Cold room");
         specimen.AssignAccession("ACC-1");
 
-        Assert.Throws<ArgumentException>(() =>
-            specimen.RecordIntakeDisposition(LabSpecimenIntakeDisposition.OnHold, null));
-        specimen.RecordIntakeDisposition(LabSpecimenIntakeDisposition.Accepted, null);
+        var tube = new LabContainer(specimen.LabWorkOrderId, specimen.Id, null,
+            LabContainerKind.SubmittedSpecimen, "TUBE-1", "Tube", "Cold room", null, null, null);
+        Assert.Throws<ArgumentException>(() => tube.ReviewIntake(LabSpecimenIntakeDisposition.OnHold, null, null, Guid.NewGuid(), DateTime.UtcNow));
+        tube.ReviewIntake(LabSpecimenIntakeDisposition.Accepted, null, null, Guid.NewGuid(), DateTime.UtcNow);
+        specimen.RefreshIntakeFromTubes([tube], DateTime.UtcNow);
 
         Assert.Equal("ACC-1", specimen.AccessionNumber);
         Assert.Equal(LabSpecimenIntakeDisposition.Accepted, specimen.IntakeDisposition);

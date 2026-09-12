@@ -1,5 +1,71 @@
 # Playwright E2E Test Plan
 
+## LAB-14 signed-in checkpoint — September 12, 2026
+
+See the [run record](../testing/runs/2026-09-12-lab-14-preparation.md). Numeric preview/cancel, all-unavailable rejection, saved 2×3/B3-unavailable format and refresh persistence passed. Saved a separate preparation-enabled three-step test protocol draft. Live approval review initially omitted scopes; after correction it shows Batch/Tube/Shared captures, QC scopes and selected-source matching before attestation. Three focused frontend tests passed; no E2E suite was rerun for this display fix. Full LAB-14 is Blocked at independent protocol approval; execution steps remain Not run. No older job, tube, execution or sequencing membership was changed.
+
+## Latest UI acceptance alignment — September 11, 2026
+
+Verify **Library prep** uses the existing work route and opens preparation batches plus the job-history lookup. Verify **Lab configurations** is the last sidebar item with a cog icon and the **Protocols**, **Workflows**, and **Tray formats** tabs. Shared Portal tabs use 36 px minimum triggers and 42 px single-line strips, with consistent padding, selected styling and keyboard focus; wrapped rows may grow. LAB-14 records the connected preparation-batch journey. Verify the shared required marker stays with the final wrapped word and long confirmation checkboxes retain first-line alignment and full width. LAB-13 carries these checks alongside accession behavior; build/read-only evidence is recorded separately from unrun full acceptance. Earlier chronological screenshots describe historical labels, not current expected text.
+
+
+### Accession before storage and bulk acceptance (2026-09-11)
+
+See LAB-13 in `docs/testing/06-laboratory.md`: mixed accepted/held/rejected/missing shipment, unscannable broken expected tube with no fake location, atomic acceptance of the identified remainder, retries and concurrent changes, stored tube details and supervised correction. Customer-requested holds remain Blocked. No persisted acceptance or physical inspection is claimed from builds or read-only UI checks. Automated suites remain Not run.
+
+
+## Specimen attempt acceptance — September 11, 2026
+
+Use the detailed [LAB-09 operator script](../testing/06-laboratory.md#lab-09---specimen-tube-attempts-and-reserve-fallback) and plan acceptance matrix. Cover order authorization, source selection/start, permitted QC repeat, multi-stage failure and reserve restart, successful lineage, terminal exhaustion, pending material, concurrency, stale retries and original Planned execution adoption. Do not mark implementation/build proof as a passed journey. Automated suites not run; connected read-only specimen/navigation evidence is narrower.
+
+## Tube review before execution - September 11, 2026
+
+Before pressing Start, a Planned execution lacking accepted available input must show Tube acceptance required. Open tubes opens the same job's Tubes tab, which precedes Execution. Preserve return section/shipment context. On a separate synthetic fixture, complete intake for an identified eligible tube during accessioning, return and verify Start becomes available without automatic processing; repeat with unavailable and foreign-specimen tubes and a concurrent eligibility change. Automated and persisted-transition cases Not run.
+
+## Planned specimen failure and customer holds - September 11, 2026
+
+Future attempt coverage must distinguish terminal failure with confirmed material exhaustion (specimen processing Failed, intake history preserved) from pending receipt or resolvable tube review (explicit temporary blocker). Verify an accepted tube plus a held reserve leaves specimen intake Accepted. These attempt cases are Not run. [Customer-requested hold coverage](CUSTOMER-SPECIMEN-HOLD-PLAN.md#future-acceptance-coverage) is planned only and **blocked from implementation by Product Owner direction**; existing generic milestone controls do not satisfy it.
+
+## Tube-level acceptance journey - September 11, 2026
+
+Verify accepted tube + rejected reserve leaves specimen Accepted, reason validation and resolution notes, no automatic historical acceptance, review lock after processing, old specimen action absent, same-tube accession retry and rejection of execution start without accepted available input. Automated journey Not run.
+
+## Proposed multi-tube specimen journey - September 11, 2026
+
+Follow the proposed [tube-attempt acceptance matrix](SPECIMEN-TUBE-ATTEMPT-PLAN.md#acceptance-matrix): order policy through receipt, Tube 1 attempt, repeat/Hold, explicit failure, Tube 2 restart, success/exhaustion and lineage; include real concurrent requests and bypass attempts. Preserve the existing HS5Y7DB7 Planned execution. All new cases Not run.
+
+## Workflow promotion and action menus - September 11, 2026
+
+Verify Draft, Invalid and Approved version Actions menus, keyboard dismissal and confirmation Cancel without state changes. Approved and Invalid menus manually checked locally. Promotion acceptance: independently approve each protocol and workflow; permit either author to promote with ProtocolAdministrator role; reject missing/self approvals, unauthorized roles and stale state; confirm new-job workflow use and unchanged existing pins. Promotion journey remains Not run after the policy change.
+
+## Discarded drafts in history only — September 11, 2026
+
+Working-list acceptance now requires no Show discarded drafts control and no standalone discarded-only records in either Show retired state. Confirm an approved protocol with a discarded revision remains visible with that revision labeled Discarded and no revision-specific edit/create actions. New empty identities remain visible as Setup incomplete. Connected Edge verified the control removal and discarded-only exclusion; mixed approved/discarded history remains a manual acceptance check. No data mutation or automated suite was used for this UI correction.
+
+## Revised retirement lifecycle journeys — September 11, 2026
+
+The manual [LAB-07](../testing/06-laboratory.md#lab-07--protocol-retirement-workflow-invalidation-and-revalidation) journey covers no workflow, active samples, queued-only samples with cancel/Proceed anyway, multi-workflow invalidation, immutable history, removal in recovery revisions, revalidation without edits and with edits, empty workflow rejection, independent approval/promotion, flagged queued jobs and blocked starts, stale confirmation and concurrency. Use separate synthetic fixtures; preserve the original library-preparation walkthrough. Prior successful retirement tests used the old dependency-blocking rule; new journey outcomes remain Not run until separately evidenced. No automatic repinning or database repair is part of acceptance.
+
+## Protocol retirement local acceptance — September 11, 2026
+
+Used a separate synthetic approved protocol and Draft service workflow. Retirement required a reason and was refused while the workflow referenced it, naming that workflow. Discarded only that workflow draft through UI, then successfully retired only the verification protocol. Confirmed default hiding, Show retired inclusion, preserved version approval and reason/date after refresh, and DB actor/time/version. Kept the two library-preparation walkthrough protocols intact. Automated tests were not run. Approved/Production dependencies, unfinished-job blockers, cross-role denial, concurrent requests, and stale direct creation paths remain acceptance gates.
+
+## Equipment retirement local acceptance — September 11, 2026
+
+Through connected Edge, created a separate TEST ONLY retirement verification asset, confirmed a blank reason prevents retirement, retired it with an explicit synthetic reason, verified default hiding and Show retired inclusion, then refreshed and checked retained reason/date. Database corroborated actor/timestamp/version and preservation of the active preparation asset. No operational execution or physical calibration was asserted. No automated suite was run; cross-role denial, concurrent retirement/use and populated usage-history scenarios remain unrun.
+
+## Protocol management tab checkpoint — September 11, 2026
+
+Focused connected Edge verification confirmed Protocols is selected by default, discarded-only Test 1-2-3 is hidden, Show discarded restores it, clearing the filter hides it, and ArrowRight/ArrowLeft selects the Service workflows/Protocols panels. Each selected panel exposes its own creation action. No automated E2E suite was run or new test added; full responsive/theme coverage remains deferred. No protocol approval or workflow write occurred.
+
+## Protocol capture layout — September 11, 2026
+
+Connected local Edge observations verified the owner-reported capture spacing correction at phone/native/wide sizes, Required-to-remove keyboard focus, and preservation of the 19 unsaved fields across hot reload and responsive checks. No capture was removed and the partial Draft was not saved or advanced. Number/Choice interaction variants, dark theme and full controlled protocol acceptance remain unrun. The [run record](../testing/runs/2026-09-11-protocol-preparation.md) preserves the paced authoring checkpoint. No automated suite was run.
+
+## Laboratory Work tab reflow — September 11, 2026
+
+Focused connected Edge verification passed for the tab-layout correction at 375/950/1280px: bar heights 122/82/42px, targets contained, visible panel separated by 8px, and no phone horizontal overflow. ArrowRight changed Execution to Lineage with visible focus. Inspection used a separate temporary Work tab, which was closed; the protocol draft retained every unsaved field and original browser size. Dark-theme verification remains unrun. The [paced protocol walkthrough](../testing/runs/2026-09-11-protocol-preparation.md) records the checkpoint. No Playwright suite or full LAB acceptance is claimed.
+
 ## Customer laboratory stages — September 10, 2026
 
 **No automated Playwright run is claimed for this change.** The [local stage record](../testing/runs/2026-09-10-customer-laboratory-stages.md) establishes a narrower signed-in Customer check: both list rows show Received; HS5Y7DB7's header, all six stages, nine Received samples and expanded sample disclosure were inspected on desktop. The 69SJN4PA detail, keyboard/mobile/theme variants and Partner session remain **Not run**. Backend fixtures establish mixed-stage rules but are not full-browser acceptance.
@@ -1988,3 +2054,88 @@ Letter/A4 receiving sheets and 50 x 25 mm lab label output were visually reviewe
 and independently QR-decoded. See
 [release evidence](PORTAL-LAB-PROGRESS-RELEASE-2026-09-10.md) for local fixture
 failures, artifacts and outstanding physical/production acceptance gates.
+
+## Global action-button rule — September 11, 2026
+
+All Portal record action menus now use the shared ActionMenu: zero visible items renders no control; one visible item renders its named button/link; two or more retain Actions. Permission filtering occurs before counting; disabled items remain disabled and count as visible. Preserve confirmation dialogs, trigger refs, link destinations, destructive styling and accessible labels. Navigation/selection menus are unchanged. Six focused shared-component tests passed. Verify representative role/status variants, keyboard activation, modal return focus and narrow/light/dark layouts during UAT. This is not a full application acceptance pass.
+
+## Library prep and Results & review navigation — September 11, 2026
+
+Implemented the first navigation slice: Library prep replaces the Lab work sidebar label (existing work URL retained); Results & review follows Sequencing batches and opens the existing job Review tab with section=results return context. Both queues retain received job visibility; no readiness is inferred from inclusion. Preserve the owner's three sidebar dividers and later groups. Shared job history and existing approval gates remain intact. This is not tray-based preparation or a new data-processing pipeline.
+
+Manual verification: Results & review → HS5Y7DB7 opens Review, retains Processing and No scientific approval recorded, and its breadcrumb returns to section=results. Verify Library prep → Specimens and legacy work links, keyboard navigation and narrow layout. No operational writes for this change.
+
+## Preparation-batch verification — September 11, 2026
+
+frontend/e2e/lab-preparation.spec.ts: 10 passing checks (five journeys × desktop/mobile Chromium). Covers exact shared/exception payloads and accessibility, exclusion of failed tubes, contextual output identity, retry after lost response retaining the original command/version, selected resource coverage with unfinished step retention, and selecting an existing output without retyping relationships/quantities. Route fixtures are deterministic; they do not claim a signed-in persisted bench journey. Separate PostgreSQL tests cover two persisted journeys. Signed-in local inspection covered the batch landing page and tray-format preview/cancel.
+
+The owning [Library prep plan](LAB-WORK-JOURNEY-PLAN.md#verification-checkpoint) and [LAB-14 manual journey](../testing/06-laboratory.md#lab-14--preparation-trays-shared-evidence-and-sequencing-handoff) retain remaining acceptance coverage: held/closed Trial races, all staff-role combinations, physical trays/scanners/labels, owner sign-off and production/provider gates. Historical TEST-008 work was not retrofitted or replayed. Customer-requested hold implementation remains blocked.
+
+
+## Receipt and accession list contrast — September 11, 2026
+
+Visual-only update across Kit requests, Prepare kits, Kits sent, Receive shipments and Accession samples: shaded bordered headers, search/filters grouped in the header, separate record rows and table column headers, and consistent empty-state spacing. TypeScript/scoped lint passed. Signed-in desktop inspection covered all tabs, populated requests/kit lists and empty shipment queues without operational writes or page overflow. Automated tests were not added or run for these class/layout changes. Retain narrow/dark and populated shipment-queue checks in manual acceptance; existing navigation, filter, receipt and accession tests are unchanged.
+
+## Lab configurations and shared tab acceptance — September 11, 2026
+
+The [LAB-14 journey](../testing/06-laboratory.md#lab-14--preparation-trays-shared-evidence-and-sequencing-handoff) now starts format configuration in Lab configurations → Tray formats, then returns to Library prep to assemble a batch. Verify default Protocols, Workflows, Tray formats, direct-link/refresh and builder return behavior, the last sidebar position/divider/cog icon, read-only versus configuration roles, and active-only format selection. Library prep must not offer format create/edit controls.
+
+Signed-in local inspection covered the three tabs, initial direct-link loading, preview/cancel, the single preparation-batch creation action and keyboard activation of the missing-format setup link, without saved writes. Receipt and configuration tabs both measured 42 px strips/36 px triggers. A read-only browser render check used the existing Web Operations fixture at 1440, 390 and 320 px, including dark/reduced motion: no overflow/runtime errors, matching tab dimensions within each row, and working arrow-key selection with visible focus. Responsive content may increase a row's height. These checks do not claim every account/CRM role journey or persisted tray creation/editing. No E2E suite was added or run for this navigation/style follow-up; existing suites and broader LAB-14 gates remain unchanged.
+
+## September 12 — Preparation batch identifiers
+
+LAB-14 naming follow-up: verify no required name field, automatic PSeq UTC timestamp heading, optional notes after reload, two separate identical creates, uncertain-create retry and unchanged historical names. These new naming cases are Not run; prior mixed-tray UAT evidence does not cover them.
+
+
+September 12 naming follow-up: both focused PostgreSQL preparation journeys passed, including name/notes/retry assertions. Signed-in UI verified removal of the name field, two distinct identical-choice creates, persisted notes and unchanged historical names. Reserve exhaustion confirmation produced terminal specimen Failed. See the LAB-14 run record; unrun variants remain open.
+
+
+September 12 LAB-14 follow-up: failed-output scan prompts removed while traceability links remain; terminal specimens use Processing outcome. Live saved-record inspection passed. Failed-output regression passed on desktop/mobile (2); all 11 preparation-domain tests passed, including new repeat reason/history coverage and existing correction invalidation. Manual correction/repeat remains separate and pending; see the active run record.
+
+September 12 LAB-14: added stage completion confirmation context/cancel regression in lab-preparation.spec.ts; passed Chromium and mobile Chrome (2). Signed-in Hold/repeat/correction/fresh-QC/completion passed separately in isolated POMS; wider variants remain open.
+
+September 12 lab-preparation.spec.ts resource choices regression passed on Chromium/mobile Chrome (2): expired lots and overdue/retired equipment absent, due-today resources present. Persisted signed-in rejection and unchanged inventory evidence recorded separately in LAB-14 run.
+
+September 12 lab-preparation.spec.ts: added Supervisor-only step visibility for Operator/ScientificReviewer and keyboard cancellation/focus restoration; six desktop/mobile cases passed. Live active batch retained at seven history entries after keyboard cancel and rejected premature completion. See LAB-14 run.
+
+September 12 lab-preparation.spec.ts: added definite stale-save case; new and uncertain-response cases passed on Chromium/mobile Chrome (4). No fake mutation on rejected save; reviewed retry creates one output. See LAB-14 run for distinction from signed-in network/concurrency acceptance.
+
+September 12 signed-in LAB-14: two Edge tabs on the same Bill account verified stale output save rejection, entered-value retention, subsequent duplicate-output rejection, and one persisted output retaining the winning values. Active batch now has output PH-L-ZC3W65F9DT-9. This is not distinct-user role testing or lost-response injection; see active run.
+
+September 12 signed-in LAB-14: wrong output barcode, missing resource coverage, excessive stock quantity, and missing tube-exception reason rejected; nested equipment cancel preserved unfinished shared/tube values. History remained eight and inventory unchanged. Manual evidence in active run; no automated tests added.
+
+September 12 signed-in LAB-14 draft cancellation passed: missing reason blocked, justified cancellation closed draft/released reservation, same source accepted into a fresh draft. Exact records and pending Operator-only account question in active run. No automated tests or application changes.
+
+September 12 signed-in LAB-14 Operator checkpoint: William saved routine shared preparation, one material use and two equipment uses on the preserved resource batch. Correction controls absent; individual QC requires Supervisor; premature stage completion rejected with history unchanged at 12. See active run for the exact handoff and database-readback limitation. Supervisor-only signed-in completion and broader role variants remain open; no new automated tests.
+
+September 12 signed-in LAB-14 Supervisor checkpoint: after the owner changed William's role, Supervisor QC became available and Operator steps were restricted. Existing output confirmation, fluorometer coverage, individual 12/Pass QC, required stage completion, justified optional skip and batch closure passed. Reopened batch remains Complete with 18 history entries and one eligible, unassigned library; QC reused. This is same-person role-transition evidence, not independent-person review. Overall acceptance remains partial; see active run. No new automated tests.
+
+September 12 signed-in LAB-14 handoff: resource library added once to the existing LAB-14 draft sequencing batch (now two libraries). Duplicate scan rejected with retained barcode/focus and unchanged count; corrected misleading QC feedback to identify an existing assignment. No sequencing start or sendout. Focused scanner unit coverage passed; no new browser fixture tests. See run for exact preserved identities.
+
+September 12 signed-in LAB-14 step 6 passed: edited and retired the isolated test tray format; new batch choices excluded it, while existing draft retained B2 available/B3 unavailable and its original member/history. Restored original Active format with five usable positions afterward. No new batch, code change or automated tests; exact checkpoint in the run record.
+
+September 12 signed-in completed-route check: resource specimen and execution link back to the preparation tray, retain evidence/authors/resources and withhold individual processing controls. Execution explicitly locked. Corrected tray resource guidance and verified live. No new automated test for the text-only fix; this does not replace direct API bypass coverage. See LAB-14 run.
+
+September 12 signed-in tray validation: numeric 2 × 3 preview showed 1–6; all-unavailable, duplicate and out-of-range positions blocked Save while retaining values/focus. Cancelled corrected form and refreshed; no new format. Original Active format unchanged. Manual evidence in LAB-14 run; no code or automated-test changes.
+
+September 12 Supervisor review boundary: completed resource preparation did not create scientific approval or advance the job beyond Processing. Review and Actions expose no approval/release control for Supervisor; the Batched library has no second QC entry. Read-only signed-in evidence only; Scientific Reviewer missing-result validation and direct API/customer visibility gates remain unverified. No records changed.
+
+September 12 Scientific Reviewer session: resource job still Processing, so milestone prerequisite hides approval before missing-result validation. Preserved Draft tray has no operating controls; fixed false closed-state wording for read-only Draft and verified live with unchanged two-entry history. Scoped lint passed; no new automated tests for copy. Missing-result validation remains pending a suitable ScientificReview fixture, not passed from hidden controls.
+
+September 12 server supplement: scientific-approval PostgreSQL regression passed four rejection cases with governed validation/dual control enabled only in test context and rollback afterward. This does not close the signed-in governed review gate; current runtime flags unchanged. See BACKEND-TEST-PLAN and run for scope.
+
+September 12 server supplement extended: seven controller rejection cases, three package transition rejections and independent positive approval passed in the rollback-only PostgreSQL journey. Positive approval leaves the package ReadyForRelease with no release timestamp/user. Signed-in governed review, actual package ingestion/scanning and customer publication remain open; automated evidence does not replace these UAT steps. Saved LAB-14 trays, sequencing membership and running configuration remain unchanged.
+
+September 12 independent reviewer live navigation: completed resource execution exposes retained authors, QC and resource evidence without edit controls; linked completed tray retains 18 history entries and one assigned output. Sequencing list retains two-library LAB-14 Draft and one-library TEST-008 Draft without New/Start controls. Results queue contains eight Processing/Received jobs, none review-ready. No records changed. Signed-in governed approval remains pending separate fixture/runtime setup; see active run.
+
+September 12 governed signed-in checkpoint: separate localhost:3016/7116 runtime uses cloned phaeno_ops_lab06_uat on an owned loopback PostgreSQL cluster at port 5436 with commit tracking on and governed/dual-control flags enabled. Independent Reviewer missing-package form disables Save; synthetic ready-package Save records one approval and ReadyForRelease, with database readback showing null release timestamp/user. Original LAB-14 environment untouched. Bounded legacy-compatible synthetic fixture excludes full tube lineage and actual ingestion/scanning; release-manager/customer visibility gates remain open. Exact fixture IDs and startup prerequisites are in the active run.
+
+September 12 release boundary: Independent Reviewer direct navigation to the known synthetic package detail on 3016 displays Result package unavailable and no publication controls. Database retains ReadyForRelease/null release fields. UI denial only; direct HTTP denial not exercised. No ResultReleaseManager exists in the cloned test DB; owner permission requested for William's test-copy role assignment before positive handoff acceptance. No role or package changes.
+
+September 12 owner-approved setup: William Agnew now has active ResultReleaseManager in 127.0.0.1:5436/phaeno_ops_lab06_uat only. Domain/audit helper verified assignment and Independent Reviewer release-role count zero; existing lab roles unchanged. Positive handoff awaits William's 3016 sign-in. No package publication or original-environment access change.
+
+September 12 William release-manager handoff passed on 3016: ReadyForRelease filter finds synthetic approved package, detail shows independent approval/file metadata, release confirmation is populated and focuses Cancel, cancellation returns to preserved filter without release. Database confirms null release fields. LAB-06 launcher required BusinessRoles plus test-only pipeline configuration; only its API restarted. Follow-ups: default ScientificallyApproved filter hides newly ready candidates, and inconsistent rollout flag combination hides role navigation. Publication/Customer visibility not tested. See active run.
+
+September 12 release default fix verified live on 3016: opening Result release without resultState selects ReadyForRelease and displays the approved synthetic candidate immediately. Selecting Released and reloading preserves Released with its empty state. Returned to ReadyForRelease for next UAT. No publication or record writes.
+
+September 12 signed-in contributor guard passed: William (ScientificReviewer + ResultReleaseManager) submitted approval for a separate ready synthetic package with an explicitly synthetic prior contribution. API rejected with independent-review requirement; package selection/summary preserved. Database status/version/events unchanged and zero approvals. Cancelled, no publication. Bounded fixture lacks real tube lineage/scanning; see active run for exact IDs.

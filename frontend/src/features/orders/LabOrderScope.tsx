@@ -2,6 +2,7 @@ import type { LabServiceOrder } from '#/api/order-management'
 
 export function LabOrderScope({ order }: { order: LabServiceOrder }) {
   return <section aria-label="Samples in this order" className="mb-4 space-y-3 border-b pb-4 text-sm">
+    <p><strong>Tube use:</strong> {order.tubeUsePolicyKey === "run_one_with_failure_fallback" ? "Run one tube per specimen; use a reserve only if the attempt fails." : "Policy not recorded for this order."}</p>
     {order.description ? <p className="whitespace-pre-wrap wrap-anywhere">{order.description}</p> : null}
     <h3 className="font-semibold">{order.requestedSpecimenCount} {order.requestedSpecimenCount === 1 ? 'sample' : 'samples'} in this order</h3>
     {order.sourceGroups.length ? <table className="w-full text-left">

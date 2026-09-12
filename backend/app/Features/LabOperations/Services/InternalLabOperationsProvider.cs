@@ -177,6 +177,9 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
             command.OpaqueSubmitterReference,
             workflowVersionId, command.MinimumTurnaroundDays, command.MaximumTurnaroundDays);
 
+        if (command.TubeUsePolicyKey is not null)
+            workOrder.SetTubeUsePolicy(command.TubeUsePolicyKey, command.TubeUsePolicyVersion!.Value);
+
         workOrder.AuthorizationVersions.Add(new LabWorkAuthorizationVersion(
             workOrder.Id,
             command.Metadata.CommandId,
@@ -260,6 +263,9 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
                 LabCommandReasonCodes.AuthorizationVersionConflict,
                 acknowledgedAtUtc);
         }
+
+        if (workOrder.TubeUsePolicyKey != replacement.TubeUsePolicyKey || workOrder.TubeUsePolicyVersion != replacement.TubeUsePolicyVersion)
+            return ManualReviewAcknowledgment(command.Metadata, workOrder, acknowledgedAtUtc);
 
         if (workOrder.Status != LabWorkOrderStatus.AwaitingSpecimens)
         {
@@ -357,9 +363,11 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
                 where workflow.ServiceKey == normalizedServiceKey && candidate.Id == approvedVersionId
                     && (candidate.Status == LabServiceWorkflowStatus.Production || candidate.Status == LabServiceWorkflowStatus.Retired)
                 select (Guid?)candidate.Id).SingleOrDefaultAsync(cancellationToken);
-            return version ?? throw new InvalidOperationException("The approved laboratory workflow version is unavailable.");
+            if (!version.HasValue) throw new InvalidOperationException("The approved laboratory workflow version is unavailable.");
+            await RequireCurrentWorkflowProtocolsAsync(version.Value, cancellationToken);
+            return version;
         }
-        return await (
+        var productionVersion = await (
             from workflow in dbContext.LabServiceWorkflows.AsNoTracking()
             join version in dbContext.LabServiceWorkflowVersions.AsNoTracking()
                 on workflow.Id equals version.LabServiceWorkflowId
@@ -367,8 +375,22 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
                 && version.Status == LabServiceWorkflowStatus.Production
             orderby version.WorkflowVersion descending
             select (Guid?)version.Id).FirstOrDefaultAsync(cancellationToken);
+        if (productionVersion.HasValue) await RequireCurrentWorkflowProtocolsAsync(productionVersion.Value, cancellationToken);
+        return productionVersion;
     }
 
+    private async Task RequireCurrentWorkflowProtocolsAsync(Guid workflowVersionId, CancellationToken cancellationToken)
+    {
+        var versionIds = dbContext.LabServiceWorkflowStages.Where(x => x.LabServiceWorkflowVersionId == workflowVersionId)
+            .Select(x => x.LabProtocolVersionId);
+        var protocolIds = dbContext.LabProtocolVersions.Where(x => versionIds.Contains(x.Id)).Select(x => x.LabProtocolId);
+        var protocols = await dbContext.LabProtocols.Where(x => protocolIds.Contains(x.Id)).OrderBy(x => x.Id).ToListAsync(cancellationToken);
+        foreach (var protocol in protocols)
+        {
+            protocol.RequireCurrent();
+            dbContext.Entry(protocol).Property(x => x.UpdatedAt).IsModified = true;
+        }
+    }
     private async Task<LabCancellationOutcome> ApplyCancellationAsync(
         RequestLabWorkCancellationCommand command,
         DateTime acknowledgedAtUtc,
@@ -632,6 +654,10 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
         && IsValidAuthorization(command.ReplacementAuthorization);
 
     private static bool IsValidAuthorization(AuthorizeLabWorkCommand command) =>
+        IsValidMetadata(command.Metadata) && (command.Metadata.ContractVersion == LabOperationsContractVersions.V1
+            ? command.TubeUsePolicyKey is null && command.TubeUsePolicyVersion is null
+            : command.TubeUsePolicyKey == LabTubeUsePolicy.RunOneWithFailureFallback && command.TubeUsePolicyVersion == LabTubeUsePolicy.Version)
+        &&
         IsValidMetadata(command.Metadata)
         && command.AuthorizationId != Guid.Empty
         && command.AuthorizationVersion > 0
@@ -669,7 +695,7 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
         && metadata.CommandId != Guid.Empty
         && metadata.CorrelationId != Guid.Empty
         && metadata.OccurredAtUtc.Kind == DateTimeKind.Utc
-        && metadata.ContractVersion == LabOperationsContractVersions.V1;
+        && metadata.ContractVersion is LabOperationsContractVersions.V1 or LabOperationsContractVersions.V2;
 
     private static bool HasValue(string value) => !string.IsNullOrWhiteSpace(value);
 

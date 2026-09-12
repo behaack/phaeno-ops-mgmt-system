@@ -8,7 +8,7 @@ import { getShippingStockKit, type ShippingStockKit } from '#/api/shipping-conta
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
+import { ActionMenu as DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { DispatchStandardKitDialog, RegisterStockKitTubesDialog } from './StandardKitDialogs'
 import { parseStockKitListSearch, stockKitState, stockKitStatus } from './stock-kit-utils'

@@ -23,6 +23,10 @@ public sealed partial class LabOperationsController
             throw Invalid("lab_milestone_invalid", "The requested laboratory milestone is invalid for this action.");
         var work = await RequireWorkOrderAsync(workOrderId, cancellationToken);
         EnsureVersion(work.Version, request.Version);
+        if (status is not (LabWorkOrderStatus.AwaitingSpecimens or LabWorkOrderStatus.Received or LabWorkOrderStatus.OnHold))
+            await RequireUsablePinnedWorkflowAsync(work, cancellationToken);
+        if (work.TubeUsePolicyKey is not null && status is not (LabWorkOrderStatus.Received or LabWorkOrderStatus.OnHold))
+            await RequireSpecimenReviewReadinessAsync(work, cancellationToken);
         Execute(() => work.RecordMilestone(status));
         await EmitProjectionAsync(work, actor.User.Id, "MilestoneChanged", cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -100,7 +104,8 @@ public sealed partial class LabOperationsController
         if (!SampleShippingBarcode.TryNormalize(request.PacketBarcode, out var packetBarcode))
             throw Invalid("shipping_insert_barcode_required", "Scan the complete PH-P- shipping insert barcode.");
         var box = request.FreezerBoxBarcode?.Trim();
-        if (string.IsNullOrWhiteSpace(box) || box.Length > 255 || box.Any(char.IsControl))
+        var rejected = string.Equals(request.IntakeDisposition, "Rejected", StringComparison.OrdinalIgnoreCase);
+        if ((!rejected && string.IsNullOrWhiteSpace(box)) || box?.Length > 255 || box?.Any(char.IsControl) == true)
             throw Invalid("freezer_box_barcode_required", "Scan the freezer box barcode (up to 255 characters).");
         var packet = await SampleShippingPackingData.ResolvePacketAsync(dbContext, packetBarcode, cancellationToken);
         if (packet.SampleShipmentId != shipmentId || packet.IsVoided)
@@ -118,7 +123,8 @@ public sealed partial class LabOperationsController
             .Where(specimen => specimen.LabWorkOrderId == workOrderId && specimen.SubmittedSpecimenId == item.SubmittedSpecimenId)
             .Select(specimen => specimen.Id).SingleAsync(cancellationToken);
         return await AccessionSpecimenCore(workOrderId, specimenId,
-            new SpecimenAccessionRequest("", tubeBarcode, box, null, null, null, 0, packetBarcode, tubeBarcode),
+            new SpecimenAccessionRequest("", tubeBarcode, box, null, null, null, 0, packetBarcode, tubeBarcode,
+                request.IntakeDisposition, request.IntakeReasonCode, request.IntakeNotes),
             cancellationToken, automaticAccession: true);
     }
 
@@ -135,6 +141,10 @@ public sealed partial class LabOperationsController
             await SampleShippingPackingData.LockAsync(dbContext, $"lab-tube-receipt:{workOrderId}", cancellationToken);
         var work = await RequireWorkOrderAsync(workOrderId, cancellationToken);
         var specimen = await RequireSpecimenAsync(work.Id, specimenId, cancellationToken);
+        if (work.Status is LabWorkOrderStatus.Cancelled or LabWorkOrderStatus.ReadyForRelease || specimen.IntakeDisposition == LabSpecimenIntakeDisposition.Cancelled)
+            throw Conflict("tube_intake_work_closed", "Closed work cannot receive tube intake decisions.");
+        if (!Enum.TryParse<LabSpecimenIntakeDisposition>(request.IntakeDisposition, true, out var intake))
+            throw Invalid("tube_intake_invalid", "Choose Accepted, On hold or Rejected.");
         if (automaticAccession)
             request = request with { AccessionNumber = specimen.AccessionNumber ?? $"ACC-{specimen.Id:N}" };
         else EnsureVersion(specimen.Version, request.Version);
@@ -178,13 +188,25 @@ public sealed partial class LabOperationsController
                     && slot.RegisteredSampleTubeId == registeredTube.Id, cancellationToken);
             if (shipmentItem.RegisteredSampleTubeId != registeredTube.Id && !slotMatches)
                 throw Conflict("supplier_tube_sample_mismatch", "The scanned tube is not matched to this Customer sample on the frozen crosswalk.");
-            var existingContainer = await dbContext.LabContainers.AsNoTracking()
+            var existingContainer = await dbContext.LabContainers
                 .SingleOrDefaultAsync(item => item.Barcode == supplierBarcode, cancellationToken);
             if (automaticAccession && existingContainer is not null)
             {
                 if (existingContainer.LabWorkOrderId != work.Id || existingContainer.LabSpecimenId != specimen.Id
-                    || existingContainer.Location != request.Location)
-                    throw Conflict("supplier_tube_already_accessioned", "This tube was already accessioned. Review its recorded freezer box before making changes.");
+                    || existingContainer.Location != (string.IsNullOrWhiteSpace(request.Location) ? null : request.Location.Trim()))
+                    throw Conflict("supplier_tube_already_accessioned", "This tube was already accessioned. Its recorded storage cannot be changed during intake.");
+                if (existingContainer.IntakeDisposition is null)
+                {
+                    await RequireUnusedTubeIntakeAsync(work, specimen, existingContainer, cancellationToken);
+                    Execute(() => existingContainer.ReviewIntake(intake, request.IntakeReasonCode, request.IntakeNotes, actor.User.Id, DateTime.UtcNow));
+                    await RefreshSpecimenTubeIntakeAsync(work, specimen, existingContainer, actor.User.Id, cancellationToken);
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                    if (transaction is not null) await transaction.CommitAsync(cancellationToken);
+                }
+                else if (existingContainer.IntakeDisposition != intake
+                    || existingContainer.IntakeReasonCode != (string.IsNullOrWhiteSpace(request.IntakeReasonCode) ? null : request.IntakeReasonCode.Trim())
+                    || existingContainer.IntakeNotes != (string.IsNullOrWhiteSpace(request.IntakeNotes) ? null : request.IntakeNotes.Trim()))
+                    throw Conflict("supplier_tube_intake_recorded", "An intake decision is already recorded. A supervisor can correct it from the tube's details.");
                 return await WorkOrder(work.Id, cancellationToken);
             }
             if (registeredTube.Status != RegisteredSampleTubeStatus.Assigned)
@@ -211,14 +233,19 @@ public sealed partial class LabOperationsController
             Execute(() => specimen.AssignAccession(request.AccessionNumber ?? string.Empty));
         var container = new LabContainer(work.Id, specimen.Id, null,
             LabContainerKind.SubmittedSpecimen, barcode, request.Label,
-            request.Location, request.Quantity, request.QuantityUnit, request.RetainUntilUtc,
-            barcodeSource, externalBarcodeReferenceId);
+            request.Location,
+            intake == LabSpecimenIntakeDisposition.Rejected && string.IsNullOrWhiteSpace(request.Location) ? null : request.Quantity,
+            intake == LabSpecimenIntakeDisposition.Rejected && string.IsNullOrWhiteSpace(request.Location) ? null : request.QuantityUnit,
+            request.RetainUntilUtc,
+            barcodeSource, externalBarcodeReferenceId, rejectedAtIntake: intake == LabSpecimenIntakeDisposition.Rejected);
         if (registeredTube is not null)
         {
             Execute(() => registeredTube.RecordReceipt(DateTime.UtcNow));
             registeredTube.MarkAccessioned(DateTime.UtcNow);
         }
+        Execute(() => container.ReviewIntake(intake, request.IntakeReasonCode, request.IntakeNotes, actor.User.Id, DateTime.UtcNow));
         dbContext.LabContainers.Add(container);
+        await RefreshSpecimenTubeIntakeAsync(work, specimen, container, actor.User.Id, cancellationToken);
         dbContext.LabWorkEvents.Add(new LabWorkEvent(work.Id, specimen.Id, "SpecimenAccessioned",
             DateTime.UtcNow, actor.User.Id, JsonSerializer.Serialize(new
             {
@@ -242,31 +269,9 @@ public sealed partial class LabOperationsController
     {
         var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.Operator, LabRole.Supervisor);
-        if (!Enum.TryParse<LabSpecimenIntakeDisposition>(request.Disposition, true, out var disposition))
-            throw Invalid("specimen_disposition_invalid", "The intake disposition is invalid.");
-        var work = await RequireWorkOrderAsync(workOrderId, cancellationToken);
-        var specimen = await RequireSpecimenAsync(work.Id, specimenId, cancellationToken);
-        EnsureVersion(specimen.Version, request.Version);
-        Execute(() => specimen.RecordIntakeDisposition(disposition, request.ReasonCode));
-        work.RefreshAcceptedSpecimenTargets();
-        dbContext.LabWorkEvents.Add(new LabWorkEvent(work.Id, specimen.Id, "SpecimenIntakeDispositionRecorded",
-            DateTime.UtcNow, actor.User.Id, JsonSerializer.Serialize(new { disposition, request.ReasonCode }, JsonOptions)));
-        var remaining = await dbContext.LabSpecimens.AnyAsync(item => item.LabWorkOrderId == work.Id
-            && item.Id != specimen.Id
-            && (item.IntakeDisposition == LabSpecimenIntakeDisposition.AwaitingReceipt
-                || item.IntakeDisposition == LabSpecimenIntakeDisposition.Received), cancellationToken);
-        if (!remaining && work.Status == LabWorkOrderStatus.AwaitingSpecimens)
-        {
-            work.RecordMilestone(LabWorkOrderStatus.Received);
-            await EmitProjectionAsync(work, actor.User.Id, "IntakeCompleted", cancellationToken);
-        }
-        else if (disposition == LabSpecimenIntakeDisposition.Accepted && work.MaximumTurnaroundDays.HasValue)
-        {
-            work.AdvanceProjectionVersion();
-            await EmitProjectionAsync(work, actor.User.Id, "SpecimenAccepted", cancellationToken);
-        }
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return await WorkOrder(work.Id, cancellationToken);
+        await RequireWorkOrderAsync(workOrderId, cancellationToken);
+        await RequireSpecimenAsync(workOrderId, specimenId, cancellationToken);
+        throw Conflict("tube_review_required", "Record tube intake during accessioning. Specimen acceptance is derived from its tubes.");
     }
 
     [HttpPost("work-orders/{workOrderId:guid}/containers")]
@@ -287,6 +292,7 @@ public sealed partial class LabOperationsController
         var container = new LabContainer(workOrderId, request.LabSpecimenId,
             request.ParentContainerId, kind, barcode, request.Label,
             request.Location, request.Quantity, request.QuantityUnit, request.RetainUntilUtc);
+        await AttachDerivedContainerAsync(container, cancellationToken);
         dbContext.LabContainers.Add(container);
         await dbContext.SaveChangesAsync(cancellationToken);
         return MapContainer(container);
@@ -397,8 +403,8 @@ public sealed partial class LabOperationsController
         await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.Operator, LabRole.Supervisor);
         var work = await RequireWorkOrderAsync(workOrderId, cancellationToken);
-        if (request.LabSpecimenId.HasValue)
-            await RequireSpecimenAsync(workOrderId, request.LabSpecimenId.Value, cancellationToken);
+        if (work.TubeUsePolicyKey is not null || request.LabSpecimenId.HasValue)
+            throw Conflict("source_attempt_required", "Open the specimen and select its source tube; assign subsequent stages from the same attempt.");
 
         if (request.AssignedToUserId.HasValue)
         {
@@ -471,6 +477,8 @@ public sealed partial class LabOperationsController
                 throw Conflict("workflow_prior_required_stage_incomplete",
                     "Complete all earlier required workflow stages before assigning this stage.");
         }
+        await RequireUsablePinnedWorkflowAsync(work, cancellationToken);
+        await RequireCurrentProtocolsAsync([stage.LabProtocolVersionId], cancellationToken);
         var execution = new LabProtocolExecution(workOrderId, request.LabSpecimenId,
             stage.LabProtocolVersionId, request.AssignedToUserId, stage.Id);
         dbContext.LabProtocolExecutions.Add(execution);
@@ -492,6 +500,27 @@ public sealed partial class LabOperationsController
         switch (request.Action.Trim().ToLowerInvariant())
         {
             case "start":
+                var sourceAttempt = await RequireExecutionAttemptAsync(execution, cancellationToken);
+                if (sourceAttempt is not null)
+                {
+                    var source = await RequireAttemptSourceAsync(sourceAttempt, cancellationToken);
+                    var next = await NextAttemptStageAsync(sourceAttempt, cancellationToken);
+                    if (next?.Id != execution.LabServiceWorkflowStageId)
+                        throw Conflict("attempt_stage_not_next", "Complete earlier stages within this attempt before starting.");
+                    if (source.Barcode != request.ConfirmedSourceBarcode?.Trim())
+                        throw Invalid("attempt_barcode_mismatch", "Scan the selected source tube before starting.");
+                    if (sourceAttempt.State == LabSpecimenAttemptState.Planned)
+                        Execute(() => sourceAttempt.Start(source.Barcode, request.ConfirmedSourceBarcode!, DateTime.UtcNow));
+                }
+                if (execution.LabSpecimenId.HasValue)
+                {
+                    var intakeSpecimen = await RequireSpecimenAsync(work.Id, execution.LabSpecimenId.Value, cancellationToken);
+                    if (!await HasAcceptedAvailableTubeAsync(intakeSpecimen, cancellationToken))
+                        throw Conflict("accepted_tube_required", "Complete tube intake during accessioning. At least one available tube must be Accepted before processing starts.");
+                    dbContext.Entry(work).Property(item => item.UpdatedAt).IsModified = true;
+                }
+                await RequireUsablePinnedWorkflowAsync(work, cancellationToken);
+                await RequireCurrentProtocolsAsync([execution.LabProtocolVersionId], cancellationToken);
                 var startedProtocol = await dbContext.LabProtocolVersions.AsNoTracking()
                     .SingleAsync(item => item.Id == execution.LabProtocolVersionId, cancellationToken);
                 RequireProtocolDefinition(startedProtocol.DefinitionJson);
@@ -503,6 +532,7 @@ public sealed partial class LabOperationsController
                 }
                 break;
             case "complete":
+                await RequireExecutionAttemptAsync(execution, cancellationToken);
                 if (!string.IsNullOrWhiteSpace(request.CapturedResultsJson) && request.CapturedResultsJson.Trim() != "{}")
                     throw Invalid("execution_results_read_only", "Record each step in the guided execution workspace before completing the procedure.");
                 var completedProtocol = await dbContext.LabProtocolVersions.AsNoTracking()
@@ -510,9 +540,17 @@ public sealed partial class LabOperationsController
                 Execute(() => execution.Complete(completedProtocol, request.DeviationNote, DateTime.UtcNow));
                 break;
             case "abandon":
+                if (execution.LabSpecimenAttemptId.HasValue)
+                    throw Conflict("attempt_closure_required", "Cancel an unstarted attempt or explicitly fail the started attempt from the specimen workspace.");
                 Execute(() => execution.Abandon(request.DeviationNote));
                 break;
             default: throw Invalid("execution_transition_invalid", "The execution transition is invalid.");
+        }
+        if (execution.LabSpecimenAttemptId.HasValue)
+        {
+            var updatedAttempt = await dbContext.LabSpecimenAttempts.SingleAsync(a => a.Id == execution.LabSpecimenAttemptId, cancellationToken);
+            var updatedSpecimen = await RequireSpecimenAsync(work.Id, updatedAttempt.LabSpecimenId, cancellationToken);
+            await RefreshAttemptOutcomeAsync(work, updatedSpecimen, updatedAttempt, actor.User.Id, cancellationToken);
         }
         dbContext.LabWorkEvents.Add(new LabWorkEvent(work.Id, execution.LabSpecimenId,
             $"Execution{request.Action.Trim()}", DateTime.UtcNow, actor.User.Id,

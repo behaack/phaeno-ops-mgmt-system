@@ -86,11 +86,15 @@ describe('LabBatchBarcodeScanner', () => {
     expect(document.activeElement).toBe(scanner)
   })
 
-  it('does not add a scanned non-library container', async () => {
+  it.each([
+    [null, null, 'The scanned container is not a prepared library.'],
+    ['library-1', 'Batched', 'This library is already assigned to a sequencing batch. Open its preparation record to view the assignment.'],
+    ['library-1', 'QcFailed', 'Only a QC-passed library can be added to a draft batch.'],
+  ])('rejects scanned library %s in state %s with specific feedback', async (labLibraryId, libraryStatus, message) => {
     api.scanLabContainer.mockResolvedValue({
       labWorkOrderId: 'work-1',
-      labLibraryId: null,
-      libraryStatus: null,
+      labLibraryId,
+      libraryStatus,
       container: { barcode: 'PH-S-23456789AB-C' },
     })
 
@@ -122,8 +126,10 @@ describe('LabBatchBarcodeScanner', () => {
     fireEvent.change(scanner, { target: { value: 'PH-S-23456789AB-C' } })
     fireEvent.submit(scanner.closest('form')!)
 
-    expect(await screen.findByText('The scanned container is not a prepared library.')).toBeTruthy()
+    expect(await screen.findByText(message)).toBeTruthy()
     expect(api.addLabBatchMember).not.toHaveBeenCalled()
+    expect((scanner as HTMLInputElement).value).toBe('PH-S-23456789AB-C')
+    expect(document.activeElement).toBe(scanner)
   })
 })
 

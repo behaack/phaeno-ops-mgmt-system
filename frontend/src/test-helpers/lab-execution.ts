@@ -29,7 +29,7 @@ export function labExecutionFixture(): LabExecutionDetail {
   optional.definition.condition = 'When the supervisor requests an additional review.'
   return {
     execution: { id: executionId, labSpecimenId: 'specimen', labProtocolVersionId: 'protocol-version', assignedToUserId: recordingUserId, status: 'Planned', capturedResultsJson: '{}', deviationNote: null, startedAtUtc: null, completedAtUtc: null, version: 1, labServiceWorkflowStageId: 'workflow-stage' },
-    workOrderId: executionWorkId, protocolName: 'Synthetic library preparation', protocolVersion: 2, accessionNumber: 'TRAINING-001', steps: [identity, qc, optional],
+    workOrderId: executionWorkId, protocolName: 'Synthetic library preparation', protocolVersion: 2, accessionNumber: 'TRAINING-001', steps: [identity, qc, optional], tubeAcceptanceRequired: false,
     recorders: [{ id: recordingUserId, name: 'Training Operator' }], materialUse: [], equipmentUse: [], completionBlockers: [identity.completionBlocker!, qc.completionBlocker!, optional.completionBlocker!], recoveryMessage: null, canOperate: true, canAbandon: true,
   }
 }

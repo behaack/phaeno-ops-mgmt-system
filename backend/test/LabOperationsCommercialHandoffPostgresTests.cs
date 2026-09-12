@@ -837,14 +837,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 .SingleAsync(item => item.Id == specimen.SubmittedSpecimenId);
             Assert.Equal(LabSampleStatus.Accessioned, accessionedSample.Status);
             Assert.Equal(accessionNumber, accessionedSample.AccessionId);
-            work = await lab.SetSpecimenDisposition(
-                workOrderId.Value,
-                specimen.Id,
-                new SpecimenDispositionRequest(
-                    LabSpecimenIntakeDisposition.Accepted.ToString(),
-                    null,
-                    specimen.Version),
-                CancellationToken.None);
+            Assert.Equal("Accepted", Assert.Single(work.Specimens).IntakeDisposition);
             Assert.Equal(LabWorkOrderStatus.Received.ToString(), work.WorkOrder.Status);
 
             var submittedContainer = Assert.Single(work.Containers);
@@ -1664,7 +1657,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 idempotencyKey ?? Guid.NewGuid().ToString("N"));
             return await controller.FinalizeSampleRoster(
                 orderId,
-                new VersionRequest(orderVersion),
+                new FinalizeLabSampleRosterRequest(orderVersion, true),
                 CancellationToken.None);
         }
 

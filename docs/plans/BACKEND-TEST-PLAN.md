@@ -1,5 +1,44 @@
 # Backend Test Plan
 
+### Accession before storage and bulk acceptance (2026-09-11)
+
+Added domain coverage in `LabTubeIntakeTests` and persisted shipment coverage in `LabTubeAccessionPostgresTests` (partial shipping fixture): rejected expected tube retains identity/evidence with null location/quantity and Rejected availability; accepted/held material needs real storage; correction needs retained material. Bulk requires inspection, frozen expected identities and current work version; includes no recorded exceptions, rejects invalid storage atomically, and replays without duplicate events. Existing per-tube and receipt identity coverage remains. Suites are authored, not run.
+
+Manual/concurrent gates: wrong role/tenant, voided or unreceived shipment, duplicate/wrong tube, stale decision and two simultaneous batches; consumed/started source and cancelled work; rollback following a mid-save failure; used-tube correction denied; no overwriting storage; no automatic reserve start. These persisted acceptance gates remain Not run.
+
+
+## Implemented specimen-attempt guards — September 11, 2026
+
+Added LabSpecimenAttemptTests covering barcode mismatch without mutation, same-attempt QC repeat versus explicit operational hold, failure immutability, required/foreign stage skip rejection and processing failure preserving intake acceptance. Domain and controller implementation also add versioned authorization, transactional command receipts, filtered uniqueness, lineage and downstream gates. Tests are authored/compiled, not run. PostgreSQL concurrency, rollback/replay, source/start races, legacy adoption and full lifecycle acceptance are still required by [LAB-09](../testing/06-laboratory.md#lab-09---specimen-tube-attempts-and-reserve-fallback). Earlier proposed-status notes are superseded by this implementation checkpoint.
+
+## Execution tube prerequisite - September 11, 2026
+
+Execution detail now projects TubeAcceptanceRequired for Planned specimen executions through the same predicate enforced by Start. Verify missing acceptance, accepted but unavailable input, foreign-specimen tubes, accepted available input, job-level execution, and started/completed history; a stale ready page must still be rejected by Start if eligibility changed. Existing behavior is preserved; automated coverage deferred and not run for this navigation/prerequisite slice.
+
+## Tube intake reason coverage - September 11, 2026
+
+Added LabTubeIntakeTests for one accepted tube among held/rejected reserves, stable first acceptance time, invalid reason/Other validation without mutation, resolution notes, unreviewed tubes and cross-specimen isolation. Adapted existing acceptance fixtures to tube-derived intake. API acceptance must cover automatic accession, reason catalog, deprecated specimen-write rejection, role/concurrency denial, start/review races and event/turnaround projection. Tests added/updated but not run.
+
+## Tube-attempt enforcement coverage - September 11, 2026
+
+The [tube-attempt plan acceptance matrix](SPECIMEN-TUBE-ATTEMPT-PLAN.md#acceptance-matrix) requires coverage for policy snapshots, atomic tube reservation, competing starts, retries, explicit failure, same-attempt repeats, cross-attempt stage isolation, eligibility, retirement/cancellation, permissions and legacy adoption. The domain sources listed above are now authored and compiled. Automated execution and PostgreSQL lifecycle/concurrency acceptance remain Not run.
+
+## Promotion actor policy - September 11, 2026
+
+Added LabWorkflowPromotionTests and revised protocol activation regressions: author or reviewer may promote independently approved versions; self-approval captured in audit-only mode cannot authorize activation/promotion; Draft and withdrawn approvals remain blocked; promotion actor/time and original approval are preserved. Automated tests not run. API acceptance still needs role denial, mixed independently/self-approved stages (including Active), stale workflow version, and atomic rejection without retiring previous production versions.
+
+## Revised retirement and invalidation coverage — September 11, 2026
+
+New required coverage is specified in [LAB-07](../testing/06-laboratory.md#lab-07--protocol-retirement-workflow-invalidation-and-revalidation). It supersedes the prior rule blocking all workflow/unfinished-job references: active processing blocks, queued work requires explicit current-impact confirmation, and authorized retirement atomically invalidates affected workflows and creates clean Invalid recovery revisions. Cover immutable historical versions, remaining-stage preservation, empty-stage rejection, revalidation with/without edits, independent approval, production gating, queued-pin retention, role checks, stale impact tokens, duplicate retries, concurrent execution starts/assignments/workflow transitions/job authorization, and audit atomicity. Add domain regressions for Invalid candidate approval and invalidated historical immutability. These new scenarios are not yet marked passed; earlier dependency-blocking evidence is historical only. Automated suite execution has not been requested.
+
+## Protocol retirement — September 11, 2026
+
+Added LabProtocolRetirementTests for retained identity/version, reason and actor validation without partial mutation, repeat retirement rejection, and rejection of edits/new versions/use after retirement. Built API and test project; did not run automated tests. Retirement enforces ProtocolAdministrator/version checks, previous approval, no open draft, no Draft/Approved/Production workflow references and no unfinished dependent jobs. New workflow/job/execution references participate in identity concurrency. Live local UI covered Draft workflow blocker and successful retirement after discarding it, with persisted reason/time/actor/version corroborated. Cross-role denial, Approved/Production dependency branches, unfinished-job references, provider rejection and concurrent requests still need executable acceptance coverage.
+
+## Equipment retirement — September 11, 2026
+
+Added LabEquipmentRetirementTests for required/limited reasons, actor requirement, metadata retention, duplicate retirement rejection, calibration/identity retention, and refusal of new usage even when backdated after retirement. API retirement requires Supervisor/OperationsAdministrator and expected equipment version. Recording use now updates the equipment concurrency version in the same SaveChanges transaction to conflict with concurrent retirement. Test project and API build passed; automated tests were not run. Local live verification covered successful retirement and persisted audit metadata; role-denial and concurrent-request scenarios remain unrun.
+
 ## Customer laboratory stages — September 10, 2026
 
 **Local checkpoint: 4/4 cases passed; 0 skipped.** See the [stage verification record](../testing/runs/2026-09-10-customer-laboratory-stages.md) and [TRX evidence](../../artifacts/customer-progress-test-results/customer-progress.trx). This is a focused run, not a full backend-suite result.
@@ -1612,3 +1651,41 @@ Letter/A4 receiving sheets and 50 x 25 mm lab label output were visually reviewe
 and independently QR-decoded. See
 [release evidence](PORTAL-LAB-PROGRESS-RELEASE-2026-09-10.md) for local fixture
 failures, artifacts and outstanding physical/production acceptance gates.
+
+## Focused execution checkpoint — September 11, 2026
+
+LabTubeIntakeTests, LabSpecimenAttemptTests, LabWorkflowPromotionTests, LabWorkflowInvalidationTests and LabProtocolRetirementTests passed: 23 tests, zero failures/skips. Earlier authored/not-run entries describe the prior checkpoint. PostgreSQL acceptance/concurrency suite remains unrun. Current partial manual evidence is in ../testing/runs/2026-09-11-protocol-preparation.md.
+
+## Preparation-batch verification — September 11, 2026
+
+LabPreparationBatchTests: 10 passing cases; LabSpecimenAttemptTests: 5 passing cases. LabPreparationPostgresTests: 2 passing persisted journeys covering competing reservations, stale versions, unauthorized Customer access, start locking, command replay, one material consumption, shared evidence/tube Hold, explicit failure, output creation and existing-output selection, optional final-stage skip, QC references, sequencing membership and reserve fallback. The optional-stage fixture lookup was corrected and rerun. The local migration was applied to localhost/phaeno_ops; the ERD includes all new tables and provenance links.
+
+The owning [Library prep plan](LAB-WORK-JOURNEY-PLAN.md#verification-checkpoint) and [LAB-14 manual journey](../testing/06-laboratory.md#lab-14--preparation-trays-shared-evidence-and-sequencing-handoff) retain remaining acceptance coverage: held/closed Trial races, all staff-role combinations, physical trays/scanners/labels, owner sign-off and production/provider gates. Historical TEST-008 work was not retrofitted or replayed. Customer-requested hold implementation remains blocked.
+
+## September 12 — Preparation batch identifiers
+
+Preparation naming: extended PostgreSQL preparation journey assertions for server-owned names, optional notes, stable create replay, distinct creates and ignoring legacy supplied names. Same-second concurrent allocation uses the existing transaction advisory lock. Regression execution pending; no database migration.
+
+
+September 12 naming follow-up: both focused PostgreSQL preparation journeys passed, including name/notes/retry assertions. Signed-in UI verified removal of the name field, two distinct identical-choice creates, persisted notes and unchanged historical names. Reserve exhaustion confirmation produced terminal specimen Failed. See the LAB-14 run record; unrun variants remain open.
+
+
+September 12 LAB-14 follow-up: failed-output scan prompts removed while traceability links remain; terminal specimens use Processing outcome. Live saved-record inspection passed. Failed-output regression passed on desktop/mobile (2); all 11 preparation-domain tests passed, including new repeat reason/history coverage and existing correction invalidation. Manual correction/repeat remains separate and pending; see the active run record.
+
+September 12 LAB-14 checkpoint: existing TypedEvidenceRequiresTheStepRoleConfirmationAndValidValues regression passed (1, no skip). No backend implementation change. This domain proof does not substitute for signed-in role-matrix acceptance.
+
+September 12 preparation concurrency: both PostgreSQL journeys now assert a stale material command returns concurrency_conflict without history, stock or consumption changes, followed by valid idempotent use. Both passed on isolated UAT DB (2, no skips), including competing reservation coverage. No backend product change.
+
+September 12 review-role checkpoint: all 11 existing LabOperationsAuthorizationTests passed, zero skipped. Isolated LAB-14 launcher has governed result-package validation disabled, so no governed missing-package claim is made from that runtime. Independent approval/package controller acceptance requires separate LAB-06 setup; see active run. No backend code or data changed.
+
+September 12 LabScientificReviewGatePostgresTests added and passed (one journey, four rejection cases, zero skipped) against the isolated UAT database. Calls the real scientific-approval controller with governed package validation and dual-control enforcement enabled for test context only. Checks exact errors for premature milestone, missing output package, contributor conflict and blocking exception; after each, asserts unchanged status/version/event count and no approval. Transaction rollback verified by absence of fixture work/user afterward. Uses a legacy-compatible job without tube policy to isolate approval guards; this does not cover specimen readiness, package scanning, HTTP authentication or signed-in acceptance. No runtime flags or operational records changed.
+
+September 12 package-gate extension: same journey passed with seven controller rejections, adding Uploading, Scanning and Failed output packages. Each package stays in its original state/version with no approval ID or release timestamp. Domain transition checks also reject incomplete artifact count, checksum mismatch and non-clean malware result while retaining Scanning. Fixture includes synthetic order/sample/package relationships and rolls back, verifying package absence afterward. No real file, scanner, provider or signed-in package workflow exercised. One journey passed, zero skipped; no product code or runtime change.
+
+September 12 independent approval extension: LabScientificReviewGatePostgresTests now also approves a synthetic ready package through the real controller using a separate non-admin Scientific Reviewer with no work contributions. Work and package become ReadyForRelease; the package references the saved approval and independent reviewer, exactly one ScientificApprovalRecorded event exists, and release timestamp/user remain null. The earlier failed package remains Failed. Focused journey passed (one test, zero skipped), retaining seven controller and three domain rejection checks. Transaction rollback verifies both packages and both reviewers absent. This isolates server approval behavior using a legacy-compatible job and synthetic scan readiness; it does not prove scanner, HTTP authentication, customer visibility or signed-in acceptance.
+
+September 12 signed-in supplement: actual UI/API approval on separate 3016/7116 runtime and cloned DB at 127.0.0.1:5436 persisted one independent approval and ReadyForRelease with no release timestamp/user. Missing-package UI prevented submission, so that case adds UI evidence rather than another controller rejection. Database commit tracking enabled only on the owned temporary cluster; original server unchanged. Full lineage/scanner/publication not covered. See active LAB-14 run.
+
+September 12 HTTP/UI supplement: signed-in contributor approval rejected on separate synthetic LAB-06 work; real database before/after retains ScientificReview/version 1, ReadyForReview/version 1, one original event and zero approvals. Confirms enforced contributor guard through live request with overlapping reviewer/release roles. No new automated test or product change; full lineage/provider cases remain separate.
+
+September 12 release checkpoint: API Release build passed with zero warnings/errors; 66 selected laboratory domain tests passed, zero skipped. Production migration/deployment evidence belongs to LAB-WORKFLOW-RELEASE-2026-09-12.md.

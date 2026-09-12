@@ -1,5 +1,9 @@
 # Prospect Trial Project Plan
 
+## Tube-use instruction at sample submission — September 11, 2026
+
+New Trial sample submissions display and confirm run-one/failure-fallback and send V2 Lab authorization with that policy. Each authorization snapshot retains the instruction; extra tubes remain reserves rather than extra analyses. Existing Trial scopes, approvals, replacement authorizations and historical V1 lab records are not rewritten. Existing Trial hold rules remain separate from the blocked customer-specimen-hold proposal. See [tube attempts](SPECIMEN-TUBE-ATTEMPT-PLAN.md). New Trial submission acceptance Not run.
+
 ## Resumable shared staff scope draft - 2026-09-07
 
 The authorized remaining-work review adds explicit **Save draft** and **Resume

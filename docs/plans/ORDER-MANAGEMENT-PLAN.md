@@ -1,5 +1,17 @@
 # Order Management Plan
 
+## Versioned tube-use instruction — September 11, 2026
+
+New/edited Lab order drafts explicitly carry Run one tube per specimen; use a reserve only after failure. Creation, review and order details show the instruction; source/tube counts and pricing remain independent. Finalizing an older unfinalized order requires explicit confirmation, records an order event and produces V2 Lab authorization without rewriting prior order snapshots. Policy is immutable after authorization. V1 replay preserves absent policy fields. See [tube attempts](SPECIMEN-TUBE-ATTEMPT-PLAN.md). Local implementation only; acceptance scenarios remain Not run.
+
+## Customer-requested specimen holds - September 11, 2026
+
+The [customer-requested specimen hold plan](CUSTOMER-SPECIMEN-HOLD-PLAN.md) captures future request scope, operational acknowledgment, safe pause, resumption and commercial decisions. **Implementation is blocked by Product Owner direction** pending separate design approval and implementation authorization. Do not include customer hold controls in the tube-use policy implementation.
+
+## Specimen tube-use policy - September 11, 2026
+
+See the [specimen tube selection and fallback plan](SPECIMEN-TUBE-ATTEMPT-PLAN.md) for the explicit order instruction and authorization snapshot changes. The first policy runs one tube per specimen with explicit reserve fallback on failure. Run-all and subset selection remain deferred. Run-one/failure-fallback is implemented locally as described above.
+
 ## Order progress and in-page shipping — September 10, 2026
 
 The Product Owner approved execution of the

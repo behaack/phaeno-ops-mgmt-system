@@ -19,6 +19,8 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
     public bool HasMixedBiologicalSources { get; private set; }
     public string? SharedBiologicalSource { get; private set; }
     public int RequestedSpecimenCount { get; private set; }
+    public string? TubeUsePolicyKey { get; private set; }
+    public int? TubeUsePolicyVersion { get; private set; }
     public string StorageRequirements { get; private set; } = null!;
     public string SafetyDeclaration { get; private set; } = null!;
     public string SubmissionInstructionsSnapshot { get; private set; } = string.Empty;
@@ -84,6 +86,8 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         Description = OrderText.Optional(description, 2000);
         SetRequestedSpecimenCount(requestedSpecimenCount);
         SetBiologicalSourceProfile(hasMixedBiologicalSources, sharedBiologicalSource);
+        TubeUsePolicyKey = "run_one_with_failure_fallback";
+        TubeUsePolicyVersion = 1;
         StorageRequirements = OrderText.Required(storageRequirements, "Storage requirements", 2000);
         SafetyDeclaration = OrderText.Required(safetyDeclaration, "Safety declaration", 2000);
         SubmissionInstructionsSnapshot = OrderText.Optional(submissionInstructionsSnapshot, 8000) ?? string.Empty;
@@ -122,6 +126,8 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         Description = OrderText.Optional(description, 2000);
         SetRequestedSpecimenCount(requestedSpecimenCount);
         SetBiologicalSourceProfile(hasMixedBiologicalSources, sharedBiologicalSource);
+        TubeUsePolicyKey = "run_one_with_failure_fallback";
+        TubeUsePolicyVersion = 1;
         StorageRequirements = OrderText.Required(storageRequirements, "Storage requirements", 2000);
         SafetyDeclaration = OrderText.Required(safetyDeclaration, "Safety declaration", 2000);
     }
@@ -345,6 +351,15 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
     {
         if (!CanEditSampleRoster)
             throw new InvalidOperationException("Samples can be changed only after price acceptance and before the sample list is finalized.");
+    }
+
+    public void ConfirmTubeUsePolicy()
+    {
+        EnsureSampleRosterEditable();
+        if (TubeUsePolicyKey is not null && (TubeUsePolicyKey != "run_one_with_failure_fallback" || TubeUsePolicyVersion != 1))
+            throw new InvalidOperationException("The recorded tube-use instruction cannot be replaced.");
+        TubeUsePolicyKey = "run_one_with_failure_fallback";
+        TubeUsePolicyVersion = 1;
     }
 
     public void FinalizeSampleRoster(Guid actorUserId, DateTime utcNow)

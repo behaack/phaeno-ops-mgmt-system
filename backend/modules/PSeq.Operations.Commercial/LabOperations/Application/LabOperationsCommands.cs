@@ -1,8 +1,11 @@
 namespace PSeq.Operations.Commercial.LabOperations.Application;
 
+using System.Text.Json.Serialization;
+
 public static class LabOperationsContractVersions
 {
     public const int V1 = 1;
+    public const int V2 = 2;
 }
 
 public enum LabWorkAuthorizationSource
@@ -46,7 +49,9 @@ public sealed record AuthorizeLabWorkCommand(
     Guid? ApprovedWorkflowVersionId = null,
     int? MinimumTurnaroundDays = null,
     int? MaximumTurnaroundDays = null,
-    string? IncludedScientificScopeJson = null);
+    string? IncludedScientificScopeJson = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? TubeUsePolicyKey = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? TubeUsePolicyVersion = null);
 
 public sealed record AmendLabWorkAuthorizationCommand(
     LabOperationsCommandMetadata Metadata,

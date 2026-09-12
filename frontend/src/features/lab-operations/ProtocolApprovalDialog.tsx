@@ -18,6 +18,9 @@ import { deserializeProtocolDefinition, protocolDefinitionFormSchema } from './p
 
 type ProtocolVersion = LabProtocol['versions'][number]
 
+const captureScopeLabels = { tube: 'Tube — record individually', batch: 'Batch — one shared observation', shared: 'Shared value with tube exceptions' }
+const qcScopeLabels = { tube: 'Tube — assess individually', batch: 'Batch — applies to all covered tubes', shared: 'Shared outcome with tube exceptions' }
+
 export function ProtocolApprovalDialog({
   error,
   isPending,
@@ -76,6 +79,10 @@ export function ProtocolApprovalDialog({
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Version</p>
             <p className="mt-1 font-medium">{version?.protocolVersion}</p>
           </div>
+          {definition ? <div className="sm:col-span-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Preparation batches</p>
+            <p className="mt-1 font-medium">{definition.preparationBatchEnabled ? 'Enabled — review the evidence and QC scopes below.' : 'Not enabled for this version.'}</p>
+          </div> : null}
         </div>
 
         <section aria-labelledby="protocol-approval-definition">
@@ -99,13 +106,14 @@ export function ProtocolApprovalDialog({
                   {step.captures.length > 0 ? (
                     <ReviewDetail
                       label="Captured values"
-                      value={step.captures.map((capture) => `${capture.label} (${capture.type}${capture.required ? ', required' : ''}${capture.unit ? `, ${capture.unit}` : ''}${capture.type === 'choice' ? `; choices: ${capture.choices}` : ''})`).join('; ')}
+                      value={step.captures.map((capture) => `${capture.label} (${capture.type}${capture.required ? ', required' : ''}${capture.unit ? `, ${capture.unit}` : ''}${capture.type === 'choice' ? `; choices: ${capture.choices}` : ''}${definition.preparationBatchEnabled && capture.scope ? `; evidence scope: ${captureScopeLabels[capture.scope]}` : ''}${capture.sourceTube ? '; must match the selected source tube' : ''})`).join('; ')}
                     />
                   ) : null}
                   {step.qcEnabled ? <ReviewDetail label="QC acceptance criteria" value={step.qcCriteria} /> : null}
+                  {definition.preparationBatchEnabled && step.qcEnabled && step.qcScope ? <ReviewDetail label="QC scope" value={qcScopeLabels[step.qcScope]} /> : null}
                   {step.repeatable || step.operatorConfirmation ? (
                     <p className="mt-2 text-xs text-muted-foreground">
-                      {[step.repeatable ? 'May repeat' : null, step.operatorConfirmation ? 'Operator confirmation required' : null].filter(Boolean).join(' · ')}
+                      {[step.repeatable ? 'May repeat' : null, step.operatorConfirmation ? 'Confirmation required' : null].filter(Boolean).join(' · ')}
                     </p>
                   ) : null}
                 </li>

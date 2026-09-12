@@ -25,6 +25,7 @@ export type WorkspaceSidebarItem<Value extends string> = {
   description: string
   icon: LucideIcon
   group?: string
+  separatorBefore?: boolean
   count?: number
   countDescription?: string
 }
@@ -246,6 +247,7 @@ function WorkspaceNavigation<Value extends string>({
 
                 return (
                   <li key={item.value}>
+                    {item.separatorBefore ? <hr className="mx-3 my-3 border-border" /> : null}
                     <button
                       type="button"
                       aria-current={isActive ? 'page' : undefined}

@@ -1,0 +1,166 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="a25ab756-df0e-4844-9b3f-7d10e049f782" name="bhaac@HAACK-DESKTOP 2026-09-11 14:26:32" runUser="HAACK-DESKTOP\bhaac" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-09-11T14:26:32.4463985-07:00" queuing="2026-09-11T14:26:32.4463988-07:00" start="2026-09-11T14:26:30.8287900-07:00" finish="2026-09-11T14:26:32.4882629-07:00" />
+  <TestSettings name="default" id="41a77855-b7a5-4bcc-8dd5-50506ee3b0df">
+    <Deployment runDeploymentRoot="bhaac_HAACK-DESKTOP_2026-09-11_14_26_32" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="e511b7ef-5c37-4cbb-b5fb-2a9caf369bf0" testId="07fa4549-f42e-78b6-9680-7c88a2225938" testName="PhaenoPortal.Test.LabWorkflowPromotionTests.AuthorOrReviewerCanPromoteAfterIndependentApproval(promoteAsAuthor: True)" computerName="HAACK-DESKTOP" duration="00:00:00.0003907" startTime="2026-09-11T14:26:32.4139940-07:00" endTime="2026-09-11T14:26:32.4140433-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e511b7ef-5c37-4cbb-b5fb-2a9caf369bf0" />
+    <UnitTestResult executionId="c7823fc7-0a1a-4fed-a078-03f755d17e1c" testId="29f31203-4526-6f2c-7a22-a3076cad7d1f" testName="PhaenoPortal.Test.LabTubeIntakeTests.InvalidReasonsCannotMutateReview(code: null, notes: null)" computerName="HAACK-DESKTOP" duration="00:00:00.0000352" startTime="2026-09-11T14:26:32.4185885-07:00" endTime="2026-09-11T14:26:32.4186334-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c7823fc7-0a1a-4fed-a078-03f755d17e1c" />
+    <UnitTestResult executionId="c872bb0e-33b8-47e8-b4bb-9b396deaab08" testId="3da70679-b710-89ce-3530-61b0c79fadc9" testName="PhaenoPortal.Test.LabWorkflowInvalidationTests.InvalidatedApprovedVersionRetainsApprovalAndCannotBeReused" computerName="HAACK-DESKTOP" duration="00:00:00.0138778" startTime="2026-09-11T14:26:32.3457269-07:00" endTime="2026-09-11T14:26:32.4142345-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c872bb0e-33b8-47e8-b4bb-9b396deaab08" />
+    <UnitTestResult executionId="110080da-7e56-46fd-bbf7-226f36c6d1e2" testId="3ae5fe92-0601-1757-e797-a7f9b6037e1a" testName="PhaenoPortal.Test.LabProtocolRetirementTests.MissingReasonDoesNotPartiallyRetire(reason: &quot;&quot;)" computerName="HAACK-DESKTOP" duration="00:00:00.0002856" startTime="2026-09-11T14:26:32.3746068-07:00" endTime="2026-09-11T14:26:32.3748705-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="110080da-7e56-46fd-bbf7-226f36c6d1e2" />
+    <UnitTestResult executionId="97618ece-a69d-47ea-8b24-464eb4d28707" testId="65940093-3887-6a88-08e6-41800976b666" testName="PhaenoPortal.Test.LabProtocolRetirementTests.RetirementPreservesIdentityAndRejectsFurtherChanges" computerName="HAACK-DESKTOP" duration="00:00:00.0053049" startTime="2026-09-11T14:26:32.3749992-07:00" endTime="2026-09-11T14:26:32.4152030-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="97618ece-a69d-47ea-8b24-464eb4d28707" />
+    <UnitTestResult executionId="02220679-c3ba-4765-8a06-2b17e6141200" testId="0b32a339-190f-3a08-f4e1-1da3d8b852ab" testName="PhaenoPortal.Test.LabSpecimenAttemptTests.Qc_hold_permits_same_attempt_repeat_but_operational_hold_requires_resolution" computerName="HAACK-DESKTOP" duration="00:00:00.0015931" startTime="2026-09-11T14:26:32.3748226-07:00" endTime="2026-09-11T14:26:32.3750445-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="02220679-c3ba-4765-8a06-2b17e6141200" />
+    <UnitTestResult executionId="3a485e18-4786-4177-8c64-5814f4a1739d" testId="f138a1b7-d28a-6f54-bae6-911d8407481e" testName="PhaenoPortal.Test.LabWorkflowPromotionTests.DraftOrWithdrawnApprovalCannotEnterProduction" computerName="HAACK-DESKTOP" duration="00:00:00.0004434" startTime="2026-09-11T14:26:32.4141883-07:00" endTime="2026-09-11T14:26:32.4147279-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3a485e18-4786-4177-8c64-5814f4a1739d" />
+    <UnitTestResult executionId="4496b46a-9dc3-44d0-951f-c3c3faba5dd7" testId="792236e4-55b8-ceba-b531-a5594cabc390" testName="PhaenoPortal.Test.LabWorkflowInvalidationTests.InvalidRecoveryRequiresIndependentApprovalBeforePromotion" computerName="HAACK-DESKTOP" duration="00:00:00.0005130" startTime="2026-09-11T14:26:32.4144962-07:00" endTime="2026-09-11T14:26:32.4149290-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4496b46a-9dc3-44d0-951f-c3c3faba5dd7" />
+    <UnitTestResult executionId="7f746650-b1ee-4e4e-b063-ecbbfe01728f" testId="ec4cdfa2-cc38-9629-3cc3-2bb05bab6a79" testName="PhaenoPortal.Test.LabProtocolRetirementTests.MissingReasonDoesNotPartiallyRetire(reason: &quot;   &quot;)" computerName="HAACK-DESKTOP" duration="00:00:00.0003946" startTime="2026-09-11T14:26:32.3738858-07:00" endTime="2026-09-11T14:26:32.3739622-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7f746650-b1ee-4e4e-b063-ecbbfe01728f" />
+    <UnitTestResult executionId="add41f14-430e-4671-9ce3-6d5e84026998" testId="69570e4e-ffcc-1b86-81dc-c63d95b40a40" testName="PhaenoPortal.Test.LabSpecimenAttemptTests.Failed_processing_does_not_change_accepted_intake" computerName="HAACK-DESKTOP" duration="00:00:00.0074553" startTime="2026-09-11T14:26:32.4203142-07:00" endTime="2026-09-11T14:26:32.4203565-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="add41f14-430e-4671-9ce3-6d5e84026998" />
+    <UnitTestResult executionId="1c57122c-66ae-422f-a582-694bf11b8b25" testId="05a6bc0c-bc8e-6932-b551-abbcf2f5deba" testName="PhaenoPortal.Test.LabSpecimenAttemptTests.Wrong_barcode_does_not_start_or_change_source" computerName="HAACK-DESKTOP" duration="00:00:00.0106297" startTime="2026-09-11T14:26:32.3458073-07:00" endTime="2026-09-11T14:26:32.3746603-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1c57122c-66ae-422f-a582-694bf11b8b25" />
+    <UnitTestResult executionId="dda845ed-3790-499c-b88a-6cc47a4f99c6" testId="07c0fd32-cac5-e06a-166b-f24c7e5dc317" testName="PhaenoPortal.Test.LabSpecimenAttemptTests.Failure_preserves_source_and_locks_attempt_even_with_later_completion" computerName="HAACK-DESKTOP" duration="00:00:00.0016834" startTime="2026-09-11T14:26:32.4135712-07:00" endTime="2026-09-11T14:26:32.4145428-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="dda845ed-3790-499c-b88a-6cc47a4f99c6" />
+    <UnitTestResult executionId="1c923c4c-1049-4895-b4ac-63164f33efb6" testId="985d283e-aa3f-b071-efb6-0e0b42662538" testName="PhaenoPortal.Test.LabTubeIntakeTests.DestroyedExpectedTubeRetainsRejectionWithoutInventingStorage" computerName="HAACK-DESKTOP" duration="00:00:00.0027108" startTime="2026-09-11T14:26:32.4199130-07:00" endTime="2026-09-11T14:26:32.4199558-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1c923c4c-1049-4895-b4ac-63164f33efb6" />
+    <UnitTestResult executionId="d96d6797-471c-4fea-ad51-5c3ee32e9024" testId="59ff910e-9317-bce1-35f4-588742c2ad45" testName="PhaenoPortal.Test.LabTubeIntakeTests.UnreviewedOrRejectedTubesDoNotAcceptOrAutomaticallyRejectSpecimen" computerName="HAACK-DESKTOP" duration="00:00:00.0011688" startTime="2026-09-11T14:26:32.4187757-07:00" endTime="2026-09-11T14:26:32.4196034-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d96d6797-471c-4fea-ad51-5c3ee32e9024" />
+    <UnitTestResult executionId="10082b86-8cb0-409b-b91d-9dddc486d9ce" testId="5176e4b3-f51e-06ce-37da-63719dfec9cf" testName="PhaenoPortal.Test.LabTubeIntakeTests.InvalidReasonsCannotMutateReview(code: &quot;other&quot;, notes: null)" computerName="HAACK-DESKTOP" duration="00:00:00.0003479" startTime="2026-09-11T14:26:32.4184414-07:00" endTime="2026-09-11T14:26:32.4184911-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="10082b86-8cb0-409b-b91d-9dddc486d9ce" />
+    <UnitTestResult executionId="acefa334-526e-44be-a358-92ec7fd930df" testId="0677643d-b6bf-4753-33a2-abf3af04114f" testName="PhaenoPortal.Test.LabProtocolRetirementTests.InvalidActorOrLongReasonDoesNotPartiallyRetire" computerName="HAACK-DESKTOP" duration="00:00:00.0062800" startTime="2026-09-11T14:26:32.3458319-07:00" endTime="2026-09-11T14:26:32.3592759-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="acefa334-526e-44be-a358-92ec7fd930df" />
+    <UnitTestResult executionId="506a19db-959f-4f51-a057-8616445503f5" testId="89df0381-56bc-4e2d-a9df-a35869dc6c7f" testName="PhaenoPortal.Test.LabTubeIntakeTests.HoldResolutionRequiresNotesAndDoesNotResetFirstAcceptanceDate" computerName="HAACK-DESKTOP" duration="00:00:00.0005233" startTime="2026-09-11T14:26:32.4197501-07:00" endTime="2026-09-11T14:26:32.4197961-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="506a19db-959f-4f51-a057-8616445503f5" />
+    <UnitTestResult executionId="bb435e3f-72e0-416f-bfe6-0bbcbc656b15" testId="8f56b2bf-a078-c532-9e33-d35727d063c2" testName="PhaenoPortal.Test.LabTubeIntakeTests.AcceptedOrHeldRetainedMaterialNeedsActualStorage" computerName="HAACK-DESKTOP" duration="00:00:00.0010055" startTime="2026-09-11T14:26:32.4200638-07:00" endTime="2026-09-11T14:26:32.4201057-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bb435e3f-72e0-416f-bfe6-0bbcbc656b15" />
+    <UnitTestResult executionId="86963011-5b1a-4665-8d37-178a57f88b61" testId="d079aa20-cc7e-f8e8-be0b-be2540da7486" testName="PhaenoPortal.Test.LabTubeIntakeTests.InvalidReasonsCannotMutateReview(code: &quot;invented&quot;, notes: &quot;Some note&quot;)" computerName="HAACK-DESKTOP" duration="00:00:00.0007845" startTime="2026-09-11T14:26:32.4173505-07:00" endTime="2026-09-11T14:26:32.4183014-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="86963011-5b1a-4665-8d37-178a57f88b61" />
+    <UnitTestResult executionId="f2f001f5-d290-4dbe-9d87-790867a909b4" testId="e20e3edf-d7c0-d629-627f-1a3081e26b19" testName="PhaenoPortal.Test.LabWorkflowPromotionTests.AuthorOrReviewerCanPromoteAfterIndependentApproval(promoteAsAuthor: False)" computerName="HAACK-DESKTOP" duration="00:00:00.0132610" startTime="2026-09-11T14:26:32.3457781-07:00" endTime="2026-09-11T14:26:32.4136466-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f2f001f5-d290-4dbe-9d87-790867a909b4" />
+    <UnitTestResult executionId="77f48f6d-a112-4017-87ed-d361e0f4bd02" testId="253eabd4-862a-6e2f-21a5-2a8a657636ba" testName="PhaenoPortal.Test.LabTubeIntakeTests.OneAcceptedTubeAcceptsSpecimenDespiteRejectedOrHeldReserves" computerName="HAACK-DESKTOP" duration="00:00:00.0159785" startTime="2026-09-11T14:26:32.3442161-07:00" endTime="2026-09-11T14:26:32.4151771-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="77f48f6d-a112-4017-87ed-d361e0f4bd02" />
+    <UnitTestResult executionId="374ad5a8-b318-4c05-b033-f12460420de5" testId="0535ba7b-0d69-58a1-4689-208524d6c4da" testName="PhaenoPortal.Test.LabSpecimenAttemptTests.Skipped_required_or_foreign_stage_does_not_create_decision" computerName="HAACK-DESKTOP" duration="00:00:00.0387761" startTime="2026-09-11T14:26:32.4146833-07:00" endTime="2026-09-11T14:26:32.4201992-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="374ad5a8-b318-4c05-b033-f12460420de5" />
+    <UnitTestResult executionId="1204b226-dc74-481c-9f2d-e82b1bb947e5" testId="605744fd-5c6c-3f23-4f33-6e25aa430b6f" testName="PhaenoPortal.Test.LabWorkflowPromotionTests.AuditOnlySelfApprovalCannotAuthorizePromotionByAnyActor" computerName="HAACK-DESKTOP" duration="00:00:00.0004212" startTime="2026-09-11T14:26:32.4148608-07:00" endTime="2026-09-11T14:26:32.4150665-07:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1204b226-dc74-481c-9f2d-e82b1bb947e5" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="PhaenoPortal.Test.LabTubeIntakeTests.UnreviewedOrRejectedTubesDoNotAcceptOrAutomaticallyRejectSpecimen" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="59ff910e-9317-bce1-35f4-588742c2ad45">
+      <Execution id="d96d6797-471c-4fea-ad51-5c3ee32e9024" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabTubeIntakeTests" name="UnreviewedOrRejectedTubesDoNotAcceptOrAutomaticallyRejectSpecimen" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabWorkflowInvalidationTests.InvalidRecoveryRequiresIndependentApprovalBeforePromotion" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="792236e4-55b8-ceba-b531-a5594cabc390">
+      <Execution id="4496b46a-9dc3-44d0-951f-c3c3faba5dd7" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabWorkflowInvalidationTests" name="InvalidRecoveryRequiresIndependentApprovalBeforePromotion" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabWorkflowPromotionTests.DraftOrWithdrawnApprovalCannotEnterProduction" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="f138a1b7-d28a-6f54-bae6-911d8407481e">
+      <Execution id="3a485e18-4786-4177-8c64-5814f4a1739d" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabWorkflowPromotionTests" name="DraftOrWithdrawnApprovalCannotEnterProduction" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabTubeIntakeTests.InvalidReasonsCannotMutateReview(code: &quot;invented&quot;, notes: &quot;Some note&quot;)" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="d079aa20-cc7e-f8e8-be0b-be2540da7486">
+      <Execution id="86963011-5b1a-4665-8d37-178a57f88b61" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabTubeIntakeTests" name="InvalidReasonsCannotMutateReview" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabProtocolRetirementTests.InvalidActorOrLongReasonDoesNotPartiallyRetire" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="0677643d-b6bf-4753-33a2-abf3af04114f">
+      <Execution id="acefa334-526e-44be-a358-92ec7fd930df" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabProtocolRetirementTests" name="InvalidActorOrLongReasonDoesNotPartiallyRetire" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabTubeIntakeTests.HoldResolutionRequiresNotesAndDoesNotResetFirstAcceptanceDate" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="89df0381-56bc-4e2d-a9df-a35869dc6c7f">
+      <Execution id="506a19db-959f-4f51-a057-8616445503f5" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabTubeIntakeTests" name="HoldResolutionRequiresNotesAndDoesNotResetFirstAcceptanceDate" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabProtocolRetirementTests.RetirementPreservesIdentityAndRejectsFurtherChanges" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="65940093-3887-6a88-08e6-41800976b666">
+      <Execution id="97618ece-a69d-47ea-8b24-464eb4d28707" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabProtocolRetirementTests" name="RetirementPreservesIdentityAndRejectsFurtherChanges" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabTubeIntakeTests.InvalidReasonsCannotMutateReview(code: null, notes: null)" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="29f31203-4526-6f2c-7a22-a3076cad7d1f">
+      <Execution id="c7823fc7-0a1a-4fed-a078-03f755d17e1c" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabTubeIntakeTests" name="InvalidReasonsCannotMutateReview" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabTubeIntakeTests.InvalidReasonsCannotMutateReview(code: &quot;other&quot;, notes: null)" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="5176e4b3-f51e-06ce-37da-63719dfec9cf">
+      <Execution id="10082b86-8cb0-409b-b91d-9dddc486d9ce" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabTubeIntakeTests" name="InvalidReasonsCannotMutateReview" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabWorkflowPromotionTests.AuditOnlySelfApprovalCannotAuthorizePromotionByAnyActor" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="605744fd-5c6c-3f23-4f33-6e25aa430b6f">
+      <Execution id="1204b226-dc74-481c-9f2d-e82b1bb947e5" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabWorkflowPromotionTests" name="AuditOnlySelfApprovalCannotAuthorizePromotionByAnyActor" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabTubeIntakeTests.DestroyedExpectedTubeRetainsRejectionWithoutInventingStorage" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="985d283e-aa3f-b071-efb6-0e0b42662538">
+      <Execution id="1c923c4c-1049-4895-b4ac-63164f33efb6" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabTubeIntakeTests" name="DestroyedExpectedTubeRetainsRejectionWithoutInventingStorage" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabProtocolRetirementTests.MissingReasonDoesNotPartiallyRetire(reason: &quot;&quot;)" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="3ae5fe92-0601-1757-e797-a7f9b6037e1a">
+      <Execution id="110080da-7e56-46fd-bbf7-226f36c6d1e2" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabProtocolRetirementTests" name="MissingReasonDoesNotPartiallyRetire" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabWorkflowInvalidationTests.InvalidatedApprovedVersionRetainsApprovalAndCannotBeReused" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="3da70679-b710-89ce-3530-61b0c79fadc9">
+      <Execution id="c872bb0e-33b8-47e8-b4bb-9b396deaab08" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabWorkflowInvalidationTests" name="InvalidatedApprovedVersionRetainsApprovalAndCannotBeReused" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabSpecimenAttemptTests.Wrong_barcode_does_not_start_or_change_source" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="05a6bc0c-bc8e-6932-b551-abbcf2f5deba">
+      <Execution id="1c57122c-66ae-422f-a582-694bf11b8b25" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabSpecimenAttemptTests" name="Wrong_barcode_does_not_start_or_change_source" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabProtocolRetirementTests.MissingReasonDoesNotPartiallyRetire(reason: &quot;   &quot;)" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="ec4cdfa2-cc38-9629-3cc3-2bb05bab6a79">
+      <Execution id="7f746650-b1ee-4e4e-b063-ecbbfe01728f" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabProtocolRetirementTests" name="MissingReasonDoesNotPartiallyRetire" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabWorkflowPromotionTests.AuthorOrReviewerCanPromoteAfterIndependentApproval(promoteAsAuthor: True)" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="07fa4549-f42e-78b6-9680-7c88a2225938">
+      <Execution id="e511b7ef-5c37-4cbb-b5fb-2a9caf369bf0" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabWorkflowPromotionTests" name="AuthorOrReviewerCanPromoteAfterIndependentApproval" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabWorkflowPromotionTests.AuthorOrReviewerCanPromoteAfterIndependentApproval(promoteAsAuthor: False)" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="e20e3edf-d7c0-d629-627f-1a3081e26b19">
+      <Execution id="f2f001f5-d290-4dbe-9d87-790867a909b4" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabWorkflowPromotionTests" name="AuthorOrReviewerCanPromoteAfterIndependentApproval" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabSpecimenAttemptTests.Failure_preserves_source_and_locks_attempt_even_with_later_completion" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="07c0fd32-cac5-e06a-166b-f24c7e5dc317">
+      <Execution id="dda845ed-3790-499c-b88a-6cc47a4f99c6" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabSpecimenAttemptTests" name="Failure_preserves_source_and_locks_attempt_even_with_later_completion" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabSpecimenAttemptTests.Qc_hold_permits_same_attempt_repeat_but_operational_hold_requires_resolution" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="0b32a339-190f-3a08-f4e1-1da3d8b852ab">
+      <Execution id="02220679-c3ba-4765-8a06-2b17e6141200" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabSpecimenAttemptTests" name="Qc_hold_permits_same_attempt_repeat_but_operational_hold_requires_resolution" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabSpecimenAttemptTests.Failed_processing_does_not_change_accepted_intake" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="69570e4e-ffcc-1b86-81dc-c63d95b40a40">
+      <Execution id="add41f14-430e-4671-9ce3-6d5e84026998" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabSpecimenAttemptTests" name="Failed_processing_does_not_change_accepted_intake" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabTubeIntakeTests.AcceptedOrHeldRetainedMaterialNeedsActualStorage" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="8f56b2bf-a078-c532-9e33-d35727d063c2">
+      <Execution id="bb435e3f-72e0-416f-bfe6-0bbcbc656b15" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabTubeIntakeTests" name="AcceptedOrHeldRetainedMaterialNeedsActualStorage" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabTubeIntakeTests.OneAcceptedTubeAcceptsSpecimenDespiteRejectedOrHeldReserves" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="253eabd4-862a-6e2f-21a5-2a8a657636ba">
+      <Execution id="77f48f6d-a112-4017-87ed-d361e0f4bd02" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabTubeIntakeTests" name="OneAcceptedTubeAcceptsSpecimenDespiteRejectedOrHeldReserves" />
+    </UnitTest>
+    <UnitTest name="PhaenoPortal.Test.LabSpecimenAttemptTests.Skipped_required_or_foreign_stage_does_not_create_decision" storage="d:\__dev\phaeno-portal\backend\test\bin\codexintakebatch\net10.0\pseq.operations.test.dll" id="0535ba7b-0d69-58a1-4689-208524d6c4da">
+      <Execution id="374ad5a8-b318-4c05-b033-f12460420de5" />
+      <TestMethod codeBase="D:\__dev\phaeno-portal\backend\test\bin\CodexIntakeBatch\net10.0\PSeq.Operations.Test.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="PhaenoPortal.Test.LabSpecimenAttemptTests" name="Skipped_required_or_foreign_stage_does_not_create_decision" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="07fa4549-f42e-78b6-9680-7c88a2225938" executionId="e511b7ef-5c37-4cbb-b5fb-2a9caf369bf0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="29f31203-4526-6f2c-7a22-a3076cad7d1f" executionId="c7823fc7-0a1a-4fed-a078-03f755d17e1c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3da70679-b710-89ce-3530-61b0c79fadc9" executionId="c872bb0e-33b8-47e8-b4bb-9b396deaab08" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3ae5fe92-0601-1757-e797-a7f9b6037e1a" executionId="110080da-7e56-46fd-bbf7-226f36c6d1e2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="65940093-3887-6a88-08e6-41800976b666" executionId="97618ece-a69d-47ea-8b24-464eb4d28707" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0b32a339-190f-3a08-f4e1-1da3d8b852ab" executionId="02220679-c3ba-4765-8a06-2b17e6141200" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f138a1b7-d28a-6f54-bae6-911d8407481e" executionId="3a485e18-4786-4177-8c64-5814f4a1739d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="792236e4-55b8-ceba-b531-a5594cabc390" executionId="4496b46a-9dc3-44d0-951f-c3c3faba5dd7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ec4cdfa2-cc38-9629-3cc3-2bb05bab6a79" executionId="7f746650-b1ee-4e4e-b063-ecbbfe01728f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="69570e4e-ffcc-1b86-81dc-c63d95b40a40" executionId="add41f14-430e-4671-9ce3-6d5e84026998" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="05a6bc0c-bc8e-6932-b551-abbcf2f5deba" executionId="1c57122c-66ae-422f-a582-694bf11b8b25" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="07c0fd32-cac5-e06a-166b-f24c7e5dc317" executionId="dda845ed-3790-499c-b88a-6cc47a4f99c6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="985d283e-aa3f-b071-efb6-0e0b42662538" executionId="1c923c4c-1049-4895-b4ac-63164f33efb6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="59ff910e-9317-bce1-35f4-588742c2ad45" executionId="d96d6797-471c-4fea-ad51-5c3ee32e9024" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5176e4b3-f51e-06ce-37da-63719dfec9cf" executionId="10082b86-8cb0-409b-b91d-9dddc486d9ce" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0677643d-b6bf-4753-33a2-abf3af04114f" executionId="acefa334-526e-44be-a358-92ec7fd930df" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="89df0381-56bc-4e2d-a9df-a35869dc6c7f" executionId="506a19db-959f-4f51-a057-8616445503f5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8f56b2bf-a078-c532-9e33-d35727d063c2" executionId="bb435e3f-72e0-416f-bfe6-0bbcbc656b15" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d079aa20-cc7e-f8e8-be0b-be2540da7486" executionId="86963011-5b1a-4665-8d37-178a57f88b61" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e20e3edf-d7c0-d629-627f-1a3081e26b19" executionId="f2f001f5-d290-4dbe-9d87-790867a909b4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="253eabd4-862a-6e2f-21a5-2a8a657636ba" executionId="77f48f6d-a112-4017-87ed-d361e0f4bd02" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0535ba7b-0d69-58a1-4689-208524d6c4da" executionId="374ad5a8-b318-4c05-b033-f12460420de5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="605744fd-5c6c-3f23-4f33-6e25aa430b6f" executionId="1204b226-dc74-481c-9f2d-e82b1bb947e5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="23" executed="23" passed="23" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 10.0.12)&#xD;
+[xUnit.net 00:00:00.47]   Discovering: PSeq.Operations.Test&#xD;
+[xUnit.net 00:00:00.60]   Discovered:  PSeq.Operations.Test&#xD;
+[xUnit.net 00:00:00.64]   Starting:    PSeq.Operations.Test&#xD;
+[xUnit.net 00:00:00.74]   Finished:    PSeq.Operations.Test&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

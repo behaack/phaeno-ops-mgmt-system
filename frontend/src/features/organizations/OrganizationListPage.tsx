@@ -140,7 +140,7 @@ export function OrganizationListPage() {
       <Tabs value={activeTab} onValueChange={(value) => {
         if (value === 'directory' || value === 'review') setActiveTab(value)
       }}>
-        <TabsList className="grid h-auto w-full grid-cols-2 sm:w-fit">
+        <TabsList className="grid w-full grid-cols-2 sm:w-fit">
           <TabsTrigger value="directory">Account directory</TabsTrigger>
           <TabsTrigger value="review">
             Review queue

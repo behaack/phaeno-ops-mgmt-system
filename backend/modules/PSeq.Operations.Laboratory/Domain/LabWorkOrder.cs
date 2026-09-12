@@ -32,6 +32,9 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
     public string ServiceKey { get; private set; } = null!;
     public int ServiceVersion { get; private set; }
     public Guid? LabServiceWorkflowVersionId { get; private set; }
+    public string? TubeUsePolicyKey { get; private set; }
+    public int? TubeUsePolicyVersion { get; private set; }
+    public int? TubeUsePolicyAuthorizationVersion { get; private set; }
     public string TurnaroundPolicyKey { get; private set; } = null!;
     public int? MinimumTurnaroundDays { get; private set; }
     public int? MaximumTurnaroundDays { get; private set; }
@@ -52,6 +55,16 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
     public ICollection<LabSpecimen> Specimens { get; } = [];
     public ICollection<LabWorkEvent> Events { get; } = [];
     public ICollection<LabScientificApproval> ScientificApprovals { get; } = [];
+
+    public void SetTubeUsePolicy(string key, int version)
+    {
+        if (key != LabTubeUsePolicy.RunOneWithFailureFallback || version != LabTubeUsePolicy.Version)
+            throw new ArgumentException("The tube-use policy is not supported.");
+        if (TubeUsePolicyKey is not null && (TubeUsePolicyKey != key || TubeUsePolicyVersion != version))
+            throw new InvalidOperationException("The authorized tube-use policy cannot be replaced.");
+        TubeUsePolicyKey = key; TubeUsePolicyVersion = version;
+        TubeUsePolicyAuthorizationVersion ??= CurrentAuthorizationVersion;
+    }
 
     private LabWorkOrder()
     {

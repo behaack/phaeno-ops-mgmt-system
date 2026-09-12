@@ -225,6 +225,12 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<LabServiceWorkflowVersion> LabServiceWorkflowVersions { get; set; }
     public DbSet<LabServiceWorkflowStage> LabServiceWorkflowStages { get; set; }
     public DbSet<LabProtocolExecution> LabProtocolExecutions { get; set; }
+    public DbSet<LabSpecimenAttempt> LabSpecimenAttempts { get; set; }
+    public DbSet<LabTrayFormat> LabTrayFormats { get; set; }
+    public DbSet<LabPreparationBatch> LabPreparationBatches { get; set; }
+    public DbSet<LabPreparationMember> LabPreparationMembers { get; set; }
+    public DbSet<LabPreparationRecord> LabPreparationRecords { get; set; }
+    public DbSet<LabAttemptCommandReceipt> LabAttemptCommandReceipts { get; set; }
     public DbSet<LabMaterialDefinition> LabMaterialDefinitions { get; set; }
     public DbSet<LabSupplier> LabSuppliers { get; set; }
     public DbSet<LabStorageLocation> LabStorageLocations { get; set; }
@@ -543,6 +549,7 @@ public sealed class PSeqOperationsDbContext(
         TrialModelConfiguration.Configure(modelBuilder);
         RelationshipManagementModelConfiguration.Configure(modelBuilder);
         LabOperationsModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
+        LabPreparationModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
         WebsiteModelConfiguration.Configure(modelBuilder, this.persistenceOptions.WebsiteSchema);
 
         ApplySchemaOwnership(modelBuilder);

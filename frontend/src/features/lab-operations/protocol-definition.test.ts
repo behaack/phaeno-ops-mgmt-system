@@ -3,11 +3,24 @@ import { describe, expect, it } from 'vitest'
 import {
   createLibraryPreparationExample,
   deserializeProtocolDefinition,
+  protocolDefinitionFormSchema,
   serializeProtocolDefinition,
   type ProtocolDefinition,
 } from './protocol-definition'
 
 describe('protocol definition authoring', () => {
+  it('requires explicit batch scopes and preserves them when a draft is resumed', () => {
+    const example = createLibraryPreparationExample()
+    example.preparationBatchEnabled = true
+    expect(protocolDefinitionFormSchema.safeParse(example).success).toBe(false)
+    for (const step of example.steps) {
+      for (const capture of step.captures) capture.scope = capture.type === 'barcode' ? 'tube' : 'shared'
+      if (step.qcEnabled) step.qcScope = 'tube'
+    }
+    expect(protocolDefinitionFormSchema.safeParse(example).success).toBe(true)
+    expect(deserializeProtocolDefinition(serializeProtocolDefinition(example))).toEqual(example)
+  })
+
   it('round-trips a structured definition when a draft is resumed or cloned', () => {
     const example = createLibraryPreparationExample()
 

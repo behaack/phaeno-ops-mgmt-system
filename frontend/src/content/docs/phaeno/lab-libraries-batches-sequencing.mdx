@@ -4,15 +4,19 @@ Library and batch records preserve the physical lineage from submitted specimen 
 
 ## Prepare a library
 
-Create the physical library container before creating the library record. Link the source container, library container, submitted specimen, and completed preparation execution. POMS uses the selected library container's Phaeno barcode as the immutable library key; do not enter a second identifier. Record the library QC result and supporting values required by the approved procedure.
+For tray-based preparation, open **Library prep** and the preparation batch. From a tube's actions choose **Create library output**, record the actual quantity, unit and storage location, then label the output and **Confirm output identity** by scanning its barcode. The job, specimen, source and preparation attempt are carried forward. Completing the final preparation stage creates the library and reuses its recorded QC evidence; do not enter the same measurements or disposition again. Complete the preparation batch before adding its eligible libraries to a sequencing batch.
+
+For historical individual work outside preparation batches, the existing library form still links source and library containers to the specimen and completed preparation execution, followed by its separate library QC entry. POMS uses the library container's barcode as the immutable library key in both paths.
 
 Only a library with passed QC can enter a sequencing batch. If QC fails, preserve the failed library and use the documented rework or replacement path.
 
 ## Build a batch
 
+A **preparation batch** is a tray of source tubes that stays together through library preparation. A **sequencing batch** groups completed, eligible libraries for sequencing. These are separate records. The preparation workspace shows each library's current sequencing membership and offers **Add to sequencing batch** for eligible, unassigned libraries after the preparation batch is complete. Repeated membership is rejected with an existing-membership message.
+
 A batch may contain libraries from different organizations and Commercial orders. Give it a human-friendly name and optional notes. POMS assigns the current **External sequencing** type and a date-stamped, scanner-safe batch number when the batch is created. The name helps operators recognize the run; the batch number remains the immutable identifier. Add only the required library identifiers and operational facts. Do not copy Customer names, prices, order notes, or other confidential Commercial details into the batch manifest.
 
-For scan-first entry, open **Batches**, select a draft batch under **Scan libraries into a batch**, and scan each physical library container. POMS accepts only a container linked to a **QC passed** library. An unknown barcode, non-library container, library in another state, or duplicate membership is rejected without changing the batch. A successful scan clears and refocuses the field for the next container.
+For scan-first entry, open **Sequencing batches**, select a draft batch under **Scan libraries into a batch**, and scan each physical library container. POMS accepts only a container linked to a **QC passed** library. An unknown barcode, non-library container, library in another state, or duplicate membership is rejected without changing the batch. If a library is already assigned, open its preparation record to view the sequencing assignment. A successful scan clears and refocuses the field for the next container.
 
 Confirm membership before starting the batch. Once started, preserve the membership history and use supported add, remove, or exception actions rather than rewriting the original manifest. Scanning proves the container identity used for entry; it does not replace the approved physical manifest and custody checks.
 

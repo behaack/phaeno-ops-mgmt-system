@@ -22,18 +22,24 @@ Expected controls reflect the current code and audience guides. If a control or 
 | [03 — Trial lifecycle](03-trials.md) | TRI-01–06 | Trial staff, two approvers, Prospect admin, release manager | Approved evaluation through results and closeout |
 | [04 — Lab orders and sample shipping](04-lab-orders.md) | ORD-01–07 | Pricing staff, Customer/Partner admins, shipping staff | Committed scope through exact sample and tube handoff |
 | [05 — Partner Kits and included Assembly](05-kits-assembly.md) | KIT-01–06 | Partner admins, Commercial/Lab staff | One purchase, one case per Kit, governed outputs |
-| [06 — Laboratory operations](06-laboratory.md) | LAB-01–06 | Protocol, operator, supervisor, independent reviewer | Controlled scientific execution and release readiness |
+| [06 — Laboratory operations](06-laboratory.md) | LAB-01–10, LAB-13–14 | Protocol, operator, supervisor, independent reviewer | Controlled scientific execution and release readiness |
 | [07 — Finance](07-finance.md) | FIN-01–06 | Billing, Cash Operator, independent Cash Reconciler | Immutable invoices, cash and independent reconciliation |
 | [08 — Files, curated data and retention](08-data-files.md) | DAT-01–06 | File/provisioning admin, external members | Governed publication, access and retained receipts |
 | [09 — Website, notifications and help](09-website-help.md) | WEB-01–06 | Visitor, platform admin, each Portal audience | Public intake, recoverable delivery and scoped help |
 | [10 — Recovery and cross-system checks](10-recovery.md) | SYS-01–06 | Tester with engineering/operations support | Conflict, outage, access, UI and restore acceptance |
 | [11 — Transportation kits and sample shipping](11-transportation-kits.md) | SHP-01–14 | Customer/Department admin, Phaeno fulfillment admin, Lab receiver | Included-cost kit order, dispatch, customer receipt, container packing and split sample intake |
 
-There are 75 cases. Each contains setup, executable human steps, observable expected results, and a cleanup/handoff instruction. They cover the major workflow families, not every field permutation or every existing automated assertion. SHP cases concern transportation supplies; KIT cases concern purchased Partner Kits and their included Assembly work.
+There are 81 cases. Each contains setup, executable human steps, observable expected results, and a cleanup/handoff instruction. They cover the major workflow families, not every field permutation or every existing automated assertion. SHP cases concern transportation supplies; KIT cases concern purchased Partner Kits and their included Assembly work.
 
 For the current HS5Y7DB7 walkthrough, use the [transportation-kit resume instructions](11-transportation-kits.md#resume-the-current-local-walkthrough). The recorded checkpoint has nine finalized samples and 18 tubes. The later [intake correction](runs/2026-09-10-intake-progress-correction.md) and [customer-stage checkpoint](runs/2026-09-10-customer-laboratory-stages.md) supersede that earlier preparation checkpoint: receipt/accession is complete and both corrected Jobs show Received to Customers. Resume with read-only verification; do not repeat kit ordering, receipt, accession or the data correction. New manual cases remain Not run despite earlier automated and screenshot evidence.
 
+### Current laboratory acceptance coverage
+
+LAB-07–10 and LAB-13 cover retirement/invalidation, promotion, source attempts and reserve fallback, tube intake reasons, and exception-first accession with bulk acceptance. LAB-13 also checks the **Library prep** sidebar label, wrapped required markers, tube details, permissions and safe retries. These cases remain Not run until their full acceptance evidence is recorded; local build/read-only checks are narrower. LAB-11 and LAB-12 are not assigned cases.
+
 ### Connected journey recipes
+
+- **Library preparation batch to sequencing:** LAB-14 step 1 (Lab configurations → Tray formats) → LAB-01/08 (preparation-enabled protocol versions and independent workflow approval/promotion) → LAB-02/13 (accepted source tubes and reserves on compatible test jobs) → LAB-14 steps 2–18 (partial mixed-job tray, shared evidence/exception, failure and reserve restart in a new batch, output identity, QC reuse and sequencing handoff). Run LAB-14's negative, concurrency, role and accessibility variants as well. Record this as LAB-14 in the run template; no provider dispatch or result release is needed.
 
 - **Customer order to cash:** CRM-01/05 → ACC-01/03 → ORD-01/02 (or manual quote ORD-03) → ORD-04 → SHP-01–03 → SHP-05–13 → LAB-02–06 → FIN-01–05 and DAT-04. ORD-05 provides the shipping overview; run ORD-07 alongside the Lab journey to verify customer stages and mixed sample progress. Run SHP-04/14 and alternate/partial variants on separate fixtures. Run Finance and scientific release independently; an unpaid Customer Lab invoice must not block scientifically authorized results.
 - **Transportation kit fulfillment and partial supply:** SHP-02/03 → SHP-05/06 → SHP-07 partial dispatch → SHP-08 partial customer receipt → SHP-09 prepare available containers → SHP-10–13. Finish the remaining kit delivery/receipt and residual packing pool without changing earlier container identities. Record provisional, available and allocated quantities separately.

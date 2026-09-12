@@ -1,7 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { BookOpenCheck, CheckCircle2, ChevronDown, ClipboardList, FlaskConical, Layers3, Microscope, PackageCheck, Pencil, Plus, RefreshCw, ScanLine, Trash2, Workflow } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { Cog, CheckCircle2, ChevronDown, ClipboardList, FileX, FlaskConical, Layers3, Microscope, PackageCheck, Pencil, Plus, RefreshCw, ScanLine, Trash2, Workflow } from 'lucide-react'
+import { useRef, useState, type FormEvent } from 'react'
+import { Archive } from 'lucide-react'
+import { retireLabProtocol } from '#/api/lab-operations'
+import { ProtocolRetirementDialog } from './ProtocolRetirementDialog'
 
 import {
   createLabBatch,
@@ -9,8 +12,10 @@ import {
   createLabSendout,
   deleteLabProtocol,
   getLabOperationsDashboard,
+  labWorkOrderLabel,
   getLabOperationsError,
   recordLabMaterialQc,
+  retireLabEquipment,
   recordLabCustody,
   transitionLabBatch,
   transitionLabProtocolVersion,
@@ -26,7 +31,7 @@ import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import {
-  DropdownMenu,
+  ActionMenu as DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -35,6 +40,8 @@ import {
 } from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import { Checkbox } from '#/components/ui/checkbox'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import {
   RequiredDialogFooter,
   RequiredFieldName,
@@ -43,6 +50,7 @@ import { usePhaenoSession } from '#/features/auth/session-context'
 
 import { LabBarcodeLookup, LabBatchBarcodeScanner } from './LabBarcodeScanner'
 import { EquipmentCreateDialog } from './EquipmentCreateDialog'
+import { EquipmentRetirementDialog } from './EquipmentRetirementDialog'
 import { MaterialLotCreateDialog } from './MaterialLotCreateDialog'
 import { LabManufacturingQueue } from './LabManufacturingPage'
 import { LabReceiptAccessionPanel } from './LabReceiptAccessionPanel'
@@ -50,6 +58,9 @@ import { ProtocolApprovalDialog } from './ProtocolApprovalDialog'
 import { ProtocolIdentityDialog, type ProtocolIdentityFormValues } from './ProtocolIdentityDialog'
 import { isProtocolVisible } from './protocol-list'
 import { ServiceWorkflowList } from './ServiceWorkflowList'
+import { PreparationBatchList } from './PreparationBatchList'
+import { TrayFormatList } from './TrayFormatList'
+import { labConfigurationTabs, parseLabConfigurationTab, type LabConfigurationTab } from './lab-configuration-tabs'
 
 type CreateKind = 'protocol' | 'material' | 'equipment' | 'batch' | null
 type SimpleCreateKind = Exclude<CreateKind, 'material' | 'equipment'>
@@ -58,25 +69,27 @@ import type { LabReceiptTab } from './lab-receipt-tabs'
 import type { LabSection } from './lab-sections'
 
 const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
-  { value: 'receipt', label: 'Receipt & accession', description: 'Kits, shipment intake, and accession', icon: ScanLine },
-  { value: 'work', label: 'Work', description: 'Authorized work and specimen progress', icon: ClipboardList },
-  { value: 'kits', label: 'PSeq kits', description: 'Preparation, shipping, and fulfillment', icon: PackageCheck },
+  { value: 'receipt', label: 'Receipt & accession', description: 'Transport kits, shipment intake, and accession', icon: ScanLine },
+  { value: 'work', label: 'Library prep', description: 'Source tubes, preparation, and library QC', icon: ClipboardList },
+  { value: 'batches', label: 'Sequencing batches', description: 'Group libraries and track sequencing', icon: Layers3 },
+  { value: 'results', label: 'Results & review', description: 'Result evidence, scientific review, and release readiness', icon: ClipboardList },
+  { value: 'kits', label: 'PSeq kits', separatorBefore: true, description: 'Preparation, shipping, and fulfillment', icon: PackageCheck },
   { value: 'assembly', label: 'Data assembly', description: 'Input validation, processing, and release', icon: Workflow },
-  { value: 'protocols', label: 'Protocols', description: 'Controlled methods and approved versions', icon: BookOpenCheck },
-  { value: 'materials', label: 'Materials', description: 'Lots, prepared reagents, and QC', icon: FlaskConical },
+  { value: 'materials', label: 'Materials', separatorBefore: true, description: 'Lots, prepared reagents, and QC', icon: FlaskConical },
   { value: 'equipment', label: 'Equipment', description: 'Assets, availability, and calibration', icon: Microscope },
-  { value: 'batches', label: 'Batches', description: 'Operational and sequencing batches', icon: Layers3 },
+  { value: 'protocols', label: 'Lab configurations', separatorBefore: true, description: 'Protocols, workflows, and tray formats', icon: Cog },
 ]
 
-export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTabChange, onSectionChange }: { section: LabSection; shipmentId?: string; receiptTab?: LabReceiptTab; onReceiptTabChange?: (tab: LabReceiptTab) => void; onSectionChange: (section: LabSection) => void }) {
+export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTabChange, configurationTab, onConfigurationTabChange, onSectionChange }: { section: LabSection; shipmentId?: string; receiptTab?: LabReceiptTab; onReceiptTabChange?: (tab: LabReceiptTab) => void; configurationTab?: LabConfigurationTab; onConfigurationTabChange?: (tab: LabConfigurationTab) => void; onSectionChange: (section: LabSection) => void }) {
   const { authProvider, session } = usePhaenoSession()
   const navigate = useNavigate()
   const canView = Boolean(session?.capabilities.canManageLabOperations)
   const apiEnabled = canView && authProvider !== 'mock'
   const queryClient = useQueryClient()
   const [createKind, setCreateKind] = useState<CreateKind>(null)
+  const [localConfigurationTab, setLocalConfigurationTab] = useState<LabConfigurationTab>('protocols')
   const dashboard = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: apiEnabled })
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ['lab-operations'] })
+  const refresh = () => Promise.all([queryClient.invalidateQueries({ queryKey: ['lab-operations'] }), queryClient.invalidateQueries({ queryKey: ['lab-preparation'] })])
 
   if (!canView) return <AccessDenied />
 
@@ -105,10 +118,31 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
           {dashboard.error ? <Alert className="mb-5" variant="destructive"><AlertTitle>Lab operations could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(dashboard.error, 'Try refreshing the workspace.')}</AlertDescription></Alert> : null}
           {dashboard.isLoading ? <p role="status">Loading laboratory workspace…</p> : null}
           {dashboard.data && section === 'receipt' ? <LabReceiptAccessionPanel canReceiveShipments={Boolean(session?.capabilities.canOperateLabWork)} tab={receiptTab} onTabChange={onReceiptTabChange} canManageKitSupply={Boolean(session?.capabilities.canManageOrderConfiguration)} shipmentId={shipmentId} apiEnabled={apiEnabled} workOrders={dashboard.data.workOrders} /> : null}
-          {dashboard.data && section === 'work' ? <div className="space-y-5"><LabBarcodeLookup /><WorkQueue items={dashboard.data.workOrders.filter((item) => item.status !== 'AwaitingSpecimens')} /></div> : null}
+          {dashboard.data && section === 'work' ? <div className="space-y-5"><PreparationBatchList /><details className="rounded-lg border p-4"><summary className="cursor-pointer font-medium">Find a job or existing specimen record</summary><div className="mt-4 space-y-5"><LabBarcodeLookup /><WorkQueue items={dashboard.data.workOrders.filter((item) => item.status !== 'AwaitingSpecimens')} /></div></details></div> : null}
+          {dashboard.data && section === 'results' ? <WorkQueue items={dashboard.data.workOrders.filter((item) => item.status !== 'AwaitingSpecimens')} results /> : null}
           {section === 'kits' ? <LabManufacturingQueue workflow="reagent" apiEnabled={apiEnabled} /> : null}
           {section === 'assembly' ? <LabManufacturingQueue workflow="assembly" apiEnabled={apiEnabled} /> : null}
-          {dashboard.data && section === 'protocols' ? <div className="space-y-5"><ServiceWorkflowList workflows={dashboard.data.serviceWorkflows} marketedServices={dashboard.data.marketedServices} canManage={Boolean(session?.capabilities.canManageLabProtocols)} refresh={refresh} /><ProtocolList protocols={dashboard.data.protocols} canManage={Boolean(session?.capabilities.canManageLabProtocols)} onCreate={() => setCreateKind('protocol')} refresh={refresh} /></div> : null}
+          {dashboard.data && section === 'protocols' ? (
+            <Tabs value={configurationTab ?? localConfigurationTab} onValueChange={value => {
+              const nextTab = parseLabConfigurationTab(value)
+              if (!nextTab) return
+              setLocalConfigurationTab(nextTab)
+              onConfigurationTabChange?.(nextTab)
+            }} className="gap-4">
+              <TabsList aria-label="Lab configurations" className="grid w-full grid-cols-3">
+                {labConfigurationTabs.map(tab => <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>)}
+              </TabsList>
+              <TabsContent value="protocols">
+                <ProtocolList protocols={dashboard.data.protocols} canManage={Boolean(session?.capabilities.canManageLabProtocols)} onCreate={() => setCreateKind('protocol')} refresh={refresh} />
+              </TabsContent>
+              <TabsContent value="workflows">
+                <ServiceWorkflowList workflows={dashboard.data.serviceWorkflows} marketedServices={dashboard.data.marketedServices} canManage={Boolean(session?.capabilities.canManageLabProtocols)} refresh={refresh} />
+              </TabsContent>
+              <TabsContent value="tray-formats">
+                <TrayFormatList />
+              </TabsContent>
+            </Tabs>
+          ) : null}
           {dashboard.data && section === 'materials' ? <MaterialList items={dashboard.data.materialLots} canManage={Boolean(session?.capabilities.canOperateLabWork)} canApprove={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('material')} refresh={refresh} /> : null}
           {dashboard.data && section === 'equipment' ? <EquipmentList items={dashboard.data.equipment} canManage={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('equipment')} /> : null}
           {dashboard.data && section === 'batches' ? <BatchList items={dashboard.data.batches} canManage={Boolean(session?.capabilities.canOperateLabWork)} onCreate={() => setCreateKind('batch')} refresh={refresh} /> : null}
@@ -164,11 +198,34 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
   )
 }
 
-function WorkQueue({ items }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['workOrders'] }) {
-  return <Card><CardHeader><CardTitle>Authorized laboratory work</CardTitle><CardDescription>Open a work order for accession, lineage, execution, exceptions, and scientific review.</CardDescription></CardHeader><CardContent><div className="divide-y">{items.map((item) => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div><Link to="/lab-operations/$workOrderId" params={{ workOrderId: item.id }} search={{ section: undefined }} className="font-medium text-primary hover:underline">{item.commercialOrderNumber ?? item.id}</Link><p className="mt-1 text-xs text-muted-foreground">{item.specimenCount} specimen(s) · {item.openExceptionCount} open exception(s) · updated {formatDate(item.updatedAt)}</p></div><Status value={item.status} /></div>)}</div>{items.length === 0 ? <Empty>No accepted Commercial order has authorized Lab work yet.</Empty> : null}</CardContent></Card>
+function WorkQueue({ items, results = false }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['workOrders']; results?: boolean }) {
+  return <Card className="gap-0 py-0">
+    <CardHeader className="border-b bg-muted/50 p-4">
+      <CardTitle>{results ? 'Results & review' : 'Job and specimen history'}</CardTitle>
+      <CardDescription>{results ? 'Open a job to inspect scientific approval and release readiness. Jobs remain visible while their required evidence is being completed.' : 'Look up receipt, specimen, execution and library records. Assemble new preparation work in a batch above.'}</CardDescription>
+    </CardHeader>
+    <CardContent className="space-y-3 p-4">
+      {items.map(item => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 p-4 shadow-xs">
+        <div><Link to="/lab-operations/$workOrderId" params={{ workOrderId: item.id }} search={{ section: results ? 'results' : 'work', tab: results ? 'review' : 'specimens' }} className="font-medium text-primary hover:underline">{labWorkOrderLabel(item)}</Link>
+          <p className="mt-1 text-xs text-muted-foreground">{item.specimenCount} specimen(s) · {item.openExceptionCount} open exception(s) · updated {formatDate(item.updatedAt)}</p>
+        </div><Status value={item.status} />
+      </div>)}
+      {items.length === 0 ? <Empty>{results ? 'No received laboratory jobs are available for results review.' : 'No received laboratory jobs are available for preparation.'}</Empty> : null}
+    </CardContent>
+  </Card>
 }
-
 export function ProtocolList({ protocols, canManage, onCreate, refresh }: { protocols: LabProtocol[]; canManage: boolean; onCreate: () => void; refresh: () => Promise<unknown> }) {
+  const [showRetired, setShowRetired] = useState(false)
+  const retiredFilterRef = useRef<HTMLButtonElement>(null)
+  const [retirementTarget, setRetirementTarget] = useState<LabProtocol | null>(null)
+  const retirement = useMutation({
+    mutationFn: ({ protocol, reason, impactToken, confirmImpact }: { protocol: LabProtocol; reason: string; impactToken: string; confirmImpact: boolean }) => retireLabProtocol(protocol.id, { reason, version: protocol.version, impactToken, confirmImpact }),
+    onSuccess: async () => {
+      setRetirementTarget(null)
+      await refresh()
+      retiredFilterRef.current?.focus()
+    },
+  })
   const [editTarget, setEditTarget] = useState<LabProtocol | null>(null)
   const [approvalTarget, setApprovalTarget] = useState<{
     protocol: LabProtocol
@@ -230,7 +287,7 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
     transition.reset()
     transition.mutate({ protocol, versionId, action })
   }
-  const visibleProtocols = protocols.filter(isProtocolVisible)
+  const visibleProtocols = protocols.filter((protocol) => isProtocolVisible(protocol, showRetired))
 
   return (
     <>
@@ -251,6 +308,10 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
           </div>
         </CardHeader>
         <CardContent className="p-4">
+          <div className="mb-4 flex items-center gap-2">
+            <Checkbox ref={retiredFilterRef} id="show-retired-protocols" checked={showRetired} onCheckedChange={(checked) => setShowRetired(checked === true)} />
+            <Label htmlFor="show-retired-protocols" className="cursor-pointer">Show retired</Label>
+          </div>
           {transition.error ? (
             <Alert variant="destructive" className="mb-4">
               <AlertTitle>Protocol status was not changed</AlertTitle>
@@ -272,18 +333,18 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
                 .at(-1)
               return (
                 <section key={protocol.id} className="rounded-lg border bg-background p-4 shadow-xs">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+                    <div className="min-w-0 wrap-anywhere">
                       <h3 className="font-medium">{protocol.name}</h3>
                       {protocol.description ? (
                         <p className="mt-1 text-sm text-muted-foreground">{protocol.description}</p>
                       ) : null}
                       <div className="mt-2 flex flex-wrap gap-2">
-                        <Status value={draft
+                        <Status value={protocol.retiredAtUtc ? 'Retired' : draft
                           ? `Draft v${draft.protocolVersion}`
                           : approvedVersion
                             ? `Approved v${approvedVersion.protocolVersion}`
-                            : 'Setup incomplete'} />
+                            : protocol.versions.at(-1)?.status ?? 'Setup incomplete'} />
                       </div>
                       {!hasDefinition ? (
                         <p className="mt-2 text-xs text-muted-foreground">
@@ -291,7 +352,7 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
                         </p>
                       ) : null}
                     </div>
-                    {canManage ? (
+                    {canManage && !protocol.retiredAtUtc ? (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button type="button" size="sm" variant="outline">
@@ -342,16 +403,17 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
                               <Pencil /> Edit name and description
                             </DropdownMenuItem>
                           ) : null}
-                          {draft ? (
+                          {draft && hasEverBeenApproved ? (
                             <DropdownMenuItem
                               onSelect={() => {
                                 transition.reset()
                                 setDiscardTarget({ protocol, version: draft })
                               }}
                             >
-                              Discard draft
+                              <FileX /> Discard draft
                             </DropdownMenuItem>
                           ) : null}
+                          {hasEverBeenApproved ? <DropdownMenuItem onSelect={() => { retirement.reset(); setRetirementTarget(protocol) }}><Archive /> Retire protocol</DropdownMenuItem> : null}
                           {!hasEverBeenApproved ? (
                             <>
                               <DropdownMenuSeparator />
@@ -370,6 +432,7 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
                       </DropdownMenu>
                     ) : null}
                   </div>
+                  {protocol.retiredAtUtc ? <p className="mt-3 text-sm text-muted-foreground">Retired {formatDate(protocol.retiredAtUtc)} · {protocol.retirementReason}</p> : null}
                   {hasDefinition ? (
                     <div className="mt-3 divide-y rounded-md border bg-muted/30 px-3">
                       {[...protocol.versions].reverse().map((version) => (
@@ -389,7 +452,7 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
               )
             })}
           </div>
-          {visibleProtocols.length === 0 ? <Empty>No current protocols have been authored.</Empty> : null}
+          {visibleProtocols.length === 0 ? <Empty>{protocols.length > 0 ? 'No protocols match the selected visibility filters.' : 'No protocols have been authored.'}</Empty> : null}
         </CardContent>
       </Card>
 
@@ -425,6 +488,12 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
         }}
       />
 
+      {retirementTarget ? <ProtocolRetirementDialog
+        protocol={retirementTarget} pending={retirement.isPending}
+        error={retirement.error ? getLabOperationsError(retirement.error, 'Refresh the list and try again.') : undefined}
+        onClose={() => { setRetirementTarget(null); retirement.reset() }}
+        onRetire={(reason, impactToken, confirmImpact) => retirement.mutate({ protocol: retirementTarget, reason, impactToken, confirmImpact })}
+      /> : null}
       <Dialog
         open={discardTarget !== null}
         onOpenChange={(open) => {
@@ -759,7 +828,67 @@ function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { ite
 }
 
 function EquipmentList({ items, canManage, onCreate }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['equipment']; canManage: boolean; onCreate: () => void }) {
-  return <Card><CardHeader><div className="flex items-start justify-between gap-3"><div><CardTitle>Equipment</CardTitle><CardDescription>Lightweight asset availability and calibration visibility for execution traceability.</CardDescription></div>{canManage ? <Button type="button" onClick={onCreate}><Plus data-icon="inline-start" /> New equipment</Button> : null}</div></CardHeader><CardContent><div className="divide-y">{items.map((item) => <div key={item.id} className="flex items-center justify-between gap-3 py-3"><div><p className="font-medium">{item.assetCode} · {item.name}</p><p className="text-xs text-muted-foreground">{item.equipmentType} · {item.location}{item.calibrationDueOn ? ` · calibration due ${formatDateOnly(item.calibrationDueOn)}` : ''}</p></div><Status value={item.status} /></div>)}</div></CardContent></Card>
+  const queryClient = useQueryClient()
+  const [showRetired, setShowRetired] = useState(false)
+  const retiredFilterRef = useRef<HTMLButtonElement>(null)
+  const [retirementTarget, setRetirementTarget] = useState<(typeof items)[number] | null>(null)
+  const retirement = useMutation({
+    mutationFn: ({ equipment, reason }: { equipment: (typeof items)[number]; reason: string }) => retireLabEquipment(equipment.id, { reason, version: equipment.version }),
+    onSuccess: async () => {
+      setRetirementTarget(null)
+      await queryClient.invalidateQueries({ queryKey: ['lab-operations'] })
+      retiredFilterRef.current?.focus()
+    },
+  })
+  const visibleItems = items.filter((item) => showRetired || item.status !== 'Retired')
+  return (
+    <>
+    <Card className="gap-0 overflow-hidden py-0">
+      <CardHeader className="border-b bg-muted/50 p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <CardTitle>Equipment</CardTitle>
+            <CardDescription>Lightweight asset availability and calibration visibility for execution traceability.</CardDescription>
+          </div>
+          {canManage ? <Button type="button" onClick={onCreate}><Plus data-icon="inline-start" /> New equipment</Button> : null}
+        </div>
+      </CardHeader>
+      <CardContent className="p-4">
+        <div className="mb-4 flex items-center gap-2">
+          <Checkbox ref={retiredFilterRef} id="show-retired-equipment" checked={showRetired} onCheckedChange={(checked) => setShowRetired(checked === true)} />
+          <Label htmlFor="show-retired-equipment" className="cursor-pointer">Show retired</Label>
+        </div>
+        {visibleItems.length === 0 ? <Empty>{items.length > 0 ? 'No current equipment. Select Show retired to view retired assets.' : 'No equipment has been created.'}</Empty> : (
+          <ul aria-label="Equipment assets" className="space-y-3">
+            {visibleItems.map((item) => (
+              <li key={item.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg border bg-background p-4 shadow-xs">
+                <div className="min-w-0 wrap-anywhere">
+                  <h3 className="font-medium">{item.name} · {item.assetCode}</h3>
+                  <p className="text-xs text-muted-foreground">{item.equipmentType} · {item.location}{item.calibrationDueOn ? ` · calibration due ${formatDateOnly(item.calibrationDueOn)}` : ''}</p>
+                  {item.status === 'Retired' ? <p className="mt-2 text-xs text-muted-foreground">{item.retiredAtUtc ? `Retired ${new Date(item.retiredAtUtc).toLocaleDateString('en-US')} · ` : ''}{item.retirementReason ?? 'Retirement reason not recorded.'}</p> : null}
+                </div>
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <Status value={item.status} />
+                  {canManage && item.status !== 'Retired' ? <DropdownMenu>
+                    <DropdownMenuTrigger asChild><Button type="button" size="sm" variant="outline" aria-label={`Actions for ${item.name}`}>Actions <ChevronDown data-icon="inline-end" /></Button></DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48"><DropdownMenuItem onSelect={() => { retirement.reset(); setRetirementTarget(item) }}>Retire equipment</DropdownMenuItem></DropdownMenuContent>
+                  </DropdownMenu> : null}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+    {retirementTarget ? <EquipmentRetirementDialog
+      equipment={retirementTarget}
+      pending={retirement.isPending}
+      error={retirement.error ? getLabOperationsError(retirement.error, 'Refresh the equipment list and try again.') : undefined}
+      onClose={() => { if (!retirement.isPending) setRetirementTarget(null) }}
+      onRetire={(reason) => retirement.mutate({ equipment: retirementTarget, reason })}
+    /> : null}
+    </>
+  )
 }
 
 function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['batches']; canManage: boolean; onCreate: () => void; refresh: () => Promise<unknown> }) {
@@ -791,11 +920,11 @@ function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<Ret
     <>
       <div className="space-y-5">
         {canManage ? <LabBatchBarcodeScanner batches={items} onAdded={refresh} /> : null}
-        <Card>
-          <CardHeader>
+        <Card className="gap-0 py-0">
+          <CardHeader className="border-b bg-muted/50 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <CardTitle>Operational and sequencing batches</CardTitle>
+                <CardTitle>Sequencing batches</CardTitle>
                 <CardDescription>Libraries may cross Commercial orders while retaining work-order and specimen lineage.</CardDescription>
               </div>
               <div className="flex flex-wrap items-end gap-3">
@@ -817,15 +946,15 @@ function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<Ret
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
             {filteredItems.length === 0 ? (
               <p className="py-3 text-sm text-muted-foreground">No batches match this status.</p>
             ) : (
-              <div className="divide-y">
+              <div className="space-y-3">
                 {filteredItems.map((item) => {
                   const next = nextStatus(item.sendoutStatus)
                   return (
-                    <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                    <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 p-4 shadow-xs">
                       <div>
                         <p className="font-medium">{item.name}</p>
                         <p className="text-xs text-muted-foreground">

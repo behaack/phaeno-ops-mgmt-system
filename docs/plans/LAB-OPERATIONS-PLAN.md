@@ -1,5 +1,113 @@
 # Lab Operations Plan
 
+## Specimen attempts implemented locally — September 11, 2026
+
+The [specimen tube-attempt plan](SPECIMEN-TUBE-ATTEMPT-PLAN.md) is now implemented locally: versioned order policy, explicit source selection, attempt-scoped ordered execution, failure/reserve restart, confirmed exhaustion, output guards and specimen detail workspace. Customer-requested holds remain blocked. Existing Planned work is adopted only through explicit source selection; historical started work is not backfilled. Local migration AddSpecimenTubeAttempts is applied. Full persisted acceptance remains Not run; this supersedes the earlier proposed-status notes below.
+
+## Tube review before execution - September 11, 2026
+
+Implemented the approved navigation/prerequisite slice: Specimens → Tubes & lineage → Execution → Libraries → Exceptions → Review, preserving the existing lineage route value. Planned specimen executions expose a server-derived TubeAcceptanceRequired flag using the same accepted/available-tube predicate as Start. The page explains Tube acceptance required, disables Start for that blocker and links Review tubes directly to the job's tube tab. Returning reloads execution eligibility; no tube or execution decision is automatic. Help and acceptance coverage updated. Wider attempt/fallback implementation is now local; customer-requested holds remain blocked.
+
+## Specimen failure and customer holds - September 11, 2026
+
+Implemented attempt behavior: terminal attempt failure with confirmed exhaustion of material for further permitted analysis makes the specimen processing outcome Failed. Preserve its intake acceptance history. Temporarily unresolved material suitability or pending receipt requires a specific blocker and next action, not an exhaustion outcome. A held reserve does not undo acceptance of another tube. See the [tube-attempt plan](SPECIMEN-TUBE-ATTEMPT-PLAN.md).
+
+The [customer-requested specimen hold plan](CUSTOMER-SPECIMEN-HOLD-PLAN.md) is **blocked from implementation by Product Owner direction**. Customer request, acknowledgment, safe pause and resumption need separate design and implementation authorization. Existing internal hold controls do not constitute that workflow.
+
+## Tube-level intake acceptance - September 11, 2026
+
+Owner clarified that acceptance belongs to tubes: a specimen is Accepted when at least one tube is Accepted. Tube accession records Accepted by default when receipt checks pass; exceptions require a predefined intake reason. Other requires notes; acceptance after hold/rejection requires resolution notes. Lineage offers Review tube; independent specimen disposition is removed and the old API rejects writes with guidance. Existing tubes remain unreviewed (no backfill). Tube decisions retain reviewer/time/code/notes with event history, and specimen aggregation does not reject a specimen just because a reserve is rejected. Started specimens have intake locked; execution start requires an available Accepted tube. Five nullable container columns added by AddTubeIntakeReview. Attempt/fallback is implemented in the checkpoint above.
+
+## Specimen tube attempts - September 11, 2026
+
+The [specimen tube selection and fallback plan](SPECIMEN-TUBE-ATTEMPT-PLAN.md) captures the owner's run-one/reserves-on-failure direction, order policy, attempt-scoped workflow enforcement and specimen-centered workspace. Implemented locally with AddSpecimenTubeAttempts; full lifecycle acceptance remains Not run.
+
+## Work-order action menu - September 11, 2026
+
+The menu fits its labels with a compact minimum width. Milestone uses a single full-width field and removes redundant body margins. Connected Edge verified the selector matches its parent width with zero extra grid margin; no milestone saved.
+
+The work-order header groups Change milestone, New container, Assign protocol and eligible Record scientific approval in Actions. Existing capability checks, disabled assignment rules and dialogs are preserved.
+
+## Work-order list presentation - September 11, 2026
+
+All six work-order tab lists (Specimens, Execution, Lineage, Libraries, Exceptions and Review) now match the established Materials/Equipment pattern: shaded divided headers, padded bodies and separate bordered rows. Status, links, actions and saved records are unchanged. Added explicit empty states for container, library and exception lists. Help reviewed; no workflow instructions changed.
+
+## Promotion after independent approval - September 11, 2026
+
+Owner approved allowing any authorized Protocol Administrator to promote an independently approved workflow, including its author or a protocol author. Promotion checks recorded independent approvals for the workflow and every included protocol (including already Active versions), regardless of audit-only rollout settings. Author restrictions remain on approval. Role checks, stale-version handling, retirement checks, existing job pins and promotion audit stamping remain unchanged. No schema migration is needed.
+
+## Workflow action menus - September 11, 2026
+
+Multiple actions for Draft, Invalid and Approved workflow versions now use an Actions dropdown, preserving permissions and confirmation dialogs. Single actions remain direct controls. This follows the owner-approved shared UI convention.
+
+## Discarded drafts as history only — September 11, 2026
+
+Owner removed the Show discarded drafts filter from the working list. Discarded-only protocol identities are always hidden, including with Show retired checked. Discarded revisions remain in their associated protocol's read-only version history; their rows have no edit/create actions. New identities without saved versions remain visible as Setup incomplete, while historical fallback badges now use the actual version status. No stored protocol data was changed. This supersedes earlier notes about a conditional discarded-drafts filter. Updated Phaeno help and existing visibility regression expectations. Connected Edge confirmed the single Show retired filter, hidden Test 1-2-3 in both filter states, visible retired protocols when checked, and intact original walkthrough protocols. Automated tests were not run.
+
+## Revised retirement policy — September 11, 2026
+
+Owner superseded the initial dependency-blocking rule: in-process samples block retirement; queued but unstarted work only warns and permits Proceed anyway. Confirmed retirement removes the protocol in new Invalid workflow revisions and invalidates affected operational versions atomically. Historical stages/approvals and job pins are retained. Invalid revisions can be revalidated/approved with or without further edits, but require at least one eligible approved stage and subsequent production promotion. Queued work retaining an invalidated version is flagged and blocked from starting; no silent repinning. A fresh impact token binds confirmation to the affected workflows/jobs. Full test scope is LAB-07 in docs/testing/06-laboratory.md and the backend/frontend/E2E living plans. Implementation is complete locally. Migration 20260911174615_AddWorkflowInvalidation applied and ERD/help updated. Builds, TypeScript and lint passed; domain regression tests compile but were not run. Live Production workflow/no-job fixture verified named confirmation, retirement, historical Invalidated v1 with two preserved stages, and Invalid recovery v2 with only the retained stage; opened review without saving or approving. Active/queued-job and complete revalidation/concurrency acceptance remains Not run under LAB-07. Earlier manual retirement evidence applies to the superseded rule only.
+
+## Manual protocol retirement — September 11, 2026
+
+Implemented owner-approved protocol retirement for Protocol Administrators, with a required reason (1–1000 characters), retirement actor/time, preserved identity/version/approval/execution history, and no reactivation. Never-approved protocols continue to use deletion. An open protocol draft must be discarded first. Retirement blocks Draft/Approved/Production workflow dependencies and unfinished jobs referencing any historical workflow stage or protocol execution. Draft workflows must be edited/discarded, Approved candidates withdrawn then revised/discarded, and Production workflows replaced or retired. Completed/release-ready and cancelled work retain references. Blocker messages name workflows and job references. New workflow selection/approval/promotion, new executions, and provider job pinning reject retired protocols; participating writers update the protocol concurrency version atomically to conflict with concurrent retirement. Historical versions retain their original status and evidence rather than rewriting approvals.
+
+UI adds Actions → Retire protocol (Archive icon), required-reason modal and unchecked-by-default Show retired. A conditional Show discarded drafts filter retains access to legacy discarded-only identities. Retired records retain reason/date and version history and expose no edit/delete/create-version actions. Phaeno help updated and generated corpus `df73f4c03659` verified. Applied local migration `20260911172654_AddProtocolRetirement` (three nullable columns); ERD regenerated. API/test-project build, frontend TypeScript, scoped ESLint and documentation checks passed. Domain regression tests added but not run under repository test policy.
+
+Connected Edge as William verified blank-reason validation, blocked retirement naming a Draft workflow, preserved error input, subsequent success after discarding that test workflow, default hiding, filter inclusion, focus return, and retained reason/approval after Refresh. Separate fixture protocol `cbcb7e3f-d7bf-4f84-98b9-0ac58223e710` is retired version 2; DB readback confirmed actor `ec4b36b6-e143-4173-8c00-2319c5078cf3` and timestamp `2026-09-11T17:30:16.913671Z`. Fixture workflow `049f9d27-1300-44dd-aed0-c539f67a4d34` version `eba3fc9f-5f48-4b11-a33e-b77e15fab4f6` remains Discarded with its historical stage. Fixture creation used an explicitly synthetic temporary helper and null-human-actor audit context. No real laboratory use occurred. Cross-role denial, Approved/Production dependencies, populated unfinished jobs and concurrent-request scenarios are source-reviewed but not live-tested. Original RNA readiness v1 remains Approved; library-preparation v1 remains Draft. Updated local API process 4092 runs CodexProtocolRetirement on port 44399. No Git mutation or deployment.
+
+## Protocol removal menu — September 11, 2026
+
+The owner approved showing only Delete protocol for never-approved protocols, retaining the existing permanent-removal confirmation. Discard draft now appears only for draft revisions of a protocol with an approved version in its history, with a FileX icon. Existing backend deletion protections remain in force, including referenced-record restrictions. Updated Phaeno help to explain the menu distinction. This changes action presentation, not saved protocol data or approval state.
+
+## Laboratory dashboard list presentation — September 11, 2026
+
+Applied the owner's Materials/Equipment list template to the Laboratory work dashboard summary: shaded header with bottom divider, inset body, and individual bordered work-order rows with subtle shadows. Existing counts, ordering, links and actions are preserved. Connected Edge confirmed the shaded header, 1px divider and row borders, 16px row padding, and both existing work orders. Scoped ESLint passed; no automated suite was run. Reviewed user-documentation guidance: this presentation-only correction does not change the documented workflow. Protocol approval remains pending.
+
+## Equipment retirement — September 11, 2026
+
+Implemented and locally verified. Migration `20260911164357_AddEquipmentRetirement` was reviewed (three nullable metadata columns only) and applied to local `phaeno_ops` at the owner's explicit request; ERD regenerated. API and test-project builds, frontend TypeScript and scoped ESLint passed. Domain regressions were added but automated tests were not run. Connected Edge verified the reason-required error and successful retirement of a separate synthetic asset `PH-EQP-20260911-2NH6C3WJ`, default hiding, Show retired inclusion, and persistence after Refresh. Database readback confirmed reason, actor, timestamp and version 2; preparation asset `PH-EQP-20260911-SVDMBJUH` remains Active at version 1. Role denial and concurrent-use rejection were source-reviewed, not live-tested. The owner also requested a wider action menu; 192px width keeps Retire equipment on one line. Phaeno help corpus regenerated (`5db2af000a47`). No Git mutation or deployment occurred. The stopped local API was started from the updated CodexRetirement build on port 44399 for verification.
+
+Authorized scope: Supervisors and Operations Administrators can retire an asset from its Actions menu after entering a reason. Retirement retains identity, calibration and execution-use records and stores the reason, actor and timestamp. Retired equipment is hidden by default with Show retired to include it, and cannot be selected or recorded for new use. Retirement is final in this scope; no deletion/reactivation is added. A version check prevents stale retirement, and equipment use participates in the same version check so a concurrent retirement cannot slip through. The local additive migration adds retirement metadata; existing Active assets are unchanged. Acceptance: reason required, retired visibility toggle, retained history, role/concurrency enforcement and rejection of retired use. Keep the walkthrough's preparation asset active; verify retirement on a separate synthetic fixture.
+
+## Equipment retirement — September 11, 2026
+
+Authorized scope: Supervisors and Operations Administrators can retire an asset from its Actions menu after entering a reason. Retirement retains identity, calibration and execution-use records and stores the reason, actor and timestamp. Retired equipment is hidden by default with Show retired to include it, and cannot be selected or recorded for new use. Retirement is final in this scope; no deletion/reactivation is added. A version check prevents stale retirement, and equipment use participates in the same version check so a concurrent retirement cannot slip through. The local additive migration adds retirement metadata; existing Active assets are unchanged. Acceptance: reason required, retired visibility toggle, retained history, role/concurrency enforcement and rejection of retired use. Keep the walkthrough's preparation asset active; verify retirement on a separate synthetic fixture.
+
+## Equipment list presentation — September 11, 2026
+
+The owner identified the Materials list as the template for Equipment. Equipment now uses the same shaded header and divider, 16px body inset, bordered rounded rows with subtle shadow, compact name/identifier and metadata lines, and trailing status. The list has an accessible name and an explicit empty state. Connected Edge verified the 1px header/row borders, 16px inset/padding and preserved asset details. Scoped ESLint passed; no automated suite was run. This is presentation only; existing help remains accurate and asset records/actions are unchanged.
+
+## Equipment modal spacing — September 11, 2026
+
+The owner also requested Equipment type and Location on separate rows. Both fields now span the form width; calibration dates retain their paired layout. Connected Edge confirmed separate rows at the same 478px width as Name, with all five entered values preserved. Scoped ESLint passed. Current reference behavior was clarified: types are inferred from equipment and all protocol versions; locations combine equipment names and active storage locations. Inline creation stores a string on the asset, not a separately managed type/location catalog record.
+
+Removed the equipment form grid's extra 20px top/bottom margins because the shared dialog body already supplies 16px padding. Connected Edge measurements confirmed the body shrank by 40px while retaining standard padding, and all five unsaved equipment fields remained identical. Scoped ESLint passed. No behavior/help change or automated test was needed for this spacing correction.
+
+## Material-lot date submission guard — September 11, 2026
+
+The test lot's date was visible before creation but stored as NULL. The precise original event failure was not reproduced. The create form now reconciles the native expiration/retest control into form state before validation/submission, preventing a stale form-state snapshot from dropping a displayed date. Invalid or past native dates produce a field error instead of silently becoming absent. Blank dates remain optional. No API/schema contract changed; the existing guide remains accurate. The owner authorized correcting the one local synthetic lot: its expiration is now December 31, 2026, version 2, with quantity 100 mL and Pending QC preserved. Connected Edge confirmed the saved display. Lint and TypeScript passed; a targeted regression case was added but not run under the repository test policy.
+
+## Protocol management tabs and discarded filter — September 11, 2026
+
+The owner requested separate Protocols and Service workflows tabs. Protocols opens by default; each panel contains its corresponding creation action and list. Protocols with only Discarded versions are hidden by default and can be restored with Show discarded. Empty identities and any history with a non-discarded version remain visible. This supersedes the earlier working-list policy that retained discarded-only identities in the default view. Saved records, version history, approval and workflow rules are unchanged. Phaeno help was updated. Scoped lint and frontend TypeScript passed; connected Edge verified the default view, filter on/off, and ArrowRight/ArrowLeft tab navigation. Automated suites were not run.
+
+## Protocol card action placement — September 11, 2026
+
+At the owner's request, protocol cards reserve a trailing column for Actions, aligned with the title at the top. The text column can shrink and wrap long content without pushing Actions onto a later row. Scoped ESLint passed; connected Edge measurements confirmed top alignment and containment on all three current protocol cards. No automated suite was run. Existing help instructions remain accurate; action behavior and protocol data are unchanged.
+
+## Role-neutral step confirmation wording — September 11, 2026
+
+The owner identified ambiguity between the Operator role and the protocol builder's “Operator confirmation required” control when a step requires Supervisor. The builder and approval preview now use **Confirmation required**, with helper text identifying the person performing the step. Execution history uses **Step confirmation recorded**. Required-role enforcement, confirmation flags and saved evidence contracts remain unchanged. The Phaeno protocol guide explains the distinction and has a September 11 review date. The three-step readiness candidate is now saved/reopened as Draft v1 and remains unapproved; see the [run record](../testing/runs/2026-09-11-protocol-preparation.md) for live-refresh recovery and exact field preservation.
+
+## Protocol capture spacing — September 11, 2026
+
+The owner reported excessive vertical gaps and a detached trash button in the initial protocol builder. Each capture now groups its label/type in a responsive field row, keeps any unit/choices with the fields, and aligns Required and its named remove button on one compact footer row. The former unconditional checkbox padding and button top margin are removed. Scope is presentation; capture values/types, required validation, add/remove behavior and draft-save semantics are unchanged. Existing protocol help remains accurate. The [run record](../testing/runs/2026-09-11-protocol-preparation.md) records rendered, keyboard, static and unsaved-state checks.
+
+## Work-record tab reflow — September 11, 2026
+
+During test-protocol preparation the owner reported that the second row of Work tabs overlapped the panel. The shared TabsList's horizontal height variant overrode the page's plain `h-auto`. The Work page now overrides that same variant, gives each trigger a 36px minimum height and uses two/three/six columns across narrow/tablet/wide layouts. Scope is this record's tab layout and accessible group name; routes, selection, scientific actions and data are unchanged. The existing user guide remains accurate and needs no procedural change. Verification is recorded in the [September 11 run record](../testing/runs/2026-09-11-protocol-preparation.md).
+
 ## Receipt and accession update Job progress — September 10, 2026
 
 The owner authorized fixing Jobs stranded between accession and Work and correcting the two reported local Jobs from saved evidence. Users are Phaeno receiving operators and Customer/Partner users tracking their Jobs. First shipment arrival advances awaiting Lab work to Received and the Commercial Job to In progress. Verified tube receipt updates the sample; Accessioned requires all expected tubes across active shipments. Holds, terminal/later states, scientific acceptance, turnaround targets and physical identities are preserved.
@@ -1188,3 +1296,17 @@ and preparation guidance in the Portal. Physical 2D scanner, printer/stock and
 handling acceptance remain explicit gates; former Code 39-only hardware proof
 cannot establish QR compatibility. The shared renderer is pinned qrcode.react
 4.2.0; no backend model or migration change is required.
+
+## Product Owner workflow review — September 11, 2026
+
+Receipt/accession, protocols/workflows, materials and equipment are accepted as broadly sound in the current walkthrough. Rename the sidebar Protocols to Protocols & workflows (implemented). Batches and Data assembly need clearer explanation and placement. PSeq kits should receive acceptance testing, then be hidden from the normal operating navigation when the owner is ready; do not hide or enable a rollout yet. Lab work needs workflow discovery and redesign around coherent specimen progression, reducing repeated entry and disconnected container/execution/library actions. These are product-review priorities, not authorization to replace existing scientific gates or change workflow contracts.
+
+## Library prep and Results & review navigation — September 11, 2026
+
+Implemented the first navigation slice: Library prep replaces the Lab work sidebar label (existing work URL retained); Results & review follows Sequencing batches and opens the existing job Review tab with section=results return context. Both queues retain received job visibility; no readiness is inferred from inclusion. Preserve the owner's three sidebar dividers and later groups. Shared job history and existing approval gates remain intact. This is not tray-based preparation or a new data-processing pipeline.
+
+Manual verification: Results & review → HS5Y7DB7 opens Review, retains Processing and No scientific approval recorded, and its breadcrumb returns to section=results. Verify Library prep → Specimens and legacy work links, keyboard navigation and narrow layout. No operational writes for this change.
+
+## Preparation batches and connected Library prep — scope recorded
+
+See [Library preparation batches and connected workflow](LAB-WORK-JOURNEY-PLAN.md) for the agreed configurable single-tray model, mixed-job/partial batches, membership locked after start, batch-first evidence with tube exceptions, and reuse of preparation QC. The same implementation explicitly addresses disconnected container/resource entry, repeated identity linking, separate library creation/QC and sequencing handoff. This supersedes earlier open questions about tray continuity, mixed jobs, partial trays and duplicate QC in the journey plan. New preparation-batch behavior is planned, not implemented.

@@ -1021,6 +1021,7 @@ public sealed class PlatformLabServiceOrdersController(
             LabCustomerActionSummary: projection?.CustomerSafeSummary,
             LabPermittedQcProjectionJson: projection?.PermittedQcProjectionJson,
             LabReadyForRelease: projection?.Milestone == "ReadyForRelease",
+            TubeUsePolicyKey: order.TubeUsePolicyKey, TubeUsePolicyVersion: order.TubeUsePolicyVersion,
             RequestedSpecimenCount: order.RequestedSpecimenCount,
             SourceGroups: order.SourceGroups.OrderBy(group => group.BiologicalSource)
                 .Select(group => new LabServiceSourceGroupDto(group.Id, group.BiologicalSource, group.SpecimenCount, group.Version)).ToList(),
@@ -1137,6 +1138,7 @@ public sealed class PlatformLabServiceOrdersController(
                 group.BiologicalSource,
                 group.SpecimenCount
             }),
+            order.TubeUsePolicyKey, order.TubeUsePolicyVersion,
             order.StorageRequirements,
             order.SafetyDeclaration,
             proposedUnitPrice = order.ProposedUnitPrice,

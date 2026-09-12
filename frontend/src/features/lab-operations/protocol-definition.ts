@@ -21,9 +21,11 @@ export const protocolRoleTypes = [
 ] as const
 
 const captureSchema = z.object({
+  scope: z.enum(['', 'batch', 'tube', 'shared']).optional(),
   label: z.string().trim().min(1, 'Capture label is required.').max(120),
   type: z.enum(protocolCaptureTypes),
   required: z.boolean(),
+  sourceTube: z.boolean().optional(),
   unit: z.string().trim().max(50),
   choices: z.string().trim().max(1000),
 }).superRefine((capture, context) => {
@@ -52,6 +54,7 @@ const stepSchema = z.object({
   equipmentTypes: z.string().trim().max(2000),
   captures: z.array(captureSchema).max(30, 'A step can contain at most 30 captures.'),
   qcEnabled: z.boolean(),
+  qcScope: z.enum(['', 'batch', 'tube', 'shared']).optional(),
   qcCriteria: z.string().trim().max(2000),
 }).superRefine((step, context) => {
   if (step.requirement === 'conditional' && !step.condition) {
@@ -71,9 +74,18 @@ const stepSchema = z.object({
 })
 
 export const protocolDefinitionFormSchema = z.object({
+  preparationBatchEnabled: z.boolean().optional(),
   steps: z.array(stepSchema)
     .min(1, 'Add at least one protocol step.')
     .max(100, 'A protocol can contain at most 100 steps.'),
+}).superRefine((value, context) => {
+  if (!value.preparationBatchEnabled) return
+  value.steps.forEach((step, i) => {
+    step.captures.forEach((capture, j) => {
+      if (!capture.scope || capture.type === 'barcode' && capture.scope !== 'tube') context.addIssue({ code: 'custom', message: capture.type === 'barcode' ? 'Barcodes require Tube scope.' : 'Choose the evidence scope.', path: ['steps', i, 'captures', j, 'scope'] })
+    })
+    if (step.qcEnabled && !step.qcScope) context.addIssue({ code: 'custom', message: 'Choose the QC scope.', path: ['steps', i, 'qcScope'] })
+  })
 })
 
 export type ProtocolDefinitionFormValues = z.infer<typeof protocolDefinitionFormSchema>
@@ -81,6 +93,7 @@ export type ProtocolStepFormValues = ProtocolDefinitionFormValues['steps'][numbe
 
 export type ProtocolDefinition = {
   schemaVersion: 1
+  preparationBatchEnabled?: boolean
   steps: Array<{
     key: string
     name: string
@@ -92,9 +105,11 @@ export type ProtocolDefinition = {
     requiredRole?: Exclude<ProtocolStepFormValues['requiredRole'], ''> | null
     captures: Array<{
       key: string
+      scope?: 'batch' | 'tube' | 'shared' | null
       label: string
       type: typeof protocolCaptureTypes[number]
       required: boolean
+      sourceTube?: boolean
       unit?: string | null
       options?: string[] | null
     }>
@@ -102,6 +117,7 @@ export type ProtocolDefinition = {
     preparedOutputs: string[]
     equipmentTypes: string[]
     qcGate?: {
+      scope?: 'batch' | 'tube' | 'shared' | null
       criteria: string
       outcomes: ['pass', 'fail', 'hold']
     } | null
@@ -109,9 +125,11 @@ export type ProtocolDefinition = {
 }
 
 const storedProtocolCaptureSchema = z.object({
+  scope: z.enum(['batch', 'tube', 'shared']).nullish(),
   label: z.string().default(''),
   type: z.enum(protocolCaptureTypes).default('text'),
   required: z.boolean().default(true),
+  sourceTube: z.boolean().default(false),
   unit: z.string().nullish(),
   options: z.array(z.string()).nullish(),
 }).passthrough()
@@ -129,11 +147,13 @@ const storedProtocolStepSchema = z.object({
   preparedOutputs: z.array(z.string()).default([]),
   equipmentTypes: z.array(z.string()).default([]),
   qcGate: z.object({
+    scope: z.enum(['batch', 'tube', 'shared']).nullish(),
     criteria: z.string().default(''),
   }).passthrough().nullish(),
 }).passthrough()
 
 const storedProtocolDefinitionSchema = z.object({
+  preparationBatchEnabled: z.boolean().optional(),
   steps: z.array(storedProtocolStepSchema).default([]),
 }).passthrough()
 
@@ -174,6 +194,7 @@ export const createLibraryPreparationExample = (): ProtocolDefinitionFormValues 
           ...createEmptyProtocolCapture(),
           label: 'Source container barcode',
           type: 'barcode',
+          sourceTube: true,
         },
       ],
     },
@@ -233,13 +254,16 @@ export function deserializeProtocolDefinition(value: string): ProtocolDefinition
         label: capture.label,
         type: capture.type,
         required: capture.required,
+        ...(capture.sourceTube ? { sourceTube: true } : {}),
+        ...(capture.scope ? { scope: capture.scope } : {}),
         unit: capture.unit ?? '',
         choices: capture.options?.join(', ') ?? '',
       })),
       qcEnabled: Boolean(step.qcGate),
+      ...(step.qcGate?.scope ? { qcScope: step.qcGate.scope } : {}),
       qcCriteria: step.qcGate?.criteria ?? '',
     }))
-    return { steps: steps.length > 0 ? steps : [createEmptyProtocolStep()] }
+    return { ...(parsed.data.preparationBatchEnabled ? { preparationBatchEnabled: true } : {}), steps: steps.length > 0 ? steps : [createEmptyProtocolStep()] }
   } catch {
     return null
   }
@@ -249,6 +273,7 @@ export function serializeProtocolDefinition(values: ProtocolDefinitionFormValues
   const usedStepKeys = new Set<string>()
   const definition: ProtocolDefinition = {
     schemaVersion: 1,
+    ...(values.preparationBatchEnabled ? { preparationBatchEnabled: true } : {}),
     steps: values.steps.map((step) => {
       const usedCaptureKeys = new Set<string>()
       return {
@@ -265,6 +290,8 @@ export function serializeProtocolDefinition(values: ProtocolDefinitionFormValues
           label: capture.label.trim(),
           type: capture.type,
           required: capture.required,
+          ...(values.preparationBatchEnabled && capture.scope ? { scope: capture.scope } : {}),
+          ...(capture.type === 'barcode' && capture.sourceTube ? { sourceTube: true } : {}),
           ...(capture.type === 'number' && capture.unit.trim()
             ? { unit: capture.unit.trim() }
             : {}),
@@ -278,6 +305,7 @@ export function serializeProtocolDefinition(values: ProtocolDefinitionFormValues
         ...(step.qcEnabled
           ? {
               qcGate: {
+                ...(values.preparationBatchEnabled && step.qcScope ? { scope: step.qcScope } : {}),
                 criteria: step.qcCriteria.trim(),
                 outcomes: ['pass', 'fail', 'hold'] as ['pass', 'fail', 'hold'],
               },
