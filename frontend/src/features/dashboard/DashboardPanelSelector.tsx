@@ -17,6 +17,7 @@ import {
 import { useMemo, useState } from 'react'
 
 import { ConnectedOperationsSummary } from './ConnectedOperationsSummary'
+import { OrderOperationsSummary } from './OrderOperationsSummary'
 import { AccountsDashboardContent } from './AccountsDashboardContent'
 import { DashboardHero } from './DashboardHero'
 import { WebOpsDashboardContent } from './WebOpsDashboardContent'
@@ -302,7 +303,7 @@ export function DashboardPanelSelector() {
         </div>
         <div className="soft-enter soft-enter-delay-1">
           {activeSection === 'orders' ? (
-            apiEnabled ? <ConnectedOperationsSummary section="orders" /> : <OperationsPanel panel={operationsPanels.orders} />
+            apiEnabled ? <OrderOperationsSummary capabilities={session?.capabilities} /> : <OperationsPanel panel={operationsPanels.orders} />
           ) : null}
           {activeSection === 'lab' ? (
             apiEnabled ? <ConnectedOperationsSummary section="lab" /> : <OperationsPanel panel={operationsPanels.lab} />

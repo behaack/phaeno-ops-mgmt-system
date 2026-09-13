@@ -1344,9 +1344,9 @@
       "slug": "order-operations",
       "overviewTitle": "Overview and queue triage",
       "title": "Order operations",
-      "summary": "Start each Customer order in Intake, manage commercial decisions, and continue Lab, Finance, and release work in their owning screens.",
+      "summary": "Find the Order operations workspace available to your role, manage commercial decisions, and continue Lab, Finance, and release work in their owning screens.",
       "order": 40,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-12",
       "navigationGroup": "order-operations",
       "contentType": "overview",
       "topicIds": [
@@ -1487,9 +1487,9 @@
       "slug": "order-billing-payment-release",
       "parentSlug": "order-operations",
       "title": "PSeq billing, cash, and result release",
-      "summary": "Review PSeq invoices, attach receipt evidence, preview imports, allocate and reconcile cash, and release scientifically approved results.",
+      "summary": "Review PSeq invoices, record and reconcile cash, release scientifically approved results, and distinguish disabled capabilities from loading failures.",
       "order": 45,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-12",
       "navigationGroup": "order-operations",
       "contentType": "guide",
       "topicIds": [

@@ -20,13 +20,26 @@ export function parseOrderSection(value: unknown): OrderSection | undefined {
   return orderSections.find(item => item.value === value)?.value
 }
 
+export function canAccessOperationalAttention(capabilities?: SessionCapabilities) {
+  return Boolean(capabilities && (capabilities.canOperateCommercialWork || capabilities.canReleasePSeqResults || capabilities.canManagePSeqBilling || capabilities.canManagePSeqCash || capabilities.canReconcilePSeqCash))
+}
+
 export function getOrderSections(capabilities?: SessionCapabilities) {
   return orderSections.filter(item => {
     if (!capabilities) return false
     if (item.value === 'trials') return capabilities.canViewTrialProjects
     if (item.value === 'results') return capabilities.canReleasePSeqResults
     if (item.value === 'finance') return capabilities.canManagePSeqBilling || capabilities.canManagePSeqCash || capabilities.canReconcilePSeqCash
-    if (item.value === 'attention') return capabilities.canOperateCommercialWork || capabilities.canReleasePSeqResults || capabilities.canManagePSeqBilling || capabilities.canManagePSeqCash || capabilities.canReconcilePSeqCash
-    return capabilities.canViewAllOperationalOrders
+    if (item.value === 'attention') return canAccessOperationalAttention(capabilities) || capabilities.canManageOrderConfiguration
+    // These commercial queue APIs currently require platform administrator access.
+    // Broad operational reading also includes release/finance roles and is insufficient.
+    return capabilities.canManageOrderConfiguration
   })
+}
+
+export function getOrderLandingSection(capabilities?: SessionCapabilities, requested?: OrderSection): OrderSection | undefined {
+  const available = getOrderSections(capabilities)
+  if (available.some(item => item.value === requested)) return requested
+  const priorities: OrderSection[] = ['intake', 'results', 'finance', 'attention', 'trials', 'reagent', 'assembly', 'integrations']
+  return priorities.find(value => available.some(item => item.value === value))
 }

@@ -16,7 +16,7 @@ import { getLabWorkOrderByCommercialOrder } from '#/api/lab-operations'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { OrderOperationsSidebar } from './OrderOperationsSidebar'
 import { CommercialSaleSummaryAttention } from './CommercialSaleSummaryAttention'
-import { getOrderSections, type OrderSection } from './order-sections'
+import { canAccessOperationalAttention, getOrderLandingSection, type OrderSection } from './order-sections'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogFeedback, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
@@ -53,14 +53,14 @@ export function OrderOperationsPage({ workflow, orderId, initialSection }: { wor
 }
 
 function OperationalQueues({ apiEnabled, mock, userId, capabilities, initialSection }: { initialSection?: OrderSection; apiEnabled: boolean; mock: boolean; userId: string | null; capabilities: SessionCapabilities }) {
-  const availableSections = getOrderSections(capabilities)
   const navigate = useNavigate()
-  const section = availableSections.find(item => item.value === initialSection)?.value ?? availableSections[0]?.value ?? 'attention'
+  const section = getOrderLandingSection(capabilities, initialSection)
   const setSection = (value: OrderSection) => { void navigate({ to: '/order-operations', search: previous => ({ ...previous, orderSection: value }) }) }
-  const organizations = useQuery({ queryKey: ['order-operations', 'organizations'], queryFn: listOrganizations, enabled: apiEnabled && capabilities.canViewAllOperationalOrders })
-  const integrations = useQuery({ queryKey: ['order-integrations'], queryFn: () => listIntegrationMessages(), enabled: apiEnabled && capabilities.canViewAllOperationalOrders })
-  const notifications = useQuery({ queryKey: ['order-notifications'], queryFn: () => listNotificationMessages(), enabled: apiEnabled && capabilities.canViewAllOperationalOrders })
+  const organizations = useQuery({ queryKey: ['order-operations', 'organizations'], queryFn: listOrganizations, enabled: apiEnabled && capabilities.canManageOrderConfiguration && (section === 'intake' || section === 'reagent' || section === 'assembly') })
+  const integrations = useQuery({ queryKey: ['order-integrations'], queryFn: () => listIntegrationMessages(), enabled: apiEnabled && capabilities.canManageOrderConfiguration && section === 'integrations' })
+  const notifications = useQuery({ queryKey: ['order-notifications'], queryFn: () => listNotificationMessages(), enabled: apiEnabled && capabilities.canManageOrderConfiguration && section === 'integrations' })
   const organizationOptions = organizations.data?.map((item) => ({ id: item.id, name: item.name, kind: item.kind })) ?? []
+  if (!section) return <main className="page-wrap px-4 py-8"><Alert><AlertTitle>No Order operations workspaces available</AlertTitle><AlertDescription>Your current responsibilities do not include an Order operations workspace.</AlertDescription></Alert></main>
   if (section === 'trials') return <Navigate to="/trial-projects" replace />
   return (
     <main className="py-8">
@@ -82,9 +82,9 @@ function OperationalQueues({ apiEnabled, mock, userId, capabilities, initialSect
           {section === 'intake' ? <CommercialOrderIntakePanel apiEnabled={apiEnabled} mock={mock} userId={userId} organizations={organizationOptions} /> : null}
           {section === 'reagent' ? <QueueCard title="PSeq kit queue" workflow="reagent" apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /> : null}
           {section === 'assembly' ? <QueueCard title="Assembly queue" workflow="assembly" apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /> : null}
-          {section === 'attention' ? <><OperationalAttentionPanel apiEnabled={apiEnabled} userId={userId} /><CommercialSaleSummaryAttention enabled={apiEnabled && capabilities.canManageOrderConfiguration} /></> : null}
+          {section === 'attention' ? <>{canAccessOperationalAttention(capabilities) ? <OperationalAttentionPanel apiEnabled={apiEnabled} userId={userId} /> : null}<CommercialSaleSummaryAttention enabled={apiEnabled && capabilities.canManageOrderConfiguration} /></> : null}
           {section === 'results' ? <ResultReleasePanel apiEnabled={apiEnabled} /> : null}
-          {section === 'finance' ? <FinanceOperationsPanel apiEnabled={apiEnabled} canBill={capabilities.canManagePSeqBilling} canManageCash={capabilities.canManagePSeqCash} canReconcile={capabilities.canReconcilePSeqCash} /> : null}
+          {section === 'finance' ? <FinanceOperationsPanel apiEnabled={apiEnabled} canBill={capabilities.canManagePSeqBilling} canManageCash={capabilities.canManagePSeqCash} canReconcile={capabilities.canReconcilePSeqCash} canViewCommercialOrder={capabilities.canManageOrderConfiguration} /> : null}
           {section === 'integrations' ? <IntegrationQueue query={integrations} notifications={notifications} apiEnabled={apiEnabled} /> : null}
         </div>
       </OrderOperationsSidebar>

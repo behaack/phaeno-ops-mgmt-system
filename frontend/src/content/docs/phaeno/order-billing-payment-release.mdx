@@ -6,7 +6,7 @@ POMS owns operational accounts receivable for PSeq Lab Service. Result release i
 
 Finance actions depend on your assigned responsibility: Billing Operators maintain billing and invoice adjustments, Cash Operators record and allocate receipts and submit reconciliations, and Cash Reconcilers independently approve reconciliations. Result Release Manager and file-administration authority remain separate.
 
-Open **Order Ops → Finance**. Choose **Invoices and aging**, **Receipts**, **Customer billing**, **Import receipts**, or **Reconciliation**. Open a record by its invoice, receipt, Customer or reconciliation number. The detail shows its current state and permitted actions. Return to Finance to keep the previous Customer filter and section. The Customer filter narrows the displayed records; aging summarizes all Customers, and **Export all invoices** and **Export all receipts** include all Customers.
+Open **Order Ops → Finance**. Choose **Invoices and aging**, **Receipts**, **Customer billing**, **Import receipts**, or **Reconciliation**. Open a record by its invoice, receipt, Customer or reconciliation number. The detail shows its current state and permitted actions. On an invoice, **Open order** is available only with commercial order administration access; Billing Operators can still review and adjust the invoice within their assigned permissions. Return to Finance to keep the previous Customer filter and section. The Customer filter narrows the displayed records; aging summarizes all Customers, and **Export all invoices** and **Export all receipts** include all Customers.
 
 If a section or its supporting Customer or aging information cannot load, use its **Retry** action. Other available Finance sections remain usable. A new receipt or import needs the Customer choices to load; a new reconciliation also needs its eligible receipts.
 
@@ -24,9 +24,13 @@ POMS calculates the approved tax rate without a tax engine. Never edit an issued
 
 ## Release PSeq results
 
+If **Result release not enabled** appears, this capability is not available in the current installation. Other available work areas remain usable. This message is different from a loading failure and does not mean there are no result packages. **Attention queues not enabled** has the same meaning for Attention; the dashboard omits its retry and queue shortcut while disabled. Workspace navigation remains available to explain the status. Neither message offers an activation action.
+
 Open **Order Ops → Result release**. The queue starts with **Ready for release** packages; use **Package state** to view another state. A link with a selected state preserves that filter. Open the package identified by its Customer, Job and sample. The detail connects scientific review, manifest, release, retention and receipt. A Customer result may be published only when the specific sample package is complete, checksummed, malware-clean, and scientifically approved. The Result Release Manager releases or withdraws a version. Other samples may remain in progress. Do not consult invoice balance or credit status for this decision.
 
 Corrections create a new package, scientific approval, and release version. Preserve notification, Customer download, retention warning/cutoff/grace/deletion, withdrawal, and authorized reissue evidence.
+
+Related-workspace links follow your access: **View commercial order** is available to platform administrators, while **View scientific review** requires laboratory access. The package still shows its Customer, Job, sample and approval context when a related workspace is unavailable to you.
 
 ## Review governed result retention
 
@@ -42,7 +46,7 @@ Physical cleanup remains separately controlled. A closed download window is not 
 
 ## Record and reconcile cash
 
-In **Receipts**, choose **Record receipt**. Enter Customer, payer, amount, received date, payment method, bank reference and external reference. Attach evidence as PDF, PNG, JPEG or text, up to 10 MB. The file must pass the configured scanner before the receipt is recorded; an unavailable scanner leaves the receipt unsaved and preserves your entries. An optional note adds context. Open a saved receipt to download its evidence, allocate it to a same-Customer invoice, or reverse it when no allocation remains.
+In **Receipts**, choose **Record receipt**. Enter Customer, payer, amount, received date, payment method, bank reference and external reference. Attach evidence as PDF, PNG, JPEG or text, up to 10 MB. The file must pass the configured scanner before the receipt is recorded; an unavailable scanner leaves the receipt unsaved and preserves your entries. An optional note adds context. Open a saved receipt to download its evidence, allocate it to a same-Customer invoice, or reverse it when no allocation remains. Evidence downloads use the receipt number and retain the file extension. Imported receipts download their saved import evidence as JSON.
 
 In **Import receipts**, select Customer and source, then choose a CSV file or paste its contents. Required headers are source, external_id, date, amount, currency, payer, reference and memo. **Preview import** validates the file. Review the frozen Customer, source, rows and total, then confirm. Only the operator who reviewed that preview can confirm it. If another operator already owns the file review, ask them to complete it; do not change the file identity to bypass that ownership. If the Customer, totals, or saved version changed, review a fresh preview before confirmation. **Change input** returns to editing and requires a fresh preview. An earlier response cannot replace a preview for changed input. Repeating your unconfirmed preview resumes the same batch; confirmed files cannot be imported twice. Imports create unapplied receipts and retain their source evidence.
 
@@ -55,6 +59,8 @@ The receipt's **Allocation history** shows each allocation, its invoice, amount,
 In **Reconciliation**, open the batch number to review its selected receipts and other contributing records. Before submission, a Cash Operator may choose **Edit draft** to correct the period end, bank total or selected receipts, or **Cancel draft** to retain an unused batch as cancelled. Both actions require a reason and the current version. Editing recalculates totals and retains the before-and-after selections. **Draft change history** shows the actor, reason and changes to the period and totals. Balancing or cancelling the draft resolves its open reconciliation-difference attention item. Cancellation does not reverse receipts or allocations.
 
 Submit the batch only when balanced. Submitted and approved batches cannot be edited or cancelled through these draft actions. Independent approval excludes the creator, submitter, contributing actors and every recorded draft editor wherever dual control is enforced. A conflict preserves your entries: review the refreshed batch before applying them. The immutable closeout remains the evidence for the approved batch.
+
+After approval, **Closeout report** shows the saved bank and ledger totals, difference, period, included-record count and approval time. Expand **Approval reference** to inspect the reviewer reference and exact UTC timestamp. **Download closeout report** saves a readable text copy of that approval evidence, including recorded draft changes and their references. It does not change the approved reconciliation. If the saved report is unavailable or does not match the record, reload and contact support if the problem continues; a report cannot be downloaded until valid saved evidence is available.
 
 ## Apply Partner assembly release gates
 

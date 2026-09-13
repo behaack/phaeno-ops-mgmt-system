@@ -4,6 +4,8 @@ Environment: local POMS at https://localhost:3000 with the configured local API.
 
 ## Current checkpoint
 
+Closeout reconciliation: see the [laboratory UAT closeout ledger](2026-09-12-laboratory-uat-closeout.md) for the current consolidated status, verified evidence and explicit remaining gates. Chronological statements below are historical and are superseded where later evidence says so. Overall acceptance is not closed.
+
 **LAB-14 overall: Partially verified. Mixed partial tray, sequencing handoff, reserve exhaustion, terminal failure, and signed-in correction/repeat variants passed. Wider role, concurrency, resource, and accessibility variants remain open.** Current isolated runtime is port 3014/API 7114 with database phaeno_ops_lab14_uat. Earlier entries below retain their historical checkpoint context; preparation execution is no longer Not run.
 
 ### Step 1 — Tray format
@@ -374,3 +376,205 @@ Created separate TEST-LAB06-REVIEW-CONTRIBUTOR work df5ff720-ee1a-4cd5-bdd3-0413
 Verified William retains active ScientificReviewer and owner-approved ResultReleaseManager. In signed-in 3016 session, refreshed Results & review, opened the new work and Approval dialog. Ready package/file/checksum displayed. Entered a clearly marked synthetic QC summary and clicked Save once. Actual API response displayed the rule that scientific approval requires a reviewer who did not perform receipt/accession/execution/QC/library/batch/sendout work. Selected package and entered summary remained in the form. No role bypass occurred from holding ResultReleaseManager as well.
 
 Before/after database comparison: work ScientificReview/version 1; package ReadyForReview/version 1; zero approvals; exactly the original one contribution event; approval ID and release timestamp null. Cancelled the dialog. Kept the same test tab available at the unapproved contributor case. This closes the bounded signed-in contributor rejection and input-preservation check. Existing independent positive approval is a separate fixture; full specimen pipeline and Customer publication remain untested. No application code change or additional automated test was needed.
+
+## Signed-in package-state and blocking-exception gates — September 12, 2026
+
+Resumed Edge tab 276179556 on https://localhost:3016 as William Agnew (ScientificReviewer and ResultReleaseManager). Existing isolated API remains on 7116, with GovernedPSeqResults, DualControlEnforced and BusinessRoles enabled, using 127.0.0.1:5436/phaeno_ops_lab06_uat. No runtime flags, roles or deployments changed. Checkout HEAD is 52cab319a1f0fd9e33f1c2a45948c809661ea3c0; the retained local API runs tmp/lab14-label-build/bin/PSeq.Operations.Api/debug/PSeq.Operations.Api.dll (built earlier that day), not a newly verified exact-HEAD API build. These results apply to the retained isolated runtime, not the production deployment.
+
+Created four separate TEST ONLY fixtures with audited domain models, using an all-or-nothing transaction and existing-fixture guard under ignored tmp/lab06-gates. Helper build passed with zero warnings/errors. No specimen lineage, actual file bytes, checksum calculation, malware scan or provider event is represented. The incomplete, scanning and failed variants explicitly retain their respective package/artifact states; the blocking variant uses synthetic ready metadata and one Internal blocking exception. Setup required a workspace sandbox escalation; no policy or permissions were changed.
+
+| Variant | Work ID | Signed-in result |
+| --- | --- | --- |
+| TEST-LAB06-GATE-INCOMPLETE | 769ab263-7626-42fe-81b0-96fc57dcfe08 | Uploading package excluded from selector; no complete/clean package message; Save disabled; cancelled. |
+| TEST-LAB06-GATE-SCANNING | 726b65e4-fd85-4d3f-85da-a8d4c61da716 | Scanning package excluded from selector; same explicit message and disabled Save; cancelled. |
+| TEST-LAB06-GATE-UNCLEAN | 846b4e7e-fdeb-4df3-a3b1-1bc850967256 | Failed package excluded from selector; same explicit message and disabled Save; cancelled. |
+| TEST-LAB06-GATE-BLOCKING | 9bb7ab9b-110a-4e42-991a-1d3b856d72ad | Ready package selectable with manifest/file metadata. One Save attempt returned: Resolve all blocking laboratory exceptions before approval. Selected package and synthetic QC summary retained; cancelled. |
+
+Direct PostgreSQL readback before and after all four UI checks matched exactly: each work remains ScientificReview/version 1, each package remains version 1 in its original state, zero approvals and work events, null scientific-approval/release IDs and timestamps. Blocking fixture still has its one open blocking exception. Exceptions tab shows Internal/Open and the retained synthetic description. This is actual signed-in server rejection for the blocking case; the three package states establish UI prevention, not new direct-HTTP bypass coverage.
+
+Preserved prior approved package 9af5b43e-60bf-4700-af20-374dc5d6e140: ReadyForRelease/version 2, original approval 4508b34c-4b69-489e-b369-df4f50004498, one approval/two work events, null release timestamp and user. No Customer publication, external delivery, exception resolution, account change or original/shared/production record write. No application source changes or automated regression suite runs in this checkpoint.
+
+Result: four additional bounded LAB-06 step 2 variants passed; overall LAB-06 remains partial. Preserve all four new fixtures and the existing approval/contributor/preparation records. Browser is left at the blocking fixture's Exceptions tab. Next local setup is unfinished-execution/full-specimen-lineage approval gates on a separate suitable fixture; real file ingestion/scanning, Customer/Trial publication, projection recovery and physical/provider/production acceptance remain open. Do not publish existing metadata-only packages to satisfy those gates.
+
+## Signed-in execution and specimen-outcome approval gates — September 12, 2026
+
+Continued as William Agnew, confirmed in the user menu, on the retained isolated 3016/7116 runtime and 127.0.0.1:5436/phaeno_ops_lab06_uat. Runtime/checkout identity and production limitation remain as recorded in the preceding checkpoint. No runtime flags, roles, application source, Git state, deployments or shared databases were changed.
+
+Prepared six separate TEST ONLY synthetic saved-state fixtures under ignored tmp/lab06-lineage using domain methods, audit stamping, an existing-record guard and a transaction. The first transaction rejected duplicate job names and rolled back; independent readback found zero new matching work orders. Added distinct variant names, rebuilt successfully with zero warnings/errors, then created all six once. Each job has the current run_one_with_failure_fallback tube policy and a synthetic ReadyForReview package. Specimen outcomes are deliberately pre-staged with explicit synthetic notes; receipt remains AwaitingReceipt, with no tubes or real attempt history. These isolate approval guards and are not a scientifically complete lineage, physical workflow or valid positive release fixture. The unfinished execution uses existing TEST ONLY Extracted RNA readiness protocol 3cc6216f-c8ca-4e5c-b213-7c5702cd2bbf, InProgress with empty evidence. No actual processing, file bytes, checksum calculation, malware scan or provider work occurred.
+
+| Variant | Work ID | Saved prerequisite and signed-in result |
+| --- | --- | --- |
+| TEST-LAB06-LINEAGE-EXECUTION | 88bd7ca2-cd2f-4fe4-a07e-2d18ededa554 | Synthetic Succeeded specimen plus InProgress execution. API rejected: Every assigned protocol execution must be completed or abandoned before approval. |
+| TEST-LAB06-LINEAGE-NO-SPECIMENS | ff100cee-c32a-45fa-b00d-75cdbbcfde22 | Policy enabled, no laboratory specimens. API rejected specimen readiness. |
+| TEST-LAB06-LINEAGE-UNRESOLVED | 26cd1269-f657-4492-ba01-51d3e266507f | Succeeded specimen A plus OnHold specimen B; package points to A. API rejected unresolved job-level readiness. |
+| TEST-LAB06-LINEAGE-ALL-FAILED | 98160633-82ff-47db-aebb-6b4cd951197d | Only specimen Failed with synthetic material_exhausted reason. API rejected absence of a successful specimen. |
+| TEST-LAB06-LINEAGE-FAILED-TARGET | 32d7a44d-d6b3-4695-8f2b-316a4e9d7c83 | A Succeeded, B Failed; selected package points to B. API rejected package-specific specimen readiness despite terminal job-level outcomes and one success. |
+| TEST-LAB06-LINEAGE-UNMATCHED-TARGET | d5a82df8-69ef-48be-9d16-39e5f01c6e27 | A Succeeded; package points to submitted sample B, which has no laboratory specimen. API rejected missing package-specific specimen. |
+
+For all five specimen cases, the exact visible server message was: Resolve every affected specimen attempt before review. Only successful specimen outputs may be approved for release. Each form displayed its selected sample/version/file and synthetic manifest; one Save attempt per case reached the actual signed-in API. Every rejection retained the entered TEST ONLY QC summary; all dialogs were cancelled. No mock rejection or forced HTTP request was used.
+
+Before/after direct PostgreSQL query output matched exactly across all six cases and the previous independently approved candidate. Each new work remains ScientificReview/version 1; each package ReadyForReview/version 1; zero approvals/work events and null approval/release fields. All saved specimen states/versions are unchanged, and the unfinished execution remains InProgress/version 1 with empty evidence. Prior package 9af5b43e-60bf-4700-af20-374dc5d6e140 remains ReadyForRelease/version 2 with the original single approval/two events and no release timestamp.
+
+Six bounded LAB-06 step 2/3 negative variants passed; overall LAB-06 remains partial. Preserve all fixtures. Edge tab 276179556 remains on the unmatched-target specimen view for continuation. No automated regression suite ran; helper build and documentation whitespace checks passed. Full positive lineage requires a separately prepared fixture that completes actual application receipt, source selection, attempt/execution/QC and output ingestion before independent approval. Actual file ingestion/scanning, Customer/Trial publication, projection recovery, physical/provider validation and signed-in production acceptance remain open. Do not use these deliberately incomplete synthetic fixtures or existing metadata-only packages for publication.
+
+## Real-byte storage and pipeline HTTP ingestion acceptance — September 12, 2026
+
+Investigated the full positive journey before attempting it. Retained 7116 configuration points object-storage transfer targets to https://127.0.0.1:1/test-only-transfers; this is intentionally unusable for actual remote transfer. No clamscan/clamdscan executable was available and Docker reported no running daemon. A read-only Defender-status query did not provide usable active scanner evidence. Existing completed preparation fixtures remain synthetic setup with incomplete Commercial/provider handoff. Full positive lineage, remote upload and real malware-scanning acceptance are therefore Blocked, not passed by the checks below.
+
+Continued independent engineering-assisted ingestion checks with a new fixture, preserving all existing laboratory journeys. Guarded helper under ignored tmp/lab06-ingestion created TEST-LAB06-FILE-INGESTION, work ec79d627-3001-4a91-802e-d1a65cffd716, commercial order 29cb6280-6a06-4919-a63c-7ae375b01543, using domain constructors/audit stamping in 127.0.0.1:5436/phaeno_ops_lab06_uat only. An explicitly TEST ONLY accepted authorization supplies the controller's reference-validation prerequisite; it is not evidence of actual Customer approval or the commercial handoff. Work remains AwaitingSpecimens with current tube policy, no specimens/executions/events or scientific approval. Do not advance this fixture to scientific review as a shortcut.
+
+Used the application's LocalFileStorage.SaveAsync and OpenReadAsync against the existing isolated temporary order-files storage area, outside the source/public directories. Stored 158 bytes of harmless text explicitly stating it contains no scientific or Customer data and must remain unpublished. Byte-for-byte readback and SHA-256 matched. Independent PowerShell file hash/length confirmed the same physical file: 09D25EF411FEB4D10195F2F6B75C1EB51E7FC5349B3A71D5CCEBA750BED3A688. The exact generated storage key and fixture references are retained in ignored tmp/lab06-ingestion/fixture.json; no actual secret is persisted there. This establishes local storage bytes/checksum, not upload through an object-storage transfer URL.
+
+Built the API/helper from current checkout 52cab319a1f0fd9e33f1c2a45948c809661ea3c0 (after correcting a helper namespace import): zero warnings/errors. Started a separate temporary API on https://localhost:7118 with the same isolated database, outbound destinations blocked/loopback, processing/deletion disabled and a separate search index. Its service secret was generated in process environment, used only for loopback requests, never printed or saved, and removed from the parent after completion. Original 7114/7116 APIs, frontend proxies and identity settings were unchanged. Stopped only the owned 7118 process in finally; no listener remains.
+
+| HTTP case | Result |
+| --- | --- |
+| Missing service secret | 401 pipeline_authentication_failed |
+| Incorrect manifest SHA-256 | 400 result_manifest_checksum_mismatch |
+| Work/order/sample authorization mismatch | 400 result_package_scope_invalid |
+| Register correctly hashed manifest | 200; one new Uploading package |
+| Retry unchanged registration | 200; same package ID, no duplicate |
+| Change manifest under original idempotency key | 409 result_idempotency_conflict |
+| Register zero artifacts against expected count 1 | 400 result_manifest_incomplete |
+| Register the stored file's actual length/hash/key | 200; package moves to Scanning |
+| Repeat artifact registration | 409 result_package_not_uploading |
+| Submit empty scan-result list | 400 result_scan_manifest_incomplete |
+
+All ten actual HTTP checks passed; evidence is in ignored tmp/lab06-ingestion/http-complete.json. No clean-scan verdict was submitted or manufactured. This exercises the real API middleware/controller/database over HTTP, with real local storage bytes and synthetic authorization setup. It does not validate external pipeline ownership, remote transfer, scanner/provider operation or a complete scientific journey.
+
+Retained package: 3c42f211-a219-421d-a7bc-dd07c6dba5e7, Scanning/version 2, one TEST-ONLY-ingestion.txt artifact, 158 bytes, matching SHA-256, artifact Pending, null scan completion/approval/release. Independent PostgreSQL readback confirmed one package for the idempotency key; work AwaitingSpecimens/version 1, zero approvals and events. Prior independently approved candidate 9af5b43e-60bf-4700-af20-374dc5d6e140 remains ReadyForRelease/version 2 and unpublished.
+
+Signed-in William's existing 3016 release workspace opened the package and displayed Scanning, one of one expected files, 158 bytes/Pending, no recorded reviewer/approval/release, and retention beginning only on release. No Release to Customer action was rendered. The existing Withdraw control was not invoked. Edge tab 276179556 is left on this package detail page for continuation. Preserve both the package and stored file; do not re-register artifacts or publish it.
+
+LAB-06/DAT-04 remain partial. Next dependent gates: verified real scanner output for the exact bytes, actual object-storage transfer integration, and a valid connected specimen journey for independent scientific approval. A configured development fixture scanner or synthetic success callback cannot close those gates. No application source changes, deployments, account/role changes, migrations or full automated suite runs. Helper/API build and documentation whitespace check passed.
+
+## Concurrent registration and release-screen keyboard/reflow UAT — September 12, 2026
+
+Continued with SYS-01/SYS-05 variants that do not require the blocked scanner/transfer setup. No application source changes, scanner verdicts, release, withdrawal, role changes or deployment. Exact API test source/build remains the 52cab319a1f0fd9e33f1c2a45948c809661ea3c0 ingestion build. Temporary isolated host 7118 was started and stopped by its owned process ID; existing 7114/7116 services stayed unchanged.
+
+### Open defect UAT-20260912-01 — overlapping registration returns HTTP 500
+
+Severity: Medium (recoverable integration failure; duplicate persistence prevented). Owner: Codex. Status: Open / Fail for clean concurrent-request handling.
+
+Reproduction: use the saved ingestion fixture and valid manifest in tmp/lab06-ingestion/fixture.json. Send two HTTP POST requests concurrently to /api/integrations/pseq-results/packages with identical scope, manifest and idempotency key. The run used test-lab06-concurrent-registration-20260912 at 21:21:58 UTC; preserve that key and package rather than repeating the setup. Both HttpClient requests were dispatched before either response was awaited; no database lock/fault injection was used.
+
+Actual: first request HTTP 200, package 278a61d2-d7a4-4f78-b183-17bcab60360e / Uploading. Overlapping duplicate HTTP 500 internal_error / An unexpected error occurred. API log identifies PostgreSQL 23505 on IX_result_output_packages_idempotency_key. A subsequent identical retry returned HTTP 200 with the original package ID. Database readback confirms exactly one package for the key, package_version 2, entity version 1, no approval/release. Original ingestion package remains Scanning/version 2.
+
+Expected: an overlapping identical request should recover the committed package as an idempotent success, or return a deliberate recoverable conflict, without an internal server error. Persistence protection passed; request-level race recovery failed. Current code reads the existing key before insertion and has no concurrent-insert recovery around SaveChangesAsync in PSeqResultPipelineController.RegisterPackage (backend/app/Features/OrderManagement/Controllers/PSeqResultPackagesController.cs, lines 62–130). Recommended correction: narrowly handle the relevant unique conflict, reread and revalidate the persisted request scope/manifest, and preserve true changed-request conflicts. Add real PostgreSQL overlapping-request regression coverage and rerun this HTTP variant on separate designated data. No fix has been applied in this UAT-only checkpoint.
+
+Evidence: ignored tmp/lab06-ingestion/concurrent-complete.json, run-concurrent.ps1 and race-api.stdout.log. Test service secret stayed in process environment and was removed afterward. Never paste raw environment/secret values into reports.
+
+### Open defect UAT-20260912-02 — page minimum width overflows narrow viewport
+
+Severity: Low (narrow reflow). Owner: Codex. Status: Open / Fail at the smallest measured viewport.
+
+On William's 3016 package detail, 390 CSS-pixel innerWidth produced clientWidth=373 and scrollWidth=373: no horizontal overflow. At innerWidth=320 with the Windows scrollbar visible, clientWidth=303 but body width/scrollWidth=320. Computed body min-width is 320px, matching frontend/src/styles.css line 137. Screenshot confirms the card/right edge reaches past the usable viewport. This is 17 pixels of overflow, not a legitimate two-dimensional scientific table. Measurements were taken after menu/modal exit settled, since scroll locking temporarily removes the scrollbar.
+
+Expected: page content should shrink to the available viewport, including a visible scrollbar, while preserving readable wrapping and usable controls. Recommended correction: remove or adapt the global body minimum-width constraint and recheck representative lists/forms/detail pages at the same measured width, 390px and desktop. Browser zoom was preserved: the viewport capability's physical sizes were adjusted to obtain measured CSS widths rather than assuming requested pixels equalled the layout width. The temporary viewport override was reset after verification. No style fix has been applied in this checkpoint.
+
+### Passed bounded keyboard and responsive checks
+
+At 390px, the long ingestion job/sample heading and commercial/review links wrap without page overflow. Narrow layouts show one primary navigation surface, in the user menu. Enter opens that menu, Escape closes it and settled focus returns to Open user menu.
+
+At 320px, opened the existing independently approved metadata-only package 9af5b43e-60bf-4700-af20-374dc5d6e140 without altering it. Enter on Release to Customer opens its confirmation; dialog geometry fits the viewport (approximately x=18–302). Initial focus is Cancel; Tab reaches Confirm; Shift+Tab returns to Cancel. Escape closes the dialog and settled focus returns to Release to Customer. Confirm was never activated. The dialog's closing animation briefly exposed its fallback reissue title in the DOM snapshot, then removed the dialog; no reissue action occurred. This transient observation is not recorded as a successful reissue or a persistent unexpected dialog.
+
+Post-check PostgreSQL readback: approved candidate remains ReadyForRelease/version 2 with its original approval and null release timestamp; real-byte package remains Scanning/version 2; concurrent-registration package remains Uploading/version 1. No package was approved, released or withdrawn in this checkpoint. Returned Edge tab 276179556 to the real-byte pending-scan package and restored viewport sizing.
+
+SYS-01/SYS-05 and the overall laboratory/data UAT remain partial. Next action is correction and focused retest of UAT-20260912-01 and UAT-20260912-02. Scanner/transfer/full-positive-lineage gates remain separately Blocked. No automated regression suite ran; only the described actual HTTP/browser checks and documentation whitespace check were executed.
+
+## UAT defect corrections and focused retest — September 12, 2026
+
+Owner continuation authorized correction and focused retest. UAT-20260912-01 and UAT-20260912-02 are now **Fixed / Retested locally**; this supersedes their historical Open statuses above. No Git mutation, deployment, shared-database migration or package publication.
+
+### Concurrent registration
+
+PSeqResultPipelineController now recovers an overlapping PostgreSQL unique insert conflict by detaching the failed package, reading the committed idempotency key and validating the complete replay scope, manifest hash, correction reference and expected artifact count. Matching requests return the existing package. Changed requests retain result_idempotency_conflict; competing version allocation without a matching key returns deliberate result_package_registration_conflict with retry guidance.
+
+Added backend/test/PSeqResultRegistrationConcurrencyPostgresTests.cs. Its independent DbContexts and adapter barrier force both requests beyond the initial lookup/version count before insertion. Cases cover identical requests, changed manifest overlap, changed replay fields and different-key version allocation with successful retry. Persistence counts, detached failed inserts, unique versions and absence of approval/release are asserted. The test creates/migrates only its own random disposable database on guarded local PostgreSQL, then drops it in finally. Final focused run: Passed 1, Failed 0, Skipped 0; rebuilt API/test project without warnings. No disposable pseq_registration_test_* databases remain. Command: dotnet test backend/test/PSeq.Operations.Test.csproj --artifacts-path tmp/uat-defect-fix-build --no-restore --filter FullyQualifiedName~PSeqResultRegistrationConcurrencyPostgresTests --nologo --logger "console;verbosity=minimal", with PSEQ_OPERATIONS_REFERENCE_CONNECTION pointing to the owned local 5436 cluster.
+
+Original HTTP race rerun on temporary fixed API 7118 at 22:02:11 UTC: two concurrent requests returned HTTP 200, both package e0359eec-4071-4ae1-814b-20477e21a735; unchanged retry returned HTTP 200/same ID. Key test-lab06-concurrent-fixed-20260912 has exactly one database row, Uploading/entity version 1/package version 3, no approval/release. Evidence: ignored tmp/lab06-ingestion/concurrent-fixed.json and run-concurrent-fixed.ps1. Service secret existed only in process environment. Owned 7118 process stopped.
+
+Retained UAT launcher tmp/lab06-review/start-api.ps1 now runs tmp/uat-defect-fix-build/bin/PSeq.Operations.Api/debug/PSeq.Operations.Api.dll. Verified the exact 7116 dotnet PID and launcher before replacing only that owned process. New 7116 PID 44884 reports /api/health HTTP 200/healthy; original LAB-14 API 7114 PID 41448 is unchanged. Existing isolated DB/provider/role flags remain in place. No configuration or secret values copied into tracked files.
+
+### Narrow reflow and preserved state
+
+Removed only body min-width: 320px from frontend/src/styles.css. Live signed-in pending package detail at measured innerWidth 320 now has clientWidth/scrollWidth 303/303, computed minimum 0 and a visible complete right edge. ReadyForRelease queue fits 320/320 when no vertical scrollbar is needed. Approved candidate confirmation fits approximately x=20–300, initially focuses Cancel and closes with Escape; settled focus returns to Release to Customer. Confirm was never submitted. Settled detail checks at innerWidth 390 and 1440 show clientWidth/scrollWidth 373/373 and 1423/1423. Existing browser zoom preserved and viewport override reset after testing. These are bounded browser checks, not complete WCAG certification or a full frontend suite.
+
+Independent post-check PostgreSQL readback: original approved package 9af5b43e-60bf-4700-af20-374dc5d6e140 remains ReadyForRelease/version 2 with approval 4508b34c-4b69-489e-b369-df4f50004498; real-byte package 3c42f211-a219-421d-a7bc-dd07c6dba5e7 remains Scanning/version 2; original failed-race fixture 278a61d2-d7a4-4f78-b183-17bcab60360e remains Uploading/version 1. All four checked packages retain null release fields. Browser returned to the saved pending-scan package for continuation.
+
+Owning plan and living backend/frontend/E2E plans updated. Reviewed Phaeno order-billing-payment-release guide: existing workflow remains accurate, so no guide text change is needed. Focused backend compilation/test, live HTTP/browser checks and documentation whitespace verification are the scope of this correction. Full scientific lineage, actual scanner/transfer and Customer publication acceptance remain Blocked; overall laboratory/data UAT remains partial. Preserve all fixtures for the next supported gate.
+
+## Real scanner callback and scientific-access boundary — September 12, 2026
+
+Continued from the preserved ingestion package after discovering newer scanner setup recorded in the separate Finance UAT run. Current local evidence supersedes the earlier claim that no real scanner is available: existing Docker container phaeno-finance-uat-scanner is healthy on loopback 127.0.0.1:3316; its health script passes and clamdscan reports ClamAV 1.4.6/signature database 28121. No scanner installation or configuration change in this checkpoint.
+
+Read the original stored artifact for package 3c42f211-a219-421d-a7bc-dd07c6dba5e7 and independently checked its 158-byte length and SHA-256 09D25EF411FEB4D10195F2F6B75C1EB51E7FC5349B3A71D5CCEBA750BED3A688 against the saved manifest. Sent those exact bytes using ClamAV INSTREAM on loopback. At 2026-09-13 02:39:29 UTC (September 12 locally), the actual daemon returned stream: OK. Evidence is saved in ignored tmp/lab06-ingestion/retained-real-scan.json; scan-retained-bytes.ps1 performs the byte verification and scan.
+
+Guarded callback helper checked the package was still Scanning/version 2, unapproved/unreleased, and rehashed the stored file before submitting the actual clean verdict. A temporary owned API 7118 used the prior verified UAT fix build, SHA-256 0AFE6E735A5020605D8DE6AC593838EBCBC589E70FF2E7AFB0591ADCFE2D7F27. Checkout HEAD remains 52cab319a1f0fd9e33f1c2a45948c809661ea3c0 with additional staged/unstaged work; this build is identified separately from the newer UI/runtime and is not claimed to match all current changes. Existing 7114/7116 services were not restarted or reconfigured.
+
+| Check | Actual result |
+| --- | --- |
+| Real scanner on retained exact bytes | stream: OK; length and checksum match |
+| Record actual verdict through POST /api/integrations/pseq-results/packages/{id}/scan-result | HTTP 200; same package becomes ReadyForReview |
+| Repeat identical scan callback | HTTP 409 result_package_not_scanning; no second transition |
+| Independent persisted readback | Package ReadyForReview/version 3; artifact Clean/version 2 with scan-completion timestamp; no approval/release |
+| Signed-in package detail | Ready For Review, one Clean 158-byte file, no recorded reviewer/approval/release; no publication control |
+| Follow View scientific review in current session | Lab work order could not be loaded; assigned laboratory role required |
+
+This turn's existing Edge session identifies Bill Haack, superseding the earlier William-session observation. No sign-in or role changes were made. The role denial is a bounded UI access check; it does not establish reviewer acceptance. Returned tab 276179556 to the scanned package and preserved it for handoff.
+
+Independent database checks confirm work ec79d627-3001-4a91-802e-d1a65cffd716 remains AwaitingSpecimens/version 1, with zero specimens and zero scientific approvals. The prior metadata-only approved package 9af5b43e-60bf-4700-af20-374dc5d6e140 remains ReadyForRelease/version 2 with its original approval and null release fields. Clean bytes do not supply missing scientific lineage; do not approve or publish either fixture as a shortcut.
+
+Evidence: ignored tmp/lab06-ingestion/retained-scan-http.json, submit-retained-scan.ps1 and scan-api stdout/stderr logs. The callback script refuses to rerun after saving its checkpoint; inspect saved state rather than repeat mutations. Service secret existed only in process environment, was removed afterward, and owned 7118 stopped in finally with no remaining listener. Local scanner and retained UAT services remain available.
+
+The local real-byte clean-scan/callback gate now passes. External object-storage transfer, actual external pipeline/scanner handoff, a complete specimen/execution journey, independent scientific approval and Customer publication remain unverified/Blocked. LAB-06/DAT-04 remain partial. No application code changes, automated suite, Git mutations, deployment, shared migration, role assignment, approval or release in this checkpoint. Documentation whitespace check passed.
+
+## Multi-artifact scan validation and checksum rejection — September 12, 2026
+
+Continued LAB-06/SYS-01 pipeline checks on a separate negative package, preserving the existing clean ReadyForReview package and independent approval fixture. No application source edits, Git operations, deployment, role changes, shared migrations or full automated suite.
+
+Engineering-assisted setup reused the saved synthetic order/work/sample references from tmp/lab06-ingestion/fixture.json. Two new 158-byte harmless copies of the retained test sentence were written with CreateNew into unique keys under the isolated order-files storage root, outside source/public directories. The helper checked resolved path containment and independently rehashed both copies. This is direct test-fixture storage setup, not an object-storage upload or new proof of the application's managed-save path. Each exact copy was sent to the existing loopback ClamAV INSTREAM service and returned stream: OK. The actual SHA-256 of both is 09D25EF411FEB4D10195F2F6B75C1EB51E7FC5349B3A71D5CCEBA750BED3A688.
+
+Registered a manifest for two artifacts. The first declared the correct hash; the second deliberately declared 64 A characters, consistently in its manifest and artifact metadata. The manifest's own SHA-256 was valid. This fixture isolates actual-byte checksum validation from malware scanning: clean malware results cannot make altered bytes acceptable.
+
+Retained package d14354fb-36ef-4801-8184-adf6cde706e2, key test-lab06-checksum-negative-20260912, sample package version 4. Registration and artifact registration both returned HTTP 200, leaving Scanning/entity version 2 with two Pending/version 1 artifacts before the negative cases.
+
+| Check | Actual result |
+| --- | --- |
+| Callback has correct count but one unknown artifact ID | HTTP 400 result_scan_manifest_incomplete; package/artifact state, versions and scan timestamps equal the before snapshot |
+| Callback repeats one artifact ID and omits the other | HTTP 400 result_scan_manifest_incomplete; same unchanged database snapshot |
+| Callback supplies both actual clean scan results and actual byte hashes | HTTP 200 processes the verdict; package becomes Failed/version 3 with artifact_checksum_mismatch |
+| Repeat callback for the failed package | HTTP 409 result_package_not_scanning; failed-state snapshot unchanged |
+
+First artifact c40062d2-fdd1-4df1-8e2f-f26d7123e425 is Clean/version 2; second 37c0a678-4482-441a-99f8-86eb5b2892af is Rejected/version 2. Both completion timestamps are approximately 2026-09-13 03:05:52 UTC (September 12 locally). The entire package remains unapproved/unreleased despite one clean file. Exactly one package exists for the new key.
+
+Signed-in UI 3016 displays version 4, Failed, Package needs attention, and One or more artifact checksums did not match the manifest. It lists both files with correct 158-byte sizes and Clean/Rejected states, with no recorded reviewer, approval or release. No publication control appears for this current session. This verifies failure presentation; it does not substitute for a ScientificReviewer attempting approval of the failed package.
+
+Independent final database check: original 3c42f211-a219-421d-a7bc-dd07c6dba5e7 remains ReadyForReview/version 3; prior 9af5b43e-60bf-4700-af20-374dc5d6e140 remains ReadyForRelease/version 2 with its original approval. Both retain null release timestamps. Returned the browser to the original clean package for continuation; preserve the failed version and its two test objects rather than repairing them in place.
+
+Evidence: ignored tmp/lab06-ingestion/checksum-negative.json includes scanner verdicts, actual/declared hashes, unique storage keys, each HTTP outcome and before/after database snapshots. run-checksum-negative.ps1 refuses to rerun once its checkpoint exists. Temporary owned 7118 used the same previously identified UAT fix build; its secret remained in process environment, was removed in finally, and the owned host stopped. Existing 7114/7116 and scanner configuration were unchanged. Documentation whitespace check passed.
+
+Four bounded negative checks pass; overall LAB-06/DAT-04/SYS-01 remain partial. Actual external transfer/provider handoff, a supported complete specimen/execution journey, reviewer acceptance and publication remain separate gates.
+
+## Phaeno help search and recovery — September 12, 2026
+
+Continued WEB-06/SYS-05 with the existing signed-in Phaeno session on UI 3016. This independent help/navigation slice does not advance scientific fixtures.
+
+Initial search for scientific approval displayed the explicit documentation-version mismatch warning, not an empty result set. Refresh page preserved the query and warning; Browse all guides remained usable. The generated UI/source corpus is 9e7fac7318fdf1c47b6aeaebbe4cbe0194ebc14e7e8d9a6c5ddbc56953b7ccb6 (56 guides), while the prior build output corpus is eb12cf6e1e64a5062e559e14d240aa2b952cc99f103d034153faa24eb139c8f1. The running process had started before the current source corpus was generated. DocumentationSearchService resolves its manifest against the content root and keeps the loaded corpus until rebuild/restart.
+
+Verified exact owned API 7116 PID 46072 and its launcher parent 21292 before restarting only that process using unchanged tmp/finance-scanner-uat/start-scanned-api.ps1. Same finance-upload-fix-build binary, isolated database, ClamAV settings and disabled outbound/retention processing configuration. New API PID 53688 reports HTTP 200/healthy; search now succeeds against the current corpus. No build, generated-document edit, application code change, role assignment or other environment restart. This is local corpus reload recovery, not a production deployment or source/API release-alignment claim.
+
+| Bounded check | Actual result |
+| --- | --- |
+| Phaeno help entry from package footer | POMS shell and Phaeno documentation, with internal guide navigation |
+| Search scientific approval after corpus reload | 17 guides found; Scientific approval and release readiness first; page 1 of 2 |
+| Open top result using Enter | Correct guide and section route; Laboratory operations topic expands automatically |
+| Expand Order operations using Enter | Only Order operations remains expanded; Laboratory topic collapses |
+| Browser Back from guide | scientific approval query and 17-result page 1 restored |
+| Search zzqunmatchedlabuat20260912 | 0 guides found and explicit No guides matched guidance; no service-error alert |
+| Measured 390px viewport | clientWidth/scrollWidth 390/390; one toolbar user-menu navigation surface; screenshot inspected |
+| Open mobile documentation rail with Enter; close with Escape | Non-modal rail opens/closes, zero dialogs; expanded=false and focus returns to its opening control |
+
+Guide text visibly preserves the scientific/publication boundary and complete-lineage requirement. The current Phaeno user can read the guide without gaining a laboratory role. This checkpoint does not claim external-audience isolation, external locale coverage, unavailable-network recovery, pagination, full WCAG acceptance or scientific approval.
+
+Temporary viewport override reset; browser returned to retained clean package 3c42f211-a219-421d-a7bc-dd07c6dba5e7 for handoff. Independent database readback: it remains ReadyForReview/version 3, approved candidate 9af5b43e-60bf-4700-af20-374dc5d6e140 remains ReadyForRelease/version 2, and checksum-negative package d14354fb-36ef-4801-8184-adf6cde706e2 remains Failed/version 3; all release timestamps null. Local restart logs are retained in ignored tmp/finance-scanner-uat/docs-refresh-api.stdout.log and docs-refresh-api.stderr.log. No business-record mutations, Git operations, shared migrations, publication or automated suite in this checkpoint. Documentation whitespace check passed. WEB-06/SYS-05 remain partial beyond the listed cases.

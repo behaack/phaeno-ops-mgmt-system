@@ -1,5 +1,9 @@
 # Library preparation batches and connected workflow
 
+September 12 closeout: forced simultaneous creation/name-collision and retry identity now have passing PostgreSQL coverage. Both connections are observed waiting at the allocation lock before release; distinct creates retain unique names and retries retain identity. Connected preparation/scientific-gate regressions also pass. No product behavior change. The [UAT closeout ledger](../testing/runs/2026-09-12-laboratory-uat-closeout.md) separates completed software evidence from remaining manual, complete-lineage and provider prerequisites; overall acceptance remains open.
+
+Later closeout correction UAT-20260912-07: direct preparation links without the existing Lab capability show permission guidance instead of endless disabled-query loading; unresolved/unauthorized sessions cannot render cached staff details or request related resources/tubes. No backend role/policy change. Four focused regressions and the existing Customer's signed-in 3014 denial/recovery check pass. Phaeno user guides remain accurate about role requirements.
+
 Status: implemented and focused local verification complete, September 11, 2026. Owner/physical acceptance and production release remain pending. Preparation batches, tray configuration, scoped execution, outputs, QC reuse and sequencing handoff are implemented locally. Verification details and remaining physical/production gates are recorded below.
 
 ## Outcome and users

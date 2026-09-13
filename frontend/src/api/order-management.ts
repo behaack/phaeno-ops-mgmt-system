@@ -1514,6 +1514,11 @@ export function isOrderConcurrencyError(error: unknown) {
   );
 }
 
+export function isOrderFeatureDisabled(error: unknown, code: 'attention_operations_disabled' | 'governed_results_disabled') {
+  return axios.isAxiosError<ApiEnvelope<unknown>>(error) &&
+    error.response?.status === 404 && error.response.data.error?.code === code;
+}
+
 function saveBlob(blob: Blob, fileName: string) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");

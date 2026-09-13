@@ -393,7 +393,7 @@ export async function recordPaymentReceiptWithEvidence(input: Omit<Parameters<ty
   const data = new FormData()
   data.append('payload', JSON.stringify({ ...input, evidenceStorageKey: '' }))
   data.append('file', file)
-  return unwrap((await api.post<ApiEnvelope<PaymentReceipt>>('/platform/accounts-receivable/receipts/with-evidence', data, { headers: { 'Idempotency-Key': idempotencyKey } })).data)
+  return unwrap((await api.post<ApiEnvelope<PaymentReceipt>>('/platform/accounts-receivable/receipts/with-evidence', data, { headers: { 'Content-Type': 'multipart/form-data', 'Idempotency-Key': idempotencyKey } })).data)
 }
 
 export async function downloadPaymentEvidence(receipt: PaymentReceipt) {
@@ -401,7 +401,8 @@ export async function downloadPaymentEvidence(receipt: PaymentReceipt) {
   const url = URL.createObjectURL(response.data)
   const link = document.createElement('a')
   link.href = url
-  link.download = `${receipt.receiptNumber}-evidence`
+  const extension = String(response.headers['content-disposition'] ?? '').match(/filename="?[^";]*\.(pdf|png|jpe?g|txt|json)"?(?:;|$)/i)?.[1]?.toLowerCase() ?? 'bin'
+  link.download = `${receipt.receiptNumber}-evidence.${extension}`
   link.click()
   URL.revokeObjectURL(url)
 }

@@ -55,7 +55,8 @@ vi.mock('@tanstack/react-router', () => ({
 
 vi.mock('#/api/pseq-order-to-cash', () => mocks)
 
-vi.mock('#/api/order-management', () => ({
+vi.mock('#/api/order-management', async (importOriginal) => ({
+  ...await importOriginal<typeof import('#/api/order-management')>(),
   getOrderConfiguration: mocks.getOrderConfiguration,
   getOrderErrorMessage: (_error: unknown, fallback: string) => fallback,
   isOrderConcurrencyError: (error: unknown) => Boolean(error && typeof error === 'object' && 'code' in error && error.code === 'concurrency_conflict'),
@@ -74,6 +75,14 @@ describe('PSeq order-to-cash panels', () => {
     mocks.listReconciliations.mockResolvedValue([])
     mocks.listPaymentAllocations.mockResolvedValue([])
     mocks.getReconciliation.mockResolvedValue({ batch, items: [], changes: [], receipts: [] })
+  })
+
+  it.each([false, true])('offers the invoice commercial link only with commercial access (%s)', async canViewCommercialOrder => {
+    mocks.listInvoices.mockResolvedValue([invoice])
+    renderPanel(<FinanceOperationsPanel apiEnabled canBill canManageCash={false} canReconcile={false} canViewCommercialOrder={canViewCommercialOrder} record={{ kind: 'invoice', id: invoice.id }} />)
+    await screen.findByText(invoice.invoiceNumber)
+    expect(Boolean(screen.queryByRole('link', { name: 'Open order' }))).toBe(canViewCommercialOrder)
+    expect(screen.getByRole('button', { name: 'Record adjustment' })).toBeTruthy()
   })
 
   it('filters recoverable retention notices in the Operations queue', async () => {

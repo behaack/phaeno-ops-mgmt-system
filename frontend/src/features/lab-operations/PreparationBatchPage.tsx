@@ -25,14 +25,15 @@ function evidenceOrigin(data: PreparationDetail, recordId: string | undefined, m
 
 export function PreparationBatchPage({ batchId }: { batchId: string }) {
   const { session, authProvider } = usePhaenoSession()
-  const query = useQuery({ queryKey: ['lab-preparation', batchId], queryFn: () => getPreparation(batchId), enabled: Boolean(session?.capabilities.canManageLabOperations) && authProvider !== 'mock' })
-  const resources = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: Boolean(query.data) })
+  const canAccess = Boolean(session?.capabilities.canManageLabOperations)
+  const query = useQuery({ queryKey: ['lab-preparation', batchId], queryFn: () => getPreparation(batchId), enabled: canAccess && authProvider !== 'mock' })
+  const resources = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: canAccess && Boolean(query.data) })
   const client = useQueryClient()
   const [action, setAction] = useState<Action | null>(null)
   const [stepAction, setStepAction] = useState<StepAction | null>(null)
   const [search, setSearch] = useState('')
   const request = useRef({ hash: '', id: '', version: 0 })
-  const tubes = useQuery({ queryKey: ['lab-preparation-tubes', batchId, search], queryFn: () => findPreparationTubes(batchId, search), enabled: query.data?.status === 'Draft' && query.data.canOperate })
+  const tubes = useQuery({ queryKey: ['lab-preparation-tubes', batchId, search], queryFn: () => findPreparationTubes(batchId, search), enabled: canAccess && query.data?.status === 'Draft' && query.data.canOperate })
   const save = useMutation({ mutationFn: (input: Omit<PreparationCommand, 'requestId' | 'version'>) => {
     const hash = JSON.stringify(input)
     if (request.current.hash !== hash) request.current = { hash, id: crypto.randomUUID(), version: query.data!.version }
@@ -52,6 +53,8 @@ export function PreparationBatchPage({ batchId }: { batchId: string }) {
     onSuccess: async () => { await Promise.all([client.invalidateQueries({ queryKey: ['lab-preparation', batchId] }), client.invalidateQueries({ queryKey: ['lab-operations'] })]); setAction(null) },
     onError: async () => { await client.invalidateQueries({ queryKey: ['lab-preparation', batchId] }) } })
   const open = (target: Action) => { save.reset(); handoff.reset(); setAction(target) }
+  if (!session) return <main className="page-wrap p-6"><p role="status">Checking laboratory access…</p></main>
+  if (!canAccess) return <main className="page-wrap space-y-4 p-6"><h1 className="text-2xl font-semibold">Preparation unavailable</h1><p role="alert">An assigned Phaeno laboratory role is required.</p><Link to="/" className="underline">Back to dashboard</Link></main>
   if (!query.data) return <main className="page-wrap space-y-4 p-6"><Link to="/lab-operations" search={{ section: 'work' }} className="underline">Library prep</Link><p role={query.isError ? 'alert' : 'status'}>{query.isError ? getLabOperationsError(query.error, 'Batch could not be loaded.') : 'Loading preparation batch…'}</p><Button variant="outline" onClick={() => void query.refetch()}>Reload</Button></main>
   const data = query.data
   const participants = data.members.filter(m => !['Failed', 'Succeeded', 'Cancelled'].includes(m.state))

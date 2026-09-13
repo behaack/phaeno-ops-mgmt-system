@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Npgsql;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Application;
@@ -78,13 +79,7 @@ public sealed class PSeqResultPipelineController(
         var existing = await dbContext.ResultOutputPackages.AsNoTracking()
             .SingleOrDefaultAsync(item => item.IdempotencyKey == request.IdempotencyKey, cancellationToken);
         if (existing is not null)
-        {
-            if (existing.ManifestSha256 != calculatedHash || existing.OrganizationId != request.OrganizationId
-                || existing.LabServiceOrderId != request.LabServiceOrderId || existing.LabWorkOrderId != request.LabWorkOrderId
-                || existing.LabSampleId != request.LabSampleId || existing.TrialProjectId != request.TrialProjectId || existing.TrialSampleId != request.TrialSampleId)
-                throw Conflict("result_idempotency_conflict", "The idempotency key was already used with a different manifest.");
-            return new ResultPackageRegistrationDto(await MapAsync(existing, cancellationToken), []);
-        }
+            return await ReplayRegistrationAsync(existing, request, calculatedHash, cancellationToken);
 
         var validReferences = await dbContext.LabServiceOrders.AsNoTracking().AnyAsync(order =>
             order.Id == request.LabServiceOrderId && order.OrganizationId == request.OrganizationId
@@ -127,9 +122,37 @@ public sealed class PSeqResultPipelineController(
             transfer.ProviderKey, transfer.PipelineSubmissionId, request.IdempotencyKey,
             normalizedManifest, calculatedHash, request.ExpectedArtifactCount, request.TrialProjectId, request.TrialSampleId);
         dbContext.ResultOutputPackages.Add(package);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException error) when (error.InnerException is PostgresException
+            { SqlState: PostgresErrorCodes.UniqueViolation, TableName: "result_output_packages" })
+        {
+            // Another connection may commit after the initial lookup or version count.
+            // Discard only our failed insert before reading the committed winner.
+            dbContext.Entry(package).State = EntityState.Detached;
+            existing = await dbContext.ResultOutputPackages.AsNoTracking()
+                .SingleOrDefaultAsync(item => item.IdempotencyKey == request.IdempotencyKey, cancellationToken);
+            if (existing is not null)
+                return await ReplayRegistrationAsync(existing, request, calculatedHash, cancellationToken);
+            throw Conflict("result_package_registration_conflict",
+                "Another result package was registered at the same time. Retry this request without changing its idempotency key.");
+        }
         return new ResultPackageRegistrationDto(await MapAsync(package, cancellationToken),
             transfer.ObjectStorageUploadTargets);
+    }
+
+    private async Task<ResultPackageRegistrationDto> ReplayRegistrationAsync(ResultOutputPackage existing,
+        RegisterResultPackageRequest request, string calculatedHash, CancellationToken cancellationToken)
+    {
+        if (existing.ManifestSha256 != calculatedHash || existing.OrganizationId != request.OrganizationId
+            || existing.LabServiceOrderId != request.LabServiceOrderId || existing.LabWorkOrderId != request.LabWorkOrderId
+            || existing.LabSampleId != request.LabSampleId || existing.TrialProjectId != request.TrialProjectId
+            || existing.TrialSampleId != request.TrialSampleId || existing.CorrectsPackageId != request.CorrectsPackageId
+            || existing.ExpectedArtifactCount != request.ExpectedArtifactCount)
+            throw Conflict("result_idempotency_conflict", "The idempotency key was already used with a different manifest.");
+        return new ResultPackageRegistrationDto(await MapAsync(existing, cancellationToken), []);
     }
 
     [HttpPost("packages/{packageId:guid}/artifacts")]

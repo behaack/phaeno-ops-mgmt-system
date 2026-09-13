@@ -1,6 +1,34 @@
 # 07 — Finance
 
+## Billing approval and completion handoff - September 12, 2026
+
+Actual signed-in FIN-01 billing validation, approval, approval reset after a terms change, reapproval and reload passed on the existing marked Customer A. Saved profile is version 4/configuration 3, Net 45 with a synthetic 10% tax rate. All invoice readbacks stayed identical; receipt totals remain 8/$108 unapplied. Settled desktop/390px billing screenshots inspected. FIN-01 remains partial: neither saved InProgress Job has terminal Commercial samples, governed release does not advance those statuses, the current Job UI has no completion action, and this isolated runtime lacks CommercialOperator. No completion, invoice issuance, PDF, role change or production action was performed. [Saved checkpoint and blockers](runs/2026-09-12-lab-production-verification.md#billing-approval-and-completion-handoff---september-12-2026). Preserve the approved Customer profile; do not replay setup.
+
 Use [shared prerequisites](TEST-DATA.md) and isolated financial fixtures. These cases test PSeq native receivables. Partner Kit accounting remains attached to its original shipment context; no Partner Finance expansion is assumed.
+
+## Latest isolated run — September 12, 2026
+
+Real ClamAV is now active only for the isolated LAB-06 API. The integration already existed; the earlier missing-integration diagnosis traced only the DevelopmentFixture implementation and was incomplete. Real clean/EICAR/encrypted/oversize/health checks and both injected storage/scanner adapter checks passed. Signed-in Cash upload rejected EICAR with no receipt, retained entries, then saved one $1 receipt after a clean replacement. Exact 83-byte download passed; Billing-only access returned 403 and anonymous access 401. A discovered client filename defect was fixed locally: supported server extensions are retained for receipt evidence, including JSON imports. Nine scanner tests, ten focused frontend tests, TypeScript, scoped lint and documentation checks passed. Existing balances/history remain intact; there are 14 invoices/$645 outstanding and eight receipts/$108 unapplied. [Latest real-scanner checkpoint](runs/2026-09-12-lab-production-verification.md#real-scanner-and-receipt-evidence--september-12-2026). Preserve the saved $1 receipt and its evidence; do not rerun the create flow. This confirms the text-evidence path, not every permitted format or production acceptance.
+
+### Earlier role-separation checkpoint
+
+Owner approved one additional development-only CashOperator + CashReconciler login. Actual signed-in UAT passed second-operator import ownership rejection (preview and direct confirm), with retained input and no receipt created. The combined-role user then imported a separate $7 receipt; a different Cash Operator created/submitted its reconciliation. Approval by the receipt contributor returned 409 and left the batch Submitted/version 2 with no approval/report. This isolates contribution exclusion from creator/submitter exclusion. Existing approved reconciliation and all previous receipt readbacks remained identical. Outstanding invoices remain $645; seven receipts now have $107 unapplied. No product defect, code, production role, provider policy, migration, Git or deployment change. [Role-separation checkpoint](runs/2026-09-12-lab-production-verification.md#finance-role-separation--september-12-2026). Preserve the unconfirmed $3 preview and Submitted $7 batch as evidence; do not rerun mutations.
+
+### Earlier aging checkpoint
+
+Actual signed-in Billing verification passed all eight aging boundaries (0, 1, 30, 31, 60, 61, 90 and 91 days) using separately marked isolated fixtures. At UTC date 2026-09-13, bucket totals are $391 current, $6 at 1-30 days, $24 at 31-60, $96 at 61-90 and $128 over 90: $645 outstanding. Aging CSV has 12 open rows; all-invoice CSV has 14 rows, including Paid and WrittenOff. Customer filtering leaves the labeled all-Customer aging/export scope unchanged. Existing receipts, allocations, adjustments and reconciliations were preserved; unapplied cash remains $100. Desktop and fresh 390px page screenshots inspected. This is synthetic arithmetic/export evidence, not legitimate issuance/PDF or production acceptance. [Latest aging checkpoint](runs/2026-09-12-lab-production-verification.md#finance-aging-boundaries--september-12-2026). Do not rerun seed helpers or earlier mutations.
+
+### Earlier exceptions checkpoint
+
+The [exceptions and upload checkpoint](runs/2026-09-12-lab-production-verification.md#finance-exceptions-and-upload-correction--september-12-2026) records the preceding saved state: backend duplicate/scope/amount/authority negatives, two-session recovery, split allocations, cancellation, section recovery and unavailable-scanner rejection passed. Receipt multipart and validation-envelope defects were fixed locally. MAIN is now $100 outstanding; CREDIT $75; total outstanding $390 and unapplied cash $100. New VARIANTS receipts and cancelled draft are retained. The original approved reconciliation remains unchanged. Do not replay earlier mutations. At that checkpoint, positive scanning/real issuance, remaining identity cases and overdue cases were open; overdue coverage is recorded above.
+
+### Earlier closeout and corrections checkpoint
+
+The [closeout and corrections continuation](runs/2026-09-12-lab-production-verification.md#finance-closeout-and-corrections--september-12-2026) supersedes the saved balances below: both main allocations and the $250 receipt are now reversed; the main invoice is $220 outstanding. Credit/debit/write-off fixtures are $90/$115/$0. Readable closeout/text download, remaining receipt reversal, basic adjustments, current aging and all-Customer exports passed. Preserve those records; do not rerun their mutations. Remaining negative/concurrency/ownership/overdue/scanner/full-issuance cases are recorded in that checkpoint.
+
+### Earlier populated checkpoint
+
+The [populated Finance checkpoint](runs/2026-09-12-lab-production-verification.md#populated-finance-acceptance--september-12-2026) records real Billing/Cash/Reconciler acceptance of invoice detail/filter return, CSV validation/confirmation/duplicate prevention, $100 + $120 allocation, the $120 reversal, and separate $75 reconciliation approval. Preserve the main fixture's $120 invoice balance and $150 unapplied cash for remaining FIN-03 steps. Synthetic invoices do not establish FIN-01 issuance/PDF. Full cases remain partial; exact remaining coverage and raw-JSON closeout presentation are recorded in the checkpoint.
 
 ## FIN-01 — Approved billing, frozen invoice and scientific independence
 
@@ -8,7 +36,7 @@ Use [shared prerequisites](TEST-DATA.md) and isolated financial fixtures. These 
 
 | Step | Action | Expected result |
 | --- | --- | --- |
-| 1 | In Finance → Customer billing complete billing contact/address, terms and tax determination; obtain required Finance approval. | Unapproved/incomplete profile cannot support final standard commitment or invoice issuance. |
+| 1 | In Finance → Customer billing complete billing contact/address, terms and tax determination; obtain required Finance approval. | Incomplete fields and missing approval notes are rejected; billing changes clear approval. An approved profile supports frozen tax/terms. Explicitly pre-tax quotes may precede approval; invoice issuance still requires complete approved billing when the quote lacks those snapshots. |
 | 2 | Complete legitimate Job workflow and inspect generated invoice/PDF. | One numbered immutable invoice; expected fixture total 220.00, due date based on completion and frozen terms. |
 | 3 | Repeat completion notification/recovery through engineering-supported idempotency check. | Same invoice/document identity; no duplicate invoice or accounting source. |
 | 4 | Change current billing/tax after issuance and reopen old invoice; test pre-tax quote variant once billing is approved. | Existing invoice/approved snapshots unchanged; pre-tax path freezes approved terms at invoicing. |
@@ -78,7 +106,7 @@ Use [shared prerequisites](TEST-DATA.md) and isolated financial fixtures. These 
 
 | Step | Action | Expected result |
 | --- | --- | --- |
-| 1 | Compare invoice due dates/outstanding balances to aging buckets at recorded run time. | Bucket totals reconcile to invoice facts, adjustments and allocations; currencies are not silently mixed. |
+| 1 | Compare invoice due dates/outstanding balances at the recorded UTC aging date, including exactly 0, 1, 30, 31, 60, 61, 90 and 91 days past due. | Bucket totals reconcile to invoice facts, adjustments and allocations; currencies are not silently mixed. |
 | 2 | Filter Finance to Customer A, open a record and return. | Customer filter/section retained; detail retains record identity. |
 | 3 | Export all invoices/all receipts and inspect known Customer B fixture. | Exports explicitly include all Customers; aging is also all-Customer, independent from displayed list filter. |
 | 4 | Trigger one section/supporting choices failure and use Retry. | Failure is distinct from no records; unrelated usable sections remain available; creation waits for required choices. |

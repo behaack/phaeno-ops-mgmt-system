@@ -8,7 +8,8 @@ import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/require
 
 import { assignOperationalAttention, listOperationalAttention, resolveOperationalAttention } from '#/api/pseq-order-to-cash'
 export { FinanceOperationsPanel } from './FinanceOperationsPanel'
-import { getOrderErrorMessage } from '#/api/order-management'
+import { getOrderErrorMessage, isOrderFeatureDisabled } from '#/api/order-management'
+import { OrderFeatureNotEnabled } from './OrderFeatureNotEnabled'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
@@ -57,6 +58,9 @@ export function OperationalAttentionPanel({
   })
   const error = query.error ?? assign.error
   const selected = query.data?.find(item => item.id === resolveId)
+  if (isOrderFeatureDisabled(query.error, 'attention_operations_disabled')) {
+    return <Card><CardHeader><CardTitle>Owned attention queues</CardTitle></CardHeader><CardContent><OrderFeatureNotEnabled feature="Attention queues" /></CardContent></Card>
+  }
   return (
     <>
     <Card>
