@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -116,7 +117,8 @@ describe('WebOpsDashboardContent', () => {
     expect(screen.queryByText('Ada Lovelace')).toBeNull()
     expect(screen.queryByRole('heading', { name: 'Email delivery', hidden: true })).toBeNull()
     const demoTab = screen.getByRole('tab', { name: /Demo Requests/ })
-    demoTab.focus(); fireEvent.keyDown(demoTab, { key: 'ArrowRight' })
+    act(() => demoTab.focus())
+    fireEvent.keyDown(demoTab, { key: 'ArrowRight' })
     await waitFor(() => expect(screen.getByRole('tab', { name: 'Email delivery' }).getAttribute('aria-selected')).toBe('true'))
     expect(screen.getAllByRole('tabpanel')).toHaveLength(1)
     expect(screen.getByRole('region', { name: 'Email delivery queue' })).toBeTruthy()

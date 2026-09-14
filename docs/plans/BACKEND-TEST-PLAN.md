@@ -1,5 +1,51 @@
 # Backend Test Plan
 
+## Opportunity stage response regression — September 14, 2026
+
+`CrmCommercialAccessPostgresTests.OpportunityStageMoveReturnsSavedStageAndRejectsStaleReplayWithoutDuplicateHistory` reproduces the connected save-then-500 defect against isolated PostgreSQL and verifies returned stage/name/probability/version, fresh readback, no duplicate stage history after stale replay, and closed-to-open history preservation. The same test failed on the original loaded-navigation reset and passes after fresh saved-record readback (1 passed, no skips). Setup and changes roll back. An intermediate assertion was corrected to expect the existing `DbUpdateConcurrencyException`, which middleware maps to HTTP 409. Artifacts: `tmp/uat-closure/crm03-stage-before.trx` and `crm03-stage-verified.trx`. No broad suite was rerun.
+
+
+Trial canonical material eligibility: extended the existing PostgreSQL batch-submission regression with `extracted_rna`; reproduced missing configuration choice, fixed configuration/submission normalization, and passed that test plus existing spaced-label approval/submission (2 passed, 0 skipped). Rolled-back local fixtures only. See [execution evidence](../testing/runs/2026-09-14-acceptance-closure.md).
+
+## Completion recovery — September 14, 2026
+
+Added one disposable PostgreSQL completion test: final idempotency-save failure reproduces the prior committed-invoice defect; after atomic transaction/per-order locking and verified PDF cleanup, failure rolls back business state, deliberate retry creates one PDF/invoice and same-key replay preserves identity/status. Test passed; no whole FIN-01 UAT claim. [Evidence](../testing/runs/2026-09-14-acceptance-closure.md).
+
+
+## File safeguards and quote recovery checkpoint — September 14, 2026
+
+54 file scanner/storage/verification/download and API/module/route/metadata checks passed; one Unix symbolic-link fixture intentionally skipped on Windows. Uses temporary storage and loopback scanner protocol doubles, not live malware detection or Customer delivery. No backend changes. See [run evidence](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-file-safeguards-shared-controls-and-quote-recovery-slice).
+
+## Finance rules and Web Operations checkpoint — September 14, 2026
+
+62 Website parsing/search/crawler/extraction, queue-monitor, Finance/import/domain, quote-rendering and unconfigured-gateway checks passed. No PostgreSQL notification-processing fixture, legitimate invoice issuance or provider-delivery claim. No backend changes. See [run evidence](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-finance-rules-and-web-operations-recovery-slice).
+
+## CRM, people and account access checkpoint — September 14, 2026
+
+94 account, identity/session, invitation, department and CRM/outreach/relationship checks passed with no failures or skips. Stub invitation HTTP responses verify message construction, not provider delivery. No backend changes. See [run evidence](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-crm-people-and-account-access-slice).
+
+## Documentation, access and provisioning checkpoint — September 14, 2026
+
+34 documentation-search and data-provisioning domain/profile checks passed with no failures or skips. No backend test or product changes. TRX recorded in the run ledger. See [run evidence](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-documentation-access-and-provisioning-slice).
+
+## Release/download/retention grouped verification — September 14, 2026
+
+56 checks passed: 44 domain/decision/download and governed-result PostgreSQL checks, plus 12 managed-release lifecycle/notice/commit checks. The latter includes ten generated local database journeys. The harness now accepts the existing isolated UAT database name alongside local phaeno_ops; loopback and generated-database cleanup guards remain. Actual commit timing, independent archive revocation, concurrent notices, holds, simulated cleanup retry and reissue history passed. No product change or shared migration; no real file deletion/email delivery. Saved UAT state and disposable cleanup verified. See [release checkpoint](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-release-download-and-retention-grouped-continuation).
+
+## Shipping and packing grouped verification — September 14, 2026
+
+72 distinct shipping domain/container/PostgreSQL checks pass after three focused fixture-assertion corrections. Queue completeness now scopes its 261 expected rows to the generated organization, failed routing verifies unchanged notification count instead of assuming an empty database, and accepted-tube intake expects recorded specimen acceptance while retaining null completion timing without a quote. No product rule/schema change. Generated-fixture cleanup and retained UAT counts verified. See [shipping results](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-shipping-packing-and-accession-grouped-continuation).
+
+## Handoff and Trial grouped verification — September 14, 2026
+
+66 distinct backend checks pass across the initial group (62/66) and focused retests of three corrected Trial release fixtures and the operator journey. Trial ready-package fixtures arrange resolved specimen state; they are not execution acceptance. The operator journey now selects a source through the attempt command, starts its generated execution with barcode confirmation, then creates the library and exercises evidence/review. It uses a guarded generated local database so commands can own transactions; exact database cleanup was verified. No product/schema/guard change. See [grouped results](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-grouped-handoff-shipping-and-trial-verification).
+
+## Grouped laboratory verification — September 14, 2026
+
+Broader laboratory selection ran 158 checks: 157 passed, one failed, zero skipped. The failure was the stale 30-entity expectation in `PersistenceTests.PSeqOperationsDbContextMapsCompleteLaboratoryModelWithoutCommercialForeignKeys`; the current model contains 36 entities. Corrected the count and explicitly asserted specimen-attempt/receipt, preparation and role-invitation table mappings, retaining schema and no-Commercial-FK assertions. All 11 persistence tests then passed, including ERD completeness. Combined runs contain 168 distinct passing backend checks. No model/migration change.
+
+Eight PostgreSQL journeys passed on isolated loopback 5436: five Lab provider authorization/amendment/cancellation/projection cases, scientific approval/non-publication, atomic batch accession with destroyed-tube exception, and forced concurrent preparation creation/retry. Saved preparation IDs/statuses/versions/history and aggregate fixture counts matched before/after. Tests use generated fixtures and scoped cleanup; this is supporting server/database evidence, not signed-in physical/provider acceptance. TRX files are in ignored `tmp/uat-resume-20260914-results`. See [grouped run](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-grouped-software-verification-and-saved-lineage-trace).
+
 ## Laboratory closeout concurrency — September 12, 2026
 
 Added ConcurrentPreparationCreatesResolveNameCollisionsAndRetainRetryIdentity in LabPreparationCreationConcurrencyPostgresTests.cs. Real PostgreSQL advisory-lock contention proves both create requests overlap; seeded test-only base names force collision handling without changing clocks. Both creates receive distinct names/IDs, unchanged retries retain those identities and notes, and exactly two creation records/no members remain before scoped cleanup. Focused test passed 1/1; the two connected preparation journeys and scientific-review-gate regression passed 3/3 with no skips. Local test/API build warning-free; original UAT fixtures preserved and generated race workflow absent afterward. This closes the forced-creation regression gap, not full signed-in acceptance. See [closeout ledger](../testing/runs/2026-09-12-laboratory-uat-closeout.md).
@@ -1721,3 +1767,10 @@ September 12 engineering-assisted LAB-06/DAT-04 ingestion acceptance: current-ch
 September 12 SYS-01 ingestion concurrency: OPEN UAT-20260912-01. Two overlapping identical registration requests returned 200 and 500 internal_error; PostgreSQL unique idempotency-key conflict was unhandled. Exactly one package persisted and a later retry recovered its ID. Data integrity passed, clean race recovery failed. Preserve package 278a61d2-d7a4-4f78-b183-17bcab60360e. Fix and focused PostgreSQL/HTTP regression remain pending; no product code change in this UAT checkpoint. See [active run](../testing/runs/2026-09-12-lab-14-preparation.md#concurrent-registration-and-release-screen-keyboardreflow-uat--september-12-2026).
 
 September 12 correction supersedes the open status above: UAT-20260912-01 fixed and retested locally. Added PSeqResultRegistrationConcurrencyPostgresTests.OverlappingRegistrationsRecoverIdenticalRequestsAndRejectChangedRequests with independent connections and a deterministic overlap barrier. Covers identical races, changed manifest races, changed scope/count/correction replay, distinct-key version collision and recovery, one-row persistence and null approval/release. Creates and drops its own disposable database on a guarded local PostgreSQL connection; no shared migration. Focused dotnet test with --artifacts-path tmp/uat-defect-fix-build passed 1/1, no skips or build warnings. Original HTTP variant passed 200/200/retry 200 for one new package. Retained 7116 uses the verified build; no full suite or deployment. See [correction evidence](../testing/runs/2026-09-12-lab-14-preparation.md#uat-defect-corrections-and-focused-retest--september-12-2026).
+
+September 14 LAB-14 continuation: extended both `LabPreparationPostgresTests` journeys with six unauthorized Customer command rejections (403 / `lab_capability_required`) and 15 held/closed Job-command combinations (`execution_work_unavailable`) each. Complete tray/history readbacks and Job/attempt versions remain unchanged; no execution starts or library creation. Generated fixture statuses are arranged directly, not through real closure. Both positive journeys and the independent scientific-review/non-publication regression passed: 3 tests, 0 failed/skipped, including 42 added negative checks. Current source compiled into `tmp/uat-resume-20260914-build`; isolated loopback 5436 database only, generated-fixture cleanup verified and retained packages unchanged. Trial-specific guards and signed-in Customer writes remain separate acceptance work. See [continuation checkpoint](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-continuation--preparation-command-guards).
+
+September 14 Trial preparation coverage: PreparationCommandsRespectTrialHoldClosureAndScopeCurrencyWithoutPartialWrites passes 56 rejected command/state combinations with unchanged persisted snapshots and one valid move control. Uses a guarded disposable local PostgreSQL database because preparation controllers own their transactions; database cleanup verified. Existing rollback fixtures remain the default. New test passed 1/1; four related Trial/preparation regressions passed 4/4, no skips. Initial nested-transaction harness failure was corrected, not a product defect. See [continuation evidence](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-trial-preparation-guards-and-reviewer-keyboard-check).
+
+
+September 14 CRM terminal-history fix: added `DisqualifiedLeadRejectsProfileAndStatusChangesWithoutChangingHistory`, covering controller/profile/working/qualify/disqualify/convert rejection and unchanged saved history. Reproduced red, then 2 focused checks passed including retained conversion/merge identity. Rolled-back local PostgreSQL fixture; actual signed-in verification recorded separately. [Execution record](../testing/runs/2026-09-14-acceptance-closure.md).

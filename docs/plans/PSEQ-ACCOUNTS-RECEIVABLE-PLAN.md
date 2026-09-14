@@ -1,5 +1,10 @@
 # PSeq Accounts Receivable Plan
 
+## September 14 completion recovery correction
+
+Scope authorized by continuing UAT with gap fixes: make the existing Complete command save the Job, invoice/outbox, notices and idempotency response in one transaction under the existing per-order lock. Preserve current role checks, sample terminal guards, accepted billing snapshots and scientific independence. On failed execution, remove a newly written PDF only after a database read proves no committed invoice references it; retain bytes if commit outcome cannot be verified. No new role, cross-application contract, dependency or migration. Verify an injected final-save failure, unchanged business records, safe retry, same-key replay and stable PDF bytes in a generated local database. This fixes recovery independently of the still-open supported Lab-to-Commercial terminal handoff and failed-sample billing decision.
+
+
 ## Billing approval and completion handoff - September 12, 2026
 
 Actual signed-in FIN-01 billing validation, approval, approval reset after a terms change, reapproval and reload passed on the existing marked Customer A. Saved profile is version 4/configuration 3, Net 45 with a synthetic 10% tax rate. All invoice readbacks stayed identical; receipt totals remain 8/$108 unapplied. Settled desktop/390px billing screenshots inspected. FIN-01 remains partial: neither saved InProgress Job has terminal Commercial samples, governed release does not advance those statuses, the current Job UI has no completion action, and this isolated runtime lacks CommercialOperator. No completion, invoice issuance, PDF, role change or production action was performed. [Evidence and next implementation slice](../testing/runs/2026-09-12-lab-production-verification.md#billing-approval-and-completion-handoff---september-12-2026).

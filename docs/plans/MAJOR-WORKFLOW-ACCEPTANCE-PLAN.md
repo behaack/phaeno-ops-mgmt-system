@@ -1,5 +1,9 @@
 # Major workflow acceptance scripts
 
+## Acceptance closure reconciliation — September 14, 2026
+
+Owner requested an end to open-ended testing and a finite closure path. The [reconciled case ledger](../testing/runs/2026-09-14-uat-closure-reconciliation.md) accounts for all 81 cases. The initial audit found zero full passes; targeted execution now closes FIN-02, FIN-04, FIN-05, FIN-06, WEB-06, CRM-01, CRM-02, CRM-03 and CRM-04 for the isolated software baseline, leaving 29 primarily remote remainders and 43 prerequisite-gated cases. The [execution run](../testing/runs/2026-09-14-acceptance-closure.md) has complete step crosswalks. These are work-routing categories, not product-failure counts. Existing regression results are supporting evidence only. First finish the bounded Finance evidence gaps; separately resolve Job completion/invoice integration and scientific/provider/physical/delivery/restore prerequisites. No new scope exclusions or acceptance waivers are inferred. Do not expand scripted requirements or repeat completed business writes to make closure easier.
+
 ## Current laboratory coverage and inventory — September 11, 2026
 
 The current pack contains **81 cases**, with matching case rows in the run-record template. Laboratory coverage is LAB-01–10 plus LAB-13–14; LAB-11/12 are unassigned. Newer cases cover retirement/workflow invalidation, promotion, specimen source/reserve attempts, intake decisions and exception-first accession. LAB-13 includes rejection without storage, atomic acceptance of identified remaining tubes, supervised correction, required-marker wrapping and the Library prep sidebar label. LAB-14 records the preparation-tray journey: Lab configurations setup, mixed-job partial trays, shared evidence and tube exceptions, failure/reserve restart, QC reuse and sequencing handoff. Backend, frontend and E2E plans are aligned. Earlier case counts below are historical checkpoints.

@@ -58,7 +58,7 @@ test("reviews Portal access in CRM without a separate customer directory", async
   ).toBeVisible();
   await expect(page.getByRole("link", { name: "Atlas Research" })).toHaveAttribute(
     "href",
-    `/crm/companies/${companyId}`,
+    `/crm/companies/${companyId}?section=requests`,
   );
   await expect(page.getByText("Portal accounts", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /New Portal account/i })).toHaveCount(
@@ -82,7 +82,7 @@ test("reviews Portal access in CRM without a separate customer directory", async
 
   await expect(dialog).toHaveCount(0);
   await expect(
-    page.getByText("No Company requests are waiting for review."),
+    page.getByText("No Company requests in this view."),
   ).toBeVisible();
 });
 
@@ -229,7 +229,7 @@ test("resolves a legacy access link to the canonical Company workspace", async (
   await expect(page.getByRole("tab", { name: "Users", exact: true })).toHaveCount(0);
   await page.getByRole("tab", { name: "People", exact: true }).click();
   await expect(page.getByText("No people are associated with this Company.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Associate contact" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add existing person" })).toBeVisible();
 });
 
 async function expectNoSeriousAccessibilityViolations(

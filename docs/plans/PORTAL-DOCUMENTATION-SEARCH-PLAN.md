@@ -485,3 +485,7 @@ and recovery. The in-Portal metadata editor remains outside this release scope.
   this release with the encrypted pre-migration backup gate enabled, then publish
   the matching Portal UI. Keep Clerk identity cutover disabled. Record exact
   release revisions, workflow/deployment IDs and live verification results.
+
+## September 14 connected acceptance correction
+
+WEB-06 now passes on the isolated baseline in all four real audiences, including delayed-response sign-out/Customer sign-in. A narrow external header covered the sidebar tab. Header height is now measured; the shared rail, tab and guide-anchor offset follow its actual size. The four getting-started guides document the tab below toolbar/organization details. The 10 focused desktop/mobile navigation checks, four shared sidebar/search component checks, TypeScript and scoped lint pass. See the [step crosswalk](../testing/runs/2026-09-14-acceptance-closure.md). Production and full release acceptance remain separate.

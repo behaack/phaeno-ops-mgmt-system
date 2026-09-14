@@ -35,7 +35,7 @@ export function CrmLeadsPage() {
   const [needsNextAction, setNeedsNextAction] = useCrmState<boolean>('needsNextAction', false);
   const query = useQuery({
     queryKey: ["crm-leads", status, needsNextAction, page, search],
-    queryFn: () => listCrmLeads({ search, status: status || undefined, needsNextAction, page, pageSize: 25 }),
+    queryFn: () => listCrmLeads({ search, status: status || undefined, includeInactive: true, needsNextAction, page, pageSize: 25 }),
   });
   const create = useMutation({
     mutationFn: (input: CrmLeadInput) => createCrmLead(input),

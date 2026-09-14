@@ -798,107 +798,124 @@ public sealed class PlatformLabServiceOrdersController(
             : await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
         var scope = $"platform:lab-order:{orderId}:complete";
-        var replay = await idempotency.ReadAsync<LabServiceOrderDto>(actor.Id, scope, key, request, cancellationToken);
-        if (replay != null) return replay;
-        var order = await ReadAsync(orderId, cancellationToken);
-        EnsureVersion(order.Version, request.Version);
-        var before = order.Status.ToString();
-        Execute(() => order.Complete(DateTime.UtcNow));
-        var acceptedQuote = order.Quotes.SingleOrDefault(item => item.Id == order.AcceptedQuoteId) ?? throw Conflict("accepted_quote_missing", "The accepted quote snapshot is unavailable.");
-        var profile = await dbContext.OrganizationCommercialProfiles.AsNoTracking().FirstOrDefaultAsync(item => item.OrganizationId == order.OrganizationId, cancellationToken);
-        var lines = JsonSerializer.Deserialize<List<QuoteLineSnapshot>>(acceptedQuote.LinesJson, JsonOptions) ?? [];
-        if (nativeReceivables)
+        string? createdPdfKey = null;
+        try
         {
-            if (!string.Equals(acceptedQuote.Currency, "USD", StringComparison.Ordinal))
-                throw Conflict("currency_not_supported", "PSeq accounts receivable supports USD only.");
-            if (await dbContext.Invoices.AnyAsync(item => item.LabServiceOrderId == order.Id, cancellationToken))
-                throw Conflict("invoice_already_issued", "An invoice has already been issued for this completed order.");
-            var quoteHasCommercialSnapshot = acceptedQuote.BillingContactSnapshotJson is not null
-                && acceptedQuote.BillingAddressSnapshotJson is not null
-                && acceptedQuote.TaxDecisionSnapshotJson is not null
-                && acceptedQuote.PaymentTermsDaysSnapshot.HasValue;
-            if (!quoteHasCommercialSnapshot)
+            var execution = await idempotency.ExecuteAsync(actor.Id, scope, key, request, async operationCancellationToken =>
             {
-                if (profile is null
-                    || !profile.HasCompleteBillingContact
-                    || !profile.HasCompleteBillingAddress
-                    || profile.PaymentTermsDays is < 0 or > 365
-                    || !profile.HasEffectiveTaxDecision)
-                    throw Conflict("billing_profile_required", "Complete the Customer billing contact, address, payment terms, and tax decision before issuing the invoice.");
-                if (!profile.HasFinanceApprovedTaxDecision)
-                    throw Conflict("finance_tax_approval_required", "Finance must approve the effective tax decision before invoice issuance.");
-            }
-            var billingContactSnapshotJson = quoteHasCommercialSnapshot
-                ? acceptedQuote.BillingContactSnapshotJson!
-                : SerializeBillingContact(profile!, profile!.BillingContactEmail!);
-            var billingAddressSnapshotJson = quoteHasCommercialSnapshot
-                ? acceptedQuote.BillingAddressSnapshotJson!
-                : profile!.BillingAddressJson!;
-            var taxDecisionSnapshotJson = quoteHasCommercialSnapshot
-                ? acceptedQuote.TaxDecisionSnapshotJson!
-                : SerializeTaxDecision(profile!);
-            var paymentTermsDays = quoteHasCommercialSnapshot
-                ? acceptedQuote.PaymentTermsDaysSnapshot!.Value
-                : profile!.PaymentTermsDays;
-            var invoiceTax = quoteHasCommercialSnapshot
-                ? acceptedQuote.Tax
-                : CalculateTax(acceptedQuote.Subtotal, profile!);
-            var invoiceTotal = decimal.Round(acceptedQuote.Subtotal + invoiceTax, 2, MidpointRounding.AwayFromZero);
-            var issuedOn = DateOnly.FromDateTime(order.CompletedAt ?? DateTime.UtcNow);
-            var dueOn = issuedOn.AddDays(paymentTermsDays);
-            var invoiceNumber = $"INV-{issuedOn:yyyyMMdd}-{Guid.NewGuid():N}"[..21].ToUpperInvariant();
-            var customerName = await dbContext.Organizations.AsNoTracking()
-                .Where(item => item.Id == order.OrganizationId).Select(item => item.Name)
-                .SingleAsync(cancellationToken);
-            var pdf = InvoicePdfRenderer.Render(invoiceNumber, customerName, issuedOn, dueOn,
-                lines.Select(line => new InvoicePdfLine(line.Description, line.Quantity, line.UnitPrice,
-                    decimal.Round(line.Quantity * line.UnitPrice, 2, MidpointRounding.AwayFromZero))).ToList(),
-                acceptedQuote.Subtotal, invoiceTax, invoiceTotal, "USD");
-            await using var pdfStream = new MemoryStream(pdf, writable: false);
-            var stored = await fileStorage.SaveAsync(pdfStream, ".pdf", 5_000_000, cancellationToken);
-            try
-            {
-                var nativeInvoice = new Invoice(order.OrganizationId, order.Id, acceptedQuote.Id,
-                    invoiceNumber, issuedOn, paymentTermsDays,
-                    billingContactSnapshotJson, billingAddressSnapshotJson,
-                    taxDecisionSnapshotJson, acceptedQuote.Subtotal, invoiceTax,
-                    stored.StorageKey, stored.Sha256, actor.Id, DateTime.UtcNow);
-                dbContext.Invoices.Add(nativeInvoice);
-                var taxRate = acceptedQuote.Subtotal == 0 ? 0
-                    : decimal.Round(invoiceTax / acceptedQuote.Subtotal, 6, MidpointRounding.AwayFromZero);
-                dbContext.InvoiceLines.AddRange(lines.Select((line, index) => new InvoiceLine(
-                    nativeInvoice.Id, index + 1, null, line.Description, line.Quantity, line.UnitPrice, taxRate)));
-                Notice(order, "lab-invoice-issued", "Invoice available",
-                    $"Invoice {invoiceNumber} is available for {order.OrderNumber} and is due {dueOn:yyyy-MM-dd}.");
-            }
-            catch
-            {
-                await fileStorage.DeleteIfExistsAsync(stored.StorageKey, cancellationToken);
-                throw;
-            }
+                var order = await ReadAsync(orderId, operationCancellationToken);
+                await dbContext.Entry(order).ReloadAsync(operationCancellationToken);
+                foreach (var sample in order.Samples) await dbContext.Entry(sample).ReloadAsync(operationCancellationToken);
+                EnsureVersion(order.Version, request.Version);
+                var before = order.Status.ToString();
+                Execute(() => order.Complete(DateTime.UtcNow));
+                var acceptedQuote = order.Quotes.SingleOrDefault(item => item.Id == order.AcceptedQuoteId) ?? throw Conflict("accepted_quote_missing", "The accepted quote snapshot is unavailable.");
+                var profile = await dbContext.OrganizationCommercialProfiles.AsNoTracking().FirstOrDefaultAsync(item => item.OrganizationId == order.OrganizationId, operationCancellationToken);
+                var lines = JsonSerializer.Deserialize<List<QuoteLineSnapshot>>(acceptedQuote.LinesJson, JsonOptions) ?? [];
+                if (nativeReceivables)
+                {
+                    if (!string.Equals(acceptedQuote.Currency, "USD", StringComparison.Ordinal))
+                        throw Conflict("currency_not_supported", "PSeq accounts receivable supports USD only.");
+                    if (await dbContext.Invoices.AnyAsync(item => item.LabServiceOrderId == order.Id, operationCancellationToken))
+                        throw Conflict("invoice_already_issued", "An invoice has already been issued for this completed order.");
+                    var quoteHasCommercialSnapshot = acceptedQuote.BillingContactSnapshotJson is not null
+                        && acceptedQuote.BillingAddressSnapshotJson is not null
+                        && acceptedQuote.TaxDecisionSnapshotJson is not null
+                        && acceptedQuote.PaymentTermsDaysSnapshot.HasValue;
+                    if (!quoteHasCommercialSnapshot)
+                    {
+                        if (profile is null
+                            || !profile.HasCompleteBillingContact
+                            || !profile.HasCompleteBillingAddress
+                            || profile.PaymentTermsDays is < 0 or > 365
+                            || !profile.HasEffectiveTaxDecision)
+                            throw Conflict("billing_profile_required", "Complete the Customer billing contact, address, payment terms, and tax decision before issuing the invoice.");
+                        if (!profile.HasFinanceApprovedTaxDecision)
+                            throw Conflict("finance_tax_approval_required", "Finance must approve the effective tax decision before invoice issuance.");
+                    }
+                    var billingContactSnapshotJson = quoteHasCommercialSnapshot
+                        ? acceptedQuote.BillingContactSnapshotJson!
+                        : SerializeBillingContact(profile!, profile!.BillingContactEmail!);
+                    var billingAddressSnapshotJson = quoteHasCommercialSnapshot
+                        ? acceptedQuote.BillingAddressSnapshotJson!
+                        : profile!.BillingAddressJson!;
+                    var taxDecisionSnapshotJson = quoteHasCommercialSnapshot
+                        ? acceptedQuote.TaxDecisionSnapshotJson!
+                        : SerializeTaxDecision(profile!);
+                    var paymentTermsDays = quoteHasCommercialSnapshot
+                        ? acceptedQuote.PaymentTermsDaysSnapshot!.Value
+                        : profile!.PaymentTermsDays;
+                    var invoiceTax = quoteHasCommercialSnapshot
+                        ? acceptedQuote.Tax
+                        : CalculateTax(acceptedQuote.Subtotal, profile!);
+                    var invoiceTotal = decimal.Round(acceptedQuote.Subtotal + invoiceTax, 2, MidpointRounding.AwayFromZero);
+                    var issuedOn = DateOnly.FromDateTime(order.CompletedAt ?? DateTime.UtcNow);
+                    var dueOn = issuedOn.AddDays(paymentTermsDays);
+                    var invoiceNumber = $"INV-{issuedOn:yyyyMMdd}-{Guid.NewGuid():N}"[..21].ToUpperInvariant();
+                    var customerName = await dbContext.Organizations.AsNoTracking()
+                        .Where(item => item.Id == order.OrganizationId).Select(item => item.Name)
+                        .SingleAsync(operationCancellationToken);
+                    var pdf = InvoicePdfRenderer.Render(invoiceNumber, customerName, issuedOn, dueOn,
+                        lines.Select(line => new InvoicePdfLine(line.Description, line.Quantity, line.UnitPrice,
+                            decimal.Round(line.Quantity * line.UnitPrice, 2, MidpointRounding.AwayFromZero))).ToList(),
+                        acceptedQuote.Subtotal, invoiceTax, invoiceTotal, "USD");
+                    await using var pdfStream = new MemoryStream(pdf, writable: false);
+                    var stored = await fileStorage.SaveAsync(pdfStream, ".pdf", 5_000_000, operationCancellationToken);
+                    createdPdfKey = stored.StorageKey;
+                    var nativeInvoice = new Invoice(order.OrganizationId, order.Id, acceptedQuote.Id,
+                        invoiceNumber, issuedOn, paymentTermsDays,
+                        billingContactSnapshotJson, billingAddressSnapshotJson,
+                        taxDecisionSnapshotJson, acceptedQuote.Subtotal, invoiceTax,
+                        stored.StorageKey, stored.Sha256, actor.Id, DateTime.UtcNow);
+                    dbContext.Invoices.Add(nativeInvoice);
+                    var taxRate = acceptedQuote.Subtotal == 0 ? 0
+                        : decimal.Round(invoiceTax / acceptedQuote.Subtotal, 6, MidpointRounding.AwayFromZero);
+                    dbContext.InvoiceLines.AddRange(lines.Select((line, index) => new InvoiceLine(
+                        nativeInvoice.Id, index + 1, null, line.Description, line.Quantity, line.UnitPrice, taxRate)));
+                    Notice(order, "lab-invoice-issued", "Invoice available",
+                        $"Invoice {invoiceNumber} is available for {order.OrderNumber} and is due {dueOn:yyyy-MM-dd}.");
+                }
+                else
+                {
+                    if (string.IsNullOrWhiteSpace(profile?.QboCustomerId)) throw Conflict("qbo_customer_required", "Link this customer to QuickBooks before completing the order.");
+                    var estimate = await dbContext.CommercialDocumentLinks.AsNoTracking().Where(item => item.WorkflowType == OrderWorkflowTypes.LabService
+                        && item.WorkflowId == orderId && item.Kind == CommercialDocumentKind.Estimate && item.SyncStatus == IntegrationStatus.Succeeded)
+                        .OrderByDescending(item => item.SynchronizedAt).FirstOrDefaultAsync(operationCancellationToken);
+                    var invoice = new CommercialDocumentLink(OrderWorkflowTypes.LabService, order.Id, CommercialDocumentKind.Invoice, acceptedQuote.Total, acceptedQuote.Currency);
+                    dbContext.CommercialDocumentLinks.Add(invoice);
+                    var payload = new OrderDocumentOutboxPayload(invoice.Id, null, profile.QboCustomerId!, order.OrderNumber, null,
+                        acceptedQuote.Currency, lines.Select(line => new QuickBooksLineRequest(line.ExternalItemId, line.Description, line.Quantity, line.UnitPrice)).ToList(), estimate?.ExternalDocumentId);
+                    dbContext.OrderOutboxMessages.Add(new OrderOutboxMessage(IntegrationOperation.CreateInvoice, OrderWorkflowTypes.LabService,
+                        order.Id, key, JsonSerializer.Serialize(payload, JsonOptions)));
+                }
+                Event(order, before, order.Status.ToString(), actor.Id);
+                Notice(order, "lab-order-completed", "Laboratory service completed", $"Laboratory work for {order.OrderNumber} is complete.");
+                await dbContext.SaveChangesAsync(operationCancellationToken);
+                var response = await MapAsync(order, operationCancellationToken);
+                return response;
+            }, nativeReceivables ? StatusCodes.Status201Created : StatusCodes.Status202Accepted,
+                cancellationToken, concurrencyScope: $"lab-order:{orderId}");
+            Response.StatusCode = execution.StatusCode;
+            return execution.Response;
         }
-        else
+        catch
         {
-            if (string.IsNullOrWhiteSpace(profile?.QboCustomerId)) throw Conflict("qbo_customer_required", "Link this customer to QuickBooks before completing the order.");
-            var estimate = await dbContext.CommercialDocumentLinks.AsNoTracking().Where(item => item.WorkflowType == OrderWorkflowTypes.LabService
-                && item.WorkflowId == orderId && item.Kind == CommercialDocumentKind.Estimate && item.SyncStatus == IntegrationStatus.Succeeded)
-                .OrderByDescending(item => item.SynchronizedAt).FirstOrDefaultAsync(cancellationToken);
-            var invoice = new CommercialDocumentLink(OrderWorkflowTypes.LabService, order.Id, CommercialDocumentKind.Invoice, acceptedQuote.Total, acceptedQuote.Currency);
-            dbContext.CommercialDocumentLinks.Add(invoice);
-            var payload = new OrderDocumentOutboxPayload(invoice.Id, null, profile.QboCustomerId!, order.OrderNumber, null,
-                acceptedQuote.Currency, lines.Select(line => new QuickBooksLineRequest(line.ExternalItemId, line.Description, line.Quantity, line.UnitPrice)).ToList(), estimate?.ExternalDocumentId);
-            dbContext.OrderOutboxMessages.Add(new OrderOutboxMessage(IntegrationOperation.CreateInvoice, OrderWorkflowTypes.LabService,
-                order.Id, key, JsonSerializer.Serialize(payload, JsonOptions)));
+            if (createdPdfKey is not null)
+            {
+                try
+                {
+                    // A lost commit acknowledgment must not remove a successfully issued invoice PDF.
+                    if (!await dbContext.Invoices.AsNoTracking().AnyAsync(item => item.PdfStorageKey == createdPdfKey,
+                        CancellationToken.None))
+                        await fileStorage.DeleteIfExistsAsync(createdPdfKey, CancellationToken.None);
+                }
+                catch (Exception cleanupError)
+                {
+                    logger.LogWarning(cleanupError, "Invoice PDF cleanup could not be verified for Job {OrderId}; retain the file for recovery.", orderId);
+                }
+            }
+            throw;
         }
-        Event(order, before, order.Status.ToString(), actor.Id);
-        Notice(order, "lab-order-completed", "Laboratory service completed", $"Laboratory work for {order.OrderNumber} is complete.");
-        await dbContext.SaveChangesAsync(cancellationToken);
-        var response = await MapAsync(order, cancellationToken);
-        idempotency.Store(actor.Id, scope, key, request, response,
-            nativeReceivables ? StatusCodes.Status201Created : StatusCodes.Status202Accepted);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        Response.StatusCode = nativeReceivables ? StatusCodes.Status201Created : StatusCodes.Status202Accepted;
-        return response;
     }
 
     private async Task<LabServiceOrderDto> MutateOrder(Guid orderId, ReasonRequest request, Action<LabServiceOrder> action, string eventName, CancellationToken cancellationToken)

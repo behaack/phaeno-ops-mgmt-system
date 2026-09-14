@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Npgsql;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.Crm.Domain;
 using PSeq.Operations.Commercial.LabOperations.Application;
@@ -629,7 +630,26 @@ public partial class LabOperationsCommercialHandoffPostgresTests
     [PostgreSqlReferenceFact]
     public async Task AuthorizedOrderCompletesTheDatabaseBackedLabOperatorJourney()
     {
-        await using var scope = await HandoffTestScope.CreateAsync();
+        var connection = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("PSEQ_OPERATIONS_REFERENCE_CONNECTION")!);
+        if (connection.Host is not ("localhost" or "127.0.0.1"))
+            throw new InvalidOperationException("The operator journey requires disposable local PostgreSQL.");
+        var name = $"pseq_handoff_test_{Guid.NewGuid():N}";
+        await using var admin = new NpgsqlConnection(connection.ConnectionString);
+        await admin.OpenAsync();
+        await using (var create = new NpgsqlCommand($"CREATE DATABASE {name}", admin)) await create.ExecuteNonQueryAsync();
+        connection.Database = name;
+        connection.Pooling = false;
+        try { await VerifyAuthorizedOperatorJourney(connection.ConnectionString); }
+        finally
+        {
+            await using var drop = new NpgsqlCommand($"DROP DATABASE {name} WITH (FORCE)", admin);
+            await drop.ExecuteNonQueryAsync();
+        }
+    }
+
+    private static async Task VerifyAuthorizedOperatorJourney(string connectionString)
+    {
+        await using var scope = await HandoffTestScope.CreateAsync(isolatedConnection: connectionString);
         var fixture = await scope.CreateQuotedOrderAsync();
         await scope.AuthorizeSampleRosterAsync(
             fixture,
@@ -642,8 +662,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         var workOrderId = authorization.LabWorkOrderId;
         Assert.NotNull(workOrderId);
 
-        await using var journey = await scope.DbContext.Database.BeginTransactionAsync();
-        try
+        // Exercise commands that own their transactions in this disposable database.
         {
             var staff = await scope.CreateLabStaffAsync();
             var administrator = scope.CreatePlatformLabController();
@@ -888,19 +907,6 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             Assert.Equal(staff.User.Id, persistedSubmittedContainer.LastLabelPrintedByUserId);
             Assert.NotNull(persistedSubmittedContainer.LastLabelPrintedAtUtc);
 
-            var libraryContainer = await lab.CreateContainer(
-                workOrderId.Value,
-                new CreateContainerRequest(
-                    specimen.Id,
-                    submittedContainer.Id,
-                    LabContainerKind.Library.ToString(),
-                    "Reference library",
-                    "Library rack A",
-                    20,
-                    "uL",
-                    DateTime.UtcNow.AddYears(1)),
-                CancellationToken.None);
-
             // Pin this fixture's approved protocol through an explicit production workflow.
             // The complete journey must not depend on workflow state from another test.
             var persistedWorkForExecution = await scope.DbContext.LabWorkOrders.SingleAsync(value => value.Id == workOrderId.Value);
@@ -918,17 +924,31 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             persistedWorkForExecution.PinServiceWorkflow(serviceVersion.Id);
             await scope.DbContext.SaveChangesAsync();
 
-            var execution = await lab.CreateExecution(
+            var attempts = await lab.ApplyAttemptCommand(
                 workOrderId.Value,
-                new CreateExecutionRequest(
-                    specimen.Id,
-                    protocolVersion.Id,
-                    staff.User.Id),
+                new LabAttemptCommand(Guid.NewGuid(), persistedWorkForExecution.Version, "select",
+                    SpecimenId: specimen.Id, SourceContainerId: submittedContainer.Id, Barcode: submittedContainer.Barcode),
                 CancellationToken.None);
+            var selected = Assert.Single(Assert.Single(attempts.Specimens).Attempts);
+            Assert.Equal(submittedContainer.Id, selected.SourceContainerId);
+            var execution = (await lab.ReadExecution(Assert.Single(selected.ExecutionIds), CancellationToken.None)).Execution;
             execution = await lab.TransitionExecution(
                 execution.Id,
-                new ExecutionTransitionRequest("start", null, null, execution.Version),
+                new ExecutionTransitionRequest("start", null, null, execution.Version, submittedContainer.Barcode),
                 CancellationToken.None);
+            var libraryContainer = await lab.CreateContainer(
+                workOrderId.Value,
+                new CreateContainerRequest(
+                    specimen.Id,
+                    submittedContainer.Id,
+                    LabContainerKind.Library.ToString(),
+                    "Reference library",
+                    "Library rack A",
+                    20,
+                    "uL",
+                    DateTime.UtcNow.AddYears(1)),
+                CancellationToken.None);
+
             var customerProgress = new LabCustomerProgressService(scope.DbContext);
             var preparationProgress = await customerProgress.ReadAsync(scope.CustomerOrganization.Id, [fixture.OrderId], CancellationToken.None);
             Assert.Equal("LibraryPrep", preparationProgress[fixture.OrderId].CurrentStage);
@@ -1170,17 +1190,11 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             Assert.Contains("ContainerLabelPrintFailed", eventTypes);
             Assert.Contains("ScientificApprovalRecorded", eventTypes);
         }
-        finally
-        {
-            await journey.RollbackAsync();
-            scope.DbContext.ChangeTracker.Clear();
-        }
-
         var persistedWork = await scope.DbContext.LabWorkOrders
             .AsNoTracking()
             .SingleAsync(item => item.Id == workOrderId.Value);
-        Assert.Equal(LabWorkOrderStatus.AwaitingSpecimens, persistedWork.Status);
-        Assert.Equal(0, await scope.DbContext.LabContainers
+        Assert.Equal(LabWorkOrderStatus.ReadyForRelease, persistedWork.Status);
+        Assert.Equal(2, await scope.DbContext.LabContainers
             .CountAsync(item => item.LabWorkOrderId == workOrderId.Value));
     }
 
@@ -1196,6 +1210,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         private readonly List<Guid> createdCrmOpportunityIds = [];
         private readonly List<Guid> createdRelationshipRequestIds = [];
         private readonly ShippingConfigurationFixture shippingConfiguration;
+        private bool ownsDisposableDatabase;
 
         private HandoffTestScope(
             PSeqOperationsDbContext dbContext,
@@ -1222,9 +1237,9 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         public User CustomerUser { get; }
         public User PlatformUser { get; }
 
-        public static async Task<HandoffTestScope> CreateAsync(OrganizationKind organizationKind = OrganizationKind.Customer)
+        public static async Task<HandoffTestScope> CreateAsync(OrganizationKind organizationKind = OrganizationKind.Customer, string? isolatedConnection = null)
         {
-            var connectionString = Environment.GetEnvironmentVariable(
+            var connectionString = isolatedConnection ?? Environment.GetEnvironmentVariable(
                 ConnectionEnvironmentVariable)
                 ?? throw new InvalidOperationException(
                     $"Set {ConnectionEnvironmentVariable} before running PostgreSQL reference tests.");
@@ -1253,6 +1268,14 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             try
             {
                 Assert.True(await dbContext.Database.CanConnectAsync());
+                if (isolatedConnection is not null)
+                {
+                    var owned = new NpgsqlConnectionStringBuilder(isolatedConnection);
+                    if (owned.Host is not ("localhost" or "127.0.0.1") ||
+                        !System.Text.RegularExpressions.Regex.IsMatch(owned.Database ?? "", "^pseq_handoff_test_[0-9a-f]{32}$"))
+                        throw new InvalidOperationException("Only a generated local handoff database may be migrated.");
+                    await dbContext.Database.MigrateAsync();
+                }
                 Assert.Empty(await dbContext.Database.GetPendingMigrationsAsync());
                 var suffix = Guid.NewGuid().ToString("N");
                 var customerOrganization = new Organization(
@@ -1323,6 +1346,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                     platformIdentity,
                     requestId,
                     shippingConfiguration);
+                scope.ownsDisposableDatabase = isolatedConnection is not null;
                 if (createdCatalogItem)
                 {
                     scope.catalogItemIds.Add(catalogItem.Id);
@@ -1781,7 +1805,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         private PlatformLabServiceOrdersController CreatePlatformController(
             ILabOperationsProvider provider,
             string? idempotencyKey = null,
-            bool derivedReadiness = false)
+            bool derivedReadiness = false,
+            IOperationalFileStorage? storage = null)
         {
             var httpContext = new DefaultHttpContext();
             if (idempotencyKey != null)
@@ -1790,7 +1815,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 DbContext,
                 new OrderRequestContext(DbContext, new FixedIdentityContext(platformIdentity)),
                 new OrderIdempotencyService(DbContext),
-                NullOperationalFileStorage.Instance,
+                storage ?? NullOperationalFileStorage.Instance,
                 NullOperationalFileScanner.Instance,
                 Options.Create(new OrderManagementOptions()),
                 Options.Create(new PSeqOrderToCashOptions
@@ -1811,6 +1836,11 @@ public partial class LabOperationsCommercialHandoffPostgresTests
 
         public async ValueTask DisposeAsync()
         {
+            if (ownsDisposableDatabase)
+            {
+                await DbContext.DisposeAsync();
+                return; // The journey wrapper drops the entire generated database.
+            }
             try
             {
                 DbContext.ChangeTracker.Clear();

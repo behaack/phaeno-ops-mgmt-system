@@ -4,6 +4,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
+using System.Text.Json;
+using Npgsql;
+using PhaenoPortal.App.Features.LabOperations.Controllers;
+using PhaenoPortal.App.Features.LabOperations.DTOs;
 using PSeq.Operations.Commercial.Accounts.Application;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.Crm.Domain;
@@ -60,7 +64,7 @@ public sealed class TrialProjectPostgresTests
     [PostgreSqlReferenceFact]
     public async Task BatchSubmissionUsesOneAuthorizationAndShipmentAndExposesQuantityRules()
     {
-        await using var scope = await Fixture.Create(); var trial = await scope.CreateApprovedTrial();
+        await using var scope = await Fixture.Create(materialClass: "extracted_rna"); var trial = await scope.CreateApprovedTrial();
         scope.Workflow.Accept(trial, scope.Prospect, new(trial.Version, trial.CurrentScopeRevision, TrialRules.TermsVersion, true)); await scope.Db.SaveChangesAsync();
         var first = scope.Submission(trial, "RNA-BATCH-1"); var second = scope.Submission(trial, "RNA-BATCH-2");
         var configuration = await scope.Reader.ConfigurationAsync(scope.Prospect, null, default);
@@ -213,6 +217,110 @@ public sealed class TrialProjectPostgresTests
     private sealed class NullIdentity : IExternalIdentityContext { public ExternalIdentity? Read(HttpContext context) => null; }
 
     [PostgreSqlReferenceFact]
+    public async Task PreparationCommandsRespectTrialHoldClosureAndScopeCurrencyWithoutPartialWrites()
+    {
+        var connection = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("PSEQ_OPERATIONS_REFERENCE_CONNECTION")!);
+        if (connection.Host is not ("localhost" or "127.0.0.1"))
+            throw new InvalidOperationException("Preparation guard verification requires local PostgreSQL.");
+        var name = $"pseq_trial_preparation_test_{Guid.NewGuid():N}";
+        await using var admin = new NpgsqlConnection(connection.ConnectionString);
+        await admin.OpenAsync();
+        await using (var create = new NpgsqlCommand($"CREATE DATABASE {name}", admin)) await create.ExecuteNonQueryAsync();
+        connection.Database = name; connection.Pooling = false;
+        try { await VerifyPreparationTrialGuards(connection.ConnectionString); }
+        finally
+        {
+            await using var drop = new NpgsqlCommand($"DROP DATABASE {name} WITH (FORCE)", admin);
+            await drop.ExecuteNonQueryAsync();
+        }
+    }
+
+    private static async Task VerifyPreparationTrialGuards(string connectionString)
+    {
+        await using var scope = await Fixture.Create(connectionString);
+        var trial = await scope.CreateApprovedTrial();
+        await scope.Submit(trial, "TEST-TRIAL-PREPARATION");
+        var db = scope.Db;
+        var work = await db.LabWorkOrders.SingleAsync(w => w.Id == trial.Samples.Single().LabWorkOrderId);
+        var specimen = await db.LabSpecimens.SingleAsync(s => s.LabWorkOrderId == work.Id);
+        var format = new LabTrayFormat(new("TEST ONLY Trial guard tray", 1, 2, "grid", []));
+        var batch = new LabPreparationBatch("TEST-TRIAL-GUARD-" + trial.Id, format, scope.WorkflowVersion.Id);
+        var tube = new LabContainer(work.Id, specimen.Id, null, LabContainerKind.SubmittedSpecimen,
+            "TEST-TRIAL-TUBE-" + trial.Id, "TEST ONLY", "TEST-BOX", 20, "uL", null);
+        var attempt = new LabSpecimenAttempt(work.Id, specimen.Id, tube.Id, scope.WorkflowVersion.Id, 1, null);
+        var member = new LabPreparationMember(batch.Id, attempt.Id, "A1", tube.Barcode);
+        // Synthetic reserved-tray setup in a disposable, isolated database.
+        // This does not assert actual specimen receipt, execution or independent human approval.
+        db.AddRange(format, batch, tube, attempt, member,
+            new LabRoleAssignment(scope.Scientific.User.Id, LabRole.Operator));
+        await db.SaveChangesAsync();
+        var identity = new PreparationIdentity(new("clerk", scope.Scientific.User.ExternalSubjectId!, scope.Scientific.User.Email, true));
+        var controller = new LabOperationsController(db, new LabOperationsRequestContext(db, identity))
+            { ControllerContext = new() { HttpContext = new DefaultHttpContext() } };
+        var revision = trial.CurrentScopeRevision;
+        var cases = new[]
+        {
+            (TrialStatus.InProgress, true, revision, revision),
+            (TrialStatus.Cancelled, false, revision, revision),
+            (TrialStatus.ClosedIncomplete, false, revision, revision),
+            (TrialStatus.Completed, false, revision, revision),
+            (TrialStatus.Declined, false, revision, revision),
+            (TrialStatus.Expired, false, revision, revision),
+            (TrialStatus.InProgress, false, revision - 1, revision),
+            (TrialStatus.InProgress, false, revision, revision - 1),
+        };
+        foreach (var (status, held, approved, accepted) in cases)
+        {
+            db.ChangeTracker.Clear();
+            // Arrange otherwise-stale saved state only on this new disposable Trial.
+            await db.TrialProjects.Where(t => t.Id == trial.Id).ExecuteUpdateAsync(s => s
+                .SetProperty(t => t.Status, status).SetProperty(t => t.IsOnHold, held)
+                .SetProperty(t => t.ApprovedScopeRevision, approved).SetProperty(t => t.AcceptedScopeRevision, accepted));
+            var before = await Snapshot();
+            foreach (var action in new[] { "add", "start", "move", "remove", "cancel", "output", "step" })
+            {
+                db.ChangeTracker.Clear();
+                var version = await db.LabPreparationBatches.Where(b => b.Id == batch.Id).Select(b => b.Version).SingleAsync();
+                var rejected = await Assert.ThrowsAsync<OrderManagementException>(() => controller.ApplyPreparation(batch.Id,
+                    new LabPreparationCommand(Guid.NewGuid(), version, action, MemberId: member.Id, Position: "A2",
+                        Barcode: tube.Barcode, Confirmed: true, Reason: "TEST ONLY Trial guard"), default));
+                Assert.Equal("trial_work_unavailable", rejected.ErrorCode);
+                Assert.Equal(StatusCodes.Status409Conflict, rejected.StatusCode);
+                db.ChangeTracker.Clear();
+                Assert.Equal(before, await Snapshot());
+            }
+        }
+        db.ChangeTracker.Clear();
+        await db.TrialProjects.Where(t => t.Id == trial.Id).ExecuteUpdateAsync(s => s
+            .SetProperty(t => t.Status, TrialStatus.InProgress).SetProperty(t => t.IsOnHold, false)
+            .SetProperty(t => t.ApprovedScopeRevision, revision).SetProperty(t => t.AcceptedScopeRevision, revision));
+        var currentVersion = await db.LabPreparationBatches.Where(b => b.Id == batch.Id).Select(b => b.Version).SingleAsync();
+        await controller.ApplyPreparation(batch.Id, new(Guid.NewGuid(), currentVersion, "move", MemberId: member.Id, Position: "A2"), default);
+        db.ChangeTracker.Clear();
+        Assert.Equal("A2", await db.LabPreparationMembers.Where(m => m.Id == member.Id).Select(m => m.Position).SingleAsync());
+        Assert.Equal(1, await db.LabPreparationRecords.CountAsync(r => r.LabPreparationBatchId == batch.Id));
+
+        async Task<string> Snapshot() => JsonSerializer.Serialize(new
+        {
+            Tray = await controller.ReadPreparation(batch.Id, default),
+            Trial = await db.TrialProjects.AsNoTracking().Where(t => t.Id == trial.Id)
+                .Select(t => new { t.Status, t.IsOnHold, t.CurrentScopeRevision, t.ApprovedScopeRevision, t.AcceptedScopeRevision, t.Version }).SingleAsync(),
+            Work = await db.LabWorkOrders.AsNoTracking().Where(w => w.Id == work.Id).Select(w => new { w.Status, w.Version }).SingleAsync(),
+            Attempts = await db.LabSpecimenAttempts.AsNoTracking().Where(a => a.LabWorkOrderId == work.Id)
+                .OrderBy(a => a.Id).Select(a => new { a.Id, a.State, a.Version, a.StartedAtUtc, a.ClosedAtUtc }).ToListAsync(),
+            Tubes = await db.LabContainers.AsNoTracking().Where(t => t.LabWorkOrderId == work.Id)
+                .OrderBy(t => t.Id).Select(t => new { t.Id, t.Quantity, t.Status, t.Version }).ToListAsync(),
+            Libraries = await db.LabLibraries.CountAsync(l => l.LabWorkOrderId == work.Id),
+            Events = await db.LabWorkEvents.CountAsync(e => e.LabWorkOrderId == work.Id),
+        });
+    }
+
+    private sealed class PreparationIdentity(ExternalIdentity identity) : IExternalIdentityContext
+    {
+        public ExternalIdentity? Read(HttpContext context) => identity;
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task TrialWarningGraceHoldCleanupAndReissuePreserveOriginalDatesAndMetadata()
     {
         await using var scope = await Fixture.Create(); var trial = await scope.CreateApprovedTrial(); await scope.Submit(trial, "RNA-01");
@@ -254,7 +362,7 @@ public sealed class TrialProjectPostgresTests
         public Task<StoredOperationalFile> SaveAsync(Stream content, string extension, long maximum, CancellationToken token) => throw new NotSupportedException();
     }
 
-    private sealed class Fixture(PSeqOperationsDbContext db, IDbContextTransaction transaction) : IAsyncDisposable
+    private sealed class Fixture(PSeqOperationsDbContext db, IDbContextTransaction? transaction) : IAsyncDisposable
     {
         public PSeqOperationsDbContext Db => db;
         public Organization Organization { get; private set; } = null!;
@@ -274,10 +382,18 @@ public sealed class TrialProjectPostgresTests
         public TrialWorkflowService Workflow => new(db, new InternalLabOperationsProvider(db), Access);
         public TrialReader Reader => new(db, Workflow, orders: Options.Create(new OrderManagementOptions { ReleasedDeliverableRetentionEnforcement = true }));
         public TrialResultService Results => new(db, Workflow, Options.Create(new PSeqOrderToCashOptions { GovernedPSeqResults = true, PipelineServiceSecret = new string('s', 24), PipelineProviderKey = "fixture", ObjectStorageTransferBaseUrl = "https://storage.example.test" }), Options.Create(new OrderManagementOptions { ReleasedDeliverableRetentionEnforcement = true }));
-        public static async Task<Fixture> Create()
+        public static async Task<Fixture> Create(string? disposableConnection = null, string materialClass = "Extracted RNA")
         {
-            var db = new PSeqOperationsDbContext(new DbContextOptionsBuilder<PSeqOperationsDbContext>().UseNpgsql(Environment.GetEnvironmentVariable("PSEQ_OPERATIONS_REFERENCE_CONNECTION")!).AddInterceptors(new AuditSaveChangesInterceptor(new Audit())).Options, Options.Create(new PersistenceOptions()));
-            var fixture = new Fixture(db, await db.Database.BeginTransactionAsync()); var now = DateTime.UtcNow;
+            if (disposableConnection is not null)
+            {
+                var target = new NpgsqlConnectionStringBuilder(disposableConnection);
+                if (target.Host is not ("localhost" or "127.0.0.1") || target.Database is null
+                    || !System.Text.RegularExpressions.Regex.IsMatch(target.Database, "^pseq_trial_preparation_test_[0-9a-f]{32}$"))
+                    throw new InvalidOperationException("Committed fixtures require a disposable preparation test database.");
+            }
+            var db = new PSeqOperationsDbContext(new DbContextOptionsBuilder<PSeqOperationsDbContext>().UseNpgsql(disposableConnection ?? Environment.GetEnvironmentVariable("PSEQ_OPERATIONS_REFERENCE_CONNECTION")!).AddInterceptors(new AuditSaveChangesInterceptor(new Audit())).Options, Options.Create(new PersistenceOptions()));
+            if (disposableConnection is not null) await db.Database.MigrateAsync();
+            var fixture = new Fixture(db, disposableConnection is null ? await db.Database.BeginTransactionAsync() : null); var now = DateTime.UtcNow;
             var phaeno = new Organization($"Trial Phaeno {Guid.NewGuid():N}", OrganizationKind.Phaeno); fixture.Organization = new($"Trial Prospect {Guid.NewGuid():N}", OrganizationKind.Prospect);
             User User(string name) { var value = new User($"trial-{Guid.NewGuid():N}@example.test", name, "Fixture"); value.Activate(); db.Add(value); return value; }
             var commercial = User("Commercial"); var scientific = User("Scientific"); fixture.Customer = User("Prospect");
@@ -307,7 +423,7 @@ public sealed class TrialProjectPostgresTests
             fixture.WorkflowVersion = new(workflow.Id, versions.Count == 0 ? 1 : versions.Max(value => value.WorkflowVersion) + 1, commercial.Id, now);
             fixture.WorkflowVersion.Approve(scientific.Id, now); fixture.WorkflowVersion.PromoteToProduction(scientific.Id, now); db.Add(fixture.WorkflowVersion);
             fixture.destination = new(Guid.NewGuid(), 1, null, $"TRIAL_{Guid.NewGuid():N}"[..20], "Trial lab", "Receiving", "Phaeno", "123 Example St", null, "San Diego", "CA", "92101", "US", null, null, "Weekdays", "America/Los_Angeles", null, "Receiving dock", null, false, now.AddDays(-1), true);
-            fixture.sampleType = new(Guid.NewGuid(), 1, null, $"RNA_{Guid.NewGuid():N}"[..20], "Extracted RNA", "Fixture", "Extracted RNA", 1, 1000, "ng", "Sealed tubes", "Frozen", null, "Containment", "Coded reference", "No PHI", "Nonhazardous", null, 48, now.AddDays(-1), true);
+            fixture.sampleType = new(Guid.NewGuid(), 1, null, $"RNA_{Guid.NewGuid():N}"[..20], "Extracted RNA", "Fixture", materialClass, 1, 1000, "ng", "Sealed tubes", "Frozen", null, "Containment", "Coded reference", "No PHI", "Nonhazardous", null, 48, now.AddDays(-1), true);
             var rule = new SampleShippingInstructionRule(Guid.NewGuid(), 1, null, fixture.destination.Id, fixture.sampleType.Id, "RNA", "Containment", "Frozen", "Traceable", "Weekday", "Receiving", "Packet", "Contact Phaeno", null, false, now.AddDays(-1), true);
             db.AddRange(fixture.destination, fixture.sampleType, rule); await db.SaveChangesAsync(); return fixture;
         }
@@ -325,6 +441,10 @@ public sealed class TrialProjectPostgresTests
         public async Task<ResultOutputPackage> ReadyPackage(TrialSample sample, Guid? corrects = null)
         {
             var work = await db.LabWorkOrders.SingleAsync(value => value.Id == sample.LabWorkOrderId);
+            // Release/retention fixture only: arrange a resolved sample without claiming an executed laboratory journey.
+            var specimen = await db.LabSpecimens.SingleAsync(value => value.LabWorkOrderId == work.Id && value.SubmittedSpecimenId == sample.Id);
+            if (specimen.ProcessingState != LabSpecimenProcessingState.Succeeded)
+                specimen.RecordProcessingState(LabSpecimenProcessingState.Succeeded, Commercial.User.Id, DateTime.UtcNow);
             if (work.Status != LabWorkOrderStatus.ReadyForRelease) { work.RecordMilestone(LabWorkOrderStatus.Processing); work.RecordMilestone(LabWorkOrderStatus.ScientificReview); }
             var package = new ResultOutputPackage(Organization.Id, null, work.Id, null, corrects.HasValue ? 2 : 1, corrects, "fixture", Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), "{}", new string('A', 64), 1, sample.TrialProjectId, sample.Id);
             var artifact = new ResultArtifact(package.Id, "FASTQ", sample.Reference + ".fastq", "application/octet-stream", 10, new string('A', 64), $"trial-fixture/{Guid.NewGuid():N}"); artifact.BeginScan(); artifact.CompleteScan(true, null, DateTime.UtcNow);
@@ -338,7 +458,11 @@ public sealed class TrialProjectPostgresTests
             return package;
         }
         private sealed class ScientificIdentity(ExternalIdentity identity) : IExternalIdentityContext { public ExternalIdentity? Read(HttpContext context) => identity; }
-        public async ValueTask DisposeAsync() { await transaction.RollbackAsync(); await transaction.DisposeAsync(); await db.DisposeAsync(); }
+        public async ValueTask DisposeAsync()
+        {
+            if (transaction is not null) { await transaction.RollbackAsync(); await transaction.DisposeAsync(); }
+            await db.DisposeAsync();
+        }
         private sealed class Identity : IExternalIdentityContext { public ExternalIdentity? Read(HttpContext context) => null; }
         private sealed class Audit : ICurrentUserContext { public Guid? UserId => null; public Guid? OrganizationId => null; public string? RequestId => "trial-reference"; }
     }

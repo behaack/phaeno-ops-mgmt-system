@@ -85,6 +85,28 @@ describe('PSeq order-to-cash panels', () => {
     expect(screen.getByRole('button', { name: 'Record adjustment' })).toBeTruthy()
   })
 
+  it.each([
+    { canBill: true, canManageCash: false, canReconcile: false, permitted: ['invoice'] },
+    { canBill: false, canManageCash: true, canReconcile: false, permitted: ['receipt', 'reconciliation'] },
+    { canBill: false, canManageCash: false, canReconcile: true, permitted: ['reconciliation'] },
+    { canBill: false, canManageCash: false, canReconcile: false, permitted: [] },
+  ])('opens the owning Finance records only within assigned capabilities: $permitted', async ({ permitted, ...capabilities }) => {
+    mocks.listOperationalAttention.mockResolvedValue([
+      { id: 'attention-invoice', sourceType: 'Invoice', sourceId: 'invoice-1', summary: 'Overdue invoice', category: 'OverdueInvoice' },
+      { id: 'attention-receipt', sourceType: 'PaymentReceipt', sourceId: 'receipt-1', summary: 'Unapplied receipt', category: 'UnappliedCash' },
+      { id: 'attention-reconciliation', sourceType: 'ReconciliationBatch', sourceId: 'reconciliation-1', summary: 'Bank difference', category: 'ReconciliationDifference' },
+    ])
+    renderPanel(<OperationalAttentionPanel apiEnabled userId="operator-user" {...capabilities} />)
+    await screen.findByRole('heading', { name: 'Bank difference' })
+    for (const kind of ['invoice', 'receipt', 'reconciliation']) {
+      const link = screen.queryByRole('link', { name: `Open ${kind}` })
+      if (permitted.includes(kind)) expect(link?.getAttribute('href')).toBe(`/order-operations/finance/${kind}/${kind}-1`)
+      else expect(link).toBeNull()
+    }
+    expect(mocks.allocatePayment).not.toHaveBeenCalled()
+    expect(mocks.resolveOperationalAttention).not.toHaveBeenCalled()
+  })
+
   it('filters recoverable retention notices in the Operations queue', async () => {
     mocks.listOperationalAttention.mockResolvedValue([])
     renderPanel(<OperationalAttentionPanel apiEnabled userId="operator-user" />)
@@ -330,6 +352,29 @@ describe('PSeq order-to-cash panels', () => {
     expect(screen.getByRole('button', { name: 'Approve current tax decision' })).toHaveProperty('disabled', true)
     fireEvent.change(name, { target: { value: customer.billingContactName } })
     await waitFor(() => expect(screen.getByRole('button', { name: 'Save changes' })).toHaveProperty('disabled', true))
+  })
+
+  it('removes the approval reminder once saved billing changes are approved', async () => {
+    let profile: AccountsReceivableCustomer = { ...customer, financeApprovedAtUtc: null }
+    mocks.listAccountsReceivableCustomers.mockImplementation(async () => [profile])
+    mocks.updateBillingProfile.mockImplementation(async (_id, values) => {
+      profile = { ...profile, billingContactName: values.billingContactName, profileVersion: 4 }
+      return profile
+    })
+    mocks.approveTaxDecision.mockImplementation(async () => {
+      profile = { ...profile, financeApprovedAtUtc: '2026-09-14T12:00:00Z', profileVersion: 5 }
+      return profile
+    })
+    renderPanel(<FinanceOperationsPanel apiEnabled canBill canManageCash={false} canReconcile={false} record={{ kind: 'customer', id: customer.organizationId }} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit billing and tax' }))
+    const dialog = within(screen.getByRole('dialog'))
+    fireEvent.change(dialog.getByLabelText(/Billing contact name/), { target: { value: 'Reviewed billing contact' } })
+    fireEvent.click(dialog.getByRole('button', { name: 'Save changes' }))
+    expect(await dialog.findByText('Billing changes saved. Review and approve the current tax decision.')).toBeTruthy()
+    fireEvent.change(dialog.getByLabelText(/Finance approval notes/), { target: { value: 'Approved reviewed billing configuration' } })
+    fireEvent.click(dialog.getByRole('button', { name: 'Approve current tax decision' }))
+    expect(await dialog.findByText('Finance approved')).toBeTruthy()
+    expect(dialog.queryByText('Billing changes saved. Review and approve the current tax decision.')).toBeNull()
   })
 
   it('validates Finance approval notes instead of silently disabling the action', async () => {

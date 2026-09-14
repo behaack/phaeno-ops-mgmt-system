@@ -5,7 +5,7 @@ test('shows Customer laboratory services in mock mode', async ({ page }) => {
   await page.goto('/lab-services')
 
   await expect(page.getByRole('heading', { name: 'Lab services' })).toBeVisible()
-  await expect(page.getByText('Connected orders are paused in mock-session mode')).toBeVisible()
+  await expect(page.getByText('Connected records are paused in mock-session mode')).toBeVisible()
   await page.getByRole('link', { name: 'Request lab service' }).click()
 
   const jobDetails = page.getByRole('dialog', { name: 'Job pricing details' })

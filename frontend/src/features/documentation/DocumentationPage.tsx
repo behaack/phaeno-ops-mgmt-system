@@ -231,7 +231,7 @@ function DocumentationArticle({
               </p>
             </div>
 
-            <div className="prose prose-neutral max-w-none dark:prose-invert prose-headings:scroll-mt-24 prose-a:text-primary prose-code:text-foreground">
+            <div className="prose prose-neutral max-w-none dark:prose-invert prose-headings:scroll-mt-[calc(var(--portal-header-height,5.25rem)+1rem)] prose-a:text-primary prose-code:text-foreground">
               <Content components={documentationMdxComponents} />
             </div>
 

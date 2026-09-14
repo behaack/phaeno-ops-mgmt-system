@@ -2,6 +2,10 @@
 
 Prepared September 8, 2026 from the current repository. These are **manual acceptance scripts**, not executable automation. All cases start **Not run**. Writing this pack does not establish acceptance or authorize production transactions.
 
+## Active closure checklist — September 14, 2026
+
+Use the [81-case reconciliation and finite closure plan](runs/2026-09-14-uat-closure-reconciliation.md) for the ongoing run. It maps retained evidence, remaining steps, owners and dependencies for every case. Broad regression batches are paused; future sessions must target a specific missing acceptance step. The reusable run template remains unchanged. [Targeted execution](runs/2026-09-14-acceptance-closure.md) has closed FIN-02, FIN-04, FIN-05, FIN-06, WEB-06, CRM-01, CRM-02, CRM-03 and CRM-04 on the isolated baseline; other cases retain their listed work.
+
 ## Start a test run
 
 1. Copy [RUN-RECORD.md](RUN-RECORD.md) for the run. Record Portal/API/Website addresses and exact revisions, date, browser, tester, and environment. Test matching API/UI versions.

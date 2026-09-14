@@ -1,5 +1,20 @@
 # First-Party CRM Plan
 
+## Company association draft protection and CRM-01 closure — September 14, 2026
+
+The connected Company/Contact case exposed silent loss of an Add existing person draft on a second Escape. The dialog now applies the established unsaved-navigation and dismissal guard, preserves a declined dismissal, blocks closing during save, and resets discarded local selections when reopened. The first Escape still closes search choices. The Company workspace regression covers decline/discard/reopen and existing recovery paths (8 passed); real signed-in desktop/tablet/phone checks confirm the nested Escape behavior without writes. TypeScript, scoped lint and generated-help consistency pass. The staff guide and review date are updated. Actual Company/relationship, outreach validation/reset, immutable history, legacy restrictions and suppression-preserving admin merge/export complete CRM-01 on the isolated baseline. See the [complete step crosswalk](../testing/runs/2026-09-14-acceptance-closure.md). No broad test suite was substituted for acceptance.
+
+## Opportunity stage response correction — September 14, 2026
+
+Connected CRM-03 reproduced a stage move that committed the new stage/history, then returned HTTP 500 because EF rejected marking an already loaded non-null Stage navigation as unloaded. The controller now returns a fresh, untracked read of the saved Opportunity. The original move is retained once; the walkthrough resumes from that saved stage. A rollback-scoped PostgreSQL controller regression reproduced the original exception, then passed saved-stage/probability/version readback, stale replay without duplicate history, loss and reopening after the correction. The existing Opportunity guide already describes the intended transition/history behavior and needs no changed user instructions. See the [acceptance run](../testing/runs/2026-09-14-acceptance-closure.md).
+
+
+## Lead closure defects — September 14, 2026
+
+Connected CRM-02 found two defects. Converted Leads were automatically inactive but the queue omitted inactive records even with All statuses/Converted selected; the queue now requests retained inactive history. Disqualified Leads hid editing in the UI but the backend still accepted profile/status changes; the domain now applies its immutable-history guard to both terminal states. Supported reviewed Company/Contact merge relinking remains available for converted history.
+
+Added a PostgreSQL controller regression for disqualified profile/working/qualification/replacement-reason/conversion denials with unchanged lead/activity snapshots. It reproduced the defect before correction, then passed together with the existing conversion/merge-identity domain test (2 passed). Converted-history list/detail/return checks pass on desktop and mobile (4 focused E2E cases); TypeScript and scoped lint pass. The actual failed UAT edit is retained as evidence, and a fresh terminal Lead is used for signed-in verification. No Portal access, invitation or executable work is created by this CRM-only journey. The staff Lead guide and generated corpus were updated. [Connected evidence](../testing/runs/2026-09-14-acceptance-closure.md).
+
 ## Outreach decision completion — September 8, 2026
 
 The Product Owner approved completing Communication preference during the guided
@@ -600,3 +615,6 @@ A minimal CRM-owned owner directory returns only active Phaeno names/email/ident
 Home attention cards use the same backend predicates as their filtered lists and exports: unfinished overdue Tasks, unfinished Tasks due now through seven days, active Leads lacking a next action excluding Converted/Disqualified, and active open Opportunities unchanged for more than 30 days across pipelines. Filters remain in URL state and saved views; Home search failures are announced with a local retry and cannot masquerade as a successful empty search.
 
 Focused regression sources cover nonadministrator positive CRM writes and negative administrative/Portal/sensitive access, role revocation/external admin denial, flag-independent Session capabilities, exact attention boundaries, Home links and retry, and Commercial People without forbidden background requests. Scope also updates existing administrator fixtures. Root coordinates integrated regression execution, release evidence, documentation metadata/corpus generation, and living test plans. Signed-in production Commercial acceptance remains separate from local checks.
+
+
+Connected CRM-03/04 are closed for isolated software acceptance. Populated Opportunity/Reports column headings now stay together inside their existing scrollable tables; desktop/tablet/phone read-only checks, TypeScript and scoped lint pass. No change to reporting semantics or user instructions.

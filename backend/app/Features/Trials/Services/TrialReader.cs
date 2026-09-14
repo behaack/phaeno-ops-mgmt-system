@@ -158,7 +158,7 @@ public sealed class TrialReader(PSeqOperationsDbContext db, TrialWorkflowService
                 authority.IsPrimary, authority.PrimaryAuthorityId, authority.RevokedAtUtc, authority.Version, authority.DesignatedByUserId, authority.EffectiveAtUtc, authority.Reason, authority.RevocationReason)).ToListAsync(token) : [];
         return new(actor.IsStaff && authorities.Any(value => value.UserId == actor.User.Id && value.Domain == "ScientificOperations" && value.RevokedAtUtc == null), actor.IsPlatformAdmin, primaryDomains, handoffs, analyses, workflows,
             definitions.Select(value => new TrialDeliverableSnapshot(value.Id, value.Revision, value.Key, value.Name)).ToList(), definitions.Where(value => value.IsDefault).Select(value => value.Id).ToList(),
-            departments, destinations, types.Where(value => string.Equals(value.MaterialClass.Replace(" ", "").Replace("-", ""), "extractedrna", StringComparison.OrdinalIgnoreCase))
+            departments, destinations, types.Where(value => string.Equals(value.MaterialClass.Replace(" ", "").Replace("-", "").Replace("_", ""), "extractedrna", StringComparison.OrdinalIgnoreCase))
                 .Select(value => new TrialSampleTypeDto(value.Id, value.Name, value.Version, value.QuantityUnit, value.MinimumQuantity, value.MaximumQuantity)).ToList(), staff, authorities);
     }
     public async Task<TrialHandoffPageDto> HandoffsAsync(TrialActor actor, string? search, int page, Guid? companyId, Guid? requestId, CancellationToken token)

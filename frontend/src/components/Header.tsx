@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { useEffect, useRef } from 'react'
 
 import { MainMenu } from './MainMenu'
 import { UserMenu } from './UserMenu'
@@ -11,6 +12,22 @@ import { useMockAdminData } from '#/features/admin/mock-admin-data'
 import { isExternalOrganizationKind } from './navigation'
 
 export default function Header() {
+  const headerRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const header = headerRef.current
+    if (!header) return
+    const updateHeight = () => {
+      const height = Math.ceil(header.getBoundingClientRect().height)
+      if (height > 0) document.documentElement.style.setProperty('--portal-header-height', `${height}px`)
+    }
+    updateHeight()
+    const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(updateHeight)
+    observer?.observe(header)
+    return () => {
+      observer?.disconnect()
+      document.documentElement.style.removeProperty('--portal-header-height')
+    }
+  }, [])
   const branding = useApplicationBranding()
   const { signedIn, session, selectedOrganizationId, selectedDepartmentId } = usePhaenoSession()
   const { customers } = useMockAdminData()
@@ -26,7 +43,7 @@ export default function Header() {
   )
 
   return (
-    <header className="sticky top-0 z-50 border-b bg-background/90 px-2 backdrop-blur md:px-4">
+    <header ref={headerRef} data-portal-header className="sticky top-0 z-50 border-b bg-background/90 px-2 backdrop-blur md:px-4">
       <nav className="page-wrap relative flex min-h-[5.25rem] flex-wrap items-center gap-x-3 gap-y-2 py-3 md:flex-nowrap">
         <div className="m-0 flex-shrink-0 text-base font-semibold">
           <Link

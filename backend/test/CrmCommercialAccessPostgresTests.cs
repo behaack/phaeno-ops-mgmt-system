@@ -18,6 +18,82 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 public sealed class CrmCommercialAccessPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task OpportunityStageMoveReturnsSavedStageAndRejectsStaleReplayWithoutDuplicateHistory()
+    {
+        await using var scope = await Scope.Create();
+        var company = new CrmCompany($"TEST ONLY stage response {Guid.NewGuid():N}", scope.Actor.Id);
+        var pipeline = new CrmPipeline($"TEST ONLY stage response {Guid.NewGuid():N}", null, false);
+        var initial = new CrmPipelineStage(pipeline.Id, "Discovery", 10, CrmPipelineStageCategory.Open, 10, false);
+        var qualified = new CrmPipelineStage(pipeline.Id, "Qualified", 20, CrmPipelineStageCategory.Open, 25, false);
+        var lost = new CrmPipelineStage(pipeline.Id, "Lost", 30, CrmPipelineStageCategory.Lost, 0, true);
+        scope.Db.AddRange(company, pipeline, initial, qualified, lost);
+        await scope.Db.SaveChangesAsync();
+        var controller = scope.Controller(new CrmOpportunitiesController(scope.Db, scope.Identity));
+        var result = await controller.Create(new("TEST ONLY stage response", company.Id, pipeline.Id, initial.Id,
+            null, null, 100m, "USD", null, null, null, null, [], null), default);
+        var created = Assert.IsType<CrmOpportunityDto>(Assert.IsType<CreatedResult>(result.Result).Value);
+        scope.Db.ChangeTracker.Clear();
+        var command = new MoveCrmOpportunityStageRequest(qualified.Id, "Reviewed next stage", created.Version);
+        var moved = await controller.MoveStage(created.Id, command, default);
+        Assert.Equal(qualified.Id, moved.StageId);
+        Assert.Equal("Qualified", moved.StageName);
+        Assert.Equal(25, moved.Probability);
+        Assert.Equal(created.Version + 1, moved.Version);
+        scope.Db.ChangeTracker.Clear();
+        Assert.Equal(moved, await controller.Get(created.Id, default));
+        var history = await controller.StageHistory(created.Id, default);
+        Assert.Equal(2, history.Count);
+        Assert.Contains(history, value => value.FromStageId == initial.Id && value.ToStageId == qualified.Id && value.Reason == command.Reason);
+        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => controller.MoveStage(created.Id, command, default));
+        Assert.Equal(history, await controller.StageHistory(created.Id, default));
+        var closed = await controller.MoveStage(created.Id, new(lost.Id, "Reviewed loss", moved.Version), default);
+        Assert.Equal(CrmPipelineStageCategory.Lost, closed.StageCategory);
+        Assert.NotNull(closed.ClosedAt);
+        scope.Db.ChangeTracker.Clear();
+        var reopened = await controller.MoveStage(created.Id, new(qualified.Id, "New pursuit", closed.Version), default);
+        Assert.Equal(CrmPipelineStageCategory.Open, reopened.StageCategory);
+        Assert.Null(reopened.ClosedAt);
+        Assert.Equal(4, (await controller.StageHistory(created.Id, default)).Count);
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task DisqualifiedLeadRejectsProfileAndStatusChangesWithoutChangingHistory()
+    {
+        await using var scope = await Scope.Create();
+        var controller = scope.Controller(new CrmLeadsController(scope.Db, scope.Identity));
+        var input = new UpsertCrmLeadRequest(CrmLeadKind.Company, "TEST ONLY terminal lead", "TEST ONLY Company",
+            null, null, null, null, "Isolated regression", null, null, [], null);
+        var created = await controller.Create(input, default);
+        var lead = Assert.IsType<CrmLeadDto>(Assert.IsType<CreatedResult>(created.Result).Value);
+        var disqualified = await controller.Disqualify(lead.Id, new("Outside the requested scope", lead.Version), default);
+        var before = await Snapshot();
+        Func<Task>[] commands = [
+            () => controller.Update(lead.Id, input with { DisplayName = "Changed history", Version = disqualified.Version }, default),
+            () => controller.StartWorking(lead.Id, new() { Version = disqualified.Version }, default),
+            () => controller.Qualify(lead.Id, new("Erase terminal decision", disqualified.Version), default),
+            () => controller.Disqualify(lead.Id, new("Replace original reason", disqualified.Version), default),
+            () => controller.Convert(lead.Id, new(null, true, false, false, null, null, disqualified.Version), default),
+        ];
+        foreach (var command in commands)
+        {
+            var error = await Assert.ThrowsAsync<CrmException>(command);
+            Assert.Equal(409, error.StatusCode);
+            Assert.Equal(before, await Snapshot());
+        }
+
+        async Task<string> Snapshot()
+        {
+            scope.Db.ChangeTracker.Clear();
+            return System.Text.Json.JsonSerializer.Serialize(new
+            {
+                Lead = await controller.Get(lead.Id, default),
+                History = await scope.Db.CrmActivities.AsNoTracking().Where(value => value.LeadId == lead.Id)
+                    .OrderBy(value => value.Id).Select(value => new { value.Id, value.Subject, value.Body, value.ActorUserId, value.Version }).ToListAsync(),
+            });
+        }
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task OutreachDecisionsPersistWithImmutableHistoryAndCannotBeChangedThroughLegacyFields()
     {
         await using var scope = await Scope.Create();

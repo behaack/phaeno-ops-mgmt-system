@@ -1,5 +1,25 @@
 import { expect, test } from '@playwright/test'
 
+test('keeps Documentation navigation below the external organization header after resizing', async ({ page }) => {
+  await selectOrganization(page, 'northline-labs')
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/docs')
+  await expect(page.getByRole('heading', { name: 'Customer documentation' })).toBeVisible()
+  for (const width of [390, 320, 768]) {
+    await page.setViewportSize({ width, height: 844 })
+    const trigger = page.getByRole('button', { name: /^Open Documentation navigation/ })
+    const header = page.locator('[data-portal-header]')
+    await expect.poll(async () => (await trigger.boundingBox())!.y - (await header.boundingBox())!.height).toBeGreaterThanOrEqual(0)
+    await trigger.click()
+    const sidebar = page.getByRole('complementary', { name: 'Documentation sidebar' })
+    await expect(sidebar).toBeVisible()
+    expect((await sidebar.boundingBox())!.y).toBeGreaterThanOrEqual((await header.boundingBox())!.height)
+    await page.keyboard.press('Escape')
+    await expect(trigger).toBeFocused()
+  }
+})
+
 test('shows Customer guide navigation and denies a cross-audience route', async ({ page }) => {
   await selectOrganization(page, 'northline-labs')
   await openDocumentationFromUserMenu(page)
@@ -28,12 +48,12 @@ test('shows Partner guides and renders MDX content', async ({ page }) => {
     page.getByRole('heading', { name: 'Partner documentation' }),
   ).toBeVisible()
   await page.getByRole('region', { name: 'Guides' }).getByRole('link', {
-    name: 'Request data assembly',
+    name: 'Prepare included Assembly',
   }).click()
   await expect(
-    page.getByRole('heading', { name: 'Request data assembly', level: 1 }),
+    page.getByRole('heading', { name: 'Included assembly inputs and outputs', level: 1 }),
   ).toBeVisible()
-  await expect(page.getByText('Accept the job quote')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Prepare an included case' })).toBeVisible()
 })
 
 test('shows only Phaeno guides in expandable topic groups', async ({ page }) => {

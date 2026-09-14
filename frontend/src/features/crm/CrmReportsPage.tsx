@@ -159,7 +159,7 @@ function Table({
         <thead className="bg-muted/50 text-xs text-muted-foreground">
           <tr>
             {headers.map((header) => (
-              <th key={header} className="p-3">
+              <th key={header} className="whitespace-nowrap p-3">
                 {header}
               </th>
             ))}

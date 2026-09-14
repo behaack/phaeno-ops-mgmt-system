@@ -100,9 +100,7 @@ public sealed class CrmOpportunitiesController(PSeqOperationsDbContext dbContext
         dbContext.CrmOpportunityStageHistory.Add(new CrmOpportunityStageHistory(value.Id, priorStageId, stage.Id, request.Reason, actor.Id, DateTime.UtcNow));
         dbContext.CrmActivities.Add(new CrmActivity(CrmActivityType.StatusChange, $"Opportunity moved to {stage.Name}", $"Previous stage: {priorStageName}.{(string.IsNullOrWhiteSpace(request.Reason) ? string.Empty : $" Reason: {request.Reason.Trim()}")}", DateTime.UtcNow, CrmActivityVisibility.Internal, actor.Id, value.CompanyId, opportunityId: value.Id));
         await dbContext.SaveChangesAsync(cancellationToken);
-        dbContext.Entry(value).Reference(item => item.Stage).IsLoaded = false;
-        await dbContext.Entry(value).Reference(item => item.Stage).LoadAsync(cancellationToken);
-        return ToDto(value);
+        return ToDto(await Require(opportunityId, false, cancellationToken));
     }
 
     [HttpGet("{opportunityId:guid}/stage-history")]

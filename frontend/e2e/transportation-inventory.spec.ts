@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { readFile } from 'node:fs/promises'
 import { shippingFixture, shippingContainers, shippingTube } from '../src/test-helpers/sample-shipping'
 import { deliveryLocationFixture } from '../src/test-helpers/transportation-kit-requests'
 
@@ -22,11 +23,13 @@ const recommendation = {
 }
 
 async function fixture(page: Page, options: { location?: boolean; member?: boolean; assigned?: boolean; onTheWay?: boolean } = {}) {
+  const html = await readFile(new URL('./fixtures/transportation-inventory.html', import.meta.url), 'utf8')
   const state = { refreshFails: false, claimConflicts: false, calls: [] as { path: string; body: Record<string, unknown>; key?: string }[], unexpected: [] as string[], received: !options.onTheWay, prepared: Boolean(options.assigned) }
   const inventory = () => ({ location, kits: [{ ...kit, status: state.received ? 'Available' : 'OnTheWay', receivedAt: state.received ? kit.receivedAt : null }], requests: [], canManageInventory: !options.member })
   await page.route('**/*', async route => {
     const request = route.request(), url = new URL(request.url())
     if (url.hostname !== '127.0.0.1') { state.unexpected.push(request.url()); await route.abort(); return }
+    if (url.pathname === '/e2e/fixtures/transportation-inventory.html') return route.fulfill({ contentType: 'text/html', body: html })
     if (!url.pathname.startsWith('/api/')) { await route.continue(); return }
     const path = url.pathname.substring(4), method = request.method()
     const respond = (data: unknown) => route.fulfill({ json: { success: true, data, error: null, meta: {} } })

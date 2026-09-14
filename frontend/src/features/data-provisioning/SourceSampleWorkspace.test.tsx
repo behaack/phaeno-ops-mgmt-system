@@ -50,13 +50,7 @@ describe('SourceSampleWorkspace', () => {
       await screen.findByRole('heading', { name: 'Synthetic source' }),
     ).toBeTruthy()
 
-    fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions' }), {
-      button: 0,
-      ctrlKey: false,
-    })
-    fireEvent.click(
-      await screen.findByRole('menuitem', { name: 'Discard draft' }),
-    )
+    fireEvent.click(screen.getByRole('button', { name: 'Discard draft' }))
 
     const dialog = await screen.findByRole('dialog', {
       name: 'Discard “Synthetic source”?',

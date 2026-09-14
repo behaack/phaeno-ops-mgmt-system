@@ -1,5 +1,50 @@
 # Frontend Test Plan
 
+## Company association draft protection and CRM-01 closure — September 14, 2026
+
+The connected Company/Contact case exposed silent loss of an Add existing person draft on a second Escape. The dialog now applies the established unsaved-navigation and dismissal guard, preserves a declined dismissal, blocks closing during save, and resets discarded local selections when reopened. The first Escape still closes search choices. The Company workspace regression covers decline/discard/reopen and existing recovery paths (8 passed); real signed-in desktop/tablet/phone checks confirm the nested Escape behavior without writes. TypeScript, scoped lint and generated-help consistency pass. The staff guide and review date are updated. Actual Company/relationship, outreach validation/reset, immutable history, legacy restrictions and suppression-preserving admin merge/export complete CRM-01 on the isolated baseline. See the [complete step crosswalk](../testing/runs/2026-09-14-acceptance-closure.md). No broad test suite was substituted for acceptance.
+
+## Connected CRM closure and table reflow — September 14, 2026
+
+CRM-03 and CRM-04 now have complete actual Clerk-session step crosswalks in the [acceptance run](../testing/runs/2026-09-14-acceptance-closure.md): pipeline/history/currency reporting, restricted activity, task completion/recurrence and populated attention links. These checks used the real isolated API/database, exact write guards and persistent journals; no broad mock suite was substituted. A backend save-then-error defect was corrected and separately regression-tested. The only frontend changes keep Opportunity/Reports column headings together in their existing scrolling containers. Actual populated layouts passed at desktop 1440, tablet 768 and phone 390 pixels, without page-level horizontal overflow or page errors. TypeScript and scoped lint pass. No new UI test file or dependency was added for this small reversible style change.
+
+## Targeted Finance gap fixes — September 14, 2026
+
+Added saved-billing approval reminder recovery and four Finance attention capability/link variants. All 41 Finance panel and disabled-capability checks passed; TypeScript and scoped lint passed. Existing permission boundaries retained. Updated Finance guide and matching generated search corpus checked. [Evidence](../testing/runs/2026-09-14-acceptance-closure.md).
+
+
+## File safeguards and quote recovery checkpoint — September 14, 2026
+
+100 distinct checks passed: shared controls/API/receipt handling 52 plus quote/configuration/journal/draft checks 48. Five shared dialog checks repeated after adding the missing description in its test fixture; scoped lint passed. Optional quote-line React timing and configuration JSDOM scrollTo warnings remain non-failing. No product changes or browser reflow claim. See [run evidence](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-file-safeguards-shared-controls-and-quote-recovery-slice).
+
+## Finance rules and Web Operations checkpoint — September 14, 2026
+
+68 distinct checks passed: dashboard/API 22 and Finance corrections/closeout/capability/order-to-cash panels 46. Wrapped direct tab focus in act in one dashboard test to eliminate its timing warning; all seven file checks retested without the warning. Scoped lint passed; no product changes. See [run evidence](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-finance-rules-and-web-operations-recovery-slice).
+
+## CRM, people and account access checkpoint — September 14, 2026
+
+104 distinct checks passed: 55 CRM and 49 organization/invitation checks. Initial CRM 54/55 resolved by testing the current fixed recipient summary and administrator radio action, retaining the contact/email/department/admin payload. All seven affected-file checks pass. Scoped lint passed. See [run evidence](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-crm-people-and-account-access-slice).
+
+## Documentation, access and provisioning checkpoint — September 14, 2026
+
+12 documentation and data-provisioning checks passed. Updated SourceSampleWorkspace test to use the current direct Discard draft action; required reason, version payload and scoped navigation assertions retained. Initial 11/12 followed by passing focused retest; scoped lint passed. See [run evidence](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-documentation-access-and-provisioning-slice).
+
+## Release and retention grouped verification — September 14, 2026
+
+31 checks across seven file-management/result-release/package/retention files passed unchanged. Covers member/staff action boundaries, policy inheritance, frozen dates, individual/package download requests, confirmation and stale-version recovery. Mocked component downloads are not Customer browser byte-delivery acceptance. See [release checkpoint](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-release-download-and-retention-grouped-continuation).
+
+## Shipping workspace and feedback verification — September 14, 2026
+
+107 distinct checks across 12 files pass after correcting three stale assertions for tube-policy confirmation and direct revision deactivation. Added four ReturnKitFulfillmentPanel regressions for failed query (both showEmpty modes), pending loading and successful empty results. Empty queue feedback now requires query success; optional empty-panel suppression does not hide errors. TypeScript and scoped ESLint passed. See [shipping results](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-shipping-packing-and-accession-grouped-continuation).
+
+## Shipping and Trial grouped verification — September 14, 2026
+
+162 distinct checks pass across 16 files: all 143 shipping checks passed initially; all 19 Trial checks passed after seven obsolete label selectors in TrialFormDialog, TrialScopePage and TrialSampleDialog tests were updated for current required-marker spacing. No application code changed. An existing SearchableSelect React act warning remains in the passing sample test. Live reviewer kit feedback exposed open UAT-20260914-01; no regression test added for that finding. See [grouped results](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-grouped-handoff-shipping-and-trial-verification).
+
+## Grouped laboratory verification — September 14, 2026
+
+All 48 tests in 15 `src/features/lab-operations` test files passed using the installed Vitest Node entrypoint (30.38 seconds). Covers protocol definitions/list/approval, scanner and receipt/accession behavior, typed QC, material dates, explicit physical-print confirmation and preparation access. Initial package-command executable resolution failed; no dependency change was needed. These are component/unit tests, not physical or signed-in workflow completion. The same checkpoint separately traced saved preparation/specimen/execution/output/source links as Independent Reviewer without writes. See [grouped evidence](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-grouped-software-verification-and-saved-lineage-trace).
+
 ## Preparation access closeout — September 12, 2026
 
 UAT-20260912-07 fixed locally: disabled Customer query no longer masquerades as endless loading on a direct preparation link. PreparationBatchPage.access.test.tsx passes four cases: immediate role guidance, cached staff data withheld with no resource/tube queries, unresolved-session cache withheld, and authorized genuine loading. Live Customer retest on isolated 3014 confirms the role explanation and keyboard Back to dashboard recovery. Existing guides retain their accurate role boundary. See [closeout ledger](../testing/runs/2026-09-12-laboratory-uat-closeout.md#uat-20260912-07--customer-preparation-link-never-leaves-loading).
@@ -1994,3 +2039,10 @@ September 12 release checkpoint: 53 selected frontend tests passed; two receipt 
 September 12 SYS-05 signed-in release workspace: OPEN UAT-20260912-02. At measured innerWidth 320 with a visible scrollbar, clientWidth 303 and body/scrollWidth 320 expose 17px overflow from styles.css body min-width. At 390, long identifiers/links reflow without overflow. Global-minimum correction and focused responsive retest remain pending. No source change or automated test added in this UAT checkpoint; exact measurements are in the active run.
 
 September 12 correction supersedes the open status above: UAT-20260912-02 fixed and retested locally. Removed body min-width: 320px. Signed-in pending package detail now measures innerWidth 320/clientWidth 303/scrollWidth 303; queue and bounded release confirmation also fit. Settled 390 and 1440 detail checks have clientWidth equal to scrollWidth (373 and 1423 respectively). Confirmation initial Cancel focus and Escape return to Release to Customer passed; no confirmation submitted. Viewport override reset. Manual browser verification is appropriate for this one-line CSS change; no new automated frontend test or full suite. See [correction evidence](../testing/runs/2026-09-12-lab-14-preparation.md#uat-defect-corrections-and-focused-retest--september-12-2026).
+
+## Connected help and header regression — September 14, 2026
+
+WEB-06 closes on four actual Clerk audiences, including wrong-audience routes, search failure/retry, preserved navigation and delayed-response sign-out/sign-in. Fixed the shared sidebar's overlap with the taller narrow external header. Four sidebar/search component checks, TypeScript and scoped lint pass; the browser regression passes across 390/320/768px. All ten focused Documentation navigation desktop/mobile cases pass. Current guide corpus generation/check and signed-in search readback pass. FIN-06 also closes after the unavailable legacy connector comparison, with all financial records unchanged. [Full acceptance crosswalk](../testing/runs/2026-09-14-acceptance-closure.md).
+
+
+September 14 Lead history: queue requests retained converted records so All statuses and Converted filters can reopen immutable history. Existing detail edit restrictions remain. TypeScript/scoped lint passed; no component suite added for this query-only correction. Focused desktop/mobile E2E coverage is in the E2E plan. [Execution record](../testing/runs/2026-09-14-acceptance-closure.md).

@@ -42,7 +42,7 @@ describe('Customer sample-list authorization', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Review and finalize list' }))
     fireEvent.click(screen.getByRole('checkbox'))
     fireEvent.click(screen.getByRole('button', { name: 'Finalize sample list' }))
-    await waitFor(() => expect(api.finalize).toHaveBeenCalledWith(order.id, order.version))
+    await waitFor(() => expect(api.finalize).toHaveBeenCalledWith(order.id, order.version, true))
     expect(screen.getByRole('button', { name: 'Cancel' })).toHaveProperty('disabled', true)
     expect(api.blocker.mock.lastCall?.[0].shouldBlockFn()).toBe(true)
     expect(api.blocker.mock.lastCall?.[0].enableBeforeUnload()).toBe(true)
@@ -220,7 +220,7 @@ describe('Customer sample-list authorization', () => {
     expect(api.finalize).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('checkbox'))
     fireEvent.click(submit)
-    await waitFor(() => expect(api.finalize).toHaveBeenCalledWith('job', 4))
+    await waitFor(() => expect(api.finalize).toHaveBeenCalledWith('job', 4, true))
   })
   it('previews an import for an empty roster without saving and requires a separate confirmation', async () => {
     api.preview.mockResolvedValue({ previewId: 'preview', validRowCount: 1, blankRowCount: 0, rows: [{ rowNumber: 2, customerSampleId: 'S-2', biologicalSource: 'Human PBMCs', tubeCount: 3 }], errors: [] })

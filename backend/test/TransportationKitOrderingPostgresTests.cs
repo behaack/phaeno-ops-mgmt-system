@@ -87,13 +87,14 @@ public partial class SampleShippingPostgresTests
                 "customer" => scope.CustomerOrganization.Name,
                 _ => scope.PlatformOrganization.Name
             };
+            var noticeCount = await scope.DbContext.OrderNotifications.CountAsync(item => item.WorkflowType == "TransportationKit");
             var failure = await Assert.ThrowsAsync<OrderManagementException>(() =>
                 scope.KitCustomer(fulfillmentName: configuredName).Create(fixture.Shipment.Id,
                     new(fixture.Shipment.Version, location.Id, location.Version, [new(size.Id, 1)]), default));
             Assert.Equal("transportation_kit_conflict", failure.ErrorCode);
             scope.ClearTrackedState();
             Assert.False(await scope.DbContext.TransportationKitRequests.AnyAsync(item => item.LabServiceOrderId == fixture.WorkOrder.AuthorizationSourceId));
-            Assert.False(await scope.DbContext.OrderNotifications.AnyAsync(item => item.WorkflowType == "TransportationKit"));
+            Assert.Equal(noticeCount, await scope.DbContext.OrderNotifications.CountAsync(item => item.WorkflowType == "TransportationKit"));
             Assert.False(await scope.DbContext.OrderStatusEvents.AnyAsync(item => item.OrganizationId == scope.CustomerOrganization.Id && item.WorkflowType == "TransportationKit"));
             Assert.False(await scope.DbContext.OrderIdempotencyRecords.AnyAsync(item => item.ActorUserId == scope.CustomerUser.Id));
             Assert.Equal(18, await scope.DbContext.SampleShipmentTubeSlots.CountAsync(item => item.SampleShipmentItemId == fixture.Item.Id));
@@ -285,10 +286,10 @@ public partial class SampleShippingPostgresTests
             scope.DbContext.TransportationKitRequests.Add(historical);
         }
         await scope.DbContext.SaveChangesAsync(); scope.ClearTrackedState();
-        var all = await scope.KitStaff().List(null, default);
+        var all = (await scope.KitStaff().List(null, default)).Where(item => item.OrganizationId == scope.CustomerOrganization.Id).ToList();
         Assert.Equal(261, all.Count);
         Assert.Equal(pending.Id, Assert.Single(all, item => item.Status == "Pending").Id);
-        Assert.Equal(260, (await scope.KitStaff().List("Cancelled", default)).Count);
+        Assert.Equal(260, (await scope.KitStaff().List("Cancelled", default)).Count(item => item.OrganizationId == scope.CustomerOrganization.Id));
         Assert.All(all, item => { Assert.False(string.IsNullOrWhiteSpace(item.OrganizationName)); Assert.False(string.IsNullOrWhiteSpace(item.DepartmentName)); });
     }
 

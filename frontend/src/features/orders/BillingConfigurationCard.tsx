@@ -84,7 +84,7 @@ export function BillingConfigurationCard({ apiEnabled, customers, customersLoadi
           {taxDecision === 'Exempt' ? <FinanceField id="billing-exemption" label="Exemption evidence" required error={form.formState.errors.exemptionEvidence?.message}><Input required {...register('exemptionEvidence')} /></FinanceField> : null}
         </fieldset>
         {!modal ? <RequiredLegend /> : null}<Button type="submit" disabled={!apiEnabled || !form.formState.isDirty || busy}>{save.isPending ? 'Saving changes…' : 'Save changes'}</Button>
-        {save.isSuccess && !form.formState.isDirty ? <p role="status" className="text-sm">Billing changes saved. Review and approve the current tax decision.</p> : null}
+        {save.isSuccess && !form.formState.isDirty && !selected.financeApprovedAtUtc ? <p role="status" className="text-sm">Billing changes saved. Review and approve the current tax decision.</p> : null}
       </form>
       <form noValidate className="space-y-3 border-t pt-4" onSubmit={approval.handleSubmit(values => { if (!form.formState.isDirty) approve.mutate(values) })}>
         <FinanceField id="billing-approval-notes" label="Finance approval notes" required error={approval.formState.errors.notes?.message}><Input required disabled={busy} {...approval.register('notes', { onChange: () => { if (approval.formState.errors.notes) void approval.trigger('notes') } })} /></FinanceField>

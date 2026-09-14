@@ -265,7 +265,7 @@ public sealed partial class ManagedReleaseRetentionPostgresTests
     private static async Task InDatabase(Func<string, Task> test)
     {
         var source = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("PSEQ_OPERATIONS_REFERENCE_CONNECTION")!);
-        if (source.Host is not ("localhost" or "127.0.0.1") || source.Database != "phaeno_ops") throw new InvalidOperationException("Local phaeno_ops source required.");
+        if (source.Host is not ("localhost" or "127.0.0.1") || source.Database is not ("phaeno_ops" or "phaeno_ops_lab06_uat")) throw new InvalidOperationException("A known local development or isolated UAT source is required.");
         var name = $"pseq_retention_test_{Guid.NewGuid():N}";
         await using var admin = new NpgsqlConnection(source.ConnectionString); await admin.OpenAsync();
         await using (var create = new NpgsqlCommand($"CREATE DATABASE {name}", admin)) await create.ExecuteNonQueryAsync();

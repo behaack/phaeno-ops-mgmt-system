@@ -253,7 +253,7 @@ for (const audience of ['lab', 'partner-lab'])
       .click()
     await expect(dialog).toHaveCount(0)
     await expect(
-      page.getByRole('button', { name: 'Add sample', exact: true }),
+      page.getByRole('button', { name: 'Add sample to Yeast', exact: true }),
     ).toBeVisible()
     await capture(page, info, `${audience}-placed-samples`)
     expect(state.writes).toHaveLength(1)

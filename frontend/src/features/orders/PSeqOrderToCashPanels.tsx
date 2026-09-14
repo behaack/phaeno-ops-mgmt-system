@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -27,9 +28,15 @@ import { Label } from '#/components/ui/label'
 export function OperationalAttentionPanel({
   apiEnabled,
   userId,
+  canBill = false,
+  canManageCash = false,
+  canReconcile = false,
 }: {
   apiEnabled: boolean
   userId: string | null
+  canBill?: boolean
+  canManageCash?: boolean
+  canReconcile?: boolean
 }) {
   const client = useQueryClient()
   const [category, setCategory] = useState('')
@@ -102,6 +109,9 @@ export function OperationalAttentionPanel({
                   <p className="mt-2 text-sm"><strong>Next action:</strong> {item.nextAction}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  {item.sourceType === 'Invoice' && canBill ? <Button asChild size="sm" variant="outline"><Link to="/order-operations/finance/$kind/$recordId" params={{ kind: 'invoice', recordId: item.sourceId }} search={previous => ({ ...previous, orderSection: 'finance', financeSection: 'invoices' })}>Open invoice</Link></Button> : null}
+                  {item.sourceType === 'PaymentReceipt' && canManageCash ? <Button asChild size="sm" variant="outline"><Link to="/order-operations/finance/$kind/$recordId" params={{ kind: 'receipt', recordId: item.sourceId }} search={previous => ({ ...previous, orderSection: 'finance', financeSection: 'receipts' })}>Open receipt</Link></Button> : null}
+                  {item.sourceType === 'ReconciliationBatch' && (canManageCash || canReconcile) ? <Button asChild size="sm" variant="outline"><Link to="/order-operations/finance/$kind/$recordId" params={{ kind: 'reconciliation', recordId: item.sourceId }} search={previous => ({ ...previous, orderSection: 'finance', financeSection: 'reconciliation' })}>Open reconciliation</Link></Button> : null}
                   {item.ownerUserId !== userId ? <Button type="button" size="sm" variant="outline" disabled={!userId || assign.isPending} onClick={() => assign.mutate({ id: item.id, version: item.version })}>Assign to me</Button> : null}
                   <Button type="button" size="sm" disabled={resolve.isPending} onClick={event => { opener.current = event.currentTarget; form.reset(); resolve.reset(); setResolveId(item.id) }}>Resolve</Button>
                 </div>

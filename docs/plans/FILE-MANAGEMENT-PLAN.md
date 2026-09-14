@@ -1,5 +1,9 @@
 # File Management Plan
 
+## Retention UAT supporting verification — September 14, 2026
+
+Grouped verification passed 56 backend and 31 frontend checks. Database journeys cover commit-time download evidence, independent ZIP revocation, concurrent notices, holds, simulated cleanup retries, shared-object preservation and reissue history. Disposable local databases removed; retained UAT packages unreleased. Harness-only source-name adaptation; no runtime/provider/retention activation. Actual Customer downloads, external notification delivery and production cleanup remain separate gates. See [the UAT ledger](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-release-download-and-retention-grouped-continuation).
+
 ## Coordinated backup implementation (authorized September 7 follow-up)
 
 The remaining database/Local-file backup item now has a bounded maintenance

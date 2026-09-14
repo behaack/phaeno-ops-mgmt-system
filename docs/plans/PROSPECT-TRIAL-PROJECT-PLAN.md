@@ -1,5 +1,19 @@
 # Prospect Trial Project Plan
 
+September 14 connected UAT found that canonical `extracted_rna` was excluded from Trial choices and submission. Both checks now normalize underscores as well as spaces/hyphens. The canonical batch-submission regression reproduced the defect and passed after correction; existing spaced-label approval/submission also passed. Actual isolated configuration now offers the retained RNA type. Eligible analysis configuration remains absent, so no whole Trial case is closed. Phaeno/Prospect guides reviewed; existing instructions remain accurate. [Evidence](../testing/runs/2026-09-14-acceptance-closure.md).
+
+## Trial desktop/mobile browser checkpoint — September 14, 2026
+
+All 12 Trial browser cases passed unchanged: scope/catalog/material terms, Prospect acceptance and coded sample submission with conflict recovery, changed-scope renewed acceptance, result history/failed-download refresh, exact Company request handoff and draft Escape behavior. Deterministic API fixtures, not live provider or completed Trial acceptance. Included in the [40-case commercial/access run](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-commercial-trial-and-department-browser-slice).
+
+## Trial grouped regression checkpoint — September 14, 2026
+
+Trial backend coverage ran with commercial handoff (66 distinct checks passing after focused retests); all 19 Trial frontend checks pass. Release/retention fixtures now arrange the resolved specimen state required by current readiness; three frontend test files use labels tolerant of required-marker spacing. These are fixture corrections, not product-rule changes. Synthetic release fixtures do not establish a real laboratory/provider journey. Full signed-in and physical acceptance remains separate in [the UAT ledger](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-grouped-handoff-shipping-and-trial-verification).
+
+## Preparation eligibility verification — September 14, 2026
+
+The laboratory UAT continuation added PostgreSQL preparation-command coverage for held Trials, all five terminal Trial states, stale approval and stale acceptance. Seven commands across eight conditions reject without changing tray/history, Trial/Job/attempt/tube state or library/work-event counts; a valid-state move succeeds once. The 56 negative checks use a disposable local database and synthetic tray arrangement; they do not establish signed-in/physical Trial execution or genuine completion. Existing approval/submission and scientific-hold regressions also pass. No behavior or shared schema change. See [the continuation record](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-trial-preparation-guards-and-reviewer-keyboard-check).
+
 ## Tube-use instruction at sample submission — September 11, 2026
 
 New Trial sample submissions display and confirm run-one/failure-fallback and send V2 Lab authorization with that policy. Each authorization snapshot retains the instruction; extra tubes remain reserves rather than extra analyses. Existing Trial scopes, approvals, replacement authorizations and historical V1 lab records are not rewritten. Existing Trial hold rules remain separate from the blocked customer-specimen-hold proposal. See [tube attempts](SPECIMEN-TUBE-ATTEMPT-PLAN.md). New Trial submission acceptance Not run.

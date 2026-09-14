@@ -116,7 +116,10 @@ describe('DialogContent', () => {
     render(
       <Dialog open>
         <DialogContent>
-          <DialogHeader><DialogTitle>Failed action</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Failed action</DialogTitle>
+            <DialogDescription>Review the failed action before retrying.</DialogDescription>
+          </DialogHeader>
           <Alert variant="destructive">The action failed.</Alert>
           <div>Scrollable content</div>
           <DialogFooter>Fixed actions</DialogFooter>

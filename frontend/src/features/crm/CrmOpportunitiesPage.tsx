@@ -249,12 +249,12 @@ export function CrmOpportunitiesPage() {
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="text-xs text-muted-foreground">
-                    <th className="p-3">Opportunity</th>
-                    <th className="p-3">Company</th>
-                    <th className="p-3">Stage</th>
-                    <th className="p-3">Amount</th>
-                    <th className="p-3">Close</th>
-                    <th className="p-3">Owner</th>
+                    <th className="whitespace-nowrap p-3">Opportunity</th>
+                    <th className="whitespace-nowrap p-3">Company</th>
+                    <th className="whitespace-nowrap p-3">Stage</th>
+                    <th className="whitespace-nowrap p-3">Amount</th>
+                    <th className="whitespace-nowrap p-3">Close</th>
+                    <th className="whitespace-nowrap p-3">Owner</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">

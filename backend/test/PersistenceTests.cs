@@ -213,7 +213,7 @@ public class PersistenceTests
             .Where(entityType => entityType.ClrType.Assembly == laboratoryAssembly)
             .ToList();
 
-        Assert.Equal(30, laboratoryEntities.Count);
+        Assert.Equal(36, laboratoryEntities.Count);
         var timingHistory = dbContext.Model.FindEntityType(typeof(LabWorkTimingChange));
         Assert.Equal("lab_work_timing_changes", timingHistory?.GetTableName());
         Assert.Equal(typeof(LabServiceOrder).Assembly, timingHistory?.ClrType.Assembly);
@@ -239,10 +239,17 @@ public class PersistenceTests
             "lab_provider_command_receipts",
             dbContext.Model.FindEntityType(typeof(LabProviderCommandReceipt))?.GetTableName());
         Assert.Equal("lab_role_assignments", dbContext.Model.FindEntityType(typeof(LabRoleAssignment))?.GetTableName());
+        Assert.Equal("lab_role_invitation_intents", dbContext.Model.FindEntityType(typeof(LabRoleInvitationIntent))?.GetTableName());
         Assert.Equal("lab_containers", dbContext.Model.FindEntityType(typeof(LabContainer))?.GetTableName());
         Assert.Equal("lab_protocols", dbContext.Model.FindEntityType(typeof(LabProtocol))?.GetTableName());
         Assert.Equal("lab_protocol_versions", dbContext.Model.FindEntityType(typeof(LabProtocolVersion))?.GetTableName());
         Assert.Equal("lab_protocol_executions", dbContext.Model.FindEntityType(typeof(LabProtocolExecution))?.GetTableName());
+        Assert.Equal("lab_specimen_attempts", dbContext.Model.FindEntityType(typeof(LabSpecimenAttempt))?.GetTableName());
+        Assert.Equal("lab_attempt_command_receipts", dbContext.Model.FindEntityType(typeof(LabAttemptCommandReceipt))?.GetTableName());
+        Assert.Equal("lab_tray_formats", dbContext.Model.FindEntityType(typeof(LabTrayFormat))?.GetTableName());
+        Assert.Equal("lab_preparation_batches", dbContext.Model.FindEntityType(typeof(LabPreparationBatch))?.GetTableName());
+        Assert.Equal("lab_preparation_members", dbContext.Model.FindEntityType(typeof(LabPreparationMember))?.GetTableName());
+        Assert.Equal("lab_preparation_records", dbContext.Model.FindEntityType(typeof(LabPreparationRecord))?.GetTableName());
         Assert.Equal("lab_material_definitions", dbContext.Model.FindEntityType(typeof(LabMaterialDefinition))?.GetTableName());
         Assert.Equal("lab_suppliers", dbContext.Model.FindEntityType(typeof(LabSupplier))?.GetTableName());
         Assert.Equal("lab_storage_locations", dbContext.Model.FindEntityType(typeof(LabStorageLocation))?.GetTableName());

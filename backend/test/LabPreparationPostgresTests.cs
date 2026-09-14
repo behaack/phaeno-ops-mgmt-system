@@ -98,6 +98,52 @@ public partial class SampleShippingPostgresTests
             await Assert.ThrowsAsync<OrderManagementException>(() => lab.ApplyPreparation(otherId, new(Guid.NewGuid(), other.GetProperty("version").GetInt64(), "add", Position: "A1", Barcode: $"TEST-PREP-{scope.Suffix}-0-0"), default));
             batch = await Command("add", v => new(Guid.NewGuid(), v, "add", Position: "A2", Barcode: $"TEST-PREP-{scope.Suffix}-1-0"));
             var second = batch.GetProperty("members").EnumerateArray().Single(m => m.GetProperty("id").GetGuid() != first).GetProperty("id").GetGuid();
+            await using (var deniedDb = scope.CreateAdditionalContext())
+            {
+                var denied = scope.CreatePreparationController(deniedDb, true);
+                var before = Json(await lab.ReadPreparation(id, default)).GetRawText();
+                foreach (var action in new[] { "start", "move", "remove", "cancel", "output", "step" })
+                {
+                    var rejected = await Assert.ThrowsAsync<OrderManagementException>(() => denied.ApplyPreparation(id,
+                        new(Guid.NewGuid(), batch.GetProperty("version").GetInt64(), action,
+                            MemberId: first, Position: "B1", Confirmed: true, Reason: "TEST ONLY unauthorized Customer"), default));
+                    Assert.Equal("lab_capability_required", rejected.ErrorCode);
+                    Assert.Equal(StatusCodes.Status403Forbidden, rejected.StatusCode);
+                    Assert.Equal(before, Json(await lab.ReadPreparation(id, default)).GetRawText());
+                }
+            }
+            // A job can be held or closed after its tube was added to a draft tray.
+            // Reject representative commands before changing the tray or its reserved work.
+            foreach (var blockedStatus in new[] { LabWorkOrderStatus.OnHold, LabWorkOrderStatus.Cancelled, LabWorkOrderStatus.ReadyForRelease })
+            {
+                scope.ClearTrackedState();
+                // Arrange each terminal state only on this test's generated job;
+                // this is guard coverage, not a real completion/resumption journey.
+                await db.LabWorkOrders.Where(w => w.Id == workIds[0])
+                    .ExecuteUpdateAsync(s => s.SetProperty(w => w.Status, blockedStatus));
+                scope.ClearTrackedState();
+                var before = Json(await lab.ReadPreparation(id, default)).GetRawText();
+                var workVersion = await db.LabWorkOrders.Where(w => w.Id == workIds[0]).Select(w => w.Version).SingleAsync();
+                var attemptVersions = await db.LabSpecimenAttempts.Where(a => workIds.Contains(a.LabWorkOrderId)).OrderBy(a => a.Id).Select(a => a.Version).ToArrayAsync();
+                foreach (var action in new[] { "start", "move", "remove", "cancel", "output" })
+                {
+                    scope.ClearTrackedState();
+                    var rejected = await Assert.ThrowsAsync<OrderManagementException>(() => Command(action,
+                        v => new(Guid.NewGuid(), v, action, MemberId: first, Position: "B1", Confirmed: true, Reason: "TEST ONLY blocked job command")));
+                    Assert.Equal("execution_work_unavailable", rejected.ErrorCode);
+                    scope.ClearTrackedState();
+                    Assert.Equal(before, Json(await lab.ReadPreparation(id, default)).GetRawText());
+                    Assert.Equal(workVersion, await db.LabWorkOrders.Where(w => w.Id == workIds[0]).Select(w => w.Version).SingleAsync());
+                    Assert.Equal(attemptVersions, await db.LabSpecimenAttempts.Where(a => workIds.Contains(a.LabWorkOrderId)).OrderBy(a => a.Id).Select(a => a.Version).ToArrayAsync());
+                    Assert.False(await db.LabProtocolExecutions.AnyAsync(e => workIds.Contains(e.LabWorkOrderId) && e.StartedAtUtc != null));
+                    Assert.False(await db.LabLibraries.AnyAsync(l => workIds.Contains(l.LabWorkOrderId)));
+                }
+            }
+            scope.ClearTrackedState();
+            await db.LabWorkOrders.Where(w => w.Id == workIds[0])
+                .ExecuteUpdateAsync(s => s.SetProperty(w => w.Status, LabWorkOrderStatus.Received));
+            scope.ClearTrackedState();
+            batch = Json(await lab.ReadPreparation(id, default));
             var startRequest = new LabPreparationCommand(Guid.NewGuid(), batch.GetProperty("version").GetInt64(), "start", Confirmed: true);
             batch = await Command("start", _ => startRequest);
             scope.ClearTrackedState(); await lab.ApplyPreparation(id, startRequest, default); // uncertain response retry, no duplicate start

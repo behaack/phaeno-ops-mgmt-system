@@ -52,6 +52,7 @@ import { CrmContactDialog } from './CrmContactDialog'
 import { CrmAssociationRecordCombobox } from './CrmAssociationRecordCombobox'
 import { CrmRelationshipRoleSelect } from './CrmRelationshipRoleSelect'
 import { CrmCollectionFeedback, type CrmCollectionQueryState } from './CrmCollectionFeedback'
+import { useOrderDraftGuard } from '#/features/orders/use-order-draft-guard'
 
 type IdentityAction =
   | { kind: 'link'; person: CrmCompanyPerson }
@@ -197,7 +198,7 @@ export function CrmCompanyPeople({
         </CardContent>
       </Card>
 
-      <AssociatePersonDialog
+      {associateOpen ? <AssociatePersonDialog
         open={associateOpen}
         excludedContactIds={(contacts.data ?? [])
           .filter((contact) => contact.isActive)
@@ -207,7 +208,7 @@ export function CrmCompanyPeople({
         contactsQuery={contacts}
         onOpenChange={setAssociateOpen}
         onSubmit={(input) => associate.mutate(input)}
-      />
+      /> : null}
       {relationshipTarget ? <CrmCompanyContactEditDialog value={relationshipTarget} pending={editRelationship.isPending} error={editRelationship.error} onOpenChange={open => { if (!open) setRelationshipTarget(null) }} onSubmit={input => editRelationship.mutate({ ...input, version: relationshipTarget.version })} /> : null}
       <CrmContactDialog open={createOpen} pending={create.isPending} error={create.error ? apiErrorMessage(create.error) : undefined} onOpenChange={setCreateOpen} onSubmit={input => create.mutate(input)} />
       {inviteTarget?.email && accessOrganizationId ? <OrganizationInvitationDialog
@@ -390,10 +391,16 @@ function AssociatePersonDialog({
   }) => void
 }) {
   const [primary, setPrimary] = useState(false)
+  const [dirty, setDirty] = useState(false)
+  useOrderDraftGuard(dirty, pending)
+  const close = (nextOpen: boolean) => {
+    if (pending || (!nextOpen && dirty && !window.confirm('Discard unsaved Company association changes?'))) return
+    onOpenChange(nextOpen)
+  }
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={close}>
       <DialogContent>
-        <form onSubmit={(event) => {
+        <form onChange={() => setDirty(true)} onSubmit={(event) => {
           event.preventDefault()
           if (pending || contactsQuery.isPending || contactsQuery.isError) return
           const data = new FormData(event.currentTarget)
@@ -414,15 +421,15 @@ function AssociatePersonDialog({
           <div className="grid gap-4">
             <div className="grid gap-1.5">
               <Label htmlFor="people-association-contact"><RequiredFieldName>Contact</RequiredFieldName></Label>
-              <CrmAssociationRecordCombobox id="people-association-contact" name="contactId" kind="contact" excludedIds={excludedContactIds} required />
+              <CrmAssociationRecordCombobox id="people-association-contact" name="contactId" kind="contact" excludedIds={excludedContactIds} required onValueChange={() => setDirty(true)} />
             </div>
             <div className="grid gap-1.5"><Label htmlFor="people-association-title">Job title</Label><Input id="people-association-title" name="jobTitle" maxLength={150} /></div>
             <div className="grid gap-1.5"><Label htmlFor="people-association-role">Relationship role</Label><CrmRelationshipRoleSelect id="people-association-role" /></div>
             <div className="grid gap-1.5"><Label htmlFor="people-association-date"><RequiredFieldName>Effective from</RequiredFieldName></Label><Input id="people-association-date" name="effectiveFrom" type="date" required defaultValue={new Date().toISOString().slice(0, 10)} /></div>
-            <Label className="flex cursor-pointer items-center gap-2 font-normal"><Checkbox checked={primary} onCheckedChange={(value) => setPrimary(value === true)} />Primary Company for this Contact</Label>
+            <Label className="flex cursor-pointer items-center gap-2 font-normal"><Checkbox checked={primary} onCheckedChange={(value) => { setPrimary(value === true); setDirty(true) }} />Primary Company for this Contact</Label>
           </div>
           <RequiredDialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="button" variant="outline" disabled={pending} onClick={() => close(false)}>Cancel</Button>
             <Button type="submit" disabled={pending || contactsQuery.isPending || contactsQuery.isError}>Associate contact</Button>
           </RequiredDialogFooter>
         </form>

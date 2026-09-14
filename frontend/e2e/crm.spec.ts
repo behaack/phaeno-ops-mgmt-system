@@ -129,7 +129,7 @@ test("creates a standalone CRM company without changing Portal access", async ({
   await dialog.getByLabel("Website").fill("https://example.test");
   await dialog.getByRole("button", { name: "Create company" }).click();
 
-  await expect(page).toHaveURL(`/crm/companies/${companyId}`);
+  await expect(page).toHaveURL(`/crm/companies/${companyId}?section=requests`);
   expect(submitted).toMatchObject({
     name: "Example Biosciences",
     websiteUrl: "https://example.test",
@@ -138,6 +138,34 @@ test("creates a standalone CRM company without changing Portal access", async ({
   expect(portalWrites).toEqual([]);
   expect(browserErrors).toEqual([]);
   await expect(page.locator("vite-error-overlay")).toHaveCount(0);
+});
+
+test("finds converted Lead history through all-status and Converted filters", async ({ page }) => {
+  const converted = { ...lead(), status: "Converted", isActive: false,
+    qualificationNotes: "Recorded qualification reason", convertedAt: "2026-09-14T12:00:00Z",
+    convertedCompanyId: companyId, convertedOpportunityId: opportunityId };
+  await page.route(apiRequestPattern, async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === `/api/platform/crm/leads/${leadId}`) return envelope(route, converted);
+    if (url.pathname === "/api/platform/crm/leads") {
+      const visible = url.searchParams.get("includeInactive") === "true"
+        && (!url.searchParams.get("status") || url.searchParams.get("status") === "Converted");
+      return envelope(route, { items: visible ? [converted] : [], page: 1, pageSize: 25, totalCount: visible ? 1 : 0 });
+    }
+    if (["/api/platform/crm/activities", "/api/platform/crm/tasks"].includes(url.pathname)) return envelope(route, emptyPage());
+    if (route.request().method() === "GET") return envelope(route, []);
+    return notFound(route);
+  });
+  await page.goto("/crm/leads");
+  await expect(page.getByRole("link", { name: "Lead A", exact: true })).toBeVisible();
+  await page.getByLabel("Status", { exact: true }).selectOption("Converted");
+  await page.getByRole("link", { name: "Lead A", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Lead A", exact: true })).toBeVisible();
+  await expect(page.getByText("Recorded qualification reason", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Edit", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Convert lead", exact: true })).toHaveCount(0);
+  await page.getByRole("link", { name: "Back to leads", exact: true }).click();
+  await expect(page.getByRole("link", { name: "Lead A", exact: true })).toBeVisible();
 });
 
 test("opens a Lead detail workspace from the Lead queue", async ({ page }) => {

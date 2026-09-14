@@ -12,6 +12,8 @@ If a section or its supporting Customer or aging information cannot load, use it
 
 An open adjustment, allocation, or reversal keeps the invoice and receipt information you reviewed. If another change prevents saving, the dialog automatically loads the current record and preserves your entries. Review the updated status and balances, then choose **Use reviewed record**, check your entries and save again. If that refresh fails, use **Retry current record**. An unavailable invoice must be reselected, and a receipt with no available amount cannot be allocated.
 
+When Attention queues are enabled, an overdue invoice, unapplied receipt or reconciliation difference includes **Open invoice**, **Open receipt** or **Open reconciliation** when your Finance responsibility permits that record. Open the record to review the facts and take the appropriate action. Following a link does not allocate cash or resolve the attention item.
+
 ## Configure and issue PSeq documents
 
 - Record billing contact/address and Net 30 terms by default.
@@ -19,6 +21,8 @@ An open adjustment, allocation, or reversal keeps the invoice and receipt inform
 - If the profile is complete and approved at quote issuance, POMS includes calculated tax and freezes billing, tax, terms, currency, and configuration version in the quote. Zero calculated tax is valid.
 - If the profile is not ready, issue an explicitly pre-tax quote. Complete and approve the profile before invoicing; POMS then calculates tax and freezes the current billing terms in the invoice.
 - Job completion idempotently creates one numbered invoice and immutable PDF. Due date is completion plus the applicable snapshotted terms.
+
+Saving billing changes clears approval. After Finance approves the current profile, the approval badge and date confirm its saved state; the reminder to approve is removed.
 
 POMS calculates the approved tax rate without a tax engine. Never edit an issued invoice; use an append-only credit, debit, or write-off adjustment.
 

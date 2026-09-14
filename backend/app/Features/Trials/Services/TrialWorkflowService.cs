@@ -131,7 +131,7 @@ public sealed class TrialWorkflowService(PSeqOperationsDbContext db, ILabOperati
             && value.EffectiveFrom <= now && (value.EffectiveTo == null || value.EffectiveTo > now), token) ?? throw Error("trial_destination_unavailable", "Choose an active Phaeno shipping destination.");
         var sampleType = await db.SampleTypeDefinitions.SingleOrDefaultAsync(value => value.Id == request.SampleTypeId && value.IsActive
             && value.EffectiveFrom <= now && (value.EffectiveTo == null || value.EffectiveTo > now), token) ?? throw Error("trial_sample_type_unavailable", "Choose an active extracted-RNA sample type.");
-        if (!string.Equals(sampleType.MaterialClass.Replace(" ", "").Replace("-", ""), "extractedrna", StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(sampleType.MaterialClass.Replace(" ", "").Replace("-", "").Replace("_", ""), "extractedrna", StringComparison.OrdinalIgnoreCase))
             throw Error("trial_material_invalid", "Initial Trials accept extracted RNA only.");
         if (!await db.SampleShippingInstructionRules.AnyAsync(value => value.SampleTypeDefinitionId == sampleType.Id && value.DestinationId == destination.Id
             && value.IsActive && value.EffectiveFrom <= now && (value.EffectiveTo == null || value.EffectiveTo > now), token))

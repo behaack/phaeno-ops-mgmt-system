@@ -287,7 +287,7 @@
       "title": "Getting started",
       "summary": "Find Customer Jobs, samples, results, curated data, and retained Trials in the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-09-09",
+      "reviewedAt": "2026-09-14",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -306,7 +306,7 @@
       "publicationStatus": "published",
       "id": "customer/en-US/getting-started",
       "route": "/docs/customer/getting-started",
-      "contentHash": "b549dabaf97df345b75b4255c918b0c7997509401bd5d7099396de730cc8050b",
+      "contentHash": "60dc3f2e6e552fc95d5540c9af8f5e91772d247f02d52e7e90ae0d8a95bf0703",
       "sections": [
         {
           "heading": "Getting started",
@@ -316,7 +316,7 @@
         {
           "heading": "Navigate the help center",
           "anchor": "navigate-the-help-center",
-          "text": "Open the user dropdown menu in the toolbar and choose Documentation under Resources. This entry is available on both wide and narrow screens. Guide navigation opens beneath the toolbar from the far-left edge of the screen. Its header identifies Documentation and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the tab. Choosing a guide closes an unpinned sidebar and displays the article."
+          "text": "Open the user dropdown menu in the toolbar and choose Documentation under Resources. This entry is available on both wide and narrow screens. On smaller screens, the Documentation tab sits below the toolbar and organization details. Guide navigation opens beneath the toolbar from the far-left edge of the screen. Its header identifies Documentation and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the tab. Choosing a guide closes an unpinned sidebar and displays the article."
         },
         {
           "heading": "Confirm the current organization",
@@ -915,7 +915,7 @@
       "title": "Getting started",
       "summary": "Find reagent orders, Assembly requests, curated data, and retained Trials in the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-09-09",
+      "reviewedAt": "2026-09-14",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -934,7 +934,7 @@
       "publicationStatus": "published",
       "id": "partner/en-US/getting-started",
       "route": "/docs/partner/getting-started",
-      "contentHash": "9b8b1bfa3fdc78ef90e8185845bcab2c10548ae4b6446d3e5a60fc1a77dc25a9",
+      "contentHash": "a338d61eef426222256670fd340457f4158e93fa6f8c97b59789c7bb67ffa4a2",
       "sections": [
         {
           "heading": "Getting started",
@@ -944,7 +944,7 @@
         {
           "heading": "Navigate the help center",
           "anchor": "navigate-the-help-center",
-          "text": "Open the user dropdown menu in the toolbar and choose Documentation under Resources. This entry is available on both wide and narrow screens. Guide navigation opens beneath the toolbar from the far-left edge of the screen. Its header identifies Documentation and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the tab. Choosing a guide closes an unpinned sidebar and displays the article."
+          "text": "Open the user dropdown menu in the toolbar and choose Documentation under Resources. This entry is available on both wide and narrow screens. On smaller screens, the Documentation tab sits below the toolbar and organization details. Guide navigation opens beneath the toolbar from the far-left edge of the screen. Its header identifies Documentation and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the tab. Choosing a guide closes an unpinned sidebar and displays the article."
         },
         {
           "heading": "Confirm the current Partner organization",
@@ -1467,7 +1467,7 @@
       "title": "Companies and Contacts",
       "summary": "Maintain Company identity, contextual People, relationships, invitations, and Portal access in one workspace.",
       "order": 16,
-      "reviewedAt": "2026-09-08",
+      "reviewedAt": "2026-09-14",
       "navigationGroup": "customer-relationship-management",
       "contentType": "guide",
       "topicIds": [
@@ -1488,7 +1488,7 @@
       "publicationStatus": "published",
       "id": "phaeno/crm-companies-contacts",
       "route": "/docs/phaeno/crm-companies-contacts",
-      "contentHash": "3cb7f5651db3b2ffa58e6f38e4b75b7a828ea8425b4af47ad16f926671adca5e",
+      "contentHash": "aa875418c9cb26dc87767de8cf56b1a523b561686483023643d4f473672cdfef",
       "sections": [
         {
           "heading": "Companies and People",
@@ -1508,7 +1508,7 @@
         {
           "heading": "Associate Contacts and Companies",
           "anchor": "associate-contacts-and-companies",
-          "text": "Open either record workspace to create the association: use Add existing person in the Company's People section to search incrementally for an existing Contact, or use Associate in the Contact's Company relationships area to search incrementally for an existing Company. Record the Contact's free-form job title at that Company and choose the relationship role—Decision maker, Scientific lead, Procurement, Executive sponsor, Champion, Influencer, Technical evaluator, or Other—then record whether this is the Contact's primary Company and the effective-from date. A Contact may be associated with more than one Company, with a different title and relationship role at each. Job title and relationship role are intentionally different. Job title is the person's organization-specific position, such as Director of Genomics, and remains free-form. Relationship role describes how the person participates in the commercial relationship and uses the controlled choices above. The Contacts directory displays the title and Company from the active primary relationship. Each relationship remains visible from the Company's People section and the Contact's Company relationships card. When a title, role, primary designation, or effective date changes, edit the Company relationship rather than the Contact's identity. When a relationship ends, record an effective-to date. Do not delete the Contact or overwrite the former Company simply to hide historical employment. POMS retains the effective-dated relationship and marks ended rows consistently in both workspaces."
+          "text": "Open either record workspace to create the association: use Add existing person in the Company's People section to search incrementally for an existing Contact, or use Associate in the Contact's Company relationships area to search incrementally for an existing Company. Record the Contact's free-form job title at that Company and choose the relationship role—Decision maker, Scientific lead, Procurement, Executive sponsor, Champion, Influencer, Technical evaluator, or Other—then record whether this is the Contact's primary Company and the effective-from date. A Contact may be associated with more than one Company, with a different title and relationship role at each. In Add existing person, Escape first closes open search choices and keeps your draft. Dismissing an edited form, or leaving the page, asks whether to discard unsaved changes. Decline to keep the draft; a discarded form opens fresh next time. Job title and relationship role are intentionally different. Job title is the person's organization-specific position, such as Director of Genomics, and remains free-form. Relationship role describes how the person participates in the commercial relationship and uses the controlled choices above. The Contacts directory displays the title and Company from the active primary relationship. Each relationship remains visible from the Company's People section and the Contact's Company relationships card. When a title, role, primary designation, or effective date changes, edit the Company relationship rather than the Contact's identity. When a relationship ends, record an effective-to date. Do not delete the Contact or overwrite the former Company simply to hide historical employment. POMS retains the effective-dated relationship and marks ended rows consistently in both workspaces."
         },
         {
           "heading": "Deactivate, reactivate, and merge",
@@ -1535,7 +1535,7 @@
       "title": "Leads and conversion",
       "summary": "Capture signals, record qualification decisions, and convert without granting Portal access.",
       "order": 17,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-14",
       "navigationGroup": "customer-relationship-management",
       "contentType": "guide",
       "topicIds": [
@@ -1556,7 +1556,7 @@
       "publicationStatus": "published",
       "id": "phaeno/crm-leads-conversion",
       "route": "/docs/phaeno/crm-leads-conversion",
-      "contentHash": "ed0b6320c84bb718bbccd9ca9aa2bae5c106f3ebb11d9c3dd30b3f9980d2df0f",
+      "contentHash": "d6a62d8db05e4b396fb97fd71b2081307e3115bb810ddaf700570dbe42f3e83c",
       "sections": [
         {
           "heading": "Leads and conversion",
@@ -1566,7 +1566,7 @@
         {
           "heading": "Capture the Lead",
           "anchor": "capture-the-lead",
-          "text": "Open Leads and select New lead. Choose Individual or Company and enter the required display name. A Company Lead also requires a company name. Add contact facts, source, owner, next action, and tags when known. Do not create a Contact merely because an email address arrived, and do not create a Company merely because a web domain was observed. The Lead preserves the original signal while qualification is incomplete. Lead statuses are: New: captured but not yet worked. Working: active follow-up has begun. Qualified: the signal is suitable for conversion. Disqualified: the signal will not proceed; the reason is retained. Converted: the selected CRM records were created or linked and the original Lead is immutable history. Use status and search filters to find the relevant queue. Save a view when the same filter supports recurring work."
+          "text": "Open Leads and select New lead. Choose Individual or Company and enter the required display name. A Company Lead also requires a company name. Add contact facts, source, owner, next action, and tags when known. Do not create a Contact merely because an email address arrived, and do not create a Company merely because a web domain was observed. The Lead preserves the original signal while qualification is incomplete. Lead statuses are: New: captured but not yet worked. Working: active follow-up has begun. Qualified: the signal is suitable for conversion. Disqualified: the signal will not proceed; the reason is retained. Converted: the selected CRM records were created or linked and the original Lead is immutable history. Use status and search filters to find the relevant queue. All statuses includes converted history; select Converted to reopen a completed Lead and its recorded results. Save a view when the same filter supports recurring work."
         },
         {
           "heading": "Qualify or disqualify",
@@ -2195,7 +2195,7 @@
       "title": "Phaeno operations guide",
       "summary": "Find each workflow, its owning workspace, reusable configuration, and the roles needed to act.",
       "order": 10,
-      "reviewedAt": "2026-09-09",
+      "reviewedAt": "2026-09-14",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -2214,7 +2214,7 @@
       "publicationStatus": "published",
       "id": "phaeno/getting-started",
       "route": "/docs/phaeno/getting-started",
-      "contentHash": "8b5ee615c256a25ab86a96554401fc5710bc970edfd9ffb79de2f59f0ef830d8",
+      "contentHash": "d39280ad7a56dd883cc7e4d6b91f5f52f3629eccbc55d5db9e67971d99cf7a11",
       "sections": [
         {
           "heading": "Phaeno operations guide",
@@ -2224,7 +2224,7 @@
         {
           "heading": "Navigate workspaces and guides",
           "anchor": "navigate-workspaces-and-guides",
-          "text": "Open the user dropdown menu in the toolbar and choose Documentation under Resources. This entry is available on both wide and narrow screens. The POMS dashboard, CRM, Lab operations, Order operations, Data provisioning, and Documentation use a shared sidebar anchored beneath the toolbar at the far-left edge of the screen. Its header identifies the current workspace and, on wider screens, provides the pin or unpin icon. The sidebar is pinned by default, leaves a centered page in place when the left margin has room, and reflows the page only to prevent overlap. Pointer users can preview an unpinned sidebar by approaching the edge; keyboard and touch users open the same non-modal rail from the tab. Documentation automatically lists only the guides for the current organization, with an icon identifying each topic. CRM, Data provisioning, Order operations, and Laboratory operations expand to show an overview and detailed workflow guides. The group containing the current guide opens automatically; use its disclosure button to expand or collapse it."
+          "text": "Open the user dropdown menu in the toolbar and choose Documentation under Resources. This entry is available on both wide and narrow screens. On smaller screens, the Documentation tab sits below the toolbar and organization details. The POMS dashboard, CRM, Lab operations, Order operations, Data provisioning, and Documentation use a shared sidebar anchored beneath the toolbar at the far-left edge of the screen. Its header identifies the current workspace and, on wider screens, provides the pin or unpin icon. The sidebar is pinned by default, leaves a centered page in place when the left margin has room, and reflows the page only to prevent overlap. Pointer users can preview an unpinned sidebar by approaching the edge; keyboard and touch users open the same non-modal rail from the tab. Documentation automatically lists only the guides for the current organization, with an icon identifying each topic. CRM, Data provisioning, Order operations, and Laboratory operations expand to show an overview and detailed workflow guides. The group containing the current guide opens automatically; use its disclosure button to expand or collapse it."
         },
         {
           "heading": "Work in the Phaeno context",
@@ -2785,7 +2785,7 @@
       "title": "PSeq billing, cash, and result release",
       "summary": "Review PSeq invoices, record and reconcile cash, release scientifically approved results, and distinguish disabled capabilities from loading failures.",
       "order": 45,
-      "reviewedAt": "2026-09-12",
+      "reviewedAt": "2026-09-14",
       "navigationGroup": "order-operations",
       "contentType": "guide",
       "topicIds": [
@@ -2816,7 +2816,7 @@
       "publicationStatus": "published",
       "id": "phaeno/order-billing-payment-release",
       "route": "/docs/phaeno/order-billing-payment-release",
-      "contentHash": "795477fee81054d26be356be8cdd638dcf1979ec696dd9774d6858950feebb8c",
+      "contentHash": "cfa7c6d6f3a7b4e776d3e8e3ca38cc6a8413513726417670968d673ad39e9051",
       "sections": [
         {
           "heading": "PSeq billing, cash, and result release",
@@ -2826,12 +2826,12 @@
         {
           "heading": "Find the Finance record",
           "anchor": "find-the-finance-record",
-          "text": "Finance actions depend on your assigned responsibility: Billing Operators maintain billing and invoice adjustments, Cash Operators record and allocate receipts and submit reconciliations, and Cash Reconcilers independently approve reconciliations. Result Release Manager and file-administration authority remain separate. Open Order Ops → Finance. Choose Invoices and aging, Receipts, Customer billing, Import receipts, or Reconciliation. Open a record by its invoice, receipt, Customer or reconciliation number. The detail shows its current state and permitted actions. On an invoice, Open order is available only with commercial order administration access; Billing Operators can still review and adjust the invoice within their assigned permissions. Return to Finance to keep the previous Customer filter and section. The Customer filter narrows the displayed records; aging summarizes all Customers, and Export all invoices and Export all receipts include all Customers. If a section or its supporting Customer or aging information cannot load, use its Retry action. Other available Finance sections remain usable. A new receipt or import needs the Customer choices to load; a new reconciliation also needs its eligible receipts. An open adjustment, allocation, or reversal keeps the invoice and receipt information you reviewed. If another change prevents saving, the dialog automatically loads the current record and preserves your entries. Review the updated status and balances, then choose Use reviewed record, check your entries and save again. If that refresh fails, use Retry current record. An unavailable invoice must be reselected, and a receipt with no available amount cannot be allocated."
+          "text": "Finance actions depend on your assigned responsibility: Billing Operators maintain billing and invoice adjustments, Cash Operators record and allocate receipts and submit reconciliations, and Cash Reconcilers independently approve reconciliations. Result Release Manager and file-administration authority remain separate. Open Order Ops → Finance. Choose Invoices and aging, Receipts, Customer billing, Import receipts, or Reconciliation. Open a record by its invoice, receipt, Customer or reconciliation number. The detail shows its current state and permitted actions. On an invoice, Open order is available only with commercial order administration access; Billing Operators can still review and adjust the invoice within their assigned permissions. Return to Finance to keep the previous Customer filter and section. The Customer filter narrows the displayed records; aging summarizes all Customers, and Export all invoices and Export all receipts include all Customers. If a section or its supporting Customer or aging information cannot load, use its Retry action. Other available Finance sections remain usable. A new receipt or import needs the Customer choices to load; a new reconciliation also needs its eligible receipts. An open adjustment, allocation, or reversal keeps the invoice and receipt information you reviewed. If another change prevents saving, the dialog automatically loads the current record and preserves your entries. Review the updated status and balances, then choose Use reviewed record, check your entries and save again. If that refresh fails, use Retry current record. An unavailable invoice must be reselected, and a receipt with no available amount cannot be allocated. When Attention queues are enabled, an overdue invoice, unapplied receipt or reconciliation difference includes Open invoice, Open receipt or Open reconciliation when your Finance responsibility permits that record. Open the record to review the facts and take the appropriate action. Following a link does not allocate cash or resolve the attention item."
         },
         {
           "heading": "Configure and issue PSeq documents",
           "anchor": "configure-and-issue-pseq-documents",
-          "text": "Record billing contact/address and Net 30 terms by default. Record Taxable, Exempt, or NonTaxable, including the approved rate or exemption evidence. Finance approval is required before the tax determination can be used. If the profile is complete and approved at quote issuance, POMS includes calculated tax and freezes billing, tax, terms, currency, and configuration version in the quote. Zero calculated tax is valid. If the profile is not ready, issue an explicitly pre-tax quote. Complete and approve the profile before invoicing; POMS then calculates tax and freezes the current billing terms in the invoice. Job completion idempotently creates one numbered invoice and immutable PDF. Due date is completion plus the applicable snapshotted terms. POMS calculates the approved tax rate without a tax engine. Never edit an issued invoice; use an append-only credit, debit, or write-off adjustment."
+          "text": "Record billing contact/address and Net 30 terms by default. Record Taxable, Exempt, or NonTaxable, including the approved rate or exemption evidence. Finance approval is required before the tax determination can be used. If the profile is complete and approved at quote issuance, POMS includes calculated tax and freezes billing, tax, terms, currency, and configuration version in the quote. Zero calculated tax is valid. If the profile is not ready, issue an explicitly pre-tax quote. Complete and approve the profile before invoicing; POMS then calculates tax and freezes the current billing terms in the invoice. Job completion idempotently creates one numbered invoice and immutable PDF. Due date is completion plus the applicable snapshotted terms. Saving billing changes clears approval. After Finance approves the current profile, the approval badge and date confirm its saved state; the reminder to approve is removed. POMS calculates the approved tax rate without a tax engine. Never edit an issued invoice; use an append-only credit, debit, or write-off adjustment."
         },
         {
           "heading": "Release PSeq results",
@@ -3669,7 +3669,7 @@
       "title": "Getting started",
       "summary": "Find approved Trials, authorized shipping, curated data, and access for the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-09-09",
+      "reviewedAt": "2026-09-14",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -3688,7 +3688,7 @@
       "publicationStatus": "published",
       "id": "prospect/en-US/getting-started",
       "route": "/docs/prospect/getting-started",
-      "contentHash": "7b3c016f09073999e4340b2149ea6c4058d37fcf1f768a211c366960d9573fbf",
+      "contentHash": "b7b1c5c1fe6c48825b3c8570bd9bf5c922cc75ca887590e9583d1827004527f8",
       "sections": [
         {
           "heading": "Getting started",
@@ -3698,7 +3698,7 @@
         {
           "heading": "Navigate the help center",
           "anchor": "navigate-the-help-center",
-          "text": "Open the user dropdown menu in the toolbar and choose Documentation under Resources. This entry is available on both wide and narrow screens. Guide navigation opens beneath the toolbar from the far-left edge of the screen. Its header identifies Documentation and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the tab. Choosing a guide closes an unpinned sidebar and displays the article."
+          "text": "Open the user dropdown menu in the toolbar and choose Documentation under Resources. This entry is available on both wide and narrow screens. On smaller screens, the Documentation tab sits below the toolbar and organization details. Guide navigation opens beneath the toolbar from the far-left edge of the screen. Its header identifies Documentation and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the tab. Choosing a guide closes an unpinned sidebar and displays the article."
         },
         {
           "heading": "Confirm the current organization",
@@ -3955,5 +3955,5 @@
       ]
     }
   ],
-  "corpusHash": "9e7fac7318fdf1c47b6aeaebbe4cbe0194ebc14e7e8d9a6c5ddbc56953b7ccb6"
+  "corpusHash": "728f30a75273a7a6954bb7a4e127132566971ad902ca4314d167982860fa0579"
 }
