@@ -520,7 +520,10 @@ export function LabJobDetailsDialog({
                       <AlertTitle>Customer readiness could not be checked</AlertTitle>
                       <AlertDescription>Your entries are kept. Retry before starting pricing.</AlertDescription>
                       <Button className="mt-2" type="button" variant="outline" disabled={readiness.isFetching} onClick={() => void readiness.refetch()}>Retry readiness check</Button>
-                    </Alert> : readiness.data ? <CustomerOrderReadiness readiness={readiness.data} /> : null}
+                    </Alert> : readiness.data ? <>
+                      <CustomerOrderReadiness readiness={readiness.data} />
+                      <Button className="mt-2" type="button" variant="outline" disabled={readiness.isFetching} onClick={() => void readiness.refetch()}>Refresh readiness</Button>
+                    </> : null}
                   </>
                 ) : null}
               </>

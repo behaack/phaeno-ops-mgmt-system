@@ -83,6 +83,8 @@ The dialog checks affected workflows and work before allowing confirmation:
 POMS creates a new **Invalid** recovery revision with the retired protocol removed and the remaining stages kept in order. Previous versions, stages and approval records remain historical. Open **Review workflow** to inspect or modify the remaining procedure. **Revalidate and approve** checks that at least one stage remains and every stage uses an eligible approved protocol, and applies the normal independent-review rule. Further edits are optional when the remaining procedure is already correct. Explicit **Promote to production** is still required before the revised workflow governs new work.
 
 Queued jobs retain their original assignments and display **Assigned workflow is invalid**. They cannot begin processing under the invalidated version. Review those assignments separately; approving a replacement does not silently move queued work onto a changed procedure.
+
+If retirement removes every stage, open **Review workflow** and choose **Add stage** to add an eligible replacement. Save the revision, then have an independent reviewer revalidate it. Saving alone leaves the workflow Invalid.
 ## Record execution
 
 On the laboratory job's **Execution** tab, open the execution link. The dedicated workspace shows its pinned protocol version, specimen, instructions, resource requirements, saved evidence, and remaining completion blockers. For a Planned specimen execution without an accepted available tube, **Tube acceptance required** explains the prerequisite and **Open tubes** opens the job's **Tubes** tab. **Start execution** also requires an explicitly selected source attempt. Use **Open specimen and source** if selection is missing; accepting a tube alone does not select it. Return after accessioning to refresh eligibility. Choose **Actions → Start execution** and scan the selected source barcode again. POMS rechecks current eligibility before recording any start.
@@ -90,6 +92,8 @@ On the laboratory job's **Execution** tab, open the execution link. The dedicate
 Choose **Record** for the next step. Enter the measurements, dates, approved choices, file references, and barcodes required by the procedure. Units appear beside the relevant capture. A file reference records an identifier; it does not upload a file. Confirm performed work when the procedure requires it. POMS checks the saved values against the pinned definition and records your identity and the time.
 
 Use **Material** and **Equipment** on the job to record consumed lots and quantities, output-container references, and equipment use. Before confirming a step's resources, check the listed inputs, outputs, and equipment against that traceability. Resource descriptions and QC acceptance criteria are controlled instructions assessed by the operator; POMS does not infer scientific thresholds or match free-text resource descriptions automatically.
+
+Enter a quantity greater than zero and no more than the lot's available stock. If the quantity is unavailable, correct the entry and save again; the rejected attempt does not deduct stock or add a consumption record.
 
 Record every optional and conditional step explicitly. An allowed **Skip with reason** requires the reason or condition assessment. Required steps cannot be skipped, and previously performed work cannot be changed into a skip. A step with a specified Lab role must be recorded by a user with that effective role. Earlier steps must be resolved before later evidence is recorded.
 
@@ -110,3 +114,5 @@ If another user changes the execution during a save, POMS reloads the current re
 ## Who can perform work
 
 Source and attempt actions require an effective Operator or Supervisor role. Each protocol step additionally checks its required role. POMS retains the actual person recording each action; an earlier assignment never grants permission to perform a step.
+
+If you edit an attempt action and then cancel, press Escape, or leave the page, POMS asks before discarding your unsaved details. Declining keeps your entries. While a save is pending, wait for its result before closing or navigating away. If another operator changes the record, your entries remain available; close the action, review the latest specimen state, and reopen the action that is still appropriate.

@@ -2152,3 +2152,19 @@ Local verification: TypeScript, scoped lint and whitespace checks passed. Signed
 # September 14 UAT verification checkpoint
 
 Grouped shipping/packing/accession checks passed: 72 backend and 107 frontend, with generated local fixture cleanup verified. Corrected misleading return-kit feedback so denied/failed loads do not also claim an empty queue; four regressions plus signed-in desktop/narrow keyboard checks passed. Existing receipt/accession guide remains accurate; no role, scientific or physical-workflow rule changed. Full provider/Customer/physical acceptance remains separate. See [UAT evidence](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-shipping-packing-and-accession-grouped-continuation).
+
+September 14 SHP-02 closeout: address setup carries explicit resumeKitOrder context. Returning from Add/Manage during kit ordering restores the same Job/shipment and opens unsubmitted review; ordinary inventory return stays view-only. Kit dialogs own dirty/pending navigation guards so the embedded parent does not silently block address setup. Real default/no-default return checks create no kit request; prior scoped address validation/retirement/phone evidence completes the case. [Full evidence and limits](../testing/runs/2026-09-14-ten-case-execution.md).
+
+## Shipping recovery acceptance — September 15, 2026
+
+SHP-03/04 now pass complete isolated connected acceptance: included-cost stock/location review, committed-response loss with retained identity, second-session duplicate/conflicting details, stale address/shipment review, deliberate cancellation/reorder and post-dispatch denial. PostgreSQL confirms one logical notice per intentional request, frozen commercial scope, zero extra invoices and preserved original walkthrough. Synthetic stock and logging-only notices do not prove physical/provider delivery. Temporary purchase/default configuration restored; no application source changed. [Full crosswalk and continuation point](../testing/runs/2026-09-15-shipping-recovery-uat.md).
+
+### Shipping recovery and long-list acceptance — September 15, 2026
+
+SHP-14 now passes complete isolated software acceptance. The full frozen Portal manifest displays eight samples per page with named controls and an announced range; complete-container receiving totals, CSV and immutable contents remain unchanged. A changed shipment/revision starts at the first page. This implements bounded long-content review under the existing minimal receiving-sheet decision; the acceptance script's older multipage-manifest wording is reconciled accordingly.
+
+Fulfillment queues no longer depend on loading the unrelated laboratory dashboard. Their existing configuration-administrator permission and all API authorization remain unchanged. Receipt workspace Refresh invalidates its relevant queues. The Customer shipping and Phaeno receipt guides explain the current behavior. [Defects, full connected crosswalk and retained evidence](../testing/runs/2026-09-15-shipping-large-recovery-uat.md).
+
+### Alternate packing and reset connected acceptance — September 15, 2026
+
+SHP-09 now passes isolated software acceptance across its ten primary steps and all five reset steps. Actual sessions prove custom sizes and residual supply, inventory recovery, competing physical-container claims and complete-plan resets. Separate explicitly staged historical families prove ReturnKit/binding/packet/dispatch/receipt/cleared-scan locks and separation of destinations/handling from a residual pool. One reset wins under concurrency; original slots, frozen orders and prior shipment identities are retained. This supersedes the earlier Not run status for connected software reset acceptance, while real physical, scanner, carrier and scientific gates remain separate. [Complete crosswalk and retained fixture evidence](../testing/runs/2026-09-15-packing-reset-uat.md).

@@ -955,6 +955,22 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             Assert.Equal("LibraryPrep", Assert.Single(preparationProgress[fixture.OrderId].Samples).Stage);
             Assert.Empty(await customerProgress.ReadAsync(Guid.NewGuid(), [fixture.OrderId], CancellationToken.None));
             Assert.Empty(await customerProgress.ReadAsync(scope.CustomerOrganization.Id, [Guid.NewGuid()], CancellationToken.None));
+            var lotBeforeRejectedUse = await scope.DbContext.LabMaterialLots.AsNoTracking()
+                .SingleAsync(item => item.Id == material.Id);
+            foreach (var invalidQuantity in new[] { 0m, -1m, lotBeforeRejectedUse.AvailableQuantity + 1 })
+            {
+                var unavailable = await Assert.ThrowsAsync<OrderManagementException>(() => lab.ConsumeMaterial(
+                    execution.Id, new ConsumeMaterialRequest(material.Id, libraryContainer.Id,
+                        invalidQuantity, "uL", material.Version), CancellationToken.None));
+                Assert.Equal("material_quantity_unavailable", unavailable.ErrorCode);
+                Assert.Equal(StatusCodes.Status409Conflict, unavailable.StatusCode);
+                var unchangedLot = await scope.DbContext.LabMaterialLots.AsNoTracking()
+                    .SingleAsync(item => item.Id == material.Id);
+                Assert.Equal(lotBeforeRejectedUse.AvailableQuantity, unchangedLot.AvailableQuantity);
+                Assert.Equal(lotBeforeRejectedUse.Version, unchangedLot.Version);
+                Assert.False(await scope.DbContext.LabMaterialConsumptions
+                    .AnyAsync(item => item.LabProtocolExecutionId == execution.Id));
+            }
             await lab.ConsumeMaterial(
                 execution.Id,
                 new ConsumeMaterialRequest(

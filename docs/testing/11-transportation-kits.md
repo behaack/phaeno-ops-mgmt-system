@@ -290,7 +290,7 @@ request failures. Repeat relevant SHP-02–13 actions on disposable variants.
 | 2 | Revoke access or change a saved version while a form is open, then save. | No stale overwrite or unauthorized mutation; the user receives a recoverable explanation. |
 | 3 | Fail or delay recommendation, order, dispatch, receipt and scan requests independently; retry and refresh. | Failures retain useful context; one successful action persists once. No false success, duplicate notice, stock increment or shipment appears. |
 | 4 | Run keyboard-only at desktop, 390px phone and 390×480 short height, in light/dark themes and reduced motion. | Controls have names/focus, required-field errors identify the fix, dirty dismissal is deliberate, modal actions remain reachable and menus/options fit the viewport. |
-| 5 | Use long group names, many samples/kits/requests and a multipage manifest. | Bounded lists/paging preserve context and totals; no clipped content, horizontal overflow or unreachable action. Capture any surface still needing pagination as a defect. |
+| 5 | Use long group names, many samples/kits/requests, a long Portal manifest and its receiving sheet. | Bounded lists/paging preserve context and totals; no clipped content, horizontal overflow or unreachable action. Capture any surface still needing pagination as a defect. |
 
 **Cleanup:** Close disposable drafts/cancel only eligible test requests through
 supported actions. Retain dispatch/receipt/audit history and the main walkthrough.

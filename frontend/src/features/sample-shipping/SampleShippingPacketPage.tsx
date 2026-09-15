@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { ArrowLeft, Printer } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { getSampleShippingPacket } from '#/api/sample-shipping'
 import { apiErrorMessage } from '#/api/organization-management'
@@ -12,6 +12,7 @@ import type { ShippingInsertIdentity } from './shipping-insert-acknowledgement'
 import './sample-shipping-packet.css'
 
 type JsonObject = Record<string, unknown>
+const manifestPageSize = 8
 type FrozenSample = {
   id: string
   customerSampleId: string
@@ -26,6 +27,7 @@ type FrozenSample = {
 
 export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAutoPrint, onFailure, embedded = false }: { shipmentId: string; autoPrint?: boolean; onAutoPrint?: (insert: ShippingInsertIdentity) => void; onFailure?: (message: string) => void; embedded?: boolean }) {
   const autoPrintHandled = useRef(false)
+  const [manifestPage, setManifestPage] = useState<{ revisionKey: string; page: number } | null>(null)
   const query = useQuery({
     queryKey: ['sample-shipping-packet', shipmentId],
     queryFn: () => getSampleShippingPacket(shipmentId),
@@ -82,6 +84,10 @@ export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAuto
   const instructions = parseObject(query.data.instructionSnapshotJson)
   const manifest = parseObject(query.data.manifestSnapshotJson)
   const frozenSamples = readFrozenSamples(manifest)
+  const revisionKey = `${shipmentId}:${packet.id}:${packet.revision}`
+  const manifestPages = Math.max(1, Math.ceil(frozenSamples.length / manifestPageSize))
+  const page = manifestPage?.revisionKey === revisionKey ? Math.min(manifestPage.page, manifestPages - 1) : 0
+  const visibleSamples = frozenSamples.slice(page * manifestPageSize, (page + 1) * manifestPageSize)
 
   return (
     <main className="shipping-packet-page page-wrap px-4 py-8 print:max-w-none print:px-0 print:py-0">
@@ -173,7 +179,11 @@ export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAuto
           <p className="mt-2 text-sm text-muted-foreground">
             This confirmed manifest lists only the physical contents of this container. Retain the tube list for your records.
           </p>
-          <div className="packet-samples mt-4 space-y-5">{frozenSamples.map(item => <article key={item.id} className="packet-sample rounded-md border p-4">
+          {manifestPages > 1 ? <nav aria-label="Manifest sample pages" className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <p aria-live="polite" aria-atomic="true" className="text-sm text-muted-foreground">Samples {page * manifestPageSize + 1}–{Math.min((page + 1) * manifestPageSize, frozenSamples.length)} of {frozenSamples.length}</p>
+            <div className="flex gap-2"><Button variant="outline" size="sm" disabled={page === 0} onClick={() => setManifestPage({ revisionKey, page: page - 1 })}>Previous samples</Button><Button variant="outline" size="sm" disabled={page === manifestPages - 1} onClick={() => setManifestPage({ revisionKey, page: page + 1 })}>Next samples</Button></div>
+          </nav> : null}
+          <div className="packet-samples mt-4 space-y-5">{visibleSamples.map(item => <article key={item.id} className="packet-sample rounded-md border p-4">
             <header className="break-inside-avoid space-y-2"><h3 className="wrap-anywhere font-semibold">{item.customerSampleId}</h3><p className="text-sm">{item.sampleName}{item.sampleTypeName ? ` · ${item.sampleTypeName}` : ''}</p><p className="text-sm font-medium">{item.tubes.length} of {item.totalTubeCount} tubes in this shipment</p>{item.sampleBarcode ? <div className="max-w-2xl"><ShippingBarcode value={item.sampleBarcode} label="Sample barcode" /></div> : null}</header>
             <h4 className="mt-4 text-sm font-semibold">Physical tubes in this container</h4>
             <ul className="mt-2 divide-y">{item.tubes.map((tube, index) => <li key={`${tube.barcode}-${index}`} className="packet-tube break-inside-avoid space-y-2 py-3"><p className="text-sm"><span className="hidden wrap-anywhere font-medium print:block">{item.customerSampleId}</span>Tube {tube.ordinal || index + 1}{tube.quantity ? ` · ${tube.quantity} ${tube.quantityUnit}` : ''}</p>{tube.barcode ? <div className="max-w-2xl"><ShippingBarcode value={tube.barcode} label="Permanent tube barcode" /></div> : <p className="text-sm">No tube barcode recorded in this revision.</p>}</li>)}</ul>

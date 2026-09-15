@@ -1,8 +1,12 @@
 # Acceptance closure execution — September 14, 2026
 
-## Latest ten-case batch
+## Latest closure slice
 
-[September 14 next-ten execution](2026-09-14-next-ten-uat.md) records CRM-06, SHP-01 and corrected-local WEB-01 closure, SHP-02 partial controls, six current order/shipping gates and the newer owned API/Website build identities. Whole-case isolated acceptance is now 12 of 81. The historical baselines below remain dated evidence.
+[Guided-evidence and retirement execution](2026-09-14-guided-evidence-retirement-uat.md) closes LAB-04/07 and fixes/retests duplicate stages in empty workflow recovery. Overall isolated software acceptance is **19 of 81 cases**; the broader ten-further-cases request is complete. Earlier tube-intake, material/equipment and versioning evidence remains valid. The original next-ten selection below remains three completed order/CRM/shipping/Website cases; its seven remaining cases are not relabeled passed.
+
+## Earlier ten-case batch checkpoint
+
+[September 14 next-ten execution](2026-09-14-next-ten-uat.md) records CRM-06, SHP-01 and corrected-local WEB-01 closure, SHP-02 partial controls, six current order/shipping gates and the newer owned API/Website build identities. Whole-case isolated acceptance at that checkpoint was 12 of 81. The historical baselines below remain dated evidence.
 
 ## Baseline and boundaries
 

@@ -139,7 +139,14 @@ public sealed partial class LabOperationsController
             throw Invalid("output_container_invalid", "The output container must belong to this work order.");
         if (attempt is not null && request.OutputContainerId.HasValue)
             await RequireAttemptLineageAsync(request.OutputContainerId.Value, attempt, cancellationToken);
-        lot.Consume(request.Quantity);
+        try
+        {
+            lot.Consume(request.Quantity);
+        }
+        catch (InvalidOperationException exception)
+        {
+            throw Conflict("material_quantity_unavailable", exception.Message);
+        }
         dbContext.LabMaterialConsumptions.Add(new LabMaterialConsumption(execution.Id, lot.Id,
             request.OutputContainerId, request.Quantity, request.QuantityUnit, actor.User.Id, DateTime.UtcNow));
         dbContext.Entry(execution).Property(item => item.UpdatedAt).IsModified = true;

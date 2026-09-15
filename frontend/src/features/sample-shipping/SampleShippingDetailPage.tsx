@@ -139,9 +139,11 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false,
   const onActivityChange = embedded?.onActivityChange
   useEffect(() => { onActivityChange?.(workspaceActive) }, [onActivityChange, workspaceActive])
   useEffect(() => () => { onActivityChange?.(false) }, [onActivityChange])
-  const navigationLocked = scanPending || packingOpen || kitActionOpen || resetOpen || Boolean(assignmentItem) || Boolean(packetAction) || shipmentOpen || printing || Boolean(printedConfirmation) || assignment.isPending || issue.isPending || shipped.isPending
+  const routeNavigationLocked = scanPending || packingOpen || resetOpen || Boolean(assignmentItem) || Boolean(packetAction) || shipmentOpen || printing || Boolean(printedConfirmation) || assignment.isPending || issue.isPending || shipped.isPending
+  // Kit dialogs guard their own dirty/pending writes and allow their address-setup link.
+  const navigationLocked = routeNavigationLocked || kitActionOpen
   const onNavigationLockChange = embedded?.onNavigationLockChange
-  useEffect(() => { onNavigationLockChange?.(navigationLocked) }, [onNavigationLockChange, navigationLocked])
+  useEffect(() => { onNavigationLockChange?.(routeNavigationLocked) }, [onNavigationLockChange, routeNavigationLocked])
   useEffect(() => () => { onNavigationLockChange?.(false) }, [onNavigationLockChange])
   const onKitSupplyChange = embedded?.onKitSupplyChange
   const currentKitSupply = customerKitSupply && !kitSupply.isFetching && !kitSupply.error ? kitSupply.data : undefined

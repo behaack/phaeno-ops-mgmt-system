@@ -1,5 +1,19 @@
 # Backend Test Plan
 
+Connected ten-case UAT found Trial action requests returning 404 because the route used MVC's reserved action value. ControllerRouteTests now exercises real endpoint matching for six lifecycle commands: the new check fails before the operation-parameter correction, and both route tests pass afterward. A separate disposable PostgreSQL test reproduces zero-tube roster creation escaping as ArgumentOutOfRangeException (HTTP 500). Explicit add/edit tube-count validation returns 400; zero/negative rows leave roster/version unchanged and a valid two-tube retry succeeds. All three focused tests pass; no shared schema change. See ../testing/runs/2026-09-14-ten-case-execution.md.
+
+## Guided evidence and retirement persistence — September 14, 2026
+
+LAB-04/07 connected API/PostgreSQL acceptance covers typed capture and role guards, immutable correction/repeat history, held/finished writes, active and queued protocol retirement, workflow recovery/invalidation, stale previews and races against start, assignment, save, approval, promotion and internal authorization. Read-only audit confirms fifteen step-evidence events, five distinct queued-work warnings and zero jobs/receipts for rejected authorization. No backend implementation or automated backend test was changed for this slice; the discovered defect was frontend field-array initialization. The API was rebuilt to include the updated help corpus and passed fresh authenticated readback. [Full evidence and fixture boundaries](../testing/runs/2026-09-14-guided-evidence-retirement-uat.md).
+
+## Connected intake concurrency and persistence — September 14, 2026
+
+LAB-10/13 actual API/database acceptance now covers whole-batch validation/rollback, dropped-success idempotency, simultaneous intake reviews, review-versus-start, locked used sources, independently correctable reserves, legacy scope/eligibility and preserved acceptance targets. Independent read-only PostgreSQL confirms seven main accession records, twelve intake-history events including corrections, one batch receipt and one execution start. No backend implementation or automated backend tests changed for this slice; its two defects were in frontend focus/draft handling. [Full crosswalk](../testing/runs/2026-09-14-tube-intake-uat.md).
+
+## Material consumption validation — September 14, 2026
+
+Extended `AuthorizedOrderCompletesTheDatabaseBackedLabOperatorJourney` with zero, negative and excessive material consumption. It requires `material_quantity_unavailable` / 409, unchanged saved stock/version and zero consumption rows before valid use. The complete disposable-database journey failed on the raw domain exception before correction and passed after correction (1 passed, 0 skipped). Connected Operator/Supervisor UAT also verifies the live error, corrected save, component atomicity, QC and equipment restrictions. [LAB-03 evidence](../testing/runs/2026-09-14-lab-resources-uat.md). No broad suite or shared migration.
+
 ## September 14, 2026 — Commercial intake access
 
 CommercialIntakeAccessPostgresTests covers scoped Customer/Department/catalog and Lab intake reads, rejection of other queues, administrator read without pricing, disabled-role fallback, revoked assignment and external membership denial. Database tests run within a rolled-back transaction, including Begin quote, Request changes, status events and absence of Lab authorization. Session tests cover BusinessRoles/DualControl flag combinations. Final checkpoint: 15 tests passed, none skipped.
@@ -1784,3 +1798,7 @@ September 14 Trial preparation coverage: PreparationCommandsRespectTrialHoldClos
 
 
 September 14 CRM terminal-history fix: added `DisqualifiedLeadRejectsProfileAndStatusChangesWithoutChangingHistory`, covering controller/profile/working/qualify/disqualify/convert rejection and unchanged saved history. Reproduced red, then 2 focused checks passed including retained conversion/merge identity. Rolled-back local PostgreSQL fixture; actual signed-in verification recorded separately. [Execution record](../testing/runs/2026-09-14-acceptance-closure.md).
+
+September 14 ten-case checkpoint: SampleShippingTransactionPostgresTests proves nested shipping packing joins the outer transaction, holds the advisory lock against another connection, rolls back correctly and owns a standalone transaction. Failed before fix; passes with the two real routing checks. Independent final PostgreSQL readback verifies exact main quote/shipment/slot/work counts, distinct Trial decision actors, revoked temporary authority and no accidental kit request/invoice. DerivedReadiness explicitly enabled for staged gate acceptance. [Full evidence and limits](../testing/runs/2026-09-14-ten-case-execution.md).
+
+September 15 LAB-09 provider/database continuation: historical V1 payload replay returns the identical acknowledgment with one authorization version, receipt and event; changed-payload command reuse is rejected. V2 Customer finalization preserves the legacy order snapshots and produces exact one-/three-tube crosswalks. Completed historical execution remains unlinked after adoption denial. Independent PostgreSQL assertions pass. [Evidence and synthetic-precondition boundaries](../testing/runs/2026-09-15-policy-history-and-shipping-access-uat.md). No backend source or automated backend tests changed.

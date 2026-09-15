@@ -32,7 +32,7 @@ describe('customer transportation kits', () => {
   })
   it('retains the owning Job and selected shipment through kit-order delivery-location setup', () => {
     render(provider(<TransportationKitOrderDialog shipmentId={shippingFixture.id} organizationId="org-1" departmentId="department-1" returnOrderId="order-1" initial={supply} busy={false} error={null} onClose={mocks.close} onConfirm={mocks.confirm} />))
-    expect(JSON.parse(screen.getByRole('link', { name: 'Manage delivery locations' }).getAttribute('data-search')!)).toEqual({ organizationId: 'org-1', departmentId: 'department-1', shipmentId: shippingFixture.id, returnOrderId: 'order-1' })
+    expect(JSON.parse(screen.getByRole('link', { name: 'Manage delivery locations' }).getAttribute('data-search')!)).toEqual({ organizationId: 'org-1', departmentId: 'department-1', shipmentId: shippingFixture.id, returnOrderId: 'order-1', resumeKitOrder: true })
     expect(mocks.order).not.toHaveBeenCalled()
   })
   it('offers optional compatible kit sizes and preserves draft quantities when returning to the recommendation', async () => {

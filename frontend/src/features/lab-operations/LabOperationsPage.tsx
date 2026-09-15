@@ -88,8 +88,11 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
   const queryClient = useQueryClient()
   const [createKind, setCreateKind] = useState<CreateKind>(null)
   const [localConfigurationTab, setLocalConfigurationTab] = useState<LabConfigurationTab>('protocols')
-  const dashboard = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: apiEnabled })
-  const refresh = () => Promise.all([queryClient.invalidateQueries({ queryKey: ['lab-operations'] }), queryClient.invalidateQueries({ queryKey: ['lab-preparation'] })])
+  const needsDashboard = section !== 'receipt'
+  const dashboard = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: apiEnabled && needsDashboard })
+  const refresh = () => Promise.all((section === 'receipt'
+    ? ['platform-transportation-kit-requests', 'shipping-stock-kits', 'sample-shipping-workflow', 'lab-shipment-queue']
+    : ['lab-operations', 'lab-preparation']).map(key => queryClient.invalidateQueries({ queryKey: [key] })))
 
   if (!canView) return <AccessDenied />
 
@@ -115,9 +118,9 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
             </Button>
           </section>
           {authProvider === 'mock' ? <Alert className="mb-5"><AlertTitle>Connected Lab operations are paused</AlertTitle><AlertDescription>Use a real Phaeno session to load or change laboratory records.</AlertDescription></Alert> : null}
-          {dashboard.error ? <Alert className="mb-5" variant="destructive"><AlertTitle>Lab operations could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(dashboard.error, 'Try refreshing the workspace.')}</AlertDescription></Alert> : null}
-          {dashboard.isLoading ? <p role="status">Loading laboratory workspace…</p> : null}
-          {dashboard.data && section === 'receipt' ? <LabReceiptAccessionPanel canReceiveShipments={Boolean(session?.capabilities.canOperateLabWork)} tab={receiptTab} onTabChange={onReceiptTabChange} canManageKitSupply={Boolean(session?.capabilities.canManageOrderConfiguration)} shipmentId={shipmentId} apiEnabled={apiEnabled} workOrders={dashboard.data.workOrders} /> : null}
+          {needsDashboard && dashboard.error ? <Alert className="mb-5" variant="destructive"><AlertTitle>Lab operations could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(dashboard.error, 'Try refreshing the workspace.')}</AlertDescription></Alert> : null}
+          {needsDashboard && dashboard.isLoading ? <p role="status">Loading laboratory workspace…</p> : null}
+          {section === 'receipt' ? <LabReceiptAccessionPanel canReceiveShipments={Boolean(session?.capabilities.canOperateLabWork)} tab={receiptTab} onTabChange={onReceiptTabChange} canManageKitSupply={Boolean(session?.capabilities.canManageOrderConfiguration)} shipmentId={shipmentId} apiEnabled={apiEnabled} workOrders={[]} /> : null}
           {dashboard.data && section === 'work' ? <div className="space-y-5"><PreparationBatchList /><details className="rounded-lg border p-4"><summary className="cursor-pointer font-medium">Find a job or existing specimen record</summary><div className="mt-4 space-y-5"><LabBarcodeLookup /><WorkQueue items={dashboard.data.workOrders.filter((item) => item.status !== 'AwaitingSpecimens')} /></div></details></div> : null}
           {dashboard.data && section === 'results' ? <WorkQueue items={dashboard.data.workOrders.filter((item) => item.status !== 'AwaitingSpecimens')} results /> : null}
           {section === 'kits' ? <LabManufacturingQueue workflow="reagent" apiEnabled={apiEnabled} /> : null}

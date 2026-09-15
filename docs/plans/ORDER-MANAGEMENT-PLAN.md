@@ -1,5 +1,7 @@
 # Order Management Plan
 
+September 14 ten-case UAT reproduced a zero-tube add as HTTP 500 without a saved row. Add/edit now validate positive tube count before mutation and return a clear 400. The disposable PostgreSQL regression fails before and passes afterward, including unchanged roster/version and valid retry. Existing Customer/Partner sample-list guides remain accurate. Connected CSV, conflict and finalization evidence is recorded in ../testing/runs/2026-09-14-ten-case-execution.md.
+
 ## Commercial intake role correction — September 14, 2026
 
 The owner approved the bounded intake correction by continuing after review of `docs/testing/runs/2026-09-14-next-ten-uat.md`. With business roles enforced, an active Phaeno Commercial Operator can read the Lab Service intake queue, active Customer/Department choices, readiness and the canonical pricing catalog, open the commercial order, start pricing and manage quote decisions. Platform administrators retain read access; pricing still requires the assigned role. With enforcement disabled the existing administrator fallback remains. This supersedes the earlier administrator-only intake workaround and September 8 quote-read restriction for this scoped workflow.
@@ -2838,3 +2840,5 @@ and all six pages of the long-source stress PDF were visually reviewed. The
 scope heading and count share a shaded band attached to the source table; pricing
 headers retain room for the first item. Documentation generation and freshness
 checks passed (56 guides); whitespace checks passed. No commit or deployment.
+
+September 14 ten-case closeout: ORD-01/02/04 pass for isolated software acceptance. Setup/Finance links open separately and Refresh readiness preserves the entered Customer/Department pricing draft. Actual staged quote/invoice denials and applicable offering version versus frozen accepted terms pass. ORD-03 remains open: post-acceptance scope-increase proposal, immutable change quote and acceptance/work gates are missing; do not treat ordinary quote reissue as that workflow. [Full evidence and limits](../testing/runs/2026-09-14-ten-case-execution.md).

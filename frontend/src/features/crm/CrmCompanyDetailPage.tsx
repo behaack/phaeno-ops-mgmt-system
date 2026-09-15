@@ -12,6 +12,7 @@ import {
   UserRoundCog,
 } from "lucide-react";
 import { useState } from "react";
+import axios from "axios";
 
 import {
   apiErrorMessage,
@@ -64,11 +65,27 @@ import { OrganizationDetailPage } from "#/features/organizations/OrganizationDet
 import { useCrmState } from './CrmListNavigation';
 import { OrganizationDepartmentsPanel } from "#/features/organizations/OrganizationDepartmentsPanel";
 
+const companyReviewFields: ReadonlyArray<readonly [keyof CrmCompany, string]> = [
+  ["name", "Company name"], ["websiteUrl", "Website"], ["domainName", "Domain"],
+  ["lifecycleState", "Relationship stage"], ["phone", "Phone"], ["industry", "Industry"],
+  ["description", "Relationship summary"], ["addressLine1", "Address line 1"],
+  ["addressLine2", "Address line 2"], ["city", "City"], ["region", "Region"],
+  ["postalCode", "Postal code"], ["countryCode", "Country"], ["employeeCount", "Employee count"],
+  ["source", "Source"], ["tags", "Tags"], ["ownerName", "Owner"], ["isActive", "Active"],
+  ["portalAccessStatus", "Portal access"], ["mergedIntoCompanyId", "Merged into Company"],
+];
+function reviewValue(value: CrmCompany[keyof CrmCompany]) {
+  if (Array.isArray(value)) return value.join(", ") || "Not recorded";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  return value == null || value === "" ? "Not recorded" : String(value);
+}
+
 export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
   const { canAdminister } = useCrmPermissions();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [editTarget, setEditTarget] = useState<CrmCompany | null>(null);
+  const [reviewNeeded, setReviewNeeded] = useState(false);
   const [lifecycleTarget, setLifecycleTarget] = useState<CrmCompany | null>(null);
   const [mergeSource, setMergeSource] = useState<CrmMergeSource | null>(null);
   const [ownerTarget, setOwnerTarget] = useState<CrmCompany | null>(null);
@@ -87,6 +104,7 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
 
   const refreshDirectory = () =>
     queryClient.invalidateQueries({ queryKey: ["crm-companies"] });
+  const reloadCompany = useMutation({ mutationFn: () => getCrmCompany(companyId) });
   const editMutation = useMutation({
     mutationFn: ({ target, values }: { target: CrmCompany; values: CrmCompanyFormValues }) => {
       return updateCrmCompany(target.id, {
@@ -97,7 +115,15 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
     onSuccess: async (company) => {
       queryClient.setQueryData(["crm-company", company.id], company);
       setEditTarget(null);
+      setReviewNeeded(false);
+      reloadCompany.reset();
       await refreshDirectory();
+    },
+    onError: (error) => {
+      if (axios.isAxiosError(error) && error.response?.status === 409) {
+        setReviewNeeded(true);
+        reloadCompany.mutate();
+      }
     },
   });
   const lifecycleMutation = useMutation({
@@ -430,13 +456,39 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
         open={editOpen}
         company={editTarget}
         isPending={editMutation.isPending}
+        saveBlocked={reviewNeeded}
+        feedback={reviewNeeded ? <Alert variant="destructive">
+          <AlertTitle>Review the current Company before saving again</AlertTitle>
+          <AlertDescription>
+            <p>Your entries are retained. Review changes made since you opened this editor; saving again applies your entered values.</p>
+            {reloadCompany.isPending ? <p role="status">Loading current Company…</p> : reloadCompany.error ? <>
+              <p>{apiErrorMessage(reloadCompany.error)}</p>
+              <Button type="button" variant="outline" onClick={() => reloadCompany.mutate()}>Retry current record</Button>
+            </> : reloadCompany.data && editTarget ? <>
+              <dl className="grid gap-2">
+                {companyReviewFields.filter(([key]) => JSON.stringify(editTarget[key]) !== JSON.stringify(reloadCompany.data![key])).map(([key, label]) => <div key={key}>
+                  <dt className="font-medium">{label}</dt>
+                  <dd>Previously: {reviewValue(editTarget[key])}. Current: {reviewValue(reloadCompany.data![key])}.</dd>
+                </div>)}
+              </dl>
+              <Button type="button" variant="outline" onClick={() => {
+                const current = reloadCompany.data;
+                if (!current) return;
+                setEditTarget(current);
+                queryClient.setQueryData(["crm-company", current.id], current);
+                setReviewNeeded(false);
+                editMutation.reset();
+              }}>Use reviewed record</Button>
+            </> : null}
+          </AlertDescription>
+        </Alert> : undefined}
         error={
-          editMutation.error ? apiErrorMessage(editMutation.error) : undefined
+          !reviewNeeded && editMutation.error ? apiErrorMessage(editMutation.error) : undefined
         }
         onOpenChange={(open) => {
-          if (!open) { setEditTarget(null); editMutation.reset(); }
+          if (!open) { setEditTarget(null); editMutation.reset(); setReviewNeeded(false); reloadCompany.reset(); }
         }}
-        onSubmit={(values) => { if (editTarget) editMutation.mutate({ target: editTarget, values }); }}
+        onSubmit={(values) => { if (editTarget && !reviewNeeded && !editMutation.isPending) editMutation.mutate({ target: editTarget, values }); }}
       />
       <CrmCompanyLifecycleDialog
         company={lifecycleTarget}

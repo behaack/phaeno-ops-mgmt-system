@@ -1,6 +1,8 @@
 # Major workflow testing scripts
 
-Latest checkpoint: **12 of 81 isolated software cases closed**. The [next-ten batch](runs/2026-09-14-next-ten-uat.md) closes CRM-06, SHP-01 and WEB-01, retains SHP-02 partial evidence and identifies the remaining order/shipping prerequisites. It does not claim ten new passes or final release signoff.
+Latest checkpoint: **35 of 81 isolated software cases closed (43.2%); 46 remain.** The [Alternate packing and whole-order reset pass](runs/2026-09-15-packing-reset-uat.md) closes SHP-09. SYS-05 is the one primarily remote case; 45 cases retain named dependencies. This is not final release signoff.
+
+Latest continuation: all ten SHP-09 steps and five reset steps have complete connected crosswalks, including competing reservations/resets, partial supply, historical locks and 248 conserved tube slots. Next remote case is SYS-05. LAB-09 still needs only positive independent scientific approval.
 
 Prepared September 8, 2026 from the current repository. These are **manual acceptance scripts**, not executable automation. All cases start **Not run**. Writing this pack does not establish acceptance or authorize production transactions.
 
@@ -41,7 +43,7 @@ For the current HS5Y7DB7 walkthrough, use the [transportation-kit resume instruc
 
 ### Current laboratory acceptance coverage
 
-LAB-07–10 and LAB-13 cover retirement/invalidation, promotion, source attempts and reserve fallback, tube intake reasons, and exception-first accession with bulk acceptance. LAB-13 also checks the **Library prep** sidebar label, wrapped required markers, tube details, permissions and safe retries. These cases remain Not run until their full acceptance evidence is recorded; local build/read-only checks are narrower. LAB-11 and LAB-12 are not assigned cases.
+LAB-07–10 and LAB-13 cover retirement/invalidation, promotion, source attempts and reserve fallback, tube intake reasons, and exception-first accession with bulk acceptance. LAB-13 also checks the **Library prep** sidebar label, wrapped required markers, tube details, permissions and safe retries. LAB-08, LAB-10 and LAB-13 now have complete isolated software crosswalks; LAB-07 and LAB-09 remain incomplete. Local build/read-only checks alone do not close cases. LAB-11 and LAB-12 are not assigned cases.
 
 ### Connected journey recipes
 

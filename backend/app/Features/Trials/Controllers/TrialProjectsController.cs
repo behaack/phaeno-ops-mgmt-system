@@ -57,9 +57,9 @@ public sealed class TrialProjectsController(PSeqOperationsDbContext db, TrialAcc
     [HttpPost("{id:guid}/samples")]
     public Task<TrialDetailDto> Submit(Guid id, [FromBody] TrialSubmitRequest request, CancellationToken token) =>
         MutateAsync(id, request, (trial, actor) => workflow.SubmitAsync(trial, actor, request, token), token);
-    [HttpPost("{id:guid}/actions/{action}")]
-    public Task<TrialDetailDto> Act(Guid id, string action, [FromBody] TrialActionRequest request, CancellationToken token) =>
-        MutateAsync(id, new { action, request }, (trial, actor) => workflow.ActAsync(trial, actor, action, request, token), token);
+    [HttpPost("{id:guid}/actions/{operation}")]
+    public Task<TrialDetailDto> Act(Guid id, string operation, [FromBody] TrialActionRequest request, CancellationToken token) =>
+        MutateAsync(id, new { action = operation, request }, (trial, actor) => workflow.ActAsync(trial, actor, operation, request, token), token);
 
     [HttpPost("{id:guid}/crm/retry")]
     public async Task<TrialDetailDto> RetryCrm(Guid id, CancellationToken token)

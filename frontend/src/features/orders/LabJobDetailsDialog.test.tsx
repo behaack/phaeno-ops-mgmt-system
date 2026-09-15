@@ -87,6 +87,13 @@ describe("LabJobDetailsDialog price proposal", () => {
     expect(screen.getByRole('textbox', { name: 'Job name' })).toHaveProperty('value', 'Retained job');
     expect(screen.getByRole('button', { name: 'Start pricing' })).toHaveProperty('disabled', true);
     expect(api.initiateCustomerLabOrder).not.toHaveBeenCalled();
+    api.getCustomerOrderReadiness.mockResolvedValue({ canStartPricing: true, startPricingBlockers: [], quoteBlockers: [], invoiceBlockers: [] });
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh readiness' }));
+    await screen.findByText('Ready to start pricing');
+    expect(screen.getByRole('textbox', { name: 'Job name' })).toHaveProperty('value', 'Retained job');
+    expect(screen.getByRole('textbox', { name: 'Storage requirements' })).toHaveProperty('value', 'Frozen');
+    expect(screen.getByRole('button', { name: 'Start pricing' })).toHaveProperty('disabled', false);
+    expect(api.initiateCustomerLabOrder).not.toHaveBeenCalled();
   });
 
   it("submits an optional USD price proposal with the job scope", async () => {

@@ -1,5 +1,21 @@
 # Lab Operations Plan
 
+## Guided evidence and retirement acceptance — September 14, 2026
+
+LAB-04 and LAB-07 now Pass for isolated software acceptance, with [complete six- and sixteen-step crosswalks](../testing/runs/2026-09-14-guided-evidence-retirement-uat.md). Connected empty-workflow recovery exposed duplicate blank stages under StrictMode. Initialize the builder field array empty and populate it only from the saved/new workflow loading path. The failing regression, new-workflow guard, actual recovery/save/revalidation, typed evidence, correction history, held/queued work and six retirement race pairs pass. Specimen source selection creates the pinned execution without a named assignee; explicit assignee validation remains covered for legacy job-level work. No role widening or scientific acceptance is inferred. Nine new synthetic jobs and eleven inactive test services preserve the existing 33 jobs and original definitions, approvals and roles.
+
+## Tube intake acceptance closure — September 14, 2026
+
+LAB-10 and LAB-13 now Pass for isolated software acceptance, with [complete step/variant crosswalks](../testing/runs/2026-09-14-tube-intake-uat.md). Connected testing found and fixed two UI gaps: initial scanner focus now completes after delayed job loading without overriding deliberate navigation, and bulk-storage dirty state now protects Cancel/navigation/unload. The 12 focused component tests, actual delayed responses, concurrent reviews/start, uncertain-response retry, Supervisor correction, independent database audit and both 390px themes pass. Existing scientific definitions, approvals, jobs and roles are preserved; the new test source attempt remains OnHold. Bench/provider and final acceptance are separate.
+
+## Material and equipment acceptance — September 14, 2026
+
+LAB-03 now Pass for isolated software acceptance. A consumed quantity outside available stock previously escaped as HTTP 500. The resource controller now maps that existing domain rejection to a structured quantity conflict, preserving stock/history and allowing the user to correct the entry. The full operator-journey regression and actual resource UI/API/database crosswalk pass. [Evidence, exact fixture boundary and cleanup](../testing/runs/2026-09-14-lab-resources-uat.md). Existing protocol/workflow concurrency counters advance through normal execution guards; definitions, approvals and prior job pins remain unchanged.
+
+## Controlled versioning acceptance — September 14, 2026
+
+LAB-01 and LAB-08 now Pass for isolated software acceptance. The [complete crosswalk](../testing/runs/2026-09-14-lab-versioning-uat.md) records structured definition validation/save/resume, distinct approvals, promotion by protocol/workflow authors, legacy self-approved Active protocol rejection, competing requests, immutable history and new/old/unpinned job retention. Original laboratory records and roles are unchanged. The disposable service was deactivated and its Production workflow retired after verification. No product implementation or scientific/bench acceptance is inferred from these software fixtures.
+
 ## Specimen attempts implemented locally — September 11, 2026
 
 The [specimen tube-attempt plan](SPECIMEN-TUBE-ATTEMPT-PLAN.md) is now implemented locally: versioned order policy, explicit source selection, attempt-scoped ordered execution, failure/reserve restart, confirmed exhaustion, output guards and specimen detail workspace. Customer-requested holds remain blocked. Existing Planned work is adopted only through explicit source selection; historical started work is not backfilled. Local migration AddSpecimenTubeAttempts is applied. Full persisted acceptance remains Not run; this supersedes the earlier proposed-status notes below.
@@ -1299,6 +1315,10 @@ cannot establish QR compatibility. The shared renderer is pinned qrcode.react
 
 ## Product Owner workflow review — September 11, 2026
 
+September 15 UAT correction: a live edited specimen-attempt dialog discarded entries on Escape without confirmation. Subscribe to the form's dirty state during render, then use that state for close/navigation protection, including pending before-unload protection. Retest declined and accepted discard, focus return and no-save navigation guards. This is a bounded recovery correction within the existing attempt workflow; no scientific rules or backend contract changes.
+
+September 15 UAT correction: a live edited specimen-attempt dialog discarded entries on Escape without confirmation. Subscribe to the form's dirty state during render, then use that state for close/navigation protection, including pending before-unload protection. Retest declined and accepted discard, focus return and no-save navigation guards. This is a bounded recovery correction within the existing attempt workflow; no scientific rules or backend contract changes.
+
 Receipt/accession, protocols/workflows, materials and equipment are accepted as broadly sound in the current walkthrough. Rename the sidebar Protocols to Protocols & workflows (implemented). Batches and Data assembly need clearer explanation and placement. PSeq kits should receive acceptance testing, then be hidden from the normal operating navigation when the owner is ready; do not hide or enable a rollout yet. Lab work needs workflow discovery and redesign around coherent specimen progression, reducing repeated entry and disconnected container/execution/library actions. These are product-review priorities, not authorization to replace existing scientific gates or change workflow contracts.
 
 ## Library prep and Results & review navigation — September 11, 2026
@@ -1310,3 +1330,5 @@ Manual verification: Results & review → HS5Y7DB7 opens Review, retains Process
 ## Preparation batches and connected Library prep — scope recorded
 
 See [Library preparation batches and connected workflow](LAB-WORK-JOURNEY-PLAN.md) for the agreed configurable single-tray model, mixed-job/partial batches, membership locked after start, batch-first evidence with tube exceptions, and reuse of preparation QC. The same implementation explicitly addresses disconnected container/resource entry, repeated identity linking, separate library creation/QC and sequencing handoff. This supersedes earlier open questions about tray continuity, mixed jobs, partial trays and duplicate QC in the journey plan. New preparation-batch behavior is planned, not implemented.
+
+September 15 policy/history closeout: LAB-09 one-/three-tube policy crosswalk, older unfinalized Customer confirmation, historical V1 replay and Completed historical protection now pass on isolated TEST ONLY records. Earlier source/hold/QC/retirement checkpoints remain retained. [Current crosswalk](../testing/runs/2026-09-15-policy-history-and-shipping-access-uat.md). Only positive independent scientific approval remains; no synthetic result is promoted to that evidence.

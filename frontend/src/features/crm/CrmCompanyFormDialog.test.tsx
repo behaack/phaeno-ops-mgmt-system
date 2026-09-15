@@ -4,8 +4,19 @@ import { describe, expect, it, vi } from "vitest";
 import { CrmCompanyFormDialog } from "./CrmCompanyFormDialog";
 import { toInput } from "./CrmCompaniesPage";
 import type { CrmCompany } from "#/api/crm";
+vi.mock('@tanstack/react-router', () => ({ useBlocker: vi.fn() }));
 
 describe("CRM Company form", () => {
+  it("protects a pending save against dismissal and repeated form submission", () => {
+    const onOpenChange = vi.fn(), onSubmit = vi.fn();
+    render(<CrmCompanyFormDialog open company={null} isPending onOpenChange={onOpenChange} onSubmit={onSubmit} />);
+    expect(screen.getByRole('button', { name: 'Cancel' })).toHaveProperty('disabled', true);
+    expect(screen.getByLabelText(/Company name/).closest('fieldset')).toHaveProperty('disabled', true);
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    fireEvent.submit(document.getElementById('create-crm-company')!);
+    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
   it("keeps Portal access disabled until the Company is approved", () => {
     render(
       <CrmCompanyFormDialog

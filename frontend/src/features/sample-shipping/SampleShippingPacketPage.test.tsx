@@ -95,6 +95,30 @@ describe('SampleShippingPacketPage', () => {
     expect(screen.getAllByRole('img', { name: /Permanent tube barcode/ })).toHaveLength(2)
   })
 
+  it('pages long frozen manifests without hiding samples from the receiving totals', async () => {
+    const samples = Array.from({ length: 20 }, (_, index) => ({ submittedSpecimenId: `specimen-${index}`, customerSampleId: `RNA-${index + 1}`, sampleName: 'TEST ONLY RNA', sampleBarcode: `SAMPLE-${index}`, supplierTubeBarcode: `TUBE-${index}`, tubeOrdinal: 1, totalSampleTubeCount: 1 }))
+    api.getPacket.mockResolvedValue({ ...packet, manifestSnapshotJson: JSON.stringify({ samples }) })
+    const client = show()
+    await screen.findByRole('button', { name: 'Print shipping insert' })
+    screen.getByText('Full packing instructions and sample / tube list').closest('details')!.open = true
+    const pages = screen.getByRole('navigation', { name: 'Manifest sample pages' })
+    expect(within(screen.getByRole('region', { name: 'Receiving summary' })).getByText('20 samples · 20 tubes')).toBeTruthy()
+    expect(document.querySelectorAll('.packet-sample')).toHaveLength(8)
+    expect(within(pages).getByText('Samples 1–8 of 20')).toBeTruthy()
+    fireEvent.click(within(pages).getByRole('button', { name: 'Next samples' }))
+    expect(screen.getByRole('heading', { name: 'RNA-9' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'RNA-1' })).toBeNull()
+    fireEvent.click(within(pages).getByRole('button', { name: 'Next samples' }))
+    expect(document.querySelectorAll('.packet-sample')).toHaveLength(4)
+    expect(within(pages).getByText('Samples 17–20 of 20')).toBeTruthy()
+    expect((within(pages).getByRole('button', { name: 'Next samples' }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Print shipping insert' }))
+    expect(window.print).toHaveBeenCalledTimes(1)
+    await act(async () => { client.setQueryData(['sample-shipping-packet', 'shipment-1'], { ...packet, shipment: { ...packet.shipment, currentPacket: { ...packet.shipment.currentPacket, id: 'replacement', revision: 2 } }, manifestSnapshotJson: JSON.stringify({ samples }) }) })
+    screen.getByText('Full packing instructions and sample / tube list').closest('details')!.open = true
+    await waitFor(() => expect(within(screen.getByRole('navigation', { name: 'Manifest sample pages' })).getByText('Samples 1–8 of 20')).toBeTruthy())
+    expect(screen.getByRole('heading', { name: 'RNA-1' })).toBeTruthy()
+  })
   it('retains a legacy frozen crosswalk in the Portal without inventing identifiers', async () => {
     api.getPacket.mockResolvedValue({ ...packet, manifestSnapshotJson: JSON.stringify({ samples: [{ customerSampleId: 'LEGACY-1', sampleName: 'Legacy RNA', supplierTubeBarcode: 'LEGACY-TUBE' }] }) })
     show()

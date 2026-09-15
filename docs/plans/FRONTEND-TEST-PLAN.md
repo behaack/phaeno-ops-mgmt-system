@@ -1,5 +1,17 @@
 # Frontend Test Plan
 
+## Department persistence during sign-in loading — September 14, 2026
+
+Connected Customer and Partner UAT exposed selection resetting to General on refresh. `SessionDepartmentPersistence.test.tsx` reproduces saved Research being cleared before authentication finishes. The effect now waits for loaded authentication; three tests cover loading, confirmed sign-out and revoked-department fallback. These and the three invitation-session tests pass. Actual Customer/Partner refresh checks preserve Research. See the ten-case execution report.
+
+## Empty workflow recovery — September 14, 2026
+
+`ServiceWorkflowVersionBuilderPage.test.tsx` reproduces an empty Invalid revision adding two blank stages under StrictMode. Initializing the field array empty corrects it. Two tests now verify exactly one added/saved replacement and the one-stage starting point for a new workflow; both pass. TypeScript and scoped ESLint pass. Actual connected UI saves, independently revalidates and promotes the repaired empty recovery, and preserves Invalid state on save of an edited/reordered revision. The Phaeno guide and generated corpus include the empty-recovery instruction. [LAB-04/07 crosswalk and evidence](../testing/runs/2026-09-14-guided-evidence-retirement-uat.md).
+
+## Accession focus and draft recovery — September 14, 2026
+
+`LabReceiptAccessionPanel.test.tsx` now covers delayed-loading focus with and without deliberate keyboard navigation, plus decline/confirm cancellation of an entered bulk storage draft. The delayed-focus and unsaved-storage regressions each fail before their correction; all 12 component tests pass afterward, none skipped. TypeScript and scoped ESLint pass. Actual connected checks confirm both fixes, exception/bulk browser Back guards, 390px light/dark checkbox wrapping and short-height dialog scrolling. The receipt guide and generated corpus are updated. [LAB-10/13 complete acceptance evidence](../testing/runs/2026-09-14-tube-intake-uat.md).
+
 ## September 14, 2026 — Commercial intake access
 
 Order section navigation now verifies assigned pricing access to intake with no configuration, Partner queue or Finance grant. LabJobDetailsDialog tests use the bounded Customer Department lookup and retain readiness, validation and draft behavior checks. Direct and CRM-handoff creation controls are disabled for read-only administrators. The focused navigation, intake, form and quote-review checkpoint passes 24 tests.
@@ -2056,3 +2068,13 @@ WEB-06 closes on four actual Clerk audiences, including wrong-audience routes, s
 
 
 September 14 Lead history: queue requests retained converted records so All statuses and Converted filters can reopen immutable history. Existing detail edit restrictions remain. TypeScript/scoped lint passed; no component suite added for this query-only correction. Focused desktop/mobile E2E coverage is in the E2E plan. [Execution record](../testing/runs/2026-09-14-acceptance-closure.md).
+
+September 14 ten-case checkpoint: 18 pricing/location tests, 32 kit-dialog tests and 20 shipping-workspace tests pass. Extended readiness failure/retry coverage verifies refreshed setup enables the retained draft without submitting. New location return variants preserve setup intent for standalone/embedded routes while inventory return remains unchanged. Embedded kit review does not impose a parent route lock; its own dirty/pending guard remains. TypeScript and scoped lint pass; Customer shipping and Phaeno intake guides updated. [Full evidence and limits](../testing/runs/2026-09-14-ten-case-execution.md).
+
+September 15 Company recovery correction: `CrmCompanyFormDialog.test.tsx` and `CrmRecordEditSnapshots.test.tsx` pass all 10 tests, including current-record read failure/retry, explicit conflict review preserving entered fields, pending dismissal/submission protection and existing reviewed snapshots. TypeScript and scoped lint pass. Phaeno Company/recovery guides and generated corpus check pass. Live two-session and committed-response-loss acceptance is recorded separately in the [Kit/system crosswalk](../testing/runs/2026-09-15-kit-and-system-recovery-uat.md).
+
+September 15 specimen-attempt draft correction: `LabSpecimenPage.test.tsx` passes the focused regression for Escape discard confirmation, retained edited evidence, navigation/before-unload protection and no unintended write. TypeScript, scoped lint and generated help check pass. Live failure-before/fix-after evidence, keyboard focus and settled 390×480 light/dark screenshots are in the [LAB-09 continuation](../testing/runs/2026-09-15-lab-attempt-continuation.md). Whole LAB-09 remains incomplete.
+
+## Shipping long-manifest and fulfillment access fixes — September 15, 2026
+
+SHP-14 exposed an unbounded frozen manifest and a fulfillment queue hidden behind a laboratory dashboard role denial. The manifest component now pages 8/8/4 for 20 samples, retains full receiving totals and print behavior, and resets the range on revision replacement. LabOperationsPage renders independently authorized receipt/kit panels without a dashboard request and refreshes their queries. Both new regressions fail before their respective corrections; seven tests pass across the two focused files. TypeScript and scoped ESLint pass. Existing API permissions are unchanged. [Connected retest and complete case evidence](../testing/runs/2026-09-15-shipping-large-recovery-uat.md).

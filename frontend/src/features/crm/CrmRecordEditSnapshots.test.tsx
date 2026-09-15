@@ -42,9 +42,32 @@ function mount(node: ReactNode) {
 describe('CRM reviewed record snapshots', () => {
   beforeEach(() => {
     vi.resetAllMocks()
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
     vi.mocked(api.getCrmCompany).mockResolvedValue(company)
     vi.mocked(api.getCrmContact).mockResolvedValue(contact)
     vi.mocked(api.listContactCompanies).mockResolvedValue([])
+  })
+
+  it('loads conflict changes, retains the draft and retries only after explicit review, including reload failure', async () => {
+    const current = { ...company, name: 'Concurrent Company', websiteUrl: 'https://current.example', version: 2 }
+    vi.mocked(api.updateCrmCompany).mockRejectedValueOnce({ isAxiosError: true, response: { status: 409 } })
+      .mockResolvedValueOnce({ ...current, name: 'Retained draft' })
+    mount(<CrmCompanyDetailPage companyId={company.id} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }))
+    fireEvent.change(screen.getByLabelText(/Company name/), { target: { value: 'Retained draft' } })
+    vi.mocked(api.getCrmCompany).mockRejectedValueOnce(new Error('Temporary read failure')).mockResolvedValue(current)
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Retry current record' }))
+    const review = await screen.findByRole('button', { name: 'Use reviewed record' })
+    expect(screen.getByText(/Current: Concurrent Company/)).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Save changes' })).toHaveProperty('disabled', true)
+    expect(api.updateCrmCompany).toHaveBeenCalledTimes(1)
+    fireEvent.click(review)
+    expect(screen.getByLabelText(/Company name/)).toHaveProperty('value', 'Retained draft')
+    expect(screen.getByLabelText('Website')).toHaveProperty('value', company.websiteUrl)
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+    await waitFor(() => expect(api.updateCrmCompany).toHaveBeenLastCalledWith(company.id, expect.objectContaining({ name: 'Retained draft', websiteUrl: company.websiteUrl, version: 2 })))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   })
 
   it('preserves Company draft fields and its reviewed version through refresh and failed save, then captures a fresh snapshot on reopen', async () => {

@@ -16,7 +16,7 @@ Use the tabs in **Lab operations → Receipt & accession** to focus on one task:
 - **Accession samples**: open a received container, then scan and accession its individual tubes.
 
 Kit requests and Prepare kits require the existing configuration-administrator
-permission. Your selected tab and queue filters stay in the page address; returning
+permission; opening these queues does not require a laboratory execution role. Your selected tab and queue filters stay in the page address; returning
 from a request or kit reopens its queue. Switching tabs during a visit retains the accession lookup draft and its results. Existing shipment links open the
 shipment-specific return-kit tab.
 
@@ -63,7 +63,7 @@ This receiving field accepts only the shipping insert's PH-P- code. The SHP… s
 
 Choose **Accession samples**. **Received containers awaiting accession** shows containers that have arrived and still have tubes to accession. Open the shipment reference or scan its PH-P- insert. This lookup is read-only. Within this tab, a **PH-S-** barcode opens the shipment's current confirmed insert, and **PH-O-** or **PH-M-** lookups let you choose a related manifest. The readable **SHP…** reference and physical **KIT-** barcode are not accepted by the lookup field.
 
-The shipping insert opens the accession dialog with every expected tube and its saved intake decision. Inspect tubes before storage. Scan each available physical tube in **Supplier tube barcode** and press Enter or **Identify tube**. Identification selects the tube for this session; it does not save acceptance or a storage location.
+The shipping insert opens the accession dialog with every expected tube and its saved intake decision. Once the shipment details have loaded, the **Supplier tube barcode** field receives keyboard focus unless you have already moved to another control. Inspect tubes before storage. Scan each available physical tube in **Supplier tube barcode** and press Enter or **Identify tube**. Identification selects the tube for this session; it does not save acceptance or a storage location.
 
 Record the exceptions first. Choose **Record exception** on the expected tube's row. Select **Rejected** or **On hold** and a predefined reason. Confirm that the received tube or damaged remains match that shipment row. A broken tube whose barcode cannot be scanned can still be rejected against its expected identity. Missing tubes remain outstanding; do not mark them received merely because they appear on the insert.
 

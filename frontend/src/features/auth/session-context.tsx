@@ -200,7 +200,8 @@ export function PhaenoSessionProvider({ children, isPreSessionRoute = false }: S
   })
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn) {
+    if (!isLoaded) return
+    if (!isSignedIn) {
       setSelectedOrganizationId(null)
       setSelectedDepartmentId(null)
       return

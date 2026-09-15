@@ -6,6 +6,8 @@ For the resumed local walkthrough, use the [TEST ONLY library-preparation protoc
 
 ## LAB-01 — Controlled protocols, independent approval and workflow pinning
 
+**Latest execution:** Pass for isolated software acceptance. The [September 14 versioning run](runs/2026-09-14-lab-versioning-uat.md) covers every required step and variant using copied TEST ONLY definitions, actual independent sessions and synthetic provider authorizations. Scientific/bench acceptance is separate.
+
 **Setup:** P-PROTOCOL-A/B, approved test definition and service identity; old pinned work order plus new-work fixture.
 
 | Step | Action | Expected result |
@@ -40,6 +42,8 @@ For the resumed local walkthrough, use the [TEST ONLY library-preparation protoc
 
 ## LAB-03 — Material QC, prepared lots, consumption and equipment
 
+**Latest execution:** Pass for isolated software acceptance. The [September 14 resource run](runs/2026-09-14-lab-resources-uat.md) covers all five steps and variants, including a reproduced/fixed insufficient-stock error, exact component deductions, unavailable-resource denials and independent saved-history readback. Physical/scientific qualification remains separate.
+
 **Setup:** Qualified/failed/expired lot fixtures, available quantities/units, calibrated/overdue equipment, started execution.
 
 | Step | Action | Expected result |
@@ -54,11 +58,13 @@ For the resumed local walkthrough, use the [TEST ONLY library-preparation protoc
 
 ## LAB-04 — Guided evidence, QC blockers, correction and completion
 
+**Status:** Pass for isolated software acceptance. All six steps and required variants have [connected UI/API/database evidence](runs/2026-09-14-guided-evidence-retirement-uat.md), including Supervisor correction with role restrictions, optional/conditional decisions and a successful source attempt. Synthetic criteria do not establish scientific or physical acceptance.
+
 **Setup:** P-LAB/P-SUP, role-restricted and repeatable steps, specimen-pinned workflow, test required/optional/conditional steps.
 
 | Step | Action | Expected result |
 | --- | --- | --- |
-| 1 | Assign eligible workflow stage/operator; attempt later required stage before predecessor completion. | Only pinned eligible stages/active operators allowed; ordering applies to matching specimen/work-order scope. |
+| 1 | Select the specimen source to assign its first workflow stage; verify active operator assignment for legacy job-level execution. Attempt a later required stage before predecessor completion. | Only pinned eligible stages/active operators allowed; ordering applies to matching specimen/work-order scope. Source-created specimen executions need no named assignee; evidence retains each recording actor. |
 | 2 | Start execution and record required typed captures/confirmation/resources; try wrong type/choice/missing required capture and insufficient role. | Definition-driven validation and server role enforcement reject bad evidence; file reference captures do not pretend to upload files. |
 | 3 | Resolve optional/conditional steps with supported skip and reason; try skipping required/performed work. | Required/performed work cannot be turned into skipped work; explicit allowed skips are retained. |
 | 4 | Record QC Fail/Hold with reason and try next step/complete. | Blocked state persists and prevents progress. Approved scientific criteria remain operator-assessed. |
@@ -116,7 +122,7 @@ another receipt. Mark physical printer/scanner checks Blocked until performed.
 
 ## LAB-07 — Protocol retirement, workflow invalidation and revalidation
 
-**Status:** Partial local evidence only. Step 6 passed for a separate Production workflow with no assigned jobs: warning/confirmation, retirement, Invalidated historical v1, and clean Invalid recovery v2. Step 9 has review/removal UI evidence only; no revalidation approval/promotion was submitted. Active/queued-work, concurrency, full revalidation and other branches remain Not run. See the [preparation run record](runs/2026-09-11-protocol-preparation.md). Earlier retirement verification used the superseded dependency-blocking rule and does not prove these scenarios.
+**Status:** Pass for isolated software acceptance. The [complete sixteen-step crosswalk](runs/2026-09-14-guided-evidence-retirement-uat.md) covers active/queued/held work, all source states, preserved history, empty and edited recovery, independent revalidation/promotion, six races and phone keyboard/theme checks. Empty-recovery duplicate stages were fixed and retested. The earlier [preparation run](runs/2026-09-11-protocol-preparation.md) remains historical partial evidence.
 
 **Setup:** Separate synthetic protocols A and B; independently approved versions; a two-stage service workflow using A then B; Protocol Administrator, independent approver, and Operator accounts. Prepare separate workflow/job fixtures for no assigned work, queued work with no started execution, active processing, and completed/cancelled history. Preserve existing acceptance fixtures. Record protocol/workflow/version/job IDs and before/after states in the run record.
 
@@ -144,7 +150,7 @@ another receipt. Mark physical printer/scanner checks Blocked until performed.
 
 ## LAB-08 - Promotion after independent approval
 
-Use synthetic local fixtures. Local walkthrough verified case 1 promotion as protocol author Bill on September 11, 2026, with workflow Production and both protocols Active; independent approvals were preserved. Existing two jobs retained Received/version 2/NULL workflow pins. Remaining cases, including new-job assignment, are Not run.
+**Latest execution:** Pass for isolated software acceptance. The [September 14 versioning run](runs/2026-09-14-lab-versioning-uat.md) covers all five steps, including both permitted author promotion paths, legacy self-approved Active protocol denial, concurrency, retired/withdrawn/unauthorized/stale denials and three provider-created new/old/unpinned work fixtures. Earlier September 11 partial evidence remains historical; it is superseded for this case by the complete crosswalk.
 
 1. Author protocols as user A and independently approve them as user B. Author their workflow as B and approve it as A. As A with ProtocolAdministrator, promote the workflow; expect success with protocol approvals preserved and A recorded as the promotion actor.
 2. On a separate approved fixture, promote as the workflow author after another user approved it; expect success. Verify the same path using the Actions menu and Cancel before confirming.
@@ -155,7 +161,7 @@ Use synthetic local fixtures. Local walkthrough verified case 1 promotion as pro
 
 ## LAB-09 - Specimen tube attempts and reserve fallback
 
-Implementation is local; the persisted journeys below remain **Not run**. Use separate synthetic fixtures. Preserve HS5Y7DB7's current Planned execution until the owner resumes the walkthrough. Record exact specimen, tube, workflow, attempt and execution identities, actor/time and expected denial alongside each result.
+Implementation and partial connected acceptance are local. The [September 15 continuation](runs/2026-09-15-lab-attempt-continuation.md) records completed legacy adoption, concurrency, hold/repeat, retirement-gap and draft-recovery checks, plus the remaining policy/replay, Completed historical and independent approval variants. The whole case remains incomplete. Use separate synthetic fixtures and preserve the owner's current HS5Y7DB7 walkthrough. Record exact specimen, tube, workflow, attempt and execution identities, actor/time and expected denial alongside each result.
 
 1. Create an order with a one-tube specimen and a three-tube specimen. Review the explicit run-one/failure-fallback instruction, confirm the exact roster and inspect the Lab job's matching policy. Extra tubes must not create extra analyses. Repeat finalization of an older, unfinalized order with explicit policy confirmation; preserve original snapshots. Check new Trial submission and replay of a historical V1 authorization independently.
 2. Receive/accession tubes independently. Accept one, hold/reject a reserve with controlled reasons and leave one pending. Confirm one Accepted tube makes the specimen intake Accepted; the workspace names each tube's eligibility and received/expected counts.
@@ -175,7 +181,7 @@ Capture both permitted and rejected persisted actions. Full acceptance requires 
 
 ## LAB-10 - Tube intake acceptance and controlled reasons
 
-Tube intake is implemented independently of LAB-09. Local UI checks passed for routine acceptance without reason, predefined hold/rejection reasons and Other requiring an explanation; no existing tube decision was saved. Complete the following on separate synthetic fixtures; persisted transition and concurrency cases remain Not run:
+**Latest execution: Pass for isolated software acceptance.** The [September 14 tube-intake run](runs/2026-09-14-tube-intake-uat.md) completes every step below, including persisted corrections, simultaneous review/start, history, scope and legacy eligibility. Scientific and physical acceptance remain separate. Tube intake is implemented independently of LAB-09.
 
 1. Accession a tube with Accepted after receipt checks: tube reviewer/time retained, no reason required, parent specimen Accepted and first acceptance target established.
 2. Hold or reject another tube of that specimen with a predefined reason: accepted tube and specimen acceptance remain intact; failed reserve is not automatically disposed.
@@ -190,7 +196,7 @@ Tube intake is implemented independently of LAB-09. Local UI checks passed for r
 
 ## LAB-13 — Inspect at accession; record damaged tubes and accept the remainder
 
-Status: Not run. Use a new isolated TEST ONLY shipment and synthetic evidence. Do not change the paused HS5Y7DB7 walkthrough.
+**Latest execution: Pass for isolated software acceptance.** The [September 14 tube-intake run](runs/2026-09-14-tube-intake-uat.md) completes every step below using new TEST ONLY shipments. Delayed scanner focus and silent bulk-storage draft discard were fixed and retested. The paused HS5Y7DB7 walkthrough is unchanged.
 
 1. Prepare and receive a shipment containing at least five registered expected tubes. Retain one as missing, one as an internal intake hold, one as destroyed, and two suitable for acceptance.
 2. Open Accession samples with the current insert. Confirm that looking up the insert and identifying tubes does not save acceptance or storage.
@@ -204,7 +210,7 @@ Status: Not run. Use a new isolated TEST ONLY shipment and synthetic evidence. D
 10. As Supervisor, correct an unused tube's intake with a required explanation. A non-stored record requires real retained-material storage before Accepted/On hold; a destroyed tube must not be falsely restored. An Operator cannot make the correction. Start an isolated source attempt and verify its intake cannot then be changed; use the existing attempt hold/failure path for later problems.
 11. Check keyboard-only use, visible focus, dialog scroll and 390px layout in both themes. Both long required checkbox labels must keep their asterisk beside the final word, with a full-size checkbox aligned to the first line. Verify the sidebar says **Library prep**, opens preparation batches with the job/specimen history lookup, and preserves existing `section=work` links and navigation. Confirm unsaved forms are guarded during navigation and saving cannot be submitted twice.
 
-Customer-requested hold management: Blocked by Product Owner instruction; this case does not authorize it. Physical inspection, scanner/printer use and persisted race/failure injection require separate recorded acceptance evidence.
+Customer-requested hold management: Blocked by Product Owner instruction; this case does not authorize it. Physical inspection and scanner/printer use remain separate acceptance gates. Persisted software race and failure-injection evidence is complete in the linked run.
 ## LAB-14 — Preparation trays, shared evidence and sequencing handoff
 
 Current signed-in checkpoint: [September 12 run record](runs/2026-09-12-lab-14-preparation.md). Reuse its Approved v1 protocol and designated fixtures. The isolated UAT environment is running at https://localhost:3014 with workflow v2 independently approved and promoted. Mixed, reserve, correction and resource preparation batches are now complete; preserve them. The resource library joined the designated LAB-14 draft sequencing batch, which now contains two libraries; duplicate scanning was rejected. William's Operator-to-Supervisor role transition passed, but independent-person review and the full staff-account matrix remain open. Role visibility and keyboard automated checks supplement signed-in evidence. Remaining variants and resumable draft identities are recorded in the run checkpoint. Use that environment for further LAB-14 writes; see the run record for exact identities and the withdrawn author-approval finding.

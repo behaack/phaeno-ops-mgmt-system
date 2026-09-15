@@ -12,6 +12,7 @@ export function CustomerOrderReadiness({ readiness }: { readiness: Readiness }) 
           : <Blockers items={readiness.startPricingBlockers} />}
       </AlertDescription>
     </Alert>
+    {readiness.startPricingBlockers.length + readiness.quoteBlockers.length + readiness.invoiceBlockers.length > 0 ? <p className="text-xs text-muted-foreground">Setup links open in a new tab, keeping these order details here. A platform administrator may need to complete setup.</p> : null}
     <details className="rounded-lg border p-3">
       <summary className="cursor-pointer text-sm font-medium">Later requirements · Quote: {readiness.quoteBlockers.length} · Invoice: {readiness.invoiceBlockers.length}</summary>
       <div className="mt-3 space-y-3 text-sm">
@@ -31,7 +32,7 @@ function Blockers({ items }: { items: OrderReadinessBlocker[] }) {
 
 function SetupLink({ code }: { code: string }) {
   const section = code === 'ActivePSeqOfferingRequired' ? 'catalog' : code === 'ShippingConfigurationIncomplete' || code === 'SampleConfigurationIncomplete' ? 'shipping' : ['OrderConfigurationIncomplete', 'ResultDestinationIncomplete', 'SubmissionInstructionsIncomplete'].includes(code) ? 'system' : null
-  if (section) return <Link className="underline underline-offset-4" to="/order-configuration" search={{ configurationSection: section }}>Open setup</Link>
-  if (['BillingContactIncomplete', 'BillingAddressIncomplete', 'PaymentTermsIncomplete', 'TaxDecisionIncomplete', 'FinanceTaxApprovalRequired'].includes(code)) return <Link className="underline underline-offset-4" to="/order-operations" search={{ orderSection: 'finance', financeSection: 'customers' }}>Open Finance</Link>
+  if (section) return <Link target="_blank" rel="noopener" className="underline underline-offset-4" to="/order-configuration" search={{ configurationSection: section }}>Open setup<span className="sr-only"> (opens in a new tab)</span></Link>
+  if (['BillingContactIncomplete', 'BillingAddressIncomplete', 'PaymentTermsIncomplete', 'TaxDecisionIncomplete', 'FinanceTaxApprovalRequired'].includes(code)) return <Link target="_blank" rel="noopener" className="underline underline-offset-4" to="/order-operations" search={{ orderSection: 'finance', financeSection: 'customers' }}>Open Finance<span className="sr-only"> (opens in a new tab)</span></Link>
   return null
 }

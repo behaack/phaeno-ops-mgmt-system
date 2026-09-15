@@ -108,8 +108,9 @@ function AttemptActionDialog({ action, stageId, data, specimen, attempt, evidenc
     client.setQueryData(['lab-attempts', data.workOrderId], result)
     await Promise.all([client.invalidateQueries({ queryKey: ['lab-work-order', data.workOrderId] }), client.invalidateQueries({ queryKey: ['lab-execution'] }), client.invalidateQueries({ queryKey: ['lab-operations'] })]); onClose()
   }, onError: async () => { await client.fetchQuery({ queryKey: ['lab-attempts', data.workOrderId], queryFn: () => getLabAttempts(data.workOrderId) }) } })
-  useBlocker({ shouldBlockFn: () => mutation.isPending || form.formState.isDirty && !window.confirm('Discard the unsaved attempt details?'), enableBeforeUnload: () => form.formState.isDirty })
-  const close = () => { if (!mutation.isPending && (!form.formState.isDirty || window.confirm('Discard the unsaved attempt details?'))) onClose() }
+  const { isDirty } = form.formState
+  useBlocker({ shouldBlockFn: () => mutation.isPending || isDirty && !window.confirm('Discard the unsaved attempt details?'), enableBeforeUnload: () => isDirty || mutation.isPending })
+  const close = () => { if (!mutation.isPending && (!isDirty || window.confirm('Discard the unsaved attempt details?'))) onClose() }
   const title = ({ select: attempt ? 'Select source' : specimen.attempts.at(-1)?.state === 'Failed' ? 'Use reserve tube' : 'Select source tube', fail: 'Close attempt as failed', hold: 'Hold attempt', resume: 'Resolve attempt hold', cancel: 'Cancel unstarted attempt', 'adopt-policy': 'Confirm tube-use instruction', 'confirm-exhaustion': 'Confirm material exhausted', 'skip-stage': 'Skip workflow stage', 'next-stage': 'Assign next stage' } as Record<string, string>)[action]
   const error = (name: keyof Values) => form.formState.errors[name] ? <p role="alert" className="mt-1 text-sm text-destructive">{form.formState.errors[name]?.message}</p> : null
   const selectClass = 'mt-1.5 h-9 w-full cursor-pointer rounded-lg border bg-background px-3 text-sm'

@@ -68,6 +68,27 @@ describe('LabReceiptAccessionPanel navigation', () => {
     expect(screen.queryByRole('button', { name: 'Receive shipment' })).toBeNull()
   })
 
+  it.each([false, true])('finishes delayed accession focus without overriding deliberate navigation (%s)', async movedFocus => {
+    let resolveWork!: (value: unknown) => void
+    api.work.mockImplementationOnce(() => new Promise(resolve => { resolveWork = resolve }))
+    render(<QueryClientProvider client={new QueryClient()}><LabReceiptAccessionPanel apiEnabled canReceiveShipments tab="accession" workOrders={[]} /></QueryClientProvider>)
+    const scanner = screen.getByLabelText('Shipping insert barcode')
+    fireEvent.change(scanner, { target: { value: 'PH-P-23456789AB-C' } })
+    fireEvent.submit(scanner.closest('form')!)
+    await screen.findByRole('dialog', { name: 'Accession tubes in SHIP-1' })
+    const tube = screen.getByLabelText('Supplier tube barcode')
+    expect(tube).toHaveProperty('disabled', true)
+    await act(async () => { await new Promise(resolve => requestAnimationFrame(resolve)) })
+    const close = screen.getByRole('button', { name: 'Close — continue later' })
+    if (movedFocus) act(() => close.focus())
+    await act(async () => resolveWork({ containers: [], workOrder: { version: 1, status: 'Received' } }))
+    await waitFor(() => expect(tube).toHaveProperty('disabled', false))
+    await act(async () => { await new Promise(resolve => requestAnimationFrame(resolve)) })
+    await waitFor(() => expect(document.activeElement).toBe(movedFocus ? close : tube))
+    expect(api.tube).not.toHaveBeenCalled()
+    expect(api.accession).not.toHaveBeenCalled()
+  })
+
   it('shows one task at a time and preserves a receiving scan draft across tabs', async () => {
     render(<QueryClientProvider client={new QueryClient()}><LabReceiptAccessionPanel apiEnabled canManageKitSupply workOrders={[]} /></QueryClientProvider>)
     expect(screen.getByRole('tab', { name: 'Kit requests' }).getAttribute('aria-selected')).toBe('true')
@@ -167,6 +188,33 @@ describe('LabReceiptAccessionPanel navigation', () => {
     expect(await screen.findByText(/This tube does not match the shipment/)).toBeTruthy()
     expect(screen.queryByLabelText(/Freezer box barcode/)).toBeNull()
     expect(api.accession).not.toHaveBeenCalled()
+  })
+
+  it('guards unsaved bulk storage entries before cancelling acceptance', async () => {
+    const packet = await api.packet()
+    packet.crosswalk = [{ shipmentItemId: 'item-1', tubeSlotId: 'slot-1', supplierTubeBarcode: 'TUBE-1', customerSampleId: 'SAMPLE-1', sampleName: 'Sample' }]
+    api.packet.mockResolvedValue(packet)
+    api.tube.mockResolvedValue({ isExpected: true, isAccessioned: false, supplierTubeBarcode: 'TUBE-1' })
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    try {
+      render(<QueryClientProvider client={new QueryClient()}><LabReceiptAccessionPanel apiEnabled canReceiveShipments tab="accession" workOrders={[]} /></QueryClientProvider>)
+      const scanner = screen.getByLabelText('Shipping insert barcode')
+      fireEvent.change(scanner, { target: { value: packet.barcode } }); fireEvent.submit(scanner.closest('form')!)
+      const tube = await screen.findByLabelText('Supplier tube barcode')
+      await waitFor(() => expect(tube).toHaveProperty('disabled', false))
+      fireEvent.change(tube, { target: { value: 'TUBE-1' } }); fireEvent.submit(tube.closest('form')!)
+      fireEvent.click(await screen.findByRole('button', { name: 'Accept all remaining (1)' }))
+      const box = await screen.findByLabelText(/Freezer box barcode/)
+      fireEvent.change(box, { target: { value: 'UNSAVED-BOX' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+      expect(confirm).toHaveBeenCalledWith('Discard the unsaved storage entries? The identified tubes will remain selected.')
+      expect(screen.getByLabelText(/Freezer box barcode/)).toHaveProperty('value', 'UNSAVED-BOX')
+      expect(api.batch).not.toHaveBeenCalled()
+      confirm.mockReturnValue(true)
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+      expect(screen.queryByLabelText(/Freezer box barcode/)).toBeNull()
+      expect(screen.getByRole('button', { name: 'Accept all remaining (1)' })).toBeTruthy()
+    } finally { confirm.mockRestore() }
   })
 
   it.each(['PH-O-11111111111141118111111111111111', 'PH-M-22222222222242228222222222222222'])('resolves %s to a manifest before comparing registered tubes', async barcode => {

@@ -1,10 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import type { CrmCompany } from "#/api/crm";
+import { useOrderDraftGuard } from "#/features/orders/use-order-draft-guard";
 import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import {
@@ -63,21 +64,31 @@ const companySchema = z.object({
 
 export type CrmCompanyFormValues = z.infer<typeof companySchema>;
 
-export function CrmCompanyFormDialog({
-  company,
-  error,
-  isPending,
-  onOpenChange,
-  onSubmit,
-  open,
-}: {
+type CompanyFormProps = {
   company: CrmCompany | null;
   error?: string;
+  feedback?: ReactNode;
+  saveBlocked?: boolean;
   isPending: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: CrmCompanyFormValues) => void;
   open: boolean;
-}) {
+};
+
+export function CrmCompanyFormDialog(props: CompanyFormProps) {
+  return props.open ? <CompanyForm key={props.company?.id ?? "new"} {...props} /> : null;
+}
+
+function CompanyForm({
+  company,
+  error,
+  feedback,
+  saveBlocked = false,
+  isPending,
+  onOpenChange,
+  onSubmit,
+  open,
+}: CompanyFormProps) {
   const editing = Boolean(company);
   const [showAdditional, setShowAdditional] = useState(editing);
   const form = useForm<CrmCompanyFormValues>({
@@ -86,18 +97,17 @@ export function CrmCompanyFormDialog({
     mode: "onBlur",
   });
 
-  useEffect(() => {
-    if (open) {
-      form.reset(valuesFor(company));
-      setShowAdditional(editing);
-    }
-  }, [company, editing, form, open]);
+  useOrderDraftGuard(form.formState.isDirty, isPending);
+  const close = (nextOpen: boolean) => {
+    if (isPending || (!nextOpen && form.formState.isDirty && !window.confirm("Discard unsaved Company changes?"))) return;
+    onOpenChange(nextOpen);
+  };
 
   const formId = editing ? "edit-crm-company" : "create-crm-company";
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+    <Dialog open={open} onOpenChange={close}>
+      <DialogContent className="sm:max-w-2xl" showCloseButton={!isPending}>
         <DialogHeader>
           <DialogTitle>{editing ? "Edit company" : "New company"}</DialogTitle>
           <DialogDescription>
@@ -111,12 +121,14 @@ export function CrmCompanyFormDialog({
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         ) : null}
+        {feedback}
         <form
           id={formId}
           className="grid gap-4"
           noValidate
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={form.handleSubmit((values) => { if (!isPending && !saveBlocked) onSubmit(values); })}
         >
+          <fieldset disabled={isPending} className="grid min-w-0 gap-4">
           <Field
             id={`${formId}-name`}
             label="Company name"
@@ -313,16 +325,18 @@ export function CrmCompanyFormDialog({
               </Field>
             </div>
           </div>
+          </fieldset>
         </form>
         <RequiredDialogFooter>
           <Button
             type="button"
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            disabled={isPending}
+            onClick={() => close(false)}
           >
             Cancel
           </Button>
-          <Button type="submit" form={formId} disabled={isPending}>
+          <Button type="submit" form={formId} disabled={isPending || saveBlocked}>
             {isPending
               ? "Saving…"
               : editing

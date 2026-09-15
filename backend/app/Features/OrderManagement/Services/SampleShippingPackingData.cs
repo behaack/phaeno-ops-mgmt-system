@@ -26,6 +26,11 @@ public static class SampleShippingPackingData
     public static async Task<IDbContextTransaction?> BeginAsync(PSeqOperationsDbContext db, string key, CancellationToken ct)
     {
         if (!db.Database.IsRelational()) return null;
+        if (db.Database.CurrentTransaction is not null)
+        {
+            await LockAsync(db, key, ct);
+            return null; // The outer Trial guard owns commit/rollback and the lock.
+        }
         var transaction = await db.Database.BeginTransactionAsync(ct);
         try { await LockAsync(db, key, ct); return transaction; }
         catch { await transaction.DisposeAsync(); throw; }

@@ -1,5 +1,7 @@
 # Ten-case UAT batch — September 14, 2026
 
+Latest continuation: the [guided-evidence and retirement slice](2026-09-14-guided-evidence-retirement-uat.md) closes LAB-04/07 after the tube-intake, material/equipment and versioning slices. Overall isolated software closure is **19 of 81**, and the broader ten-further-cases effort is complete with ten closures. This originally selected batch remains **3 of 10**; its seven remaining cases retain the prerequisites below. The 12-of-81 counts below are the earlier checkpoint.
+
 ## Continued checkpoint — Commercial intake access corrected
 
 The owner authorized the bounded correction below with **continue**. It is implemented and running on the same isolated Portal/API. This continuation closes the access defect, not another complete acceptance case: the selected batch remains **3 of 10 Pass**, and the overall ledger remains **12 of 81 Pass**.

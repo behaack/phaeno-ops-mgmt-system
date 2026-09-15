@@ -21,6 +21,41 @@ using PSeq.Operations.Commercial.OrderManagement.Domain;
 public partial class LabOperationsCommercialHandoffPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task InvalidTubeCountsReturnValidationWithoutSavingRosterChanges()
+    {
+        var connection = new Npgsql.NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("PSEQ_OPERATIONS_REFERENCE_CONNECTION")!);
+        if (connection.Host is not ("localhost" or "127.0.0.1")) throw new InvalidOperationException("Use disposable local PostgreSQL.");
+        var name = $"pseq_handoff_test_{Guid.NewGuid():N}";
+        await using var admin = new Npgsql.NpgsqlConnection(connection.ConnectionString);
+        await admin.OpenAsync();
+        await using (var create = new Npgsql.NpgsqlCommand($"CREATE DATABASE {name}", admin)) await create.ExecuteNonQueryAsync();
+        connection.Database = name; connection.Pooling = false;
+        try
+        {
+            await using var scope = await HandoffTestScope.CreateAsync(isolatedConnection: connection.ConnectionString);
+            var order = await scope.CreateSampleCapacityOrderAsync();
+            var version = order.Version;
+            foreach (var count in new[] { 0, -1 })
+            {
+                var error = await Assert.ThrowsAsync<OrderManagementException>(() => scope.ExtensionCustomerController().AddSample(order.Id,
+                    new LabSampleRosterWriteRequest("A-invalid", "Human PBMCs", count, OrderVersion: version), default));
+                Assert.Equal(400, error.StatusCode);
+                Assert.Contains("tube", error.Message, StringComparison.OrdinalIgnoreCase);
+                Assert.Empty(await scope.DbContext.LabSamples.Where(x => x.LabServiceOrderId == order.Id).ToListAsync());
+                Assert.Equal(version, await scope.DbContext.LabServiceOrders.Where(x => x.Id == order.Id).Select(x => x.Version).SingleAsync());
+            }
+            var saved = await scope.ExtensionCustomerController().AddSample(order.Id,
+                new LabSampleRosterWriteRequest("A-valid", "Human PBMCs", 2, OrderVersion: version), default);
+            Assert.Equal(2, Assert.Single(saved.Samples).Quantity);
+        }
+        finally
+        {
+            await using var drop = new Npgsql.NpgsqlCommand($"DROP DATABASE {name} WITH (FORCE)", admin);
+            await drop.ExecuteNonQueryAsync();
+        }
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task SampleSourceCapacitySerializesSimultaneousAddsToTheLastSourceSlot()
     {
         await using var scope = await HandoffTestScope.CreateAsync();

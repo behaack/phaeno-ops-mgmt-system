@@ -510,7 +510,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-08",
+      "reviewedAt": "2026-09-14",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -575,7 +575,7 @@
       "title": "Prepare and ship samples",
       "summary": "Use the Job workspace to receive kits, assign containers, scan tubes, print inserts and record dispatch.",
       "order": 35,
-      "reviewedAt": "2026-09-10",
+      "reviewedAt": "2026-09-14",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -726,7 +726,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-08",
+      "reviewedAt": "2026-09-14",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -925,7 +925,7 @@
       "title": "Companies and Contacts",
       "summary": "Maintain Company identity, contextual People, relationships, invitations, and Portal access in one workspace.",
       "order": 16,
-      "reviewedAt": "2026-09-14",
+      "reviewedAt": "2026-09-15",
       "navigationGroup": "customer-relationship-management",
       "contentType": "guide",
       "topicIds": [
@@ -1107,7 +1107,7 @@
       "title": "Troubleshooting and recovery",
       "summary": "Resolve access, duplicate, stale-update, conversion, stage, import, Task, and handoff problems safely.",
       "order": 22,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-15",
       "navigationGroup": "customer-relationship-management",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1373,7 +1373,7 @@
       "title": "Customer lab authorization",
       "summary": "Start a Customer Job for its Department, resolve readiness by stage, issue pricing, and authorize Lab work after sample finalization.",
       "order": 41,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-14",
       "navigationGroup": "order-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1595,7 +1595,7 @@
       "title": "Receipt and accession",
       "summary": "Dispatch barcoded containers to Customer locations, track inventory and assignments, and record receipt and accession for each registered tube.",
       "order": 51,
-      "reviewedAt": "2026-09-11",
+      "reviewedAt": "2026-09-14",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1640,7 +1640,7 @@
       "title": "Service workflows, protocol control, and execution",
       "summary": "Use Lab configurations for protocols, workflows, and tray formats; assemble preparation batches and record shared or tube evidence.",
       "order": 54,
-      "reviewedAt": "2026-09-12",
+      "reviewedAt": "2026-09-15",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [

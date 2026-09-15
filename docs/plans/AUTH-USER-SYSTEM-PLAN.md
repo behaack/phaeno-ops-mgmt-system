@@ -704,3 +704,8 @@ for local evidence and remaining signed-in/shared-environment gates.
 Pending-invitation menus in Phaeno and organization user management use content-sized width with a 12rem minimum and viewport cap. Resend invitation and Revoke invitation fit without unnecessary wrapping. Right alignment and existing actions are unchanged; user guide steps need no change.
 
 Verified the live Phaeno invitation menu at 192 px wide with both action rows 28 px high (single-line labels). Scoped lint and whitespace checks passed. No invitation was resent or revoked.
+## September 14 UAT correction: Department survives refresh
+
+Connected UAT found that an administrator choosing Research returned to General after a full page load. Authentication initialization was clearing remembered scope before Clerk had established whether the user was signed in. Preserve the remembered organization/Department while authentication loads, then validate it against the current session as before. Confirmed sign-out still clears scope; revoked Department access still falls back to a permitted Department. No membership, role, authentication-provider or API contract changes. This bounded correction is included in the owner's authorized ten-case UAT gap fixes.
+
+Regression: `SessionDepartmentPersistence.test.tsx` reproduces the refresh loss before the correction and covers loading, signed-out cleanup and revoked-scope fallback. Existing invitation/session continuity checks remain applicable. Actual Customer, Partner and Prospect reload checks are recorded in the ten-case execution run.

@@ -52,9 +52,10 @@ export function AcceptRemainingTubesDialog({ rows, packet, work, onClose, onSave
   const [version] = useState(work.workOrder.version)
   const [requestId] = useState(() => crypto.randomUUID())
   const form = useForm<BatchValues>({ resolver: zodResolver(batchSchema), defaultValues: { confirmed: false, tubes: selection.map(row => ({ supplierTubeBarcode: row.supplierTubeBarcode!, freezerBoxBarcode: work.containers.find(t => t.barcode === row.supplierTubeBarcode)?.location ?? '' })) } })
+  const dirty = form.formState.isDirty
   const save = useMutation({ mutationFn: (values: BatchValues) => acceptRemainingLabTubes(packet.labWorkOrderId, packet.shipmentId, { requestId, packetBarcode: packet.barcode, workOrderVersion: version, inspectionConfirmed: values.confirmed, tubes: values.tubes }), retry: false, onSuccess: (detail, values) => onSaved(detail, values.tubes.map(t => t.supplierTubeBarcode)), onError: async () => { await client.invalidateQueries({ queryKey: ['lab-work-order', packet.labWorkOrderId] }) } })
-  const confirmLeave = () => !form.formState.isDirty || window.confirm('Discard the unsaved storage entries? The identified tubes will remain selected.')
-  useBlocker({ shouldBlockFn: () => save.isPending || !confirmLeave(), enableBeforeUnload: () => form.formState.isDirty || save.isPending })
+  const confirmLeave = () => !dirty || window.confirm('Discard the unsaved storage entries? The identified tubes will remain selected.')
+  useBlocker({ shouldBlockFn: () => save.isPending || !confirmLeave(), enableBeforeUnload: () => dirty || save.isPending })
   const close = () => { if (!save.isPending && confirmLeave()) onClose() }
   return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent className="sm:max-w-2xl" onCloseAutoFocus={event => event.preventDefault()}>
     <DialogHeader><DialogTitle>Accept {selection.length} remaining tube{selection.length === 1 ? '' : 's'}</DialogTitle><DialogDescription>Only the identified tubes below will be accepted. Recorded exceptions and unidentified tubes are excluded. Record the actual storage location for each accepted tube.</DialogDescription></DialogHeader>

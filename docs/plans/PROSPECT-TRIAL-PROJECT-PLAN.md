@@ -1,5 +1,7 @@
 # Prospect Trial Project Plan
 
+September 14 ten-case connected UAT: lifecycle commands (hold/close/replacement) returned 404 because the route parameter action collided with MVC action selection. Rename only the internal route parameter to operation; the public URL, roles, payload and idempotency fingerprint remain unchanged. The real endpoint-routing regression fails before and passes after correction. Phaeno/Prospect guides reviewed: existing lifecycle instructions remain accurate. Connected follow-up and full-case crosswalk are in ../testing/runs/2026-09-14-ten-case-execution.md.
+
 September 14 connected UAT found that canonical `extracted_rna` was excluded from Trial choices and submission. Both checks now normalize underscores as well as spaces/hyphens. The canonical batch-submission regression reproduced the defect and passed after correction; existing spaced-label approval/submission also passed. Actual isolated configuration now offers the retained RNA type. Eligible analysis configuration remains absent, so no whole Trial case is closed. Phaeno/Prospect guides reviewed; existing instructions remain accurate. [Evidence](../testing/runs/2026-09-14-acceptance-closure.md).
 
 ## Trial desktop/mobile browser checkpoint — September 14, 2026
@@ -1333,3 +1335,5 @@ or reserved provider identifiers as implemented Trial behavior before verificati
 - Detailed final checks and remaining rollout gates are recorded in
   `TRIAL-INTEGRATION-CLOSEOUT.md`. Do not infer production readiness from local
   tests or from the previously deployed Portal closeout.
+
+September 14 ten-case closeout: TRI-01/02/03/04 pass for isolated software acceptance. Connected draft/revisions, independent authority approvals, bounded submission, hold/custody and one replacement lineage complete. Trial packing joins the existing guard transaction, preserving advisory lock and rollback; no nested-transaction 500. Temporary Commercial delegation revoked; original authorities unchanged. [Full evidence and limits](../testing/runs/2026-09-14-ten-case-execution.md).

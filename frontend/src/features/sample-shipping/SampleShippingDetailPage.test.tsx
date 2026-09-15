@@ -9,6 +9,7 @@ import {
   type PhaenoSessionContextValue,
 } from '#/features/auth/session-context'
 import { noSessionCapabilities } from '#/test-helpers/session'
+import { deliveryLocationFixture } from '#/test-helpers/transportation-kit-requests'
 
 import { SampleShippingDetailPage } from './SampleShippingDetailPage'
 import type { ShippingInsertIdentity } from './shipping-insert-acknowledgement'
@@ -55,6 +56,16 @@ describe('SampleShippingDetailPage', () => {
     api.getKitSupply.mockResolvedValue({ shipmentId: shipment.id, jobId: shipment.authorizationSourceId, request: null, recordedStock: [], inventoryStatus: 'Unknown', canRequestKits: true, canPrepareSamples: true, preparationBlockedReason: 'Order kits for this Job first.', locations: [], recommendation: { containers: [] } })
   })
 
+  it('lets the kit dialog guard address setup navigation without an unconditional parent lock', async () => {
+    const onNavigationLockChange = vi.fn()
+    api.getSampleShipment.mockResolvedValue({ ...shipment, authorizationSource: 'CustomerLabServiceOrder' })
+    api.getKitSupply.mockResolvedValue({ shipmentId: shipment.id, jobId: shipment.authorizationSourceId, jobNumber: 'TEST-JOB', request: null, recordedStock: [], inventoryStatus: 'Unknown', canRequestKits: true, canPrepareSamples: false, locations: [deliveryLocationFixture], deliveryLocationId: deliveryLocationFixture.id, recommendation: { containers: [] } })
+    renderPage(undefined, customerSession(), embeddedHost({ onNavigationLockChange, showPreparation: true }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Order transportation kits' }))
+    await screen.findByRole('dialog', { name: 'Order transportation kits' })
+    expect(screen.getByRole('link', { name: 'Manage delivery locations' })).toBeTruthy()
+    expect(onNavigationLockChange).toHaveBeenLastCalledWith(false)
+  })
   it('keeps order actions while embedded shipment data is loading and rejects a different Job without revealing its contents', async () => {
     const renderSendAction = vi.fn(() => null)
     const embedded = embeddedHost({ sourceId: 'different-job', renderSendAction })

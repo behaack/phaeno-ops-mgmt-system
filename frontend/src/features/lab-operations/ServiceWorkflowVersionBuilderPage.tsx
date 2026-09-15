@@ -54,7 +54,7 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
   const controlledSource = workflow?.versions.find((item) => item.status === 'Production')
     ?? workflow?.versions.filter((item) => item.status === 'Retired').slice(-1)[0]
   const formKey = `${workflowId}:${draftVersionId ?? 'new'}`
-  const form = useForm<WorkflowForm>({ resolver: zodResolver(workflowSchema), defaultValues: { stages: [emptyStage()] } })
+  const form = useForm<WorkflowForm>({ resolver: zodResolver(workflowSchema), defaultValues: { stages: [] } })
   const stages = useFieldArray({ control: form.control, name: 'stages' })
   const mutation = useMutation({
     mutationFn: (values: WorkflowForm) => {

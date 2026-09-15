@@ -628,3 +628,9 @@ Focused regression sources cover nonadministrator positive CRM writes and negati
 
 
 Connected CRM-03/04 are closed for isolated software acceptance. Populated Opportunity/Reports column headings now stay together inside their existing scrollable tables; desktop/tablet/phone read-only checks, TypeScript and scoped lint pass. No change to reporting semantics or user instructions.
+
+## September 15 UAT Company save recovery
+
+SYS-01 reproduced a Company edit conflict in two authorized sessions: the stale save retained the draft but offered no recovery. Load the current record after a conflict, show changes since the editor opened, and require explicit review before a deliberate save using its current version. Keep entered values intact, provide a retry when the current record cannot load, and protect pending saves from dismissal, navigation and repeat submission. This is a Company editor correction within the authorized UAT gap-fix scope; permissions and the API contract stay as implemented. Verify real-session conflict/recovery and committed-response loss, with focused form regression coverage and updated Phaeno help.
+
+Implemented and verified: both actual-session recovery variants pass, as do all 10 focused form/snapshot tests, TypeScript, scoped lint and generated documentation checks. Independent saved-state readback shows one committed Company version after response loss. [Closure evidence](../testing/runs/2026-09-15-kit-and-system-recovery-uat.md).

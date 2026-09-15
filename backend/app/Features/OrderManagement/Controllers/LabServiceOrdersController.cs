@@ -469,6 +469,7 @@ public sealed partial class LabServiceOrdersController(
         Execute(order.EnsureSampleRosterEditable);
         var sample = order.Samples.SingleOrDefault(item => item.Id == sampleId) ?? throw Missing();
         EnsureVersion(sample.Version, request.Version);
+        ValidateRosterTubeCount(request.TubeCount);
         EnsureUniqueSampleId(order, request.CustomerSampleId, sample.Id);
         var source = ResolveRosterSource(order, request.BiologicalSource, sample);
         EnsureRosterSourceCapacity(order, source, sample.Id);
@@ -861,10 +862,18 @@ public sealed partial class LabServiceOrdersController(
     }
 
     private static LabSample ToRosterSample(LabServiceOrder order, LabSampleRosterWriteRequest request)
-        => new(order.Id, request.CustomerSampleId, StandardMaterialType,
+    {
+        ValidateRosterTubeCount(request.TubeCount);
+        return new(order.Id, request.CustomerSampleId, StandardMaterialType,
             ResolveRosterSource(order, request.BiologicalSource), request.TubeCount, StandardQuantityUnit,
             order.StorageRequirements, order.SafetyDeclaration, request.CollectionDate, request.Concentration,
             request.Notes, JsonSerializer.Serialize(order.ReadConfiguredSnapshot()?.AnalysisIds ?? [], JsonSerializerOptions));
+    }
+
+    private static void ValidateRosterTubeCount(int count)
+    {
+        if (count < 1) throw Invalid("tube_count_invalid", "Tube count must be at least one.");
+    }
 
     private static string ResolveRosterSource(LabServiceOrder order, string? requestedSource, LabSample? existing = null)
     {

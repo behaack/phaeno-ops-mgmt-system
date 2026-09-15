@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useBlocker } from '@tanstack/react-router'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getLabWorkOrder, type LabWorkOrderDetail } from '#/api/lab-operations'
 import { getOrderErrorMessage } from '#/api/order-management'
 import { scanRegisteredSampleTube, scanSampleShippingPacket, type SampleShippingCrosswalkItem, type SampleShippingPacketScan } from '#/api/sample-shipping'
@@ -16,6 +16,8 @@ export function ContainerAccessionDialog({ initialPacket, canAccession, onClose 
 }) {
   const client = useQueryClient()
   const tubeInput = useRef<HTMLInputElement>(null)
+  const dialog = useRef<HTMLDivElement>(null)
+  const initialFocusPending = useRef(true)
   const doneButton = useRef<HTMLButtonElement>(null)
   const [tubeBarcode, setTubeBarcode] = useState('')
   const [identified, setIdentified] = useState<string[]>([])
@@ -40,6 +42,18 @@ export function ContainerAccessionDialog({ initialPacket, canAccession, onClose 
     focusTube()
   }, onError: focusTube })
   const blocked = !canAccession || packet.isVoided || !packet.containerReceivedAt || !workQuery.data || workQuery.isError || packetQuery.isError || ['Cancelled', 'ReadyForRelease'].includes(workQuery.data?.workOrder.status ?? '')
+  useEffect(() => {
+    if (blocked || !initialFocusPending.current) return
+    const frame = window.requestAnimationFrame(() => {
+      initialFocusPending.current = false
+      // A disabled input cannot receive the dialog's initial focus. Finish that
+      // handoff after loading, unless the user has already chosen a control.
+      if (document.activeElement === dialog.current || document.activeElement === document.body) {
+        (tubeInput.current ?? doneButton.current)?.focus()
+      }
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [blocked])
   const unsaved = remaining.length > 0 || Boolean(tubeBarcode.trim())
   const confirmLeave = () => !unsaved || window.confirm('Discard the unsaved tube selection? Previously saved intake decisions will be kept.')
   useBlocker({ shouldBlockFn: () => tubeScan.isPending || !exception && !accepting && !confirmLeave(), enableBeforeUnload: () => unsaved || tubeScan.isPending })
@@ -51,7 +65,7 @@ export function ContainerAccessionDialog({ initialPacket, canAccession, onClose 
     await Promise.all(['lab-shipment-queue', 'accession-packet', 'lab-receipt-context', 'lab-operations', 'lab-attempts', 'lab-execution', 'sample-shipment', 'sample-shipments', 'platform-sample-shipments'].map(key => client.invalidateQueries({ queryKey: [key] })))
   }
   return <Dialog open onOpenChange={open => { if (!open) close() }}>
-    <DialogContent className="sm:max-w-4xl" onOpenAutoFocus={event => { event.preventDefault(); focusTube() }}>
+    <DialogContent ref={dialog} className="sm:max-w-4xl" onOpenAutoFocus={event => { event.preventDefault(); if (tubeInput.current?.disabled) dialog.current?.focus(); else focusTube() }}>
       <DialogHeader><DialogTitle>Accession tubes in {packet.shipmentNumber}</DialogTitle><DialogDescription>{packet.organizationName} · {packet.authorizationReference} · {packet.packetNumber}. Identify and inspect tubes before storing them. Record exceptions first, then accept the rest.</DialogDescription></DialogHeader>
       <div className="space-y-4">
         <p role="status" className="font-medium">{recorded} of {packet.crosswalk.length} expected tubes have an intake decision{allDone ? ' — intake complete' : ''}</p>
