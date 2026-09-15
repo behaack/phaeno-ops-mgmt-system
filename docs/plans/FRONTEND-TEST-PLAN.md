@@ -1,5 +1,15 @@
 # Frontend Test Plan
 
+## September 14, 2026 — Commercial intake access
+
+Order section navigation now verifies assigned pricing access to intake with no configuration, Partner queue or Finance grant. LabJobDetailsDialog tests use the bounded Customer Department lookup and retain readiness, validation and draft behavior checks. Direct and CRM-handoff creation controls are disabled for read-only administrators. The focused navigation, intake, form and quote-review checkpoint passes 24 tests.
+
+
+## Public Website search recovery — September 14, 2026
+
+Connected WEB-01 exposed a service failure rendered as no matches. Website Search now separates loading, successful empty and error states; preserves the query; provides retry; and ignores aborted responses. Local Website build and browser failure/retry/focus/no-match checks pass using live public search responses and controlled transport faults. Portal frontend source is unchanged; no Portal unit suite was run. [Evidence](../testing/runs/2026-09-14-next-ten-uat.md).
+
+
 ## Company association draft protection and CRM-01 closure — September 14, 2026
 
 The connected Company/Contact case exposed silent loss of an Add existing person draft on a second Escape. The dialog now applies the established unsaved-navigation and dismissal guard, preserves a declined dismissal, blocks closing during save, and resets discarded local selections when reopened. The first Escape still closes search choices. The Company workspace regression covers decline/discard/reopen and existing recovery paths (8 passed); real signed-in desktop/tablet/phone checks confirm the nested Escape behavior without writes. TypeScript, scoped lint and generated-help consistency pass. The staff guide and review date are updated. Actual Company/relationship, outreach validation/reset, immutable history, legacy restrictions and suppression-preserving admin merge/export complete CRM-01 on the isolated baseline. See the [complete step crosswalk](../testing/runs/2026-09-14-acceptance-closure.md). No broad test suite was substituted for acceptance.

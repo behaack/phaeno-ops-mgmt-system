@@ -1,5 +1,15 @@
 # First-Party CRM Plan
 
+## September 14, 2026 — Intake access continuation
+
+The owner-approved Commercial intake access correction aligns the read-only order-handoff list with existing CRM Commercial access. Handoff creation, review and administrative actions retain their original checks. Connected P-PRICE read and external denial pass; see the [next-ten UAT checkpoint](../testing/runs/2026-09-14-next-ten-uat.md).
+
+
+## CRM administration acceptance and invalid import guard — September 14, 2026
+
+CRM-06 is closed on the isolated baseline: actual mixed/corrected import and replay, required and restricted custom fields, personal/shared views, filtered export/audit and retained controlled merge evidence. Invalid import commit now returns a validation error before constructing any business rows; the regression and actual connected retry pass. Disposable fields/views were deactivated and import/export/merge history retained. The current guide already states that invalid rows block commit. [Full step crosswalk](../testing/runs/2026-09-14-next-ten-uat.md).
+
+
 ## Company association draft protection and CRM-01 closure — September 14, 2026
 
 The connected Company/Contact case exposed silent loss of an Add existing person draft on a second Escape. The dialog now applies the established unsaved-navigation and dismissal guard, preserves a declined dismissal, blocks closing during save, and resets discarded local selections when reopened. The first Escape still closes search choices. The Company workspace regression covers decline/discard/reopen and existing recovery paths (8 passed); real signed-in desktop/tablet/phone checks confirm the nested Escape behavior without writes. TypeScript, scoped lint and generated-help consistency pass. The staff guide and review date are updated. Actual Company/relationship, outreach validation/reset, immutable history, legacy restrictions and suppression-preserving admin merge/export complete CRM-01 on the isolated baseline. See the [complete step crosswalk](../testing/runs/2026-09-14-acceptance-closure.md). No broad test suite was substituted for acceptance.

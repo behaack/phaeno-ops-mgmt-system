@@ -26,11 +26,13 @@ type IntakeQueueItem =
 
 export function CommercialOrderIntakePanel({
   apiEnabled,
+  canCreate,
   mock,
   userId,
   organizations,
 }: {
   apiEnabled: boolean
+  canCreate: boolean
   mock: boolean
   userId: string | null
   organizations: OrganizationOption[]
@@ -63,8 +65,8 @@ export function CommercialOrderIntakePanel({
   })
   const eligibleCustomers = customers.data ?? []
   const organizationNames = useMemo(
-    () => new Map(organizations.map((organization) => [organization.id, organization.name])),
-    [organizations],
+    () => new Map([...(customers.data ?? []), ...organizations].map((organization) => [organization.id, organization.name])),
+    [organizations, customers.data],
   )
   const queueItems = useMemo(() => {
     const items: IntakeQueueItem[] = [
@@ -100,7 +102,7 @@ export function CommercialOrderIntakePanel({
             </div>
             <Button
               type="button"
-              disabled={!mock && (!apiEnabled || customers.isLoading || customers.isError || eligibleCustomers.length === 0)}
+              disabled={!canCreate || (!mock && (!apiEnabled || customers.isLoading || customers.isError || eligibleCustomers.length === 0))}
               onClick={() => setCreateOpen(true)}
             >
               <Plus data-icon="inline-start" /> New Customer order
@@ -167,6 +169,7 @@ export function CommercialOrderIntakePanel({
               <CrmHandoffRow
                 key={item.handoff.handoff.id}
                 item={item.handoff}
+                canCreate={canCreate}
                 onStart={setSelectedHandoff}
               />
             ))}
@@ -270,7 +273,7 @@ function CommercialOrderRow({
   )
 }
 
-function CrmHandoffRow({ item, onStart }: { item: CrmOrderHandoff; onStart: (item: CrmOrderHandoff) => void }) {
+function CrmHandoffRow({ item, canCreate, onStart }: { item: CrmOrderHandoff; canCreate: boolean; onStart: (item: CrmOrderHandoff) => void }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 py-4">
       <div>
@@ -293,7 +296,7 @@ function CrmHandoffRow({ item, onStart }: { item: CrmOrderHandoff; onStart: (ite
           <Link to="/customers" search={{ requestId: item.handoff.relationshipRequestId }}>Open request</Link>
         </Button>
       ) : item.handoff.canStartCustomerOrder && item.handoff.organizationId ? (
-        <Button type="button" onClick={() => onStart(item)}>Start Customer order</Button>
+        <Button type="button" disabled={!canCreate} onClick={() => onStart(item)}>Start Customer order</Button>
       ) : (
         <Button asChild variant="outline"><Link to="/crm/companies">Review Companies in CRM</Link></Button>
       )}

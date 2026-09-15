@@ -1,5 +1,10 @@
 # Auth and User System Plan
 
+## September 14, 2026 — Intake access continuation
+
+Owner-approved Commercial intake correction: see [Order Management plan](ORDER-MANAGEMENT-PLAN.md#commercial-intake-role-correction--september-14-2026). Existing CommercialOperator plus active Phaeno membership governs pricing and scoped intake reads; administrator read and flag fallback remain distinct. No role grants or identity-provider change.
+
+
 ## 2026-09-08 signed-in menu and dashboard polish
 
 The owner completed dashboard entry as the invited Customer member. The header

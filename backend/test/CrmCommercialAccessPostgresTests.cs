@@ -18,6 +18,32 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 public sealed class CrmCommercialAccessPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task InvalidImportCommitLeavesPreviewAndBusinessRecordsUnchanged()
+    {
+        await using var scope = await Scope.Create();
+        scope.Membership.SetOrganizationAdmin(true);
+        await scope.Db.SaveChangesAsync();
+        var controller = scope.Controller(new CrmAdministrationController(scope.Db, scope.Identity));
+        var name = $"TEST ONLY invalid import {Guid.NewGuid():N}";
+        var result = await controller.PreviewImport(new(CrmRecordType.Company, Guid.NewGuid().ToString(), "invalid.csv",
+            [new(new Dictionary<string, string?> { ["name"] = name }),
+             new(new Dictionary<string, string?> { ["name"] = null }),
+             new(new Dictionary<string, string?> { ["name"] = "" })]), default);
+        var preview = Assert.IsType<CrmImportPreviewDto>(Assert.IsType<CreatedResult>(result.Result).Value);
+        Assert.Equal(2, preview.InvalidRows);
+        scope.Db.ChangeTracker.Clear();
+        var error = await Assert.ThrowsAsync<CrmException>(() => controller.CommitImport(preview.BatchId, new(preview.Version), default));
+        Assert.Equal(400, error.StatusCode);
+        Assert.False(await scope.Db.CrmCompanies.AsNoTracking().AnyAsync(value => value.Name == name));
+        Assert.DoesNotContain(scope.Db.ChangeTracker.Entries<CrmCompany>(), entry => entry.State == EntityState.Added);
+        scope.Db.ChangeTracker.Clear();
+        var saved = await scope.Db.CrmImportBatches.AsNoTracking().SingleAsync(value => value.Id == preview.BatchId);
+        Assert.Equal(CrmImportStatus.Previewed, saved.Status);
+        Assert.Equal(preview.Version, saved.Version);
+        Assert.Null(saved.CommittedAt);
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task OpportunityStageMoveReturnsSavedStageAndRejectsStaleReplayWithoutDuplicateHistory()
     {
         await using var scope = await Scope.Create();

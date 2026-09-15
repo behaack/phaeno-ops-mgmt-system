@@ -1,5 +1,12 @@
 # Order Management Plan
 
+## Commercial intake role correction — September 14, 2026
+
+The owner approved the bounded intake correction by continuing after review of `docs/testing/runs/2026-09-14-next-ten-uat.md`. With business roles enforced, an active Phaeno Commercial Operator can read the Lab Service intake queue, active Customer/Department choices, readiness and the canonical pricing catalog, open the commercial order, start pricing and manage quote decisions. Platform administrators retain read access; pricing still requires the assigned role. With enforcement disabled the existing administrator fallback remains. This supersedes the earlier administrator-only intake workaround and September 8 quote-read restriction for this scoped workflow.
+
+The aggregate queue restricts non-administrator Commercial users to Lab Service records. Department and price lookups expose only the bounded fields needed by intake. Organization/Department administration, other order queues, configuration editing, laboratory execution, Finance and result release retain their own authorization. No role grants, identity-provider change or migration. Revoked roles and inactive Phaeno memberships must fail closed. Focused rollback database tests and the existing actual UAT identities verify both successful and denied paths; this correction alone does not complete an order UAT case.
+
+
 ## Versioned tube-use instruction — September 11, 2026
 
 New/edited Lab order drafts explicitly carry Run one tube per specimen; use a reserve only after failure. Creation, review and order details show the instruction; source/tube counts and pricing remain independent. Finalizing an older unfinalized order requires explicit confirmation, records an order event and produces V2 Lab authorization without rewriting prior order snapshots. Policy is immutable after authorization. V1 replay preserves absent policy fields. See [tube attempts](SPECIMEN-TUBE-ATTEMPT-PLAN.md). Local implementation only; acceptance scenarios remain Not run.

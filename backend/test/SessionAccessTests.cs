@@ -26,6 +26,24 @@ public class SessionAccessTests
         Assert.False(session.Capabilities.CanManageOrganizations);
     }
 
+    [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(true, false, true)]
+    [InlineData(false, true, true)]
+    [InlineData(true, true, true)]
+    public void CommercialPricingRequiresActivePhaenoAccessAndMatchesEnforcement(bool businessRoles, bool dualControl, bool expected)
+    {
+        var organization = new Organization("Phaeno", OrganizationKind.Phaeno);
+        var user = new User("pricing@example.test", "Pricing", "Staff"); user.Activate();
+        var membership = new OrganizationMembership(user.Id, organization.Id, false);
+        AttachOrganization(membership, organization); user.Memberships.Add(membership);
+        var session = SessionEndpoints.ToSession(user, [], "ready", membership, [BusinessRole.CommercialOperator], businessRoles, dualControl);
+        Assert.Equal(expected, session.Capabilities.CanQuoteLabServiceWork);
+        Assert.False(session.Capabilities.CanManageOrderConfiguration);
+        membership.Deactivate();
+        Assert.False(SessionEndpoints.ToSession(user, [], "ready", membership, [BusinessRole.CommercialOperator], businessRoles, dualControl).Capabilities.CanQuoteLabServiceWork);
+    }
+
     [Fact]
     public void CustomerLabInvoiceNavigationPreservesCurrentReceivablesReadAuthority()
     {

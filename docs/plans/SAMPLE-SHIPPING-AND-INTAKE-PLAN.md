@@ -1,5 +1,10 @@
 # Sample Shipping and Intake Plan
 
+## Container configuration and location acceptance — September 14, 2026
+
+SHP-01 now passes isolated software acceptance: actual catalog/detail, 18/30-tube recommendations, invalid/draft compatibility checks and disposable revision retirement with original shipment snapshots unchanged. SHP-02 actual five-session validation/default/stale-write/scoping/retirement and phone controls pass; returning to an unsubmitted kit confirmation still needs an eligible accepted Customer Job. No physical inventory, delivery, receipt, existing shipment or original TRANS definition was changed. [Full evidence and retained IDs](../testing/runs/2026-09-14-next-ten-uat.md).
+
+
 ## Inspect before storage and batch acceptance — September 11, 2026
 
 Owner-approved scope: identify and inspect tubes during accessioning; record exceptions first, then accept the remaining identified/undecided tubes in that shipment. A rejected tube retains its expected shipment identity and rejection evidence even when destroyed. Rejection does not require a freezer location and never creates available material. Retained Accepted/On hold material requires a real storage location; a rejected retained tube may optionally record one. No disposal is inferred.

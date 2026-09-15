@@ -9,7 +9,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
-import { getOrderConfiguration, getOrderErrorMessage, getPlatformOrder, listIntegrationMessages, listNotificationMessages, listPlatformOrders, retryIntegrationMessage, retryNotificationMessage, runPlatformAction, updateOperationalAssignment, type DataAssemblyRequest, type IntegrationMessage, type LabServiceOrder, type NotificationMessage, type PagedResult, type Quote, type ReagentOrder } from '#/api/order-management'
+import { getCommercialPricingCatalog, getOrderConfiguration, getOrderErrorMessage, getPlatformOrder, listIntegrationMessages, listNotificationMessages, listPlatformOrders, retryIntegrationMessage, retryNotificationMessage, runPlatformAction, updateOperationalAssignment, type DataAssemblyRequest, type IntegrationMessage, type LabServiceOrder, type NotificationMessage, type PagedResult, type Quote, type ReagentOrder } from '#/api/order-management'
 import type { SessionCapabilities } from '#/api/session'
 import { listOrganizations } from '#/api/data-provisioning'
 import { getLabWorkOrderByCommercialOrder } from '#/api/lab-operations'
@@ -79,7 +79,7 @@ function OperationalQueues({ apiEnabled, mock, userId, capabilities, initialSect
               <AlertDescription>Use a real Phaeno session to work operational orders.</AlertDescription>
             </Alert>
           ) : null}
-          {section === 'intake' ? <CommercialOrderIntakePanel apiEnabled={apiEnabled} mock={mock} userId={userId} organizations={organizationOptions} /> : null}
+          {section === 'intake' ? <CommercialOrderIntakePanel canCreate={Boolean(capabilities.canQuoteLabServiceWork)} apiEnabled={apiEnabled} mock={mock} userId={userId} organizations={organizationOptions} /> : null}
           {section === 'reagent' ? <QueueCard title="PSeq kit queue" workflow="reagent" apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /> : null}
           {section === 'assembly' ? <QueueCard title="Assembly queue" workflow="assembly" apiEnabled={apiEnabled} userId={userId} organizations={organizationOptions} /> : null}
           {section === 'attention' ? <>{canAccessOperationalAttention(capabilities) ? <OperationalAttentionPanel apiEnabled={apiEnabled} userId={userId} canBill={capabilities.canManagePSeqBilling} canManageCash={capabilities.canManagePSeqCash} canReconcile={capabilities.canReconcilePSeqCash} /> : null}<CommercialSaleSummaryAttention enabled={apiEnabled && capabilities.canManageOrderConfiguration} /></> : null}
@@ -128,14 +128,16 @@ function IntegrationQueue({ query, notifications, apiEnabled }: { query: UseQuer
 
 function OperationalDetail({ workflow, orderId, apiEnabled, userId }: { workflow: Workflow; orderId: string; apiEnabled: boolean; userId: string | null }) {
   const client = useQueryClient()
+  const { session } = usePhaenoSession()
+  const canAdminister = Boolean(session?.capabilities.canManageOrderConfiguration)
   const [reasonDialog, setReasonDialog] = useState<string | null>(null)
   const [assignmentOpen, setAssignmentOpen] = useState(false)
   const order = useQuery({ queryKey: ['platform-order', workflow, orderId], queryFn: () => getPlatformOrder(workflow, orderId), enabled: apiEnabled })
-  const configuration = useQuery({ queryKey: ['order-configuration'], queryFn: getOrderConfiguration, enabled: apiEnabled })
+  const configuration = useQuery({ queryKey: [workflow === 'lab' ? 'commercial-pricing-catalog' : 'order-configuration'], queryFn: workflow === 'lab' ? getCommercialPricingCatalog : getOrderConfiguration, enabled: apiEnabled })
   const labWork = useQuery({
     queryKey: ['lab-work-by-commercial-order', orderId],
     queryFn: () => getLabWorkOrderByCommercialOrder(orderId),
-    enabled: apiEnabled && workflow === 'lab' && Boolean(order.data && 'sampleRosterFinalizedAt' in order.data && order.data.sampleRosterFinalizedAt),
+    enabled: apiEnabled && canAdminister && workflow === 'lab' && Boolean(order.data && 'sampleRosterFinalizedAt' in order.data && order.data.sampleRosterFinalizedAt),
     retry: false,
   })
   async function refresh() {
@@ -169,10 +171,10 @@ function OperationalDetail({ workflow, orderId, apiEnabled, userId }: { workflow
   if (order.error || !order.data) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Operational record could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(order.error, 'Return to the operations queue.')}</AlertDescription></Alert></main>
   const item = order.data
   const number = 'orderNumber' in item ? item.orderNumber : item.requestNumber
-  const actions = primaryActions(workflow, item.status, 'resumeStatus' in item ? item.resumeStatus : undefined)
+  const actions = primaryActions(workflow, item.status, 'resumeStatus' in item ? item.resumeStatus : undefined).filter(action => workflow === 'lab' && ['begin-quote', 'request-changes', 'decline'].includes(action.path) ? session?.capabilities.canQuoteLabServiceWork : canAdminister)
   const recordTitle = workflow === 'lab' && 'customerReference' in item ? item.customerReference : number
   const breadcrumb = workflow === 'lab' ? 'Order intake' : humanizeStatus(workflow)
-  return <main className="page-wrap px-4 py-8"><section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-sm text-muted-foreground"><Link to="/order-operations" search={previous => ({ ...previous, orderSection: previous.orderSection ?? (workflow === 'lab' ? 'intake' : workflow) })} className="hover:underline">Order operations</Link> / {breadcrumb} / <span className="font-mono">{number}</span></p><div className="mt-2 flex items-center gap-3"><h1 className="text-3xl font-semibold">{recordTitle}</h1><OrderStatusBadge status={item.status} /></div><p className="mt-2 text-sm text-muted-foreground">{workflow === 'lab' ? <>Job number <span className="font-mono">{number}</span> · </> : null}Organization {item.organizationId} · {item.assignedToUserId ? item.assignedToUserId === userId ? 'Assigned to you' : 'Assigned to another operator' : 'Unassigned'}{item.dueAt ? ` · Due ${formatDateTime(item.dueAt)}` : ''} · Version {item.version}</p></div><div className="flex flex-wrap gap-2"><Button type="button" variant="outline" onClick={() => { assignment.reset(); setAssignmentOpen(true) }}>Assignment</Button>{workflow === 'lab' && labWork.data ? <Button asChild variant="outline"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: labWork.data.id }} search={{ section: undefined }}>Open Lab work</Link></Button> : null}{actions.map((action) => <Button key={action.path} type="button" variant={action.reason ? 'outline' : 'default'} disabled={mutation.isPending} onClick={() => { mutation.reset(); if (action.reason) setReasonDialog(action.path); else mutation.mutate({ action: action.path }) }}>{action.label}</Button>)}</div></section>{mutation.error && !reasonDialog ? <Alert variant="destructive" className="mb-5"><AlertTitle>Operation failed</AlertTitle><AlertDescription>{getOrderErrorMessage(mutation.error, 'Reload the record and try again.')}</AlertDescription></Alert> : null}{configuration.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Commercial configuration could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(configuration.error, 'Operational status changes remain available, but quote and catalog actions are paused.')}</AlertDescription></Alert> : null}<OperationalSummary workflow={workflow} item={item} />{workflow === 'lab' && 'samples' in item ? <><StandardLabServicePanel order={item} readOnly /><LabServiceTimingPanel orderId={item.id} timing={item.timing} staff /></> : null}{workflow === 'reagent' && 'lines' in item ? <KitAssemblyCasesPanel order={item} staff /> : null}<CommercialControlPanel workflow={workflow} item={item} catalogItems={configuration.data?.catalogItems ?? []} labWorkOrderId={labWork.data?.id ?? null} onSaved={refresh} />{workflow !== 'lab' ? <Card className="mt-5"><CardHeader><CardTitle>{workflow === 'reagent' ? 'Kit fulfillment' : 'Assembly execution'}</CardTitle><CardDescription>{workflow === 'reagent' ? 'Lab operations prepares, substitutes, ships, and completes the accepted kit order.' : 'Lab operations validates input, processes data, reviews quality, and approves outputs.'} Commercial decisions remain in this order.</CardDescription></CardHeader><CardContent><Button asChild variant="outline"><Link to={workflow === 'reagent' ? '/lab-operations/pseq-kit-orders/$orderId' : '/lab-operations/data-assembly/$orderId'} params={{ orderId: item.id }} search={{ section: undefined }}>Open Lab work</Link></Button></CardContent></Card> : null}{reasonDialog ? <StatusReasonDialog
+  return <main className="page-wrap px-4 py-8"><section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-sm text-muted-foreground"><Link to="/order-operations" search={previous => ({ ...previous, orderSection: previous.orderSection ?? (workflow === 'lab' ? 'intake' : workflow) })} className="hover:underline">Order operations</Link> / {breadcrumb} / <span className="font-mono">{number}</span></p><div className="mt-2 flex items-center gap-3"><h1 className="text-3xl font-semibold">{recordTitle}</h1><OrderStatusBadge status={item.status} /></div><p className="mt-2 text-sm text-muted-foreground">{workflow === 'lab' ? <>Job number <span className="font-mono">{number}</span> · </> : null}Organization {item.organizationId} · {item.assignedToUserId ? item.assignedToUserId === userId ? 'Assigned to you' : 'Assigned to another operator' : 'Unassigned'}{item.dueAt ? ` · Due ${formatDateTime(item.dueAt)}` : ''} · Version {item.version}</p></div><div className="flex flex-wrap gap-2">{canAdminister ? <Button type="button" variant="outline" onClick={() => { assignment.reset(); setAssignmentOpen(true) }}>Assignment</Button> : null}{workflow === 'lab' && labWork.data ? <Button asChild variant="outline"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: labWork.data.id }} search={{ section: undefined }}>Open Lab work</Link></Button> : null}{actions.map((action) => <Button key={action.path} type="button" variant={action.reason ? 'outline' : 'default'} disabled={mutation.isPending} onClick={() => { mutation.reset(); if (action.reason) setReasonDialog(action.path); else mutation.mutate({ action: action.path }) }}>{action.label}</Button>)}</div></section>{mutation.error && !reasonDialog ? <Alert variant="destructive" className="mb-5"><AlertTitle>Operation failed</AlertTitle><AlertDescription>{getOrderErrorMessage(mutation.error, 'Reload the record and try again.')}</AlertDescription></Alert> : null}{configuration.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Commercial configuration could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(configuration.error, 'Operational status changes remain available, but quote and catalog actions are paused.')}</AlertDescription></Alert> : null}<OperationalSummary workflow={workflow} item={item} />{workflow === 'lab' && 'samples' in item ? <><StandardLabServicePanel order={item} readOnly /><LabServiceTimingPanel orderId={item.id} timing={item.timing} staff={canAdminister} /></> : null}{workflow === 'reagent' && 'lines' in item ? <KitAssemblyCasesPanel order={item} staff /> : null}<CommercialControlPanel workflow={workflow} item={item} catalogItems={configuration.data?.catalogItems ?? []} labWorkOrderId={labWork.data?.id ?? null} onSaved={refresh} />{workflow !== 'lab' ? <Card className="mt-5"><CardHeader><CardTitle>{workflow === 'reagent' ? 'Kit fulfillment' : 'Assembly execution'}</CardTitle><CardDescription>{workflow === 'reagent' ? 'Lab operations prepares, substitutes, ships, and completes the accepted kit order.' : 'Lab operations validates input, processes data, reviews quality, and approves outputs.'} Commercial decisions remain in this order.</CardDescription></CardHeader><CardContent><Button asChild variant="outline"><Link to={workflow === 'reagent' ? '/lab-operations/pseq-kit-orders/$orderId' : '/lab-operations/data-assembly/$orderId'} params={{ orderId: item.id }} search={{ section: undefined }}>Open Lab work</Link></Button></CardContent></Card> : null}{reasonDialog ? <StatusReasonDialog
     actionLabel={actions.find(action => action.path === reasonDialog)?.label ?? humanizeStatus(reasonDialog)}
     number={number} pending={mutation.isPending} error={mutation.error}
     onClose={() => { setReasonDialog(null); mutation.reset() }}
@@ -383,14 +385,14 @@ export function CommercialControlPanel({
           </CardContent>
         ) : null}
       </Card>
-      <CancellationDecisionPanel
+      {session?.capabilities.canManageOrderConfiguration ? <CancellationDecisionPanel
         workflowPath={workflowPath}
         recordId={item.id}
         version={item.version}
         requests={item.cancellationRequests}
         reagentLines={workflow === 'reagent' && 'lines' in item ? item.lines : undefined}
         onSaved={onSaved}
-      />
+      /> : null}
       {workflow === 'lab' || workflow === 'assembly' ? (
         <PlatformQuoteDialog
           open={quoteOpen}

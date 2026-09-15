@@ -39,6 +39,8 @@ export default function Search() {
   const [searchList, setSearchList] = useState<ISearchResult[]>([])
   const [activeIndex, setActiveIndex] = useState<number>(-1)
   const [ariaMessage, setAriaMessage] = useState<string>('')
+  const [searchState, setSearchState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
+  const [retry, setRetry] = useState(0)
 
   const inputRef = useRef<HTMLInputElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
@@ -247,6 +249,7 @@ export default function Search() {
 
   useEffect(() => {
     if (debouncedSearch.length < 3) {
+      setSearchState('idle')
       setSearchList([])
       setAriaMessage('')
       resultRefs.current = []
@@ -254,6 +257,10 @@ export default function Search() {
     }
 
     const controller = new AbortController()
+    setSearchState('loading')
+    setSearchList([])
+    setAriaMessage('Searching…')
+    resultRefs.current = []
 
     const fetchResults = async () => {
       try {
@@ -265,20 +272,11 @@ export default function Search() {
           },
         )
 
-        if (!res.ok) {
-          let message = `Request failed (${res.status}).`
-          try {
-            const detail = await res.json()
-            if ((detail as any)?.message) message = (detail as any).message
-          } catch {}
-          if (res.status === 500)
-            message = 'Whoops – something went wrong on our side. Please try again.'
-          throw new Error(message)
-        }
-
+        if (!res.ok) throw new Error('Search is unavailable.')
         const json = (await res.json()) as ApiEnvelope<ISearchResult[]>
+        if (json.success === false || !Array.isArray(json.data)) throw new Error('Search is unavailable.')
+        if (controller.signal.aborted) return
 
-        // ✅ the important part: the array is json.data
         const list = Array.isArray(json?.data)
           ? json.data.filter((result) => hasVisibleSearchMatch(
               debouncedSearch,
@@ -291,17 +289,20 @@ export default function Search() {
           : []
 
         setSearchList(list)
+        setSearchState('ready')
         setAriaMessage(`${list.length} search result${list.length !== 1 ? 's' : ''} found.`)
         resultRefs.current = new Array(list.length).fill(null)
       } catch (err) {
-        if (err instanceof DOMException && err.name === 'AbortError') return
-        console.error(err)
+        if (controller.signal.aborted || err instanceof DOMException && err.name === 'AbortError') return
+        setSearchList([])
+        setSearchState('error')
+        setAriaMessage('Search is temporarily unavailable. Try again.')
       }
     }
 
     fetchResults()
     return () => controller.abort()
-  }, [debouncedSearch, searchEndpoint])
+  }, [debouncedSearch, searchEndpoint, retry])
 
   return (
     <>
@@ -456,13 +457,26 @@ export default function Search() {
                 ))}
               </ul>
 
-              {!searchList.length && (
+              {searchState === 'error' && searchStr.trim() === debouncedSearch && (
+                <div role="alert" className="p-5 text-center text-[var(--color-text)]">
+                  <p>Search is temporarily unavailable. Your search has been kept.</p>
+                  <button
+                    type="button"
+                    className="mt-3 cursor-pointer rounded-md border border-[var(--color-border-strong)] px-4 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]"
+                    onClick={() => { inputRef.current?.focus(); setRetry(value => value + 1) }}
+                  >Try again</button>
+                </div>
+              )}
+              {(searchState === 'loading' || searchStr.trim() !== debouncedSearch) && searchStr.trim().length >= 3 && (
+                <p role="status" className="p-5 text-center text-[var(--color-text-muted)]">Searching…</p>
+              )}
+              {!searchList.length && searchState !== 'error' && searchState !== 'loading' && searchStr.trim() === debouncedSearch && (
                 <div className="text-center p-5 text-gray-700">
                   {searchStr.length === 0 && <span>Nothing here yet. Let’s find something!</span>}
                   {searchStr.length > 0 && searchStr.length < 3 && (
                     <span>Keep typing... we’ll match full words after 3 characters.</span>
                   )}
-                  {searchStr.length >= 3 && (
+                  {searchStr.length >= 3 && searchState === 'ready' && (
                     <span>
                       No exact word matches found. Try typing the full name or word, or try a different term.
                     </span>

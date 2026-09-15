@@ -1,5 +1,9 @@
 # Acceptance closure execution — September 14, 2026
 
+## Latest ten-case batch
+
+[September 14 next-ten execution](2026-09-14-next-ten-uat.md) records CRM-06, SHP-01 and corrected-local WEB-01 closure, SHP-02 partial controls, six current order/shipping gates and the newer owned API/Website build identities. Whole-case isolated acceptance is now 12 of 81. The historical baselines below remain dated evidence.
+
 ## Baseline and boundaries
 
 Current local UI 3016 proxies API 7116. API now runs the current source build under tmp/uat-resume-20260914-build (HEAD 25bcfbf3db8b9d0807f574f447d4d238b07cca64 plus retained working changes), replacing only the owned older Finance binary. Build passed. API health returned 200. All current source migrations are applied; one retained historical Website-submission-language migration is also recorded. No migrations were applied or removed. Exact binary hash and settings are in ignored tmp/uat-closure/baseline.json.

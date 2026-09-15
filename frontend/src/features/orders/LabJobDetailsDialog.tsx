@@ -37,7 +37,7 @@ import {
 import { SearchableSelect } from "#/components/ui/searchable-select";
 import { Textarea } from "#/components/ui/textarea";
 import { usePhaenoSession } from "#/features/auth/session-context";
-import { listDepartments } from "#/api/organization-management";
+import { listCustomerOrderDepartments } from "#/api/order-management";
 import { CustomerOrderReadiness } from './CustomerOrderReadiness';
 
 const duplicateBiologicalSourcesMessage =
@@ -166,8 +166,8 @@ export function LabJobDetailsDialog({
     : Boolean(session?.capabilities.canCreateLabServiceRequests);
   const apiEnabled = authProvider !== "mock" && canCreate;
   const departments = useQuery({
-    queryKey: ["organization-departments", organizationId, false],
-    queryFn: () => listDepartments(organizationId, false),
+    queryKey: ["customer-order-departments", organizationId],
+    queryFn: () => listCustomerOrderDepartments(organizationId),
     enabled: open && platformMode && apiEnabled && Boolean(organizationId),
   });
   const selectedDepartment = departmentId

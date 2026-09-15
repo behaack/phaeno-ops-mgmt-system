@@ -57,6 +57,7 @@ public sealed record LabServiceOrderingEligibilityDto(
 public sealed record EligibleCustomerCompanyDto(Guid Id, Guid CompanyId, string Name);
 
 public sealed record CustomerOrderOptionDto(Guid Id, string Name);
+public sealed record CustomerOrderDepartmentOptionDto(Guid Id, string Name, bool IsDefault);
 public sealed record CustomerOrderReadinessDto(
     bool CanStartPricing,
     IReadOnlyList<PSeq.Operations.Commercial.Relationships.Application.OperationalReadinessBlocker> StartPricingBlockers,

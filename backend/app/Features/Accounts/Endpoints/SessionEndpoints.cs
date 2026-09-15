@@ -244,9 +244,10 @@ public static class SessionEndpoints
         var labCapabilities = LabOperationsAuthorization.Evaluate(
             user, labRoles, labRolesEnforced);
         var effectiveBusinessRoles = businessRoles ?? [];
-        var canOperateCommercialWork = businessRolesEnabled
+        var hasActivePhaenoMembership = memberships.Any(value => value.Organization is { IsActive: true, Kind: OrganizationKind.Phaeno });
+        var canOperateCommercialWork = hasActivePhaenoMembership && (businessRolesEnabled || labRolesEnforced
             ? effectiveBusinessRoles.Contains(BusinessRole.CommercialOperator)
-            : isPlatformAdmin;
+            : isPlatformAdmin);
         var canReleasePSeqResults = businessRolesEnabled
             ? effectiveBusinessRoles.Contains(BusinessRole.ResultReleaseManager)
             : isPlatformAdmin;

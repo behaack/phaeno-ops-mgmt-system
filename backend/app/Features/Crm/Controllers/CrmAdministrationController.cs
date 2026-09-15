@@ -229,6 +229,7 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
             ?? throw Missing("crm_import_not_found", "The import preview was not found.");
         EnsureVersion(value.Version, request.Version);
         if (value.Status == CrmImportStatus.Committed) return ToDto(value);
+        if (value.InvalidRows > 0) throw Invalid("crm_import_invalid_rows", "Resolve invalid rows before committing the import.");
         var rows = JsonSerializer.Deserialize<List<Dictionary<string, string?>>>(value.RowsJson) ?? [];
         var importKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var row in rows)

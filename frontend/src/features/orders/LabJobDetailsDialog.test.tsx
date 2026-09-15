@@ -7,19 +7,15 @@ import { LabJobDetailsDialog } from "./LabJobDetailsDialog";
 const api = vi.hoisted(() => ({
   createLabOrder: vi.fn(),
   initiateCustomerLabOrder: vi.fn(),
-  listDepartments: vi.fn(),
+  listCustomerOrderDepartments: vi.fn(),
   getCustomerOrderReadiness: vi.fn(),
-}));
-
-vi.mock("#/api/organization-management", async (importOriginal) => ({
-  ...await importOriginal<typeof import("#/api/organization-management")>(),
-  listDepartments: api.listDepartments,
 }));
 
 vi.mock("#/api/order-management", async (importOriginal) => {
   const original = await importOriginal<typeof import("#/api/order-management")>();
   return {
     ...original,
+    listCustomerOrderDepartments: api.listCustomerOrderDepartments,
     getCustomerOrderReadiness: api.getCustomerOrderReadiness,
     createLabOrder: api.createLabOrder,
     initiateCustomerLabOrder: api.initiateCustomerLabOrder,
@@ -46,7 +42,7 @@ describe("LabJobDetailsDialog price proposal", () => {
   });
 
   it("sends the explicitly selected Customer department when staff start pricing", async () => {
-    api.listDepartments.mockResolvedValue([
+    api.listCustomerOrderDepartments.mockResolvedValue([
       { id: 'general', name: 'General', isDefault: true },
       { id: 'research', name: 'Research', isDefault: false },
     ]);
@@ -70,7 +66,7 @@ describe("LabJobDetailsDialog price proposal", () => {
   });
 
   it("keeps a complete draft blocked until Customer readiness can be checked", async () => {
-    api.listDepartments.mockResolvedValue([{ id: 'general', name: 'General', isDefault: true }]);
+    api.listCustomerOrderDepartments.mockResolvedValue([{ id: 'general', name: 'General', isDefault: true }]);
     api.getCustomerOrderReadiness.mockRejectedValueOnce(new Error('Offline')).mockResolvedValue({
       canStartPricing: false,
       startPricingBlockers: [{ code: 'ManualBlock', label: 'Manual block', nextAction: 'Review the hold.' }],

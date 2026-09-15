@@ -1,5 +1,15 @@
 # Backend Test Plan
 
+## September 14, 2026 — Commercial intake access
+
+CommercialIntakeAccessPostgresTests covers scoped Customer/Department/catalog and Lab intake reads, rejection of other queues, administrator read without pricing, disabled-role fallback, revoked assignment and external membership denial. Database tests run within a rolled-back transaction, including Begin quote, Request changes, status events and absence of Lab authorization. Session tests cover BusinessRoles/DualControl flag combinations. Final checkpoint: 15 tests passed, none skipped.
+
+
+## Invalid CRM import commit — September 14, 2026
+
+Added `CrmCommercialAccessPostgresTests.InvalidImportCommitLeavesPreviewAndBusinessRecordsUnchanged`. The original implementation began constructing valid rows before reaching invalid input; the connected null-name variant returned 500. The controller now rejects the preview's invalid-row count first. The rollback-scoped regression failed before correction and passes with null/empty-name rows, unchanged preview/version and no persisted or tracked Company additions (1 passed, 0 skipped). Actual admin corrected import, duplicate skipping and batch/content replay also pass. [Ten-case evidence](../testing/runs/2026-09-14-next-ten-uat.md). No broad suite, schema or authorization change.
+
+
 ## Opportunity stage response regression — September 14, 2026
 
 `CrmCommercialAccessPostgresTests.OpportunityStageMoveReturnsSavedStageAndRejectsStaleReplayWithoutDuplicateHistory` reproduces the connected save-then-500 defect against isolated PostgreSQL and verifies returned stage/name/probability/version, fresh readback, no duplicate stage history after stale replay, and closed-to-open history preservation. The same test failed on the original loaded-navigation reset and passes after fresh saved-record readback (1 passed, no skips). Setup and changes roll back. An intermediate assertion was corrected to expect the existing `DbUpdateConcurrencyException`, which middleware maps to HTTP 409. Artifacts: `tmp/uat-closure/crm03-stage-before.trx` and `crm03-stage-verified.trx`. No broad suite was rerun.

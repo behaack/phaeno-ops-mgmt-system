@@ -1,5 +1,15 @@
 # Playwright E2E Test Plan
 
+## September 14, 2026 — Commercial intake access
+
+Commercial intake UAT uses the existing P-PRICE, P-ADMIN and Customer identities to check queue entry, Customer/Department/readiness, order return, and denied configuration/external access. Evidence belongs to the next-ten UAT report; no case is passed from the authorization regression alone.
+
+
+## Connected ten-case batch — September 14, 2026
+
+Actual Clerk sessions/API persistence close CRM-06 and SHP-01; SHP-02's location validation/default/stale/role/retirement and phone controls pass, while shipment-return confirmation remains unrun. The corrected local public Website completes WEB-01 navigation, actual public search result destination, injected outage/delay/retry, readable seven-page PDF, 390px keyboard/menu/metrics/anchors, no-JavaScript content and metadata/discovery checks. These are journaled connected acceptance scripts under ignored `tmp/uat-closure-identities`, not new mocked-suite counts. Six order/shipping cases retain current setup/access gates. [Crosswalk and baseline](../testing/runs/2026-09-14-next-ten-uat.md). No broad browser suite, real order/dispatch/receipt or production Website deployment.
+
+
 ## Company association draft protection and CRM-01 closure — September 14, 2026
 
 The connected Company/Contact case exposed silent loss of an Add existing person draft on a second Escape. The dialog now applies the established unsaved-navigation and dismissal guard, preserves a declined dismissal, blocks closing during save, and resets discarded local selections when reopened. The first Escape still closes search choices. The Company workspace regression covers decline/discard/reopen and existing recovery paths (8 passed); real signed-in desktop/tablet/phone checks confirm the nested Escape behavior without writes. TypeScript, scoped lint and generated-help consistency pass. The staff guide and review date are updated. Actual Company/relationship, outreach validation/reset, immutable history, legacy restrictions and suppression-preserving admin merge/export complete CRM-01 on the isolated baseline. See the [complete step crosswalk](../testing/runs/2026-09-14-acceptance-closure.md). No broad test suite was substituted for acceptance.

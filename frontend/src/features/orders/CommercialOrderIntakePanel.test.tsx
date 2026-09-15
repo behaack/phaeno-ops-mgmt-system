@@ -60,11 +60,20 @@ describe("Commercial order intake CRM handoffs", () => {
     }]);
   });
 
+  it("keeps administrator readers from starting either direct or handoff pricing", async () => {
+    renderIntake(false);
+    await screen.findByText("PRQ-100");
+    expect(screen.getByRole("button", { name: "New Customer order" })).toHaveProperty('disabled', true);
+    expect(screen.getByRole("button", { name: "Start Customer order" })).toHaveProperty('disabled', true);
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
   it("starts pricing from the approved immutable handoff instead of a free Customer choice", async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={client}>
         <CommercialOrderIntakePanel
+          canCreate
           apiEnabled
           mock={false}
           userId="user-1"
@@ -107,6 +116,7 @@ describe("Commercial order intake CRM handoffs", () => {
     render(
       <QueryClientProvider client={client}>
         <CommercialOrderIntakePanel
+          canCreate
           apiEnabled
           mock={false}
           userId="user-1"
@@ -132,6 +142,7 @@ describe("Commercial order intake CRM handoffs", () => {
     render(
       <QueryClientProvider client={client}>
         <CommercialOrderIntakePanel
+          canCreate
           apiEnabled
           mock={false}
           userId="user-1"
@@ -204,7 +215,7 @@ describe("Commercial order intake CRM handoffs", () => {
 
 });
 
-function renderIntake() {
+function renderIntake(canCreate = true) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={client}><CommercialOrderIntakePanel apiEnabled mock={false} userId="user-1" organizations={[{ id: "customer-1", name: "Example Customer" }]} /></QueryClientProvider>);
+  return render(<QueryClientProvider client={client}><CommercialOrderIntakePanel canCreate={canCreate} apiEnabled mock={false} userId="user-1" organizations={[{ id: "customer-1", name: "Example Customer" }]} /></QueryClientProvider>);
 }

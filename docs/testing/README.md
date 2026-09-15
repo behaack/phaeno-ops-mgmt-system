@@ -1,5 +1,7 @@
 # Major workflow testing scripts
 
+Latest checkpoint: **12 of 81 isolated software cases closed**. The [next-ten batch](runs/2026-09-14-next-ten-uat.md) closes CRM-06, SHP-01 and WEB-01, retains SHP-02 partial evidence and identifies the remaining order/shipping prerequisites. It does not claim ten new passes or final release signoff.
+
 Prepared September 8, 2026 from the current repository. These are **manual acceptance scripts**, not executable automation. All cases start **Not run**. Writing this pack does not establish acceptance or authorize production transactions.
 
 ## Active closure checklist — September 14, 2026

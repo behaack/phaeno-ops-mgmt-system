@@ -31,7 +31,8 @@ export function getOrderSections(capabilities?: SessionCapabilities) {
     if (item.value === 'results') return capabilities.canReleasePSeqResults
     if (item.value === 'finance') return capabilities.canManagePSeqBilling || capabilities.canManagePSeqCash || capabilities.canReconcilePSeqCash
     if (item.value === 'attention') return canAccessOperationalAttention(capabilities) || capabilities.canManageOrderConfiguration
-    // These commercial queue APIs currently require platform administrator access.
+    if (item.value === 'intake') return capabilities.canManageOrderConfiguration || capabilities.canQuoteLabServiceWork
+    // The remaining queues require platform administrator access.
     // Broad operational reading also includes release/finance roles and is insufficient.
     return capabilities.canManageOrderConfiguration
   })

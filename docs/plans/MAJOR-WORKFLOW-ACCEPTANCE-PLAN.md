@@ -1,5 +1,7 @@
 # Major workflow acceptance scripts
 
+Latest checkpoint: **12 of 81 isolated software cases closed**. The [next-ten batch](../testing/runs/2026-09-14-next-ten-uat.md) closes CRM-06, SHP-01 and WEB-01, retains SHP-02 partial evidence and identifies the remaining order/shipping prerequisites. It does not claim ten new passes or final release signoff.
+
 ## Acceptance closure reconciliation — September 14, 2026
 
 Owner requested an end to open-ended testing and a finite closure path. The [reconciled case ledger](../testing/runs/2026-09-14-uat-closure-reconciliation.md) accounts for all 81 cases. The initial audit found zero full passes; targeted execution now closes FIN-02, FIN-04, FIN-05, FIN-06, WEB-06, CRM-01, CRM-02, CRM-03 and CRM-04 for the isolated software baseline, leaving 29 primarily remote remainders and 43 prerequisite-gated cases. The [execution run](../testing/runs/2026-09-14-acceptance-closure.md) has complete step crosswalks. These are work-routing categories, not product-failure counts. Existing regression results are supporting evidence only. First finish the bounded Finance evidence gaps; separately resolve Job completion/invoice integration and scientific/provider/physical/delivery/restore prerequisites. No new scope exclusions or acceptance waivers are inferred. Do not expand scripted requirements or repeat completed business writes to make closure easier.

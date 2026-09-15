@@ -33,10 +33,10 @@ describe('Order operations role navigation', () => {
     expect(getOrderLandingSection(roles)).toBe('intake')
     expect(getOrderLandingSection(roles, 'integrations')).toBe('integrations')
   })
-  it('does not treat a commercial business role as platform administration', () => {
-    const roles = capabilities({ canOperateCommercialWork: true, canAccessCrm: true })
-    expect(getOrderSections(roles).map(item => item.value)).toEqual(['attention'])
-    expect(getOrderLandingSection(roles)).toBe('attention')
+  it('opens Lab Service intake without granting other administrator queues', () => {
+    const roles = capabilities({ canOperateCommercialWork: true, canQuoteLabServiceWork: true, canAccessCrm: true })
+    expect(getOrderSections(roles).map(item => item.value)).toEqual(['intake', 'attention'])
+    expect(getOrderLandingSection(roles)).toBe('intake')
   })
   it('preserves trial-only navigation and handles no available sections', () => {
     expect(getOrderLandingSection(capabilities({ canViewTrialProjects: true }))).toBe('trials')

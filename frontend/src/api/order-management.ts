@@ -197,6 +197,14 @@ export async function listCustomerOrderOptions() {
   return get<Array<{ id: string; name: string }>>("/platform/lab-service-orders/customer-options");
 }
 
+export async function listCustomerOrderDepartments(organizationId: string) {
+  return get<Array<{ id: string; name: string; isDefault: boolean }>>(`/platform/lab-service-orders/customer-options/${organizationId}/departments`);
+}
+
+export async function getCommercialPricingCatalog() {
+  return { catalogItems: await get<OrderConfiguration['catalogItems']>('/platform/lab-service-orders/pricing-catalog') };
+}
+
 export async function getCustomerOrderReadiness(organizationId: string, departmentId: string) {
   return get<CustomerOrderReadiness>(`/platform/lab-service-orders/customer-options/${organizationId}/readiness?departmentId=${encodeURIComponent(departmentId)}`);
 }

@@ -17,6 +17,8 @@ site, Vercel serves it, and the Portal backend owns the anonymous Website API.
 - **Anonymous API**: `../backend/app/Features/Website`
 - **Portal application**: `../frontend/`
 
+Site search distinguishes no matches from a temporary service failure. A failure keeps the search text and offers **Try again**; loading and recovery are announced for keyboard and screen-reader users.
+
 The Website does not connect directly to PostgreSQL or use authenticated Portal
 data. Search, contact, non-binding order, public-document, and reCAPTCHA flows
 consume the versioned anonymous Website API. The database-ping endpoint remains

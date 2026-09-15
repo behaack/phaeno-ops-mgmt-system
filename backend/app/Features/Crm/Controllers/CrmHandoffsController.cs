@@ -23,7 +23,7 @@ public sealed class CrmHandoffsController(PSeqOperationsDbContext dbContext, IEx
     [HttpGet("~/api/platform/crm/order-handoffs")]
     public async Task<IReadOnlyList<CrmOrderHandoffDto>> OrderHandoffs(CancellationToken cancellationToken)
     {
-        await RequireActor(cancellationToken);
+        await RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
         var values = await dbContext.CrmHandoffs.AsNoTracking()
             .Include(value => value.Company)
             .Include(value => value.Opportunity).ThenInclude(value => value!.Stage)

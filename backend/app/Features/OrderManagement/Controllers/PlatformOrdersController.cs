@@ -1,6 +1,9 @@
 namespace PhaenoPortal.App.Features.OrderManagement.Controllers;
 
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Options;
+using PhaenoPortal.App.Features.Accounts.Services;
+using PSeq.Operations.Commercial.Accounts.Application;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
@@ -14,7 +17,8 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [Route("api/platform/orders")]
 public sealed class PlatformOrdersController(
     PSeqOperationsDbContext dbContext,
-    OrderRequestContext requestContext) : ControllerBase
+    OrderRequestContext requestContext,
+    IOptions<PSeqOrderToCashOptions> orderToCashOptions) : ControllerBase
 {
     [HttpGet]
     public async Task<PagedResult<CommercialOrderListItemDto>> List(
@@ -34,7 +38,14 @@ public sealed class PlatformOrdersController(
         CancellationToken cancellationToken = default,
         [FromQuery] bool quoteExtensionRequested = false)
     {
-        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var actor = await requestContext.RequireCommercialOrderAsync(HttpContext,
+            orderToCashOptions.Value.BusinessRoles || orderToCashOptions.Value.DualControlEnforced, true, cancellationToken);
+        if (!AccountAuthorization.IsPlatformAdmin(actor))
+        {
+            if (!string.IsNullOrWhiteSpace(orderType) && orderType != "PSeqLabService")
+                throw new OrderManagementException("platform_capability_required", "This queue requires platform administration.", StatusCodes.Status403Forbidden);
+            orderType = "PSeqLabService";
+        }
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
         var normalizedType = orderType?.Trim();

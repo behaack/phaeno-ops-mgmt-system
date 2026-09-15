@@ -41,7 +41,7 @@ public sealed class PlatformLabServiceOrdersController(
     [HttpGet("customer-options")]
     public async Task<IReadOnlyList<CustomerOrderOptionDto>> ListCustomerOptions(CancellationToken cancellationToken)
     {
-        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        await RequireCommercialAsync(true, cancellationToken);
         return await dbContext.Organizations.AsNoTracking()
             .Where(item => item.IsActive && item.Kind == OrganizationKind.Customer)
             .OrderBy(item => item.Name)
@@ -49,11 +49,37 @@ public sealed class PlatformLabServiceOrdersController(
             .ToListAsync(cancellationToken);
     }
 
+    [HttpGet("customer-options/{organizationId:guid}/departments")]
+    public async Task<IReadOnlyList<CustomerOrderDepartmentOptionDto>> ListCustomerDepartments(
+        Guid organizationId, CancellationToken cancellationToken)
+    {
+        await RequireCommercialAsync(true, cancellationToken);
+        if (!await dbContext.Organizations.AnyAsync(value => value.Id == organizationId
+            && value.IsActive && value.Kind == OrganizationKind.Customer, cancellationToken))
+            throw new OrderManagementException("order_not_found", "The requested Customer was not found.", StatusCodes.Status404NotFound);
+        return await dbContext.OrganizationDepartments.AsNoTracking()
+            .Where(value => value.OrganizationId == organizationId && value.IsActive)
+            .OrderByDescending(value => value.IsDefault).ThenBy(value => value.Name)
+            .Select(value => new CustomerOrderDepartmentOptionDto(value.Id, value.Name, value.IsDefault))
+            .ToListAsync(cancellationToken);
+    }
+
+    [HttpGet("pricing-catalog")]
+    public async Task<IReadOnlyList<CatalogItemDto>> PricingCatalog(CancellationToken cancellationToken)
+    {
+        await RequireCommercialAsync(true, cancellationToken);
+        return await dbContext.QboCatalogItems.AsNoTracking()
+            .Where(value => value.ExternalItemId.ToLower() == OrderServiceKeys.PSeqLabService)
+            .Select(value => new CatalogItemDto(value.Id, value.ExternalItemId, value.Name,
+                value.Description, value.SalesUnit, value.BasePrice, value.Currency, value.IsActive,
+                true, value.LastSyncedAt, value.Version)).ToListAsync(cancellationToken);
+    }
+
     [HttpGet("customer-options/{organizationId:guid}/readiness")]
     public async Task<CustomerOrderReadinessDto> CustomerReadiness(
         Guid organizationId, [FromQuery] Guid departmentId, CancellationToken cancellationToken)
     {
-        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        await RequireCommercialAsync(true, cancellationToken);
         if (!await dbContext.OrganizationDepartments.AsNoTracking().AnyAsync(item =>
             item.Id == departmentId && item.OrganizationId == organizationId && item.IsActive
             && item.Organization.IsActive && item.Organization.Kind == OrganizationKind.Customer, cancellationToken))
@@ -69,7 +95,7 @@ public sealed class PlatformLabServiceOrdersController(
     public async Task<IReadOnlyList<EligibleCustomerCompanyDto>> ListEligibleCustomers(
         CancellationToken cancellationToken)
     {
-        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        await RequireCommercialAsync(true, cancellationToken);
         var now = DateTime.UtcNow;
         var offeringAvailable = await dbContext.QboCatalogItems.AsNoTracking()
             .AnyAsync(item => item.IsActive
@@ -119,7 +145,7 @@ public sealed class PlatformLabServiceOrdersController(
         CancellationToken cancellationToken = default,
         [FromQuery] bool quoteExtensionRequested = false)
     {
-        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        await RequireCommercialAsync(true, cancellationToken);
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
         var query = dbContext.LabServiceOrders.AsNoTracking().Where(order => !order.IsDiscarded);
@@ -165,7 +191,7 @@ public sealed class PlatformLabServiceOrdersController(
         [FromBody] InitiateCustomerLabOrderRequest request,
         CancellationToken cancellationToken)
     {
-        var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var actor = await RequireCommercialAsync(false, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
         const string scope = "platform:lab-order:initiate";
         var execution = await idempotency.ExecuteAsync(
@@ -328,7 +354,7 @@ public sealed class PlatformLabServiceOrdersController(
     [HttpGet("{orderId:guid}")]
     public async Task<LabServiceOrderDto> Get(Guid orderId, CancellationToken cancellationToken)
     {
-        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        await RequireCommercialAsync(true, cancellationToken);
         return await MapAsync(await ReadAsync(orderId, cancellationToken), cancellationToken);
     }
 
@@ -361,7 +387,7 @@ public sealed class PlatformLabServiceOrdersController(
     [HttpPost("{orderId:guid}/begin-quote")]
     public async Task<LabServiceOrderDto> BeginQuote(Guid orderId, [FromBody] VersionRequest request, CancellationToken cancellationToken)
     {
-        var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var actor = await RequireCommercialAsync(false, cancellationToken);
         var order = await ReadAsync(orderId, cancellationToken);
         EnsureVersion(order.Version, request.Version);
         var before = order.Status.ToString();
@@ -374,7 +400,7 @@ public sealed class PlatformLabServiceOrdersController(
     [HttpPost("{orderId:guid}/request-changes")]
     public async Task<LabServiceOrderDto> RequestChanges(Guid orderId, [FromBody] ReasonRequest request, CancellationToken cancellationToken)
     {
-        var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var actor = await RequireCommercialAsync(false, cancellationToken);
         var order = await ReadAsync(orderId, cancellationToken);
         EnsureVersion(order.Version, request.Version);
         var before = order.Status.ToString();
@@ -392,7 +418,7 @@ public sealed class PlatformLabServiceOrdersController(
     [HttpPost("{orderId:guid}/decline")]
     public async Task<LabServiceOrderDto> Decline(Guid orderId, [FromBody] ReasonRequest request, CancellationToken cancellationToken)
     {
-        var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var actor = await RequireCommercialAsync(false, cancellationToken);
         var order = await ReadAsync(orderId, cancellationToken);
         EnsureVersion(order.Version, request.Version);
         var before = order.Status.ToString();
@@ -411,11 +437,7 @@ public sealed class PlatformLabServiceOrdersController(
     public async Task<LabServiceOrderDto> IssueQuote(Guid orderId, [FromBody] IssueQuoteRequest request, CancellationToken cancellationToken)
     {
         var nativeReceivables = orderToCashOptions.Value.NativePSeqAccountsReceivable;
-        var actor = nativeReceivables
-            ? await requestContext.RequireBusinessRoleAsync(HttpContext, BusinessRole.CommercialOperator,
-                orderToCashOptions.Value.BusinessRoles || orderToCashOptions.Value.DualControlEnforced,
-                cancellationToken)
-            : await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var actor = await RequireCommercialAsync(false, cancellationToken);
         var key = idempotency.RequireKey(HttpContext);
         var scope = $"platform:lab-order:{orderId}:quote";
         await using var transaction = dbContext.Database.CurrentTransaction is null
@@ -1057,15 +1079,16 @@ public sealed class PlatformLabServiceOrdersController(
             CanManageQuotes: await CanManageQuotesAsync(cancellationToken));
     }
 
+    private Task<User> RequireCommercialAsync(bool readOnly, CancellationToken cancellationToken)
+        => requestContext.RequireCommercialOrderAsync(HttpContext,
+            orderToCashOptions.Value.BusinessRoles || orderToCashOptions.Value.DualControlEnforced,
+            readOnly, cancellationToken);
+
     private async Task<bool> CanManageQuotesAsync(CancellationToken cancellationToken)
     {
         try
         {
-            if (orderToCashOptions.Value.NativePSeqAccountsReceivable)
-                await requestContext.RequireBusinessRoleAsync(HttpContext, BusinessRole.CommercialOperator,
-                    orderToCashOptions.Value.BusinessRoles || orderToCashOptions.Value.DualControlEnforced, cancellationToken);
-            else
-                await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+            await RequireCommercialAsync(false, cancellationToken);
             return true;
         }
         catch (OrderManagementException exception) when (exception.ErrorCode is "business_role_required" or "platform_capability_required")

@@ -228,6 +228,21 @@ public sealed class OrderRequestContext(
         return actor;
     }
 
+    public async Task<User> RequireCommercialOrderAsync(
+        HttpContext httpContext, bool enforceBusinessRoles, bool readOnly,
+        CancellationToken cancellationToken)
+    {
+        var actor = await AccountAccess.ReadActiveActorAsync(httpContext, dbContext,
+            externalIdentityContext, cancellationToken)
+            ?? throw new OrderManagementException("active_actor_required", "An active portal user is required.", StatusCodes.Status401Unauthorized);
+        if (!actor.Memberships.Any(value => value.IsActive
+            && value.Organization is { IsActive: true, Kind: OrganizationKind.Phaeno }))
+            throw new OrderManagementException("business_role_required", "Active Phaeno commercial access is required.", StatusCodes.Status403Forbidden);
+        if (readOnly && AccountAuthorization.IsPlatformAdmin(actor)) return actor;
+        if (!enforceBusinessRoles) return await RequirePlatformAdminAsync(httpContext, cancellationToken);
+        return await RequireBusinessRoleAsync(httpContext, BusinessRole.CommercialOperator, true, cancellationToken);
+    }
+
     public async Task<User> RequireBusinessRoleAsync(
         HttpContext httpContext,
         BusinessRole role,
