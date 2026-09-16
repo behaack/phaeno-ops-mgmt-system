@@ -48,6 +48,7 @@ import { Route as DataAssemblyNewRouteImport } from './routes/data-assembly.new'
 import { Route as DataAssemblyRequestIdRouteImport } from './routes/data-assembly.$requestId'
 import { Route as CustomersCustomerIdRouteImport } from './routes/customers.$customerId'
 import { Route as CrmTasksRouteImport } from './routes/crm.tasks'
+import { Route as CrmRequestsRouteImport } from './routes/crm.requests'
 import { Route as CrmReportsRouteImport } from './routes/crm.reports'
 import { Route as CrmOpportunitiesRouteImport } from './routes/crm.opportunities'
 import { Route as CrmLeadsRouteImport } from './routes/crm.leads'
@@ -283,6 +284,11 @@ const CrmTasksRoute = CrmTasksRouteImport.update({
   path: '/tasks',
   getParentRoute: () => CrmRoute,
 } as any)
+const CrmRequestsRoute = CrmRequestsRouteImport.update({
+  id: '/requests',
+  path: '/requests',
+  getParentRoute: () => CrmRoute,
+} as any)
 const CrmReportsRoute = CrmReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -505,6 +511,7 @@ export interface FileRoutesByFullPath {
   '/crm/leads': typeof CrmLeadsRoute
   '/crm/opportunities': typeof CrmOpportunitiesRoute
   '/crm/reports': typeof CrmReportsRoute
+  '/crm/requests': typeof CrmRequestsRoute
   '/crm/tasks': typeof CrmTasksRoute
   '/customers/$customerId': typeof CustomersCustomerIdRoute
   '/data-assembly/$requestId': typeof DataAssemblyRequestIdRouteWithChildren
@@ -580,6 +587,7 @@ export interface FileRoutesByTo {
   '/crm/leads': typeof CrmLeadsRoute
   '/crm/opportunities': typeof CrmOpportunitiesRoute
   '/crm/reports': typeof CrmReportsRoute
+  '/crm/requests': typeof CrmRequestsRoute
   '/crm/tasks': typeof CrmTasksRoute
   '/customers/$customerId': typeof CustomersCustomerIdRoute
   '/data-assembly/$requestId': typeof DataAssemblyRequestIdRouteWithChildren
@@ -656,6 +664,7 @@ export interface FileRoutesById {
   '/crm/leads': typeof CrmLeadsRoute
   '/crm/opportunities': typeof CrmOpportunitiesRoute
   '/crm/reports': typeof CrmReportsRoute
+  '/crm/requests': typeof CrmRequestsRoute
   '/crm/tasks': typeof CrmTasksRoute
   '/customers/$customerId': typeof CustomersCustomerIdRoute
   '/data-assembly/$requestId': typeof DataAssemblyRequestIdRouteWithChildren
@@ -733,6 +742,7 @@ export interface FileRouteTypes {
     | '/crm/leads'
     | '/crm/opportunities'
     | '/crm/reports'
+    | '/crm/requests'
     | '/crm/tasks'
     | '/customers/$customerId'
     | '/data-assembly/$requestId'
@@ -808,6 +818,7 @@ export interface FileRouteTypes {
     | '/crm/leads'
     | '/crm/opportunities'
     | '/crm/reports'
+    | '/crm/requests'
     | '/crm/tasks'
     | '/customers/$customerId'
     | '/data-assembly/$requestId'
@@ -883,6 +894,7 @@ export interface FileRouteTypes {
     | '/crm/leads'
     | '/crm/opportunities'
     | '/crm/reports'
+    | '/crm/requests'
     | '/crm/tasks'
     | '/customers/$customerId'
     | '/data-assembly/$requestId'
@@ -1232,6 +1244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CrmTasksRouteImport
       parentRoute: typeof CrmRoute
     }
+    '/crm/requests': {
+      id: '/crm/requests'
+      path: '/requests'
+      fullPath: '/crm/requests'
+      preLoaderRoute: typeof CrmRequestsRouteImport
+      parentRoute: typeof CrmRoute
+    }
     '/crm/reports': {
       id: '/crm/reports'
       path: '/reports'
@@ -1480,6 +1499,7 @@ interface CrmRouteChildren {
   CrmLeadsRoute: typeof CrmLeadsRoute
   CrmOpportunitiesRoute: typeof CrmOpportunitiesRoute
   CrmReportsRoute: typeof CrmReportsRoute
+  CrmRequestsRoute: typeof CrmRequestsRoute
   CrmTasksRoute: typeof CrmTasksRoute
   CrmCompaniesCompanyIdRoute: typeof CrmCompaniesCompanyIdRoute
   CrmContactsContactIdRoute: typeof CrmContactsContactIdRoute
@@ -1494,6 +1514,7 @@ const CrmRouteChildren: CrmRouteChildren = {
   CrmLeadsRoute: CrmLeadsRoute,
   CrmOpportunitiesRoute: CrmOpportunitiesRoute,
   CrmReportsRoute: CrmReportsRoute,
+  CrmRequestsRoute: CrmRequestsRoute,
   CrmTasksRoute: CrmTasksRoute,
   CrmCompaniesCompanyIdRoute: CrmCompaniesCompanyIdRoute,
   CrmContactsContactIdRoute: CrmContactsContactIdRoute,

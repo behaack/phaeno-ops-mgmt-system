@@ -82,7 +82,7 @@ const crmSections = [
     label: 'Requests',
     description: 'Company requests and approvals',
     icon: ClipboardCheck,
-    to: '/customers',
+    to: '/crm/requests',
     group: 'Follow-up',
   },
   {

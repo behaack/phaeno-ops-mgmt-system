@@ -1012,7 +1012,7 @@
       "title": "Activities and Tasks",
       "summary": "Record commercial interactions and manage owned, recurring follow-up in record context.",
       "order": 19,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "customer-relationship-management",
       "contentType": "guide",
       "topicIds": [
@@ -1078,7 +1078,7 @@
       "title": "Company requests and approvals",
       "summary": "Create Company requests, decide them centrally, complete approved work, and apply reviewed Prospect conversions.",
       "order": 21,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "customer-relationship-management",
       "contentType": "guide",
       "topicIds": [

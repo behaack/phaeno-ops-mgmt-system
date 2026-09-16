@@ -283,7 +283,7 @@ export function CrmCompanyRelationships({
                       ) : null}
                       {value.status === "PendingReview" || value.status === "Approved" ? (
                         <Button asChild size="sm" variant="outline">
-                          <Link to="/customers" search={previous => ({ ...previous, section: value.status === "Approved" ? "work" : "decision", requestId: value.relationshipRequestId })}>
+                          <Link to="/crm/requests" search={previous => ({ ...previous, section: value.status === "Approved" ? "work" : "decision", requestId: value.relationshipRequestId })}>
                             Open in Requests
                             <ArrowRight data-icon="inline-end" />
                           </Link>

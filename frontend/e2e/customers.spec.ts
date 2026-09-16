@@ -52,10 +52,12 @@ test("reviews Portal access in CRM without a separate customer directory", async
     return notFound(route);
   });
 
-  await page.goto("/customers");
+  await page.goto("/crm/requests");
   await expect(
     page.getByRole("heading", { name: "Company request review" }),
   ).toBeVisible();
+  await expect(page.locator('header a[href="/crm"]')).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("button", { name: /^Requests/, includeHidden: true })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("link", { name: "Atlas Research" })).toHaveAttribute(
     "href",
     `/crm/companies/${companyId}?section=requests`,
@@ -84,6 +86,23 @@ test("reviews Portal access in CRM without a separate customer directory", async
   await expect(
     page.getByText("No Company requests in this view."),
   ).toBeVisible();
+});
+
+test("redirects legacy Requests links into CRM while retaining queue context", async ({ page }) => {
+  await page.route(apiRequestPattern, async (route) => {
+    if (route.request().method() === "GET") return envelope(route, []);
+    return notFound(route);
+  });
+
+  await page.goto(`/customers?section=work&requestId=${requestId}`);
+  await expect(page.getByRole("heading", { name: "Company request review" })).toBeVisible();
+  const destination = new URL(page.url());
+  expect(destination.pathname).toBe("/crm/requests");
+  expect(destination.searchParams.get("section")).toBe("work");
+  expect(destination.searchParams.get("requestId")).toBe(requestId);
+  await expect(page.getByRole("tab", { name: /Approved \/ needs work/ })).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator('header a[href="/crm"]')).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("button", { name: /^Requests/, includeHidden: true })).toHaveAttribute("aria-current", "page");
 });
 
 test("resolves a legacy access link to the canonical Company workspace", async ({

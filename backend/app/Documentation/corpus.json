@@ -1419,7 +1419,7 @@
       "title": "Activities and Tasks",
       "summary": "Record commercial interactions and manage owned, recurring follow-up in record context.",
       "order": 19,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "customer-relationship-management",
       "contentType": "guide",
       "topicIds": [
@@ -1440,7 +1440,7 @@
       "publicationStatus": "published",
       "id": "phaeno/crm-activities-tasks",
       "route": "/docs/phaeno/crm-activities-tasks",
-      "contentHash": "299148ae3937b2310b8e16eb3784168de3a720e0b73f740023af2cf2c3187980",
+      "contentHash": "2daa713a5964c571c57a6077735acd312cd638ca3360ced8c5c657d768e365c7",
       "sections": [
         {
           "heading": "Activities and Tasks",
@@ -1460,7 +1460,7 @@
         {
           "heading": "Manage the Task queue",
           "anchor": "manage-the-task-queue",
-          "text": "Open Tasks from the CRM sidebar to search by title or description, filter by status, overdue state, or due within seven days, page through results, and apply saved views. Administrators can also export the current view. Search and filters remain when you return from a record. Statuses are: Open: not started. In progress: actively owned. Blocked: unable to proceed; a reason is required. Completed: finished. Cancelled: intentionally stopped. Use Update to change status. A blocked Task requires the blocking reason. Completed and Cancelled Tasks retain their history and no longer offer Update. Create a new follow-up Task when more work is needed. Completing a recurring Task creates its next occurrence according to the stored rule. Confirm the new occurrence and due date rather than changing the completed historical Task."
+          "text": "Open Tasks from the CRM sidebar to search by title or description, filter by status, overdue state, or due within seven days, page through results, and apply saved views. Administrators can also export the current view. Search and filters remain when you return from a record. Statuses are: Open: not started. In progress: actively owned. Blocked: unable to proceed; a reason is required. Completed: finished. Cancelled: intentionally stopped. Use Actions > Edit task in the queue or a related record's Task list to change the title, description, owner, priority, due date, or reminder. Commercial staff and administrators can edit Open, In progress, and Blocked Tasks. Dates and times use the time zone shown in the editor. Review the reminder when moving the due date: it stays at its existing time unless you change it, and cannot be later than the due date. Select Save changes to apply the edit. Rescheduling keeps the current status and related record, and updates overdue and due-soon views. The linked record's Activity timeline records who edited the Task and when, including the previous and new due date, reminder, owner, and priority when those values change. If another user changes the Task while you are editing, POMS refreshes its saved values and retains your edited fields. Review the latest values before saving again. If the Task was completed or cancelled, it can no longer be edited. Use Actions > Update status to change status. A blocked Task requires the blocking reason. Completed and Cancelled Tasks retain their history and cannot be edited, rescheduled, or reopened. Create a new follow-up Task when more work is needed. Completing a recurring Task creates its next occurrence from the current due date using the same daily, weekly, or monthly interval, reminder offset, details, and owner. Rescheduling therefore shifts the next occurrence too; it is not an exception to a separate fixed schedule. Keep a due date on recurring Tasks. The edit dialog preserves the existing recurrence interval. Confirm the new occurrence and due date rather than changing the completed historical Task."
         },
         {
           "heading": "Use Home attention safely",
@@ -1661,7 +1661,7 @@
       "title": "Company requests and approvals",
       "summary": "Create Company requests, decide them centrally, complete approved work, and apply reviewed Prospect conversions.",
       "order": 21,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "customer-relationship-management",
       "contentType": "guide",
       "topicIds": [
@@ -1682,7 +1682,7 @@
       "publicationStatus": "published",
       "id": "phaeno/crm-portal-handoffs",
       "route": "/docs/phaeno/crm-portal-handoffs",
-      "contentHash": "3ac05a34ef10062f903e99296fa02cdc42c0205b198669e143e48cc3a3b354c0",
+      "contentHash": "3e10d9db5cc5ce67efb9c351147ba936468c4a8e1a8122344aab05d0e6c9e4ee",
       "sections": [
         {
           "heading": "Company requests and approvals",
@@ -1702,7 +1702,7 @@
         {
           "heading": "Review and follow up",
           "anchor": "review-and-follow-up",
-          "text": "Open CRM's central Requests section to review onboarding, evaluation, products and services, relationship, work, or offboarding requests. Use Needs decision for pending review, Approved / needs work for fulfillment and access recovery, and Completed / history for finished decisions. The Company's Requests tab keeps history and links both pending and approved items to the same queue. After performing the approved work, select Complete request and record what was completed. For an approved relationship change, Apply Customer relationship or Apply Partner relationship performs the Prospect conversion and completes the request in one action. Open Order operations for custom-work or order-intake review when the request is applicable there. Keep CRM Activities and Tasks focused on commercial follow-up; record each decision in its owning workflow. For Customer PSeq Lab Service, a Won Opportunity can create a dedicated Customer order handoff from its detail page. After Company request review approves the request and confirms the active Company operational scope, Ready ordering entitlement, available service offering, and no manual operational block, Start Customer order appears in both the Opportunity and Order intake. An online Customer administrator is not required to begin pricing, but every non-billing readiness item and an active administrator are required before the quote can be issued. Billing readiness may be completed after acceptance and must be complete before invoicing. Starting the order creates one order, marks the request Applied in the same transaction, and links both records. Open the resulting order from either surface. Create a separate reviewed handoff when the same Opportunity legitimately produces another order; never retry by creating a duplicate handoff. Trial Project and Portal Evaluation handoffs do not start Customer orders. Company-level Customer order handoffs may start an order without an Opportunity, but they follow the same approval and eligibility checks. If the Company already has active online access, choose the appropriate change or offboarding request instead of creating a second onboarding request. If a submission outcome is uncertain, check Company request history before creating another request. A repeated operation key is rejected as an existing handoff. CRM lifecycle labels and Opportunity Won status never substitute for this reviewed boundary."
+          "text": "The Requests queue stays within CRM, with CRM selected in the main navigation and Requests selected in the sidebar. Older saved Requests links open the same queue and retain the selected request and queue tab. Open CRM's central Requests section to review onboarding, evaluation, products and services, relationship, work, or offboarding requests. Use Needs decision for pending review, Approved / needs work for fulfillment and access recovery, and Completed / history for finished decisions. The Company's Requests tab keeps history and links both pending and approved items to the same queue. After performing the approved work, select Complete request and record what was completed. For an approved relationship change, Apply Customer relationship or Apply Partner relationship performs the Prospect conversion and completes the request in one action. Open Order operations for custom-work or order-intake review when the request is applicable there. Keep CRM Activities and Tasks focused on commercial follow-up; record each decision in its owning workflow. For Customer PSeq Lab Service, a Won Opportunity can create a dedicated Customer order handoff from its detail page. After Company request review approves the request and confirms the active Company operational scope, Ready ordering entitlement, available service offering, and no manual operational block, Start Customer order appears in both the Opportunity and Order intake. An online Customer administrator is not required to begin pricing, but every non-billing readiness item and an active administrator are required before the quote can be issued. Billing readiness may be completed after acceptance and must be complete before invoicing. Starting the order creates one order, marks the request Applied in the same transaction, and links both records. Open the resulting order from either surface. Create a separate reviewed handoff when the same Opportunity legitimately produces another order; never retry by creating a duplicate handoff. Trial Project and Portal Evaluation handoffs do not start Customer orders. Company-level Customer order handoffs may start an order without an Opportunity, but they follow the same approval and eligibility checks. If the Company already has active online access, choose the appropriate change or offboarding request instead of creating a second onboarding request. If a submission outcome is uncertain, check Company request history before creating another request. A repeated operation key is rejected as an existing handoff. CRM lifecycle labels and Opportunity Won status never substitute for this reviewed boundary."
         },
         {
           "heading": "Trial Project handoff",
@@ -3970,5 +3970,5 @@
       ]
     }
   ],
-  "corpusHash": "c980261fa8142c51f5ebf0ccdcbd40b1691897f82b5d44881665963cc4f1ab35"
+  "corpusHash": "c6782fa84e78d344d74b89cadcac90e66e21ffb4e908596a433e8b32959be39e"
 }

@@ -71,6 +71,7 @@ public sealed class CrmTask : IAudit, IConcurrency
         DateTime? reminderAt,
         string? recurrenceRule)
     {
+        EnsureOpen();
         if (reminderAt.HasValue && dueAt.HasValue && reminderAt.Value > dueAt.Value)
         {
             throw new ArgumentException("The reminder cannot occur after the due date.");
@@ -86,6 +87,7 @@ public sealed class CrmTask : IAudit, IConcurrency
 
     public void AssignOwner(Guid ownerUserId)
     {
+        EnsureOpen();
         if (ownerUserId == Guid.Empty) throw new ArgumentException("An owner is required.");
         OwnerUserId = ownerUserId;
     }
@@ -122,6 +124,7 @@ public sealed class CrmTask : IAudit, IConcurrency
 
     public void Reopen()
     {
+        EnsureOpen();
         Status = CrmTaskStatus.Open;
         CompletedAt = null;
         CompletedByUserId = null;
@@ -139,7 +142,7 @@ public sealed class CrmTask : IAudit, IConcurrency
     {
         if (Status is CrmTaskStatus.Completed or CrmTaskStatus.Cancelled)
         {
-            throw new InvalidOperationException("Reopen the task before changing its workflow status.");
+            throw new InvalidOperationException("Completed and cancelled tasks are retained as history. Create a new follow-up task instead.");
         }
     }
 

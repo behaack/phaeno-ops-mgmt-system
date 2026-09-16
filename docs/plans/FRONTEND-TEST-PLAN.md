@@ -1,5 +1,21 @@
 # Frontend Test Plan
 
+## September 16, 2026 — Task editing and rescheduling
+
+`CrmTaskEditDialog.test.tsx` covers pristine Save, preserved timestamp precision
+and links/recurrence, local-time rescheduling, reminder validation, cache
+invalidation, failed-save draft retention, discard confirmation, refreshed
+versions with explicit review and concurrent completion. Shared dialog state is
+owned above each task list so background list changes do not discard an editor.
+Tests added, not executed (not requested).
+
+## September 16, 2026 — CRM Requests navigation
+
+The queue now lives under `/crm/requests`; legacy queue URLs redirect with
+validated search context and leave legacy Company detail links intact. Routing
+and active-menu coverage lives in `e2e/customers.spec.ts`; no duplicate component
+test was added. Test execution was not requested.
+
 ## Final Change-quote acceptance - September 15, 2026
 
 Forty targeted component checks pass across Change quotes, the sample roster and the existing quote dialog. Coverage includes original agreement selection, reviewed version/additional counts, PO and affirmative acceptance, decline, terminal/expired proposals and member denial. TypeScript and focused lint pass. [Final-three evidence](../testing/runs/2026-09-15-final-three-acceptance.md).

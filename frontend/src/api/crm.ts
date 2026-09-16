@@ -1058,7 +1058,7 @@ export async function listCrmTasks(input: {
   );
   return unwrap(response.data);
 }
-export async function createCrmTask(input: {
+export type CrmTaskInput = {
   title: string;
   description: string | null;
   ownerUserId?: string | null;
@@ -1070,11 +1070,20 @@ export async function createCrmTask(input: {
   contactId?: string | null;
   leadId?: string | null;
   opportunityId?: string | null;
-}) {
+};
+export async function createCrmTask(input: CrmTaskInput) {
   const response = await api.post<ApiEnvelope<CrmTask>>(
     "/platform/crm/tasks",
     input,
   );
+  return unwrap(response.data);
+}
+export async function getCrmTask(id: string) {
+  const response = await api.get<ApiEnvelope<CrmTask>>(`/platform/crm/tasks/${id}`);
+  return unwrap(response.data);
+}
+export async function updateCrmTask(id: string, input: CrmTaskInput & { version: number }) {
+  const response = await api.put<ApiEnvelope<CrmTask>>(`/platform/crm/tasks/${id}`, input);
   return unwrap(response.data);
 }
 export async function changeCrmTaskStatus(

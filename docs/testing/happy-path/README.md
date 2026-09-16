@@ -16,7 +16,7 @@ These are new UI/UX walkthroughs. Their results stay separate from the [full acc
 
 | ID | Workflow | Successful finish |
 | --- | --- | --- |
-| [HP-01](01-website-inquiry.md) | Public discovery and technical-brief request | Visitor receives and opens the requested brief |
+| [HP-01](01-COMPLETE-website-inquiry.md) | Public discovery and technical-brief request | Visitor receives and opens the requested brief |
 | [HP-02](02-crm-lead-to-opportunity.md) | Lead to Company, Contact and Opportunity | Won Opportunity with completed follow-up |
 | [HP-03](03-customer-onboarding.md) | Customer access and first sign-in | Invited administrator reaches the correct Customer workspace |
 | [HP-04](04-department-and-member.md) | Department and member access | Member can work in the intended Department |

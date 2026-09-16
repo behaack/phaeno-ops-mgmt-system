@@ -293,7 +293,7 @@ function CrmHandoffRow({ item, canCreate, onStart }: { item: CrmOrderHandoff; ca
       </div>
       {item.handoff.status === 'PendingReview' ? (
         <Button asChild variant="outline">
-          <Link to="/customers" search={{ requestId: item.handoff.relationshipRequestId }}>Open request</Link>
+          <Link to="/crm/requests" search={{ requestId: item.handoff.relationshipRequestId }}>Open request</Link>
         </Button>
       ) : item.handoff.canStartCustomerOrder && item.handoff.organizationId ? (
         <Button type="button" disabled={!canCreate} onClick={() => onStart(item)}>Start Customer order</Button>

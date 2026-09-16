@@ -31,9 +31,13 @@ Open **Tasks** from the CRM sidebar to search by title or description, filter by
 - **Completed:** finished.
 - **Cancelled:** intentionally stopped.
 
-Use **Update** to change status. A blocked Task requires the blocking reason. Completed and Cancelled Tasks retain their history and no longer offer **Update**. Create a new follow-up Task when more work is needed.
+Use **Actions > Edit task** in the queue or a related record's Task list to change the title, description, owner, priority, due date, or reminder. Commercial staff and administrators can edit Open, In progress, and Blocked Tasks. Dates and times use the time zone shown in the editor. Review the reminder when moving the due date: it stays at its existing time unless you change it, and cannot be later than the due date. Select **Save changes** to apply the edit. Rescheduling keeps the current status and related record, and updates overdue and due-soon views.
 
-Completing a recurring Task creates its next occurrence according to the stored rule. Confirm the new occurrence and due date rather than changing the completed historical Task.
+The linked record's Activity timeline records who edited the Task and when, including the previous and new due date, reminder, owner, and priority when those values change. If another user changes the Task while you are editing, POMS refreshes its saved values and retains your edited fields. Review the latest values before saving again. If the Task was completed or cancelled, it can no longer be edited.
+
+Use **Actions > Update status** to change status. A blocked Task requires the blocking reason. Completed and Cancelled Tasks retain their history and cannot be edited, rescheduled, or reopened. Create a new follow-up Task when more work is needed.
+
+Completing a recurring Task creates its next occurrence from the current due date using the same daily, weekly, or monthly interval, reminder offset, details, and owner. Rescheduling therefore shifts the next occurrence too; it is not an exception to a separate fixed schedule. Keep a due date on recurring Tasks. The edit dialog preserves the existing recurrence interval. Confirm the new occurrence and due date rather than changing the completed historical Task.
 
 ## Use Home attention safely
 

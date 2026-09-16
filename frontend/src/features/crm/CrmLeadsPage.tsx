@@ -77,24 +77,29 @@ export function CrmLeadsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-1.5"><Label htmlFor="crm-list-search">Search</Label><Input id="crm-list-search" value={draftSearch} onChange={event => setDraftSearch(event.target.value)} /></div>
-          <div className="grid max-w-xs gap-1.5">
-            <Label htmlFor="lead-status">Status</Label>
-            <select
-              id="lead-status"
-              value={status}
-              onChange={(event) =>
-                setStatus(event.target.value as CrmLeadStatus | "")
-              }
-              className="h-9 rounded-md border bg-background px-3 text-sm"
-            >
-              <option value="">All statuses</option>
-              {["New", "Working", "Qualified", "Disqualified", "Converted"].map(
-                (value) => (
-                  <option key={value}>{value}</option>
-                ),
-              )}
-            </select>
+          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_20rem]">
+            <div className="grid min-w-0 content-start gap-1.5">
+              <Label htmlFor="crm-list-search">Search</Label>
+              <Input id="crm-list-search" className="h-9" value={draftSearch} onChange={event => setDraftSearch(event.target.value)} />
+            </div>
+            <div className="grid w-full max-w-xs gap-1.5">
+              <Label htmlFor="lead-status">Status</Label>
+              <select
+                id="lead-status"
+                value={status}
+                onChange={(event) =>
+                  setStatus(event.target.value as CrmLeadStatus | "")
+                }
+                className="h-9 rounded-md border bg-background px-3 text-sm"
+              >
+                <option value="">All statuses</option>
+                {["New", "Working", "Qualified", "Disqualified", "Converted"].map(
+                  (value) => (
+                    <option key={value}>{value}</option>
+                  ),
+                )}
+              </select>
+            </div>
           </div>
           <CrmClearFilters />
           <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" checked={needsNextAction} onChange={event => setNeedsNextAction(event.target.checked)} />Needs next action</label>

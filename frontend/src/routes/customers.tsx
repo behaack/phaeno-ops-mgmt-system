@@ -1,21 +1,12 @@
 import { validateCrmNavigationSearch } from '#/features/crm/CrmListNavigation'
-import { Outlet, createFileRoute, useRouterState } from '@tanstack/react-router'
+import { Outlet, createFileRoute, redirect } from '@tanstack/react-router'
 
-import { CrmPortalAccessPage } from '#/features/crm/CrmPortalAccessPage'
-import { CrmShell } from '#/features/crm/CrmShell'
-
-export const Route = createFileRoute('/customers')({ validateSearch: validateCrmNavigationSearch,
-  component: LegacyCompaniesRoute,
+export const Route = createFileRoute('/customers')({
+  validateSearch: validateCrmNavigationSearch,
+  beforeLoad: ({ location, search }) => {
+    if (location.pathname.replace(/\/$/, '') === '/customers') {
+      throw redirect({ to: '/crm/requests', search, hash: location.hash, replace: true })
+    }
+  },
+  component: Outlet,
 })
-
-function LegacyCompaniesRoute() {
-  const isDetail = useRouterState({
-    select: (state) => state.location.pathname !== '/customers',
-  })
-
-  return isDetail ? <Outlet /> : (
-    <CrmShell>
-      <CrmPortalAccessPage />
-    </CrmShell>
-  )
-}

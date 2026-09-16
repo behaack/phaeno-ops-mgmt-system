@@ -1,5 +1,14 @@
 # Backend Test Plan
 
+## September 16, 2026 — Task editing and rescheduling
+
+`CrmTaskEditingTests` covers rescheduling in each active status, overdue/due-soon
+membership, reminder validation without partial mutation, and terminal
+edit/owner/reopen denial. `CrmTaskEditingPostgresTests` extends the existing
+rollback-scoped Commercial fixture for saved readback, version conflicts without
+duplicate audit events, actor and before/after dates, rescheduled recurrence,
+terminal history and revoked access. Tests added, not executed (not requested).
+
 ## Coordinated recovery rehearsal - September 15, 2026
 
 The complete command-driven Lab journey can now opt into exporting its own synthetic disposable database and actual invoice/result bytes through `PSEQ_RECOVERY_EXPORT_DIR`. Export rejects non-loopback or non-generated databases and preserves ordinary database cleanup. The final exported journey passed; the real API then passed coordinated encrypted capture, fresh database/file restoration and authenticated matching-byte downloads in an owned Linux/systemd/Docker environment. All 26 unchanged backup safety checks passed, and an actual killed coordinator recovered its exact API through the independent watchdog. Production backup maintenance was separately activated successfully; actual overnight scheduled evidence remains pending. [Evidence and boundaries](../testing/runs/2026-09-15-sys06-recovery.md).

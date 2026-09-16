@@ -24,7 +24,7 @@ Use **Pass**, **Needs attention**, **Blocked** or **Not run**. Record actual res
 
 | Script | Result | Record references / evidence | UX observation |
 | --- | --- | --- | --- |
-| [HP-01 Website inquiry](01-website-inquiry.md) | Not run | | |
+| [HP-01 Website inquiry](01-COMPLETE-website-inquiry.md) | Not run | | |
 | [HP-02 CRM](02-crm-lead-to-opportunity.md) | Not run | | |
 | [HP-03 Onboarding](03-customer-onboarding.md) | Not run | | |
 | [HP-04 Department/member](04-department-and-member.md) | Not run | | |

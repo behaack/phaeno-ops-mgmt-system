@@ -1,17 +1,16 @@
+import { CrmTaskActions, useCrmTaskDialogs } from "./CrmTaskActions";
 import { CrmClearFilters, useCrmSearch, useCrmState, CrmListPagination } from "./CrmListNavigation";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+
 import {
   apiErrorMessage,
-  changeCrmTaskStatus,
   listCrmTasks,
   type CrmTask,
   type CrmTaskStatus,
 } from "#/api/crm";
 import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
 import { Badge } from "#/components/ui/badge";
-import { Button } from "#/components/ui/button";
 import {
   Card,
   CardContent,
@@ -19,30 +18,17 @@ import {
   CardHeader,
   CardTitle,
 } from "#/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "#/components/ui/dialog";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
-import { Textarea } from "#/components/ui/textarea";
 import { CrmSavedViewBar } from "./CrmSavedViewBar";
 
 export function CrmTasksPage() {
+  const taskActions = useCrmTaskDialogs();
   const [draftSearch, setDraftSearch, search, setSearch] = useCrmSearch();
   const [page, setPage] = useCrmState<number>("page", 1);
-  const client = useQueryClient();
   const [status, setStatus] = useCrmState<CrmTaskStatus | "">("status", "");
   const [overdue, setOverdue] = useCrmState<boolean>("overdue", false);
   const [dueSoon, setDueSoon] = useCrmState<boolean>("dueSoon", false);
-  const [change, setChange] = useState<{
-    task: CrmTask;
-    status: CrmTaskStatus;
-  } | null>(null);
   const query = useQuery({
     queryKey: ["crm-tasks", status, overdue, dueSoon, page, search],
     queryFn: () =>
@@ -53,24 +39,6 @@ export function CrmTasksPage() {
         dueSoonOnly: dueSoon,
         page, pageSize: 25,
       }),
-  });
-  const mutation = useMutation({
-    mutationFn: ({
-      task,
-      next,
-      reason,
-    }: {
-      task: CrmTask;
-      next: CrmTaskStatus;
-      reason: string | null;
-    }) => changeCrmTaskStatus(task.id, next, reason, task.version),
-    onSuccess: async () => {
-      setChange(null);
-      await Promise.all([
-        client.invalidateQueries({ queryKey: ["crm-tasks"] }),
-        client.invalidateQueries({ queryKey: ["crm-dashboard"] }),
-      ]);
-    },
   });
   return (
     <main className="page-wrap space-y-6 px-4 py-8">
@@ -104,8 +72,11 @@ export function CrmTasksPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-1.5"><Label htmlFor="crm-list-search">Search</Label><Input id="crm-list-search" value={draftSearch} onChange={event => setDraftSearch(event.target.value)} /></div>
           <div className="flex flex-wrap items-end gap-4">
+            <div className="grid w-full min-w-0 gap-1.5 md:w-auto md:flex-1">
+              <Label htmlFor="crm-list-search">Search</Label>
+              <Input id="crm-list-search" className="h-9" value={draftSearch} onChange={event => setDraftSearch(event.target.value)} />
+            </div>
             <div className="grid gap-1.5">
               <Label htmlFor="task-status-filter">Status</Label>
               <select
@@ -195,18 +166,7 @@ export function CrmTasksPage() {
                       </Badge>
                     </td>
                     <td className="p-3">
-                      {task.status !== "Completed" &&
-                      task.status !== "Cancelled" ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            setChange({ task, status: "Completed" })
-                          }
-                        >
-                          Update
-                        </Button>
-                      ) : null}
+                      <CrmTaskActions task={task} actions={taskActions} />
                     </td>
                   </tr>
                 ))}
@@ -221,105 +181,9 @@ export function CrmTasksPage() {
           <CrmListPagination result={query.data} page={page} onPageChange={setPage} busy={query.isFetching} />
         </CardContent>
       </Card>
-      <TaskStatusDialog
-        value={change}
-        pending={mutation.isPending}
-        error={mutation.error}
-        onOpenChange={(open) => {
-          if (!open) setChange(null);
-        }}
-        onSubmit={(next, reason) =>
-          change && mutation.mutate({ task: change.task, next, reason })
-        }
-      />
+
+      {taskActions.dialogs}
     </main>
-  );
-}
-function TaskStatusDialog({
-  value,
-  pending,
-  error,
-  onOpenChange,
-  onSubmit,
-}: {
-  value: { task: CrmTask; status: CrmTaskStatus } | null;
-  pending: boolean;
-  error: unknown;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (next: CrmTaskStatus, reason: string | null) => void;
-}) {
-  const [next, setNext] = useState<CrmTaskStatus>("Completed");
-  return (
-    <Dialog open={Boolean(value)} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            const text = String(
-              new FormData(event.currentTarget).get("reason") ?? "",
-            ).trim();
-            onSubmit(next, text || null);
-          }}
-        >
-          <DialogHeader>
-            <DialogTitle>Update task status</DialogTitle>
-            <DialogDescription>{value?.task.title}</DialogDescription>
-          </DialogHeader>
-          {error ? (
-            <Alert variant="destructive">
-              <AlertDescription>{apiErrorMessage(error)}</AlertDescription>
-            </Alert>
-          ) : null}
-          <div className="grid gap-4">
-            <div className="grid gap-1.5">
-              <Label htmlFor="task-next-status">New status</Label>
-              <select
-                id="task-next-status"
-                value={next}
-                onChange={(event) =>
-                  setNext(event.target.value as CrmTaskStatus)
-                }
-                className="h-9 rounded-md border bg-background px-3 text-sm"
-              >
-                <option value="Open">Open</option>
-                <option value="InProgress">In progress</option>
-                <option value="Blocked">Blocked</option>
-                <option value="Completed">Completed</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="task-status-reason">
-                Reason {next === "Blocked" ? "*" : ""}
-              </Label>
-              <Textarea
-                id="task-status-reason"
-                name="reason"
-                required={next === "Blocked"}
-                rows={3}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            {next === "Blocked" ? (
-              <span className="mr-auto text-xs text-muted-foreground">
-                * Required
-              </span>
-            ) : null}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={pending}>
-              Save status
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
   );
 }
 function recordLink(task: CrmTask) {

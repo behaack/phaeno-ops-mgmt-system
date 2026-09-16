@@ -1,5 +1,59 @@
 # First-Party CRM Plan
 
+## September 16, 2026 — Task editing and rescheduling
+
+Approved scope: Commercial and administrator users who already maintain CRM
+tasks can edit title, description, owner, priority, due date and reminder from
+the queue and related-record task list through Actions > Edit task. Status
+changes remain a separate action. Completed and Cancelled tasks are immutable
+for ordinary editing and workflow changes; reviewed Company/Contact merge
+relinking remains supported. Record actor/time and before/after title, scheduling,
+owner, priority and interval changes as an immutable Task event in the linked
+record timeline; note description edits without duplicating long text. Refresh task lists, attention
+and reports after saving. Preserve drafts on failures and stale-version conflicts.
+
+Keep existing recurrence semantics: completion creates the next occurrence from
+the current task's due date, reminder offset and recurrence interval, using its
+current details and owner. The editor explains that rescheduling shifts the next
+occurrence; interval changes and independently anchored series are outside this
+slice. Use the existing versioned PUT endpoint and add a same-permission task GET
+for conflict recovery. No persisted model, migration, dependency, authentication,
+deployment or Git change is required. Add focused coverage; do not execute tests
+unless requested.
+
+Implemented locally. Backend solution build (including added tests), frontend
+typecheck, scoped ESLint and diff whitespace checks pass. A disposable browser
+preview of the actual editor verified desktop/390px phone reflow, light/dark
+themes, populated fields, initial focus, pristine Save, keyboard date editing,
+reverting to pristine, reminder validation and return focus. No saved business
+records were modified. Automated tests, connected save/history acceptance,
+concurrent-edit browser acceptance and deployment remain unrun.
+
+## September 16, 2026 — Requests route belongs to CRM
+
+Company request review now uses `/crm/requests` under the existing CRM shell,
+so both the main CRM menu and Requests sidebar item remain selected. Sidebar,
+Company, Dashboard and order-intake links use the canonical route. Legacy
+`/customers` queue links redirect with replacement history and preserve validated
+search context and fragments; `/customers/$customerId` compatibility is retained.
+The request workflow, API contracts and authorization are unchanged. Updated the
+staff guide and added routing/navigation regression coverage; test execution is
+not requested.
+
+Verification: frontend TypeScript, scoped ESLint and diff whitespace checks pass.
+Route and documentation artifacts were regenerated. Browser verification and
+automated tests were not run; this change has not been deployed.
+
+## September 16, 2026 — Responsive queue filters
+
+The Leads and Tasks queues place Search and Status on the same row from the
+768px breakpoint, with Search using the remaining width. Tasks retains its
+wrapping overdue and seven-day controls beside Status. Narrow screens retain
+Search on its own row. Labels, filter state and behavior are unchanged; the
+existing Leads and Activities/Tasks guide instructions remain accurate.
+Verification: source review and diff whitespace check; browser verification and
+test execution were not performed for this presentation-only change.
+
 ## September 15, 2026 — Company People hard-bounce recovery
 
 ACC-01/02 simulated acceptance found Company People allowed resend after hard bounce while User management already directed revoke/reissue. The existing Person access dialog now disables resend and explains reviewed revoke, Contact email correction and new invitation. Four focused access-dialog tests plus explicit Research invitation/session checks cover the flow. No authentication boundary, backend invitation behavior or Contact/User identity model changed. [Acceptance evidence and retained provider gates](../testing/runs/2026-09-15-invitation-software-acceptance.md).

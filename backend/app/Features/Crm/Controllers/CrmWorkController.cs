@@ -117,6 +117,13 @@ public sealed class CrmWorkController(PSeqOperationsDbContext dbContext, IExtern
         return new CrmPageDto<CrmTaskDto> { Items = values.Select(value => ToDto(value)).ToList(), Page = page, PageSize = pageSize, TotalCount = total };
     }
 
+    [HttpGet("tasks/{taskId:guid}")]
+    public async Task<CrmTaskDto> GetTask(Guid taskId, CancellationToken cancellationToken)
+    {
+        await RequireActor(cancellationToken);
+        return ToDto(await RequireTask(taskId, false, cancellationToken));
+    }
+
     [HttpPost("tasks")]
     public async Task<ActionResult<CrmTaskDto>> CreateTask([FromBody] UpsertCrmTaskRequest request, CancellationToken cancellationToken)
     {
@@ -133,17 +140,23 @@ public sealed class CrmWorkController(PSeqOperationsDbContext dbContext, IExtern
     [HttpPut("tasks/{taskId:guid}")]
     public async Task<CrmTaskDto> UpdateTask(Guid taskId, [FromBody] UpsertCrmTaskRequest request, CancellationToken cancellationToken)
     {
-        await RequireActor(cancellationToken);
+        var actor = await RequireActor(cancellationToken);
         var value = await RequireTask(taskId, true, cancellationToken);
         EnsureVersion(value.Version, request.Version ?? 0);
+        var before = ToDto(value);
         Execute(() => value.Update(request.Title, request.Description, request.Priority, request.DueAt, request.ReminderAt, request.RecurrenceRule));
         User? owner = null;
         if (request.OwnerUserId.HasValue && request.OwnerUserId != value.OwnerUserId)
         {
             owner = await RequireOwner(request.OwnerUserId.Value, cancellationToken);
-            value.AssignOwner(owner.Id);
+            Execute(() => value.AssignOwner(owner.Id));
         }
 
+        var changes = TaskEditHistory(before, ToDto(value, owner));
+        if (changes.Count > 0)
+            dbContext.CrmActivities.Add(new CrmActivity(CrmActivityType.TaskEvent, "Task updated",
+                $"{value.Title}\n{string.Join("\n", changes)}", DateTime.UtcNow, CrmActivityVisibility.Internal,
+                actor.Id, value.CompanyId, value.ContactId, value.LeadId, value.OpportunityId));
         await dbContext.SaveChangesAsync(cancellationToken);
         return owner is null ? ToDto(value) : ToDto(value, owner);
     }
@@ -268,6 +281,25 @@ public sealed class CrmWorkController(PSeqOperationsDbContext dbContext, IExtern
         if (!nextDue.HasValue) return;
         var reminderOffset = completed.ReminderAt.HasValue ? completed.DueAt.Value - completed.ReminderAt.Value : (TimeSpan?)null;
         dbContext.CrmTasks.Add(new CrmTask(completed.Title, completed.Description, completed.OwnerUserId, completed.Priority, nextDue, reminderOffset.HasValue ? nextDue.Value - reminderOffset.Value : null, completed.RecurrenceRule, completed.CompanyId, completed.ContactId, completed.LeadId, completed.OpportunityId));
+    }
+
+    private static List<string> TaskEditHistory(CrmTaskDto before, CrmTaskDto after)
+    {
+        var changes = new List<string>();
+        void Add(string label, string? previous, string? current)
+        {
+            if (previous != current) changes.Add($"{label}: {previous ?? "None"} → {current ?? "None"}");
+        }
+        static string? Date(DateTime? value) => value?.ToString("yyyy-MM-dd HH:mm:ss 'UTC'", System.Globalization.CultureInfo.InvariantCulture);
+        Add("Title", before.Title, after.Title);
+        // Keep the complete event within the existing activity body limit.
+        if (before.Description != after.Description) changes.Add("Description updated.");
+        if (before.OwnerUserId != after.OwnerUserId) Add("Owner", $"{before.OwnerName} ({before.OwnerUserId})", $"{after.OwnerName} ({after.OwnerUserId})");
+        Add("Priority", before.Priority.ToString(), after.Priority.ToString());
+        Add("Due", Date(before.DueAt), Date(after.DueAt));
+        Add("Reminder", Date(before.ReminderAt), Date(after.ReminderAt));
+        Add("Recurrence", before.RecurrenceRule, after.RecurrenceRule);
+        return changes;
     }
 
     private static void ApplyStatus(CrmTask task, CrmTaskStatus status, string? reason, Guid actorId)

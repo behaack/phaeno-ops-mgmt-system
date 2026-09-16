@@ -1,5 +1,26 @@
 # Playwright E2E Test Plan
 
+## September 16, 2026 — Task editing and rescheduling
+
+`crm-task-editing.spec.ts` covers queue Actions > Edit task, pristine Save,
+rescheduling with reminder review, unchanged status/recurrence/record links,
+dialog width and return focus in desktop/mobile projects. Tests added, not run.
+Manual follow-up should include related-record entry, light/dark themes,
+keyboard dismissal, stale edits, newly terminal tasks, and an edited task leaving
+the current overdue filter. No production records or shared data are required.
+An isolated sample preview verified desktop/phone editor layout, light/dark
+themes, keyboard date changes, pristine/reverted Save state, invalid-reminder
+feedback and closing focus restoration. Connected persistence and conflict
+journeys were not executed.
+
+## September 16, 2026 — CRM Requests navigation
+
+`customers.spec.ts` now opens `/crm/requests` for the approval journey and checks
+the CRM main-menu and Requests sidebar active states. A legacy `/customers`
+redirect case checks preserved request ID, Approved / needs work tab, canonical
+URL and active navigation. Existing legacy Company-detail coverage is retained.
+These scenarios were added/updated but not run; test execution was not requested.
+
 ## Final Change-quote acceptance - September 15, 2026
 
 `e2e/change-quotes.spec.ts` passes four scenarios: 320/1440 pixels, each light/dark. It exercises real form issuance and acceptance with explicitly intercepted APIs, required PO/affirmation, keyboard checkbox interaction, request bodies, axe and horizontal reflow. Phone screenshots were visually inspected. These form fixtures complement actual PostgreSQL controller journeys; they do not claim production or scientific acceptance. [Final-three evidence](../testing/runs/2026-09-15-final-three-acceptance.md).
