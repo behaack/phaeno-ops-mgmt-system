@@ -1,5 +1,9 @@
 # Playwright E2E Test Plan
 
+## Combined settings navigation — September 16, 2026
+
+Existing navigation, settings-sidebar, retention-panel, and browser selectors follow **Order & retention settings** and its **File retention** section. Verify one menu entry, independent section permissions, the old retention URL redirect, policy history and Edit/Cancel, and sidebar return without changing saved policy. Automated tests were not requested and were not run. Signed-in local browser checks confirmed the legacy redirect, one combined menu entry, the selected retention sidebar item with its divider, policy history, and Edit/Cancel without saving. TypeScript, scoped lint, and documentation checks passed.
+
 ## September 16, 2026 — Clear Home attention states
 
 Review Home with all visible counts zero and with a positive count. Confirm explicit No items need attention, neutral zero cards, descriptive highlighted nonzero categories and matching Review links. Recent changes must appear as a separate reference section. Failed/loading dashboard states must not imply all clear. No business writes are required.

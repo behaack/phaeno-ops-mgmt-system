@@ -871,7 +871,7 @@
       "title": "Phaeno operations guide",
       "summary": "Find each workflow, its owning workspace, reusable configuration, and the roles needed to act.",
       "order": 10,
-      "reviewedAt": "2026-09-14",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -1346,7 +1346,7 @@
       "title": "Order operations",
       "summary": "Find the Order operations workspace available to your role, manage commercial decisions, and continue Lab, Finance, and release work in their owning screens.",
       "order": 40,
-      "reviewedAt": "2026-09-12",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "order-operations",
       "contentType": "overview",
       "topicIds": [
@@ -1373,7 +1373,7 @@
       "title": "Customer lab authorization",
       "summary": "Start a Customer Job for its Department, resolve readiness by stage, issue pricing, and authorize Lab work after sample finalization.",
       "order": 41,
-      "reviewedAt": "2026-09-14",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "order-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1528,7 +1528,7 @@
       "title": "Integration failures and recovery",
       "summary": "Recover original invitations and notices, inspect failed projections, and recognize unavailable historical connectors.",
       "order": 46,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "order-operations",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1809,7 +1809,7 @@
       "title": "Configuration and file retention",
       "summary": "Maintain reusable defaults, services, analyses, Partner rules, shipping container sizes and compatibility, and released-file retention.",
       "order": 60,
-      "reviewedAt": "2026-09-10",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "platform-operations",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1842,7 +1842,7 @@
       "title": "Statuses and recovery",
       "summary": "Find each owning workspace and recover readiness, Lab work, releases, Finance, notifications, and retained history.",
       "order": 70,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "support",
       "contentType": "troubleshooting",
       "topicIds": [

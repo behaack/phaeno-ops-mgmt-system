@@ -1,5 +1,13 @@
 # Order Management Plan
 
+## Combined order and retention settings — September 16, 2026
+
+The user menu has one **Order & retention settings** entry. Its shared sidebar includes **File retention**, separated from order subjects by a horizontal divider, which displays the existing global policy, history, and edit dialog. The former `/file-management` URL redirects to `/order-configuration?configurationSection=retention`. Existing section-specific capabilities still govern navigation and loading, and retention does not depend on the order-configuration request succeeding. No retention rules, API contracts, or saved policies change.
+
+## Intake create action — September 16, 2026
+
+The Commercial order intake card places **+ New Order** at the right end of its title row, with the description below. The existing creation dialog and eligibility rules remain unchanged. Operator help uses the updated action label.
+
 ## Final acceptance closure — September 15, 2026
 
 The owner's request to finish authorizes the missing additive Change-quote workflow. Commercial staff propose additional source counts and an incremental price on an active accepted Job; the Customer organization administrator accepts or declines that separate immutable proposal. Original placement, accepted prices, existing specimens and ongoing work stay intact. New sample entry opens only after acceptance; finalization appends a versioned Lab authorization and shipping records for new samples only. Started-work amendments preserve every existing specimen and the pinned scientific configuration. Completion includes accepted amendment charges and requires all accepted samples to finish. Stale, expired, unauthorized and repeated decisions must not duplicate scope, work or billing. Use existing roles and native receivables; no auth change or dependency is needed. Verify in disposable local databases and browser fixtures; production backup activation/deployment remains separately authorized.

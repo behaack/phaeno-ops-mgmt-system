@@ -10,7 +10,7 @@ import {
 } from '#/features/auth/session-context'
 import { noSessionCapabilities } from '#/test-helpers/session'
 
-import { FileManagementPage } from './FileManagementPage'
+import { FileRetentionPanel } from './FileManagementPage'
 
 const api = vi.hoisted(() => ({
   getPolicy: vi.fn(),
@@ -25,7 +25,7 @@ vi.mock('#/api/file-management', () => ({
 
 vi.mock('@tanstack/react-router', () => ({ useBlocker: vi.fn(), Link: ({ to, children }: { to: string; children: ReactNode }) => <a href={to}>{children}</a> }))
 
-describe('FileManagementPage', () => {
+describe('FileRetentionPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     api.getPolicy.mockResolvedValue(configuration)
@@ -96,7 +96,7 @@ function renderPage(session: PhaenoSessionContextValue) {
   const rendered = render(
     <QueryClientProvider client={client}>
       <PhaenoSessionContext.Provider value={session}>
-        <FileManagementPage />
+        <FileRetentionPanel />
       </PhaenoSessionContext.Provider>
     </QueryClientProvider>,
   )

@@ -27,23 +27,24 @@ describe('OrderConfigurationPage', () => {
       </QueryClientProvider>,
     )
 
-    expect(await screen.findByRole('heading', { name: 'Order configuration' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Order & retention settings' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', {
-      name: 'Open Order configuration navigation; current selection: Defaults',
+      name: 'Open Order & retention settings navigation; current selection: Defaults',
     }))
 
     expect(screen.getByRole('navigation', {
-      name: 'Order configuration sections',
+      name: 'Order & retention settings sections',
     })).toBeTruthy()
     expect(screen.getByRole('button', { name: /^Defaults/ }).getAttribute('aria-current')).toBe('page')
     expect(screen.getByRole('button', { name: /^Analyses/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: /^PSeq kits/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: /^Assembly/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: /^Legacy links/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /^File retention/ })).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: /^PSeq kits/ }))
     expect(await screen.findByRole('button', {
-      name: 'Open Order configuration navigation; current selection: PSeq kits',
+      name: 'Open Order & retention settings navigation; current selection: PSeq kits',
     })).toBeTruthy()
   })
 })
@@ -79,6 +80,7 @@ function createPlatformContext(): PhaenoSessionContextValue {
       capabilities: {
         ...noSessionCapabilities,
         canManageOrderConfiguration: true,
+        canManageFileManagementConfiguration: true,
       },
     },
     isLoading: false,

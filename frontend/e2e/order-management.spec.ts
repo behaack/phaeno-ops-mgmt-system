@@ -82,9 +82,9 @@ test('shows Phaeno operations and configuration workspaces in mock mode', async 
   await expect(page.getByRole('button', { name: /^Data assembly/ })).toBeVisible()
 
   await page.goto('/order-configuration')
-  await expect(page.getByRole('heading', { name: 'Order configuration' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Order & retention settings' })).toBeVisible()
   await expect(page.getByText('Connected configuration is paused in mock-session mode')).toBeVisible()
-  await openSidebarIfCollapsed(page, 'Order configuration')
+  await openSidebarIfCollapsed(page, 'Order & retention settings')
   await expect(page.getByRole('button', { name: /^Defaults/ })).toHaveAttribute('aria-current', 'page')
   await expect(page.getByRole('button', { name: /^Analyses/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /^PSeq kits/ })).toBeVisible()

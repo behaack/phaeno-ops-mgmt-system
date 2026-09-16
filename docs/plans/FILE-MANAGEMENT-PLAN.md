@@ -1,5 +1,9 @@
 # File Management Plan
 
+## Combined order and retention settings — September 16, 2026
+
+The user menu has one **Order & retention settings** entry. Its shared sidebar includes **File retention**, separated from order subjects by a horizontal divider, which displays the existing global policy, history, and edit dialog. The former `/file-management` URL redirects to `/order-configuration?configurationSection=retention`. Existing section-specific capabilities still govern navigation and loading, and retention does not depend on the order-configuration request succeeding. No retention rules, API contracts, or saved policies change.
+
 ## Retention UAT supporting verification — September 14, 2026
 
 Grouped verification passed 56 backend and 31 frontend checks. Database journeys cover commit-time download evidence, independent ZIP revocation, concurrent notices, holds, simulated cleanup retries, shared-object preservation and reissue history. Disposable local databases removed; retained UAT packages unreleased. Harness-only source-name adaptation; no runtime/provider/retention activation. Actual Customer downloads, external notification delivery and production cleanup remain separate gates. See [the UAT ledger](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-release-download-and-retention-grouped-continuation).

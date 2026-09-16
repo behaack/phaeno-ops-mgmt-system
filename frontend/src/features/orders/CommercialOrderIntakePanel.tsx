@@ -93,21 +93,20 @@ export function CommercialOrderIntakePanel({
     <div className="space-y-5">
       <Card>
         <CardHeader>
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <CardTitle>Commercial order intake</CardTitle>
-              <CardDescription className="mt-1">
-                Create Customer orders, check readiness, and manage pricing through quote acceptance. You can start pricing before a Customer administrator is active. Authorized laboratory work continues in Lab operations.
-              </CardDescription>
-            </div>
+          <div className="flex items-start justify-between gap-3">
+            <CardTitle>Commercial order intake</CardTitle>
             <Button
+              className="shrink-0"
               type="button"
               disabled={!canCreate || (!mock && (!apiEnabled || customers.isLoading || customers.isError || eligibleCustomers.length === 0))}
               onClick={() => setCreateOpen(true)}
             >
-              <Plus data-icon="inline-start" /> New Customer order
+              <Plus data-icon="inline-start" /> New Order
             </Button>
           </div>
+          <CardDescription>
+            Create Customer orders, check readiness, and manage pricing through quote acceptance. You can start pricing before a Customer administrator is active. Authorized laboratory work continues in Lab operations.
+          </CardDescription>
         </CardHeader>
         {customers.error ? (
           <CardContent>

@@ -1,5 +1,14 @@
 # Frontend Test Plan
 
+## Combined settings navigation — September 16, 2026
+
+Existing navigation, settings-sidebar, retention-panel, and browser selectors follow **Order & retention settings** and its **File retention** section. Verify one menu entry, independent section permissions, the old retention URL redirect, policy history and Edit/Cancel, and sidebar return without changing saved policy. Automated tests were not requested and were not run. Signed-in local browser checks confirmed the legacy redirect, one combined menu entry, the selected retention sidebar item with its divider, policy history, and Edit/Cancel without saving. TypeScript, scoped lint, and documentation checks passed.
+
+## Intake create action label — September 16, 2026
+
+Updated the existing CommercialOrderIntakePanel permission assertion to the **New Order** accessible button name. This presentation-only change retains the existing creation behavior; automated tests were not requested and were not run.
+
+
 ## September 16, 2026 — Clear Home attention states
 
 CrmHomePage.test.tsx retains exact filtered-link coverage and adds explicit zero-state and loading/error-not-all-clear coverage. Zero counts are neutral nonlinks; positive counts describe the rule and offer Review. Tests updated but not executed (not requested).

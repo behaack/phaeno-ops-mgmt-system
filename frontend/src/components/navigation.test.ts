@@ -81,7 +81,7 @@ describe('order navigation permissions', () => {
     expect(labels).toContain('PSeq Kit orders')
     expect(labels).toContain('Assembly cases')
     expect(labels).not.toContain('Lab services')
-    expect(labels).not.toContain('Order configuration')
+    expect(labels).not.toContain('Order & retention settings')
   })
 
   it('shows operations and configuration only in the authorized Phaeno context', () => {
@@ -99,8 +99,8 @@ describe('order navigation permissions', () => {
 
     expect(labels).toContain('Order ops')
     expect(labels).toContain('Lab ops')
-    expect(labels).toContain('Order configuration')
-    expect(labels).toContain('File retention')
+    expect(labels).toContain('Order & retention settings')
+    expect(labels).not.toContain('File retention')
     expect(labels).not.toContain('Lab services')
     expect(labels).not.toContain('PSeq Kit orders')
   })
@@ -166,6 +166,19 @@ describe('sample-shipping navigation permissions', () => {
 })
 
 describe('navigation placement', () => {
+  it.each([
+    [true, false, true],
+    [false, true, true],
+    [false, false, false],
+  ])('combines settings access for order=%s and retention=%s', (orders, retention, visible) => {
+    const session = createSession('Phaeno', {
+      canManageOrderConfiguration: orders,
+      canManageFileManagementConfiguration: retention,
+    })
+    const items = getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Phaeno' }, 'administration')
+    expect(items.map(item => item.label)).toEqual(visible ? ['Order & retention settings'] : [])
+  })
+
   it('keeps frequent Phaeno work in the toolbar and moves secondary destinations to the menu', () => {
     const session = createSession('Phaeno', {
       canManageOrganizations: true,
@@ -189,7 +202,7 @@ describe('navigation placement', () => {
       getVisibleMainMenuItems(session, context, 'administration').map(
         (item) => item.label,
       ),
-    ).toEqual(['Order configuration', 'File retention'])
+    ).toEqual(['Order & retention settings'])
     expect(
       getVisibleMainMenuItems(session, context, 'resources').map(
         (item) => item.label,

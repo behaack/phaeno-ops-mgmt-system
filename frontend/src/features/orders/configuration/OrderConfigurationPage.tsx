@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Boxes,
+  FolderClock,
   ChartSpline,
   Landmark,
   RefreshCw,
@@ -9,13 +10,14 @@ import {
   Truck,
   BookOpen,
 } from 'lucide-react'
-import { Link, useNavigate, useSearch } from '@tanstack/react-router'
+import { useNavigate, useSearch } from '@tanstack/react-router'
 
 import { getOrderConfiguration, getOrderErrorMessage, syncQuickBooksCatalog } from '#/api/order-management'
 import { WorkspaceSidebar, type WorkspaceSidebarItem } from '#/components/WorkspaceSidebar'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { usePhaenoSession } from '#/features/auth/session-context'
+import { FileRetentionPanel } from '#/features/file-management/FileManagementPage'
 import { AnalysisConfigurationPanel } from './AnalysisConfigurationPanel'
 import { AssemblyConfigurationPanel } from './AssemblyConfigurationPanel'
 import { CommercialConfigurationPanel } from './CommercialConfigurationPanel'
@@ -25,8 +27,8 @@ import { SampleShippingConfigurationPanel } from './SampleShippingConfigurationP
 import { SystemConfigurationPanel } from './SystemConfigurationPanel'
 import { LabServiceOfferingsPanel } from './LabServiceOfferingsPanel'
 
-export type ConfigurationSection = 'system' | 'catalog' | 'lab-service-offerings' | 'shipping' | 'analyses' | 'reagents' | 'assembly' | 'commercial'
-export function parseConfigurationSection(value: unknown): ConfigurationSection { return ['system', 'catalog', 'lab-service-offerings', 'shipping', 'analyses', 'reagents', 'assembly', 'commercial'].includes(String(value)) ? value as ConfigurationSection : 'system' }
+export type ConfigurationSection = 'system' | 'catalog' | 'lab-service-offerings' | 'shipping' | 'analyses' | 'reagents' | 'assembly' | 'commercial' | 'retention'
+export function parseConfigurationSection(value: unknown): ConfigurationSection { return ['system', 'catalog', 'lab-service-offerings', 'shipping', 'analyses', 'reagents', 'assembly', 'commercial', 'retention'].includes(String(value)) ? value as ConfigurationSection : 'system' }
 
 const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSection>> = [
   {
@@ -62,6 +64,7 @@ const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSec
     description: 'Historical credit and connector recovery',
     icon: Landmark,
   },
+  { value: 'retention', label: 'File retention', separatorBefore: true, description: 'Released-file deadlines and policy history', icon: FolderClock },
 ]
 
 export function OrderConfigurationPage() {
@@ -69,35 +72,38 @@ export function OrderConfigurationPage() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const search = useSearch({ strict: false })
-  const section = parseConfigurationSection(search.configurationSection)
-  const setSection = (value: ConfigurationSection) => { void navigate({ to: '/order-configuration', search: { configurationSection: value } }) }
   const canManage = Boolean(session?.capabilities.canManageOrderConfiguration)
-  const apiEnabled = canManage && authProvider !== 'mock'
+  const canManageRetention = Boolean(session?.capabilities.canManageFileManagementConfiguration)
+  const sections = configurationSections.filter(item => item.value === 'retention' ? canManageRetention : canManage)
+  const requestedSection = parseConfigurationSection(search.configurationSection)
+  const section = sections.find(item => item.value === requestedSection)?.value ?? sections[0]?.value
+  const showingOrders = Boolean(section && section !== 'retention')
+  const setSection = (value: ConfigurationSection) => { void navigate({ to: '/order-configuration', search: { configurationSection: value } }) }
+  const apiEnabled = canManage && showingOrders && authProvider !== 'mock'
   const configuration = useQuery({ queryKey: ['order-configuration'], queryFn: getOrderConfiguration, enabled: apiEnabled })
   const sync = useMutation({ mutationFn: syncQuickBooksCatalog, onSuccess: async () => queryClient.invalidateQueries({ queryKey: ['order-configuration'] }) })
 
-  if (!canManage) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Order configuration unavailable</AlertTitle><AlertDescription>A Phaeno platform administrator is required.</AlertDescription></Alert></main>
+  if (!canManage && !canManageRetention) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Order &amp; retention settings unavailable</AlertTitle><AlertDescription>A Phaeno platform administrator is required.</AlertDescription></Alert></main>
   return (
     <main className="py-8">
       <WorkspaceSidebar
-        workspaceLabel="Order configuration"
-        items={configurationSections}
-        value={section}
+        workspaceLabel="Order & retention settings"
+        items={sections}
+        value={section!}
         onValueChange={setSection}
       >
         <div className="page-wrap px-4">
           <section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="text-3xl font-semibold">Order configuration</h1>
+              <h1 className="text-3xl font-semibold">Order &amp; retention settings</h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
                 Maintain PSeq readiness defaults, scientific service definitions,
                 Partner-negotiated reagent prices, assembly profiles, and legacy
-                accounting links. Customer billing and tax approval live in Finance.
+                accounting links, plus file retention for released packages. Customer billing and tax approval live in Finance.
               </p>
             </div>
-            <Button asChild variant="outline"><Link to="/file-management">Result retention settings</Link></Button>
           </section>
-          {authProvider === 'mock' ? (
+          {showingOrders && authProvider === 'mock' ? (
             <Alert className="mb-5">
               <AlertTitle>Connected configuration is paused in mock-session mode</AlertTitle>
               <AlertDescription>
@@ -105,7 +111,7 @@ export function OrderConfigurationPage() {
               </AlertDescription>
             </Alert>
           ) : null}
-          {configuration.error ? (
+          {showingOrders && configuration.error ? (
             <Alert variant="destructive" className="mb-5">
               <AlertTitle>Configuration could not be loaded</AlertTitle>
               <AlertDescription>
@@ -113,7 +119,8 @@ export function OrderConfigurationPage() {
               </AlertDescription>
             </Alert>
           ) : null}
-          {configuration.isLoading ? <p role="status">Loading order configuration…</p> : null}
+          {showingOrders && configuration.isLoading ? <p role="status">Loading order configuration…</p> : null}
+          {section === 'retention' ? <FileRetentionPanel /> : null}
           {section === 'commercial' ? <div className="mb-5 space-y-3 rounded-lg border p-4"><p className="text-sm text-muted-foreground">Historical accounting mappings and connector recovery. The service catalog is maintained in Service catalog.</p><Button variant="outline" disabled={!apiEnabled || sync.isPending} onClick={() => sync.mutate()}><RefreshCw data-icon="inline-start" />{sync.isPending ? 'Queueing…' : 'Queue QuickBooks catalog recovery'}</Button>{sync.error ? <p role="alert">{getOrderErrorMessage(sync.error, 'Connector recovery is unavailable.')}</p> : null}{sync.isSuccess ? <p role="status">Catalog recovery queued.</p> : null}</div> : null}
           {configuration.data && section === 'catalog' ? <CatalogConfigurationPanel configuration={configuration.data} /> : null}
           {configuration.data && section === 'lab-service-offerings' ? <LabServiceOfferingsPanel configuration={configuration.data} apiEnabled={apiEnabled} /> : null}

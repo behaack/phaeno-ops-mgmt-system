@@ -63,7 +63,7 @@ describe("Commercial order intake CRM handoffs", () => {
   it("keeps administrator readers from starting either direct or handoff pricing", async () => {
     renderIntake(false);
     await screen.findByText("PRQ-100");
-    expect(screen.getByRole("button", { name: "New Customer order" })).toHaveProperty('disabled', true);
+    expect(screen.getByRole("button", { name: "New Order" })).toHaveProperty('disabled', true);
     expect(screen.getByRole("button", { name: "Start Customer order" })).toHaveProperty('disabled', true);
     expect(screen.queryByRole("dialog")).toBeNull();
   });

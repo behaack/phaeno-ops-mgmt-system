@@ -6,7 +6,6 @@ import {
   ClipboardList,
   Microscope,
   FlaskConical,
-  FolderClock,
   Handshake,
   Package,
   PackageCheck,
@@ -152,22 +151,13 @@ export const mainMenuItems: readonly MainMenuItem[] = [
       Boolean(session?.capabilities.canManageLabOperations),
   },
   {
-    label: 'Order configuration',
+    label: 'Order & retention settings',
     to: '/order-configuration',
     icon: Settings,
     group: 'administration',
     visibleWhen: (session, context) =>
       context.selectedOrganizationKind === 'Phaeno' &&
-      Boolean(session?.capabilities.canManageOrderConfiguration),
-  },
-  {
-    label: 'File retention',
-    to: '/file-management',
-    icon: FolderClock,
-    group: 'administration',
-    visibleWhen: (session, context) =>
-      context.selectedOrganizationKind === 'Phaeno' &&
-      Boolean(session?.capabilities.canManageFileManagementConfiguration),
+      Boolean(session?.capabilities.canManageOrderConfiguration || session?.capabilities.canManageFileManagementConfiguration),
   },
   {
     label: 'Documentation',
