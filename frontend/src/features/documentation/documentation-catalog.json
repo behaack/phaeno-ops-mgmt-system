@@ -1139,7 +1139,7 @@
       "title": "Company access and user administration",
       "summary": "Manage Company access, staged Department readiness, service entitlements, invitation recovery, and membership lifecycle.",
       "order": 25,
-      "reviewedAt": "2026-09-15",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "platform-operations",
       "contentType": "guide",
       "topicIds": [

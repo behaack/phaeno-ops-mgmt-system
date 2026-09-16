@@ -25,12 +25,39 @@ public static class InvitationEndpoints
         CancellationToken cancellationToken)
     {
         httpContext.Response.Headers.CacheControl = "no-store";
-        if (string.IsNullOrWhiteSpace(request.Token) || request.Token.Length > 256)
+        var invitation = await RequirePendingInvitation(request.Token, dbContext, tokenService, cancellationToken);
+
+        return TypedResults.Ok(new InvitationPreviewDto(
+            invitation.Email, invitation.FirstName, invitation.LastName,
+            invitation.Organization!.Name, invitation.ExpiresAt));
+    }
+
+    public static async Task<IResult> BeginAuthentication(
+        [FromBody] InvitationPreviewRequest request,
+        HttpContext httpContext,
+        PSeqOperationsDbContext dbContext,
+        InvitationTokenService tokenService,
+        IInvitationRegistration registration,
+        CancellationToken cancellationToken)
+    {
+        httpContext.Response.Headers.CacheControl = "no-store";
+        var invitation = await RequirePendingInvitation(request.Token, dbContext, tokenService, cancellationToken);
+        var url = await registration.PrepareAsync(invitation, cancellationToken);
+        // Recheck after the provider round trip; a concurrent revoke/resend must not return a handoff.
+        await RequirePendingInvitation(request.Token, dbContext, tokenService, cancellationToken);
+        return TypedResults.Ok(new InvitationAuthenticationDto(url));
+    }
+
+    private static async Task<OrganizationInvitation> RequirePendingInvitation(
+        string token, PSeqOperationsDbContext dbContext, InvitationTokenService tokenService,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(token) || token.Length > 256)
         {
             throw new BadRequestException("This invitation is unavailable. Ask the sender for a new invitation.");
         }
 
-        var tokenHash = tokenService.HashToken(request.Token);
+        var tokenHash = tokenService.HashToken(token);
         var invitation = await dbContext.OrganizationInvitations.AsNoTracking()
             .Include(value => value.Organization)
             .FirstOrDefaultAsync(value => value.TokenHash == tokenHash, cancellationToken);
@@ -40,9 +67,7 @@ public static class InvitationEndpoints
             throw new BadRequestException("This invitation is unavailable. Ask the sender for a new invitation.");
         }
 
-        return TypedResults.Ok(new InvitationPreviewDto(
-            invitation.Email, invitation.FirstName, invitation.LastName,
-            invitation.Organization.Name, invitation.ExpiresAt));
+        return invitation;
     }
 
     public static async Task<IResult> CreateInvitation(
@@ -1194,6 +1219,15 @@ public static class InvitationEndpoints
             .WithSummary("Preview a pending invitation using its secret link token")
             .Produces<InvitationPreviewDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest);
+
+        group.MapPost("/authentication", BeginAuthentication)
+            .AllowAnonymous()
+            .RequireRateLimiting("api")
+            .WithName("BeginInvitationAuthentication")
+            .WithSummary("Prepare invite-only identity setup for a valid Portal invitation")
+            .Produces<InvitationAuthenticationDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status503ServiceUnavailable);
 
         group.MapPost("/", CreateInvitation)
             .WithName("CreateInvitation")

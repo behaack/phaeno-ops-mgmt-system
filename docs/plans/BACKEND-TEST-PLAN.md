@@ -1,5 +1,11 @@
 # Backend Test Plan
 
+## September 16, 2026 — Invitation-authorized identity setup
+
+`ClerkInvitationRegistrationTests` covers exact-email existing-user lookup, silent provider invitation creation, revision-specific reuse, provider errors and unsafe URL rejection. `InvitationRegistrationPostgresTests` covers pending-token handoff without membership, no-store responses, revoked/expired/accepted/declined/replaced/inactive links, and revocation during the provider call. The approved focused run uses disposable PostgreSQL databases and simulated identity-provider responses; it does not create production identities or send email.
+
+Focused verification: all 12 provider and PostgreSQL handoff cases passed on September 16, 2026.
+
 ## September 16, 2026 â€” Empty pipeline deletion
 
 `CrmPipelineDeletionPostgresTests.cs` adds rollback-scoped coverage for admin-only access, stale versions, active/inactive empty deletion, default protection, active/inactive stages and retained closed/inactive Opportunity history. Tests added but not executed (not requested).

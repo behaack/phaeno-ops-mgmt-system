@@ -199,6 +199,14 @@ builder.Services.AddHttpClient<ClerkVerifiedEmailResolver>((services, httpClient
 });
 builder.Services.AddScoped<IVerifiedExternalEmailResolver>(
     services => services.GetRequiredService<ClerkVerifiedEmailResolver>());
+builder.Services.AddHttpClient<ClerkInvitationRegistration>((services, httpClient) =>
+{
+    var options = services.GetRequiredService<IOptions<ClerkOptions>>().Value;
+    httpClient.BaseAddress = new Uri(options.ApiBaseUrl.TrimEnd('/') + "/");
+    httpClient.Timeout = TimeSpan.FromSeconds(20);
+});
+builder.Services.AddScoped<IInvitationRegistration>(
+    services => services.GetRequiredService<ClerkInvitationRegistration>());
 builder.Services.AddScoped<LoggingInvitationEmailSender>();
 builder.Services.AddDataProtection();
 builder.Services.AddSingleton<IInvitationDeliveryPayloadProtector, InvitationDeliveryPayloadProtector>();

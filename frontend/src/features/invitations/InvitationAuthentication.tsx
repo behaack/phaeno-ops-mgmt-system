@@ -5,7 +5,9 @@ import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import type { InvitationPreview } from '#/api/invitations'
+import { beginInvitationAuthentication, previewInvitation, type InvitationPreview } from '#/api/invitations'
+import { apiErrorMessage } from '#/api/api-error'
+import { clearInviteRegistrationTicket } from '#/features/auth/invitation-storage'
 import { Alert, AlertDescription } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
@@ -25,10 +27,14 @@ const labels: Record<Step, string> = {
 function checked(result: AuthResult) { if (result.error) throw result.error }
 function errorMessage(error: unknown) {
   if (isClerkAPIResponseError(error)) return error.errors[0]?.longMessage ?? error.errors[0]?.message ?? 'Sign-in could not be completed. Try again.'
-  return error instanceof Error ? error.message : 'Sign-in could not be completed. Try again.'
+  return apiErrorMessage(error)
 }
 
-export function InvitationAuthentication({ invitation }: { invitation: InvitationPreview }) {
+export function InvitationAuthentication({ invitation, token, registrationTicket }: {
+  invitation: InvitationPreview
+  token: string
+  registrationTicket?: string | null
+}) {
   const { signIn } = useSignIn()
   const { signUp } = useSignUp()
   const [step, setStep] = useState<Step>('start')
@@ -81,6 +87,7 @@ export function InvitationAuthentication({ invitation }: { invitation: Invitatio
     if (session?.currentTask && session.currentTask.key !== 'setup-mfa') {
       throw new Error('Additional account setup is required. Contact Phaeno to complete it.')
     }
+    clearInviteRegistrationTicket()
     window.location.assign(session?.currentTask ? '/session-tasks/setup-mfa' : '/accept-invite')
   }
 
@@ -120,7 +127,22 @@ export function InvitationAuthentication({ invitation }: { invitation: Invitatio
 
   async function start() {
     // The reviewed invitation is the sole source of the identifier. There is no email input.
-    checked(await signIn.create({ identifier: invitation.email, signUpIfMissing: import.meta.env.DEV }))
+    if (registrationTicket) {
+      // Revalidate after the provider redirect and before consuming its ticket.
+      const current = await previewInvitation(token)
+      if (current.email.toLowerCase() !== invitation.email.toLowerCase()) {
+        throw new Error('The invitation changed. Open the newest invitation email to continue.')
+      }
+      checked(await signUp.ticket({ ticket: registrationTicket, firstName: invitation.firstName ?? undefined, lastName: invitation.lastName ?? undefined }))
+      await advanceSignUp()
+      return
+    }
+    const authentication = await beginInvitationAuthentication(token)
+    if (authentication.registrationUrl) {
+      window.location.assign(authentication.registrationUrl)
+      return
+    }
+    checked(await signIn.create({ identifier: invitation.email, signUpIfMissing: false }))
     requireInvitedIdentifier()
     const factors = signIn.supportedFirstFactors ?? []
     if (factors.some(factor => factor.strategy === 'email_code')) {
@@ -153,13 +175,6 @@ export function InvitationAuthentication({ invitation }: { invitation: Invitatio
       case 'reset-code': result = await signIn.resetPasswordEmailCode.verifyCode({ code: value.trim() }); break
       case 'reset-password': result = await signIn.resetPasswordEmailCode.submitPassword({ password: value }); break
       default: return
-    }
-    if (step === 'email' && import.meta.env.DEV && isClerkAPIResponseError(result.error)
-      && result.error.errors.some(detail => detail.code === 'sign_up_if_missing_transfer')) {
-      // Transfer only after Clerk verifies ownership of the invitation's fixed email.
-      checked(await signUp.create({ transfer: true, firstName: invitation.firstName ?? undefined, lastName: invitation.lastName ?? undefined }))
-      await advanceSignUp()
-      return
     }
     checked(result)
     await advanceSignIn()
@@ -219,6 +234,10 @@ export function InvitationAuthentication({ invitation }: { invitation: Invitatio
       </form> : null}
     </>}
     {error ? <Alert variant="destructive" className="mt-4"><AlertDescription>{error}</AlertDescription></Alert> : null}
+    {error && registrationTicket ? <Button type="button" variant="outline" className="mt-3" disabled={pending} onClick={() => {
+      clearInviteRegistrationTicket()
+      window.location.assign('/accept-invite')
+    }}>Restart account setup</Button> : null}
     <div id="clerk-captcha" className="mt-4 empty:hidden" />
   </section>
 }

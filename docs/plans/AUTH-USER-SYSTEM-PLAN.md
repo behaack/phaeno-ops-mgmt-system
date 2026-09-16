@@ -1,5 +1,15 @@
 # Auth and User System Plan
 
+## September 16, 2026 — Production invitation onboarding repair
+
+Read-only production investigation confirmed a pending Portal invitation for a first-time recipient, while Clerk Production had neither that identity nor an application invitation. Production is Invite-only. The previous `signUpIfMissing: import.meta.env.DEV` flow attempted existing-account sign-in only in production. Portal email delivery succeeded, but the account setup bridge was missing.
+
+The owner approved the authentication repair and deployment. A rate-limited, no-store POST handoff validates the private Portal token, pending status, expiry and active organization before looking up the exact identity. Existing identities retain normal sign-in. New recipients receive a silent Clerk application invitation (`notify: false`), scoped to the exact Portal invitation revision, with a return to `/accept-invite`. A repeat attempt reuses a matching pending provider invitation where available. The Portal lifecycle is rechecked after the provider call. No additional email, provider setting change, schema change or automatic Portal membership is involved.
+
+The frontend preserves the original Portal token in session storage, captures and removes the provider ticket from the URL, and revalidates the Portal invitation before consuming that ticket with the fixed recipient identity. Required password and MFA setup precede explicit Portal acceptance. Failed setup can be restarted with the same valid Portal invitation. Public signup remains disabled. This supersedes the September 8 development-only signup implementation; production and development now use the same invitation-authorized setup path.
+
+Verification covers first-time setup in both environment modes, existing-user challenges, identity mismatch, secret-link cleanup, provider failure/reuse, and invalid lifecycle rejection before provider calls. PostgreSQL checks use isolated disposable databases; no shared or production data is changed. Actual recipient password/MFA enrollment and acceptance remain a recipient-performed production acceptance gate. Deployment evidence is recorded after release.
+
 ## September 15, 2026 â€” Live MFA and role acceptance
 
 ACC-06 is closed for the isolated software scope. The owner privately completed required authenticator enrollment and later signed in with the current authenticator code. The reserved email test code is not valid for the authenticator prompt. Actual local User management and fresh authenticated reads verified pending role intent, acceptance and the approved Operator-to-ScientificReviewer change while retaining ProtocolAdministrator. Session revocation removed the unsaved form; an expired save returned 401 and persisted nothing. The recovered controlled session was signed out after verification. Invitation transport was simulated; no provider settings or authentication rules changed. [Evidence and full step crosswalk](../testing/runs/2026-09-15-final-three-acceptance.md).

@@ -77,6 +77,11 @@ export async function previewInvitation(token: string) {
   return response.data
 }
 
+export async function beginInvitationAuthentication(token: string) {
+  const response = await api.post<{ registrationUrl: string | null }>('/invitations/authentication', { token })
+  return response.data
+}
+
 export async function createInvitation(input: {
   organizationId: string
   firstName: string

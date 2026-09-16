@@ -1,5 +1,9 @@
 # Playwright E2E Test Plan
 
+## September 16, 2026 — Production invitation onboarding repair
+
+Release checks must verify the exact backend and frontend revisions, health/database connectivity, and anonymous rejection of an invalid authentication-handoff token with no-store headers. Real first-time acceptance remains a recipient-performed gate: reopen the original valid invitation, continue with its fixed email, complete password/MFA setup, explicitly accept, and verify intended access. Existing recipients must retain sign-in; expired/revoked links must not prepare account setup. Do not create an invited person's identity, send another email, or accept on their behalf as a smoke test. Automated component/provider/disposable-database checks are separate from this live provider acceptance gate.
+
 ## Combined settings navigation â€” September 16, 2026
 
 Existing navigation, settings-sidebar, retention-panel, and browser selectors follow **Order & retention settings** and its **File retention** section. Verify one menu entry, independent section permissions, the old retention URL redirect, policy history and Edit/Cancel, and sidebar return without changing saved policy. Automated tests were not requested and were not run. Signed-in local browser checks confirmed the legacy redirect, one combined menu entry, the selected retention sidebar item with its divider, policy history, and Edit/Cancel without saving. TypeScript, scoped lint, and documentation checks passed.

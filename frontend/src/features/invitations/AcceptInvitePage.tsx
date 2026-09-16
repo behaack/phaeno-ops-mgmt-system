@@ -15,7 +15,7 @@ import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredFieldName, RequiredLegend } from '#/components/ui/required-field'
-import { clearStoredInviteToken, readStoredInviteToken, storeInviteToken } from '#/features/auth/invitation-storage'
+import { clearStoredInviteToken, readStoredInviteToken, storeInviteToken, readInviteRegistrationTicket, storeInviteRegistrationTicket } from '#/features/auth/invitation-storage'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
 export function AcceptInvitePage() {
@@ -23,6 +23,7 @@ export function AcceptInvitePage() {
   const queryClient = useQueryClient()
   const auth = usePhaenoSession()
   const [token, setToken] = useState<string | null>(null)
+  const [registrationTicket, setRegistrationTicket] = useState<string | null>(null)
   const [tokenReady, setTokenReady] = useState(false)
   const [outcome, setOutcome] = useState<{ status: 'accepted' | 'declined'; organizationName: string | null } | null>(null)
   // Scope private data to this page without putting the secret token in cache keys.
@@ -40,11 +41,16 @@ export function AcceptInvitePage() {
   useEffect(() => {
     const url = new URL(window.location.href)
     const incomingToken = url.searchParams.get('token')
-    if (incomingToken) {
-      storeInviteToken(incomingToken)
+    const incomingTicket = url.searchParams.get('__clerk_ticket')
+    if (incomingToken) storeInviteToken(incomingToken)
+    if (incomingTicket) storeInviteRegistrationTicket(incomingTicket)
+    if (incomingToken || incomingTicket) {
       url.searchParams.delete('token')
+      url.searchParams.delete('__clerk_ticket')
+      url.searchParams.delete('__clerk_status')
       window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`)
     }
+    setRegistrationTicket(readInviteRegistrationTicket())
     setToken(incomingToken || readStoredInviteToken())
     setTokenReady(true)
   }, [])
@@ -100,7 +106,7 @@ export function AcceptInvitePage() {
       </div>
     </div>
     {!auth.clerkLoaded ? <p role="status">Preparing secure sign-in…</p> : !auth.signedIn ? (
-      !auth.authConfigured ? <p role="alert">Sign-in is temporarily unavailable. Please try again later or contact the sender.</p> : <InvitationAuthentication invitation={invitation} />
+      !auth.authConfigured ? <p role="alert">Sign-in is temporarily unavailable. Please try again later or contact the sender.</p> : <InvitationAuthentication invitation={invitation} token={token} registrationTicket={registrationTicket} />
     ) : auth.authProvider === 'clerk' ? (
       <ClerkInvitationReview invitation={invitation} pending={accept.isPending || decline.isPending} onAccept={(names) => accept.mutate(names)} onDecline={() => decline.mutate()} />
     ) : (

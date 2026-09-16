@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ReactNode } from 'react'
 import { AcceptInvitePage } from './AcceptInvitePage'
-import { readStoredInviteToken, storeInviteToken } from '#/features/auth/invitation-storage'
+import { readStoredInviteToken, storeInviteToken, readInviteRegistrationTicket } from '#/features/auth/invitation-storage'
 
 const mocks = vi.hoisted(() => ({
   previewInvitation: vi.fn(), acceptInvitation: vi.fn(), declineInvitation: vi.fn(),
@@ -63,6 +63,16 @@ describe('invitation acceptance', () => {
     setup()
     await screen.findByText('Joe Blow')
     expect(readStoredInviteToken()).toBe('new-test-token')
+  })
+  it('captures and scrubs a provider ticket, binds it to the saved invitation, and clears it on replacement', async () => {
+    window.history.replaceState({}, '', '/accept-invite?__clerk_ticket=private-ticket&__clerk_status=sign_up')
+    const client = setup()
+    await screen.findByText('Joe Blow')
+    expect(window.location.search).toBe('')
+    expect(readInviteRegistrationTicket()).toBe('private-ticket')
+    expect(JSON.stringify(client.getQueryCache().getAll().map(query => query.queryKey))).not.toContain('private-ticket')
+    storeInviteToken('replacement-invitation')
+    expect(readInviteRegistrationTicket()).toBeNull()
   })
   it('blocks an account without the verified invited email', async () => {
     mocks.session.mockReturnValue({ ...signedOut, signedIn: true })

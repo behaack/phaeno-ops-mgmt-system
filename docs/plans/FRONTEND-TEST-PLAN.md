@@ -1,5 +1,11 @@
 # Frontend Test Plan
 
+## September 16, 2026 — Invitation-authorized identity setup
+
+Focused invitation component coverage verifies production and development ticket-based signup, required password and MFA handling, existing-user sign-in, fixed-email guards, rejected Portal revalidation, provider failure, and removal of private query parameters. Registration tickets are bound to the current session-stored Portal token and cleared when that token changes. Run the invitation authentication, page and session suites at the release checkpoint.
+
+Focused verification: all 24 invitation component cases passed; TypeScript and scoped ESLint checks passed on September 16, 2026.
+
 ## Combined settings navigation â€” September 16, 2026
 
 Existing navigation, settings-sidebar, retention-panel, and browser selectors follow **Order & retention settings** and its **File retention** section. Verify one menu entry, independent section permissions, the old retention URL redirect, policy history and Edit/Cancel, and sidebar return without changing saved policy. Automated tests were not requested and were not run. Signed-in local browser checks confirmed the legacy redirect, one combined menu entry, the selected retention sidebar item with its divider, policy history, and Edit/Cancel without saving. TypeScript, scoped lint, and documentation checks passed.
