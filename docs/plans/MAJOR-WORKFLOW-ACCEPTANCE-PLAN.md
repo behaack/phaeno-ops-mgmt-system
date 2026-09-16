@@ -1,5 +1,11 @@
 # Major workflow acceptance scripts
 
+## Happy-path UI/UX companion — September 15, 2026
+
+The owner requested one successful manual script per major workflow, without variants, exceptions or edge cases, in a happy-path folder. [docs/testing/happy-path](../testing/happy-path/README.md) contains 18 scripts, prerequisites, role handoffs, expected results, connected journey order and a separate Not run results template. The Customer journey uses manual quotation; Partner included Assembly uses prepared approved credit. This documentation does not run workflows, change product behavior or close any existing acceptance case. Verification is limited to document inventory, relative links and whitespace.
+
+The companion uses current Customer-guide shipping controls: **Review and confirm shipping insert**, **Print shipping insert**, explicit printed-and-packed confirmation, then **Record shipment**. Older acceptance prose says “packet” or “View packet”; those historical labels are not copied into the Customer walkthrough. The current preparation guide also limits active sources to one tube per specimen, so the connected fixture processes one tube per sample and retains SAMPLE-B's second tube as reserve.
+
 **80 of 81 software cases closed (98.8%); SYS-06 remains Blocked.** This comprises 39 ordinary passes and 41 explicitly labeled simulated software passes, with no remaining software failure. The [final-three review](../testing/runs/2026-09-15-final-three-acceptance.md) closes ACC-06 and ORD-03: real private MFA/session/role checks and the implemented immutable Change-quote workflow now have complete software crosswalks. Coordinated recovery, independent scheduled/off-server backup and exact release/owner acceptance remain required. Real physical, scientific and provider-delivery acceptance remains separate.
 
 Latest continuation: the approved failed-processing billing policy, terminal Lab handoff, selected partial cancellation and Trial/result notice links are implemented and verified locally. Current case dispositions and test boundaries are in the report above. No deployment or shared migration was performed.

@@ -1,5 +1,7 @@
 # Major workflow testing scripts
 
+For focused manual UI/UX walkthroughs, use the [happy-path folder](happy-path/README.md): 18 successful workflow scripts, a connected run order and a separate results template. These companion walkthroughs do not change the acceptance ledger below.
+
 **80 of 81 software cases closed (98.8%); SYS-06 remains Blocked.** This comprises 39 ordinary passes and 41 explicitly labeled simulated software passes, with no remaining software failure. The [final-three review](runs/2026-09-15-final-three-acceptance.md) closes ACC-06 and ORD-03: real private MFA/session/role checks and the implemented immutable Change-quote workflow now have complete software crosswalks. Coordinated recovery, independent scheduled/off-server backup and exact release/owner acceptance remain required. Real physical, scientific and provider-delivery acceptance remains separate.
 
 Latest continuation: the approved failed-processing billing policy, terminal Lab handoff, selected partial cancellation and Trial/result notice links are implemented and verified locally. Current case dispositions and test boundaries are in the report above. No deployment or shared migration was performed.

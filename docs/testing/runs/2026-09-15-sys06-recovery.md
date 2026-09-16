@@ -14,6 +14,18 @@ The command-driven scientific journey passes and exports only its generated synt
 
 ## Results
 
+### September 16 scheduled follow-up — 04:17 Pacific
+
+**SYS-06 remains Blocked; the ledger stays 80/81.** GitHub's repository run API returned zero `schedule` runs, and the backup workflow still listed only installation run `35043891714` (`workflow_dispatch`). Workflow `359220409` is active and the repository default branch is `main`. At this checkpoint the 10:47 UTC collection had not appeared, approximately 30 minutes after its configured time. This establishes missing scheduled evidence, not a confirmed host-backup failure.
+
+The read-only status dispatch could not be submitted in this session: the local GitHub CLI credential was invalid and the selected browser was signed out. No credential or permission was changed. Consequently the overnight host snapshot, its deployed-revision/migration receipt, export receipt and new off-server artifact remain unverified. No manual backup or substitute collection was run.
+
+Live checks at approximately `2026-09-16T11:17:35Z` returned API health **200 / healthy**, database ping **204** and Portal root **200**. The last successful API deployment listed by GitHub remains `35044889461`, source `5d57de217542efeafbe45b1bd654dc1ed200a6be`; runtime image and Portal deployment identity were not independently re-established by these health responses. The previously recorded release remains the required baseline.
+
+Evidence: [scheduled-run query](2026-09-15-sys06-evidence/2026-09-16-scheduled-check.json). Next action: keep the authorized automation active and inspect the next actual scheduled run. If collection is still absent, use an authenticated read-only status check to inspect the host snapshot/timer before proposing any operational change. Closure still requires the new receipt and encrypted artifact; the automation is not paused while this gate is open.
+
+### September 15 execution results
+
 - Full command-driven fixture: passed (2 minutes 10 seconds); final opt-in export rerun passed (1 minute 18 seconds).
 - Unchanged Linux safety checks: 26 passed (5 envelope, 6 recovery, 15 file/archive checks).
 - Coordinated capture, exact-container watchdog recovery, decrypted isolated restore and authenticated restored downloads: **PASS**.
