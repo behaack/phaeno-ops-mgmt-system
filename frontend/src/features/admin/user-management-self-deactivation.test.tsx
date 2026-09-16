@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -34,6 +34,32 @@ describe('user-management self-deactivation', () => {
     mocks.listInvitations.mockResolvedValue([])
   })
 
+  it('reviews employee suspension, cancels without changes, then restores the same user', async () => {
+    const employee = createPhaenoUser('employee', 'Simulated', 'Operator')
+    employee.isPlatformAdministrator = false
+    mocks.listPhaenoUsers.mockResolvedValue([employee])
+    mocks.setUserActive.mockImplementation(async (_id, active) => {
+      mocks.listPhaenoUsers.mockResolvedValue([{ ...employee, isActive: active, status: active ? 'Active' : 'Disabled' }])
+    })
+    renderPanel(<PhaenoUserManagementPanel canManageAccounts canManageLabRoles currentUserId="current-user" organizationId="phaeno-organization" />)
+    await openActions('Simulated Operator')
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Deactivate' }))
+    let dialog = screen.getByRole('dialog')
+    expect(within(dialog).getByText(/Simulated Operator/)).toBeTruthy()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+    expect(mocks.setUserActive).not.toHaveBeenCalled()
+    await openActions('Simulated Operator')
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Deactivate' }))
+    dialog = screen.getByRole('dialog')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Deactivate user' }))
+    await screen.findByText('Disabled')
+    expect(mocks.setUserActive).toHaveBeenCalledWith('employee', false)
+    fireEvent.click(screen.getByRole('button', { name: 'Reactivate' }))
+    await screen.findByText('Active')
+    await waitFor(() => expect(mocks.setUserActive).toHaveBeenLastCalledWith('employee', true))
+    expect(mocks.setUserActive).toHaveBeenCalledTimes(2)
+  })
+
   it('omits membership deactivation from the signed-in user’s actions', async () => {
     mocks.listOrganizationUsers.mockResolvedValue([
       createOrganizationUser('current-user', 'Bill', 'Haack'),
@@ -47,9 +73,8 @@ describe('user-management self-deactivation', () => {
       />,
     )
 
-    await openActions('Bill Haack')
-
-    expect(screen.getByRole('menuitem', { name: 'Edit' })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: 'Edit' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Deactivate' })).toBeNull()
     expect(screen.queryByRole('menuitem', { name: 'Deactivate' })).toBeNull()
   })
 
@@ -85,9 +110,8 @@ describe('user-management self-deactivation', () => {
       />,
     )
 
-    await openActions('Bill Haack')
-
-    expect(screen.getByRole('menuitem', { name: 'Edit' })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: 'Edit' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Deactivate' })).toBeNull()
     expect(screen.queryByRole('menuitem', { name: 'Deactivate' })).toBeNull()
   })
 

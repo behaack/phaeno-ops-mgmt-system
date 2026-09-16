@@ -353,6 +353,13 @@ export async function markSourceReady(id: string, version: number) {
   return unwrap(response.data)
 }
 
+export async function retrySourceFileScan(id: string, fileId: string, version: number) {
+  const response = await api.post<ApiEnvelope<SourceSample>>(
+    `/data-provisioning/source-samples/${id}/files/${fileId}/retry-scan`, { version },
+  )
+  return unwrap(response.data)
+}
+
 export async function archiveSource(id: string, version: number) {
   const response = await api.post<ApiEnvelope<SourceSample>>(
     `/data-provisioning/source-samples/${id}/archive`,

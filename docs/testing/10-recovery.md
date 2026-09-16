@@ -1,5 +1,9 @@
 # 10 — Recovery and cross-system checks
 
+## Remaining-case review — September 15, 2026
+
+SYS-04 now passes the approved simulated scope after selected partial cancellation and its Commercial/Lab return context were verified. SYS-06 remains Blocked: 26 safety fixtures and isolated file restore pass, while coordinated DB/files capture, restored Portal download, scheduled/off-server and final release evidence remain outstanding. [Current crosswalk](runs/2026-09-15-remaining-case-acceptance.md).
+
 Use [shared prerequisites](TEST-DATA.md). Engineering/operations assists with isolated fault injection and independently verifies persisted results. Do not apply these failures to shared production services.
 
 ## SYS-01 — Conflict handling, delayed saves and duplicate submissions
@@ -45,6 +49,8 @@ Use [shared prerequisites](TEST-DATA.md). Engineering/operations assists with is
 **Cleanup:** Restore test grants/assignments; if monitoring is disabled, record active-stream assertion Blocked and separately record fresh-request results.
 
 ## SYS-04 — Holds, cancellation and cross-screen ownership
+
+**Latest software execution, September 15:** Fail; named product gap remains. See the [ten-case scientific/workflow report](runs/2026-09-15-scientific-ten-software-acceptance.md) for the required-step crosswalk. Earlier checkpoints below remain historical evidence; original real-world acceptance criteria are unchanged.
 
 **Setup:** Separate received/unreceived/partly consumed Lab work, Kit output with paid original source, Trial hold, blocking exception; Commercial/Lab roles.
 

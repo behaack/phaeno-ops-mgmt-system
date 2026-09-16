@@ -1,5 +1,26 @@
 import { expect, test, type Page } from '@playwright/test'
 
+test('moves workspace navigation into the user menu at tablet widths', async ({ page }) => {
+  await page.goto('/')
+  await page.waitForLoadState('networkidle')
+  const header = page.locator('[data-portal-header]')
+  for (const width of [768, 1024]) {
+    await page.setViewportSize({ width, height: 850 })
+    const dashboard = header.getByRole('link', { name: 'Dashboard', exact: true })
+    if (width < 1024) await expect(dashboard).toBeHidden()
+    else await expect(dashboard).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    const menu = header.getByRole('button', { name: 'Open user menu', exact: true })
+    await menu.focus()
+    await page.keyboard.press('Enter')
+    const menuDashboard = page.getByRole('menuitem', { name: 'Dashboard', exact: true })
+    if (width < 1024) await expect(menuDashboard).toBeVisible()
+    else await expect(menuDashboard).toBeHidden()
+    await page.keyboard.press('Escape')
+    await expect(menu).toBeFocused()
+  }
+})
+
 test('uses POMS branding in the internal Phaeno context', async ({ page }) => {
   await page.goto('/')
 

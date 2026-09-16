@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.Crm.Domain;
@@ -639,7 +640,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         await using (var create = new NpgsqlCommand($"CREATE DATABASE {name}", admin)) await create.ExecuteNonQueryAsync();
         connection.Database = name;
         connection.Pooling = false;
-        try { await VerifyAuthorizedOperatorJourney(connection.ConnectionString); }
+        try { await VerifyAuthorizedOperatorJourney(connection.ConnectionString, Environment.GetEnvironmentVariable("PSEQ_RECOVERY_EXPORT_DIR")); }
         finally
         {
             await using var drop = new NpgsqlCommand($"DROP DATABASE {name} WITH (FORCE)", admin);
@@ -647,9 +648,10 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         }
     }
 
-    private static async Task VerifyAuthorizedOperatorJourney(string connectionString)
+    private static async Task VerifyAuthorizedOperatorJourney(string connectionString, string? recoveryExportDirectory = null)
     {
         await using var scope = await HandoffTestScope.CreateAsync(isolatedConnection: connectionString);
+        scope.RecoveryExportDirectory = recoveryExportDirectory;
         var fixture = await scope.CreateQuotedOrderAsync();
         await scope.AuthorizeSampleRosterAsync(
             fixture,
@@ -661,6 +663,11 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             .SingleAsync(item => item.CommercialOrderId == fixture.OrderId);
         var workOrderId = authorization.LabWorkOrderId;
         Assert.NotNull(workOrderId);
+        // Explicit quoted-turnaround prerequisite for this disposable legacy order fixture.
+        var timedWork = await scope.DbContext.LabWorkOrders.SingleAsync(value => value.Id == workOrderId);
+        scope.DbContext.Entry(timedWork).Property(value => value.MinimumTurnaroundDays).CurrentValue = 7;
+        scope.DbContext.Entry(timedWork).Property(value => value.MaximumTurnaroundDays).CurrentValue = 14;
+        await scope.DbContext.SaveChangesAsync();
 
         // Exercise commands that own their transactions in this disposable database.
         {
@@ -687,9 +694,11 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 LabRole.ProtocolAdministrator.ToString(),
                 new SetLabRoleRequest(true, null),
                 CancellationToken.None);
+            await administrator.SetRole(protocolApprover.User.Id, LabRole.ScientificReviewer.ToString(),
+                new SetLabRoleRequest(true, null), CancellationToken.None);
 
-            var lab = scope.CreateLabController(staff.Identity);
-            var approvalLab = scope.CreateLabController(protocolApprover.Identity);
+            var lab = scope.CreateLabController(staff.Identity, governed: true);
+            var approvalLab = scope.CreateLabController(protocolApprover.Identity, governed: true);
             var protocolName = $"Reference library preparation {Guid.NewGuid():N}";
             var protocol = await lab.CreateProtocol(
                 new CreateProtocolRequest(
@@ -833,6 +842,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
 
             var accessionNumber = $"ACC-{Guid.NewGuid():N}";
             Assert.Equal("Received", work.WorkOrder.Status);
+            Assert.Null((await scope.DbContext.LabWorkOrders.AsNoTracking().SingleAsync(value => value.Id == workOrderId)).OriginalTargetAtUtc);
             await LabOperationsProjectionDispatcher.DispatchAsync(scope.DbContext, NullLogger.Instance, CancellationToken.None);
             var receivedOrder = await scope.DbContext.LabServiceOrders.AsNoTracking().Include(item => item.Samples)
                 .SingleAsync(item => item.Id == work.WorkOrder.CommercialOrderId);
@@ -858,6 +868,18 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             Assert.Equal(accessionNumber, accessionedSample.AccessionId);
             Assert.Equal("Accepted", Assert.Single(work.Specimens).IntakeDisposition);
             Assert.Equal(LabWorkOrderStatus.Received.ToString(), work.WorkOrder.Status);
+            var timingWork = await scope.DbContext.LabWorkOrders.SingleAsync(value => value.Id == workOrderId);
+            var originalTarget = timingWork.OriginalTargetAtUtc;
+            Assert.NotNull(originalTarget);
+            await lab.OverrideOrderTiming(fixture.OrderId, new(timingWork.Version, originalTarget.Value.AddDays(2),
+                "Additional processing or quality review", "SIMULATED safe expected date", "PRIVATE-INTERNAL-TIMING"), default);
+            timingWork = await scope.DbContext.LabWorkOrders.SingleAsync(value => value.Id == workOrderId);
+            await lab.OverrideOrderTiming(fixture.OrderId, new(timingWork.Version, originalTarget.Value.AddDays(1),
+                "Laboratory scheduling adjustment", "SIMULATED safe earlier date", "PRIVATE-INTERNAL-TIMING"), default);
+            Assert.Equal(originalTarget, timingWork.OriginalTargetAtUtc);
+            Assert.Equal(1, await scope.DbContext.OrderNotifications.CountAsync(value => value.WorkflowId == fixture.OrderId && value.EventType == "lab-timing-delayed"));
+            var safeTiming = await new LabServiceTimingService(scope.DbContext).ReadAsync(fixture.OrderId, scope.CustomerOrganization.Id, false, false, default);
+            Assert.DoesNotContain("PRIVATE-INTERNAL-TIMING", JsonSerializer.Serialize(safeTiming));
 
             var submittedContainer = Assert.Single(work.Containers);
             Assert.StartsWith("PH-S-", submittedContainer.Barcode);
@@ -1072,6 +1094,13 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             Assert.Matches(
                 "^PH-BAT-[0-9]{8}-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{8}$",
                 batch.BatchNumber);
+            library = await lab.RecordLibraryQc(library.Id, new(false, "{\"concentrationNgUl\":0.1,\"scope\":\"SIMULATED failed QC\"}", library.Version), default);
+            var failedQc = await Assert.ThrowsAsync<OrderManagementException>(() => lab.AddBatchMember(batch.Id,
+                new(workOrderId.Value, library.Id), default));
+            Assert.Equal("library_qc_required", failedQc.ErrorCode);
+            Assert.False(await scope.DbContext.LabBatchMembers.AnyAsync(value => value.LabOperationalBatchId == batch.Id));
+            Assert.Null((await lab.ScanContainer(submittedContainer.Barcode, default)).LabLibraryId);
+            library = await lab.RecordLibraryQc(library.Id, new(true, "{\"concentrationNgUl\":12.5,\"scope\":\"SIMULATED corrected QC\"}", library.Version), default);
             batch = await lab.AddBatchMember(
                 batch.Id,
                 new AddBatchMemberRequest(workOrderId.Value, library.Id),
@@ -1129,6 +1158,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 CancellationToken.None);
             Assert.Equal(LabBatchStatus.Complete.ToString(), batch.Status);
 
+            await scope.VerifyMixedProgressAsync(fixture.OrderId, workOrderId.Value, released: false);
+
             var exception = await lab.RaiseException(
                 workOrderId.Value,
                 new CreateExceptionRequest(
@@ -1157,16 +1188,38 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                     LabWorkOrderStatus.ScientificReview.ToString(),
                     work.WorkOrder.Version),
                 CancellationToken.None);
-            work = await lab.ApproveScientificReview(
+            // The protocol, execution, library and provider lineage above is executed through
+            // owning commands. Output bytes and clean-scanner state are explicitly simulated.
+            var simulatedBytes = System.Text.Encoding.UTF8.GetBytes("SIMULATED scientific acceptance output\n");
+            var checksum = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(simulatedBytes));
+            var output = new ResultOutputPackage(scope.CustomerOrganization.Id, fixture.OrderId, workOrderId.Value,
+                specimen.SubmittedSpecimenId, 1, null, "simulated-acceptance", Guid.NewGuid().ToString(),
+                Guid.NewGuid().ToString(), "{\"scope\":\"SIMULATED\"}", checksum, 1);
+            var artifact = new ResultArtifact(output.Id, "report", "SIMULATED-output.txt", "text/plain",
+                simulatedBytes.Length, checksum, "simulated-acceptance/" + output.Id);
+            artifact.BeginScan(); artifact.CompleteScan(true, null, DateTime.UtcNow);
+            output.BeginScanning(); output.MarkReadyForReview(1, true, true);
+            scope.DbContext.AddRange(output, artifact);
+            await scope.DbContext.SaveChangesAsync();
+            var contributor = await Assert.ThrowsAsync<OrderManagementException>(() => lab.ApproveScientificReview(
+                workOrderId.Value, new("reference-release", 1, null, work.WorkOrder.Version, output.Id), default));
+            Assert.Equal("scientific_approval_contributor_conflict", contributor.ErrorCode);
+            Assert.False(await scope.DbContext.LabScientificApprovals.AnyAsync(value => value.LabWorkOrderId == workOrderId));
+            work = await approvalLab.ApproveScientificReview(
                 workOrderId.Value,
                 new ScientificApprovalRequest(
                     "reference-release",
                     1,
                     """{"rin":9.2,"libraryQc":"passed"}""",
-                    work.WorkOrder.Version),
+                    work.WorkOrder.Version, output.Id),
                 CancellationToken.None);
             Assert.Equal(LabWorkOrderStatus.ReadyForRelease.ToString(), work.WorkOrder.Status);
             Assert.Single(work.ScientificApprovals);
+            var savedApproval = await scope.DbContext.LabScientificApprovals.AsNoTracking().SingleAsync(value => value.LabWorkOrderId == workOrderId);
+            Assert.Equal(protocolApprover.User.Id, savedApproval.ApprovedByUserId);
+            Assert.Equal(output.Id, savedApproval.ResultOutputPackageId);
+            Assert.Equal(ResultOutputPackageState.ReadyForRelease, output.State);
+            Assert.Null(output.ReleasedAtUtc);
             var reviewedProgress = (await customerProgress.ReadAsync(scope.CustomerOrganization.Id,
                 [fixture.OrderId], CancellationToken.None))[fixture.OrderId];
             Assert.Equal("QualityReview", reviewedProgress.CurrentStage);
@@ -1205,6 +1258,10 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             Assert.Contains("ContainerLabelPrintSucceeded", eventTypes);
             Assert.Contains("ContainerLabelPrintFailed", eventTypes);
             Assert.Contains("ScientificApprovalRecorded", eventTypes);
+            await scope.VerifyGovernedPublicationAsync(output.Id, artifact.Id, simulatedBytes);
+            await scope.VerifyMixedProgressAsync(fixture.OrderId, workOrderId.Value, released: true);
+            await scope.VerifyScientificCompletionAndFrozenInvoice(fixture.OrderId, output.Id, artifact.Id, simulatedBytes);
+            if (recoveryExportDirectory is not null) await scope.ExportRecoveryFixtureAsync(fixture.OrderId, output.Id, artifact.Id, simulatedBytes);
         }
         var persistedWork = await scope.DbContext.LabWorkOrders
             .AsNoTracking()
@@ -1216,6 +1273,78 @@ public partial class LabOperationsCommercialHandoffPostgresTests
 
     private sealed partial class HandoffTestScope : IAsyncDisposable
     {
+        public async Task VerifyMixedProgressAsync(Guid orderId, Guid workId, bool released)
+        {
+            // Staged aggregation variants only. Rollback preserves the command-driven journey.
+            await using var transaction = await DbContext.Database.BeginTransactionAsync();
+            var existing = await DbContext.LabLibraries.SingleAsync(value => value.LabWorkOrderId == workId);
+            var original = await DbContext.LabSpecimens.SingleAsync(value => value.Id == existing.LabSpecimenId);
+            var received = new LabSample(orderId, "SIMULATED sample 2", "RNA", "Synthetic", 1, "tube", "Frozen", "Safe", null, null, null, "[]");
+            var expected = new LabSample(orderId, "SIMULATED sample 10", "RNA", "Synthetic", 1, "tube", "Frozen", "Safe", null, null, null, "[]");
+            var receivedSpecimen = new LabSpecimen(workId, received.Id);
+            receivedSpecimen.RecordReceipt(DateTime.UtcNow, "SIMULATED sealed", "SIMULATED storage");
+            DbContext.AddRange(received, expected, receivedSpecimen, new LabSpecimen(workId, expected.Id));
+            var container = new LabContainer(workId, original.Id, existing.SourceContainerId, LabContainerKind.Library,
+                "SIM" + Guid.NewGuid().ToString("N"), "SIMULATED second library", "SIMULATED storage", null, null, null);
+            var second = new LabLibrary(workId, original.Id, existing.SourceContainerId, container.Id, existing.PreparationExecutionId, container.Barcode);
+            second.RecordQc(true, "{\"scope\":\"SIMULATED\"}");
+            DbContext.AddRange(container, second); await DbContext.SaveChangesAsync();
+            var reader = new LabCustomerProgressService(DbContext);
+            async Task<LabCustomerProgress> Read() => (await reader.ReadAsync(CustomerOrganization.Id, [orderId], default))[orderId];
+            var progress = await Read();
+            Assert.Equal("Received", progress.CurrentStage);
+            Assert.Equal(3, progress.Counts.Sum(value => value.Count));
+            Assert.Equal("Received", progress.Samples.Single(value => value.SampleId == received.Id).Stage);
+            Assert.Equal("AwaitingReceipt", progress.Samples.Single(value => value.SampleId == expected.Id).Stage);
+            Assert.Equal(released ? "ResultsAvailable" : "LibraryPrep", progress.Samples.Single(value => value.SampleId == original.SubmittedSpecimenId).Stage);
+            Assert.Empty(await reader.ReadAsync(Guid.NewGuid(), [orderId], default));
+            Assert.DoesNotContain("SIMULATED storage", JsonSerializer.Serialize(progress));
+            if (!released)
+            {
+                var extraBatch = new LabOperationalBatch("SIM" + Guid.NewGuid().ToString("N"), "SIMULATED second library batch", null);
+                extraBatch.Start(DateTime.UtcNow);
+                var sendout = new LabNgsSendout(extraBatch.Id, "PRIVATE-PROVIDER", null, "{}", null);
+                DbContext.AddRange(extraBatch, new LabBatchMember(extraBatch.Id, workId, second.Id, DateTime.UtcNow), sendout);
+                foreach (var status in new[] { LabNgsSendoutStatus.Shipped, LabNgsSendoutStatus.ReceivedByProvider, LabNgsSendoutStatus.Sequencing })
+                {
+                    sendout.SetStatus(status, DateTime.UtcNow); await DbContext.SaveChangesAsync();
+                    progress = await Read();
+                    Assert.Equal(status == LabNgsSendoutStatus.Sequencing ? "Sequencing" : "LibraryPrep",
+                        progress.Samples.Single(value => value.SampleId == original.SubmittedSpecimenId).Stage);
+                    Assert.Equal("Received", progress.CurrentStage);
+                    Assert.DoesNotContain("PRIVATE-PROVIDER", JsonSerializer.Serialize(progress));
+                }
+                var package = new ResultOutputPackage(CustomerOrganization.Id, orderId, workId, original.SubmittedSpecimenId,
+                    1, null, "simulated", Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), "{}", new string('A', 64), 1);
+                DbContext.Add(package); await DbContext.SaveChangesAsync();
+                Assert.Equal("DataAssembly", (await Read()).Samples.Single(value => value.SampleId == original.SubmittedSpecimenId).Stage);
+                package.BeginScanning(); package.MarkReadyForReview(1, true, true); await DbContext.SaveChangesAsync();
+                Assert.Equal("QualityReview", (await Read()).Samples.Single(value => value.SampleId == original.SubmittedSpecimenId).Stage);
+                Assert.Equal("Received", (await Read()).CurrentStage);
+            }
+            else
+            {
+                // Explicit legacy release facts exercise aggregation, not additional scientific approvals.
+                var additionalReleases = new[] { received, expected }.Select(sample => new LabResultRelease(CustomerOrganization.Id,
+                    orderId, sample.Id, 1, "SIMULATED", "SIMULATED", "SIMULATED aggregation fixture", "SIMULATED", "{}", DateTime.UtcNow)).ToArray();
+                foreach (var release in additionalReleases) { release.MarkReady(false); release.Release(DateTime.UtcNow); }
+                DbContext.AddRange(additionalReleases); await DbContext.SaveChangesAsync();
+                progress = await Read();
+                Assert.Equal("ResultsAvailable", progress.CurrentStage);
+                Assert.Equal(3, Assert.Single(progress.Counts).Count);
+                DbContext.Entry(received).Property(value => value.Status).CurrentValue = LabSampleStatus.OnHold;
+                await DbContext.SaveChangesAsync();
+                Assert.Equal("NeedsAttention", (await Read()).CurrentStage);
+                DbContext.Entry(received).Property(value => value.Status).CurrentValue = LabSampleStatus.Rejected;
+                await DbContext.SaveChangesAsync();
+                Assert.Equal("NeedsAttention", (await Read()).CurrentStage);
+                DbContext.Entry(received).Property(value => value.Status).CurrentValue = LabSampleStatus.Expected;
+                additionalReleases[0].Withdraw(); await DbContext.SaveChangesAsync();
+                Assert.Equal("Received", (await Read()).Samples.Single(value => value.SampleId == received.Id).Stage);
+            }
+            await transaction.RollbackAsync(); DbContext.ChangeTracker.Clear();
+        }
+
         private const string ConnectionEnvironmentVariable =
             "PSEQ_OPERATIONS_REFERENCE_CONNECTION";
         private readonly string requestId;
@@ -1224,6 +1353,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         private readonly List<Guid> catalogItemIds = [];
         private readonly List<Guid> createdCrmCompanyIds = [];
         private readonly List<Guid> createdCrmOpportunityIds = [];
+        private readonly List<Guid> createdCrmPipelineIds = [];
         private readonly List<Guid> createdRelationshipRequestIds = [];
         private readonly ShippingConfigurationFixture shippingConfiguration;
         private bool ownsDisposableDatabase;
@@ -1496,7 +1626,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 rule.Id);
         }
 
-        public async Task<QuotedOrderFixture> CreateQuotedOrderAsync(string jobName = "reference-handoff")
+        public async Task<QuotedOrderFixture> CreateQuotedOrderAsync(string jobName = "reference-handoff", int specimenCount = 1)
         {
             var now = DateTime.UtcNow;
             var order = new LabServiceOrder(
@@ -1505,7 +1635,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 OrderNumberGenerator.Lab(),
                 jobName,
                 null,
-                1,
+                specimenCount,
                 false,
                 "synthetic_reference",
                 "frozen",
@@ -1514,15 +1644,15 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             order.SourceGroups.Add(new LabServiceSourceGroup(
                 order.Id,
                 "synthetic_reference",
-                1));
+                specimenCount));
             order.Submit(CustomerUser.Id, now);
             order.BeginQuotePreparation();
             var quote = new LabServiceQuote(
                 order.Id,
                 1,
                 QuotePurpose.Initial,
-                "[]",
-                100,
+                JsonSerializer.Serialize(new[] { new { catalogItemId = Guid.NewGuid(), externalItemId = OrderServiceKeys.PSeqLabService, description = "PSeq Lab Service", quantity = specimenCount, unitPrice = 100m } }),
+                100 * specimenCount,
                 0,
                 "USD",
                 now,
@@ -1583,8 +1713,13 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             CrmOpportunity? opportunity = null;
             if (opportunityStageCategory.HasValue)
             {
-                var stage = await DbContext.CrmPipelineStages
-                    .FirstAsync(value => value.IsActive && value.Category == opportunityStageCategory.Value);
+                var pipeline = new CrmPipeline($"TEST ONLY handoff {Guid.NewGuid():N}", null);
+                var category = opportunityStageCategory.Value;
+                var probability = category == CrmPipelineStageCategory.Won ? 100
+                    : category == CrmPipelineStageCategory.Open ? 10 : 0;
+                var stage = new CrmPipelineStage(pipeline.Id, "TEST ONLY stage", 10, category, probability, false);
+                DbContext.AddRange(pipeline, stage);
+                createdCrmPipelineIds.Add(pipeline.Id);
                 opportunity = new CrmOpportunity(
                     $"CRM handoff opportunity {Guid.NewGuid():N}",
                     company.Id,
@@ -1775,12 +1910,59 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         public LabOperationsController CreatePlatformLabController() =>
             CreateLabController(platformIdentity);
 
-        public LabOperationsController CreateLabController(ExternalIdentity identity) =>
+        public async Task VerifyGovernedPublicationAsync(Guid packageId, Guid artifactId, byte[] bytes)
+        {
+            var package = await DbContext.ResultOutputPackages.SingleAsync(value => value.Id == packageId);
+            DbContext.Add(new BusinessRoleAssignment(PlatformUser.Id, BusinessRole.ResultReleaseManager));
+            await DbContext.SaveChangesAsync();
+            var options = Options.Create(new PSeqOrderToCashOptions { GovernedPSeqResults = true, BusinessRoles = true,
+                DualControlEnforced = true, PipelineServiceSecret = new string('s', 24), PipelineProviderKey = "simulated",
+                ObjectStorageTransferBaseUrl = "https://example.test/simulated" });
+            var release = new PSeqResultReleaseController(DbContext, new(DbContext, new FixedIdentityContext(platformIdentity)),
+                options, new(DbContext), new(DbContext)) { ControllerContext = new() { HttpContext = new DefaultHttpContext() } };
+            using var services = new ServiceCollection().AddLogging().AddControllers().Services.BuildServiceProvider();
+            var http = new DefaultHttpContext { RequestServices = services };
+            http.Request.Method = "GET";
+            http.Request.Headers["X-Organization-Id"] = CustomerOrganization.Id.ToString();
+            http.Request.Headers["X-Department-Id"] = CustomerOrganization.Departments.Single(value => value.IsDefault).Id.ToString();
+            var downloads = new PSeqResultDownloadsController(DbContext, new(DbContext, new FixedIdentityContext(customerIdentity)),
+                new AcceptanceOutputStorage(bytes), new(DbContext, Options.Create(new OrderManagementOptions()), NullLogger<ReleasedDeliverableDownloadAttemptService>.Instance),
+                new(DbContext), NullLogger<CompletionTrackedFileStreamResult>.Instance) { ControllerContext = new() { HttpContext = http } };
+            Assert.Empty(await downloads.List(package.LabServiceOrderId!.Value, default));
+            await Assert.ThrowsAsync<OrderManagementException>(() => downloads.Download(package.LabServiceOrderId.Value,
+                package.LabSampleId!.Value, package.Id, artifactId, default));
+            var priorVersion = package.Version;
+            await release.Release(package.Id, new(priorVersion), default);
+            var releasedAt = package.ReleasedAtUtc;
+            Assert.Equal(ResultOutputPackageState.Released, package.State);
+            Assert.True(Assert.Single(await downloads.List(package.LabServiceOrderId.Value, default)).IsDownloadAvailable);
+            await Assert.ThrowsAsync<OrderManagementException>(() => release.Release(package.Id, new(priorVersion), default));
+            Assert.Equal(releasedAt, package.ReleasedAtUtc);
+            Assert.Equal(1, await DbContext.LabResultReleases.CountAsync(value => value.LabServiceOrderId == package.LabServiceOrderId));
+            Assert.Equal(1, await DbContext.ResultRetentionSchedules.CountAsync(value => value.ResultOutputPackageId == package.Id));
+            Assert.Equal(1, await DbContext.OrderNotifications.CountAsync(value => value.WorkflowId == package.LabServiceOrderId && value.EventType == "pseq-result-released"));
+            http.Response.Body = new MemoryStream();
+            var response = await downloads.Download(package.LabServiceOrderId.Value, package.LabSampleId!.Value, package.Id, artifactId, default);
+            await response.ExecuteResultAsync(new(http, new Microsoft.AspNetCore.Routing.RouteData(), new Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor()));
+            Assert.Equal(bytes, ((MemoryStream)http.Response.Body).ToArray());
+            var progress = await new LabCustomerProgressService(DbContext).ReadAsync(CustomerOrganization.Id, [package.LabServiceOrderId.Value], default);
+            Assert.Equal("ResultsAvailable", progress[package.LabServiceOrderId.Value].CurrentStage);
+            var retention = await DbContext.ResultRetentionSchedules.AsNoTracking().SingleAsync(value => value.ResultOutputPackageId == package.Id);
+            var releaseCount = await DbContext.LabResultReleases.CountAsync(value => value.LabServiceOrderId == package.LabServiceOrderId);
+            await WorkflowNoticeAcceptance.VerifyRetry(DbContext, package.LabServiceOrderId.Value, CustomerUser.Email);
+            Assert.Equal(releaseCount, await DbContext.LabResultReleases.CountAsync(value => value.LabServiceOrderId == package.LabServiceOrderId));
+            Assert.Equal(retention.Id, (await DbContext.ResultRetentionSchedules.AsNoTracking().SingleAsync(value => value.ResultOutputPackageId == package.Id)).Id);
+            Assert.Equal(releasedAt, package.ReleasedAtUtc);
+        }
+
+        public LabOperationsController CreateLabController(ExternalIdentity identity, bool governed = false) =>
             new(
                 DbContext,
                 new LabOperationsRequestContext(
                     DbContext,
-                    new FixedIdentityContext(identity)))
+                    new FixedIdentityContext(identity),
+                    Options.Create(new PSeqOrderToCashOptions { GovernedPSeqResults = governed, DualControlEnforced = governed }),
+                    NullLogger<LabOperationsRequestContext>.Instance))
             {
                 ControllerContext = new ControllerContext
                 {
@@ -1822,7 +2004,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             ILabOperationsProvider provider,
             string? idempotencyKey = null,
             bool derivedReadiness = false,
-            IOperationalFileStorage? storage = null)
+            IOperationalFileStorage? storage = null,
+            bool dualControl = false)
         {
             var httpContext = new DefaultHttpContext();
             if (idempotencyKey != null)
@@ -1837,7 +2020,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 Options.Create(new PSeqOrderToCashOptions
                 {
                     NativePSeqAccountsReceivable = true,
-                    DerivedReadiness = derivedReadiness
+                    DerivedReadiness = derivedReadiness,
+                    DualControlEnforced = dualControl
                 }),
                 provider,
                 new ReleasedDeliverableRetentionSnapshotService(DbContext),
@@ -1928,6 +2112,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 await DbContext.CrmActivities.Where(item => item.CompanyId.HasValue && createdCrmCompanyIds.Contains(item.CompanyId.Value)).ExecuteDeleteAsync();
                 await DbContext.CrmHandoffs.Where(item => createdCrmCompanyIds.Contains(item.CompanyId)).ExecuteDeleteAsync();
                 await DbContext.CrmOpportunities.Where(item => createdCrmOpportunityIds.Contains(item.Id)).ExecuteDeleteAsync();
+                await DbContext.CrmPipelineStages.Where(item => createdCrmPipelineIds.Contains(item.PipelineId)).ExecuteDeleteAsync();
+                await DbContext.CrmPipelines.Where(item => createdCrmPipelineIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await DbContext.PortalIntegrationRequestServices.Where(item => createdRelationshipRequestIds.Contains(item.PortalIntegrationRequestId)).ExecuteDeleteAsync();
                 await DbContext.PortalIntegrationRequests.Where(item => createdRelationshipRequestIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await DbContext.CrmCompanies.Where(item => createdCrmCompanyIds.Contains(item.Id)).ExecuteDeleteAsync();
@@ -2025,6 +2211,13 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         public Task<LabWorkProjection?> GetWorkProjectionAsync(
             Guid authorizationId,
             CancellationToken cancellationToken) => throw new NotSupportedException();
+    }
+
+    private sealed class AcceptanceOutputStorage(byte[] bytes) : IOperationalFileStorage
+    {
+        public Task<StoredOperationalFile> SaveAsync(Stream content, string extension, long maximumBytes, CancellationToken token) => throw new NotSupportedException();
+        public Task<Stream> OpenReadAsync(string key, CancellationToken token) => Task.FromResult<Stream>(new MemoryStream(bytes, writable: false));
+        public Task DeleteIfExistsAsync(string key, CancellationToken token) => throw new NotSupportedException();
     }
 
     private sealed class NullOperationalFileStorage : IOperationalFileStorage

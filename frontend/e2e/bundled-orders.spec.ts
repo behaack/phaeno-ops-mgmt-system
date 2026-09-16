@@ -11,7 +11,7 @@ import {
   bundlePreview,
   bundleTiming,
 } from '../src/test-helpers/bundled-orders'
-import type { OperationalFile } from '../src/api/order-management'
+import type { LabServiceOrder, OperationalFile } from '../src/api/order-management'
 
 test.use({
   launchOptions: {
@@ -20,7 +20,7 @@ test.use({
   },
 })
 
-async function fixture(page: Page, screen: string) {
+async function fixture(page: Page, screen: string, patch: Partial<LabServiceOrder> = {}, packages: unknown[] = []) {
   const unexpected: string[] = []
   const errors: string[] = []
   const writes: Array<{
@@ -28,7 +28,7 @@ async function fixture(page: Page, screen: string) {
     body: Record<string, unknown>
     key?: string
   }> = []
-  let lab = structuredClone(bundleLabDraft)
+  let lab = { ...structuredClone(bundleLabDraft), ...patch }
   let assembly = structuredClone(bundleAssembly)
   const kit = structuredClone(bundleKitOrder)
   let uploadAttempts = 0
@@ -60,11 +60,8 @@ async function fixture(page: Page, screen: string) {
           path === '/platform/order-configuration/lab-service-offerings'
         )
           return send([bundleOffering])
-        if (
-          path === '/accounts-receivable/invoices' ||
-          path === `${labPath}/result-packages`
-        )
-          return send([])
+        if (path === '/accounts-receivable/invoices') return send([])
+        if (path === `${labPath}/result-packages`) return send(packages)
         if (path === `/reagent-orders/${bundleIds.order}`) return send(kit)
         if (path === assemblyPath) return send(assembly)
         if (path === '/organizations')
@@ -198,6 +195,67 @@ async function fixture(page: Page, screen: string) {
   )
   await page.goto(`/e2e/fixtures/bundled-orders.html?screen=${screen}`)
   return { unexpected, errors, writes }
+}
+
+for (const audience of ['customer-lab', 'partner-lab']) {
+  test(`${audience} mixed laboratory stages preserve sample names and keyboard disclosures`, async ({ page }, info) => {
+    const samples = [10, 2, 1].map(number => ({
+      id: `simulated-sample-${number}`, customerSampleId: `Sample ${number}`, materialType: 'RNA',
+      biologicalSource: 'Yeast', quantity: 1, quantityUnit: 'tube', storageRequirements: 'Frozen',
+      safetyDeclaration: 'SIMULATED', collectionDate: null, concentration: null, notes: null,
+      analysisDefinitionIdsJson: '[]', accessionId: null, status: 'Received', replacementForSampleId: null,
+      receivedAt: '2026-09-15T12:00:00Z', receiptCondition: 'SIMULATED', carrier: null,
+      trackingNumber: null, customerShippedAt: null, tenantSafeReason: null, internalNote: null, version: 1,
+    }))
+    const state = await fixture(page, audience, {
+      status: 'InProgress', canEdit: false, canSubmit: false, canWithdraw: false, canPlaceStandardOrder: false,
+      placedAt: '2026-09-15T09:00:00Z', entryMode: 'ConfiguredDirect',
+      sourceGroups: [{ id: bundleIds.analysis, biologicalSource: 'Yeast', specimenCount: 3, version: 1 }],
+      standardCommercialSnapshot: { ...bundleOffering, offeringId: bundleOffering.id, productName: bundleOffering.name,
+        specimenCount: 3, subtotal: 300, tax: 30, total: 330, committedAtUtc: '2026-09-15T09:00:00Z' },
+      sampleRosterFinalizedAt: '2026-09-15T10:00:00Z', requestedSpecimenCount: 3, samples,
+      labReadyForRelease: true, labPermittedQcProjectionJson: '{"quality":"Approved simulated summary"}',
+      laboratoryProgress: {
+        currentStage: 'Received', jobStage: 'QualityReview', hasContainerReceipt: true,
+        counts: [{ stage: 'Received', count: 1 }, { stage: 'LibraryPrep', count: 1 }, { stage: 'ResultsAvailable', count: 1 }],
+        samples: samples.map((sample, i) => ({ sampleId: sample.id, stage: ['Received', 'LibraryPrep', 'ResultsAvailable'][i] })),
+      },
+    }, [{ id: bundleIds.request, labSampleId: 'simulated-sample-1', packageVersion: 1, state: 'Released',
+      releasedAtUtc: '2026-09-15T12:00:00Z', retentionState: 'Available', isDownloadAvailable: true,
+      artifacts: [{ id: bundleIds.profile, logicalRole: 'report', fileName: 'SIMULATED-sample-1.txt',
+        contentType: 'text/plain', sizeBytes: 10, sha256: 'a'.repeat(64), deletedAtUtc: null }] }])
+    const stages = page.getByRole('list', { name: 'Laboratory stages' })
+    await expect(stages.locator('[aria-current="step"]')).toHaveText(/Received/)
+    await expect(stages.locator('li').last()).not.toHaveAttribute('aria-current', 'step')
+    await expect(page.getByText(/Latest Job-wide activity: Quality Review/)).toBeVisible()
+    await expect(page.getByText('SIMULATED-sample-1.txt', { exact: true })).toBeVisible()
+    const names = page.locator('details').filter({ has: page.locator('summary', { hasText: 'View sample stages' }) })
+    await names.locator('summary').focus(); await page.keyboard.press('Enter')
+    await expect(names).toHaveAttribute('open', '')
+    await expect(names.locator('li > span:first-child')).toHaveText(['Sample 1', 'Sample 2', 'Sample 10'])
+    const qc = page.locator('details').filter({ has: page.locator('summary', { hasText: 'Approved QC summary' }) })
+    await qc.locator('summary').focus(); await page.keyboard.press('Space')
+    await expect(qc).toHaveAttribute('open', '')
+    for (const theme of ['light', 'dark']) {
+      await page.evaluate(value => document.documentElement.classList.toggle('dark', value === 'dark'), theme)
+      for (const width of [320, 375, 1440]) {
+        await page.setViewportSize({ width, height: 950 })
+        await expect(stages).toBeVisible()
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true)
+        await page.screenshot({ path: info.outputPath(`${audience}-${theme}-${width}.png`), fullPage: true })
+      }
+    }
+    await page.setViewportSize({ width: 1440, height: 950 })
+    await page.evaluate(() => { document.body.style.zoom = '2' })
+    await expect(names.locator('li').first()).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true)
+    await page.evaluate(() => { document.body.style.zoom = '' })
+    const accessibility = await new AxeBuilder({ page }).include('main').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()
+    expect(accessibility.violations).toEqual([])
+    await names.locator('summary').focus(); await page.keyboard.press('Enter')
+    await expect(names).not.toHaveAttribute('open', '')
+    expect(state.writes).toEqual([]); expect(state.unexpected).toEqual([]); expect(state.errors).toEqual([])
+  })
 }
 async function capture(page: Page, info: TestInfo, name: string) {
   // Inspect the settled interface, not a partially transparent dialog animation.

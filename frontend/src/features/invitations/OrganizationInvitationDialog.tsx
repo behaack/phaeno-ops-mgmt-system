@@ -93,7 +93,8 @@ function InvitationForm({ departments, pending, onDirty, onSubmit, contact, orga
     : selected.length === 0 ? m.selectDepartments
       : selected.some(entry => !activeDepartments.some(department => department.id === entry.departmentId)) ? m.reviewChangedDepartments : undefined
   const departmentError = role === 'Member' ? accessError : undefined
-  useEffect(() => onAccessReady(!accessError), [accessError, onAccessReady])
+  const accessAvailable = activeDepartments.length > 0 && (role !== 'Administrator' || Boolean(defaultDepartment))
+  useEffect(() => onAccessReady(accessAvailable), [accessAvailable, onAccessReady])
   const submit = form.handleSubmit(async (values) => {
     const intent = values.role === 'Administrator'
       ? defaultDepartment ? [{ departmentId: defaultDepartment.id, isDepartmentAdmin: false }] : []

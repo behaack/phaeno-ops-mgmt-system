@@ -1,5 +1,13 @@
 # Lab Job progress and shipping workspace
 
+## September 15 scientific and workflow acceptance
+
+ORD-07 now passes simulated software scope with persisted three-sample/multiple-library progression, partial/all release and withdrawal/attention variants, independent approval/publication boundaries and Customer/Partner responsive browser checks. Retained split-tube receipt/accession and scope evidence is carried forward. This does not declare a fully connected physical/scientific/provider journey. [Evidence](../testing/runs/2026-09-15-scientific-ten-software-acceptance.md).
+
+## September 15 ten-case shipping and accession acceptance
+
+Direct packet-page printing included the application header/footer and spilled representative receiving inserts onto a second page; dark theme also colored paper margins. Shipping-only print CSS now hides the application chrome, releases the viewport-height shell and paints the named page/body white. Four connected and four synthetic receiving PDFs fit one page on Letter/A4 across both themes. Full Portal instructions remain paged on screen and excluded from paper. Current-revision validation and explicit operator print/packing confirmation are unchanged. Customer/Phaeno guides were reviewed and already describe the restored behavior. [Complete case crosswalk and limits](../testing/runs/2026-09-15-shipping-ten-software-acceptance.md).
+
 Status: implemented locally, September 10, 2026, following the Product Owner's
 "Okay, let's execute" approval. The follow-up direction is a **horizontal,
 iconic step sequence** with six short labels, completion checks and the current step

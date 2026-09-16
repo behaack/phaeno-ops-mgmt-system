@@ -2,6 +2,12 @@
 
 Customer and Partner Lab Service work shares the Department-scoped Job, specimen, shipping and scientific-release workflow. Manual Customer work enters Order Ops as a Commercial request. Order Ops validates the Job-level specimen count, biological-source composition, storage, safety, and service profile before pricing. Individual samples do not exist yet.
 
+## Additional scope on an accepted Job
+
+For an active accepted Job, an authorized Commercial Operator can select **Issue Change quote**. Enter only additional biological-source counts and the price per additional sample. The saved quote is an immutable incremental proposal; it does not replace the original placement or authorize new work. Existing readiness and independent pricing controls remain enforced. A new proposal supersedes the previous unaccepted Change quote.
+
+The Customer or Partner organization administrator accepts or declines separately. Accepted additions open sample entry without unlocking existing authorized samples. Finalization appends a versioned authorization and creates shipping records only for new samples. Started work must preserve all existing specimens and its pinned scientific configuration; unsafe changes require laboratory review. Final billing combines accepted original and additional charges, retaining each quote's tax decision. Completed or cancelled Jobs cannot receive new additions.
+
 ## Configured standard orders
 
 An eligible Customer or Partner organization administrator may select a configured offering and place its standard Lab Service bundle directly from the Job. Department administrators may prepare the Job but cannot commit a new configured purchase. The review includes the specimen count, frozen scientific scope, unit price, approved tax and final total. Complete billing and Finance-approved tax are required for this direct commitment; manual quote readiness remains as described below.

@@ -1,5 +1,9 @@
 # `phaeno_ops` database ERD
 
+## Final Lab outcomes — September 15, 2026
+
+The existing text-backed `lab_samples.status` now includes distinct `Failed` and `Cancelled` values alongside `Completed` and `Rejected` as terminal outcomes. Failed means processing ended without success, not intake rejection. Accepted quote, placement, invoice and PDF snapshots remain unchanged by this outcome. Selected cancellation outcomes retain per-sample order events and Lab command receipts. No table, column, key, persisted model shape or migration changed.
+
 This document covers every table, column, key, and relationship in the application-owned EF Core model, plus the configured EF migration-history table in `public`.
 
 Generated from [PSeqOperationsDbContextModelSnapshot.cs](../backend/app/Migrations/PSeqOperationsDbContextModelSnapshot.cs) by [generate-database-erd.py](../scripts/generate-database-erd.py). Re-run the script after persisted-model changes. This is model evidence; verify applied migrations separately for each environment.
@@ -1263,6 +1267,9 @@ erDiagram
     }
     lab_service_quotes {
         uuid id PK "not null"
+        jsonb change_scope_snapshot_json "nullable; immutable additional sources and base agreement"
+        jsonb accepted_amendment_snapshot_json "nullable; immutable acceptance and PO"
+        timestamp_with_time_zone change_roster_finalized_at "nullable"
         timestamp_with_time_zone accepted_at "nullable"
         uuid accepted_by_user_id "nullable"
         jsonb billing_address_snapshot_json "nullable"

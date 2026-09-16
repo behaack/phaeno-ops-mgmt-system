@@ -17,7 +17,7 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 using PSeq.Operations.Commercial.Accounts.Domain;
 
 [Collection(PostgreSqlReferenceCollection.Name)]
-public sealed class WebsiteNotificationPostgresTests
+public sealed partial class WebsiteNotificationPostgresTests
 {
     [PostgreSqlReferenceFact]
     public async Task PublicSignupPersistsRequestedMessagesAndDuplicateCannotTriggerResend()

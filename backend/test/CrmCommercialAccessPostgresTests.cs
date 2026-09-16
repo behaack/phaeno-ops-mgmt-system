@@ -15,7 +15,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 
 [Collection(PostgreSqlReferenceCollection.Name)]
-public sealed class CrmCommercialAccessPostgresTests
+public sealed partial class CrmCommercialAccessPostgresTests
 {
     [PostgreSqlReferenceFact]
     public async Task InvalidImportCommitLeavesPreviewAndBusinessRecordsUnchanged()

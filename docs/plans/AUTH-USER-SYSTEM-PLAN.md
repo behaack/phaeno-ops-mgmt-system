@@ -1,5 +1,13 @@
 # Auth and User System Plan
 
+## September 15, 2026 — Live MFA and role acceptance
+
+ACC-06 is closed for the isolated software scope. The owner privately completed required authenticator enrollment and later signed in with the current authenticator code. The reserved email test code is not valid for the authenticator prompt. Actual local User management and fresh authenticated reads verified pending role intent, acceptance and the approved Operator-to-ScientificReviewer change while retaining ProtocolAdministrator. Session revocation removed the unsaved form; an expired save returned 401 and persisted nothing. The recovered controlled session was signed out after verification. Invitation transport was simulated; no provider settings or authentication rules changed. [Evidence and full step crosswalk](../testing/runs/2026-09-15-final-three-acceptance.md).
+
+## September 15, 2026 — Simulated invitation acceptance and bounce recovery
+
+Continuing approved software acceptance for ACC-01/02, disposable-database tests exercise Contact association, durable invitation delivery through the actual template/dispatcher with a simulated provider, verified-email acceptance, exact Research access, replay, resend/cooldown, revoked/expired/declined links, invalid Department intent and signed hard-bounce/reissue. Company People now disables resend for a hard-bounced invitation and explains reviewed revoke, Contact correction and reissue, matching existing User management behavior. No authentication rules, role definitions, provider settings or shared schema changed. Real recipient delivery, identity-provider enrollment/MFA and final operational acceptance remain separate gates.
+
 ## September 14, 2026 — Intake access continuation
 
 Owner-approved Commercial intake correction: see [Order Management plan](ORDER-MANAGEMENT-PLAN.md#commercial-intake-role-correction--september-14-2026). Existing CommercialOperator plus active Phaeno membership governs pricing and scoped intake reads; administrator read and flag fallback remain distinct. No role grants or identity-provider change.

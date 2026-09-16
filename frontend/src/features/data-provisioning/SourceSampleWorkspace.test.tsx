@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   discardSourceDraft: vi.fn(),
   getSourceSample: vi.fn(),
   markSourceReady: vi.fn(),
+  retrySourceFileScan: vi.fn(),
   navigate: vi.fn(),
   updateSourceSample: vi.fn(),
   uploadSourceFile: vi.fn(),
@@ -31,6 +32,7 @@ vi.mock('#/api/data-provisioning', () => ({
   getApiErrorMessage: (_error: unknown, fallback: string) => fallback,
   getSourceSample: mocks.getSourceSample,
   markSourceReady: mocks.markSourceReady,
+  retrySourceFileScan: mocks.retrySourceFileScan,
   updateSourceSample: mocks.updateSourceSample,
   uploadSourceFile: mocks.uploadSourceFile,
 }))
@@ -41,6 +43,41 @@ describe('SourceSampleWorkspace', () => {
     mocks.getSourceSample.mockResolvedValue(createDraftSource())
     mocks.discardSourceDraft.mockResolvedValue(undefined)
     mocks.navigate.mockResolvedValue(undefined)
+  })
+
+  it.each([
+    { status: 'Draft', scan: 'Pending', visible: true },
+    { status: 'Draft', scan: 'Unavailable', visible: true },
+    { status: 'Draft', scan: 'Rejected', visible: false },
+    { status: 'Draft', scan: 'Clean', visible: false },
+    { status: 'Ready', scan: 'Unavailable', visible: false },
+  ])('limits scan retry to recoverable draft files ($status / $scan)', async ({ status, scan, visible }) => {
+    mocks.getSourceSample.mockResolvedValue({ ...createDraftSource(), status, files: [scanFile(scan)] })
+    renderWorkspace()
+    await screen.findByRole('heading', { name: 'Synthetic source' })
+    expect(Boolean(screen.queryByRole('button', { name: 'Retry scan for test.txt' }))).toBe(visible)
+  })
+
+  it('retries the saved bytes with the reviewed source version and preserves unsaved metadata without silently upgrading its version', async () => {
+    mocks.getSourceSample.mockResolvedValue({ ...createDraftSource(), files: [scanFile('Unavailable')] })
+    mocks.retrySourceFileScan.mockImplementation(async () => {
+      const refreshed = { ...createDraftSource(), version: 8, files: [scanFile('Clean')] }
+      mocks.getSourceSample.mockResolvedValue(refreshed)
+      return refreshed
+    })
+    mocks.updateSourceSample.mockRejectedValue(new Error('concurrency conflict'))
+    renderWorkspace()
+    await screen.findByRole('heading', { name: 'Synthetic source' })
+    fireEvent.change(screen.getByLabelText(/Sample description/), { target: { value: 'Unsaved description' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Retry scan for test.txt' }))
+    await screen.findByText('Clean', { exact: true })
+    expect(mocks.retrySourceFileScan).toHaveBeenCalledWith('source-1', 'file-1', 7)
+    expect(screen.getByLabelText(/Sample description/)).toHaveProperty('value', 'Unsaved description')
+    expect(screen.getByRole('button', { name: 'Mark ready' })).toHaveProperty('disabled', true)
+    expect(screen.getByText('Save your draft changes before marking this source ready.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }))
+    await waitFor(() => expect(mocks.updateSourceSample).toHaveBeenCalledWith('source-1', expect.objectContaining({ description: 'Unsaved description', version: 7 })))
+    expect(screen.getByLabelText(/Sample description/)).toHaveProperty('value', 'Unsaved description')
   })
 
   it('requires a reason and discards the current optimistic draft version', async () => {
@@ -124,6 +161,10 @@ function createDraftSource() {
     updatedAt: '2026-07-14T12:00:00Z',
     version: 7,
   }
+}
+
+function scanFile(scanStatus: string) {
+  return { id: 'file-1', fileName: 'test.txt', fileKind: 'plain_text_fixture', contentType: 'text/plain', sizeBytes: 8, sha256: 'a'.repeat(64), scanStatus, scanMessage: null }
 }
 
 function createPlatformContext(): PhaenoSessionContextValue {

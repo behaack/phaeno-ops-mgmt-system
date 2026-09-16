@@ -74,6 +74,44 @@ describe('Company People and Sales recovery', () => {
     await waitFor(() => expect(api.createInvitation).toHaveBeenCalledWith(expect.objectContaining({ organizationId: 'organization-1', crmContactId: person.contactId, email: person.email, isOrganizationAdmin: true, departments: [{ departmentId: department.id, isDepartmentAdmin: false }] })))
   })
 
+  it('reviews the selected Contact and sends only ordinary Research membership intent', async () => {
+    api.listCrmCompanyPeople.mockResolvedValue([person])
+    api.listDepartments.mockResolvedValue([
+      { id: 'general', name: 'General', isDefault: true, isActive: true },
+      { ...department, isDefault: false },
+    ])
+    mount('organization-1')
+    fireEvent.click(await screen.findByRole('button', { name: 'Invite to Portal' }))
+    const dialog = within(screen.getByRole('dialog'))
+    const recipient = within(await dialog.findByRole('region', { name: 'Recipient' }))
+    expect(recipient.getByText(person.email)).toBeTruthy()
+    fireEvent.click(dialog.getByRole('checkbox', { name: 'General (default)' }))
+    fireEvent.click(dialog.getByRole('checkbox', { name: 'Research' }))
+    expect(dialog.getByRole('checkbox', { name: 'Department administrator for Research' })).toHaveProperty('checked', false)
+    expect(api.createInvitation).not.toHaveBeenCalled()
+    fireEvent.click(dialog.getByRole('button', { name: 'Send invitation' }))
+    await waitFor(() => expect(api.createInvitation).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ organizationId: 'organization-1', crmContactId: person.contactId, email: person.email, isOrganizationAdmin: false, departments: [{ departmentId: department.id, isDepartmentAdmin: false }] })))
+  })
+
+  it('reviews the selected Contact and sends only ordinary Research membership intent', async () => {
+    api.listCrmCompanyPeople.mockResolvedValue([person])
+    api.listDepartments.mockResolvedValue([
+      { id: 'general', name: 'General', isDefault: true, isActive: true },
+      { ...department, isDefault: false },
+    ])
+    mount('organization-1')
+    fireEvent.click(await screen.findByRole('button', { name: 'Invite to Portal' }))
+    const dialog = within(screen.getByRole('dialog'))
+    const recipient = within(await dialog.findByRole('region', { name: 'Recipient' }))
+    expect(recipient.getByText(person.email)).toBeTruthy()
+    fireEvent.click(dialog.getByRole('checkbox', { name: 'General (default)' }))
+    fireEvent.click(dialog.getByRole('checkbox', { name: 'Research' }))
+    expect(dialog.getByRole('checkbox', { name: 'Department administrator for Research' })).toHaveProperty('checked', false)
+    expect(api.createInvitation).not.toHaveBeenCalled()
+    fireEvent.click(dialog.getByRole('button', { name: 'Send invitation' }))
+    await waitFor(() => expect(api.createInvitation).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ organizationId: 'organization-1', crmContactId: person.contactId, email: person.email, isOrganizationAdmin: false, departments: [{ departmentId: department.id, isDepartmentAdmin: false }] })))
+  })
+
   it('announces pending loads and guards association without showing empty collections', () => {
     api.listCompanyContacts.mockReturnValue(new Promise(() => {}))
     api.listCrmCompanyPeople.mockReturnValue(new Promise(() => {}))

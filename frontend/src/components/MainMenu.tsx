@@ -32,7 +32,7 @@ export function MainMenu() {
   )
 
   return (
-    <div className="hidden items-center gap-1 text-sm font-medium md:ml-auto md:flex lg:gap-2">
+    <div className="hidden items-center gap-2 text-sm font-medium lg:ml-auto lg:flex">
       {visibleMenuItems.map((item) => (
         <Link
           key={item.to}

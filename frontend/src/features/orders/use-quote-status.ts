@@ -2,6 +2,7 @@ import { useEffect, useReducer } from 'react'
 import type { Quote } from '#/api/order-management'
 
 export function currentLabQuote(quotes: Quote[]) {
+  quotes = quotes.filter(quote => quote.purpose !== 'Change')
   const current = quotes.filter(quote => quote.status === 'Issued' || quote.status === 'Expired' || quote.status === 'Accepted')
   const candidates = current.length ? current : quotes
   return candidates.reduce<Quote | null>((latest, quote) => !latest || quote.revision > latest.revision ? quote : latest, null)

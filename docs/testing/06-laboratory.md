@@ -75,6 +75,8 @@ For the resumed local walkthrough, use the [TEST ONLY library-preparation protoc
 
 ## LAB-05 — Libraries, scan-first batches and external sequencing custody
 
+**Latest software execution, September 15:** Pass (simulated software scope). See the [ten-case scientific/workflow report](runs/2026-09-15-scientific-ten-software-acceptance.md) for the required-step crosswalk. Earlier checkpoints below remain historical evidence; original real-world acceptance criteria are unchanged.
+
 **Setup:** Completed preparation, source and derived library containers, QC-passed/failed libraries, P-LAB and real or explicitly simulated provider events.
 
 | Step | Action | Expected result |
@@ -89,6 +91,8 @@ For the resumed local walkthrough, use the [TEST ONLY library-preparation protoc
 **Handoff:** Final output from the actual upstream owner must meet approved package contract. Raw ingestion/pipeline orchestration is outside POMS.
 
 ## LAB-06 — Exceptions, independent scientific approval and release candidate
+
+**Latest software execution, September 15:** Pass (simulated software scope). See the [ten-case scientific/workflow report](runs/2026-09-15-scientific-ten-software-acceptance.md) for the required-step crosswalk. Earlier checkpoints below remain historical evidence; original real-world acceptance criteria are unchanged.
 
 **Setup:** Complete lineage/package fixture; P-LAB/P-SUP/P-REVIEW/P-RELEASE; missing-artifact and blocking-exception variants.
 
@@ -160,6 +164,8 @@ another receipt. Mark physical printer/scanner checks Blocked until performed.
 
 
 ## LAB-09 - Specimen tube attempts and reserve fallback
+
+**Latest software execution, September 15:** Pass (simulated software scope). See the [ten-case scientific/workflow report](runs/2026-09-15-scientific-ten-software-acceptance.md) for the required-step crosswalk. Earlier checkpoints below remain historical evidence; original real-world acceptance criteria are unchanged.
 
 Implementation and partial connected acceptance are local. The [September 15 continuation](runs/2026-09-15-lab-attempt-continuation.md) records completed legacy adoption, concurrency, hold/repeat, retirement-gap and draft-recovery checks, plus the remaining policy/replay, Completed historical and independent approval variants. The whole case remains incomplete. Use separate synthetic fixtures and preserve the owner's current HS5Y7DB7 walkthrough. Record exact specimen, tube, workflow, attempt and execution identities, actor/time and expected denial alongside each result.
 

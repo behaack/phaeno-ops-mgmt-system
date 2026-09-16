@@ -1,5 +1,9 @@
 # 09 — Public Website, notifications and Portal help
 
+## Remaining-case review — September 15, 2026
+
+WEB-05 now passes the approved simulated scope: Trial/result notice context and authenticated owning-workspace links are present; retry, privacy and signed-out route protection pass. Inbox/provider acceptance remains separate. [Current crosswalk](runs/2026-09-15-remaining-case-acceptance.md).
+
 Use [shared prerequisites](TEST-DATA.md). Public Website has its own deployment. All submissions use an approved isolated mail sink or explicitly authorized tester-controlled recipient.
 
 ## WEB-01 — Public discovery, navigation, search and documents
@@ -22,7 +26,7 @@ Use [shared prerequisites](TEST-DATA.md). Public Website has its own deployment.
 
 | Step | Action | Expected result |
 | --- | --- | --- |
-| 1 | Open contact/technical-brief form; leave required fields/consent incomplete and submit. | Required legend/associated errors visible; invalid intake not accepted. |
+| 1 | Open contact/technical-brief form; leave required fields incomplete and submit. Separately compare the optional technical-brief checkbox checked and unchecked. | Required legend/associated errors visible; invalid intake not accepted. A valid updates-only signup is allowed; brief intent is created only with explicit opt-in. |
 | 2 | Submit valid consenting request with permitted test data and captcha. | One saved intake with durable email intent; confirmation says queued, not delivered. |
 | 3 | Repeat accepted signup; compare duplicate-email error with unrelated API failure. | Repeated accepted signup does not resend brief; duplicate-specific message only for actual duplicate-email response. |
 | 4 | Submit separate non-binding demo/order inquiry. | Inquiry saved for Web Operations; no commercial order, invoice, service entitlement or Portal user created. |
@@ -59,6 +63,8 @@ Use [shared prerequisites](TEST-DATA.md). Public Website has its own deployment.
 **Cleanup:** Retain safe provider/message references; do not paste full recipient messages or resend to real contacts for testing.
 
 ## WEB-05 — Workflow notices, recipient changes and failed-event recovery
+
+**Latest software execution, September 15:** Fail; named product gap remains. See the [ten-case scientific/workflow report](runs/2026-09-15-scientific-ten-software-acceptance.md) for the required-step crosswalk. Earlier checkpoints below remain historical evidence; original real-world acceptance criteria are unchanged.
 
 **Setup:** Controlled invitation, quote, Trial milestone and release notices; current/removed admin identities; isolated failed delivery.
 

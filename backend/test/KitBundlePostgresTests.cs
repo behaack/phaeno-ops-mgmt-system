@@ -21,7 +21,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 
 [Collection(PostgreSqlReferenceCollection.Name)]
-public sealed class KitBundlePostgresTests
+public sealed partial class KitBundlePostgresTests
 {
     [PostgreSqlReferenceFact]
     public async Task SavedJsonbScopePlacesExactlyOnceAndChangedProfileRollsBackUntilDraftReview()
@@ -294,8 +294,8 @@ public sealed class KitBundlePostgresTests
         public static async Task<Scope> Create()
         {
             var source = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("PSEQ_OPERATIONS_REFERENCE_CONNECTION")!);
-            if (source.Host is not ("localhost" or "127.0.0.1") || source.Database != "phaeno_ops")
-                throw new InvalidOperationException("Kit acceptance requires the configured localhost/phaeno_ops source and a disposable database.");
+            if (source.Host is not ("localhost" or "127.0.0.1") || source.Database is not ("phaeno_ops" or "phaeno_ops_lab06_uat"))
+                throw new InvalidOperationException("Kit acceptance requires a known loopback reference source and a disposable database.");
             var name = "pseq_kit_test_" + Guid.NewGuid().ToString("N");
             var admin = new NpgsqlConnection(source.ConnectionString); await admin.OpenAsync();
             await using (var create = new NpgsqlCommand($"CREATE DATABASE {name}", admin)) await create.ExecuteNonQueryAsync();
@@ -336,9 +336,10 @@ public sealed class KitBundlePostgresTests
             => Attach(new ReagentOrdersController(Db, Context(PartnerIdentity), new(Db)), true, key, department);
         public PlatformReagentOrdersController Platform(string? key = null)
             => Attach(new PlatformReagentOrdersController(Db, Context(StaffIdentity), new(Db)), false, key);
-        public DataAssemblyRequestsController Assembly(string? key = null)
-            => Attach(new DataAssemblyRequestsController(Db, Context(PartnerIdentity), new(Db), null!, null!, Options.Create(new OrderManagementOptions()),
-                null!, new ReleasedDeliverableDownloadProjectionService(Db), NullLogger<CompletionTrackedFileStreamResult>.Instance, NullLogger<CompletionTrackedArchiveResult>.Instance), true, key);
+        public DataAssemblyRequestsController Assembly(string? key = null, IOperationalFileStorage? storage = null, IOperationalFileScanner? scanner = null, ExternalIdentity? identity = null)
+            => Attach(new DataAssemblyRequestsController(Db, Context(identity ?? PartnerIdentity), new(Db), storage!, scanner!, Options.Create(new OrderManagementOptions { AllowedFileKinds = new() { [".fasta"] = "text/plain" } }),
+                new ReleasedDeliverableDownloadAttemptService(Db, Options.Create(new OrderManagementOptions()), NullLogger<ReleasedDeliverableDownloadAttemptService>.Instance),
+                new ReleasedDeliverableDownloadProjectionService(Db), NullLogger<CompletionTrackedFileStreamResult>.Instance, NullLogger<CompletionTrackedArchiveResult>.Instance), true, key);
         public PlatformDataAssemblyRequestsController Scientific(string? key = null)
             => Attach(new PlatformDataAssemblyRequestsController(Db, Context(StaffIdentity), new(Db), null!, null!, Options.Create(new OrderManagementOptions()), ReleaseService()), false, key);
         public ManualCommercialReleaseService ReleaseService() => new(Db, new ReleasedDeliverableRetentionSnapshotService(Db));

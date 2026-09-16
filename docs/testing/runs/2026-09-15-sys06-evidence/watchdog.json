@@ -1,0 +1,8 @@
+{
+  "callerKilled": true,
+  "independentWatchdogTriggered": true,
+  "sameApiContainer": "ff790436d455587442954cf297f94ee14c675a1fc0e3fadc194d53f468ce3aaa",
+  "observationSeconds": 150.1,
+  "falseSuccessAbsent": true,
+  "ownedOrphanHelperCleaned": true
+}

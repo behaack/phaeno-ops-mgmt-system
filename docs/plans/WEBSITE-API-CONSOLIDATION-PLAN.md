@@ -1,5 +1,9 @@
 # Website API consolidation plan
 
+## September 15 simulated Website intake and delivery acceptance
+
+WEB-02/04 pass the continuing approved simulated software scope: public form recovery/duplicates, optional technical-brief opt-in, non-binding inquiry isolation, durable bounded attempts, reviewed recovery and separate simulated provider/inbox evidence. Fifteen backend, thirteen administration component and two Website error checks plus desktop/phone actual-form runs pass. No API contract, product behavior, dependency, provider configuration or deployment change. The acceptance script now explicitly reflects the existing optional brief checkbox. The local configured PDF is three pages; external Mailgun template copy, real inbox receipt and deployed exact-link/PDF identity remain open. [Full WEB-02/04 crosswalk and limits](../testing/runs/2026-09-15-website-intake-recovery-software-acceptance.md).
+
 ## Public search error recovery — September 14, 2026
 
 WEB-01 reproduced an HTTP 503 displayed as no matches on the published Website. The local Search component now gives distinct loading, empty and unavailable states, retains the query, and offers Try again with keyboard focus returned to the input. It rejects failed/malformed envelopes and ignores aborted responses. No API contract or deployment change. The 17-page Website build and connected local/public search, navigation, PDF, phone/no-JavaScript and discovery checks pass. [Exact baseline and acceptance](../testing/runs/2026-09-14-next-ten-uat.md). The public production correction is not deployed.

@@ -6,9 +6,11 @@ using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
-// Customer-safe intake facts only: storage, receipt notes and scientific decisions stay in Lab.
+// Customer-safe intake and final outcome facts only; private evidence stays in Lab.
 public sealed record LabSpecimenIntakeProgress(Guid SubmittedSpecimenId, DateTime ReceivedAtUtc, string? AccessionNumber);
-public sealed record LabIntakeProgress(bool HasPhysicalReceipt, IReadOnlyList<LabSpecimenIntakeProgress> Specimens)
+public sealed record LabSpecimenTerminalProgress(Guid SubmittedSpecimenId, string Outcome);
+public sealed record LabIntakeProgress(bool HasPhysicalReceipt, IReadOnlyList<LabSpecimenIntakeProgress> Specimens,
+    IReadOnlyList<LabSpecimenTerminalProgress>? TerminalOutcomes = null)
 {
     public static async Task<LabIntakeProgress> ReadAsync(PSeqOperationsDbContext db, LabWorkOrder work,
         CancellationToken cancellationToken)
@@ -37,7 +39,21 @@ public sealed record LabIntakeProgress(bool HasPhysicalReceipt, IReadOnlyList<La
             return new LabSpecimenIntakeProgress(specimen.SubmittedSpecimenId, specimen.ReceivedAtUtc!.Value,
                 allAccessioned ? specimen.AccessionNumber : null);
         }).ToArray();
+        var packages = await db.ResultOutputPackages.Where(value => value.LabWorkOrderId == work.Id
+            && value.OrganizationId == work.SubmittingOrganizationId).ToListAsync(cancellationToken);
+        foreach (var entry in db.ChangeTracker.Entries<ResultOutputPackage>())
+            if (entry.Entity.LabWorkOrderId == work.Id && !packages.Any(value => value.Id == entry.Entity.Id)) packages.Add(entry.Entity);
+        var outcomes = work.Specimens.Select(specimen => new LabSpecimenTerminalProgress(specimen.SubmittedSpecimenId,
+            specimen.IntakeDisposition == LabSpecimenIntakeDisposition.OnHold || specimen.ProcessingState == LabSpecimenProcessingState.OnHold ? ""
+            : specimen.IntakeDisposition == LabSpecimenIntakeDisposition.Cancelled ? "Cancelled"
+            : specimen.IntakeDisposition == LabSpecimenIntakeDisposition.Rejected ? "Rejected"
+            : specimen.ProcessingState == LabSpecimenProcessingState.Failed ? "Failed"
+            : specimen.ProcessingState == LabSpecimenProcessingState.Succeeded && packages.Any(package =>
+                (package.LabSampleId ?? package.TrialSampleId) == specimen.SubmittedSpecimenId && package.ScientificApprovalId.HasValue
+                && package.State is ResultOutputPackageState.ReadyForRelease
+                    or ResultOutputPackageState.Released) ? "Completed" : ""))
+            .Where(value => value.Outcome.Length > 0).ToArray();
         return new(specimens.Length > 0 || shipments.Any(item => !item.IsPackingPool
-            && (item.DeliveredAt.HasValue || item.ReceivedAt.HasValue)), specimens);
+            && (item.DeliveredAt.HasValue || item.ReceivedAt.HasValue)), specimens, outcomes);
     }
 }

@@ -276,7 +276,8 @@ public sealed class PSeqResultReleaseController(
     OrderRequestContext requestContext,
     IOptions<PSeqOrderToCashOptions> options,
     ReleasedDeliverableRetentionSnapshotService retentionSnapshots,
-    GovernedResultRetentionService retentionService) : ControllerBase
+    GovernedResultRetentionService retentionService,
+    IOptions<InvitationOptions>? invitations = null) : ControllerBase
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -379,13 +380,14 @@ public sealed class PSeqResultReleaseController(
         dbContext.ResultDeliveryEvidence.Add(new ResultDeliveryEvidence(package.Id, null,
             ResultDeliveryEvidenceKind.Notification, actor.Id, now,
             JsonSerializer.Serialize(new { status = "queued", paymentGateApplied = false }, JsonOptions)));
-        var departmentId = await dbContext.LabServiceOrders.AsNoTracking()
+        var orderContext = await dbContext.LabServiceOrders.AsNoTracking()
             .Where(order => order.Id == package.LabServiceOrderId)
-            .Select(order => order.DepartmentId)
+            .Select(order => new { order.DepartmentId, order.OrderNumber })
             .SingleAsync(cancellationToken);
         dbContext.OrderNotifications.Add(new OrderNotification(package.OrganizationId, null,
             OrderWorkflowTypes.LabService, package.LabServiceOrderId!.Value, "pseq-result-released",
-            "PSeq result available", "A scientifically approved PSeq result package is available for download.", departmentId));
+            "PSeq result available", $"A scientifically approved PSeq result package is available for Job {orderContext.OrderNumber}. "
+                + $"Open the Job in the Portal:\n{(invitations?.Value ?? new InvitationOptions()).PublicBaseUrl.TrimEnd('/')}/lab-services/{package.LabServiceOrderId.Value}", orderContext.DepartmentId));
         await dbContext.SaveChangesAsync(cancellationToken);
         return await Get(package.Id, cancellationToken);
     }

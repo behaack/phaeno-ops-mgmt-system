@@ -1,5 +1,9 @@
 # 04 — Lab orders and sample shipping
 
+## Remaining-case review — September 15, 2026
+
+ORD-06 now passes the approved simulated scope after selected partial cancellation was implemented and verified. ORD-03 now passes the simulated software scope: the immutable additional-scope quote, separate Customer decision and new-work gates are implemented and verified. See the [final-three crosswalk](runs/2026-09-15-final-three-acceptance.md). [Current crosswalk](runs/2026-09-15-remaining-case-acceptance.md). Historical checkpoints below remain evidence of their recorded date.
+
 Use [shared prerequisites](TEST-DATA.md). Run standard placement for both Customer and entitled Partner; manual sales-assisted intake currently selects Customers.
 
 ## ORD-01 — Staged readiness and versioned configuration
@@ -90,6 +94,8 @@ Use [shared prerequisites](TEST-DATA.md). Run standard placement for both Custom
 
 ## ORD-06 — Custom work, sales-assisted intake, timing and cancellation
 
+**Latest software execution, September 15:** Fail; named product gap remains. See the [ten-case scientific/workflow report](runs/2026-09-15-scientific-ten-software-acceptance.md) for the required-step crosswalk. Earlier checkpoints below remain historical evidence; original real-world acceptance criteria are unchanged.
+
 **Setup:** Separate custom request, known Customer Opportunity, accepted Job and unaccepted draft; P-PRICE, C-ADMIN, Lab operator.
 
 | Step | Action | Expected result |
@@ -103,6 +109,8 @@ Use [shared prerequisites](TEST-DATA.md). Run standard placement for both Custom
 **Cleanup:** Close disposable drafts; retain accepted-order and notice evidence.
 
 ## ORD-07 — Customer laboratory stages and mixed sample progress
+
+**Latest software execution, September 15:** Pass (simulated software scope). See the [ten-case scientific/workflow report](runs/2026-09-15-scientific-ten-software-acceptance.md) for the required-step crosswalk. Earlier checkpoints below remain historical evidence; original real-world acceptance criteria are unchanged.
 
 **Execution status:** Not run as a complete manual case. The [local checkpoint](runs/2026-09-10-customer-laboratory-stages.md) covers a Customer desktop Received view only; unit/database fixtures do not pass the remaining connected journey.
 

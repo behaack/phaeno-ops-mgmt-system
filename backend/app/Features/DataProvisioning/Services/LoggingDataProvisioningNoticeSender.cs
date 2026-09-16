@@ -10,10 +10,8 @@ public sealed class LoggingDataProvisioningNoticeSender(
         DataProvisioningNoticeMessage message,
         CancellationToken cancellationToken)
     {
-        logger.LogInformation(
-            "Data-provisioning administrator notice for {Email}: {Subject}",
-            message.Email,
-            message.Subject);
-        return Task.CompletedTask;
+        cancellationToken.ThrowIfCancellationRequested();
+        logger.LogWarning("Data-provisioning email delivery is not configured; the notice remains available for recovery.");
+        return Task.FromException(new InvalidOperationException("Data-provisioning email delivery is not configured."));
     }
 }

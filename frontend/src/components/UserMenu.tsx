@@ -166,7 +166,7 @@ export function UserMenu() {
           </>
         ) : null}
 
-        <div className="md:hidden">
+        <div className="lg:hidden">
           <DropdownMenuSeparator className="mx-1 my-2" />
           <DropdownMenuGroup>
             <DropdownMenuLabel className="px-3 pb-2">Workspace</DropdownMenuLabel>

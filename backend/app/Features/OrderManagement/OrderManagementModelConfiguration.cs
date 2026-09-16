@@ -846,6 +846,8 @@ public static class OrderManagementModelConfiguration
             EnumText(entity.Property(e => e.Purpose));
             EnumText(entity.Property(e => e.Status));
             Json(entity.Property(e => e.LinesJson));
+            Json(entity.Property(e => e.ChangeScopeSnapshotJson), false);
+            Json(entity.Property(e => e.AcceptedAmendmentSnapshotJson), false);
             Money(entity.Property(e => e.Subtotal)); Money(entity.Property(e => e.Tax)); Money(entity.Property(e => e.Total));
             Text(entity.Property(e => e.Currency), 3);
             Json(entity.Property(e => e.BillingContactSnapshotJson), false);

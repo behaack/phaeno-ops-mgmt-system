@@ -31,6 +31,24 @@ public static class CommercialLabIntakeProgressService
             changed = true;
             AddEvent(sample.Id, sampleBefore.ToString(), sample.Status.ToString());
         }
+        foreach (var fact in intake.TerminalOutcomes ?? [])
+        {
+            var sample = order.Samples.SingleOrDefault(item => item.Id == fact.SubmittedSpecimenId)
+                ?? throw new InvalidOperationException("The Lab outcome contains a specimen outside its authorized order.");
+            var outcome = fact.Outcome switch
+            {
+                "Completed" => LabSampleStatus.Completed,
+                "Failed" => LabSampleStatus.Failed,
+                "Rejected" => LabSampleStatus.Rejected,
+                "Cancelled" => LabSampleStatus.Cancelled,
+                _ => throw new InvalidOperationException("The Lab outcome is not a recognized final outcome.")
+            };
+            var sampleBefore = sample.Status;
+            if (!sample.ApplyLaboratoryOutcome(outcome, outcome == LabSampleStatus.Failed
+                ? "Laboratory processing ended without a successful result." : null)) continue;
+            changed = true;
+            AddEvent(sample.Id, sampleBefore.ToString(), sample.Status.ToString());
+        }
         if (changed) db.Entry(order).Property(item => item.Version).IsModified = true;
 
         void AddEvent(Guid? sampleId, string from, string to) => db.OrderStatusEvents.Add(new OrderStatusEvent(

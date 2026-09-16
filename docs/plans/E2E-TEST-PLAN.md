@@ -1,5 +1,65 @@
 # Playwright E2E Test Plan
 
+## Final Change-quote acceptance - September 15, 2026
+
+`e2e/change-quotes.spec.ts` passes four scenarios: 320/1440 pixels, each light/dark. It exercises real form issuance and acceptance with explicitly intercepted APIs, required PO/affirmation, keyboard checkbox interaction, request bodies, axe and horizontal reflow. Phone screenshots were visually inspected. These form fixtures complement actual PostgreSQL controller journeys; they do not claim production or scientific acceptance. [Final-three evidence](../testing/runs/2026-09-15-final-three-acceptance.md).
+
+## Final-three live acceptance — September 15, 2026
+
+ACC-06 closes for isolated software scope: real private authenticator enrollment and sign-in, actual invitation/role administration, fresh capability reads, controlled session revocation, expired draft POST returning 401 with zero persisted rows, and an empty form after reauthentication. The final controlled session was signed out. Email delivery used the local test transport; this is not production delivery acceptance. No automated browser suite was rerun for this continuation. [Complete crosswalk and remaining ORD-03/SYS-06 gaps](../testing/runs/2026-09-15-final-three-acceptance.md). This supersedes the earlier MFA/browser prerequisites below.
+
+## Remaining-case review — September 15, 2026
+
+Five remaining-acceptance browser scenarios pass: cancellation/completion at 320/1440 pixels in both themes with keyboard/draft recovery, no overflow and axe checks, plus fresh signed-out root/Job/Trial destinations. Form API writes are intercepted. Actual provider MFA and independent recovery remain blocked. [Evidence](../testing/runs/2026-09-15-remaining-case-acceptance.md).
+
+## September 15 scientific and workflow acceptance
+
+Two new scenarios in bundled-orders.spec.ts render actual Customer/Partner Job pages with three samples and partial output. Numerical ordering, Enter/Space disclosures, 320/375/1440 widths, both themes, 200% CSS scaling, page overflow and accessibility pass. The final 16-check run includes Trial result/history/handoff and protocol evidence/recovery. APIs are explicitly simulated, not connected sign-in/provider acceptance. [Evidence](../testing/runs/2026-09-15-scientific-ten-software-acceptance.md).
+
+## September 15 ten-case shipping and accession acceptance
+
+The existing shipping print fixture now includes application chrome and checks the approved paged manifest (16 then four tube graphics), hidden chrome, white print background and exactly one receiving PDF page on Letter/A4 in light/dark. Three Chromium print tests pass, including stock-kit and laboratory label regression. Separate real Customer/fulfillment/member sessions verify two unchanged packets, 390x480 layouts, 13-request paging/return and staff-queue denial. Independent PDF page counts and visual inspection pass. Raster QR decoding and actual printer/scanner acceptance remain open. [Complete case crosswalk and limits](../testing/runs/2026-09-15-shipping-ten-software-acceptance.md).
+
+## September 15 session and role acceptance continuation
+
+ACC-06 gained 17 passing backend and seven passing component checks for session/privacy, pending and edited roles, denied persistence and observed draft behavior. No browser/E2E run occurred. Required live root/deep-link, private MFA enrollment, controlled session expiry and administration role screens remain explicitly open; no whole-case pass was added. [Exact continuation and evidence](../testing/runs/2026-09-15-session-role-acceptance.md).
+
+## September 15 simulated account lifecycle acceptance
+
+ACC-05 uses actual backend lifecycle endpoints in disposable PostgreSQL databases and actual React components with mocked API responses. The 23 backend and 14 component checks cover preserved history, access suspension/restoration, membership isolation, reviewed consequences/cancellation and employee self-protection. No live browser/E2E run, identity-provider operation or deployed rendering acceptance is claimed. [ACC-05 crosswalk and remaining gates](../testing/runs/2026-09-15-account-lifecycle-software-acceptance.md).
+
+## September 15 simulated invitation acceptance and recovery
+
+ACC-01/02 use the approved simulated acceptance boundary in this continuation: actual backend journeys in disposable PostgreSQL databases plus actual React components with mocked identity/API transport. No full browser/E2E suite was run and no screenshots or live multi-profile/MFA/inbox evidence are inferred. Company People review, fixed recipient, Research intent, explicit acceptance/session reload and failure/recovery states are covered by the 39 component checks; live provider/recipient and deployed rendering remain open. [ACC-01/02 crosswalk, results and limits](../testing/runs/2026-09-15-invitation-software-acceptance.md).
+
+## September 15 simulated Website intake and delivery acceptance
+
+The bounded `tmp/uat-closure-identities/web-intake-simulated.mjs` harness waits for actual Astro form hydration, intercepts every form write/CAPTCHA transport, and checks required fields, request/captcha failures, retained entries, corrected retry, duplicate-specific errors, optional brief opt-in and non-binding demo confirmation at 1440/390 pixels. It follows the exact captured sender document URL through a local-only interception, verifying the same-path PDF's content type/signature, 292,851 bytes and hash. All three PDF pages were visually inspected. The rendered receipt is explicitly simulated; actual Mailgun template/inbox and deployed link remain open. Two browser runs pass with no tested-form automated WCAG violations/overflow. No standard E2E suite or production Website source changed. [Full WEB-02/04 crosswalk and limits](../testing/runs/2026-09-15-website-intake-recovery-software-acceptance.md).
+
+## September 15 approved simulated Kit batch
+
+The existing authenticated local harness exercises actual `/reagent-orders/:id` and `/data-assembly/:id/edit`/detail routes with intercepted, visibly simulated responses at 1440/light and 390/dark. It verifies two independent cases, frozen profile/output controls, one retained upload after interruption, the saved-draft link, retry with the same remaining-file key and one submission containing both files. It checks no page overflow, keyboard focus for the fulfillment scroll region and zero automated WCAG violations on recovery screens. This is actual-route simulated-data evidence, not a real shipment/scanner/approval/provider journey. No standard E2E suite was rerun or changed. [Run and screenshots](../testing/runs/2026-09-15-kit-batch-software-acceptance.md).
+
+## September 15 approved simulated seven-case completion
+
+The Product Owner approved simulated evidence for DAT-03–06, ACC-04, SYS-03 and WEB-03. The actual Portal receipt route rendered simulated retained-release data at 1440/light and 390/dark, preserved member history privacy and full manifest/checksum text, and produced print PDFs. This uses the current React route with intercepted API data, not the static receipt HTML fixture. Backend and component evidence plus retained connected steps close the seven for software testing; real scientific/provider, received attestation and Google reCAPTCHA acceptance remain open. [Full crosswalk](../testing/runs/2026-09-15-seven-case-software-acceptance.md).
+
+## September 15 connected files, grants and recovery
+
+Signed-in UI/API/database crosswalk closes DAT-01, DAT-02 and SYS-02 using real managed files, ClamAV, three scoped external audiences, Company setup/lifecycle, source scan retry and actual failed durable CRM projection. Governance lifecycle, investigation checks and Web Operations administration/control/failed attempts also ran. These are resumable connected acceptance scripts under ignored local evidence, not mocked-suite passes. DAT-03 external attestation, WEB-03 configured public intake, and the five operational-release-dependent cases remain blocked. See [full ten-case report](../testing/runs/2026-09-15-files-access-ten-case-batch.md).
+
+Continuation verifies SYS-03 current-scope replay and saved Department draft return (steps 4–5), refreshes ACC-04 operational record/denied-edit readback and cross-references existing purchase-role evidence, and verifies DAT-05 invalid policy requests preserve the complete revision history. No new broad suite or duplicate purchase was run. Operational file/stream, approved release, external attestation and public reCAPTCHA prerequisites remain open; total remains 39/81.
+
+## September 15 connected completion control
+
+The isolated signed-in Commercial Operator sees Complete Job and cannot confirm the retained empty-roster billing fixture; P-ADMIN without CommercialOperator cannot see the action. Existing Job readback is unchanged and no business write was attempted. Dialog screenshots at 1440/390/320 px in both themes show no page overflow, and Escape closes the dialog. This is a manual connected check, not successful FIN-01 issuance. [Evidence](../testing/runs/2026-09-15-job-completion-control.md).
+
+## SYS-05 connected interface acceptance — September 15, 2026
+
+The [SYS-05 run](../testing/runs/2026-09-15-system-ui-uat.md) records twelve connected representative surfaces, desktop/tablet/phone/320-pixel reflow, light/dark, keyboard draft recovery, failed-save/no-results distinctions and native 200%/400% zoom. The new tablet navigation regression checks 768 and 1024 pixels, one visible navigation location, no page overflow and focus return in both browser projects. It waits for the hydrated application before keyboard activation.
+
+Four invitation and four navigation desktop/mobile checks pass. Invitation regressions now submit an invalid Department selection and verify focus plus zero requests before supplying valid access. The old disabled-submit policy discrepancy is resolved. These mocked browser checks support the separately journaled connected evidence; they do not establish invitation delivery or physical/scientific acceptance.
+
 September 14 ten-case connected UAT uses the actual scoped Customer, Partner and Prospect accounts with journaled writes and controlled lost responses. It reproduced Department reset on refresh, Trial lifecycle routing 404 and zero-tube roster HTTP 500. Focused regressions reproduce each defect; live retests use the isolated corrected API. No broad mocked suite substitutes for case coverage. See ../testing/runs/2026-09-14-ten-case-execution.md.
 
 ## Guided evidence and retirement closure — September 14, 2026

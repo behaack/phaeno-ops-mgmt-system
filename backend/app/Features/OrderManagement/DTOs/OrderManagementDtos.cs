@@ -144,7 +144,8 @@ public sealed record QuoteDto(
     string? PricingDecision = null,
     Guid? PricingDecidedByUserId = null,
     DateTime? PricingDecidedAt = null,
-    QuoteExtensionRequestDto? ExtensionRequest = null);
+    QuoteExtensionRequestDto? ExtensionRequest = null,
+    string? ChangeScopeSnapshotJson = null, string? AcceptedAmendmentSnapshotJson = null);
 
 public sealed record LabSampleDto(
     Guid Id,
@@ -289,7 +290,8 @@ public sealed record LabServiceOrderDto(
     bool CanRequestQuoteExtension = false,
     bool CanManageQuotes = false,
     string? QuoteAcceptanceBlockedReason = null,
-    LabCustomerProgress? LaboratoryProgress = null, string? TubeUsePolicyKey = null, int? TubeUsePolicyVersion = null);
+    LabCustomerProgress? LaboratoryProgress = null, string? TubeUsePolicyKey = null, int? TubeUsePolicyVersion = null,
+    IReadOnlyList<Guid>? AuthorizedSampleIds = null, bool CanProposeChange = false);
 
 public sealed record ReagentOrderLineDto(
     Guid Id,
@@ -576,7 +578,8 @@ public sealed record FinalizeLabSampleRosterRequest(long Version,
 public sealed record ReasonRequest(long Version, string Reason, string? InternalNote = null);
 public sealed record CancellationRequestBody(long Version, string Reason, string ScopeJson = "{}");
 public sealed record CancellationLineDecisionRequest(Guid OrderLineId, decimal Quantity);
-public sealed record CancellationDecisionRequest(long Version, string Status, string Reason, IReadOnlyList<CancellationLineDecisionRequest>? Lines = null);
+public sealed record CancellationDecisionRequest(long Version, string Status, string Reason,
+    IReadOnlyList<CancellationLineDecisionRequest>? Lines = null, IReadOnlyList<Guid>? SampleIds = null);
 public sealed record OperationalAssignmentRequest(long Version, bool AssignToMe, DateTime? DueAt);
 public sealed record OperationalAssignmentDto(string Workflow, Guid RecordId, Guid? AssignedToUserId, DateTime? DueAt, long Version);
 
@@ -651,7 +654,8 @@ public sealed record LabSampleReceiptRequest(long Version, DateTime ReceivedAt, 
 public sealed record LabSampleAccessionRequest(long Version, string AccessionId);
 public sealed record LabSampleTransitionRequest(long Version, string Status, string? Reason, string? InternalNote);
 public sealed record QuoteLineRequest(Guid CatalogItemId, string Description, decimal Quantity, decimal UnitPrice);
-public sealed record IssueQuoteRequest(long Version, IReadOnlyList<QuoteLineRequest> Lines, decimal Tax, string Currency, DateTime? ExpiresAt, string Purpose = "Initial", string? PricingDecisionReason = null, Guid? SourceQuoteId = null);
+public sealed record IssueQuoteRequest(long Version, IReadOnlyList<QuoteLineRequest> Lines, decimal Tax, string Currency, DateTime? ExpiresAt, string Purpose = "Initial", string? PricingDecisionReason = null, Guid? SourceQuoteId = null,
+    IReadOnlyList<LabChangeSource>? AdditionalSources = null);
 public sealed record QuoteExtensionRequestBody(long Version, string? Reason = null);
 public sealed record AcceptQuoteRequest(long Version, Guid QuoteId, string? PurchaseOrderNumber = null);
 
@@ -757,7 +761,8 @@ public static class OrderManagementMappings
         quote.PricingDecidedByUserId, quote.PricingDecidedAt,
         extensionRequest is null ? null : new QuoteExtensionRequestDto(extensionRequest.Id,
             extensionRequest.QuoteId, extensionRequest.ResolvedAt.HasValue ? "Resolved" : "Pending",
-            extensionRequest.Reason, extensionRequest.RequestedAt, extensionRequest.ResolvedAt, extensionRequest.ReplacementQuoteId));
+            extensionRequest.Reason, extensionRequest.RequestedAt, extensionRequest.ResolvedAt, extensionRequest.ReplacementQuoteId),
+        quote.ChangeScopeSnapshotJson, quote.AcceptedAmendmentSnapshotJson);
 
     public static QuoteDto ToDto(this DataAssemblyQuote quote) => new(
         quote.Id, quote.Revision, quote.Purpose.ToString(), quote.Status.ToString(), quote.LinesJson,

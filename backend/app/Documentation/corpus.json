@@ -143,7 +143,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-14",
+      "reviewedAt": "2026-09-15",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -168,7 +168,7 @@
       "publicationStatus": "published",
       "id": "customer/en-US/account-and-access",
       "route": "/docs/customer/account-and-access",
-      "contentHash": "62748aad53a4d6617de577a21d5cd6654e13bfba251c0e49b7087efa250fb485",
+      "contentHash": "1859dfb277a21f41b267837a5e5ee10f52523e4e631a8b47cd2fb75c7cd9fd75",
       "sections": [
         {
           "heading": "Account and access",
@@ -208,7 +208,7 @@
         {
           "heading": "Manage Customer members",
           "anchor": "manage-customer-members",
-          "text": "Customer organization administrators manage membership only for their current organization. In User management, active members and invited people appear in one list. A Pending invitation status means the invitation has not been accepted and the offered access is not active. The person may already have a sign-in account. Use the card’s actions menu to resend or revoke that invitation, edit an active member’s organization role, or deactivate another member’s membership. An administrator cannot deactivate their own membership from User management. Enter the person’s first name, last name, and exact sign-in email, but never copy or request an invitation token. A deactivated membership is restored only through a fresh invitation and acceptance. Contact Phaeno for a globally disabled account or an action the organization administrator cannot complete."
+          "text": "Customer organization administrators manage membership only for their current organization. In User management, active members and invited people appear in one list. A Pending invitation status means the invitation has not been accepted and the offered access is not active. The person may already have a sign-in account. Use the card’s actions menu to resend or revoke that invitation, edit an active member’s organization role, or deactivate another member’s membership. An administrator cannot deactivate their own membership from User management. Enter the person’s first name, last name, and exact sign-in email, but never copy or request an invitation token. A deactivated membership is restored only through a fresh invitation and acceptance. Contact Phaeno for a globally disabled account or an action the organization administrator cannot complete. For a Member invitation, select at least one Department. If you clear all Departments and select Send invitation, the form returns focus to Department access and explains what to select. Your entries are retained and no invitation is sent until the required information is valid."
         },
         {
           "heading": "Resolve common access states",
@@ -388,12 +388,17 @@
       "publicationStatus": "published",
       "id": "customer/en-US/lab-services",
       "route": "/docs/customer/lab-services",
-      "contentHash": "8356c14981b481903fac773bb7a7d1ead02102547828279f8a98dd52f5f95c3e",
+      "contentHash": "734a2e086126f3cd7f89b036251d6187d56c313b6c70a592578a7a3879853c98",
       "sections": [
         {
           "heading": "Request laboratory services",
           "anchor": "request-laboratory-services",
           "text": "Use Lab services within the selected Department to describe and price a Job before entering its exact sample list. Organization and Department administrators may prepare a Job. Only an organization administrator may place a configured standard order; existing Department authority for manual quote workflows remains available."
+        },
+        {
+          "heading": "Additional samples after acceptance",
+          "anchor": "additional-samples-after-acceptance",
+          "text": "Phaeno can issue a separate Change quote for additional samples on an active accepted Job. Review the added source counts, incremental charge, tax status and expiry. An organization administrator can Review and accept addition, enter a required purchase order number and affirm the exact scope and price, or Decline addition. The original agreement and existing laboratory work remain in effect. Expired or superseded proposals cannot be accepted. Acceptance opens sample entry for the additional counts. Previously authorized samples remain locked. Add the new samples individually, then review and finalize the full list; only new samples receive additional laboratory and shipping authorization. If laboratory review is required, no partial authorization is saved. Completion bills the original accepted quote plus accepted additions; declining a proposal does not cancel the Job."
         },
         {
           "heading": "Follow the Job workspace",
@@ -708,7 +713,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-14",
+      "reviewedAt": "2026-09-15",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -733,7 +738,7 @@
       "publicationStatus": "published",
       "id": "partner/en-US/account-and-access",
       "route": "/docs/partner/account-and-access",
-      "contentHash": "f88a6ee846b52a9c317e57a50b607da9f692f73eea12f54904d9911f6dbee4ef",
+      "contentHash": "f074d555a198eb3aac98840d3b1183c67334c154ef0130046292f25ebfa86ea5",
       "sections": [
         {
           "heading": "Account and access",
@@ -773,7 +778,7 @@
         {
           "heading": "Manage Partner members",
           "anchor": "manage-partner-members",
-          "text": "Partner organization administrators manage membership only for their current organization. In User management, active members and invited people appear in one list. A Pending invitation status means the invitation has not been accepted and the offered access is not active. The person may already have a sign-in account. Use the card’s actions menu to resend or revoke that invitation, edit an active member’s organization role, or deactivate another member’s membership. An administrator cannot deactivate their own membership from User management. Enter the person’s first name, last name, and exact sign-in email, but never copy or request an invitation token. A deactivated membership is restored only through a fresh invitation and acceptance. Contact Phaeno for a globally disabled account or an action the organization administrator cannot complete."
+          "text": "Partner organization administrators manage membership only for their current organization. In User management, active members and invited people appear in one list. A Pending invitation status means the invitation has not been accepted and the offered access is not active. The person may already have a sign-in account. Use the card’s actions menu to resend or revoke that invitation, edit an active member’s organization role, or deactivate another member’s membership. An administrator cannot deactivate their own membership from User management. Enter the person’s first name, last name, and exact sign-in email, but never copy or request an invitation token. A deactivated membership is restored only through a fresh invitation and acceptance. Contact Phaeno for a globally disabled account or an action the organization administrator cannot complete. For a Member invitation, select at least one Department. If you clear all Departments and select Send invitation, the form returns focus to Department access and explains what to select. Your entries are retained and no invitation is sent until the required information is valid."
         },
         {
           "heading": "Resolve common access states",
@@ -847,7 +852,7 @@
       "title": "Prepare included Assembly",
       "summary": "Prepare a purchased Kit case, correct inputs and download governed outputs without another purchase.",
       "order": 40,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-15",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [
@@ -869,7 +874,7 @@
       "publicationStatus": "published",
       "id": "partner/en-US/data-assembly",
       "route": "/docs/partner/data-assembly",
-      "contentHash": "0b6ab74fd52c1101a2e8b0b709413ae0f86dacedfaa01b6b0312f32d5ce232dd",
+      "contentHash": "59d7e053bbfd9b2466c27c18e3d253f1533cd12401e623b0c1acd1f96573fb32",
       "sections": [
         {
           "heading": "Included assembly inputs and outputs",
@@ -879,7 +884,7 @@
         {
           "heading": "Prepare an included case",
           "anchor": "prepare-an-included-case",
-          "text": "Open PSeq Kit orders, select the order, and find Included assembly cases. After the kit is shipped, select Prepare inputs on the intended case. Check its kit label, lot and submission deadline. Enter the Partner project or reference and required metadata. Review the read-only included profile and outputs. These are frozen from purchase and cannot be replaced with another catalog profile. Choose allowed input files within the displayed per-file and total limits, and confirm the prohibited-data statement. Select Save draft or Submit for intake validation. Files must complete managed upload and clean-scan checks before submission. Do not include patient identifiers, PHI or unnecessary personal data. Assembly cases is a list of included cases and retained historical requests; new standalone assembly purchases are not created from that list."
+          "text": "Open PSeq Kit orders, select the order, and find Included assembly cases. After the kit is shipped, select Prepare inputs on the intended case. Check its kit label, lot and submission deadline. Enter the Partner project or reference and required metadata. Review the read-only included profile and outputs. These are frozen from purchase and cannot be replaced with another catalog profile. Choose allowed input files within the displayed per-file and total limits, and confirm the prohibited-data statement. Select Save draft or Submit for intake validation. Files must complete managed upload and clean-scan checks before submission. Do not include patient identifiers, PHI or unnecessary personal data. Assembly cases is a list of included cases and retained historical requests; new standalone assembly purchases are not created from that list. If the Assembly cases list is empty, select Open PSeq Kit orders to find the included case. Prepare inputs becomes available after its kit is shipped."
         },
         {
           "heading": "Submit and correct",
@@ -1016,12 +1021,17 @@
       "publicationStatus": "published",
       "id": "partner/en-US/lab-services",
       "route": "/docs/partner/lab-services",
-      "contentHash": "514b3662689f6ad1d9fcb4cc602e6cc5c38a62b39c783458c98771010324bd9b",
+      "contentHash": "0b507506de72f427551b96496d60045dd30db3fbdf288c0c3bfc117c4b322c8f",
       "sections": [
         {
           "heading": "Use Partner Lab services",
           "anchor": "use-partner-lab-services",
-          "text": "When Phaeno records the first container's arrival, the Job shows Received. Individual sample receipt follows verification of actual tubes. A sample shows Accessioned after all its expected tubes across shipments have been accessioned. Partial receipt remains visible while other tubes are outstanding. Receipt does not mean scientific acceptance or analysis has begun. The Job list and header show recorded laboratory progress: Received → Library Prep → Sequencing → Data Assembly → Quality Review → Results Available. In After you send, each stage shows the number of samples currently at that stage. Choose View sample stages to review individual samples. These are current counts, not completion checkmarks; a partial release does not make the whole Job complete. When activity is recorded for the whole Job before individual samples are updated, the page explains that distinction. The Order status filter continues to find commercial stages such as In Progress, On Hold, or Completed. Sequencing requires recorded sequencing activity; shipping to the sequencing provider alone is insufficient. Quality Review includes scientific review and approved results awaiting release. Results Available requires an actual release. Holds, cancellation requests, and completed or cancelled orders retain their visible status. Use Lab services within the selected Department to describe and price a Job before entering its exact sample list. Organization and Department administrators may prepare a Job. Only an organization administrator may place a configured standard order; existing Department authority for manual quote workflows remains available."
+          "text": ""
+        },
+        {
+          "heading": "Additional samples after acceptance",
+          "anchor": "additional-samples-after-acceptance",
+          "text": "Phaeno can issue a separate Change quote for additional samples on an active accepted Job. An organization administrator reviews the added source counts, incremental charge, tax status and expiry, then accepts with any required purchase order number or declines the addition. The original agreement and existing work remain in effect. Expired or superseded proposals cannot be accepted. After acceptance, add the new samples individually and finalize the list. Previously authorized samples stay locked; only new samples receive additional laboratory and shipping authorization. Laboratory review may block unsafe additions without saving partial work. Completion includes accepted additions in the Job's invoice; declining the proposal does not cancel the Job. When Phaeno records the first container's arrival, the Job shows Received. Individual sample receipt follows verification of actual tubes. A sample shows Accessioned after all its expected tubes across shipments have been accessioned. Partial receipt remains visible while other tubes are outstanding. Receipt does not mean scientific acceptance or analysis has begun. The Job list and header show recorded laboratory progress: Received → Library Prep → Sequencing → Data Assembly → Quality Review → Results Available. In After you send, each stage shows the number of samples currently at that stage. Choose View sample stages to review individual samples. These are current counts, not completion checkmarks; a partial release does not make the whole Job complete. When activity is recorded for the whole Job before individual samples are updated, the page explains that distinction. The Order status filter continues to find commercial stages such as In Progress, On Hold, or Completed. Sequencing requires recorded sequencing activity; shipping to the sequencing provider alone is insufficient. Quality Review includes scientific review and approved results awaiting release. Results Available requires an actual release. Holds, cancellation requests, and completed or cancelled orders retain their visible status. Use Lab services within the selected Department to describe and price a Job before entering its exact sample list. Organization and Department administrators may prepare a Job. Only an organization administrator may place a configured standard order; existing Department authority for manual quote workflows remains available."
         },
         {
           "heading": "Follow the Job workspace",
@@ -1938,7 +1948,7 @@
       "title": "Governance and recovery",
       "summary": "Quarantine unsafe content, investigate with purpose, close out incidents, and retry safely.",
       "order": 34,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-15",
       "navigationGroup": "data-provisioning",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1968,7 +1978,7 @@
       "publicationStatus": "published",
       "id": "phaeno/data-governance-recovery",
       "route": "/docs/phaeno/data-governance-recovery",
-      "contentHash": "3bc328c80a1eca5ab5779ac5f91b26e7d48c633a8f87518e1c2e12d8f4a198af",
+      "contentHash": "5984da66260997056373296b282472a93b1579428e909277fc2ccb666e54b8f1",
       "sections": [
         {
           "heading": "Governance and recovery",
@@ -1993,7 +2003,7 @@
         {
           "heading": "Review notice delivery",
           "anchor": "review-notice-delivery",
-          "text": "Grant notices use current active organization and department access when dispatched. A revoked or superseded grant may still require a notice. Deactivated users, memberships, and department-admin assignments are excluded. Organization-wide notices go to organization administrators. Quarantine, clearance, withdrawal, and attestation reminders continue to reach current active organization administrators for affected organizations during suspension, because instructions may apply to copies already held. This does not restore Portal or download access. If no eligible administrator remains, arrange follow-up and record any externally received attestation with its evidence source. A notice with no eligible recipients remains failed and eligible for retry under the normal retry limits. Review current administrator assignments and the applicable organization or department status before retrying. A successful delivery state records sender acceptance; confirm the recipient's response separately."
+          "text": "Grant notices use current active organization and department access when dispatched. A revoked or superseded grant may still require a notice. Deactivated users, memberships, and department-admin assignments are excluded. Organization-wide notices go to organization administrators. Quarantine, clearance, withdrawal, and attestation reminders continue to reach current active organization administrators for affected organizations during suspension, because instructions may apply to copies already held. This does not restore Portal or download access. If no eligible administrator remains, arrange follow-up and record any externally received attestation with its evidence source. A notice with no eligible recipients or an unconfigured email sender remains failed and eligible for retry under the normal retry limits. Review current administrator assignments, the applicable organization or department status, and sender configuration before retrying. A successful delivery state records sender acceptance; confirm the recipient's response separately."
         },
         {
           "heading": "Recover failed operations",
@@ -2135,7 +2145,7 @@
       "title": "Source registry",
       "summary": "Register Phaeno-owned sources, managed files, evidence, and immutable ready revisions.",
       "order": 31,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-15",
       "navigationGroup": "data-provisioning",
       "contentType": "guide",
       "topicIds": [
@@ -2159,7 +2169,7 @@
       "publicationStatus": "published",
       "id": "phaeno/data-source-registry",
       "route": "/docs/phaeno/data-source-registry",
-      "contentHash": "2a3665fcd0664501b03fdd1aaf665d8f83b75e15f5fbca0e3cdc175068741841",
+      "contentHash": "141b135d945c542b92afc584b20f47bf8e34702817d822a281ab28adb966052d",
       "sections": [
         {
           "heading": "Source registry",
@@ -2174,12 +2184,12 @@
         {
           "heading": "Build the draft revision",
           "anchor": "build-the-draft-revision",
-          "text": "Add required metadata, ownership and de-identification evidence, and approved files. Upload files through managed portal storage so the system records size, content type, checksum, scan state, and storage identity. The draft remains editable while validation is incomplete. Review every required field and file, then resolve validation or malware-scan failures before readiness."
+          "text": "Add required metadata, ownership and de-identification evidence, and approved files. Upload files through managed portal storage so the system records size, content type, checksum, scan state, and storage identity. The draft remains editable while validation is incomplete. Review every required field and file, then resolve validation or malware-scan failures before readiness. If a file's scan is Unavailable or Pending, restore the scanner and choose Retry scan on that draft file. Retry scans the same saved bytes and updates their scan state; it does not upload a replacement or grant access. A rejected file cannot be cleared by this action, and ready or archived sources cannot be rescanned here. Scan refresh preserves unsaved metadata. If your metadata save reports a changed revision, reload and review the current source before saving again."
         },
         {
           "heading": "Mark the revision ready",
           "anchor": "mark-the-revision-ready",
-          "text": "Ready is an irreversible revision boundary. A ready revision is immutable and can be selected for a curated snapshot. Later corrections create a new source revision; they never mutate the revision already used by a package."
+          "text": "Save your draft changes before choosing Mark ready. Readiness uses the saved revision; the action stays unavailable while metadata is unsaved or a save, upload or scan retry is in progress. Ready is an irreversible revision boundary. A ready revision is immutable and can be selected for a curated snapshot. Later corrections require a new source record for a new curated package version; they never mutate the source already used by a package."
         },
         {
           "heading": "Discard or archive safely",
@@ -2785,7 +2795,7 @@
       "title": "PSeq billing, cash, and result release",
       "summary": "Review PSeq invoices, record and reconcile cash, release scientifically approved results, and distinguish disabled capabilities from loading failures.",
       "order": 45,
-      "reviewedAt": "2026-09-14",
+      "reviewedAt": "2026-09-15",
       "navigationGroup": "order-operations",
       "contentType": "guide",
       "topicIds": [
@@ -2816,7 +2826,7 @@
       "publicationStatus": "published",
       "id": "phaeno/order-billing-payment-release",
       "route": "/docs/phaeno/order-billing-payment-release",
-      "contentHash": "cfa7c6d6f3a7b4e776d3e8e3ca38cc6a8413513726417670968d673ad39e9051",
+      "contentHash": "efd31ba119053e4832870f56fa3bf02ae18495b7160f3349c778b7ff0050695a",
       "sections": [
         {
           "heading": "PSeq billing, cash, and result release",
@@ -2831,7 +2841,7 @@
         {
           "heading": "Configure and issue PSeq documents",
           "anchor": "configure-and-issue-pseq-documents",
-          "text": "Record billing contact/address and Net 30 terms by default. Record Taxable, Exempt, or NonTaxable, including the approved rate or exemption evidence. Finance approval is required before the tax determination can be used. If the profile is complete and approved at quote issuance, POMS includes calculated tax and freezes billing, tax, terms, currency, and configuration version in the quote. Zero calculated tax is valid. If the profile is not ready, issue an explicitly pre-tax quote. Complete and approve the profile before invoicing; POMS then calculates tax and freezes the current billing terms in the invoice. Job completion idempotently creates one numbered invoice and immutable PDF. Due date is completion plus the applicable snapshotted terms. Saving billing changes clears approval. After Finance approves the current profile, the approval badge and date confirm its saved state; the reminder to approve is removed. POMS calculates the approved tax rate without a tax engine. Never edit an issued invoice; use an append-only credit, debit, or write-off adjustment."
+          "text": "Record billing contact/address and Net 30 terms by default. Record Taxable, Exempt, or NonTaxable, including the approved rate or exemption evidence. Finance approval is required before the tax determination can be used. If the profile is complete and approved at quote issuance, POMS includes calculated tax and freezes billing, tax, terms, currency, and configuration version in the quote. Zero calculated tax is valid. If the profile is not ready, issue an explicitly pre-tax quote. Complete and approve the profile before invoicing; POMS then calculates tax and freezes the current billing terms in the invoice. Job completion idempotently creates one numbered invoice and immutable PDF. Due date is completion plus the applicable snapshotted terms. Saving billing changes clears approval. After Finance approves the current profile, the approval badge and date confirm its saved state; the reminder to approve is removed. A Commercial Operator can open an In progress or Results available Job in Order Operations and choose Complete Job. Review the sample outcomes and billing details, then choose Confirm completion. An empty roster or any sample without a final Completed, Failed, Rejected, or Cancelled outcome blocks confirmation. POMS also checks current Lab outcomes and unresolved holds when you confirm. Successful processing becomes final after the applicable scientific approval. Failed processing remains billable at the accepted price; any credit or replacement requires a separate reviewed decision. If the Job changed, choose Reload Job, review its current outcomes and reopen completion. If the connection fails before completion is confirmed, retry the same open Job to recover the existing operation. POMS calculates the approved tax rate without a tax engine. Never edit an issued invoice; use an append-only credit, debit, or write-off adjustment."
         },
         {
           "heading": "Release PSeq results",
@@ -2894,12 +2904,17 @@
       "publicationStatus": "published",
       "id": "phaeno/order-customer-lab-authorization",
       "route": "/docs/phaeno/order-customer-lab-authorization",
-      "contentHash": "8a9cc9e5163adfcac012a50627689b4589d403d5b4faa06efa109e48ceb8c942",
+      "contentHash": "170748eb0531c7974a662f347da21e02add82b3948bc3292a203befd2cf91e13",
       "sections": [
         {
           "heading": "Lab Service authorization",
           "anchor": "lab-service-authorization",
           "text": "Customer and Partner Lab Service work shares the Department-scoped Job, specimen, shipping and scientific-release workflow. Manual Customer work enters Order Ops as a Commercial request. Order Ops validates the Job-level specimen count, biological-source composition, storage, safety, and service profile before pricing. Individual samples do not exist yet."
+        },
+        {
+          "heading": "Additional scope on an accepted Job",
+          "anchor": "additional-scope-on-an-accepted-job",
+          "text": "For an active accepted Job, an authorized Commercial Operator can select Issue Change quote. Enter only additional biological-source counts and the price per additional sample. The saved quote is an immutable incremental proposal; it does not replace the original placement or authorize new work. Existing readiness and independent pricing controls remain enforced. A new proposal supersedes the previous unaccepted Change quote. The Customer or Partner organization administrator accepts or declines separately. Accepted additions open sample entry without unlocking existing authorized samples. Finalization appends a versioned authorization and creates shipping records only for new samples. Started work must preserve all existing specimens and its pinned scientific configuration; unsafe changes require laboratory review. Final billing combines accepted original and additional charges, retaining each quote's tax decision. Completed or cancelled Jobs cannot receive new additions."
         },
         {
           "heading": "Configured standard orders",
@@ -2999,7 +3014,7 @@
       "title": "Holds, cancellations, and adjustments",
       "summary": "Pause work safely, decide cancellation requests, preserve completed work, and account for adjustments.",
       "order": 44,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-15",
       "navigationGroup": "order-operations",
       "contentType": "guide",
       "topicIds": [
@@ -3020,7 +3035,7 @@
       "publicationStatus": "published",
       "id": "phaeno/order-holds-cancellations-adjustments",
       "route": "/docs/phaeno/order-holds-cancellations-adjustments",
-      "contentHash": "07deaaced4f494f0f12799a31c628237107a9e54fb805e48f8e7333c3407acdc",
+      "contentHash": "53c16e6a615dde0ca692915430b5138e2ca8a8940d33cb01cff163bee26b1d6c",
       "sections": [
         {
           "heading": "Holds, cancellations, and adjustments",
@@ -3035,7 +3050,7 @@
         {
           "heading": "Handle cancellation timing",
           "anchor": "handle-cancellation-timing",
-          "text": "A draft or other unaccepted commitment may be withdrawn under its workflow rules. After quote acceptance or reagent-order acceptance, cancellation becomes a request for Phaeno review. Decide the request as approved, partially approved, or declined based on work performed, material committed, quantities shipped, and outputs already released. For Customer laboratory work, Order Ops asks Lab Ops whether unreceived work can be cancelled before committing the Commercial decision. Started or specimen-level work requires a bounded manual decision; do not force Lab into a cancelled state."
+          "text": "A draft or other unaccepted commitment may be withdrawn under its workflow rules. After quote acceptance or reagent-order acceptance, cancellation becomes a request for Phaeno review. Decide the request as approved, partially approved, or declined based on work performed, material committed, quantities shipped, and outputs already released. For Customer laboratory work with a finalized sample roster, open the cancellation request, choose Partially approve, and select the specific samples awaiting receipt. Record a reason for the Customer and choose Save decision. POMS checks the latest Lab and shipment records before saving. Received work cannot be selected for this action. Dispatched shipments or containers mixing selected and unaffected samples require shipping review and separation first. If records change while you review, reopen the current Job and review the selection again. The selected samples and their eligible unshipped shipments become Cancelled. Remaining work resumes its previous Job state. The accepted quote stays unchanged, and any credit is a separate Finance decision. Unsaved selections and reasons are protected when closing the dialog."
         },
         {
           "heading": "Preserve unaffected work",
@@ -3258,9 +3273,9 @@
       "locale": null,
       "slug": "organization-and-user-administration",
       "title": "Company access and user administration",
-      "summary": "Manage Company access, staged Department readiness, service entitlements, invitations, and membership lifecycle.",
+      "summary": "Manage Company access, staged Department readiness, service entitlements, invitation recovery, and membership lifecycle.",
       "order": 25,
-      "reviewedAt": "2026-09-08",
+      "reviewedAt": "2026-09-15",
       "navigationGroup": "platform-operations",
       "contentType": "guide",
       "topicIds": [
@@ -3285,7 +3300,7 @@
       "publicationStatus": "published",
       "id": "phaeno/organization-and-user-administration",
       "route": "/docs/phaeno/organization-and-user-administration",
-      "contentHash": "5947b2d6357f519f05c69ca5631ddfa92c6a96f8c33357f21e5a6fe19fa6b3e7",
+      "contentHash": "8071189f1c983407562c0852b4edc8fb1c1be35c992167f74732566fce6b843d",
       "sections": [
         {
           "heading": "Company access and user administration",
@@ -3300,7 +3315,7 @@
         {
           "heading": "Review and maintain Companies",
           "anchor": "review-and-maintain-companies",
-          "text": "Create the Company first, then request the approved Portal relationship when access is needed: Prospect for an external organization that may receive explicitly granted curated data or participate in an approved no-charge Trial, but cannot place paid orders. Customer for organizations that request laboratory services. Partner for organizations that submit specimens for PSeq Lab Service or purchase the PSeq Kit, which includes data assembly. Internal employee invitations use the existing Phaeno organization in User management; Company requests create only the approved external relationship. Do not use Company lifecycle or Portal readiness as a shortcut for access. Curated package access requires an exact-version grant, member access requires an accepted invitation, and commercial work requires a current service entitlement. Open CRM and select Companies to search durable external customer records. Select the Company name to open its workspace. Use its Requests tab to propose online access, a product or service change, a relationship change, or reviewed work. Use CRM's central Requests section for requests that still need a Phaeno decision. The Company tab preserves request history but does not duplicate the decision controls. There is no standalone customer-creation action outside CRM. For a pending onboarding or evaluation request, select Approve and enable Portal access and record the approval reason. POMS atomically approves the request, creates the Company's internal tenant scope with Pending readiness, and attaches it to the existing Company. Online-access approval never adds or removes a product or service entitlement, creates another customer record, or creates a user. If an older approved onboarding or evaluation request shows Portal access incomplete, select Complete Portal access. POMS creates and attaches the missing tenant scope without changing product or service entitlements. This recovery does not create another Company, invite users, create an order, or complete the request. If POMS finds an active, compatible access scope with the exact Company name that is not linked to another Company, it pauses and shows Existing access scope found. Review the displayed name and relationship, then select Use existing access scope to reconnect it. Reuse preserves existing users, orders, invitations, and history. Existing Company requests are attached to the scope so they can be fulfilled through their separate owning workflows; attaching them does not grant product or service access. POMS will not offer this shortcut when the scope is inactive, belongs to another Company, or has a different relationship kind; resolve those cases before approving access. For a Customer, open Departments & services and choose the Department in Department readiness. The same derived checks used by Order Intake separate requirements before pricing, quote issuance, and invoicing. Follow each setup link to its owning screen. Historical readiness notes are retained as context; no manually selected Ready label authorizes work."
+          "text": "Create the Company first, then request the approved Portal relationship when access is needed: Prospect for an external organization that may receive explicitly granted curated data or participate in an approved no-charge Trial, but cannot place paid orders. Customer for organizations that request laboratory services. Partner for organizations that submit specimens for PSeq Lab Service or purchase the PSeq Kit, which includes data assembly. Internal employee invitations use the existing Phaeno organization in User management; Company requests create only the approved external relationship. If an invitation shows a Hard bounce, review and revoke it, correct the Contact email, and issue a new invitation from Company People. Resend is unavailable for that bounced invitation. Email delivery status and acceptance are separate: a provider-accepted message does not activate membership. Do not use Company lifecycle or Portal readiness as a shortcut for access. Curated package access requires an exact-version grant, member access requires an accepted invitation, and commercial work requires a current service entitlement. Open CRM and select Companies to search durable external customer records. Select the Company name to open its workspace. Use its Requests tab to propose online access, a product or service change, a relationship change, or reviewed work. Use CRM's central Requests section for requests that still need a Phaeno decision. The Company tab preserves request history but does not duplicate the decision controls. There is no standalone customer-creation action outside CRM. For a pending onboarding or evaluation request, select Approve and enable Portal access and record the approval reason. POMS atomically approves the request, creates the Company's internal tenant scope with Pending readiness, and attaches it to the existing Company. Online-access approval never adds or removes a product or service entitlement, creates another customer record, or creates a user. If an older approved onboarding or evaluation request shows Portal access incomplete, select Complete Portal access. POMS creates and attaches the missing tenant scope without changing product or service entitlements. This recovery does not create another Company, invite users, create an order, or complete the request. If POMS finds an active, compatible access scope with the exact Company name that is not linked to another Company, it pauses and shows Existing access scope found. Review the displayed name and relationship, then select Use existing access scope to reconnect it. Reuse preserves existing users, orders, invitations, and history. Existing Company requests are attached to the scope so they can be fulfilled through their separate owning workflows; attaching them does not grant product or service access. POMS will not offer this shortcut when the scope is inactive, belongs to another Company, or has a different relationship kind; resolve those cases before approving access. For a Customer, open Departments & services and choose the Department in Department readiness. The same derived checks used by Order Intake separate requirements before pricing, quote issuance, and invoicing. Follow each setup link to its owning screen. Historical readiness notes are retained as context; no manually selected Ready label authorizes work. When inviting an external Company contact, review the selected access. For a Member invitation, select at least one Department. If you clear all Departments and select Send invitation, the form returns focus to Department access and explains what to select. Your entries are retained and no invitation is sent until the required information is valid."
         },
         {
           "heading": "Review Company requests",
@@ -3480,7 +3495,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-08",
+      "reviewedAt": "2026-09-15",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -3505,7 +3520,7 @@
       "publicationStatus": "published",
       "id": "prospect/en-US/account-and-access",
       "route": "/docs/prospect/account-and-access",
-      "contentHash": "fbfcf424e60fe7dcfea8311b8efbd1a15ab8c1d2237a4c213a2d06d7c9baad1d",
+      "contentHash": "d2477586abacfc0f70a8ec4a04851b53c0a813860d525c3a6dfd865e32cf72a2",
       "sections": [
         {
           "heading": "Account and access",
@@ -3540,7 +3555,7 @@
         {
           "heading": "Understand roles",
           "anchor": "understand-roles",
-          "text": "Member can review and download package versions explicitly granted to the current Prospect organization. Organization administrator can also review organization download history and respond to applicable package-governance instructions. Prospect organization administrators manage membership only for their current organization. In User management, active members and invited people appear in one list. A Pending invitation status means the invitation has not been accepted and the offered access is not active. The person may already have a sign-in account. Use the card’s actions menu to resend or revoke that invitation, edit an active member’s organization role, or deactivate another member’s membership. An administrator cannot deactivate their own membership from User management. Restoring a deactivated membership requires a fresh invitation and acceptance. Contact Phaeno for a globally disabled account or an action the organization administrator cannot complete."
+          "text": "Member can review and download package versions explicitly granted to the current Prospect organization. Organization administrator can also review organization download history and respond to applicable package-governance instructions. Prospect organization administrators manage membership only for their current organization. In User management, active members and invited people appear in one list. A Pending invitation status means the invitation has not been accepted and the offered access is not active. The person may already have a sign-in account. Use the card’s actions menu to resend or revoke that invitation, edit an active member’s organization role, or deactivate another member’s membership. An administrator cannot deactivate their own membership from User management. Restoring a deactivated membership requires a fresh invitation and acceptance. Contact Phaeno for a globally disabled account or an action the organization administrator cannot complete. For a Member invitation, select at least one Department. If you clear all Departments and select Send invitation, the form returns focus to Department access and explains what to select. Your entries are retained and no invitation is sent until the required information is valid."
         },
         {
           "heading": "Resolve common access states",
@@ -3955,5 +3970,5 @@
       ]
     }
   ],
-  "corpusHash": "d3f992bc70c039ee8c7ae4bc0d292dfe3fd38a3d2791b85c45d72ac0e9761b62"
+  "corpusHash": "c980261fa8142c51f5ebf0ccdcbd40b1691897f82b5d44881665963cc4f1ab35"
 }

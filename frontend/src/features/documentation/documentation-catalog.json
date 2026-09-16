@@ -293,7 +293,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-08",
+      "reviewedAt": "2026-09-15",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -510,7 +510,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-14",
+      "reviewedAt": "2026-09-15",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -726,7 +726,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-14",
+      "reviewedAt": "2026-09-15",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -784,7 +784,7 @@
       "title": "Prepare included Assembly",
       "summary": "Prepare a purchased Kit case, correct inputs and download governed outputs without another purchase.",
       "order": 40,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-15",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [
@@ -1137,9 +1137,9 @@
       "locale": null,
       "slug": "organization-and-user-administration",
       "title": "Company access and user administration",
-      "summary": "Manage Company access, staged Department readiness, service entitlements, invitations, and membership lifecycle.",
+      "summary": "Manage Company access, staged Department readiness, service entitlements, invitation recovery, and membership lifecycle.",
       "order": 25,
-      "reviewedAt": "2026-09-08",
+      "reviewedAt": "2026-09-15",
       "navigationGroup": "platform-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1209,7 +1209,7 @@
       "title": "Source registry",
       "summary": "Register Phaeno-owned sources, managed files, evidence, and immutable ready revisions.",
       "order": 31,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-15",
       "navigationGroup": "data-provisioning",
       "contentType": "guide",
       "topicIds": [
@@ -1308,7 +1308,7 @@
       "title": "Governance and recovery",
       "summary": "Quarantine unsafe content, investigate with purpose, close out incidents, and retry safely.",
       "order": 34,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-15",
       "navigationGroup": "data-provisioning",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1460,7 +1460,7 @@
       "title": "Holds, cancellations, and adjustments",
       "summary": "Pause work safely, decide cancellation requests, preserve completed work, and account for adjustments.",
       "order": 44,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-15",
       "navigationGroup": "order-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1489,7 +1489,7 @@
       "title": "PSeq billing, cash, and result release",
       "summary": "Review PSeq invoices, record and reconcile cash, release scientifically approved results, and distinguish disabled capabilities from loading failures.",
       "order": 45,
-      "reviewedAt": "2026-09-14",
+      "reviewedAt": "2026-09-15",
       "navigationGroup": "order-operations",
       "contentType": "guide",
       "topicIds": [

@@ -127,6 +127,7 @@ public sealed class CustomWorkRequestPostgresTests
         private ExternalIdentity Identity { get; } = new("test", Guid.NewGuid().ToString("N"), $"custom-{Guid.NewGuid():N}@example.test", true);
         private string Key { get; } = Guid.NewGuid().ToString("N");
         private string AuditRequest { get; } = "custom-work-" + Guid.NewGuid().ToString("N");
+        private Guid? createdPipelineId;
 
         public static async Task<Scope> Create(OrganizationKind kind = OrganizationKind.Customer)
         {
@@ -150,6 +151,12 @@ public sealed class CustomWorkRequestPostgresTests
             scope.Company.EnablePortalAccess(scope.Tenant.Id);
             scope.Db.AddRange(scope.Staff, scope.Tenant, scope.Actor, scope.Owner, scope.Membership,
                 scope.Department, scope.Company, new OrganizationMembership(scope.Owner.Id, scope.Staff.Id, false));
+            if (!await scope.Db.CrmPipelines.AnyAsync(value => value.IsActive && value.IsDefault))
+            {
+                var pipeline = new CrmPipeline("SIMULATED custom-work acceptance " + Guid.NewGuid().ToString("N"), null, true);
+                scope.createdPipelineId = pipeline.Id;
+                scope.Db.AddRange(pipeline, new CrmPipelineStage(pipeline.Id, "SIMULATED open", 1, CrmPipelineStageCategory.Open, 10, false));
+            }
             await scope.Db.SaveChangesAsync();
             return scope;
         }
@@ -182,6 +189,11 @@ public sealed class CustomWorkRequestPostgresTests
                 await Db.CrmActivities.Where(value => value.CompanyId == Company.Id).ExecuteDeleteAsync();
                 await Db.CrmOpportunityStageHistory.Where(value => opportunities.Contains(value.OpportunityId)).ExecuteDeleteAsync();
                 await Db.CrmOpportunities.Where(value => value.CompanyId == Company.Id).ExecuteDeleteAsync();
+                if (createdPipelineId.HasValue)
+                {
+                    await Db.CrmPipelineStages.Where(value => value.PipelineId == createdPipelineId.Value).ExecuteDeleteAsync();
+                    await Db.CrmPipelines.Where(value => value.Id == createdPipelineId.Value).ExecuteDeleteAsync();
+                }
                 await Db.CrmCompanies.Where(value => value.Id == Company.Id).ExecuteDeleteAsync();
                 await Db.OrderIdempotencyRecords.Where(value => value.ActorUserId == Actor.Id).ExecuteDeleteAsync();
                 await Db.LabServiceOrders.Where(value => value.OrganizationId == Tenant.Id).ExecuteDeleteAsync();

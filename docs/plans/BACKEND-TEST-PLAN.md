@@ -1,5 +1,61 @@
 # Backend Test Plan
 
+## Coordinated recovery rehearsal - September 15, 2026
+
+The complete command-driven Lab journey can now opt into exporting its own synthetic disposable database and actual invoice/result bytes through `PSEQ_RECOVERY_EXPORT_DIR`. Export rejects non-loopback or non-generated databases and preserves ordinary database cleanup. The final exported journey passed; the real API then passed coordinated encrypted capture, fresh database/file restoration and authenticated matching-byte downloads in an owned Linux/systemd/Docker environment. All 26 unchanged backup safety checks passed, and an actual killed coordinator recovered its exact API through the independent watchdog. Production backup maintenance was separately activated successfully; actual overnight scheduled evidence remains pending. [Evidence and boundaries](../testing/runs/2026-09-15-sys06-recovery.md).
+
+## Final manual and Change-quote acceptance - September 15, 2026
+
+The final-three continuation adds disposable PostgreSQL journeys for correction/resubmission and independent pricing review; immutable incremental quotes; stale, expired, superseded and unauthorized decisions; new-only sample authorization/shipping; preserved started-work specimens; and combined amendment billing with completion replay. The retained two-person check is exercised. The existing open-opportunity handoff helper now creates and cleans up its own pipeline/stage instead of depending on shared seed data. [Full results and boundaries](../testing/runs/2026-09-15-final-three-acceptance.md).
+
+## Remaining-case review — September 15, 2026
+
+43 distinct backend checks pass across the remaining-case continuation, including authoritative terminal outcomes, current hold checks, failed-processing billability, invoice/PDF issuance and preservation, selected partial cancellation and contextual notice retry. The change-quote probe records ORD-03 as Fail. Tests use disposable loopback databases; no source/shared migration. [Case crosswalk](../testing/runs/2026-09-15-remaining-case-acceptance.md).
+
+## September 15 scientific and workflow acceptance
+
+New CRM request and Trial closure tests plus the strengthened command-driven Lab journey verify governed independent approval, separate release/exact-byte download, timing, same-notice retry, three-sample/multiple-library projections and Trial replacement/conversion. The partial Trial member archive is now executed and checked before complete release. Fixtures explicitly own missing seed prerequisites and preserve cleanup. Thirty focused checks plus the separate paid-held Kit check pass without skips; the same Lab journey passes again with its final all-samples/hold/rejection/withdrawal assertions. Two product gaps remain: missing Trial/result email links and incomplete partial Lab cancellation. [Crosswalk and test boundaries](../testing/runs/2026-09-15-scientific-ten-software-acceptance.md).
+
+## September 15 ten-case shipping and accession acceptance
+
+Three new `ShippingAcceptancePostgresTests` journeys cover durable same-notice failed/retried delivery to current administrators, full-capacity stock registration with incomplete/duplicate/excess/used identity denials, and a specimen split 9+9 through frozen packet correction, distinct dispatch/receipt, 18 exact-once accessions and derived-label failure/success/reprint history. All 28 focused backend checks pass without skips. Physical facts and transport/print confirmations are simulated. A schema-only disposable database was removed afterward; source business data and migrations were unchanged. [Complete case crosswalk and limits](../testing/runs/2026-09-15-shipping-ten-software-acceptance.md).
+
+## September 15 session and role acceptance continuation
+
+Two new disposable PostgreSQL journeys in `SessionRoleAcceptancePostgresTests.cs` verify pending-to-accepted additive Lab roles, ignored display/provider role labels, unauthorized/missing-session edits, fresh authorization after role changes, retained assignment history and stale-update rejection. The second rejects unauthenticated Company association without persistence, then verifies authorized save and duplicate denial. All 17 focused backend checks pass without skips, including identity and session regressions. ACC-06 remains open for live provider/browser execution. [Crosswalk and limits](../testing/runs/2026-09-15-session-role-acceptance.md).
+
+## September 15 simulated account lifecycle acceptance
+
+Two new disposable PostgreSQL journeys cover Company suspension/restoration, retained order/grant/invitation history, membership-only isolation and fresh acceptance using the original membership/Department assignment, employee disable/restore with preserved roles, and administrator self-disable denial. All 23 focused lifecycle, account authorization and session checks pass without skips. The shared invitation fixture supports selected scope and existing-user invitations; its original defaults remain unchanged. Final inspection confirms no disposable invitation databases remain. [ACC-05 crosswalk and limits](../testing/runs/2026-09-15-account-lifecycle-software-acceptance.md).
+
+## September 15 simulated invitation acceptance and recovery
+
+Four new `InvitationAcceptancePostgresTests` use newly created loopback disposable databases for real endpoint commits, actual dispatcher/template and simulated provider delivery, verified-email/Research membership, session/replay, resend/cooldown, revoked/expired/declined/invalid-Department guards, and signed hard-bounce deduplication/reissue. The 24-check focused run passes without skips; the four new checks also pass after strengthening the fixture to use the specified Phaeno platform administrator. No shared migration, real external send or existing UAT identity mutation. [ACC-01/02 crosswalk, results and limits](../testing/runs/2026-09-15-invitation-software-acceptance.md).
+
+## September 15 simulated Website intake and delivery acceptance
+
+Three PostgreSQL checks in `WebsiteIntakeAcceptancePostgresTests.cs` add rejected-CAPTCHA/no-intake and updates-only/demo isolation, real Mailgun-adapter failure/recovery with a separate simulated inbox, and inactive/active legacy eligibility plus actor audit. They share the existing notification class's transaction rollback fixture. All 14 PostgreSQL notification checks and the sender-failure unit check pass without skips. Five failed attempts remain after the same notice is recovered; captured sender URL/recipient fields and separate provider/inbox timestamps are retained. No real external send or product behavior change. [Full WEB-02/04 crosswalk and limits](../testing/runs/2026-09-15-website-intake-recovery-software-acceptance.md).
+
+## September 15 approved simulated Kit batch
+
+KIT-02–06 now pass the approved simulated software scope. Four additional PostgreSQL checks cover two-unit shipment admission/replay/source separation, different-product substitution decisions and member denial, extension/cancellation/repeat-draft/historical compatibility, and corrected-input release/member file and ZIP completion against the original invoice. The shared fixture now supplies download-attempt tracking and an optional member identity. The 13 Kit PostgreSQL plus six domain checks pass without skips; the strengthened substitution check passed a final targeted rerun. Real physical/scientific/provider acceptance remains open. [Full crosswalk and recovery notes](../testing/runs/2026-09-15-kit-batch-software-acceptance.md).
+
+## September 15 included Kit input recovery
+
+Three new disposable PostgreSQL checks cover included-input upload interruption/cleanup/replay, all non-clean scan states, file and metadata limits, confirmation/manifest gates, frozen purchased scope, one immutable submitted revision and expired-draft preservation. The shared fixture accepts the known loopback UAT source and injectable upload adapters while creating and removing only its own disposable databases. All nine Kit controller checks pass without skips. Bytes, scans and shipments are simulated; KIT-04 remains open under its original real-world criteria. [Evidence and remaining gate](../testing/runs/2026-09-15-kit-input-continuation.md).
+
+## September 15 approved simulated completion of seven cases
+
+The Product Owner approved simulated software acceptance for DAT-03–06, ACC-04, SYS-03 and WEB-03, preserving real scientific/provider acceptance as a separate gate. The final focused run passes 107 checks, and one additional focused monitoring-disabled test passes: **108 distinct checks, no skips**. Four new checks verify exact Lab/Assembly/Trial file and ZIP bytes, second-member credit, membership/Department revocation with non-revival, and quarantine denial without monitoring. Synthetic hashes match their bytes; commit/concurrency tests accept the existing loopback UAT source while retaining disposable-database cleanup guards. No shared schema or production application change. [Scope, results and crosswalk](../testing/runs/2026-09-15-seven-case-software-acceptance.md).
+
+## September 15 managed files and governance recovery
+
+Two focused PostgreSQL regressions pass without skips: reloaded governance investigation/reminder/recorded-attestation commands insert their three follow-ups and one reminder notice; an unconfigured sender records Failed with a retry time and no delivery timestamp. Each fixture rolls back. Connected evidence separately verifies actual ClamAV and storage faults/recovery, source-version/role/frozen-file retry guards, real source/grant lifecycle and durable Trial-to-CRM projection failure/retry exactly once. See [ten-case crosswalk](../testing/runs/2026-09-15-files-access-ten-case-batch.md). No schema migration or production activation; external attestation and operational release/retention acceptance remain gated.
+
+## September 15 empty Job completion guard
+
+Two focused OrderManagementDomainTests pass: accepted pricing cannot complete a Job with no samples, while normal post-acceptance roster finalization remains available. The guard preserves InProgress and a null completion time on rejection. This is local domain evidence; FIN-01 still requires supported terminal laboratory outcomes and genuine invoice/PDF issuance. See [completion continuation](../testing/runs/2026-09-15-job-completion-control.md).
+
 Connected ten-case UAT found Trial action requests returning 404 because the route used MVC's reserved action value. ControllerRouteTests now exercises real endpoint matching for six lifecycle commands: the new check fails before the operation-parameter correction, and both route tests pass afterward. A separate disposable PostgreSQL test reproduces zero-tube roster creation escaping as ArgumentOutOfRangeException (HTTP 500). Explicit add/edit tube-count validation returns 400; zero/negative rows leave roster/version unchanged and a valid two-tube retry succeeds. All three focused tests pass; no shared schema change. See ../testing/runs/2026-09-14-ten-case-execution.md.
 
 ## Guided evidence and retirement persistence — September 14, 2026

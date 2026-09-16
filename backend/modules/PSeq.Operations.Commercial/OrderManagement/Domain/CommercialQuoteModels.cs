@@ -37,6 +37,9 @@ public sealed class LabServiceQuote : IAudit, IConcurrency
     public QuotePurpose Purpose { get; private set; }
     public QuoteStatus Status { get; private set; } = QuoteStatus.SyncPending;
     public string LinesJson { get; private set; } = "[]";
+    public string? ChangeScopeSnapshotJson { get; private set; }
+    public string? AcceptedAmendmentSnapshotJson { get; private set; }
+    public DateTime? ChangeRosterFinalizedAt { get; private set; }
     public decimal Subtotal { get; private set; }
     public decimal Tax { get; private set; }
     public decimal Total { get; private set; }
@@ -95,6 +98,34 @@ public sealed class LabServiceQuote : IAudit, IConcurrency
         => Status == QuoteStatus.Issued && AcceptedAt is null && ExpiresAt <= utcNow ? QuoteStatus.Expired : Status;
 
     public void MarkIssued() { if (Status != QuoteStatus.SyncPending) throw new InvalidOperationException(); Status = QuoteStatus.Issued; }
+
+    public void FreezeChangeScope(string snapshot)
+    {
+        if (Purpose != QuotePurpose.Change || Status != QuoteStatus.SyncPending || ChangeScopeSnapshotJson is not null)
+            throw new InvalidOperationException("Change scope must be frozen before issuance.");
+        ChangeScopeSnapshotJson = OrderText.Json(snapshot);
+    }
+
+    public void RecordAcceptedAmendment(string snapshot)
+    {
+        if (Purpose != QuotePurpose.Change || Status != QuoteStatus.Accepted || AcceptedAmendmentSnapshotJson is not null)
+            throw new InvalidOperationException("Only a newly accepted Change quote can record its amendment.");
+        AcceptedAmendmentSnapshotJson = OrderText.Json(snapshot);
+    }
+
+    public void FinalizeChangeRoster(DateTime now)
+    {
+        if (AcceptedAmendmentSnapshotJson is null || ChangeRosterFinalizedAt.HasValue)
+            throw new InvalidOperationException("The accepted amendment roster is unavailable.");
+        ChangeRosterFinalizedAt = now;
+    }
+
+    public void DeclineChange()
+    {
+        if (Purpose != QuotePurpose.Change || Status != QuoteStatus.Issued)
+            throw new InvalidOperationException("Only an issued Change quote can be declined.");
+        Status = QuoteStatus.Declined;
+    }
 
     public void FreezeCommercialTerms(
         string billingContactSnapshotJson,

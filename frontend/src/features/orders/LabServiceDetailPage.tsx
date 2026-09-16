@@ -1,4 +1,5 @@
 import { LabCustomerProgressPanel } from './LabCustomerProgressPanel'
+import { LabChangeQuotes } from './LabChangeQuotes'
 import { customerLabStatus } from './lab-customer-progress'
 import { LabJobWorkspaceActions } from './LabJobWorkspaceActions'
 import { LabOrderScope } from './LabOrderScope'
@@ -148,6 +149,7 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
       {action.error && !dialog ? <Alert variant="destructive" className="mb-5"><AlertTitle>Order was not updated</AlertTitle><AlertDescription>{getOrderErrorMessage(action.error, 'Reload and try again.')}</AlertDescription></Alert> : null}
       {quoteDownload.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Quote could not be downloaded</AlertTitle><AlertDescription>{getOrderErrorMessage(quoteDownload.error, 'Try Download quote PDF again. If the problem continues, contact Phaeno.')}</AlertDescription></Alert> : null}
       <section id="ordering-and-shipping" className="space-y-5">
+        <LabChangeQuotes order={order} onSaved={async () => { await queryClient.invalidateQueries({ queryKey: ['lab-service-order', orderId] }); await queryClient.invalidateQueries({ queryKey: ['lab-service-orders'] }) }} />
         <LabJobOrderProgress order={order} shipments={shipping.related} shippingState={shipping.receiptState} kitSupply={kitSupply} canManageShipping={session?.capabilities.canManageSampleShipping === true} canAcceptOrder={Boolean(canManageQuotes || order.canPlaceStandardOrder)} onStepSelect={openStep} sendActionTargetRef={setSendActionTarget} />
         <section id="job-commercial" tabIndex={-1} className="space-y-4 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <StandardLabServicePanel order={order} />

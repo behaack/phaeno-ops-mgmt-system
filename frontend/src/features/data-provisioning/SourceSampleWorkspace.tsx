@@ -12,7 +12,7 @@ import {
   Save,
   Trash2,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
@@ -22,6 +22,7 @@ import {
   getApiErrorMessage,
   getSourceSample,
   markSourceReady,
+  retrySourceFileScan,
   updateSourceSample,
   uploadSourceFile,
 } from '#/api/data-provisioning'
@@ -95,6 +96,7 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
     enabled: apiEnabled,
   })
   const source = sourceQuery.data
+  const reviewedMetadata = useRef<{ id: string; version: number } | null>(null)
   const form = useForm<MetadataValues>({
     resolver: zodResolver(metadataSchema),
     defaultValues: emptyMetadata,
@@ -105,7 +107,8 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
   })
 
   useEffect(() => {
-    if (!source) return
+    if (!source || form.formState.isDirty && reviewedMetadata.current?.id === source.id) return
+    reviewedMetadata.current = { id: source.id, version: source.version }
     form.reset({
       label: source.label,
       description: source.description ?? '',
@@ -133,8 +136,12 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
   }
   const saveMutation = useMutation({
     mutationFn: (values: MetadataValues) =>
-      updateSourceSample(sourceSampleId, { ...values, version: source!.version }),
-    onSuccess: refresh,
+      updateSourceSample(sourceSampleId, { ...values, version: reviewedMetadata.current?.version ?? source!.version }),
+    onSuccess: async (saved, values) => {
+      reviewedMetadata.current = { id: saved.id, version: saved.version }
+      form.reset(values)
+      await refresh()
+    },
   })
   const uploadMutation = useMutation({
     mutationFn: (file: File) => uploadSourceFile(sourceSampleId, file),
@@ -149,6 +156,10 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
       setReadyOpen(false)
       await refresh()
     },
+  })
+  const retryScanMutation = useMutation({
+    mutationFn: (fileId: string) => retrySourceFileScan(sourceSampleId, fileId, source!.version),
+    onSuccess: refresh,
   })
   const archiveMutation = useMutation({
     mutationFn: () => archiveSource(sourceSampleId, source!.version),
@@ -261,7 +272,7 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form className="space-y-4" onSubmit={form.handleSubmit((values) => saveMutation.mutateAsync(values))}>
+            <form className="space-y-4" onSubmit={form.handleSubmit((values) => saveMutation.mutate(values))}>
               <RequiredLegend />
               <Field label="Internal label" error={form.formState.errors.label?.message} required>
                 <Input disabled={!isDraft} {...form.register('label')} />
@@ -340,9 +351,13 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
                   </div>
                   <p className="m-0 mt-1 text-xs text-muted-foreground">{file.fileKind} · {formatBytes(file.sizeBytes)}</p>
                   <p className="m-0 mt-2 break-all font-mono text-[0.6875rem] text-muted-foreground">{file.sha256}</p>
+                  {file.scanStatus === 'Unavailable' ? <p className="mt-2 text-sm">Scanning was unavailable. Retry after the scanner is restored; this file cannot be published until it passes.</p> : null}
+                  {file.scanStatus === 'Rejected' ? <p className="mt-2 text-sm">The scanner rejected this file. It cannot be published or cleared with a scan retry.</p> : null}
+                  {isDraft && ['Pending', 'Unavailable'].includes(file.scanStatus) ? <Button type="button" variant="outline" className="mt-2" disabled={retryScanMutation.isPending} onClick={() => retryScanMutation.mutate(file.id)} aria-label={`Retry scan for ${file.fileName}`}>{retryScanMutation.isPending && retryScanMutation.variables === file.id ? 'Scanning…' : 'Retry scan'}</Button> : null}
                 </div>
               ))}
               {source.files.length === 0 ? <p className="m-0 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No managed files attached.</p> : null}
+              <ErrorAlert error={retryScanMutation.error} fallback="The scan could not be retried. Reload the source, review its current state and try again." />
               {isDraft ? (
                 <form
                   className="space-y-3 rounded-lg border p-3"
@@ -383,8 +398,9 @@ export function SourceSampleWorkspace({ sourceSampleId }: { sourceSampleId: stri
                 ))}
               </ul>
               <ErrorAlert error={readyMutation.error ?? archiveMutation.error} fallback="The lifecycle action could not be completed." />
+              {isDraft && form.formState.isDirty ? <p className="text-sm text-muted-foreground">Save your draft changes before marking this source ready.</p> : null}
               {isDraft ? (
-                <Button type="button" className="w-full" onClick={() => setReadyOpen(true)}>
+                <Button type="button" className="w-full" disabled={form.formState.isDirty || saveMutation.isPending || uploadMutation.isPending || retryScanMutation.isPending} onClick={() => setReadyOpen(true)}>
                   <FileCheck2 data-icon="inline-start" />Mark ready
                 </Button>
               ) : source.status === 'Ready' ? (

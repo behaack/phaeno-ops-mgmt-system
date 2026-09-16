@@ -273,5 +273,7 @@ public sealed partial class LabOperationsController
         var received = await dbContext.LabContainers.CountAsync(t => t.LabSpecimenId == specimen.Id && t.Kind == LabContainerKind.SubmittedSpecimen, ct);
         if (expected > received) throw Conflict("material_receipt_pending", "Declared tubes are still awaiting receipt or accession. Resolve those records before confirming exhaustion.");
         specimen.RecordProcessingState(LabSpecimenProcessingState.Failed, actorId, DateTime.UtcNow, "material_exhausted", request.Note);
+        work.AdvanceProjectionVersion();
+        await EmitProjectionAsync(work, actorId, "SpecimenProcessingFailed", ct);
     }
 }

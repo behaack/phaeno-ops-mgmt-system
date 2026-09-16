@@ -60,6 +60,8 @@ Use [shared prerequisites](TEST-DATA.md). Main path uses a two-sample extracted-
 
 ## TRI-05 — Partial and complete scientific result release
 
+**Latest software execution, September 15:** Pass (simulated software scope). See the [ten-case scientific/workflow report](runs/2026-09-15-scientific-ten-software-acceptance.md) for the required-step crosswalk. Earlier checkpoints below remain historical evidence; original real-world acceptance criteria are unchanged.
+
 **Setup:** LAB-06 approved packages for every submitted sample/replacement; P-RELEASE, R-ADMIN/R-MEMBER; real test storage/scanner.
 
 | Step | Action | Expected result |
@@ -73,6 +75,8 @@ Use [shared prerequisites](TEST-DATA.md). Main path uses a two-sample extracted-
 **Handoff:** Preserve full manifest/receipt metadata for TRI-06 and DAT-05/06. Do not store scientific contents in the run log.
 
 ## TRI-06 — Closure, material disposition, CRM follow-up and conversion
+
+**Latest software execution, September 15:** Pass (simulated software scope). See the [ten-case scientific/workflow report](runs/2026-09-15-scientific-ten-software-acceptance.md) for the required-step crosswalk. Earlier checkpoints below remain historical evidence; original real-world acceptance criteria are unchanged.
 
 **Setup:** Completed main Trial; separate incomplete Trial; controlled CRM publication failure; Prospect conversion request fixture.
 

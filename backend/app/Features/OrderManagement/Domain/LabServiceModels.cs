@@ -301,7 +301,7 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
     public void Complete(DateTime utcNow)
     {
         EnsureStatus(LabServiceOrderStatus.InProgress, LabServiceOrderStatus.ResultsAvailable);
-        if (Samples.Any(sample => !sample.IsTerminal()))
+        if (Samples.Count != RequestedSpecimenCount || HasPendingChangeRoster || Samples.Any(sample => !sample.IsTerminal()))
             throw new InvalidOperationException("Every sample must be terminal before the job can be completed.");
         CompletedAt = utcNow;
         SetStatus(LabServiceOrderStatus.Completed, null, null);
@@ -326,7 +326,29 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
 
     public bool IsTerminal() => Status is LabServiceOrderStatus.Completed or LabServiceOrderStatus.Cancelled or LabServiceOrderStatus.Declined;
 
-    public bool CanEditSampleRoster => Status == LabServiceOrderStatus.PlacedAwaitingSamples && !SampleRosterFinalizedAt.HasValue;
+    public bool CanProposeChange => AcceptedQuoteId.HasValue && Status is
+        LabServiceOrderStatus.PlacedAwaitingSamples or LabServiceOrderStatus.InProgress or LabServiceOrderStatus.ResultsAvailable;
+
+    public bool HasPendingChangeRoster => Quotes.Any(q => q.AcceptedAmendmentSnapshotJson is not null && !q.ChangeRosterFinalizedAt.HasValue);
+
+    public bool CanEditSampleRoster => CanProposeChange && (!SampleRosterFinalizedAt.HasValue || HasPendingChangeRoster);
+
+    public void AcceptAdditionalScope(LabChangeScope scope)
+    {
+        if (!CanProposeChange || scope.OriginalQuoteId != AcceptedQuoteId || scope.BaseSpecimenCount != RequestedSpecimenCount)
+            throw new InvalidOperationException("The accepted Job scope changed. Request a current Change quote.");
+        if (scope.AdditionalSources.Count == 0 || scope.AdditionalSources.Any(s => s.SpecimenCount < 1)
+            || scope.AdditionalSources.Select(s => LabServiceSourceGroup.Normalize(s.BiologicalSource)).Distinct().Count() != scope.AdditionalSources.Count)
+            throw new InvalidOperationException("Specify positive additional counts for unique biological sources.");
+        SetRequestedSpecimenCount(RequestedSpecimenCount + scope.AdditionalSources.Sum(s => s.SpecimenCount));
+        foreach (var source in scope.AdditionalSources)
+        {
+            var existing = SourceGroups.SingleOrDefault(g => g.NormalizedBiologicalSource == LabServiceSourceGroup.Normalize(source.BiologicalSource));
+            if (existing is null) SourceGroups.Add(new LabServiceSourceGroup(Id, source.BiologicalSource, source.SpecimenCount));
+            else existing.Update(existing.BiologicalSource, existing.SpecimenCount + source.SpecimenCount);
+        }
+        SetBiologicalSourceProfile(SourceGroups.Count > 1, SourceGroups.FirstOrDefault()?.BiologicalSource);
+    }
 
     public bool HasAcceptedSampleSourceCounts => SourceGroups.Count > 0
         && Samples.Count == RequestedSpecimenCount
@@ -385,8 +407,10 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
                 throw new InvalidOperationException(
                     $"Biological source '{group.BiologicalSource}' requires {group.SpecimenCount} samples; {actual} are entered.");
         }
-        SampleRosterFinalizedByUserId = actorUserId;
-        SampleRosterFinalizedAt = utcNow;
+        SampleRosterFinalizedByUserId ??= actorUserId;
+        SampleRosterFinalizedAt ??= utcNow;
+        foreach (var change in Quotes.Where(q => q.AcceptedAmendmentSnapshotJson is not null && !q.ChangeRosterFinalizedAt.HasValue))
+            change.FinalizeChangeRoster(utcNow);
     }
 
     private void SetBiologicalSourceProfile(bool hasMixedBiologicalSources, string? sharedBiologicalSource)
@@ -681,7 +705,18 @@ public sealed class LabSample : IAudit, IConcurrency
         InternalNote = OrderText.Optional(internalNote, 4000);
     }
 
-    public bool IsTerminal() => Status is LabSampleStatus.Completed or LabSampleStatus.Rejected;
+    public bool ApplyLaboratoryOutcome(LabSampleStatus outcome, string? safeReason)
+    {
+        if (outcome is not (LabSampleStatus.Completed or LabSampleStatus.Failed or LabSampleStatus.Rejected or LabSampleStatus.Cancelled))
+            throw new ArgumentException("A final laboratory outcome is required.", nameof(outcome));
+        if (Status == outcome || Status == LabSampleStatus.OnHold) return false;
+        if (IsTerminal()) throw new InvalidOperationException("A recorded terminal sample outcome cannot be replaced.");
+        Status = outcome; ResumeStatus = null;
+        TenantSafeReason = OrderText.Optional(safeReason, 2000);
+        return true;
+    }
+
+    public bool IsTerminal() => Status is LabSampleStatus.Completed or LabSampleStatus.Rejected or LabSampleStatus.Failed or LabSampleStatus.Cancelled;
 
     private static bool IsAllowed(LabSampleStatus from, LabSampleStatus to) =>
         (from, to) switch

@@ -64,7 +64,7 @@ function RootLayout() {
     <AuthProvider isPreSessionRoute={isPreSessionRoute}>
       <MockAdminDataProvider>
         <ContextualDocumentTitle />
-        <div className="flex min-h-screen flex-col">
+        <div data-portal-shell className="flex min-h-screen flex-col">
           <AuthenticatedHeader />
           <div className="flex flex-1 flex-col">
             {isPreSessionRoute ? (

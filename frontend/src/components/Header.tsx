@@ -67,7 +67,7 @@ export default function Header() {
 
         <MainMenu />
 
-        <div className="ml-auto md:ml-0">
+        <div className="ml-auto lg:ml-0">
           <UserMenu />
         </div>
         {showOrganizationContext ? (

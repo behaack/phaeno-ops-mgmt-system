@@ -404,7 +404,7 @@ export function PlatformQuoteDialog({
                 className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm"
               >
                 <option value="Initial">Initial</option>
-                <option value="Change">Scope change</option>
+                {workflow !== 'lab' ? <option value="Change">Scope change</option> : null}
               </select>}
             </div>
             <div>

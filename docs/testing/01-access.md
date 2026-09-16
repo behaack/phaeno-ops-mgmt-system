@@ -24,7 +24,7 @@ Use [shared prerequisites](TEST-DATA.md) and record every result in the [run rec
 | --- | --- | --- |
 | 1 | Resend one eligible invitation; try the previous link, then the newest link. | Old link no longer grants access; newest link presents current offered access. Cooldown blocks premature repeat sends. |
 | 2 | Revoke a second invitation with the reviewed consequence, then open its link. | It cannot be accepted; no membership is activated. History retains revocation. |
-| 3 | Open the expired fixture's link; separately decline the fourth invitation. | Neither grants access; each displays its actual lifecycle state. |
+| 3 | Open the expired fixture's link; separately decline the fourth invitation. Inspect both from authorized administration. | Neither grants access. Administration retains the actual lifecycle state; anonymous unavailable links use the existing generic recovery message without disclosing recipient identity. |
 | 4 | On a pending Department invite, deactivate/change the offered Department before resend/acceptance. | Invalid current access is rejected for review/reissue; stale role intent cannot grant access. |
 | 5 | Review a controlled hard-bounce fixture and reissue to a corrected controlled Contact. | Recovery uses revoke/reissue; sender failure is not shown as membership acceptance. |
 

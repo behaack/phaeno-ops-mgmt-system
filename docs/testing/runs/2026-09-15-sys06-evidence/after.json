@@ -1,0 +1,27 @@
+{
+  "job": {
+    "status": 200,
+    "bytes": 7963,
+    "sha256": "89d11c5e2300ed8df4588f31651b0dcbb0123e67e84d77ff7054ee63e510cc82"
+  },
+  "packages": {
+    "status": 200,
+    "bytes": 1174,
+    "sha256": "b4bc29ecc4ab7b13a3c1560004f9c42397137ed11b5faac1261c7bde11c1aa17"
+  },
+  "invoices": {
+    "status": 200,
+    "bytes": 557,
+    "sha256": "841ab2bfee66a0594b3bc75d0f2462b9f1a5441bc22c33d731f75ad4be71dbc5"
+  },
+  "invoice_pdf": {
+    "status": 200,
+    "bytes": 927,
+    "sha256": "fa7266be7c2f2498b3a2cc453a34875516e16fd4c34efbb1c44a2dcc0d4112a4"
+  },
+  "result_file": {
+    "status": 200,
+    "bytes": 39,
+    "sha256": "96c17a5bef7ad06d8d830a04175d5eedc4728429e6b99ef4dce83e872e336cf1"
+  }
+}

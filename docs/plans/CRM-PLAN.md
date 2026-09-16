@@ -1,5 +1,9 @@
 # First-Party CRM Plan
 
+## September 15, 2026 — Company People hard-bounce recovery
+
+ACC-01/02 simulated acceptance found Company People allowed resend after hard bounce while User management already directed revoke/reissue. The existing Person access dialog now disables resend and explains reviewed revoke, Contact email correction and new invitation. Four focused access-dialog tests plus explicit Research invitation/session checks cover the flow. No authentication boundary, backend invitation behavior or Contact/User identity model changed. [Acceptance evidence and retained provider gates](../testing/runs/2026-09-15-invitation-software-acceptance.md).
+
 ## September 14, 2026 — Intake access continuation
 
 The owner-approved Commercial intake access correction aligns the read-only order-handoff list with existing CRM Commercial access. Handoff creation, review and administrative actions retain their original checks. Connected P-PRICE read and external denial pass; see the [next-ten UAT checkpoint](../testing/runs/2026-09-14-next-ten-uat.md).

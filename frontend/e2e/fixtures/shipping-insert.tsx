@@ -22,7 +22,7 @@ const kit: ShippingStockKit = { id: 'kit-example', kitNumber: 'KIT-58073414ED6C4
 const kitMode = new URLSearchParams(window.location.search).has('stockKit')
 const labMode = new URLSearchParams(window.location.search).has('labLabel')
 api.defaults.adapter = async config => ({ config, status: 200, statusText: 'OK', headers: {}, data: { success: true, data: labMode ? labLabel : packet, error: null } })
-const root = createRootRoute({ component: Outlet })
+const root = createRootRoute({ component: () => <div data-portal-shell className="flex min-h-screen flex-col"><header data-portal-header className="h-24">Portal navigation</header><div className="flex flex-1 flex-col"><Outlet /></div><footer className="h-24">Portal legal footer</footer></div> })
 const route = createRoute({ getParentRoute: () => root, path: '/e2e/fixtures/shipping-insert.html', component: () => kitMode ? <StockKitBarcodeDialog kit={kit} onClose={() => undefined} /> : labMode ? <LabLabelDialog container={container} onClose={() => undefined} onRecorded={() => Promise.resolve()} /> : <SampleShippingPacketPage shipmentId="example" /> })
 const router = createRouter({ routeTree: root.addChildren([route]) })
 const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })

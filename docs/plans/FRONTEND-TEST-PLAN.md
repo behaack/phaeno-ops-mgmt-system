@@ -1,5 +1,63 @@
 # Frontend Test Plan
 
+## Final Change-quote acceptance - September 15, 2026
+
+Forty targeted component checks pass across Change quotes, the sample roster and the existing quote dialog. Coverage includes original agreement selection, reviewed version/additional counts, PO and affirmative acceptance, decline, terminal/expired proposals and member denial. TypeScript and focused lint pass. [Final-three evidence](../testing/runs/2026-09-15-final-three-acceptance.md).
+
+## Remaining-case review — September 15, 2026
+
+21 focused component checks pass for completion, partial cancellation, the owning Commercial panel and existing quote-extension behavior. Recorded sample IDs and reviewed version, pending-save guards, protected unsaved choices and the approved failed-processing billing explanation are covered. [Case crosswalk](../testing/runs/2026-09-15-remaining-case-acceptance.md).
+
+## September 15 scientific and workflow acceptance
+
+All 56 focused CRM request/relationship, Trial scope, Job progress/decision/shipping/action and Lab scanner/attempt component checks pass without skips. Existing lifecycle precedence and missing-progress assertions complement the new browser scenarios. No production component changes were made. [Evidence and remaining defects](../testing/runs/2026-09-15-scientific-ten-software-acceptance.md).
+
+## September 15 ten-case shipping and accession acceptance
+
+All 113 focused shipping/stock/inventory/receipt/label component checks pass without skips. The direct shipping-packet print fix hides application chrome, removes the viewport-height shell from paper flow and forces white page/body output in both themes. TypeScript and scoped ESLint pass. Existing supplier identity, explicit print confirmation, frozen packet and failed-save behavior remain intact. [Complete case crosswalk and limits](../testing/runs/2026-09-15-shipping-ten-software-acceptance.md).
+
+## September 15 session and role acceptance continuation
+
+Four new `SessionAccessAcceptance` component checks cover authentication/bootstrap privacy, failed access checks, simulated pending MFA/task rendering and rejected 401 form-save recovery. The real association form retains its draft after rejection; confirmed sign-out unmounts and discards it. All seven focused component checks pass, including Department/session persistence; TypeScript and scoped ESLint pass. ACC-06 remains open for live provider/browser execution. [Crosswalk and limits](../testing/runs/2026-09-15-session-role-acceptance.md).
+
+## September 15 simulated account lifecycle acceptance
+
+Four new component cases cover Company deactivate/reactivate review and cancellation, membership-only deactivation with fresh-invitation guidance, and employee disable/restore. All 14 focused Company lifecycle, person access and employee self-protection checks pass without skips. Existing self-action expectations now match the shared single-action direct button. TypeScript and scoped ESLint pass. No product behavior changed. [ACC-05 crosswalk and limits](../testing/runs/2026-09-15-account-lifecycle-software-acceptance.md).
+
+## September 15 simulated invitation acceptance and recovery
+
+Thirty-nine component checks pass across Company People/access, invitation recipient/authentication/session and Department intent. Six new checks cover explicit Research-only review/session reload, revocation consequence/cancel/focus, cooldown recovery, hard-bounce resend denial and lifecycle display. An existing mismatch test also verifies continuation retention. Company People now matches the existing hard-bounce revoke/correct/reissue guidance. TypeScript and scoped ESLint pass; live provider and browser-profile acceptance remain open. [ACC-01/02 crosswalk, results and limits](../testing/runs/2026-09-15-invitation-software-acceptance.md).
+
+## September 15 simulated Website intake and delivery acceptance
+
+Thirteen existing `WebOpsDeliveryPanel`/`WebOpsDashboardContent` checks pass, covering exact-recipient resend review, stale-version refresh, attempts/provider-accepted wording and legacy recovery eligibility. Two Website error-decoder checks also pass. Actual local public forms pass simulated CAPTCHA/request recovery, optional opt-in, duplicate and demo variants on desktop/phone, with zero tested-form automated WCAG violations or overflow. No frontend production source changed. [Full WEB-02/04 crosswalk and limits](../testing/runs/2026-09-15-website-intake-recovery-software-acceptance.md).
+
+## September 15 approved simulated Kit batch
+
+Twenty BundledOrders/ExternalOrderDecisionDialogs component checks pass. Actual Portal order and input routes also pass at 1440/light and 390/dark with visibly simulated API data, including interrupted second-upload recovery and exactly one final submission. Fulfillment table headers/prices now stay together; a constrained parent and named keyboard-scroll region prevent page overflow. Scoped ESLint and TypeScript pass. Guides retain the same actions/business meaning. [KIT-02–06 evidence](../testing/runs/2026-09-15-kit-batch-software-acceptance.md).
+
+## September 15 included Kit interrupted upload
+
+Added a component check proving that an interrupted second upload retains the saved-request recovery link, retries only that file with its original idempotency key, and submits both saved files without creating another request. Five selected included-Kit component checks pass; five unrelated checks were excluded by the filter. Scoped ESLint and TypeScript pass. No product UI or E2E script changed; real shipped-case/scanner acceptance remains open. [KIT-04 continuation](../testing/runs/2026-09-15-kit-input-continuation.md).
+
+## September 15 simulated receipt and retention acceptance
+
+Fourteen component checks pass across ReleasedDeliverableDetailPage, OrganizationRetentionPolicyPanel and ReleasedDeliverableRetentionNotice. The receipt fixture now consistently represents its completed file in aggregate download state; all four affected receipt checks passed again after that correction. The actual Portal receipt route also passed desktop/mobile and print checks with an explicitly simulated API response. Real deletion/provider acceptance remains separate. [Seven-case scope and evidence](../testing/runs/2026-09-15-seven-case-software-acceptance.md).
+
+## September 15 source scan recovery
+
+Seven focused SourceSampleWorkspace checks pass, covering discard plus Pending/Unavailable retry visibility, rejected/clean/frozen exclusion and dirty metadata retained after scan refresh. Metadata submission keeps its originally reviewed version rather than silently adopting the scan's newer version; handled mutation errors do not produce an unhandled rejection. Unsaved metadata blocks Mark ready with a save-first explanation, preventing an older stored revision from being frozen while newer edits are displayed. TypeScript and scoped ESLint pass. Real browser verification rescanned the same stored outage/pending objects and retained draft entries. [Evidence](../testing/runs/2026-09-15-files-access-ten-case-batch.md).
+
+## September 15 Job completion control
+
+Eight focused CompleteLabJob checks pass: Commercial authority/active-state visibility, empty/unfinished/held sample gates, explicit confirmation, retained operation key and reviewed version after an uncertain response and reopening, deliberate conflict reload, and pending duplicate/dismissal protection. TypeScript and scoped lint pass. [Connected continuation](../testing/runs/2026-09-15-job-completion-control.md) records the separate signed-in negative path; successful issuance remains gated.
+
+## SYS-05 validation and accessibility — September 15, 2026
+
+The [connected SYS-05 run](../testing/runs/2026-09-15-system-ui-uat.md) corrects empty/stale Department submit-and-focus behavior while retaining unavailable-configuration gates. Five invitation checks, nine existing bundled-order checks and four Trial-scope checks pass. Assembly controls now associate validation messages and keep required markers with labels; untouched Trial fields do not reference missing error elements. TypeScript and scoped lint pass. This supersedes the earlier disabled-empty-selection invitation expectation without changing role intent or backend authorization.
+
+Connected evidence also covers the Partner tablet toolbar correction and Assembly empty-state guidance. These low-impact presentation changes use targeted browser verification; no additional broad component suite was run.
+
 ## Department persistence during sign-in loading — September 14, 2026
 
 Connected Customer and Partner UAT exposed selection resetting to General on refresh. `SessionDepartmentPersistence.test.tsx` reproduces saved Research being cleared before authentication finishes. The effect now waits for loaded authentication; three tests cover loading, confirmed sign-out and revoked-department fallback. These and the three invitation-session tests pass. Actual Customer/Partner refresh checks preserve Research. See the ten-case execution report.

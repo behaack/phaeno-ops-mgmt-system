@@ -239,6 +239,47 @@ describe('configured Lab Service commitment', () => {
 })
 
 describe('included Kit assembly', () => {
+  it('retains the saved request and retries only the interrupted upload with its original key', async () => {
+    const saved = structuredClone(bundleAssembly)
+    mocks.getAssembly.mockImplementation(async () => structuredClone(saved))
+    mocks.update.mockImplementation(async () => structuredClone(saved))
+    const first = new File(['SIMULATED FIRST'], 'first.fastq', { type: 'text/plain' })
+    const second = new File(['SIMULATED SECOND'], 'second.fastq', { type: 'text/plain' })
+    let interrupted = false
+    mocks.upload.mockImplementation(async (_id: string, file: File) => {
+      if (file === second && !interrupted) {
+        interrupted = true
+        throw new Error('Controlled upload interruption')
+      }
+      const input = {
+        id: crypto.randomUUID(), parentRecordId: null, purpose: 'AssemblyInput',
+        fileName: file.name, fileKind: '.fastq', contentType: file.type,
+        sizeBytes: file.size, scanStatus: 'Clean', releaseStatus: 'Internal',
+        releasedAt: null, createdAt: '2026-09-15T12:00:00Z', version: 1,
+      }
+      saved.inputFiles.push(input)
+      return input
+    })
+    mocks.submit.mockResolvedValue({ ...saved, status: 'Submitted' })
+    show(<DataAssemblyCreatePage requestId={bundleIds.request} />)
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Submit for intake validation' })).toHaveProperty('disabled', false))
+    fireEvent.change(screen.getByLabelText(/Choose assembly inputs/), { target: { files: [first, second] } })
+    fireEvent.click(screen.getByRole('button', { name: 'Submit for intake validation' }))
+    expect(await screen.findByText('Draft saved; submission needs attention')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Open saved draft' })).toBeTruthy()
+    expect(mocks.submit).not.toHaveBeenCalled()
+    expect(mocks.prepare).not.toHaveBeenCalled()
+    const interruptedKey = mocks.upload.mock.calls[1][2]
+    expect(mocks.upload.mock.calls.map(call => call[1])).toEqual([first, second])
+    fireEvent.click(screen.getByRole('button', { name: 'Submit for intake validation' }))
+    await waitFor(() => expect(mocks.submit).toHaveBeenCalledTimes(1))
+    expect(mocks.upload.mock.calls.map(call => call[1])).toEqual([first, second, second])
+    expect(mocks.upload.mock.calls[2][2]).toBe(interruptedKey)
+    expect(saved.inputFiles.map(file => file.fileName)).toEqual(['first.fastq', 'second.fastq'])
+    expect(mocks.submit).toHaveBeenCalledWith(bundleIds.request, saved.version, saved.inputFiles)
+    expect(mocks.prepare).not.toHaveBeenCalled()
+  })
+
   it('links preparation to the exact case and never offers a second purchase', () => {
     show(<KitAssemblyCasesPanel order={bundleKitOrder} />)
     expect(

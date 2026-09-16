@@ -94,8 +94,8 @@ public sealed class LabCustomerProgressService(PSeqOperationsDbContext db)
         bool preparationStarted, bool sequencingStarted, IReadOnlyCollection<string> packages, bool legacyReleased)
     {
         if (status == "OnHold" || disposition == "OnHold") return "OnHold";
-        if (status == "Rejected" || disposition == "Rejected") return "NeedsAttention";
-        if (disposition == "Cancelled") return "Cancelled";
+        if (status is "Rejected" or "Failed" || disposition == "Rejected") return "NeedsAttention";
+        if (status == "Cancelled" || disposition == "Cancelled") return "Cancelled";
         if (legacyReleased || packages.Contains("Released")) return "ResultsAvailable";
         if (packages.Any(state => state is "ReadyForReview" or "ScientificallyApproved" or "ReadyForRelease")) return "QualityReview";
         if (status == "DataProcessing" || packages.Any(state => state is "Uploading" or "Scanning")) return "DataAssembly";

@@ -26,6 +26,71 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 public sealed class DepartmentSecondaryPathPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task UnconfiguredDataSenderRecordsFailureWithoutClaimingDelivery()
+    {
+        await using var scope = await Scope.Create();
+        var notice = scope.Notice(null);
+        await scope.Db.SaveChangesAsync();
+        await DataProvisioningNoticeDispatcher.DeliverAsync(scope.Db,
+            new LoggingDataProvisioningNoticeSender(NullLogger<LoggingDataProvisioningNoticeSender>.Instance),
+            notice, NullLogger.Instance, default);
+        await scope.Db.SaveChangesAsync();
+        scope.Db.ChangeTracker.Clear();
+        var saved = await scope.Db.DataProvisioningNotices.SingleAsync(item => item.Id == notice.Id);
+        Assert.Equal(DataProvisioningNoticeStatus.Failed, saved.Status);
+        Assert.Null(saved.DeliveredAt);
+        Assert.Equal(1, saved.AttemptCount);
+        Assert.NotNull(saved.NextAttemptAt);
+        Assert.Contains("delivery failed", saved.LastError);
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task GovernanceFollowUpsPersistAfterReloadWithReminderAndRecordedAttestation()
+    {
+        await using var scope = await Scope.Create(OrganizationKind.Phaeno);
+        var customer = new Organization($"Synthetic governance {Guid.NewGuid():N}", OrganizationKind.Customer);
+        var source = new SourceSample($"Synthetic governance {Guid.NewGuid():N}", true);
+        var incident = new DataGovernanceIncident(source, DataGovernanceConcernCategory.Other,
+            "Synthetic concern", "Synthetic test instructions", "Automated fixture only", DateTime.UtcNow.AddDays(7));
+        incident.ConfirmUnsafe("Synthetic withdrawal fixture", scope.Actor.Id, DateTime.UtcNow);
+        var affected = new DataGovernanceAffectedOrganization(incident.Id, customer, 1);
+        affected.RequireAttestation();
+        scope.Db.AddRange(customer, source, incident, affected);
+        await scope.Db.SaveChangesAsync();
+        scope.Db.ChangeTracker.Clear();
+
+        var controller = new DataGovernanceAdminController(scope.Db, scope.Identity, scope.Storage)
+        { ControllerContext = new() { HttpContext = scope.Http } };
+        await controller.AddFollowUp(incident.Id, new() { Notes = "Synthetic investigation note" }, default);
+        scope.Db.ChangeTracker.Clear();
+        await controller.RemindOrganization(incident.Id, customer.Id,
+            new() { Notes = "Synthetic reminder evidence" }, default);
+        scope.Db.ChangeTracker.Clear();
+        var current = await controller.GetIncident(incident.Id, default);
+        var organization = Assert.Single(current.AffectedOrganizations);
+        Assert.Equal(1, organization.ReminderCount);
+        await controller.RecordAttestation(incident.Id, customer.Id, new()
+        {
+            OrganizationContact = "Synthetic contact",
+            EvidenceSource = "Automated persistence fixture; not external acceptance evidence",
+            Notes = "Synthetic attestation content",
+            Version = organization.Version
+        }, default);
+        scope.Db.ChangeTracker.Clear();
+
+        var saved = await controller.GetIncident(incident.Id, default);
+        Assert.Equal(new[] { "AttestationRecorded", "AttestationReminder", "InternalNote" },
+            saved.FollowUps.Select(item => item.Kind).OrderBy(value => value));
+        var attested = Assert.Single(saved.AffectedOrganizations);
+        Assert.Equal(AffectedOrganizationStatus.Attested, attested.Status);
+        Assert.Equal(AttestationSource.RecordedByPhaeno, attested.AttestationSource);
+        Assert.Equal("Synthetic contact", attested.OrganizationContact);
+        Assert.Equal("Automated persistence fixture; not external acceptance evidence", attested.EvidenceSource);
+        Assert.Equal(1, attested.ReminderCount);
+        Assert.Equal(1, await scope.Db.DataProvisioningNotices.CountAsync(item => item.IncidentId == incident.Id));
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task RelationshipReadinessUsesPendingConversionWithoutSavingItEarly()
     {
         await using var scope = await Scope.Create(OrganizationKind.Prospect);

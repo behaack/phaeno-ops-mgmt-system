@@ -4,9 +4,13 @@
 .shipping-packet .packet-scan-target h2, .shipping-packet .packet-scan-target p { text-align: center; }
 
 @media print {
-  @page sample-shipping { size: auto; margin: 10mm 12mm 15mm !important; }
+  @page sample-shipping { size: auto; margin: 10mm 12mm 15mm !important; background: white; color: black; }
   .shipping-packet-page { page: sample-shipping; }
-  body:has(.shipping-packet) { page: sample-shipping; background: white; }
+  html:has(.shipping-packet), body:has(.shipping-packet) { background: white !important; color: black !important; color-scheme: light; transition: none !important; }
+  body:has(.shipping-packet) { page: sample-shipping; }
+  body:has(.shipping-packet) [data-portal-shell] { display: block; min-height: 0; }
+  body:has(.shipping-packet) [data-portal-header],
+  body:has(.shipping-packet) [data-portal-shell] > footer { display: none !important; }
   .shipping-packet { font-size: 10pt; line-height: 1.25; padding-bottom: 0; }
   .shipping-packet > * { margin-block: 0 5mm; }
   .shipping-packet .text-sm { font-size: 10pt; line-height: 1.3; }

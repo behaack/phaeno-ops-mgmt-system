@@ -1,5 +1,9 @@
 # Prospect Trial Project Plan
 
+## September 15 scientific and workflow acceptance
+
+TRI-05/06 pass simulated software scope: partial member archive, exact bytes/manifest, missing-replacement denial, complete retention, incomplete closure, held/once-only disposition, CRM replay, actual Customer conversion and access-close guards. Actual material/scientific/provider acceptance stays separate. Trial emails omit their workspace URL (SC-01), so WEB-05 remains failed. No production Trial behavior changed. [Evidence](../testing/runs/2026-09-15-scientific-ten-software-acceptance.md).
+
 September 14 ten-case connected UAT: lifecycle commands (hold/close/replacement) returned 404 because the route parameter action collided with MVC action selection. Rename only the internal route parameter to operation; the public URL, roles, payload and idempotency fingerprint remain unchanged. The real endpoint-routing regression fails before and passes after correction. Phaeno/Prospect guides reviewed: existing lifecycle instructions remain accurate. Connected follow-up and full-case crosswalk are in ../testing/runs/2026-09-14-ten-case-execution.md.
 
 September 14 connected UAT found that canonical `extracted_rna` was excluded from Trial choices and submission. Both checks now normalize underscores as well as spaces/hyphens. The canonical batch-submission regression reproduced the defect and passed after correction; existing spaced-label approval/submission also passed. Actual isolated configuration now offers the retained RNA type. Eligible analysis configuration remains absent, so no whole Trial case is closed. Phaeno/Prospect guides reviewed; existing instructions remain accurate. [Evidence](../testing/runs/2026-09-14-acceptance-closure.md).

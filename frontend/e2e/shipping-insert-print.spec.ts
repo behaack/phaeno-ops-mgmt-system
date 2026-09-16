@@ -12,7 +12,10 @@ test('receiving sheet keeps large scan targets apart and prints without the full
   await summary.focus()
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { name: 'Sample and tube list', exact: true })).toBeVisible()
-  await expect(page.getByRole('img', { name: /^Permanent tube barcode/ })).toHaveCount(20)
+  await expect(page.getByRole('img', { name: /^Permanent tube barcode/ })).toHaveCount(16)
+  await page.getByRole('button', { name: 'Next samples', exact: true }).click()
+  await expect(page.getByRole('img', { name: /^Permanent tube barcode/ })).toHaveCount(4)
+  await page.getByRole('button', { name: 'Previous samples', exact: true }).click()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
   if (info.project.name === 'chromium') {
     await page.getByRole('img', { name: 'Permanent tube barcode Tube_001', exact: true }).screenshot({ path: info.outputPath('mixed-case-tube.png') })
@@ -27,7 +30,14 @@ test('receiving sheet keeps large scan targets apart and prints without the full
     expect(Math.abs(first.height - first.width)).toBeLessThan(1)
     expect(second.y - first.y - first.height).toBeGreaterThan(100)
     for (const format of ['Letter', 'A4'] as const) {
-      await page.pdf({ path: info.outputPath(`receiving-${format}.pdf`), format, printBackground: true })
+      for (const theme of ['light', 'dark']) {
+        await page.evaluate(theme => document.documentElement.classList.toggle('dark', theme === 'dark'), theme)
+        await expect(page.locator('[data-portal-header]')).toBeHidden()
+        await expect(page.locator('[data-portal-shell] > footer')).toBeHidden()
+        expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgb(255, 255, 255)')
+        const pdf = await page.pdf({ path: info.outputPath(`receiving-${format}-${theme}.pdf`), format, printBackground: true })
+        expect(pdf.toString('latin1').match(/\/Type\s*\/Page\b/g)).toHaveLength(1)
+      }
     }
     await page.screenshot({ path: info.outputPath('receiving-sheet.png'), fullPage: true })
   }

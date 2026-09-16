@@ -1,5 +1,33 @@
 # Order Management Plan
 
+## Final acceptance closure — September 15, 2026
+
+The owner's request to finish authorizes the missing additive Change-quote workflow. Commercial staff propose additional source counts and an incremental price on an active accepted Job; the Customer organization administrator accepts or declines that separate immutable proposal. Original placement, accepted prices, existing specimens and ongoing work stay intact. New sample entry opens only after acceptance; finalization appends a versioned Lab authorization and shipping records for new samples only. Started-work amendments preserve every existing specimen and the pinned scientific configuration. Completion includes accepted amendment charges and requires all accepted samples to finish. Stale, expired, unauthorized and repeated decisions must not duplicate scope, work or billing. Use existing roles and native receivables; no auth change or dependency is needed. Verify in disposable local databases and browser fixtures; production backup activation/deployment remains separately authorized.
+
+Verification: ORD-03 now passes the approved simulated software scope. Seventy-five distinct backend checks, 40 component checks and four browser scenarios pass across the documented runs; the additive migration is applied only to the owned local UAT database. The local API has been refreshed. [Complete crosswalk](../testing/runs/2026-09-15-final-three-acceptance.md). Historical missing-workflow findings below are superseded by this completion.
+
+## Remaining acceptance implementation — September 15, 2026
+
+The Product Owner requested completion of the eight remaining cases. Exercise the remaining scripts, repair the recorded notice-link and partial Lab cancellation defects, and verify authoritative terminal Lab-to-Commercial outcomes. The scope-increase probe confirms that the immutable change-quote requirement is still missing; retain ORD-03 as Fail, with implementation outstanding rather than claiming that rejection satisfies the requirement. Preserve accepted agreements, receipt/custody, result access, version checks and reviewed Finance adjustments. Verify in disposable databases and controlled browser fixtures; production deployment, shared migrations, private MFA and independent backup/owner acceptance remain distinct gates.
+
+**Approved billing policy:** an accepted, processed specimen that ultimately fails remains billable under the accepted quote. A replacement or credit is a separate reviewed remedy; it does not rewrite the original agreement or automatically block Job completion. Failed processing must remain distinct from rejected intake and approved cancellation. Map successful scientifically approved work, exhausted-material failure, rejected intake and approved cancellation to distinct terminal sample outcomes; unresolved holds must still prevent completion.
+
+Partial cancellation requires an explicit reviewed selection of unreceived samples, revalidates current Lab eligibility atomically, retains the unaffected received/consumed specimens and resumes the remaining Job. Dispatched or mixed selected/unaffected shipment contents require shipping review and separation before cancellation; wholly selected eligible unshipped shipments are cancelled with their reservations released. It must not reduce the accepted quote automatically; Finance records any adjustment separately. Additive request fields and safe projected outcome values are limited to this acceptance scope, with API/UI/tests updated together.
+
+## September 15 scientific and workflow acceptance
+
+UAT confirms custom/sales handoff and acceptance-based timing but finds the documented partial Lab cancellation incomplete (SC-02). The provider returns PartiallyAccepted; Commercial full approval rolls back it, and the Lab decision UI exposes no partial outcome. A raw PartiallyApproved status is not a supported specimen-level resolution and currently follows the non-approved branch. Complete reviewed specimen outcome, preserved received/consumed history and safe external projection before closing ORD-06/SYS-04. Result notice context/link is also missing (SC-01). These findings are recorded, not implemented. [Ten-case report](../testing/runs/2026-09-15-scientific-ten-software-acceptance.md).
+
+## Approved simulated Kit acceptance — September 15, 2026
+
+The Product Owner approved extending the simulated software approach; KIT-02–06 now pass that scope with 19 distinct backend checks, 20 component checks and actual-route desktop/mobile evidence. The fulfillment table received a narrow readability/reflow/keyboard-scroll correction. Real physical/scientific/provider and historical-record acceptance remain open. [Full crosswalk](../testing/runs/2026-09-15-kit-batch-software-acceptance.md).
+
+Documentation reconciliation: the current Partner reagent guide and controller permit Organization or Department administrators to decide substitutions; ordinary members are denied. Organization-administrator authority remains required for a new Kit purchase. This supersedes the older substitution wording below without changing permissions. Tests cover Department-admin decline and Organization-admin approval of a subsequent different-product proposal.
+
+## Included Kit input recovery checkpoint — September 15, 2026 (pre-approval)
+
+The KIT-04 continuation adds three disposable PostgreSQL tests and one component recovery test; nine related backend checks and five selected component checks pass. Validation, interrupted-upload cleanup/replay, frozen purchased scope, submitted-revision integrity and expired-draft preservation now have direct software evidence. No product behavior changed. Actual shipped-case/approved-input/storage/scanner acceptance remains open, and the earlier seven-case simulation approval is not extended. See [the case crosswalk](../testing/runs/2026-09-15-kit-input-continuation.md).
+
 September 14 ten-case UAT reproduced a zero-tube add as HTTP 500 without a saved row. Add/edit now validate positive tube count before mutation and return a clear 400. The disposable PostgreSQL regression fails before and passes afterward, including unchanged roster/version and valid retry. Existing Customer/Partner sample-list guides remain accurate. Connected CSV, conflict and finalization evidence is recorded in ../testing/runs/2026-09-14-ten-case-execution.md.
 
 ## Commercial intake role correction — September 14, 2026
@@ -1462,8 +1490,9 @@ commercial direction is implemented and verified.
   tracked by line and quantity, and the Partner can see shipped and remaining
   quantities plus an estimated ship date when known.
 - Unfulfilled quantities remain visible as backordered. Phaeno cannot substitute
-  a different reagent without explicit approval from a Partner organization
-  administrator.
+  a different reagent without explicit approval from an eligible Partner
+  organization or Department administrator. See the September 15 documentation
+  reconciliation above; new Kit purchases still require Organization-admin consent.
 - Reagent orders may be saved as drafts. The initial release does not schedule
   automatically recurring orders or accept bulk order uploads.
 - A Partner administrator may create a new draft from a prior order. The new

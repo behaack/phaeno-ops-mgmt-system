@@ -267,7 +267,30 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
         if (workOrder.TubeUsePolicyKey != replacement.TubeUsePolicyKey || workOrder.TubeUsePolicyVersion != replacement.TubeUsePolicyVersion)
             return ManualReviewAcknowledgment(command.Metadata, workOrder, acknowledgedAtUtc);
 
-        if (workOrder.Status != LabWorkOrderStatus.AwaitingSpecimens)
+        var additive = command.CommercialReasonCode == "accepted_additional_scope";
+        if (additive)
+        {
+            var previousJson = await dbContext.LabWorkAuthorizationVersions.AsNoTracking()
+                .Where(v => v.LabWorkOrderId == workOrder.Id && v.AuthorizationVersion == workOrder.CurrentAuthorizationVersion)
+                .Select(v => v.SnapshotJson).SingleAsync(cancellationToken);
+            using var previousDocument = JsonDocument.Parse(previousJson);
+            var previousElement = previousDocument.RootElement.TryGetProperty("replacementAuthorization", out var amended)
+                ? amended : previousDocument.RootElement;
+            var previous = previousElement.Deserialize<AuthorizeLabWorkCommand>(SerializerOptions)!;
+            var newById = replacement.Specimens.ToDictionary(s => s.SubmittedSpecimenId);
+            var preservesExisting = previous.Specimens.All(s => newById.TryGetValue(s.SubmittedSpecimenId, out var current)
+                && JsonSerializer.Serialize(s, SerializerOptions) == JsonSerializer.Serialize(current, SerializerOptions));
+            if (!preservesExisting || replacement.Specimens.Count <= previous.Specimens.Count
+                || replacement.ServiceKey != previous.ServiceKey || replacement.ServiceVersion != previous.ServiceVersion
+                || replacement.TurnaroundPolicyKey != previous.TurnaroundPolicyKey
+                || replacement.MinimumTurnaroundDays != previous.MinimumTurnaroundDays || replacement.MaximumTurnaroundDays != previous.MaximumTurnaroundDays
+                || replacement.IncludedScientificScopeJson != previous.IncludedScientificScopeJson
+                || replacement.OpaqueSubmitterReference != previous.OpaqueSubmitterReference
+                || replacement.ApprovedWorkflowVersionId != workOrder.LabServiceWorkflowVersionId
+                || workOrder.Status is LabWorkOrderStatus.OnHold or LabWorkOrderStatus.Cancelled or LabWorkOrderStatus.ReadyForRelease)
+                return ManualReviewAcknowledgment(command.Metadata, workOrder, acknowledgedAtUtc);
+        }
+        if (!additive && workOrder.Status != LabWorkOrderStatus.AwaitingSpecimens)
         {
             return ManualReviewAcknowledgment(command.Metadata, workOrder, acknowledgedAtUtc);
         }

@@ -37,6 +37,18 @@ const company: CrmCompany = {
 };
 
 describe("CRM Company lifecycle dialog", () => {
+  it.each([true, false])('reviews linked Company lifecycle with cancellation before confirmation (active=%s)', active => {
+    const onConfirm = vi.fn()
+    const onOpenChange = vi.fn()
+    render(<CrmCompanyLifecycleDialog company={{ ...company, accessOrganizationId: 'scope-id', isActive: active }} isPending={false} onConfirm={onConfirm} onOpenChange={onOpenChange} />)
+    expect(screen.getByText(active ? /Users, service entitlements, orders, and history are retained/ : /existing memberships and service entitlements/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+    expect(onConfirm).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: active ? 'Deactivate company' : 'Reactivate company' }))
+    expect(onConfirm).toHaveBeenCalledOnce()
+  })
+
   it("explains the consequence boundary before deactivation", () => {
     const onConfirm = vi.fn();
     render(

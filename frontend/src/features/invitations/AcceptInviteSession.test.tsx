@@ -145,6 +145,42 @@ describe('invitation completion across session changes', () => {
     expect(mocks.navigate).toHaveBeenCalledWith({ to: '/' })
   })
 
+  it('selects only invited Research access and preserves the accepted session across reload', async () => {
+    const research = { ...acceptedSession, memberships: acceptedSession.memberships.map(membership => ({ ...membership, departments: [{ departmentId: 'research', departmentName: 'Research', departmentCode: 'RESEARCH', isDefault: false, isDepartmentAdmin: false }] })), selectedDepartment: { ...acceptedSession.selectedDepartment!, departmentId: 'research' } }
+    let accepted = false
+    storeInviteToken('test-invitation-token')
+    mocks.getSession.mockImplementation(async () => accepted ? research : unauthorizedSession)
+    mocks.acceptInvitation.mockImplementation(async () => { accepted = true; return { organizationName: invitation.organizationName, status: 'Accepted' } })
+    setup(<><AcceptInvitePage /><SessionStatus /></>, true)
+    await screen.findByText('unauthorized:none:none')
+    fireEvent.click(await screen.findByRole('button', { name: 'Accept invitation' }))
+    await screen.findByText('ready:university:research')
+    expect(readStoredInviteToken()).toBeNull()
+    expect(research.memberships[0].isOrganizationAdmin).toBe(false)
+    cleanup()
+    setup(<SessionStatus />)
+    await screen.findByText('ready:university:research')
+    expect(mocks.acceptInvitation).toHaveBeenCalledTimes(1)
+  })
+
+  it('selects only invited Research access and preserves the accepted session across reload', async () => {
+    const research = { ...acceptedSession, memberships: acceptedSession.memberships.map(membership => ({ ...membership, departments: [{ departmentId: 'research', departmentName: 'Research', departmentCode: 'RESEARCH', isDefault: false, isDepartmentAdmin: false }] })), selectedDepartment: { ...acceptedSession.selectedDepartment!, departmentId: 'research' } }
+    let accepted = false
+    storeInviteToken('test-invitation-token')
+    mocks.getSession.mockImplementation(async () => accepted ? research : unauthorizedSession)
+    mocks.acceptInvitation.mockImplementation(async () => { accepted = true; return { organizationName: invitation.organizationName, status: 'Accepted' } })
+    setup(<><AcceptInvitePage /><SessionStatus /></>, true)
+    await screen.findByText('unauthorized:none:none')
+    fireEvent.click(await screen.findByRole('button', { name: 'Accept invitation' }))
+    await screen.findByText('ready:university:research')
+    expect(readStoredInviteToken()).toBeNull()
+    expect(research.memberships[0].isOrganizationAdmin).toBe(false)
+    cleanup()
+    setup(<SessionStatus />)
+    await screen.findByText('ready:university:research')
+    expect(mocks.acceptInvitation).toHaveBeenCalledTimes(1)
+  })
+
   it('preserves pre-session state for tenant selection but clears it when the signed-in identity changes', async () => {
     const { rerender } = setup(<StatefulWorkspace />, true)
     await screen.findByText('unauthorized:none:none')

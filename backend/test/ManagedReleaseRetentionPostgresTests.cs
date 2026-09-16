@@ -188,7 +188,9 @@ public sealed partial class ManagedReleaseRetentionPostgresTests
             fixture.Files = Enumerable.Range(1, 2).Select(index => new ManagedOperationalFile(fixture.Organization.Id,
                 assembly ? OrderWorkflowTypes.DataAssembly : OrderWorkflowTypes.LabService, fixture.WorkflowId, parent,
                 assembly ? OperationalFilePurpose.AssemblyOutput : OperationalFilePurpose.LabResult,
-                $"result-{index}.txt", "report", "text/plain", 16, new string('A', 64), $"synthetic/{Guid.NewGuid():N}")).ToArray();
+                $"result-{index}.txt", "report", "text/plain", 16,
+                Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes("synthetic-result"))),
+                $"synthetic/{Guid.NewGuid():N}")).ToArray();
             foreach (var file in fixture.Files) { file.RecordScan(OperationalFileScanStatus.Clean, null); if (held) file.HoldForPayment(); else file.Release(released); }
             db.AddRange(fixture.Files);
             LabResultRelease? release = null;
@@ -214,12 +216,13 @@ public sealed partial class ManagedReleaseRetentionPostgresTests
         public Task<List<OperationalFileDownload>> Attempts() => db.OperationalFileDownloads.AsNoTracking().Where(value => value.ReleasedPackageId == ReleaseId).ToListAsync();
         public async Task<ReleasedDeliverableDownloadProjection> Projection() => (await new ReleasedDeliverableDownloadProjectionService(db, Enabled)
             .ReadAsync(Organization.Id, Type, new Dictionary<Guid, IReadOnlyCollection<Guid>> { [ReleaseId] = Files.Select(value => value.Id).ToList() }, DateTime.UtcNow, default))[ReleaseId];
-        public Task<IActionResult> Download(bool archive, PSeqOperationsDbContext? serving = null, bool enforce = true)
+        public Task<IActionResult> Download(bool archive, PSeqOperationsDbContext? serving = null, bool enforce = true,
+            IExternalIdentityContext? downloadIdentity = null)
         {
             var target = serving ?? db;
             var options = Options.Create(new OrderManagementOptions { ReleasedDeliverableRetentionEnforcement = enforce });
             var attempts = new ReleasedDeliverableDownloadAttemptService(target, options, NullLogger<ReleasedDeliverableDownloadAttemptService>.Instance);
-            var context = new OrderRequestContext(target, identity);
+            var context = new OrderRequestContext(target, downloadIdentity ?? identity);
             if (Assembly)
             {
                 var controller = new DataAssemblyRequestsController(target, context, null!, Storage, null!, options, attempts, new(target, options),

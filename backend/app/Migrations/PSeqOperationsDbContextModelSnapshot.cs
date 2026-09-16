@@ -5318,6 +5318,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("AcceptedAmendmentSnapshotJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("accepted_amendment_snapshot_json");
+
                     b.Property<DateTime?>("AcceptedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("accepted_at");
@@ -5333,6 +5337,14 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<string>("BillingContactSnapshotJson")
                         .HasColumnType("jsonb")
                         .HasColumnName("billing_contact_snapshot_json");
+
+                    b.Property<DateTime?>("ChangeRosterFinalizedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("change_roster_finalized_at");
+
+                    b.Property<string>("ChangeScopeSnapshotJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("change_scope_snapshot_json");
 
                     b.Property<int?>("CommercialConfigurationVersion")
                         .HasColumnType("integer")

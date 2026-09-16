@@ -184,6 +184,31 @@ public sealed class DataProvisioningAdminController(
         }
     }
 
+    [HttpPost("source-samples/{id:guid}/files/{fileId:guid}/retry-scan")]
+    public async Task<SourceSampleDto> RetrySourceFileScan(
+        Guid id, Guid fileId, [FromBody] VersionedCommandRequest request,
+        CancellationToken cancellationToken)
+    {
+        var actor = await RequirePlatformAdminAsync(cancellationToken);
+        var source = await ReadSourceAsync(id, tracking: true, cancellationToken);
+        EnsureVersion(source.Version, request.Version);
+        EnsureSourceDraft(source);
+        var file = source.Files.SingleOrDefault(item => item.Id == fileId)
+            ?? throw NotFound("source_file_not_found", "The managed file was not found in this source revision.");
+        if (file.ScanStatus is not (ManagedFileScanStatus.Pending or ManagedFileScanStatus.Unavailable))
+            throw new DataProvisioningException("source_file_scan_not_retryable",
+                "Only a pending or unavailable scan on a draft source can be retried.", StatusCodes.Status409Conflict);
+        var previousStatus = file.ScanStatus;
+        var scan = await fileScanner.ScanAsync(file.StorageKey, cancellationToken);
+        file.RecordScan(scan.Status, scan.Message);
+        source.MarkUpdated(DateTime.UtcNow, actor.Id);
+        AccountAudit.Add(dbContext, HttpContext, nameof(ManagedFile), file.Id, "SourceFileScanRetried",
+            organizationId: null, actor.Id, new { sourceId = source.Id, previousStatus, scanStatus = scan.Status });
+        // Source and file concurrency checks keep a delayed scan from changing a frozen revision.
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return DataProvisioningMappings.ToDto(source);
+    }
+
     [HttpPost("source-samples/{id:guid}/ready")]
     public async Task<SourceSampleDto> MarkSourceReady(
         Guid id,

@@ -31,7 +31,7 @@ public class OrderManagementDomainTests
     }
 
     [Fact]
-    public void LabRequestPricesFromJobProfileAndOpensSamplesAfterQuoteAcceptance()
+    public void LabRequestPricesFromJobProfileButCannotCompleteWithoutSamples()
     {
         var actor = Guid.NewGuid();
         var order = new LabServiceOrder(Guid.NewGuid(), Guid.NewGuid(), OrderNumberGenerator.Lab(), "customer-job", null,
@@ -50,6 +50,27 @@ public class OrderManagementDomainTests
 
         Assert.Equal(LabServiceOrderStatus.PlacedAwaitingSamples, order.Status);
         Assert.Equal(QuoteStatus.Accepted, quote.Status);
+        order.MarkWorkStarted();
+        Assert.Throws<InvalidOperationException>(() => order.Complete(Now));
+        Assert.Null(order.CompletedAt);
+        Assert.Equal(LabServiceOrderStatus.InProgress, order.Status);
+    }
+
+    [Fact]
+    public void LabSampleRosterCanBeFinalizedAfterQuoteAcceptance()
+    {
+        var actor = Guid.NewGuid();
+        var order = new LabServiceOrder(Guid.NewGuid(), Guid.NewGuid(), OrderNumberGenerator.Lab(), "customer-job", null,
+            1, false, "Human PBMCs", "Keep frozen.", "No known hazards.", "Ship cold");
+        order.SourceGroups.Add(new LabServiceSourceGroup(order.Id, "Human PBMCs", 1));
+        order.Submit(actor, Now);
+        order.BeginQuotePreparation();
+        var quote = new LabServiceQuote(order.Id, 1, QuotePurpose.Initial, "[]", 100, 5, "USD", Now, Now.AddDays(30));
+        quote.MarkIssued();
+        order.Quotes.Add(quote);
+        order.MarkQuoteIssued(quote.Id);
+        quote.Accept(actor, Now.AddMinutes(1));
+        order.AcceptQuote(quote.Id, Now.AddMinutes(1));
         Assert.True(order.CanEditSampleRoster);
         order.Samples.Add(Sample(order.Id, "S-1", "Human PBMCs"));
         order.FinalizeSampleRoster(actor, Now.AddMinutes(2));
@@ -184,6 +205,27 @@ public class OrderManagementDomainTests
         held.TransitionTo(LabSampleStatus.Accessioned, "Replacement aliquot received", null);
 
         Assert.Equal(LabSampleStatus.Accessioned, held.Status);
+    }
+
+    [Theory]
+    [InlineData(LabSampleStatus.Completed)]
+    [InlineData(LabSampleStatus.Failed)]
+    [InlineData(LabSampleStatus.Rejected)]
+    [InlineData(LabSampleStatus.Cancelled)]
+    public void AuthoritativeFinalOutcomesAreDistinctIdempotentAndCannotReplaceAHold(LabSampleStatus outcome)
+    {
+        var sample = Sample(Guid.NewGuid(), "FINAL");
+        Assert.True(sample.ApplyLaboratoryOutcome(outcome, "Reviewed final outcome"));
+        Assert.True(sample.IsTerminal());
+        Assert.False(sample.ApplyLaboratoryOutcome(outcome, "Replay must not rewrite the original reason"));
+        Assert.Equal("Reviewed final outcome", sample.TenantSafeReason);
+        Assert.Throws<InvalidOperationException>(() => sample.ApplyLaboratoryOutcome(
+            outcome == LabSampleStatus.Completed ? LabSampleStatus.Failed : LabSampleStatus.Completed, null));
+        var held = Sample(Guid.NewGuid(), "HELD");
+        held.TransitionTo(LabSampleStatus.OnHold, "Waiting for review", null);
+        Assert.False(held.ApplyLaboratoryOutcome(outcome, null));
+        Assert.Equal(LabSampleStatus.OnHold, held.Status);
+        Assert.False(held.IsTerminal());
     }
 
     [Fact]

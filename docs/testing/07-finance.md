@@ -1,5 +1,9 @@
 # 07 — Finance
 
+## Remaining-case review — September 15, 2026
+
+FIN-01 and FIN-03 now pass the approved simulated scope: authoritative Lab completion creates the invoice/PDF, failed processing remains billable under the approved policy, current holds block completion, and original PDF bytes survive billing changes and adjustments. Existing operational cash records were preserved. [Current crosswalk](runs/2026-09-15-remaining-case-acceptance.md). Historical checkpoints below are unchanged.
+
 ## Billing approval and completion handoff - September 12, 2026
 
 Actual signed-in FIN-01 billing validation, approval, approval reset after a terms change, reapproval and reload passed on the existing marked Customer A. Saved profile is version 4/configuration 3, Net 45 with a synthetic 10% tax rate. All invoice readbacks stayed identical; receipt totals remain 8/$108 unapplied. Settled desktop/390px billing screenshots inspected. FIN-01 remains partial: neither saved InProgress Job has terminal Commercial samples, governed release does not advance those statuses, the current Job UI has no completion action, and this isolated runtime lacks CommercialOperator. No completion, invoice issuance, PDF, role change or production action was performed. [Saved checkpoint and blockers](runs/2026-09-12-lab-production-verification.md#billing-approval-and-completion-handoff---september-12-2026). Preserve the approved Customer profile; do not replay setup.

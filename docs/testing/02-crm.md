@@ -62,6 +62,8 @@ Use [shared prerequisites](TEST-DATA.md). All CRM data is fictional commercial c
 
 ## CRM-05 — Request approval, access, services and completion
 
+**Latest software execution, September 15:** Pass (simulated software scope). See the [ten-case scientific/workflow report](runs/2026-09-15-scientific-ten-software-acceptance.md) for the required-step crosswalk. Earlier checkpoints below remain historical evidence; original real-world acceptance criteria are unchanged.
+
 **Setup:** CRM-only Company, P-ADMIN, eligible test service request; separate P-SALES session.
 
 | Step | Action | Expected result |

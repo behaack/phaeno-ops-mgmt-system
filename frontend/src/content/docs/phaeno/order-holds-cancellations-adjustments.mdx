@@ -14,7 +14,9 @@ Release a hold only after the blocking condition is resolved. The release is an 
 - After quote acceptance or reagent-order acceptance, cancellation becomes a request for Phaeno review.
 - Decide the request as approved, partially approved, or declined based on work performed, material committed, quantities shipped, and outputs already released.
 
-For Customer laboratory work, Order Ops asks Lab Ops whether unreceived work can be cancelled before committing the Commercial decision. Started or specimen-level work requires a bounded manual decision; do not force Lab into a cancelled state.
+For Customer laboratory work with a finalized sample roster, open the cancellation request, choose **Partially approve**, and select the specific samples awaiting receipt. Record a reason for the Customer and choose **Save decision**. POMS checks the latest Lab and shipment records before saving. Received work cannot be selected for this action. Dispatched shipments or containers mixing selected and unaffected samples require shipping review and separation first. If records change while you review, reopen the current Job and review the selection again.
+
+The selected samples and their eligible unshipped shipments become Cancelled. Remaining work resumes its previous Job state. The accepted quote stays unchanged, and any credit is a separate Finance decision. Unsaved selections and reasons are protected when closing the dialog.
 
 ## Preserve unaffected work
 

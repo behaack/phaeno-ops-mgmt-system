@@ -1,8 +1,8 @@
 # Major workflow acceptance scripts
 
-Latest checkpoint: **35 of 81 isolated software cases closed (43.2%); 46 remain.** The [Alternate packing and whole-order reset pass](../testing/runs/2026-09-15-packing-reset-uat.md) closes SHP-09. SYS-05 is the one primarily remote case; 45 cases retain named dependencies. This is not final release signoff.
+**80 of 81 software cases closed (98.8%); SYS-06 remains Blocked.** This comprises 39 ordinary passes and 41 explicitly labeled simulated software passes, with no remaining software failure. The [final-three review](../testing/runs/2026-09-15-final-three-acceptance.md) closes ACC-06 and ORD-03: real private MFA/session/role checks and the implemented immutable Change-quote workflow now have complete software crosswalks. Coordinated recovery, independent scheduled/off-server backup and exact release/owner acceptance remain required. Real physical, scientific and provider-delivery acceptance remains separate.
 
-Latest continuation: all ten SHP-09 steps and five reset steps have complete connected crosswalks, including competing reservations/resets, partial supply, historical locks and 248 conserved tube slots. Next remote case is SYS-05. LAB-09 still needs only positive independent scientific approval.
+Latest continuation: the approved failed-processing billing policy, terminal Lab handoff, selected partial cancellation and Trial/result notice links are implemented and verified locally. Current case dispositions and test boundaries are in the report above. No deployment or shared migration was performed.
 
 ## Acceptance closure reconciliation — September 14, 2026
 

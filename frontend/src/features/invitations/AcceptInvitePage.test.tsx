@@ -72,6 +72,8 @@ describe('invitation acceptance', () => {
     expect(screen.getByRole('button', { name: 'Switch account' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Accept invitation' })).toBeNull()
     expect(mocks.acceptInvitation).not.toHaveBeenCalled()
+    expect(readStoredInviteToken()).toBe('test-invitation-token')
+    expect(readStoredInviteToken()).toBe('test-invitation-token')
   })
   it('accepts explicitly with a verified secondary email and the known name', async () => {
     mocks.session.mockReturnValue({ ...signedOut, signedIn: true })

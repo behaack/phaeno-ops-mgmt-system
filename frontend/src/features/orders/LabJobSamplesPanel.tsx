@@ -167,7 +167,7 @@ export function LabJobSamplesPanel({ order, embedded = false, page, onPageChange
               {showLabProgress && (value.status !== 'Expected' || order.sampleRosterFinalizedAt) ? <OrderStatusBadge status={value.status} /> : null}
               {order.sampleRosterFinalizedAt && canViewReceipt ? <span className="text-muted-foreground">Matched: {receiptState === 'loading' ? 'Checking…' : receiptState !== 'ready' || !matches ? 'Not available' : `${matches.matched} of ${matches.total} ${matches.total === 1 ? 'tube' : 'tubes'}`}</span> : null}
               {order.sampleRosterFinalizedAt && canViewReceipt && showLabProgress ? <span className="text-muted-foreground">Receipt: {receiptState === 'loading' ? 'Checking…' : receiptState !== 'ready' || !receipt ? 'Not available' : `${receipt.received} of ${receipt.total} ${receipt.total === 1 ? 'tube' : 'tubes'} received`}</span> : null}
-              {order.canEditSamples || legacyCleanup ? (
+              {(order.canEditSamples || legacyCleanup) && !order.authorizedSampleIds?.includes(value.id) ? (
                 <div className="ml-auto flex gap-2">
                   {order.canEditSamples ? <SampleRowAction label={`Edit sample ${value.customerSampleId}`} onClick={() => { setAddingSource(undefined); setSample(value) }}><Pencil aria-hidden="true" /></SampleRowAction> : null}
                   <SampleRowAction label={`Remove sample ${value.customerSampleId}`} disabled={change.isPending} onClick={() => { if (window.confirm(`Remove ${value.customerSampleId} from this sample list?`)) change.mutate({ kind: 'remove', sample: value }) }}><Trash2 aria-hidden="true" /></SampleRowAction>

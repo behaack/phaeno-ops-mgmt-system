@@ -70,7 +70,8 @@ export function CrmPersonAccessDialog({ organizationId, person, onClose }: { org
         })}</div> : null}
       </section> : null}
       {!busy && invitation ? <section className="space-y-3"><h3 className="font-medium">Invitation</h3><p className="text-sm">{invitation.status}{invitation.isExpired ? ' · Expired' : ''} · Delivery: {invitation.deliveryStatus ?? 'Not sent'}</p>{invitation.lastSendError ? <p className="text-sm text-destructive">{invitation.lastSendError}</p> : null}{invitation.status === 'Pending' ? <div className="flex flex-wrap gap-2">
-        <Button variant="outline" disabled={Boolean(confirmation)} onClick={() => choose({ label: 'Resend invitation', description: `Send a renewed invitation to ${invitation.email}?`, run: () => resendInvitation(invitation.id) })}>Resend invitation</Button>
+        {invitation.hasHardBounce ? <p className="w-full text-sm text-destructive">Hard bounce: revoke this invitation, correct the Contact email, and issue a new invitation from People.</p> : null}
+        <Button variant="outline" disabled={Boolean(confirmation) || invitation.hasHardBounce} onClick={() => choose({ label: 'Resend invitation', description: `Send a renewed invitation to ${invitation.email}?`, run: () => resendInvitation(invitation.id) })}>Resend invitation</Button>
         <Button variant="outline" disabled={Boolean(confirmation)} onClick={() => choose({ label: 'Revoke invitation', destructive: true, description: `Revoke the pending invitation for ${invitation.email}? Its current link will no longer grant access.`, run: () => revokeInvitation(invitation.id) })}>Revoke invitation</Button>
       </div> : null}</section> : null}
       {!busy && !membership && !invitation && !error ? <p className="text-sm text-muted-foreground">No active membership or pending invitation. Invite this Contact from People.</p> : null}

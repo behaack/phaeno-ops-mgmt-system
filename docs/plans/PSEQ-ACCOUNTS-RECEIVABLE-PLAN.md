@@ -1,5 +1,15 @@
 # PSeq Accounts Receivable Plan
 
+## Remaining-case review — September 15, 2026
+
+The Product Owner approved accepted failed processing as billable, with separate reviewed credits/replacements. Authoritative terminal handoff and current hold checks now support Job completion and native invoice/PDF issuance. FIN-01/03 pass the approved simulated scope, including immutable PDF through adjustments and unpaid scientific download. [Evidence](../testing/runs/2026-09-15-remaining-case-acceptance.md).
+
+## September 15 supported completion control
+
+The remaining-case continuation adds the missing staff Complete Job confirmation for the existing Commercial Operator capability, using the existing version-checked completion endpoint. Empty or unfinished Commercial samples block submission; the domain also rejects an empty roster. A confirmed operation retains its idempotency key and reviewed version across an uncertain response and dialog reopening. A stale-version conflict requires deliberate reload and renewed review. No role, dependency, schema, billing arithmetic or scientific outcome is changed.
+
+This closes the missing control and empty-roster guard defects, not FIN-01 acceptance. The Lab-to-Commercial terminal handoff remains incomplete. In particular, material-exhaustion Failed is distinct from rejected intake; it must not be mapped to Rejected to force invoicing. The Product Owner has been asked whether failed specimens require a reviewed price adjustment or remain billable at the full accepted quote. Until that rule and the supported handoff are resolved, preserve the existing blocked Jobs and scientific evidence. No invoice is issued merely to manufacture acceptance evidence.
+
 ## September 14 completion recovery correction
 
 Scope authorized by continuing UAT with gap fixes: make the existing Complete command save the Job, invoice/outbox, notices and idempotency response in one transaction under the existing per-order lock. Preserve current role checks, sample terminal guards, accepted billing snapshots and scientific independence. On failed execution, remove a newly written PDF only after a database read proves no committed invoice references it; retain bytes if commit outcome cannot be verified. No new role, cross-application contract, dependency or migration. Verify an injected final-save failure, unchanged business records, safe retry, same-key replay and stable PDF bytes in a generated local database. This fixes recovery independently of the still-open supported Lab-to-Commercial terminal handoff and failed-sample billing decision.

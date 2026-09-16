@@ -92,6 +92,8 @@ export type OperationalFile = {
 };
 
 export type Quote = {
+  changeScopeSnapshotJson?: string | null;
+  acceptedAmendmentSnapshotJson?: string | null;
   id: string;
   revision: number;
   purpose: string;
@@ -261,6 +263,8 @@ export type LabRequestRevision = {
 };
 
 export type LabServiceOrder = {
+  authorizedSampleIds?: string[];
+  canProposeChange?: boolean;
   tubeUsePolicyKey?: string | null;
   tubeUsePolicyVersion?: number | null;
   laboratoryProgress?: LabCustomerProgress | null;
@@ -1229,6 +1233,13 @@ export async function runPlatformAction<T>(
 ) {
   return post<T>(`/platform/${path}`, body, idempotent);
 }
+export async function declineLabChangeQuote(orderId: string, quoteId: string, version: number) {
+  return post<LabServiceOrder>(`/lab-service-orders/${orderId}/quotes/${quoteId}/decline-change`, { version });
+}
+
+export function completeLabJob(id: string, version: number, idempotencyKey: string) {
+  return post<LabServiceOrder>(`/platform/lab-service-orders/${id}/complete`, { version }, true, idempotencyKey);
+}
 export type QuoteLineInput = {
   catalogItemId: string;
   description: string;
@@ -1247,6 +1258,7 @@ export async function issuePlatformQuote(
     purpose: "Initial" | "Change";
     pricingDecisionReason?: string | null;
     sourceQuoteId?: string;
+    additionalSources?: Array<{ biologicalSource: string; specimenCount: number }>;
   },
 ) {
   const path =

@@ -25,8 +25,8 @@ public sealed class GovernedDownloadCommitPostgresTests
     public async Task ActualCommitTimesPreserveGraceRecoverObservationAndRejectLateAdmissionBeforeStorage()
     {
         var source = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("PSEQ_OPERATIONS_REFERENCE_CONNECTION")!);
-        if (source.Host is not ("localhost" or "127.0.0.1") || source.Database != "phaeno_ops")
-            throw new InvalidOperationException("Commit verification requires the configured localhost/phaeno_ops source.");
+        if (source.Host is not ("localhost" or "127.0.0.1") || source.Database is not ("phaeno_ops" or "phaeno_ops_lab06_uat"))
+            throw new InvalidOperationException("Commit verification requires a known local development or isolated UAT source.");
         var name = $"pseq_retention_test_{Guid.NewGuid():N}";
         await using var admin = new NpgsqlConnection(source.ConnectionString);
         await admin.OpenAsync();

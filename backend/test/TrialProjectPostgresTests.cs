@@ -26,7 +26,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 
 [Collection(PostgreSqlReferenceCollection.Name)]
-public sealed class TrialProjectPostgresTests
+public sealed partial class TrialProjectPostgresTests
 {
     [PostgreSqlReferenceFact]
     public async Task ScopeDraftIsSharedAmongStaffVersionedAndHiddenFromProspectWithoutNewAuthority()
@@ -394,6 +394,8 @@ public sealed class TrialProjectPostgresTests
             var db = new PSeqOperationsDbContext(new DbContextOptionsBuilder<PSeqOperationsDbContext>().UseNpgsql(disposableConnection ?? Environment.GetEnvironmentVariable("PSEQ_OPERATIONS_REFERENCE_CONNECTION")!).AddInterceptors(new AuditSaveChangesInterceptor(new Audit())).Options, Options.Create(new PersistenceOptions()));
             if (disposableConnection is not null) await db.Database.MigrateAsync();
             var fixture = new Fixture(db, disposableConnection is null ? await db.Database.BeginTransactionAsync() : null); var now = DateTime.UtcNow;
+            if (!await db.ReleasedDeliverablePolicyDefaults.AnyAsync(value => value.IsActive))
+                db.Add(new ReleasedDeliverablePolicyDefault(1, ReleasedDeliverablePolicyValues.Create(30, 5, 5), "SIMULATED acceptance policy"));
             var phaeno = new Organization($"Trial Phaeno {Guid.NewGuid():N}", OrganizationKind.Phaeno); fixture.Organization = new($"Trial Prospect {Guid.NewGuid():N}", OrganizationKind.Prospect);
             User User(string name) { var value = new User($"trial-{Guid.NewGuid():N}@example.test", name, "Fixture"); value.Activate(); db.Add(value); return value; }
             var commercial = User("Commercial"); var scientific = User("Scientific"); fixture.Customer = User("Prospect");
@@ -430,7 +432,12 @@ public sealed class TrialProjectPostgresTests
         public async Task<TrialProject> CreateApprovedTrial()
         {
             var trial = await Workflow.CreateAsync(Commercial, new(Handoff.Id), default); await db.SaveChangesAsync();
-            var deliverable = await db.TrialDeliverableDefinitions.SingleAsync(value => value.Key == "FASTQ" && value.IsActive);
+            var deliverable = await db.TrialDeliverableDefinitions.SingleOrDefaultAsync(value => value.Key == "FASTQ" && value.IsActive);
+            if (deliverable is null)
+            {
+                deliverable = new TrialDeliverableDefinition("FASTQ", "SIMULATED FASTQ", 1, true);
+                db.Add(deliverable); await db.SaveChangesAsync();
+            }
             await Workflow.ProposeAsync(trial, Commercial, new(trial.Version, Department.Id, "Trial evaluation", "Research objective", 2, DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(10), WorkflowVersion.Id, [analysis.Id], [deliverable.Id], "Frozen extracted RNA", "Existing PSeq criteria", 2000, 500, 30, TrialMaterialDisposition.Destroy, null, null, null, "RUO; no PHI", "Initial scope"), default); await db.SaveChangesAsync();
             await Workflow.DecideAsync(trial, Commercial, new(trial.Version, TrialApprovalDomain.Commercial, TrialDecisionKind.Approve, "Commercially appropriate"), default); await db.SaveChangesAsync();
             await Workflow.DecideAsync(trial, Scientific, new(trial.Version, TrialApprovalDomain.ScientificOperations, TrialDecisionKind.Approve, "Scientifically appropriate"), default); await db.SaveChangesAsync(); return trial;
@@ -447,7 +454,9 @@ public sealed class TrialProjectPostgresTests
                 specimen.RecordProcessingState(LabSpecimenProcessingState.Succeeded, Commercial.User.Id, DateTime.UtcNow);
             if (work.Status != LabWorkOrderStatus.ReadyForRelease) { work.RecordMilestone(LabWorkOrderStatus.Processing); work.RecordMilestone(LabWorkOrderStatus.ScientificReview); }
             var package = new ResultOutputPackage(Organization.Id, null, work.Id, null, corrects.HasValue ? 2 : 1, corrects, "fixture", Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), "{}", new string('A', 64), 1, sample.TrialProjectId, sample.Id);
-            var artifact = new ResultArtifact(package.Id, "FASTQ", sample.Reference + ".fastq", "application/octet-stream", 10, new string('A', 64), $"trial-fixture/{Guid.NewGuid():N}"); artifact.BeginScan(); artifact.CompleteScan(true, null, DateTime.UtcNow);
+            var artifact = new ResultArtifact(package.Id, "FASTQ", sample.Reference + ".fastq", "application/octet-stream", 10,
+                Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes("TEST ONLY\n"))),
+                $"trial-fixture/{Guid.NewGuid():N}"); artifact.BeginScan(); artifact.CompleteScan(true, null, DateTime.UtcNow);
             package.BeginScanning(); package.MarkReadyForReview(1, true, true);
             db.AddRange(package, artifact); await db.SaveChangesAsync();
             var identity = new ScientificIdentity(new("clerk", Scientific.User.ExternalSubjectId!, Scientific.User.Email, true));

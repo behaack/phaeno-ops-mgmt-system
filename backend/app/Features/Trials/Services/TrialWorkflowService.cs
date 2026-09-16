@@ -2,6 +2,8 @@ namespace PhaenoPortal.App.Features.Trials.Services;
 
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using PhaenoPortal.App.Features.Accounts.Services;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.Crm.Domain;
 using PSeq.Operations.Commercial.LabOperations.Application;
@@ -14,7 +16,8 @@ using PhaenoPortal.App.Features.Trials.DTOs;
 using PhaenoPortal.App.Infrastructure.Persistence;
 using static TrialAccess;
 
-public sealed class TrialWorkflowService(PSeqOperationsDbContext db, ILabOperationsProvider lab, TrialAccess access)
+public sealed class TrialWorkflowService(PSeqOperationsDbContext db, ILabOperationsProvider lab, TrialAccess access,
+    IOptions<InvitationOptions>? invitations = null)
 {
     public IQueryable<TrialProject> Query => db.TrialProjects.Include(value => value.Scopes).ThenInclude(value => value.Decisions).Include(value => value.Samples).AsSplitQuery();
     public async Task<TrialProject> ReadAsync(Guid id, TrialActor actor, CancellationToken token) =>
@@ -250,7 +253,7 @@ public sealed class TrialWorkflowService(PSeqOperationsDbContext db, ILabOperati
     {
         if (trial.OrganizationId.HasValue && trial.DepartmentId.HasValue)
             db.OrderNotifications.Add(new(trial.OrganizationId.Value, null, "trial-project", trial.Id, kind, subject,
-                $"{body} Open Trial {trial.Number} in the Portal. {TrialRules.RuoStatement}", trial.DepartmentId));
+                $"{body} Open Trial {trial.Number} in the Portal:\n{(invitations?.Value ?? new InvitationOptions()).PublicBaseUrl.TrimEnd('/')}/trial-projects/{trial.Id}\n{TrialRules.RuoStatement}", trial.DepartmentId));
     }
     private static void ValidateInputs(TrialScopeValues scope, TrialSampleInput input)
     {
