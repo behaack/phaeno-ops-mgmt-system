@@ -1,5 +1,12 @@
 # Playwright E2E Test Plan
 
+## September 16, 2026 — Lead conversion Company dropdown
+
+Browser acceptance is deferred: select Create company, an existing Company and
+No company; verify the proposed name and Opportunity prerequisite update and
+that Contact-only conversion remains available. Check Company/Individual
+defaults and keyboard selection. No live conversion or automated tests run.
+
 ## September 16, 2026 — Task editing and rescheduling
 
 `crm-task-editing.spec.ts` covers queue Actions > Edit task, pristine Save,

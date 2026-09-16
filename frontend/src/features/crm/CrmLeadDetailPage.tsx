@@ -378,8 +378,11 @@ function ConfirmConvert({
   onOpenChange: (open: boolean) => void;
   onConfirm: (input: LeadConversionInput) => void;
 }) {
-  const [existingCompanyId, setExistingCompanyId] = useState("");
-  const [createCompany, setCreateCompany] = useState(lead.kind === "Company");
+  const [companySelection, setCompanySelection] = useState(
+    lead.kind === "Company" ? "create" : "",
+  );
+  const createCompany = companySelection === "create";
+  const existingCompanyId = createCompany ? null : companySelection || null;
   const [createContact, setCreateContact] = useState(
     lead.kind === "Individual",
   );
@@ -395,8 +398,8 @@ function ConfirmConvert({
             event.preventDefault();
             const data = new FormData(event.currentTarget);
             onConfirm({
-              existingCompanyId: existingCompanyId || null,
-              createCompany: !existingCompanyId && createCompany,
+              existingCompanyId,
+              createCompany,
               createContact,
               createOpportunity,
               opportunityName: createOpportunity
@@ -423,32 +426,33 @@ function ConfirmConvert({
           ) : null}
           <div className="grid gap-4">
             <div className="grid gap-1.5">
-              <Label htmlFor="lead-existing-company">Existing Company</Label>
+              <Label htmlFor="lead-company">Company</Label>
               <select
-                id="lead-existing-company"
-                value={existingCompanyId}
-                onChange={(event) => {
-                  setExistingCompanyId(event.target.value);
-                  if (event.target.value) setCreateCompany(false);
-                }}
+                id="lead-company"
+                value={companySelection}
+                onChange={(event) => setCompanySelection(event.target.value)}
+                aria-describedby={
+                  createCompany ? "lead-company-description" : undefined
+                }
                 className="h-9 rounded-md border bg-background px-3 text-sm"
               >
-                <option value="">Do not associate an existing Company</option>
+                <option value="">No company</option>
+                <option value="create">Create company</option>
                 {companies.map((company) => (
                   <option key={company.id} value={company.id}>
                     {company.name}
                   </option>
                 ))}
               </select>
+              {createCompany ? (
+                <p
+                  id="lead-company-description"
+                  className="text-sm text-muted-foreground"
+                >
+                  Company name: {lead.companyName ?? lead.displayName}
+                </p>
+              ) : null}
             </div>
-            {!existingCompanyId ? (
-              <CheckRow
-                id="lead-create-company"
-                checked={createCompany}
-                onChange={setCreateCompany}
-                label={`Create Company ${lead.companyName ?? lead.displayName}`}
-              />
-            ) : null}
             <CheckRow
               id="lead-create-contact"
               checked={createContact}

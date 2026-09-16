@@ -1,5 +1,17 @@
 # First-Party CRM Plan
 
+## September 16, 2026 — Lead conversion Company selection
+
+Replace the separate create-Company checkbox with one Company dropdown containing
+No company, Create company and existing Companies. Preserve the Company-lead
+default of creating a Company and the Individual-lead default of no selection.
+Show the proposed name below Create company. One selection determines the existing
+Company ID or create flag, preserving contact-only conversion and the requirement
+for a Company when creating an Opportunity. Existing duplicate checks and the API
+contract remain unchanged. The staff guide and generated help are updated.
+TypeScript, scoped ESLint, help consistency and diff whitespace checks pass.
+Automated tests and browser acceptance were not run; the change is local.
+
 ## September 16, 2026 — Task editing and rescheduling
 
 Approved scope: Commercial and administrator users who already maintain CRM

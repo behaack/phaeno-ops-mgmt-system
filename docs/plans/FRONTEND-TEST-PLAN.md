@@ -1,5 +1,12 @@
 # Frontend Test Plan
 
+## September 16, 2026 — Lead conversion Company dropdown
+
+Single Company selection derives either an existing Company ID, createCompany,
+or neither; the API shape and conversion prerequisites are unchanged. No new
+component tests added for this bounded control change; execution not requested.
+TypeScript and scoped ESLint pass.
+
 ## September 16, 2026 — Task editing and rescheduling
 
 `CrmTaskEditDialog.test.tsx` covers pristine Save, preserved timestamp precision

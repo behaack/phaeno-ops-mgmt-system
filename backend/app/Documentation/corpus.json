@@ -1545,7 +1545,7 @@
       "title": "Leads and conversion",
       "summary": "Capture signals, record qualification decisions, and convert without granting Portal access.",
       "order": 17,
-      "reviewedAt": "2026-09-14",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "customer-relationship-management",
       "contentType": "guide",
       "topicIds": [
@@ -1566,7 +1566,7 @@
       "publicationStatus": "published",
       "id": "phaeno/crm-leads-conversion",
       "route": "/docs/phaeno/crm-leads-conversion",
-      "contentHash": "d6a62d8db05e4b396fb97fd71b2081307e3115bb810ddaf700570dbe42f3e83c",
+      "contentHash": "4dcf2e8fbb9e62188cdb64aa5590034ae70e67b5e6036b30c525485fba43627c",
       "sections": [
         {
           "heading": "Leads and conversion",
@@ -1586,7 +1586,7 @@
         {
           "heading": "Convert a qualified Lead",
           "anchor": "convert-a-qualified-lead",
-          "text": "Select Convert lead only from a Qualified Lead. Review each requested result: link an existing Company or create a Company from the Lead optionally create a Contact optionally create an Opportunity in an active pipeline If an existing Company is chosen, POMS links conversion to that CRM identity. If a new Company is requested, the Company name is required. Opportunity creation requires the Company outcome and uses the selected or default active pipeline. Likely Company or Contact duplicates stop unsafe creation or are returned as warnings. Review the suggested records and retry with an existing authoritative identity when appropriate. Do not alter spelling or identifying data merely to bypass duplicate detection. Conversion records the resulting Company, Contact, and Opportunity identifiers on the original Lead. It never enables Portal access or creates a user, entitlement, order, shipment, or Lab work order."
+          "text": "Select Convert lead only from a Qualified Lead. Review each requested result: choose an existing Company or Create company in the Company dropdown; No company supports a Contact-only conversion optionally create a Contact optionally create an Opportunity in an active pipeline If an existing Company is chosen, POMS links conversion to that CRM identity. Create company shows the name that will be used from the Lead's company name, or its display name when no company name is recorded. Opportunity creation requires an existing or new Company and uses the selected or default active pipeline. Likely Company or Contact duplicates stop unsafe creation or are returned as warnings. Review the suggested records and retry with an existing authoritative identity when appropriate. Do not alter spelling or identifying data merely to bypass duplicate detection. Conversion records the resulting Company, Contact, and Opportunity identifiers on the original Lead. It never enables Portal access or creates a user, entitlement, order, shipment, or Lab work order."
         },
         {
           "heading": "Correct mistakes safely",
@@ -3970,5 +3970,5 @@
       ]
     }
   ],
-  "corpusHash": "c6782fa84e78d344d74b89cadcac90e66e21ffb4e908596a433e8b32959be39e"
+  "corpusHash": "7dc414b33087ae266b90fb7f7e81c5c3a7f319cb433bdb1367155974d3abca34"
 }
