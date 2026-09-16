@@ -14,6 +14,24 @@ The command-driven scientific journey passes and exports only its generated synt
 
 ## Results
 
+### September 16 recovery — 05:29–05:32 Pacific
+
+The owner asked to fix the missing collection. Authenticated GitHub access was available in this continuation after the command's network restriction was handled through the approved escalation. No credential change was needed. The backup workflow was already active on default branch `main`, its `47 10 * * *` schedule was present there, and repository Actions were enabled. No repository-side schedule configuration error was found. GitHub had emitted no scheduled run; the precise scheduler-side cause remains unknown. [GitHub documents that scheduled events can be delayed or dropped](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
+
+**The host created the overnight snapshot at `2026-09-16T09:00:02Z` (02:00:02 Pacific).** The authorized recovery used only `collect-latest`; no new capture, API interruption, application deployment, migration or production restore occurred.
+
+- [Recovery collection run `35096088897`](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/35096088897): success, `workflow_dispatch`, `main` maintenance revision `e8df58b92aefebd3f4ddbecde96e23a9ee1fbab0`, completed `2026-09-16T12:29:18Z`.
+- Snapshot: `snapshot-20260916T090002Z-260bcfb1-9808-4111-928b-b5d87fc04f21`; newer than the installation snapshot. Its receipt identifies deployed application `5d57de217542efeafbe45b1bd654dc1ed200a6be` and migration `20260916000046_AddLabChangeQuoteSnapshots`.
+- Receipt flags: `restore_verified=true`, `api_resumed=true`, `envelope_roundtrip=true`, `cleanup_verified=true`. Actual managed-file count/bytes remain zero; populated restoration proof remains the separate rehearsal above.
+- Encrypted off-server artifact `10445867906`: 882139 bytes; unexpired, expires `2026-10-21T12:29:17Z`; ZIP digest `sha256:76544ac2f151a512e13ec55b8eab69a08a063e1863856fcaafbe56b68257872c`.
+- The encrypted payload, wrapped key and receipt were downloaded and verified; all three SHA-256 entries matched. The downloaded archive files were then moved into a dedicated Windows temporary directory outside the repository. Retained nonsensitive evidence: [receipt](2026-09-15-sys06-evidence/2026-09-16-overnight-receipt.env) and [encrypted checksums](2026-09-15-sys06-evidence/2026-09-16-overnight-encrypted.sha256). No payload or key is added to repository evidence.
+- The export-record step returned `backup_export_receipt=PASS` after artifact upload. Timer-install step was skipped.
+- Reissued enable for the existing GitHub workflow; readback shows `active`, updated `2026-09-16T12:30:26Z`. This is a recovery action, not proof that GitHub's next schedule event will fire.
+- Updated the existing 04:15 Pacific acceptance automation to recover a missed collection with `collect-latest` when a fresh host snapshot lacks a verified off-server artifact. It inspects recent runs first, never substitutes a new backup, retains the scheduled-evidence requirement and pauses only after genuine closure. This fallback is tied to the active acceptance automation, not an always-on server service.
+- Post-recovery API health **200**, database ping **204**, Portal **200**.
+
+**SYS-06 remains Blocked only on a genuine GitHub schedule-event collection. Total remains 80/81.** The overnight backup and its independently stored recovery copy are now verified. Manual collection does not close the remaining scheduled assertion. The next automatic check remains active for September 17 at 04:15 Pacific.
+
 ### September 16 scheduled follow-up — 04:17 Pacific
 
 **SYS-06 remains Blocked; the ledger stays 80/81.** GitHub's repository run API returned zero `schedule` runs, and the backup workflow still listed only installation run `35043891714` (`workflow_dispatch`). Workflow `359220409` is active and the repository default branch is `main`. At this checkpoint the 10:47 UTC collection had not appeared, approximately 30 minutes after its configured time. This establishes missing scheduled evidence, not a confirmed host-backup failure.
