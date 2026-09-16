@@ -898,7 +898,7 @@
       "title": "Customer relationship management",
       "summary": "Manage canonical Companies, Contacts, Leads, Opportunities, Portal access, Tasks, reporting, and data quality.",
       "order": 15,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "customer-relationship-management",
       "contentType": "overview",
       "topicIds": [
@@ -983,7 +983,7 @@
       "title": "Opportunities and pipelines",
       "summary": "Run commercial pursuits through controlled stages, immutable history, and currency-safe reporting.",
       "order": 18,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "customer-relationship-management",
       "contentType": "guide",
       "topicIds": [
@@ -1041,7 +1041,7 @@
       "title": "Reports and administration",
       "summary": "Interpret commercial reports and manage pipelines, fields, views, duplicates, imports, and exports.",
       "order": 20,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "customer-relationship-management",
       "contentType": "guide",
       "topicIds": [

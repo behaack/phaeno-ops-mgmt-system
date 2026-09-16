@@ -1,5 +1,23 @@
 # Backend Test Plan
 
+## September 16, 2026 — Empty pipeline deletion
+
+`CrmPipelineDeletionPostgresTests.cs` adds rollback-scoped coverage for admin-only access, stale versions, active/inactive empty deletion, default protection, active/inactive stages and retained closed/inactive Opportunity history. Tests added but not executed (not requested).
+
+## September 16, 2026 — Opportunity summary and queue
+
+`CrmOpportunitySummaryPostgresTests.cs` adds rollback-scoped coverage for more
+than 25 records, per-currency totals, zero/unpriced amounts, empty stages, search,
+pipeline isolation, inactive inclusion and stale-only/list count agreement.
+Tests added, not executed (not requested).
+
+## September 16, 2026 — Missing conversion Company name
+
+`CrmLeadConversionPostgresTests.cs` adds rollback-scoped cases for missing/blank/
+overlong names without conversion writes, trimmed saved names, duplicate entered
+names, recorded-name precedence, existing-company linking and contact-only
+conversion. Tests added, not executed (not requested).
+
 ## September 16, 2026 — Task editing and rescheduling
 
 `CrmTaskEditingTests` covers rescheduling in each active status, overdue/due-soon

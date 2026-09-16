@@ -55,11 +55,12 @@ export function CrmListPagination({ result, page, onPageChange, busy }: { result
   return <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm"><p>{result?.totalCount ?? 0} records · Page {page} of {pages}</p><div className="flex gap-2"><Button size="sm" variant="outline" disabled={busy || page <= 1} onClick={() => onPageChange(page - 1)}>Previous</Button><Button size="sm" variant="outline" disabled={busy || page >= pages} onClick={() => onPageChange(page + 1)}>Next</Button></div></div>
 }
 
-export function CrmClearFilters() {
+export function CrmClearFilters({ ignoreStageSelection = false, label = "Clear all", keepVisible = false }: { ignoreStageSelection?: boolean; label?: string; keepVisible?: boolean }) {
   const search = useRouterState({ select: state => state.location.search }) as CrmNavigationSearch
   const navigate = useNavigate()
-  if (!search.search && !search.requestId && !search.status && !search.includeInactive && !search.stageId && !search.overdue && !search.dueSoon && !search.needsNextAction && !search.stale && !(search.page && search.page > 1)) return null
-  return <Button type="button" size="sm" variant="ghost" onClick={() => void navigate({ to: '.', search: { pipelineId: search.pipelineId, board: search.board, section: search.section, returnTo: search.returnTo }, replace: true, resetScroll: false })}>Clear all</Button>
+  const hasFilters = Boolean(search.search || search.requestId || search.status || search.includeInactive || (!ignoreStageSelection && search.stageId) || search.overdue || search.dueSoon || search.needsNextAction || search.stale || (search.page && search.page > 1))
+  if (!hasFilters && !keepVisible) return null
+  return <Button type="button" size="sm" variant="ghost" disabled={!hasFilters} onClick={() => void navigate({ to: '.', search: { pipelineId: search.pipelineId, board: search.board, section: search.section, returnTo: search.returnTo }, replace: true, resetScroll: false })}>{label}</Button>
 }
 
 export function CrmProvisioningReturn() {

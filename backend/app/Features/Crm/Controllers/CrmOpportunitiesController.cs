@@ -22,11 +22,58 @@ public sealed class CrmOpportunitiesController(PSeqOperationsDbContext dbContext
     {
         await RequireActor(cancellationToken);
         EnsurePagination(page, pageSize);
+        var query = FilteredQuery(search, companyId, pipelineId, includeInactive, staleOnly);
+        if (stageId.HasValue) query = query.Where(value => value.StageId == stageId);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var values = await query.OrderBy(value => value.Stage.Position).ThenBy(value => value.ExpectedCloseDate).ThenBy(value => value.Name).ThenBy(value => value.Id)
+            .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+        return new CrmPageDto<CrmOpportunityDto> { Items = values.Select(value => ToDto(value)).ToList(), Page = page, PageSize = pageSize, TotalCount = totalCount };
+    }
+
+    [HttpGet("stage-summary")]
+    public async Task<IReadOnlyList<CrmOpportunityStageSummaryDto>> StageSummary(
+        [FromQuery] string? search, [FromQuery] Guid? companyId, [FromQuery] Guid? pipelineId,
+        [FromQuery] bool includeInactive = false, [FromQuery] bool staleOnly = false,
+        CancellationToken cancellationToken = default)
+    {
+        await RequireActor(cancellationToken);
+        // Stage and page intentionally do not restrict the overview of the matching pipeline.
+        var query = FilteredQuery(search, companyId, pipelineId, includeInactive, staleOnly);
+        var totals = await query.GroupBy(value => new { value.StageId, value.Currency })
+            .Select(group => new
+            {
+                group.Key.StageId,
+                group.Key.Currency,
+                Count = group.Count(),
+                UnpricedCount = group.Count(value => value.Amount == null),
+                Amount = group.Sum(value => value.Amount ?? 0m),
+            }).ToListAsync(cancellationToken);
+        var populatedStageIds = totals.Select(value => value.StageId).Distinct().ToArray();
+        var stages = await dbContext.CrmPipelineStages.AsNoTracking()
+            .Where(value => (!pipelineId.HasValue || value.PipelineId == pipelineId)
+                && ((value.IsActive && value.Pipeline.IsActive) || populatedStageIds.Contains(value.Id)))
+            .OrderBy(value => value.Pipeline.Name).ThenBy(value => value.PipelineId)
+            .ThenBy(value => value.Position).ThenBy(value => value.Id)
+            .Select(value => new { value.Id, value.Name, PipelineName = value.Pipeline.Name, value.Probability })
+            .ToListAsync(cancellationToken);
+        var byStage = totals.ToLookup(value => value.StageId);
+        return stages.Select(stage => new CrmOpportunityStageSummaryDto(
+            stage.Id, stage.Name, stage.PipelineName, stage.Probability,
+            byStage[stage.Id].Sum(value => value.Count),
+            byStage[stage.Id].Sum(value => value.UnpricedCount),
+            byStage[stage.Id].Where(value => value.Count > value.UnpricedCount)
+                .OrderBy(value => value.Currency)
+                .Select(value => new CrmOpportunityCurrencyTotalDto(value.Currency, value.Amount)).ToList()
+        )).ToList();
+    }
+
+    private IQueryable<CrmOpportunity> FilteredQuery(string? search, Guid? companyId, Guid? pipelineId, bool includeInactive, bool staleOnly)
+    {
         var query = Query(tracking: false);
         if (!includeInactive) query = query.Where(value => value.IsActive);
         if (companyId.HasValue) query = query.Where(value => value.CompanyId == companyId);
         if (pipelineId.HasValue) query = query.Where(value => value.PipelineId == pipelineId);
-        if (stageId.HasValue) query = query.Where(value => value.StageId == stageId);
         if (staleOnly) query = CrmAttentionFilters.StaleOpportunities(query, DateTime.UtcNow);
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -37,10 +84,7 @@ public sealed class CrmOpportunitiesController(PSeqOperationsDbContext dbContext
                 || (value.ProductInterest != null && EF.Functions.ILike(value.ProductInterest, pattern, "\\")));
         }
 
-        var totalCount = await query.CountAsync(cancellationToken);
-        var values = await query.OrderBy(value => value.Stage.Position).ThenBy(value => value.ExpectedCloseDate).ThenBy(value => value.Name)
-            .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
-        return new CrmPageDto<CrmOpportunityDto> { Items = values.Select(value => ToDto(value)).ToList(), Page = page, PageSize = pageSize, TotalCount = totalCount };
+        return query;
     }
 
     [HttpGet("{opportunityId:guid}")]

@@ -1,5 +1,52 @@
 # Frontend Test Plan
 
+## September 16, 2026 — Clear Home attention states
+
+CrmHomePage.test.tsx retains exact filtered-link coverage and adds explicit zero-state and loading/error-not-all-clear coverage. Zero counts are neutral nonlinks; positive counts describe the rule and offer Review. Tests updated but not executed (not requested).
+
+Signed-in local browser DOM verification confirmed all five zero counts, the No items need attention heading, explanatory rules and zero attention links. Screenshot capture timed out; populated/loading/error regression cases were updated but not executed. TypeScript, scoped ESLint, documentation consistency and whitespace checks pass. No business data changed.
+
+## September 16, 2026 — Combined pipeline summary
+
+Only multiple available active pipelines expose the Pipeline selector and All pipelines option, independently of the 30-day filter. One pipeline is automatically selected and its selector stays hidden. All pipelines displays one noninteractive All opportunities total from the paginated queue response's full matching count, not the current page length; the existing pipeline/stage context remains visible in each desktop/mobile queue row. Choosing a specific pipeline restores selectable stage summaries. Switching pipeline scope resets stage and pagination atomically. Saved views/export keep an empty pipeline filter for combined scope; the URL uses an explicit all selection so default initialization cannot overwrite it. Search and stale-work filtering apply to both count and queue. Older all-pipeline stale links remain supported. No API or database changes.
+
+Verification covers one pipeline with/without stale filtering, combined count beyond a page, specific/all switching and hidden-stage reset, filtering and queue pipeline/stage context. Automated tests are not run unless requested.
+
+Verified manually in a disposable local preview of the real page with 36 records across two pipelines: the combined total stays 36 on page 2, search reduces it to 1, stale filtering reduces it to 18, specific pipeline restores stage cards, selecting All clears a stage filter, and combined rows show pipeline/stage context. With only one pipeline, the selector stays hidden with stale filtering on/off and an existing All selection normalizes to that pipeline. Unpriced counts remain visible when qualifying records remain (15 with stale filtering versus 30 without). TypeScript, scoped ESLint, documentation consistency and whitespace checks pass. Preview data was local only; no business records were created or changed. Preview files/server were removed.
+
+## September 16, 2026 — Opportunity filter toolbar
+
+Clear filter is always visible at the end of the filter row, after the Pipeline dropdown when shown. On narrow screens with Pipeline visible, search spans the first row and Pipeline/Clear filter share the next. Disable it when no other filters or later queue page need clearing; stage-only selection does not enable it because All stages handles that reset. When enabled, clearing also resets the stage while preserving the pipeline. Other CRM pages retain their existing labels and visibility behavior.
+
+Hide the Pipeline dropdown for one active pipeline, including with stale-work aggregation. Preserve automatic pipeline selection. Search applies after the existing 250ms delay and Enter submits immediately; there is no redundant Search button.
+
+The earlier local browser check verified automatic search, reset behavior, single-pipeline dropdown hiding and the All pipelines exception. The local browser confirmed Clear filter stays visible and disabled with no applicable filters, enables after typing and returns to disabled after reset. Final local browser verification confirms Search, Pipeline, Clear filter left-to-right with aligned control bottoms; without Pipeline, Search is followed by the disabled Clear filter button. Scoped lint, documentation and whitespace checks pass. No automated tests added or run for these bounded presentation changes.
+
+## September 16, 2026 — CRM Actions menus
+
+Lead, pipeline and stage Actions menus retain existing availability and disabled guards. Verify keyboard menu operation, Edit/decision dialog handoff, Cancel returning focus to the trigger, default deactivation disabled and eligible deletion retaining confirmation. Automated component tests are not added for this presentation-only regrouping; execution was not requested.
+
+Verified in the signed-in local Portal: pipeline menu contains Edit, disabled default Deactivate and Add stage; stage menu supports keyboard Edit; lead menu contains Edit, Qualify and Disqualify for a Working lead. Pipeline/stage edit and lead qualification dialogs opened and cancelled without writes, restoring focus to their Actions buttons after closing. TypeScript, scoped ESLint, documentation consistency and whitespace checks pass. Automated tests were not run.
+
+## September 16, 2026 — Empty pipeline deletion
+
+Review Delete visibility only for nondefault pipelines without stages, named confirmation, Cancel, pending dismissal protection, visible errors, success announcement and focus after removal. Component automation is deferred; test execution was not requested. Stage percentages now use smaller 0.65rem text.
+
+## September 16, 2026 — Opportunity summary and queue
+
+`CrmOpportunityStageSummary.test.tsx` covers combined counts, distinct currencies,
+zero/unpriced amounts, numeric-only counts, stage probabilities, selection and
+All stages reset. The redundant Stage dropdown is removed. A zero-count regression
+covers summary responses without probability and configured 10%, 0% and 100% stages. Tests added,
+not executed (not requested). The queue ignores legacy board preferences.
+
+## September 16, 2026 — Missing conversion Company name
+
+Missing-name conversion uses React Hook Form and Zod for conditional required
+validation. Component test expansion is deferred; test execution not requested.
+Review name visibility only for Create company without a recorded name, whitespace
+validation, draft retention when switching choices and failed conversion.
+
 ## September 16, 2026 — Lead conversion Company dropdown
 
 Single Company selection derives either an existing Company ID, createCompany,

@@ -1,5 +1,49 @@
 # Playwright E2E Test Plan
 
+## September 16, 2026 — Clear Home attention states
+
+Review Home with all visible counts zero and with a positive count. Confirm explicit No items need attention, neutral zero cards, descriptive highlighted nonzero categories and matching Review links. Recent changes must appear as a separate reference section. Failed/loading dashboard states must not imply all clear. No business writes are required.
+
+Signed-in local browser DOM verification confirmed all five zero counts, the No items need attention heading, explanatory rules and zero attention links. Screenshot capture timed out; populated/loading/error regression cases were updated but not executed. TypeScript, scoped ESLint, documentation consistency and whitespace checks pass. No business data changed.
+
+## September 16, 2026 — Combined pipeline summary
+
+Only multiple available active pipelines expose the Pipeline selector and All pipelines option, independently of the 30-day filter. One pipeline is automatically selected and its selector stays hidden. All pipelines displays one noninteractive All opportunities total from the paginated queue response's full matching count, not the current page length; the existing pipeline/stage context remains visible in each desktop/mobile queue row. Choosing a specific pipeline restores selectable stage summaries. Switching pipeline scope resets stage and pagination atomically. Saved views/export keep an empty pipeline filter for combined scope; the URL uses an explicit all selection so default initialization cannot overwrite it. Search and stale-work filtering apply to both count and queue. Older all-pipeline stale links remain supported. No API or database changes.
+
+Verification covers one pipeline with/without stale filtering, combined count beyond a page, specific/all switching and hidden-stage reset, filtering and queue pipeline/stage context. Automated tests are not run unless requested.
+
+Verified manually in a disposable local preview of the real page with 36 records across two pipelines: the combined total stays 36 on page 2, search reduces it to 1, stale filtering reduces it to 18, specific pipeline restores stage cards, selecting All clears a stage filter, and combined rows show pipeline/stage context. With only one pipeline, the selector stays hidden with stale filtering on/off and an existing All selection normalizes to that pipeline. Unpriced counts remain visible when qualifying records remain (15 with stale filtering versus 30 without). TypeScript, scoped ESLint, documentation consistency and whitespace checks pass. Preview data was local only; no business records were created or changed. Preview files/server were removed.
+
+## September 16, 2026 — CRM Actions menus
+
+Review lead, pipeline and stage Actions menus using keyboard and pointer. Open Edit and Cancel without saving; verify focus restoration and existing disabled/hidden actions. No live status changes or deletions are part of this presentation verification.
+
+Verified in the signed-in local Portal: pipeline menu contains Edit, disabled default Deactivate and Add stage; stage menu supports keyboard Edit; lead menu contains Edit, Qualify and Disqualify for a Working lead. Pipeline/stage edit and lead qualification dialogs opened and cancelled without writes, restoring focus to their Actions buttons after closing. TypeScript, scoped ESLint, documentation consistency and whitespace checks pass. Automated tests were not run.
+
+## September 16, 2026 — Empty pipeline deletion
+
+Connected acceptance remains deferred: delete a disposable empty active/inactive pipeline, cancel without changes, reject stale or newly populated pipelines, and preserve defaults plus active/inactive stages and Opportunity history. Verify keyboard focus and error recovery. No live deletion or automated E2E execution was requested.
+
+## September 16, 2026 — Opportunity summary and queue
+
+Browser acceptance should cover a populated multi-page pipeline: summary counts
+stay complete on page/stage changes; summary buttons are the sole stage selector;
+search/pipeline/stale filters and saved views update both surfaces; detail-return
+restores filters/page; failures provide Retry; desktop/phone and light/dark layouts
+remain usable. No live business data writes or automated E2E run are requested.
+A disposable 36-record preview verified desktop/phone and light/dark rendering,
+full summary totals across queue pages, stage selection resetting page, All stages,
+Clear all and the absence of a Stage dropdown. Summary labels show numbers only,
+no empty-stage sentence, and configured probability. Connected data, error/retry,
+saved-view and detail-return acceptance remain deferred.
+
+## September 16, 2026 — Missing conversion Company name
+
+Connected/browser acceptance is deferred: a named Lead displays its recorded
+name; an unnamed Lead creating a Company must enter a name. Verify whitespace
+rejection, switching choices without losing the draft, duplicate-name recovery,
+existing-company linking and contact-only conversion. No live conversion run.
+
 ## September 16, 2026 — Lead conversion Company dropdown
 
 Browser acceptance is deferred: select Create company, an existing Company and

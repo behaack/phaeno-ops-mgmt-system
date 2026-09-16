@@ -96,7 +96,16 @@ public sealed class CrmLeadsController(PSeqOperationsDbContext dbContext, IExter
         EnsureVersion(lead.Version, request.Version);
         if (lead.Status != CrmLeadStatus.Qualified) throw Conflict("crm_lead_not_qualified", "Qualify the lead before conversion.");
 
-        var duplicateWarnings = await DuplicateWarnings(lead, cancellationToken);
+        var companyName = lead.CompanyName ?? request.CompanyName?.Trim();
+        if (request.CreateCompany && !request.ExistingCompanyId.HasValue)
+        {
+            if (string.IsNullOrWhiteSpace(companyName))
+                throw new CrmException("crm_company_name_required", "Enter a company name before converting this lead.");
+            if (companyName.Length > 255)
+                throw new CrmException("crm_company_name_too_long", "Use 255 characters or fewer for the company name.");
+        }
+
+        var duplicateWarnings = await DuplicateWarnings(lead, companyName, cancellationToken);
         if (request.CreateCompany && duplicateWarnings.Any(value => value.StartsWith("Company", StringComparison.Ordinal)))
         {
             throw Conflict("crm_lead_company_duplicate", "A likely Company match exists. Select the existing Company or resolve the duplicate before conversion.");
@@ -115,7 +124,7 @@ public sealed class CrmLeadsController(PSeqOperationsDbContext dbContext, IExter
         }
         else if (request.CreateCompany)
         {
-            company = Execute(() => new CrmCompany(lead.CompanyName ?? lead.DisplayName, lead.OwnerUserId, source: lead.Source, tags: lead.Tags));
+            company = Execute(() => new CrmCompany(companyName!, lead.OwnerUserId, source: lead.Source, tags: lead.Tags));
             dbContext.CrmCompanies.Add(company);
         }
 
@@ -164,10 +173,10 @@ public sealed class CrmLeadsController(PSeqOperationsDbContext dbContext, IExter
         return ToDto(value);
     }
 
-    private async Task<IReadOnlyList<string>> DuplicateWarnings(CrmLead lead, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<string>> DuplicateWarnings(CrmLead lead, string? companyName, CancellationToken cancellationToken)
     {
         var warnings = new List<string>();
-        if (!string.IsNullOrWhiteSpace(lead.CompanyName) && await dbContext.CrmCompanies.AnyAsync(value => value.IsActive && value.Name.ToLower() == lead.CompanyName.ToLower(), cancellationToken)) warnings.Add("Company name matches an existing Company.");
+        if (!string.IsNullOrWhiteSpace(companyName) && await dbContext.CrmCompanies.AnyAsync(value => value.IsActive && value.Name.ToLower() == companyName.ToLower(), cancellationToken)) warnings.Add("Company name matches an existing Company.");
         if (!string.IsNullOrWhiteSpace(lead.NormalizedEmail) && await dbContext.CrmContacts.AnyAsync(value => value.IsActive && value.NormalizedEmail == lead.NormalizedEmail, cancellationToken)) warnings.Add("Contact email matches an existing Contact.");
         return warnings;
     }

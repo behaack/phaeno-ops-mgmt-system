@@ -790,6 +790,7 @@ export async function convertCrmLead(
   input: {
     existingCompanyId?: string | null;
     createCompany: boolean;
+    companyName?: string | null;
     createContact: boolean;
     createOpportunity: boolean;
     opportunityName?: string | null;
@@ -841,6 +842,9 @@ export async function updateCrmPipeline(
     input,
   );
   return unwrap(response.data);
+}
+export async function deleteCrmPipeline(id: string, version: number) {
+  await api.delete(`/platform/crm/pipelines/${id}`, { data: { version } });
 }
 export async function changeCrmPipelineActive(
   id: string,
@@ -916,6 +920,28 @@ export async function listCrmOpportunities(input: {
   );
   return unwrap(response.data);
 }
+export type CrmOpportunityStageSummary = {
+  stageId: string;
+  stageName: string;
+  pipelineName: string;
+  probability?: number;
+  count: number;
+  unpricedCount: number;
+  currencyTotals: { currency: string; amount: number }[];
+};
+
+export async function getCrmOpportunityStageSummary(input: {
+  search?: string;
+  pipelineId?: string;
+  staleOnly?: boolean;
+}) {
+  const response = await api.get<ApiEnvelope<CrmOpportunityStageSummary[]>>(
+    "/platform/crm/opportunities/stage-summary",
+    { params: input },
+  );
+  return unwrap(response.data);
+}
+
 export async function getCrmOpportunity(id: string) {
   const response = await api.get<ApiEnvelope<CrmOpportunity>>(
     `/platform/crm/opportunities/${id}`,

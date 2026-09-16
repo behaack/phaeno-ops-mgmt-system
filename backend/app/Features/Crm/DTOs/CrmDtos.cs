@@ -170,7 +170,8 @@ public sealed record ConvertCrmLeadRequest(
     bool CreateOpportunity,
     string? OpportunityName,
     Guid? PipelineId,
-    long Version);
+    long Version,
+    string? CompanyName = null);
 
 public sealed record CrmLeadConversionDto(
     CrmLeadDto Lead,
@@ -201,6 +202,11 @@ public sealed record CrmPipelineDto(
 
 public sealed record UpsertCrmPipelineRequest(string Name, string? Description, bool IsDefault, long? Version);
 public sealed record UpsertCrmPipelineStageRequest(string Name, int Position, CrmPipelineStageCategory Category, int Probability, bool RequiresReason, long? Version);
+
+public sealed record CrmOpportunityCurrencyTotalDto(string Currency, decimal Amount);
+public sealed record CrmOpportunityStageSummaryDto(
+    Guid StageId, string StageName, string PipelineName, int Probability, int Count, int UnpricedCount,
+    IReadOnlyList<CrmOpportunityCurrencyTotalDto> CurrencyTotals);
 
 public sealed record CrmOpportunityDto(
     Guid Id,

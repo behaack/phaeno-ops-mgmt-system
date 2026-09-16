@@ -1,13 +1,14 @@
 import { CrmClearFilters, useCrmState, useCrmSearch, CrmListPagination } from "./CrmListNavigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { List, Plus, Rows3 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   apiErrorMessage,
   createCrmOpportunity,
   listCrmCompanies,
   listCrmOpportunities,
+  getCrmOpportunityStageSummary,
   listCrmPipelines,
   type CrmOpportunityInput,
 } from "#/api/crm";
@@ -25,45 +26,58 @@ import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { CrmOpportunityDialog } from "./CrmOpportunityDialog";
 import { CrmSavedViewBar } from "./CrmSavedViewBar";
+import { CrmOpportunityStageSummary, formatOpportunityAmount } from "./CrmOpportunityStageSummary";
 
 export function CrmOpportunitiesPage() {
   const [page, setPage] = useCrmState<number>("page", 1);
   const navigate = useNavigate();
   const client = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [board, setBoard] = useCrmState<boolean>("board", true);
   const [draftSearch, setDraftSearch, search, setSearch] = useCrmSearch();
-  const [pipelineId, setPipelineId] = useCrmState<string>("pipelineId", "");
+  const [pipelineId] = useCrmState<string>("pipelineId", "");
   const [stageId, setStageId] = useCrmState<string>("stageId", "");
   const [stale, setStale] = useCrmState<boolean>('stale', false);
-  const opportunities = useQuery({
-    queryKey: ["crm-opportunities", search, pipelineId, stageId, stale, page],
-    queryFn: () =>
-      listCrmOpportunities({
-        search,
-        pipelineId: pipelineId || undefined,
-        stageId: stageId || undefined,
-        staleOnly: stale,
-        page, pageSize: 25,
-      }),
-    enabled: Boolean(pipelineId) || stale,
-  });
   const pipelines = useQuery({
     queryKey: ["crm-pipelines"],
     queryFn: () => listCrmPipelines(),
+  });
+  const activePipelines = (pipelines.data ?? []).filter(value => value.isActive);
+  const showPipelineFilter = activePipelines.length > 1;
+  const defaultPipelineId = activePipelines.find(value => value.isDefault)?.id ?? activePipelines[0]?.id ?? "";
+  const allPipelines = showPipelineFilter && (pipelineId === "all" || (!pipelineId && stale));
+  const selectedPipelineId = allPipelines ? "" : activePipelines.length === 1 ? activePipelines[0].id : pipelineId && pipelineId !== "all" ? pipelineId : defaultPipelineId;
+  const selectedStageId = allPipelines || pipelineId === "all" ? "" : stageId;
+  const opportunities = useQuery({
+    queryKey: ["crm-opportunities", search, selectedPipelineId, selectedStageId, stale, page],
+    queryFn: () => listCrmOpportunities({
+      search,
+      pipelineId: selectedPipelineId || undefined,
+      stageId: selectedStageId || undefined,
+      staleOnly: stale,
+      page, pageSize: 25,
+    }),
+    enabled: pipelines.isSuccess && (allPipelines || Boolean(selectedPipelineId)),
+  });
+  const summary = useQuery({
+    queryKey: ["crm-opportunities", "stage-summary", search, selectedPipelineId, stale],
+    queryFn: () => getCrmOpportunityStageSummary({ search, pipelineId: selectedPipelineId, staleOnly: stale }),
+    enabled: pipelines.isSuccess && !allPipelines && Boolean(selectedPipelineId),
   });
   const companies = useQuery({
     queryKey: ["crm-companies", "choices"],
     queryFn: () => listCrmCompanies({ pageSize: 100 }),
   });
   useEffect(() => {
-    if (!pipelineId && !stale && pipelines.data?.length) {
-      setPipelineId(
-        pipelines.data.find((value) => value.isDefault)?.id ??
-          pipelines.data[0].id,
-      );
+    if (!pipelines.isSuccess || !defaultPipelineId) return;
+    const nextPipelineId = allPipelines ? "all" : selectedPipelineId;
+    if (pipelineId !== nextPipelineId || (allPipelines && stageId)) {
+      void navigate({ to: ".", search: previous => ({
+        ...previous, pipelineId: nextPipelineId,
+        stageId: allPipelines || (pipelineId && pipelineId !== nextPipelineId) ? "" : stageId,
+        page: 1,
+      }), replace: true, resetScroll: false });
     }
-  }, [pipelineId, pipelines.data, setPipelineId, stale]);
+  }, [allPipelines, defaultPipelineId, navigate, pipelineId, pipelines.isSuccess, selectedPipelineId, stageId]);
   const create = useMutation({
     mutationFn: (input: CrmOpportunityInput) => createCrmOpportunity(input),
     onSuccess: async (value) => {
@@ -79,12 +93,6 @@ export function CrmOpportunitiesPage() {
     },
   });
   const records = opportunities.data?.items ?? [];
-  const stages =
-    pipelines.data
-      ?.filter((pipeline) => !pipelineId || pipeline.id === pipelineId)
-      .flatMap((pipeline) =>
-        pipeline.stages.filter((stage) => stage.isActive),
-      ) ?? [];
   return (
     <main className="page-wrap space-y-6 px-4 py-8">
       <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -99,14 +107,6 @@ export function CrmOpportunitiesPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setBoard((value) => !value)}>
-            {board ? (
-              <List data-icon="inline-start" />
-            ) : (
-              <Rows3 data-icon="inline-start" />
-            )}
-            {board ? "Table view" : "Board view"}
-          </Button>
           <Button onClick={() => setOpen(true)}>
             <Plus data-icon="inline-start" />
             New opportunity
@@ -126,126 +126,99 @@ export function CrmOpportunitiesPage() {
         <CardHeader>
           <CardTitle>Opportunity view</CardTitle>
           <CardDescription>
-            Search and focus the board or table on one pipeline and stage.
+            Search and filter the opportunity queue by pipeline and stage.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <form
             role="search"
-            className="grid gap-3 sm:grid-cols-[minmax(12rem,1fr)_minmax(10rem,auto)_minmax(10rem,auto)_auto] sm:items-end"
+            className={showPipelineFilter
+              ? "grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(10rem,auto)_auto]"
+              : "grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3"}
             onSubmit={(event) => {
               event.preventDefault();
               setSearch(draftSearch.trim());
             }}
           >
-            <div className="grid gap-1.5">
+            <div className={showPipelineFilter ? "col-span-2 grid min-w-0 gap-1.5 sm:col-span-1" : "grid min-w-0 gap-1.5"}>
               <Label htmlFor="opportunity-search">Search opportunities</Label>
               <Input
                 id="opportunity-search"
+                className="min-w-0"
                 value={draftSearch}
                 onChange={(event) => setDraftSearch(event.target.value)}
                 placeholder="Opportunity number, name, Company, or product"
               />
             </div>
-            <div className="grid gap-1.5">
+            {showPipelineFilter ? <div className="grid gap-1.5">
               <Label htmlFor="opportunity-pipeline-filter">Pipeline</Label>
               <select
                 id="opportunity-pipeline-filter"
-                value={pipelineId}
+                value={allPipelines ? "all" : selectedPipelineId}
                 onChange={(event) => {
-                  setPipelineId(event.target.value);
-                  setStageId("");
+                  const nextPipelineId = event.target.value;
+                  void navigate({ to: ".", search: previous => ({ ...previous, pipelineId: nextPipelineId, stageId: "", page: 1 }), replace: true, resetScroll: false });
                 }}
                 className="h-9 rounded-md border bg-background px-3 text-sm"
               >
-                {stale ? <option value="">All pipelines</option> : null}
-                {(pipelines.data ?? [])
-                  .filter((value) => value.isActive)
-                  .map((pipeline) => (
+                <option value="all">All pipelines</option>
+                {activePipelines.map((pipeline) => (
                     <option key={pipeline.id} value={pipeline.id}>
                       {pipeline.name}
                     </option>
                   ))}
               </select>
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="opportunity-stage-filter">Stage</Label>
-              <select
-                id="opportunity-stage-filter"
-                value={stageId}
-                onChange={(event) => setStageId(event.target.value)}
-                className="h-9 rounded-md border bg-background px-3 text-sm"
-              >
-                <option value="">All stages</option>
-                {stages.map((stage) => (
-                  <option key={stage.id} value={stage.id}>
-                    {stage.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <Button type="submit" variant="outline">
-              Search
-            </Button>
+            </div> : null}
+            <CrmClearFilters ignoreStageSelection keepVisible label="Clear filter" />
           </form>
-          <CrmClearFilters />
           <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" checked={stale} onChange={event => setStale(event.target.checked)} />Open opportunities unchanged for 30 days</label>
           <CrmSavedViewBar
             recordType="Opportunity"
-            currentFilter={{ search, pipelineId, stageId, board, stale }}
+            currentFilter={{ search, pipelineId: selectedPipelineId, stageId: selectedStageId, stale }}
             onApply={(filter) => {
-              setStale(filter.stale === true);
-              const nextSearch =
-                typeof filter.search === "string" ? filter.search : "";
+              const nextSearch = typeof filter.search === "string" ? filter.search : "";
+              const nextPipelineId = typeof filter.pipelineId === "string" && filter.pipelineId
+                ? filter.pipelineId : showPipelineFilter ? "all" : defaultPipelineId;
               setDraftSearch(nextSearch);
-              setSearch(nextSearch);
-              setPipelineId(
-                typeof filter.pipelineId === "string" ? filter.pipelineId : "",
-              );
-              setStageId(
-                typeof filter.stageId === "string" ? filter.stageId : "",
-              );
-              setBoard(filter.board !== false);
+              void navigate({ to: ".", search: previous => ({
+                ...previous, search: nextSearch, stale: filter.stale === true,
+                pipelineId: nextPipelineId,
+                stageId: nextPipelineId === "all" ? "" : typeof filter.stageId === "string" ? filter.stageId : "",
+                page: 1,
+              }), replace: true, resetScroll: false });
             }}
           />
-          <CrmListPagination result={opportunities.data} page={page} onPageChange={setPage} busy={opportunities.isFetching} />
         </CardContent>
       </Card>
-      {board ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {stages.map((stage) => (
-            <section key={stage.id} className="rounded-lg border bg-muted/20">
-              <header className="flex justify-between border-b p-3">
-                <h2 className="font-semibold">{stage.name}</h2>
-                <Badge variant="outline">
-                  {records.filter((value) => value.stageId === stage.id).length}
-                </Badge>
-              </header>
-              <div className="space-y-3 p-3">
-                {records
-                  .filter((value) => value.stageId === stage.id)
-                  .map((value) => (
-                    <OpportunityCard key={value.id} value={value} />
-                  ))}
-                {!records.some((value) => value.stageId === stage.id) ? (
-                  <p className="py-5 text-center text-xs text-muted-foreground">
-                    No opportunities
-                  </p>
-                ) : null}
-              </div>
-            </section>
-          ))}
-        </div>
-      ) : (
+      <section aria-label="Pipeline summary" aria-busy={allPipelines ? opportunities.isFetching : summary.isFetching} className="space-y-2">
+        <h2 className="text-lg font-semibold">Pipeline summary</h2>
+        <p className="text-sm text-muted-foreground">{allPipelines
+          ? "All opportunities matching the search and stale-work filters across all pipelines and queue pages."
+          : "All opportunities matching the pipeline, search and stale-work filters. Select a stage to focus the queue."}</p>
+        {allPipelines ? (
+          opportunities.isError ? <Alert variant="destructive"><AlertDescription>Could not load the opportunity total. <Button variant="outline" size="sm" onClick={() => void opportunities.refetch()}>Retry total</Button></AlertDescription></Alert>
+            : opportunities.data ? <dl className="rounded-lg border bg-card p-3">
+              <dt className="text-sm font-medium">All opportunities</dt>
+              <dd className="mt-1 text-lg font-semibold tabular-nums">{opportunities.data.totalCount.toLocaleString()}</dd>
+            </dl> : <p role="status">Loading opportunity total…</p>
+        ) : summary.isError ? <Alert variant="destructive"><AlertDescription>Could not load pipeline totals. <Button variant="outline" size="sm" onClick={() => void summary.refetch()}>Retry pipeline totals</Button></AlertDescription></Alert>
+          : summary.data ? <CrmOpportunityStageSummary stages={summary.data} configuredStages={pipelines.data?.flatMap(pipeline => pipeline.stages)} selectedStageId={selectedStageId} showPipeline={false} onSelect={setStageId} />
+          : summary.isLoading || pipelines.isLoading ? <p role="status">Loading pipeline totals…</p>
+          : <p className="text-sm text-muted-foreground">Select an active pipeline to view its opportunities.</p>}
+      </section>
         <Card>
           <CardHeader>
-            <CardTitle>Opportunity directory</CardTitle>
+            <CardTitle>Opportunity queue</CardTitle>
             <CardDescription>
-              All open and closed commercial work.
+              Open and closed opportunities, with their current stage and next action.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
+          <CardContent aria-busy={opportunities.isFetching}>
+            {opportunities.isLoading ? <p role="status">Loading opportunities…</p>
+              : opportunities.isError ? <Alert variant="destructive"><AlertDescription>Could not load opportunities. <Button variant="outline" size="sm" onClick={() => void opportunities.refetch()}>Retry opportunities</Button></AlertDescription></Alert>
+              : records.length === 0 ? <p className="py-6 text-center text-sm text-muted-foreground">No opportunities match these filters.</p>
+              : <>
+            <div className="overflow-x-auto hidden md:block">
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="text-xs text-muted-foreground">
@@ -253,8 +226,9 @@ export function CrmOpportunitiesPage() {
                     <th className="whitespace-nowrap p-3">Company</th>
                     <th className="whitespace-nowrap p-3">Stage</th>
                     <th className="whitespace-nowrap p-3">Amount</th>
-                    <th className="whitespace-nowrap p-3">Close</th>
+                    <th className="whitespace-nowrap p-3">Expected close</th>
                     <th className="whitespace-nowrap p-3">Owner</th>
+                    <th className="whitespace-nowrap p-3">Next action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -273,18 +247,35 @@ export function CrmOpportunitiesPage() {
                         </p>
                       </td>
                       <td className="p-3">{value.companyName}</td>
-                      <td className="p-3">{value.stageName}</td>
-                      <td className="p-3">{money(value)}</td>
+                      <td className="p-3"><Badge variant="outline">{value.stageName}</Badge>{allPipelines ? <p className="mt-1 text-xs text-muted-foreground">{value.pipelineName}</p> : null}</td>
+                      <td className="p-3">{formatOpportunityAmount(value)}</td>
                       <td className="p-3">{value.expectedCloseDate ?? "—"}</td>
                       <td className="p-3">{value.ownerName}</td>
+                      <td className="max-w-64 whitespace-normal p-3">{value.nextStep ?? "—"}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+            <ul className="divide-y md:hidden">
+              {records.map(value => <li key={value.id} className="space-y-2 py-4">
+                <Link to="/crm/opportunities/$opportunityId" search={previous => previous} params={{ opportunityId: value.id }} className="font-medium hover:underline">{value.name}</Link>
+                <p className="font-mono text-xs text-muted-foreground">{value.opportunityNumber}</p>
+                <p className="text-sm">{value.companyName}</p>
+                <Badge variant="outline">{value.stageName}</Badge>
+                {allPipelines ? <p className="text-xs text-muted-foreground">{value.pipelineName}</p> : null}
+                <dl className="grid grid-cols-2 gap-2 text-sm">
+                  <div><dt className="text-xs text-muted-foreground">Amount</dt><dd>{formatOpportunityAmount(value)}</dd></div>
+                  <div><dt className="text-xs text-muted-foreground">Owner</dt><dd>{value.ownerName}</dd></div>
+                  <div><dt className="text-xs text-muted-foreground">Expected close</dt><dd>{value.expectedCloseDate ?? "—"}</dd></div>
+                  <div><dt className="text-xs text-muted-foreground">Next action</dt><dd>{value.nextStep ?? "—"}</dd></div>
+                </dl>
+              </li>)}
+            </ul>
+            </>}
+            {opportunities.data && !opportunities.isError ? <CrmListPagination result={opportunities.data} page={page} onPageChange={setPage} busy={opportunities.isFetching} /> : null}
           </CardContent>
         </Card>
-      )}
       <CrmOpportunityDialog
         open={open}
         companies={companies.data?.items ?? []}
@@ -299,36 +290,4 @@ export function CrmOpportunitiesPage() {
       />
     </main>
   );
-}
-function OpportunityCard({
-  value,
-}: {
-  value: Awaited<ReturnType<typeof listCrmOpportunities>>["items"][number];
-}) {
-  return (
-    <Link
-      to="/crm/opportunities/$opportunityId" search={previous => previous}
-      params={{ opportunityId: value.id }}
-      className="block rounded-lg border bg-card p-3 shadow-sm hover:bg-muted/40 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-    >
-      <p className="font-medium">{value.name}</p>
-      <p className="mt-1 font-mono text-xs text-muted-foreground">
-        {value.opportunityNumber}
-      </p>
-      <p className="mt-1 text-xs text-muted-foreground">{value.companyName}</p>
-      <div className="mt-3 flex justify-between text-xs">
-        <span>{money(value)}</span>
-        <span>{value.probability}%</span>
-      </div>
-    </Link>
-  );
-}
-function money(value: { amount: number | null; currency: string }) {
-  return value.amount == null
-    ? "—"
-    : new Intl.NumberFormat(undefined, {
-        style: "currency",
-        currency: value.currency,
-        maximumFractionDigits: 0,
-      }).format(value.amount);
 }

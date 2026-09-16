@@ -1368,7 +1368,7 @@
       "title": "Customer relationship management",
       "summary": "Manage canonical Companies, Contacts, Leads, Opportunities, Portal access, Tasks, reporting, and data quality.",
       "order": 15,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "customer-relationship-management",
       "contentType": "overview",
       "topicIds": [
@@ -1387,7 +1387,7 @@
       "publicationStatus": "published",
       "id": "phaeno/crm",
       "route": "/docs/phaeno/crm",
-      "contentHash": "8de72279666f799a7ba1f47ae5c656f1764f5aad930bf53041943cf059012922",
+      "contentHash": "7fe0941311b0a587e5283e738e082c7bcfa94cf9b52e5f44760efcfaaf46fa90",
       "sections": [
         {
           "heading": "Customer relationship management",
@@ -1402,7 +1402,7 @@
         {
           "heading": "Start from Home",
           "anchor": "start-from-home",
-          "text": "Home answers what needs attention. It shows overdue and due-soon Tasks, Leads without a next action, stale Opportunities, your next Tasks, and recently changed Opportunities. Administrators also see required-data warnings. Use Find anything to search active Companies, Contacts, Leads, Opportunities, and Tasks. Enter at least two characters, then choose a result to open its owning workspace. Search does not cross into Portal users, specimens, files, or laboratory records. Commercial staff can maintain Companies, Contacts, relationships, Leads, Opportunities, Tasks, ordinary Internal Activities, personal saved views, and Internal custom values, and read Reports. A platform administrator manages Company and Contact deactivation/reactivation and merges, Portal identity and access, Company Requests, pipelines and field definitions, imports, exports, shared-view publication, and Restricted Activities and custom values. Administrative sections and actions are shown only to administrators."
+          "text": "Home separates follow-up checks from your next Tasks and recently changed Opportunities. When all visible counts are zero, it says No items need attention. Categories with matching records are highlighted and offer Review to open their queue; zero-count categories remain neutral. Each category explains its rule: unfinished overdue or due-soon Tasks, active Leads without a next action, and open Opportunities unchanged for more than 30 days. Administrators also see possible duplicates and missing required custom-field values under Data warnings. Recently changed Opportunities are shown separately for reference. A missing Opportunity amount alone does not trigger an attention warning. Use Find anything to search active Companies, Contacts, Leads, Opportunities, and Tasks. Enter at least two characters, then choose a result to open its owning workspace. Search does not cross into Portal users, specimens, files, or laboratory records. Commercial staff can maintain Companies, Contacts, relationships, Leads, Opportunities, Tasks, ordinary Internal Activities, personal saved views, and Internal custom values, and read Reports. A platform administrator manages Company and Contact deactivation/reactivation and merges, Portal identity and access, Company Requests, pipelines and field definitions, imports, exports, shared-view publication, and Restricted Activities and custom values. Administrative sections and actions are shown only to administrators."
         },
         {
           "heading": "Keep the domain boundaries clear",
@@ -1566,7 +1566,7 @@
       "publicationStatus": "published",
       "id": "phaeno/crm-leads-conversion",
       "route": "/docs/phaeno/crm-leads-conversion",
-      "contentHash": "4dcf2e8fbb9e62188cdb64aa5590034ae70e67b5e6036b30c525485fba43627c",
+      "contentHash": "eab1a14e002cd3306f5803e639242f5f5f7efba36eb8ae2fe7a8a2554a340f09",
       "sections": [
         {
           "heading": "Leads and conversion",
@@ -1581,12 +1581,12 @@
         {
           "heading": "Qualify or disqualify",
           "anchor": "qualify-or-disqualify",
-          "text": "Open the Lead. Select Start working before active follow-up when it is still New. Qualification and disqualification require an explanation so another Phaeno user can understand the decision. The full-width Qualification record shows only the applicable decision: qualification notes for Qualified or Converted Leads, the disqualification reason for Disqualified Leads, or a concise pending state while no decision exists. Qualify only when the organization or person, commercial fit, and next action are understood well enough to avoid speculative records. Disqualify when follow-up should stop; record the actual commercial reason without protected scientific or patient information."
+          "text": "Open the Lead and use its Actions menu to edit it or change its status. Select Start working before active follow-up when it is still New. Qualification and disqualification require an explanation so another Phaeno user can understand the decision. The full-width Qualification record shows only the applicable decision: qualification notes for Qualified or Converted Leads, the disqualification reason for Disqualified Leads, or a concise pending state while no decision exists. Qualify only when the organization or person, commercial fit, and next action are understood well enough to avoid speculative records. Disqualify when follow-up should stop; record the actual commercial reason without protected scientific or patient information."
         },
         {
           "heading": "Convert a qualified Lead",
           "anchor": "convert-a-qualified-lead",
-          "text": "Select Convert lead only from a Qualified Lead. Review each requested result: choose an existing Company or Create company in the Company dropdown; No company supports a Contact-only conversion optionally create a Contact optionally create an Opportunity in an active pipeline If an existing Company is chosen, POMS links conversion to that CRM identity. Create company shows the name that will be used from the Lead's company name, or its display name when no company name is recorded. Opportunity creation requires an existing or new Company and uses the selected or default active pipeline. Likely Company or Contact duplicates stop unsafe creation or are returned as warnings. Review the suggested records and retry with an existing authoritative identity when appropriate. Do not alter spelling or identifying data merely to bypass duplicate detection. Conversion records the resulting Company, Contact, and Opportunity identifiers on the original Lead. It never enables Portal access or creates a user, entitlement, order, shipment, or Lab work order."
+          "text": "Select Actions > Convert lead from a Qualified Lead. Review each requested result: choose an existing Company or Create company in the Company dropdown; No company supports a Contact-only conversion optionally create a Contact optionally create an Opportunity in an active pipeline If an existing Company is chosen, POMS links conversion to that CRM identity. Create company uses the Lead's recorded company name when available. If the Lead has no company name, enter the required Company name in the conversion modal. This names the new Company without changing the original Lead's captured details. Opportunity creation requires an existing or new Company and uses the selected or default active pipeline. Likely Company or Contact duplicates stop unsafe creation or are returned as warnings. Review the suggested records and retry with an existing authoritative identity when appropriate. Do not alter spelling or identifying data merely to bypass duplicate detection. Conversion records the resulting Company, Contact, and Opportunity identifiers on the original Lead. It never enables Portal access or creates a user, entitlement, order, shipment, or Lab work order."
         },
         {
           "heading": "Correct mistakes safely",
@@ -1603,7 +1603,7 @@
       "title": "Opportunities and pipelines",
       "summary": "Run commercial pursuits through controlled stages, immutable history, and currency-safe reporting.",
       "order": 18,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "customer-relationship-management",
       "contentType": "guide",
       "topicIds": [
@@ -1624,7 +1624,7 @@
       "publicationStatus": "published",
       "id": "phaeno/crm-opportunities-pipelines",
       "route": "/docs/phaeno/crm-opportunities-pipelines",
-      "contentHash": "a199d46d495430890165f7b285f6cf03b1c93dc8a302c16d516c582f829a6957",
+      "contentHash": "5ecac6c38474b487ee3a604b49a6a75b3c153f332ebb58987ee948b73a749015",
       "sections": [
         {
           "heading": "Opportunities and pipelines",
@@ -1639,7 +1639,7 @@
         {
           "heading": "Work the pipeline",
           "anchor": "work-the-pipeline",
-          "text": "The default board groups Opportunities by active stage. Use Table view when comparison across Company, stage, amount, close date, and owner is more useful. Search by identity and filter by pipeline or stage. Saved views retain the current filters and board/table choice; Export current view uses those same filters. Open the Opportunity name for its view-first workspace. Use Edit for commercial facts. Associate buying-team Contacts with an optional role and one primary Contact when that reflects the pursuit. In Opportunity contacts, select Associate and search the Contact directory by name or email. Choose a result, optionally record the person's role, and select Associate contact. Contacts already actively associated with this Opportunity are excluded from the choices. If the section or directory search fails, use its Retry action before continuing; a failed load is not an empty buying team. Use the association's Manage action to change its role or primary designation. Remove association asks for confirmation and retains the Contact and prior association in history. Keep association returns to the editor. Failed saves retain your entries; leaving an edited draft asks whether to discard the unsaved changes."
+          "text": "For a selected pipeline, the Pipeline summary shows each stage's configured probability beside its name, a numeric count and recorded value across all matching Opportunities, including records beyond the current queue page. Values remain separate by currency; unpriced means no amount has been recorded, while zero is a recorded value. Search, pipeline and the stale-work filter affect the summary. Selecting a stage filters the queue while keeping the full stage summary visible; choose All stages to clear the stage filter. Clear filter stays at the end of the filter row, after the Pipeline dropdown when shown, and is disabled when no other filters or later queue page need clearing; selecting a stage alone does not enable it. When enabled, it also clears the selected stage while keeping the pipeline. Use the single Opportunity queue to compare Company, stage, amount, expected close, owner and next action. It pages through 25 records at a time and uses compact rows on phones. Search applies automatically as you type; Enter applies the current text immediately. Use the summary buttons to select a stage. The Pipeline dropdown, including All pipelines, appears only when multiple active pipelines are available. With one available pipeline, it is selected automatically and the dropdown remains hidden even with the 30-day filter enabled. All pipelines replaces stage cards with one All opportunities count across every matching queue page; search and the 30-day filter still apply. The combined queue shows each Opportunity's pipeline and stage. Choosing a specific pipeline restores its selectable stage cards. Saved views retain the filters; old saved board/table preferences now open the same queue. Export current view uses those same filters. Open the Opportunity name for its view-first workspace. Use Edit for commercial facts. Associate buying-team Contacts with an optional role and one primary Contact when that reflects the pursuit. In Opportunity contacts, select Associate and search the Contact directory by name or email. Choose a result, optionally record the person's role, and select Associate contact. Contacts already actively associated with this Opportunity are excluded from the choices. If the section or directory search fails, use its Retry action before continuing; a failed load is not an empty buying team. Use the association's Manage action to change its role or primary designation. Remove association asks for confirmation and retains the Contact and prior association in history. Keep association returns to the editor. Failed saves retain your entries; leaving an edited draft asks whether to discard the unsaved changes."
         },
         {
           "heading": "Move stages deliberately",
@@ -1719,7 +1719,7 @@
       "title": "Reports and administration",
       "summary": "Interpret commercial reports and manage pipelines, fields, views, duplicates, imports, and exports.",
       "order": 20,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "customer-relationship-management",
       "contentType": "guide",
       "topicIds": [
@@ -1748,7 +1748,7 @@
       "publicationStatus": "published",
       "id": "phaeno/crm-reports-administration",
       "route": "/docs/phaeno/crm-reports-administration",
-      "contentHash": "77c62ad8fe8dc360fc1cef68781ce4a29e6b6cbff74d0a79f972a355efacb801",
+      "contentHash": "503f4a7a53e2c442236294f2ed405f2f00b01543f03163217efcbb5b96f96e8e",
       "sections": [
         {
           "heading": "Reports and administration",
@@ -1763,7 +1763,7 @@
         {
           "heading": "Configure pipelines and stages",
           "anchor": "configure-pipelines-and-stages",
-          "text": "Open Administration. Create a pipeline for a distinct commercial process, then add ordered stages. Each stage has a name, position, category, probability, and a choice requiring transition reason. Only one active default pipeline supplies default conversion behavior. Deactivating a pipeline or stage removes it from new selections without erasing Opportunity or stage history. Before deactivation, review active Opportunities that still depend on it and move them through valid business transitions."
+          "text": "Open Administration. Create a pipeline for a distinct commercial process, then add ordered stages. Each stage has a name, position, category, probability, and a choice requiring transition reason. Each pipeline and stage has an Actions menu for editing and deactivation or reactivation. The pipeline menu also contains Add stage and, when eligible, Delete. Only one active default pipeline supplies default conversion behavior. Deactivating a pipeline or stage removes it from new selections without erasing Opportunity or stage history. Before deactivation, review active Opportunities that still depend on it and move them through valid business transitions. An administrator can select Actions > Delete for a pipeline with no stages and no Opportunity history, whether active or inactive. Confirm the pipeline name before permanently deleting it. Inactive stages also prevent deletion. Choose another default pipeline before deleting the current default; use Deactivate for pipelines that contain stages or history."
         },
         {
           "heading": "Configure custom fields",
@@ -3970,5 +3970,5 @@
       ]
     }
   ],
-  "corpusHash": "7dc414b33087ae266b90fb7f7e81c5c3a7f319cb433bdb1367155974d3abca34"
+  "corpusHash": "2eaf02f826b8f6a300dac56dd6c960a8692b218730ff2959657241a4a997128f"
 }

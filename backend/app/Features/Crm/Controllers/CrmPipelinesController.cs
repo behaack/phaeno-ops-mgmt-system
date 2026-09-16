@@ -3,6 +3,7 @@ namespace PhaenoPortal.App.Features.Crm.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using PSeq.Operations.Commercial.Accounts.Application;
 using PSeq.Operations.Commercial.Crm.Domain;
 using PhaenoPortal.App.Features.Accounts.Services;
@@ -74,6 +75,35 @@ public sealed class CrmPipelinesController(PSeqOperationsDbContext dbContext, IE
         Execute(lifecycleAction == "reactivate" ? value.Reactivate : value.Deactivate);
         await dbContext.SaveChangesAsync(cancellationToken);
         return ToDto(value);
+    }
+
+    [HttpDelete("{pipelineId:guid}")]
+    public async Task<IActionResult> Delete(Guid pipelineId, [FromBody] ChangeCrmCompanyActiveRequest request, CancellationToken cancellationToken)
+    {
+        await RequireActor(cancellationToken);
+        var value = await Require(pipelineId, cancellationToken);
+        EnsureVersion(value.Version, request.Version);
+        if (value.IsDefault)
+            throw Conflict("crm_default_pipeline_active", "Choose another default pipeline before deleting this one.");
+
+        // Include inactive stages and closed/inactive Opportunities; history must never be erased.
+        if (value.Stages.Count != 0
+            || await dbContext.CrmOpportunities.AnyAsync(item => item.PipelineId == pipelineId, cancellationToken)
+            || await dbContext.CrmOpportunityStageHistory.AnyAsync(item =>
+                item.ToStage.PipelineId == pipelineId || (item.FromStage != null && item.FromStage.PipelineId == pipelineId), cancellationToken))
+            throw Conflict("crm_pipeline_not_empty", "Only a pipeline with no stages or Opportunity history can be deleted. Deactivate it instead.");
+
+        dbContext.CrmPipelines.Remove(value);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception) when (exception.InnerException is PostgresException { SqlState: PostgresErrorCodes.ForeignKeyViolation })
+        {
+            // A stage or Opportunity may have been added after the emptiness check.
+            throw Conflict("crm_pipeline_not_empty", "This pipeline is no longer empty. Refresh the list before continuing.");
+        }
+        return NoContent();
     }
 
     [HttpPost("{pipelineId:guid}/stages")]

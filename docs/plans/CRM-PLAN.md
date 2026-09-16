@@ -1,5 +1,94 @@
 # First-Party CRM Plan
 
+## September 16, 2026 — Clear Home attention states
+
+Home uses No items need attention with a neutral check icon only after a successful dashboard load with zero visible counts. Nonzero categories are highlighted, explain their exact backend predicate and offer Review; zero/unknown categories are neutral nonlinks. Loading and errors cannot masquerade as all clear. Recent opportunity changes remain separate reference activity. Data warnings include duplicate company names/contact emails and required custom-field omissions; missing optional Opportunity amounts do not create warnings. Existing filters and permissions are preserved.
+
+Signed-in local browser DOM verification confirmed all five zero counts, the No items need attention heading, explanatory rules and zero attention links. Screenshot capture timed out; populated/loading/error regression cases were updated but not executed. TypeScript, scoped ESLint, documentation consistency and whitespace checks pass. No business data changed.
+
+## September 16, 2026 — Combined pipeline summary
+
+Only multiple available active pipelines expose the Pipeline selector and All pipelines option, independently of the 30-day filter. One pipeline is automatically selected and its selector stays hidden. All pipelines displays one noninteractive All opportunities total from the paginated queue response's full matching count, not the current page length; the existing pipeline/stage context remains visible in each desktop/mobile queue row. Choosing a specific pipeline restores selectable stage summaries. Switching pipeline scope resets stage and pagination atomically. Saved views/export keep an empty pipeline filter for combined scope; the URL uses an explicit all selection so default initialization cannot overwrite it. Search and stale-work filtering apply to both count and queue. Older all-pipeline stale links remain supported. No API or database changes.
+
+Verification covers one pipeline with/without stale filtering, combined count beyond a page, specific/all switching and hidden-stage reset, filtering and queue pipeline/stage context. Automated tests are not run unless requested.
+
+Verified manually in a disposable local preview of the real page with 36 records across two pipelines: the combined total stays 36 on page 2, search reduces it to 1, stale filtering reduces it to 18, specific pipeline restores stage cards, selecting All clears a stage filter, and combined rows show pipeline/stage context. With only one pipeline, the selector stays hidden with stale filtering on/off and an existing All selection normalizes to that pipeline. Unpriced counts remain visible when qualifying records remain (15 with stale filtering versus 30 without). TypeScript, scoped ESLint, documentation consistency and whitespace checks pass. Preview data was local only; no business records were created or changed. Preview files/server were removed.
+
+## September 16, 2026 — Opportunity filter toolbar
+
+Clear filter is always visible at the end of the filter row, after the Pipeline dropdown when shown. On narrow screens with Pipeline visible, search spans the first row and Pipeline/Clear filter share the next. Disable it when no other filters or later queue page need clearing; stage-only selection does not enable it because All stages handles that reset. When enabled, clearing also resets the stage while preserving the pipeline. Other CRM pages retain their existing labels and visibility behavior.
+
+Hide the Pipeline dropdown for one active pipeline, including with stale-work aggregation. Preserve automatic pipeline selection. Search applies after the existing 250ms delay and Enter submits immediately; there is no redundant Search button.
+
+The earlier local browser check verified automatic search, reset behavior, single-pipeline dropdown hiding and the All pipelines exception. The local browser confirmed Clear filter stays visible and disabled with no applicable filters, enables after typing and returns to disabled after reset. Final local browser verification confirms Search, Pipeline, Clear filter left-to-right with aligned control bottoms; without Pipeline, Search is followed by the disabled Clear filter button. Scoped lint, documentation and whitespace checks pass. No automated tests added or run for these bounded presentation changes.
+
+## September 16, 2026 — CRM Actions menus
+
+Lead headers, pipeline headers and stage rows group their existing actions in an Actions dropdown. Preserve status-based availability, disabled/default guards and existing dialogs; destructive actions remain styled distinctly. Restore focus to the persistent menu trigger before opening dialogs and on cancellation. Page-level creation stays separate.
+
+Verified in the signed-in local Portal: pipeline menu contains Edit, disabled default Deactivate and Add stage; stage menu supports keyboard Edit; lead menu contains Edit, Qualify and Disqualify for a Working lead. Pipeline/stage edit and lead qualification dialogs opened and cancelled without writes, restoring focus to their Actions buttons after closing. TypeScript, scoped ESLint, documentation consistency and whitespace checks pass. Automated tests were not run.
+
+## September 16, 2026 — Empty pipeline deletion
+
+Administrators may delete active or inactive nondefault pipelines only with no stages (including inactive stages) and no Opportunity history. The owner explicitly selected this strict definition of empty. A named confirmation dialog protects the action; the server checks permissions, version and dependencies. Restrictive foreign keys prevent a concurrent insert from making deletion unsafe. Central auditing retains the delete event. No schema change or migration is needed. Stage summary percentages now use 0.65rem text beside unchanged stage names, keeping each percentage together when wrapping.
+
+Verification: backend Release solution build (including regression test compilation), frontend TypeScript, scoped ESLint, documentation consistency and whitespace checks pass. Automated tests and connected deletion acceptance were not run; no live pipeline was deleted. Changes remain local and uncommitted.
+
+Follow-up font correction: the earlier edit did not reach the component. Applied the percentage class and verified the signed-in local Opportunities page visually and via computed styles: stage names 14px, percentages 10.4px, including zero-count stages. Scoped ESLint and whitespace checks pass.
+
+## September 16, 2026 — Opportunity stage summary and queue
+
+Approved replacement for the large-pipeline board: show a compact, wrapping stage
+summary after the Opportunity view filter card and immediately before one
+paginated queue. Summary buttons display the configured stage
+probability after its name (except All stages), a numeric count without a suffix
+or empty-stage sentence, totals by
+recorded currency and unpriced count; zero amounts remain priced. All stages
+clears the queue's stage filter. Summary buttons are the sole stage filter; remove
+the redundant Stage dropdown. Read percentages from the pipeline stage configuration,
+with summary probability as fallback, so older summary responses cannot suppress
+percentages; render them independently of count, including 0%.
+Pipeline, search and stale-only filters scope
+both views; page and stage selection never reduce the summary. Queue rows show
+identity, Company, stage, amount, expected close, owner and next action, with
+compact mobile rows. Existing URLs and saved views retain their filters; obsolete
+board preferences are ignored. Detail navigation retains filter/page context.
+
+Add a same-permission read-only stage-summary API that aggregates in PostgreSQL
+before paging and shares list filtering. Include configured empty stages and
+populated retired stages so summary counts reconcile. No database model,
+migration, dependency or authorization changes. Preserve the pending Lead
+conversion Company-name change in this workspace.
+
+Verification: backend Release solution build (including new regression cases),
+frontend TypeScript and scoped ESLint pass. Debug build output was locked by the
+owner's running Visual Studio/IIS application, which was left running. A disposable
+36-record preview of the real page verified a single summary row at 1280px,
+wrapping/no horizontal overflow at 390px, light/dark states, numeric-only counts,
+probabilities, empty-stage presentation, per-currency/unpriced values, pagination
+without reducing totals, stage selection resetting page, All stages and Clear all.
+The Stage dropdown is absent. The subsequent summary reorder places filters
+before the summary and queue; source order, scoped lint and whitespace were checked.
+Automated tests and connected database/browser
+acceptance were not run. No live records were modified; changes remain local.
+
+## September 16, 2026 — Missing Company name during Lead conversion
+
+When Create company is selected, reuse and display the Lead's recorded company
+name. Only when that name is missing, show a required Company name field in the
+same modal. Preserve the entered draft when switching company choices or when
+saving fails. Do not substitute the person's display name for an organization.
+Add an optional CompanyName to the conversion command, used only when the Lead
+has no recorded company name. Validate a trimmed nonempty name of at most 255
+characters and check that actual name for duplicates before saving. Keep the
+original Lead details as captured history. Existing-company and contact-only
+conversion do not require a new name. No database model or migration changes.
+
+Verification: backend solution build (including new regression cases), frontend
+TypeScript, scoped ESLint, generated-help consistency and diff whitespace checks
+pass. Automated tests and browser/connected conversion acceptance were not run.
+This change is local and has not been committed or deployed.
+
 ## September 16, 2026 — Lead conversion Company selection
 
 Replace the separate create-Company checkbox with one Company dropdown containing

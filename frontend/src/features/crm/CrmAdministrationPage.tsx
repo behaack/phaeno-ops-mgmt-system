@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Download, Plus, Upload } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   apiErrorMessage,
   changeCrmCustomFieldActive,
@@ -11,6 +11,7 @@ import {
   createCrmCustomField,
   createCrmPipeline,
   createCrmPipelineStage,
+  deleteCrmPipeline,
   exportCrm,
   listCrmCustomFields,
   listCrmDuplicates,
@@ -52,8 +53,14 @@ import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { Textarea } from "#/components/ui/textarea";
 
+import { CrmActionsMenu } from "./CrmActionsMenu";
+
 export function CrmAdministrationPage() {
   const client = useQueryClient();
+  const newPipelineButton = useRef<HTMLButtonElement>(null);
+  const pipelineDeleted = useRef(false);
+  const [deletingPipeline, setDeletingPipeline] = useState<CrmPipeline | null>(null);
+  const [pipelineNotice, setPipelineNotice] = useState("");
   const [pipelineOpen, setPipelineOpen] = useState(false);
   const [editingPipeline, setEditingPipeline] = useState<CrmPipeline | null>(
     null,
@@ -89,6 +96,15 @@ export function CrmAdministrationPage() {
     onSuccess: async () => {
       setPipelineOpen(false);
       await refresh();
+    },
+  });
+  const deletePipeline = useMutation({
+    mutationFn: (pipeline: CrmPipeline) => deleteCrmPipeline(pipeline.id, pipeline.version),
+    onSuccess: async (_, pipeline) => {
+      setPipelineNotice(`Pipeline "${pipeline.name}" deleted.`);
+      await refresh();
+      pipelineDeleted.current = true;
+      setDeletingPipeline(null);
     },
   });
   const createStage = useMutation({
@@ -236,13 +252,14 @@ export function CrmAdministrationPage() {
             configurable.
           </CardDescription>
           <CardAction>
-            <Button size="sm" onClick={() => setPipelineOpen(true)}>
+            <Button ref={newPipelineButton} size="sm" onClick={() => setPipelineOpen(true)}>
               <Plus data-icon="inline-start" />
               New pipeline
             </Button>
           </CardAction>
         </CardHeader>
         <CardContent className="space-y-4">
+          <p role="status" className={pipelineNotice ? "text-sm" : "sr-only"}>{pipelineNotice}</p>
           {(pipelines.data ?? []).map((pipeline) => (
             <section key={pipeline.id} className="rounded-lg border">
               <header className="flex flex-wrap items-center justify-between gap-2 border-b p-3">
@@ -257,45 +274,25 @@ export function CrmAdministrationPage() {
                     {pipeline.description ?? "No description"}
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setEditingPipeline(pipeline)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={
-                      changePipelineActive.isPending ||
-                      (pipeline.isActive && pipeline.isDefault)
-                    }
-                    title={
-                      pipeline.isActive && pipeline.isDefault
-                        ? "Choose another default pipeline before deactivating this one."
-                        : undefined
-                    }
-                    onClick={() =>
-                      changePipelineActive.mutate({
-                        id: pipeline.id,
-                        action: pipeline.isActive ? "deactivate" : "reactivate",
-                        version: pipeline.version,
-                      })
-                    }
-                  >
-                    {pipeline.isActive ? "Deactivate" : "Reactivate"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={!pipeline.isActive}
-                    onClick={() => setStagePipelineId(pipeline.id)}
-                  >
-                    Add stage
-                  </Button>
-                </div>
+                <CrmActionsMenu label={`Actions for pipeline ${pipeline.name}`} items={[
+                  { label: "Edit", onSelect: () => setEditingPipeline(pipeline) },
+                  {
+                    label: pipeline.isActive ? "Deactivate" : "Reactivate",
+                    disabled: changePipelineActive.isPending || (pipeline.isActive && pipeline.isDefault),
+                    title: pipeline.isActive && pipeline.isDefault ? "Choose another default pipeline before deactivating this one." : undefined,
+                    onSelect: () => changePipelineActive.mutate({ id: pipeline.id, action: pipeline.isActive ? "deactivate" : "reactivate", version: pipeline.version }),
+                  },
+                  { label: "Add stage", disabled: !pipeline.isActive, onSelect: () => setStagePipelineId(pipeline.id) },
+                  !pipeline.isDefault && pipeline.stages.length === 0 && {
+                    label: "Delete", destructive: true,
+                    onSelect: () => {
+                      pipelineDeleted.current = false;
+                      deletePipeline.reset();
+                      setPipelineNotice("");
+                      setDeletingPipeline(pipeline);
+                    },
+                  },
+                ]} />
               </header>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
@@ -307,7 +304,7 @@ export function CrmAdministrationPage() {
                       <th className="p-3">Probability</th>
                       <th className="p-3">Reason</th>
                       <th className="p-3">Status</th>
-                      <th className="p-3 text-right">Action</th>
+                      <th className="p-3 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -324,30 +321,17 @@ export function CrmAdministrationPage() {
                           {stage.isActive ? "Active" : "Inactive"}
                         </td>
                         <td className="p-3 text-right">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setEditingStage(stage)}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            disabled={changeStageActive.isPending}
-                            onClick={() =>
-                              changeStageActive.mutate({
-                                pipelineId: pipeline.id,
-                                stageId: stage.id,
-                                action: stage.isActive
-                                  ? "deactivate"
-                                  : "reactivate",
-                                version: stage.version,
-                              })
-                            }
-                          >
-                            {stage.isActive ? "Deactivate" : "Reactivate"}
-                          </Button>
+                          <CrmActionsMenu label={`Actions for ${pipeline.name} stage ${stage.name}`} items={[
+                            { label: "Edit", onSelect: () => setEditingStage(stage) },
+                            {
+                              label: stage.isActive ? "Deactivate" : "Reactivate",
+                              disabled: changeStageActive.isPending,
+                              onSelect: () => changeStageActive.mutate({
+                                pipelineId: pipeline.id, stageId: stage.id,
+                                action: stage.isActive ? "deactivate" : "reactivate", version: stage.version,
+                              }),
+                            },
+                          ]} />
                         </td>
                       </tr>
                     ))}
@@ -490,6 +474,36 @@ export function CrmAdministrationPage() {
           ))}
         </CardContent>
       </Card>
+      <Dialog open={deletingPipeline !== null} onOpenChange={(open) => {
+        if (!open && !deletePipeline.isPending) setDeletingPipeline(null);
+      }}>
+        <DialogContent
+          showCloseButton={!deletePipeline.isPending}
+          onEscapeKeyDown={(event) => { if (deletePipeline.isPending) event.preventDefault(); }}
+          onCloseAutoFocus={(event) => {
+            if (pipelineDeleted.current) {
+              event.preventDefault();
+              newPipelineButton.current?.focus();
+            }
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>Delete pipeline?</DialogTitle>
+            <DialogDescription>
+              Permanently delete "{deletingPipeline?.name}"? Only a pipeline with no stages or Opportunity history can be deleted. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {deletePipeline.isError ? (
+            <Alert variant="destructive"><AlertDescription>{apiErrorMessage(deletePipeline.error)}</AlertDescription></Alert>
+          ) : null}
+          <DialogFooter>
+            <Button variant="outline" disabled={deletePipeline.isPending} onClick={() => setDeletingPipeline(null)}>Cancel</Button>
+            <Button variant="destructive" disabled={deletePipeline.isPending} onClick={() => {
+              if (deletingPipeline) deletePipeline.mutate(deletingPipeline);
+            }}>{deletePipeline.isPending ? "Deleting…" : "Delete pipeline"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <PipelineDialog
         open={pipelineOpen}
         pending={createPipeline.isPending}
