@@ -1,5 +1,7 @@
 # Lab Operations Plan
 
+Planned authoring work: [Lab steps and configuration preview](LAB-STEPS-AND-CONFIGURATION-PREVIEW-PLAN.md). Requirements are agreed; implementation is pending.
+
 ## Physical tray identity — September 17, 2026
 
 Approved and implemented scope: reusable physical tray barcode is distinct from preparation batch name; active batches exclusively reserve that barcode, retained on closed history for reuse. Scan/confirm saves the physical identity before new tube additions or Start. Existing populated drafts may receive their first physical identity without changing members. Compact QR cells replace repetitive Planned text, and selecting a cell shows a single tube detail area. The earlier September 16 batch-label-only design below is superseded. Implementation and acceptance boundaries are in [the preparation journey plan](LAB-WORK-JOURNEY-PLAN.md#physical-tray-identity-and-compact-tray-workspace--september-17-2026).

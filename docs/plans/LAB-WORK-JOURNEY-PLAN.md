@@ -1,5 +1,7 @@
 # Library preparation batches and connected workflow
 
+Planned authoring work: [Lab steps and configuration preview](LAB-STEPS-AND-CONFIGURATION-PREVIEW-PLAN.md). Requirements are agreed; implementation is pending.
+
 ## Shared library output creation (2026-09-17)
 
 Owner approved a Create library outputs modal from shared resource actions. Show all covered continuing tubes, shared unit and storage-location defaults, required individual actual quantities, optional per-tube default overrides, and generated individual barcodes after save. Existing outputs and held tubes are read-only; failed/closed attempts cannot receive new outputs. Retain the single-tube action in individual contexts. Preserve the underlying step draft when opening/closing this modal. One versioned outputs command creates all requested outputs atomically using existing lineage validation, operator/supervisor permissions, job guards and idempotency. Save generated output IDs/barcodes per member in the command history. Keep physical barcode confirmation separate. Extend the Lab API with optional outputs input and bulkOutputs capability, with no database migration or dependencies. Compile/lint and author regressions; do not run tests or mutate walkthrough data. Verification: Release solution build (including regression compilation), frontend typecheck, scoped lint, UTF-8 text checks and documentation generation passed. Tests were not executed and no operational outputs were created. Restart the running local API and refresh to activate bulkOutputs; signed-in acceptance remains pending.
