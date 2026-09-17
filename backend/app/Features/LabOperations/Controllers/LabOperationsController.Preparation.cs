@@ -111,6 +111,11 @@ public sealed partial class LabOperationsController
         var jobs = await dbContext.LabWorkOrders.AsNoTracking().Where(w => workIds.Contains(w.Id)).ToDictionaryAsync(w => w.Id, ct);
         var specimenIds = attempts.Select(a => a.LabSpecimenId).ToList();
         var specimens = await dbContext.LabSpecimens.AsNoTracking().Where(s => specimenIds.Contains(s.Id)).ToDictionaryAsync(s => s.Id, ct);
+        var authorizations = await (from authorization in dbContext.LabWorkAuthorizationVersions.AsNoTracking()
+            join work in dbContext.LabWorkOrders.AsNoTracking() on authorization.LabWorkOrderId equals work.Id
+            where workIds.Contains(work.Id) && authorization.AuthorizationVersion == work.CurrentAuthorizationVersion
+            select new { work.Id, authorization.SnapshotJson }).ToListAsync(ct);
+        var declarations = authorizations.ToDictionary(a => a.Id, a => ReadPreparationSpecimenDeclarations(a.SnapshotJson));
         var executions = await dbContext.LabProtocolExecutions.AsNoTracking().Where(e => e.LabSpecimenAttemptId.HasValue && ids.Contains(e.LabSpecimenAttemptId.Value)).ToListAsync(ct);
         var stages = await dbContext.LabServiceWorkflowStages.AsNoTracking().Where(s => s.LabServiceWorkflowVersionId == batch.LabServiceWorkflowVersionId).OrderBy(s => s.Sequence).ToListAsync(ct);
         var protocolIds = stages.Select(s => s.LabProtocolVersionId).ToList();
@@ -125,13 +130,18 @@ public sealed partial class LabOperationsController
             where libraries.Select(l => l.Id).Contains(m.LabLibraryId) select new { m.LabLibraryId, b.Id, b.BatchNumber, b.Name }).ToListAsync(ct);
         var creation = records.FirstOrDefault(r => r.Action == "create");
         var notes = creation is null ? null : JsonSerializer.Deserialize<CreateLabPreparationRequest>(creation.DetailsJson, JsonOptions)?.Notes;
-        return new { batch.Id, batch.Name, notes, batch.Version, status = batch.Status.ToString(), batch.LabServiceWorkflowVersionId,
+        return new { batch.Id, batch.Name, batch.TrayBarcode, automaticSpecimenReferences = true, bulkOutputs = true, optionalPreparationReports = true, optionalQcReports = true, trayConfirmed = batch.StartedAtUtc.HasValue || PreparationTrayConfirmed(records), notes, batch.Version, status = batch.Status.ToString(), batch.LabServiceWorkflowVersionId,
+            automaticSkipAvailable = jobs.Values.All(w => w.Status is not (LabWorkOrderStatus.OnHold or LabWorkOrderStatus.Cancelled or LabWorkOrderStatus.ReadyForRelease))
+                && FindAutomaticPreparationSkip(batch, attempts, executions, stages, protocols, EffectiveExecutionRoles(actor)) is not null,
             layout = LabTrayLayout.Read(batch.LayoutJson), batch.StartedAtUtc, batch.CompletedAtUtc,
             canOperate = actor.HasAny(LabRole.Operator, LabRole.Supervisor), canCorrect = actor.HasAny(LabRole.Supervisor), roles = EffectiveExecutionRoles(actor).Select(r => r.ToString()),
             stages = stages.Select(s => new { s.Id, s.Name, s.Sequence, requirement = s.Requirement.ToString(), definition = LabProtocolDefinition.Parse(protocols[s.LabProtocolVersionId].DefinitionJson) }),
             members = members.Select(m => { var a = attempts.Single(a => a.Id == m.LabSpecimenAttemptId); var w = jobs[a.LabWorkOrderId];
+                var specimen = specimens[a.LabSpecimenId];
+                var declaration = declarations.GetValueOrDefault(w.Id)?.GetValueOrDefault(specimen.SubmittedSpecimenId);
                 return new { m.Id, m.Position, barcode = m.ConfirmedBarcode, attemptId = a.Id, a.Sequence, workOrderId = w.Id, jobName = w.OpaqueSubmitterReference,
                     specimenId = a.LabSpecimenId, specimenName = specimens[a.LabSpecimenId].AccessionNumber, state = a.State.ToString(), a.FailureEvidence,
+                    customerSampleId = declaration?.CustomerSampleId, biologicalSource = declaration?.BiologicalSource, safetyInformation = declaration?.SafetyInformation,
                     blocker = w.Status is LabWorkOrderStatus.OnHold or LabWorkOrderStatus.Cancelled or LabWorkOrderStatus.ReadyForRelease ? "The job is held or closed." : a.HoldReason,
                     output = outputs.Where(o => o.Id == m.OutputContainerId).Select(o => new { o.Id, o.Barcode, o.Quantity, o.QuantityUnit, confirmed = m.OutputConfirmed }).SingleOrDefault(),
                     availableOutputs = availableOutputs.Where(o => o.LabSpecimenAttemptId == a.Id && !members.Any(other => other.OutputContainerId == o.Id))
@@ -140,29 +150,80 @@ public sealed partial class LabOperationsController
                     stageSkips = a.ReadStageSkips(), executions = executions.Where(e => e.LabSpecimenAttemptId == a.Id).Select(e => new { e.Id, stageId = e.LabServiceWorkflowStageId, status = e.Status.ToString(),
                         evidence = LabProtocolEvidence.Read(e.CapturedResultsJson), blockers = LabProtocolEvidence.Read(e.CapturedResultsJson).CompletionBlockers(LabProtocolDefinition.Parse(protocols[e.LabProtocolVersionId].DefinitionJson)),
                         stepPrerequisites = PreparationStepPrerequisites(e, protocols[e.LabProtocolVersionId]) }) }; }),
-            records = records.Select(r => new { r.Id, r.Action, r.RecordedAtUtc, r.ActorUserId, details = JsonSerializer.Deserialize<JsonElement>(r.DetailsJson) }) };
+            records = records.Select(r => new { r.Id, r.Action, r.RecordedAtUtc, r.ActorUserId, details = PublicPreparationDetails(r.DetailsJson) }) };
     }
 
     [HttpGet("preparation/batches/{preparationBatchId:guid}/tubes")]
-    public async Task<object> FindPreparationTubes(Guid preparationBatchId, string? query, CancellationToken ct)
+    public async Task<object> FindPreparationTubes(Guid preparationBatchId, string? query, CancellationToken ct, string? freezerBox = null, int? page = null, int pageSize = 10)
     {
         await requestContext.RequireAsync(HttpContext, ct, LabRole.Operator, LabRole.Supervisor);
+        freezerBox = string.IsNullOrWhiteSpace(freezerBox) ? null : freezerBox.Trim();
         var batch = await dbContext.LabPreparationBatches.AsNoTracking().SingleOrDefaultAsync(b => b.Id == preparationBatchId, ct) ?? throw Missing();
-        var candidates = await (from t in dbContext.LabContainers.AsNoTracking() join s in dbContext.LabSpecimens.AsNoTracking() on t.LabSpecimenId equals s.Id
+        var serviceKey = await (from v in dbContext.LabServiceWorkflowVersions.AsNoTracking()
+            join w in dbContext.LabServiceWorkflows.AsNoTracking() on v.LabServiceWorkflowId equals w.Id
+            where v.Id == batch.LabServiceWorkflowVersionId select w.ServiceKey).SingleAsync(ct);
+        var firstStage = await dbContext.LabServiceWorkflowStages.AsNoTracking().Where(s => s.LabServiceWorkflowVersionId == batch.LabServiceWorkflowVersionId)
+            .OrderBy(s => s.Sequence).Select(s => (Guid?)s.Id).FirstOrDefaultAsync(ct);
+        var attempts = dbContext.LabSpecimenAttempts.AsNoTracking().Where(a => a.State != LabSpecimenAttemptState.Cancelled);
+        var executions = dbContext.LabProtocolExecutions.AsNoTracking().Where(e => e.Status != LabExecutionStatus.Abandoned);
+        var candidates = from t in dbContext.LabContainers.AsNoTracking() join s in dbContext.LabSpecimens.AsNoTracking() on t.LabSpecimenId equals s.Id
             join w in dbContext.LabWorkOrders.AsNoTracking() on t.LabWorkOrderId equals w.Id
             where t.Kind == LabContainerKind.SubmittedSpecimen && t.IntakeDisposition == LabSpecimenIntakeDisposition.Accepted && t.Status == LabContainerStatus.Available
-                && w.LabServiceWorkflowVersionId == batch.LabServiceWorkflowVersionId && w.TubeUsePolicyKey == LabTubeUsePolicy.RunOneWithFailureFallback
+                && w.ServiceKey == serviceKey
+                && (w.AuthorizationSource != LabAuthorizationSource.TrialProject || w.LabServiceWorkflowVersionId == null || w.LabServiceWorkflowVersionId == batch.LabServiceWorkflowVersionId)
+                && w.TubeUsePolicyKey == LabTubeUsePolicy.RunOneWithFailureFallback
                 && w.Status != LabWorkOrderStatus.OnHold && w.Status != LabWorkOrderStatus.Cancelled && w.Status != LabWorkOrderStatus.ReadyForRelease
                 && s.AccessionNumber != null && s.ReceivedAtUtc != null && s.IntakeDisposition != LabSpecimenIntakeDisposition.Cancelled
                 && s.ProcessingState != LabSpecimenProcessingState.Succeeded && s.ProcessingState != LabSpecimenProcessingState.Failed
                 && (query == null || t.Barcode.Contains(query) || (w.OpaqueSubmitterReference != null && w.OpaqueSubmitterReference.Contains(query)))
-            orderby t.Barcode select new { t.Id, t.Barcode, t.Location, specimenId = s.Id, specimenName = s.AccessionNumber, jobName = w.OpaqueSubmitterReference }).Take(200).ToListAsync(ct);
-        var specimenIds = candidates.Select(c => c.specimenId).ToList();
-        var attempts = await dbContext.LabSpecimenAttempts.AsNoTracking().Where(a => specimenIds.Contains(a.LabSpecimenId) && a.State != LabSpecimenAttemptState.Cancelled).ToListAsync(ct);
-        var reserved = await dbContext.LabPreparationMembers.AsNoTracking().Where(m => !m.Removed).Select(m => m.LabSpecimenAttemptId).ToListAsync(ct);
-        return candidates.Where(c => !attempts.Any(a => a.LabSpecimenId == c.specimenId && (a.State != LabSpecimenAttemptState.Failed && (a.State != LabSpecimenAttemptState.Planned || a.SourceContainerId != c.Id || reserved.Contains(a.Id))
-            || a.SourceContainerId == c.Id && a.State == LabSpecimenAttemptState.Failed))).ToList();
+                && (freezerBox == null || (t.Location != null && t.Location.Contains(freezerBox)))
+                && !executions.Any(e => e.LabSpecimenId == s.Id && (
+                    e.LabSpecimenAttemptId == null && (e.StartedAtUtc != null || e.Status != LabExecutionStatus.Planned || e.LabServiceWorkflowStageId != firstStage)
+                    || attempts.Any(a => a.Id == e.LabSpecimenAttemptId && a.State == LabSpecimenAttemptState.Planned)
+                        && (e.StartedAtUtc != null || e.Status != LabExecutionStatus.Planned)))
+                && executions.Count(e => e.LabSpecimenId == s.Id && e.LabSpecimenAttemptId == null) <= 1
+                && !attempts.Any(a => a.LabSpecimenId == s.Id && (
+                    a.State != LabSpecimenAttemptState.Failed && (a.State != LabSpecimenAttemptState.Planned || a.SourceContainerId != t.Id
+                        || a.LabServiceWorkflowVersionId != batch.LabServiceWorkflowVersionId
+                        || dbContext.LabPreparationMembers.Any(m => !m.Removed && m.LabSpecimenAttemptId == a.Id))
+                    || a.SourceContainerId == t.Id && a.State == LabSpecimenAttemptState.Failed))
+            orderby t.Barcode, t.Id
+            select new { t.Id, t.Barcode, t.Location, specimenId = s.Id, specimenName = s.AccessionNumber, jobName = w.OpaqueSubmitterReference };
+        // Keep the original array contract for callers that do not request a page.
+        if (page is null) return await candidates.Take(200).ToListAsync(ct);
+        pageSize = Math.Clamp(pageSize, 1, 50);
+        var totalCount = await candidates.CountAsync(ct);
+        var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
+        var currentPage = Math.Clamp(page.Value, 1, totalPages);
+        var items = await candidates.Skip((currentPage - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+        return new { items, totalCount, page = currentPage, pageSize, totalPages };
     }
+
+    private sealed record PreparationSpecimenDeclaration(string? CustomerSampleId, string? BiologicalSource, string? SafetyInformation);
+
+    private static Dictionary<Guid, PreparationSpecimenDeclaration> ReadPreparationSpecimenDeclarations(string snapshot)
+    {
+        using var document = JsonDocument.Parse(snapshot);
+        var root = document.RootElement;
+        if (root.TryGetProperty("replacementAuthorization", out var replacement)) root = replacement;
+        var declarations = new Dictionary<Guid, PreparationSpecimenDeclaration>();
+        if (!root.TryGetProperty("specimens", out var specimens) || specimens.ValueKind != JsonValueKind.Array) return declarations;
+        foreach (var specimen in specimens.EnumerateArray())
+        {
+            if (!specimen.TryGetProperty("submittedSpecimenId", out var id) || !id.TryGetGuid(out var submittedId)) continue;
+            declarations[submittedId] = new(ReadText(specimen, "submitterSpecimenReference"), ReadText(specimen, "declaredBiologicalSource"), ReadText(specimen, "declaredSafetyInformation"));
+        }
+        return declarations;
+
+        static string? ReadText(JsonElement specimen, string key) =>
+            specimen.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(value.GetString())
+                ? value.GetString()!.Trim() : null;
+    }
+
+    private static bool PreparationTrayConfirmed(IEnumerable<LabPreparationRecord> records) => records
+        .Where(r => r.Action is "confirm-tray" or "reopen-tray")
+        .OrderByDescending(r => JsonSerializer.Deserialize<LabPreparationCommand>(r.DetailsJson, JsonOptions)?.Version ?? -1)
+        .FirstOrDefault()?.Action == "confirm-tray";
 
     private static string PreparationHash(object request) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(request, JsonOptions))));
 

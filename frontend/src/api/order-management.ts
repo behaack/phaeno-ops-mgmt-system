@@ -692,6 +692,7 @@ export async function listAnalysisDefinitions() {
   return get<AnalysisDefinition[]>("/order-catalog/analyses");
 }
 export type LabPricingProfileWrite = {
+  submitForPricing?: boolean;
   requestedSpecimenCount: number;
   sourceGroups: Array<{ biologicalSource: string; specimenCount: number }>;
   proposedUnitPrice?: number;

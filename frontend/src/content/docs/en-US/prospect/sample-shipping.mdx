@@ -6,11 +6,11 @@ Open the approved Trial and its **Shipping containers** section. Phaeno creates 
 
 Open **Choose containers** for tubes awaiting allocation. Review the recommended sizes by common name, SKU and usable tube capacity. The recommendation prefers the fewest containers and then the least spare capacity; it does not verify or reserve stock.
 
-Open **Adjust containers** to review **Containers to use**. The recommendation starts as one row per container, with a compatible size selector, SKU/capacity and tube count. **Add container** chooses a size for the capacity still needed and assigns the remaining tubes up to its capacity. A row's **Remove** action removes only that container; changing or removing it preserves the other rows' tube counts.
+Open **Assign containers** to review **Containers to use**. The recommendation starts as one row per container, with a compatible size selector, SKU/capacity and tube count. **Add container** chooses a size for the capacity still needed and assigns the remaining tubes up to its capacity. A row's **Remove** action removes only that container; changing or removing it preserves the other rows' tube counts.
 
 Size choices include smaller containers and the smallest size that covers the remaining capacity needed, excluding choices that make another selected container unnecessary. With sizes 5/10/20, three remaining tubes offer only a 5. For 30 tubes, 20+10 or six 5s are valid; two 20s are not offered. With 10+5 already selected, Add chooses another 10 and then a 5. **Add container** is disabled once selected capacity covers all tubes. **Use recommendation** replaces the current rows and tube counts. Stock requirements apply automatically; no manual stock quantities are entered here. The preview shows tubes, containers, capacity, spare slots and unallocated tubes.
 
-**Confirm containers** creates one shipment for each container with allocated tubes. A partly filled container is valid and empty containers do not become shipments. If capacity is insufficient, **Prepare available containers** prepares the allocated tubes while the remaining tubes stay visible. The accepted Trial sample count and no-charge scope do not change. Tubes from one sample may occupy different containers.
+**Confirm assignment** creates one shipment for each container with allocated tubes. A partly filled container is valid and empty containers do not become shipments. If capacity is insufficient, **Confirm partial assignment** prepares the allocated tubes while the remaining tubes stay visible. The accepted Trial sample count and no-charge scope do not change. Tubes from one sample may occupy different containers.
 
 Adjust each row's tube count as needed. Counts must be whole numbers, fit each container and together equal the tubes allocated in the preview. The **Summary** stays visible while updating; confirmation becomes available when the current allocation has been checked.
 
@@ -26,7 +26,7 @@ The action is locked once any container in that plan has a scan, linked physical
 
 Your organization must retain the connection between each coded sample ID and its own sample record. Do not enter patient names, medical-record numbers, dates of birth or other direct identifiers. Phaeno retains the permanent-tube-to-sample crosswalk used for shipping and intake.
 
-Select **Open shipment** for a prepared container and use **Scan tubes into this shipment**. Scan the physical tube for the displayed sample and tube number, then press Enter or **Save scan**. A successful match shows the saved number and barcode graphic, updates progress and advances to the next tube. Saved matches survive leaving the page. **Previous tubes** and **Next tubes** review long lists without expanding the whole page.
+Select **Open shipment** for a prepared container and use **Scan tubes into this shipment**. Use the barcode field inside the active tube row. Scan the physical tube for that sample and tube number, then press Enter or **Save scan**. A successful match shows the saved number and barcode graphic, updates progress and advances to the next tube. The next active row scrolls into view and receives focus. Failed scans remain in their row for correction. Saved matches survive leaving the page. Paging away retains an unfinished barcode; **Return to active tube** restores its inline field. **Previous tubes** and **Next tubes** review long lists without expanding the whole page.
 
 Use tubes registered in a fulfilled kit for this Trial. The first successful scan associates the physical kit with this container; subsequent tubes must come from that kit. Unknown, ineligible, duplicate and already-used barcodes cannot advance scanning. A failed scan retains the barcode and current sample for correction and retry. Do not cover, alter or remove a permanent manufacturer barcode.
 
@@ -53,3 +53,7 @@ sample/tube identifiers use the same format. Use a QR-capable 2D scanner. Existi
 manufacturer labels and older printed barcodes remain valid; do not relabel a
 tube or change its saved identity merely to match the new display. A scan still
 requires the correct workflow and does not by itself confirm receipt or accession.
+
+With one container, the tube count is assigned automatically up to its capacity and shown in a read-only text box. Any remaining tubes stay unallocated. With multiple containers, edit the tube counts to split the allocation. Returning to one container restores its automatic allocation.
+
+Samples are ordered by ID alphabetically and digit by digit, rather than by numeric value. In the Job, biological-source groups stay together. Tube matching follows that sample order, with each sample’s tubes in tube-number order. Saving a match advances to the next unmatched tube.

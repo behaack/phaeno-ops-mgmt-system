@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { Cog, CheckCircle2, ChevronDown, ClipboardList, FileX, FlaskConical, Layers3, Microscope, PackageCheck, Pencil, Plus, RefreshCw, ScanLine, Trash2, Workflow } from 'lucide-react'
+import { Building2, Cog, CheckCircle2, ChevronDown, ClipboardList, FileX, FlaskConical, Layers3, Microscope, PackageCheck, Pencil, Plus, RefreshCw, ScanLine, ShieldCheck, Trash2, Workflow } from 'lucide-react'
 import { useRef, useState, type FormEvent } from 'react'
 import { Archive } from 'lucide-react'
 import { retireLabProtocol } from '#/api/lab-operations'
@@ -59,6 +59,8 @@ import { ProtocolIdentityDialog, type ProtocolIdentityFormValues } from './Proto
 import { isProtocolVisible } from './protocol-list'
 import { ServiceWorkflowList } from './ServiceWorkflowList'
 import { PreparationBatchList } from './PreparationBatchList'
+import { SupplierCatalogWorkspace } from './SupplierCatalogWorkspace'
+import type { SupplierCatalogTab } from './supplier-catalog-tabs'
 import { TrayFormatList } from './TrayFormatList'
 import { labConfigurationTabs, parseLabConfigurationTab, type LabConfigurationTab } from './lab-configuration-tabs'
 
@@ -78,9 +80,10 @@ const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
   { value: 'materials', label: 'Materials', separatorBefore: true, description: 'Lots, prepared reagents, and QC', icon: FlaskConical },
   { value: 'equipment', label: 'Equipment', description: 'Assets, availability, and calibration', icon: Microscope },
   { value: 'protocols', label: 'Lab configurations', separatorBefore: true, description: 'Protocols, workflows, and tray formats', icon: Cog },
+  { value: 'suppliers', label: 'Suppliers & Products', description: 'Vendors, reagents, and shipping supplies', icon: Building2 },
 ]
 
-export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTabChange, configurationTab, onConfigurationTabChange, onSectionChange }: { section: LabSection; shipmentId?: string; receiptTab?: LabReceiptTab; onReceiptTabChange?: (tab: LabReceiptTab) => void; configurationTab?: LabConfigurationTab; onConfigurationTabChange?: (tab: LabConfigurationTab) => void; onSectionChange: (section: LabSection) => void }) {
+export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTabChange, configurationTab, onConfigurationTabChange, supplierTab, onSupplierTabChange, onSectionChange }: { section: LabSection; shipmentId?: string; receiptTab?: LabReceiptTab; onReceiptTabChange?: (tab: LabReceiptTab) => void; configurationTab?: LabConfigurationTab; onConfigurationTabChange?: (tab: LabConfigurationTab) => void; supplierTab?: SupplierCatalogTab; onSupplierTabChange?: (tab: SupplierCatalogTab) => void; onSectionChange: (section: LabSection) => void }) {
   const { authProvider, session } = usePhaenoSession()
   const navigate = useNavigate()
   const canView = Boolean(session?.capabilities.canManageLabOperations)
@@ -88,9 +91,11 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
   const queryClient = useQueryClient()
   const [createKind, setCreateKind] = useState<CreateKind>(null)
   const [localConfigurationTab, setLocalConfigurationTab] = useState<LabConfigurationTab>('protocols')
-  const needsDashboard = section !== 'receipt'
+  const needsDashboard = section !== 'receipt' && section !== 'suppliers'
   const dashboard = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: apiEnabled && needsDashboard })
-  const refresh = () => Promise.all((section === 'receipt'
+  const refresh = () => Promise.all((section === 'suppliers'
+    ? ['supplier-product-types', 'supplier-catalog']
+    : section === 'receipt'
     ? ['platform-transportation-kit-requests', 'shipping-stock-kits', 'sample-shipping-workflow', 'lab-shipment-queue']
     : ['lab-operations', 'lab-preparation']).map(key => queryClient.invalidateQueries({ queryKey: [key] })))
 
@@ -120,6 +125,7 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
           {authProvider === 'mock' ? <Alert className="mb-5"><AlertTitle>Connected Lab operations are paused</AlertTitle><AlertDescription>Use a real Phaeno session to load or change laboratory records.</AlertDescription></Alert> : null}
           {needsDashboard && dashboard.error ? <Alert className="mb-5" variant="destructive"><AlertTitle>Lab operations could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(dashboard.error, 'Try refreshing the workspace.')}</AlertDescription></Alert> : null}
           {needsDashboard && dashboard.isLoading ? <p role="status">Loading laboratory workspace…</p> : null}
+          {section === 'suppliers' ? <SupplierCatalogWorkspace tab={supplierTab} onTabChange={onSupplierTabChange} /> : null}
           {section === 'receipt' ? <LabReceiptAccessionPanel canReceiveShipments={Boolean(session?.capabilities.canOperateLabWork)} tab={receiptTab} onTabChange={onReceiptTabChange} canManageKitSupply={Boolean(session?.capabilities.canManageOrderConfiguration)} shipmentId={shipmentId} apiEnabled={apiEnabled} workOrders={[]} /> : null}
           {dashboard.data && section === 'work' ? <div className="space-y-5"><PreparationBatchList /><details className="rounded-lg border p-4"><summary className="cursor-pointer font-medium">Find a job or existing specimen record</summary><div className="mt-4 space-y-5"><LabBarcodeLookup /><WorkQueue items={dashboard.data.workOrders.filter((item) => item.status !== 'AwaitingSpecimens')} /></div></details></div> : null}
           {dashboard.data && section === 'results' ? <WorkQueue items={dashboard.data.workOrders.filter((item) => item.status !== 'AwaitingSpecimens')} results /> : null}
@@ -136,10 +142,10 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
                 {labConfigurationTabs.map(tab => <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>)}
               </TabsList>
               <TabsContent value="protocols">
-                <ProtocolList protocols={dashboard.data.protocols} canManage={Boolean(session?.capabilities.canManageLabProtocols)} onCreate={() => setCreateKind('protocol')} refresh={refresh} />
+                <ProtocolList actorId={session?.user?.id} canOverride={Boolean(session?.isPlatformAdmin)} protocols={dashboard.data.protocols} canManage={Boolean(session?.capabilities.canManageLabProtocols)} onCreate={() => setCreateKind('protocol')} refresh={refresh} />
               </TabsContent>
               <TabsContent value="workflows">
-                <ServiceWorkflowList workflows={dashboard.data.serviceWorkflows} marketedServices={dashboard.data.marketedServices} canManage={Boolean(session?.capabilities.canManageLabProtocols)} refresh={refresh} />
+                <ServiceWorkflowList actorId={session?.user?.id} canOverride={Boolean(session?.isPlatformAdmin)} workflows={dashboard.data.serviceWorkflows} marketedServices={dashboard.data.marketedServices} canManage={Boolean(session?.capabilities.canManageLabProtocols)} refresh={refresh} />
               </TabsContent>
               <TabsContent value="tray-formats">
                 <TrayFormatList />
@@ -217,7 +223,7 @@ function WorkQueue({ items, results = false }: { items: Awaited<ReturnType<typeo
     </CardContent>
   </Card>
 }
-export function ProtocolList({ protocols, canManage, onCreate, refresh }: { protocols: LabProtocol[]; canManage: boolean; onCreate: () => void; refresh: () => Promise<unknown> }) {
+export function ProtocolList({ protocols, canManage, canOverride = false, actorId, onCreate, refresh }: { protocols: LabProtocol[]; canManage: boolean; canOverride?: boolean; actorId?: string; onCreate: () => void; refresh: () => Promise<unknown> }) {
   const [showRetired, setShowRetired] = useState(false)
   const retiredFilterRef = useRef<HTMLButtonElement>(null)
   const [retirementTarget, setRetirementTarget] = useState<LabProtocol | null>(null)
@@ -233,6 +239,7 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
   const [approvalTarget, setApprovalTarget] = useState<{
     protocol: LabProtocol
     version: LabProtocol['versions'][number]
+    override?: boolean
   } | null>(null)
   const [discardTarget, setDiscardTarget] = useState<{
     protocol: LabProtocol
@@ -244,13 +251,16 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
       protocol,
       versionId,
       action,
+      approvalOverrideReason,
     }: {
       protocol: LabProtocol
       versionId: string
       action: string
+      approvalOverrideReason?: string
     }) => transitionLabProtocolVersion(versionId, {
       action,
       protocolVersion: protocol.version,
+      ...(approvalOverrideReason !== undefined ? { approvalOverrideReason } : {}),
     }),
     onSuccess: async () => {
       setApprovalTarget(null)
@@ -362,7 +372,7 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
                             Actions <ChevronDown data-icon="inline-end" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-60">
+                        <DropdownMenuContent align="end" className="w-80 max-w-[calc(100vw-2rem)]">
                           <DropdownMenuLabel>Protocol actions</DropdownMenuLabel>
                           {draft ? (
                             <DropdownMenuItem asChild>
@@ -386,6 +396,7 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
                             </DropdownMenuItem>
                           )}
                           {draft ? (
+                            <>
                             <DropdownMenuItem
                               disabled={transition.isPending}
                               onSelect={() => {
@@ -395,6 +406,8 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
                             >
                               <CheckCircle2 /> Review and approve
                             </DropdownMenuItem>
+                            {canOverride && actorId === draft.authoredByUserId ? <DropdownMenuItem onSelect={() => { transition.reset(); setApprovalTarget({ protocol, version: draft, override: true }) }}><ShieldCheck aria-hidden="true" /> Approve with administrator override</DropdownMenuItem> : null}
+                            </>
                           ) : null}
                           {!hasEverBeenApproved ? (
                             <DropdownMenuItem
@@ -444,6 +457,7 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
                             <span className="font-medium">Version {version.protocolVersion}</span>
                             <Status value={protocolVersionStatusLabel(version.status)} />
                           </div>
+                          {version.approvalOverrideReason ? <p className="w-full text-sm"><strong>Administrator override</strong> · {version.approvalOverrideReason}</p> : null}
                           {version.approvedAtUtc ? (
                             <span className="text-xs text-muted-foreground">Approved {formatDate(version.approvedAtUtc)}</span>
                           ) : null}
@@ -474,6 +488,7 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
       />
 
       <ProtocolApprovalDialog
+        override={approvalTarget?.override ?? false}
         protocol={approvalTarget?.protocol ?? null}
         version={approvalTarget?.version ?? null}
         error={approvalTarget && transition.error
@@ -485,9 +500,9 @@ export function ProtocolList({ protocols, canManage, onCreate, refresh }: { prot
           setApprovalTarget(null)
           transition.reset()
         }}
-        onApprove={() => {
+        onApprove={(reason) => {
           if (!approvalTarget) return
-          applyTransition(approvalTarget.protocol, approvalTarget.version.id, 'approve')
+          transition.mutate({ protocol: approvalTarget.protocol, versionId: approvalTarget.version.id, action: 'approve', approvalOverrideReason: reason })
         }}
       />
 

@@ -62,6 +62,10 @@ public static class SampleShippingContainerModelConfiguration
             entity.Property(item => item.TubeSupplierName).HasMaxLength(255).IsRequired();
             entity.Property(item => item.TubeProductNumber).HasMaxLength(100).IsRequired();
             entity.Property(item => item.TubeLotNumber).HasMaxLength(100);
+            entity.Property(item => item.TubeProductDescription).HasMaxLength(1000);
+            entity.Property(item => item.ShipperProductDescription).HasMaxLength(1000);
+            entity.HasOne<PSeq.Operations.Laboratory.Domain.LabSupplierProduct>().WithMany().HasForeignKey(item => item.TubeSupplierProductId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<PSeq.Operations.Laboratory.Domain.LabSupplierProduct>().WithMany().HasForeignKey(item => item.ShipperSupplierProductId).OnDelete(DeleteBehavior.Restrict);
             entity.Property(item => item.ShipperSupplierName).HasMaxLength(255).IsRequired();
             entity.Property(item => item.ShipperProductNumber).HasMaxLength(100).IsRequired();
             entity.Property(item => item.OutboundCarrier).HasMaxLength(255);

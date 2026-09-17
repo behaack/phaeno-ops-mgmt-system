@@ -232,6 +232,8 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<LabPreparationRecord> LabPreparationRecords { get; set; }
     public DbSet<LabAttemptCommandReceipt> LabAttemptCommandReceipts { get; set; }
     public DbSet<LabMaterialDefinition> LabMaterialDefinitions { get; set; }
+    public DbSet<LabProductType> LabProductTypes { get; set; }
+    public DbSet<LabSupplierProduct> LabSupplierProducts { get; set; }
     public DbSet<LabSupplier> LabSuppliers { get; set; }
     public DbSet<LabStorageLocation> LabStorageLocations { get; set; }
     public DbSet<LabMaterialLot> LabMaterialLots { get; set; }

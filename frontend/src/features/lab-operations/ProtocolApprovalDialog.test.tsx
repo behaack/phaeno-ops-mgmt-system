@@ -1,8 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { ProtocolApprovalDialog } from './ProtocolApprovalDialog'
 import { createLibraryPreparationExample, serializeProtocolDefinition } from './protocol-definition'
 import type { LabProtocol } from '#/api/lab-operations'
+
+vi.mock('@tanstack/react-router', () => ({ useBlocker: vi.fn() }))
 
 const protocol: LabProtocol = { id: 'protocol', name: 'Library preparation', key: 'library', description: null, latestVersion: 1, versions: [], version: 1 }
 
@@ -46,4 +48,29 @@ describe('formal protocol review', () => {
     expect(definition).toContain('must match the selected source tube')
     expect((screen.getByRole('button', { name: 'Approve version 1' }) as HTMLButtonElement).disabled).toBe(true)
   })
+})
+
+it('requires an override reason and retains entries after a rejected save', async () => {
+  const approve = vi.fn()
+  const close = vi.fn()
+  const version = { id: 'override-version', protocolVersion: 2, status: 'Draft', definitionJson: serializeProtocolDefinition(createLibraryPreparationExample()), authoredByUserId: 'author', authoredAtUtc: '', approvedByUserId: null, approvedAtUtc: null }
+  const props = { protocol, version, override: true, isPending: false, onApprove: approve, onOpenChange: close }
+  const view = render(<ProtocolApprovalDialog {...props} />)
+  const accept = screen.getByRole('button', { name: 'Approve with override' })
+  expect(accept).toHaveProperty('disabled', true)
+  fireEvent.click(screen.getByRole('checkbox'))
+  fireEvent.click(accept)
+  expect(await screen.findByText('Enter a reason for bypassing independent review.')).toBeTruthy()
+  expect(approve).not.toHaveBeenCalled()
+  fireEvent.change(screen.getByLabelText(/Override reason/), { target: { value: '  TEST ONLY — administrator reviewed  ' } })
+  fireEvent.click(accept)
+  await waitFor(() => expect(approve).toHaveBeenCalledWith('TEST ONLY — administrator reviewed'))
+  view.rerender(<ProtocolApprovalDialog {...props} error="Version changed; reload before approving." />)
+  expect(screen.getByLabelText(/Override reason/)).toHaveProperty('value', '  TEST ONLY — administrator reviewed  ')
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+  expect(close).not.toHaveBeenCalled()
+  confirm.mockRestore()
+  view.rerender(<ProtocolApprovalDialog {...props} isPending />)
+  expect(screen.getByRole('button', { name: 'Cancel' })).toHaveProperty('disabled', true)
 })

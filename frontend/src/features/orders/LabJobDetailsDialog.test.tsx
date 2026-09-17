@@ -34,7 +34,7 @@ vi.mock("#/features/auth/session-context", () => ({
   }),
 }));
 
-describe("LabJobDetailsDialog price proposal", () => {
+describe("LabJobDetailsDialog request submission", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     api.getCustomerOrderReadiness.mockResolvedValue({ canStartPricing: true, startPricingBlockers: [], quoteBlockers: [], invoiceBlockers: [] });
@@ -96,7 +96,7 @@ describe("LabJobDetailsDialog price proposal", () => {
     expect(api.initiateCustomerLabOrder).not.toHaveBeenCalled();
   });
 
-  it("submits an optional USD price proposal with the job scope", async () => {
+  it("submits the customer scope directly for pricing without a price proposal", async () => {
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
     });
@@ -112,18 +112,19 @@ describe("LabJobDetailsDialog price proposal", () => {
 
     fireEvent.change(screen.getByRole("textbox", { name: "Job name" }), { target: { value: "Hopkins pilot" } });
     fireEvent.change(screen.getByRole("textbox", { name: "Biological source for source group 1" }), { target: { value: "Human PBMCs" } });
-    fireEvent.click(screen.getByRole("checkbox", { name: /Propose a price/ }));
-    fireEvent.change(screen.getByRole("spinbutton", { name: "Proposed price per specimen" }), { target: { value: "120.50" } });
-    fireEvent.change(screen.getByLabelText(/Pricing note/), { target: { value: "Sales-discussed pilot rate." } });
+    expect(screen.queryByRole("checkbox", { name: /Propose a price/ })).toBeNull();
+    expect(screen.getByRole("dialog", { name: "Submit lab service request" })).toBeTruthy();
+    expect(screen.getByText(/pricing for you to accept or decline/)).toBeTruthy();
     fireEvent.change(screen.getByRole("textbox", { name: "Storage requirements" }), { target: { value: "Ship frozen." } });
     fireEvent.change(screen.getByRole("textbox", { name: "Safety declaration" }), { target: { value: "No known hazards." } });
-    fireEvent.click(screen.getByRole("button", { name: "Create job" }));
+    fireEvent.click(screen.getByRole("button", { name: "Submit request" }));
 
     await waitFor(() => expect(api.createLabOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         customerReference: "Hopkins pilot",
-        proposedUnitPrice: 120.5,
-        priceProposalNote: "Sales-discussed pilot rate.",
+        submitForPricing: true,
+        proposedUnitPrice: undefined,
+        priceProposalNote: undefined,
         requestedSpecimenCount: 1,
       }),
     ));

@@ -4,8 +4,8 @@ import { KitAssemblyCasesPanel } from './KitAssemblyCasesPanel'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 import { Link, Navigate, useNavigate, useSearch } from '@tanstack/react-router'
-import { RefreshCw } from 'lucide-react'
-import { useState } from 'react'
+import { ChevronDown, RefreshCw } from 'lucide-react'
+import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
@@ -18,6 +18,7 @@ import { OrderOperationsSidebar } from './OrderOperationsSidebar'
 import { CommercialSaleSummaryAttention } from './CommercialSaleSummaryAttention'
 import { canAccessOperationalAttention, getOrderLandingSection, type OrderSection } from './order-sections'
 import { Button } from '#/components/ui/button'
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogFeedback, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Label } from '#/components/ui/label'
@@ -134,6 +135,11 @@ function OperationalDetail({ workflow, orderId, apiEnabled, userId }: { workflow
   const canAdminister = Boolean(session?.capabilities.canManageOrderConfiguration)
   const [reasonDialog, setReasonDialog] = useState<string | null>(null)
   const [assignmentOpen, setAssignmentOpen] = useState(false)
+  const actionsTrigger = useRef<HTMLButtonElement>(null)
+  function restoreActionFocus(event: Event) {
+    event.preventDefault()
+    actionsTrigger.current?.focus()
+  }
   const order = useQuery({ queryKey: ['platform-order', workflow, orderId], queryFn: () => getPlatformOrder(workflow, orderId), enabled: apiEnabled })
   const configuration = useQuery({ queryKey: [workflow === 'lab' ? 'commercial-pricing-catalog' : 'order-configuration'], queryFn: workflow === 'lab' ? getCommercialPricingCatalog : getOrderConfiguration, enabled: apiEnabled })
   const labWork = useQuery({
@@ -176,12 +182,25 @@ function OperationalDetail({ workflow, orderId, apiEnabled, userId }: { workflow
   const actions = primaryActions(workflow, item.status, 'resumeStatus' in item ? item.resumeStatus : undefined).filter(action => workflow === 'lab' && ['begin-quote', 'request-changes', 'decline'].includes(action.path) ? session?.capabilities.canQuoteLabServiceWork : canAdminister)
   const recordTitle = workflow === 'lab' && 'customerReference' in item ? item.customerReference : number
   const breadcrumb = workflow === 'lab' ? 'Order intake' : humanizeStatus(workflow)
-  return <main className="page-wrap px-4 py-8"><section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-sm text-muted-foreground"><Link to="/order-operations" search={previous => ({ ...previous, orderSection: previous.orderSection ?? (workflow === 'lab' ? 'intake' : workflow) })} className="hover:underline">Order operations</Link> / {breadcrumb} / <span className="font-mono">{number}</span></p><div className="mt-2 flex items-center gap-3"><h1 className="text-3xl font-semibold">{recordTitle}</h1><OrderStatusBadge status={item.status} /></div><p className="mt-2 text-sm text-muted-foreground">{workflow === 'lab' ? <>Job number <span className="font-mono">{number}</span> · </> : null}Organization {item.organizationId} · {item.assignedToUserId ? item.assignedToUserId === userId ? 'Assigned to you' : 'Assigned to another operator' : 'Unassigned'}{item.dueAt ? ` · Due ${formatDateTime(item.dueAt)}` : ''} · Version {item.version}</p></div><div className="flex flex-wrap gap-2">{workflow === 'lab' && 'samples' in item ? <CompleteLabJob order={item} authorized={Boolean(session?.capabilities.canOperateCommercialWork)} onSaved={refresh} /> : null}{canAdminister ? <Button type="button" variant="outline" onClick={() => { assignment.reset(); setAssignmentOpen(true) }}>Assignment</Button> : null}{workflow === 'lab' && labWork.data ? <Button asChild variant="outline"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: labWork.data.id }} search={{ section: undefined }}>Open Lab work</Link></Button> : null}{actions.map((action) => <Button key={action.path} type="button" variant={action.reason ? 'outline' : 'default'} disabled={mutation.isPending} onClick={() => { mutation.reset(); if (action.reason) setReasonDialog(action.path); else mutation.mutate({ action: action.path }) }}>{action.label}</Button>)}</div></section>{mutation.error && !reasonDialog ? <Alert variant="destructive" className="mb-5"><AlertTitle>Operation failed</AlertTitle><AlertDescription>{getOrderErrorMessage(mutation.error, 'Reload the record and try again.')}</AlertDescription></Alert> : null}{configuration.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Commercial configuration could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(configuration.error, 'Operational status changes remain available, but quote and catalog actions are paused.')}</AlertDescription></Alert> : null}<OperationalSummary workflow={workflow} item={item} />{workflow === 'lab' && 'samples' in item ? <><StandardLabServicePanel order={item} readOnly /><LabServiceTimingPanel orderId={item.id} timing={item.timing} staff={canAdminister} /></> : null}{workflow === 'reagent' && 'lines' in item ? <KitAssemblyCasesPanel order={item} staff /> : null}<CommercialControlPanel workflow={workflow} item={item} catalogItems={configuration.data?.catalogItems ?? []} labWorkOrderId={labWork.data?.id ?? null} onSaved={refresh} />{workflow !== 'lab' ? <Card className="mt-5"><CardHeader><CardTitle>{workflow === 'reagent' ? 'Kit fulfillment' : 'Assembly execution'}</CardTitle><CardDescription>{workflow === 'reagent' ? 'Lab operations prepares, substitutes, ships, and completes the accepted kit order.' : 'Lab operations validates input, processes data, reviews quality, and approves outputs.'} Commercial decisions remain in this order.</CardDescription></CardHeader><CardContent><Button asChild variant="outline"><Link to={workflow === 'reagent' ? '/lab-operations/pseq-kit-orders/$orderId' : '/lab-operations/data-assembly/$orderId'} params={{ orderId: item.id }} search={{ section: undefined }}>Open Lab work</Link></Button></CardContent></Card> : null}{reasonDialog ? <StatusReasonDialog
+  function renderHeaderActions(openCompletion?: () => void, completionOpen = false) {
+    return <ActionMenu>
+      <DropdownMenuTrigger asChild><Button ref={actionsTrigger} type="button" variant="outline">Actions<ChevronDown aria-hidden="true" data-icon="inline-end" /></Button></DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56 max-w-[calc(100vw-2rem)]" onCloseAutoFocus={event => { if (assignmentOpen || reasonDialog || completionOpen) event.preventDefault() }}>
+        {openCompletion ? <DropdownMenuItem onSelect={openCompletion}>Complete Job</DropdownMenuItem> : null}
+        {canAdminister ? <DropdownMenuItem onSelect={() => { assignment.reset(); setAssignmentOpen(true) }}>Assignment</DropdownMenuItem> : null}
+        {workflow === 'lab' && labWork.data ? <DropdownMenuItem asChild><Link to="/lab-operations/$workOrderId" params={{ workOrderId: labWork.data.id }} search={{ section: undefined }}>Open Lab work</Link></DropdownMenuItem> : null}
+        {actions.map(action => <DropdownMenuItem key={action.path} disabled={mutation.isPending} onSelect={() => { mutation.reset(); if (action.reason) setReasonDialog(action.path); else mutation.mutate({ action: action.path }) }}>{action.label}</DropdownMenuItem>)}
+      </DropdownMenuContent>
+    </ActionMenu>
+  }
+  return <main className="page-wrap px-4 py-8"><section className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-sm text-muted-foreground"><Link to="/order-operations" search={previous => ({ ...previous, orderSection: previous.orderSection ?? (workflow === 'lab' ? 'intake' : workflow) })} className="hover:underline">Order operations</Link> / {breadcrumb} / <span className="font-mono">{number}</span></p><div className="mt-2 flex items-center gap-3"><h1 className="text-3xl font-semibold">{recordTitle}</h1><OrderStatusBadge status={item.status} /></div><p className="mt-2 text-sm text-muted-foreground">{workflow === 'lab' ? <>Job number <span className="font-mono">{number}</span> · </> : null}Organization {item.organizationId} · {item.assignedToUserId ? item.assignedToUserId === userId ? 'Assigned to you' : 'Assigned to another operator' : 'Unassigned'}{item.dueAt ? ` · Due ${formatDateTime(item.dueAt)}` : ''} · Version {item.version}</p></div><div className="shrink-0">{workflow === 'lab' && 'samples' in item ? <CompleteLabJob order={item} authorized={Boolean(session?.capabilities.canOperateCommercialWork)} onSaved={refresh} renderActions={renderHeaderActions} onCloseAutoFocus={restoreActionFocus} /> : renderHeaderActions()}</div></section>{mutation.error && !reasonDialog ? <Alert variant="destructive" className="mb-5"><AlertTitle>Operation failed</AlertTitle><AlertDescription>{getOrderErrorMessage(mutation.error, 'Reload the record and try again.')}</AlertDescription></Alert> : null}{configuration.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Commercial configuration could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(configuration.error, 'Operational status changes remain available, but quote and catalog actions are paused.')}</AlertDescription></Alert> : null}<OperationalSummary workflow={workflow} item={item} />{workflow === 'lab' && 'samples' in item ? <><StandardLabServicePanel order={item} readOnly /><LabServiceTimingPanel orderId={item.id} timing={item.timing} staff={canAdminister} /></> : null}{workflow === 'reagent' && 'lines' in item ? <KitAssemblyCasesPanel order={item} staff /> : null}<CommercialControlPanel workflow={workflow} item={item} catalogItems={configuration.data?.catalogItems ?? []} labWorkOrderId={labWork.data?.id ?? null} onSaved={refresh} />{workflow !== 'lab' ? <Card className="mt-5"><CardHeader><CardTitle>{workflow === 'reagent' ? 'Kit fulfillment' : 'Assembly execution'}</CardTitle><CardDescription>{workflow === 'reagent' ? 'Lab operations prepares, substitutes, ships, and completes the accepted kit order.' : 'Lab operations validates input, processes data, reviews quality, and approves outputs.'} Commercial decisions remain in this order.</CardDescription></CardHeader><CardContent><Button asChild variant="outline"><Link to={workflow === 'reagent' ? '/lab-operations/pseq-kit-orders/$orderId' : '/lab-operations/data-assembly/$orderId'} params={{ orderId: item.id }} search={{ section: undefined }}>Open Lab work</Link></Button></CardContent></Card> : null}{reasonDialog ? <StatusReasonDialog
     actionLabel={actions.find(action => action.path === reasonDialog)?.label ?? humanizeStatus(reasonDialog)}
+    onCloseAutoFocus={restoreActionFocus}
     number={number} pending={mutation.isPending} error={mutation.error}
     onClose={() => { setReasonDialog(null); mutation.reset() }}
     onSave={reason => mutation.mutate({ action: reasonDialog, reason })}
   /> : null}{assignmentOpen ? <AssignmentDialog
+    onCloseAutoFocus={restoreActionFocus}
     number={number} initialDueAt={item.dueAt ?? null} hasAssignment={Boolean(item.assignedToUserId)} assignedToMe={item.assignedToUserId === userId}
     pending={assignment.isPending} error={assignment.error}
     onClose={() => { setAssignmentOpen(false); assignment.reset() }} onSave={input => assignment.mutate(input)}
@@ -192,7 +211,8 @@ const statusReasonSchema = z.object({ reason: z.string().trim().min(1, 'A reason
 const assignmentSchema = z.object({ dueAt: z.string().refine(value => !value || isValidLocalDateTime(value), 'Enter a valid local date and time.') })
 type AssignmentInput = { assignToMe: boolean; dueAt: string | null }
 
-function StatusReasonDialog({ actionLabel, number, pending, error, onClose, onSave }: {
+function StatusReasonDialog({ actionLabel, number, pending, error, onClose, onSave, onCloseAutoFocus }: {
+  onCloseAutoFocus: (event: Event) => void
   actionLabel: string; number: string; pending: boolean; error: unknown; onClose: () => void; onSave: (reason: string) => void
 }) {
   const form = useForm<z.infer<typeof statusReasonSchema>>({ resolver: zodResolver(statusReasonSchema), mode: 'onBlur', defaultValues: { reason: '' } })
@@ -200,7 +220,7 @@ function StatusReasonDialog({ actionLabel, number, pending, error, onClose, onSa
   function requestClose() { if (!pending && (!form.formState.isDirty || window.confirm('Discard this unsaved status-change reason?'))) onClose() }
   const reasonError = form.formState.errors.reason?.message
   return <Dialog open onOpenChange={open => { if (!open) requestClose() }}>
-    <DialogContent>
+    <DialogContent onCloseAutoFocus={onCloseAutoFocus}>
       <DialogHeader><DialogTitle>{actionLabel} for {number}</DialogTitle><DialogDescription>Explain the change for the Customer or Partner. Keep internal scientific and commercial notes in Internal context.</DialogDescription></DialogHeader>
       {error ? <DialogFeedback><Alert variant="destructive"><AlertTitle>Status change was not saved</AlertTitle><AlertDescription>{getOrderErrorMessage(error, 'Try again. Your reason is retained.')}</AlertDescription></Alert></DialogFeedback> : null}
       <form id="operational-status-change" noValidate onSubmit={form.handleSubmit(values => onSave(values.reason))}>
@@ -215,7 +235,8 @@ function StatusReasonDialog({ actionLabel, number, pending, error, onClose, onSa
   </Dialog>
 }
 
-function AssignmentDialog({ number, initialDueAt, hasAssignment, assignedToMe, pending, error, onClose, onSave }: {
+function AssignmentDialog({ number, initialDueAt, hasAssignment, assignedToMe, pending, error, onClose, onSave, onCloseAutoFocus }: {
+  onCloseAutoFocus: (event: Event) => void
   number: string; initialDueAt: string | null; hasAssignment: boolean; assignedToMe: boolean; pending: boolean; error: unknown; onClose: () => void; onSave: (input: AssignmentInput) => void
 }) {
   const form = useForm<z.infer<typeof assignmentSchema>>({ resolver: zodResolver(assignmentSchema), mode: 'onBlur', defaultValues: { dueAt: toLocalDateTime(initialDueAt) } })
@@ -223,7 +244,7 @@ function AssignmentDialog({ number, initialDueAt, hasAssignment, assignedToMe, p
   function requestClose() { if (!pending && (!form.formState.isDirty || window.confirm('Discard these unsaved assignment changes?'))) onClose() }
   const dueAtError = form.formState.errors.dueAt?.message
   return <Dialog open onOpenChange={open => { if (!open) requestClose() }}>
-    <DialogContent>
+    <DialogContent onCloseAutoFocus={onCloseAutoFocus}>
       <DialogHeader><DialogTitle>Assignment for {number}</DialogTitle><DialogDescription>Take responsibility for this order and optionally set when it is due. Clearing the assignment also removes its due time.</DialogDescription></DialogHeader>
       {error ? <DialogFeedback><Alert variant="destructive"><AlertTitle>Assignment was not saved</AlertTitle><AlertDescription>{getOrderErrorMessage(error, 'Try again. Your entered date and time are retained.')}</AlertDescription></Alert></DialogFeedback> : null}
       <form id="operational-assignment" noValidate onSubmit={event => {

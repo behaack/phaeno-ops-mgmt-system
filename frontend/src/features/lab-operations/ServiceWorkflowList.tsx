@@ -1,6 +1,7 @@
+import { WorkflowApprovalOverrideDialog } from './WorkflowApprovalOverrideDialog'
 import { useMutation } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { ChevronDown, Plus } from 'lucide-react'
+import { ChevronDown, Plus, ShieldCheck } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
 import {
@@ -29,12 +30,12 @@ const transitionCopy: Record<ConfirmedWorkflowAction, { title: string; descripti
   },
   promote: {
     title: 'Promote workflow to production?',
-    description: 'This exact ordered workflow will govern new laboratory jobs. Its Approved protocols will enter Production, and the previous Production workflow and replaced protocol versions will be retired.',
+    description: 'This exact ordered workflow will be the default for new standalone processing attempts. Its Approved protocols will enter Production, and the previous Production workflow and replaced protocol versions will be retired.',
     label: 'Promote to production',
   },
   retire: {
     title: 'Retire production workflow?',
-    description: 'Existing jobs will keep this pinned version, but new laboratory jobs cannot start this service until another workflow version is promoted.',
+    description: 'Existing attempts retain their recorded version. Promote another workflow before selecting new standalone sources; approved preparation batches use their selected version.',
     label: 'Retire workflow',
   },
   withdraw: {
@@ -48,13 +49,18 @@ export function ServiceWorkflowList({
   workflows,
   marketedServices,
   canManage,
+  canOverride = false,
+  actorId,
   refresh,
 }: {
   workflows: LabServiceWorkflow[]
   marketedServices: LabMarketedService[]
   canManage: boolean
+  canOverride?: boolean
+  actorId?: string
   refresh: () => Promise<unknown>
 }) {
+  const [overrideTarget, setOverrideTarget] = useState<{ workflow: LabServiceWorkflow; version: LabServiceWorkflow['versions'][number] } | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
   const [confirmation, setConfirmation] = useState<{
     workflow: LabServiceWorkflow
@@ -63,10 +69,11 @@ export function ServiceWorkflowList({
     action: ConfirmedWorkflowAction
   } | null>(null)
   const transition = useMutation({
-    mutationFn: ({ workflow, versionId, action }: { workflow: LabServiceWorkflow; versionId: string; action: string }) =>
-      transitionLabServiceWorkflowVersion(versionId, { action, workflowVersion: workflow.version }),
+    mutationFn: ({ workflow, versionId, action, approvalOverrideReason }: { workflow: LabServiceWorkflow; versionId: string; action: string; approvalOverrideReason?: string }) =>
+      transitionLabServiceWorkflowVersion(versionId, { action, workflowVersion: workflow.version, ...(approvalOverrideReason !== undefined ? { approvalOverrideReason } : {}) }),
     onSuccess: async () => {
       setConfirmation(null)
+      setOverrideTarget(null)
       await refresh()
     },
   })
@@ -104,27 +111,26 @@ export function ServiceWorkflowList({
               const openCandidate = workflow.versions.find((version) => version.status === 'Draft' || version.status === 'Approved' || version.status === 'Invalid')
               return (
                 <section key={workflow.id} className="rounded-lg border bg-background p-4 shadow-xs">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <h3 className="font-medium">{workflow.name}</h3>
-                      {workflow.description ? <p className="mt-1 text-sm text-muted-foreground">{workflow.description}</p> : null}
-                      <p className="mt-1 text-xs text-muted-foreground">{workflow.serviceKey} · latest v{workflow.latestVersion || 'none'}</p>
-                    </div>
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="min-w-0 wrap-anywhere font-medium">{workflow.name}</h3>
                     {canManage && !openCandidate ? (
-                      <Button asChild size="sm" variant="outline">
+                      <Button asChild size="sm" variant="outline" className="shrink-0">
                         <Link to="/lab-operations/workflows/$workflowId/versions/new" params={{ workflowId: workflow.id }} search={{ section: undefined }}>
                           Add version
                         </Link>
                       </Button>
                     ) : null}
                   </div>
+                  {workflow.description ? <p className="mt-1 text-sm text-muted-foreground">{workflow.description}</p> : null}
+                  <p className="mt-1 text-xs text-muted-foreground">{workflow.serviceKey} · latest v{workflow.latestVersion || 'none'}</p>
                   <div className="mt-3 space-y-2">
-                    {workflow.versions.filter((version) => version.status !== 'Discarded').map((version) => (
+                    {workflow.versions.filter((version) => version.status !== 'Discarded').sort((a, b) => b.workflowVersion - a.workflowVersion).map((version) => (
                       <div key={version.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-muted px-3 py-2 text-sm">
                         <div>
                           <span className="font-medium">v{version.workflowVersion}</span>
                           <Status value={version.status} />
                           <span className="ml-2 text-muted-foreground">{version.stages.length} stage(s)</span>
+                          {version.approvalOverrideReason ? <p className="mt-1 text-sm"><strong>Administrator override</strong> · {version.approvedAtUtc ? new Date(version.approvedAtUtc).toLocaleString() : ''} · {version.approvalOverrideReason}</p> : null}
                           {version.invalidationReason ? <p className="mt-1 text-xs text-muted-foreground">{version.invalidationReason}</p> : null}
                         </div>
                         {canManage && ['Draft', 'Invalid', 'Approved'].includes(version.status) ? (
@@ -134,7 +140,7 @@ export function ServiceWorkflowList({
                                 Actions <ChevronDown aria-hidden="true" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-60 max-w-[calc(100vw-2rem)]">
+                            <DropdownMenuContent align="end" className="w-80 max-w-[calc(100vw-2rem)]">
                               <DropdownMenuLabel>Workflow v{version.workflowVersion} actions</DropdownMenuLabel>
                               {version.status === 'Draft' || version.status === 'Invalid' ? (
                                 <>
@@ -144,6 +150,7 @@ export function ServiceWorkflowList({
                                     </Link>
                                   </DropdownMenuItem>
                                   <DropdownMenuItem onSelect={() => transition.mutate({ workflow, versionId: version.id, action: 'approve' })}>{version.status === 'Invalid' ? 'Revalidate and approve' : 'Approve'}</DropdownMenuItem>
+                                  {canOverride && actorId === version.authoredByUserId ? <DropdownMenuItem onSelect={() => { transition.reset(); setOverrideTarget({ workflow, version }) }}><ShieldCheck aria-hidden="true" /> Approve with administrator override</DropdownMenuItem> : null}
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem variant="destructive" onSelect={() => setConfirmation({ workflow, versionId: version.id, workflowVersion: version.workflowVersion, action: 'discard' })}>Discard</DropdownMenuItem>
                                 </>
@@ -168,6 +175,8 @@ export function ServiceWorkflowList({
           {visibleWorkflows.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">No service workflow has been defined.</p> : null}
         </CardContent>
       </Card>
+
+      {overrideTarget ? <WorkflowApprovalOverrideDialog key={overrideTarget.version.id} workflow={overrideTarget.workflow} version={overrideTarget.version} pending={transition.isPending} error={transition.error ? getLabOperationsError(transition.error, 'Refresh the workflow and try again.') : undefined} onClose={() => { setOverrideTarget(null); transition.reset() }} onApprove={reason => transition.mutate({ workflow: overrideTarget.workflow, versionId: overrideTarget.version.id, action: 'approve', approvalOverrideReason: reason })} /> : null}
 
       <CreateServiceWorkflowDialog
         open={createOpen}

@@ -67,6 +67,15 @@ describe('Lab Job customer preparation evidence', () => {
     expect(find('confirm-order', { order: { ...order, ...commitment, status: 'OnHold' } }).state).toBe('complete')
   })
 
+  it('shows pricing review while pending and confirmation only when pricing is issued', () => {
+    const pending = { ...order, placedAt: null, status: 'QuoteInPreparation', canEdit: true, canWithdraw: true,
+      quoteAcceptanceBlockedReason: 'There is no current issued quote available to accept.' }
+    expect(find('confirm-order', { order: pending })).toMatchObject({ label: 'Waiting for pricing', owner: 'Phaeno' })
+    expect(find('confirm-order', { order: pending }).detail).toContain('modify or withdraw')
+    expect(find('confirm-order', { order: pending }).detail).not.toContain('no current issued quote')
+    expect(find('confirm-order', { order: { ...pending, status: 'QuoteIssued', canAcceptQuote: true, quotes: [quote()] } }).label).toBe('Confirm pricing')
+  })
+
   it('makes quote expiry and administrator responsibility explicit', () => {
     const quoted = { ...order, placedAt: null, status: 'QuoteIssued', canAcceptQuote: true, quotes: [quote()] }
     expect(find('confirm-order', { order: quoted, canAcceptOrder: false })).toMatchObject({ state: 'waiting-for-administrator', owner: 'Your administrator' })
@@ -82,6 +91,21 @@ describe('Lab Job customer preparation evidence', () => {
     expect(find('confirm-order', { order: { ...blocked, quoteAcceptanceBlockedReason: null }, canAcceptOrder: true })).toMatchObject({ state: 'needs-attention', owner: 'You', detail: 'Review the order or quote blockers before accepting.' })
     expect(find('confirm-order', { order: blocked, canAcceptOrder: false })).toMatchObject({ state: 'waiting-for-administrator', owner: 'Your administrator' })
     expect(find('confirm-order', { order: { ...blocked, canPlaceStandardOrder: true }, canAcceptOrder: true }).state).toBe('waiting-for-you')
+  })
+
+  it('makes finalization the next action only for a complete accepted sample composition', () => {
+    const identified = { ...order, sampleRosterFinalizedAt: null,
+      sourceGroups: [{ id: 'source', biologicalSource: 'Human kidney', specimenCount: 2, version: 1 }],
+      samples: order.samples.map(sample => ({ ...sample, biologicalSource: 'Human kidney' })),
+    }
+    expect(find('samples', { order: identified })).toMatchObject({ label: 'Review and finalize sample list', actionLabel: 'Review and finalize list', state: 'waiting-for-you' })
+    for (const incomplete of [
+      { ...identified, samples: identified.samples.slice(1) },
+      { ...identified, samples: identified.samples.map(sample => ({ ...sample, customerSampleId: 'DUPLICATE' })) },
+      { ...identified, samples: identified.samples.map(sample => ({ ...sample, quantity: 0 })) },
+      { ...identified, samples: identified.samples.map(sample => ({ ...sample, biologicalSource: 'Other source' })) },
+    ]) expect(find('samples', { order: incomplete }).actionLabel).toBeUndefined()
+    expect(find('samples', { order: identified, canManageShipping: false }).detail).toContain('Your administrator can review and finalize')
   })
 
   it('requires roster finalization rather than the number of entered rows', () => {
@@ -203,7 +227,7 @@ describe('Lab Job customer preparation evidence', () => {
   })
 
   it('checks kit availability rather than marking a mandatory kit order complete', () => {
-    expect(find('kits', { shipments: [pool()] }).detail).toContain('Check available kits')
+    expect(find('kits', { shipments: [pool()] }).detail).toContain('Check received kits')
     expect(find('kits', { shipments: [pool()] }).state).not.toBe('complete')
     expect(find('kits', { shipments: [pool()], kitSupply: supply() }).state).toBe('complete')
     expect(find('kits', { shipments: [pool()], kitSupply: supply({ canPrepareSamples: false }), canManageShipping: false }).state).toBe('complete')
@@ -213,6 +237,14 @@ describe('Lab Job customer preparation evidence', () => {
     const secondPool = { ...pool(), id: 'other-pool', crosswalk: shipment(2).crosswalk, expectedTubeCount: 2 }
     const firstPool = { ...pool(), crosswalk: shipment(1).crosswalk, expectedTubeCount: 2 }
     expect(find('kits', { shipments: [firstPool, secondPool], kitSupply: supply({ tubeCount: 2 }) }).state).not.toBe('complete')
+  })
+
+  it.each(['Pending', 'PartiallyDispatched', 'Dispatched'] as const)('shows waiting for containers after a %s kit order', status => {
+    const request = { status, canConfirmReceipt: false } as NonNullable<ShipmentKitSupply['request']>
+    const value = find('kits', { shipments: [pool()], kitSupply: supply({ recordedStock: [], canPrepareSamples: false, request }) })
+    expect(value).toMatchObject({ label: 'Wait for containers to arrive', actionLabel: 'View kit delivery', owner: status === 'Dispatched' ? 'Carrier' : 'Phaeno' })
+    expect(value.detail).toContain(status === 'Pending' ? 'preparing your containers' : 'on the way')
+    expect(value.state).not.toBe('complete')
   })
 
   it('distinguishes outbound kit delivery from sample dispatch and preserves member ownership', () => {

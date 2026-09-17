@@ -1,5 +1,23 @@
 # `phaeno_ops` database ERD
 
+## Shared output command metadata (2026-09-17)
+
+No schema change. lab_ops.lab_preparation_records.details_json retains outputs input rows and outputResults with memberId, outputContainerId and generated barcode for shared output creation. Each row still produces a separate existing lab container linked to its own specimen attempt/source and preparation member. Existing output-confirmation and library-eligibility fields retain their meaning.
+
+## Automatic preparation skip provenance — September 17, 2026
+
+No schema migration. Generated conditional-review skips reuse `lab_ops.lab_preparation_records` and existing per-execution step evidence. Their `details_json` contains the normal skipped step command, `automatic: true` and `triggerRequestId` identifying the parent preparation command. Existing actor/time fields identify the authorized session that triggered evaluation; coverage and the automatic reason are retained. No performed-work attestation is generated.
+
+
+## Preparation QC report metadata — September 17, 2026
+
+No new table or column. A preparation step's existing `lab_ops.lab_preparation_records.details_json` may contain `qcReport` or `preparationReport` with `fileName`, `contentType`, `sizeBytes`, `sha256`, private `storageKey`, and `scanStatus`. The record ID, actor, timestamp, stage/step and covered member IDs supply attachment provenance. Blob bytes use the existing private order-files area. API responses omit the storage key; downloads authorize the batch/record pair. The backup reference manifest includes these JSON references. Reports are internal execution evidence, not released customer deliverables.
+
+
+## Physical preparation trays — September 17, 2026
+
+`lab_ops.lab_preparation_batches.tray_barcode` retains the scanned physical tray identity separately from the batch name. Its unique index applies only to non-null barcodes in Draft or InProgress batches; completed/cancelled history retains the barcode and permits later reuse. Existing batches remain null until a physical tray is scanned.
+
 ## Final Lab outcomes — September 15, 2026
 
 The existing text-backed `lab_samples.status` now includes distinct `Failed` and `Cancelled` values alongside `Completed` and `Rejected` as terminal outcomes. Failed means processing ended without success, not intake rejection. Accepted quote, placement, invoice and PDF snapshots remain unchanged by this outcome. Selected cancellation outcomes retain per-sample order events and Lab command receipts. No table, column, key, persisted model shape or migration changed.
@@ -17,10 +35,10 @@ Generated from [PSeqOperationsDbContextModelSnapshot.cs](../backend/app/Migratio
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 136 | 2182 | 345 |
-| `lab_ops` | 37 | 454 | 64 |
+| `commercial_ops` | 136 | 2189 | 347 |
+| `lab_ops` | 39 | 480 | 66 |
 | `website` | 5 | 49 | 4 |
-| **Total** | **179** | **2687** | **413** |
+| **Total** | **181** | **2720** | **417** |
 
 ## `public` schema
 
@@ -1267,13 +1285,13 @@ erDiagram
     }
     lab_service_quotes {
         uuid id PK "not null"
-        jsonb change_scope_snapshot_json "nullable; immutable additional sources and base agreement"
-        jsonb accepted_amendment_snapshot_json "nullable; immutable acceptance and PO"
-        timestamp_with_time_zone change_roster_finalized_at "nullable"
+        jsonb accepted_amendment_snapshot_json "nullable"
         timestamp_with_time_zone accepted_at "nullable"
         uuid accepted_by_user_id "nullable"
         jsonb billing_address_snapshot_json "nullable"
         jsonb billing_contact_snapshot_json "nullable"
+        timestamp_with_time_zone change_roster_finalized_at "nullable"
+        jsonb change_scope_snapshot_json "nullable"
         integer commercial_configuration_version "nullable"
         timestamp_with_time_zone created_at "not null"
         uuid created_by_user_id "nullable"
@@ -1847,13 +1865,17 @@ erDiagram
         timestamp_with_time_zone reserved_at "nullable"
         uuid reserved_by_user_id FK "nullable"
         uuid reserved_sample_shipment_id FK,UK "nullable"
+        character_varying_1000 shipper_product_description "nullable"
         character_varying_100 shipper_product_number "not null"
         character_varying_255 shipper_supplier_name "not null"
+        uuid shipper_supplier_product_id FK "nullable"
         uuid transportation_kit_request_line_id FK "nullable"
         integer tube_capacity "not null"
         character_varying_100 tube_lot_number "nullable"
+        character_varying_1000 tube_product_description "nullable"
         character_varying_100 tube_product_number "not null"
         character_varying_255 tube_supplier_name "not null"
+        uuid tube_supplier_product_id FK "nullable"
         timestamp_with_time_zone updated_at "not null"
         uuid updated_by_user_id FK "nullable"
         bigint version "not null"
@@ -1872,7 +1894,9 @@ erDiagram
     organizations o|--o{ sample_shipping_stock_kits : "organization_id"
     users o|--o{ sample_shipping_stock_kits : "reserved_by_user_id"
     sample_shipments o|--o{ sample_shipping_stock_kits : "reserved_sample_shipment_id"
+    lab_supplier_products o|--o{ sample_shipping_stock_kits : "shipper_supplier_product_id"
     transportation_kit_request_lines o|--o{ sample_shipping_stock_kits : "transportation_kit_request_line_id"
+    lab_supplier_products o|--o{ sample_shipping_stock_kits : "tube_supplier_product_id"
     users o|--o{ sample_shipping_stock_kits : "updated_by_user_id"
     sample_shipping_stock_kits ||--o{ sample_shipping_stock_tubes : "sample_shipping_stock_kit_id"
 ```
@@ -2976,6 +3000,7 @@ erDiagram
         character_varying_160 name "not null"
         timestamp_with_time_zone started_at_utc "nullable"
         character_varying_50 status "not null"
+        character_varying_255 tray_barcode UK "nullable"
         timestamp_with_time_zone updated_at "not null"
         uuid updated_by_user_id "nullable"
         bigint version "not null"
@@ -3000,6 +3025,19 @@ erDiagram
         timestamp_with_time_zone recorded_at_utc "not null"
         character_varying_64 request_hash "not null"
     }
+    lab_product_types {
+        uuid id PK "not null"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id "nullable"
+        character_varying_1000 description "not null"
+        boolean is_active "not null"
+        character_varying_30 kit_use "not null"
+        character_varying_100 name "not null"
+        character_varying_100 normalized_name UK "not null"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
     lab_specimen_attempts {
         uuid id PK "not null"
         timestamp_with_time_zone closed_at_utc "nullable"
@@ -3021,6 +3059,20 @@ erDiagram
         jsonb stage_skips_json "not null"
         timestamp_with_time_zone started_at_utc "nullable"
         character_varying_50 state "not null"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
+    lab_supplier_products {
+        uuid id PK "not null"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id "nullable"
+        character_varying_1000 description "not null"
+        boolean is_active "not null"
+        character_varying_100 normalized_product_number UK "not null"
+        character_varying_100 product_number "not null"
+        uuid product_type_id FK "not null"
+        uuid supplier_id FK,UK "not null"
         timestamp_with_time_zone updated_at "not null"
         uuid updated_by_user_id "nullable"
         bigint version "not null"
@@ -3061,6 +3113,8 @@ erDiagram
     lab_work_orders ||--o{ lab_specimen_attempts : "lab_work_order_id"
     lab_specimen_attempts o|--o{ lab_specimen_attempts : "previous_attempt_id"
     lab_containers ||--o{ lab_specimen_attempts : "source_container_id"
+    lab_product_types ||--o{ lab_supplier_products : "product_type_id"
+    lab_suppliers ||--o{ lab_supplier_products : "supplier_id"
     lab_work_orders ||--o{ lab_work_timing_changes : "lab_work_order_id"
     order_notifications o|--o{ lab_work_timing_changes : "notification_id"
     users ||--o{ lab_work_timing_changes : "timing_changed_by_user_id"
@@ -3292,6 +3346,7 @@ erDiagram
     }
     lab_protocol_versions {
         uuid id PK "not null"
+        character_varying_2000 approval_override_reason "nullable"
         timestamp_with_time_zone approved_at_utc "nullable"
         uuid approved_by_user_id "nullable"
         timestamp_with_time_zone authored_at_utc "not null"
@@ -3328,6 +3383,7 @@ erDiagram
     }
     lab_service_workflow_versions {
         uuid id PK "not null"
+        character_varying_2000 approval_override_reason "nullable"
         timestamp_with_time_zone approved_at_utc "nullable"
         uuid approved_by_user_id "nullable"
         timestamp_with_time_zone authored_at_utc "not null"

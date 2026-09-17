@@ -93,17 +93,24 @@ public sealed partial class LabOperationsController
         var workflow = await dbContext.LabServiceWorkflows.SingleOrDefaultAsync(
             item => item.Id == version.LabServiceWorkflowId, cancellationToken) ?? throw Missing();
         EnsureVersion(workflow.Version, request.WorkflowVersion);
+        if (request.ApprovalOverrideReason is not null && !string.Equals(request.Action.Trim(), "approve", StringComparison.OrdinalIgnoreCase))
+            throw Invalid("approval_override_action_invalid", "An approval override can only be used when approving a version.");
         switch (request.Action.Trim().ToLowerInvariant())
         {
             case "approve":
                 await RequireWorkflowStagesAsync(version.Id, cancellationToken);
-                if (version.AuthoredByUserId == actor.User.Id)
-                    requestContext.EnforceOrAuditActorConflict(actor.User.Id,
-                        "service_workflow_author_approval_conflict",
-                        "A workflow author cannot approve the same workflow version.",
-                        new { workflowId = workflow.Id, workflowVersionId = version.Id });
-                Execute(() => version.Approve(actor.User.Id, DateTime.UtcNow,
-                    requestContext.DualControlEnforced));
+                if (request.ApprovalOverrideReason is not null)
+                {
+                    RequireApprovalOverrideAdministrator(actor);
+                    Execute(() => version.ApproveWithOverride(actor.User.Id, DateTime.UtcNow, request.ApprovalOverrideReason));
+                }
+                else
+                {
+                    if (version.AuthoredByUserId == actor.User.Id)
+                        throw Conflict("service_workflow_author_approval_conflict",
+                            "An independent Protocol Administrator must approve this workflow, or a platform administrator must explicitly record an approval override.");
+                    Execute(() => version.Approve(actor.User.Id, DateTime.UtcNow));
+                }
                 break;
             case "withdraw":
                 Execute(version.WithdrawApproval);
@@ -177,10 +184,10 @@ public sealed partial class LabOperationsController
             throw Conflict("service_workflow_protocol_not_ready",
                 "Every workflow protocol must still be approved.");
 
-        Execute(version.RequireIndependentApproval);
+        Execute(version.RequireReleaseApproval);
         foreach (var protocol in protocolVersions)
         {
-            Execute(protocol.RequireIndependentApproval);
+            Execute(protocol.RequireReleaseApproval);
             RequireProtocolDefinition(protocol.DefinitionJson);
         }
         foreach (var protocolVersion in protocolVersions.Where(item => item.Status == LabProtocolStatus.Approved))

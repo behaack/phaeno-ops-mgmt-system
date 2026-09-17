@@ -1,5 +1,87 @@
 # Sample Shipping and Intake Plan
 
+## Accession footer summary — September 16, 2026
+
+Show X with exceptions | Y to be accepted in the accession modal footer, with Accept (Y) beside the existing close action. X counts saved OnHold or Rejected decisions for this shipment; Y uses the existing identified, undecided, eligible acceptance selection. Preserve the review/storage confirmation and disabled/completed states. Stack the summary above the actions on narrow screens.
+
+## Receipt confirmation action — September 16, 2026
+
+Place Accession samples at the right of the Shipment received / Shipment already received heading row. Keep the receipt timestamp and guidance below, allow wrapping on narrow screens, and preserve existing receipt and accession behavior.
+
+## Sample row alignment — September 16, 2026
+
+Give sample IDs a consistent 12rem column on wider screens, wrap long IDs without changing their stored length, and align ID/status text with the same font size, line height and vertical spacing. Stack status beneath the ID on narrow screens. Use “1 of 1 tube matched” / “2 of 2 tubes matched” and omit the duplicate standalone quantity when matching status is shown. Keep quantity before matching is available, unavailable/loading states, accession and receipt details, and individual tube ordinals in expanded rows. Keep the QR size unchanged.
+
+## Compact matched-tube rows — September 16, 2026
+
+Lead each saved tube row with the QR on the left. Top-align the sample details with the visible QR, and tighten the compact QR caption spacing while retaining its quiet zone. Group the sample ID and tube ordinal directly beside it, followed by biological source and a muted, wrapping container/shipment reference. Keep Change tube at the right on wide screens and below on narrow screens. Avoid letting long references determine the gap between the identity and QR. Use a 21 mm QR in these rows (25% smaller than the standard 28 mm); retain the encoded value, contrast and four-module quiet zone. Other QR usages retain their existing sizes. Inline scanning remains full width. Reviewed shipping guides; no workflow or instruction changes are needed for this visual adjustment.
+
+## Scanning completion action — September 16, 2026
+
+Show Done scanning only during matching after all tubes in the selected nonempty container have saved barcode matches. Render it in the shared action slot at the right of Samples and shipping, and focus it after the last save settles. Hide it while incomplete; keep pending-save and current-data guards. Match tubes uses the same header slot before scanning. Completion exits matching and preserves the expanded review list; unsaved-navigation protection remains.
+
+## Inline tube matching — September 16, 2026
+
+Put the single active barcode form inside its tube row, including validation and save errors. Keep shipment/container identity and overall progress above the list. Successful save expands and pages to the next unmatched tube, focuses its field and scrolls the row into view without animation. Keep barcode draft state when the row is collapsed or paged away; Return to active tube remounts and focuses the retained draft. Pending saves still block navigation and duplicates, and failures retain the same target. Apply this to embedded Job lists and standalone shipment lists; no API or saved-match changes.
+
+## Sample ID ordering — September 16, 2026
+
+Use case-insensitive alphabetical/digit-by-digit ID ordering within existing biological-source groups. IDs are identifiers, not numeric quantities. The Job passes that same grouped sample order to the scanner; standalone scanning sorts by ID. Tube ordinals remain numeric. Apply the ordering on initial load, pagination, resumption and successful scan advancement without mutating saved crosswalks or changing a dirty active target. Source grouping and matched identities remain intact.
+
+## Kit fulfillment date — September 16, 2026
+
+The Kits sent table includes a Fulfillment date column after Registered tubes, using the saved return-kit fulfilledAt timestamp in the viewer's local time zone. Show a dash when no fulfillment timestamp exists. No API, date inference or workflow changes.
+
+## Container assignment wording — September 16, 2026
+
+Use **Assign shipping containers** for the card and modal titles, **Assign containers** for the card header action, and **Confirm assignment** (or **Confirm partial assignment**) to save. Receiving stock makes it available; it does not assign a physical container to the Job. Label the suggested configuration **Recommended containers — not yet assigned**. Each modal card has a visible, accessible **Container N** heading and fields labeled **Container**, **Tubes**, and, for location inventory, **Scan or enter container barcode**. Hide Remove when the sole selected container is the only compatible container in available stock. Retain removal for multiple rows, alternative stock, unrestricted stock selection and stale/unavailable selections needing correction. Collapse the unused action column. A single container shows its automatic tube allocation in a read-only text box with muted background and text in both themes, capped at capacity; multiple containers retain editable counts. Removing rows until one remains recalculates its allocation and preserves the unallocated remainder. Barcode scanning no longer moves focus to a hidden tube input. Keep the existing barcode checks, explicit confirmation/reservation boundary, partial-allocation rules and availability guards. Audience guides and existing regression selectors follow these labels. Tests updated but not run.
+
+## Kit product validation correction — September 16, 2026
+
+Product selections revalidate immediately after supplier changes, clearing stale required errors for both Tubes and Shipping Container. Configured-size prefills also revalidate the shipping supplier and product, and the displayed product stays synchronized with the form value as supplier options change. Empty selections remain invalid. Existing catalog eligibility and save checks are retained. Focused regressions cover both manual selections and prefills after a failed submission; tests added but not run. Reviewed the Phaeno preparation guide; this restores its documented behavior without changing instructions.
+
+## Product type row actions — September 16, 2026
+
+Each product-type, supplier and product row, plus supplier/type detail headers, has an Actions menu with Edit and Deactivate, or Activate for an inactive record. Edit opens the existing bounded form. Status changes share an application confirmation that identifies the record and explains selection effects, retaining history and the current concurrency version. Keep errors in the confirmation and disable repeat submission while saving. Refresh supplier, type and Materials caches after status changes. Return focus to the row action or search field when deactivation hides the row. On narrow screens move the product count below the type name to leave room for Actions. No backend or database change. Focused frontend coverage updated, not run.
+
+## Supplier catalog tabs — September 16, 2026
+
+Keep one **Suppliers & Products** sidebar entry. Its shared tab control contains **Suppliers & Products** and **Product types**; remove the separate Product types sidebar item. Persist the selected tab in route search so refresh and return from type details restore it. Legacy `section=product-types` links resolve to the Product types tab. Existing detail routes, record forms, permissions and data remain unchanged. Update Phaeno navigation help. This navigation-only change uses typecheck/lint and documentation checks; automated tests are not run.
+
+## Managed product types — September 16, 2026
+
+Extend the shared supplier directory to reagent vendors as well as transportation supplies. Place Product types in a tab within Suppliers & Products, with view-first type details and bounded create/edit modals. Names are case-insensitively unique, descriptions required, and types may be inactivated/reactivated without deleting referenced products. Seed Tube, Shipping Container and Reagent. Each type declares kit use (Tube, Shipping Container or Not used in transportation kits); reagent and other catalog types cannot enter kit selections. Once products reference a type, its kit use cannot change; its name, description and active status remain editable. Product editors select active saved types and retain an existing inactive reference for correction. Inactive types exclude their products from new kits. Existing material-lot supplier references reuse the same directory; reagent stock, QC and lot workflows are unchanged.
+
+Implementation checkpoint: `20260916202935_AddManagedProductTypes` maps existing Tube/ShippingContainer values to stable type IDs before removing the old enum column, seeds Reagent, and is applied to localhost `phaeno_ops`. Build, frontend typecheck/lint, documentation and ERD checks pass; automated tests are not run. API restart remains necessary.
+
+Migrate existing product kinds to stable type references without changing product/kit identities or snapshots. Local migration and ERD included. Shared/production migration and deployment remain outside scope. Acceptance: manage types, supplier offering several types, required descriptions, normalized uniqueness, stale edit protection, inactive-type filtering and reagent exclusion from kit selectors. Tests updated but not run unless requested.
+
+## Suppliers and products — September 16, 2026
+
+Authorized scope: Phaeno kit administrators manage reusable suppliers and their products from **Suppliers & Products**, immediately below Lab configurations in the sidebar. Reuse existing LabSupplier identities. Supplier detail is view-first with a product list; creation/editing uses bounded modals. Products require a supplier, product number, description and managed product type. Supplier names and supplier/product numbers are case-insensitively unique. Retire/reactivate through editing rather than deleting history. Existing platform-administrator kit permissions govern catalog access; no authentication or role widening.
+
+Kit preparation uses supplier and product select lists, limited to active matching product types. Supplier changes clear the selected product. Existing configured shipper references preselect only an exact active catalog match. Lot stays batch-specific free text. The server resolves selected IDs and freezes supplier, number and description in kit history; old kits remain readable without fabricated catalog associations. No speculative historical supplier/product import. Additive local migration and ERD update are included; shared/production migration and deployment are outside this request.
+
+Implementation checkpoint: catalog endpoints, supplier detail and product editors, sidebar route, typed kit selections and frozen descriptions are implemented locally. Migration `20260916201610_AddSupplierProductCatalog` was generated, reviewed and applied to localhost `phaeno_ops`; it was the only pending migration. ERD and Phaeno guides updated. Release solution build and frontend typecheck/lint pass. Focused regression tests are compiled/updated but not run. The existing Visual Studio/IIS Express session retains the older API; restart that development session to load the new endpoints. No shared database, commit, push or deployment performed.
+
+Acceptance: catalog create/edit/retire, duplicate rejection, scoped products, descriptions in options, no stale supplier/product selection, required fields, server validation, retained historical snapshots, local navigation and responsive forms. Automated tests are updated/added but not executed unless requested. Success means kit preparation requires no repeated supplier/product typing and uses valid catalog references.
+
+## Standard kit preparation sections — September 16, 2026
+
+Group the modal into **Tubes** (Supplier, Product name, optional Lot, each on its own full-width row at every screen size) and **Shipping Container** (Supplier and Product name, each on its own full-width row at every screen size). Stack fields on narrow screens and preserve required markers, errors, prefilled shipper references and save behavior. The supplier/product catalog implementation above supersedes the earlier free-text selection proposal.
+
+## Kit receiving and container locations — September 16, 2026
+
+Use **Kit receiving location** for the kit-order delivery address and **Container location** for received-stock selection. Remove the misleading Departure location label from this preparation flow; physical sample-dispatch terms remain separate. Move the received-stock control into Choose shipping containers. Display the selected sole active location as text; retain the selector when multiple active locations are available, including when current stock is empty so stock at another location remains reachable. The full container chooser stays hidden with no received stock. Existing address, inventory and shipment API fields are unchanged. Customer and Partner help and affected selectors are updated; tests are not executed unless requested.
+
+## Ordered containers awaiting arrival — September 16, 2026
+
+After an active transportation-kit order, show **Wait for containers to arrive** and **View kit delivery** in the next-step area. Distinguish pending preparation, partial dispatch and dispatched delivery in the detail; preserve receipt eligibility and actor permissions, and complete Container supply only from recorded compatible supply or assignment evidence. Hide **Choose shipping containers** while the selected location has no compatible received stock; reveal it from recorded inventory, including previously received kits or partial arrivals. Keep an open selection draft and inventory errors/retry visible. Suppress redundant order-kits preparation advice during an outstanding delivery, retaining location links and receipt controls. No automatic receipt or shipping write is introduced. Customer and Partner guides and focused progress expectations follow this state-based copy. Tests updated but not executed (not requested).
+
+## Transportation kit order action — September 16, 2026
+
+Place **Order transportation kits**, **Cancel kit order** for a cancellable pending request, or **Confirm kits received** for arriving kits, at the right end of the **Transportation kits** card heading, using the shared card action layout. Retain existing permission, loading, error, active-request and ordering-eligibility conditions; disabled reasons remain in the card body. Remove the duplicate stock-availability message and suggested configuration from this card; the ordering modal labels its default sizes **Recommended kit configuration for this shipment**. Hide that label while adjusting sizes or when there is no current recommendation. This is a layout change only; ordering and confirmation behavior are unchanged. Customer shipping help identifies the new button location.
+
 ## Container configuration and location acceptance — September 14, 2026
 
 SHP-01 now passes isolated software acceptance: actual catalog/detail, 18/30-tube recommendations, invalid/draft compatibility checks and disposable revision retirement with original shipment snapshots unchanged. SHP-02 actual five-session validation/default/stale-write/scoping/retirement and phone controls pass; returning to an unsubmitted kit confirmation still needs an eligible accepted Customer Job. No physical inventory, delivery, receipt, existing shipment or original TRANS definition was changed. [Full evidence and retained IDs](../testing/runs/2026-09-14-next-ten-uat.md).

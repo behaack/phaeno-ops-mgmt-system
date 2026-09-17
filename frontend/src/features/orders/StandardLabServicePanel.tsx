@@ -1,4 +1,3 @@
-import { RequestCustomWorkButton } from './RequestCustomWorkButton'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -71,6 +70,7 @@ export function StandardLabServicePanel({
   const canReview =
     !readOnly &&
     !order.placedAt &&
+    ['DraftRequest', 'ChangesRequested'].includes(order.status) &&
     (order.canEdit || order.canSubmit || order.canPlaceStandardOrder)
   const offerings = useQuery({
     queryKey: [
@@ -302,19 +302,10 @@ export function StandardLabServicePanel({
             ) : !offerings.isLoading && !offerings.error ? (
               <p className="text-sm text-muted-foreground">
                 No standard offering is currently available for this
-                organization. You can request custom pricing from this Job.
+                organization. Submit this request for Phaeno to prepare pricing.
               </p>
             ) : null}
-            <RequestCustomWorkButton
-              service="PSeqLabService"
-              sourceOrderId={order.id}
-              defaultSubject={order.customerReference || order.orderNumber}
-            />
-            <p className="text-sm text-muted-foreground">
-              For scope, sources or outputs outside an offering, use the
-              custom-work action on this Job. Selecting an offering does not
-              commit the order.
-            </p>
+
           </>
         )}
         <Dialog

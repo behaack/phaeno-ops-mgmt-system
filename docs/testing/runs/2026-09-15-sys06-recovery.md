@@ -14,6 +14,42 @@ The command-driven scientific journey passes and exports only its generated synt
 
 ## Results
 
+### September 17 closure — SYS-06 Pass
+
+**81/81 software cases are closed: 40 ordinary passes and 41 explicitly simulated software passes.** This section supersedes the historical pending dispositions below. The owner authorized automatic closure when genuine scheduled evidence passed; that condition is now met.
+
+#### Genuine scheduled collection
+
+- [Run `35113420745`](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/35113420745) completed successfully with event **`schedule`**, branch `main`, maintenance revision `e8df58b92aefebd3f4ddbecde96e23a9ee1fbab0`. It started September 16 at `15:09:30Z` (08:09 Pacific), approximately 4 hours 22 minutes after the configured collection time, and completed at `15:10:01Z`. This proves scheduled execution, not an on-time collection guarantee.
+- Host snapshot `snapshot-20260916T090002Z-260bcfb1-9808-4111-928b-b5d87fc04f21` was created at 02:00:02 Pacific, after the initial installation snapshot. The [receipt](2026-09-15-sys06-evidence/2026-09-16-scheduled-receipt.env) matches authorized application `5d57de217542efeafbe45b1bd654dc1ed200a6be` and migration `20260916000046_AddLabChangeQuoteSnapshots`.
+- Encrypted off-server artifact **`10453261809`**, 882139 bytes, remains unexpired until `2026-10-21T15:09:53Z`; ZIP digest `96039fd22daa2674bd15a0bc33d8b2c5fe31725e6cb8e638ebb65ae1783dc407`.
+- Downloaded encrypted payload, wrapped key and receipt all match the [three SHA-256 entries](2026-09-15-sys06-evidence/2026-09-16-scheduled-encrypted.sha256). Workflow logs report `coordinated_backup=PASS` and `backup_export_receipt=PASS`. Receipt flags `restore_verified`, `api_resumed`, `envelope_roundtrip` and `cleanup_verified` are all true. This scheduled export is distinct from the earlier manual recovery export of the same host snapshot.
+
+#### September 17 continuity and current release
+
+Today's scheduled GitHub collection had not appeared at the 04:17 Pacific check. After checking recent runs for duplicates, the authorized **collect-latest** fallback [run `35215010171`](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/35215010171) succeeded. It collected the existing 02:00:09 Pacific host snapshot `snapshot-20260917T090009Z-c10b5971-769b-4307-94c3-738c7be2c9ef`; it did not trigger a capture or interrupt the API.
+
+- Off-server artifact **`10494054992`**, 892379 bytes, expires `2026-10-22T11:18:55Z`; ZIP digest `0f39fe3fad7ccb49aed37ec6b629d58a4a7a7bf286ea807c77d2fa7affe48382`. Collection and export-receipt steps passed; [all three checksums](2026-09-15-sys06-evidence/2026-09-17-recovery-encrypted.sha256) match. This manual recovery is supplemental evidence; the scheduled assertion is satisfied by `35113420745` above.
+- Today's [receipt](2026-09-15-sys06-evidence/2026-09-17-recovery-receipt.env) identifies application `52d21681517018ee77735e33e323518c808a27fd`, the same migration and all four verification flags true. The September 16 production invitation repair was explicitly requested after the scoped fix-and-deploy approval question in task “Align Search and Status” (`01a0aa3d-071e-7152-a1dc-2f2e0448ad37`, repair turn `01a0ab19-1d78-7f91-a4fe-dc0cc7d78ae2`); its completion records that exact release.
+- [API deployment `35125322003`](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/35125322003) succeeded for `52d21681517018ee77735e33e323518c808a27fd`. Vercel's live Production Deployment panel independently identifies the matching Portal source, **Ready**, deployment [`dpl_9AEybubY8YACgvd9WJMJi4UABCPW`](https://vercel.com/cadexgenomics/phaeno-ops-mgmt-system/9AEybubY8YACgvd9WJMJi4UABCPW), assigned to `portal.phaenobiotech.com`.
+- The live Website production panel remains **Ready** at source `00959f5600e065714166232b2f579b3b4b2eff57`, deployment [`dpl_H9LEZ3mPteKbp3tp96Q38V61Wig7`](https://vercel.com/cadexgenomics/phaeno-website/H9LEZ3mPteKbp3tp96Q38V61Wig7).
+- [Fresh health checks](2026-09-15-sys06-evidence/2026-09-17-health.json) at 04:25 Pacific: API health **200**, database ping **204**, Portal root **200**, Website **200**.
+
+Both production receipts have zero managed files/bytes; populated restored-download proof remains the separate isolated rehearsal below. Only nonsensitive receipts, hashes and metadata are retained in the repository; encrypted payloads and wrapped keys remain outside it. No application deployment, migration, production restore, access change or Git mutation occurred in this closure check.
+
+#### Required-step crosswalk and closure boundary
+
+| SYS-06 step | Passing evidence |
+| --- | --- |
+| 1 — Exact environment/release | Rehearsal identity, production release report, receipts and current matched API/UI/Website identity above |
+| 2 — Coordinated isolated capture | Completed isolated recovery proof below; bounded writer pause and return to service |
+| 3 — Failure/watchdog | Same-container forced-kill recovery, orphan cleanup and no false successful snapshot below |
+| 4 — Populated isolated restore | Retained Job/package/invoice links, history and matching invoice/result download bytes below |
+| 5 — Independent scheduled/off-server backup | Actual schedule-event run `35113420745`, newer host snapshot, unexpired artifact, three matching hashes and export receipt |
+| 6 — Reconciled acceptance | Controlling ledger now 81/81 software cases; owner-authorized conditional closure satisfied |
+
+Scoped Markdown link checks and whitespace checks passed; the ledger reconciled to exactly 40 Pass and 41 Pass (simulated) rows. Completion automation `close-final-uat-backup-case` was then set to **PAUSED**, confirmed by the app. Retained [run/artifact metadata](2026-09-15-sys06-evidence/2026-09-17-run-verification.json) accompanies the receipts. Pausing ends its temporary missed-export fallback; it does not disable the host timer or GitHub's daily collection. GitHub collection delay remains an operational timing limitation. Physical laboratory processing, scientific validation, real provider delivery and final business acceptance remain separate; this closure does not assert those outcomes or re-test later application changes.
+
 ### September 16 recovery — 05:29–05:32 Pacific
 
 The owner asked to fix the missing collection. Authenticated GitHub access was available in this continuation after the command's network restriction was handled through the approved escalation. No credential change was needed. The backup workflow was already active on default branch `main`, its `47 10 * * *` schedule was present there, and repository Actions were enabled. No repository-side schedule configuration error was found. GitHub had emitted no scheduled run; the precise scheduler-side cause remains unknown. [GitHub documents that scheduled events can be delayed or dropped](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).

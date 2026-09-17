@@ -36,4 +36,28 @@ describe('Specimen attempt draft recovery', () => {
     expect(api.applyLabAttemptCommand).not.toHaveBeenCalled()
     confirm.mockRestore()
   })
+
+  it('keeps the active attempt on its recorded workflow when a newer default exists', async () => {
+    vi.mocked(api.getLabAttempts).mockResolvedValue({
+      workOrderId: 'work', jobName: 'Test Job', workOrderVersion: 1, policyKey: 'run_one_with_failure_fallback',
+      workflowName: 'Service procedure', workflowVersion: 2, defaultWorkflowVersionId: 'workflow-v2', canOperate: true, canAdoptPolicy: false,
+      stages: [
+        { id: 'new-first', name: 'New preparation', sequence: 1, requirement: 'Required', protocolVersionId: 'new-protocol', workflowVersionId: 'workflow-v2' },
+        { id: 'original-first', name: 'Original preparation', sequence: 1, requirement: 'Required', protocolVersionId: 'original-protocol', workflowVersionId: 'workflow-v1' },
+      ],
+      specimens: [{ id: 'specimen', name: 'Test specimen', accessionNumber: 'ACC-TEST', intakeDisposition: 'Accepted', processingState: 'Planned',
+        reasonCode: null, note: null, nextAction: null, receivedTubes: 1, expectedTubes: 1, eligibleTubes: 0, tubes: [], blocker: null,
+        attempts: [{ id: 'attempt', specimenId: 'specimen', sequence: 1, previousAttemptId: null, sourceContainerId: 'tube', sourceBarcode: 'TUBE-1', state: 'Planned', version: 1,
+          workflowVersionId: 'workflow-v1', workflowName: 'Service procedure', workflowVersion: 1, startedAtUtc: null, closedAtUtc: null,
+          failureReasonCode: null, failureEvidence: null, failedExecutionId: null, holdReason: null, nextAction: null, ownerUserId: null, stageSkips: [], executionIds: [] }],
+      }],
+    })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(<QueryClientProvider client={client}><LabSpecimenPage workOrderId="work" specimenId="specimen" /></QueryClientProvider>)
+    expect(await screen.findByText('Attempt workflow: Service procedure · version 1')).toBeTruthy()
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions' }), { button: 0, ctrlKey: false })
+    expect(await screen.findByRole('menuitem', { name: 'Assign Original preparation' })).toBeTruthy()
+    expect(screen.queryByRole('menuitem', { name: 'Assign New preparation' })).toBeNull()
+  })
+
 })

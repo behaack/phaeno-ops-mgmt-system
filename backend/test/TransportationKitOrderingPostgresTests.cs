@@ -333,7 +333,7 @@ public partial class SampleShippingPostgresTests
         public async Task<StockKitDto> ReadyTransportationKitAsync(SampleShippingContainerDefinitionDto size)
         {
             var stock = StockController();
-            var created = Assert.IsType<StockKitDto>(Assert.IsType<CreatedResult>((await stock.Create(new(size.Id, "Supplier", "T-1", null, "Shipper", "B-1"), default)).Result).Value);
+            var created = Assert.IsType<StockKitDto>(Assert.IsType<CreatedResult>((await stock.Create(await CatalogKitRequestAsync(size.Id), default)).Result).Value);
             ClearTrackedState();
             var codes = Enumerable.Range(1, size.TubeCapacity).Select(index => $"TK-{created.Id:N}-{index:00}").ToArray();
             var ready = await stock.Register(created.Id, new(codes, created.Version), default); ClearTrackedState(); return ready;

@@ -13,12 +13,17 @@ public sealed partial class LabOperationsController
 {
     [HttpPost("preparation/batches/{preparationBatchId:guid}/commands")]
     public async Task<object> ApplyPreparation(Guid preparationBatchId, [FromBody] LabPreparationCommand request, CancellationToken ct)
+        => await ApplyPreparationCore(preparationBatchId, request, ct);
+
+    private async Task<object> ApplyPreparationCore(Guid preparationBatchId, LabPreparationCommand request, CancellationToken ct,
+        string? reportFingerprint = null, Func<CancellationToken, Task<PreparationQcReport>>? uploadReport = null)
     {
         var actor = await requestContext.RequireAsync(HttpContext, ct, Enum.GetValues<LabRole>());
         if (request.Action != "step" && !actor.HasAny(LabRole.Operator, LabRole.Supervisor)) throw Conflict("preparation_role_required", "An Operator or Supervisor must perform this action.");
         if (request.RequestId == Guid.Empty) throw Invalid("preparation_request_required", "A request identifier is required.");
         await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext, $"lab-preparation:{preparationBatchId}", ct);
-        var hash = PreparationHash(new { preparationBatchId, request });
+        var hash = reportFingerprint is null ? PreparationHash(new { preparationBatchId, request })
+            : PreparationHash(new { preparationBatchId, request, reportFingerprint });
         var receipt = await dbContext.LabPreparationRecords.AsNoTracking().SingleOrDefaultAsync(r => r.Id == request.RequestId, ct);
         if (receipt is not null)
         {
@@ -44,18 +49,51 @@ public sealed partial class LabOperationsController
         foreach (var workId in workIds)
         {
             var work = await RequireOpenExecutionWorkAsync(workId, ct);
-            if (work.TubeUsePolicyKey != LabTubeUsePolicy.RunOneWithFailureFallback || work.LabServiceWorkflowVersionId != batch.LabServiceWorkflowVersionId)
-                throw Conflict("preparation_workflow_mismatch", "Every job must already have the same pinned workflow and the run-one-with-failure-fallback instruction.");
+            if (work.TubeUsePolicyKey != LabTubeUsePolicy.RunOneWithFailureFallback)
+                throw Conflict("preparation_workflow_mismatch", "Every job must have the run-one-with-failure-fallback instruction.");
             jobs.Add(work.Id, work);
         }
+        string? reportProperty = null;
+        IReadOnlyList<PreparationOutputResult>? outputResults = null;
         var now = DateTime.UtcNow;
+        var trayConfirmed = PreparationTrayConfirmed(await dbContext.LabPreparationRecords.AsNoTracking()
+            .Where(r => r.LabPreparationBatchId == batch.Id && (r.Action == "confirm-tray" || r.Action == "reopen-tray")).ToListAsync(ct));
+        if (trayConfirmed && request.Action is "assign-tray" or "add" or "move" or "remove")
+            throw Conflict("preparation_tray_confirmed", "The assembled tray is confirmed and locked. Choose Edit tray before changing its contents.");
         try
         {
-            if (request.Action == "add")
+            if (request.Action == "confirm-tray")
             {
+                batch.RequireDraft();
+                batch.RequireTray();
+                if (trayConfirmed) throw new InvalidOperationException("The tray is already confirmed. Start preparation when ready.");
+                if (!request.Confirmed || members.Count == 0) throw new ArgumentException("Review and confirm the assembled tray with at least one scanned tube.");
+            }
+            else if (request.Action == "reopen-tray")
+            {
+                batch.RequireDraft();
+                if (!trayConfirmed) throw new InvalidOperationException("The tray is already open for editing.");
+                if (string.IsNullOrWhiteSpace(request.Reason)) throw new ArgumentException("Record why the confirmed tray needs editing.");
+            }
+            else if (request.Action == "assign-tray")
+            {
+                var barcode = request.Barcode?.Trim() ?? "";
+                batch.AssignTray(barcode, members.Count > 0);
+                await SampleShippingPackingData.LockAsync(dbContext, $"lab-physical-tray:{barcode}", ct);
+                if (await dbContext.LabPreparationBatches.AnyAsync(b => b.Id != batch.Id && b.TrayBarcode == barcode
+                    && (b.Status == LabBatchStatus.Draft || b.Status == LabBatchStatus.InProgress), ct))
+                    throw Conflict("preparation_tray_in_use", "This physical tray is already assigned to another active batch. Complete or cancel that batch before reusing the tray.");
+                if (await dbContext.LabPreparationBatches.AnyAsync(b => b.Name == barcode, ct)
+                    || await dbContext.LabContainers.AnyAsync(t => t.Barcode == barcode, ct))
+                    throw Conflict("preparation_tray_identity", "Scan the physical tray label, not a batch or tube barcode.");
+            }
+            else if (request.Action == "add")
+            {
+                batch.RequireTray();
                 batch.CheckPosition(request.Position ?? "", members);
                 await RequirePreparationWorkflowAsync(batch.LabServiceWorkflowVersionId, ct);
                 var work = jobs[candidate!.LabWorkOrderId];
+                await RequireExecutionWorkflowAsync(work, batch.LabServiceWorkflowVersionId, ct);
                 var specimen = await RequireSpecimenAsync(work.Id, candidate.LabSpecimenId ?? Guid.Empty, ct);
                 if (specimen.ProcessingState is LabSpecimenProcessingState.Succeeded or LabSpecimenProcessingState.Failed)
                     throw Conflict("specimen_processing_final", "This specimen already has a final processing outcome.");
@@ -72,7 +110,7 @@ public sealed partial class LabOperationsController
                 }
                 else
                 {
-                    await SelectAttemptAsync(work, specimen, new(Guid.NewGuid(), work.Version, "select", specimen.Id, SourceContainerId: candidate.Id, Barcode: request.Barcode), actor.User.Id, ct);
+                    await SelectAttemptAsync(work, specimen, new(Guid.NewGuid(), work.Version, "select", specimen.Id, SourceContainerId: candidate.Id, Barcode: request.Barcode), actor.User.Id, ct, batch.LabServiceWorkflowVersionId);
                     attempt = dbContext.LabSpecimenAttempts.Local.Single(a => a.LabSpecimenId == specimen.Id && a.State == LabSpecimenAttemptState.Planned);
                 }
                 dbContext.LabPreparationMembers.Add(new(batch.Id, attempt.Id, request.Position!, candidate.Barcode));
@@ -96,10 +134,16 @@ public sealed partial class LabOperationsController
             }
             else if (request.Action == "start")
             {
+                batch.RequireDraft();
+                if (!trayConfirmed) throw Conflict("preparation_tray_confirmation_required", "Confirm the assembled tray before starting preparation.");
                 var stages = await RequirePreparationWorkflowAsync(batch.LabServiceWorkflowVersionId, ct);
                 foreach (var member in members)
                 {
-                    var attempt = Attempt(member); var source = await RequireAttemptSourceAsync(attempt, ct);
+                    var attempt = Attempt(member);
+                    await RequireExecutionWorkflowAsync(jobs[attempt.LabWorkOrderId], attempt.LabServiceWorkflowVersionId, ct);
+                    if (attempt.LabServiceWorkflowVersionId != batch.LabServiceWorkflowVersionId)
+                        throw Conflict("preparation_workflow_mismatch", "Every attempt must use this batch’s workflow version.");
+                    var source = await RequireAttemptSourceAsync(attempt, ct);
                     if (attempt.State != LabSpecimenAttemptState.Planned || (await NextAttemptStageAsync(attempt, ct))?.Id != stages[0].Id)
                         throw Conflict("preparation_attempt_started", "Every tube must enter at the workflow's first stage with unstarted work.");
                     attempt.Start(source.Barcode, member.ConfirmedBarcode, now);
@@ -117,8 +161,9 @@ public sealed partial class LabOperationsController
                 batch.RequireActive();
                 switch (request.Action)
                 {
+                    case "evaluate-conditions": break; // Reconciliation below rechecks saved evidence under the batch lock.
                     case "step":
-                        await RecordPreparationStepAsync(batch, members, attempts, request, actor, ct); break;
+                        reportProperty = await RecordPreparationStepAsync(batch, members, attempts, request, actor, ct, uploadReport is not null); break;
                     case "advance":
                         await AdvancePreparationAsync(batch, members, attempts, request, actor, ct); break;
                     case "skip-stage":
@@ -132,6 +177,7 @@ public sealed partial class LabOperationsController
                         await RefreshAttemptOutcomeAsync(jobs[failed.LabWorkOrderId], await RequireSpecimenAsync(failed.LabWorkOrderId, failed.LabSpecimenId, ct), failed, actor.User.Id, ct);
                         break;
                     case "output": await PreparationOutputAsync(Member(), Attempt(Member()), request, ct); break;
+                    case "outputs": outputResults = await PreparationOutputsAsync(members, attempts, request, ct); break;
                     case "confirm-output":
                         Attempt(Member()).RequireOpen(false);
                         var outputId = Member().OutputContainerId;
@@ -148,9 +194,22 @@ public sealed partial class LabOperationsController
         }
         catch (ArgumentException e) { throw Invalid("preparation_details_invalid", e.Message); }
         catch (InvalidOperationException e) { throw Conflict("preparation_blocked", e.Message); }
-        dbContext.LabPreparationRecords.Add(new(request.RequestId, batch.Id, actor.User.Id, request.Action, hash, JsonSerializer.Serialize(request, JsonOptions), now));
+        try
+        {
+            if (request.Action is "step" or "fail" or "evaluate-conditions")
+                await ApplyAutomaticPreparationSkipAsync(batch, members, attempts, request, actor, ct);
+        }
+        catch (ArgumentException e) { throw Invalid("preparation_details_invalid", e.Message); }
+        catch (InvalidOperationException e) { throw Conflict("preparation_blocked", e.Message); }
+        var report = uploadReport is null ? null : await uploadReport(ct);
+        var details = JsonSerializer.SerializeToNode(request, JsonOptions)!.AsObject();
+        if (outputResults is not null) details["outputResults"] = JsonSerializer.SerializeToNode(outputResults, JsonOptions);
+        if (report is not null) details[reportProperty ?? throw new InvalidOperationException("Report step was not validated.")] = JsonSerializer.SerializeToNode(report, JsonOptions);
+        dbContext.LabPreparationRecords.Add(new(request.RequestId, batch.Id, actor.User.Id, request.Action, hash, details.ToJsonString(), now));
         foreach (var workId in workIds) dbContext.LabWorkEvents.Add(new(workId, null, "PreparationBatchCommand", now, actor.User.Id,
             JsonSerializer.Serialize(new { preparationBatchId, request.RequestId, request.Action }, JsonOptions)));
+        // Do not delete bytes after an uncertain commit: they may already be referenced.
+        // Unreferenced private objects are retained for storage reconciliation.
         await dbContext.SaveChangesAsync(ct);
         if (transaction is not null) await transaction.CommitAsync(ct);
         return await ReadPreparation(batch.Id, ct);

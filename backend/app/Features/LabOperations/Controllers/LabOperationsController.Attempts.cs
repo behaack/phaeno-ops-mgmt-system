@@ -42,16 +42,21 @@ public sealed partial class LabOperationsController
             .Where(s => s.LabWorkOrderId == work.Id && s.Status != SampleShipmentStatus.Cancelled).ToListAsync(cancellationToken);
         var expected = shipments.SelectMany(s => s.Items).GroupBy(i => i.SubmittedSpecimenId)
             .ToDictionary(g => g.Key, g => g.Sum(SampleShippingPackingData.TubeCount));
-        var workflow = work.LabServiceWorkflowVersionId.HasValue ? await dbContext.LabServiceWorkflowVersions.AsNoTracking()
-            .SingleAsync(w => w.Id == work.LabServiceWorkflowVersionId, cancellationToken) : null;
-        var workflowName = workflow is null ? null : await dbContext.LabServiceWorkflows.AsNoTracking()
-            .Where(w => w.Id == workflow.LabServiceWorkflowId).Select(w => w.Name).SingleAsync(cancellationToken);
-        var stages = await dbContext.LabServiceWorkflowStages.AsNoTracking().Where(s => s.LabServiceWorkflowVersionId == work.LabServiceWorkflowVersionId)
-            .OrderBy(s => s.Sequence).Select(s => new LabAttemptStageDto(s.Id, s.Sequence, s.Name, s.Requirement.ToString(), s.LabProtocolVersionId)).ToListAsync(cancellationToken);
+        var defaultWorkflowId = await ReadDefaultExecutionWorkflowAsync(work, cancellationToken);
+        var executionStageIds = executions.Where(e => e.LabServiceWorkflowStageId.HasValue).Select(e => e.LabServiceWorkflowStageId!.Value).ToList();
+        var attemptWorkflowIds = attempts.Select(a => a.LabServiceWorkflowVersionId).ToList();
+        var stages = await dbContext.LabServiceWorkflowStages.AsNoTracking()
+            .Where(s => attemptWorkflowIds.Contains(s.LabServiceWorkflowVersionId) || s.LabServiceWorkflowVersionId == defaultWorkflowId || executionStageIds.Contains(s.Id))
+            .OrderBy(s => s.Sequence).Select(s => new LabAttemptStageDto(s.Id, s.Sequence, s.Name, s.Requirement.ToString(), s.LabProtocolVersionId, s.LabServiceWorkflowVersionId)).ToListAsync(cancellationToken);
+        var workflowIds = stages.Select(s => s.WorkflowVersionId).Concat(attemptWorkflowIds.Select(id => (Guid?)id)).ToList();
+        var workflows = await (from v in dbContext.LabServiceWorkflowVersions.AsNoTracking()
+            join w in dbContext.LabServiceWorkflows.AsNoTracking() on v.LabServiceWorkflowId equals w.Id
+            where workflowIds.Contains(v.Id) select new { v.Id, w.Name, v.WorkflowVersion }).ToDictionaryAsync(v => v.Id, cancellationToken);
+        var workflow = defaultWorkflowId.HasValue ? workflows.GetValueOrDefault(defaultWorkflowId.Value) : null;
         var prepMemberships = await dbContext.LabPreparationMembers.AsNoTracking().Where(m => !m.Removed && attempts.Select(a => a.Id).Contains(m.LabSpecimenAttemptId)).ToDictionaryAsync(m => m.LabSpecimenAttemptId, m => (Guid?)m.LabPreparationBatchId, cancellationToken);
         var open = work.Status is not (LabWorkOrderStatus.Cancelled or LabWorkOrderStatus.ReadyForRelease or LabWorkOrderStatus.OnHold);
         return new(work.Id, work.OpaqueSubmitterReference ?? "Laboratory job", work.Version, work.TubeUsePolicyKey,
-            workflowName, workflow?.WorkflowVersion, open && actor.HasAny(LabRole.Operator, LabRole.Supervisor),
+            workflow?.Name, workflow?.WorkflowVersion, open && actor.HasAny(LabRole.Operator, LabRole.Supervisor),
             open && work.TubeUsePolicyKey is null && actor.HasAny(LabRole.Supervisor) && executions.All(e => !e.StartedAtUtc.HasValue), stages,
             specimens.Select(s =>
             {
@@ -71,9 +76,9 @@ public sealed partial class LabOperationsController
                     history.Select(a => new LabAttemptDto(a.Id, a.LabSpecimenId, a.Sequence, a.PreviousAttemptId, a.SourceContainerId,
                         tubes.First(t => t.Id == a.SourceContainerId).Barcode, a.State.ToString(), a.Version, a.StartedAtUtc, a.ClosedAtUtc,
                         a.FailureReasonCode, a.FailureEvidence, a.FailedExecutionId, a.HoldReason, a.HoldNextAction, a.HoldOwnerUserId,
-                        a.ReadStageSkips(), executions.Where(e => e.LabSpecimenAttemptId == a.Id).Select(e => e.Id).ToList(), prepMemberships.GetValueOrDefault(a.Id))).ToList(),
+                        a.ReadStageSkips(), executions.Where(e => e.LabSpecimenAttemptId == a.Id).Select(e => e.Id).ToList(), prepMemberships.GetValueOrDefault(a.Id), a.LabServiceWorkflowVersionId, workflows.GetValueOrDefault(a.LabServiceWorkflowVersionId)?.Name, workflows.GetValueOrDefault(a.LabServiceWorkflowVersionId)?.WorkflowVersion)).ToList(),
                     legacy ? "Historical processing has no selected-source evidence. Supervisor review is required; do not infer a tube." : work.TubeUsePolicyKey is null ? "Confirm the order's tube-use instruction before selecting a source." : s.ProcessingState == LabSpecimenProcessingState.Failed ? "Material exhausted. Specimen processing failed." : null);
-            }).OrderBy(s => s.Name).ToList());
+            }).OrderBy(s => s.Name).ToList(), defaultWorkflowId);
     }
 
     [HttpPost("work-orders/{workOrderId:guid}/attempts")]
@@ -156,7 +161,7 @@ public sealed partial class LabOperationsController
         return await ReadAttempts(work.Id, cancellationToken);
     }
 
-    private async Task SelectAttemptAsync(LabWorkOrder work, LabSpecimen specimen, LabAttemptCommand request, Guid actorId, CancellationToken ct)
+    private async Task SelectAttemptAsync(LabWorkOrder work, LabSpecimen specimen, LabAttemptCommand request, Guid actorId, CancellationToken ct, Guid? selectedWorkflowId = null)
     {
         var attempts = await dbContext.LabSpecimenAttempts.Where(a => a.LabSpecimenId == specimen.Id).OrderBy(a => a.Sequence).ToListAsync(ct);
         if (attempts.Any(a => a.State is not (LabSpecimenAttemptState.Failed or LabSpecimenAttemptState.Cancelled)))
@@ -168,19 +173,18 @@ public sealed partial class LabOperationsController
         var legacy = await dbContext.LabProtocolExecutions.Where(e => e.LabWorkOrderId == work.Id && e.LabSpecimenId == specimen.Id && e.LabSpecimenAttemptId == null && e.Status != LabExecutionStatus.Abandoned).ToListAsync(ct);
         if (legacy.Count > 1 || legacy.Any(e => e.Status != LabExecutionStatus.Planned || e.StartedAtUtc.HasValue))
             throw Conflict("legacy_attempt_review_required", "The existing processing records require supervisor review. No source has been inferred.");
-        if (!work.LabServiceWorkflowVersionId.HasValue)
-        {
-            var workflowId = await (from w in dbContext.LabServiceWorkflows join v in dbContext.LabServiceWorkflowVersions on w.Id equals v.LabServiceWorkflowId
-                where w.ServiceKey == work.ServiceKey && v.Status == LabServiceWorkflowStatus.Production select (Guid?)v.Id).SingleOrDefaultAsync(ct);
-            if (!workflowId.HasValue) throw Conflict("production_workflow_required", "Promote a service workflow before selecting a source.");
-            work.PinServiceWorkflow(workflowId.Value);
-        }
-        await RequireUsablePinnedWorkflowAsync(work, ct);
-        var first = await dbContext.LabServiceWorkflowStages.Where(s => s.LabServiceWorkflowVersionId == work.LabServiceWorkflowVersionId).OrderBy(s => s.Sequence).FirstOrDefaultAsync(ct)
+        var legacyExecution = legacy.SingleOrDefault();
+        var legacyWorkflowId = legacyExecution?.LabServiceWorkflowStageId is { } legacyStageId
+            ? await dbContext.LabServiceWorkflowStages.Where(s => s.Id == legacyStageId).Select(s => (Guid?)s.LabServiceWorkflowVersionId).SingleAsync(ct)
+            : null;
+        var workflowId = selectedWorkflowId ?? request.WorkflowVersionId ?? legacyWorkflowId ?? await ReadDefaultExecutionWorkflowAsync(work, ct)
+            ?? throw Conflict("production_workflow_required", "Promote a service workflow before selecting a source, or add this tube to an approved preparation batch.");
+        await RequireExecutionWorkflowAsync(work, workflowId, ct, newSelection: legacyWorkflowId != workflowId);
+        var first = await dbContext.LabServiceWorkflowStages.Where(s => s.LabServiceWorkflowVersionId == workflowId).OrderBy(s => s.Sequence).FirstOrDefaultAsync(ct)
             ?? throw Conflict("workflow_empty", "The workflow has no stages.");
         await RequireCurrentProtocolsAsync([first.LabProtocolVersionId], ct);
         RequireProtocolDefinition((await dbContext.LabProtocolVersions.SingleAsync(p => p.Id == first.LabProtocolVersionId, ct)).DefinitionJson);
-        var attempt = new LabSpecimenAttempt(work.Id, specimen.Id, tube.Id, work.LabServiceWorkflowVersionId!.Value, (attempts.LastOrDefault()?.Sequence ?? 0) + 1, attempts.LastOrDefault()?.Id);
+        var attempt = new LabSpecimenAttempt(work.Id, specimen.Id, tube.Id, workflowId, (attempts.LastOrDefault()?.Sequence ?? 0) + 1, attempts.LastOrDefault()?.Id);
         dbContext.LabSpecimenAttempts.Add(attempt);
         var execution = legacy.SingleOrDefault();
         if (execution is not null && (execution.LabServiceWorkflowStageId != first.Id || execution.LabProtocolVersionId != first.LabProtocolVersionId))
@@ -213,7 +217,7 @@ public sealed partial class LabOperationsController
         if (next is null || next.Id != stageId) throw Conflict("attempt_stage_not_next", "Complete or explicitly skip the preceding stages in this attempt first.");
         if (await dbContext.LabProtocolExecutions.AnyAsync(e => e.LabSpecimenAttemptId == attempt.Id && e.LabServiceWorkflowStageId == next.Id, ct))
             throw Conflict("attempt_stage_exists", "This stage already has an execution. Open the existing execution.");
-        await RequireUsablePinnedWorkflowAsync(work, ct); await RequireCurrentProtocolsAsync([next.LabProtocolVersionId], ct);
+        await RequireExecutionWorkflowAsync(work, attempt.LabServiceWorkflowVersionId, ct); await RequireCurrentProtocolsAsync([next.LabProtocolVersionId], ct);
         RequireProtocolDefinition((await dbContext.LabProtocolVersions.SingleAsync(p => p.Id == next.LabProtocolVersionId, ct)).DefinitionJson);
         var execution = new LabProtocolExecution(work.Id, attempt.LabSpecimenId, next.LabProtocolVersionId, null, next.Id);
         execution.AttachAttempt(attempt); dbContext.LabProtocolExecutions.Add(execution);

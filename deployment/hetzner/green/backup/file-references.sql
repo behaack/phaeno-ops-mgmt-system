@@ -34,5 +34,17 @@ WITH deleted_managed AS (
     SELECT 'order-files/' || object_storage_key, lower(sha256), size_bytes::text,
            CASE WHEN deleted_at_utc IS NULL THEN 'required' ELSE 'retired' END
       FROM commercial_ops.result_artifacts
+    UNION ALL
+    SELECT 'order-files/' || (details_json->'qcReport'->>'storageKey'),
+           lower(details_json->'qcReport'->>'sha256'),
+           details_json->'qcReport'->>'sizeBytes', 'required'
+      FROM lab_ops.lab_preparation_records
+      WHERE jsonb_typeof(details_json->'qcReport') = 'object'
+    UNION ALL
+    SELECT 'order-files/' || (details_json->'preparationReport'->>'storageKey'),
+           lower(details_json->'preparationReport'->>'sha256'),
+           details_json->'preparationReport'->>'sizeBytes', 'required'
+      FROM lab_ops.lab_preparation_records
+      WHERE jsonb_typeof(details_json->'preparationReport') = 'object'
 )
 SELECT path || E'\t' || hash || E'\t' || bytes || E'\t' || presence FROM file_refs ORDER BY path, presence;

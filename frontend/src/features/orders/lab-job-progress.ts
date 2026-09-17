@@ -1,3 +1,4 @@
+import { hasCompleteSampleIdentification } from './sample-source-capacity'
 import type { LabServiceOrder, Quote } from '#/api/order-management'
 import type { SampleShipmentWorkflow, SampleShippingCrosswalkItem } from '#/api/sample-shipping'
 import type { ShipmentKitSupply } from '#/api/transportation-kit-requests'
@@ -11,6 +12,7 @@ export type LabJobProgressStep = {
   state: LabJobProgressState
   owner: LabJobProgressOwner
   detail: string
+  actionLabel?: string
 }
 export type LabJobProgressException = { label: string; detail: string; owner: LabJobProgressOwner }
 export type LabJobProgress = {
@@ -40,8 +42,8 @@ export const labJobProgressStateLabels: Record<LabJobProgressState, string> = {
 }
 
 const labels: Record<LabJobProgressStepId, string> = {
-  'confirm-order': 'Review and confirm the order', samples: 'Enter and finalize samples',
-  kits: 'Have transportation kits ready', containers: 'Assign containers', tubes: 'Match tubes',
+  'confirm-order': 'Confirm pricing', samples: 'Identify and finalize samples',
+  kits: 'Have transportation kits ready', containers: 'Assign containers', tubes: 'Match samples to tubes',
   send: 'Send and record shipments',
 }
 const hasDate = (value: string | null | undefined) => !!value && Number.isFinite(Date.parse(value))
@@ -62,14 +64,20 @@ export function buildLabJobProgress(input: LabJobProgressInput): LabJobProgress 
   const samples = order.samples
   const expected = expectedTubes(order)
   const sampleCountKnown = Number.isInteger(order.requestedSpecimenCount) && order.requestedSpecimenCount > 0
-  const sampleDetail = sampleCountKnown ? `${samples.length} of ${order.requestedSpecimenCount} samples entered.` : 'The accepted sample count is not available.'
+  const sampleDetail = sampleCountKnown ? `${samples.length} of ${order.requestedSpecimenCount} sample IDs saved.` : 'The accepted sample count is not available.'
+  const identified = accepted && !finalized && hasCompleteSampleIdentification(order)
   const steps = [
     confirmationStep(order, accepted, canAcceptOrder, input.now ?? Date.now()),
     step('samples', finalized ? 'complete' : !accepted ? 'not-started' : readyState,
       finalized ? `Sample list finalized.${expected === null ? ' The required tube count is not available.' : ` ${count(samples.length, 'sample')} · ${count(expected, 'tube')}.`}`
         : !accepted ? `${sampleDetail} Confirm the order before finalizing the sample list.`
+          : identified ? `${sampleDetail} ${canManageShipping ? 'Review the sample IDs and tube counts, then finalize the list.' : 'Your administrator can review and finalize the sample list.'}`
           : `${sampleDetail} ${canManageShipping ? 'Enter the agreed samples and finalize the list.' : 'Your administrator can enter and finalize the sample list.'}`),
   ]
+  if (identified) {
+    steps[1].label = 'Review and finalize sample list'
+    steps[1].actionLabel = 'Review and finalize list'
+  }
   const exception = orderException(order)
 
   if (shippingState !== 'ready') {
@@ -143,10 +151,10 @@ function confirmationStep(order: LabServiceOrder, accepted: boolean, allowed: bo
   if (expired) return { ...base, state: 'waiting-for-phaeno', owner: 'Phaeno', detail: 'The quote has expired. Ask Phaeno to provide a current quote before confirming the order.' }
   if (order.canPlaceStandardOrder || current?.status === 'Issued') {
     if (allowed && !order.canPlaceStandardOrder && !order.canAcceptQuote) return { ...base, state: 'needs-attention', owner: 'You', detail: order.quoteAcceptanceBlockedReason?.trim() || 'Review the order or quote blockers before accepting.' }
-    return { ...base, state: customerState(allowed), owner: customerOwner(allowed), detail: allowed ? 'Review the current order or quote, then confirm it.' : 'Your administrator can review and confirm the current order or quote.' }
+    return { ...base, label: 'Confirm pricing', state: customerState(allowed), owner: customerOwner(allowed), detail: allowed ? 'Review the scope and pricing, then accept or decline it.' : 'Your administrator can review and accept or decline the pricing.' }
   }
   if (['SubmittedForQuote', 'QuoteInPreparation', 'QuoteIssued'].includes(order.status)) {
-    return { ...base, state: 'waiting-for-phaeno', owner: 'Phaeno', detail: order.quoteAcceptanceBlockedReason || 'Phaeno is preparing or updating the quote. Submitting a request does not confirm the order.' }
+    return { ...base, label: 'Waiting for pricing', state: 'waiting-for-phaeno', owner: 'Phaeno', detail: 'Phaeno is reviewing your request and preparing pricing for you to accept or decline.' + (order.canEdit || order.canWithdraw ? ' Use Actions to modify or withdraw your request while you wait.' : '') }
   }
   const canPrepareOrder = allowed || order.canEdit || order.canSubmit
   return { ...base, state: customerState(canPrepareOrder), owner: customerOwner(canPrepareOrder), detail: order.status === 'ChangesRequested' ? 'Review the requested changes and resubmit the order for pricing.' : 'Complete the order details and submit for pricing, or review the configured standard order.' }
@@ -222,11 +230,16 @@ function kitStep({ step, finalized, active, supply, complete, readyState, owner 
   if (!active.length) return step('kits', 'unavailable', 'Shipping setup is not available yet. Ask Phaeno to check this Job.', 'Phaeno')
   const request = supply?.request
   if (request && request.status !== 'Cancelled' && request.status !== 'Received') {
-    if (request.canConfirmReceipt) return step('kits', readyState, 'Kits are on the way. Confirm receipt only after they physically arrive at the departure location.', owner)
-    if (request.status === 'Dispatched') return step('kits', 'waiting-for-delivery', 'Transportation kits are on the way to your departure location. Their delivery is separate from sending your samples.', 'Carrier')
-    return step('kits', 'waiting-for-phaeno', 'Phaeno is preparing the remaining transportation kits. Existing compatible stock may also be available at your departure location.', 'Phaeno')
+    const delivery = request.canConfirmReceipt
+      ? step('kits', readyState, 'Wait for the ordered containers to arrive. Confirm each kit’s receipt only after it physically arrives at your kit receiving location.', owner)
+      : request.status === 'Dispatched'
+        ? step('kits', 'waiting-for-delivery', 'Your containers are on the way to your kit receiving location. Wait for them to arrive before confirming receipt.', 'Carrier')
+        : request.status === 'PartiallyDispatched'
+          ? step('kits', 'waiting-for-phaeno', 'Some containers are on the way; Phaeno is preparing the rest. Confirm each kit’s receipt only after it physically arrives.', 'Phaeno')
+          : step('kits', 'waiting-for-phaeno', 'Phaeno is preparing your containers for delivery. Wait for them to arrive before confirming receipt.', 'Phaeno')
+    return { ...delivery, label: 'Wait for containers to arrive', actionLabel: 'View kit delivery' }
   }
-  return step('kits', readyState, 'Check available kits at your departure location. Use compatible received stock, or request the kits you still need.')
+  return step('kits', readyState, 'Check received kits at your container location. Use compatible received stock, or request the kits you still need.')
 }
 
 function orderException(order: LabServiceOrder): LabJobProgressException | null {

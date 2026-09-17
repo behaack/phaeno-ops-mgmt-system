@@ -1,5 +1,10 @@
 # Specimen tube selection and failure fallback
 
+## Service-based commercial jobs — September 16, 2026
+
+Commercial jobs are now service-based. New standalone attempts select the current Production workflow; preparation attempts select the batch workflow. Existing attempts and legacy execution stages retain their exact versions, with no automatic reassignment. A new reserve attempt starts its selected workflow from stage one. Workspace stages and history carry per-attempt workflow identity. Existing Trial scope restrictions remain unchanged.
+
+
 Status: implemented locally, September 11, 2026. Additive migration `20260911200711_AddSpecimenTubeAttempts` applied to the configured local development database. Full persisted journey, concurrency and rollout acceptance remain Not run. Customer-requested holds remain blocked.
 
 ## Product outcome

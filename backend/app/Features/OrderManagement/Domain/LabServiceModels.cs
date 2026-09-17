@@ -184,6 +184,14 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         SetStatus(LabServiceOrderStatus.SubmittedForQuote, null, null);
     }
 
+    public void RevisePendingRequest()
+    {
+        EnsureStatus(LabServiceOrderStatus.SubmittedForQuote, LabServiceOrderStatus.QuoteInPreparation);
+        if (CurrentQuoteId.HasValue || AcceptedQuoteId.HasValue || PlacedAt.HasValue)
+            throw new InvalidOperationException("Issued pricing must be decided before changing the request.");
+        SetStatus(LabServiceOrderStatus.ChangesRequested, null, null);
+    }
+
     public void BeginQuotePreparation() => Transition(LabServiceOrderStatus.SubmittedForQuote, LabServiceOrderStatus.QuoteInPreparation);
 
     public ConfiguredLabServiceSnapshot? ReadConfiguredSnapshot() => ConfiguredCommercialSnapshotJson is null

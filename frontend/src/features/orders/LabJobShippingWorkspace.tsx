@@ -1,25 +1,27 @@
 import { createPortal } from 'react-dom'
-import { useRef, type RefObject } from 'react'
+import { useRef, useState, type RefObject } from 'react'
 import type { LabServiceOrder } from '#/api/order-management'
 import type { ShipmentKitSupply } from '#/api/transportation-kit-requests'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Label } from '#/components/ui/label'
 import { SampleShippingDetailPage, type ShipmentHeaderAction } from '#/features/sample-shipping/SampleShippingDetailPage'
 import { useSourceSampleShipments } from '#/features/sample-shipping/use-source-sample-shipments'
 import type { SampleTubeListContext } from '#/features/sample-shipping/SampleTubeScanner'
+import { groupSampleRows } from './sample-source-capacity'
 import { LabJobSamplesPanel } from './LabJobSamplesPanel'
 import { LabJobWorkspaceActions } from './LabJobWorkspaceActions'
 import type { ChangeLabJobWorkspace, LabJobWorkspaceSearch } from './lab-job-workspace-search'
 import { humanizeStatus } from './OrderStatusBadge'
 
-export function LabJobShippingWorkspace({ order, workspace, onWorkspaceChange, headerTarget, sendActionTarget, orderActions, orderDialogOpen, onActivityChange, navigationLocked = false, onNavigationLockChange, onKitSupplyChange }: {
+export function LabJobShippingWorkspace({ order, workspace, onWorkspaceChange, headerTarget, sendActionTarget, sampleReviewTarget, orderActions, orderDialogOpen, onActivityChange, navigationLocked = false, onNavigationLockChange, onKitSupplyChange }: {
   order: LabServiceOrder
   workspace: LabJobWorkspaceSearch
   onWorkspaceChange: ChangeLabJobWorkspace
   headerTarget: HTMLElement | null
   sendActionTarget?: HTMLElement | null
+  sampleReviewTarget?: HTMLElement | null
   orderActions: ShipmentHeaderAction[]
   orderDialogOpen: boolean
   onActivityChange: (active: boolean) => void
@@ -28,6 +30,7 @@ export function LabJobShippingWorkspace({ order, workspace, onWorkspaceChange, h
   onKitSupplyChange?: (supply: ShipmentKitSupply | undefined) => void
 }) {
   const { allowed, shipments, related, retired, receiptState } = useSourceSampleShipments(order.id)
+  const [sampleActionsTarget, setSampleActionsTarget] = useState<HTMLDivElement | null>(null)
   const fallbackActionRef = useRef<HTMLButtonElement>(null)
   const fallbackSendRef = useRef<HTMLButtonElement>(null)
   const jobShipments = allowed ? related.filter(item => item.organizationId === order.organizationId && ['CustomerLabServiceOrder', 'CustomerPromotionalOrder'].includes(item.authorizationSource)) : []
@@ -67,13 +70,14 @@ export function LabJobShippingWorkspace({ order, workspace, onWorkspaceChange, h
       {jobShipments.length > 1 && selected && action ? <p className="max-w-64 text-xs text-muted-foreground wrap-anywhere">{selected.shipmentNumber}</p> : null}
     </div>, sendActionTarget)
   }
-  const renderSamples = (context?: SampleTubeListContext) => <LabJobSamplesPanel key={order.id} order={order} embedded
+  const renderSamples = (context?: SampleTubeListContext) => <LabJobSamplesPanel key={order.id} order={order} embedded actionsTarget={sampleActionsTarget} reviewActionTarget={sampleReviewTarget}
     tubeShipments={allowed ? selected?.status === 'Cancelled' ? [...jobShipments, selected] : jobShipments : undefined} tubeContext={context} navigationLocked={navigationLocked || orderDialogOpen}
     page={(workspace.samplePage ?? 1) - 1} onPageChange={page => change({ samplePage: page ? page + 1 : undefined })} />
   return <Card id="samples-and-shipping" tabIndex={-1} className="min-w-0 scroll-mt-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
     <CardHeader>
       <CardTitle>Samples and shipping</CardTitle>
-      <CardDescription>{order.sampleRosterFinalizedAt ? 'Review your samples, prepare each container and record its shipment here.' : 'Enter the accepted samples and finalize the list before preparing your shipment.'}</CardDescription>
+      <CardAction ref={setSampleActionsTarget} className="flex flex-wrap justify-end gap-2 empty:hidden" />
+      <CardDescription>{order.sampleRosterFinalizedAt ? 'Review your samples, prepare each container and record its shipment here.' : 'Identify each accepted sample below, then review and finalize the list before preparing your shipment.'}</CardDescription>
     </CardHeader>
     <CardContent className="space-y-5">
       {!selected && headerTarget ? createPortal(<LabJobWorkspaceActions orderActions={orderActions} shipmentActions={fallbackShippingActions} triggerRef={fallbackActionRef} dialogOpen={orderDialogOpen} />, headerTarget) : null}
@@ -94,12 +98,14 @@ export function LabJobShippingWorkspace({ order, workspace, onWorkspaceChange, h
       {selected ? <SampleShippingDetailPage key={selected.id} shipmentId={selected.id} autoOpenKitOrder={workspace.orderKits} embedded={{
         sourceId: order.id,
         specimenSources,
+        sampleOrder: groupSampleRows(order).flatMap(group => group.samples.map(sample => sample.id)),
         jobTubeProgress,
         onActivityChange,
         onNavigationLockChange,
         onKitSupplyChange,
         showPreparation: tubesView,
         renderSamples,
+        scanActionsTarget: sampleActionsTarget,
         onClosePreparation: () => change({ shippingView: undefined, orderKits: undefined }),
         onSelectShipment: id => onWorkspaceChange({ shipmentId: id, shippingView: 'tubes', orderKits: undefined }, { afterSave: true }),
         onOpenPreparation: () => change({ shipmentId: selected.id, shippingView: 'tubes' }),

@@ -29,6 +29,7 @@ export function ContainerAccessionDialog({ initialPacket, canAccession, onClose 
   const packet = packetQuery.data
   const containers = workQuery.data?.containers ?? []
   const recorded = packet.crosswalk.filter(row => containers.some(t => t.barcode === row.supplierTubeBarcode && t.intakeDisposition)).length
+  const exceptionCount = packet.crosswalk.filter(row => containers.some(t => t.barcode === row.supplierTubeBarcode && (t.intakeDisposition === 'OnHold' || t.intakeDisposition === 'Rejected'))).length
   const allDone = packet.crosswalk.length > 0 && recorded === packet.crosswalk.length
   const remaining = packet.crosswalk.filter(row => row.supplierTubeBarcode && identified.includes(row.supplierTubeBarcode) && !containers.some(t => t.barcode === row.supplierTubeBarcode && (t.intakeDisposition || t.status !== 'Available')))
   const focusTube = () => window.requestAnimationFrame(() => (tubeInput.current ?? doneButton.current)?.focus())
@@ -84,7 +85,13 @@ export function ContainerAccessionDialog({ initialPacket, canAccession, onClose 
         </table></div>
         {remaining.length ? <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm">{remaining.length} identified tube{remaining.length === 1 ? ' awaits' : 's await'} a decision. Saved decisions and unidentified tubes are excluded from bulk acceptance.</p><Button variant="outline" size="sm" disabled={tubeScan.isPending} onClick={() => { setIdentified([]); setNotice('Unsaved selection cleared. Saved intake decisions are unchanged.'); focusTube() }}>Clear selection</Button></div> : null}
       </div>
-      <DialogFooter><Button ref={doneButton} variant="outline" disabled={tubeScan.isPending} onClick={close}>{allDone ? 'Done' : 'Close — continue later'}</Button>{!allDone ? <Button disabled={blocked || tubeScan.isPending || !remaining.length} onClick={() => setAccepting(true)}>Accept all remaining ({remaining.length})</Button> : null}</DialogFooter>
+      <DialogFooter className="flex-col sm:flex-wrap sm:items-center">
+        <p role="status" className="text-sm text-muted-foreground sm:mr-auto">{exceptionCount} with exceptions | {remaining.length} to be accepted</p>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row">
+          <Button ref={doneButton} variant="outline" disabled={tubeScan.isPending} onClick={close}>{allDone ? 'Done' : 'Close — continue later'}</Button>
+          {!allDone ? <Button disabled={blocked || tubeScan.isPending || !remaining.length} onClick={() => setAccepting(true)}>Accept ({remaining.length})</Button> : null}
+        </div>
+      </DialogFooter>
       {exception ? <TubeIntakeExceptionDialog row={exception} packet={packet} existing={containers.find(t => t.barcode === exception.supplierTubeBarcode)} onClose={() => { setException(null); focusTube() }} onSaved={detail => saved(detail, [exception.supplierTubeBarcode!], `Exception saved for ${exception.supplierTubeBarcode}.`)} /> : null}
       {accepting && workQuery.data ? <AcceptRemainingTubesDialog rows={remaining} packet={packet} work={workQuery.data} onClose={() => { setAccepting(false); focusTube() }} onSaved={(detail, barcodes) => saved(detail, barcodes, `${barcodes.length} tube(s) accepted and stored.`)} /> : null}
     </DialogContent>

@@ -86,6 +86,8 @@ export type ShippingStockKit = {
   container: { definitionId: string; sku: string; commonName: string; capacity: number }
   tubeSupplierName: string
   tubeProductNumber: string
+  tubeProductDescription?: string | null
+  shipperProductDescription?: string | null
   tubeLotNumber: string | null
   shipperSupplierName: string
   shipperProductNumber: string
@@ -113,7 +115,7 @@ export type ShippingStockKit = {
   version: number
   tubes: Array<{ id: string; supplierBarcode: string }>
 }
-export type ShippingStockKitWrite = Pick<ShippingStockKit, 'tubeSupplierName' | 'tubeProductNumber' | 'tubeLotNumber' | 'shipperSupplierName' | 'shipperProductNumber'> & { containerDefinitionId: string }
+export type ShippingStockKitWrite = { containerDefinitionId: string; tubeSupplierProductId: string; shipperSupplierProductId: string; tubeLotNumber: string | null }
 export type ShippingStockKitDispatch = { shipmentId?: string; requestId?: string; deliveryLocationId?: string; version: number; outboundCarrier: string; outboundTrackingNumber: string; fulfilledAt: string }
 const stockPath = '/platform/sample-shipping/stock-kits'
 export async function getShippingStockKits() { return read((await api.get<Envelope<ShippingStockKit[]>>(stockPath)).data) }

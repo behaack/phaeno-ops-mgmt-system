@@ -53,6 +53,7 @@ public sealed class LabServiceWorkflowVersion : LabAuditedEntity
     public DateTime AuthoredAtUtc { get; private set; }
     public Guid? ApprovedByUserId { get; private set; }
     public DateTime? ApprovedAtUtc { get; private set; }
+    public string? ApprovalOverrideReason { get; private set; }
     public Guid? ProductionByUserId { get; private set; }
     public DateTime? ProductionAtUtc { get; private set; }
     public DateTime? InvalidatedAtUtc { get; private set; }
@@ -103,6 +104,7 @@ public sealed class LabServiceWorkflowVersion : LabAuditedEntity
         Status = LabServiceWorkflowStatus.Draft;
         ApprovedByUserId = null;
         ApprovedAtUtc = null;
+        ApprovalOverrideReason = null;
     }
 
     public void Discard()
@@ -112,11 +114,21 @@ public sealed class LabServiceWorkflowVersion : LabAuditedEntity
         Status = LabServiceWorkflowStatus.Discarded;
     }
 
-    public void RequireIndependentApproval()
+    public void ApproveWithOverride(Guid actorUserId, DateTime utcNow, string reason)
+    {
+        var validatedReason = LabAuditedEntity.Required(reason, nameof(reason), 2000);
+        if (actorUserId != AuthoredByUserId)
+            throw new InvalidOperationException("Use independent approval when the approver is not the author.");
+        Approve(actorUserId, utcNow, enforceActorSeparation: false);
+        ApprovalOverrideReason = validatedReason;
+    }
+
+    public void RequireReleaseApproval()
     {
         if (ApprovedByUserId is null || ApprovedByUserId == Guid.Empty
-            || ApprovedByUserId == AuthoredByUserId || ApprovedAtUtc is null)
-            throw new InvalidOperationException("The workflow requires approval by someone other than its author before production use.");
+            || ApprovedAtUtc is null
+            || ApprovedByUserId == AuthoredByUserId && string.IsNullOrWhiteSpace(ApprovalOverrideReason))
+            throw new InvalidOperationException("The workflow requires independent approval or a recorded administrator override before production use.");
     }
 
     public void PromoteToProduction(Guid actorUserId, DateTime utcNow)
@@ -124,7 +136,7 @@ public sealed class LabServiceWorkflowVersion : LabAuditedEntity
         if (Status != LabServiceWorkflowStatus.Approved)
             throw new InvalidOperationException("Only an approved workflow can enter production.");
         RequireActor(actorUserId, "A production actor is required.");
-        RequireIndependentApproval();
+        RequireReleaseApproval();
         Status = LabServiceWorkflowStatus.Production;
         ProductionByUserId = actorUserId;
         ProductionAtUtc = utcNow;

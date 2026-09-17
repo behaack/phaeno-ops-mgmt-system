@@ -20,7 +20,7 @@ vi.mock('#/features/sample-shipping/SampleShippingDetailPage', () => ({
   },
 }))
 
-const order = { id: 'job-1', organizationId: shippingFixture.organizationId, sampleRosterFinalizedAt: '2026-09-10T00:00:00Z', samples: [{ id: 'sample-1', biologicalSource: 'Human PBMCs' }] } as LabServiceOrder
+const order = { id: 'job-1', organizationId: shippingFixture.organizationId, sampleRosterFinalizedAt: '2026-09-10T00:00:00Z', sourceGroups: [{ id: 'source-1', biologicalSource: 'Human PBMCs', specimenCount: 1 }], samples: [{ id: 'sample-1', customerSampleId: 'RNA-1', biologicalSource: 'Human PBMCs' }] } as LabServiceOrder
 const active = { ...shippingFixture, authorizationSourceId: order.id }
 const another = { ...active, id: 'shipment-2', shipmentNumber: 'SHIP-2' }
 const retired = { ...active, id: 'retired-shipment', shipmentNumber: 'RETIRED-1', status: 'Cancelled' }
@@ -37,6 +37,12 @@ function Harness({ workspace = {}, navigationLocked = false, orderDialogOpen = f
 
 describe('Lab Job shipping host selection and navigation', () => {
   beforeEach(() => { vi.clearAllMocks(); mocks.source.mockReturnValue(source()); mocks.navigate.mockResolvedValue(undefined) })
+
+  it('provides the Samples and shipping header as the scan-action destination', () => {
+    render(<Harness workspace={{ shippingView: 'tubes' }} />)
+    const target = mocks.detail.mock.lastCall?.[0].embedded.scanActionsTarget as HTMLElement
+    expect(target.closest('[data-slot="card-header"]')?.textContent).toContain('Samples and shipping')
+  })
 
   it('prints directly from the next-step card without leaving the sample view', () => {
     render(<Harness />)

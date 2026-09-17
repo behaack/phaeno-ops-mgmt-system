@@ -177,7 +177,7 @@ public partial class SampleShippingPostgresTests
         var fixture = await scope.CreateShipmentAsync(30);
         var definition = await scope.CreateContainerAsync(fixture, 20);
         var stock = scope.StockController();
-        var createdResult = await stock.Create(new(definition.Id, "Supplier", "T-1", null, "Shipper", "B-1"), default);
+        var createdResult = await stock.Create(await scope.CatalogKitRequestAsync(definition.Id), default);
         var created = Assert.IsType<StockKitDto>(Assert.IsType<CreatedResult>(createdResult.Result).Value);
         scope.ClearTrackedState();
         var codes = Enumerable.Range(1, 20).Select(index => $"STK-{scope.Suffix}-{index:00}").ToArray();
@@ -326,7 +326,7 @@ public partial class SampleShippingPostgresTests
         var fixture = await scope.CreateShipmentAsync(30);
         var definition = await scope.CreateContainerAsync(fixture, 20);
         var stock = scope.StockController();
-        var createdResult = await stock.Create(new(definition.Id, "Supplier", "T-1", null, "Shipper", "B-1"), default);
+        var createdResult = await stock.Create(await scope.CatalogKitRequestAsync(definition.Id), default);
         var kit = Assert.IsType<StockKitDto>(Assert.IsType<CreatedResult>(createdResult.Result).Value);
         scope.ClearTrackedState();
         var codes = Enumerable.Range(1, 20).Select(index => $"RACE-{scope.Suffix}-{index:00}").ToArray();
@@ -442,6 +442,16 @@ public partial class SampleShippingPostgresTests
                 new SampleShippingWorkflowReader(db)) { ControllerContext = new() { HttpContext = http } };
         }
 
+        public async Task<CreateStockKitRequest> CatalogKitRequestAsync(Guid definitionId, string? lot = null)
+        {
+            var supplier = new PSeq.Operations.Laboratory.Domain.LabSupplier($"TEST-CATALOG-{Suffix}-{Guid.NewGuid():N}");
+            var tube = new PSeq.Operations.Laboratory.Domain.LabSupplierProduct(supplier.Id, "T-1", "TEST ONLY tube", PSeq.Operations.Laboratory.Domain.LabProductType.TubeId);
+            var shipper = new PSeq.Operations.Laboratory.Domain.LabSupplierProduct(supplier.Id, "B-1", "TEST ONLY shipper", PSeq.Operations.Laboratory.Domain.LabProductType.ShippingContainerId);
+            DbContext.AddRange(supplier, tube, shipper);
+            await DbContext.SaveChangesAsync();
+            return new(definitionId, tube.Id, shipper.Id, lot);
+        }
+
         private async Task CleanupContainerStockAsync()
         {
             var typeIds = await DbContext.SampleShippingContainerTypes.Where(item => item.Sku.StartsWith($"PACK-{Suffix}-")).Select(item => item.Id).ToArrayAsync();
@@ -449,6 +459,9 @@ public partial class SampleShippingPostgresTests
             var stockIds = await DbContext.SampleShippingStockKits.Where(item => definitionIds.Contains(item.ContainerDefinitionId)).Select(item => item.Id).ToArrayAsync();
             await DbContext.SampleShippingStockTubes.Where(item => stockIds.Contains(item.SampleShippingStockKitId)).ExecuteDeleteAsync();
             await DbContext.SampleShippingStockKits.Where(item => stockIds.Contains(item.Id)).ExecuteDeleteAsync();
+            var supplierIds = await DbContext.LabSuppliers.Where(item => item.Name.StartsWith($"TEST-CATALOG-{Suffix}-")).Select(item => item.Id).ToArrayAsync();
+            await DbContext.LabSupplierProducts.Where(item => supplierIds.Contains(item.SupplierId)).ExecuteDeleteAsync();
+            await DbContext.LabSuppliers.Where(item => supplierIds.Contains(item.Id)).ExecuteDeleteAsync();
         }
         private async Task CleanupContainerDefinitionsAsync()
         {

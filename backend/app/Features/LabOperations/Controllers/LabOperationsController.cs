@@ -357,6 +357,8 @@ public sealed partial class LabOperationsController(
             ?? throw Missing();
         EnsureVersion(protocol.Version, request.ProtocolVersion);
         Execute(protocol.RequireCurrent);
+        if (request.ApprovalOverrideReason is not null && !string.Equals(request.Action.Trim(), "approve", StringComparison.OrdinalIgnoreCase))
+            throw Invalid("approval_override_action_invalid", "An approval override can only be used when approving a version.");
         switch (request.Action.Trim().ToLowerInvariant())
         {
             case "approve":
@@ -366,11 +368,18 @@ public sealed partial class LabOperationsController(
                         && (item.Status == LabProtocolStatus.Approved
                             || item.Status == LabProtocolStatus.Active))
                     .ToListAsync(cancellationToken);
-                if (version.AuthoredByUserId == actor.User.Id)
-                    throw Conflict(
-                        "protocol_author_approval_conflict",
-                        "A protocol author cannot approve the same protocol version. An independent Protocol Administrator must approve it.");
-                Execute(() => version.Approve(actor.User.Id, DateTime.UtcNow));
+                if (request.ApprovalOverrideReason is not null)
+                {
+                    RequireApprovalOverrideAdministrator(actor);
+                    Execute(() => version.ApproveWithOverride(actor.User.Id, DateTime.UtcNow, request.ApprovalOverrideReason));
+                }
+                else
+                {
+                    if (version.AuthoredByUserId == actor.User.Id)
+                        throw Conflict("protocol_author_approval_conflict",
+                            "An independent Protocol Administrator must approve this protocol, or a platform administrator must explicitly record an approval override.");
+                    Execute(() => version.Approve(actor.User.Id, DateTime.UtcNow));
+                }
                 foreach (var previous in previousApprovedVersions) Execute(previous.Retire);
                 break;
             case "discard": Execute(version.Discard); break;

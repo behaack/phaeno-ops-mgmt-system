@@ -84,19 +84,19 @@ test('location receipt remains available independently of the originating cancel
 
 test('exact container claim preserves the scanned barcode across conflicts and failed refreshes', async ({ page }, info) => {
   const state = await fixture(page)
-  await page.getByRole('button', { name: 'Adjust containers', exact: true }).click()
-  const dialog = page.getByRole('dialog'), barcode = dialog.getByLabel('Container 1 barcode', { exact: false })
+  await page.getByRole('button', { name: 'Assign containers', exact: true }).click()
+  const dialog = page.getByRole('dialog'), barcode = dialog.getByRole('group', { name: 'Container 1', exact: true }).getByLabel('Scan or enter container barcode', { exact: false })
   await barcode.fill(kit.kitNumber)
   await barcode.press('Tab')
   await expect(dialog.getByText('Container identified. It will be reserved when you confirm.')).toBeVisible()
   state.claimConflicts = true
-  await dialog.getByRole('button', { name: 'Confirm containers', exact: true }).click()
+  await dialog.getByRole('button', { name: 'Confirm assignment', exact: true }).click()
   await expect(dialog.getByText('This container was assigned to another Job. Choose an available container.')).toBeVisible()
   await expect(barcode).toHaveValue(kit.kitNumber)
   expect(state.calls.find(call => call.path === '/sample-shipping/pool-1/packing')?.body).toMatchObject({ deliveryLocationId: location.id, stockKits: [{ stockKitId: kit.stockKitId, version: 5 }], containerTubeCounts: [3] })
   state.refreshFails = true
   await page.evaluate(() => window.dispatchEvent(new Event('test-inventory-refresh')))
-  await expect(dialog.getByRole('button', { name: 'Confirm containers', exact: true })).toBeDisabled()
+  await expect(dialog.getByRole('button', { name: 'Confirm assignment', exact: true })).toBeDisabled()
   await expect(barcode).toHaveValue(kit.kitNumber)
   await expect(dialog.getByText('Current inventory must be verified before confirming. Your selections are retained.')).toBeVisible()
   await page.screenshot({ path: info.outputPath('preserved-container-draft.png'), fullPage: true })
@@ -104,8 +104,8 @@ test('exact container claim preserves the scanned barcode across conflicts and f
   state.refreshFails = false
   state.claimConflicts = false
   await page.evaluate(() => window.dispatchEvent(new Event('test-inventory-refresh')))
-  await expect(dialog.getByRole('button', { name: 'Confirm containers', exact: true })).toBeEnabled()
-  await dialog.getByRole('button', { name: 'Confirm containers', exact: true }).click()
+  await expect(dialog.getByRole('button', { name: 'Confirm assignment', exact: true })).toBeEnabled()
+  await dialog.getByRole('button', { name: 'Confirm assignment', exact: true }).click()
   await expect(page.getByRole('heading', { name: assigned.shipmentNumber, exact: true })).toBeVisible()
   await expect(page.getByLabel('Scan tube barcode', { exact: false })).toBeVisible()
   expect(state.unexpected).toEqual([])

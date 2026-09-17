@@ -162,8 +162,10 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
                 acknowledgedAtUtc);
         }
 
-        var workflowVersionId = await ResolveProductionWorkflowVersionAsync(
-            command.ServiceKey, cancellationToken, command.ApprovedWorkflowVersionId);
+        // Commercial authorizations describe services; execution chooses its workflow.
+        var workflowVersionId = command.SourceType == LabWorkAuthorizationSource.TrialProject
+            ? await ResolveProductionWorkflowVersionAsync(command.ServiceKey, cancellationToken, command.ApprovedWorkflowVersionId)
+            : (Guid?)null;
 
         var workOrder = new LabWorkOrder(
             command.AuthorizationId,
@@ -286,7 +288,6 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
                 || replacement.MinimumTurnaroundDays != previous.MinimumTurnaroundDays || replacement.MaximumTurnaroundDays != previous.MaximumTurnaroundDays
                 || replacement.IncludedScientificScopeJson != previous.IncludedScientificScopeJson
                 || replacement.OpaqueSubmitterReference != previous.OpaqueSubmitterReference
-                || replacement.ApprovedWorkflowVersionId != workOrder.LabServiceWorkflowVersionId
                 || workOrder.Status is LabWorkOrderStatus.OnHold or LabWorkOrderStatus.Cancelled or LabWorkOrderStatus.ReadyForRelease)
                 return ManualReviewAcknowledgment(command.Metadata, workOrder, acknowledgedAtUtc);
         }
@@ -327,8 +328,9 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
             return ManualReviewAcknowledgment(command.Metadata, workOrder, acknowledgedAtUtc);
         }
 
-        var workflowVersionId = await ResolveProductionWorkflowVersionAsync(
-            replacement.ServiceKey, cancellationToken, replacement.ApprovedWorkflowVersionId);
+        var workflowVersionId = replacement.SourceType == LabWorkAuthorizationSource.TrialProject
+            ? await ResolveProductionWorkflowVersionAsync(replacement.ServiceKey, cancellationToken, replacement.ApprovedWorkflowVersionId)
+            : workOrder.LabServiceWorkflowVersionId; // Retain historical metadata, never select a workflow for an order.
         workOrder.RecordAuthorizationVersion(
             command.NewAuthorizationVersion,
             replacement.ServiceKey,

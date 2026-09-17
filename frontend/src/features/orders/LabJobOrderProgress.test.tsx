@@ -14,10 +14,10 @@ vi.mock('./lab-job-progress', async original => ({
 beforeEach(() => {
   const steps: LabJobProgressStep[] = [
     { id: 'confirm-order', label: 'Review and confirm the order', state: 'complete', owner: 'You', detail: 'The order is confirmed.' },
-    { id: 'samples', label: 'Enter and finalize samples', state: 'complete', owner: 'You', detail: 'Nine samples are finalized.' },
+    { id: 'samples', label: 'Identify and finalize samples', state: 'complete', owner: 'You', detail: 'Nine samples are finalized.' },
     { id: 'kits', label: 'Have transportation kits ready', state: 'complete', owner: 'You', detail: 'A registered container is assigned.' },
     { id: 'containers', label: 'Assign containers', state: 'complete', owner: 'You', detail: 'All eighteen tubes have container slots.' },
-    { id: 'tubes', label: 'Match tubes', state: 'waiting-for-you', owner: 'You', detail: 'Five of eighteen tubes are matched.' },
+    { id: 'tubes', label: 'Match samples to tubes', state: 'waiting-for-you', owner: 'You', detail: 'Five of eighteen tubes are matched.' },
     { id: 'send', label: 'Send and record your shipment', state: 'not-started', owner: 'You', detail: 'Confirm the current shipping insert before recording shipment.' },
   ]
   mocks.progress = { steps, nextStep: steps[4], allSent: false, exception: null, shipmentCount: 1 }
@@ -30,6 +30,15 @@ function show() {
 }
 
 describe('Lab Job step information', () => {
+  it('hosts the sample panel review action when the complete roster needs finalization', () => {
+    const target = vi.fn()
+    mocks.progress!.nextStep = { ...mocks.progress!.steps[1], label: 'Review and finalize sample list', actionLabel: 'Review and finalize list', state: 'waiting-for-you' }
+    render(<LabJobOrderProgress order={{ ...bundleLabDraft, canEditSamples: true }} shipments={[]} shippingState="ready" canManageShipping canAcceptOrder sampleReviewTargetRef={target} />)
+    expect(target).toHaveBeenCalledWith(expect.any(HTMLDivElement))
+    expect(screen.getByText('Review and finalize sample list')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /Review samples/ })).toBeNull()
+  })
+
   it('hosts the selected shipment command for Send instead of linking back to completed tube work', () => {
     const select = vi.fn()
     const sendTarget = vi.fn()
@@ -45,13 +54,14 @@ describe('Lab Job step information', () => {
     show()
     const strip = screen.getByRole('list', { name: 'Ordering and shipping steps' })
     expect(within(strip).getAllByRole('listitem')).toHaveLength(6)
+    expect(within(strip).getByText('Sample identification')).toBeTruthy()
     expect(within(strip).getAllByRole('button')).toHaveLength(6)
     expect(strip.className).toContain('repeat(6,')
     expect(within(strip).queryByRole('link')).toBeNull()
     expect(within(strip).queryByText('Complete')).toBeNull()
     expect(within(strip).queryByText('Waiting for you')).toBeNull()
     expect(within(strip).queryByText(/Shipping insert/)).toBeNull()
-    expect(within(strip).getByRole('button', { name: /Information about step 5: Match tubes. Waiting for you/ }).closest('li')?.getAttribute('aria-current')).toBe('step')
+    expect(within(strip).getByRole('button', { name: /Information about step 5: Match samples to tubes. Waiting for you/ }).closest('li')?.getAttribute('aria-current')).toBe('step')
     expect(within(strip).getByRole('button', { name: /Information about step 6:/ }).className).toContain('text-muted-foreground')
     expect(within(strip).getAllByRole('button').every(button => !button.hasAttribute('title'))).toBe(true)
   })
@@ -83,7 +93,7 @@ describe('Lab Job step information', () => {
     expect(within(panel).getByText('Confirm the current shipping insert before recording shipment.')).toBeTruthy()
     expect(within(panel).getByText('With: You')).toBeTruthy()
     expect(select).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('button', { name: 'Show shipping work: Match tubes' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Show shipping work: Match samples to tubes' }))
     expect(select).toHaveBeenCalledExactlyOnceWith('tubes')
   })
 
@@ -95,11 +105,11 @@ describe('Lab Job step information', () => {
     await screen.findByRole('dialog', { name: 'Review and confirm the order' })
     fireEvent.pointerOut(first, { pointerType: 'mouse', relatedTarget: document.body })
     fireEvent.pointerOver(second, { pointerType: 'mouse' })
-    await screen.findByRole('dialog', { name: 'Enter and finalize samples' })
+    await screen.findByRole('dialog', { name: 'Identify and finalize samples' })
     act(() => first.blur())
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 220)) })
     expect(screen.getAllByRole('dialog')).toHaveLength(1)
-    expect(screen.getByRole('dialog', { name: 'Enter and finalize samples' })).toBeTruthy()
+    expect(screen.getByRole('dialog', { name: 'Identify and finalize samples' })).toBeTruthy()
     expect(select).not.toHaveBeenCalled()
   })
 })

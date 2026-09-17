@@ -1,12 +1,14 @@
 import { useMutation } from '@tanstack/react-query'
-import { useRef, useState } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 
 import { completeLabJob, getOrderErrorMessage, isOrderConcurrencyError, type LabServiceOrder } from '#/api/order-management'
 import { Button } from '#/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFeedback, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 
-export function CompleteLabJob({ order, authorized, onSaved }: {
+export function CompleteLabJob({ order, authorized, onSaved, renderActions, onCloseAutoFocus }: {
   order: LabServiceOrder; authorized: boolean; onSaved: () => Promise<unknown>
+  renderActions?: (openCompletion: (() => void) | undefined, dialogOpen: boolean) => ReactNode
+  onCloseAutoFocus?: (event: Event) => void
 }) {
   const [open, setOpen] = useState(false)
   const [reviewedVersion, setReviewedVersion] = useState(order.version)
@@ -22,18 +24,19 @@ export function CompleteLabJob({ order, authorized, onSaved }: {
     mutationFn: onSaved,
     onSuccess: () => { attempt.current = null; mutation.reset(); setOpen(false) },
   })
-  if (!authorized || !['InProgress', 'ResultsAvailable'].includes(order.status)) return null
+  if (!authorized || !['InProgress', 'ResultsAvailable'].includes(order.status)) return renderActions?.(undefined, false) ?? null
   const unresolved = order.samples.filter(sample => !['Completed', 'Rejected', 'Failed', 'Cancelled'].includes(sample.status)).length
   const ready = order.samples.length > 0 && unresolved === 0
   const conflict = isOrderConcurrencyError(mutation.error)
   const pending = mutation.isPending || reload.isPending
+  function openCompletion() {
+    if (!attempt.current) { setReviewedVersion(order.version); mutation.reset() }
+    reload.reset(); setOpen(true)
+  }
   return <>
-    <Button type="button" variant="outline" onClick={() => {
-      if (!attempt.current) { setReviewedVersion(order.version); mutation.reset() }
-      reload.reset(); setOpen(true)
-    }}>Complete Job</Button>
+    {renderActions ? renderActions(openCompletion, open) : <Button type="button" variant="outline" onClick={openCompletion}>Complete Job</Button>}
     <Dialog open={open} onOpenChange={value => { if (!pending) setOpen(value) }}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle>Complete Job {order.orderNumber}</DialogTitle>
           <DialogDescription>Close this Job after reviewing every sample outcome. Completion issues its invoice from the accepted quote and applicable approved billing details. Unpaid PSeq invoices do not prevent scientific result access.</DialogDescription>

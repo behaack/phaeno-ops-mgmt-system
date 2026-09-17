@@ -16,7 +16,8 @@ public sealed partial class LabOperationsController
         }
         var attempt = await dbContext.LabSpecimenAttempts.SingleAsync(a => a.Id == execution.LabSpecimenAttemptId, ct);
         if (!allowSucceeded) await RequireOutsidePreparationAsync(attempt.Id, ct);
-        if (attempt.LabWorkOrderId != work.Id || attempt.LabSpecimenId != execution.LabSpecimenId || attempt.LabServiceWorkflowVersionId != work.LabServiceWorkflowVersionId)
+        var stage = await dbContext.LabServiceWorkflowStages.SingleOrDefaultAsync(s => s.Id == execution.LabServiceWorkflowStageId, ct);
+        if (attempt.LabWorkOrderId != work.Id || attempt.LabSpecimenId != execution.LabSpecimenId || stage is null || stage.LabServiceWorkflowVersionId != attempt.LabServiceWorkflowVersionId || stage.LabProtocolVersionId != execution.LabProtocolVersionId)
             throw Conflict("attempt_scope_mismatch", "The execution must match its specimen attempt and pinned workflow.");
         if (!(allowSucceeded && attempt.State == LabSpecimenAttemptState.Succeeded)) Execute(() => attempt.RequireOpen());
         dbContext.Entry(attempt).Property(a => a.UpdatedAt).IsModified = true;

@@ -206,6 +206,7 @@ public static class LabOperationsModelConfiguration
 
         modelBuilder.Entity<LabProtocolVersion>(entity =>
         {
+            entity.Property(item => item.ApprovalOverrideReason).HasMaxLength(2000);
             entity.ToTable("lab_protocol_versions", laboratorySchema);
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
@@ -227,6 +228,7 @@ public static class LabOperationsModelConfiguration
 
         modelBuilder.Entity<LabServiceWorkflowVersion>(entity =>
         {
+            entity.Property(item => item.ApprovalOverrideReason).HasMaxLength(2000);
             entity.Property(e => e.InvalidationReason).HasMaxLength(2000);
             entity.ToTable("lab_service_workflow_versions", laboratorySchema);
             entity.HasKey(e => e.Id);
@@ -288,6 +290,31 @@ public static class LabOperationsModelConfiguration
             entity.Property(e => e.NormalizedName).HasMaxLength(255).IsRequired();
             entity.HasIndex(e => e.NormalizedName).IsUnique();
             entity.HasIndex(e => new { e.IsActive, e.Name });
+        });
+
+        modelBuilder.Entity<LabProductType>(entity =>
+        {
+            entity.ToTable("lab_product_types", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            ConfigureAudited(entity);
+            entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.NormalizedName).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(1000).IsRequired();
+            entity.Property(e => e.KitUse).HasConversion<string>().HasMaxLength(30).IsRequired();
+            entity.HasIndex(e => e.NormalizedName).IsUnique();
+        });
+
+        modelBuilder.Entity<LabSupplierProduct>(entity =>
+        {
+            entity.ToTable("lab_supplier_products", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            ConfigureAudited(entity);
+            entity.Property(e => e.ProductNumber).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.NormalizedProductNumber).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(1000).IsRequired();
+            entity.HasOne<LabProductType>().WithMany().HasForeignKey(e => e.ProductTypeId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(e => new { e.SupplierId, e.NormalizedProductNumber }).IsUnique();
+            entity.HasOne<LabSupplier>().WithMany().HasForeignKey(e => e.SupplierId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<LabStorageLocation>(entity =>

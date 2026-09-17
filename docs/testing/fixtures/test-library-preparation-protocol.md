@@ -1,5 +1,7 @@
 # TEST ONLY — Two-protocol library-preparation workflow
 
+Compatibility update (September 17, 2026): the two synthetic QC record references are optional. Preparation QC entry offers an optional PDF report upload (10 MB maximum), with its reference recorded automatically. Historical approved definitions and saved references remain unchanged; all other measurements and QC decisions below still apply.
+
 Prepared September 11, 2026. **Both protocol versions approved locally for synthetic software acceptance only.** The owner requested a two-protocol process and a slow, step-by-step authoring walkthrough. Both **TEST ONLY — Extracted RNA readiness** and **TEST ONLY — Library preparation and QC** are Approved v1, with all three steps saved. Approval was submitted through the synthetic William Agnew account and verified after Refresh; this demonstrates distinct-account workflow behavior, not independent human or scientific validation. No unsaved edits remain. Service-workflow setup is next. The builder labels the role-neutral setting **Confirmation required**. See the [run record](../runs/2026-09-11-protocol-preparation.md) before resuming.
 
 This fixture adapts the Portal's [built-in library-preparation example](../../../frontend/src/features/lab-operations/protocol-definition.ts). It is not a laboratory SOP. All measurements, material use and preparation below are simulated on explicitly identified local test records. It provides no wet-lab recipe or scientifically validated acceptance thresholds.
@@ -58,7 +60,7 @@ All captures listed below are required unless explicitly marked optional. All st
 - Requirement: Conditional. Condition: “Perform when step 2 history contains a Hold or Fail, even if a permitted repeat now passes; otherwise skip with a reason.” Role: Supervisor. Repeatable: No. QC gate: None.
 - Instructions: “TEST ONLY. Review retained input QC history and the successful repeat. Record why the synthetic issue is resolved. A current Fail or Hold must be resolved at step 2 before this step can be performed; this review does not override a blocker.”
 - Capture: **Review rationale** (text).
-- Main path: Skip with reason “No Hold or Fail in this execution's input QC history.” This plain-language condition is assessed explicitly by the operator, not automatically evaluated from history.
+- Main path: Skip with reason “No Hold or Fail in this execution's input QC history.” Preparation batches now automatically record this skip when every continuing sample has resolved prerequisites and passing input QC with no Hold or Fail anywhere in its history. The exact established condition is recognized; other prose remains operator assessed. Existing step-role permissions apply.
 - The Supervisor role applies to the skip assessment as well as performed review; an Operator-only user cannot resolve this step by skipping it.
 
 ### Protocol 2, step 1. Record simulated library preparation and traceability
@@ -68,7 +70,7 @@ All captures listed below are required unless explicitly marked optional. All st
 - Input materials: Source test specimen; Qualified TEST ONLY library-preparation reagent lot.
 - Prepared outputs: Derived TEST ONLY library container.
 - Equipment types: TEST ONLY preparation equipment.
-- Captures: **Derived library container barcode** (barcode); **Preparation mode** (choice: Simulated); **Preparation record reference** (text).
+- Captures: **Derived library container barcode** (barcode); **Preparation mode** (choice: Simulated); optional **Preparation report or worksheet** attachment (PDF up to 10 MB). The legacy preparation reference no longer requires manual entry. Required material/equipment records and output-barcode evidence remain unchanged.
 - Main-path preparation reference: TEST-PREP-001. The derived barcode must come from POMS, not a fabricated text value.
 - Prerequisites for this later step: a dedicated qualified, unexpired synthetic lot with agreed available quantity/unit; eligible test equipment and calibration record; explicit source/child lineage. Record actual synthetic quantity and unit in the run before using it. Missing resources block the step. Free-text resource requirements do not automatically match inventory; review the saved traceability before confirming resources.
 

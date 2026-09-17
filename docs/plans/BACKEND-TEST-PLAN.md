@@ -1,6 +1,69 @@
 # Backend Test Plan
 
-## September 16, 2026 � Invitation-authorized identity setup
+## Shared output command checkpoint (2026-09-17)
+
+Extended preparation PostgreSQL reference journey for multi-output atomic validation, duplicate/foreign members, invalid row quantities/unit/location, stale version, individual lineage/barcodes, no automatic physical confirmation, replay without duplicate containers/records, and existing-output rejection. Existing held-job/access-denied matrix includes outputs. Tests authored and compiled, not executed.
+
+## Preparation report checkpoint - September 17, 2026
+
+Added domain regression coverage for optional preparation reference, required output barcode and required resource confirmation. Extended the PostgreSQL journey for optional preparation-report omission/upload, metadata purpose, private-key redaction, covered tube count, authenticated download and idempotent replay. Existing scanned-upload behavior is reused. Tests authored, not run; connected preparation upload, retry, private download and backup restore remain acceptance checks.
+
+## Automatic conditional-review skips — September 17, 2026
+
+Added domain coverage for all-pass histories, missing prerequisites, empty coverage, historical Hold/Fail followed by Pass, unknown condition prose, existing review evidence, and stale evidence after correction. Extended the mixed-tray PostgreSQL journey to retain review when a tube is on hold, automatically skip for the remaining passing tube after explicit failure, verify coverage/audit metadata, and prevent duplicate skips on reconciliation. Existing validation/roles remain authoritative. Build includes these tests; execution deferred per repository instruction.
+
+
+## Optional preparation QC reports — September 17, 2026
+
+Added domain regressions for omission of the two exact synthetic file-reference captures while retaining QC and unrelated required captures. Extended the mixed-tray PostgreSQL journey with malformed file rejection, unclean scan rollback/cleanup, successful attachment and exact coverage, metadata redaction, retry without duplicate upload, changed-file idempotency rejection, protected download and wrong-batch/customer denial. The alternate journey still saves without a report. Solution build compiles these tests; execution is deferred per repository instruction.
+
+
+## Automatic preparation specimen references (2026-09-17)
+
+Add automatic specimen-reference tests for server-owned accession values across record/repeat/correct and legacy scopes, ignored client substitutions, distinct tube accessions, missing accession failure, skipped evidence and unchanged ordinary exception rules. Extend the mixed-job preparation journey to check customer sample references from original/replacement authorizations and persisted per-execution accession evidence. Build tests with the solution; execution deferred per repository instruction.
+
+## Preparation specimen declarations — September 17, 2026
+
+Extend the mixed-tray PostgreSQL journey fixtures/assertions to read biological source and multiline safety declarations from both original and replacement authorization snapshots, distinguish two jobs' specimens, and retain null when the second specimen has no safety declaration. Existing denied-reader coverage remains. Tests updated but not executed; Release build is the compilation checkpoint.
+
+## Guided preparation and tray confirmation — September 17, 2026
+
+LabPreparationPostgresTests now covers rejecting Start before assembly confirmation, persisted confirmation readback, rejection of assign/add/move/remove while confirmed, reason-required reopening, invalidation/reconfirmation, idempotent confirmation retries and rejection of reopening after Start. Existing workflow-decoupling coverage explicitly confirms before Start. Confirmation uses the existing audited command records and optimistic version guard; no migration. Tests updated, not executed; Release compilation is the checkpoint. Concurrent confirm/edit, stale-client recovery and closed-batch regressions remain part of requested acceptance execution.
+
+## Eligible tube pagination — September 17, 2026
+
+Extended preparation eligibility PostgreSQL assertions for one-item pages with distinct identities, correct eligible totals/page counts and filtered out-of-range page clamping. Existing exclusions and unpaged compatibility assertions remain. Eligibility now executes before counting and paging in the database. Tests added/compiled, not executed; populated translation, large-list and concurrent-list-change acceptance remains pending.
+
+## Physical preparation tray identity — September 17, 2026
+
+Domain coverage adds required tray identity before Start, trimming, batch-label rejection, populated-tray reassignment denial, empty-tray reassignment, running-tray locking and closed-history retention. Preparation PostgreSQL journeys now assign distinct physical trays before adding tubes; cross-batch active reuse is rejected. Concurrent assignment protection is provided by a transaction lock plus an active-only unique index; concurrent/reuse acceptance remains pending. Tests updated/compiled, not executed unless requested.
+
+## Eligible tube freezer-box filter — September 16, 2026
+
+Extended the preparation workflow PostgreSQL regression with distinct recorded boxes: trimmed/partial box filtering, tube/job query AND box filtering, exclusion of unreviewed tubes and whitespace-only reset. Filtering occurs before the existing candidate limit. Assertions added, not executed per repository policy.
+
+## Service-based commercial jobs — September 16, 2026
+
+Added PreparationSelectsWorkflowByServiceAndPreservesAttemptVersions and CommercialAuthorizationDoesNotRequireOrPinAWorkflow. Coverage: historical commercial v1 pin permits same-service v2 batch; wrong service/unreviewed tube excluded; actual attempt/stage v2 persisted while legacy pin retained; incompatible reservation excluded; standalone selection follows Production at selection time; retirement follows queued/started execution dependencies; authorization without a production workflow is idempotent and unpinned. Tests added, not executed per repository policy. Existing preparation lock, held/closed job and concurrency suites remain required before release.
+
+
+## Administrator approval override — September 16, 2026
+
+LabApprovalOverrideTests covers unchanged independent approval, required/trimmed/bounded reasons, self-approval with override, production use, immutable retired history and withdrawal clearing. LabApprovalOverridePostgresTests covers both controller paths with strict role enforcement: ordinary Protocol Administrator denial, standard self-approval denial, blank reason rejection, persisted actor/time/reason, stale protocol version rejection, DTO visibility, audit retention after workflow withdrawal and promotion with recorded overrides. Existing legacy self-approval production-denial tests remain. Tests added, not executed by request policy.
+
+## Managed product types — September 16, 2026
+
+Managed type persistence, seeded type references, reagent exclusion from kits, inactive-type assignment restrictions, uniqueness, stale updates and used-type kit-use protection are covered in SupplierCatalogPostgresTests. Tests updated/compiled, not executed.
+
+## Supplier catalog and kit product snapshots — September 16, 2026
+
+Added supplier-catalog PostgreSQL coverage for administrator-only access, normalized duplicate names/numbers, required descriptions, wrong-type/missing/inactive selections, stale edits and frozen kit descriptions. Existing shipping fixtures now prepare stock from catalog products. Tests compiled but not executed; requested verification remains build-only.
+
+## Lab request submission and pricing review — September 16, 2026
+
+Atomic lab request creation/submission and revision coverage is added in LabRequestSubmissionPostgresTests; domain coverage checks pending edits and issued-quote rejection. Existing manual quote coverage no longer supplies a Customer price proposal. Check idempotent creation, unchanged prior snapshots, fresh revisions, stale edits, withdrawal and no Lab authorization before acceptance. Tests are added/updated but not run (not requested).
+
+## September 16, 2026 — Invitation-authorized identity setup
 
 `ClerkInvitationRegistrationTests` covers exact-email existing-user lookup, silent provider invitation creation, revision-specific reuse, provider errors and unsafe URL rejection. `InvitationRegistrationPostgresTests` covers pending-token handoff without membership, no-store responses, revoked/expired/accepted/declined/replaced/inactive links, and revocation during the provider call. The approved focused run uses disposable PostgreSQL databases and simulated identity-provider responses; it does not create production identities or send email.
 

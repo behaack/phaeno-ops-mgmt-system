@@ -1,6 +1,140 @@
 # Playwright E2E Test Plan
 
-## September 16, 2026 � Production invitation onboarding repair
+## Shared output acceptance checkpoint (2026-09-17)
+
+Pending signed-in acceptance: from Shared evidence create outputs for all participating tubes with shared unit/location and one override, verify per-tube barcodes and retained step draft, retry an uncertain response without duplicates, verify existing/failed tubes are not recreated, and confirm each physical output before final protocol completion. Do not use synthetic evidence as physical or scientific acceptance.
+
+## Preparation report acceptance - September 17, 2026
+
+Pending connected acceptance: save a preparation step with and without an optional PDF, verify required materials/equipment/output barcodes remain enforced, download from history and tube evidence, reject invalid/unclean files without saving evidence, and retry without duplicate reports. No operational data written for verification.
+
+## Automatic conditional-review skips — September 17, 2026
+
+Pending after API restart: all-active-pass/no-prior-hold skips the established review and moves Next step to stage completion; history identifies automatic skip and exact coverage. Any current/historical Hold/Fail, missing or stale evidence, unknown condition, no continuing tubes or missing step permission prevents automatic skipping. Failed tubes stay visible and excluded. Refresh/retry/concurrent operators must not duplicate skips or overwrite evidence. Existing eligible batches reconcile without changing data during GET. No operational batch write was used for verification.
+
+
+## Optional preparation QC reports — September 17, 2026
+
+Pending connected acceptance after restarting the local API: save a performed QC step without a report; select/cancel/remove a PDF without a write; save an approved test PDF with exact tube coverage; refresh and download from history and effective tube evidence; reject invalid/oversized files and unavailable/rejected scanning without evidence changes; retry uncertain responses without duplicates; deny customer and wrong-batch downloads; verify keyboard labels, errors and light/dark layout. Include attachment references in isolated backup/restore verification. No real batch evidence, protocol definitions or user draft were changed to verify this feature. These acceptance cases are not claimed passed.
+
+
+## Workflow-based preparation progress (2026-09-17)
+
+Inspect the Prepare libraries information panel for saved step and protocol totals across the pinned workflow. Confirm counts are independent of tube quantity; Complete batch retains tube-outcome counts. Keep any open evidence draft intact and make no operational writes for verification. Disposable-fixture acceptance should cover partial entries, QC holds, corrections that stale later evidence, explicit stage completion and permitted skips. Automated tests not executed.
+
+## Retained failed tubes (2026-09-17)
+
+Browser inspection verified the existing failed B2 remains visible in the reopened step modal with saved reason, read-only identity and disabled coverage. Tray retains B2 and displays four active / one failed. No operational records were written. Pending disposable-fixture acceptance: fail a tube with a populated draft, verify its read-only card remains in position, preserve surviving values, submit only surviving member IDs, and verify failed output cannot supply a successful library. Check all-failed and optional-step skip states. Automated tests not executed.
+
+## Sample card headers and identity explanations (2026-09-17)
+
+Inspect one Values and exceptions heading above the sample cards, failure actions at the right end of each header, separate disclosure/failure controls, and no redundant reason field for the standard identity check. Preserve draft values through collapse/expand. Retain reason fields for steps with shared exceptions or tube QC. Do not save operational evidence for presentation verification; automated tests remain unexecuted.
+
+## Fail a tube from step entry (2026-09-17)
+
+Safe browser inspection verified the per-tube action opens a named confirmation in the same dialog with required reason/evidence, Back to step, and a destructive save action. No failure or step evidence was saved. Pending authorized disposable-fixture acceptance: preserve entered date/barcodes on Back, failed request and successful failure; require a reason; prevent duplicate saves; exclude the failed tube from further evidence coverage and sequencing eligibility; preserve other tubes; require renewed coverage confirmation. Verify keyboard focus return and read-only permissions. Automated tests not executed.
+
+## One identity check date per entry (2026-09-17)
+
+Check the identity step contains one shared date and no per-tube date copies; confirm the coverage explanation and unchanged barcode fields. Saving a disposable fixture should retain the shared date on each covered execution. Failure remains an explicit tube action with a required reason, available in step entry and Tray, not a text-note side effect. No operational writes solely for verification.
+
+## Automatic preparation specimen references (2026-09-17)
+
+Pending connected acceptance: upgraded API shows per-tube customer sample/type/accession and no editable accession capture. Verify source scans and confirmations remain required; save on an authorized disposable fixture and check each execution retains its own canonical accession. Check new-tab specimen links preserve the form. Keep the currently open operational form unsaved; no evidence is recorded merely to verify UI.
+
+## Tray collapse after preparation starts (2026-09-17)
+
+Check started batches open with Tray collapsed, header identity and printing remain available, and pointer/keyboard toggles expose the positions and selected tube details. Draft trays remain open. Review library outputs must expand the tray. Starting a live batch solely for verification is out of scope.
+
+## Direct start within library preparation — September 17, 2026
+
+Inspect four progress steps and a confirmed draft with Prepare libraries current. Verify the visible explanation accompanies Start preparation and the extra confirmation modal is absent. Direct start failure/retry and success acceptance require a disposable fixture; do not start the saved operational batch solely to verify this change. Retain hover/focus/tap help, responsive layout and persisted tray locking checks.
+
+## Preparation specimen declarations — September 17, 2026
+
+After rebuilding the API, select occupied positions and compare Specimen type and Declared safety information with the matching submitted specimen's current authorization, including mixed-job trays and amendments. Check missing data shows Not recorded, long/multiline values wrap, and existing evidence/actions remain accessible. Do not mutate specimen declarations for visual verification. Automated suites remain unexecuted without request.
+
+## Tray confirmation checkbox — September 17, 2026
+
+Inspect Confirm tray dialog: inline required checkbox starts unchecked, Space toggles it, unchecked submission shows an associated error, and Required legend stays in footer. Cancel without saving to preserve the operational batch. Persisted confirmation acceptance remains covered by the existing guarded lifecycle scenario; no test suite execution without request.
+
+## Combined preparation step and help panels — September 17, 2026
+
+Verify five progress steps, Prepare tray current for loaded but unconfirmed drafts, scan/load/confirm guidance and no automatic completion of partial trays. Check each information panel by hover, focus and tap/click; pointer movement into the panel must keep it open, Escape/outside interaction closes it without workflow writes, and visible next actions remain available. Check narrow layout and theme contrast. Automated suites are not run without request; do not advance the saved operational batch for presentation verification.
+
+## Restore saved tray identity — September 17, 2026
+
+Check assigned draft reload shows the saved read-only barcode, immediately offers Confirm tray for a populated tray and never requests another Verify tray scan. Review tray shortcut is absent. Unassigned drafts still require acknowledged Save tray before tube entry. Empty unconfirmed drafts may Change tray; cancellation/failure preserves the saved identity. Existing confirmation/start locks remain. Do not perform operational writes for this visual check. Automated tests remain unexecuted.
+
+## Guided preparation journey — September 17, 2026
+
+Pending acceptance after rebuilding/restarting the local API: verify the physical tray, assemble a partial or full tray, confirm its contents, reload and verify the saved lock, reopen with reason, reconfirm, then Start. Confirm a stale second client cannot edit or bypass the saved lock. Check current progress step and direct next action through required evidence, Hold/repeat/correction, output scanning, stage advancement and batch completion. Handoff stays hidden before completion and for all-failed/cancelled batches; passing libraries show individual assignment actions and destinations. Check read-only/operator/protocol-role differences, focus after modal saves, narrow/dark layout and keyboard navigation. Do not mutate the owner's saved operational fixture for a visual check. Automated tests not executed without request.
+
+## Eligible tubes inside Tray — September 17, 2026
+
+Manual acceptance pending: Find eligible tubes appears inside Tray immediately after the Required legend; its compact chevron row starts collapsed and opens with pointer or keyboard. Expanded filters and pager remain within Tray; closing/reopening preserves their state. Selected-tube details and physical tray/tube scanning remain separate controls. Check narrow layout and focus visibility. No tests executed for this presentation change.
+
+## Collapsible eligible tubes — September 17, 2026
+
+Manual acceptance pending: Find eligible tubes starts collapsed; pointer and Enter/Space on its header toggle the filters/results/pager; the chevron follows open state; keyboard focus is visible. Collapse and reopen after filtering and paging to confirm values and page remain. Check narrow layout and dark theme. No automated tests run for this presentation change.
+
+## Eligible tube pagination — September 17, 2026
+
+Pending manual acceptance: more than 10 eligible tubes show 10 per page with matching total/page counts; Previous/Next retain both filters; either filter and Clear filters reset to page 1. Check no matches, loading/error recovery, keyboard focus on page controls, narrow layout and page clamping when a final-page tube is added to the tray. Verify matches beyond the former 200-candidate limit and preserve ineligible-tube exclusions. API must be rebuilt/restarted for the paged response. No automated test execution requested.
+
+## Physical preparation trays — September 17, 2026
+
+Pending connected acceptance: scan a physical tray into an existing populated draft without changing tubes; reopen and reconfirm; reject wrong tray/batch/tube labels; race two batches for the same tray and verify one winner; close/cancel then reuse while retaining history. Select cells with keyboard/pointer and confirm one complete details/action area, visible selection, preserved tube actions, compact QR readability and narrow/dark layout. Print/scanner qualification and operational writes are separate gates. Existing batch-label-only confirmation assertions must now use physical tray identity. Tests are not run for this implementation checkpoint.
+
+## Eligible tube freezer-box filter — September 16, 2026
+
+Manual acceptance pending: scan/type a recorded freezer-box barcode in Find eligible tubes; confirm all returned tubes match both the box and any tube/job search; clear filters and recover the list; verify no-match, loading and error feedback, keyboard operation and stacked narrow layout. Filtering must not save a scan or change eligibility. No automated test execution requested.
+
+## Inline tray scanning — September 16, 2026
+
+Inline tray scan acceptance: verify a matching batch label enables fields and focuses the first empty cell; a wrong label leaves scanning disabled. Scan into A1, verify server save before focus advances past occupied/unavailable cells; reject duplicates without advancing. Check network failure/retry and concurrent-position conflict retention, numeric layouts, partial/full tray, keyboard scrolling, narrow screen, printed label readability and actual scanner behavior. Physical scanning/printing and persisted tube-save acceptance remain pending; do not alter the owner’s tray merely for UI inspection.
+
+Signed-in desktop inspection completed: batch confirmation by Enter enabled the fields and focused A1; B3 remained unavailable; the label preview displayed the matching batch identity and QR. No tube membership or batch status was changed. This is UI evidence only; the saved-scan, error recovery, responsive and physical checks above remain pending. Automated tests were not run.
+
+
+## Service-based commercial jobs — September 16, 2026
+
+Manual acceptance pending: open the v2 preparation batch, find accepted tubes from the same-service v1 historical job, scan one into a position and verify its attempt/stage uses v2; confirm other-service and rejected/unreviewed tubes are unavailable; start and confirm promotion cannot redirect that attempt. Check retirement against actual queued/started attempts and standalone source selection after promotion. Do not duplicate the user’s saved operational scans for verification.
+
+
+## Administrator approval override — September 16, 2026
+
+Administrator approval override manual acceptance: as a platform administrator with protocol-management permission, review your own Draft protocol/workflow, verify required reason and confirmation, cancel without mutation, save and reload the labeled reason/time. Verify a non-admin cannot invoke override through UI or API, stale versions preserve form/error, workflow withdrawal retains audit and removes current override, and production promotion recognizes recorded overrides without changing prior job pins. Existing strict scientific/release checks remain. No real approval or promotion is performed as a verification fixture; populated acceptance is pending.
+
+## Catalog row actions — September 16, 2026
+
+Pending manual acceptance: supplier/product/type Actions menus, Edit modal identity, Deactivate confirmation/cancel, hidden inactive rows, Show inactive and Activate, stale-update failures, restored focus, keyboard operation and narrow layouts. Component coverage updated; no test execution requested.
+
+## Supplier catalog tab navigation — September 16, 2026
+
+Product types now lives under Suppliers & Products as a tab, with route-backed selection, legacy-link compatibility and return-to-tab links from details. Manual navigation acceptance remains pending; no automated test run requested for this navigation-only change.
+
+## Managed product types — September 16, 2026
+
+Pending manual acceptance: create a reagent vendor/product, create/rename/inactivate/reactivate a type, preserve inactive references, and confirm reagent products never appear in transportation selectors. Verify keyboard navigation, narrow layout and both themes. No end-to-end run requested.
+
+## Supplier and product catalog acceptance — September 16, 2026
+
+Manual acceptance pending: open Suppliers & Products beneath Lab configurations, create a supplier with Tube and Shipping Container products and descriptions; select them in kit preparation, change supplier and confirm the product resets; verify inactive records cannot be selected; prepare a kit and edit catalog details, verifying the kit retains its original details. Check keyboard focus, required errors, 390px and both themes. No browser end-to-end test run requested.
+
+## Complete roster review and clear details — September 16, 2026
+
+Pending Customer/Partner acceptance: finish an accepted roster, verify CSV actions/import advice disappear and both primary review buttons open the same confirmation. Cancel review without writes. Cancel Clear sample details without changes; confirm it and verify the source/count is retained, ID is blank, tubes default to one, focus moves to entry and finalization is blocked. Re-enter and save; verify review returns. Finalize explicitly, then verify finalized samples cannot be cleared. Cover keyboard, narrow layout and permission boundaries. Scenarios not executed (not requested).
+
+## Sample identification — September 16, 2026
+
+Pending acceptance: for Customer and entitled Partner users with ten accepted samples, verify ten rows grouped by source, one tube prefilled, keyboard ID entry, save/discard and partial save recovery. Check CSV preview/import on untouched placeholders, unique-ID/source/total guards, reserve tube edits, leaving with unsaved IDs, completed-roster pagination and exact finalization confirmation. Verify Sample identification in the progress strip at desktop and narrow widths. `bundled-orders.spec.ts` now expects the generated Sample ID row after placement instead of an Add button. Scenarios documented and selectors updated but not executed (not requested).
+
+## Lab request submission and pricing review — September 16, 2026
+
+For Customer and entitled Partner administrators, submit a lab request and verify Pricing review / Waiting for pricing, one saved submitted request, no separate custom-work action, and Edit/Withdraw under Actions. Modify scope while waiting and verify preserved prior revision and refreshed pricing work; issue a quote and verify Confirm pricing, acceptance/decline and no direct scope edits. Check mobile footer readability and keyboard focus. Do not send real requests as a UI smoke test. Scenarios not executed (not requested).
+
+## September 16, 2026 — Production invitation onboarding repair
 
 Release checks must verify the exact backend and frontend revisions, health/database connectivity, and anonymous rejection of an invalid authentication-handoff token with no-store headers. Real first-time acceptance remains a recipient-performed gate: reopen the original valid invitation, continue with its fixed email, complete password/MFA setup, explicitly accept, and verify intended access. Existing recipients must retain sign-in; expired/revoked links must not prepare account setup. Do not create an invited person's identity, send another email, or accept on their behalf as a smoke test. Automated component/provider/disposable-database checks are separate from this live provider acceptance gate.
 
@@ -2490,3 +2624,13 @@ Actual scoped Customer and fulfillment administrator sessions complete the SHP-1
 ## SHP-09 alternate packing and whole-order reset — September 15, 2026
 
 Actual scoped Customer/Member/fulfillment sessions complete the ten primary steps and five reset steps. New coverage includes six-five and mixed-size choices, delayed-current preview, invalid allocation/stock claims, partial supply and one additional order, cancelled-origin stock, Member history, retained drafts during inventory errors, two-Job reservation races, stale/open and competing resets, distinct historical handling/destination pools and every sibling/history lock. Independent readback conserves all 248 slots across 15 authorized isolated Jobs and all frozen order fields. Staged milestone/physical prerequisites are explicitly labelled; no broad mocked suite or physical/scientific claim. [Complete evidence and continuation](../testing/runs/2026-09-15-packing-reset-uat.md). No application or automated regression test changed.
+
+September 16 container selection action: existing packing/inventory selectors now use **Change container selection**. The action appears at the right of **Choose shipping containers** with existing availability guards. Tests updated but not run (not requested).
+
+September 16 assignment wording supersedes the earlier container-selection labels: **Assign shipping containers**, **Assign containers**, and **Confirm assignment** / **Confirm partial assignment**. Existing packing selectors now scope repeated Container and barcode field labels by the numbered container group. Tests updated but not run (not requested).
+
+September 16 sample ordering: digit-by-digit sample IDs, biological-source group order, numeric tube ordinals and scanner advancement now share the displayed order. Added focused ordering coverage and updated integrated scanner pagination expectations; tests not run. Manual check: mixed-length numeric IDs, multiple sources, multiple tubes, resume after saved matches and dirty-target preservation.
+
+September 16 inline tube scanning: updated scanner and integrated Job regressions for one active row-local field, save/advance, inline errors, paging and collapse draft retention, remount focus and completion. Manual acceptance includes keyboard/scanner Enter, row scrolling, narrow screens and reduced motion. Tests updated but not run (not requested).
+
+September 16 scan completion: verify Done scanning is absent before the final saved match, appears in the Samples and shipping header on completion, receives focus, and closes matching without losing the sample review list. Updated integrated completion and host-header coverage; tests not run.

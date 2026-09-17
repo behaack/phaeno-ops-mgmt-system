@@ -80,6 +80,8 @@ Use [shared prerequisites](TEST-DATA.md). Engineering/operations assists with is
 
 ## SYS-06 — Coordinated restore and release-level acceptance
 
+**Latest execution, September 17: Pass.** All six required steps have an [evidence crosswalk](runs/2026-09-15-sys06-recovery.md), including the real scheduled collection and encrypted off-server receipt. Software closure is 81/81; physical, scientific and provider acceptance remain separate.
+
 **Setup:** Operations engineer; isolated populated database/private files with known manifests and checksums; approved backup tooling, isolated restore target and recovery plan. No production writer interruption is authorized by this document.
 
 | Step | Action | Expected result |

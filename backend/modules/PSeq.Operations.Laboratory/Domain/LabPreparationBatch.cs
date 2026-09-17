@@ -35,6 +35,7 @@ public sealed class LabPreparationBatch : LabAuditedEntity
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public string Name { get; private set; } = null!;
+    public string? TrayBarcode { get; private set; }
     public Guid LabTrayFormatId { get; private set; }
     public Guid LabServiceWorkflowVersionId { get; private set; }
     public string LayoutJson { get; private set; } = null!;
@@ -52,6 +53,20 @@ public sealed class LabPreparationBatch : LabAuditedEntity
     {
         if (Status != LabBatchStatus.Draft) throw new InvalidOperationException("The tray is locked. Tubes cannot be moved, added or removed after preparation starts.");
     }
+    public void AssignTray(string barcode, bool hasTubes)
+    {
+        RequireDraft();
+        barcode = Required(barcode, "Physical tray barcode", 255);
+        if (barcode.Any(char.IsControl)) throw new ArgumentException("Scan a valid physical tray barcode.");
+        if (barcode == Name) throw new ArgumentException("Scan the physical tray barcode, not the batch identifier.");
+        if (TrayBarcode is not null && TrayBarcode != barcode && hasTubes)
+            throw new InvalidOperationException("This batch already has tubes assigned to another tray. Remove the tubes before changing trays.");
+        TrayBarcode = barcode;
+    }
+    public void RequireTray()
+    {
+        if (TrayBarcode is null) throw new InvalidOperationException("Scan the physical tray barcode before adding tubes or starting preparation.");
+    }
     public void RequireActive()
     {
         if (Status != LabBatchStatus.InProgress) throw new InvalidOperationException("Start this preparation batch before recording work. Closed batches are read-only.");
@@ -66,6 +81,7 @@ public sealed class LabPreparationBatch : LabAuditedEntity
     {
         RequireDraft();
         if (!confirmed || !members.Any(m => !m.Removed)) throw new ArgumentException("Confirm the assembled tray with at least one scanned tube.");
+        RequireTray();
         Status = LabBatchStatus.InProgress; StartedAtUtc = now;
     }
     public void Complete(bool allResolved, DateTime now)
@@ -130,7 +146,12 @@ public sealed record LabPreparationStepInput(Guid StageId, string StepKey, strin
 
 public static class LabPreparationEvidence
 {
-    public static LabProtocolStepInput Resolve(LabProtocolStepDefinition step, LabPreparationStepInput input, Guid memberId, Guid recordId)
+    // This established capture key binds to the specimen accession, including legacy shared definitions.
+    public static bool IsSpecimenReference(LabProtocolCaptureDefinition capture) =>
+        capture.Key == "specimen-reference" && capture.Type == "text";
+
+    public static LabProtocolStepInput Resolve(LabProtocolStepDefinition step, LabPreparationStepInput input, Guid memberId, Guid recordId,
+        string? accessionNumber = null)
     {
         if (!input.CoverageConfirmed || input.CoveredMemberIds.Count == 0 || input.CoveredMemberIds.Distinct().Count() != input.CoveredMemberIds.Count
             || !input.CoveredMemberIds.Contains(memberId) || input.Tubes.Select(t => t.MemberId).Distinct().Count() != input.Tubes.Count
@@ -143,12 +164,18 @@ public static class LabPreparationEvidence
                 throw new ArgumentException("A skipped step cannot contain performed work or QC.");
             return new(step.Key, input.Action, input.Outcome, new Dictionary<string, JsonElement>(), false, false, null, tube?.Reason ?? input.Reason, recordId);
         }
-        if (input.SharedCaptures.Keys.Any(k => !step.Captures.Any(c => c.Key == k && c.Scope is "batch" or "shared"))
-            || input.Tubes.Any(t => t.Captures.Keys.Any(k => !step.Captures.Any(c => c.Key == k && c.Scope is "tube" or "shared"))))
+        if (input.SharedCaptures.Keys.Any(k => !step.Captures.Any(c => c.Key == k && (IsSpecimenReference(c) || c.Scope is "batch" or "shared")))
+            || input.Tubes.Any(t => t.Captures.Keys.Any(k => !step.Captures.Any(c => c.Key == k && (IsSpecimenReference(c) || c.Scope is "tube" or "shared")))))
             throw new ArgumentException("Values must use the scope defined by the approved protocol.");
         var values = new Dictionary<string, JsonElement>();
         foreach (var capture in step.Captures)
         {
+            if (IsSpecimenReference(capture))
+            {
+                LabProtocolDefinition.RequiredText(accessionNumber, 200, "Assigned specimen accession");
+                values[capture.Key] = JsonSerializer.SerializeToElement(accessionNumber!.Trim());
+                continue;
+            }
             if (capture.Scope != "tube" && input.SharedCaptures.TryGetValue(capture.Key, out var shared)) values[capture.Key] = shared;
             if (capture.Scope != "batch" && tube?.Captures.TryGetValue(capture.Key, out var individual) == true)
             {

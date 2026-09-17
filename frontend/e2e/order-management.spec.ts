@@ -8,7 +8,7 @@ test('shows Customer laboratory services in mock mode', async ({ page }) => {
   await expect(page.getByText('Connected records are paused in mock-session mode')).toBeVisible()
   await page.getByRole('link', { name: 'Request lab service' }).click()
 
-  const jobDetails = page.getByRole('dialog', { name: 'Job pricing details' })
+  const jobDetails = page.getByRole('dialog', { name: 'Submit lab service request' })
   await expect(jobDetails).toBeVisible()
   await expect(jobDetails.locator(':scope > [data-slot="dialog-header"]')).toBeVisible()
   await expect(jobDetails.locator(':scope > [data-slot="dialog-body"]')).toBeVisible()
@@ -21,7 +21,7 @@ test('shows Customer laboratory services in mock mode', async ({ page }) => {
   await expect(jobDetails.getByLabel('Safety declaration')).toBeVisible()
   await expect(jobDetails.getByLabel('Job notes (optional)')).toBeVisible()
   await expect(jobDetails.getByLabel('Customer sample ID')).toHaveCount(0)
-  await expect(jobDetails.getByRole('button', { name: 'Create job' })).toBeDisabled()
+  await expect(jobDetails.getByRole('button', { name: 'Submit request' })).toBeDisabled()
 
   await page.mouse.click(4, 4)
   await expect(jobDetails).toBeVisible()

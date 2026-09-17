@@ -1,3 +1,4 @@
+import { supplierCatalogFixture, tubeSupplierId, tubeProductId, shipperSupplierId, shipperProductId } from '#/test-helpers/supplier-catalog'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -8,15 +9,16 @@ import { KitRequestsPanel } from './KitRequestsPanel'
 import { KitRequestDetailPage } from './KitRequestDetailPage'
 import { KitRequestDispatchDialog } from './KitRequestDispatchDialog'
 
-const mocks = vi.hoisted(() => ({ list: vi.fn(), get: vi.fn(), dispatch: vi.fn(), cancel: vi.fn(), definitions: vi.fn(), create: vi.fn(), navigate: vi.fn(), allowed: true }))
+const mocks = vi.hoisted(() => ({ catalog: vi.fn(), list: vi.fn(), get: vi.fn(), dispatch: vi.fn(), cancel: vi.fn(), definitions: vi.fn(), create: vi.fn(), navigate: vi.fn(), allowed: true }))
 vi.mock('#/api/transportation-kit-requests', () => ({ getPlatformTransportationKitRequests: mocks.list, getPlatformTransportationKitRequest: mocks.get, dispatchTransportationKitRequest: mocks.dispatch, cancelPlatformTransportationKitRequest: mocks.cancel }))
+vi.mock('#/api/supplier-catalog', async importOriginal => ({ ...await importOriginal<typeof import('#/api/supplier-catalog')>(), useSupplierCatalog: () => mocks.catalog() }))
 vi.mock('#/api/shipping-containers', () => ({ getShippingContainerDefinitions: mocks.definitions, createShippingStockKit: mocks.create }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ session: { capabilities: { canManageOrderConfiguration: mocks.allowed } } }) }))
 vi.mock('../use-order-draft-guard', () => ({ useOrderDraftGuard: () => vi.fn() }))
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => mocks.navigate, useSearch: () => ({}), Link: ({ children, to, params }: { children: ReactNode; to: string; params?: Record<string, string> }) => <a href={Object.entries(params ?? {}).reduce((path, [key, value]) => path.replace(`$${key}`, value), to)}>{children}</a> }))
 function mount(node: ReactNode) { return render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>{node}</QueryClientProvider>) }
-function fill(label: string, value: string) { fireEvent.change(screen.getByLabelText(new RegExp(label)), { target: { value } }) }
-beforeEach(() => { vi.clearAllMocks(); mocks.allowed = true; mocks.definitions.mockResolvedValue([{ ...containerDefinition, id: request.lines[0].containerDefinitionId }, { ...containerDefinition, id: '40000000-0000-4000-8000-000000000004', commonName: 'Unrequested size' }]); mocks.create.mockResolvedValue(standardKit); mocks.list.mockResolvedValue([request]); mocks.get.mockResolvedValue(detail); mocks.dispatch.mockResolvedValue(detail); mocks.cancel.mockResolvedValue({ ...request, status: 'Cancelled' }) })
+function fill(label: string, value: string, group?: string) { fireEvent.change((group ? within(screen.getByRole('group', { name: group })) : screen).getByLabelText(new RegExp(label)), { target: { value } }) }
+beforeEach(() => { vi.clearAllMocks(); mocks.catalog.mockReturnValue({ data: supplierCatalogFixture, isPending: false, isError: false, error: null }); mocks.allowed = true; mocks.definitions.mockResolvedValue([{ ...containerDefinition, id: request.lines[0].containerDefinitionId }, { ...containerDefinition, id: '40000000-0000-4000-8000-000000000004', commonName: 'Unrequested size' }]); mocks.create.mockResolvedValue(standardKit); mocks.list.mockResolvedValue([request]); mocks.get.mockResolvedValue(detail); mocks.dispatch.mockResolvedValue(detail); mocks.cancel.mockResolvedValue({ ...request, status: 'Cancelled' }) })
 
 describe('transportation-kit fulfillment', () => {
   it('links an open request to its dedicated detail without embedding a dispatch form', async () => { mount(<KitRequestsPanel apiEnabled />); expect((await screen.findByRole('link', { name: 'Request 20000000' })).getAttribute('href')).toBe(`/lab-operations/kit-requests/${request.id}`); expect(screen.getByText('Example Customer · Research')).toBeTruthy(); expect(screen.queryByLabelText(/Tracking number/)).toBeNull() })
@@ -42,8 +44,8 @@ describe('transportation-kit fulfillment', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Prepare standard kit' })
     expect(within(dialog).queryByRole('option', { name: /Unrequested size/ })).toBeNull()
     fireEvent.change(within(dialog).getByLabelText(/Container size/), { target: { value: request.lines[0].containerDefinitionId } })
-    fill('Tube supplier', 'Example supplier'); fill('Tube product number', 'TUBE-20')
-    fill('Shipper supplier', 'Example shipper'); fill('Shipper product number', 'SHIP-20')
+    fill('Supplier', tubeSupplierId, 'Tubes'); fill('Product name', tubeProductId, 'Tubes')
+    fill('Supplier', shipperSupplierId, 'Shipping Container'); fill('Product name', shipperProductId, 'Shipping Container')
     fireEvent.click(within(dialog).getByRole('button', { name: 'Prepare standard kit' }))
     await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith(expect.objectContaining({
       to: '/lab-operations/stock-kits/$kitId', params: { kitId: standardKit.id },

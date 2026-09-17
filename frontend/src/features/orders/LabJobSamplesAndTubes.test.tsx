@@ -29,10 +29,11 @@ function show(initial = shipment, canManage = true) {
   function Harness() {
     const [saved, setSaved] = useState(initial)
     const [scanning, setScanning] = useState(false)
-    return <SampleTubeScanner shipment={saved} canManage={canManage} scanning={scanning}
+    const [scanTarget, setScanTarget] = useState<HTMLDivElement | null>(null)
+    return <><div data-testid="sample-card-header"><h2>Samples and shipping</h2><div ref={setScanTarget} /></div><SampleTubeScanner scanActionsTarget={scanTarget} shipment={saved} canManage={canManage} scanning={scanning}
       onStartScanning={() => setScanning(true)} onStopScanning={() => setScanning(false)} onCorrect={mocks.correct}
       onAssign={async (item, barcode) => { const result = await mocks.assign(item, barcode) as SampleShipmentWorkflow; setSaved(result); return result }}
-      renderSamples={context => <LabJobSamplesPanel order={order} embedded tubeShipments={[saved, split]} tubeContext={context} onPageChange={mocks.navigate} />} />
+      renderSamples={context => <LabJobSamplesPanel order={order} embedded tubeShipments={[saved, split]} tubeContext={context} onPageChange={mocks.navigate} />} /></>
   }
   return render(<QueryClientProvider client={client}><Harness /></QueryClientProvider>)
 }
@@ -47,7 +48,7 @@ describe('one sample list for review and tube matching', () => {
     show()
     expect(screen.queryByLabelText(/Scan tube barcode/)).toBeNull()
     expect(screen.getAllByRole('region', { name: 'Samples by biological source' })).toHaveLength(1)
-    expect(screen.getByText('Matched: 1 of 2 tubes')).toBeTruthy()
+    expect(screen.getByText('1 of 2 tubes matched')).toBeTruthy()
     expect(screen.queryByText(/Receipt:/)).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'RNA-1 tubes' }))
     const tubes = screen.getByRole('list', { name: 'Tubes for RNA-1' })
@@ -62,18 +63,20 @@ describe('one sample list for review and tube matching', () => {
   it('opens the next unmatched sample page and preserves a dirty target while reviewing another page', async () => {
     show()
     fireEvent.click(screen.getByRole('button', { name: 'Match tubes' }))
-    const input = screen.getByLabelText(/Scan tube barcode/)
+    const input = within(screen.getByRole('list', { name: 'Tubes for RNA-11' })).getByLabelText(/Scan tube barcode/)
+    expect(screen.getAllByLabelText(/Scan tube barcode/)).toHaveLength(1)
     await waitFor(() => expect(document.activeElement).toBe(input))
     expect(screen.getByRole('button', { name: 'RNA-11 tubes' }).getAttribute('aria-expanded')).toBe('true')
-    expect(screen.getByText('Samples 11–12 of 12')).toBeTruthy()
+    expect(screen.getByText('Samples 1–10 of 12')).toBeTruthy()
     fireEvent.change(input, { target: { value: 'UNSAVED-BARCODE' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Previous samples' }))
-    expect(input).toHaveProperty('value', 'UNSAVED-BARCODE')
-    expect(screen.getByRole('heading', { name: 'RNA-11' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Next samples' }))
+    expect(screen.queryByLabelText(/Scan tube barcode/)).toBeNull()
     expect(mocks.navigate).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Return to active tube' }))
     expect(screen.getByRole('button', { name: 'RNA-11 tubes' }).getAttribute('aria-expanded')).toBe('true')
-    expect(document.activeElement).toBe(input)
+    const resumedInput = within(screen.getByRole('list', { name: 'Tubes for RNA-11' })).getByLabelText(/Scan tube barcode/)
+    expect(resumedInput).toHaveProperty('value', 'UNSAVED-BARCODE')
+    await waitFor(() => expect(document.activeElement).toBe(resumedInput))
   })
 
   it('retains a failed scan, saves before advancing, then leaves the list open when matching completes', async () => {
@@ -91,7 +94,7 @@ describe('one sample list for review and tube matching', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save scan' }))
     await waitFor(() => expect(screen.getByRole('button', { name: 'Saving scan…' })).toHaveProperty('disabled', true))
     expect(screen.getByRole('button', { name: 'Previous samples' })).toHaveProperty('disabled', true)
-    expect(screen.getByRole('button', { name: 'Done scanning' })).toHaveProperty('disabled', true)
+    expect(screen.queryByRole('button', { name: 'Done scanning' })).toBeNull()
     const saved = { ...shipment, crosswalk: shipment.crosswalk.map(item => item.submittedSpecimenId === 'sample-11' ? { ...item, supplierTubeBarcode: 'TUBE-11' } : item) }
     await act(async () => resolve(saved))
     await waitFor(() => expect(screen.getByRole('heading', { name: 'RNA-12' })).toBeTruthy())
@@ -102,24 +105,37 @@ describe('one sample list for review and tube matching', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save scan' }))
     await waitFor(() => expect(screen.queryByLabelText(/Scan tube barcode/)).toBeNull())
     expect(screen.getByText('All 12 tubes matched in this container.')).toBeTruthy()
+    const done = within(screen.getByTestId('sample-card-header')).getByRole('button', { name: 'Done scanning' })
+    await waitFor(() => expect(done).toHaveProperty('disabled', false))
+    await waitFor(() => expect(document.activeElement).toBe(done))
+    fireEvent.click(done)
+    expect(screen.queryByRole('button', { name: 'Done scanning' })).toBeNull()
     expect(screen.getByRole('region', { name: 'Samples by biological source' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'RNA-12 tubes' }).getAttribute('aria-expanded')).toBe('true')
   })
 
-  it('asks before discarding an unfinished scan and restores focus when matching resumes', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+  it('retains an unfinished inline scan when the active sample is collapsed and reopened', async () => {
     show()
     fireEvent.click(screen.getByRole('button', { name: 'Match tubes' }))
     fireEvent.change(screen.getByLabelText(/Scan tube barcode/), { target: { value: 'DRAFT-TUBE' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Done scanning' }))
-    expect(screen.getByLabelText(/Scan tube barcode/)).toHaveProperty('value', 'DRAFT-TUBE')
-    confirm.mockReturnValue(true)
-    fireEvent.click(screen.getByRole('button', { name: 'Done scanning' }))
+    fireEvent.click(screen.getByRole('button', { name: 'RNA-11 tubes' }))
     expect(screen.queryByLabelText(/Scan tube barcode/)).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Match tubes' }))
-    await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText(/Scan tube barcode/)))
-    expect(screen.getByLabelText(/Scan tube barcode/)).toHaveProperty('value', '')
-    confirm.mockRestore()
+    fireEvent.click(screen.getByRole('button', { name: 'Return to active tube' }))
+    const input = within(screen.getByRole('list', { name: 'Tubes for RNA-11' })).getByLabelText(/Scan tube barcode/)
+    expect(input).toHaveProperty('value', 'DRAFT-TUBE')
+    await waitFor(() => expect(document.activeElement).toBe(input))
+    expect(mocks.assign).not.toHaveBeenCalled()
+  })
+
+  it('hides Done scanning while matches or an unsaved barcode remain', () => {
+    show()
+    expect(screen.queryByRole('button', { name: 'Done scanning' })).toBeNull()
+    fireEvent.click(within(screen.getByTestId('sample-card-header')).getByRole('button', { name: 'Match tubes' }))
+    expect(screen.queryByRole('button', { name: 'Done scanning' })).toBeNull()
+    fireEvent.change(screen.getByLabelText(/Scan tube barcode/), { target: { value: 'DRAFT-TUBE' } })
+    expect(screen.queryByRole('button', { name: 'Done scanning' })).toBeNull()
+    expect(screen.getByLabelText(/Scan tube barcode/)).toHaveProperty('value', 'DRAFT-TUBE')
+    expect(mocks.assign).not.toHaveBeenCalled()
   })
 
   it('keeps unmatched sample identities visible and removes write actions after dispatch or for Members', () => {

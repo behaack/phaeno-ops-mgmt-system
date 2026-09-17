@@ -14,6 +14,10 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
     public string? TubeLotNumber { get; private set; }
     public string ShipperSupplierName { get; private set; } = null!;
     public string ShipperProductNumber { get; private set; } = null!;
+    public Guid? TubeSupplierProductId { get; private set; }
+    public Guid? ShipperSupplierProductId { get; private set; }
+    public string? TubeProductDescription { get; private set; }
+    public string? ShipperProductDescription { get; private set; }
     public Guid? OrganizationId { get; private set; }
     public Guid? DepartmentId { get; private set; }
     public SampleShipmentAuthorizationSource? AuthorizationSource { get; private set; }
@@ -40,7 +44,9 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
 
     public SampleShippingStockKit(string kitNumber, Guid definitionId, string snapshotJson, int tubeCapacity,
         string tubeSupplierName, string tubeProductNumber, string? tubeLotNumber,
-        string shipperSupplierName, string shipperProductNumber)
+        string shipperSupplierName, string shipperProductNumber,
+        Guid? tubeSupplierProductId = null, Guid? shipperSupplierProductId = null,
+        string? tubeProductDescription = null, string? shipperProductDescription = null)
     {
         if (definitionId == Guid.Empty) throw new ArgumentException("Select a container type.");
         if (tubeCapacity is < 1 or > 10_000) throw new ArgumentOutOfRangeException(nameof(tubeCapacity));
@@ -48,6 +54,10 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
         ContainerDefinitionId = definitionId;
         ContainerSnapshotJson = OrderText.Json(snapshotJson);
         TubeCapacity = tubeCapacity;
+        TubeSupplierProductId = tubeSupplierProductId;
+        ShipperSupplierProductId = shipperSupplierProductId;
+        TubeProductDescription = OrderText.Optional(tubeProductDescription, 1000);
+        ShipperProductDescription = OrderText.Optional(shipperProductDescription, 1000);
         TubeSupplierName = OrderText.Required(tubeSupplierName, nameof(tubeSupplierName), 255);
         TubeProductNumber = SampleShippingText.ProductNumber(tubeProductNumber, nameof(tubeProductNumber));
         TubeLotNumber = OrderText.Optional(tubeLotNumber, 100);

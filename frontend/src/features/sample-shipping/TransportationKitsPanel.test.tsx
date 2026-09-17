@@ -22,6 +22,14 @@ function panel(canManage = true, isPackingPool = true) { return render(provider(
 function dialog(initial = supply, busy = false, error: unknown = null) { return render(provider(<TransportationKitOrderDialog shipmentId={shippingFixture.id} organizationId="org-1" departmentId="department-1" initial={initial} busy={busy} error={error} onClose={mocks.close} onConfirm={mocks.confirm} />)) }
 
 describe('customer transportation kits', () => {
+  it('hides ordering advice while delivery is outstanding and retains the location link', async () => {
+    mocks.supply.mockResolvedValue({ ...supply, request, canRequestKits: false })
+    panel()
+    expect(await screen.findByText('Kits ordered')).toBeTruthy()
+    expect(screen.queryByText(supply.preparationBlockedReason!)).toBeNull()
+    expect(screen.getByRole('link', { name: 'View shipping and receiving location' })).toBeTruthy()
+  })
+
   it('keeps delivery-location setup reachable when an order intent cannot yet open its dialog', async () => {
     const active = vi.fn()
     mocks.supply.mockResolvedValue({ ...supply, locations: [], deliveryLocationId: null })
@@ -40,7 +48,9 @@ describe('customer transportation kits', () => {
     mocks.supply.mockResolvedValue(customSupply)
     dialog(customSupply)
     await waitFor(() => expect(screen.getByRole('button', { name: 'Confirm kit order' })).toHaveProperty('disabled', false))
+    expect(screen.getByText('Recommended kit configuration for this shipment')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Adjust kit sizes' }))
+    expect(screen.queryByText('Recommended kit configuration for this shipment')).toBeNull()
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Quantity of 20-tube container' }), { target: { value: '0' } })
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Quantity of 10-tube container' }), { target: { value: '0' } })
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Quantity of 5-tube container' }), { target: { value: '6' } })
@@ -89,7 +99,7 @@ describe('customer transportation kits', () => {
     mocks.supply.mockResolvedValue({ ...supply, canPrepareSamples: true })
     panel()
     expect(await screen.findByRole('button', { name: 'Order transportation kits' })).toBeTruthy()
-    expect(screen.getByText(/No compatible received kits are currently available at this location/)).toBeTruthy()
+    expect(screen.queryByText(/No compatible received kits are currently available at this location/)).toBeNull()
     expect(screen.queryByText(/No usable registered kits/)).toBeNull()
     expect(screen.getByText('Sample preparation controls')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'I already have kits' })).toBeNull()
@@ -166,7 +176,7 @@ describe('customer transportation kits', () => {
     panel()
     fireEvent.click(await screen.findByRole('button', { name: 'Order transportation kits' }))
     const modal = screen.getByRole('dialog', { name: 'Order transportation kits' })
-    expect(within(modal).getByRole('combobox', { name: /Delivery location/ })).toHaveProperty('value', location.id)
+    expect(within(modal).getByRole('combobox', { name: /Kit receiving location/ })).toHaveProperty('value', location.id)
     expect(within(modal).getByText(/no additional charge/)).toBeTruthy()
     const submit = within(modal).getByRole('button', { name: 'Confirm kit order' })
     await waitFor(() => expect(submit).toHaveProperty('disabled', false))
@@ -247,8 +257,8 @@ describe('customer transportation kits', () => {
     expect(submit).toHaveProperty('disabled', false)
     fireEvent.click(submit)
     expect(await within(modal).findByText('Select a delivery location.')).toBeTruthy()
-    expect(document.activeElement).toBe(within(modal).getByRole('combobox', { name: /Delivery location/ }))
-    fireEvent.change(within(modal).getByRole('combobox', { name: /Delivery location/ }), { target: { value: alternate.id } })
+    expect(document.activeElement).toBe(within(modal).getByRole('combobox', { name: /Kit receiving location/ }))
+    fireEvent.change(within(modal).getByRole('combobox', { name: /Kit receiving location/ }), { target: { value: alternate.id } })
     await waitFor(() => expect(submit).toHaveProperty('disabled', false))
   })
 
@@ -270,7 +280,7 @@ describe('customer transportation kits', () => {
     const initial = { ...supply, locations: [location, alternate] }
     mocks.supply.mockImplementation(async (_id, selected) => ({ ...initial, deliveryLocationId: selected ?? initial.deliveryLocationId }))
     dialog(initial)
-    fireEvent.change(screen.getByRole('combobox', { name: /Delivery location/ }), { target: { value: alternate.id } })
+    fireEvent.change(screen.getByRole('combobox', { name: /Kit receiving location/ }), { target: { value: alternate.id } })
     const submit = screen.getByRole('button', { name: 'Confirm kit order' })
     await waitFor(() => expect(submit).toHaveProperty('disabled', false))
     fireEvent.click(submit)
@@ -297,7 +307,7 @@ describe('customer transportation kits', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Keep reviewing' }))
     expect(mocks.close).not.toHaveBeenCalled()
     expect(screen.getByRole('button', { name: 'Ordering kits…' })).toHaveProperty('disabled', true)
-    expect(screen.getByRole('combobox', { name: /Delivery location/ }).closest('fieldset')).toHaveProperty('disabled', true)
+    expect(screen.getByRole('combobox', { name: /Kit receiving location/ }).closest('fieldset')).toHaveProperty('disabled', true)
   })
 
   it.each([
@@ -308,7 +318,7 @@ describe('customer transportation kits', () => {
     dialog(supply, false, error)
     const feedback = screen.getByRole('alert')
     expect(within(feedback).getByText(message)).toBeTruthy()
-    expect(screen.getByRole('combobox', { name: /Delivery location/ })).toHaveProperty('value', location.id)
+    expect(screen.getByRole('combobox', { name: /Kit receiving location/ })).toHaveProperty('value', location.id)
     expect(screen.getByText(location.line1)).toBeTruthy()
     await waitFor(() => expect(screen.getByRole('button', { name: 'Confirm kit order' })).toHaveProperty('disabled', false))
     expect(mocks.confirm).not.toHaveBeenCalled()

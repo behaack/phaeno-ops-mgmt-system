@@ -1,5 +1,10 @@
 # File Management Plan
 
+## Optional preparation QC reports — September 17, 2026
+
+Preparation step submissions may attach one PDF up to 10 MiB. Reuse private operational storage and scanning; persist metadata in the existing preparation record and authorize download through its batch/record identity. This is internal execution evidence, outside customer release/retention workflows. The coordinated-backup reference manifest includes its storage key, digest and length. A rejected scan removes the unsaved object. An uncertain database commit does not delete bytes that could already be referenced; unreferenced objects remain private for storage reconciliation. No automatic orphan deletion or new retention policy is introduced.
+
+
 ## Combined order and retention settings — September 16, 2026
 
 The user menu has one **Order & retention settings** entry. Its shared sidebar includes **File retention**, separated from order subjects by a horizontal divider, which displays the existing global policy, history, and edit dialog. The former `/file-management` URL redirects to `/order-configuration?configurationSection=retention`. Existing section-specific capabilities still govern navigation and loading, and retention does not depend on the order-configuration request succeeding. No retention rules, API contracts, or saved policies change.

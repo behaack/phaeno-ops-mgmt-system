@@ -289,6 +289,7 @@ public sealed class LabProtocolVersion
     public DateTime AuthoredAtUtc { get; private set; }
     public Guid? ApprovedByUserId { get; private set; }
     public DateTime? ApprovedAtUtc { get; private set; }
+    public string? ApprovalOverrideReason { get; private set; }
 
     private LabProtocolVersion() { }
 
@@ -326,18 +327,28 @@ public sealed class LabProtocolVersion
         Status = LabProtocolStatus.Discarded;
     }
 
-    public void RequireIndependentApproval()
+    public void ApproveWithOverride(Guid actorUserId, DateTime utcNow, string reason)
+    {
+        var validatedReason = LabAuditedEntity.Required(reason, nameof(reason), 2000);
+        if (actorUserId != AuthoredByUserId)
+            throw new InvalidOperationException("Use independent approval when the approver is not the author.");
+        Approve(actorUserId, utcNow, enforceActorSeparation: false);
+        ApprovalOverrideReason = validatedReason;
+    }
+
+    public void RequireReleaseApproval()
     {
         if (ApprovedByUserId is null || ApprovedByUserId == Guid.Empty
-            || ApprovedByUserId == AuthoredByUserId || ApprovedAtUtc is null)
-            throw new InvalidOperationException("The protocol requires approval by someone other than its author before production use.");
+            || ApprovedAtUtc is null
+            || ApprovedByUserId == AuthoredByUserId && string.IsNullOrWhiteSpace(ApprovalOverrideReason))
+            throw new InvalidOperationException("The protocol requires independent approval or a recorded administrator override before production use.");
     }
 
     public void Activate(Guid actorUserId)
     {
         if (Status != LabProtocolStatus.Approved) throw new InvalidOperationException("Only an approved protocol can be activated.");
         if (actorUserId == Guid.Empty) throw new ArgumentException("An activation actor is required.");
-        RequireIndependentApproval();
+        RequireReleaseApproval();
         LabProtocolDefinition.Parse(DefinitionJson);
         Status = LabProtocolStatus.Active;
     }
@@ -496,6 +507,12 @@ public sealed class LabSupplier : LabAuditedEntity
     private LabSupplier() { }
 
     public LabSupplier(string name)
+    {
+        Name = Required(name, nameof(name), 255);
+        NormalizedName = Name.ToUpperInvariant();
+    }
+
+    public void Rename(string name)
     {
         Name = Required(name, nameof(name), 255);
         NormalizedName = Name.ToUpperInvariant();

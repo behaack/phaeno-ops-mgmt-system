@@ -11,18 +11,19 @@ export type LabJobOrderProgressProps = Omit<LabJobProgressInput, 'now'> & {
   onStepSelect?: (stepId: string) => void
   /** The selected shipment owns the direct Send command and its dialogs. */
   sendActionTargetRef?: Ref<HTMLDivElement>
+  sampleReviewTargetRef?: Ref<HTMLDivElement>
 }
 
 const stepAppearance = {
-  'confirm-order': { icon: ClipboardCheck, label: 'Confirm order', purpose: 'Review the scope and price, then place the configured standard order or accept the current quote.' },
-  samples: { icon: ListChecks, label: 'Samples', purpose: 'Enter the sample IDs, biological sources and tube quantities. Review and finalize the exact sample list before preparing containers.' },
+  'confirm-order': { icon: ClipboardCheck, label: 'Confirm pricing', purpose: 'Phaeno reviews your request and prepares pricing. Review and accept or decline that pricing before preparing samples.' },
+  samples: { icon: ListChecks, label: 'Sample identification', purpose: 'Enter the sample IDs, biological sources and tube quantities. Review and finalize the exact sample list before preparing containers.' },
   kits: { icon: Package, label: 'Container supply', purpose: 'Have compatible kits physically received and registered for use. Use available permitted stock or arrange any missing supplies.' },
   containers: { icon: Boxes, label: 'Assign containers', purpose: 'Review the physical container identities, compatible sizes and tube allocations, then confirm which containers will hold the samples.' },
-  tubes: { icon: ScanBarcode, label: 'Match tubes', purpose: 'Scan each permanent tube barcode to save which physical tube belongs to each sample. Matching tubes is separate from the laboratory recording their receipt.' },
-  send: { icon: Truck, label: 'Send', purpose: 'Review and confirm the current shipping insert, print it and pack it with the matching container. Hand the package to the carrier, then record the carrier, tracking number and shipment time.' },
+  tubes: { icon: ScanBarcode, label: 'Match samples to tubes', purpose: 'Scan each permanent tube barcode to save which physical tube belongs to each sample. Matching tubes is separate from the laboratory recording their receipt.' },
+  send: { icon: Truck, label: 'Send samples', purpose: 'Review and confirm the current shipping insert, print it and pack it with the matching container. Hand the package to the carrier, then record the carrier, tracking number and shipment time.' },
 } satisfies Record<LabJobProgressStepId, { icon: typeof ClipboardCheck; label: string; purpose: string }>
 
-export function LabJobOrderProgress({ onStepSelect, sendActionTargetRef, ...input }: LabJobOrderProgressProps) {
+export function LabJobOrderProgress({ onStepSelect, sendActionTargetRef, sampleReviewTargetRef, ...input }: LabJobOrderProgressProps) {
   const headingId = useId()
   const stepsRef = useRef<HTMLOListElement>(null)
   const [informationStepId, setInformationStepId] = useState<LabJobProgressStepId | null>(null)
@@ -32,7 +33,7 @@ export function LabJobOrderProgress({ onStepSelect, sendActionTargetRef, ...inpu
   const { nextStep, allSent, exception, shipmentCount } = progress
   const currentStepId = nextStep?.id
   const currentStepIndex = progress.steps.findIndex(step => step.id === currentStepId)
-  const reviewLabel = currentStepId === 'confirm-order' ? 'Review order' : currentStepId === 'samples' ? 'Review samples' : 'Show shipping work'
+  const reviewLabel = nextStep?.actionLabel ?? (currentStepId === 'confirm-order' ? nextStep?.state === 'waiting-for-phaeno' ? 'View request' : 'Review pricing' : currentStepId === 'samples' ? 'Review samples' : 'Show shipping work')
   useEffect(() => {
     const strip = stepsRef.current
     const current = strip?.querySelector<HTMLElement>('[aria-current="step"]')
@@ -70,7 +71,7 @@ export function LabJobOrderProgress({ onStepSelect, sendActionTargetRef, ...inpu
           <p className="text-sm">{nextStep.detail}</p>
           <p className="text-xs text-muted-foreground">With: {nextStep.owner}</p>
         </div>
-        {nextStep.id === 'send' && sendActionTargetRef ? <div ref={sendActionTargetRef} className="max-w-full self-start" /> : onStepSelect ? <Button type="button" variant="outline" size="sm" onClick={() => onStepSelect(nextStep.id)} aria-label={`${reviewLabel}: ${nextStep.label}`}>{reviewLabel}<ArrowRight aria-hidden="true" /></Button> : null}
+        {nextStep.id === 'samples' && nextStep.actionLabel && input.order.canEditSamples && sampleReviewTargetRef ? <div ref={sampleReviewTargetRef} className="max-w-full self-start" /> : nextStep.id === 'send' && sendActionTargetRef ? <div ref={sendActionTargetRef} className="max-w-full self-start" /> : onStepSelect ? <Button type="button" variant="outline" size="sm" onClick={() => onStepSelect(nextStep.id)} aria-label={`${reviewLabel}: ${nextStep.label}`}>{reviewLabel}<ArrowRight aria-hidden="true" /></Button> : null}
       </div> : <p className="text-sm">Review the recorded preparation below.</p>}
     </div>
   </section>
@@ -104,7 +105,7 @@ function StepInformation({ step, current, future, index, open, onOpenChange: set
           <Icon className="size-4" />
           {step.state === 'complete' ? <CircleCheck className="absolute -right-1 -bottom-0.5 size-4 rounded-full bg-background" /> : null}
         </span>
-        <span className="text-sm font-medium">{appearance.label}</span>
+        <span className="text-sm font-medium">{step.id === 'confirm-order' && step.state === 'waiting-for-phaeno' ? 'Pricing review' : appearance.label}</span>
       </button>
     </Popover.Anchor>
     <Popover.Portal>

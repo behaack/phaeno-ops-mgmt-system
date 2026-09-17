@@ -325,7 +325,7 @@
       "title": "Prepare and ship samples",
       "summary": "Choose Trial containers, retain tube identities, print shipping inserts and record dispatch.",
       "order": 25,
-      "reviewedAt": "2026-09-10",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "trial-project",
       "contentType": "guide",
       "topicIds": [
@@ -542,7 +542,7 @@
       "title": "Request laboratory services",
       "summary": "Complete ordering and shipping on the Job, then follow receipt, laboratory progress and results.",
       "order": 30,
-      "reviewedAt": "2026-09-11",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -575,7 +575,7 @@
       "title": "Prepare and ship samples",
       "summary": "Use the Job workspace to receive kits, assign containers, scan tubes, print inserts and record dispatch.",
       "order": 35,
-      "reviewedAt": "2026-09-14",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -1564,7 +1564,7 @@
       "title": "Laboratory operations",
       "summary": "Fulfill kits, receive and accession specimens, execute controlled work, assemble data, and record release readiness.",
       "order": 50,
-      "reviewedAt": "2026-09-11",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "laboratory-operations",
       "contentType": "overview",
       "topicIds": [
@@ -1595,7 +1595,7 @@
       "title": "Receipt and accession",
       "summary": "Dispatch barcoded containers to Customer locations, track inventory and assignments, and record receipt and accession for each registered tube.",
       "order": 51,
-      "reviewedAt": "2026-09-14",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1874,7 +1874,7 @@
       "title": "Use Partner Lab services",
       "summary": "Complete Partner ordering and shipping on the Job, then track sample receipt and laboratory results.",
       "order": 25,
-      "reviewedAt": "2026-09-11",
+      "reviewedAt": "2026-09-16",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [

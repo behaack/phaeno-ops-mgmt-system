@@ -11,7 +11,7 @@ Use the tabs in **Lab operations → Receipt & accession** to focus on one task:
 
 - **Kit requests**: review Customer orders and fulfill requested kits.
 - **Prepare kits**: prepare stock and review kit inventory and deliveries.
-- **Kits sent**: finish previously prepared shipment-specific kits.
+- **Kits sent**: finish previously prepared shipment-specific kits and review their recorded fulfillment dates. Dates use your local time zone; a dash means fulfillment has not been recorded.
 - **Receive shipments**: review expected containers and tracking numbers; scan the PH-P- insert to acknowledge container arrival.
 - **Accession samples**: open a received container, then scan and accession its individual tubes.
 
@@ -39,11 +39,25 @@ tracking number and shipment time after handoff. A partially ready request can
 ship its available kits while the remaining sizes are prepared. Preparation does
 not reserve stock or record a shipment.
 
+## Suppliers and products
+
+Phaeno platform administrators manage **Suppliers & Products** in the Lab operations sidebar, immediately below **Lab configurations**. Choose **New supplier**, enter its name, and save. Open the supplier name to see its products. Choose **New product** and enter the **Product #**, a required **Product description**, and **Product type** from the saved active types. Vendors can supply reagents, tubes, shipping containers, and other products from the same supplier record. Product numbers must be unique within each supplier, including inactive products.
+
+Each supplier and product row has an **Actions** menu. Choose **Edit** to correct details, or **Deactivate** and review the application confirmation to make the record inactive. **Show inactive** reveals those records; choose **Actions → Activate** to restore them. The supplier detail header offers the same actions. Inactivating a supplier prevents selection of all its products for new kits; it does not alter prepared kits. Inactive product types also prevent their products from being selected for new kits. The tube **Lot** remains specific to each kit preparation and is not stored in the product catalog.
+
+## Manage product types
+
+Open **Lab operations → Suppliers & Products** and select the **Product types** tab to manage the categories offered by your vendors. **Tube**, **Shipping Container**, and **Reagent** are provided initially. Choose **New product type** and enter a unique name, description, and **Use in transportation kits**. For reagents and other supplies, choose **Not used in transportation kits**. A vendor can offer products of several types.
+
+Open a type's name to review its description, status, kit use, and product count. Each type has an **Actions** menu in its list row and detail header. Choose **Edit** to change its details, or **Deactivate** to make it inactive after reviewing the confirmation. Use **Show inactive**, then **Actions → Activate**, to restore a type. Once products reference a type, its kit use cannot change; create a different type when that classification needs to differ. Existing products retain inactive type references for review and correction, but new products must choose an active type. Inactivating a type preserves kit history.
+
+Reagent vendors use the same supplier directory as **Materials**. Reagent product catalog entries do not create material lots, receive stock, or record QC; those remain separate Materials actions.
+
 ## Prepare and register standard kits
 
 Open **Lab operations → Receipt & accession → Prepare kits**. Search by kit number, size, SKU, location or Job, or filter by inventory status. Open the kit number to review its products, registered tubes, location, receipt, outbound tracking and any current assignment. Distinguish the originating request's Job from the Job currently using the container.
 
-Choose **Prepare standard kit**, select an active configured container size, and record the actual tube supplier, product, optional lot, and shipper product. The configured size supplies the usable tube capacity and available shipper references. A new kit does not yet belong to a Customer Job.
+Choose **Prepare standard kit**, select an active configured container size, and complete the two sections: **Tubes** contains **Supplier**, **Product name**, and optional **Lot**; **Shipping Container** contains **Supplier** and **Product name**. Select a saved supplier, then choose its product number and description. Only active suppliers and products of the correct type are available. Changing a supplier clears the product selection. The configured size supplies the usable tube capacity and preselects its shipper reference only when it matches an active catalog product. Product details are saved with the kit, so later catalog changes do not rewrite its history. A new kit does not yet belong to a Customer Job.
 
 Open the kit and choose **Register tubes**. Scan each permanent supplier barcode on its own line. A kit must contain exactly its full configured tube capacity before dispatch; duplicate scans and excess tubes are rejected. The kit's own permanent number is its container barcode; print its label and keep the readable number with the barcode. A fully registered kit is ready stock at Phaeno. Return to **Kit requests**, open the request, and use **Record kit shipment** to select that kit and record dispatch to its confirmed address. The kit's **Record dispatch** action also selects a request and displays its frozen delivery address. Both entry points update the same request and stock exactly once. Dispatch supplies the location; the Customer later assigns the container to a Job during preparation by scanning its barcode.
 
@@ -55,7 +69,7 @@ If an older kit is already sent but its request still shows an outstanding quant
 
 Open **Lab operations → Receipt & accession → Receive shipments**. **Expected shipments** lists each expected container separately, including the Customer, Job, carrier, tracking number and expected tube count. Containers still being prepared remain visible with their current status; missing tracking is shown as not recorded.
 
-When a container physically arrives, scan the **PH-P-** barcode under **Scan to receive this shipment** in the body of its shipping insert in **Shipping insert barcode**, then submit with Enter or **Receive shipment**. This action records the container's arrival time and staff audit event. The confirmation identifies the shipment and offers **Accession samples**. Repeating the same scan shows the original receipt without creating another event. Invalid, replaced or cancelled inserts cannot receive a container. A failed response leaves receipt unconfirmed in the screen; scanning again safely checks or completes that receipt.
+When a container physically arrives, scan the **PH-P-** barcode under **Scan to receive this shipment** in the body of its shipping insert in **Shipping insert barcode**, then submit with Enter or **Receive shipment**. This action records the container's arrival time and staff audit event. The confirmation identifies the shipment and offers **Accession samples** at the right of its first row. Repeating the same scan shows the original receipt without creating another event. Invalid, replaced or cancelled inserts cannot receive a container. A failed response leaves receipt unconfirmed in the screen; scanning again safely checks or completes that receipt.
 
 This receiving field accepts only the shipping insert's PH-P- code. The SHP… shipment reference, PH-S- shipment barcode, PH-O- Order barcode, PH-M- sample barcode, physical KIT- container barcode and individual tube barcodes do not acknowledge container arrival here. Receipt of a container does not accession its tubes or accept its samples for processing.
 
@@ -69,7 +83,7 @@ Record the exceptions first. Choose **Record exception** on the expected tube's 
 
 A broken or destroyed rejected tube requires no freezer location and is unavailable for processing. POMS retains its expected-tube link, rejection reason, notes, actor and time. No remaining quantity is asserted for a non-stored rejection. If rejected material is actually retained, its real storage location may be recorded. An internally held tube must have a real retained-material location. Rejection itself does not record disposal.
 
-After exceptions are saved, choose **Accept all remaining (N)**. This includes only identified tubes with no saved decision. Previously accepted, held, rejected and unidentified tubes are excluded. Review the listed identities, record each actual freezer-box barcode, and confirm inspection. **Accept N tubes** saves the entire batch together. Routine acceptance needs no reason code. Storage is recorded as entered; POMS does not validate a freezer registry or assign a position within the box.
+The modal footer shows **X with exceptions | Y to be accepted**. Exceptions count tubes on hold or rejected in this shipment; the acceptance count includes only identified tubes with no saved decision. After exceptions are saved, choose **Accept (Y)**. Previously accepted, held, rejected and unidentified tubes are excluded. Review the listed identities, record each actual freezer-box barcode, and confirm inspection. **Accept N tubes** saves the entire batch together. Routine acceptance needs no reason code. Storage is recorded as entered; POMS does not validate a freezer registry or assign a position within the box.
 
 If any selected tube changed, the whole batch is refused. Your entries stay visible; close the acceptance dialog and review the refreshed selection before trying again. For an uncertain connection result, retry the same request. A completed batch is returned without duplicate intake records. Bulk acceptance cannot relocate a previously stored tube.
 

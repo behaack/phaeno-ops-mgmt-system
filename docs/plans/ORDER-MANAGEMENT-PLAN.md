@@ -1,5 +1,43 @@
 # Order Management Plan
 
+## Service-based commercial jobs — September 16, 2026
+
+Commercial Lab authorizations now describe the purchased service and its version without choosing a laboratory workflow. New commercial jobs have no workflow pin; existing nullable pins remain historical metadata. Additive authorizations preserve specimens, service scope and execution history without copying an old job workflow into the order contract. See LAB-OPERATIONS-PLAN.md, Service-based commercial jobs. Multi-service order composition and sequential service handoffs remain separate work.
+
+
+## Complete sample list review and clearing details — September 16, 2026
+
+Once every required sample has a unique saved ID, a positive tube count and the accepted source composition, replace the roster menu with the primary **Review and finalize list** action. Hide CSV actions and import advice in that state. **Your next step** becomes **Review and finalize sample list** and hosts the same review action, including permission, busy and unsaved-entry guards. Both open the existing review; finalization remains an explicit separately confirmed write.
+
+Replace Remove sample with **Clear sample details**, keeping Edit sample for corrections. An application confirmation modal names the sample and offers Cancel / Clear sample details; it focuses Cancel, blocks dismissal during the save and keeps failures visible for retry. Confirmation clears only the unfinalized saved identification using the existing versioned endpoint; accepted scope and source counts never change. The generated required slot reappears with a blank ID and one tube, focus moves to the source’s entry field, readiness returns to incomplete, and finalization stays blocked until re-entry. Finalized/authorized samples remain protected by existing backend restrictions. Legacy or invalid extra entries may also be cleared without adding any scope. No model, migration, permission or API-contract change.
+
+Regression coverage updated for complete/partial roster controls, confirmation/cancel, clear-and-reenter placeholders, protected finalized samples, source/ID/tube validation and the shared next-step review action. Tests were not executed (not requested). Verification: TypeScript, scoped ESLint, generated-documentation consistency and whitespace checks passed. Changes remain local and uncommitted.
+
+## Sample identification — September 16, 2026
+
+Approved workflow: Customer and entitled Partner users see a row for each accepted sample after placement or quote acceptance. **Sample identification** replaces **Samples** in the progress strip. **Match samples to tubes** names the barcode-matching step explicitly, and **Send samples** names the final shipping step. Source groups prefill the biological source and one tube; users enter unique non-PHI IDs and adjust reserve-tube counts only when needed. This bounded, accepted-roster task is an explicit inline-form exception to the usual form-free discovery-list rule: showing missing sample identities makes the remaining work visible without repeated Add dialogs.
+
+Rows are unsaved placeholders until **Save sample IDs**. Blank rows never create specimen records or prevent CSV import. Each group can be saved incrementally with existing versioned sample APIs; sequential writes use returned versions, and failures preserve unconfirmed entries while reconciling confirmed saves. Enforce unique IDs, positive tube counts, accepted source and total capacity. Unsaved entries block leaving without confirmation and must be saved or discarded before import, editing saved rows or finalization. Contextual roster and saved-row actions use Actions menus. Each saved-sample menu identifies the sample in its header and uses concise Edit sample / Clear sample details labels in a wider menu. The roster Actions control sits at the right end of the Samples and shipping title row, including the embedded shipping workspace, with enough menu width for single-line action labels. Completed roster browsing retains ten-row pagination and existing tube work. No schema, authentication, dependency or cross-app contract change.
+
+Acceptance: ten accepted samples show ten identifiable rows, known source and default tube counts; no writes occur on display; blanks do not count as saved; partial saves retain remaining entries; finalization still requires exact total and source composition plus the existing explicit confirmation. CSV preview/import remains available for an untouched empty list. Customer and Partner guides are updated. Component regression coverage is updated but not executed because tests were not requested. Verification: frontend TypeScript and scoped ESLint passed, documentation artifacts were regenerated and checked, and whitespace checks passed. Changes remain local and uncommitted.
+
+
+## Customer-submitted Lab Service requests — September 16, 2026
+
+Approved product scope: Customer and entitled Partner administrators submit the biological-source profile directly for pricing. The create modal is **Submit lab service request**, its action is **Submit request**, and its footer explains that submission does not accept a price or authorize work. Customer price proposals and the separate Sales custom-work inquiry are removed from this Lab request flow; internal Commercial price proposals and Kit custom-work inquiries remain separate capabilities.
+
+Engineering plan: add an optional `SubmitForPricing` flag to the existing write request so creation and submission are one atomic save with the existing idempotency guard. Editing while SubmittedForQuote or QuoteInPreparation replaces the pending scope and atomically submits a new immutable request revision, retaining prior revisions and concurrency checks. Once a quote is issued, direct scope edits stop and the existing accept/decline controls apply. No schema, role, authentication, or dependency change. Keep draft APIs compatible for existing callers; do not create a draft and submit it as two independent browser requests.
+
+Request edits use the existing ordering-eligibility checks; quote-issuance readiness is not a prerequisite for correcting a pending request. Quote issuance and acceptance retain their own readiness gates.
+
+The progress strip shows **Pricing review** while awaiting Phaeno and **Confirm pricing** when an issued quote requires a decision. Waiting guidance explains Modify/Edit request and Withdraw request. Current saved drafts still need submission; never label an unsent draft as waiting. Acceptance criteria include one submitted request per create retry, fresh scope revisions after edits, stale/issued/accepted edit rejection, no sample entry before acceptance, and retained withdrawal/history. Automated tests are updated but not run unless requested; perform build/type/lint/documentation checks at the implementation checkpoint.
+
+Implementation verification: backend Release solution build passed with zero warnings/errors; frontend TypeScript, scoped ESLint, generated documentation consistency and whitespace checks passed. Regression cases were added/updated but not executed. No deployment or production data changes in this task.
+
+## Order header actions — September 16, 2026
+
+The operational order detail header groups its permitted actions in one **Actions** menu, including assignment, status transitions, opening Lab work, and Job completion. The shared action-menu component shows a labeled button for one action and no control for zero actions. Existing permissions, pending states, confirmation dialogs, and completion safeguards remain intact; closing a dialog returns focus to the header action control. The Phaeno Lab authorization guide describes the menu. No API or persisted behavior changes.
+
 ## Combined order and retention settings — September 16, 2026
 
 The user menu has one **Order & retention settings** entry. Its shared sidebar includes **File retention**, separated from order subjects by a horizontal divider, which displays the existing global policy, history, and edit dialog. The former `/file-management` URL redirects to `/order-configuration?configurationSection=retention`. Existing section-specific capabilities still govern navigation and loading, and retention does not depend on the order-configuration request succeeding. No retention rules, API contracts, or saved policies change.

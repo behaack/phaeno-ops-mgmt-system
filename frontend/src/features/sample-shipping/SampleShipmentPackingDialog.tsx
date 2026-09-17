@@ -63,6 +63,8 @@ export function PackingDialog({ packing, initial, availableKits, locationInvento
   const capacityNeeded = (rows: Array<{ definitionId?: string }>, excludedIndex?: number) => Math.max(0, openedPacking.tubeCount - rows.reduce((sum, row, index) => sum + (index === excludedIndex ? 0 : openedPacking.containerTypes.find(type => type.id === row.definitionId)?.tubeCapacity ?? 0), 0))
   const additionalCapacityNeeded = capacityNeeded(values.containers ?? [])
   const optionsFor = (rows: Array<{ definitionId?: string }>, index?: number) => containerOptions(openedPacking, rows, index, availableKits)
+  const availableContainerCount = availableKits?.reduce((count, item) => count + (openedPacking.containerTypes.some(type => type.id === item.containerDefinitionId) ? item.quantity : 0), 0)
+  const canRemoveContainer = fields.length !== 1 || availableContainerCount !== 1 || !availableKits?.some(item => item.quantity > 0 && item.containerDefinitionId === values.containers?.[0]?.definitionId)
   const unavailableSelection = availableKits !== undefined && (values.containers ?? []).some(row => !row?.definitionId || (values.containers ?? []).filter(item => item?.definitionId === row.definitionId).length > (availableKits.find(item => item.containerDefinitionId === row.definitionId)?.quantity ?? 0))
   const draftTotals = (values.containers ?? []).reduce((totals, row) => {
     const capacity = openedPacking.containerTypes.find(type => type.id === row?.definitionId)?.tubeCapacity ?? 0
@@ -83,9 +85,14 @@ export function PackingDialog({ packing, initial, availableKits, locationInvento
     form.clearErrors('root.allocation')
   }
   const removeContainer = (index: number) => {
-    if (working) return
+    if (working || !canRemoveContainer) return
     const nextIndex = Math.min(index, fields.length - 2)
     remove(index)
+    const remaining = form.getValues('containers')
+    if (remaining.length === 1) {
+      const type = openedPacking.containerTypes.find(item => item.id === remaining[0].definitionId)
+      if (type) form.setValue('containers.0.tubes', Math.min(type.tubeCapacity, openedPacking.tubeCount), { shouldDirty: true, shouldValidate: true })
+    }
     setPage(Math.max(0, Math.floor(nextIndex / pageSize)))
     form.clearErrors('root.allocation')
     window.requestAnimationFrame(() => { if (nextIndex >= 0) form.setFocus(`containers.${nextIndex}.definitionId`); else addButton.current?.focus() })
@@ -100,7 +107,7 @@ export function PackingDialog({ packing, initial, availableKits, locationInvento
   }
   const focusTubes = (index: number) => {
     setPage(Math.floor(index / pageSize))
-    window.requestAnimationFrame(() => form.setFocus(`containers.${index}.tubes`))
+    window.requestAnimationFrame(() => form.setFocus(fields.length === 1 ? `containers.${index}.definitionId` : `containers.${index}.tubes`))
   }
   const resolveBarcode = (index: number, adjustSize = false) => {
     const row = form.getValues(`containers.${index}`)
@@ -150,7 +157,7 @@ export function PackingDialog({ packing, initial, availableKits, locationInvento
     // The API expands grouped quantities in selection order; counts must follow that same order.
     const containerTubeCounts = input.selection.flatMap(item => data.containers.filter(row => row.definitionId === item.containerDefinitionId).map(row => row.tubes))
     const stockKits = locationInventory ? input.selection.flatMap(item => data.containers.flatMap((row, index) => row.definitionId === item.containerDefinitionId && row.tubes > 0 ? [resolveBarcode(index)!].map(kit => ({ stockKitId: kit.stockKitId, version: kit.version })) : [])) : undefined
-    if (locationInventory && !openedPacking.deliveryLocationId) { form.setError('root.allocation', { message: 'Choose a departure location before confirming containers.' }); return }
+    if (locationInventory && !openedPacking.deliveryLocationId) { form.setError('root.allocation', { message: 'Choose a container location before confirming containers.' }); return }
     onConfirm({ ...input, containerTubeCounts, version: openedPacking.version, ...(locationInventory ? { deliveryLocationId: openedPacking.deliveryLocationId!, stockKits } : {}) })
   }, errors => {
     const index = fields.findIndex((_, index) => errors.containers?.[index])
@@ -162,8 +169,8 @@ export function PackingDialog({ packing, initial, availableKits, locationInvento
   }
   return <Dialog open onOpenChange={next => { if (!next) close() }}>
     <DialogContent className="sm:max-w-2xl">
-      <DialogHeader><DialogTitle>Adjust containers</DialogTitle><DialogDescription>{locationInventory ? 'Scan each physical container barcode from the selected location' : availableKits ? 'Choose from received kits' : 'Add the containers you have'} and set how many of the {packing.tubeCount} tubes go in each. {locationInventory ? 'Confirmation reserves these containers; an unsaved scan does not.' : 'Empty containers will not become shipments.'}</DialogDescription></DialogHeader>
-      {error || suggest.error ? <Alert variant="destructive"><AlertTitle>Containers were not confirmed</AlertTitle><AlertDescription>{apiErrorMessage(error ?? suggest.error)}</AlertDescription></Alert> : null}
+      <DialogHeader><DialogTitle>Assign shipping containers</DialogTitle><DialogDescription>{locationInventory ? 'Scan or enter each physical container barcode from the selected location' : availableKits ? 'Choose from received kits' : 'Add the containers you have'} and set how many of the {packing.tubeCount} tubes go in each. {locationInventory ? 'Confirmation reserves these containers; an unsaved scan does not.' : 'Empty containers will not become shipments.'}</DialogDescription></DialogHeader>
+      {error || suggest.error ? <Alert variant="destructive"><AlertTitle>Containers were not assigned</AlertTitle><AlertDescription>{apiErrorMessage(error ?? suggest.error)}</AlertDescription></Alert> : null}
       <form id="sample-packing" noValidate className="space-y-3" onSubmit={submit}>
         <section className="space-y-3" aria-label="Containers to use">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -184,21 +191,22 @@ export function PackingDialog({ packing, initial, availableKits, locationInvento
             const sizeId = `container-size-${field.id}`
             const tubesId = `container-tubes-${field.id}`
             const helpId = `container-help-${field.id}`
-            return <div key={field.id} role="group" aria-label={`Container ${index + 1}`} className="grid grid-cols-[minmax(0,1fr)_4.5rem_2rem] items-start gap-x-2 gap-y-1 rounded-md border p-3 sm:grid-cols-[minmax(0,1fr)_5rem_2rem] sm:gap-x-3">
+            return <div key={field.id} role="group" aria-labelledby={`container-heading-${field.id}`} className={`grid items-start gap-x-2 gap-y-1 rounded-md border p-3 sm:gap-x-3 ${canRemoveContainer ? 'grid-cols-[minmax(0,1fr)_4.5rem_2rem] sm:grid-cols-[minmax(0,1fr)_5rem_2rem]' : 'grid-cols-[minmax(0,1fr)_4.5rem] sm:grid-cols-[minmax(0,1fr)_5rem]'}`}>
+              <h4 id={`container-heading-${field.id}`} className="col-span-full mb-2 text-sm font-semibold">Container {index + 1}</h4>
               <div className="min-w-0 space-y-1.5">
-                <Label htmlFor={sizeId}><RequiredFieldName><span className="sr-only">Container size for container {index + 1}</span><span aria-hidden="true">Container {index + 1}</span></RequiredFieldName></Label>
+                <Label htmlFor={sizeId}><RequiredFieldName>Container</RequiredFieldName></Label>
                 <select id={sizeId} value={row?.definitionId ?? ''} disabled={working} className="h-8 w-full min-w-0 cursor-pointer rounded-md border border-input bg-background px-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50" aria-invalid={Boolean(sizeError)} aria-describedby={`${helpId}${sizeError ? ` ${sizeId}-error` : ''}`} {...form.register(`containers.${index}.definitionId`, { onChange: event => changeSize(index, event.target.value) })}>
                   {type && !optionsFor(values.containers ?? [], index).some(option => option.id === type.id) ? <option value={type.id} disabled>{type.commonName} · Unavailable</option> : null}
                   {optionsFor(values.containers ?? [], index).map(option => <option key={option.id} value={option.id}>{option.commonName} · {option.sku}</option>)}
                 </select>
               </div>
-              <div className="space-y-1.5">
+              {fields.length === 1 ? <div className="space-y-1.5"><Label htmlFor={tubesId}><span aria-hidden="true">Tubes</span><span className="sr-only">Tubes to pack · {type?.commonName ?? 'container'} #{index + 1}</span></Label><Input id={tubesId} className="h-8 cursor-default bg-muted text-muted-foreground dark:bg-muted" type="text" readOnly aria-describedby={helpId} {...form.register(`containers.${index}.tubes`)} /></div> : <div className="space-y-1.5">
                 <Label htmlFor={tubesId}><RequiredFieldName><span aria-hidden="true">Tubes</span><span className="sr-only">Tubes to pack · {type?.commonName ?? 'container'} #{index + 1}</span></RequiredFieldName></Label>
                 <Input id={tubesId} className="h-8" type="number" min="0" max={type?.tubeCapacity} step="1" disabled={working} aria-invalid={Boolean(tubeError)} aria-describedby={`${helpId}${tubeError ? ` ${tubesId}-error` : ''}`} {...form.register(`containers.${index}.tubes`)} />
-              </div>
-              <Button type="button" variant="outline" size="icon" className="mt-5 size-8" disabled={working} aria-label={`Remove container ${index + 1}`} title={`Remove container ${index + 1}`} onClick={() => removeContainer(index)}><Trash2 aria-hidden="true" className="size-4" /></Button>
+              </div>}
+              {canRemoveContainer ? <Button type="button" variant="outline" size="icon" className="mt-5 size-8" disabled={working} aria-label={`Remove container ${index + 1}`} title={`Remove container ${index + 1}`} onClick={() => removeContainer(index)}><Trash2 aria-hidden="true" className="size-4" /></Button> : null}
               <p id={helpId} className="col-span-full text-xs text-muted-foreground wrap-anywhere">SKU {type?.sku} · Capacity {type?.tubeCapacity}{type?.packingInstructions ? ` · ${type.packingInstructions}` : ''}</p>
-              {locationInventory ? <div className="col-span-full mt-2 space-y-1.5"><Label htmlFor={`container-barcode-${field.id}`}><RequiredFieldName>Container {index + 1} barcode</RequiredFieldName></Label><Input id={`container-barcode-${field.id}`} className="font-mono uppercase" autoComplete="off" disabled={working} aria-invalid={Boolean(barcodeError)} aria-describedby={barcodeError ? `container-barcode-error-${field.id}` : undefined} {...form.register(`containers.${index}.containerBarcode`)} onBlur={() => { if (form.getValues(`containers.${index}.containerBarcode`)?.trim()) resolveBarcode(index, true) }} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); if (resolveBarcode(index, true)) form.setFocus(`containers.${index}.tubes`) } }} />{barcodeError ? <p id={`container-barcode-error-${field.id}`} role="alert" className="text-sm text-destructive">{barcodeError.message}</p> : row?.containerBarcode && packing.availableKits?.some(kit => kit.kitNumber.toUpperCase() === row.containerBarcode?.trim().toUpperCase() && kit.container.definitionId === row.definitionId) ? <p role="status" className="text-xs text-muted-foreground">Container identified. It will be reserved when you confirm.</p> : null}</div> : null}
+              {locationInventory ? <div className="col-span-full mt-2 space-y-1.5"><Label htmlFor={`container-barcode-${field.id}`}><RequiredFieldName>Scan or enter container barcode</RequiredFieldName></Label><Input id={`container-barcode-${field.id}`} className="font-mono uppercase" autoComplete="off" disabled={working} aria-invalid={Boolean(barcodeError)} aria-describedby={barcodeError ? `container-barcode-error-${field.id}` : undefined} {...form.register(`containers.${index}.containerBarcode`)} onBlur={() => { if (form.getValues(`containers.${index}.containerBarcode`)?.trim()) resolveBarcode(index, true) }} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); if (resolveBarcode(index, true) && fields.length > 1) form.setFocus(`containers.${index}.tubes`) } }} />{barcodeError ? <p id={`container-barcode-error-${field.id}`} role="alert" className="text-sm text-destructive">{barcodeError.message}</p> : row?.containerBarcode && packing.availableKits?.some(kit => kit.kitNumber.toUpperCase() === row.containerBarcode?.trim().toUpperCase() && kit.container.definitionId === row.definitionId) ? <p role="status" className="text-xs text-muted-foreground">Container identified. Confirm assignment to reserve it for this Job.</p> : null}</div> : null}
               {sizeError ? <p id={`${sizeId}-error`} role="alert" className="col-span-full text-sm text-destructive">{sizeError.message}</p> : null}
               {tubeError ? <p id={`${tubesId}-error`} role="alert" className="col-span-full text-sm text-destructive">{tubeError.message}</p> : null}
             </div>
@@ -221,13 +229,14 @@ export function PackingDialog({ packing, initial, availableKits, locationInvento
           </div>
         </section>
       </form>
-      <RequiredDialogFooter><Button variant="outline" disabled={working} onClick={close}>Keep reviewing</Button><Button type="submit" form="sample-packing" disabled={working || writesBlocked || !packing.canPack || unavailableSelection || parsed.success && !currentPreview?.containerCount}>{busy ? 'Confirming…' : currentPreview && !currentPreview.isComplete ? 'Prepare available containers' : 'Confirm containers'}</Button></RequiredDialogFooter>
+      <RequiredDialogFooter><Button variant="outline" disabled={working} onClick={close}>Keep reviewing</Button><Button type="submit" form="sample-packing" disabled={working || writesBlocked || !packing.canPack || unavailableSelection || parsed.success && !currentPreview?.containerCount}>{busy ? 'Confirming…' : currentPreview && !currentPreview.isComplete ? 'Confirm partial assignment' : 'Confirm assignment'}</Button></RequiredDialogFooter>
     </DialogContent>
   </Dialog>
 }
 
 export function PackingSummary({ preview, description }: { preview: ContainerRecommendation; description?: string }) {
   return <div className="space-y-3">
+    <h3 className="text-sm font-semibold">Recommended containers — not yet assigned</h3>
     <p className="text-sm">{description ?? preview.explanation}</p>
     <ul className="space-y-2">{preview.containers.map(item => <li key={item.containerDefinitionId} className="flex items-start gap-2 text-sm"><Package aria-hidden="true" className="mt-0.5 size-4 shrink-0" /><span><strong>{item.quantity} × {item.commonName}</strong> · SKU {item.sku}<br /><span className="text-muted-foreground">{item.capacity} tubes per container · {item.assignedTubes} tubes allocated · {item.unusedCapacity} spare slots</span></span></li>)}</ul>
     <dl className="grid grid-cols-2 gap-3 rounded-md bg-muted/40 p-3 text-sm sm:grid-cols-3">{[['Tubes', preview.tubeCount], ['Containers', preview.containerCount], ['Usable capacity', preview.totalCapacity], ['Spare slots', preview.unusedCapacity], ['Unallocated tubes', preview.unallocatedTubes]].map(([label, value]) => <div key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 font-semibold">{value}</dd></div>)}</dl>

@@ -191,15 +191,14 @@ public sealed partial class LabServiceOrdersController(
                     tenant.Configuration.ShippingInstructions
                         ?? config?.SampleSubmissionInstructions
                         ?? string.Empty);
-                Execute(() => order.UpdatePriceProposal(
-                    request.ProposedUnitPrice,
-                    request.PriceProposalNote,
-                    tenant.Actor.Id,
-                    DateTime.UtcNow));
+                if (request.ProposedUnitPrice.HasValue || !string.IsNullOrWhiteSpace(request.PriceProposalNote))
+                    throw Invalid("customer_price_proposal_unavailable", "Phaeno prepares pricing for your request.");
                 foreach (var group in sourceGroups)
                     order.SourceGroups.Add(new LabServiceSourceGroup(order.Id, group.BiologicalSource, group.SpecimenCount));
                 dbContext.LabServiceOrders.Add(order);
                 dbContext.OrderStatusEvents.Add(NewEvent(order, "Created", order.Status.ToString(), tenant.Actor.Id));
+                if (request.SubmitForPricing)
+                    await SubmitRequestAsync(order, tenant.Actor.Id, operationCancellationToken);
                 await dbContext.SaveChangesAsync(operationCancellationToken);
                 return await MapAsync(order, true, false, operationCancellationToken);
             },
@@ -216,20 +215,14 @@ public sealed partial class LabServiceOrdersController(
         var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
         var order = await ReadOrderAsync(orderId, tenant, cancellationToken);
         EnsureVersion(order.Version, request.Version);
-        if (orderToCashOptions.Value.DerivedReadiness)
-        {
-            var readiness = await new OperationalReadinessService(dbContext)
-                .EvaluateAsync(order.OrganizationId, cancellationToken);
-            if (!readiness.Evaluation.CanIssueQuote)
-                throw new OrderManagementException("operational_readiness_incomplete",
-                    "Resolve every non-billing PSeq readiness blocker before accepting the quote.",
-                    StatusCodes.Status409Conflict, readiness.Evaluation.QuoteBlockers);
-        }
         var normalizedJobName = NormalizeJobName(request.CustomerReference);
         await EnsureUniqueJobNameAsync(tenant.Organization.Id, tenant.Department.Id, normalizedJobName, order.Id, cancellationToken);
         if (request.Samples.Count != 0)
             throw Invalid("samples_before_pricing", "Samples cannot be entered until the Job price is accepted.");
         var sourceGroups = ValidatePricingProfile(request.RequestedSpecimenCount, request.SourceGroups);
+        var revisingPending = order.Status is LabServiceOrderStatus.SubmittedForQuote or LabServiceOrderStatus.QuoteInPreparation;
+        var previousStatus = order.Status.ToString();
+        if (revisingPending) Execute(order.RevisePendingRequest);
         Execute(() => order.UpdateDraft(
             request.CustomerReference,
             request.Description,
@@ -238,11 +231,9 @@ public sealed partial class LabServiceOrdersController(
             sourceGroups.Count == 1 ? sourceGroups[0].BiologicalSource : null,
             request.StorageRequirements,
             request.SafetyDeclaration));
-        Execute(() => order.UpdatePriceProposal(
-            request.ProposedUnitPrice,
-            request.PriceProposalNote,
-            tenant.Actor.Id,
-            DateTime.UtcNow));
+        // Customer scope edits retain any Commercial-authored proposal without allowing price changes.
+        if (request.ProposedUnitPrice.HasValue || !string.IsNullOrWhiteSpace(request.PriceProposalNote))
+            throw Invalid("customer_price_proposal_unavailable", "Phaeno prepares pricing for your request.");
         var existingSourceGroups = order.SourceGroups
             .ToDictionary(group => group.NormalizedBiologicalSource, StringComparer.Ordinal);
         foreach (var group in sourceGroups)
@@ -263,6 +254,9 @@ public sealed partial class LabServiceOrdersController(
             dbContext.LabServiceSourceGroups.Remove(removedSourceGroup);
             order.SourceGroups.Remove(removedSourceGroup);
         }
+        if (request.SubmitForPricing || revisingPending)
+            await SubmitRequestAsync(order, tenant.Actor.Id, cancellationToken,
+                revisingPending ? "Customer modified the pending request." : null, previousStatus);
         await dbContext.SaveChangesAsync(cancellationToken);
         return await MapAsync(order, true, false, cancellationToken);
     }
@@ -289,28 +283,32 @@ public sealed partial class LabServiceOrdersController(
                     DateTime.UtcNow,
                     operationCancellationToken,
                     tenant.Department.Id);
-                var before = order.Status.ToString();
-                var correctionReason = order.Status == LabServiceOrderStatus.ChangesRequested ? order.TenantSafeReason : null;
-                var snapshot = await BuildRequestSnapshotAsync(order, operationCancellationToken);
-                var previousRevisionId = order.Revisions.OrderByDescending(item => item.Revision).Select(item => (Guid?)item.Id).FirstOrDefault();
-                var submittedAt = DateTime.UtcNow;
-                Execute(() => order.Submit(tenant.Actor.Id, submittedAt));
-                var revision = new LabServiceRequestRevision(order.Id, order.RequestRevision, previousRevisionId, snapshot,
-                    correctionReason, tenant.Actor.Id, submittedAt);
-                dbContext.LabServiceRequestRevisions.Add(revision);
-                order.Revisions.Add(revision);
-                dbContext.OrderStatusEvents.Add(NewEvent(order, before, order.Status.ToString(), tenant.Actor.Id));
-                QueueNotice(
-                    order,
-                    "lab-request-submitted",
-                    "Laboratory service request submitted",
-                    $"{order.OrderNumber} was submitted for pricing.",
-                    tenant.Actor.Id);
+                await SubmitRequestAsync(order, tenant.Actor.Id, operationCancellationToken);
                 await dbContext.SaveChangesAsync(operationCancellationToken);
                 return await MapAsync(order, true, false, operationCancellationToken);
             },
             cancellationToken: cancellationToken);
         return execution.Response;
+    }
+
+    private async Task SubmitRequestAsync(LabServiceOrder order, Guid actorId, CancellationToken cancellationToken,
+        string? revisionReason = null, string? previousStatus = null)
+    {
+        await LabServiceOrderingEligibility.RequireAsync(dbContext, order.OrganizationId, DateTime.UtcNow,
+            cancellationToken, order.DepartmentId);
+        var before = previousStatus ?? order.Status.ToString();
+        var correctionReason = revisionReason ?? (order.Status == LabServiceOrderStatus.ChangesRequested ? order.TenantSafeReason : null);
+        var snapshot = await BuildRequestSnapshotAsync(order, cancellationToken);
+        var previousRevisionId = order.Revisions.OrderByDescending(item => item.Revision).Select(item => (Guid?)item.Id).FirstOrDefault();
+        var submittedAt = DateTime.UtcNow;
+        Execute(() => order.Submit(actorId, submittedAt));
+        var revision = new LabServiceRequestRevision(order.Id, order.RequestRevision, previousRevisionId, snapshot,
+            correctionReason, actorId, submittedAt);
+        dbContext.LabServiceRequestRevisions.Add(revision);
+        order.Revisions.Add(revision);
+        dbContext.OrderStatusEvents.Add(NewEvent(order, before, order.Status.ToString(), actorId, revisionReason));
+        QueueNotice(order, "lab-request-submitted", "Laboratory service request submitted",
+            $"{order.OrderNumber} was submitted for pricing.", actorId);
     }
 
     [HttpPost("{orderId:guid}/withdraw")]
@@ -664,12 +662,10 @@ public sealed partial class LabServiceOrdersController(
                 CommercialLabAuthorization authorization;
                 if (existingAuthorization is not null)
                 {
-                    var pinnedWorkflow = await dbContext.LabWorkOrders.Where(w => w.Id == existingAuthorization.LabWorkOrderId)
-                        .Select(w => w.LabServiceWorkflowVersionId).SingleAsync(operationCancellationToken);
                     command = originalCommand! with { Metadata = command.Metadata,
                         AuthorizationVersion = existingAuthorization.AuthorizationVersion + 1,
                         Specimens = originalCommand!.Specimens.Concat(command.Specimens.Where(s => !authorizedIds.Contains(s.SubmittedSpecimenId))).ToList(),
-                        ApprovedWorkflowVersionId = pinnedWorkflow };
+                        ApprovedWorkflowVersionId = null };
                     acknowledgment = await labOperationsProvider.AmendAuthorizationAsync(new(command.Metadata, authorizationId,
                         existingAuthorization.AuthorizationVersion, command.AuthorizationVersion, "accepted_additional_scope", command), operationCancellationToken);
                     authorization = existingAuthorization;
@@ -1064,7 +1060,9 @@ public sealed partial class LabServiceOrdersController(
             .SingleOrDefaultAsync(item => item.CommercialOrderId == order.Id, cancellationToken);
         var projection = authorization is null ? null : await dbContext.CommercialLabWorkProjections.AsNoTracking()
             .SingleOrDefaultAsync(item => item.AuthorizationId == authorization.AuthorizationId, cancellationToken);
-        var editable = order.Status is LabServiceOrderStatus.DraftRequest or LabServiceOrderStatus.ChangesRequested;
+        var submittable = order.Status is LabServiceOrderStatus.DraftRequest or LabServiceOrderStatus.ChangesRequested;
+        var editable = submittable || (order.Status is LabServiceOrderStatus.SubmittedForQuote or LabServiceOrderStatus.QuoteInPreparation
+            && !order.CurrentQuoteId.HasValue && !order.PlacedAt.HasValue);
         var orderingEligible = !canManage
             || (!editable && order.Status != LabServiceOrderStatus.QuoteIssued)
             || (await LabServiceOrderingEligibility.ReadAsync(
@@ -1091,7 +1089,7 @@ public sealed partial class LabServiceOrdersController(
             order.PlacedAt, order.CompletedAt, order.TenantSafeReason, platform ? order.InternalNote : null,
             order.CreatedAt, order.UpdatedAt, order.Version,
             canManage && orderingEligible && editable,
-            canManage && orderingEligible && editable,
+            canManage && orderingEligible && submittable,
             canAcceptQuote,
             canManage && order.Status is LabServiceOrderStatus.DraftRequest or LabServiceOrderStatus.SubmittedForQuote
                 or LabServiceOrderStatus.ChangesRequested or LabServiceOrderStatus.QuoteInPreparation or LabServiceOrderStatus.QuoteIssued,
@@ -1128,7 +1126,7 @@ public sealed partial class LabServiceOrdersController(
             PriceProposedAt: order.PriceProposedAt,
             EntryMode: order.EntryMode.ToString(),
             StandardCommercialSnapshot: LabServiceTimingService.CommercialSnapshot(order.ReadConfiguredSnapshot()),
-            CanPlaceStandardOrder: editable && orderingEligible && order.SourceRequestId is null && order.ProposedUnitPrice is null
+            CanPlaceStandardOrder: submittable && orderingEligible && order.SourceRequestId is null && order.ProposedUnitPrice is null
                 && (await requestContext.RequireLabServiceTenantAsync(HttpContext, false, cancellationToken)).Membership.IsOrganizationAdmin,
             Timing: timing,
             CanRequestQuoteExtension: canManage && order.Status == LabServiceOrderStatus.QuoteIssued

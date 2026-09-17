@@ -33,6 +33,7 @@ import {
   RequiredDialogFooter,
   RequiredFieldName,
   RequiredMark,
+  RequiredLegend,
 } from "#/components/ui/required-field";
 import { SearchableSelect } from "#/components/ui/searchable-select";
 import { Textarea } from "#/components/ui/textarea";
@@ -215,10 +216,10 @@ export function LabJobDetailsDialog({
         : values.sourceGroups[0].biologicalSource;
       const storageRequirements = values.storageRequirements;
       const safetyDeclaration = values.safetyDeclaration;
-      const proposedUnitPrice = values.proposePrice
+      const proposedUnitPrice = platformMode && values.proposePrice
         ? Number(values.proposedUnitPrice)
         : undefined;
-      const priceProposalNote = values.proposePrice
+      const priceProposalNote = platformMode && values.proposePrice
         ? values.priceProposalNote || undefined
         : undefined;
       if (!order) {
@@ -245,6 +246,7 @@ export function LabJobDetailsDialog({
           });
         }
         return createLabOrder({
+          submitForPricing: true,
           customerReference,
           description,
           hasMixedBiologicalSources,
@@ -263,6 +265,7 @@ export function LabJobDetailsDialog({
       const saveVersion = saveVersionRef.current ?? baseOrder.version;
       const update = (version: number) =>
         updateLabOrder(baseOrder.id, {
+          submitForPricing: !platformMode,
           customerReference,
           description,
           hasMixedBiologicalSources,
@@ -388,17 +391,17 @@ export function LabJobDetailsDialog({
         <DialogHeader className="pt-5 pr-12 pl-5">
           <DialogTitle>
             {editing
-              ? "Edit Job pricing details"
+              ? platformMode ? "Edit Job pricing details" : "Modify lab service request"
               : platformMode
                 ? sourceHandoff
                   ? `Start order from ${sourceHandoff.requestNumber}`
                   : "New Customer order"
-                : "Job pricing details"}
+                : "Submit lab service request"}
           </DialogTitle>
           <DialogDescription>
             {platformMode
               ? "Select the Customer, enter the price-bearing Job scope, and optionally record the price discussed by Sales. Phaeno reviews that proposal before issuing the Customer quote."
-              : "Enter each biological source and its sample count. Save the Job to review configured PSeq Lab Service pricing or request custom pricing. Individual sample details follow acceptance."}
+              : "Enter each biological source and its sample count. Phaeno will review your request and prepare pricing. Individual sample details follow your acceptance."}
           </DialogDescription>
         </DialogHeader>
 
@@ -673,6 +676,7 @@ export function LabJobDetailsDialog({
               </div>
             </fieldset>
 
+            {platformMode ? (
             <section className="mt-4 rounded-lg border p-4">
               <label
                 htmlFor={`${formId}-propose-price`}
@@ -758,6 +762,7 @@ export function LabJobDetailsDialog({
                 </div>
               ) : null}
             </section>
+            ) : null}
 
             <Label htmlFor={`${formId}-storage`} className="mt-4">
               <RequiredFieldName>Storage requirements</RequiredFieldName>
@@ -840,32 +845,38 @@ export function LabJobDetailsDialog({
           </form>
         </div>
 
-        <RequiredDialogFooter className="border-t bg-muted/40 px-5 py-4">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={mutation.isPending}
-            onClick={() => requestOpenChange(false)}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            form={formId}
-            disabled={!canSave || mutation.isPending}
-          >
-            {mutation.isPending
-              ? editing
-                ? "Saving…"
-                : platformMode
-                  ? "Starting pricing…"
-                  : "Creating…"
-              : editing
-                ? "Save job details"
-                : platformMode
-                  ? "Start pricing"
-                  : "Create job"}
-          </Button>
+        <RequiredDialogFooter showLegend={false} className="flex-col border-t bg-muted/40 px-5 py-4 sm:flex-col">
+          {!platformMode ? <p className="text-sm text-muted-foreground">Phaeno will prepare pricing for you to accept or decline. Submitting does not authorize work. You can modify or withdraw your request while pricing is under review.</p> : null}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <RequiredLegend />
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={mutation.isPending}
+                onClick={() => requestOpenChange(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                form={formId}
+                disabled={!canSave || mutation.isPending}
+              >
+                {mutation.isPending
+                  ? editing
+                    ? "Saving…"
+                    : platformMode
+                      ? "Starting pricing…"
+                      : "Submitting…"
+                  : editing
+                    ? platformMode ? "Save job details" : "Submit changes"
+                    : platformMode
+                      ? "Start pricing"
+                      : "Submit request"}
+              </Button>
+            </div>
+          </div>
         </RequiredDialogFooter>
       </DialogContent>
     </Dialog>

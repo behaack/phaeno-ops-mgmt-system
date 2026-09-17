@@ -13,7 +13,7 @@ public sealed record LabWorkOrderSummaryDto(
     Guid Id, Guid AuthorizationId, Guid? CommercialOrderId, string? CommercialOrderNumber,
     Guid SubmittingOrganizationId, string ServiceKey, string Status, int SpecimenCount,
     int OpenExceptionCount, DateTime UpdatedAt, long Version,
-    Guid? LabServiceWorkflowVersionId = null, string? DisplayName = null);
+    Guid? LabServiceWorkflowVersionId = null, string? DisplayName = null, int ServiceVersion = 1);
 
 public sealed record LabProtocolDto(
     Guid Id, string Key, string Name, string? Description, int LatestVersion,
@@ -27,7 +27,7 @@ public sealed record ProtocolRetirementImpactDto(string ImpactToken, IReadOnlyLi
 
 public sealed record LabProtocolVersionDto(
     Guid Id, int ProtocolVersion, string Status, string DefinitionJson,
-    Guid AuthoredByUserId, DateTime AuthoredAtUtc, Guid? ApprovedByUserId, DateTime? ApprovedAtUtc);
+    Guid AuthoredByUserId, DateTime AuthoredAtUtc, Guid? ApprovedByUserId, DateTime? ApprovedAtUtc, string? ApprovalOverrideReason = null);
 
 public sealed record LabMarketedServiceDto(string ServiceKey, string Name);
 
@@ -42,7 +42,7 @@ public sealed record LabServiceWorkflowVersionDto(
     Guid? ApprovedByUserId, DateTime? ApprovedAtUtc,
     Guid? ProductionByUserId, DateTime? ProductionAtUtc,
     IReadOnlyList<LabServiceWorkflowStageDto> Stages, long Version,
-    DateTime? InvalidatedAtUtc = null, string? InvalidationReason = null);
+    DateTime? InvalidatedAtUtc = null, string? InvalidationReason = null, string? ApprovalOverrideReason = null);
 
 public sealed record LabServiceWorkflowDto(
     Guid Id, string ServiceKey, string Name, string? Description, int LatestVersion,
@@ -178,7 +178,7 @@ public sealed record CreateProtocolRequest(string Name, string? Description);
 public sealed record UpdateProtocolRequest(string Name, string? Description, long Version);
 public sealed record CreateProtocolVersionRequest(string DefinitionJson, long ProtocolVersion);
 public sealed record UpdateProtocolVersionRequest(string DefinitionJson, long ProtocolVersion);
-public sealed record ProtocolTransitionRequest(string Action, long ProtocolVersion);
+public sealed record ProtocolTransitionRequest(string Action, long ProtocolVersion, string? ApprovalOverrideReason = null);
 public sealed record DeleteProtocolRequest(long Version);
 public sealed record CreateServiceWorkflowRequest(string ServiceKey, string Name, string? Description);
 public sealed record ServiceWorkflowStageRequest(
@@ -188,7 +188,7 @@ public sealed record CreateServiceWorkflowVersionRequest(
     IReadOnlyList<ServiceWorkflowStageRequest> Stages, long WorkflowVersion);
 public sealed record UpdateServiceWorkflowVersionRequest(
     IReadOnlyList<ServiceWorkflowStageRequest> Stages, long WorkflowVersion);
-public sealed record ServiceWorkflowTransitionRequest(string Action, long WorkflowVersion);
+public sealed record ServiceWorkflowTransitionRequest(string Action, long WorkflowVersion, string? ApprovalOverrideReason = null);
 public sealed record WorkMilestoneRequest(string Status, long Version);
 public sealed record SpecimenReceiptRequest(DateTime ReceivedAtUtc, string? ReceiptCondition, string? CurrentLocation, long Version,
     string? SampleShippingPacketBarcode = null, string? SupplierTubeBarcode = null);

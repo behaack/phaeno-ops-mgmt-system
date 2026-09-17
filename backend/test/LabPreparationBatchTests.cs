@@ -23,6 +23,7 @@ public class LabPreparationBatchTests
         var member = new LabPreparationMember(batch.Id, Guid.NewGuid(), "A1", "TUBE-1");
         format.Update(new("Changed", 1, 1, "numeric", []), false);
         Assert.Equal(6, LabTrayLayout.Read(batch.LayoutJson).Positions().Count);
+        batch.AssignTray("PHYSICAL-TRAY", true);
         batch.Start([member], true, DateTime.UtcNow);
         Assert.Throws<InvalidOperationException>(() => member.Move(batch, "A2", [member]));
         Assert.Throws<InvalidOperationException>(() => member.Remove(batch));
@@ -127,7 +128,26 @@ public class LabPreparationBatchTests
         var batch = new LabPreparationBatch("TEST", Format(), Guid.NewGuid()); var member = new LabPreparationMember(batch.Id, Guid.NewGuid(), "A1", "SOURCE");
         member.SetOutput(Guid.NewGuid()); Assert.Throws<ArgumentException>(() => member.ConfirmOutput("OUTPUT", "WRONG")); Assert.False(member.OutputConfirmed);
         member.ConfirmOutput("OUTPUT", "OUTPUT"); Assert.True(member.OutputConfirmed);
+        batch.AssignTray("PHYSICAL-TRAY", true);
         batch.Start([member], true, DateTime.UtcNow); Assert.Throws<InvalidOperationException>(() => batch.Complete(false, DateTime.UtcNow));
         batch.Complete(true, DateTime.UtcNow); Assert.Equal(LabBatchStatus.Complete, batch.Status);
     }
+    [Fact]
+    public void Physical_tray_identity_is_required_and_cannot_change_under_assigned_tubes()
+    {
+        var batch = new LabPreparationBatch("BATCH", Format(), Guid.NewGuid());
+        var member = new LabPreparationMember(batch.Id, Guid.NewGuid(), "A1", "TUBE");
+        Assert.Throws<InvalidOperationException>(() => batch.Start([member], true, DateTime.UtcNow));
+        Assert.Throws<ArgumentException>(() => batch.AssignTray("BATCH", false));
+        batch.AssignTray("  TRAY-001  ", false);
+        Assert.Equal("TRAY-001", batch.TrayBarcode);
+        batch.AssignTray("TRAY-001", true);
+        Assert.Throws<InvalidOperationException>(() => batch.AssignTray("TRAY-002", true));
+        batch.AssignTray("TRAY-002", false);
+        batch.Start([member], true, DateTime.UtcNow);
+        Assert.Throws<InvalidOperationException>(() => batch.AssignTray("TRAY-003", false));
+        batch.Complete(true, DateTime.UtcNow);
+        Assert.Equal("TRAY-002", batch.TrayBarcode);
+    }
+
 }

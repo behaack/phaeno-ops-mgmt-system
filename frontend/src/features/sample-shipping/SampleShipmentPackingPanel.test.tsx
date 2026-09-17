@@ -54,7 +54,7 @@ describe('physical location-container confirmation', () => {
     const rendered = render(view())
     return { refresh: (blocked = false, value = packing, error: unknown = null) => rendered.rerender(view(blocked, value, error)), packing }
   }
-  function barcode(index: number) { return screen.getByRole('textbox', { name: `Container ${index} barcode` }) }
+  function barcode(index: number) { return within(container(index)).getByRole('textbox', { name: 'Scan or enter container barcode' }) }
   function scan(index: number, value: string) { fireEvent.change(barcode(index), { target: { value } }); fireEvent.keyDown(barcode(index), { key: 'Enter' }) }
   it('requires the physical barcode and rejects unknown or wrong-size containers without reserving', async () => {
     physical()
@@ -81,7 +81,7 @@ describe('physical location-container confirmation', () => {
     refresh(true)
     expect(barcode(1)).toHaveProperty('value', 'KIT-20')
     expect(tubes(1)).toHaveProperty('value', '20')
-    expect(screen.getByRole('button', { name: 'Confirm containers' })).toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: 'Confirm assignment' })).toHaveProperty('disabled', true)
     refresh(false, { ...packing, availableKits: [locationKit(10)] }, new Error('KIT-20 was claimed by another Job.'))
     await confirm()
     expect(await screen.findByText(/This container is not available at the selected location/)).toBeTruthy()
@@ -98,8 +98,8 @@ describe('physical location-container confirmation', () => {
   })
 })
 function container(number: number) { return screen.getByRole('group', { name: `Container ${number}` }) }
-function size(number: number) { return within(container(number)).getByRole('combobox', { name: `Container size for container ${number}` }) }
-function tubes(number: number) { return within(container(number)).getByRole('spinbutton', { name: /^Tubes to pack/ }) }
+function size(number: number) { return within(container(number)).getByRole('combobox', { name: 'Container' }) }
+function tubes(number: number) { return within(container(number)).getByLabelText(/^Tubes to pack/) }
 function offeredSizes(number: number) { return Array.from((size(number) as HTMLSelectElement).options).map(option => Number(option.value.replace('container-', ''))).sort((left, right) => left - right) }
 function changeSize(number: number, capacity: number) { fireEvent.change(size(number), { target: { value: `container-${capacity}` } }) }
 function pack(number: number, count: number) { fireEvent.change(tubes(number), { target: { value: count } }) }
@@ -110,7 +110,7 @@ async function add(number: number) {
   await waitFor(() => expect(size(number)).toBe(document.activeElement))
 }
 async function confirm() {
-  const button = screen.getByRole('button', { name: 'Confirm containers' })
+  const button = screen.getByRole('button', { name: 'Confirm assignment' })
   await waitFor(() => expect(button).toHaveProperty('disabled', false))
   fireEvent.click(button)
 }
@@ -124,7 +124,7 @@ describe('individual shipping-container adjustment', () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
     client.setQueryData(['lab-service-order', shippingFixture.authorizationSourceId], { id: shippingFixture.authorizationSourceId })
     render(<QueryClientProvider client={client}><SampleShipmentPackingPanel shipment={{ ...shippingFixture, isPackingPool: true }} canManage onSelectShipment={select} /></QueryClientProvider>)
-    const adjust = await screen.findByRole('button', { name: 'Adjust containers' })
+    const adjust = await screen.findByRole('button', { name: 'Assign containers' })
     await waitFor(() => expect(adjust).toHaveProperty('disabled', false))
     fireEvent.click(adjust)
     await confirm()
@@ -151,7 +151,7 @@ describe('individual shipping-container adjustment', () => {
     expect(tubes(1)).toHaveProperty('value', '10')
     expect(screen.queryByRole('group', { name: 'Container 2' })).toBeNull()
     expect(addButton()).toHaveProperty('disabled', true)
-    const submit = await screen.findByRole('button', { name: 'Prepare available containers' })
+    const submit = await screen.findByRole('button', { name: 'Confirm partial assignment' })
     await waitFor(() => expect(submit).toHaveProperty('disabled', false))
     fireEvent.click(submit)
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ selection: [{ containerDefinitionId: 'container-10', quantity: 1 }], containerTubeCounts: [10] })))
@@ -165,7 +165,7 @@ describe('individual shipping-container adjustment', () => {
     expect(screen.getByText('Received kits changed')).toBeTruthy()
     expect(tubes(1)).toHaveProperty('value', '19')
     expect(size(2)).toHaveProperty('value', 'container-10')
-    expect(screen.getByRole('button', { name: /Confirm containers|Prepare available containers/ })).toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: /Confirm assignment|Confirm partial assignment/ })).toHaveProperty('disabled', true)
     expect(mocks.confirm).not.toHaveBeenCalled()
     view.refreshKits(kits)
     expect(screen.queryByText('Received kits changed')).toBeNull()
@@ -178,14 +178,14 @@ describe('individual shipping-container adjustment', () => {
     show(false, null, packingFixture, packingRecommendation, [])
     expect(screen.queryByRole('group', { name: 'Container 1' })).toBeNull()
     expect(addButton()).toHaveProperty('disabled', true)
-    expect(screen.getByRole('button', { name: 'Confirm containers' })).toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: 'Confirm assignment' })).toHaveProperty('disabled', true)
   })
 
   it('waits for the received-supply recommendation before opening configuration', async () => {
     let resolve!: (value: ContainerRecommendation) => void
     mocks.preview.mockReturnValue(new Promise<ContainerRecommendation>(done => { resolve = done }))
     render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><SampleShipmentPackingPanel shipment={{ ...shippingFixture, isPackingPool: true }} canManage availableKits={[{ containerDefinitionId: 'container-20', quantity: 1 }, { containerDefinitionId: 'container-10', quantity: 1 }]} /></QueryClientProvider>)
-    const adjust = await screen.findByRole('button', { name: 'Adjust containers' })
+    const adjust = await screen.findByRole('button', { name: 'Assign containers' })
     expect(adjust).toHaveProperty('disabled', true)
     fireEvent.click(adjust)
     expect(screen.queryByRole('dialog')).toBeNull()
@@ -215,9 +215,25 @@ describe('individual shipping-container adjustment', () => {
     expect(screen.queryByRole('spinbutton', { name: /Containers to use/ })).toBeNull()
   })
 
+  it('automatically allocates the remaining single container and shows a noneditable count', async () => {
+    show()
+    pack(1, 12)
+    remove(2)
+    expect(within(container(1)).getByRole('textbox', { name: /^Tubes to pack/ })).toHaveProperty('readOnly', true)
+    expect(tubes(1)).toHaveProperty('value', '20')
+    const confirmPartial = await screen.findByRole('button', { name: 'Confirm partial assignment' })
+    await waitFor(() => expect(confirmPartial).toHaveProperty('disabled', false))
+    fireEvent.click(confirmPartial)
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ containerTubeCounts: [20] })))
+    await add(2)
+    expect(within(container(1)).getByRole('spinbutton')).toBeTruthy()
+    expect(within(container(2)).getByRole('spinbutton')).toBeTruthy()
+  })
+
   it('offers only the five-tube size for three tubes and focuses the added row', async () => {
     showCount(3, [{ containerDefinitionId: 'container-5', quantity: 1 }])
     expect(offeredSizes(1)).toEqual([5])
+    expect(within(container(1)).getByRole('textbox', { name: /^Tubes to pack/ })).toHaveProperty('readOnly', true)
     expect(tubes(1)).toHaveProperty('value', '3')
     expect(addButton()).toHaveProperty('disabled', true)
     remove(1)
@@ -293,7 +309,7 @@ describe('individual shipping-container adjustment', () => {
     expect(size(1)).toHaveProperty('value', 'container-10')
     expect(tubes(1)).toHaveProperty('value', '10')
     expect(await screen.findByText(/20 tubes still need a container/)).toBeTruthy()
-    const prepare = await screen.findByRole('button', { name: 'Prepare available containers' })
+    const prepare = await screen.findByRole('button', { name: 'Confirm partial assignment' })
     await waitFor(() => expect(prepare).toHaveProperty('disabled', false))
     fireEvent.click(prepare)
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith({ version: 3, selection: [{ containerDefinitionId: 'container-10', quantity: 1 }], containerTubeCounts: [10] }))
@@ -303,19 +319,19 @@ describe('individual shipping-container adjustment', () => {
     mocks.preview.mockRejectedValueOnce(new Error('The selection exceeds the quantity available to you.'))
     show()
     expect(await screen.findByText(/selection exceeds the quantity available/)).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Confirm containers' })).toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: 'Confirm assignment' })).toHaveProperty('disabled', true)
     expect(screen.queryByText('Available quantities (optional)')).toBeNull()
     expect(screen.queryByRole('spinbutton', { name: /Available to you/ })).toBeNull()
     expect(mocks.confirm).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Retry preview' }))
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Confirm containers' })).toHaveProperty('disabled', false))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Confirm assignment' })).toHaveProperty('disabled', false))
     expect(mocks.confirm).not.toHaveBeenCalled()
   })
 
   it('keeps allocation totals visible while recalculating and blocks stale confirmation', async () => {
     show()
     const summary = screen.getByRole('region', { name: 'Summary' })
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Confirm containers' })).toHaveProperty('disabled', false))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Confirm assignment' })).toHaveProperty('disabled', false))
     const totalLabels = ['Tubes', 'Containers', 'Usable capacity', 'Spare slots', 'Unallocated tubes']
     for (const label of totalLabels) expect(within(summary).getByText(label)).toBeTruthy()
     let resolvePreview!: (result: ContainerRecommendation) => void
@@ -324,7 +340,7 @@ describe('individual shipping-container adjustment', () => {
     expect(within(summary).getByText('Updating…')).toBeTruthy()
     for (const label of totalLabels) expect(within(summary).getByText(label)).toBeTruthy()
     expect(summary.getAttribute('aria-busy')).toBe('true')
-    expect(screen.getByRole('button', { name: 'Confirm containers' })).toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: 'Confirm assignment' })).toHaveProperty('disabled', true)
     await waitFor(() => expect(resolvePreview).toBeTypeOf('function'))
     for (const label of totalLabels) expect(within(summary).getByText(label)).toBeTruthy()
     await act(async () => { resolvePreview(preview({ selection: [{ containerDefinitionId: 'container-20', quantity: 1 }] })) })
@@ -332,7 +348,7 @@ describe('individual shipping-container adjustment', () => {
     for (const label of totalLabels) expect(within(summary).getByText(label)).toBeTruthy()
     expect(within(summary).getByText(/10 tubes still need a container/)).toBeTruthy()
     expect(summary.getAttribute('aria-busy')).toBe('false')
-    expect(screen.getByRole('button', { name: 'Prepare available containers' })).toHaveProperty('disabled', false)
+    expect(screen.getByRole('button', { name: 'Confirm partial assignment' })).toHaveProperty('disabled', false)
     expect(mocks.confirm).not.toHaveBeenCalled()
   })
 
@@ -342,7 +358,7 @@ describe('individual shipping-container adjustment', () => {
     remove(1)
     expect(screen.queryByRole('group', { name: /^Container \d+$/ })).toBeNull()
     expect(await screen.findByText('Choose at least one compatible container to prepare a shipment.')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Prepare available containers' })).toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: 'Confirm partial assignment' })).toHaveProperty('disabled', true)
     expect(mocks.confirm).not.toHaveBeenCalled()
   })
 
@@ -463,5 +479,37 @@ describe('individual shipping-container adjustment', () => {
     expect(tubes(3)).toHaveProperty('value', '19')
     await confirm()
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ version: 3, containerTubeCounts: [18, 19, 4] })))
+  })
+})
+
+
+describe('Received-container selection visibility', () => {
+  it('waits for recorded compatible stock at the selected location before showing container selection', async () => {
+    mocks.packing.mockResolvedValue({ ...packingFixture, availableKits: [], canPack: false })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(<QueryClientProvider client={client}><SampleShipmentPackingPanel shipment={{ ...shippingFixture, isPackingPool: true }} canManage locationInventory deliveryLocationId="location-1" /></QueryClientProvider>)
+    expect(screen.queryByText('Assign shipping containers')).toBeNull()
+    await waitFor(() => expect(client.getQueryState(['sample-shipment-packing', shippingFixture.id, 'location-1'])?.status).toBe('success'))
+    expect(screen.queryByText('Assign shipping containers')).toBeNull()
+    expect(mocks.preview).not.toHaveBeenCalled()
+    act(() => client.setQueryData(['sample-shipment-packing', shippingFixture.id, 'location-1'], { ...packingFixture, canPack: true, availableKits: [locationKit(20)] }))
+    expect(await screen.findByText('Assign shipping containers')).toBeTruthy()
+    expect(mocks.confirm).not.toHaveBeenCalled()
+  })
+  it('retains a multiple-location choice so received stock elsewhere remains reachable', async () => {
+    mocks.packing.mockResolvedValue({ ...packingFixture, availableKits: [] })
+    render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <SampleShipmentPackingPanel shipment={{ ...shippingFixture, isPackingPool: true }} canManage locationInventory hasLocationChoice
+        locationControl={<label>Container location<select><option>Main laboratory</option><option>Other laboratory</option></select></label>} />
+    </QueryClientProvider>)
+    expect(await screen.findByRole('combobox', { name: 'Container location' })).toBeTruthy()
+    expect(screen.queryByText('Assign shipping containers')).toBeNull()
+    expect(mocks.confirm).not.toHaveBeenCalled()
+  })
+  it('keeps a failed inventory lookup visible with a retry instead of treating it as no containers', async () => {
+    mocks.packing.mockRejectedValue(new Error('Inventory unavailable'))
+    render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><SampleShipmentPackingPanel shipment={{ ...shippingFixture, isPackingPool: true }} canManage locationInventory deliveryLocationId="location-1" /></QueryClientProvider>)
+    expect(await screen.findByRole('button', { name: 'Retry containers' })).toBeTruthy()
+    expect(mocks.confirm).not.toHaveBeenCalled()
   })
 })

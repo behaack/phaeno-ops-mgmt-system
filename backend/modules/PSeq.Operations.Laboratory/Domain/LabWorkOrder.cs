@@ -31,6 +31,8 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
     public Guid SubmittingOrganizationId { get; private set; }
     public string ServiceKey { get; private set; } = null!;
     public int ServiceVersion { get; private set; }
+    // Historical commercial assignment or explicitly approved Trial scope.
+    // Commercial execution eligibility uses ServiceKey; attempts/batches own workflow versions.
     public Guid? LabServiceWorkflowVersionId { get; private set; }
     public string? TubeUsePolicyKey { get; private set; }
     public int? TubeUsePolicyVersion { get; private set; }

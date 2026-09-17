@@ -18,6 +18,8 @@ public static class LabPreparationModelConfiguration
         {
             e.ToTable("lab_preparation_batches", schema); e.HasKey(x => x.Id);
             e.Property(x => x.Name).HasMaxLength(160); e.Property(x => x.LayoutJson).HasColumnType("jsonb");
+            e.Property(x => x.TrayBarcode).HasMaxLength(255);
+            e.HasIndex(x => x.TrayBarcode).IsUnique().HasFilter("tray_barcode IS NOT NULL AND status IN ('Draft', 'InProgress')");
             e.Property(x => x.Status).HasConversion<string>().HasMaxLength(50); e.Property(x => x.Version).IsConcurrencyToken();
             e.HasOne<LabTrayFormat>().WithMany().HasForeignKey(x => x.LabTrayFormatId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<LabServiceWorkflowVersion>().WithMany().HasForeignKey(x => x.LabServiceWorkflowVersionId).OnDelete(DeleteBehavior.Restrict);

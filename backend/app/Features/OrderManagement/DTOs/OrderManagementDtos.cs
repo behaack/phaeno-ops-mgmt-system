@@ -610,7 +610,8 @@ public sealed record LabOrderWriteRequest(
     int RequestedSpecimenCount = 0,
     IReadOnlyList<LabServiceSourceGroupWriteRequest>? SourceGroups = null,
     decimal? ProposedUnitPrice = null,
-    string? PriceProposalNote = null);
+    string? PriceProposalNote = null,
+    bool SubmitForPricing = false);
 public sealed record InitiateCustomerLabOrderRequest(
     Guid OrganizationId,
     string? CustomerReference,

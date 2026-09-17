@@ -13,6 +13,14 @@ using PhaenoPortal.App.Features.OrderManagement.Services;
 
 public sealed partial class LabOperationsController
 {
+    private static void RequireApprovalOverrideAdministrator(LabOperationsActor actor)
+    {
+        if (!actor.IsPlatformAdmin)
+            throw new OrderManagementException("approval_override_forbidden",
+                "Only a platform administrator with protocol-management access can override independent approval.",
+                StatusCodes.Status403Forbidden);
+    }
+
     private async Task<LabWorkOrder> RequireWorkOrderAsync(Guid workOrderId, CancellationToken cancellationToken) =>
         await dbContext.LabWorkOrders.Include(value => value.Specimens).SingleOrDefaultAsync(item => item.Id == workOrderId, cancellationToken) ?? throw Missing();
 
@@ -211,7 +219,7 @@ public sealed partial class LabOperationsController
                     version.Status.ToString(), version.AuthoredByUserId, version.AuthoredAtUtc,
                     version.ApprovedByUserId, version.ApprovedAtUtc, version.ProductionByUserId,
                     version.ProductionAtUtc, stagesByVersion.GetValueOrDefault(version.Id) ?? [],
-                    version.Version, version.InvalidatedAtUtc, version.InvalidationReason)).ToList());
+                    version.Version, version.InvalidatedAtUtc, version.InvalidationReason, version.ApprovalOverrideReason)).ToList());
         return workflows.Select(workflow => new LabServiceWorkflowDto(workflow.Id,
             workflow.ServiceKey, workflow.Name, workflow.Description, workflow.LatestVersion,
             versionsByWorkflow.GetValueOrDefault(workflow.Id) ?? [], workflow.Version)).ToList();
@@ -313,7 +321,7 @@ public sealed partial class LabOperationsController
             work.LabServiceWorkflowVersionId,
             !string.IsNullOrWhiteSpace(commercialOrder?.OrderNumber) ? commercialOrder.OrderNumber
                 : !string.IsNullOrWhiteSpace(work.OpaqueSubmitterReference) ? work.OpaqueSubmitterReference
-                : $"WO-{work.Id}");
+                : $"WO-{work.Id}", work.ServiceVersion);
     }
 
     private static LabProtocolDto MapProtocol(LabProtocol protocol, IReadOnlyList<LabProtocolVersionDto> versions) =>
@@ -323,7 +331,7 @@ public sealed partial class LabOperationsController
 
     private static LabProtocolVersionDto MapProtocolVersion(LabProtocolVersion version) =>
         new(version.Id, version.ProtocolVersion, version.Status.ToString(), version.DefinitionJson,
-            version.AuthoredByUserId, version.AuthoredAtUtc, version.ApprovedByUserId, version.ApprovedAtUtc);
+            version.AuthoredByUserId, version.AuthoredAtUtc, version.ApprovedByUserId, version.ApprovedAtUtc, version.ApprovalOverrideReason);
 
     private static LabEquipmentDto MapEquipment(LabEquipment item) =>
         new(item.Id, item.AssetCode, item.Name, item.EquipmentType, item.Location,

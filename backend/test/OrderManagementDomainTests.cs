@@ -9,6 +9,27 @@ public class OrderManagementDomainTests
     private static readonly DateTime Now = new(2026, 7, 14, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
+    public void PendingRequestCanBeRevisedUntilPricingIsIssued()
+    {
+        var actor = Guid.NewGuid();
+        var order = new LabServiceOrder(Guid.NewGuid(), Guid.NewGuid(), OrderNumberGenerator.Lab(), "revision-job", null,
+            1, false, "Human PBMCs", "Frozen", "No known hazards", "Ship cold");
+        order.SourceGroups.Add(new LabServiceSourceGroup(order.Id, "Human PBMCs", 1));
+        order.Submit(actor, Now);
+        order.BeginQuotePreparation();
+        order.RevisePendingRequest();
+        order.UpdateDraft("Updated job", "Updated scope", 1, false, "Human PBMCs", "Frozen", "No known hazards");
+        order.Submit(actor, Now.AddMinutes(1));
+        Assert.Equal(2, order.RequestRevision);
+        Assert.Equal(LabServiceOrderStatus.SubmittedForQuote, order.Status);
+        Assert.Empty(order.Samples);
+        Assert.Null(order.PlacedAt);
+        order.BeginQuotePreparation();
+        order.MarkQuoteIssued(Guid.NewGuid());
+        Assert.Throws<InvalidOperationException>(order.RevisePendingRequest);
+    }
+
+    [Fact]
     public void ReagentDraftRetainsPurchaseAndDeliveryWithoutFreezingPlacement()
     {
         var order = new PartnerReagentOrder(Guid.NewGuid(), Guid.NewGuid(), "REAGENT-DRAFT");

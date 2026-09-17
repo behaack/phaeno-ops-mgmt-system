@@ -1,5 +1,30 @@
 # Commercial to Lab Operations Contract
 
+## Shared library outputs (2026-09-17)
+
+Preparation detail advertises bulkOutputs. The existing versioned commands endpoint accepts action outputs, stageId and outputs [{memberId, quantity, quantityUnit, location}]. Outputs is omitted when null to preserve existing request hashes. Validate distinct current-batch members, active output-producing protocol, open unheld attempts, no existing output, positive quantities and required bounded unit/location strings. All outputs use individual generated barcodes and attempt/source lineage. Save once under existing batch/job locks and transaction, with outputResults [{memberId, outputContainerId, barcode}] in history. Exact retries return the original receipt without new outputs. Creation does not confirm physical barcodes or QC. The individual output command remains supported.
+
+## Optional preparation reports - September 17, 2026
+
+Preparation detail adds optionalPreparationReports. POST preparation/batches/{id}/commands/with-report accepts the existing multipart payload and file fields; GET preparation/batches/{id}/records/{recordId}/report downloads the saved report. Existing with-qc-report and qc-report routes remain supported. The pinned performed step determines attachment type: QC gate uses qcReport; non-QC steps with preparation-record-reference text in shared/batch scope use preparationReport. Other steps reject attachments. Both metadata objects share filename, content type, size, hash and clean scan status; storageKey remains private. The legacy preparation reference is optional, while other required captures/resources remain enforced. Existing locks, roles, concurrency, replay fingerprinting, PDF validation, scanning and private download authorization apply.
+
+## Automatic preparation review skip — September 17, 2026
+
+Preparation detail adds optional `automaticSkipAvailable`, calculated from the exact recognized conditional-review definition, every continuing execution history, job/attempt eligibility and the current actor's existing step role. Clients may POST the existing versioned/idempotent command with action `evaluate-conditions`; this uses the same locks, job guards and role checks as other preparation writes. A successful step/failure command also evaluates the rule in its transaction. GET never saves evidence. A generated standard skipped step retains empty captures/QC and false performed/resource attestations, plus `automatic: true` and `triggerRequestId` in its preparation record details. Skips never overwrite existing target evidence. Existing correction/staleness rules still apply. This is a bounded compatibility rule for the established prior-step-2 Hold/Fail condition, not a general prose evaluator.
+
+
+## Optional preparation QC reports — September 17, 2026
+
+Preparation detail advertises `optionalQcReports: true`. `POST /platform/lab-operations/preparation/batches/{id}/commands/with-qc-report` accepts multipart `payload` (the existing versioned preparation command) and `file` (one optional report represented by using this endpoint only when selected). Only performed QC steps accept uploads; PDF signature/extension and 10 MiB size limit are checked. File name, length and SHA-256 participate in idempotency. Existing actor, role, version, execution and tube eligibility checks apply before storage. A clean malware scan is required before evidence can commit. Ordinary commands continue to save without attachments.
+
+`GET /platform/lab-operations/preparation/batches/{id}/records/{recordId}/qc-report` is lab-authorized, validates record ownership and clean scan status, and returns a private PDF attachment. Public record details include report metadata but omit storage keys. The two legacy synthetic QC file-reference keys are optional at QC gates; other required protocol captures remain enforced. Approved definitions and prior references are preserved.
+
+
+## Service-based commercial jobs — September 16, 2026
+
+Commercial AuthorizeLabWorkCommand and amendments no longer resolve a Production workflow or require ApprovedWorkflowVersionId. The optional field remains wire-compatible for historical replay and explicitly approved Trial scope. Commercial jobs choose exact procedures at attempt/batch execution; preserve service identity, authorization snapshots and provider command idempotency. Existing job workflow columns are retained historical data, not commercial eligibility restrictions.
+
+
 This document defines the version 1 application contract between
 Commercial Operations and Lab Operations.
 

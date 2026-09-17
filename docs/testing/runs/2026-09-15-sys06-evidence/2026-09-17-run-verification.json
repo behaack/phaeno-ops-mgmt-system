@@ -1,0 +1,56 @@
+[
+  {
+    "id": 35113420745,
+    "html_url": "https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/35113420745",
+    "event": "schedule",
+    "head_branch": "main",
+    "head_sha": "e8df58b92aefebd3f4ddbecde96e23a9ee1fbab0",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-09-16T15:09:30Z",
+    "updated_at": "2026-09-16T15:10:01Z",
+    "artifacts": [
+      {
+        "id": 10453261809,
+        "name": "portal-snapshot-20260916T090002Z-260bcfb1-9808-4111-928b-b5d87fc04f21",
+        "size_in_bytes": 882139,
+        "digest": "sha256:96039fd22daa2674bd15a0bc33d8b2c5fe31725e6cb8e638ebb65ae1783dc407",
+        "expired": false,
+        "expires_at": "2026-10-21T15:09:53Z"
+      }
+    ]
+  },
+  {
+    "id": 35215010171,
+    "html_url": "https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/35215010171",
+    "event": "workflow_dispatch",
+    "head_branch": "main",
+    "head_sha": "e8df58b92aefebd3f4ddbecde96e23a9ee1fbab0",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-09-17T11:18:44Z",
+    "updated_at": "2026-09-17T11:19:00Z",
+    "artifacts": [
+      {
+        "id": 10494054992,
+        "name": "portal-snapshot-20260917T090009Z-c10b5971-769b-4307-94c3-738c7be2c9ef",
+        "size_in_bytes": 892379,
+        "digest": "sha256:0f39fe3fad7ccb49aed37ec6b629d58a4a7a7bf286ea807c77d2fa7affe48382",
+        "expired": false,
+        "expires_at": "2026-10-22T11:18:55Z"
+      }
+    ]
+  },
+  {
+    "id": 35125322003,
+    "html_url": "https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/35125322003",
+    "event": "workflow_dispatch",
+    "head_branch": "codex/portal-documentation-search-release",
+    "head_sha": "52d21681517018ee77735e33e323518c808a27fd",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-09-16T16:59:04Z",
+    "updated_at": "2026-09-16T17:03:15Z",
+    "artifacts": []
+  }
+]

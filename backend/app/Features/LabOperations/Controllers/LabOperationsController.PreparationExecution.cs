@@ -8,8 +8,8 @@ using PhaenoPortal.App.Features.LabOperations.Services;
 
 public sealed partial class LabOperationsController
 {
-    private async Task RecordPreparationStepAsync(LabPreparationBatch batch, List<LabPreparationMember> members, List<LabSpecimenAttempt> attempts,
-        LabPreparationCommand request, LabOperationsActor actor, CancellationToken ct)
+    private async Task<string?> RecordPreparationStepAsync(LabPreparationBatch batch, List<LabPreparationMember> members, List<LabSpecimenAttempt> attempts,
+        LabPreparationCommand request, LabOperationsActor actor, CancellationToken ct, bool hasReport = false)
     {
         var input = request.Step ?? throw new ArgumentException("Enter the preparation step evidence.");
         if (input.CoveredMemberIds.Count == 0 || input.CoveredMemberIds.Any(id => members.All(m => m.Id != id))) throw new ArgumentException("Select tubes in this batch.");
@@ -17,12 +17,17 @@ public sealed partial class LabOperationsController
         var protocol = await dbContext.LabProtocolVersions.SingleAsync(p => p.Id == stage.LabProtocolVersionId, ct);
         var definition = RequireProtocolDefinition(protocol.DefinitionJson);
         var step = definition.Steps.SingleOrDefault(s => s.Key == input.StepKey) ?? throw Missing();
+        var reportProperty = step.QcGate is not null ? "qcReport"
+            : step.Captures.Any(c => LabProtocolEvidence.IsPreparationReportReference(step, c)) ? "preparationReport" : null;
+        if (hasReport && (reportProperty is null || input.Outcome != "recorded"))
+            throw new ArgumentException("Attach a report only to a performed QC or preparation report step.");
         foreach (var member in members.Where(m => input.CoveredMemberIds.Contains(m.Id)))
         {
             var attempt = attempts.Single(a => a.Id == member.LabSpecimenAttemptId); attempt.RequireOpen();
             var execution = await dbContext.LabProtocolExecutions.SingleOrDefaultAsync(e => e.LabSpecimenAttemptId == attempt.Id && e.LabServiceWorkflowStageId == stage.Id, ct)
                 ?? throw Conflict("preparation_stage_not_started", "Complete the preceding stage before recording this stage.");
-            var effective = LabPreparationEvidence.Resolve(step, input, member.Id, request.RequestId);
+            var specimen = await RequireSpecimenAsync(attempt.LabWorkOrderId, attempt.LabSpecimenId, ct);
+            var effective = LabPreparationEvidence.Resolve(step, input, member.Id, request.RequestId, specimen.AccessionNumber);
             foreach (var capture in step.Captures.Where(c => c.Type == "barcode"))
             {
                 if (!effective.Captures.TryGetValue(capture.Key, out var value) || value.ValueKind != JsonValueKind.String) continue;
@@ -34,6 +39,7 @@ public sealed partial class LabOperationsController
             execution.RecordStep(protocol, effective, actor.User.Id, EffectiveExecutionRoles(actor), DateTime.UtcNow);
             await RefreshAttemptOutcomeAsync(await RequireWorkOrderAsync(attempt.LabWorkOrderId, ct), await RequireSpecimenAsync(attempt.LabWorkOrderId, attempt.LabSpecimenId, ct), attempt, actor.User.Id, ct);
         }
+        return reportProperty;
     }
 
     private async Task AdvancePreparationAsync(LabPreparationBatch batch, List<LabPreparationMember> members, List<LabSpecimenAttempt> attempts,
@@ -95,7 +101,7 @@ public sealed partial class LabOperationsController
         }
     }
 
-    private async Task PreparationOutputAsync(LabPreparationMember member, LabSpecimenAttempt attempt, LabPreparationCommand request, CancellationToken ct)
+    private async Task<LabContainer> PreparationOutputAsync(LabPreparationMember member, LabSpecimenAttempt attempt, LabPreparationCommand request, CancellationToken ct)
     {
         attempt.RequireOpen(false);
         if (request.Quantity is null or <= 0 || string.IsNullOrWhiteSpace(request.QuantityUnit)) throw new ArgumentException("Record the actual output quantity and unit.");
@@ -117,6 +123,46 @@ public sealed partial class LabOperationsController
                 $"Prepared library · {member.Position}", request.Location, request.Quantity, request.QuantityUnit, null);
             output.AttachAttempt(attempt); dbContext.LabContainers.Add(output); member.SetOutput(output.Id);
         }
+        return output;
+    }
+
+    private sealed record PreparationOutputResult(Guid MemberId, Guid OutputContainerId, string Barcode);
+
+    private async Task<IReadOnlyList<PreparationOutputResult>> PreparationOutputsAsync(List<LabPreparationMember> members,
+        List<LabSpecimenAttempt> attempts, LabPreparationCommand request, CancellationToken ct)
+    {
+        var inputs = request.Outputs;
+        if (inputs is null || inputs.Count == 0 || inputs.Count > members.Count || inputs.Any(o => o is null)
+            || inputs.Select(o => o.MemberId).Distinct().Count() != inputs.Count
+            || inputs.Any(o => members.All(m => m.Id != o.MemberId)))
+            throw new ArgumentException("Review the tubes for these outputs, without duplicates.");
+        if (!request.StageId.HasValue) throw new ArgumentException("Choose the preparation protocol for these outputs.");
+        // Validate every tube before allocating any output identity.
+        foreach (var input in inputs)
+        {
+            var member = members.Single(m => m.Id == input.MemberId);
+            var attempt = attempts.Single(a => a.Id == member.LabSpecimenAttemptId);
+            attempt.RequireOpen(false);
+            if (member.OutputContainerId.HasValue) throw new InvalidOperationException($"{member.Position}: an output already exists. Review the saved output.");
+            if (input.Quantity <= 0 || string.IsNullOrWhiteSpace(input.QuantityUnit) || input.QuantityUnit.Trim().Length > 50
+                || string.IsNullOrWhiteSpace(input.Location) || input.Location.Trim().Length > 255)
+                throw new ArgumentException($"{member.Position}: enter a positive quantity, unit (up to 50 characters) and storage location (up to 255 characters).");
+            var execution = await dbContext.LabProtocolExecutions.SingleOrDefaultAsync(e => e.LabSpecimenAttemptId == attempt.Id
+                && e.LabServiceWorkflowStageId == request.StageId && (e.Status == LabExecutionStatus.InProgress || e.Status == LabExecutionStatus.Blocked), ct)
+                ?? throw new InvalidOperationException($"{member.Position}: output creation requires an active protocol.");
+            var protocol = await dbContext.LabProtocolVersions.SingleAsync(p => p.Id == execution.LabProtocolVersionId, ct);
+            if (!RequireProtocolDefinition(protocol.DefinitionJson).Steps.Any(s => s.PreparedOutputs.Count > 0))
+                throw new InvalidOperationException("This protocol does not define a prepared output.");
+        }
+        var results = new List<PreparationOutputResult>();
+        foreach (var input in inputs)
+        {
+            var member = members.Single(m => m.Id == input.MemberId);
+            var output = await PreparationOutputAsync(member, attempts.Single(a => a.Id == member.LabSpecimenAttemptId),
+                request with { Quantity = input.Quantity, QuantityUnit = input.QuantityUnit.Trim(), Location = input.Location.Trim(), OutputContainerId = null }, ct);
+            results.Add(new(member.Id, output.Id, output.Barcode));
+        }
+        return results;
     }
 
     private async Task EstablishPreparedLibraryAsync(LabPreparationMember member, LabSpecimenAttempt attempt, LabProtocolExecution finalExecution, Guid recordId, CancellationToken ct)

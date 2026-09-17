@@ -39,13 +39,16 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
         var now = DateTime.UtcNow;
         if (!definition.IsActive || definition.EffectiveFrom > now || definition.EffectiveTo <= now)
             throw Invalid("Select an active, effective container type before preparing physical stock.");
+        var tube = await SelectedProduct(request.TubeSupplierProductId, PSeq.Operations.Laboratory.Domain.LabSupplierProductKind.Tube, ct);
+        var shipper = await SelectedProduct(request.ShipperSupplierProductId, PSeq.Operations.Laboratory.Domain.LabSupplierProductKind.ShippingContainer, ct);
         SampleShippingStockKit kit;
         try
         {
             kit = new SampleShippingStockKit($"KIT-{Guid.NewGuid():N}".ToUpperInvariant(), definition.Id,
                 SampleShippingContainerCatalogService.Snapshot(definition), definition.TubeCapacity,
-                request.TubeSupplierName, request.TubeProductNumber, request.TubeLotNumber,
-                request.ShipperSupplierName, request.ShipperProductNumber);
+                tube.SupplierName, tube.ProductNumber, request.TubeLotNumber,
+                shipper.SupplierName, shipper.ProductNumber,
+                request.TubeSupplierProductId, request.ShipperSupplierProductId, tube.Description, shipper.Description);
         }
         catch (ArgumentException exception) { throw Invalid(exception.Message); }
         db.SampleShippingStockKits.Add(kit);
@@ -154,8 +157,17 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
             kit.CustomerReceivedAt, kit.ReservedSampleShipmentId, inventory[kit.Id].AssignedJobId, inventory[kit.Id].AssignedJobNumber,
             kit.OrganizationId.HasValue ? organizations.GetValueOrDefault(kit.OrganizationId.Value) : null,
             kit.DepartmentId.HasValue ? departments.GetValueOrDefault(kit.DepartmentId.Value) : null,
-            inventory[kit.Id].Status == "NeedsReview" ? "Record the verified Customer delivery location before this container can become available." : null)).ToArray();
+            inventory[kit.Id].Status == "NeedsReview" ? "Record the verified Customer delivery location before this container can become available." : null, kit.TubeProductDescription, kit.ShipperProductDescription)).ToArray();
     }
+
+    private sealed record SelectedCatalogProduct(string SupplierName, string ProductNumber, string Description);
+    private async Task<SelectedCatalogProduct> SelectedProduct(Guid id, PSeq.Operations.Laboratory.Domain.LabSupplierProductKind kind, CancellationToken ct)
+        => await (from product in db.LabSupplierProducts.AsNoTracking()
+                  join supplier in db.LabSuppliers.AsNoTracking() on product.SupplierId equals supplier.Id
+                  join type in db.LabProductTypes.AsNoTracking() on product.ProductTypeId equals type.Id
+                  where product.Id == id && type.KitUse == kind && type.IsActive && product.IsActive && supplier.IsActive
+                  select new SelectedCatalogProduct(supplier.Name, product.ProductNumber, product.Description))
+            .SingleOrDefaultAsync(ct) ?? throw Invalid($"Choose an active { (kind == PSeq.Operations.Laboratory.Domain.LabSupplierProductKind.Tube ? "tube" : "shipping container") } product from an active supplier.");
 
     private static void Version(long actual, long expected) { if (actual != expected) throw Conflict("This kit changed. Refresh before continuing."); }
     private static OrderManagementException Invalid(string message) => new("stock_kit_invalid", message);

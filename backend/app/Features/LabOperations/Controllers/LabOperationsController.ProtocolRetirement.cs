@@ -53,7 +53,7 @@ public sealed partial class LabOperationsController
             var sourceStages = await dbContext.LabServiceWorkflowStages.Where(x => x.LabServiceWorkflowVersionId == source.Id).OrderBy(x => x.Sequence).ToListAsync(cancellationToken);
             foreach (var version in candidates.Where(x => x.Status is LabServiceWorkflowStatus.Draft or LabServiceWorkflowStatus.Invalid
                 or LabServiceWorkflowStatus.Approved or LabServiceWorkflowStatus.Production
-                || impact.QueuedJobs.Any(job => job.LabServiceWorkflowVersionId == x.Id)))
+                || impact.QueuedWorkflowIds.Contains(x.Id)))
                 version.Invalidate(reason, utcNow);
             var next = workflow.LatestVersion + 1;
             workflow.RecordVersion(next);
@@ -72,17 +72,17 @@ public sealed partial class LabOperationsController
         }
         foreach (var job in impact.QueuedJobs)
         {
-            // Pair the warning with the exact queued work state and retain its pin.
+            // Pair the warning with queued execution state; retain its exact procedure.
             dbContext.Entry(job).Property(x => x.UpdatedAt).IsModified = true;
             dbContext.LabWorkEvents.Add(new LabWorkEvent(job.Id, null, "WorkflowInvalidatedByProtocolRetirement", utcNow, actor.User.Id,
-                JsonSerializer.Serialize(new { protocol.Id, protocol.Name, job.LabServiceWorkflowVersionId, reason }, JsonOptions)));
+                JsonSerializer.Serialize(new { protocol.Id, protocol.Name, workflowVersionIds = impact.QueuedWorkflowIds, reason }, JsonOptions)));
         }
         await dbContext.SaveChangesAsync(cancellationToken);
         return (await ReadProtocolsAsync(cancellationToken)).Single(x => x.Id == protocolId);
     }
 
     private sealed record RetirementImpact(ProtocolRetirementImpactDto Dto, List<LabServiceWorkflow> Workflows,
-        List<LabServiceWorkflowVersion> WorkflowVersions, List<LabWorkOrder> QueuedJobs);
+        List<LabServiceWorkflowVersion> WorkflowVersions, List<LabWorkOrder> QueuedJobs, List<Guid> QueuedWorkflowIds);
 
     private async Task<RetirementImpact> ReadRetirementImpactAsync(LabProtocol protocol, CancellationToken cancellationToken)
     {
@@ -93,13 +93,21 @@ public sealed partial class LabOperationsController
         var liveWorkflowIds = referencedVersions.Where(x => x.Status is LabServiceWorkflowStatus.Draft or LabServiceWorkflowStatus.Invalid
             or LabServiceWorkflowStatus.Approved or LabServiceWorkflowStatus.Production).Select(x => x.LabServiceWorkflowId).Distinct().ToList();
         // Invalidation affects the canonical workflow's live candidates, so also
-        // inspect jobs pinned to its other versions before allowing that change.
+        // inspect attempts and executions using its other versions before allowing that change.
         var relatedVersionIds = await dbContext.LabServiceWorkflowVersions
             .Where(x => liveWorkflowIds.Contains(x.LabServiceWorkflowId) || referencedIds.Contains(x.Id))
             .Select(x => x.Id).ToListAsync(cancellationToken);
-        var directlyUsingJobs = dbContext.LabProtocolExecutions.Where(x => versionIds.Contains(x.LabProtocolVersionId)).Select(x => x.LabWorkOrderId);
+        var relatedAttempts = await dbContext.LabSpecimenAttempts.Where(a => relatedVersionIds.Contains(a.LabServiceWorkflowVersionId)
+            && a.State != LabSpecimenAttemptState.Cancelled && a.State != LabSpecimenAttemptState.Failed).OrderBy(a => a.Id).ToListAsync(cancellationToken);
+        var attemptJobIds = relatedAttempts.Select(a => a.LabWorkOrderId).ToList();
+        var relatedExecutionJobs = from e in dbContext.LabProtocolExecutions
+            join stage in dbContext.LabServiceWorkflowStages on e.LabServiceWorkflowStageId equals stage.Id
+            where relatedVersionIds.Contains(stage.LabServiceWorkflowVersionId) && e.Status != LabExecutionStatus.Abandoned select e.LabWorkOrderId;
+        var directlyUsingJobs = dbContext.LabProtocolExecutions.Where(x => versionIds.Contains(x.LabProtocolVersionId)
+            && x.Status != LabExecutionStatus.Abandoned).Select(x => x.LabWorkOrderId);
         var jobs = await dbContext.LabWorkOrders.Where(x => x.Status != LabWorkOrderStatus.ReadyForRelease && x.Status != LabWorkOrderStatus.Cancelled
-            && ((x.LabServiceWorkflowVersionId.HasValue && relatedVersionIds.Contains(x.LabServiceWorkflowVersionId.Value)) || directlyUsingJobs.Contains(x.Id)))
+            && (attemptJobIds.Contains(x.Id) || relatedExecutionJobs.Contains(x.Id) || directlyUsingJobs.Contains(x.Id)
+                || x.AuthorizationSource == LabAuthorizationSource.TrialProject && x.LabServiceWorkflowVersionId.HasValue && relatedVersionIds.Contains(x.LabServiceWorkflowVersionId.Value)))
             .OrderBy(x => x.Id).ToListAsync(cancellationToken);
         var jobIds = jobs.Select(x => x.Id).ToList();
         var executions = await dbContext.LabProtocolExecutions.Where(x => jobIds.Contains(x.LabWorkOrderId)).OrderBy(x => x.Id).ToListAsync(cancellationToken);
@@ -108,7 +116,12 @@ public sealed partial class LabOperationsController
         var activeIds = jobs.Where(x => startedAttemptJobs.Contains(x.Id) || x.Status is not (LabWorkOrderStatus.AwaitingSpecimens or LabWorkOrderStatus.Received or LabWorkOrderStatus.OnHold)
             || executions.Any(e => e.LabWorkOrderId == x.Id && e.StartedAtUtc.HasValue && e.Status != LabExecutionStatus.Abandoned)).Select(x => x.Id).ToHashSet();
         var queued = jobs.Where(x => !activeIds.Contains(x.Id)).ToList();
-        var queuedWorkflowIds = queued.Select(x => x.LabServiceWorkflowVersionId).ToList();
+        var queuedJobIds = queued.Select(x => x.Id).ToList();
+        var queuedWorkflowIds = await (from e in dbContext.LabProtocolExecutions
+            join stage in dbContext.LabServiceWorkflowStages on e.LabServiceWorkflowStageId equals stage.Id
+            where queuedJobIds.Contains(e.LabWorkOrderId) && e.Status != LabExecutionStatus.Abandoned select stage.LabServiceWorkflowVersionId).ToListAsync(cancellationToken);
+        queuedWorkflowIds.AddRange(relatedAttempts.Where(a => queuedJobIds.Contains(a.LabWorkOrderId)).Select(a => a.LabServiceWorkflowVersionId));
+        queuedWorkflowIds.AddRange(queued.Where(w => w.AuthorizationSource == LabAuthorizationSource.TrialProject && w.LabServiceWorkflowVersionId.HasValue).Select(w => w.LabServiceWorkflowVersionId!.Value));
         var affectedIds = referencedVersions.Where(x => x.Status is LabServiceWorkflowStatus.Draft or LabServiceWorkflowStatus.Invalid or LabServiceWorkflowStatus.Approved or LabServiceWorkflowStatus.Production
             || queuedWorkflowIds.Contains(x.Id)).Select(x => x.LabServiceWorkflowId).Distinct().ToList();
         var workflows = await dbContext.LabServiceWorkflows.Where(x => affectedIds.Contains(x.Id)).OrderBy(x => x.Id).ToListAsync(cancellationToken);
@@ -123,9 +136,10 @@ public sealed partial class LabOperationsController
             Workflows = workflows.Select(x => new { x.Id, x.Version }),
             Versions = workflowVersions.Select(x => new { x.Id, x.Version, x.Status }),
             Jobs = jobs.Select(x => new { x.Id, x.Version, x.Status, x.LabServiceWorkflowVersionId }),
+            Attempts = relatedAttempts.Select(a => new { a.Id, a.Version, a.State, a.LabServiceWorkflowVersionId }),
             Executions = executions.Select(x => new { x.Id, x.Version, x.Status, x.StartedAtUtc }) });
         var token = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(tokenData)));
-        return new(new(token, workflows.Select(x => x.Name).ToList(), jobs.Where(x => activeIds.Contains(x.Id)).Select(MapJob).ToList(), queued.Select(MapJob).ToList()), workflows, workflowVersions, queued);
+        return new(new(token, workflows.Select(x => x.Name).ToList(), jobs.Where(x => activeIds.Contains(x.Id)).Select(MapJob).ToList(), queued.Select(MapJob).ToList()), workflows, workflowVersions, queued, queuedWorkflowIds);
     }
 
     private async Task RequireCurrentProtocolsAsync(IEnumerable<Guid> versionIds, CancellationToken cancellationToken)
@@ -136,21 +150,14 @@ public sealed partial class LabOperationsController
         foreach (var protocol in protocols) { Execute(protocol.RequireCurrent); MarkProtocolCandidateChanged(protocol); }
     }
 
-    private async Task RequireUsablePinnedWorkflowAsync(LabWorkOrder work, CancellationToken cancellationToken)
+    private async Task RequireWorkExecutionWorkflowsAsync(LabWorkOrder work, CancellationToken cancellationToken)
     {
-        if (!work.LabServiceWorkflowVersionId.HasValue)
-        {
-            var assignedIds = await dbContext.LabProtocolExecutions.Where(x => x.LabWorkOrderId == work.Id)
-                .Select(x => x.LabProtocolVersionId).ToListAsync(cancellationToken);
-            await RequireCurrentProtocolsAsync(assignedIds, cancellationToken);
-            return;
-        }
-        var version = await dbContext.LabServiceWorkflowVersions.SingleAsync(x => x.Id == work.LabServiceWorkflowVersionId.Value, cancellationToken);
-        if (version.Status is LabServiceWorkflowStatus.Invalid or LabServiceWorkflowStatus.Invalidated)
-            throw Conflict("work_workflow_invalid", "This job is assigned to an invalid workflow after protocol retirement. Review the job assignment before starting work.");
-        var workflow = await dbContext.LabServiceWorkflows.SingleAsync(x => x.Id == version.LabServiceWorkflowId, cancellationToken);
-        MarkWorkflowCandidateChanged(workflow);
-        var ids = await dbContext.LabServiceWorkflowStages.Where(x => x.LabServiceWorkflowVersionId == version.Id).Select(x => x.LabProtocolVersionId).ToListAsync(cancellationToken);
-        await RequireCurrentProtocolsAsync(ids, cancellationToken);
+        var ids = await dbContext.LabSpecimenAttempts.Where(a => a.LabWorkOrderId == work.Id
+            && a.State != LabSpecimenAttemptState.Cancelled && a.State != LabSpecimenAttemptState.Failed)
+            .Select(a => a.LabServiceWorkflowVersionId).Distinct().ToListAsync(cancellationToken);
+        foreach (var id in ids) await RequireExecutionWorkflowAsync(work, id, cancellationToken);
+        var legacy = await dbContext.LabProtocolExecutions.Where(e => e.LabWorkOrderId == work.Id
+            && e.LabSpecimenAttemptId == null && e.Status != LabExecutionStatus.Abandoned).ToListAsync(cancellationToken);
+        foreach (var execution in legacy) await RequireExecutionWorkflowAsync(execution, cancellationToken);
     }
 }

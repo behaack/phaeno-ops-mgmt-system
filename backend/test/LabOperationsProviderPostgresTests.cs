@@ -15,6 +15,25 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 public class LabOperationsProviderPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task CommercialAuthorizationDoesNotRequireOrPinAWorkflow()
+    {
+        await using var scope = await ProviderTestScope.CreateAsync();
+        var command = CreateAuthorization(scope.TrackAuthorization(Guid.NewGuid()), Guid.NewGuid(), [Guid.NewGuid()]) with
+        {
+            ServiceKey = "unconfigured-service-" + Guid.NewGuid().ToString("N"),
+            // Old callers may carry this field; it is not an order requirement.
+            ApprovedWorkflowVersionId = Guid.NewGuid()
+        };
+        var result = await scope.Provider.AuthorizeWorkAsync(command, default);
+        Assert.Equal(LabCommandDisposition.Accepted, result.Disposition);
+        var work = await scope.DbContext.LabWorkOrders.AsNoTracking().SingleAsync(w => w.Id == result.LabWorkOrderId);
+        Assert.Null(work.LabServiceWorkflowVersionId);
+        Assert.Equal(command.ServiceKey, work.ServiceKey);
+        Assert.Equal(command.ServiceVersion, work.ServiceVersion);
+        Assert.Equal(result, await scope.Provider.AuthorizeWorkAsync(command, default));
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task AuthorizationIsAtomicIdempotentAndRejectsConflictingCommandReuse()
     {
         await using var scope = await ProviderTestScope.CreateAsync();

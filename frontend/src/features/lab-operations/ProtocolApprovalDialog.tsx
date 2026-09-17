@@ -1,3 +1,8 @@
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useBlocker } from '@tanstack/react-router'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 import { useEffect, useMemo, useState } from 'react'
 
 import type { LabProtocol } from '#/api/lab-operations'
@@ -23,6 +28,7 @@ const qcScopeLabels = { tube: 'Tube — assess individually', batch: 'Batch — 
 
 export function ProtocolApprovalDialog({
   error,
+  override = false,
   isPending,
   onApprove,
   onOpenChange,
@@ -30,13 +36,19 @@ export function ProtocolApprovalDialog({
   version,
 }: {
   error?: string
+  override?: boolean
   isPending: boolean
-  onApprove: () => void
+  onApprove: (reason?: string) => void
   onOpenChange: (open: boolean) => void
   protocol: LabProtocol | null
   version: ProtocolVersion | null
 }) {
   const [confirmed, setConfirmed] = useState(false)
+  const form = useForm<{ reason: string }>({ resolver: zodResolver(z.object({ reason: z.string().trim().min(1, 'Enter a reason for bypassing independent review.').max(2000) })), defaultValues: { reason: '' } })
+  const confirmLeave = () => !override || !form.formState.isDirty || window.confirm('Discard the unsaved approval override reason?')
+  const close = () => { if (!isPending && confirmLeave()) onOpenChange(false) }
+  useBlocker({ shouldBlockFn: () => isPending || !confirmLeave(), enableBeforeUnload: () => isPending || override && form.formState.isDirty })
+  const Footer = override ? RequiredDialogFooter : DialogFooter
   const definition = useMemo(
     () => {
       const parsed = version ? deserializeProtocolDefinition(version.definitionJson) : null
@@ -47,14 +59,15 @@ export function ProtocolApprovalDialog({
 
   useEffect(() => {
     setConfirmed(false)
-  }, [version?.id])
+    form.reset({ reason: '' })
+  }, [version?.id, override, form])
 
   return (
-    <Dialog open={protocol !== null && version !== null} onOpenChange={onOpenChange}>
+    <Dialog open={protocol !== null && version !== null} onOpenChange={open => { if (!open) close() }}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>
-            Approve {protocol?.name} version {version?.protocolVersion}?
+            {override ? 'Administrator protocol approval override' : 'Approve protocol'}
           </DialogTitle>
           <DialogDescription>
             Approval is a formal controlled release. It locks this exact version,
@@ -127,6 +140,13 @@ export function ProtocolApprovalDialog({
           )}
         </section>
 
+        {override ? <form id="protocol-approval-override" onSubmit={form.handleSubmit(values => { if (confirmed && definition && !isPending) onApprove(values.reason) })} className="space-y-2">
+          <p className="text-sm">You are approving your own work without independent review. Your identity, time and reason will be retained as an administrator override.</p>
+          <Label htmlFor="protocol-override-reason"><RequiredFieldName>Override reason</RequiredFieldName></Label>
+          <textarea id="protocol-override-reason" className="min-h-24 w-full rounded-md border bg-background p-3 text-sm" maxLength={2000} disabled={isPending} aria-invalid={Boolean(form.formState.errors.reason)} aria-describedby={form.formState.errors.reason ? 'protocol-override-error' : undefined} {...form.register('reason')} />
+          {form.formState.errors.reason ? <p id="protocol-override-error" role="alert" className="text-sm text-destructive">{form.formState.errors.reason.message}</p> : null}
+        </form> : null}
+
         <div className="flex items-start gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
           <Checkbox
             id="confirm-protocol-approval"
@@ -135,19 +155,18 @@ export function ProtocolApprovalDialog({
             onCheckedChange={(checked) => setConfirmed(checked === true)}
           />
           <Label htmlFor="confirm-protocol-approval" className="cursor-pointer text-sm leading-5">
-            I reviewed this exact version and confirm that it is complete and ready
-            to govern future laboratory work. I understand that approval locks it.
+            {override ? 'I reviewed this exact version, accept responsibility for bypassing independent review, and understand that approval locks it.' : 'I reviewed this exact version and confirm that it is complete and ready to govern future laboratory work. I understand that approval locks it.'}
           </Label>
         </div>
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+        <Footer>
+          <Button type="button" variant="outline" disabled={isPending} onClick={close}>
             Cancel
           </Button>
-          <Button type="button" disabled={!confirmed || !definition || isPending} onClick={onApprove}>
-            {isPending ? 'Approving…' : `Approve version ${version?.protocolVersion ?? ''}`}
+          <Button type={override ? "submit" : "button"} form={override ? "protocol-approval-override" : undefined} disabled={!confirmed || !definition || isPending} onClick={override ? undefined : () => onApprove()}>
+            {isPending ? 'Approving…' : override ? 'Approve with override' : `Approve version ${version?.protocolVersion ?? ''}`}
           </Button>
-        </DialogFooter>
+        </Footer>
       </DialogContent>
     </Dialog>
   )

@@ -24,7 +24,7 @@ public sealed partial class LabOperationsController
         var work = await RequireWorkOrderAsync(workOrderId, cancellationToken);
         EnsureVersion(work.Version, request.Version);
         if (status is not (LabWorkOrderStatus.AwaitingSpecimens or LabWorkOrderStatus.Received or LabWorkOrderStatus.OnHold))
-            await RequireUsablePinnedWorkflowAsync(work, cancellationToken);
+            await RequireWorkExecutionWorkflowsAsync(work, cancellationToken);
         if (work.TubeUsePolicyKey is not null && status is not (LabWorkOrderStatus.Received or LabWorkOrderStatus.OnHold))
             await RequireSpecimenReviewReadinessAsync(work, cancellationToken);
         Execute(() => work.RecordMilestone(status));
@@ -417,41 +417,36 @@ public sealed partial class LabOperationsController
                 throw Invalid("lab_assignee_not_eligible", "Choose an active laboratory operator, supervisor, or operations administrator.");
         }
 
-        var workflowVersionId = work.LabServiceWorkflowVersionId;
-        if (!workflowVersionId.HasValue)
-        {
-            workflowVersionId = await (
-                from workflow in dbContext.LabServiceWorkflows.AsNoTracking()
-                join version in dbContext.LabServiceWorkflowVersions.AsNoTracking()
-                    on workflow.Id equals version.LabServiceWorkflowId
-                where workflow.ServiceKey == work.ServiceKey.ToLower()
-                    && version.Status == LabServiceWorkflowStatus.Production
-                orderby version.WorkflowVersion descending
-                select (Guid?)version.Id).FirstOrDefaultAsync(cancellationToken);
-            if (!workflowVersionId.HasValue)
-                throw Conflict("service_workflow_not_in_production",
-                    "This service does not have a production laboratory workflow. Promote one before starting work.");
-            Execute(() => work.PinServiceWorkflow(workflowVersionId.Value));
-        }
+        // Existing legacy executions own their workflow; an old order pin does not.
+        var recordedWorkflowIds = await (from e in dbContext.LabProtocolExecutions
+            join s in dbContext.LabServiceWorkflowStages on e.LabServiceWorkflowStageId equals s.Id
+            where e.LabWorkOrderId == work.Id && e.LabSpecimenId == null && e.Status != LabExecutionStatus.Abandoned
+            select s.LabServiceWorkflowVersionId).Distinct().ToListAsync(cancellationToken);
+        if (recordedWorkflowIds.Count > 1)
+            throw Conflict("execution_workflow_review_required", "This legacy work has multiple workflow versions. Review its execution records before assigning another stage.");
+        var workflowVersionId = recordedWorkflowIds.Select(id => (Guid?)id).SingleOrDefault()
+            ?? await ReadDefaultExecutionWorkflowAsync(work, cancellationToken)
+            ?? throw Conflict("service_workflow_not_in_production", "Promote a workflow for this service before assigning new work.");
+        await RequireExecutionWorkflowAsync(work, workflowVersionId, cancellationToken, newSelection: recordedWorkflowIds.Count == 0);
 
         LabServiceWorkflowStage? stage;
         if (request.LabServiceWorkflowStageId.HasValue)
         {
             stage = await dbContext.LabServiceWorkflowStages.AsNoTracking().SingleOrDefaultAsync(item =>
                 item.Id == request.LabServiceWorkflowStageId.Value
-                && item.LabServiceWorkflowVersionId == workflowVersionId.Value,
+                && item.LabServiceWorkflowVersionId == workflowVersionId,
                 cancellationToken);
         }
         else
         {
             stage = await dbContext.LabServiceWorkflowStages.AsNoTracking().SingleOrDefaultAsync(item =>
-                item.LabServiceWorkflowVersionId == workflowVersionId.Value
+                item.LabServiceWorkflowVersionId == workflowVersionId
                 && item.LabProtocolVersionId == request.LabProtocolVersionId,
                 cancellationToken);
         }
         if (stage is null)
             throw Conflict("protocol_not_in_pinned_workflow",
-                "Choose a protocol stage from this job's pinned laboratory workflow.");
+                "Choose a stage from the workflow used for this laboratory execution.");
         if (request.LabProtocolVersionId != stage.LabProtocolVersionId)
             throw Invalid("workflow_stage_protocol_mismatch",
                 "The selected workflow stage and protocol version do not match.");
@@ -459,7 +454,7 @@ public sealed partial class LabOperationsController
             .SingleAsync(item => item.Id == stage.LabProtocolVersionId, cancellationToken);
         RequireProtocolDefinition(protocol.DefinitionJson);
         var priorRequiredStageIds = await dbContext.LabServiceWorkflowStages.AsNoTracking()
-            .Where(item => item.LabServiceWorkflowVersionId == workflowVersionId.Value
+            .Where(item => item.LabServiceWorkflowVersionId == workflowVersionId
                 && item.Sequence < stage.Sequence
                 && item.Requirement == LabServiceWorkflowStageRequirement.Required)
             .Select(item => item.Id).ToListAsync(cancellationToken);
@@ -477,7 +472,6 @@ public sealed partial class LabOperationsController
                 throw Conflict("workflow_prior_required_stage_incomplete",
                     "Complete all earlier required workflow stages before assigning this stage.");
         }
-        await RequireUsablePinnedWorkflowAsync(work, cancellationToken);
         await RequireCurrentProtocolsAsync([stage.LabProtocolVersionId], cancellationToken);
         var execution = new LabProtocolExecution(workOrderId, request.LabSpecimenId,
             stage.LabProtocolVersionId, request.AssignedToUserId, stage.Id);
@@ -519,7 +513,7 @@ public sealed partial class LabOperationsController
                         throw Conflict("accepted_tube_required", "Complete tube intake during accessioning. At least one available tube must be Accepted before processing starts.");
                     dbContext.Entry(work).Property(item => item.UpdatedAt).IsModified = true;
                 }
-                await RequireUsablePinnedWorkflowAsync(work, cancellationToken);
+                await RequireExecutionWorkflowAsync(execution, cancellationToken);
                 await RequireCurrentProtocolsAsync([execution.LabProtocolVersionId], cancellationToken);
                 var startedProtocol = await dbContext.LabProtocolVersions.AsNoTracking()
                     .SingleAsync(item => item.Id == execution.LabProtocolVersionId, cancellationToken);

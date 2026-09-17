@@ -1,6 +1,158 @@
 # Frontend Test Plan
 
-## September 16, 2026 � Invitation-authorized identity setup
+## Shared output form checkpoint (2026-09-17)
+
+Authored PreparationOutputsDialog regressions for required per-tube quantities, shared defaults/overrides, single submission, individual barcode results, existing/failed tubes, stable rows after uncertain response, API compatibility and cancel. Typecheck and scoped lint at the checkpoint; automated tests not run.
+
+## Preparation report checkpoint - September 17, 2026
+
+Added preparation-dialog regressions for optional file selection/omission, preserved required capture validation and older-API compatibility. Multipart regression covers generic and legacy QC routes. Tests authored, not run.
+
+## Automatic conditional-review skips — September 17, 2026
+
+The preparation page consumes the server eligibility flag and submits one versioned reconciliation per batch version when no form is open. Added coverage for automatic initiation, visible failure/retry, no retry loop and reuse of the same request after uncertain failure. Existing session/role gates remain in force. Typecheck and scoped lint only; automated tests not executed.
+
+
+## Single-entry review rationale — September 17, 2026
+
+Added regressions for mandatory rationale captured once and copied to condition assessment, explicit skip reason despite a retained rationale draft, and separate required repeat/correction reasons. Tests authored but not executed per repository instruction; typecheck and scoped lint cover compilation/style.
+
+## Collapsed sample cards — September 17, 2026
+
+Updated the existing identity-entry test to expand each sample before interacting with its details. All card states now start collapsed, including failed tubes. No new tests; execution remains deferred per repository instruction.
+
+## Optional preparation QC reports — September 17, 2026
+
+Added modal regressions for optional omission with mandatory QC, save-only file submission, draft preservation after rejection, removal, oversized-file validation, cancellation, and old-API compatibility. Added Axios multipart serialization coverage. Typecheck and scoped lint are the requested-scope checkpoint; automated tests are authored but not executed. Download failure/retry and keyboard/screen-reader upload behavior remain in connected manual acceptance.
+
+
+## Workflow-based preparation progress (2026-09-17)
+
+Added progress-helper regressions for single counts across multiple stages/tubes, partial coverage, explicit protocol completion, QC hold/repeat, stale evidence after correction, failed/empty batches, and permitted step/stage skips. The progress popover test asserts step/protocol totals replace tube outcomes under Prepare libraries. Tests authored but not executed; typecheck and scoped lint are the checkpoint.
+
+## Retained failed tubes (2026-09-17)
+
+PreparationStepDialog coverage now asserts disabled failed coverage, a read-only card with failure evidence and unsaved reference captures after acknowledged failure, retained other drafts, and submission containing only surviving members. Added persisted-failure reopening/skip and all-failed coverage. PreparationTray coverage asserts failed membership still occupies the same cell and opens its details. Tests authored but not executed; typecheck and scoped lint are the checkpoint.
+
+## Sample card headers and identity explanations (2026-09-17)
+
+Update PreparationStepDialog selectors for the simplified sample heading and card disclosure. Cover omission of the redundant identity exception field and retention of required tube reasons for QC holds. Tests updated but not executed; typecheck and scoped lint are the checkpoint.
+
+## Fail a tube from step entry (2026-09-17)
+
+Added PreparationStepDialog regressions for same-dialog failure confirmation, cancellation with draft and focus preservation, required reason/evidence, duplicate-submit protection, pending controls, failure rejection, operator permissions, and successful removal from coverage while retaining other values and requiring renewed coverage confirmation. Assert no implicit step submission and no failed tube in the subsequent evidence payload. Tests authored but not executed per repository scope; scoped lint and typecheck passed.
+
+## One identity check date per entry (2026-09-17)
+
+Update the preparation identity form regression to use identity-checked-on, require exactly one labeled date control, and assert a shared date with no per-tube overrides. Tests updated, not executed; scoped lint and typecheck are the checkpoint.
+
+## Automatic preparation specimen references (2026-09-17)
+
+Add PreparationStepDialog coverage for read-only customer sample/type/accession details, required manual source scans, submission without accession or spurious exception notes, and compatibility with older APIs lacking automaticSpecimenReferences. Typecheck and scoped lint; tests not executed.
+
+## Tray collapse after preparation starts (2026-09-17)
+
+Adapt the existing running-tray regression to expand the initially collapsed panel before checking that scanning is unavailable. Tests not run per repository instructions; scoped lint and typecheck are the checkpoint.
+
+## Direct start within library preparation — September 17, 2026
+
+Update phase and component assertions for four steps, with confirmed Draft and InProgress both current at Prepare libraries. Page coverage checks direct start payload, no modal, pending state, duplicate-click prevention, visible failure, uncertain-response retry identity reuse and transition to active work. Tests updated but not executed; scoped lint and typecheck are the checkpoint.
+
+## Preparation specimen declarations — September 17, 2026
+
+PreparationBatchPage access tests now render selected-tube details through the tray mock and assert biological source/safety text, multiline preservation and explicit Not recorded fallbacks. No inferred safe status. Tests updated but not executed; typecheck and scoped lint are the checkpoint.
+
+## Tray confirmation checkbox — September 17, 2026
+
+PreparationFormDialog coverage verifies an initially unchecked review checkbox, no select, unchecked/cleared submission rejection and checked submission of the existing yes value. Tests added but not executed; scoped lint and typecheck are the checkpoint.
+
+## Combined preparation step and help panels — September 17, 2026
+
+Update preparation-progress phase coverage for the five-step journey; partial trays remain in Prepare tray until confirmed. PreparationProgress component coverage checks five information controls, saved confirmation transition, keyboard focus retention, Escape dismissal, click/tap opening, current tube counts and persistent next-step guidance. Tests added/updated but not executed per repository policy; scoped lint and typecheck are the checkpoint.
+
+## Restore saved tray identity — September 17, 2026
+
+PreparationTray tests now use persisted tray assignment immediately, verify remount enables tube scanning and Confirm tray without another assignment write, retain pending assignment acknowledgement/focus coverage, and verify failed empty-tray replacement plus cancellation restores the original identity. Confirmed/read-only guards and unsaved tube gating remain. Existing scan tests no longer perform browser-only verification. Tests updated, not executed; scoped lint and typecheck are the checkpoint.
+
+## Guided preparation journey — September 17, 2026
+
+New preparation-progress tests cover assembly/confirmation/start phases, delayed handoff, mixed outcomes, all-failed/cancelled batches, complete handoff assignment and final-stage output/QC guards. PreparationTray tests distinguish physical verification from assembly confirmation and cover confirmed-draft read-only controls, retained inspection and unsaved-scan gating. Page access coverage checks direct Start action and hidden discovery/handoff for confirmed drafts. Existing pagination/access tests remain. Tests are not run without request; typecheck and scoped lint are the checkpoint.
+
+## Eligible tubes inside Tray — September 17, 2026
+
+Update the PreparationBatchPage access test's Tray mock to render the eligible-tube slot; open the initially collapsed disclosure before exercising the existing pagination assertions. No new automated test is needed for the bounded placement change. Typecheck and scoped lint are the checkpoint; tests not run.
+
+## Eligible tube pagination — September 17, 2026
+
+PreparationBatchPage.access.test.tsx adds eligible-tube page navigation, endpoint page arguments, first/last button states, both filter resets and Clear filters. Tray scanning is isolated from this list regression. Tests updated, not executed; typecheck and scoped lint are the checkpoint.
+
+## Physical preparation trays — September 17, 2026
+
+PreparationTray regressions now use separately assigned physical tray identities and await assignment acknowledgement. Added selection coverage verifies one tube detail at a time and no repeated Planned text; an unassigned tray keeps inputs disabled until server acknowledgement. Existing scanning/error/skip/focus/read-only coverage and label preview assertions are updated. Tests are not executed without request; typecheck and scoped lint are the checkpoint.
+
+## Inline tray scanning — September 16, 2026
+
+PreparationTray.test.tsx adds batch identity gating, initial focus, acknowledgement-only advance, duplicate-submit prevention, unavailable/filled-cell skipping, error-value/focus retention, full-tray announcement, read-only/started views and label identity preview coverage. Tests added but not executed per repository policy; typecheck/scoped lint and help consistency are the checkpoint.
+
+
+## Service-based commercial jobs — September 16, 2026
+
+Add specimen workspace regression: v1 attempt continues its v1 next stage even with a v2 default and mixed version stage list. History displays the attempt version. Scientific review uses service version, not the historical workflow pin. Component tests added, not executed; typecheck and scoped lint are the implementation checkpoint.
+
+
+## Administrator approval override — September 16, 2026
+
+ProtocolApprovalDialog and WorkflowApprovalOverrideDialog coverage requires reason plus explicit attestation, preserves fields after a rejected save, and blocks pending dismissal. Protocol override dirty cancellation is covered. ProtocolList router mock updated for navigation protection. Tests added/updated, not executed by request policy.
+
+## Accession footer summary — September 16, 2026
+
+Updated LabReceiptAccessionPanel.test.tsx for Accept (Y), exception and pending-acceptance totals before and after saving, and disabled Accept (0). The existing broken-tube and bulk-acceptance scenario covers saved exceptions, unidentified tubes and accepted tubes. Tests updated but not run, per requested scope.
+
+## Product type row actions — September 16, 2026
+
+SupplierCatalog.test.tsx also covers supplier row editing, versioned deactivation, product activation and failed-save retention. ProductTypes.test.tsx now covers list-row editing, confirmation before a versioned deactivation request, activation of inactive types, and the detail Actions menu. Tests updated but not executed; typecheck/lint and documentation checks used for this UI change.
+
+## Supplier catalog tab navigation — September 16, 2026
+
+Product types now lives under Suppliers & Products as a tab, with route-backed selection, legacy-link compatibility and return-to-tab links from details. Manual navigation acceptance remains pending; no automated test run requested for this navigation-only change.
+
+## Managed product types — September 16, 2026
+
+ProductTypes.test.tsx covers view-first type navigation, required descriptions, default non-kit use, preserved classification for referenced types and inactive filtering. Supplier editors load saved types; stock-kit coverage excludes reagents and inactive types. Tests not run.
+
+## Supplier and product selections — September 16, 2026
+
+Updated standard-kit and request preparation fixtures to use supplier/product IDs. Added description/type filtering, supplier-change reset and failed-catalog disabling coverage. Supplier catalog creation/editing, inactive filtering, required descriptions and error retention have focused component coverage. Tests are not executed unless requested.
+
+## Standard kit preparation sections — September 16, 2026
+
+Existing preparation and kit-request tests locate Supplier and Product # within the Tubes or Shipping Container fieldset. Existing default-product, optional-lot and submission assertions remain. Selectors updated; tests not run (not requested).
+
+## Receiving and container location presentation — September 16, 2026
+
+Kit-order selectors use Kit receiving location. Packing coverage preserves the multiple-location choice while stock at the selected location is empty, without showing the full container chooser prematurely. Tests updated but not executed (not requested).
+
+## Container arrival guidance — September 16, 2026
+
+Packing-panel cases cover hidden selection with no received stock, appearance after inventory refresh, and visible error/retry. Kit-panel coverage suppresses redundant ordering advice for outstanding deliveries while retaining the location link. Progress cases cover pending, partially dispatched and dispatched kit requests showing Wait for containers to arrive / View kit delivery while preserving actor, supply-completion and physical-receipt distinctions. Tests updated but not run (not requested).
+
+## Transportation kit recommendation presentation — September 16, 2026
+
+Existing panel expectations now omit the duplicated availability message. Kit adjustment coverage checks that the default recommendation is labeled in the ordering modal and that the label is hidden for custom sizes. Tests updated but not executed (not requested).
+
+## Complete roster review and clear details — September 16, 2026
+
+Updated sample panel coverage for complete rosters replacing CSV controls with a primary review action; partial rosters retaining import guards; application-modal clear confirmation/cancellation (without a browser prompt) restoring a blank ID and one tube without changing scope; and finalized samples remaining protected. Progress tests cover correct sources, unique IDs, positive tube counts and the next-step review-action host. Tests updated but not run (not requested).
+
+## Sample identification — September 16, 2026
+
+`SampleIdentificationRows.test.tsx` covers expected placeholder rows and one-tube defaults without writes, duplicate IDs, invalid tubes, sequential versions, partial failures, lost-response reconciliation and clearing dirty state. `LabJobSamplesPanel.test.tsx` follows Actions menus with concise Edit sample / Remove sample labels and covers source placeholders, unchanged import/finalization guards and unsaved-entry navigation protection. `LabJobOrderProgress.test.tsx` follows Sample identification and Match samples to tubes. Tests added/updated but not run (not requested).
+
+## Lab request submission and pricing review — September 16, 2026
+
+Lab request modal assertions now require Submit lab service request, Submit request, acceptance/decline guidance, no Customer price proposal and atomic submission input. Progress coverage distinguishes Waiting for pricing from Confirm pricing. Tests are updated but not run (not requested).
+
+## September 16, 2026 — Invitation-authorized identity setup
 
 Focused invitation component coverage verifies production and development ticket-based signup, required password and MFA handling, existing-user sign-in, fixed-email guards, rejected Portal revalidation, provider failure, and removal of private query parameters. Registration tickets are bound to the current session-stored Portal token and cleared when that token changes. Run the invitation authentication, page and session suites at the release checkpoint.
 
@@ -2221,3 +2373,21 @@ September 15 specimen-attempt draft correction: `LabSpecimenPage.test.tsx` passe
 ## Shipping long-manifest and fulfillment access fixes — September 15, 2026
 
 SHP-14 exposed an unbounded frozen manifest and a fulfillment queue hidden behind a laboratory dashboard role denial. The manifest component now pages 8/8/4 for 20 samples, retains full receiving totals and print behavior, and resets the range on revision replacement. LabOperationsPage renders independently authorized receipt/kit panels without a dashboard request and refreshes their queries. Both new regressions fail before their respective corrections; seven tests pass across the two focused files. TypeScript and scoped ESLint pass. Existing API permissions are unchanged. [Connected retest and complete case evidence](../testing/runs/2026-09-15-shipping-large-recovery-uat.md).
+
+Kit preparation label update: both product selectors read **Product name**. StandardKits and KitRequests selectors updated; tests not run for this copy-only change.
+
+September 16 standard kit product validation: added regressions for clearing stale required errors on manual selection in both product groups, restoring errors for blank selections, and clearing shipping supplier/product errors when a configured size prefills them after an invalid submission. Existing valid-payload and supplier-reset coverage retained. Tests not run (not requested).
+
+September 16 container selection action: existing packing/inventory selectors now use **Change container selection**. The action appears at the right of **Choose shipping containers** with existing availability guards. Tests updated but not run (not requested).
+
+September 16 assignment wording supersedes the earlier container-selection labels: **Assign shipping containers**, **Assign containers**, and **Confirm assignment** / **Confirm partial assignment**. Existing packing selectors now scope repeated Container and barcode field labels by the numbered container group. Tests updated but not run (not requested).
+
+September 16 single-container allocation: show tube counts in a read-only text box for one container; retain editable inputs for multiple containers. Updated count locators and added coverage for recalculation after removal, capacity-capped partial submission, and return to editable counts when another container is added. Tests updated, not run.
+
+September 16 sample ordering: digit-by-digit sample IDs, biological-source group order, numeric tube ordinals and scanner advancement now share the displayed order. Added focused ordering coverage and updated integrated scanner pagination expectations; tests not run. Manual check: mixed-length numeric IDs, multiple sources, multiple tubes, resume after saved matches and dirty-target preservation.
+
+September 16 inline tube scanning: updated scanner and integrated Job regressions for one active row-local field, save/advance, inline errors, paging and collapse draft retention, remount focus and completion. Manual acceptance includes keyboard/scanner Enter, row scrolling, narrow screens and reduced motion. Tests updated but not run (not requested).
+
+September 16 scan completion: verify Done scanning is absent before the final saved match, appears in the Samples and shipping header on completion, receives focus, and closes matching without losing the sample review list. Updated integrated completion and host-header coverage; tests not run.
+
+September 16 sample row alignment: updated matching-status expectations for combined count/progress labels and preserved explicit loading/unavailable states. Fixed-width desktop ID column, wrapping IDs and stacked narrow layout are visual changes; no new tests added or executed.

@@ -45,6 +45,7 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
   const workspace = controlledWorkspace ?? localWorkspace
   const orderActionRef = useRef<HTMLButtonElement>(null)
   const [headerTarget, setHeaderTarget] = useState<HTMLDivElement | null>(null)
+  const [sampleReviewTarget, setSampleReviewTarget] = useState<HTMLDivElement | null>(null)
   const [sendActionTarget, setSendActionTarget] = useState<HTMLDivElement | null>(null)
   const [shippingActive, setShippingActive] = useState(false)
   const [navigationLocked, setNavigationLocked] = useState(false)
@@ -150,7 +151,7 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
       {quoteDownload.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Quote could not be downloaded</AlertTitle><AlertDescription>{getOrderErrorMessage(quoteDownload.error, 'Try Download quote PDF again. If the problem continues, contact Phaeno.')}</AlertDescription></Alert> : null}
       <section id="ordering-and-shipping" className="space-y-5">
         <LabChangeQuotes order={order} onSaved={async () => { await queryClient.invalidateQueries({ queryKey: ['lab-service-order', orderId] }); await queryClient.invalidateQueries({ queryKey: ['lab-service-orders'] }) }} />
-        <LabJobOrderProgress order={order} shipments={shipping.related} shippingState={shipping.receiptState} kitSupply={kitSupply} canManageShipping={session?.capabilities.canManageSampleShipping === true} canAcceptOrder={Boolean(canManageQuotes || order.canPlaceStandardOrder)} onStepSelect={openStep} sendActionTargetRef={setSendActionTarget} />
+        <LabJobOrderProgress order={order} shipments={shipping.related} shippingState={shipping.receiptState} kitSupply={kitSupply} canManageShipping={session?.capabilities.canManageSampleShipping === true} canAcceptOrder={Boolean(canManageQuotes || order.canPlaceStandardOrder)} onStepSelect={openStep} sendActionTargetRef={setSendActionTarget} sampleReviewTargetRef={setSampleReviewTarget} />
         <section id="job-commercial" tabIndex={-1} className="space-y-4 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <StandardLabServicePanel order={order} />
           <CommercialSection key={visibility.confirmed ? 'confirmed' : 'unconfirmed'} aria-labelledby="order-details-heading" className="rounded-lg border bg-card p-4">
@@ -174,7 +175,7 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
             </div>
           </CommercialSection>
         </section>
-        {visibility.samplesRelevant ? <LabJobShippingWorkspace order={order} workspace={workspace} onWorkspaceChange={changeWorkspace} headerTarget={headerTarget} sendActionTarget={sendActionTarget} orderActions={orderActions} orderDialogOpen={Boolean(dialog) || Boolean(extensionQuote)} onActivityChange={setShippingActive} navigationLocked={navigationLocked} onNavigationLockChange={setNavigationLocked} onKitSupplyChange={setKitSupply} /> : null}
+        {visibility.samplesRelevant ? <LabJobShippingWorkspace order={order} workspace={workspace} onWorkspaceChange={changeWorkspace} headerTarget={headerTarget} sendActionTarget={sendActionTarget} sampleReviewTarget={sampleReviewTarget} orderActions={orderActions} orderDialogOpen={Boolean(dialog) || Boolean(extensionQuote)} onActivityChange={setShippingActive} navigationLocked={navigationLocked} onNavigationLockChange={setNavigationLocked} onKitSupplyChange={setKitSupply} /> : null}
       </section>
       {visibility.trackingRelevant ? <section id="after-you-send" className="mt-8 space-y-5" aria-labelledby="after-send-title">
         <div><h2 id="after-send-title" className="text-xl font-semibold">After you send</h2><p className="mt-1 text-sm text-muted-foreground">Track your shipments, laboratory progress and results here. We will show any action needed from you above.</p></div>
