@@ -29,12 +29,14 @@ Deployment reported success at 18:29:15 UTC, with matching source revision and u
 
 Independent post-release probes returned API health 200, database ping 204, Portal root 200 and Portal API-health proxy 200. No operational specimen/output/evidence records were created for verification.
 
-## Portal UI promotion pending
+## Portal UI production deployment
 
 GitHub reports success for the exact-application-commit [Portal preview deployment BxLhtu6yiASk3jNSk4Hk7P1bH2CD](https://vercel.com/cadexgenomics/phaeno-ops-mgmt-system/BxLhtu6yiASk3jNSk4Hk7P1bH2CD).
 
-Production promotion is not complete. The signed-in Vercel dashboard requires the owner's authenticator code. The Edge sign-in tab is left for the owner to complete; resume by opening the exact preview above and promoting it with production environment settings, then verify the production deployment source and Portal rendering. A 200 from the existing Portal domain is availability evidence, not proof that the new frontend is deployed. No public Website production promotion was performed.
+After the owner completed Vercel sign-in, the exact preview was promoted through a new build using production environment settings. [Production deployment BcCwr3VvXhx9v7FsUqWnRzaqbi8y](https://vercel.com/cadexgenomics/phaeno-ops-mgmt-system/BcCwr3VvXhx9v7FsUqWnRzaqbi8y) reported Ready after a 24-second build on September 17, 2026 at 11:58:59 AM PDT. Its source is the exact application revision `4df13cb42d38fb1b1304b247e75a436411e72bb9`, its environment is Production, and its assigned domain is `portal.phaenobiotech.com`.
+
+A fresh browser navigation to the production domain rendered the POMS dashboard in the owner's existing authenticated session. Post-promotion probes returned API health 200, database ping 204, Portal root 200 and Portal API-health proxy 200. This verifies deployment identity, page rendering and service availability; it does not constitute populated laboratory workflow acceptance. No public Website production promotion was performed.
 
 ## Remaining acceptance
 
-Finish Portal UI promotion, verify its exact source revision and perform fresh signed-out browser smoke checks. Authenticated populated workflow acceptance, physical barcode handling and scientific validation remain separate from release/build checks.
+Populated laboratory workflow acceptance, physical barcode handling and scientific validation remain separate from release/build checks. The browser smoke check used the existing authenticated session; no signed-out check or operational record mutation was performed.
