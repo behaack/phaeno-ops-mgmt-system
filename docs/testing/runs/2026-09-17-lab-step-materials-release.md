@@ -24,4 +24,12 @@ The implementation checkpoint passed the Release solution build (including regre
 
 ## Deployment results
 
-Pending dispatch and verification. Record exact commit, workflow, backup/migrations, Portal deployment identity and independent probes here after release.
+Application revision `1e96aa35a84d811296dd7bed4f554af788957a72` was committed and pushed to `codex/portal-documentation-search-release`.
+
+[Deploy Portal Green run 35303119908](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/35303119908) succeeded for that exact revision. Inputs: migrations true, file storage/scanning Preserve, Clerk identity cutover false. The job completed in 4m13s.
+
+The log records `backup_restore_check=PASS` and `backup_restore_cleanup=PASS` at 03:28:59 UTC on September 18 (September 17 PDT). The encrypted dump and key checksums for `pre-migration-20260918T032854Z-1e96aa35a84d` both reported OK. All three migrations listed above applied at 03:29:03 UTC. The deployment reported matching source revision at 03:29:13 UTC and unchanged Website intake counts `12,5`.
+
+The exact-commit Portal [preview HbWiEUepEjjhSXcNhVEdy5dfXSYu](https://vercel.com/cadexgenomics/phaeno-ops-mgmt-system/HbWiEUepEjjhSXcNhVEdy5dfXSYu) built successfully. Promotion created a new build with Production environment settings: [GMNz16zPXsDuRFpUNVuQFbXgVHJB](https://vercel.com/cadexgenomics/phaeno-ops-mgmt-system/GMNz16zPXsDuRFpUNVuQFbXgVHJB). Vercel displayed Ready, a 26-second build, September 17 at 8:30:18 PM PDT, source `1e96aa35a84d811296dd7bed4f554af788957a72`, and the assigned domain `portal.phaenobiotech.com`.
+
+Independent post-promotion probes returned API health 200, database ping 204, Portal root 200 and Portal API-health proxy 200. Fresh browser navigation rendered the signed-in POMS dashboard, new laboratory navigation, the new Lab steps catalog (empty in production), the existing Materials list, and its material-detail page with the unassigned product clearly shown. No browser console errors were reported. No production configuration or operational records were written for smoke verification. Automated suites and populated laboratory acceptance remain unperformed; this release does not copy local fixtures into production.

@@ -186,3 +186,7 @@ Clarification verification: the running local authoring catalog returned supplie
 Remove the redundant coverage checkbox. Submission acknowledges the displayed automatic coverage using the existing command flag; exact eligible coverage remains validated by the server. The configured operator attestation is the last field, after the report, and is absent when confirmation is disabled or the step is skipped. Closing a tube as failed clears a previously checked operator attestation. Existing separately required legacy resource confirmations remain unchanged.
 
 Verification: frontend typecheck, scoped lint and whitespace checks passed. Connected preview showed the configurable attestation after the QC report and no attestation when Confirmation required was disabled. Temporary editor settings were discarded without saving. Regression cases updated, not executed.
+
+### Production release — September 17, 2026
+
+The owner subsequently authorized commit, push and deployment, with the earlier explicit production EF migration authorization retained. Application revision `1e96aa35a84d811296dd7bed4f554af788957a72` is deployed to both the API and Portal UI. The three additive migrations completed after encrypted-backup and isolated restore verification. See the [release record](../testing/runs/2026-09-17-lab-step-materials-release.md) for exact deployment identities and the remaining operational acceptance boundary. Local fixtures and operational records were not copied to production.
