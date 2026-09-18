@@ -737,6 +737,9 @@ public sealed class PlatformLabServiceOrdersController(
                 Execute(order.MarkResultsAvailable);
                 if (sample.Status == LabSampleStatus.DataProcessing) Execute(() => sample.TransitionTo(LabSampleStatus.DataAvailable, null, null));
                 Event(order, "ResultReview", mayRelease ? "ResultReleased" : "PaymentHold", actor.Id, childId: sample.Id);
+                if (mayRelease)
+                    await new LabOperations.Services.LabJobDeliveryRecorder(dbContext).RecordCommercialAsync(order.Id,
+                        [new(sample.Id, releasedAtUtc)], operationCancellationToken);
                 Notice(order, mayRelease ? "lab-result-released" : "lab-result-payment-hold",
                     mayRelease ? "Laboratory result available" : "Laboratory result awaiting payment",
                     mayRelease ? $"A result is available for {order.OrderNumber}." : $"A result for {order.OrderNumber} is ready but remains on payment hold. Contact Phaeno about release.");

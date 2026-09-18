@@ -7,7 +7,7 @@ Preparation step submissions may attach one PDF up to 10 MiB. Reuse private oper
 
 ## Combined order and retention settings — September 16, 2026
 
-The user menu has one **Order & retention settings** entry. Its shared sidebar includes **File retention**, separated from order subjects by a horizontal divider, which displays the existing global policy, history, and edit dialog. The former `/file-management` URL redirects to `/order-configuration?configurationSection=retention`. Existing section-specific capabilities still govern navigation and loading, and retention does not depend on the order-configuration request succeeding. No retention rules, API contracts, or saved policies change.
+Superseded September 18: **File retention policies** has its own `/file-management` page and user-menu entry under **Administration**, after **Order Settings** and **Lab Settings**. It is removed from the Order Settings sidebar. Old combined-settings retention links redirect to the standalone page. Existing retention permissions, policy history, edit dialog, API contracts and saved rules remain unchanged.
 
 ## Retention UAT supporting verification — September 14, 2026
 

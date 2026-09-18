@@ -10,6 +10,9 @@ import {
   Package,
   PackageCheck,
   Settings,
+  FolderClock,
+  Cog,
+  Truck,
   UsersRound,
   Workflow,
   type LucideIcon,
@@ -115,7 +118,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
       Boolean(session?.capabilities.canViewSampleShipping),
   },
   {
-    label: 'PSeq Kit orders',
+    label: 'PSeq kit orders',
     to: '/reagent-orders',
     icon: Package,
     group: 'workspace',
@@ -151,13 +154,50 @@ export const mainMenuItems: readonly MainMenuItem[] = [
       Boolean(session?.capabilities.canManageLabOperations),
   },
   {
-    label: 'Order & retention settings',
+    label: 'Order settings',
     to: '/order-configuration',
     icon: Settings,
     group: 'administration',
     visibleWhen: (session, context) =>
       context.selectedOrganizationKind === 'Phaeno' &&
-      Boolean(session?.capabilities.canManageOrderConfiguration || session?.capabilities.canManageFileManagementConfiguration),
+      Boolean(session?.capabilities.canManageOrderConfiguration),
+  },
+  {
+    label: 'Lab settings',
+    to: '/lab-configuration',
+    icon: Cog,
+    group: 'administration',
+    visibleWhen: (session, context) =>
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session?.capabilities.canManageLabOperations),
+  },
+  {
+    label: 'CRM settings',
+    to: '/crm/administration',
+    icon: Settings,
+    group: 'administration',
+    visibleWhen: (session, context) =>
+      session?.state === 'ready' &&
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session.capabilities.canAccessCrm && session.capabilities.canAdministerCrm),
+  },
+  {
+    label: 'Sample shipping settings',
+    to: '/sample-shipping-settings',
+    icon: Truck,
+    group: 'administration',
+    visibleWhen: (session, context) =>
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session?.capabilities.canManageOrderConfiguration),
+  },
+  {
+    label: 'File retention policies',
+    to: '/file-management',
+    icon: FolderClock,
+    group: 'administration',
+    visibleWhen: (session, context) =>
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session?.capabilities.canManageFileManagementConfiguration),
   },
   {
     label: 'Documentation',
@@ -222,6 +262,7 @@ export function isPhaenoEmployee(session: SessionResponse | null) {
 }
 
 export function isMainMenuRouteActive(pathname: string, to: string, exact?: boolean) {
+  if (to === '/crm' && (pathname === '/crm/administration' || pathname.startsWith('/crm/administration/'))) return false
   if (to === '/order-operations' && (pathname === '/trial-projects' || pathname.startsWith('/trial-projects/'))) return true
   return pathname === to || (!exact && pathname.startsWith(`${to}/`))
 }

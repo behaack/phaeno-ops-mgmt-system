@@ -1,4 +1,5 @@
 import { useId, useState } from 'react'
+import { Plus } from 'lucide-react'
 import { Link, useSearch } from '@tanstack/react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
@@ -37,7 +38,7 @@ export function ProductTypesPage({ productTypeId }: { productTypeId?: string }) 
   return <div className={productTypeId ? 'page-wrap space-y-5 px-4 py-8' : 'space-y-5'}>
     {query.isError ? <p role="alert">Refresh failed. Your current edits are retained. <button className="cursor-pointer underline" onClick={() => void query.refetch()}>Retry</button></p> : null}
     {type ? <Link className="text-sm text-primary underline" to="/lab-operations" search={backSearch}>Back to product types</Link> : null}
-    <Card className="gap-0 overflow-hidden py-0"><CardHeader className="border-b bg-muted/50 p-4"><CardTitle><h1>{type ? type.name : 'Product types'}</h1></CardTitle><CardDescription>{type ? type.description : 'Organize supplier products, including reagents, tubes and shipping containers.'}</CardDescription><CardAction>{type ? <ProductTypeActions type={type} onEdit={() => setEditing(type)} onStatus={() => setStatusTarget(type)} /> : <Button variant="outline" onClick={() => setEditing('new')}>New product type</Button>}</CardAction>
+    <Card className="gap-0 overflow-hidden py-0"><CardHeader className="border-b bg-muted/50 p-4"><CardTitle><h1>{type ? type.name : 'Product types'}</h1></CardTitle><CardDescription>{type ? type.description : 'Organize supplier products, including reagents, tubes and shipping containers.'}</CardDescription><CardAction>{type ? <ProductTypeActions type={type} onEdit={() => setEditing(type)} onStatus={() => setStatusTarget(type)} /> : <Button type="button" onClick={() => setEditing('new')}><Plus data-icon="inline-start" /> New product type</Button>}</CardAction>
       {!type ? <div className="col-span-full mt-3 flex min-w-0 flex-wrap items-end gap-4"><div className="min-w-0 flex-1 basis-48"><Label htmlFor="product-type-search">Search product types</Label><Input id="product-type-search" className="mt-2" value={search} onChange={e => setSearch(e.target.value)} /></div><label className="flex cursor-pointer items-center gap-2 py-2 text-sm"><input type="checkbox" checked={showInactive} onChange={e => setShowInactive(e.target.checked)} />Show inactive</label></div> : null}
     </CardHeader><CardContent className="space-y-4 p-4">
       {type ? <dl className="space-y-3 text-sm"><div><dt className="text-muted-foreground">Status</dt><dd>{type.isActive ? 'Active' : 'Inactive'}</dd></div><div><dt className="text-muted-foreground">Use in transportation kits</dt><dd>{productKindLabel(type.kitUse)}</dd></div><div><dt className="text-muted-foreground">Products using this type</dt><dd>{type.productCount}</dd></div></dl> : <>

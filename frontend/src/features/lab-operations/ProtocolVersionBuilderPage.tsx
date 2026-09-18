@@ -112,7 +112,7 @@ export function ProtocolVersionBuilderPage({
     onSuccess: async () => {
       leaveApproved.current = true;
       await queryClient.invalidateQueries({ queryKey: ['lab-operations'] })
-      await navigate({ to: '/lab-operations', search: { section: 'protocols' } })
+      await navigate({ to: '/lab-configuration', search: { configurationTab: 'protocols' } })
     },
   })
 
@@ -162,8 +162,8 @@ export function ProtocolVersionBuilderPage({
   const showPreview = (index = 0) => setCapturePreview({ definition: JSON.parse(serializeProtocolDefinition(form.getValues())) as ProtocolDefinition, index })
 
   const leaveBuilder = () => navigate({
-    to: '/lab-operations',
-    search: { section: 'protocols' },
+    to: '/lab-configuration',
+    search: { configurationTab: 'protocols' },
   })
 
   if (!canManage) {
@@ -211,7 +211,7 @@ export function ProtocolVersionBuilderPage({
           <AlertDescription>The protocol may have changed or no longer be available.</AlertDescription>
         </Alert>
         <Button asChild variant="outline" className="mt-4">
-          <Link to="/lab-operations" search={{ section: 'protocols' }}>
+          <Link to="/lab-configuration" search={{ configurationTab: 'protocols' }}>
             <ArrowLeft data-icon="inline-start" /> Back to protocols
           </Link>
         </Button>
@@ -229,7 +229,7 @@ export function ProtocolVersionBuilderPage({
           </AlertDescription>
         </Alert>
         <Button asChild variant="outline" className="mt-4">
-          <Link to="/lab-operations" search={{ section: 'protocols' }}>
+          <Link to="/lab-configuration" search={{ configurationTab: 'protocols' }}>
             <ArrowLeft data-icon="inline-start" /> Back to protocols
           </Link>
         </Button>
@@ -257,7 +257,7 @@ export function ProtocolVersionBuilderPage({
             </Link>
           </Button>
           <Button asChild variant="outline">
-            <Link to="/lab-operations" search={{ section: 'protocols' }}>
+            <Link to="/lab-configuration" search={{ configurationTab: 'protocols' }}>
               Back to protocols
             </Link>
           </Button>
@@ -276,7 +276,7 @@ export function ProtocolVersionBuilderPage({
           </AlertDescription>
         </Alert>
         <Button asChild variant="outline" className="mt-4">
-          <Link to="/lab-operations" search={{ section: 'protocols' }}>
+          <Link to="/lab-configuration" search={{ configurationTab: 'protocols' }}>
             <ArrowLeft data-icon="inline-start" /> Back to protocols
           </Link>
         </Button>
@@ -295,7 +295,7 @@ export function ProtocolVersionBuilderPage({
     <main className="page-wrap px-4 py-8">
       <section className="mb-6">
         <p className="text-sm text-muted-foreground">
-          <Link to="/lab-operations" search={{ section: 'protocols' }} className="hover:underline">
+          <Link to="/lab-configuration" search={{ configurationTab: 'protocols' }} className="hover:underline">
             Lab operations
           </Link>
           {' / '}

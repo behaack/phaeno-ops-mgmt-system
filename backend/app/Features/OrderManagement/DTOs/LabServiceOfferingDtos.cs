@@ -39,7 +39,9 @@ public sealed record LabServiceCommercialSnapshotDto(
 public sealed record LabServiceTimingDto(
     DateTime? FirstReceivedAtUtc, DateTime? AcceptedAtUtc, DateTime? OriginalTargetAtUtc,
     DateTime? ExpectedCompletionAtUtc, DateTime? CompletedAtUtc, string ScheduleHealth,
-    IReadOnlyList<LabServiceTimingChangeDto> Changes, long Version, bool CanOverrideTiming);
+    IReadOnlyList<LabServiceTimingChangeDto> Changes, long Version, bool CanOverrideTiming,
+    DateTime? DeliveryDueAtUtc = null, DateTime? OriginalDeliveryDueAtUtc = null,
+    DateTime? PortalDeliveredAtUtc = null);
 
 public sealed record LabServiceTimingChangeDto(
     Guid Id, DateTime PreviousExpectedAtUtc, DateTime ExpectedAtUtc, string Reason,

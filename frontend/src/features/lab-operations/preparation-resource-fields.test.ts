@@ -5,6 +5,17 @@ import { emptyResourceCatalog, eligibleResources, materialLotMatches, resourceEn
 
 const members = createPreviewBatch({ id: 'stage', name: 'Example', sequence: 1, requirement: 'Required', definition: { schemaVersion: 1, steps: [] } }).members
 describe('inline resource entries', () => {
+  it('requires registered equipment even when older configuration disabled tracking or requiredness', () => {
+    const equipment: ResourceField = { key: 'instrument', label: 'Instrument', type: 'equipment', scope: 'batch', required: false, includeTracking: false }
+    const invalidEntries: Record<string, string>[] = [{}, { shared_instrument_name: 'Free-text instrument' }, { shared_instrument_resource: 'missing' }]
+    for (const values of invalidEntries) {
+      expect(resourceEntries([equipment], members, values, emptyResourceCatalog).errors.shared_instrument_resource).toBeTruthy()
+    }
+    const catalog = { ...emptyResourceCatalog, equipment: [{ id: 'asset', assetCode: 'EQ-1', name: 'Instrument', equipmentType: 'Test', location: 'Bench', status: 'Active' as const, lastCalibrationOn: null, calibrationDueOn: null, version: 1 }] }
+    const result = resourceEntries([equipment], members, { shared_instrument_resource: 'asset', shared_instrument_name: 'Ignored name' }, catalog)
+    expect(result.errors).toEqual({})
+    expect(result.entries).toEqual([{ fieldKey: 'instrument', resourceId: 'asset', resourceVersion: 1 }])
+  })
   const field: ResourceField = { key: 'buffer', label: 'Buffer', type: 'material', required: true, scope: 'batch', quantityBasis: 'perSample', material: { name: 'Configured buffer', vendor: 'Configured vendor' } }
   it('takes material identity from configuration and ignores runtime replacement values', () => {
     const result = resourceEntries([field], members, { shared_buffer_product: 'manual', shared_buffer_name: 'In-house buffer', shared_buffer_vendor: 'In-house', shared_buffer_quantity: '10', shared_buffer_unit: 'µL' }, emptyResourceCatalog)

@@ -41,7 +41,7 @@ not reserve stock or record a shipment.
 
 ## Suppliers and products
 
-Phaeno platform administrators manage **Suppliers & Products** in the Lab operations sidebar, immediately below **Lab configurations**. Choose **New supplier**, enter its name, and save. Open the supplier name to see its products. Choose **New product** and enter the **Product #**, a required **Product description**, and **Product type** from the saved active types. Vendors can supply reagents, tubes, shipping containers, and other products from the same supplier record. Product numbers must be unique within each supplier, including inactive products.
+Phaeno platform administrators manage **Suppliers & Products** in the Lab operations sidebar, before **Materials** and **Equipment**. Choose **New supplier**, enter its name, and save. Open the supplier name to see its products. Choose **New product** and enter the **Product #**, a required **Product description**, and **Product type** from the saved active types. Vendors can supply reagents, tubes, shipping containers, and other products from the same supplier record. Product numbers must be unique within each supplier, including inactive products.
 
 Each supplier and product row has an **Actions** menu. Choose **Edit** to correct details, or **Deactivate** and review the application confirmation to make the record inactive. **Show inactive** reveals those records; choose **Actions → Activate** to restore them. The supplier detail header offers the same actions. Inactivating a supplier prevents selection of all its products for new kits; it does not alter prepared kits. Inactive product types also prevent their products from being selected for new kits. The tube **Lot** remains specific to each kit preparation and is not stored in the product catalog.
 
@@ -64,6 +64,10 @@ Open the kit and choose **Register tubes**. Scan each permanent supplier barcode
 **On the way** means dispatched but not yet acknowledged. **Available** means received and unassigned at the Customer location. **Assigned** means the Customer confirmed this container for a Job/shipment; **In use** means tube scanning has begun. Reset before the first tube scan releases an assignment to available inventory. After scanning, ordinary reset/reassignment remains locked. **Needs review** identifies incomplete location or receipt history that must be resolved before use. The original request, tracking and receipt remain distinct from the consuming Job.
 
 If an older kit is already sent but its request still shows an outstanding quantity, the kit page offers **Update kit request** when the saved dispatch has one eligible matching request. Review the existing carrier, tracking number and dispatch time, then confirm **Update kit request**. This links the existing dispatch; it does not send another kit or confirm Customer receipt. A failed update keeps the confirmation available for review and retry. Existing Trial and Partner supply workflows remain unchanged. Use the configuration workflow to qualify or revise container sizes rather than changing a kit's capacity.
+
+## Delivery deadline before acceptance
+
+Every job must have a delivery due date when its first sample is accepted. The saved standard turnaround calculates the date automatically. When no turnaround is recorded, an operator or supervisor opens the job and chooses **Actions → Set due date**, enters the delivery date/time and a customer-safe reason, then returns to acceptance. Acceptance cannot be saved until the date is set. Receipt and holding or rejecting a tube do not start the turnaround clock.
 
 ## Receive a shipment
 

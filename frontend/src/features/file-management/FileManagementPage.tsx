@@ -40,6 +40,10 @@ const policySchema = z.object({
 
 type PolicyFormValues = z.infer<typeof policySchema>
 
+export function FileManagementPage() {
+  return <main className="page-wrap px-4 py-8"><FileRetentionPanel /></main>
+}
+
 export function FileRetentionPanel() {
   const { authProvider, session } = usePhaenoSession()
   const queryClient = useQueryClient()
@@ -101,7 +105,7 @@ export function FileRetentionPanel() {
     <section aria-label="File retention" className="space-y-6">
       <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-xl font-semibold">File retention policy</h2>
+          <h1 className="text-3xl font-semibold">File retention policies</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
             Control the retention schedule applied to future released result and output packages.
           </p>

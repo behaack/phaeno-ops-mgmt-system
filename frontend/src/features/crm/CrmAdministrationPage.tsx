@@ -225,7 +225,7 @@ export function CrmAdministrationPage() {
         <Badge variant="secondary" className="mb-3">
           Configuration & data quality
         </Badge>
-        <h1 className="text-3xl font-semibold">CRM administration</h1>
+        <h1 className="text-3xl font-semibold">CRM Settings</h1>
         <p className="mt-3 text-sm text-muted-foreground">
           Configure first-party pipelines and fields, review possible
           duplicates, and use previewed, auditable data movement.

@@ -1,5 +1,9 @@
 # Lab Operations Plan
 
+## Standalone Lab Settings — September 18, 2026
+
+Lab Settings moves from the Lab operations sidebar to Administration in the user dropdown, directly after Order Settings and before File retention policies. Its own /lab-configuration page uses the shared workspace sidebar for Lab steps, Protocols, Workflows, Stage durations, Holiday calendar and Library tray formats, replacing the horizontal tabs. Existing Lab access and action capabilities are preserved. Legacy configuration links redirect with their selected section and Lab step filters; builder returns target the standalone page. No laboratory data, approvals or configuration rules change.
+
 ## Product-linked material lots — September 17, 2026
 
 Implementation scope and verification are tracked in [Material lot identity and Library prep matching](MATERIAL-LOT-PRODUCT-LINK-PLAN.md). This supersedes the earlier vendor-only lot matching.
@@ -1391,3 +1395,17 @@ Manual verification: Results & review → HS5Y7DB7 opens Review, retains Process
 See [Library preparation batches and connected workflow](LAB-WORK-JOURNEY-PLAN.md) for the agreed configurable single-tray model, mixed-job/partial batches, membership locked after start, batch-first evidence with tube exceptions, and reuse of preparation QC. The same implementation explicitly addresses disconnected container/resource entry, repeated identity linking, separate library creation/QC and sequencing handoff. This supersedes earlier open questions about tray continuity, mixed jobs, partial trays and duplicate QC in the journey plan. New preparation-batch behavior is planned, not implemented.
 
 September 15 policy/history closeout: LAB-09 one-/three-tube policy crosswalk, older unfinalized Customer confirmation, historical V1 replay and Completed historical protection now pass on isolated TEST ONLY records. Earlier source/hold/QC/retirement checkpoints remain retained. [Current crosswalk](../testing/runs/2026-09-15-policy-history-and-shipping-access-uat.md). Only positive independent scientific approval remains; no synthetic result is promoted to that evidence.
+
+## Sequencing list consolidation — September 18, 2026
+
+Sequencing batches now uses one card: its shaded header contains the title, Status filter, New batch action and a collapsed Scan libraries disclosure. The existing authorized scan form lives inside that disclosure rather than a separate introductory card. Collapsing keeps the mounted scanner and entered values; successful scans still clear/refocus the barcode input. This retains the bounded laboratory scanning exception to form-free lists while keeping discovery compact. Membership, QC, permissions and mutation behavior are unchanged.
+
+## Jobs and specimens workspace — September 18, 2026
+
+The owner requested a dedicated list page separate from Library prep. Jobs & specimens now appears immediately above Library prep in the Lab operations sidebar, using the existing addressable section navigation (`section=jobs`). It owns container lookup and the existing received-job/specimen history list. Library prep contains preparation batches only. Record links and returns preserve the originating section, including Results & review and receipt contexts; preparation batch links retain Library prep. No permissions, data filters, API contracts or stored records change. Manual acceptance covers sidebar order, direct navigation/reload, list separation, container lookup, job/specimen/execution returns and existing preparation links; automated execution was not requested.
+
+Follow-up: Jobs & specimens hides `ReadyForRelease` work orders by default, matching the domain transition that stamps laboratory completion. Show complete in the list header includes them and persists in the URL across reload and record returns. Results & review retains all of its existing jobs; cancelled jobs are not reclassified as completed. Container lookup is a collapsed, chevron-marked disclosure inside the list header and retains its values when collapsed. No API or database changes.
+
+## Proposed Jobs deadline workspace — September 18, 2026
+
+Planning only: [Jobs workspace and deadline tracking](LAB-JOB-DEADLINE-TRACKING-PLAN.md) proposes renaming the open-work page to Jobs, exposing due dates and reasoned risk, and preserving a path to multiple independently dated phases under one contract. The owner confirmed that the deadline means data for all samples under the job is made available to the customer through the Portal, calculated initially from a configurable standard TAT and adjustable by an authorized Phaeno employee. Retain the original baseline and adjustment history; laboratory completion alone will not close the job in this proposed workspace. This proposal does not mark these capabilities implemented or authorize execution.

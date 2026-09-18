@@ -132,7 +132,7 @@ export function UserMenu() {
               key={displayMode.value}
               value={displayMode.value}
               aria-label={`Use ${displayMode.label.toLowerCase()} theme`}
-              className="min-h-10 justify-center gap-1.5 px-2 py-2 pr-2 text-xs focus:bg-background focus:text-foreground focus:**:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset data-[state=checked]:bg-background data-[state=checked]:font-semibold data-[state=checked]:text-foreground data-[state=checked]:shadow-sm data-[state=checked]:ring-1 data-[state=checked]:ring-border data-[state=checked]:focus-visible:ring-2 data-[state=checked]:focus-visible:ring-ring [&_[data-slot=dropdown-menu-radio-item-indicator]]:hidden"
+              className="min-h-8 justify-center gap-1.5 px-2 py-1 pr-2 text-xs focus:bg-background focus:text-foreground focus:**:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset data-[state=checked]:bg-background data-[state=checked]:font-semibold data-[state=checked]:text-foreground data-[state=checked]:shadow-sm data-[state=checked]:ring-1 data-[state=checked]:ring-border data-[state=checked]:focus-visible:ring-2 data-[state=checked]:focus-visible:ring-ring [&_[data-slot=dropdown-menu-radio-item-indicator]]:hidden"
             >
               <displayMode.icon aria-hidden="true" />
               <span>{displayMode.label}</span>

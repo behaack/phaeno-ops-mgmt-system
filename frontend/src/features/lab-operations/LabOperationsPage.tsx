@@ -1,9 +1,12 @@
+import { StageDurations } from './StageDurations'
+import { HolidayCalendar } from './HolidayCalendar'
+import { JobsList } from './JobsList'
 import { LabStepList } from './LabSteps'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { Building2, Cog, CheckCircle2, ChevronDown, ClipboardList, FileX, FlaskConical, Layers3, Microscope, PackageCheck, Pencil, Plus, RefreshCw, ScanLine, ShieldCheck, Trash2, Workflow } from 'lucide-react'
+import { Building2, CheckCircle2, ChevronDown, ClipboardList, FileX, FlaskConical, Layers3, Microscope, PackageCheck, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, Truck, Workflow } from 'lucide-react'
 import { useRef, useState, type FormEvent } from 'react'
-import { Archive } from 'lucide-react'
+import { Archive, ChevronRight } from 'lucide-react'
 import { retireLabProtocol } from '#/api/lab-operations'
 import { ProtocolRetirementDialog } from './ProtocolRetirementDialog'
 
@@ -42,14 +45,13 @@ import {
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { Checkbox } from '#/components/ui/checkbox'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import {
   RequiredDialogFooter,
   RequiredFieldName,
 } from '#/components/ui/required-field'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
-import { LabBarcodeLookup, LabBatchBarcodeScanner } from './LabBarcodeScanner'
+import { LabBatchBarcodeScanner } from './LabBarcodeScanner'
 import { EquipmentCreateDialog } from './EquipmentCreateDialog'
 import { EquipmentRetirementDialog } from './EquipmentRetirementDialog'
 import { MaterialLotCreateDialog } from './MaterialLotCreateDialog'
@@ -72,7 +74,8 @@ import type { LabReceiptTab } from './lab-receipt-tabs'
 import type { LabSection } from './lab-sections'
 
 const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
-  { value: 'receipt', label: 'Receipt & accession', description: 'Transport kits, shipment intake, and accession', icon: ScanLine },
+  { value: 'receipt', label: 'Receipt & accession', description: 'Transport kits, shipment intake, and accession', icon: Truck },
+  { value: 'jobs', label: 'Jobs', description: 'Open jobs, delivery deadlines, and specimens', icon: Microscope },
   { value: 'work', label: 'Library prep', description: 'Source tubes, preparation, and library QC', icon: ClipboardList },
   { value: 'batches', label: 'Sequencing batches', description: 'Group libraries and track sequencing', icon: Layers3 },
   { value: 'results', label: 'Results & review', description: 'Result evidence, scientific review, and release readiness', icon: ClipboardList },
@@ -81,7 +84,6 @@ const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
   { value: 'suppliers', label: 'Suppliers & products', separatorBefore: true, description: 'Vendors, reagents, and shipping supplies', icon: Building2 },
   { value: 'materials', label: 'Materials', description: 'Lots, prepared reagents, and QC', icon: FlaskConical },
   { value: 'equipment', label: 'Equipment', description: 'Assets, availability, and calibration', icon: Microscope },
-  { value: 'protocols', label: 'Lab configurations', separatorBefore: true, description: 'Lab steps, protocols, workflows, and tray formats', icon: Cog },
 ]
 
 export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTabChange, configurationTab, onConfigurationTabChange, supplierTab, onSupplierTabChange, onSectionChange }: { section: LabSection; shipmentId?: string; receiptTab?: LabReceiptTab; onReceiptTabChange?: (tab: LabReceiptTab) => void; configurationTab?: LabConfigurationTab; onConfigurationTabChange?: (tab: LabConfigurationTab) => void; supplierTab?: SupplierCatalogTab; onSupplierTabChange?: (tab: SupplierCatalogTab) => void; onSectionChange: (section: LabSection) => void }) {
@@ -91,32 +93,39 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
   const apiEnabled = canView && authProvider !== 'mock'
   const queryClient = useQueryClient()
   const [createKind, setCreateKind] = useState<CreateKind>(null)
-  const [localConfigurationTab, setLocalConfigurationTab] = useState<LabConfigurationTab>('protocols')
-  const needsDashboard = section !== 'receipt' && section !== 'suppliers'
+  const [localConfigurationTab, setLocalConfigurationTab] = useState<LabConfigurationTab>('steps')
+  const configuring = section === 'protocols'
+  const activeConfiguration = configurationTab ?? localConfigurationTab
+  const needsDashboard = section !== 'receipt' && section !== 'suppliers' && section !== 'jobs'
   const dashboard = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: apiEnabled && needsDashboard })
   const refresh = () => Promise.all((section === 'suppliers'
     ? ['supplier-product-types', 'supplier-catalog']
     : section === 'receipt'
     ? ['platform-transportation-kit-requests', 'shipping-stock-kits', 'sample-shipping-workflow', 'lab-shipment-queue']
-    : ['lab-operations', 'lab-preparation']).map(key => queryClient.invalidateQueries({ queryKey: [key] })))
+    : ['lab-operations', 'lab-preparation', 'lab-jobs', 'lab-job-deadline', 'lab-forecast-configuration', 'lab-completion-forecast']).map(key => queryClient.invalidateQueries({ queryKey: [key] })))
 
   if (!canView) return <AccessDenied />
 
   return (
     <main className="py-8">
       <WorkspaceSidebar
-        workspaceLabel="Lab operations"
-        items={labSections}
-        value={section}
-        onValueChange={onSectionChange}
+        workspaceLabel={configuring ? "Lab Settings" : "Lab operations"}
+        items={configuring ? labConfigurationTabs : labSections}
+        value={configuring ? activeConfiguration : section}
+        onValueChange={value => {
+          if (configuring) {
+            const next = parseLabConfigurationTab(value)
+            if (next) { setLocalConfigurationTab(next); onConfigurationTabChange?.(next) }
+          } else onSectionChange(value as LabSection)
+        }}
       >
         <div className="page-wrap px-4">
           <section className="mb-6 flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-3xl">
-              <h1 className="text-3xl font-semibold">Lab operations</h1>
+              <h1 className="text-3xl font-semibold">{configuring ? "Lab Settings" : "Lab operations"}</h1>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Internal kit fulfillment, receipt and accession, protocol execution, data assembly,
-                materials, equipment, cross-order batching, exceptions, and release readiness.
+                {configuring ? "Maintain laboratory steps, protocols, workflows, duration estimates, holidays, and library tray formats." : <>Internal kit fulfillment, receipt and accession, protocol execution, data assembly,
+                materials, equipment, cross-order batching, exceptions, and release readiness.</>}
               </p>
             </div>
             <Button type="button" variant="outline" disabled={!apiEnabled || dashboard.isFetching} onClick={() => refresh()}>
@@ -128,32 +137,17 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
           {needsDashboard && dashboard.isLoading ? <p role="status">Loading laboratory workspace…</p> : null}
           {section === 'suppliers' ? <SupplierCatalogWorkspace tab={supplierTab} onTabChange={onSupplierTabChange} /> : null}
           {section === 'receipt' ? <LabReceiptAccessionPanel canReceiveShipments={Boolean(session?.capabilities.canOperateLabWork)} tab={receiptTab} onTabChange={onReceiptTabChange} canManageKitSupply={Boolean(session?.capabilities.canManageOrderConfiguration)} shipmentId={shipmentId} apiEnabled={apiEnabled} workOrders={[]} /> : null}
-          {dashboard.data && section === 'work' ? <div className="space-y-5"><PreparationBatchList /><details className="rounded-lg border p-4"><summary className="cursor-pointer font-medium">Find a job or existing specimen record</summary><div className="mt-4 space-y-5"><LabBarcodeLookup /><WorkQueue items={dashboard.data.workOrders.filter((item) => item.status !== 'AwaitingSpecimens')} /></div></details></div> : null}
-          {dashboard.data && section === 'results' ? <WorkQueue items={dashboard.data.workOrders.filter((item) => item.status !== 'AwaitingSpecimens')} results /> : null}
+          {section === 'jobs' ? <JobsList enabled={apiEnabled} /> : null}
+          {dashboard.data && section === 'work' ? <PreparationBatchList /> : null}
+          {dashboard.data && section === 'results' ? <ResultsWorkQueue items={dashboard.data.workOrders.filter((item) => item.status !== 'AwaitingSpecimens')} /> : null}
           {section === 'kits' ? <LabManufacturingQueue workflow="reagent" apiEnabled={apiEnabled} /> : null}
           {section === 'assembly' ? <LabManufacturingQueue workflow="assembly" apiEnabled={apiEnabled} /> : null}
-          {dashboard.data && section === 'protocols' ? (
-            <Tabs value={configurationTab ?? localConfigurationTab} onValueChange={value => {
-              const nextTab = parseLabConfigurationTab(value)
-              if (!nextTab) return
-              setLocalConfigurationTab(nextTab)
-              onConfigurationTabChange?.(nextTab)
-            }} className="gap-4">
-              <TabsList aria-label="Lab configurations" className="grid w-full grid-cols-2 sm:grid-cols-4">
-                {labConfigurationTabs.map(tab => <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>)}
-              </TabsList>
-              <TabsContent value="steps"><LabStepList /></TabsContent>
-              <TabsContent value="protocols">
-                <ProtocolList actorId={session?.user?.id} canOverride={Boolean(session?.isPlatformAdmin)} protocols={dashboard.data.protocols} canManage={Boolean(session?.capabilities.canManageLabProtocols)} onCreate={() => setCreateKind('protocol')} refresh={refresh} />
-              </TabsContent>
-              <TabsContent value="workflows">
-                <ServiceWorkflowList actorId={session?.user?.id} canOverride={Boolean(session?.isPlatformAdmin)} workflows={dashboard.data.serviceWorkflows} marketedServices={dashboard.data.marketedServices} canManage={Boolean(session?.capabilities.canManageLabProtocols)} refresh={refresh} />
-              </TabsContent>
-              <TabsContent value="tray-formats">
-                <TrayFormatList />
-              </TabsContent>
-            </Tabs>
-          ) : null}
+          {configuring && activeConfiguration === 'steps' ? <LabStepList /> : null}
+          {dashboard.data && configuring && activeConfiguration === 'protocols' ? <ProtocolList actorId={session?.user?.id} canOverride={Boolean(session?.isPlatformAdmin)} protocols={dashboard.data.protocols} canManage={Boolean(session?.capabilities.canManageLabProtocols)} onCreate={() => setCreateKind('protocol')} refresh={refresh} /> : null}
+          {dashboard.data && configuring && activeConfiguration === 'workflows' ? <ServiceWorkflowList actorId={session?.user?.id} canOverride={Boolean(session?.isPlatformAdmin)} workflows={dashboard.data.serviceWorkflows} marketedServices={dashboard.data.marketedServices} canManage={Boolean(session?.capabilities.canManageLabProtocols)} refresh={refresh} /> : null}
+          {configuring && activeConfiguration === 'stage-durations' ? <StageDurations /> : null}
+          {configuring && activeConfiguration === 'holiday-calendar' ? <HolidayCalendar /> : null}
+          {configuring && activeConfiguration === 'tray-formats' ? <TrayFormatList /> : null}
           {dashboard.data && section === 'materials' ? <MaterialList items={dashboard.data.materialLots} canManage={Boolean(session?.capabilities.canOperateLabWork)} canApprove={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('material')} refresh={refresh} /> : null}
           {dashboard.data && section === 'equipment' ? <EquipmentList items={dashboard.data.equipment} canManage={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('equipment')} /> : null}
           {dashboard.data && section === 'batches' ? <BatchList items={dashboard.data.batches} canManage={Boolean(session?.capabilities.canOperateLabWork)} onCreate={() => setCreateKind('batch')} refresh={refresh} /> : null}
@@ -209,19 +203,19 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
   )
 }
 
-function WorkQueue({ items, results = false }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['workOrders']; results?: boolean }) {
+function ResultsWorkQueue({ items }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['workOrders'] }) {
   return <Card className="gap-0 py-0">
     <CardHeader className="border-b bg-muted/50 p-4">
-      <CardTitle>{results ? 'Results & review' : 'Job and specimen history'}</CardTitle>
-      <CardDescription>{results ? 'Open a job to inspect scientific approval and release readiness. Jobs remain visible while their required evidence is being completed.' : 'Look up receipt, specimen, execution and library records. Assemble new preparation work in a batch above.'}</CardDescription>
+      <CardTitle>Results & review</CardTitle>
+      <CardDescription>Open a job to inspect scientific approval and release readiness. Jobs remain visible while their required evidence is being completed.</CardDescription>
     </CardHeader>
     <CardContent className="space-y-3 p-4">
       {items.map(item => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 p-4 shadow-xs">
-        <div><Link to="/lab-operations/$workOrderId" params={{ workOrderId: item.id }} search={{ section: results ? 'results' : 'work', tab: results ? 'review' : 'specimens' }} className="font-medium text-primary hover:underline">{labWorkOrderLabel(item)}</Link>
+        <div><Link to="/lab-operations/$workOrderId" params={{ workOrderId: item.id }} search={previous => ({ ...previous, section: 'results', tab: 'review' })} className="font-medium text-primary hover:underline">{labWorkOrderLabel(item)}</Link>
           <p className="mt-1 text-xs text-muted-foreground">{item.specimenCount} specimen(s) · {item.openExceptionCount} open exception(s) · updated {formatDate(item.updatedAt)}</p>
         </div><Status value={item.status} />
       </div>)}
-      {items.length === 0 ? <Empty>{results ? 'No received laboratory jobs are available for results review.' : 'No received laboratory jobs are available for preparation.'}</Empty> : null}
+      {items.length === 0 ? <Empty>No received laboratory jobs are available for results review.</Empty> : null}
     </CardContent>
   </Card>
 }
@@ -321,12 +315,12 @@ export function ProtocolList({ protocols, canManage, canOverride = false, actorI
               </Button>
             ) : null}
           </div>
-        </CardHeader>
-        <CardContent className="p-4">
-          <div className="mb-4 flex items-center gap-2">
+          <div className="mt-3 flex items-center gap-2">
             <Checkbox ref={retiredFilterRef} id="show-retired-protocols" checked={showRetired} onCheckedChange={(checked) => setShowRetired(checked === true)} />
             <Label htmlFor="show-retired-protocols" className="cursor-pointer">Show retired</Label>
           </div>
+        </CardHeader>
+        <CardContent className="p-4">
           {transition.error ? (
             <Alert variant="destructive" className="mb-4">
               <AlertTitle>Protocol status was not changed</AlertTitle>
@@ -872,12 +866,12 @@ function EquipmentList({ items, canManage, onCreate }: { items: Awaited<ReturnTy
           </div>
           {canManage ? <Button type="button" onClick={onCreate}><Plus data-icon="inline-start" /> New equipment</Button> : null}
         </div>
-      </CardHeader>
-      <CardContent className="p-4">
-        <div className="mb-4 flex items-center gap-2">
+        <div className="mt-3 flex items-center gap-2">
           <Checkbox ref={retiredFilterRef} id="show-retired-equipment" checked={showRetired} onCheckedChange={(checked) => setShowRetired(checked === true)} />
           <Label htmlFor="show-retired-equipment" className="cursor-pointer">Show retired</Label>
         </div>
+      </CardHeader>
+      <CardContent className="p-4">
         {visibleItems.length === 0 ? <Empty>{items.length > 0 ? 'No current equipment. Select Show retired to view retired assets.' : 'No equipment has been created.'}</Empty> : (
           <ul aria-label="Equipment assets" className="space-y-3">
             {visibleItems.map((item) => (
@@ -939,7 +933,6 @@ function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<Ret
   return (
     <>
       <div className="space-y-5">
-        {canManage ? <LabBatchBarcodeScanner batches={items} onAdded={refresh} /> : null}
         <Card className="gap-0 py-0">
           <CardHeader className="border-b bg-muted/50 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -965,6 +958,10 @@ function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<Ret
                 {canManage ? <Button type="button" onClick={onCreate}><Plus data-icon="inline-start" /> New batch</Button> : null}
               </div>
             </div>
+            {canManage ? <details className="group/scan mt-3 border-t pt-3">
+              <summary className="flex cursor-pointer list-none items-center gap-2 rounded-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden"><ChevronRight aria-hidden="true" className="size-4 shrink-0 group-open/scan:rotate-90" />Scan libraries</summary>
+              <div className="mt-3"><LabBatchBarcodeScanner batches={items} onAdded={refresh} /></div>
+            </details> : null}
           </CardHeader>
           <CardContent className="p-4">
             {filteredItems.length === 0 ? (

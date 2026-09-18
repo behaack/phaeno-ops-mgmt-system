@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { Plus } from 'lucide-react'
 import { Link, useSearch } from '@tanstack/react-router'
 import { useSupplierCatalog, saveSupplier, saveSupplierProduct, supplierCatalogKey, type CatalogSupplier, type SupplierProduct } from '#/api/supplier-catalog'
 import { getLabOperationsError } from '#/api/lab-operations'
@@ -39,7 +40,7 @@ export function SupplierCatalogPage({ supplierId }: { supplierId?: string }) {
       <div className="flex flex-wrap items-start justify-between gap-3"><div><h1 className="text-2xl font-semibold wrap-anywhere">{supplier.name}</h1><Badge variant="secondary" className="mt-2">{supplier.isActive ? 'Active' : 'Inactive'}</Badge></div><CatalogActions id={`supplier-actions-${supplier.id}`} name={supplier.name} isActive={supplier.isActive} onEdit={() => setSupplierEditor(supplier)} onStatus={() => setStatusTarget({ kind: 'supplier', supplier })} /></div>
       {!supplier.isActive ? <p className="text-sm text-muted-foreground">This supplier and its products are unavailable for new kits. Existing kit records are preserved.</p> : null}
     </> : null}
-    <Card className="gap-0 overflow-hidden py-0"><CardHeader className="border-b bg-muted/50 p-4"><CardTitle>{supplier ? 'Products' : 'Suppliers & products'}</CardTitle><CardDescription>{supplier ? 'Product names, descriptions and types for laboratory work and kits.' : 'Manage vendors and their reagents, tubes, shipping containers, and other products.'}</CardDescription><CardAction><Button variant="outline" disabled={supplier ? !supplier.isActive : false} onClick={() => supplier ? setProductEditor('new') : setSupplierEditor('new')}>{supplier ? 'New product' : 'New supplier'}</Button></CardAction>
+    <Card className="gap-0 overflow-hidden py-0"><CardHeader className="border-b bg-muted/50 p-4"><CardTitle>{supplier ? 'Products' : 'Suppliers & products'}</CardTitle><CardDescription>{supplier ? 'Product names, descriptions and types for laboratory work and kits.' : 'Manage vendors and their reagents, tubes, shipping containers, and other products.'}</CardDescription><CardAction><Button type="button" disabled={supplier ? !supplier.isActive : false} onClick={() => supplier ? setProductEditor('new') : setSupplierEditor('new')}><Plus data-icon="inline-start" />{supplier ? 'New product' : 'New supplier'}</Button></CardAction>
       <div className="col-span-full mt-3 flex min-w-0 flex-wrap items-end gap-4"><div className="min-w-0 flex-1 basis-48"><Label htmlFor="supplier-catalog-search">{supplier ? 'Search products' : 'Search suppliers or products'}</Label><Input id="supplier-catalog-search" className="mt-2" value={search} onChange={e => setSearch(e.target.value)} /></div><label className="flex cursor-pointer items-center gap-2 py-2 text-sm"><input type="checkbox" checked={showInactive} onChange={e => setShowInactive(e.target.checked)} />Show inactive</label></div>
     </CardHeader>
       <CardContent className="space-y-4 p-4">

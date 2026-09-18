@@ -16,6 +16,7 @@ public static class PersistenceServiceCollectionExtensions
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
+        services.AddScoped<ISaveChangesInterceptor, PhaenoPortal.App.Features.LabOperations.Services.LabForecastTrackingInterceptor>();
         services.AddScoped<ISaveChangesInterceptor, AuditSaveChangesInterceptor>();
 
         services.AddDbContext<PSeqOperationsDbContext>((serviceProvider, options) =>

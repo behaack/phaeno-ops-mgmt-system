@@ -12,7 +12,6 @@ import {
 } from '#/api/lab-operations'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredFieldName, RequiredLegend } from '#/components/ui/required-field'
@@ -40,14 +39,9 @@ export function LabBarcodeLookup() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Scan a container</CardTitle>
-        <CardDescription>
-          Locate Phaeno material by scanning into this field or entering its complete barcode.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">Locate Phaeno material by scanning or entering its complete barcode.</p>
+      <div>
         <form className="flex flex-wrap items-end gap-3" onSubmit={submit}>
           <RequiredLegend className="basis-full" />
           <div className="min-w-64 flex-1">
@@ -86,7 +80,7 @@ export function LabBarcodeLookup() {
                   <Link
                     className="font-medium text-primary hover:underline"
                     params={{ workOrderId: result.labWorkOrderId }}
-                    search={{ section: undefined }}
+                    search={previous => ({ ...previous, section: 'jobs' })}
                     to="/lab-operations/$workOrderId"
                   >
                     {result.commercialOrderNumber ?? result.labWorkOrderId}
@@ -104,8 +98,8 @@ export function LabBarcodeLookup() {
             </div>
           ) : null}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 
@@ -155,15 +149,9 @@ export function LabBatchBarcodeScanner({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Scan libraries into a batch</CardTitle>
-        <CardDescription>
-          Select one draft batch, then scan QC-passed library containers. Duplicate and
-          wrong-context scans are rejected without changing membership.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">Select a draft batch, then scan QC-passed library containers.</p>
+      <div>
         <form className="grid gap-3 sm:grid-cols-[minmax(12rem,1fr)_minmax(14rem,2fr)_auto]" onSubmit={submit}>
           <RequiredLegend className="sm:col-span-3" />
           <div>
@@ -219,7 +207,7 @@ export function LabBatchBarcodeScanner({
             Create a draft batch before scanning libraries.
           </p>
         ) : null}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

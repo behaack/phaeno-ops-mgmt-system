@@ -54,6 +54,10 @@ public sealed class TrialResultsController(PSeqOperationsDbContext db, TrialAcce
             var release = await db.TrialResultReleases.SingleOrDefaultAsync(value => value.Id == releaseId && value.TrialProjectId == id, token) ?? throw Missing();
             await using var retentionLock = await RetentionTransaction.OpenAsync(db, release.Id, token);
             release.Withdraw(TrialRules.Text(request.Reason));
+            var jobIds = await db.LabWorkOrders.Where(w => w.AuthorizationSource == PSeq.Operations.Laboratory.Domain.LabAuthorizationSource.TrialProject
+                && w.AuthorizationSourceId == id).Select(w => w.Id).ToListAsync(token);
+            foreach (var jobId in jobIds.Order())
+                await new LabOperations.Services.LabJobDeliveryRecorder(db).RecordAsync(jobId, [], token);
             var ids = ReleasedDeliverableManifest.ReadFileIds(release.ManifestJson);
             foreach (var file in await db.ManagedOperationalFiles.Where(value => ids.Contains(value.Id)).ToListAsync(token)) file.Withdraw();
             workflow.Record(trial, actor, "ResultsWithdrawn", "Phaeno withdrew a Trial result release. Contact Phaeno for the next step.", new { releaseId, request.Reason });

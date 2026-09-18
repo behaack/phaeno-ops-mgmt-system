@@ -1,4 +1,4 @@
-import { Outlet, createFileRoute, useRouterState } from '@tanstack/react-router'
+import { Outlet, createFileRoute, redirect, useRouterState } from '@tanstack/react-router'
 
 import { OrderConfigurationPage, parseConfigurationSection, type ConfigurationSection } from '#/features/orders/configuration/OrderConfigurationPage'
 import { parseShippingContainerListSearch, type ShippingContainerListSearch } from '#/features/orders/configuration/shipping-container-navigation'
@@ -9,6 +9,14 @@ export const Route = createFileRoute('/order-configuration')({
     ...parseShippingContainerListSearch(search),
   }),
   component: OrderConfigurationRoute,
+  beforeLoad: ({ search, location }) => {
+    if (search.configurationSection === 'retention') {
+      throw redirect({ to: '/file-management', replace: true })
+    }
+    if (location.pathname === '/order-configuration' && search.configurationSection === 'shipping') {
+      throw redirect({ to: '/sample-shipping-settings', search: { ...parseShippingContainerListSearch(search), shippingSection: 'containers' }, replace: true })
+    }
+  },
 })
 
 function OrderConfigurationRoute() {

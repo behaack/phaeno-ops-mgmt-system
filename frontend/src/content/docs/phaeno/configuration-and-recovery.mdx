@@ -1,10 +1,12 @@
 # Configuration and file retention
 
-**Order & retention settings** controls the active scientific, Partner, commercial, release, and integration rules used by new work. Changes must be audited and should not rewrite immutable order snapshots.
+Open the user dropdown menu, then choose **Administration → Order settings**.
 
-The **File retention** sidebar section controls the retention policy used by future released result and output packages. Only a Phaeno platform administrator can change these settings.
+**Order settings** controls the active scientific, Partner, commercial, release, and integration rules used by new work. Changes must be audited and should not rewrite immutable order snapshots.
 
-Use the far-left **Order & retention settings** sidebar to move among **Defaults**, **Service catalog**, **Lab Service offerings**, **Analyses**, **Sample shipping**, **PSeq kits**, **Assembly**, **Legacy links**, and **File retention**. On wider screens the sidebar can remain pinned; when it is unpinned or the screen is narrow, open the same non-modal navigation from the edge tab. The selected subject appears in the main pane without duplicating the navigation above the configuration form.
+The separate **File retention policies** page, after **Order settings**, **Lab settings**, **CRM settings**, and **Sample shipping settings** in the user menu, controls the retention policy used by future released result and output packages. Only a Phaeno platform administrator can change these settings.
+
+Use the far-left **Order settings** sidebar to move among **Quote & workflow**, **Service catalog**, **Lab Service offerings**, **Analyses**, **Sample types**, **PSeq kits**, **Assembly**, and **Legacy links**. On wider screens the sidebar can remain pinned; when it is unpinned or the screen is narrow, open the same non-modal navigation from the edge tab. The selected subject appears in the main pane without duplicating the navigation above the configuration form.
 
 ## Maintain commercial configuration
 
@@ -16,7 +18,7 @@ Configure Partner PSeq Kit availability, negotiated bundle price, currency, effe
 
 Historical credit and accounting links are retained under **Legacy links**. Partner Assembly payment gates remain in its owning workflow. PSeq Customer result release depends on scientific approval and the Result Release Manager; invoice balance and credit do not gate it. Customer billing, tax, invoices and cash are maintained in **Order Ops → Finance**.
 
-Open **Defaults → Edit defaults** to maintain quote validity and sample submission instructions. The initial quote validity is 30 days, and an issued quote snapshots its own expiration. The supported sample workflow uses an exact roster after quote acceptance; the supported result destination is governed Portal delivery. Free-form configuration text no longer establishes readiness. Review and save older defaults once, then maintain the effective sample types, destinations and rules in **Sample shipping**. Each order and shipment still checks its specific requirements.
+Open **Quote & workflow → Edit settings** to maintain quote validity and review the supported sample and result workflows. The initial quote validity is 30 days, and an issued quote snapshots its own expiration. The supported sample workflow uses an exact roster after quote acceptance; the supported result destination is governed Portal delivery. Free-form configuration text no longer establishes readiness. Review and save older workflow settings once, then maintain shared definitions in **Order settings → Sample types** and destinations and rules in **Sample shipping settings**. Each order and shipment still checks its specific requirements.
 
 ## Maintain configured Lab Service offerings
 
@@ -34,10 +36,10 @@ Deactivate configuration that must not be used for new work. Existing orders kee
 
 The ship-to destinations in this configuration are laboratory receiving locations for samples sent to Phaeno. Customer delivery addresses for outbound kits are maintained separately under the Customer's **Departments & services → Delivery locations**. Confirmed kit orders retain their saved address even when a delivery-location record changes later.
 
-Use **Sample shipping** to maintain four controlled record sets:
+Open **Administration → Sample shipping settings**, after **CRM settings** in the user dropdown menu. Its sidebar opens separate pages for **Container sizes**, **Ship-to destinations**, **Sample shipping instructions**, and **Default submission instructions**. List titles, descriptions, create actions, and available filters sit in shaded headers. The settings maintain these controlled record sets:
 
 - ship-to destinations with the full address, receiving team, receiving hours and time zone, closure guidance, delivery directions, and carrier restrictions;
-- sample types with material, quantity, primary-container, temperature, packaging, customer-label, prohibited-identifier, safety, and transit requirements;
+- shared sample types, maintained on their own **Order settings → Sample types** page, with material, quantity, primary-container, temperature, packaging, customer-label, prohibited-identifier, safety, and transit requirements;
 - one instruction rule for an exact destination revision and sample-type revision, including compatibility grouping, packing, carrier, dispatch, delivery, required-document, exception, and optional customs instructions; and
 - container sizes with a required SKU, common name, approved usable tube capacity, exact compatible sample-and-rule choices, supplier product references, packing instructions, effective dates, and display order.
 
@@ -49,15 +51,17 @@ In the size editor, expand **Supplier and packing** for optional product referen
 
 Use **Preview recommendation** to enter a tube count, select the exact sample and handling context, and optionally enter available quantities. Blank quantities mean availability is unknown; zero excludes that size. The result favors fewer containers, then less unused capacity, and shows any unallocated tubes. A preview from a container detail page can include that draft revision. Previewing does not reserve stock, create a shipment, or estimate shipping cost.
 
-Use **Instruction preview** before operational use. Select an exact destination revision, one or more sample-type revisions, and the time to evaluate. POMS displays the full resolved ship-to and detailed preparation instructions. If a required combination rule is missing, compatibility groups differ, or a type requires its own package, POMS blocks a combined preview so the work can be corrected or split.
+On **Sample shipping instructions**, choose a rule's **Actions → Preview instructions**. The read-only preview opens automatically for that destination and sample type, using the current time or the rule's exact start time if it starts in the future. Inactive or ended rules cannot resolve a preview. Expand **Add sample types** to check a combined shipment; the original sample type stays included. POMS displays the full resolved ship-to and detailed preparation instructions. If a required combination rule is missing, compatibility groups differ, or a type requires its own package, POMS blocks a combined preview so the work can be corrected or split. Use **Actions → Create revision** to revise an instruction rule.
 
 This configuration is shared infrastructure only. It does not create a Prospect Trial Project, grant a Customer promotion, place an order, or activate any real destination or sample type on its own.
 
 Prepare and register standard kits in **Lab operations → Receipt & accession → Prepare kits** before supplying them to Customer locations. Staff choose a configured container size, record the actual tube and shipper products, register the full configured tube capacity, print the permanent container barcode, and record outbound dispatch against the delivery request. The Customer confirms arrival into location inventory and assigns each physical container to a Job during preparation. Previously prepared shipment-specific kits remain in **Kits sent**. These records retain product and lot facts, permanent tube identities, and outbound tracking. Qualify the physical tubes, container fit, seals, temperature handling, and readable barcodes before using a container size operationally.
 
+Default submission instructions are general guidance copied to new lab orders when customer-specific instructions are not configured. Maintain them in **Sample shipping settings → Default submission instructions → Edit instructions**. They are still required for order readiness. Existing orders keep their saved text. This guidance does not replace destination/sample rules or shipment validation. Saving guidance preserves quote and workflow settings.
+
 ## Maintain released-deliverable retention
 
-Open **Order & retention settings → File retention** to review or edit the global released-deliverable policy. The starting values are 30 days of standard retention, one undownloaded-package warning 5 days before the standard deadline, and a conditional 5-day grace period when any released file remains undownloaded at that deadline. Every value is a positive whole number of exact 24-hour days, and the warning lead must be shorter than standard retention.
+Open **Administration → File retention policies** to review or edit the global released-deliverable policy. The starting values are 30 days of standard retention, one undownloaded-package warning 5 days before the standard deadline, and a conditional 5-day grace period when any released file remains undownloaded at that deadline. Every value is a positive whole number of exact 24-hour days, and the warning lead must be shorter than standard retention.
 
 Enter a reason for every change. A new revision applies only to packages released afterward; it never changes a deadline already communicated for an existing release. Prior revisions remain visible in policy history.
 
@@ -92,7 +96,7 @@ can reopen the item.
 
 ## Preserve a release or record a reissue
 
-A Phaeno platform administrator can open **File retention → Review released packages**,
+A Phaeno platform administrator can open **File retention policies → Review released packages**,
 find the organization, and open a package's retained receipt. The detail page
 shows its full manifest, checksums, original retention dates, download evidence,
 cleanup outcome and reissue history. Use **Print / save PDF** for a metadata copy.

@@ -1,5 +1,9 @@
 # Backend Test Plan
 
+## September 18 jobs/settings release checkpoint
+
+Release solution build passed with zero warnings/errors, and EF reports no model changes missing a migration. Automated suites were not requested or run; authored Jobs/forecast integration coverage remains unexecuted. See [release evidence](PORTAL-JOBS-SETTINGS-RELEASE-2026-09-18.md) for production migration and health results.
+
 ## Material lot identity matching (2026-09-17)
 
 See [implementation plan](MATERIAL-LOT-PRODUCT-LINK-PLAN.md). Added domain/Postgres regressions for exact product/definition matching, unlinked and wrong-supplier assignment, immutable assignment, stale versions, configured prepared identity, and rejected wrong-lot consumption with no stock change. Updated material creation fixtures for required products and added frontend helper/schema checks for same-vendor wrong products, unlinked lots, prepared identity and unusable stock. Automated tests are authored/compiled but not executed. Build, typecheck, scoped lint, migration review and local read-only UI checks form this checkpoint; populated operational writes remain unverified.
@@ -1982,3 +1986,23 @@ Material unit configuration follow-up: require authoring units, preserve them in
 ### Material amount exceptions and quantity reconciliation
 
 Authored domain coverage for shared material scope, total-batch rejection, uncertain stock holds and reconciliation without replenishment. PostgreSQL preparation journeys cover actual failed-tube consumption, unknown stock and tube holds, mandatory reasons, late-validation transaction rollback, request replay, and reconcile-before-resume. Solution build compiles these cases; they are not executed under the repository's request-only test policy. Role denial, stale reconciliation and concurrent consumption still need execution acceptance.
+
+### Equipment selector requirement — September 18, 2026
+
+Preparation step recording now requires a catalog equipment identity for every Equipment used field, even when an older definition disabled tracking or requiredness. Name-only and omitted entries are rejected. Existing active/calibration checks and resource-use transactions remain in effect; corrections retain prior evidence. Backend compilation passed with zero warnings/errors. Connected API regression execution (missing identity, optional legacy field, inactive/out-of-calibration asset, valid selection and atomic rollback) remains deferred; no automated test run requested.
+
+## Jobs delivery deadlines — September 18, 2026
+
+Authored `LabJobDeadlineTests`: undated/acceptance, exact cutoff, three-day warning, blocking risk, reforecast independence, earlier specimen target, partial publication/ReadyForRelease, cancellation, immutable deadline-at-delivery and SQL translation/pagination beyond the dashboard cap. Automated execution not requested. Local read-only database acceptance verified query translation and complete counts; live concurrent release, withdrawals/reissue, roles and actual publication fixtures remain acceptance cases.
+
+`LabJobDeadlinePostgresTests` additionally defines rollback-scoped acceptance cases for a 276-job queue/page 12, complete-query counts, distinct sample coverage and retained completion/deadline history. These cases compile but have not been run.
+
+Jobs queue refinement: authored PostgreSQL eligibility coverage for every shipment state, receipt fallback and direct detail availability; the 276-job pagination fixture now records specimen receipt. SQL-translation coverage uses the eligible queue. Tests not run (not requested).
+
+Required date at acceptance: added LabJobDeadlineTests coverage for missing-date rejection, configured automatic deadlines, explicit manual deadlines and domain refresh enforcement; historical accepted/undated work is AtRisk. Shared shipping fixture now supplies its 14-day standard turnaround. Intake rollback and single/bulk/correction acceptance paths remain focused integration acceptance cases. Tests authored, not run.
+
+Active/Closed Jobs: added stage classification, partial delivery/hold/cancelled precedence, SQL translation for stage/date predicates and rollback-scoped database coverage for inclusive lower/exclusive upper due and order-date boundaries, pre-shipment cancellation in Closed, outcome filtering and warning counts. Authored/compiled; suites not run.
+
+## Progress-based completion forecast — September 18, 2026
+
+Authored `LabCompletionForecastTests` covers mixed day bases, weekend/observed holidays, fractional eligible days, daylight saving, exact exhaustion and repeatable actual-plus-one overruns, missing coverage, future entry, duplicate holidays, zero downstream duration and per-stage validation. Authored `LabCompletionForecastPostgresTests` covers latest-sample delivery, a real mixed-stage policy, read-only preview, missing-duration coverage, preserved pinned binding and no read-triggered snapshots. Suites not executed (not requested). Build and read-only local database projection checks are recorded in the owning plan. Remaining acceptance: atomic state tracking/no-op edits/retry, configuration permissions/concurrency, policy application, parallel library joins/provider waits, rework/holds/publication withdrawal, scheduler history and large queues.

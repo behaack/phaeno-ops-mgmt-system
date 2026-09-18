@@ -1361,7 +1361,8 @@ export async function getOrderConfiguration() {
   return get<OrderConfiguration>("/platform/order-configuration");
 }
 export async function updateOrderSystemConfiguration(
-  input: OrderConfiguration["system"],
+  input: Omit<OrderConfiguration["system"], "sampleConfigurationJson" | "resultDestinationConfigurationJson">
+    & Partial<Pick<OrderConfiguration["system"], "sampleConfigurationJson" | "resultDestinationConfigurationJson">>,
 ) {
   return patch<OrderConfiguration>(
     "/platform/order-configuration/system",

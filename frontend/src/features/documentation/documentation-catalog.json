@@ -542,7 +542,7 @@
       "title": "Request laboratory services",
       "summary": "Complete ordering and shipping on the Job, then follow receipt, laboratory progress and results.",
       "order": 30,
-      "reviewedAt": "2026-09-16",
+      "reviewedAt": "2026-09-18",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -871,7 +871,7 @@
       "title": "Phaeno operations guide",
       "summary": "Find each workflow, its owning workspace, reusable configuration, and the roles needed to act.",
       "order": 10,
-      "reviewedAt": "2026-09-16",
+      "reviewedAt": "2026-09-18",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -898,7 +898,7 @@
       "title": "Customer relationship management",
       "summary": "Manage canonical Companies, Contacts, Leads, Opportunities, Portal access, Tasks, reporting, and data quality.",
       "order": 15,
-      "reviewedAt": "2026-09-16",
+      "reviewedAt": "2026-09-18",
       "navigationGroup": "customer-relationship-management",
       "contentType": "overview",
       "topicIds": [
@@ -1041,7 +1041,7 @@
       "title": "Reports and administration",
       "summary": "Interpret commercial reports and manage pipelines, fields, views, duplicates, imports, and exports.",
       "order": 20,
-      "reviewedAt": "2026-09-16",
+      "reviewedAt": "2026-09-18",
       "navigationGroup": "customer-relationship-management",
       "contentType": "guide",
       "topicIds": [
@@ -1107,7 +1107,7 @@
       "title": "Troubleshooting and recovery",
       "summary": "Resolve access, duplicate, stale-update, conversion, stage, import, Task, and handoff problems safely.",
       "order": 22,
-      "reviewedAt": "2026-09-15",
+      "reviewedAt": "2026-09-18",
       "navigationGroup": "customer-relationship-management",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1346,7 +1346,7 @@
       "title": "Order operations",
       "summary": "Find the Order operations workspace available to your role, manage commercial decisions, and continue Lab, Finance, and release work in their owning screens.",
       "order": 40,
-      "reviewedAt": "2026-09-16",
+      "reviewedAt": "2026-09-18",
       "navigationGroup": "order-operations",
       "contentType": "overview",
       "topicIds": [
@@ -1373,7 +1373,7 @@
       "title": "Customer lab authorization",
       "summary": "Start a Customer Job for its Department, resolve readiness by stage, issue pricing, and authorize Lab work after sample finalization.",
       "order": 41,
-      "reviewedAt": "2026-09-16",
+      "reviewedAt": "2026-09-18",
       "navigationGroup": "order-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1528,7 +1528,7 @@
       "title": "Integration failures and recovery",
       "summary": "Recover original invitations and notices, inspect failed projections, and recognize unavailable historical connectors.",
       "order": 46,
-      "reviewedAt": "2026-09-16",
+      "reviewedAt": "2026-09-18",
       "navigationGroup": "order-operations",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1562,9 +1562,9 @@
       "slug": "lab-operations",
       "overviewTitle": "Overview",
       "title": "Laboratory operations",
-      "summary": "Fulfill kits, receive and accession specimens, execute controlled work, assemble data, and record release readiness.",
+      "summary": "Track jobs and delivery deadlines, receive specimens, execute controlled work, and record release readiness.",
       "order": 50,
-      "reviewedAt": "2026-09-16",
+      "reviewedAt": "2026-09-18",
       "navigationGroup": "laboratory-operations",
       "contentType": "overview",
       "topicIds": [
@@ -1595,7 +1595,7 @@
       "title": "Receipt and accession",
       "summary": "Dispatch barcoded containers to Customer locations, track inventory and assignments, and record receipt and accession for each registered tube.",
       "order": 51,
-      "reviewedAt": "2026-09-16",
+      "reviewedAt": "2026-09-18",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1640,7 +1640,7 @@
       "title": "Service workflows, protocol control, and execution",
       "summary": "Use Lab configurations for protocols, workflows, and tray formats; assemble preparation batches and record shared or tube evidence.",
       "order": 54,
-      "reviewedAt": "2026-09-17",
+      "reviewedAt": "2026-09-18",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1706,7 +1706,7 @@
       "title": "Libraries, batches, and sequencing",
       "summary": "Reuse preparation QC, hand passing libraries to sequencing batches, and track sendout manifests and custody.",
       "order": 56,
-      "reviewedAt": "2026-09-11",
+      "reviewedAt": "2026-09-18",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1809,7 +1809,7 @@
       "title": "Configuration and file retention",
       "summary": "Maintain reusable defaults, services, analyses, Partner rules, shipping container sizes and compatibility, and released-file retention.",
       "order": 60,
-      "reviewedAt": "2026-09-16",
+      "reviewedAt": "2026-09-18",
       "navigationGroup": "platform-operations",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1874,7 +1874,7 @@
       "title": "Use Partner Lab services",
       "summary": "Complete Partner ordering and shipping on the Job, then track sample receipt and laboratory results.",
       "order": 25,
-      "reviewedAt": "2026-09-16",
+      "reviewedAt": "2026-09-18",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [

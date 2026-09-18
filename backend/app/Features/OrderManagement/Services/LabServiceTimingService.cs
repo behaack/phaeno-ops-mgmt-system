@@ -53,7 +53,9 @@ public sealed class LabServiceTimingService(PSeqOperationsDbContext db)
                 value.TimingChangedByUserId, value.OccurredAtUtc, value.NotificationId.HasValue,
                 value.NotificationId.HasValue ? notifications.GetValueOrDefault(value.NotificationId.Value) ?? "Pending" : "NotRequired")).ToList(),
             work.Version, canOverride && work.OriginalTargetAtUtc.HasValue
-                && work.Status is not (LabWorkOrderStatus.ReadyForRelease or LabWorkOrderStatus.Cancelled));
+                && work.Status is not (LabWorkOrderStatus.ReadyForRelease or LabWorkOrderStatus.Cancelled),
+            work.AdjustedDeliveryDueAtUtc ?? work.OriginalDeliveryDueAtUtc, work.OriginalDeliveryDueAtUtc,
+            work.FirstDeliveredAtUtc);
     }
 
     public static LabServiceCommercialSnapshotDto? CommercialSnapshot(ConfiguredLabServiceSnapshot? value) => value is null ? null : new(

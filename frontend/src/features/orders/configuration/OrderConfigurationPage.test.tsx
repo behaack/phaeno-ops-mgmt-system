@@ -27,24 +27,26 @@ describe('OrderConfigurationPage', () => {
       </QueryClientProvider>,
     )
 
-    expect(await screen.findByRole('heading', { name: 'Order & retention settings' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Order Settings' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', {
-      name: 'Open Order & retention settings navigation; current selection: Defaults',
+      name: 'Open Order Settings navigation; current selection: Quote & workflow',
     }))
 
     expect(screen.getByRole('navigation', {
-      name: 'Order & retention settings sections',
+      name: 'Order Settings sections',
     })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /^Defaults/ }).getAttribute('aria-current')).toBe('page')
+    expect(screen.getByRole('button', { name: /^Quote & workflow/ }).getAttribute('aria-current')).toBe('page')
     expect(screen.getByRole('button', { name: /^Analyses/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /^Sample types/ })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /^Sample shipping/ })).toBeNull()
     expect(screen.getByRole('button', { name: /^PSeq kits/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: /^Assembly/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: /^Legacy links/ })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /^File retention/ })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /^File retention/ })).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: /^PSeq kits/ }))
     expect(await screen.findByRole('button', {
-      name: 'Open Order & retention settings navigation; current selection: PSeq kits',
+      name: 'Open Order Settings navigation; current selection: PSeq kits',
     })).toBeTruthy()
   })
 })

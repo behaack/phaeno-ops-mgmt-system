@@ -9,12 +9,12 @@ const api = vi.hoisted(() => ({ save: vi.fn() }))
 vi.mock('#/api/order-management', () => ({ updateOrderSystemConfiguration: api.save, getOrderErrorMessage: (_error: unknown, fallback: string) => fallback }))
 vi.mock('@tanstack/react-router', () => ({ useBlocker: vi.fn(), Link: ({ children }: { children: ReactNode }) => <a href="#shipping">{children}</a> }))
 
-describe('Order defaults editor', () => {
+describe('Quote and workflow editor', () => {
   beforeEach(() => { vi.restoreAllMocks(); vi.resetAllMocks(); api.save.mockResolvedValue(undefined) })
 
   it('disables a pristine supported configuration and becomes pristine when original values are restored', () => {
     renderDefaults()
-    fireEvent.click(screen.getByRole('button', { name: 'Edit defaults' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Edit settings' }))
     const save = screen.getByRole('button', { name: 'Save changes' })
     expect(save).toHaveProperty('disabled', true)
     const days = screen.getByLabelText(/Default quote validity/)
@@ -23,7 +23,7 @@ describe('Order defaults editor', () => {
     fireEvent.change(days, { target: { value: '30' } })
     expect(save).toHaveProperty('disabled', true)
     expect(days).toHaveProperty('required', true)
-    expect(screen.getByLabelText(/Sample submission instructions/)).toHaveProperty('required', true)
+    expect(screen.queryByLabelText(/Sample submission instructions/)).toBeNull()
   })
 
   it.each([
@@ -34,17 +34,17 @@ describe('Order defaults editor', () => {
   ])('requires review and permits conversion of unchanged unsupported settings: %s', async sampleConfigurationJson => {
     renderDefaults(sampleConfigurationJson)
     expect(screen.getByText('Review the supported workflow')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Edit defaults' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Edit settings' }))
     const save = screen.getByRole('button', { name: 'Save changes' })
     expect(save).toHaveProperty('disabled', false)
     fireEvent.click(save)
     await waitFor(() => expect(api.save).toHaveBeenCalledOnce())
-    expect(api.save.mock.calls[0][0]).toMatchObject({ version: 4, quoteValidityDays: 30, sampleConfigurationJson: '{"mode":"ExactSampleRoster"}', resultDestinationConfigurationJson: '{"destination":"GovernedPortal"}', shippingConfigurationJson: '{"preserved":true}' })
+    expect(api.save.mock.calls[0][0]).toMatchObject({ version: 4, quoteValidityDays: 30, sampleConfigurationJson: '{"mode":"ExactSampleRoster"}', resultDestinationConfigurationJson: '{"destination":"GovernedPortal"}', shippingConfigurationJson: '{"preserved":true}', sampleSubmissionInstructions: 'Follow the sample packet.' })
   })
 
   it('validates on blur and corrects the existing field error without sending a request', async () => {
     renderDefaults()
-    fireEvent.click(screen.getByRole('button', { name: 'Edit defaults' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Edit settings' }))
     const days = screen.getByLabelText(/Default quote validity/)
     fireEvent.change(days, { target: { value: '0' } })
     expect(days.getAttribute('aria-invalid')).toBe('false')
@@ -60,16 +60,16 @@ describe('Order defaults editor', () => {
     api.save.mockRejectedValue(new Error('Settings changed'))
     const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true)
     renderDefaults()
-    const opener = screen.getByRole('button', { name: 'Edit defaults' })
+    const opener = screen.getByRole('button', { name: 'Edit settings' })
     opener.focus()
     fireEvent.click(opener)
-    const instructions = screen.getByLabelText(/Sample submission instructions/)
-    fireEvent.change(instructions, { target: { value: 'Use the registered tubes.' } })
+    const days = screen.getByLabelText(/Default quote validity/)
+    fireEvent.change(days, { target: { value: '45' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
-    expect(await screen.findByText('Defaults were not saved')).toBeTruthy()
+    expect(await screen.findByText('Settings were not saved')).toBeTruthy()
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
-    expect(confirm).toHaveBeenCalledWith('Discard unsaved order defaults?')
-    expect(instructions).toHaveProperty('value', 'Use the registered tubes.')
+    expect(confirm).toHaveBeenCalledWith('Discard unsaved quote and workflow settings?')
+    expect(days).toHaveProperty('value', '45')
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     await waitFor(() => expect(document.activeElement).toBe(opener))

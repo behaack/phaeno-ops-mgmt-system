@@ -284,6 +284,8 @@ public sealed class OrderIntegrationDispatcher(
                     cancellationToken);
         }
         foreach (var file in files) file.Release(releasedAtUtc);
+        await new LabOperations.Services.LabJobDeliveryRecorder(dbContext).RecordCommercialAsync(orderId,
+            releases.Select(r => new LabOperations.Services.LabJobRelease(r.LabSampleId, r.ReleasedAt)).ToList(), cancellationToken);
     }
 
     private static async Task MarkDocumentFailedAsync(PSeqOperationsDbContext dbContext, OrderOutboxMessage message, CancellationToken cancellationToken)

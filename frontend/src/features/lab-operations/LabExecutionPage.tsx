@@ -20,7 +20,7 @@ import { Textarea } from '#/components/ui/textarea'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
 import { ExecutionStepDialog } from './ExecutionStepDialog'
-import type { LabSection } from './lab-sections'
+import { parseLabSection, type LabSection } from './lab-sections'
 
 export function LabExecutionPage({ executionId, returnSection, returnShipmentId }: { executionId: string; returnSection?: LabSection; returnShipmentId?: string }) {
   const { session, authProvider } = usePhaenoSession()
@@ -58,9 +58,9 @@ export function LabExecutionPage({ executionId, returnSection, returnShipmentId 
   const error = record.error ?? transition.error
   return <LabExecutionWorkspace data={execution.data} pending={record.isPending || transition.isPending}
     error={error ? `${getLabOperationsError(error, 'The laboratory action could not be saved.')} ${recovery ?? ''}` : undefined}
-    returnLink={<Link to="/lab-operations/$workOrderId" params={{ workOrderId: execution.data.workOrderId }} search={{ section: returnSection ?? 'work', shipmentId: returnShipmentId, tab: 'execution' }} className="text-sm text-primary underline underline-offset-4">Back to laboratory job</Link>}
-    reviewTubesLink={<Button asChild size="sm"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: execution.data.workOrderId }} search={{ section: returnSection ?? 'work', shipmentId: returnShipmentId, tab: 'lineage' }}>Open tubes</Link></Button>}
-    specimenLink={execution.data.execution.labSpecimenId ? <Button asChild size="sm" variant="outline"><Link to="/lab-operations/$workOrderId/specimens/$specimenId" params={{ workOrderId: execution.data.workOrderId, specimenId: execution.data.execution.labSpecimenId }}>Open specimen and source</Link></Button> : null}
+    returnLink={<Link to="/lab-operations/$workOrderId" params={{ workOrderId: execution.data.workOrderId }} search={previous => ({ ...previous, section: returnSection ?? 'jobs', shipmentId: returnShipmentId, tab: 'execution' })} className="text-sm text-primary underline underline-offset-4">Back to laboratory job</Link>}
+    reviewTubesLink={<Button asChild size="sm"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: execution.data.workOrderId }} search={previous => ({ ...previous, section: returnSection ?? 'jobs', shipmentId: returnShipmentId, tab: 'lineage' })}>Open tubes</Link></Button>}
+    specimenLink={execution.data.execution.labSpecimenId ? <Button asChild size="sm" variant="outline"><Link to="/lab-operations/$workOrderId/specimens/$specimenId" params={{ workOrderId: execution.data.workOrderId, specimenId: execution.data.execution.labSpecimenId }} search={previous => ({ ...previous, section: parseLabSection(previous.section) ?? 'jobs' })}>Open specimen and source</Link></Button> : null}
     onRecord={async input => { await record.mutateAsync(input) }}
     onTransition={async (action, note, sourceBarcode) => { await transition.mutateAsync({ action, note, sourceBarcode }) }} />
 }

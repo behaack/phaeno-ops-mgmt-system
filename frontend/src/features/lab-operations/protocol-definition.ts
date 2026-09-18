@@ -306,7 +306,7 @@ export function deserializeProtocolDefinition(value: string): ProtocolDefinition
         ...(capture.key ? { key: capture.key } : {}),
         label: capture.label,
         type: capture.type,
-        required: capture.required,
+        required: capture.type === 'equipment' || capture.required,
         ...(capture.sourceTube ? { sourceTube: true } : {}),
         ...(capture.material ? { material: capture.material } : {}),
         ...(capture.includeTracking ? { includeTracking: true } : {}),
@@ -348,11 +348,11 @@ export function serializeProtocolDefinition(values: ProtocolDefinitionFormValues
           key: uniqueKey(capture.key || capture.label, usedCaptureKeys, 'capture'),
           label: capture.label.trim(),
           type: capture.type,
-          required: capture.required,
+          required: capture.type === 'equipment' || capture.required,
           ...(values.preparationBatchEnabled && capture.scope ? { scope: capture.scope } : {}),
           ...(capture.type === 'barcode' && capture.sourceTube ? { sourceTube: true } : {}),
           ...(capture.type === 'material' && capture.material ? { material: capture.material } : {}),
-          ...(['material', 'equipment'].includes(capture.type) && capture.includeTracking ? { includeTracking: true } : {}),
+          ...(capture.type === 'equipment' || capture.type === 'material' && capture.includeTracking ? { includeTracking: true } : {}),
           ...(capture.type === 'material' ? { quantityBasis: capture.quantityBasis ?? 'perSample' } : {}),
           ...(['number', 'material'].includes(capture.type) && capture.unit.trim()
             ? { unit: capture.unit.trim() }

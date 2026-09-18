@@ -10920,6 +10920,66 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("lab_batch_members", "lab_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabBusinessCalendar", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateOnly>("CoverageFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("coverage_from");
+
+                    b.Property<DateOnly>("CoverageTo")
+                        .HasColumnType("date")
+                        .HasColumnName("coverage_to");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("reason");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("time_zone_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Revision")
+                        .IsUnique();
+
+                    b.ToTable("lab_business_calendars", "lab_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabContainer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -11363,6 +11423,209 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasIndex("Audience", "Status", "ResponseDueAtUtc");
 
                     b.ToTable("lab_exceptions", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabForecastSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("DetailsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("details_json");
+
+                    b.Property<DateTime>("EvaluatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("evaluated_at_utc");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabWorkOrderId", "EvaluatedAtUtc");
+
+                    b.ToTable("lab_forecast_snapshots", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabForecastTransition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<DateTime>("EnteredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("entered_at_utc");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<string>("PreviousState")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("previous_state");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recorded_at_utc");
+
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_id");
+
+                    b.Property<string>("SourceKind")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("source_kind");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("state");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabWorkOrderId", "SourceKind", "SourceId", "EnteredAtUtc");
+
+                    b.ToTable("lab_forecast_transitions", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabHoliday", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<Guid>("LabBusinessCalendarId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_business_calendar_id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabBusinessCalendarId", "Date")
+                        .IsUnique();
+
+                    b.ToTable("lab_holidays", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabJobDeadlineChange", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<DateTime>("DueAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("due_at_utc");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<DateTime>("OccurredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at_utc");
+
+                    b.Property<DateTime?>("PreviousDueAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("previous_due_at_utc");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("reason");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabWorkOrderId", "OccurredAtUtc");
+
+                    b.ToTable("lab_job_deadline_changes", "lab_ops");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabJobTimingPolicy", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("LabTimingPolicyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_timing_policy_id");
+
+                    b.Property<Guid>("LabWorkOrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_work_order_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("reason");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabTimingPolicyId");
+
+                    b.HasIndex("LabWorkOrderId", "Revision")
+                        .IsUnique();
+
+                    b.ToTable("lab_job_timing_policies", "lab_ops");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabLibrary", b =>
@@ -13074,6 +13337,42 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("lab_specimen_attempts", "lab_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabStageDuration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("DayBasis")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("day_basis");
+
+                    b.Property<decimal>("Days")
+                        .HasPrecision(7, 2)
+                        .HasColumnType("numeric(7,2)")
+                        .HasColumnName("days");
+
+                    b.Property<Guid>("LabTimingPolicyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_timing_policy_id");
+
+                    b.Property<string>("StageKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("stage_key");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabTimingPolicyId", "StageKey")
+                        .IsUnique();
+
+                    b.ToTable("lab_stage_durations", "lab_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabStep", b =>
                 {
                     b.Property<Guid>("Id")
@@ -13375,6 +13674,66 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("lab_supplier_products", "lab_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabTimingPolicy", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("LabBusinessCalendarId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_business_calendar_id");
+
+                    b.Property<Guid>("LabServiceWorkflowVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_service_workflow_version_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("reason");
+
+                    b.Property<bool>("RequiresSequencing")
+                        .HasColumnType("boolean")
+                        .HasColumnName("requires_sequencing");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabBusinessCalendarId");
+
+                    b.HasIndex("LabServiceWorkflowVersionId", "Revision")
+                        .IsUnique();
+
+                    b.ToTable("lab_timing_policies", "lab_ops");
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabTrayFormat", b =>
                 {
                     b.Property<Guid>("Id")
@@ -13520,6 +13879,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<DateTime?>("AdjustedDeliveryDueAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("adjusted_delivery_due_at_utc");
+
                     b.Property<Guid>("AuthorizationId")
                         .HasColumnType("uuid")
                         .HasColumnName("authorization_id");
@@ -13550,9 +13913,17 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("current_authorization_version");
 
+                    b.Property<DateTime?>("DeliveryDueAtFirstDeliveryUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("delivery_due_at_first_delivery_utc");
+
                     b.Property<DateTime?>("ExpectedCompletionAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("expected_completion_at_utc");
+
+                    b.Property<DateTime?>("FirstDeliveredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("first_delivered_at_utc");
 
                     b.Property<bool>("HasTimingOverride")
                         .ValueGeneratedOnAdd()
@@ -13576,6 +13947,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
                         .HasColumnName("opaque_submitter_reference");
+
+                    b.Property<DateTime?>("OriginalDeliveryDueAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("original_delivery_due_at_utc");
 
                     b.Property<DateTime?>("OriginalTargetAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -17788,6 +18163,57 @@ namespace PSeq.Operations.Api.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabForecastSnapshot", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabForecastTransition", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabHoliday", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabBusinessCalendar", null)
+                        .WithMany("Holidays")
+                        .HasForeignKey("LabBusinessCalendarId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabJobDeadlineChange", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabJobTimingPolicy", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabTimingPolicy", null)
+                        .WithMany()
+                        .HasForeignKey("LabTimingPolicyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabWorkOrder", null)
+                        .WithMany()
+                        .HasForeignKey("LabWorkOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabLibrary", b =>
                 {
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabSpecimen", null)
@@ -18079,6 +18505,15 @@ namespace PSeq.Operations.Api.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabStageDuration", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabTimingPolicy", null)
+                        .WithMany("Durations")
+                        .HasForeignKey("LabTimingPolicyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabStepVersion", b =>
                 {
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabStep", null)
@@ -18099,6 +18534,21 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplier", null)
                         .WithMany()
                         .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabTimingPolicy", b =>
+                {
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabBusinessCalendar", null)
+                        .WithMany()
+                        .HasForeignKey("LabBusinessCalendarId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabServiceWorkflowVersion", null)
+                        .WithMany()
+                        .HasForeignKey("LabServiceWorkflowVersionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
@@ -18655,6 +19105,16 @@ namespace PSeq.Operations.Api.Migrations
             modelBuilder.Entity("PSeq.Operations.Commercial.Trials.Domain.TrialScope", b =>
                 {
                     b.Navigation("Decisions");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabBusinessCalendar", b =>
+                {
+                    b.Navigation("Holidays");
+                });
+
+            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabTimingPolicy", b =>
+                {
+                    b.Navigation("Durations");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabWorkOrder", b =>

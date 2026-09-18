@@ -28,7 +28,7 @@ describe('SampleShippingConfigurationPanel', () => {
     apiMocks.getConfiguration.mockResolvedValue(configuration)
   })
 
-  it('shows versioned setup and resolves an approved instruction preview', async () => {
+  it('automatically previews the selected rule without asking for destination or sample again', async () => {
     apiMocks.preview.mockResolvedValue({
       effectiveAt: '2026-08-17T19:00:00Z',
       destination: configuration.destinations[0],
@@ -48,19 +48,13 @@ describe('SampleShippingConfigurationPanel', () => {
       }],
     })
 
-    renderPanel()
-
-    expect(await screen.findByText('Ship-to destinations')).toBeTruthy()
-    expect(screen.getAllByText('West laboratory').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Extracted RNA').length).toBeGreaterThan(0)
-    expect(screen.getByText('West laboratory + Extracted RNA')).toBeTruthy()
-
-    fireEvent.change(document.getElementById('preview-destination') as HTMLSelectElement, {
-      target: { value: configuration.destinations[0].id },
-    })
-    fireEvent.click(document.getElementById(`preview-sample-${configuration.sampleTypes[0].id}`) as HTMLButtonElement)
-    fireEvent.click(screen.getByRole('button', { name: 'Preview instructions' }))
-
+    renderPanel('instructions')
+    const actions = await screen.findByRole('button', { name: 'Actions' })
+    fireEvent.keyDown(actions, { key: 'ArrowDown' })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Preview instructions' }))
+    expect(await screen.findByRole('dialog', { name: 'Instructions preview' })).toBeTruthy()
+    expect(screen.queryByLabelText('Destination revision')).toBeNull()
+    expect(screen.queryByLabelText('Effective at')).toBeNull()
     expect(await screen.findByText('Resolved packet instructions')).toBeTruthy()
     expect(apiMocks.preview).toHaveBeenCalledWith(expect.objectContaining({
       destinationId: configuration.destinations[0].id,
@@ -70,7 +64,7 @@ describe('SampleShippingConfigurationPanel', () => {
   })
 
   it('opens an immutable new revision instead of editing the current destination row', async () => {
-    renderPanel()
+    renderPanel('destinations')
 
     await screen.findByText('Ship-to destinations')
     fireEvent.click(screen.getAllByRole('button', { name: 'Create revision' })[0])
@@ -79,11 +73,28 @@ describe('SampleShippingConfigurationPanel', () => {
     expect((document.getElementById('destination-code') as HTMLInputElement).disabled).toBe(true)
     expect(screen.getByText(/current revision will end/i)).toBeTruthy()
   })
+
+  it('shows shared sample definitions without shipping lists on the sample-types page', async () => {
+    renderPanel('sample-types')
+    expect(await screen.findByText('Sample types')).toBeTruthy()
+    expect(screen.getByText('Extracted RNA')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Add sample type' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Add destination' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Add instruction rule' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Preview instructions' })).toBeNull()
+  })
+
+  it('shows instruction rules separately from the preview form', async () => {
+    renderPanel('instructions')
+    expect(await screen.findByText('West laboratory + Extracted RNA')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Add instruction rule' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Preview instructions' })).toBeNull()
+  })
 })
 
-function renderPanel() {
+function renderPanel(section: 'destinations' | 'sample-types' | 'instructions') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
-  return render(<QueryClientProvider client={client}><SampleShippingConfigurationPanel apiEnabled /></QueryClientProvider>)
+  return render(<QueryClientProvider client={client}><SampleShippingConfigurationPanel apiEnabled section={section} /></QueryClientProvider>)
 }
 
 const configuration = {

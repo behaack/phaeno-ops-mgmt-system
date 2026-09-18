@@ -21,7 +21,7 @@ Current protocols embed step definitions. Current workflows reference protocol v
 
 ## Lab step requirements
 
-1. Add **Lab steps** to Lab configuration, following the existing view-first list/detail and bounded authoring patterns.
+1. Add **Lab steps** to Lab configuration, following the existing view-first list/detail and bounded authoring patterns. Opening Lab configurations defaults to Lab steps; explicit links to another tab retain that selection. The Lab steps list uses the same shaded, separated header and spacing as Protocols, with Find Lab steps and Show retired inside its header (September 18 clarification).
 2. Give each step a stable identity and immutable approved versions. Use the existing draft, approval and retirement conventions and permissions; define the detailed approval behavior in the implementation design without weakening existing controls.
 3. A step owns instructions; typed captures with labels, units, allowed choices and required/optional settings; shared versus tube scope; attachment presentation; material/equipment/output requirements; operator confirmation; role requirements; and QC criteria.
 4. Protocol authors select an exact step version and arrange its occurrences. Sequence, dependencies, required/conditional placement and applicability belong to the protocol composition. Avoid free-form overrides that conceal scientific differences; distinct instructions or criteria require an explicit version or distinct step.
@@ -190,3 +190,13 @@ Verification: frontend typecheck, scoped lint and whitespace checks passed. Conn
 ### Production release — September 17, 2026
 
 The owner subsequently authorized commit, push and deployment, with the earlier explicit production EF migration authorization retained. Application revision `1e96aa35a84d811296dd7bed4f554af788957a72` is deployed to both the API and Portal UI. The three additive migrations completed after encrypted-backup and isolated restore verification. See the [release record](../testing/runs/2026-09-17-lab-step-materials-release.md) for exact deployment identities and the remaining operational acceptance boundary. Local fixtures and operational records were not copied to production.
+
+### Equipment selector requirement — September 18, 2026
+
+Equipment used always requires a registered equipment selection, including when an older definition omitted tracking or marked the field optional. The builder removes Include equipment barcode and the equipment Required toggle. Newly serialized equipment fields are required and tracked. Preview and live recording share the selector and required-selection validation; the API rejects omitted selections and free-text-only entries and retains existing availability/calibration checks. Previously recorded evidence and correction history remain unchanged. No database migration is needed. The focused frontend regression covers missing, free-text, unavailable and valid equipment selections; automated tests are not run unless requested.
+
+Verification: isolated backend solution build passed with zero warnings/errors; frontend TypeScript and scoped lint passed. Help corpus regenerated. Frontend regression added but not executed under repository policy; browser/connected acceptance remains pending. Restart the local API to load the changed server validation.
+
+### Library tray naming — September 18, 2026
+
+The configuration tab, list, create/edit actions, layout preview and preparation-batch format selector now say Library tray formats / Library tray format to distinguish this equipment from other trays. Help and navigation descriptions use the same name. Saved format names, identifiers and route values remain unchanged.

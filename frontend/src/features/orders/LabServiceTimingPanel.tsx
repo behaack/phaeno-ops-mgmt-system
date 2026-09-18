@@ -163,7 +163,7 @@ export function LabServiceTimingPanel({
         </div>
         <CardDescription>
           The published turnaround starts at scientific acceptance. The original
-          target remains in the record when expected timing changes.
+          target remains in the record when expected timing changes. Laboratory completion is separate from delivery of every sample’s results.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -173,7 +173,10 @@ export function LabServiceTimingPanel({
             ['Scientific acceptance', timing.acceptedAtUtc],
             ['Original target', timing.originalTargetAtUtc],
             ['Current expected completion', timing.expectedCompletionAtUtc],
-            ['Actual completion', timing.completedAtUtc],
+            ['Laboratory completion', timing.completedAtUtc],
+            ['Delivery due date', timing.deliveryDueAtUtc ?? null],
+            ['Original delivery target', timing.originalDeliveryDueAtUtc ?? null],
+            ['All samples delivered to Portal', timing.portalDeliveredAtUtc ?? null],
           ].map(([label, value]) => (
             <div key={label}>
               <dt className="text-muted-foreground">{label}</dt>
@@ -187,7 +190,7 @@ export function LabServiceTimingPanel({
           </p>
         ) : null}
         <p className="mt-3 text-sm">
-          Schedule: {timing.scheduleHealth.replace(/([a-z])([A-Z])/g, '$1 $2')}
+          Laboratory schedule: {timing.scheduleHealth.replace(/([a-z])([A-Z])/g, '$1 $2')}
         </p>
         {timing.changes.length ? (
           <details className="mt-4">

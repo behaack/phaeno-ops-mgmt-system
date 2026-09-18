@@ -36,7 +36,7 @@ export function resourceEntries(fields: ResourceField[], members: PreparationMem
     const get = (part: string) => isException && ['resource', 'unit'].includes(part) ? values[`shared_${field.key}_${part}`]?.trim() || '' : raw(part)
     const parts = field.type === 'output' ? ['quantity', 'unit', 'location'] : field.type === 'equipment' ? ['name', 'resource', 'run'] : ['resource', 'quantity', 'unit']
     const hasOverrides = field.scope === 'shared' && members.some(m => values[`${m.id}_${field.key}_exception`] === 'yes')
-    if (!field.required && !isException && !hasOverrides && !parts.some(p => get(p))) continue
+    if (field.type !== 'equipment' && !field.required && !isException && !hasOverrides && !parts.some(p => get(p))) continue
     const require = (part: string, message: string) => { if (!get(part)) errors[`${prefix}_${part}`] = message }
     const entry: PreparationResourceInput = { fieldKey: field.key, ...(member ? { memberId: member.id } : {}) }
     if (isException) {
@@ -47,13 +47,13 @@ export function resourceEntries(fields: ResourceField[], members: PreparationMem
       if (!['continue', 'hold', 'fail'].includes(entry.disposition ?? '')) errors[`${prefix}_disposition`] = 'Choose the tube outcome.'
       if (entry.amountUnknown && entry.disposition === 'continue') errors[`${prefix}_disposition`] = 'Unknown amounts require Hold or Close attempt as failed.'
     }
-    if (field.includeTracking) {
+    if (field.type === 'equipment' || field.includeTracking) {
       require('resource', field.type === 'material' ? 'Select the lot used.' : 'Select the equipment used.')
       const resource = (field.type === 'material' ? catalog.materialLots : catalog.equipment).find(r => r.id === get('resource'))
       if (get('resource') && !resource) errors[`${prefix}_resource`] = 'Choose an available item.'
       if (field.type === 'material' && resource && !materialLotMatches(field, resource as LabMaterialLot)) errors[`${prefix}_resource`] = 'Choose a lot matching the configured material and quantity unit.'
       entry.resourceId = get('resource') || undefined; entry.resourceVersion = resource?.version
-    } else if (field.type === 'equipment') { require('name', 'Enter the equipment name.'); entry.name = get('name') }
+    }
     if (field.type !== 'equipment') {
       if (!entry.amountUnknown) require('quantity', isException ? 'Enter the actual quantity, including zero.' : 'Enter a positive quantity.')
       const quantity = Number(get('quantity'))

@@ -46,6 +46,8 @@ Phaeno Portal is desktop-first and fully responsive.
 
 Use task-oriented entry points with record-centered workspaces.
 
+- User dropdown labels use sentence case: capitalize only the first word, preserving acronyms and product names such as CRM and PSeq (for example, Order settings, Sample shipping settings, and Sign out).
+
 - The home experience should answer, "What needs my attention?"
 - The POMS home uses the shared far-left sidebar as one **Order Operations / Lab
   Operations / Customer access / Web Operations** panel selector so internal users can

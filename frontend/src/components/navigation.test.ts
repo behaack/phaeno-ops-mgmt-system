@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   getVisibleMainMenuItems,
   isExternalOrganizationKind,
+  isMainMenuRouteActive,
 } from './navigation'
 import type { OrganizationKind, SessionResponse } from '#/api/session'
 
@@ -13,6 +14,7 @@ describe('data navigation permissions', () => {
     session.memberships[0].isOrganizationAdmin = false
     const labels = getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Phaeno', selectedMembership: session.memberships[0] }).map(item => item.label)
     expect(labels).toContain('CRM')
+    expect(labels).not.toContain('CRM settings')
     expect(labels).not.toContain('Data provisioning')
   })
   it('shows provisioning only in the Phaeno context', () => {
@@ -31,7 +33,7 @@ describe('data navigation permissions', () => {
   })
 
   it.each<OrganizationKind>(['Prospect', 'Customer', 'Partner'])(
-    'shows the Data Library for an active %s organization context',
+    'shows the Data library for an active %s organization context',
     (kind) => {
       const session = createSession(kind, {
         canViewDatasetConfiguration: false,
@@ -62,7 +64,7 @@ describe('order navigation permissions', () => {
     }).map((item) => item.label)
 
     expect(labels).toContain('Lab services')
-    expect(labels).not.toContain('PSeq Kit orders')
+    expect(labels).not.toContain('PSeq kit orders')
     expect(labels).not.toContain('Assembly cases')
     expect(labels).not.toContain('Order ops')
   })
@@ -78,10 +80,10 @@ describe('order navigation permissions', () => {
       selectedMembership: session.memberships[1],
     }).map((item) => item.label)
 
-    expect(labels).toContain('PSeq Kit orders')
+    expect(labels).toContain('PSeq kit orders')
     expect(labels).toContain('Assembly cases')
     expect(labels).not.toContain('Lab services')
-    expect(labels).not.toContain('Order & retention settings')
+    expect(labels).not.toContain('Order settings')
   })
 
   it('shows operations and configuration only in the authorized Phaeno context', () => {
@@ -99,10 +101,10 @@ describe('order navigation permissions', () => {
 
     expect(labels).toContain('Order ops')
     expect(labels).toContain('Lab ops')
-    expect(labels).toContain('Order & retention settings')
-    expect(labels).not.toContain('File retention')
+    expect(labels).toContain('Order settings')
+    expect(labels).toContain('File retention policies')
     expect(labels).not.toContain('Lab services')
-    expect(labels).not.toContain('PSeq Kit orders')
+    expect(labels).not.toContain('PSeq kit orders')
   })
 })
 
@@ -166,17 +168,44 @@ describe('sample-shipping navigation permissions', () => {
 })
 
 describe('navigation placement', () => {
+  it('keeps CRM settings permission-scoped and selected separately from CRM', () => {
+    const session = createSession('Phaeno', {})
+    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Phaeno' }, 'administration')).toContainEqual(expect.objectContaining({ label: 'CRM settings', to: '/crm/administration' }))
+    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Customer' }, 'administration').some(item => item.label === 'CRM settings')).toBe(false)
+    expect(isMainMenuRouteActive('/crm/administration', '/crm')).toBe(false)
+    expect(isMainMenuRouteActive('/crm/administration', '/crm/administration')).toBe(true)
+  })
   it.each([
-    [true, false, true],
-    [false, true, true],
-    [false, false, false],
-  ])('combines settings access for order=%s and retention=%s', (orders, retention, visible) => {
+    [true, false],
+    [false, true],
+    [true, true],
+    [false, false],
+  ])('separates settings access for order=%s and retention=%s', (orders, retention) => {
     const session = createSession('Phaeno', {
       canManageOrderConfiguration: orders,
       canManageFileManagementConfiguration: retention,
+      canAdministerCrm: false,
     })
-    const items = getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Phaeno' }, 'administration')
-    expect(items.map(item => item.label)).toEqual(visible ? ['Order & retention settings'] : [])
+    const context = { selectedOrganizationKind: 'Phaeno' as const }
+    const items = getVisibleMainMenuItems(session, context, 'administration')
+    expect(items.map(item => item.label)).toEqual([
+      ...(orders ? ['Order settings', 'Sample shipping settings'] : []),
+      ...(retention ? ['File retention policies'] : []),
+    ])
+    expect(getVisibleMainMenuItems(session, context, 'workspace').some(item => item.label === 'Order ops')).toBe(false)
+  })
+
+  it('keeps settings independent of operational workspaces', () => {
+    expect(isMainMenuRouteActive('/order-configuration', '/order-configuration')).toBe(true)
+    expect(isMainMenuRouteActive('/order-configuration', '/order-operations')).toBe(false)
+    expect(isMainMenuRouteActive('/order-configuration', '/lab-operations')).toBe(false)
+  })
+
+  it('shows Lab settings only with laboratory access in Phaeno', () => {
+    const session = createSession('Phaeno', { canManageLabOperations: true, canAdministerCrm: false })
+    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Phaeno' }, 'administration').map(item => item.label)).toEqual(['Lab settings'])
+    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Customer' }, 'administration')).toEqual([])
+    expect(isMainMenuRouteActive('/lab-configuration', '/lab-operations')).toBe(false)
   })
 
   it('keeps frequent Phaeno work in the toolbar and moves secondary destinations to the menu', () => {
@@ -202,7 +231,7 @@ describe('navigation placement', () => {
       getVisibleMainMenuItems(session, context, 'administration').map(
         (item) => item.label,
       ),
-    ).toEqual(['Order & retention settings'])
+    ).toEqual(['Order settings', 'Lab settings', 'CRM settings', 'Sample shipping settings', 'File retention policies'])
     expect(
       getVisibleMainMenuItems(session, context, 'resources').map(
         (item) => item.label,

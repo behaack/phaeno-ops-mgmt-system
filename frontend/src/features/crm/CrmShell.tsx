@@ -6,7 +6,6 @@ import {
   ContactRound,
   House,
   ListTodo,
-  Settings,
   Target,
   UserSearch,
 } from 'lucide-react'
@@ -27,7 +26,6 @@ type CrmSection =
   | 'opportunities'
   | 'tasks'
   | 'reports'
-  | 'administration'
 
 const crmSections = [
   {
@@ -93,14 +91,6 @@ const crmSections = [
     to: '/crm/reports',
     group: 'Insights',
   },
-  {
-    value: 'administration',
-    label: 'Administration',
-    description: 'Pipelines, views, imports, and data quality',
-    icon: Settings,
-    to: '/crm/administration',
-    group: 'Administration',
-  },
 ] as const satisfies ReadonlyArray<
   WorkspaceSidebarItem<CrmSection> & { to: string }
 >
@@ -112,9 +102,13 @@ export function CrmShell({ children }: { children: ReactNode }) {
     select: (state) => state.location.pathname,
   })
   const activeSection = getActiveSection(pathname)
-  const sections = crmSections.filter(section => canAdminister || !['portalAccess', 'administration'].includes(section.value))
+  const sections = crmSections.filter(section => canAdminister || section.value !== 'portalAccess')
 
   if (!canAccess) return <main className="page-wrap px-4 py-8"><h1 className="text-2xl font-semibold">CRM access required</h1><p className="mt-3 text-muted-foreground">Select your Phaeno organization. Commercial or administrator access is required to use CRM.</p></main>
+
+  if (pathname === '/crm/administration' || pathname.startsWith('/crm/administration/')) {
+    return canAdminister ? children : <main className="page-wrap px-4 py-8"><h1 className="text-2xl font-semibold">CRM Settings</h1><p className="mt-3 text-muted-foreground">A Phaeno administrator manages pipelines, imports, exports, and sensitive configuration. Use CRM to continue your commercial work.</p></main>
+  }
 
   return (
     <WorkspaceSidebar
@@ -128,7 +122,7 @@ export function CrmShell({ children }: { children: ReactNode }) {
         if (destination) void navigate({ to: destination.to })
       }}
     >
-      {!canAdminister && activeSection === 'administration' ? <main className="page-wrap px-4 py-8"><h1 className="text-2xl font-semibold">CRM administration</h1><p className="mt-3 text-muted-foreground">A Phaeno administrator manages pipelines, imports, exports, and sensitive configuration. Use the CRM sections to continue your commercial work.</p></main> : children}
+      {children}
     </WorkspaceSidebar>
   )
 }

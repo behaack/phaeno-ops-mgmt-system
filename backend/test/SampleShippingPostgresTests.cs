@@ -625,7 +625,7 @@ public partial class SampleShippingPostgresTests
                 "reference-service",
                 1,
                 "reference-turnaround",
-                $"PROMO-{Suffix}");
+                $"PROMO-{Suffix}", minimumTurnaroundDays: 14, maximumTurnaroundDays: 14);
             var specimen = new LabSpecimen(workOrder.Id, Guid.NewGuid());
             workOrder.Specimens.Add(specimen);
             var shipment = new SampleShipment(

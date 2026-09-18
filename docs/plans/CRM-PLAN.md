@@ -1,5 +1,9 @@
 # First-Party CRM Plan
 
+## September 18, 2026 — CRM Settings navigation
+
+CRM configuration now opens from Administration → CRM Settings in the user dropdown, immediately after Lab Settings. The former Administration sidebar item is removed; the settings page uses the CRM Settings heading and retains its existing tools and address at `/crm/administration`, including direct links from data-quality warnings. It renders independently of the operational CRM sidebar. CRM access and administrator capabilities remain required, and unauthorized direct links do not mount configuration content. User-dropdown labels use sentence case (only the first word capitalized), preserving CRM and PSeq capitalization; this corrects the initial title-case interpretation. No API, authorization policy, or persisted data changes.
+
 ## September 16, 2026 — Clear Home attention states
 
 Home uses No items need attention with a neutral check icon only after a successful dashboard load with zero visible counts. Nonzero categories are highlighted, explain their exact backend predicate and offer Review; zero/unknown categories are neutral nonlinks. Loading and errors cannot masquerade as all clear. Recent opportunity changes remain separate reference activity. Data warnings include duplicate company names/contact emails and required custom-field omissions; missing optional Opportunity amounts do not create warnings. Existing filters and permissions are preserved.
@@ -271,9 +275,9 @@ deployment, and test execution retain their normal approval boundaries.
   previewed/idempotent imports, audited exports, and explicit Portal handoffs
   and Company-owned Portal access.
 - The CRM workspace now uses the shared far-left responsive sidebar for Home,
-  Companies, Contacts, Leads, Opportunities, Tasks, Requests, Reports, and
-  Administration. The destinations are grouped as Relationships, Sales,
-  Follow-up, Insights, and Administration so the complete CRM remains available
+  Companies, Contacts, Leads, Opportunities, Tasks, Requests, and Reports.
+  CRM Settings is available from the user dropdown. The workspace destinations are grouped as Relationships, Sales,
+  Follow-up and Insights so the complete CRM remains available
   without presenting every record type as an unrelated top-level concept.
   Phaeno CRM help is organized as one expandable subject with independently
   routed workflow, administration, handoff, and recovery guides. This
@@ -584,9 +588,9 @@ They do not replace or directly mutate their owning domains.
 - Add a first-class **CRM** area to Phaeno navigation rather than overloading
   **Accounts**.
 - Use the shared far-left responsive workspace sidebar for CRM Home, Companies,
-  Contacts, Leads, Opportunities, Tasks, Requests, Reports, and Administration.
+  Contacts, Leads, Opportunities, Tasks, Requests, and Reports.
   Group the complete destination set into Relationships, Sales, Follow-up,
-  Insights, and Administration. Preserve the active section on list and detail
+  and Insights. Open CRM Settings from the user dropdown after Lab Settings. Preserve the active section on list and detail
   routes and do not duplicate these items in a horizontal section bar.
 - CRM landing answers: what needs attention, which opportunities changed, what
   is overdue, and how the pipeline is performing.

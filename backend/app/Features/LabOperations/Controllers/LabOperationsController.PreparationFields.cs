@@ -131,8 +131,7 @@ public sealed partial class LabOperationsController
                     if (field.Type == "material" && (entry.ProductId.HasValue || entry.Name is not null || entry.Vendor is not null))
                         throw new ArgumentException("Material identity is fixed by the step configuration. Record only quantity and the requested lot.");
                     if (field.Type != "material" && (entry.ProductId.HasValue || entry.Vendor is not null)) throw new ArgumentException("Product and vendor are configured only for materials.");
-                    if (!field.IncludeTracking && entry.ResourceId.HasValue) throw new ArgumentException("This field does not include lot or equipment tracking.");
-                    if (field.Type == "equipment" && !field.IncludeTracking && (string.IsNullOrWhiteSpace(name) || name.Length > 160)) throw new ArgumentException("Enter the equipment name, up to 160 characters.");
+                    if (field.Type == "material" && !field.IncludeTracking && entry.ResourceId.HasValue) throw new ArgumentException("This field does not include lot tracking.");
                     if (field.Material?.Vendor is { Length: > 0 } vendor) name += $" · Vendor {vendor}";
                     if (field.Material?.ProductId is Guid productId) name += $" · Product {field.Material.ProductNumber} · {productId}";
                     if (field.Type == "material")
@@ -169,17 +168,15 @@ public sealed partial class LabOperationsController
                     else
                     {
                         if (entry.RunReference?.Length > 1000) throw new ArgumentException("Use a run reference of at most 1000 characters.");
-                        if (field.IncludeTracking)
-                        {
-                            var equipment = await dbContext.LabEquipment.SingleOrDefaultAsync(e => e.Id == entry.ResourceId, ct) ?? throw Missing();
-                            await PreparationResourceAsync(members, attempts, request with { Action = "equipment", StageId = input.StageId, Confirmed = true,
-                                CoveredMemberIds = covered, ResourceId = equipment.Id, Reason = entry.RunReference }, actorId, ct);
-                            name = $"{equipment.Name} · Equipment barcode {equipment.AssetCode} · {equipment.Id}";
-                        }
+                        if (!entry.ResourceId.HasValue) throw new ArgumentException("Select the equipment used.");
+                        var equipment = await dbContext.LabEquipment.SingleOrDefaultAsync(e => e.Id == entry.ResourceId, ct) ?? throw Missing();
+                        await PreparationResourceAsync(members, attempts, request with { Action = "equipment", StageId = input.StageId, Confirmed = true,
+                            CoveredMemberIds = covered, ResourceId = equipment.Id, Reason = entry.RunReference }, actorId, ct);
+                        name = $"{equipment.Name} · Equipment barcode {equipment.AssetCode} · {equipment.Id}";
                         display = name + (string.IsNullOrWhiteSpace(entry.RunReference) ? "" : $" · Run {entry.RunReference.Trim()}");
                     }
                 }
-                if (display is null && field.Required) throw new ArgumentException($"{field.Label} is required for every included sample.");
+                if (display is null && (field.Required || field.Type == "equipment")) throw new ArgumentException($"{field.Label} is required for every included sample.");
                 if (display is not null && step.Captures.Any(c => c.Key == field.Key))
                     foreach (var id in covered) result[id][field.Key] = JsonSerializer.SerializeToElement(display);
             }

@@ -1,4 +1,5 @@
-import { Outlet, createFileRoute, useNavigate, useRouterState } from '@tanstack/react-router'
+import { parseJobListSearch, type JobListSearch } from '#/features/lab-operations/job-deadlines'
+import { Navigate, Outlet, createFileRoute, useNavigate, useRouterState } from '@tanstack/react-router'
 
 import { LabOperationsPage, type LabSection } from '#/features/lab-operations/LabOperationsPage'
 
@@ -10,10 +11,11 @@ import { parseStockKitListSearch, type StockKitListSearch } from '#/features/ord
 import { parseKitRequestSearch, type KitRequestListSearch } from '#/features/orders/kit-requests/kit-request-navigation'
 
 export const Route = createFileRoute('/lab-operations')({
-  validateSearch: (search: Record<string, unknown>): StockKitListSearch & KitRequestListSearch & { section?: LabSection; supplierTab?: SupplierCatalogTab; shipmentId?: string; receiptTab?: LabReceiptTab; configurationTab?: LabConfigurationTab; labStepSearch?: string; labStepRetired?: boolean; labStepPage?: number; returnKitRequestId?: string; supplierSearch?: string; supplierInactive?: boolean; productTypeSearch?: string; productTypeInactive?: boolean } => ({
+  validateSearch: (search: Record<string, unknown>): StockKitListSearch & KitRequestListSearch & JobListSearch & { section?: LabSection; supplierTab?: SupplierCatalogTab; shipmentId?: string; receiptTab?: LabReceiptTab; configurationTab?: LabConfigurationTab; labStepSearch?: string; labStepRetired?: boolean; labStepPage?: number; returnKitRequestId?: string; supplierSearch?: string; supplierInactive?: boolean; productTypeSearch?: string; productTypeInactive?: boolean } => ({
     labStepSearch: typeof search.labStepSearch === 'string' ? search.labStepSearch.slice(0, 255) : undefined,
     labStepRetired: search.labStepRetired === true || search.labStepRetired === 'true' ? true : undefined,
     labStepPage: Number.isInteger(Number(search.labStepPage)) && Number(search.labStepPage) > 0 ? Number(search.labStepPage) : undefined,
+    ...parseJobListSearch(search),
     ...parseStockKitListSearch(search),
     ...parseKitRequestSearch(search),
     shipmentId: typeof search.shipmentId === 'string' && /^[0-9a-f-]{36}$/i.test(search.shipmentId) ? search.shipmentId : undefined,
@@ -34,7 +36,8 @@ function LabOperationsRoute() {
   const navigate = useNavigate()
   const isChild = useRouterState({ select: (state) => state.location.pathname !== '/lab-operations' })
   const legacyTab = useRouterState({ select: state => state.location.hash === 'standard-kits' ? 'standard-kits' as const : state.location.hash === 'transportation-kit-requests' ? 'kit-requests' as const : undefined })
-  const { section, shipmentId, receiptTab, configurationTab, supplierTab } = Route.useSearch()
+  const { section, shipmentId, receiptTab, configurationTab, supplierTab, labStepSearch, labStepRetired, labStepPage } = Route.useSearch()
+  if (!isChild && section === 'protocols') return <Navigate to="/lab-configuration" search={{ configurationTab: configurationTab ?? 'steps', labStepSearch, labStepRetired, labStepPage }} replace />
   return isChild
     ? <Outlet />
     : (
@@ -42,7 +45,7 @@ function LabOperationsRoute() {
           section={section ?? 'receipt'}
           shipmentId={shipmentId}
           receiptTab={receiptTab ?? legacyTab}
-          configurationTab={configurationTab ?? 'protocols'}
+          configurationTab={configurationTab ?? 'steps'}
           supplierTab={supplierTab ?? 'suppliers'}
           onSupplierTabChange={nextTab => void navigate({
             to: '/lab-operations',

@@ -44,6 +44,10 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
     public DateTime? ExpectedCompletionAtUtc { get; private set; }
     public DateTime? CompletedAtUtc { get; private set; }
     public bool HasTimingOverride { get; private set; }
+    public DateTime? OriginalDeliveryDueAtUtc { get; private set; }
+    public DateTime? AdjustedDeliveryDueAtUtc { get; private set; }
+    public DateTime? FirstDeliveredAtUtc { get; private set; }
+    public DateTime? DeliveryDueAtFirstDeliveryUtc { get; private set; }
     public string? OpaqueSubmitterReference { get; private set; }
     public LabWorkOrderStatus Status { get; private set; } = LabWorkOrderStatus.AwaitingSpecimens;
     public long ProjectionVersion { get; private set; } = 1;
@@ -206,11 +210,40 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
 
     public void RefreshAcceptedSpecimenTargets()
     {
+        if (Specimens.Any(value => value.AcceptedAtUtc.HasValue)) RequireAcceptanceDeadline();
         if (!MaximumTurnaroundDays.HasValue) return;
         foreach (var specimen in Specimens.Where(value => value.AcceptedAtUtc.HasValue))
             specimen.SetOriginalTarget(MaximumTurnaroundDays.Value);
         OriginalTargetAtUtc = Specimens.Select(value => value.OriginalTargetAtUtc).Max();
+        // Freeze the job's delivery baseline when its acceptance clock starts.
+        // Later specimens keep their own targets without moving this commitment.
+        OriginalDeliveryDueAtUtc ??= OriginalTargetAtUtc;
         if (!HasTimingOverride) ExpectedCompletionAtUtc = OriginalTargetAtUtc;
+    }
+
+    public void RequireAcceptanceDeadline()
+    {
+        if (!MaximumTurnaroundDays.HasValue && !OriginalDeliveryDueAtUtc.HasValue && !AdjustedDeliveryDueAtUtc.HasValue)
+            throw new InvalidOperationException("Set the job's delivery due date from its Actions menu before accepting samples. No standard turnaround is recorded for this job.");
+    }
+
+    public void AdjustDeliveryDueDate(DateTime dueAtUtc)
+    {
+        if (Status == LabWorkOrderStatus.Cancelled || FirstDeliveredAtUtc.HasValue)
+            throw new InvalidOperationException("Only an unfinished job can change its delivery due date.");
+        if (dueAtUtc.Kind != DateTimeKind.Utc)
+            throw new ArgumentException("The delivery deadline must include a UTC time.");
+        if (dueAtUtc == (AdjustedDeliveryDueAtUtc ?? OriginalDeliveryDueAtUtc))
+            throw new InvalidOperationException("Choose a different due date.");
+        AdjustedDeliveryDueAtUtc = dueAtUtc;
+        ProjectionVersion++;
+    }
+
+    public void RecordFirstDelivery(DateTime deliveredAtUtc)
+    {
+        if (FirstDeliveredAtUtc.HasValue) return;
+        FirstDeliveredAtUtc = deliveredAtUtc;
+        DeliveryDueAtFirstDeliveryUtc = AdjustedDeliveryDueAtUtc ?? OriginalDeliveryDueAtUtc;
     }
 
     public void OverrideExpectedCompletion(DateTime expectedAtUtc)

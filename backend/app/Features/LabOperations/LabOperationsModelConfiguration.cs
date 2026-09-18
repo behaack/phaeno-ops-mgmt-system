@@ -8,6 +8,15 @@ public static class LabOperationsModelConfiguration
 {
     public static void Configure(ModelBuilder modelBuilder, string laboratorySchema)
     {
+        LabForecastModelConfiguration.Configure(modelBuilder, laboratorySchema);
+        modelBuilder.Entity<LabJobDeadlineChange>(entity =>
+        {
+            entity.ToTable("lab_job_deadline_changes", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Reason).HasMaxLength(2000).IsRequired();
+            entity.HasIndex(e => new { e.LabWorkOrderId, e.OccurredAtUtc });
+            entity.HasOne<LabWorkOrder>().WithMany().HasForeignKey(e => e.LabWorkOrderId).OnDelete(DeleteBehavior.Restrict);
+        });
         modelBuilder.Entity<LabSpecimenAttempt>(entity =>
         {
             entity.ToTable("lab_specimen_attempts", laboratorySchema);

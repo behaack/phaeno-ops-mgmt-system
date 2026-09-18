@@ -38,6 +38,15 @@ describe('Order operations role navigation', () => {
     expect(getOrderSections(roles).map(item => item.value)).toEqual(['intake', 'attention'])
     expect(getOrderLandingSection(roles)).toBe('intake')
   })
+  it('keeps settings out of the operations sidebar', () => {
+    const roles = capabilities({ canManageOrderConfiguration: true, canManageFileManagementConfiguration: true })
+    expect(getOrderSections(roles).some(item => item.label === 'Order Settings')).toBe(false)
+  })
+  it('does not add operational queues for retention-only users', () => {
+    const roles = capabilities({ canViewAllOperationalOrders: false, canManageFileManagementConfiguration: true })
+    expect(getOrderSections(roles)).toEqual([])
+    expect(getOrderLandingSection(roles)).toBeUndefined()
+  })
   it('preserves trial-only navigation and handles no available sections', () => {
     expect(getOrderLandingSection(capabilities({ canViewTrialProjects: true }))).toBe('trials')
     expect(getOrderSections(capabilities({}))).toEqual([])

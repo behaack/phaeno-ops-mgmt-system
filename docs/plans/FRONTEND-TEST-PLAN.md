@@ -1,5 +1,9 @@
 # Frontend Test Plan
 
+## September 18 jobs/settings release checkpoint
+
+Full frontend typecheck, lint and production build passed. Updated user guides are included in the generated documentation package. Automated suites were not requested or run. Earlier navigation acceptance records are historical; the current dropdown uses sentence case and the shipping preview is a rule action. See [release evidence](PORTAL-JOBS-SETTINGS-RELEASE-2026-09-18.md).
+
 ## Material lot identity matching (2026-09-17)
 
 See [implementation plan](MATERIAL-LOT-PRODUCT-LINK-PLAN.md). Added domain/Postgres regressions for exact product/definition matching, unlinked and wrong-supplier assignment, immutable assignment, stale versions, configured prepared identity, and rejected wrong-lot consumption with no stock change. Updated material creation fixtures for required products and added frontend helper/schema checks for same-vendor wrong products, unlinked lots, prepared identity and unusable stock. Automated tests are authored/compiled but not executed. Build, typecheck, scoped lint, migration review and local read-only UI checks form this checkpoint; populated operational writes remain unverified.
@@ -2434,3 +2438,37 @@ Attestation simplification: update form/preview cases to submit without a covera
 ### Material amount exceptions
 
 Authored helper cases for common amounts plus sample overrides, unknown/zero amounts, required reason/outcome, aggregate available stock, and ignored unchecked overrides. Dialog regression covers hidden sample cards, explicit material override, required reason/outcome, zero quantity, unknown-only hold/fail choices and clearing discarded overrides. Existing configured units, final report/attestation and batch-only presentation remain covered. Tests authored and typechecked, not executed.
+
+### Equipment selector requirement — September 18, 2026
+
+`preparation-resource-fields.test.ts` adds coverage for required registered equipment despite legacy optional/untracked configuration: missing selection, free-text-only input and unavailable identity fail; a catalog selection records its identity and ignores supplied display text. Automated execution deferred under the owner’s no-tests-unless-requested policy.
+
+## Jobs delivery deadlines — September 18, 2026
+
+Authored `job-deadlines.test.ts`: URL filter/page parsing, invalid values and explicit cancellation. Typecheck and targeted lint cover Jobs, deadline detail/modal and additive commercial timing fields. Automated test execution not requested.
+
+Jobs header follow-up: container lookup removed and Clear filters moved from pagination footer into header controls. Use targeted lint/typecheck; no new tests for this reversible layout change.
+
+Required date at acceptance: removed Needs due date option/count, added a legacy URL parsing case and clarified Set/Adjust due date action, modal and deadline-panel guidance. Static lint/typecheck plus React review; automated tests not requested.
+
+Active/Closed Jobs: updated URL-state coverage for independent per-tab filters/pages, clear-current-tab only, legacy links, supported filter values, calendar validation and local next-day boundaries including DST dates. Static type/lint and React review; suites not run.
+
+## Progress-based completion forecast — September 18, 2026
+
+Stage durations and CompletionForecast components added with RHF/Zod forms, TanStack queries, versioned holiday/duration configuration, read-only preview with explicit application, sample-driver details and Jobs forecast summaries. Type checking and targeted lint are implementation checks; no automated frontend suite was requested or run. Add/run interaction coverage for date typing, mixed basis/blank/zero validation, duplicate/out-of-coverage holidays, revision conflicts, preview page selection, permissions, unknown/blocked forecasts and responsive keyboard/focus behavior. Signed-in configuration navigation, real workflow/stage data loading and the unsaved holiday-calendar form were verified; persistence/preview/application remains pending requested acceptance.
+
+Holiday calendar tab refinement: scoped lint and type checking passed. Manual signed-in inspection confirmed the year/revision header, date-only `MMM dd, yyyy` display and copied/sorted editor defaults; no automated suite was requested.
+
+Settings navigation separation: updated existing tests for independent Order Settings, Lab Settings and File retention policies menu permissions/order; settings are absent from Operations sidebars and file retention is absent from the Order Settings sidebar. Scoped lint and TypeScript checks pass. Automated suites were not requested or run; restricted-account and standalone Lab Settings component interaction suites remain unexecuted.
+
+## Separate sample-shipping settings — September 18, 2026
+
+Updated navigation permission/order tests and Order Settings sidebar assertions for Sample Shipping Settings and Sample types. Adapted the existing instruction-preview and revision tests to isolated pages; added shared sample-type isolation and instruction-list/preview separation cases. Container detail URLs remain compatible. TypeScript and scoped lint checks pass; no automated suite was requested or run. The standalone preview sidebar item was subsequently removed in favor of rule actions.
+
+Rule preview refinement: updated component coverage for automatic preview from Actions and added focused cases for current/future evaluation times, inactive/ended rules and legacy preview links. Actions has a chevron and a 192px menu so labels remain on one line. Sidebar and list now use Sample shipping instructions. Automated suites were not requested or run.
+
+CRM Settings navigation (September 18, 2026): updated title-case navigation expectations and added permission/menu-selection assertions. CRM shell coverage now expects no Administration sidebar item, standalone settings rendering, and blocked direct access for Commercial staff. TypeScript and scoped lint pass. Automated suites were not requested or run.
+
+Quote/workflow and submission guidance separation (September 18, 2026): updated existing sidebar/editor expectations; quote editor coverage retains instruction text while converting supported workflows. Added guidance-editor coverage for required validation and preserving quote/shipping values while omitting optional workflow fields. TypeScript and scoped lint pass. Automated suites were not requested or run.
+
+User dropdown sentence case correction (September 18, 2026): navigation label expectations now capitalize only the first word, retaining CRM and PSeq. This supersedes the earlier title-case decision; menu placement and permissions are unchanged. Scoped lint and whitespace checks pass; automated suites were not requested or run.

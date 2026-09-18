@@ -72,7 +72,7 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['lab-operations'] })
-      await navigate({ to: '/lab-operations', search: { section: 'protocols', configurationTab: 'workflows' } })
+      await navigate({ to: '/lab-configuration', search: { configurationTab: 'workflows' } })
     },
   })
 
@@ -101,7 +101,7 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
     return () => window.removeEventListener('beforeunload', warn)
   }, [form.formState.isDirty, mutation.isSuccess])
 
-  const leave = () => navigate({ to: '/lab-operations', search: { section: 'protocols', configurationTab: 'workflows' } })
+  const leave = () => navigate({ to: '/lab-configuration', search: { configurationTab: 'workflows' } })
   if (!canManage) return <PageAlert title="Workflow authoring unavailable" message="An active Protocol Administrator role is required." destructive />
   if (authProvider === 'mock') return <PageAlert title="Workflow authoring is paused" message="Connect a real Phaeno session to create a controlled workflow version." />
   if (dashboard.isLoading) return <main className="page-wrap px-4 py-8"><p role="status">Loading service workflow…</p></main>
@@ -117,7 +117,7 @@ export function ServiceWorkflowVersionBuilderPage({ workflowId, draftVersionId }
     <main className="page-wrap px-4 py-8">
       <section className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm text-muted-foreground"><Link to="/lab-operations" search={{ section: 'protocols', configurationTab: 'workflows' }} className="inline-flex items-center gap-1 hover:underline"><ArrowLeft className="size-4" /> Workflows</Link></p>
+          <p className="text-sm text-muted-foreground"><Link to="/lab-configuration" search={{ configurationTab: 'workflows' }} className="inline-flex items-center gap-1 hover:underline"><ArrowLeft className="size-4" /> Workflows</Link></p>
           <h1 className="mt-2 text-3xl font-semibold">{workflow.name} · workflow v{draft?.workflowVersion ?? workflow.latestVersion + 1}</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">Arrange exact approved protocol versions in operating order. Production jobs retain this complete version even after a replacement is promoted.</p>
         </div>

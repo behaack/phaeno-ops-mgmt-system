@@ -95,7 +95,7 @@ export function ProtocolStepEditor({
           <BooleanField
             id={`step-${index}-confirmation`}
             label="Confirmation required"
-            description="The person performing this step must explicitly confirm completion."
+            description="Completion of this step must be confirmed."
             control={form}
             name={`steps.${index}.operatorConfirmation`}
           />
@@ -154,7 +154,8 @@ export function ProtocolStepEditor({
                     {!['barcode', 'output'].includes(captureType) ? <><option value="batch">Batch only — same entry for all samples</option>{captureType !== 'equipment' ? <option value="shared">Same entry with sample exceptions</option> : null}</> : null}
                   </select>
                 </Field> : null}
-                {['material', 'equipment'].includes(captureType) ? <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" {...form.register(`steps.${index}.captures.${captureIndex}.includeTracking`)} />{captureType === 'material' ? 'Include lot number' : 'Include equipment barcode'}</label> : null}
+                {captureType === 'material' ? <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" {...form.register(`steps.${index}.captures.${captureIndex}.includeTracking`)} />Include lot number</label> : null}
+                {captureType === 'equipment' ? <p className="text-sm text-muted-foreground">Select the equipment used from eligible registered equipment when recording this step.</p> : null}
                 {captureType === 'material' && ['batch', 'shared'].includes(form.watch(`steps.${index}.captures.${captureIndex}.scope`) ?? '') ? <Field label="Quantity recorded" id={`basis-${index}-${captureIndex}`}><select id={`basis-${index}-${captureIndex}`} className={selectClass} {...form.register(`steps.${index}.captures.${captureIndex}.quantityBasis`)}><option value="perSample">Amount per sample</option>{form.watch(`steps.${index}.captures.${captureIndex}.scope`) !== 'shared' ? <option value="total">Total amount for the batch</option> : null}</select></Field> : null}
                 {captureType === 'material' ? <Field label="Quantity unit" id={`step-${index}-capture-${captureIndex}-unit`} required error={captureErrors?.unit?.message}>
                   <ScientificTextField id={`step-${index}-capture-${captureIndex}-unit`} control={form.control} name={`steps.${index}.captures.${captureIndex}.unit`} label="Quantity unit" unit placeholder="µL" />
@@ -172,13 +173,13 @@ export function ProtocolStepEditor({
                   </Field>
                 ) : null}
                 <div className="flex items-center justify-between gap-4">
-                  <BooleanField
+                  {captureType === 'equipment' ? <span className="text-sm text-muted-foreground">Equipment selection is required.</span> : <BooleanField
                     id={`step-${index}-capture-${captureIndex}-required`}
                     label="Required"
                     control={form}
                     name={`steps.${index}.captures.${captureIndex}.required`}
                     compact
-                  />
+                  />}
                   <Button type="button" variant="ghost" size="icon" aria-label={`Remove ${form.watch(`steps.${index}.captures.${captureIndex}.label`) || `capture ${captureIndex + 1}`}`} title="Remove field" onClick={() => captures.remove(captureIndex)}><Trash2 /></Button>
                 </div>
               </div>

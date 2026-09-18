@@ -152,6 +152,7 @@ builder.Services.AddScoped<PhaenoPortal.App.Features.Trials.Services.TrialResult
 builder.Services.AddScoped<ILabOperationsProvider, InternalLabOperationsProvider>();
 builder.Services.AddScoped<LabOperationsRequestContext>();
 builder.Services.AddHostedService<LabOperationsProjectionDispatcher>();
+builder.Services.AddHostedService<LabForecastWorker>();
 builder.Services.AddHttpClient("QuickBooksOAuth");
 builder.Services.AddSingleton(services => new QuickBooksAccessTokenProvider(
     services.GetRequiredService<IHttpClientFactory>().CreateClient("QuickBooksOAuth"),

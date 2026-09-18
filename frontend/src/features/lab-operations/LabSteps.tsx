@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Plus } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useBlocker, useNavigate, useRouterState } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
@@ -8,6 +9,8 @@ import { getLabOperationsError } from '#/api/lab-operations'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
+import { Checkbox } from '#/components/ui/checkbox'
+import { Label } from '#/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardAction } from '#/components/ui/card'
 import { RequiredLegend } from '#/components/ui/required-field'
 import { PreparationActions, PreparationFormDialog, PreparationField } from './preparation-ui'
@@ -29,16 +32,33 @@ export function LabStepList() {
   const search = listState.labStepSearch ?? ''
   const retired = listState.labStepRetired ?? false
   const requestedPage = listState.labStepPage ?? 1
-  const updateList = (patch: typeof listState) => void navigate({ to: '/lab-operations', search: previous => ({ ...labStepListSearch(previous), ...patch }), replace: true, resetScroll: false })
+  const updateList = (patch: typeof listState) => void navigate({ to: '/lab-configuration', search: previous => ({ ...labStepListSearch(previous), ...patch }), replace: true, resetScroll: false })
   const mutation = useMutation({ mutationFn: createLabStep, onSuccess: async step => {
     await client.invalidateQueries({ queryKey: ['lab-steps'] }); setCreate(false)
     await navigate({ to: '/lab-operations/steps/$stepId', params: { stepId: step.id }, search: labStepListSearch })
   } })
   const items = query.data?.filter(s => (retired || !s.retiredAtUtc) && `${s.name} ${s.key}`.toLowerCase().includes(search.toLowerCase())) ?? []
   const page = Math.min(requestedPage, Math.max(1, Math.ceil(items.length / 10)))
-  return <Card><CardHeader><CardTitle>Lab steps</CardTitle><CardDescription>Reusable, independently approved procedures. Protocols pin exact versions.</CardDescription>{session?.capabilities.canManageLabProtocols ? <CardAction><Button onClick={() => setCreate(true)}>Create Lab step</Button></CardAction> : null}</CardHeader><CardContent className="space-y-4">
-    <PreparationField label="Find Lab steps" id="find-lab-steps"><Input id="find-lab-steps" value={search} onChange={e => { updateList({ labStepSearch: e.target.value, labStepPage: 1 }) }} /></PreparationField>
-    <label className="flex cursor-pointer gap-2 text-sm"><input type="checkbox" checked={retired} onChange={e => { updateList({ labStepRetired: e.target.checked, labStepPage: 1 }) }} />Show retired</label>
+  return <Card className="gap-0 py-0">
+    <CardHeader className="border-b bg-muted/50 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <CardTitle>Lab steps</CardTitle>
+          <CardDescription>Reusable, independently approved procedures. Protocols pin exact versions.</CardDescription>
+        </div>
+        {session?.capabilities.canManageLabProtocols ? <Button type="button" onClick={() => setCreate(true)}><Plus data-icon="inline-start" /> New lab step</Button> : null}
+      </div>
+      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="min-w-0 flex-1">
+          <PreparationField label="Find Lab steps" id="find-lab-steps"><Input id="find-lab-steps" value={search} onChange={e => { updateList({ labStepSearch: e.target.value, labStepPage: 1 }) }} /></PreparationField>
+        </div>
+        <div className="flex items-center gap-2 sm:pb-2">
+          <Checkbox id="show-retired-lab-steps" checked={retired} onCheckedChange={checked => { updateList({ labStepRetired: checked === true, labStepPage: 1 }) }} />
+          <Label htmlFor="show-retired-lab-steps" className="cursor-pointer">Show retired</Label>
+        </div>
+      </div>
+    </CardHeader>
+    <CardContent className="space-y-4 p-4">
     {query.isLoading ? <p role="status">Loading Lab steps…</p> : query.error ? <p role="alert">{getLabOperationsError(query.error, 'Lab steps could not be loaded.')}</p> : !items.length ? <p>No Lab steps match. Create a step to begin.</p> : <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr><th className="p-2">Lab step</th><th className="p-2">Latest version</th><th className="p-2">Status</th></tr></thead><tbody>{items.slice((page - 1) * 10, page * 10).map(s => <tr key={s.id} className="border-t"><td className="p-2"><Link className="underline" to="/lab-operations/steps/$stepId" params={{ stepId: s.id }} search={labStepListSearch}>{s.name}</Link></td><td className="p-2">{s.latestVersion || 'Not authored'}</td><td className="p-2">{s.retiredAtUtc ? 'Retired' : s.versions.at(-1)?.status ?? 'No draft'}</td></tr>)}</tbody></table></div>}
     {items.length > 10 ? <div className="flex items-center gap-3"><Button variant="outline" disabled={page <= 1} onClick={() => updateList({ labStepPage: page - 1 })}>Previous</Button><span>Page {page} of {Math.ceil(items.length / 10)}</span><Button variant="outline" disabled={page * 10 >= items.length} onClick={() => updateList({ labStepPage: page + 1 })}>Next</Button></div> : null}
     {create ? <PreparationFormDialog title="Create Lab step" description="Create a reusable procedure identity. Its draft must be approved before a protocol can select it." fields={[{ key: 'name', label: 'Name', required: true }, { key: 'description', label: 'Description', type: 'textarea' }]} pending={mutation.isPending} error={mutation.error ? getLabOperationsError(mutation.error, 'The Lab step could not be created.') : undefined} submitLabel="Create Lab step" onClose={() => setCreate(false)} onSubmit={v => mutation.mutate({ name: v.name, description: v.description })} /> : null}
@@ -50,7 +70,7 @@ export function LabStepPage({ stepId, editing = false }: { stepId: string; editi
   const { session } = usePhaenoSession()
   const step = query.data?.find(s => s.id === stepId)
   return <main className="page-wrap space-y-5 px-4 py-8">
-    <Link className="underline" to="/lab-operations" search={labStepListSearch}>Back to Lab steps</Link>
+    <Link className="underline" to="/lab-configuration" search={labStepListSearch}>Back to Lab steps</Link>
     {query.isLoading ? <p role="status">Loading Lab step…</p> : query.error ? <p role="alert">{getLabOperationsError(query.error, 'The Lab step could not be loaded.')}</p> : !step ? <p>Lab step not found or unavailable to this session.</p> : editing ? session?.capabilities.canManageLabProtocols && !step.retiredAtUtc ? <LabStepEditor key={stepId} step={step} /> : <p>Step authoring is unavailable.</p> : <LabStepDetails step={step} />}
   </main>
 }
@@ -125,7 +145,7 @@ function LabStepSummary({ version }: { version: LabStepVersion }) {
   if (!definition) return <p role="alert">The stored definition cannot be displayed.</p>
   return <details><summary className="cursor-pointer">Instructions and fields to record</summary><div className="mt-3 space-y-3 text-sm">
     <p className="whitespace-pre-wrap">{definition.instructions}</p>
-    <dl className="space-y-2">{definition.captures.map((c, i) => <div key={c.key ?? i}><dt className="font-medium">{c.label}{c.required ? ' · Required' : ' · Optional'}</dt><dd>{c.type} · {c.scope ?? 'Individual'}{c.unit ? ` · ${c.unit}` : ''}{c.material ? ` · ${c.material.name}${c.material.vendor ? ` · ${c.material.vendor}` : ''}${c.material.productNumber ? ` · ${c.material.productNumber}` : ''}` : ''}{c.type === 'material' ? ` · ${c.quantityBasis === 'total' ? 'Total batch quantity' : 'Quantity per sample'} · ${c.includeTracking ? 'Lot number included' : 'Configured material'} ` : ''}{c.type === 'equipment' ? ` · ${c.includeTracking ? 'Equipment barcode included' : 'Equipment name'}` : ''}{c.choices ? ` · ${c.choices}` : ''}</dd></div>)}</dl>
+    <dl className="space-y-2">{definition.captures.map((c, i) => <div key={c.key ?? i}><dt className="font-medium">{c.label}{c.type === 'equipment' || c.required ? ' · Required' : ' · Optional'}</dt><dd>{c.type} · {c.scope ?? 'Individual'}{c.unit ? ` · ${c.unit}` : ''}{c.material ? ` · ${c.material.name}${c.material.vendor ? ` · ${c.material.vendor}` : ''}${c.material.productNumber ? ` · ${c.material.productNumber}` : ''}` : ''}{c.type === 'material' ? ` · ${c.quantityBasis === 'total' ? 'Total batch quantity' : 'Quantity per sample'} · ${c.includeTracking ? 'Lot number included' : 'Configured material'} ` : ''}{c.type === 'equipment' ? ' · Registered equipment selection required' : ''}{c.choices ? ` · ${c.choices}` : ''}</dd></div>)}</dl>
     <p>Inputs: {definition.inputMaterials || 'None'}<br />Equipment: {definition.equipmentTypes || 'None'}<br />Outputs: {definition.preparedOutputs || 'None'}</p>
     {definition.attachmentKind && definition.attachmentKind !== 'none' ? <p>{definition.attachmentRequired ? 'Required' : 'Optional'} PDF: {definition.attachmentKind === 'qc' ? 'QC report' : 'Preparation report or worksheet'}</p> : null}
     {definition.qcEnabled ? <p>QC ({definition.qcScope}): {definition.qcCriteria}</p> : null}

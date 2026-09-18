@@ -368,6 +368,8 @@ public sealed class PSeqResultReleaseController(
         EnsureVersion(package.Version, request.Version);
         var now = DateTime.UtcNow;
         package.Release(actor.Id, now);
+        await new LabOperations.Services.LabJobDeliveryRecorder(dbContext).RecordAsync(package.LabWorkOrderId,
+            [new(package.LabSampleId!.Value, now)], cancellationToken);
         var release = new LabResultRelease(package.OrganizationId, package.LabServiceOrderId!.Value,
             package.LabSampleId!.Value, package.PackageVersion, "PSeq", package.PipelineProviderKey,
             $"Output package {package.Id}; manifest SHA-256 {package.ManifestSha256}", "ScientificallyApproved",
@@ -404,6 +406,7 @@ public sealed class PSeqResultReleaseController(
         EnsureVersion(package.Version, request.Version);
         if (package.TrialProjectId.HasValue) throw new OrderManagementException("trial_release_required", "Manage Trial results from the owning Trial Project.", StatusCodes.Status409Conflict);
         package.Withdraw(actor.Id, DateTime.UtcNow, request.Reason ?? "Withdrawn by result release manager.");
+        await new LabOperations.Services.LabJobDeliveryRecorder(dbContext).RecordAsync(package.LabWorkOrderId, [], cancellationToken);
         var release = await dbContext.LabResultReleases.SingleOrDefaultAsync(item =>
             item.LabSampleId == package.LabSampleId && item.ReleaseVersion == package.PackageVersion, cancellationToken);
         release?.Withdraw();

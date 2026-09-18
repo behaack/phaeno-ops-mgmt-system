@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TrialProjectsRouteImport } from './routes/trial-projects'
+import { Route as SampleShippingSettingsRouteImport } from './routes/sample-shipping-settings'
 import { Route as SampleShippingRouteImport } from './routes/sample-shipping'
 import { Route as ReleasedDeliverablesRouteImport } from './routes/released-deliverables'
 import { Route as ReagentOrdersRouteImport } from './routes/reagent-orders'
@@ -18,6 +19,7 @@ import { Route as OrderOperationsRouteImport } from './routes/order-operations'
 import { Route as OrderConfigurationRouteImport } from './routes/order-configuration'
 import { Route as LabServicesRouteImport } from './routes/lab-services'
 import { Route as LabOperationsRouteImport } from './routes/lab-operations'
+import { Route as LabConfigurationRouteImport } from './routes/lab-configuration'
 import { Route as FileManagementRouteImport } from './routes/file-management'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DepartmentsRouteImport } from './routes/departments'
@@ -94,6 +96,11 @@ const TrialProjectsRoute = TrialProjectsRouteImport.update({
   path: '/trial-projects',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SampleShippingSettingsRoute = SampleShippingSettingsRouteImport.update({
+  id: '/sample-shipping-settings',
+  path: '/sample-shipping-settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SampleShippingRoute = SampleShippingRouteImport.update({
   id: '/sample-shipping',
   path: '/sample-shipping',
@@ -132,6 +139,11 @@ const LabServicesRoute = LabServicesRouteImport.update({
 const LabOperationsRoute = LabOperationsRouteImport.update({
   id: '/lab-operations',
   path: '/lab-operations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LabConfigurationRoute = LabConfigurationRouteImport.update({
+  id: '/lab-configuration',
+  path: '/lab-configuration',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FileManagementRoute = FileManagementRouteImport.update({
@@ -531,6 +543,7 @@ export interface FileRoutesByFullPath {
   '/departments': typeof DepartmentsRoute
   '/docs': typeof DocsRouteWithChildren
   '/file-management': typeof FileManagementRoute
+  '/lab-configuration': typeof LabConfigurationRoute
   '/lab-operations': typeof LabOperationsRouteWithChildren
   '/lab-services': typeof LabServicesRouteWithChildren
   '/order-configuration': typeof OrderConfigurationRouteWithChildren
@@ -539,6 +552,7 @@ export interface FileRoutesByFullPath {
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/released-deliverables': typeof ReleasedDeliverablesRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
+  '/sample-shipping-settings': typeof SampleShippingSettingsRoute
   '/trial-projects': typeof TrialProjectsRouteWithChildren
   '/crm/administration': typeof CrmAdministrationRoute
   '/crm/companies': typeof CrmCompaniesRoute
@@ -612,6 +626,7 @@ export interface FileRoutesByTo {
   '/departments': typeof DepartmentsRoute
   '/docs': typeof DocsRouteWithChildren
   '/file-management': typeof FileManagementRoute
+  '/lab-configuration': typeof LabConfigurationRoute
   '/lab-operations': typeof LabOperationsRouteWithChildren
   '/lab-services': typeof LabServicesRouteWithChildren
   '/order-configuration': typeof OrderConfigurationRouteWithChildren
@@ -620,6 +635,7 @@ export interface FileRoutesByTo {
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/released-deliverables': typeof ReleasedDeliverablesRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
+  '/sample-shipping-settings': typeof SampleShippingSettingsRoute
   '/trial-projects': typeof TrialProjectsRouteWithChildren
   '/crm/administration': typeof CrmAdministrationRoute
   '/crm/companies': typeof CrmCompaniesRoute
@@ -694,6 +710,7 @@ export interface FileRoutesById {
   '/departments': typeof DepartmentsRoute
   '/docs': typeof DocsRouteWithChildren
   '/file-management': typeof FileManagementRoute
+  '/lab-configuration': typeof LabConfigurationRoute
   '/lab-operations': typeof LabOperationsRouteWithChildren
   '/lab-services': typeof LabServicesRouteWithChildren
   '/order-configuration': typeof OrderConfigurationRouteWithChildren
@@ -702,6 +719,7 @@ export interface FileRoutesById {
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/released-deliverables': typeof ReleasedDeliverablesRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
+  '/sample-shipping-settings': typeof SampleShippingSettingsRoute
   '/trial-projects': typeof TrialProjectsRouteWithChildren
   '/crm/administration': typeof CrmAdministrationRoute
   '/crm/companies': typeof CrmCompaniesRoute
@@ -777,6 +795,7 @@ export interface FileRouteTypes {
     | '/departments'
     | '/docs'
     | '/file-management'
+    | '/lab-configuration'
     | '/lab-operations'
     | '/lab-services'
     | '/order-configuration'
@@ -785,6 +804,7 @@ export interface FileRouteTypes {
     | '/reagent-orders'
     | '/released-deliverables'
     | '/sample-shipping'
+    | '/sample-shipping-settings'
     | '/trial-projects'
     | '/crm/administration'
     | '/crm/companies'
@@ -858,6 +878,7 @@ export interface FileRouteTypes {
     | '/departments'
     | '/docs'
     | '/file-management'
+    | '/lab-configuration'
     | '/lab-operations'
     | '/lab-services'
     | '/order-configuration'
@@ -866,6 +887,7 @@ export interface FileRouteTypes {
     | '/reagent-orders'
     | '/released-deliverables'
     | '/sample-shipping'
+    | '/sample-shipping-settings'
     | '/trial-projects'
     | '/crm/administration'
     | '/crm/companies'
@@ -939,6 +961,7 @@ export interface FileRouteTypes {
     | '/departments'
     | '/docs'
     | '/file-management'
+    | '/lab-configuration'
     | '/lab-operations'
     | '/lab-services'
     | '/order-configuration'
@@ -947,6 +970,7 @@ export interface FileRouteTypes {
     | '/reagent-orders'
     | '/released-deliverables'
     | '/sample-shipping'
+    | '/sample-shipping-settings'
     | '/trial-projects'
     | '/crm/administration'
     | '/crm/companies'
@@ -1021,6 +1045,7 @@ export interface RootRouteChildren {
   DepartmentsRoute: typeof DepartmentsRoute
   DocsRoute: typeof DocsRouteWithChildren
   FileManagementRoute: typeof FileManagementRoute
+  LabConfigurationRoute: typeof LabConfigurationRoute
   LabOperationsRoute: typeof LabOperationsRouteWithChildren
   LabServicesRoute: typeof LabServicesRouteWithChildren
   OrderConfigurationRoute: typeof OrderConfigurationRouteWithChildren
@@ -1029,6 +1054,7 @@ export interface RootRouteChildren {
   ReagentOrdersRoute: typeof ReagentOrdersRouteWithChildren
   ReleasedDeliverablesRoute: typeof ReleasedDeliverablesRouteWithChildren
   SampleShippingRoute: typeof SampleShippingRouteWithChildren
+  SampleShippingSettingsRoute: typeof SampleShippingSettingsRoute
   TrialProjectsRoute: typeof TrialProjectsRouteWithChildren
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
   SessionTasksSetupMfaRoute: typeof SessionTasksSetupMfaRoute
@@ -1041,6 +1067,13 @@ declare module '@tanstack/react-router' {
       path: '/trial-projects'
       fullPath: '/trial-projects'
       preLoaderRoute: typeof TrialProjectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sample-shipping-settings': {
+      id: '/sample-shipping-settings'
+      path: '/sample-shipping-settings'
+      fullPath: '/sample-shipping-settings'
+      preLoaderRoute: typeof SampleShippingSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sample-shipping': {
@@ -1097,6 +1130,13 @@ declare module '@tanstack/react-router' {
       path: '/lab-operations'
       fullPath: '/lab-operations'
       preLoaderRoute: typeof LabOperationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lab-configuration': {
+      id: '/lab-configuration'
+      path: '/lab-configuration'
+      fullPath: '/lab-configuration'
+      preLoaderRoute: typeof LabConfigurationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/file-management': {
@@ -1937,6 +1977,7 @@ const rootRouteChildren: RootRouteChildren = {
   DepartmentsRoute: DepartmentsRoute,
   DocsRoute: DocsRouteWithChildren,
   FileManagementRoute: FileManagementRoute,
+  LabConfigurationRoute: LabConfigurationRoute,
   LabOperationsRoute: LabOperationsRouteWithChildren,
   LabServicesRoute: LabServicesRouteWithChildren,
   OrderConfigurationRoute: OrderConfigurationRouteWithChildren,
@@ -1945,6 +1986,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReagentOrdersRoute: ReagentOrdersRouteWithChildren,
   ReleasedDeliverablesRoute: ReleasedDeliverablesRouteWithChildren,
   SampleShippingRoute: SampleShippingRouteWithChildren,
+  SampleShippingSettingsRoute: SampleShippingSettingsRoute,
   TrialProjectsRoute: TrialProjectsRouteWithChildren,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
   SessionTasksSetupMfaRoute: SessionTasksSetupMfaRoute,

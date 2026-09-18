@@ -106,6 +106,9 @@ export type StandardLabOrderPreview = {
   organizationVersion: number
 }
 export type LabServiceTiming = {
+  deliveryDueAtUtc?: string | null
+  originalDeliveryDueAtUtc?: string | null
+  portalDeliveredAtUtc?: string | null
   version: number
   canOverrideTiming: boolean
   firstReceivedAtUtc: string | null

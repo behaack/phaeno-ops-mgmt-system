@@ -6,11 +6,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CrmShell } from './CrmShell'
 
 const navigate = vi.fn()
+const location = vi.hoisted(() => ({ pathname: '/crm/opportunities/opportunity-id' }))
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => navigate,
   useRouterState: ({ select }: { select: (state: unknown) => unknown }) =>
-    select({ location: { pathname: '/crm/opportunities/opportunity-id' } }),
+    select({ location }),
 }))
 
 describe('CrmShell', () => {
@@ -18,6 +19,7 @@ describe('CrmShell', () => {
     navigate.mockReset()
     permissions.canAccess = true
     permissions.canAdminister = true
+    location.pathname = '/crm/opportunities/opportunity-id'
     window.localStorage.clear()
     vi.stubGlobal('matchMedia', () => ({
       matches: true,
@@ -39,6 +41,21 @@ describe('CrmShell', () => {
     expect(screen.getByRole('button', { name: /^Companies/ })).toBeTruthy()
     expect(screen.queryByRole('button', { name: /^Requests/ })).toBeNull()
     expect(screen.queryByRole('button', { name: /^Administration/ })).toBeNull()
+  })
+
+  it('opens CRM Settings without the operational sidebar', () => {
+    location.pathname = '/crm/administration'
+    render(<CrmShell><h1>CRM Settings</h1></CrmShell>)
+    expect(screen.getByRole('heading', { name: 'CRM Settings' })).toBeTruthy()
+    expect(screen.queryByRole('navigation', { name: 'CRM sections' })).toBeNull()
+  })
+
+  it('does not mount settings content for Commercial staff on a direct link', () => {
+    location.pathname = '/crm/administration'
+    permissions.canAdminister = false
+    render(<CrmShell><h1>Protected configuration</h1></CrmShell>)
+    expect(screen.queryByRole('heading', { name: 'Protected configuration' })).toBeNull()
+    expect(screen.getByRole('heading', { name: 'CRM Settings' })).toBeTruthy()
   })
 
   it('does not mount CRM record content when the session lacks CRM access', () => {
@@ -75,7 +92,6 @@ describe('CrmShell', () => {
       'TasksOwned follow-up and reminders',
       'RequestsCompany requests and approvals',
       'ReportsPipeline, conversion, and activity reporting',
-      'AdministrationPipelines, views, imports, and data quality',
     ])
     expect(
       within(navigation).getAllByRole('heading').map((heading) =>
@@ -86,7 +102,6 @@ describe('CrmShell', () => {
       'Sales',
       'Follow-up',
       'Insights',
-      'Administration',
     ])
 
     fireEvent.click(

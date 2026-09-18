@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { FilePenLine, MapPin, PackageCheck, Plus, SearchCheck, TestTubeDiagonal } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { ChevronDown, FilePenLine, MapPin, Plus, SearchCheck, TestTubeDiagonal } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useForm, type UseFormRegisterReturn } from 'react-hook-form'
 import { z } from 'zod'
 
@@ -29,9 +29,11 @@ import { Label } from '#/components/ui/label'
 import {
   RequiredDialogFooter,
   RequiredFieldName,
-  RequiredLegend,
 } from '#/components/ui/required-field'
 import { ContainerSizesPanel } from './ContainerSizesPanel'
+import type { ShippingSettingsSection } from './shipping-settings-navigation'
+import { instructionPreviewTime, instructionPreviewUnavailable } from './instruction-rule-preview'
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 
 const codePattern = /^[A-Za-z0-9][A-Za-z0-9_-]*$/
 const positiveOptionalNumber = z.string().refine(
@@ -115,14 +117,6 @@ const ruleSchema = z.object({
 
 type RuleValues = z.infer<typeof ruleSchema>
 
-const previewSchema = z.object({
-  destinationId: z.string().uuid('Select a destination revision.'),
-  sampleTypeDefinitionIds: z.array(z.string().uuid()).min(1, 'Select at least one sample type.'),
-  effectiveAt: z.string().min(1, 'Choose the preview time.'),
-})
-
-type PreviewValues = z.infer<typeof previewSchema>
-
 const emptyDestination: DestinationValues = {
   code: '', name: '', recipientName: '', organizationName: '', addressLine1: '', addressLine2: '', city: '',
   stateOrProvince: '', postalCode: '', countryCode: 'US', receivingPhone: '', receivingEmail: '', receivingHours: '',
@@ -143,9 +137,11 @@ const emptyRule: RuleValues = {
   internationalCustomsInstructions: '', requiresSeparateShipment: false, effectiveFrom: toLocalDateTime(new Date()), isActive: false,
 }
 
-export function SampleShippingConfigurationPanel({ apiEnabled }: { apiEnabled: boolean }) {
+export function SampleShippingConfigurationPanel({ apiEnabled, section }: { apiEnabled: boolean; section: ShippingSettingsSection | 'sample-types' }) {
   const [destinationEditor, setDestinationEditor] = useState<SampleShippingDestination | null | undefined>(undefined)
   const [sampleTypeEditor, setSampleTypeEditor] = useState<SampleTypeDefinition | null | undefined>(undefined)
+  const [previewRule, setPreviewRule] = useState<SampleShippingInstructionRule | null>(null)
+  const ruleActionsRef = useRef<HTMLButtonElement | null>(null)
   const [ruleEditor, setRuleEditor] = useState<SampleShippingInstructionRule | null | undefined>(undefined)
   const configuration = useQuery({
     queryKey: ['sample-shipping-configuration'],
@@ -165,24 +161,16 @@ export function SampleShippingConfigurationPanel({ apiEnabled }: { apiEnabled: b
 
   return (
     <div className="space-y-5">
-      <Alert>
-        <PackageCheck className="size-4" />
-        <AlertTitle>Sample shipping setup</AlertTitle>
-        <AlertDescription>
-          Destinations, sample types, and instruction rules are versioned. New records default to inactive; enter only approved operational content before activation. Approved Trial and Customer jobs use these definitions when preparing their shipment.
-        </AlertDescription>
-      </Alert>
+      {section === 'containers' ? <ContainerSizesPanel apiEnabled={apiEnabled} configuration={configuration.data} /> : null}
 
-      <ContainerSizesPanel apiEnabled={apiEnabled} configuration={configuration.data} />
-
-      <Card>
-        <CardHeader>
+      {section === 'destinations' ? <Card className="gap-0 py-0">
+        <CardHeader className="border-b bg-muted/50 p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div><CardTitle>Ship-to destinations</CardTitle><CardDescription>Receiving addresses, hours, closures, delivery directions, and carrier restrictions printed from a frozen revision.</CardDescription></div>
             <Button type="button" onClick={() => setDestinationEditor(null)}><Plus data-icon="inline-start" />Add destination</Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4">
           <div className="divide-y">
             {destinations.map((item) => (
               <div key={item.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
@@ -198,16 +186,16 @@ export function SampleShippingConfigurationPanel({ apiEnabled }: { apiEnabled: b
           {!destinations.length ? <EmptyConfiguration text="No ship-to destinations are configured." /> : null}
           <RevisionHistory items={configuration.data.destinations} currentItems={destinations} label={(item) => `${item.code} · revision ${item.revision} · ${formatEffectiveRange(item)}`} />
         </CardContent>
-      </Card>
+      </Card> : null}
 
-      <Card>
-        <CardHeader>
+      {section === 'sample-types' ? <Card className="gap-0 py-0">
+        <CardHeader className="border-b bg-muted/50 p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div><CardTitle>Sample types</CardTitle><CardDescription>Material, quantity, container, temperature, packaging, labeling, safety, and transit requirements.</CardDescription></div>
+            <div><CardTitle>Sample types</CardTitle><CardDescription>Shared material, quantity, container, temperature, packaging, labeling, safety, and transit requirements. New revisions start inactive until approved content is ready.</CardDescription></div>
             <Button type="button" onClick={() => setSampleTypeEditor(null)}><Plus data-icon="inline-start" />Add sample type</Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4">
           <div className="divide-y">
             {sampleTypes.map((item) => (
               <div key={item.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
@@ -223,16 +211,15 @@ export function SampleShippingConfigurationPanel({ apiEnabled }: { apiEnabled: b
           {!sampleTypes.length ? <EmptyConfiguration text="No sample types are configured." /> : null}
           <RevisionHistory items={configuration.data.sampleTypes} currentItems={sampleTypes} label={(item) => `${item.code} · revision ${item.revision} · ${formatEffectiveRange(item)}`} />
         </CardContent>
-      </Card>
+      </Card> : null}
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div><CardTitle>Destination and sample instructions</CardTitle><CardDescription>Resolve detailed shipping steps for one exact destination revision and sample-type revision. Compatibility groups decide whether types may share a packet.</CardDescription></div>
-            <Button type="button" disabled={!configuration.data.destinations.length || !configuration.data.sampleTypes.length} onClick={() => setRuleEditor(null)}><Plus data-icon="inline-start" />Add instruction rule</Button>
-          </div>
+      {section === 'instructions' ? <Card className="gap-0 py-0">
+        <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">
+          <CardTitle className="min-w-0">Sample shipping instructions</CardTitle>
+          <Button className="col-start-2 row-start-1 justify-self-end" type="button" disabled={!configuration.data.destinations.length || !configuration.data.sampleTypes.length} onClick={() => setRuleEditor(null)}><Plus data-icon="inline-start" />Add instruction rule</Button>
+          <CardDescription className="col-span-full">Packing and shipping instructions for each destination and sample type.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4">
           <div className="divide-y">
             {rules.map((item) => (
               <div key={item.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
@@ -240,20 +227,26 @@ export function SampleShippingConfigurationPanel({ apiEnabled }: { apiEnabled: b
                   <div className="flex flex-wrap items-center gap-2"><span className="font-medium">{item.destinationName} + {item.sampleTypeName}</span><Badge variant="outline">{item.compatibilityGroup} · rev {item.revision}</Badge><EffectiveBadge item={item} /></div>
                   <p className="mt-2 text-sm text-muted-foreground">{item.requiresSeparateShipment ? 'Must ship separately' : 'May share a packet with the same compatibility group'}</p>
                 </div>
-                <Button type="button" variant="outline" onClick={() => setRuleEditor(item)}><FilePenLine data-icon="inline-start" />Create revision</Button>
+                <ActionMenu>
+                  <DropdownMenuTrigger asChild><Button type="button" variant="outline" onPointerDown={event => { ruleActionsRef.current = event.currentTarget }} onFocus={event => { ruleActionsRef.current = event.currentTarget }}>Actions<ChevronDown aria-hidden="true" className="size-4" /></Button></DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem onSelect={() => setPreviewRule(item)}><SearchCheck aria-hidden="true" />Preview instructions</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setRuleEditor(item)}><FilePenLine aria-hidden="true" />Create revision</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </ActionMenu>
               </div>
             ))}
           </div>
-          {!rules.length ? <EmptyConfiguration text="No destination and sample instruction rules are configured." /> : null}
+          {!rules.length ? <EmptyConfiguration text="No sample shipping instruction rules are configured." /> : null}
           <RevisionHistory items={configuration.data.instructionRules} currentItems={rules} label={(item) => `${item.destinationName} + ${item.sampleTypeName} · revision ${item.revision} · ${formatEffectiveRange(item)}`} />
         </CardContent>
-      </Card>
+      </Card> : null}
 
-      <InstructionPreview configuration={configuration.data} />
+      {previewRule ? <InstructionPreview key={previewRule.id} rule={previewRule} configuration={configuration.data} onClose={() => setPreviewRule(null)} restoreFocus={() => ruleActionsRef.current?.focus()} /> : null}
 
       <DestinationDialog item={destinationEditor} onClose={() => setDestinationEditor(undefined)} />
       <SampleTypeDialog item={sampleTypeEditor} onClose={() => setSampleTypeEditor(undefined)} />
-      <InstructionRuleDialog configuration={configuration.data} item={ruleEditor} onClose={() => setRuleEditor(undefined)} />
+      <InstructionRuleDialog configuration={configuration.data} item={ruleEditor} onClose={() => setRuleEditor(undefined)} restoreFocus={() => ruleActionsRef.current?.focus()} />
     </div>
   )
 }
@@ -374,8 +367,9 @@ function SampleTypeDialog({ item, onClose }: { item: SampleTypeDefinition | null
   )
 }
 
-function InstructionRuleDialog({ configuration, item, onClose }: { configuration: SampleShippingConfiguration; item: SampleShippingInstructionRule | null | undefined; onClose: () => void }) {
+function InstructionRuleDialog({ configuration, item, onClose, restoreFocus }: { configuration: SampleShippingConfiguration; item: SampleShippingInstructionRule | null | undefined; onClose: () => void; restoreFocus: () => void }) {
   const client = useQueryClient()
+  const openedFromRule = useRef(false)
   const form = useForm<RuleValues>({ resolver: zodResolver(ruleSchema), defaultValues: emptyRule })
   const mutation = useMutation({
     mutationFn: (values: RuleValues) => createSampleShippingInstructionRule({
@@ -392,14 +386,15 @@ function InstructionRuleDialog({ configuration, item, onClose }: { configuration
 
   useEffect(() => {
     if (item === undefined) return
+    openedFromRule.current = item !== null
     form.reset(item ? ruleValues(item) : { ...emptyRule, effectiveFrom: toLocalDateTime(new Date()) })
     resetMutation()
   }, [form, item, resetMutation])
 
   return (
     <Dialog open={item !== undefined} onOpenChange={(open) => { if (!open) onClose() }}>
-      <DialogContent className="sm:max-w-3xl">
-        <DialogHeader><DialogTitle>{item ? `Create instruction revision ${item.revision + 1}` : 'Add destination and sample instruction rule'}</DialogTitle><DialogDescription>The destination and sample-type revisions are fixed for this rule. Create another rule when either revision changes.</DialogDescription></DialogHeader>
+      <DialogContent className="sm:max-w-3xl" onCloseAutoFocus={event => { if (openedFromRule.current) { event.preventDefault(); restoreFocus() } }}>
+        <DialogHeader><DialogTitle>{item ? `Create instruction revision ${item.revision + 1}` : 'Add sample shipping instruction rule'}</DialogTitle><DialogDescription>The destination and sample-type revisions are fixed for this rule. Create another rule when either revision changes.</DialogDescription></DialogHeader>
         <form id="sample-shipping-rule-form" noValidate className="grid gap-5 px-1 sm:grid-cols-2" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
           <Field label="Destination revision" id="shipping-rule-destination" required error={form.formState.errors.destinationId?.message}><select id="shipping-rule-destination" disabled={Boolean(item)} className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" {...form.register('destinationId')}><option value="">Select destination…</option>{configuration.destinations.map((destination) => <option key={destination.id} value={destination.id}>{destination.code} · rev {destination.revision} · {destination.name}</option>)}</select></Field>
           <Field label="Sample-type revision" id="shipping-rule-sample" required error={form.formState.errors.sampleTypeDefinitionId?.message}><select id="shipping-rule-sample" disabled={Boolean(item)} className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" {...form.register('sampleTypeDefinitionId')}><option value="">Select sample type…</option>{configuration.sampleTypes.map((sampleType) => <option key={sampleType.id} value={sampleType.id}>{sampleType.code} · rev {sampleType.revision} · {sampleType.name}</option>)}</select></Field>
@@ -413,8 +408,8 @@ function InstructionRuleDialog({ configuration, item, onClose }: { configuration
           <Field label="Required documents" id="shipping-rule-documents" required error={form.formState.errors.requiredDocuments?.message} full><TextArea id="shipping-rule-documents" rows={4} registration={form.register('requiredDocuments')} /></Field>
           <Field label="Delay, damage, and temperature-excursion instructions" id="shipping-rule-exceptions" required error={form.formState.errors.exceptionInstructions?.message} full><TextArea id="shipping-rule-exceptions" rows={4} registration={form.register('exceptionInstructions')} /></Field>
           <Field label="International customs instructions" id="shipping-rule-customs" error={form.formState.errors.internationalCustomsInstructions?.message} full><TextArea id="shipping-rule-customs" rows={4} registration={form.register('internationalCustomsInstructions')} /></Field>
-          <div className="flex items-center gap-2"><Checkbox id="shipping-rule-separate" checked={form.watch('requiresSeparateShipment')} onCheckedChange={(value) => form.setValue('requiresSeparateShipment', value === true, { shouldDirty: true })} /><Label htmlFor="shipping-rule-separate" className="cursor-pointer font-normal">This sample type must have a separate shipment packet</Label></div>
-          <div className="flex items-center gap-2"><Checkbox id="shipping-rule-active" checked={form.watch('isActive')} onCheckedChange={(value) => form.setValue('isActive', value === true, { shouldDirty: true })} /><Label htmlFor="shipping-rule-active" className="cursor-pointer font-normal">Active for packet resolution</Label></div>
+          <div className="flex items-center gap-2 sm:col-span-2"><Checkbox id="shipping-rule-separate" checked={form.watch('requiresSeparateShipment')} onCheckedChange={(value) => form.setValue('requiresSeparateShipment', value === true, { shouldDirty: true })} /><Label htmlFor="shipping-rule-separate" className="cursor-pointer font-normal">This sample type must have a separate shipment packet</Label></div>
+          <div className="flex items-center gap-2 sm:col-span-2"><Checkbox id="shipping-rule-active" checked={form.watch('isActive')} onCheckedChange={(value) => form.setValue('isActive', value === true, { shouldDirty: true })} /><Label htmlFor="shipping-rule-active" className="cursor-pointer font-normal">Active for packet resolution</Label></div>
         </form>
         {mutation.error ? <SaveError title="Instruction-rule revision was not saved" error={mutation.error} /> : null}
         <RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" form="sample-shipping-rule-form" disabled={mutation.isPending}>{mutation.isPending ? 'Saving revision…' : item ? 'Create revision' : 'Add instruction rule'}</Button></RequiredDialogFooter>
@@ -423,33 +418,51 @@ function InstructionRuleDialog({ configuration, item, onClose }: { configuration
   )
 }
 
-function InstructionPreview({ configuration }: { configuration: SampleShippingConfiguration }) {
-  const [preview, setPreview] = useState<SampleShippingPreview | null>(null)
-  const form = useForm<PreviewValues>({ resolver: zodResolver(previewSchema), defaultValues: { destinationId: '', sampleTypeDefinitionIds: [], effectiveAt: toLocalDateTime(new Date()) } })
-  const selectedSampleTypes = form.watch('sampleTypeDefinitionIds')
-  const mutation = useMutation({
-    mutationFn: (values: PreviewValues) => previewSampleShipping({ destinationId: values.destinationId, sampleTypeDefinitionIds: values.sampleTypeDefinitionIds, effectiveAt: new Date(values.effectiveAt).toISOString() }),
-    onSuccess: setPreview,
+function InstructionPreview({ configuration, rule, onClose, restoreFocus }: { configuration: SampleShippingConfiguration; rule: SampleShippingInstructionRule; onClose: () => void; restoreFocus: () => void }) {
+  const [effectiveAt] = useState(() => instructionPreviewTime(rule))
+  const [additionalSampleIds, setAdditionalSampleIds] = useState<string[]>([])
+  const baseSample = configuration.sampleTypes.find(item => item.id === rule.sampleTypeDefinitionId)
+  const additionalSamples = configuration.sampleTypes.filter(item => item.id !== rule.sampleTypeDefinitionId
+    && item.definitionKey !== baseSample?.definitionKey
+    && item.isActive && new Date(item.effectiveFrom).getTime() <= new Date(effectiveAt).getTime() && (!item.effectiveTo || new Date(item.effectiveTo).getTime() > new Date(effectiveAt).getTime()))
+  const sampleTypeDefinitionIds = [rule.sampleTypeDefinitionId, ...additionalSampleIds].sort()
+  const unavailable = instructionPreviewUnavailable(rule, effectiveAt)
+  const preview = useQuery({
+    queryKey: ['shipping-rule-preview', rule.id, rule.version, effectiveAt, sampleTypeDefinitionIds],
+    queryFn: () => previewSampleShipping({ destinationId: rule.destinationId, sampleTypeDefinitionIds, effectiveAt }),
+    enabled: !unavailable,
+    retry: false,
   })
 
-  return (
-    <Card>
-      <CardHeader><div className="flex items-start gap-3"><SearchCheck className="mt-0.5 size-5 text-primary" /><div><CardTitle>Instruction preview</CardTitle><CardDescription>Resolve exactly what a shipment packet would freeze at a selected time. Incompatible sample types are blocked and must be split.</CardDescription></div></div></CardHeader>
-      <CardContent className="space-y-5">
-        <form noValidate className="grid gap-5 sm:grid-cols-2" onSubmit={form.handleSubmit((values) => { setPreview(null); mutation.mutate(values) })}>
-          <RequiredLegend className="sm:col-span-2" />
-          <Field label="Destination revision" id="preview-destination" required error={form.formState.errors.destinationId?.message}><select id="preview-destination" className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" {...form.register('destinationId')}><option value="">Select destination…</option>{configuration.destinations.map((item) => <option key={item.id} value={item.id}>{item.code} · rev {item.revision} · {item.name}</option>)}</select></Field>
-          <Field label="Effective at" id="preview-effective" required error={form.formState.errors.effectiveAt?.message}><Input id="preview-effective" type="datetime-local" {...form.register('effectiveAt')} /></Field>
-          <fieldset className="sm:col-span-2"><legend className="text-sm font-medium"><RequiredFieldName>Sample-type revisions</RequiredFieldName></legend><div className="mt-2 grid gap-2 sm:grid-cols-2">{configuration.sampleTypes.map((item) => { const id = `preview-sample-${item.id}`; const checked = selectedSampleTypes.includes(item.id); return <label key={item.id} htmlFor={id} className="flex cursor-pointer items-start gap-3 rounded-lg border p-3"><Checkbox id={id} checked={checked} onCheckedChange={(value) => form.setValue('sampleTypeDefinitionIds', value === true ? [...selectedSampleTypes, item.id] : selectedSampleTypes.filter((valueId) => valueId !== item.id), { shouldValidate: true })} /><span><span className="block text-sm font-medium">{item.name}</span><span className="block text-xs text-muted-foreground">{item.code} · revision {item.revision} · {formatEffectiveRange(item)}</span></span></label> })}</div><ErrorText message={form.formState.errors.sampleTypeDefinitionIds?.message} /></fieldset>
-          <div className="flex justify-end sm:col-span-2"><Button type="submit" disabled={mutation.isPending || !configuration.destinations.length || !configuration.sampleTypes.length}>{mutation.isPending ? 'Resolving…' : 'Preview instructions'}</Button></div>
-        </form>
-        {mutation.error ? <SaveError title="Instructions could not be resolved" error={mutation.error} /> : null}
-        {preview ? <PreviewResult preview={preview} /> : null}
-      </CardContent>
-    </Card>
-  )
+  return <Dialog open onOpenChange={open => { if (!open) onClose() }}>
+    <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-3xl" onCloseAutoFocus={event => { event.preventDefault(); restoreFocus() }}>
+      <DialogHeader>
+        <DialogTitle>Instructions preview</DialogTitle>
+        <DialogDescription>{rule.destinationName} + {rule.sampleTypeName} · rule revision {rule.revision}. This preview does not save or issue a shipment packet.</DialogDescription>
+      </DialogHeader>
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">Preview date: {new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }).format(new Date(effectiveAt))}{effectiveAt === new Date(rule.effectiveFrom).toISOString() ? ' (rule start date)' : ''}.</p>
+        {unavailable ? <Alert><AlertTitle>Preview unavailable</AlertTitle><AlertDescription>{unavailable}</AlertDescription></Alert> : <>
+          <details>
+            <summary className="cursor-pointer text-sm font-medium">Add sample types{additionalSampleIds.length ? ` (${additionalSampleIds.length} added)` : ''}</summary>
+            <p className="mt-2 text-sm text-muted-foreground">{rule.sampleTypeName} stays included. Select other types to check whether they can share the same shipment.</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {additionalSamples.map(item => <label key={item.id} htmlFor={`preview-sample-${item.id}`} className="flex cursor-pointer items-start gap-3 rounded-lg border p-3">
+                <Checkbox id={`preview-sample-${item.id}`} checked={additionalSampleIds.includes(item.id)} onCheckedChange={checked => setAdditionalSampleIds(previous => checked === true ? [...previous, item.id] : previous.filter(id => id !== item.id))} />
+                <span><span className="block text-sm font-medium">{item.name}</span><span className="block text-xs text-muted-foreground">{item.code} · revision {item.revision}</span></span>
+              </label>)}
+            </div>
+            {!additionalSamples.length ? <p className="mt-2 text-sm text-muted-foreground">No other sample types are active on the preview date.</p> : null}
+          </details>
+          {preview.isFetching ? <p role="status">Resolving instructions…</p> : null}
+          {preview.error ? <Alert variant="destructive"><AlertTitle>Instructions could not be resolved</AlertTitle><AlertDescription>{getOrderErrorMessage(preview.error, 'Review the rule and selected sample types, then try again.')} <Button type="button" variant="outline" disabled={preview.isFetching} onClick={() => void preview.refetch()}>Retry preview</Button></AlertDescription></Alert> : null}
+          {preview.data && !preview.isFetching ? <PreviewResult preview={preview.data} /> : null}
+        </>}
+      </div>
+      <RequiredDialogFooter showLegend={false}><DialogClose asChild><Button type="button" variant="outline">Close</Button></DialogClose></RequiredDialogFooter>
+    </DialogContent>
+  </Dialog>
 }
-
 function PreviewResult({ preview }: { preview: SampleShippingPreview }) {
   return (
     <div className="space-y-5 rounded-lg border bg-muted/20 p-5" aria-live="polite">

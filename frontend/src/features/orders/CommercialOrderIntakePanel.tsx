@@ -91,9 +91,9 @@ export function CommercialOrderIntakePanel({
 
   return (
     <div className="space-y-5">
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between gap-3">
+      <Card className="gap-0 overflow-hidden py-0">
+        <CardHeader className="border-b bg-muted/50 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <CardTitle>Commercial order intake</CardTitle>
             <Button
               className="shrink-0"
@@ -105,34 +105,7 @@ export function CommercialOrderIntakePanel({
             </Button>
           </div>
           <CardDescription>
-            Create Customer orders, check readiness, and manage pricing through quote acceptance. You can start pricing before a Customer administrator is active. Authorized laboratory work continues in Lab operations.
-          </CardDescription>
-        </CardHeader>
-        {customers.error ? (
-          <CardContent>
-            <Alert variant="destructive">
-              <AlertTitle>Customer organizations could not be loaded</AlertTitle>
-              <AlertDescription>{getOrderErrorMessage(customers.error, 'Refresh the intake workspace and try again.')}</AlertDescription>
-            </Alert>
-          </CardContent>
-        ) : null}
-        {!customers.isLoading && !customers.isError && apiEnabled && eligibleCustomers.length === 0 ? (
-          <CardContent>
-            <Alert>
-              <AlertTitle>No active Customers</AlertTitle>
-              <AlertDescription>
-                Activate a Customer relationship in CRM before creating an order. Customers with incomplete service setup remain visible in New Customer order with their next steps.
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        ) : null}
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Intake, pricing, and quotes</CardTitle>
-          <CardDescription>
-            Active intake includes pricing, quote decisions, extension requests and held orders. Use All orders for accepted, completed and cancelled records. Laboratory execution continues in Lab operations.
+            Create Customer orders and manage pricing, quotes, extensions and holds. Use All orders and history for accepted, completed and cancelled records. Laboratory execution continues in Lab operations.
           </CardDescription>
           <div className="mt-3 flex flex-wrap items-end gap-3">
             <div><Label htmlFor="intake-view">View</Label><select id="intake-view" className="mt-2 block h-9 cursor-pointer rounded-lg border bg-background px-3 text-sm" value={view} onChange={event => setFilters({ intakeView: event.target.value as 'active' | 'holds' | 'all' })}><option value="active">Active intake</option><option value="holds">On hold</option><option value="all">All orders and history</option></select></div>
@@ -148,7 +121,21 @@ export function CommercialOrderIntakePanel({
             </div><Button variant="outline" onClick={() => setFilters({ intakeView: 'active', intakeSearch: '', intakePage: 1 })}>Clear filters</Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4">
+          {customers.error ? (
+            <Alert variant="destructive" className="mb-4">
+              <AlertTitle>Customer organizations could not be loaded</AlertTitle>
+              <AlertDescription>{getOrderErrorMessage(customers.error, 'Refresh the intake workspace and try again.')}</AlertDescription>
+            </Alert>
+          ) : null}
+          {!customers.isLoading && !customers.isError && apiEnabled && eligibleCustomers.length === 0 ? (
+            <Alert className="mb-4">
+              <AlertTitle>No active Customers</AlertTitle>
+              <AlertDescription>
+                Activate a Customer relationship in CRM before creating an order. Customers with incomplete service setup remain visible in New Customer order with their next steps.
+              </AlertDescription>
+            </Alert>
+          ) : null}
           {handoffs.error || orders.error ? (
             <Alert variant="destructive" className="mb-4">
               <AlertTitle>Commercial intake could not be loaded</AlertTitle>

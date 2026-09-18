@@ -1,5 +1,9 @@
 # Playwright E2E Test Plan
 
+## September 18 jobs/settings release checkpoint
+
+Prior signed-in local checks below remain scoped manual evidence. The current dropdown uses sentence case; Lab settings uses sidebar pages, and shipping instruction preview opens from each rule's Actions menu. Automated E2E suites were not requested or run. Production smoke checks and exact deployment identities are recorded separately in [release evidence](PORTAL-JOBS-SETTINGS-RELEASE-2026-09-18.md); they do not imply complete operational acceptance.
+
 ## Material lot identity matching (2026-09-17)
 
 Connected local manual checkpoint after API restart: supplier-filtered product creation choices, resetting product on supplier change, existing lot's supplier-filtered Assign product modal, and exact-product fictional preview passed. Preview automatically used the lot unit, calculated 10 µL × 2 samples = 20 µL and validated without saving. Temporary configuration edits were discarded. No operational records changed; no console errors observed. Prepared-reagent catalog was empty, so populated prepared-lot UI acceptance remains pending along with actual write/rollback acceptance. No automated tests were run.
@@ -2675,3 +2679,43 @@ Attestation simplification: update form/preview cases to submit without a covera
 ### Material exceptions acceptance
 
 Use only unsaved configuration preview for connected screen inspection: shared per-sample material scope; batch quantity and fixed units; Record exception reveals collapsed cards; zero or unknown, required reason and disposition; clearing overrides. Operational acceptance is separate: failed-tube consumption, unknown lot unavailable across all use paths, stale/unauthorized reconciliation rejection, supervisor reconciliation and hold resolution, idempotent replay and transaction rollback. No operational records may be changed merely to claim preview acceptance. Automated E2E and populated operational write checks remain unexecuted unless authorized.
+
+### Equipment selector requirement — September 18, 2026
+
+Manual acceptance pending: Equipment used has no Include equipment barcode or Required toggle in the builder; preview and Library prep require selection of eligible equipment, retain the selected name/barcode, and reject a missing selection. Existing recorded evidence and corrections stay readable. No automated E2E run requested.
+
+### Jobs and specimens navigation — September 18, 2026
+
+Manual acceptance pending: Jobs & specimens appears immediately above Library prep; its addressable `section=jobs` view contains container lookup and the received-job/specimen list. Library prep shows preparation batches only. Verify job → specimen/tube/execution → job → list returns preserve Jobs & specimens, Results & review and receipt origins, while preparation links continue to Library prep. Confirm reload/direct navigation and narrow sidebar navigation. Static TypeScript/lint checks are used for this change; automated E2E execution is not requested.
+
+Jobs & specimens follow-up acceptance: verify completed (`ReadyForRelease`) jobs are hidden by default and restored by Show complete; checkbox state survives reload and job/specimen/execution round trips. Results & review remains unfiltered. Scan a container is collapsed within the list header, has an expanding chevron, preserves typed values when toggled, and keeps existing successful/error lookup behavior. Automated execution remains unrequested.
+
+## Jobs delivery deadlines — September 18, 2026
+
+Jobs deadline acceptance: verify Jobs sidebar above Library prep; shaded header search/status/Show complete/scanner; counts/paging beyond 250; record-return state; desktop/narrow/keyboard; exact-time adjustment with reason and concurrent-version conflict; customer-safe due-date visibility; partial/all-sample Portal publication, withdrawal/restoration and ReadyForRelease still open. Do not require download. Local authenticated browser results are recorded in the owning deadline plan; full automated E2E execution not requested.
+
+Jobs queue follow-up supersedes the earlier scanner checks: no container lookup on Jobs; Clear filters is in the header and resets search/status/completion/page. Verify preparing/ready shipments stay out, dispatched/delivered/received jobs appear, historical receipt qualifies, and counts and paging use the same eligible set. Manual and automated browser acceptance pending.
+
+Required date at acceptance: verify standard-turnaround single/bulk acceptance sets a due date; missing-turnaround acceptance rejects atomically without saving receipt/accession/intake mutations, then succeeds after an authorized explicit date; held/rejected intake remains available without a date. Check deadline history, unchanged forecasts, customer-safe notice, stale-version rejection and preserved earlier dates. Verify no Needs due date control, historical missing dates remain At risk, and Set/Adjust controls work by keyboard and narrow viewport. Execution pending.
+
+Active/Closed Jobs acceptance: tab defaults and keyboard operation; independent search/date/status/outcome/page state across tab switching and record return; clear current filters only; single-day/open/inverted dates and daylight-saving boundaries; cancellation before shipment appears only in Closed; partial delivery stays Active at earliest outstanding stage; four Active deadline options; no Show complete or Failed outcome. Automated E2E execution not requested.
+
+Jobs date filters (September 18, 2026): manual Edge check passed for segmented month/day/year typing without resets, Enter/blur commit and Clear filters. Automated browser regression deferred under the requested-test policy; preserve this keyboard path when adding coverage.
+
+## Progress-based completion forecast — September 18, 2026
+
+Pending requested acceptance: configure confirmed holiday coverage and independently mixed stage durations; inspect latest-sample forecast through Portal publication; verify weekend/holiday/overrun and missing coverage; preview before applying revisions to existing jobs; preserve due dates/manual forecasts and send no customer notices; no-op edits retain entry time; rework and parallel libraries retain required dependencies; blocked/unknown samples prevent a complete job date; read-only roles cannot save; stale saves fail; preview paging, focus, mobile and default Lab steps remain correct. No E2E suite run or production operational timing validation is claimed.
+
+Holiday calendar navigation/formatting checkpoint: signed-in local browser confirmed the new standalone tab, header year/revision controls, formatted display dates, separate Stage durations content and ascending observed-date order for all 15 saved holiday rows in the unsaved editor. Cancelled without data writes. Full automated E2E execution remains unrequested.
+
+Settings navigation separation: signed-in local inspection confirmed Administration menu order: Order Settings, Lab Settings, File retention policies. Order Settings is absent from the Order operations sidebar. Standalone retention shows the existing policy and history. Lab Settings shows six sidebar subjects with no tab strip; Lab steps, Protocols, Workflows, Stage durations, Holiday calendar and Library tray formats each load their existing content. The old combined retention URL redirects to /file-management. No records or policies were saved; automated E2E and live restricted-role journeys were not run.
+
+## Separate sample-shipping settings — September 18, 2026
+
+Signed-in local browser verified the new menu order after Lab Settings; separate container, destination, instruction and preview pages; existing sample types on their Order Settings page; shaded list headers and header filters; and container search, detail, and return preserving TRANS-10. Old combined shipping links redirect to the new list with filters. Preview resolved the existing synthetic reference destination/sample definition without saving records. Narrow-screen sidebar navigation worked with no horizontal overflow; added small-screen heading clearance for the edge navigation trigger. Automated suites and restricted-role runtime journeys were not requested or run; no definitions, policies or operational records were changed.
+
+Rule preview refinement: local signed-in browser verified Sample shipping instructions in the sidebar and list heading, the wider Actions menu with single-line labels, automatic resolved preview for the existing reference rule, collapsed Add sample types and its empty state, and focus returning to Actions after closing. Create revision still opened the correct existing definition and was cancelled without saving. Combined additional-sample, future/inactive rule and narrow-screen dialog acceptance remain unexecuted; no automated suites were run.
+
+CRM Settings navigation (September 18, 2026): signed-in local browser confirmed CRM sidebar no longer lists Administration; user dropdown order is Order Settings, Lab Settings, CRM Settings, Sample Shipping Settings, File Retention Policies, User Management. Resources and Sign Out use consistent title case. CRM Settings opens existing pipelines, fields, duplicate review, saved views and import/export tools without the operational sidebar. No records changed. Automated suites, restricted-role browser journeys and mobile runtime checks were not run.
+
+Quote/workflow and submission guidance separation (September 18, 2026): signed-in local browser confirmed the Quote & workflow sidebar/header, quote-only editable field with supported workflow review, removal of submission text from Order Settings, and the Default submission instructions sidebar page under Sample Shipping Settings. Dedicated modal showed required guidance, disabled pristine Save, and inline validation on blur. Editors were cancelled without saving. Persistence/conflict, restricted-role and mobile acceptance were not executed; no automated suite was run.

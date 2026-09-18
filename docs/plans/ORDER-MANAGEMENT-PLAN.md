@@ -1,5 +1,22 @@
 # Order Management Plan
 
+## Service-owned scientific configuration — discovery, September 18, 2026
+
+Product direction: Lab service offerings belong within Service catalog items, and each service explicitly identifies its supported sample types. They must not appear as independent peer configuration subjects.
+
+Current implementation links `LabServiceOffering.CatalogItemId` to the commercial catalog and versions scientific scope, but exposes offerings through a separate settings sidebar item. Allowed material types are text values, not relationships to the shared sample-type definitions. Moving navigation alone would not establish service/sample compatibility.
+
+Proposed implementation scope:
+
+- Open a catalog item in a dedicated, view-first service workspace. Show commercial details, included analyses and outputs, turnaround, supported sample types and scientific revision history under that item. Bounded changes use existing modal conventions and shaded section headers.
+- Retain reusable sample-type definitions while explicitly assigning supported types within each service. Do not infer support merely because a type is globally active or has a shipping rule.
+- Enforce service compatibility in the backend as well as customer/staff sample selection and authorization. Existing destination, packaging and sample-handling checks remain additional requirements.
+- Preserve committed order definitions, scientific versions, accepted sample scope and shipment snapshots. Review ambiguous existing text-to-type matches rather than assuming all sample types are supported.
+- Preserve existing entry URLs with redirects or contextual links. Retire the independent Lab service offerings navigation after its capabilities are available inside service items. The treatment of a shared sample-definition maintenance surface must preserve shared revisions and shipping references.
+- Update the database ERD and migration when explicit persisted relationships are implemented; do not alter shared data or migrate existing scientific commitments as part of discovery.
+
+Confirmed product decision: each service catalog item has one current scientific definition, with prior versions retained for accepted work. It does not contain independently selectable packages. Prevent overlapping active definitions across all version families for the same item; creating another version must not allow moving its parent item. Existing backend validation currently limits configured direct laboratory purchases to the designated PSeq specimen-priced catalog item. This reorganization must preserve that supported execution boundary rather than silently enabling other service workflows. Discovery is complete for this structure; implementation remains pending, and no runtime or schema changes have been made for this proposal.
+
 ## Service-based commercial jobs — September 16, 2026
 
 Commercial Lab authorizations now describe the purchased service and its version without choosing a laboratory workflow. New commercial jobs have no workflow pin; existing nullable pins remain historical metadata. Additive authorizations preserve specimens, service scope and execution history without copying an old job workflow into the order contract. See LAB-OPERATIONS-PLAN.md, Service-based commercial jobs. Multi-service order composition and sequential service handoffs remain separate work.
@@ -40,11 +57,11 @@ The operational order detail header groups its permitted actions in one **Action
 
 ## Combined order and retention settings — September 16, 2026
 
-The user menu has one **Order & retention settings** entry. Its shared sidebar includes **File retention**, separated from order subjects by a horizontal divider, which displays the existing global policy, history, and edit dialog. The former `/file-management` URL redirects to `/order-configuration?configurationSection=retention`. Existing section-specific capabilities still govern navigation and loading, and retention does not depend on the order-configuration request succeeding. No retention rules, API contracts, or saved policies change.
+As revised September 18, **Order Settings** and **File retention policies** are separate destinations under **Administration** in the user dropdown menu, in that order. Order Settings is removed from the Order operations sidebar, and File retention policies is removed from the settings sidebar. Each menu item and page retains its own existing capability gate. `/file-management` opens the standalone retention page; old `/order-configuration?configurationSection=retention` links redirect there. No retention rules, API contracts, or saved policies change.
 
 ## Intake create action — September 16, 2026
 
-The Commercial order intake card places **+ New Order** at the right end of its title row, with the description below. The existing creation dialog and eligibility rules remain unchanged. Operator help uses the updated action label.
+The Commercial order intake list places **+ New Order** at the right end of its title row. As clarified September 18, one shaded list header contains the title, a single description, View, Search intake and Clear filters; the separate introductory card is removed. Customer loading/eligibility notices remain above the rows. The existing creation dialog and eligibility rules remain unchanged. Operator help uses the updated action label.
 
 ## Final acceptance closure — September 15, 2026
 
@@ -2917,3 +2934,11 @@ headers retain room for the first item. Documentation generation and freshness
 checks passed (56 guides); whitespace checks passed. No commit or deployment.
 
 September 14 ten-case closeout: ORD-01/02/04 pass for isolated software acceptance. Setup/Finance links open separately and Refresh readiness preserves the entered Customer/Department pricing draft. Actual staged quote/invoice denials and applicable offering version versus frozen accepted terms pass. ORD-03 remains open: post-acceptance scope-increase proposal, immutable change quote and acceptance/work gates are missing; do not treat ordinary quote reissue as that workflow. [Full evidence and limits](../testing/runs/2026-09-14-ten-case-execution.md).
+
+## Separate shipping settings — September 18, 2026
+
+Sample types is now its own Order Settings sidebar subject and reads the existing shared sample definitions independently of the commercial configuration request. Container sizes, destinations, shipping instruction rules and preview move to standalone Sample Shipping Settings after Lab Settings in Administration. The former shipping section URL redirects with container filters preserved. Scientific/sample requirements and existing frozen order and shipment revisions remain unchanged.
+
+## September 18, 2026 — Quote and workflow settings
+
+The Order Settings sidebar now calls Defaults Quote & workflow. It retains quote validity and explicit supported sample/result workflow review. Default sample-submission guidance has moved to its own Sample Shipping Settings page. The underlying instruction value remains required for readiness and is copied to new lab orders when tenant-specific instructions are absent; existing order snapshots remain unchanged. Quote edits preserve that text, and instruction edits omit the optional readiness JSON fields so older workflows are neither converted nor revalidated by an unrelated guidance edit. Existing optimistic concurrency is preserved. No backend or persisted-model changes.

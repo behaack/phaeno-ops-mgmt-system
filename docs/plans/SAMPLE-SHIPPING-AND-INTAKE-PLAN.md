@@ -1,5 +1,9 @@
 # Sample Shipping and Intake Plan
 
+## Standalone shipping settings and shared sample types — September 18, 2026
+
+Sample Shipping Settings appears under Administration after CRM Settings. Its addressable sidebar sections are Container sizes, Ship-to destinations, Sample shipping instructions. Each rule has an Actions dropdown with a chevron indicator, Preview instructions, and Create revision. Preview opens read-only for the exact destination and sample type, using now or the exact future start. Optional Add sample types checks combined compatibility while keeping the original sample included. Inactive or ended rules cannot resolve a preview; existing API checks remain authoritative. Legacy preview links open the instruction list. Sample types is a separate Order Settings subject; shipping reads the same shared definitions and exact revisions. Container, destination, instruction and sample-type lists use shaded headers, with container search/status controls inside the header. Existing revision creation dialogs and controlled activation rules remain unchanged. The former combined shipping URL redirects to Container sizes and preserves list filters. Existing container detail URLs remain valid and return to the new shipping list with filters intact. No API, schema, revision, instruction resolution or authorization changes. Creation and revision actions continue using existing bounded dialogs; this navigation change does not replace existing destination, sample-type or instruction row management with new detail workspaces.
+
 ## Accession footer summary — September 16, 2026
 
 Show X with exceptions | Y to be accepted in the accession modal footer, with Accept (Y) beside the existing close action. X counts saved OnHold or Rejected decisions for this shipment; Y uses the existing identified, undecided, eligible acceptance selection. Preserve the review/storage confirmation and disabled/completed states. Stack the summary above the actions on narrow screens.
@@ -2260,3 +2264,7 @@ Fulfillment queues no longer depend on loading the unrelated laboratory dashboar
 ### Alternate packing and reset connected acceptance — September 15, 2026
 
 SHP-09 now passes isolated software acceptance across its ten primary steps and all five reset steps. Actual sessions prove custom sizes and residual supply, inventory recovery, competing physical-container claims and complete-plan resets. Separate explicitly staged historical families prove ReturnKit/binding/packet/dispatch/receipt/cleared-scan locks and separation of destinations/handling from a residual pool. One reset wins under concurrency; original slots, frozen orders and prior shipment identities are retained. This supersedes the earlier Not run status for connected software reset acceptance, while real physical, scanner, carrier and scientific gates remain separate. [Complete crosswalk and retained fixture evidence](../testing/runs/2026-09-15-packing-reset-uat.md).
+
+## September 18, 2026 — Default submission guidance
+
+Default submission instructions is a separate sidebar page with a shaded header and bounded edit dialog. It relocates the existing fallback instruction value from Order Settings without deleting it or replacing destination/sample shipping rules. Loading and saving use existing administrator configuration APIs and shared query invalidation. Saving preserves quote/shipping settings and omits optional sample/result workflow fields; version conflicts retain entered values. Required validation, unsaved-change protection and return focus are preserved.
