@@ -245,6 +245,7 @@ public sealed partial class LabOperationsController
         CancellationToken cancellationToken)
     {
         var lots = await dbContext.LabMaterialLots.AsNoTracking().ToListAsync(cancellationToken);
+        var products = await dbContext.LabSupplierProducts.AsNoTracking().ToDictionaryAsync(p => p.Id, cancellationToken);
         var definitions = await dbContext.LabMaterialDefinitions.AsNoTracking()
             .ToDictionaryAsync(item => item.Id, cancellationToken);
         var suppliers = await dbContext.LabSuppliers.AsNoTracking()
@@ -281,7 +282,7 @@ public sealed partial class LabOperationsController
                 lot.LotNumber, supplier?.Id, supplier?.Name, lot.ExpirationOrRetestDate,
                 storageLocation.Id, storageLocation.Name, lot.AvailableQuantity,
                 lot.QuantityUnit, lot.QcDisposition.ToString(), lot.QcPerformedOn,
-                lot.QcFailureReason, componentDtos, lot.Version);
+                lot.QcFailureReason, componentDtos, lot.Version, lot.SupplierProductId, products.GetValueOrDefault(lot.SupplierProductId ?? Guid.Empty)?.ProductNumber, lot.QuantityHoldReason, lot.QuantityHistoryJson);
         })
         .OrderBy(item => item.Name)
         .ThenBy(item => item.LotNumber)

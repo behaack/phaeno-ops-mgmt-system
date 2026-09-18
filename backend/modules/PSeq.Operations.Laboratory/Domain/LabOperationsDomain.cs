@@ -546,6 +546,7 @@ public sealed class LabMaterialLot : LabAuditedEntity
     public Guid MaterialDefinitionId { get; private set; }
     public string LotNumber { get; private set; } = null!;
     public Guid? SupplierId { get; private set; }
+    public Guid? SupplierProductId { get; private set; }
     public string? LegacyComponentsJson { get; private set; }
     public DateOnly? ExpirationOrRetestDate { get; private set; }
     public Guid StorageLocationId { get; private set; }
@@ -557,6 +558,32 @@ public sealed class LabMaterialLot : LabAuditedEntity
     public string? QcFailureReason { get; private set; }
     public Guid? QcApprovedByUserId { get; private set; }
     public DateTime? QcApprovedAtUtc { get; private set; }
+
+    public string? QuantityHoldReason { get; private set; }
+    public string QuantityHistoryJson { get; private set; } = "[]";
+
+    public void HoldQuantity(string reason, Guid recordId, Guid actorId, DateTime utcNow)
+    {
+        QuantityHoldReason = Required(reason, nameof(reason), 2000);
+        RecordQuantityHistory("hold", AvailableQuantity, AvailableQuantity, reason, recordId, actorId, utcNow);
+    }
+
+    public void ReconcileQuantity(decimal counted, string reason, Guid actorId, DateTime utcNow)
+    {
+        if (QuantityHoldReason is null) throw new InvalidOperationException("This lot does not need quantity reconciliation.");
+        if (counted < 0 || counted > AvailableQuantity) throw new ArgumentException("Counted remaining quantity must be between zero and the last recorded balance.");
+        reason = Required(reason, nameof(reason), 2000);
+        RecordQuantityHistory("reconciled", AvailableQuantity, counted, reason, null, actorId, utcNow);
+        AvailableQuantity = counted;
+        QuantityHoldReason = null;
+    }
+
+    private void RecordQuantityHistory(string action, decimal before, decimal after, string reason, Guid? recordId, Guid actorId, DateTime utcNow)
+    {
+        var history = System.Text.Json.Nodes.JsonNode.Parse(QuantityHistoryJson)!.AsArray();
+        history.Add(System.Text.Json.JsonSerializer.SerializeToNode(new { action, before, after, reason, recordId, actorId, utcNow }));
+        QuantityHistoryJson = history.ToJsonString();
+    }
 
     private LabMaterialLot() { }
 
@@ -584,6 +611,22 @@ public sealed class LabMaterialLot : LabAuditedEntity
         QuantityUnit = Required(quantityUnit, nameof(quantityUnit), 50);
     }
 
+    public void AssignProduct(Guid supplierProductId, Guid supplierId)
+    {
+        if (Kind != LabMaterialLotKind.SupplierLot || SupplierId != supplierId || supplierProductId == Guid.Empty)
+            throw new ArgumentException("Choose a product from this purchased lot's supplier.");
+        if (SupplierProductId.HasValue && SupplierProductId != supplierProductId)
+            throw new InvalidOperationException("The lot's assigned product cannot be replaced.");
+        SupplierProductId = supplierProductId;
+    }
+
+    public bool MatchesConfiguredMaterial(LabConfiguredMaterial? material) =>
+        material?.ProductId is Guid productId
+            ? Kind == LabMaterialLotKind.SupplierLot && SupplierProductId == productId && SupplierId == material.SupplierId
+            : material?.MaterialDefinitionId is Guid definitionId
+                ? Kind == LabMaterialLotKind.PreparedReagent && MaterialDefinitionId == definitionId
+                : material?.SupplierId is not Guid supplierId || SupplierId == supplierId;
+
     public void RecordQc(LabQcDisposition disposition, DateOnly performedOn,
         string? failureReason, string resultsJson, Guid actorUserId, DateTime utcNow)
     {
@@ -606,6 +649,7 @@ public sealed class LabMaterialLot : LabAuditedEntity
 
     public void Consume(decimal quantity)
     {
+        if (QuantityHoldReason is not null) throw new InvalidOperationException("Reconcile this lot’s quantity before further use.");
         if (quantity <= 0 || quantity > AvailableQuantity) throw new InvalidOperationException("The requested quantity is not available.");
         AvailableQuantity -= quantity;
     }

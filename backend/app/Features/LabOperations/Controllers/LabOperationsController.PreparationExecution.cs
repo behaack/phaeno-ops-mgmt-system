@@ -17,10 +17,24 @@ public sealed partial class LabOperationsController
         var protocol = await dbContext.LabProtocolVersions.SingleAsync(p => p.Id == stage.LabProtocolVersionId, ct);
         var definition = RequireProtocolDefinition(protocol.DefinitionJson);
         var step = definition.Steps.SingleOrDefault(s => s.Key == input.StepKey) ?? throw Missing();
-        var reportProperty = step.QcGate is not null ? "qcReport"
-            : step.Captures.Any(c => LabProtocolEvidence.IsPreparationReportReference(step, c)) ? "preparationReport" : null;
-        if (hasReport && (reportProperty is null || input.Outcome != "recorded"))
-            throw new ArgumentException("Attach a report only to a performed QC or preparation report step.");
+        var attemptIds = attempts.Select(a => a.Id).ToList();
+        var stageExecutions = await dbContext.LabProtocolExecutions
+            .Where(e => attemptIds.Contains(e.LabSpecimenAttemptId!.Value) && e.LabServiceWorkflowStageId == stage.Id).ToListAsync(ct);
+        var eligible = members.Where(member =>
+        {
+            var attempt = attempts.Single(a => a.Id == member.LabSpecimenAttemptId);
+            if (attempt.State is LabSpecimenAttemptState.Failed or LabSpecimenAttemptState.Cancelled or LabSpecimenAttemptState.Succeeded || attempt.HoldReason is not null) return false;
+            var execution = stageExecutions.SingleOrDefault(e => e.LabSpecimenAttemptId == attempt.Id);
+            if (execution is null || execution.Status is not (LabExecutionStatus.InProgress or LabExecutionStatus.Blocked)) return false;
+            if (PreparationStepPrerequisites(execution, protocol)[step.Key].Count != 0) return false;
+            var hasRecord = LabProtocolEvidence.Read(execution.CapturedResultsJson).Records.Any(r => r.StepKey == step.Key);
+            return input.Action == "record" ? !hasRecord : hasRecord;
+        }).Select(m => m.Id).ToHashSet();
+        if (eligible.Count == 0 || input.CoveredMemberIds.Count != eligible.Count || !eligible.SetEquals(input.CoveredMemberIds))
+            throw Conflict("preparation_step_coverage_changed", "This step must include every eligible tube. Refresh the batch and review its coverage before saving.");
+        var reportProperty = step.PreparationReportProperty;
+        step.ValidatePreparationReport(hasReport, input.Outcome);
+        var resourceValues = await RecordPreparationFieldsAsync(step, input, members, attempts, stageExecutions, request, actor.User.Id, ct);
         foreach (var member in members.Where(m => input.CoveredMemberIds.Contains(m.Id)))
         {
             var attempt = attempts.Single(a => a.Id == member.LabSpecimenAttemptId); attempt.RequireOpen();
@@ -28,6 +42,7 @@ public sealed partial class LabOperationsController
                 ?? throw Conflict("preparation_stage_not_started", "Complete the preceding stage before recording this stage.");
             var specimen = await RequireSpecimenAsync(attempt.LabWorkOrderId, attempt.LabSpecimenId, ct);
             var effective = LabPreparationEvidence.Resolve(step, input, member.Id, request.RequestId, specimen.AccessionNumber);
+            effective = effective with { Captures = effective.Captures.Concat(resourceValues[member.Id]).ToDictionary(p => p.Key, p => p.Value) };
             foreach (var capture in step.Captures.Where(c => c.Type == "barcode"))
             {
                 if (!effective.Captures.TryGetValue(capture.Key, out var value) || value.ValueKind != JsonValueKind.String) continue;
@@ -37,6 +52,17 @@ public sealed partial class LabOperationsController
                 if (container is not null) await RequireAttemptLineageAsync(container.Id, attempt, ct);
             }
             execution.RecordStep(protocol, effective, actor.User.Id, EffectiveExecutionRoles(actor), DateTime.UtcNow);
+            var exceptions = (input.ResourceEntries ?? []).Where(e => e.MemberId == member.Id && e.Disposition is not null).ToArray();
+            if (exceptions.Length > 0 && !actor.HasAny(LabRole.Operator, LabRole.Supervisor)) throw new InvalidOperationException("An Operator or Supervisor must record material exceptions.");
+            var disposition = exceptions.Any(e => e.Disposition == "fail") ? "fail" : exceptions.Any(e => e.Disposition == "hold") ? "hold" : null;
+            var exceptionReason = string.Join("; ", exceptions.Select(e => e.ExceptionReason));
+            if (exceptionReason.Length > 2000) throw new ArgumentException("Combined material exception reasons must not exceed 2,000 characters per tube.");
+            if (disposition == "hold") attempt.Hold(exceptionReason, "Review material exception and reconcile any uncertain lot balance before resolving this hold.", actor.User.Id);
+            if (disposition == "fail")
+            {
+                attempt.Fail("procedure_deviation", exceptionReason, execution.Id, actor.User.Id, DateTime.UtcNow);
+                await CloseAttemptExecutionsAsync(attempt, exceptionReason, ct);
+            }
             await RefreshAttemptOutcomeAsync(await RequireWorkOrderAsync(attempt.LabWorkOrderId, ct), await RequireSpecimenAsync(attempt.LabWorkOrderId, attempt.LabSpecimenId, ct), attempt, actor.User.Id, ct);
         }
         return reportProperty;

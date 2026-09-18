@@ -51,15 +51,15 @@ describe('supplier catalog', () => {
     expect(screen.queryByRole('link', { name: supplierCatalogFixture[1].name })).toBeNull()
   })
   it('saves suppliers through a bounded modal', async () => {
-    mount(); fireEvent.click(screen.getByRole('button', { name: '+ New supplier' }))
+    mount(); fireEvent.click(screen.getByRole('button', { name: 'New supplier' }))
     fireEvent.change(screen.getByLabelText(/Supplier name/), { target: { value: 'New supplier' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     await waitFor(() => expect(mocks.supplier).toHaveBeenCalledWith({ name: 'New supplier', isActive: true, version: undefined }, undefined))
   })
   it('requires a description and retains product edits after a failed save', async () => {
     mocks.product.mockRejectedValue(new Error('Save failed'))
-    mount(supplierCatalogFixture[0].id); fireEvent.click(screen.getByRole('button', { name: '+ New product' }))
-    fireEvent.change(screen.getByLabelText(/Product #/), { target: { value: 'T-NEW' } })
+    mount(supplierCatalogFixture[0].id); fireEvent.click(screen.getByRole('button', { name: 'New product' }))
+    fireEvent.change(screen.getByLabelText(/Product name/), { target: { value: 'T-NEW' } })
     fireEvent.change(screen.getByLabelText(/Product type/), { target: { value: productTypesFixture[0].id } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     expect(await screen.findByText('Enter a product description.')).toBeTruthy()
@@ -67,7 +67,7 @@ describe('supplier catalog', () => {
     fireEvent.change(screen.getByLabelText(/Product description/), { target: { value: 'New tube' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     expect(await screen.findByText('Changes were not saved')).toBeTruthy()
-    expect(screen.getByLabelText(/Product #/)).toHaveProperty('value', 'T-NEW')
+    expect(screen.getByLabelText(/Product name/)).toHaveProperty('value', 'T-NEW')
   })
   it('can reveal inactive suppliers for reactivation', () => {
     mocks.catalog.mockReturnValue({ data: supplierCatalogFixture.map(s => ({ ...s, isActive: false })), isPending: false, isError: false })

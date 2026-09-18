@@ -1,4 +1,5 @@
 export const labConfigurationTabs = [
+  { value: 'steps', label: 'Lab steps' },
   { value: 'protocols', label: 'Protocols' },
   { value: 'workflows', label: 'Workflows' },
   { value: 'tray-formats', label: 'Tray formats' },

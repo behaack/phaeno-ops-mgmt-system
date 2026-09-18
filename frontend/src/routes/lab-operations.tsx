@@ -10,7 +10,10 @@ import { parseStockKitListSearch, type StockKitListSearch } from '#/features/ord
 import { parseKitRequestSearch, type KitRequestListSearch } from '#/features/orders/kit-requests/kit-request-navigation'
 
 export const Route = createFileRoute('/lab-operations')({
-  validateSearch: (search: Record<string, unknown>): StockKitListSearch & KitRequestListSearch & { section?: LabSection; supplierTab?: SupplierCatalogTab; shipmentId?: string; receiptTab?: LabReceiptTab; configurationTab?: LabConfigurationTab; returnKitRequestId?: string; supplierSearch?: string; supplierInactive?: boolean; productTypeSearch?: string; productTypeInactive?: boolean } => ({
+  validateSearch: (search: Record<string, unknown>): StockKitListSearch & KitRequestListSearch & { section?: LabSection; supplierTab?: SupplierCatalogTab; shipmentId?: string; receiptTab?: LabReceiptTab; configurationTab?: LabConfigurationTab; labStepSearch?: string; labStepRetired?: boolean; labStepPage?: number; returnKitRequestId?: string; supplierSearch?: string; supplierInactive?: boolean; productTypeSearch?: string; productTypeInactive?: boolean } => ({
+    labStepSearch: typeof search.labStepSearch === 'string' ? search.labStepSearch.slice(0, 255) : undefined,
+    labStepRetired: search.labStepRetired === true || search.labStepRetired === 'true' ? true : undefined,
+    labStepPage: Number.isInteger(Number(search.labStepPage)) && Number(search.labStepPage) > 0 ? Number(search.labStepPage) : undefined,
     ...parseStockKitListSearch(search),
     ...parseKitRequestSearch(search),
     shipmentId: typeof search.shipmentId === 'string' && /^[0-9a-f-]{36}$/i.test(search.shipmentId) ? search.shipmentId : undefined,

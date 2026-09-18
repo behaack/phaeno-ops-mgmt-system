@@ -18,8 +18,8 @@ export function PreparationPanel({ title, description, actions, children }: { ti
 }
 export function PreparationActions({ items }: { items: { label: string; onClick: () => void; disabled?: boolean }[] }) {
   if (!items.length) return null
-  if (items.length === 1) return <Button variant="outline" onClick={items[0].onClick} disabled={items[0].disabled}>{items[0].label}</Button>
-  return <ActionMenu><DropdownMenuTrigger asChild><Button variant="outline">Actions <ChevronDown /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]">{items.map(item => <DropdownMenuItem key={item.label} disabled={item.disabled} onSelect={item.onClick}>{item.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu>
+  if (items.length === 1) return <Button type="button" variant="outline" onClick={items[0].onClick} disabled={items[0].disabled}>{items[0].label}</Button>
+  return <ActionMenu><DropdownMenuTrigger asChild><Button type="button" variant="outline">Actions <ChevronDown /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]">{items.map(item => <DropdownMenuItem key={item.label} disabled={item.disabled} onSelect={item.onClick}>{item.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu>
 }
 export function PreparationField({ label, id, required, children, error }: { label: string; id: string; required?: boolean; children: ReactNode; error?: string }) {
   const control = isValidElement<{ 'aria-required'?: boolean; 'aria-invalid'?: boolean; 'aria-describedby'?: string }>(children) ? cloneElement(children, { 'aria-required': required || undefined, 'aria-invalid': Boolean(error), 'aria-describedby': [children.props['aria-describedby'], error ? `${id}-error` : undefined].filter(Boolean).join(' ') || undefined }) : children
@@ -54,4 +54,12 @@ export function PreparationFormDialog({ title, description, fields, onClose, onS
     </div>
     <RequiredDialogFooter showLegend={fields.some(field => field.required)}><Button type="button" variant="outline" disabled={pending} onClick={onClose}>Cancel</Button><Button disabled={pending} type="submit">{pending ? 'Saving…' : submitLabel}</Button></RequiredDialogFooter>
   </form></DialogContent></Dialog>
+}
+
+export function preparationResourceFields(kind: 'material' | 'equipment', options: { value: string; label: string }[]): PreparationFormField[] {
+  return [
+    { key: 'resource', label: kind === 'material' ? 'Material lot' : 'Equipment', required: true, options },
+    ...(kind === 'material' ? [{ key: 'quantity', label: 'Total quantity used for these tubes', type: 'number' as const, required: true }] : [{ key: 'reason', label: 'Run reference (optional)' }]),
+    { key: 'confirm', label: 'Confirm resource coverage', required: true, options: [{ value: 'yes', label: 'Confirmed' }] },
+  ]
 }

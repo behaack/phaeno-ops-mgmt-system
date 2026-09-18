@@ -1,3 +1,4 @@
+import { LabStepList } from './LabSteps'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Building2, Cog, CheckCircle2, ChevronDown, ClipboardList, FileX, FlaskConical, Layers3, Microscope, PackageCheck, Pencil, Plus, RefreshCw, ScanLine, ShieldCheck, Trash2, Workflow } from 'lucide-react'
@@ -77,10 +78,10 @@ const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
   { value: 'results', label: 'Results & review', description: 'Result evidence, scientific review, and release readiness', icon: ClipboardList },
   { value: 'kits', label: 'PSeq kits', separatorBefore: true, description: 'Preparation, shipping, and fulfillment', icon: PackageCheck },
   { value: 'assembly', label: 'Data assembly', description: 'Input validation, processing, and release', icon: Workflow },
-  { value: 'materials', label: 'Materials', separatorBefore: true, description: 'Lots, prepared reagents, and QC', icon: FlaskConical },
+  { value: 'suppliers', label: 'Suppliers & products', separatorBefore: true, description: 'Vendors, reagents, and shipping supplies', icon: Building2 },
+  { value: 'materials', label: 'Materials', description: 'Lots, prepared reagents, and QC', icon: FlaskConical },
   { value: 'equipment', label: 'Equipment', description: 'Assets, availability, and calibration', icon: Microscope },
-  { value: 'protocols', label: 'Lab configurations', separatorBefore: true, description: 'Protocols, workflows, and tray formats', icon: Cog },
-  { value: 'suppliers', label: 'Suppliers & Products', description: 'Vendors, reagents, and shipping supplies', icon: Building2 },
+  { value: 'protocols', label: 'Lab configurations', separatorBefore: true, description: 'Lab steps, protocols, workflows, and tray formats', icon: Cog },
 ]
 
 export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTabChange, configurationTab, onConfigurationTabChange, supplierTab, onSupplierTabChange, onSectionChange }: { section: LabSection; shipmentId?: string; receiptTab?: LabReceiptTab; onReceiptTabChange?: (tab: LabReceiptTab) => void; configurationTab?: LabConfigurationTab; onConfigurationTabChange?: (tab: LabConfigurationTab) => void; supplierTab?: SupplierCatalogTab; onSupplierTabChange?: (tab: SupplierCatalogTab) => void; onSectionChange: (section: LabSection) => void }) {
@@ -138,9 +139,10 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
               setLocalConfigurationTab(nextTab)
               onConfigurationTabChange?.(nextTab)
             }} className="gap-4">
-              <TabsList aria-label="Lab configurations" className="grid w-full grid-cols-3">
+              <TabsList aria-label="Lab configurations" className="grid w-full grid-cols-2 sm:grid-cols-4">
                 {labConfigurationTabs.map(tab => <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>)}
               </TabsList>
+              <TabsContent value="steps"><LabStepList /></TabsContent>
               <TabsContent value="protocols">
                 <ProtocolList actorId={session?.user?.id} canOverride={Boolean(session?.isPlatformAdmin)} protocols={dashboard.data.protocols} canManage={Boolean(session?.capabilities.canManageLabProtocols)} onCreate={() => setCreateKind('protocol')} refresh={refresh} />
               </TabsContent>
@@ -678,9 +680,9 @@ function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { ite
                 className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-background p-4 shadow-xs focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
               >
                 <div>
-                  <p className="font-medium">{item.name} · {item.lotNumber}</p>
+                  <Link className="font-medium text-primary underline underline-offset-4 wrap-anywhere" to="/lab-operations/materials/$materialLotId" params={{ materialLotId: item.id }} search={{ section: 'materials' }}>{item.name} · {item.lotNumber}</Link>
                   <p className="text-xs text-muted-foreground">
-                    {item.materialKey} · {item.availableQuantity} {item.quantityUnit} · {item.storageLocation}
+                    {item.quantityHoldReason ? 'Quantity reconciliation required · ' : ''}{item.materialKey} · {item.availableQuantity} {item.quantityUnit} · {item.storageLocation}
                     {item.supplier ? ` · ${item.supplier}` : ''}
                     {item.expirationOrRetestDate ? ` · expiration/retest ${formatDateOnly(item.expirationOrRetestDate)}` : ''}
                     {item.qcPerformedOn ? ` · QC ${formatDateOnly(item.qcPerformedOn)}` : ''}

@@ -138,6 +138,7 @@ public sealed partial class LabOperationsController
                     case "hold": Execute(() => attempt.Hold(request.Note ?? "", request.NextAction ?? "", actor.User.Id)); break;
                     case "resume":
                         await RequireAttemptSourceAsync(attempt, cancellationToken);
+                        await RequireMaterialExceptionReviewAsync(attempt, actor.HasAny(LabRole.Supervisor), cancellationToken);
                         Execute(() => attempt.Resume(request.Note ?? "")); break;
                     case "cancel":
                         Execute(() => attempt.Cancel(request.Note ?? "", actor.User.Id, DateTime.UtcNow));

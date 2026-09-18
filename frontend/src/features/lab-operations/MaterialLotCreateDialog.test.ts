@@ -8,6 +8,7 @@ const supplierLot = {
   newMaterialName: '',
   lotNumber: 'LOT-42',
   supplierSelection: 'supplier-id',
+  supplierProductId: 'product-id',
   newSupplierName: '',
   storageSelection: 'storage-id',
   newStorageLocationName: '',
@@ -18,6 +19,11 @@ const supplierLot = {
 }
 
 describe('material lot form validation', () => {
+  it('requires a catalog product for purchased lots', () => {
+    const result = materialLotFormSchema.safeParse({ ...supplierLot, supplierProductId: '' })
+    expect(result.success).toBe(false)
+    if (!result.success) expect(result.error.issues).toContainEqual(expect.objectContaining({ path: ['supplierProductId'] }))
+  })
   it('accepts a controlled supplier lot without a time-of-day expiration', () => {
     expect(materialLotFormSchema.safeParse(supplierLot).success).toBe(true)
   })

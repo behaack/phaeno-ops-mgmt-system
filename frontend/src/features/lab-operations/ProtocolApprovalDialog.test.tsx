@@ -41,9 +41,9 @@ describe('formal protocol review', () => {
     render(<ProtocolApprovalDialog protocol={protocol} version={{ id: 'scoped-version', protocolVersion: 1, status: 'Draft', definitionJson: serializeProtocolDefinition(values), authoredByUserId: 'author', authoredAtUtc: '', approvedByUserId: null, approvedAtUtc: null }} isPending={false} onApprove={vi.fn()} onOpenChange={vi.fn()} />)
     expect(screen.getByText('Enabled — review the evidence and QC scopes below.')).toBeTruthy()
     const definition = screen.getByRole('region', { name: 'Ordered protocol definition' }).textContent
-    expect(definition).toContain('Tube — record individually')
-    expect(definition).toContain('Batch — one shared observation')
-    expect(definition).toContain('Shared value with tube exceptions')
+    expect(definition).toContain('Sample — record individually')
+    expect(definition).toContain('Batch — same entry for all selected samples')
+    expect(definition).toContain('Same entry with sample exceptions')
     expect(definition).toContain('Shared outcome with tube exceptions')
     expect(definition).toContain('must match the selected source tube')
     expect((screen.getByRole('button', { name: 'Approve version 1' }) as HTMLButtonElement).disabled).toBe(true)

@@ -35,6 +35,10 @@ public sealed partial class LabOperationsController
         var protocol = await dbContext.LabProtocolVersions.AsNoTracking()
             .SingleAsync(item => item.Id == execution.LabProtocolVersionId, cancellationToken);
         var utcNow = DateTime.UtcNow;
+        var reportStep = RequireProtocolDefinition(protocol.DefinitionJson).Steps.SingleOrDefault(s => s.Key == request.StepKey);
+        if (reportStep?.Captures.Any(c => c.IsResource) == true) throw Invalid("preparation_fields_required", "Record linked material, equipment and output fields in Library prep.");
+        if (reportStep?.AttachmentRequired == true && request.Outcome == "recorded")
+            throw Invalid("preparation_report_required", "Record this step in Library prep and attach the required report.");
         if (request.Captures is null) throw Invalid("execution_captures_required", "Supply the captured values for this step.");
         if (attempt is not null)
         {

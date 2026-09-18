@@ -192,6 +192,29 @@ public static class LabOperationsModelConfiguration
             entity.HasOne<LabContainer>().WithMany().HasForeignKey(e => e.ParentContainerId).OnDelete(DeleteBehavior.Restrict);
         });
 
+        modelBuilder.Entity<LabStep>(entity =>
+        {
+            entity.ToTable("lab_steps", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            ConfigureAudited(entity);
+            entity.Property(e => e.Key).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Name).HasMaxLength(255).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(2000);
+            entity.Property(e => e.RetirementReason).HasMaxLength(1000);
+            entity.HasIndex(e => e.Key).IsUnique();
+        });
+
+        modelBuilder.Entity<LabStepVersion>(entity =>
+        {
+            entity.Property(item => item.ApprovalOverrideReason).HasMaxLength(2000);
+            entity.ToTable("lab_step_versions", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
+            entity.Property(e => e.DefinitionJson).HasColumnType("jsonb").IsRequired();
+            entity.HasIndex(e => new { e.LabStepId, e.StepVersion }).IsUnique();
+            entity.HasOne<LabStep>().WithMany().HasForeignKey(e => e.LabStepId).OnDelete(DeleteBehavior.Restrict);
+        });
+
         modelBuilder.Entity<LabProtocol>(entity =>
         {
             entity.ToTable("lab_protocols", laboratorySchema);
@@ -330,7 +353,7 @@ public static class LabOperationsModelConfiguration
 
         modelBuilder.Entity<LabMaterialLot>(entity =>
         {
-            entity.ToTable("lab_material_lots", laboratorySchema);
+            entity.ToTable("lab_material_lots", laboratorySchema, table => table.HasCheckConstraint("ck_material_lot_product_kind", "supplier_product_id IS NULL OR kind = 'SupplierLot'"));
             entity.HasKey(e => e.Id);
             ConfigureAudited(entity);
             entity.Property(e => e.Kind).HasConversion<string>().HasMaxLength(50).IsRequired();
@@ -342,7 +365,11 @@ public static class LabOperationsModelConfiguration
             entity.Property(e => e.QcResultsJson).HasColumnType("jsonb");
             entity.Property(e => e.QcPerformedOn).HasColumnType("date");
             entity.Property(e => e.QcFailureReason).HasMaxLength(1000);
+            entity.Property(e => e.QuantityHoldReason).HasMaxLength(2000);
+            entity.Property(e => e.QuantityHistoryJson).HasColumnType("jsonb").HasDefaultValue("[]");
             entity.HasIndex(e => new { e.MaterialDefinitionId, e.LotNumber }).IsUnique();
+            entity.HasIndex(e => e.SupplierProductId);
+            entity.HasOne<LabSupplierProduct>().WithMany().HasForeignKey(e => e.SupplierProductId).OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => new { e.QcDisposition, e.ExpirationOrRetestDate });
             entity.HasOne<LabMaterialDefinition>().WithMany().HasForeignKey(e => e.MaterialDefinitionId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<LabSupplier>().WithMany().HasForeignKey(e => e.SupplierId).OnDelete(DeleteBehavior.Restrict);

@@ -13,7 +13,7 @@ export function SupplierCatalogWorkspace({ tab, onTabChange }: { tab?: SupplierC
     else setLocalTab(next)
   }} className="gap-4">
     <TabsList aria-label="Suppliers and products" className="grid w-full grid-cols-2">
-      <TabsTrigger value="suppliers">Suppliers &amp; Products</TabsTrigger>
+      <TabsTrigger value="suppliers">Suppliers &amp; products</TabsTrigger>
       <TabsTrigger value="product-types">Product types</TabsTrigger>
     </TabsList>
     <TabsContent value="suppliers"><SupplierCatalogPage /></TabsContent>

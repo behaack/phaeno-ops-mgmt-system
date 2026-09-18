@@ -1,3 +1,4 @@
+import { useLotProducts } from '#/api/lab-materials'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Plus, Trash2 } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
@@ -47,6 +48,7 @@ export const materialLotFormSchema = z.object({
   newMaterialName: z.string(),
   lotNumber: requiredText('Enter a lot number.'),
   supplierSelection: z.string(),
+  supplierProductId: z.string(),
   newSupplierName: z.string(),
   storageSelection: requiredText('Select a storage location.'),
   newStorageLocationName: z.string(),
@@ -66,6 +68,7 @@ export const materialLotFormSchema = z.object({
     context.addIssue({ code: 'custom', path: ['newStorageLocationName'], message: 'Enter the new storage location.' })
   }
   if (values.kind === 'SupplierLot') {
+    if (!values.supplierProductId) context.addIssue({ code: 'custom', path: ['supplierProductId'], message: 'Select the purchased product.' })
     if (!values.supplierSelection) {
       context.addIssue({ code: 'custom', path: ['supplierSelection'], message: 'Select a supplier.' })
     }
@@ -100,6 +103,7 @@ const defaultValues: MaterialLotFormValues = {
   newMaterialName: '',
   lotNumber: '',
   supplierSelection: '',
+  supplierProductId: '',
   newSupplierName: '',
   storageSelection: '',
   newStorageLocationName: '',
@@ -136,15 +140,15 @@ export function MaterialLotCreateDialog({
   })
   const components = useFieldArray({ control: form.control, name: 'components' })
   const kind = form.watch('kind')
+  const productCatalog = useLotProducts(open && kind === 'SupplierLot')
   const materialSelection = form.watch('materialSelection')
   const supplierSelection = form.watch('supplierSelection')
   const storageSelection = form.watch('storageSelection')
   const newMaterialName = form.watch('newMaterialName')
-  const newSupplierName = form.watch('newSupplierName')
   const newStorageLocationName = form.watch('newStorageLocationName')
   const availableComponents = materialLots.filter((lot) =>
     (lot.qcDisposition === 'Passed' || lot.qcDisposition === 'ApprovedException')
-    && lot.availableQuantity > 0
+    && !lot.quantityHoldReason && lot.availableQuantity > 0
     && (!lot.expirationOrRetestDate || lot.expirationOrRetestDate >= today()),
   )
 
@@ -210,6 +214,7 @@ export function MaterialLotCreateDialog({
     try {
       await createLabMaterialLot({
         kind: values.kind,
+        supplierProductId: values.kind === 'SupplierLot' ? values.supplierProductId : null,
         materialDefinitionId: values.materialSelection === newReferenceValue
           ? null
           : values.materialSelection,
@@ -287,6 +292,7 @@ export function MaterialLotCreateDialog({
                       form.setValue('materialSelection', '')
                       form.setValue('newMaterialName', '')
                       form.setValue('supplierSelection', '')
+                      form.setValue('supplierProductId', '')
                       form.setValue('newSupplierName', '')
                       components.replace([])
                     },
@@ -340,6 +346,7 @@ export function MaterialLotCreateDialog({
                         aria-invalid={Boolean(form.formState.errors.supplierSelection)}
                         {...form.register('supplierSelection', {
                           onChange: (event) => {
+                            form.setValue('supplierProductId', '')
                             if (event.target.value === createReferenceValue) {
                               openReferenceDialog('supplier', supplierSelection)
                             } else if (event.target.value !== newReferenceValue) {
@@ -350,10 +357,17 @@ export function MaterialLotCreateDialog({
                       >
                         <option value="">Select supplier…</option>
                         {suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}
-                        <option value={newReferenceValue} hidden={!newSupplierName}>{newSupplierName || 'New supplier'}</option>
-                        <option value={createReferenceValue}>Create a new supplier…</option>
                       </select>
                     </FormField>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <FormField id="material-product" label="Product name" required error={form.formState.errors.supplierProductId?.message}>
+                      <select id="material-product" className={selectClass} disabled={!supplierSelection || productCatalog.isPending || productCatalog.isError} aria-invalid={Boolean(form.formState.errors.supplierProductId)} {...form.register('supplierProductId')}>
+                        <option value="">Select product…</option>
+                        {(productCatalog.data?.find(s => s.id === supplierSelection)?.products ?? []).map(p => <option key={p.id} value={p.id}>{p.productNumber} — {p.description}</option>)}
+                      </select>
+                    </FormField>
+                    {productCatalog.isPending ? <p role="status" className="mt-2 text-sm">Loading products…</p> : productCatalog.isError ? <div role="alert" className="mt-2 text-sm">Products could not be loaded. <Button type="button" variant="outline" onClick={() => void productCatalog.refetch()}>Retry products</Button></div> : supplierSelection && !productCatalog.data?.find(s => s.id === supplierSelection)?.products.length ? <p className="mt-2 text-sm text-muted-foreground">Add or activate this supplier's product in Suppliers &amp; products before receiving its lot.</p> : null}
                   </div>
                 </>
               ) : null}

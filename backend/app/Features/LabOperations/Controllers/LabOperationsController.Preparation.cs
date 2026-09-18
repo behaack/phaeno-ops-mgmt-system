@@ -130,7 +130,7 @@ public sealed partial class LabOperationsController
             where libraries.Select(l => l.Id).Contains(m.LabLibraryId) select new { m.LabLibraryId, b.Id, b.BatchNumber, b.Name }).ToListAsync(ct);
         var creation = records.FirstOrDefault(r => r.Action == "create");
         var notes = creation is null ? null : JsonSerializer.Deserialize<CreateLabPreparationRequest>(creation.DetailsJson, JsonOptions)?.Notes;
-        return new { batch.Id, batch.Name, batch.TrayBarcode, automaticSpecimenReferences = true, bulkOutputs = true, optionalPreparationReports = true, optionalQcReports = true, trayConfirmed = batch.StartedAtUtc.HasValue || PreparationTrayConfirmed(records), notes, batch.Version, status = batch.Status.ToString(), batch.LabServiceWorkflowVersionId,
+        return new { batch.Id, batch.Name, batch.TrayBarcode, inlineResourceFields = true, configuredMaterials = true, automaticSpecimenReferences = true, bulkOutputs = true, optionalPreparationReports = true, optionalQcReports = true, trayConfirmed = batch.StartedAtUtc.HasValue || PreparationTrayConfirmed(records), notes, batch.Version, status = batch.Status.ToString(), batch.LabServiceWorkflowVersionId,
             automaticSkipAvailable = jobs.Values.All(w => w.Status is not (LabWorkOrderStatus.OnHold or LabWorkOrderStatus.Cancelled or LabWorkOrderStatus.ReadyForRelease))
                 && FindAutomaticPreparationSkip(batch, attempts, executions, stages, protocols, EffectiveExecutionRoles(actor)) is not null,
             layout = LabTrayLayout.Read(batch.LayoutJson), batch.StartedAtUtc, batch.CompletedAtUtc,
@@ -142,6 +142,7 @@ public sealed partial class LabOperationsController
                 return new { m.Id, m.Position, barcode = m.ConfirmedBarcode, attemptId = a.Id, a.Sequence, workOrderId = w.Id, jobName = w.OpaqueSubmitterReference,
                     specimenId = a.LabSpecimenId, specimenName = specimens[a.LabSpecimenId].AccessionNumber, state = a.State.ToString(), a.FailureEvidence,
                     customerSampleId = declaration?.CustomerSampleId, biologicalSource = declaration?.BiologicalSource, safetyInformation = declaration?.SafetyInformation,
+                    operationalHold = a.HoldReason is not null,
                     blocker = w.Status is LabWorkOrderStatus.OnHold or LabWorkOrderStatus.Cancelled or LabWorkOrderStatus.ReadyForRelease ? "The job is held or closed." : a.HoldReason,
                     output = outputs.Where(o => o.Id == m.OutputContainerId).Select(o => new { o.Id, o.Barcode, o.Quantity, o.QuantityUnit, confirmed = m.OutputConfirmed }).SingleOrDefault(),
                     availableOutputs = availableOutputs.Where(o => o.LabSpecimenAttemptId == a.Id && !members.Any(other => other.OutputContainerId == o.Id))

@@ -142,7 +142,13 @@ public sealed record LabPreparationTubeInput(Guid MemberId, IReadOnlyDictionary<
 public sealed record LabPreparationStepInput(Guid StageId, string StepKey, string Action, string Outcome,
     IReadOnlyList<Guid> CoveredMemberIds, IReadOnlyDictionary<string, JsonElement> SharedCaptures,
     IReadOnlyList<LabPreparationTubeInput> Tubes, string? SharedQcOutcome, string? Reason,
-    bool CoverageConfirmed, bool OperatorConfirmed, bool ResourcesConfirmed);
+    bool CoverageConfirmed, bool OperatorConfirmed, bool ResourcesConfirmed,
+    IReadOnlyList<LabPreparationResourceFieldInput>? ResourceEntries = null);
+
+public sealed record LabPreparationResourceFieldInput(string FieldKey, Guid? MemberId = null,
+    Guid? ResourceId = null, long? ResourceVersion = null, decimal? Quantity = null,
+    string? QuantityUnit = null, string? Location = null, string? RunReference = null, string? Name = null,
+    Guid? ProductId = null, string? Vendor = null, bool AmountUnknown = false, string? ExceptionReason = null, string? Disposition = null);
 
 public static class LabPreparationEvidence
 {

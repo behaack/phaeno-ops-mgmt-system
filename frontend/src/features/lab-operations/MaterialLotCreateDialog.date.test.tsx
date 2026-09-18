@@ -9,19 +9,22 @@ vi.mock('#/api/lab-operations', () => ({
   getLabOperationsError: () => 'Save failed',
 }))
 
+vi.mock('#/api/lab-materials', () => ({ useLotProducts: () => ({ data: [{ id: 'supplier', products: [{ id: 'product', productNumber: 'TEST reagent', description: 'TEST ONLY' }] }], isPending: false, isError: false }) }))
+
 describe('material lot native date submission', () => {
   it('submits the displayed date even before a change event reaches form state', async () => {
-    render(<MaterialLotCreateDialog open definitions={[]} suppliers={[]} storageLocations={[]} materialLots={[]} onOpenChange={vi.fn()} onSaved={vi.fn().mockResolvedValue(undefined)} />)
+    render(<MaterialLotCreateDialog open definitions={[]} suppliers={[{ id: 'supplier', name: 'TEST supplier', isActive: true }]} storageLocations={[]} materialLots={[]} onOpenChange={vi.fn()} onSaved={vi.fn().mockResolvedValue(undefined)} />)
 
     for (const [selection, field, value, action] of [
       ['Material', 'Material name', 'TEST ONLY reagent', 'Use material'],
-      ['Supplier', 'Supplier name', 'TEST ONLY supplier', 'Use supplier'],
       ['Storage location', 'Storage location name', 'TEST ONLY storage', 'Use storage location'],
     ]) {
       fireEvent.change(screen.getByRole('combobox', { name: selection }), { target: { value: '__create__' } })
       fireEvent.change(screen.getByRole('textbox', { name: field }), { target: { value } })
       fireEvent.click(screen.getByRole('button', { name: action }))
     }
+    fireEvent.change(screen.getByRole('combobox', { name: 'Supplier' }), { target: { value: 'supplier' } })
+    fireEvent.change(screen.getByRole('combobox', { name: 'Product name' }), { target: { value: 'product' } })
     fireEvent.change(screen.getByRole('textbox', { name: 'Lot number' }), { target: { value: 'TEST-DATE-001' } })
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Available quantity' }), { target: { value: '100' } })
     fireEvent.change(screen.getByRole('textbox', { name: 'Unit' }), { target: { value: 'mL' } })

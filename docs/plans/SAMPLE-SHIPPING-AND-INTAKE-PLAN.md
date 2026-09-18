@@ -56,6 +56,16 @@ Implementation checkpoint: `20260916202935_AddManagedProductTypes` maps existing
 
 Migrate existing product kinds to stable type references without changing product/kit identities or snapshots. Local migration and ERD included. Shared/production migration and deployment remain outside scope. Acceptance: manage types, supplier offering several types, required descriptions, normalized uniqueness, stale edit protection, inactive-type filtering and reagent exclusion from kit selectors. Tests updated but not run unless requested.
 
+## Catalog filter placement — September 17, 2026
+
+Scope is limited to the **Suppliers & products**, **Products**, and **Product types** lists. Place search and Show inactive together on a full-width row inside the shaded card header, beneath title, description and creation action. Preserve filter behavior and detail-page layouts; controls wrap on narrow screens. The Product Owner explicitly deferred the proposed Portal-wide rollout.
+
+## Catalog presentation — September 17, 2026
+
+Use **Product name** in product create/edit forms, validation and catalog guidance. Keep the existing `productNumber` API/storage property and historical values unchanged. Products and Product types use the Preparation batches card pattern: shaded header, bottom separator, outlined creation action at the right, and separately padded body. The shared supplier list uses the same treatment. No schema or workflow change. Update existing accessible-label/button test selectors; automated tests are not run for this presentation-only change.
+
+Verification: frontend typecheck and scoped lint pass. Connected local browser inspection confirmed both card headers and the Product name field in the New product modal; cancelled without saving. Help corpus regenerated. Automated tests not run.
+
 ## Suppliers and products — September 16, 2026
 
 Authorized scope: Phaeno kit administrators manage reusable suppliers and their products from **Suppliers & Products**, immediately below Lab configurations in the sidebar. Reuse existing LabSupplier identities. Supplier detail is view-first with a product list; creation/editing uses bounded modals. Products require a supplier, product number, description and managed product type. Supplier names and supplier/product numbers are case-insensitively unique. Retire/reactivate through editing rather than deleting history. Existing platform-administrator kit permissions govern catalog access; no authentication or role widening.

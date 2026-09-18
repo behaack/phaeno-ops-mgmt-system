@@ -176,6 +176,14 @@ public sealed partial class LabOperationsController
                         await CloseAttemptExecutionsAsync(failed, request.Reason!, ct);
                         await RefreshAttemptOutcomeAsync(jobs[failed.LabWorkOrderId], await RequireSpecimenAsync(failed.LabWorkOrderId, failed.LabSpecimenId, ct), failed, actor.User.Id, ct);
                         break;
+                    case "resume":
+                        if (!actor.HasAny(LabRole.Supervisor)) throw new InvalidOperationException("A Supervisor must review and resolve the tube hold.");
+                        var resumed = Attempt(Member());
+                        await RequireAttemptSourceAsync(resumed, ct);
+                        await RequireMaterialExceptionReviewAsync(resumed, actor.HasAny(LabRole.Supervisor), ct);
+                        resumed.Resume(request.Reason ?? "");
+                        await RefreshAttemptOutcomeAsync(jobs[resumed.LabWorkOrderId], await RequireSpecimenAsync(resumed.LabWorkOrderId, resumed.LabSpecimenId, ct), resumed, actor.User.Id, ct);
+                        break;
                     case "output": await PreparationOutputAsync(Member(), Attempt(Member()), request, ct); break;
                     case "outputs": outputResults = await PreparationOutputsAsync(members, attempts, request, ct); break;
                     case "confirm-output":

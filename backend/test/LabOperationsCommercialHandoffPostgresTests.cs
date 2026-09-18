@@ -790,20 +790,25 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 protocol.Versions,
                 item => item.Status == LabProtocolStatus.Approved.ToString());
 
+            var materialSupplier = new LabSupplier($"Reference supplier {Guid.NewGuid():N}");
+            var materialProductType = new LabProductType($"Reference material {Guid.NewGuid():N}", "TEST ONLY", LabSupplierProductKind.Other);
+            var materialProduct = new LabSupplierProduct(materialSupplier.Id, "REFERENCE-REAGENT", "Reference reagent", materialProductType.Id);
+            scope.DbContext.AddRange(materialSupplier, materialProductType, materialProduct);
+            await scope.DbContext.SaveChangesAsync();
             var material = await lab.CreateMaterialLot(
                 new CreateMaterialLotRequest(
                     LabMaterialLotKind.SupplierLot.ToString(),
                     null,
                     $"Reference preparation kit {Guid.NewGuid():N}",
                     $"lot-{Guid.NewGuid():N}",
+                    materialSupplier.Id,
                     null,
-                    $"Reference supplier {Guid.NewGuid():N}",
                     null,
                     $"Freezer A {Guid.NewGuid():N}",
                     DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(6)),
                     100,
                     "uL",
-                    null),
+                    null, materialProduct.Id),
                 CancellationToken.None);
             material = await lab.RecordMaterialQc(
                 material.Id,

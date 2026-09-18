@@ -7,6 +7,9 @@ export const protocolCaptureTypes = [
   'choice',
   'fileReference',
   'barcode',
+  'material',
+  'equipment',
+  'output',
 ] as const
 
 export const protocolRequirementTypes = ['required', 'optional', 'conditional'] as const
@@ -20,15 +23,26 @@ export const protocolRoleTypes = [
   'OperationsAdministrator',
 ] as const
 
+const materialSchema = z.object({ materialDefinitionId: z.string().uuid().optional(), productId: z.string().uuid().optional(), supplierId: z.string().uuid().optional(), name: z.string().trim().min(1, 'Enter the material name.').max(1000), vendor: z.string().trim().max(255).optional(), productNumber: z.string().trim().max(100).optional() })
+export type ConfiguredMaterial = z.infer<typeof materialSchema>
+
 const captureSchema = z.object({
+  key: z.string().optional(),
   scope: z.enum(['', 'batch', 'tube', 'shared']).optional(),
   label: z.string().trim().min(1, 'Capture label is required.').max(120),
   type: z.enum(protocolCaptureTypes),
   required: z.boolean(),
   sourceTube: z.boolean().optional(),
+  material: materialSchema.optional(),
+  includeTracking: z.boolean().optional(),
+  quantityBasis: z.enum(['perSample', 'total']).optional(),
   unit: z.string().trim().max(50),
   choices: z.string().trim().max(1000),
 }).superRefine((capture, context) => {
+  if (capture.type === 'material' && !capture.unit) context.addIssue({ code: 'custom', message: 'Enter the quantity unit.', path: ['unit'] })
+  if (capture.type === 'material' && capture.includeTracking && capture.material && !capture.material.productId && !capture.material.materialDefinitionId) context.addIssue({ code: 'custom', message: 'Lot tracking requires a catalog product or prepared reagent.', path: ['material'] })
+  if (capture.material?.productId && capture.material.materialDefinitionId) context.addIssue({ code: 'custom', message: 'Choose one material identity.', path: ['material'] })
+  if (capture.type === 'material' && !capture.material) context.addIssue({ code: 'custom', message: 'Choose a vendor/product or define the material manually.', path: ['material'] })
   if (capture.type === 'choice' && new Set(splitList(capture.choices)).size !== splitList(capture.choices).length) {
     context.addIssue({ code: 'custom', message: 'Choices cannot repeat.', path: ['choices'] })
   }
@@ -42,6 +56,10 @@ const captureSchema = z.object({
 })
 
 const stepSchema = z.object({
+  key: z.string().optional(),
+  labStepVersionId: z.string().uuid().optional(),
+  attachmentKind: z.enum(['', 'none', 'qc', 'preparation']).optional(),
+  attachmentRequired: z.boolean().optional(),
   name: z.string().trim().min(1, 'Step name is required.').max(160),
   instructions: z.string().trim().min(1, 'Instructions are required.').max(4000),
   requirement: z.enum(protocolRequirementTypes),
@@ -79,9 +97,17 @@ export const protocolDefinitionFormSchema = z.object({
     .min(1, 'Add at least one protocol step.')
     .max(100, 'A protocol can contain at most 100 steps.'),
 }).superRefine((value, context) => {
-  if (!value.preparationBatchEnabled) return
   value.steps.forEach((step, i) => {
+    if (step.attachmentRequired && (!value.preparationBatchEnabled || !['qc', 'preparation'].includes(step.attachmentKind ?? ''))) context.addIssue({ code: 'custom', message: 'Choose a report type and enable preparation batches to require a report.', path: ['steps', i, 'attachmentKind'] })
+  })
+  if (!value.preparationBatchEnabled) {
+    value.steps.forEach((step, i) => { if (step.captures.some(c => ['material', 'equipment', 'output'].includes(c.type))) context.addIssue({ code: 'custom', message: 'Linked fields require preparation batches.', path: ['steps', i, 'captures'] }) })
+    return
+  }
+  value.steps.forEach((step, i) => {
+    if (step.captures.filter(c => c.type === 'output').length > 1) context.addIssue({ code: 'custom', message: 'Use one output field per step.', path: ['steps', i, 'captures'] })
     step.captures.forEach((capture, j) => {
+      if (['material', 'equipment', 'output'].includes(capture.type) && (!(['batch', 'tube'].includes(capture.scope ?? '') || capture.type === 'material' && capture.scope === 'shared' && capture.quantityBasis !== 'total') || capture.type === 'output' && capture.scope !== 'tube')) context.addIssue({ code: 'custom', message: 'Material exceptions require per-sample amounts; equipment uses batch or sample scope and outputs are individual.', path: ['steps', i, 'captures', j, 'scope'] })
       if (!capture.scope || capture.type === 'barcode' && capture.scope !== 'tube') context.addIssue({ code: 'custom', message: capture.type === 'barcode' ? 'Barcodes require Tube scope.' : 'Choose the evidence scope.', path: ['steps', i, 'captures', j, 'scope'] })
     })
     if (step.qcEnabled && !step.qcScope) context.addIssue({ code: 'custom', message: 'Choose the QC scope.', path: ['steps', i, 'qcScope'] })
@@ -96,6 +122,9 @@ export type ProtocolDefinition = {
   preparationBatchEnabled?: boolean
   steps: Array<{
     key: string
+    labStepVersionId?: string | null
+    attachmentKind?: 'none' | 'qc' | 'preparation' | null
+    attachmentRequired?: boolean
     name: string
     instructions: string
     required: boolean
@@ -110,6 +139,9 @@ export type ProtocolDefinition = {
       type: typeof protocolCaptureTypes[number]
       required: boolean
       sourceTube?: boolean
+      material?: ConfiguredMaterial
+      includeTracking?: boolean
+      quantityBasis?: 'perSample' | 'total'
       unit?: string | null
       options?: string[] | null
     }>
@@ -125,16 +157,24 @@ export type ProtocolDefinition = {
 }
 
 const storedProtocolCaptureSchema = z.object({
+  key: z.string().optional(),
   scope: z.enum(['batch', 'tube', 'shared']).nullish(),
   label: z.string().default(''),
   type: z.enum(protocolCaptureTypes).default('text'),
   required: z.boolean().default(true),
   sourceTube: z.boolean().default(false),
+  material: materialSchema.optional(),
+  includeTracking: z.boolean().optional(),
+  quantityBasis: z.enum(['perSample', 'total']).optional(),
   unit: z.string().nullish(),
   options: z.array(z.string()).nullish(),
 }).passthrough()
 
 const storedProtocolStepSchema = z.object({
+  key: z.string().optional(),
+  labStepVersionId: z.string().uuid().nullish(),
+  attachmentKind: z.enum(['none', 'qc', 'preparation']).nullish(),
+  attachmentRequired: z.boolean().optional(),
   name: z.string().default(''),
   instructions: z.string().default(''),
   required: z.boolean().default(true),
@@ -158,6 +198,7 @@ const storedProtocolDefinitionSchema = z.object({
 }).passthrough()
 
 export const createEmptyProtocolStep = (): ProtocolStepFormValues => ({
+  attachmentKind: 'none',
   name: '',
   instructions: '',
   requirement: 'required',
@@ -170,6 +211,7 @@ export const createEmptyProtocolStep = (): ProtocolStepFormValues => ({
   equipmentTypes: '',
   captures: [],
   qcEnabled: false,
+  qcScope: 'batch',
   qcCriteria: '',
 })
 
@@ -177,11 +219,13 @@ export const createEmptyProtocolCapture = (): ProtocolStepFormValues['captures']
   label: '',
   type: 'text',
   required: true,
+  scope: 'batch',
   unit: '',
   choices: '',
 })
 
 export const createLibraryPreparationExample = (): ProtocolDefinitionFormValues => ({
+  preparationBatchEnabled: true,
   steps: [
     {
       ...createEmptyProtocolStep(),
@@ -194,6 +238,7 @@ export const createLibraryPreparationExample = (): ProtocolDefinitionFormValues 
           ...createEmptyProtocolCapture(),
           label: 'Source container barcode',
           type: 'barcode',
+          scope: 'tube',
           sourceTube: true,
         },
       ],
@@ -212,6 +257,7 @@ export const createLibraryPreparationExample = (): ProtocolDefinitionFormValues 
           ...createEmptyProtocolCapture(),
           label: 'Library container barcode',
           type: 'barcode',
+          scope: 'tube',
         },
       ],
     },
@@ -226,10 +272,12 @@ export const createLibraryPreparationExample = (): ProtocolDefinitionFormValues 
           ...createEmptyProtocolCapture(),
           label: 'Library concentration',
           type: 'number',
+          scope: 'tube',
           unit: 'ng/µL',
         },
       ],
       qcEnabled: true,
+      qcScope: 'tube',
       qcCriteria: 'Confirm that the measured concentration is within the approved range for sequencing.',
     },
   ],
@@ -240,6 +288,10 @@ export function deserializeProtocolDefinition(value: string): ProtocolDefinition
     const parsed = storedProtocolDefinitionSchema.safeParse(JSON.parse(value))
     if (!parsed.success) return null
     const steps = parsed.data.steps.map((step) => ({
+      ...(step.key ? { key: step.key } : {}),
+      ...(step.labStepVersionId ? { labStepVersionId: step.labStepVersionId } : {}),
+      ...(step.attachmentKind ? { attachmentKind: step.attachmentKind } : {}),
+      ...(step.attachmentRequired ? { attachmentRequired: true } : {}),
       name: step.name,
       instructions: step.instructions,
       requirement: step.condition ? 'conditional' as const : step.required ? 'required' as const : 'optional' as const,
@@ -251,10 +303,14 @@ export function deserializeProtocolDefinition(value: string): ProtocolDefinition
       preparedOutputs: step.preparedOutputs.join(', '),
       equipmentTypes: step.equipmentTypes.join(', '),
       captures: step.captures.map((capture) => ({
+        ...(capture.key ? { key: capture.key } : {}),
         label: capture.label,
         type: capture.type,
         required: capture.required,
         ...(capture.sourceTube ? { sourceTube: true } : {}),
+        ...(capture.material ? { material: capture.material } : {}),
+        ...(capture.includeTracking ? { includeTracking: true } : {}),
+        ...(capture.quantityBasis ? { quantityBasis: capture.quantityBasis } : {}),
         ...(capture.scope ? { scope: capture.scope } : {}),
         unit: capture.unit ?? '',
         choices: capture.options?.join(', ') ?? '',
@@ -277,7 +333,10 @@ export function serializeProtocolDefinition(values: ProtocolDefinitionFormValues
     steps: values.steps.map((step) => {
       const usedCaptureKeys = new Set<string>()
       return {
-        key: uniqueKey(step.name, usedStepKeys, 'step'),
+        key: uniqueKey(step.key || step.name, usedStepKeys, 'step'),
+        ...(step.labStepVersionId ? { labStepVersionId: step.labStepVersionId } : {}),
+        ...(step.attachmentKind ? { attachmentKind: step.attachmentKind } : {}),
+        ...(step.attachmentRequired ? { attachmentRequired: true } : {}),
         name: step.name.trim(),
         instructions: step.instructions.trim(),
         required: step.requirement === 'required',
@@ -286,13 +345,16 @@ export function serializeProtocolDefinition(values: ProtocolDefinitionFormValues
         operatorConfirmation: step.operatorConfirmation,
         ...(step.requiredRole ? { requiredRole: step.requiredRole } : {}),
         captures: step.captures.map((capture) => ({
-          key: uniqueKey(capture.label, usedCaptureKeys, 'capture'),
+          key: uniqueKey(capture.key || capture.label, usedCaptureKeys, 'capture'),
           label: capture.label.trim(),
           type: capture.type,
           required: capture.required,
           ...(values.preparationBatchEnabled && capture.scope ? { scope: capture.scope } : {}),
           ...(capture.type === 'barcode' && capture.sourceTube ? { sourceTube: true } : {}),
-          ...(capture.type === 'number' && capture.unit.trim()
+          ...(capture.type === 'material' && capture.material ? { material: capture.material } : {}),
+          ...(['material', 'equipment'].includes(capture.type) && capture.includeTracking ? { includeTracking: true } : {}),
+          ...(capture.type === 'material' ? { quantityBasis: capture.quantityBasis ?? 'perSample' } : {}),
+          ...(['number', 'material'].includes(capture.type) && capture.unit.trim()
             ? { unit: capture.unit.trim() }
             : {}),
           ...(capture.type === 'choice'

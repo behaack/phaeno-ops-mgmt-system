@@ -22,7 +22,7 @@ export type LabMaterialDefinition = { id: string; key: string; name: string; kin
 export type LabSupplier = { id: string; name: string; isActive: boolean }
 export type LabStorageLocation = { id: string; name: string; isActive: boolean }
 export type LabPreparedReagentComponent = { id: string; componentMaterialLotId: string; materialKey: string; materialName: string; lotNumber: string; quantity: number; quantityUnit: string }
-export type LabMaterialLot = { id: string; kind: string; materialDefinitionId: string; materialKey: string; name: string; lotNumber: string; supplierId: string | null; supplier: string | null; expirationOrRetestDate: string | null; storageLocationId: string; storageLocation: string; availableQuantity: number; quantityUnit: string; qcDisposition: string; qcPerformedOn: string | null; qcFailureReason: string | null; components: LabPreparedReagentComponent[]; version: number }
+export type LabMaterialLot = { supplierProductId?: string | null; productName?: string | null; quantityHoldReason?: string | null; quantityHistoryJson?: string; id: string; kind: string; materialDefinitionId: string; materialKey: string; name: string; lotNumber: string; supplierId: string | null; supplier: string | null; expirationOrRetestDate: string | null; storageLocationId: string; storageLocation: string; availableQuantity: number; quantityUnit: string; qcDisposition: string; qcPerformedOn: string | null; qcFailureReason: string | null; components: LabPreparedReagentComponent[]; version: number }
 export type LabEquipment = { id: string; assetCode: string; name: string; equipmentType: string; location: string; status: string; lastCalibrationOn: string | null; calibrationDueOn: string | null; version: number; retirementReason?: string | null; retiredAtUtc?: string | null; retiredByUserId?: string | null }
 
 export const retireLabEquipment = (equipmentId: string, input: { reason: string; version: number }) =>
@@ -30,6 +30,7 @@ export const retireLabEquipment = (equipmentId: string, input: { reason: string;
 export type LabBatch = { id: string; batchNumber: string; name: string; batchType: string; status: string; startedAtUtc: string | null; completedAtUtc: string | null; notes: string | null; memberCount: number; sendoutId: string | null; sendoutStatus: string | null; sendoutVersion: number | null; version: number }
 export type LabOperationsDashboard = { workOrders: LabWorkOrderSummary[]; protocols: LabProtocol[]; serviceWorkflows: LabServiceWorkflow[]; marketedServices: LabMarketedService[]; materialLots: LabMaterialLot[]; materialDefinitions: LabMaterialDefinition[]; suppliers: LabSupplier[]; storageLocations: LabStorageLocation[]; equipment: LabEquipment[]; batches: LabBatch[]; roleAssignments: LabRoleAssignment[] }
 export type CreateLabMaterialLotInput = {
+  supplierProductId?: string | null
   kind: 'SupplierLot' | 'PreparedReagent'
   materialDefinitionId: string | null
   newMaterialName: string | null

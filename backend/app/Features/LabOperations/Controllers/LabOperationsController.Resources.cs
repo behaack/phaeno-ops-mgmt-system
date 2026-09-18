@@ -40,6 +40,10 @@ public sealed partial class LabOperationsController
         if (kind == LabMaterialLotKind.PreparedReagent
             && (request.SupplierId.HasValue || !string.IsNullOrWhiteSpace(request.NewSupplierName)))
             throw Invalid("material_supplier_not_allowed", "A prepared reagent cannot have a supplier.");
+        if (kind == LabMaterialLotKind.PreparedReagent && request.SupplierProductId.HasValue)
+            throw Invalid("material_product_not_allowed", "Prepared reagents use a material definition, not a supplier product.");
+        var product = kind == LabMaterialLotKind.SupplierLot
+            ? await RequireLotProductAsync(request.SupplierProductId, supplier!.Id, cancellationToken) : null;
         var storageLocation = await ResolveStorageLocationAsync(
             request.StorageLocationId, request.NewStorageLocationName, cancellationToken);
 
@@ -74,6 +78,7 @@ public sealed partial class LabOperationsController
         var lot = new LabMaterialLot(kind, definition.Id, request.LotNumber, supplier?.Id,
             request.ExpirationOrRetestDate, storageLocation.Id,
             request.AvailableQuantity, request.QuantityUnit);
+        if (product is not null) lot.AssignProduct(product.Id, product.SupplierId);
         dbContext.LabMaterialLots.Add(lot);
         foreach (var componentRequest in componentRequests)
         {
@@ -85,6 +90,52 @@ public sealed partial class LabOperationsController
         if (transaction is not null)
             await transaction.CommitAsync(cancellationToken);
         return (await ReadMaterialLotsAsync(cancellationToken)).Single(item => item.Id == lot.Id);
+    }
+
+    [HttpGet("material-lots/products")]
+    public async Task<IReadOnlyList<SupplierCatalogEntryDto>> ReadLotProducts(CancellationToken ct)
+    {
+        await requestContext.RequireAsync(HttpContext, ct, LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
+        return await PreparationMaterialCatalogAsync(ct);
+    }
+
+    [HttpPost("material-lots/{lotId:guid}/product")]
+    public async Task<LabMaterialLotDto> AssignLotProduct(Guid lotId, [FromBody] AssignMaterialLotProductRequest request, CancellationToken ct)
+    {
+        await requestContext.RequireAsync(HttpContext, ct, LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
+        var lot = await dbContext.LabMaterialLots.SingleOrDefaultAsync(l => l.Id == lotId, ct) ?? throw Missing();
+        EnsureVersion(lot.Version, request.Version);
+        if (lot.Kind != LabMaterialLotKind.SupplierLot || lot.SupplierId is not Guid supplierId)
+            throw Invalid("material_product_not_allowed", "Only purchased lots can be assigned a catalog product.");
+        if (lot.SupplierProductId.HasValue)
+            throw Conflict("material_product_already_assigned", "The lot already has a product assignment. Refresh its details.");
+        var product = await RequireLotProductAsync(request.SupplierProductId, supplierId, ct);
+        lot.AssignProduct(product.Id, product.SupplierId);
+        await dbContext.SaveChangesAsync(ct);
+        return (await ReadMaterialLotsAsync(ct)).Single(l => l.Id == lot.Id);
+    }
+
+    private async Task<LabSupplierProduct> RequireLotProductAsync(Guid? productId, Guid supplierId, CancellationToken ct)
+    {
+        var product = await dbContext.LabSupplierProducts.SingleOrDefaultAsync(p => p.Id == productId && p.SupplierId == supplierId && p.IsActive, ct)
+            ?? throw Invalid("material_product_invalid", "Select an active product from the lot's supplier.");
+        if (!await dbContext.LabSuppliers.AnyAsync(s => s.Id == supplierId && s.IsActive, ct)
+            || !await dbContext.LabProductTypes.AnyAsync(t => t.Id == product.ProductTypeId && t.IsActive, ct))
+            throw Invalid("material_product_unavailable", "Select a product with an active supplier and product type.");
+        return product;
+    }
+
+    [HttpPost("material-lots/{lotId:guid}/reconcile-quantity")]
+    public async Task<LabMaterialLotDto> ReconcileMaterialQuantity(Guid lotId, [FromBody] ReconcileMaterialQuantityRequest request, CancellationToken ct)
+    {
+        var actor = await requestContext.RequireAsync(HttpContext, ct, LabRole.Supervisor, LabRole.OperationsAdministrator);
+        var lot = await dbContext.LabMaterialLots.SingleOrDefaultAsync(l => l.Id == lotId, ct) ?? throw Missing();
+        EnsureVersion(lot.Version, request.Version);
+        try { lot.ReconcileQuantity(request.CountedQuantity, request.Reason, actor.User.Id, DateTime.UtcNow); }
+        catch (ArgumentException e) { throw Invalid("material_reconciliation_invalid", e.Message); }
+        catch (InvalidOperationException e) { throw Conflict("material_reconciliation_unavailable", e.Message); }
+        await dbContext.SaveChangesAsync(ct);
+        return (await ReadMaterialLotsAsync(ct)).Single(l => l.Id == lot.Id);
     }
 
     [HttpPost("material-lots/{lotId:guid}/qc")]

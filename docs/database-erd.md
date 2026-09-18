@@ -1,5 +1,11 @@
 # `phaeno_ops` database ERD
 
+## Reusable Lab steps - September 17, 2026
+
+Additive migration `AddReusableLabSteps` introduces `lab_ops.lab_steps` (audited identity, optimistic concurrency and retirement) and `lab_ops.lab_step_versions` (immutable approved scoped definition, author, independent approval/override). The version-to-step FK restricts deletion; `(lab_step_id, step_version)` and identity `key` are unique. The generated diagrams below enumerate every field.
+
+Protocol `definition_json.steps[].labStepVersionId` is a logical reference to an exact retained catalog version, validated on draft save/approval. Each occurrence keeps its own stable `key` and resolved content in the protocol snapshot; no operational lookup follows mutable catalog data. `attachmentKind` controls PDF presentation (`none`, `qc`, `preparation`; absent retains legacy inference). `attachmentRequired` requires a PDF for performed batch entries, including repeats/corrections; false or absent remains optional. These fields are retained inside versioned definition JSON; no relational columns change. Existing embedded definitions and execution evidence are unchanged. No backfill or deduplication is performed.
+
 ## Shared output command metadata (2026-09-17)
 
 No schema change. lab_ops.lab_preparation_records.details_json retains outputs input rows and outputResults with memberId, outputContainerId and generated barcode for shared output creation. Each row still produces a separate existing lab container linked to its own specimen attempt/source and preparation member. Existing output-confirmation and library-eligibility fields retain their meaning.
@@ -36,9 +42,9 @@ Generated from [PSeqOperationsDbContextModelSnapshot.cs](../backend/app/Migratio
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
 | `commercial_ops` | 136 | 2189 | 347 |
-| `lab_ops` | 39 | 480 | 66 |
+| `lab_ops` | 41 | 506 | 68 |
 | `website` | 5 | 49 | 4 |
-| **Total** | **181** | **2720** | **417** |
+| **Total** | **183** | **2746** | **419** |
 
 ## `public` schema
 
@@ -2978,7 +2984,7 @@ erDiagram
 
 ## `lab_ops` schema
 
-### Domain
+### Domain (1)
 
 ```mermaid
 erDiagram
@@ -3063,6 +3069,33 @@ erDiagram
         uuid updated_by_user_id "nullable"
         bigint version "not null"
     }
+    lab_step_versions {
+        uuid id PK "not null"
+        character_varying_2000 approval_override_reason "nullable"
+        timestamp_with_time_zone approved_at_utc "nullable"
+        uuid approved_by_user_id "nullable"
+        timestamp_with_time_zone authored_at_utc "not null"
+        uuid authored_by_user_id "not null"
+        jsonb definition_json "not null"
+        uuid lab_step_id FK,UK "not null"
+        character_varying_50 status "not null"
+        integer step_version UK "not null"
+    }
+    lab_steps {
+        uuid id PK "not null"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id "nullable"
+        character_varying_2000 description "nullable"
+        character_varying_100 key UK "not null"
+        integer latest_version "not null"
+        character_varying_255 name "not null"
+        timestamp_with_time_zone retired_at_utc "nullable"
+        uuid retired_by_user_id "nullable"
+        character_varying_1000 retirement_reason "nullable"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
     lab_supplier_products {
         uuid id PK "not null"
         timestamp_with_time_zone created_at "not null"
@@ -3087,18 +3120,6 @@ erDiagram
         uuid updated_by_user_id "nullable"
         bigint version "not null"
     }
-    lab_work_timing_changes {
-        uuid id PK "not null"
-        character_varying_2000 customer_safe_note "nullable"
-        timestamp_with_time_zone expected_at_utc "not null"
-        character_varying_4000 internal_note "nullable"
-        uuid lab_work_order_id FK "not null"
-        uuid notification_id FK "nullable"
-        timestamp_with_time_zone occurred_at_utc "not null"
-        timestamp_with_time_zone previous_expected_at_utc "not null"
-        character_varying_100 reason "not null"
-        uuid timing_changed_by_user_id FK "not null"
-    }
     lab_work_orders ||--o{ lab_attempt_command_receipts : "lab_work_order_id"
     lab_service_workflow_versions ||--o{ lab_preparation_batches : "lab_service_workflow_version_id"
     lab_tray_formats ||--o{ lab_preparation_batches : "lab_tray_format_id"
@@ -3113,8 +3134,27 @@ erDiagram
     lab_work_orders ||--o{ lab_specimen_attempts : "lab_work_order_id"
     lab_specimen_attempts o|--o{ lab_specimen_attempts : "previous_attempt_id"
     lab_containers ||--o{ lab_specimen_attempts : "source_container_id"
+    lab_steps ||--o{ lab_step_versions : "lab_step_id"
     lab_product_types ||--o{ lab_supplier_products : "product_type_id"
     lab_suppliers ||--o{ lab_supplier_products : "supplier_id"
+```
+
+### Domain (2)
+
+```mermaid
+erDiagram
+    lab_work_timing_changes {
+        uuid id PK "not null"
+        character_varying_2000 customer_safe_note "nullable"
+        timestamp_with_time_zone expected_at_utc "not null"
+        character_varying_4000 internal_note "nullable"
+        uuid lab_work_order_id FK "not null"
+        uuid notification_id FK "nullable"
+        timestamp_with_time_zone occurred_at_utc "not null"
+        timestamp_with_time_zone previous_expected_at_utc "not null"
+        character_varying_100 reason "not null"
+        uuid timing_changed_by_user_id FK "not null"
+    }
     lab_work_orders ||--o{ lab_work_timing_changes : "lab_work_order_id"
     order_notifications o|--o{ lab_work_timing_changes : "notification_id"
     users ||--o{ lab_work_timing_changes : "timing_changed_by_user_id"
@@ -3217,9 +3257,12 @@ erDiagram
         character_varying_1000 qc_failure_reason "nullable"
         date qc_performed_on "nullable"
         jsonb qc_results_json "nullable"
+        jsonb quantity_history_json "not null"
+        character_varying_2000 quantity_hold_reason "nullable"
         character_varying_50 quantity_unit "not null"
         uuid storage_location_id FK "not null"
         uuid supplier_id FK "nullable"
+        uuid supplier_product_id FK "nullable"
         timestamp_with_time_zone updated_at "not null"
         uuid updated_by_user_id "nullable"
         bigint version "not null"
@@ -3263,6 +3306,7 @@ erDiagram
     lab_material_definitions ||--o{ lab_material_lots : "material_definition_id"
     lab_storage_locations ||--o{ lab_material_lots : "storage_location_id"
     lab_suppliers o|--o{ lab_material_lots : "supplier_id"
+    lab_supplier_products o|--o{ lab_material_lots : "supplier_product_id"
     lab_material_lots ||--o{ lab_prepared_reagent_components : "component_material_lot_id"
     lab_material_lots ||--o{ lab_prepared_reagent_components : "prepared_material_lot_id"
 ```
@@ -3708,3 +3752,17 @@ erDiagram
     web_orders o|--o{ web_notification_deliveries : "web_order_id"
     users o|--o{ web_notification_processing_controls : "updated_by_user_id"
 ```
+
+### Preparation resource JSON fields (September 17)
+
+The existing Lab step/protocol version definition JSON capture entries additionally support `material`, `equipment`, and `output` types, `includeTracking`, and material `quantityBasis` (`perSample` or `total`). Preparation record command JSON retains `step.resourceEntries`: field key, optional member id, product id, resource id/version, manual name/vendor, quantity/unit, location and run reference. Server-resolved capture strings retain vendor/product, lot/equipment and output identity snapshots in execution evidence. Existing material consumption/equipment usage records link to the preparation record; output containers retain attempt/source lineage. Material lots now have a nullable supplier_product_id foreign key to lab_supplier_products; purchased lots are explicitly assigned and prepared lots remain product-free. A check constraint enforces the lot kind. Product-configured execution requires the exact product; prepared-material execution requires the exact material definition. Existing historical lots are not backfilled automatically.
+
+Material configuration clarification: the existing capture JSON now has a nested `material` snapshot with `name`, optional `vendor`, `productId`, `supplierId`, and `productNumber`, or `materialDefinitionId` for an internal prepared reagent (camelCase JSON). Catalog-backed snapshots are resolved at configuration save and retained in approved/pinned definitions. Execution accepts only quantity/unit and requested lot, rejecting run-time product/name/vendor substitutions. Existing consumption rows and frozen protocol definitions are retained; new material fields with lot tracking must select a product or prepared definition.
+
+Material capture JSON also retains the existing `unit` property for configured quantity units. No new database column or migration is required. New authoring requires a material unit; frozen legacy captures can omit it. Execution rejects overrides and requires matching lot units.
+
+### Material amount exceptions and stock reconciliation (September 17)
+
+Migration `20260918000907_AddMaterialQuantityReconciliation` adds nullable `quantity_hold_reason` (2000 characters) and non-null `quantity_history_json` (jsonb, default []) to `lab_ops.lab_material_lots`. History entries retain action, before/after balance, reason, optional preparation record ID, actor ID and UTC time. These IDs are retained audit values, not new foreign keys. Existing optimistic concurrency and audit stamping apply.
+
+Preparation `details_json.step.resourceEntries` retains optional `amountUnknown`, `exceptionReason` and `disposition` for member overrides of shared material fields. Effective capture strings preserve the sample amount or unknown status and reason/outcome. Known consumption uses existing rows and preparation-record links; unknown use retains a hold without inventing a numeric deduction. No historical records or approved definitions are rewritten.

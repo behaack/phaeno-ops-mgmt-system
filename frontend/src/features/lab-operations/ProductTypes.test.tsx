@@ -40,7 +40,7 @@ describe('product type management', () => {
     expect(screen.getByRole('link', { name: 'Reagent' }).getAttribute('href')).toContain(productTypesFixture[2].id)
   })
   it('defaults new types to non-kit use and requires a description', async () => {
-    mount(); fireEvent.click(screen.getByRole('button', { name: '+ New product type' }))
+    mount(); fireEvent.click(screen.getByRole('button', { name: 'New product type' }))
     fireEvent.change(screen.getByLabelText(/Type name/), { target: { value: 'Enzyme' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     expect(await screen.findByText('Enter a description.')).toBeTruthy()

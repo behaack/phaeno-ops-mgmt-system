@@ -1,5 +1,10 @@
 # Library preparation batches and connected workflow
 
+## Reusable Lab steps and configuration preview - September 17, 2026
+
+Implemented locally: reusable scoped step versions, independent approval/retirement, exact-version protocol occurrences with explicit adoption and preserved legacy snapshots, plus disposable previews using Library prep capture/resource/output forms. See [implementation and acceptance status](LAB-STEPS-AND-CONFIGURATION-PREVIEW-PLAN.md#local-implementation-checkpoint). The additive local migration is applied. Production rollout remains separate.
+
+
 Planned authoring work: [Lab steps and configuration preview](LAB-STEPS-AND-CONFIGURATION-PREVIEW-PLAN.md). Requirements are agreed; implementation is pending.
 
 ## Shared library output creation (2026-09-17)

@@ -1640,7 +1640,7 @@
       "title": "Service workflows, protocol control, and execution",
       "summary": "Use Lab configurations for protocols, workflows, and tray formats; assemble preparation batches and record shared or tube evidence.",
       "order": 54,
-      "reviewedAt": "2026-09-15",
+      "reviewedAt": "2026-09-17",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1673,7 +1673,7 @@
       "title": "Materials and equipment",
       "summary": "Qualify lots and equipment, record consumption and use, and preserve traceability.",
       "order": 55,
-      "reviewedAt": "2026-09-11",
+      "reviewedAt": "2026-09-17",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [

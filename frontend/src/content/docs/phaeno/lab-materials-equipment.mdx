@@ -4,16 +4,22 @@ Materials and equipment records show what was used, in what quantity, and whethe
 
 ## Receive and qualify material lots
 
+In **Materials**, select a lot's name and lot number to open its details. The page shows material identity, supplier, available quantity and unit, storage, expiration or retest date, and the recorded QC status, date and failure reason. Prepared reagents also show their recorded source lots and quantities; select a source lot to inspect its details. Use **Back to Materials** to return to the list.
+
 Choose the lot kind first:
 
-- **Supplier lot** uses a controlled material identity, supplier, supplier lot number, and storage location.
+- **Supplier lot** uses a controlled material identity, supplier, catalog product, supplier lot number, and storage location. Select the exact product from the chosen supplier; changing the supplier clears the product selection.
 - **Prepared reagent** uses a controlled material identity, Phaeno lot number, storage location, and one or more source component lots. It does not use a supplier.
 
-Select existing controlled records when available. If a material, supplier, or storage location is new, choose the corresponding **Create a new…** option and enter its name in the focused modal. The entered name returns as the selected option in the lot form. The new reference is created with the lot, and POMS assigns an immutable key to a new material. Retired reference records are retained for history but are not available for new lots.
+Select existing controlled records when available. If a material or storage location is new, choose the corresponding **Create a new…** option and enter its name in the focused modal. The entered name returns as the selected option in the lot form. The new reference is created with the lot, and POMS assigns an immutable key to a new material. Retired reference records are retained for history but are not available for new lots.
 
 Record the available quantity and unit. Use **Expiration or retest date** when applicable; this is a date-only field and the lot remains valid through the end of that date. Exact time-sensitive use-by control is not represented by this field.
 
 New lots show **QC: Pending**. A laboratory supervisor uses **Record QC**, confirms the QC date, and selects **Pass QC** or **Fail QC** in the modal. A failed outcome requires a reason. Passing QC makes the lot eligible for controlled work when its expiration or retest date, availability, and other rules are also satisfied. Failing QC keeps the lot blocked. POMS also retains the operator and server-recorded audit time.
+
+For an older purchased lot without a product, open its details and choose **Actions → Assign product**. Confirm the product from the recorded supplier against the lot label before saving. The assignment cannot be replaced. Add or activate missing suppliers/products in **Suppliers & products** first. Historical stock use is retained.
+
+A configured product in Library prep offers only eligible lots assigned to that exact product. An internally prepared reagent offers only prepared lots of its configured material definition. Unlinked purchased lots cannot satisfy a product-specific step. If no lots are offered, check the identity assignment, QC, expiry and available stock.
 
 Only lots with **Passed** or **Approved exception** QC may be consumed in controlled work.
 
@@ -26,6 +32,14 @@ When a prepared reagent is created, select each exact source lot and quantity. E
 Start the assigned execution before recording consumption. Select the exact lot, quantity, and compatible unit required by the protocol. The portal blocks unit mismatches and consumption above the available quantity.
 
 Consumption is a durable scientific fact. Do not reduce or delete it to make inventory appear correct. Use an approved correction, adjustment, or exception that preserves the original entry and reason.
+
+## Reconcile an uncertain lot quantity
+
+When a sample's material amount is recorded as **Amount unknown**, POMS retains that fact and places the lot's quantity on hold. Known amounts from the same entry are deducted normally. The last recorded balance remains visible, but the lot cannot supply further work, including prepared reagents, until it is reconciled. Passing QC does not clear a quantity hold.
+
+A Supervisor or Operations Administrator opens the lot and chooses **Reconcile quantity**. Verify the physical remaining stock, enter the **Counted remaining quantity** in the lot's unit, and explain the reconciliation. The balance may be zero and cannot exceed the last recorded balance. Saving retains the before/after quantities, reason, operator and time in **Quantity history**, then clears the quantity hold. Earlier sample amounts remain unknown; reconciliation does not invent a sample quantity or undo known consumption.
+
+If the affected tube is also held, a Supervisor must separately review it and choose **Resolve hold** from its Library prep actions, with a reason. Reconcile its uncertain lot first. Neither inventory reconciliation nor resolving a hold makes a failed attempt usable again.
 
 ## Register equipment
 

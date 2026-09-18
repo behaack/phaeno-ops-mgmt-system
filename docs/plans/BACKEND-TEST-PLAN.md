@@ -1,5 +1,10 @@
 # Backend Test Plan
 
+## Material lot identity matching (2026-09-17)
+
+See [implementation plan](MATERIAL-LOT-PRODUCT-LINK-PLAN.md). Added domain/Postgres regressions for exact product/definition matching, unlinked and wrong-supplier assignment, immutable assignment, stale versions, configured prepared identity, and rejected wrong-lot consumption with no stock change. Updated material creation fixtures for required products and added frontend helper/schema checks for same-vendor wrong products, unlinked lots, prepared identity and unusable stock. Automated tests are authored/compiled but not executed. Build, typecheck, scoped lint, migration review and local read-only UI checks form this checkpoint; populated operational writes remain unverified.
+
+
 ## Shared output command checkpoint (2026-09-17)
 
 Extended preparation PostgreSQL reference journey for multi-output atomic validation, duplicate/foreign members, invalid row quantities/unit/location, stale version, individual lineage/barcodes, no automatic physical confirmation, replay without duplicate containers/records, and existing-output rejection. Existing held-job/access-denied matrix includes outputs. Tests authored and compiled, not executed.
@@ -1954,3 +1959,26 @@ September 14 CRM terminal-history fix: added `DisqualifiedLeadRejectsProfileAndS
 September 14 ten-case checkpoint: SampleShippingTransactionPostgresTests proves nested shipping packing joins the outer transaction, holds the advisory lock against another connection, rolls back correctly and owns a standalone transaction. Failed before fix; passes with the two real routing checks. Independent final PostgreSQL readback verifies exact main quote/shipment/slot/work counts, distinct Trial decision actors, revoked temporary authority and no accidental kit request/invoice. DerivedReadiness explicitly enabled for staged gate acceptance. [Full evidence and limits](../testing/runs/2026-09-14-ten-case-execution.md).
 
 September 15 LAB-09 provider/database continuation: historical V1 payload replay returns the identical acknowledgment with one authorization version, receipt and event; changed-payload command reuse is rejected. V2 Customer finalization preserves the legacy order snapshots and produces exact one-/three-tube crosswalks. Completed historical execution remains unlinked after adoption denial. Independent PostgreSQL assertions pass. [Evidence and synthetic-precondition boundaries](../testing/runs/2026-09-15-policy-history-and-shipping-access-uat.md). No backend source or automated backend tests changed.
+
+
+## Reusable Lab steps and configuration preview - September 17, 2026
+
+Added LabStepTests and LabStepPostgresTests: one scoped catalog step, author/editor separation, immutable approval, retirement retention, independent repeated-occurrence evidence, exact-version pinning, rejected overrides, retained retired references, blocked new retired occurrences and stale parent version. Tests are authored, not executed. API role denial and concurrent retirement/approval races remain acceptance scenarios; no production acceptance is inferred.
+
+LabStepTests adds hidden/optional/required/permitted-skip report policy and legacy QC inference regressions. Automated tests remain unexecuted under repository policy.
+
+Added partial-coverage rejection and no-record-write assertion to the PostgreSQL preparation journey. Automated tests remain unexecuted under repository policy.
+
+### Inline resource fields and sample exception disclosure (September 17)
+
+LabStepTests: resource scopes, optional tracking and material quantity basis; LabPreparationPostgresTests.PreparationInlineMaterialUseIsAtomicAndIdempotent: rejected step rollback, unavailable lot, per-sample stock total and receipt replay. Authored; not executed. Product/supplier matching, corrections and output atomicity need connected acceptance before release.
+
+### Material identity at configuration
+
+Configured material snapshot resolution and retention added to LabStepPostgresTests. Inline material integration coverage now checks rejection of runtime identity replacement and retained configured name. Tests authored, not executed.
+
+Material unit configuration follow-up: require authoring units, preserve them in save/reopen, show fixed runtime labels, reject tracked lots or submitted units that differ, and keep legacy definitions runnable. Regression cases added/updated; not executed. Manual preview checks cover symbol insertion and report placement after step-entry fields.
+
+### Material amount exceptions and quantity reconciliation
+
+Authored domain coverage for shared material scope, total-batch rejection, uncertain stock holds and reconciliation without replenishment. PostgreSQL preparation journeys cover actual failed-tube consumption, unknown stock and tube holds, mandatory reasons, late-validation transaction rollback, request replay, and reconcile-before-resume. Solution build compiles these cases; they are not executed under the repository's request-only test policy. Role denial, stale reconciliation and concurrent consumption still need execution acceptance.

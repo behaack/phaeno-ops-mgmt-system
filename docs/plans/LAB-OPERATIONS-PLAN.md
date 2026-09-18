@@ -1,5 +1,20 @@
 # Lab Operations Plan
 
+## Product-linked material lots — September 17, 2026
+
+Implementation scope and verification are tracked in [Material lot identity and Library prep matching](MATERIAL-LOT-PRODUCT-LINK-PLAN.md). This supersedes the earlier vendor-only lot matching.
+
+## Material lot details — September 17, 2026
+
+Make the material name/lot number in Materials open a stable, view-first `/lab-operations/materials/$materialLotId` route. Show the existing material identity, lot kind, supplier, stock/unit, storage, expiration/retest date and recorded QC status/date/failure reason. Prepared reagents show component quantities and links to their source lot details. Include Back to Materials and refresh, loading, unavailable-session, permission, error/retry and missing-record states. Reuse the authorized dashboard query; no new API, schema or data writes. Existing list QC actions remain in place. Update Phaeno help. Automated tests are deferred for this read-only presentation change; verify typecheck, scoped lint and connected navigation.
+
+Verification: typecheck and scoped lint pass. Connected local inspection confirmed both supplied lots, failed QC reason, retained dates/quantities, direct reload and return to Materials. No prepared-reagent fixture was available, so populated component navigation remains unverified. No records were changed.
+
+## Reusable Lab steps and configuration preview - September 17, 2026
+
+Implemented locally: reusable scoped step versions, independent approval/retirement, exact-version protocol occurrences with explicit adoption and preserved legacy snapshots, plus disposable previews using Library prep capture/resource/output forms. See [implementation and acceptance status](LAB-STEPS-AND-CONFIGURATION-PREVIEW-PLAN.md#local-implementation-checkpoint). The additive local migration is applied. Production rollout remains separate.
+
+
 Planned authoring work: [Lab steps and configuration preview](LAB-STEPS-AND-CONFIGURATION-PREVIEW-PLAN.md). Requirements are agreed; implementation is pending.
 
 ## Physical tray identity — September 17, 2026
@@ -31,6 +46,10 @@ Product Owner approved a reason-required, audited alternative to independent pro
 Implementation: additive optional override reason in the existing transition contracts and version DTOs, one nullable reason column on each protocol/workflow version table, no new roles or dependencies. Apply the additive migration only to the verified local development database. Update ERD, help and regression coverage; build/type/lint checks at the checkpoint, no test execution unless requested. No automatic approval or production promotion of any laboratory record.
 
 Implemented locally. Migration `20260916235423_AddLabApprovalOverrides` adds only two nullable reason columns and is applied to verified `localhost:5432/phaeno_ops`. ERD regenerated with its existing manual outcome notes preserved. Release solution/test-project build, TypeScript and scoped lint passed. Regression tests are added/compiled but not executed. Signed-in UI inspection confirmed the author-admin menu entry, exact-definition review, reason field, unchecked attestation, disabled initial submit and footer. The current RNA readiness v2 review is open for the owner; no approval was submitted. Production/multi-role/stale-response acceptance remains pending. No Git mutation or deployment.
+
+## Supplier navigation placement — September 17, 2026
+
+Move **Suppliers & products** to the start of the resource group, immediately after the separator and before Materials, followed by Equipment. Lab configurations retains its separate group. Use sentence case for the destination title, tab, return link and guidance. Routes, permissions and catalog/material data remain unchanged. This supersedes the original placement below Lab configurations.
 
 ## Product types and reagent vendors — September 16, 2026
 

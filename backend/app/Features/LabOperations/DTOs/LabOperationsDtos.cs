@@ -65,7 +65,7 @@ public sealed record LabMaterialLotDto(
     DateOnly? ExpirationOrRetestDate, Guid StorageLocationId, string StorageLocation,
     decimal AvailableQuantity, string QuantityUnit, string QcDisposition,
     DateOnly? QcPerformedOn, string? QcFailureReason,
-    IReadOnlyList<LabPreparedReagentComponentDto> Components, long Version);
+    IReadOnlyList<LabPreparedReagentComponentDto> Components, long Version, Guid? SupplierProductId = null, string? ProductName = null, string? QuantityHoldReason = null, string QuantityHistoryJson = "[]");
 
 public sealed record LabEquipmentDto(
     Guid Id, string AssetCode, string Name, string EquipmentType, string Location,
@@ -215,7 +215,8 @@ public sealed record CreateMaterialLotRequest(
     Guid? SupplierId, string? NewSupplierName,
     Guid? StorageLocationId, string? NewStorageLocationName,
     DateOnly? ExpirationOrRetestDate, decimal AvailableQuantity, string QuantityUnit,
-    IReadOnlyList<CreatePreparedReagentComponentRequest>? Components);
+    IReadOnlyList<CreatePreparedReagentComponentRequest>? Components, Guid? SupplierProductId = null);
+public sealed record AssignMaterialLotProductRequest(Guid SupplierProductId, long Version);
 public sealed record MaterialQcRequest(
     string Disposition, DateOnly PerformedOn, string? FailureReason,
     string ResultsJson, long Version);
@@ -242,3 +243,5 @@ public sealed record ResolveExceptionRequest(string ResolutionNote, long Version
 public sealed record ScientificApprovalRequest(string ReleaseDefinitionKey,
     int ReleaseDefinitionVersion, string? PermittedQcProjectionJson, long WorkOrderVersion,
     Guid? ResultOutputPackageId = null);
+
+public sealed record ReconcileMaterialQuantityRequest(decimal CountedQuantity, string Reason, long Version);

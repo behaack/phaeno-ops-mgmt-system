@@ -1,5 +1,17 @@
 # Playwright E2E Test Plan
 
+## Material lot identity matching (2026-09-17)
+
+Connected local manual checkpoint after API restart: supplier-filtered product creation choices, resetting product on supplier change, existing lot's supplier-filtered Assign product modal, and exact-product fictional preview passed. Preview automatically used the lot unit, calculated 10 µL × 2 samples = 20 µL and validated without saving. Temporary configuration edits were discarded. No operational records changed; no console errors observed. Prepared-reagent catalog was empty, so populated prepared-lot UI acceptance remains pending along with actual write/rollback acceptance. No automated tests were run.
+
+See [implementation plan](MATERIAL-LOT-PRODUCT-LINK-PLAN.md). Added domain/Postgres regressions for exact product/definition matching, unlinked and wrong-supplier assignment, immutable assignment, stale versions, configured prepared identity, and rejected wrong-lot consumption with no stock change. Updated material creation fixtures for required products and added frontend helper/schema checks for same-vendor wrong products, unlinked lots, prepared identity and unusable stock. Automated tests are authored/compiled but not executed. Build, typecheck, scoped lint, migration review and local read-only UI checks form this checkpoint; populated operational writes remain unverified.
+
+
+## Material lot detail navigation (2026-09-17)
+
+Manual acceptance: open a material lot by its linked identifier, inspect identity/stock/storage/dates and QC (including failed reason), refresh/direct-load the detail URL and return to Materials. Inspect prepared-reagent source lot links when populated. Permission, mock-session, error/retry and missing-record rendering reviewed in source. No automated tests added or executed for this read-only detail view; typecheck and scoped lint at the checkpoint.
+
+
 ## Shared output acceptance checkpoint (2026-09-17)
 
 Pending signed-in acceptance: from Shared evidence create outputs for all participating tubes with shared unit/location and one override, verify per-tube barcodes and retained step draft, retry an uncertain response without duplicates, verify existing/failed tubes are not recreated, and confirm each physical output before final protocol completion. Do not use synthetic evidence as physical or scientific acceptance.
@@ -2634,3 +2646,32 @@ September 16 sample ordering: digit-by-digit sample IDs, biological-source group
 September 16 inline tube scanning: updated scanner and integrated Job regressions for one active row-local field, save/advance, inline errors, paging and collapse draft retention, remount focus and completion. Manual acceptance includes keyboard/scanner Enter, row scrolling, narrow screens and reduced motion. Tests updated but not run (not requested).
 
 September 16 scan completion: verify Done scanning is absent before the final saved match, appears in the Samples and shipping header on completion, receives focus, and closes matching without losing the sample review list. Updated integrated completion and host-header coverage; tests not run.
+
+
+## Reusable Lab steps and configuration preview - September 17, 2026
+
+Configuration authoring acceptance: create a fictional Lab step; draft scoped captures/QC/attachment/resources; preview unsaved values, invalid and valid entries, direct step selection, skip/repeat/correction, reset and return without saving configuration. Check no operational API request on all preview controls, including file selection, resources and outputs. Independently approve; compose a protocol containing two occurrences; approve protocol separately. New step version/adoption/retirement must leave approved protocol and existing batches unchanged. Verify low-role write denial, stale edits, usage, list-state restoration, narrow/light/dark layouts, Escape and focus return. No automated E2E run was requested; these scenarios are not represented as passed.
+
+September 17 local manual checkpoint: restarted API catalog read, TEST ONLY identity creation, version-1 draft save and saved preview passed. Batch capture default, all fictional tubes selected, shared optional QC report and local successful validation observed. Editor child-route navigation fixed and rechecked. Approval/adoption/retirement, race/role variants remain pending; no operational batch was modified.
+
+Scientific entry controls: verify symbols at a caret and over selected text, keyboard menu selection/focus return, common and custom units, Unicode display in unsaved preview, and discard without changing saved configuration. Updated existing label expectations for Step record and batch entry terminology. Automated tests are not requested for this checkpoint.
+
+Report configuration acceptance: inspect hidden, optional and required settings in unsaved preview; verify new uploads are required on performed repeats/corrections, allowed skips remain file-free, and API rejects missing required files. Live API acceptance requires the rebuilt local API. Automated tests remain unexecuted under repository policy.
+
+Verify all-tube automatic coverage in preview and live recording; inspect exclusion reasons and confirm failure updates coverage without clearing other entries. Partial/stale submissions must be rejected by the API. Automated tests remain unexecuted under repository policy.
+
+### Inline resource fields and sample exception disclosure (September 17)
+
+Manual configuration preview: batch-only has no sample cards; shared starts with Record exception unchecked; toggle shows collapsed cards and turning off drops hidden overrides. Material product/manual entry, optional tracked lot/equipment selection and per-sample quantity totals; output defaults and overrides. No operational writes during preview. Live save with inventory/output rollback and receipt replay remains a separate connected acceptance gate.
+
+### Material identity at configuration
+
+Preview acceptance now requires vendor/product assignment in configuration, read-only identity at runtime, and optional lot selection with configured-vendor filtering. Verify no runtime material/vendor/product controls or operational mutations in preview.
+
+Material unit configuration follow-up: require authoring units, preserve them in save/reopen, show fixed runtime labels, reject tracked lots or submitted units that differ, and keep legacy definitions runnable. Regression cases added/updated; not executed. Manual preview checks cover symbol insertion and report placement after step-entry fields.
+
+Attestation simplification: update form/preview cases to submit without a coverage checkbox; retain configured operator validation and verify its position after the report. Check disabled confirmation and skipped entries omit the attestation, and changed coverage clears operator confirmation. Tests updated but not run under repository policy.
+
+### Material exceptions acceptance
+
+Use only unsaved configuration preview for connected screen inspection: shared per-sample material scope; batch quantity and fixed units; Record exception reveals collapsed cards; zero or unknown, required reason and disposition; clearing overrides. Operational acceptance is separate: failed-tube consumption, unknown lot unavailable across all use paths, stale/unauthorized reconciliation rejection, supervisor reconciliation and hold resolution, idempotent replay and transaction rollback. No operational records may be changed merely to claim preview acceptance. Automated E2E and populated operational write checks remain unexecuted unless authorized.

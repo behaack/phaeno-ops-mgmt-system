@@ -1,5 +1,19 @@
 # Frontend Test Plan
 
+## Material lot identity matching (2026-09-17)
+
+See [implementation plan](MATERIAL-LOT-PRODUCT-LINK-PLAN.md). Added domain/Postgres regressions for exact product/definition matching, unlinked and wrong-supplier assignment, immutable assignment, stale versions, configured prepared identity, and rejected wrong-lot consumption with no stock change. Updated material creation fixtures for required products and added frontend helper/schema checks for same-vendor wrong products, unlinked lots, prepared identity and unusable stock. Automated tests are authored/compiled but not executed. Build, typecheck, scoped lint, migration review and local read-only UI checks form this checkpoint; populated operational writes remain unverified.
+
+
+## Material lot detail navigation (2026-09-17)
+
+Manual acceptance: open a material lot by its linked identifier, inspect identity/stock/storage/dates and QC (including failed reason), refresh/direct-load the detail URL and return to Materials. Inspect prepared-reagent source lot links when populated. Permission, mock-session, error/retry and missing-record rendering reviewed in source. No automated tests added or executed for this read-only detail view; typecheck and scoped lint at the checkpoint.
+
+
+## Supplier catalog presentation (2026-09-17)
+
+Updated existing supplier/product/type test selectors for **Product name** and the standard **New…** button labels. No new tests for the cosmetic card-header change; automated execution remains deferred. Verification uses frontend typecheck, scoped lint and visual inspection.
+
 ## Shared output form checkpoint (2026-09-17)
 
 Authored PreparationOutputsDialog regressions for required per-tube quantities, shared defaults/overrides, single submission, individual barcode results, existing/failed tubes, stable rows after uncertain response, API compatibility and cancel. Typecheck and scoped lint at the checkpoint; automated tests not run.
@@ -2391,3 +2405,32 @@ September 16 inline tube scanning: updated scanner and integrated Job regression
 September 16 scan completion: verify Done scanning is absent before the final saved match, appears in the Samples and shipping header on completion, receives focus, and closes matching without losing the sample review list. Updated integrated completion and host-header coverage; tests not run.
 
 September 16 sample row alignment: updated matching-status expectations for combined count/progress labels and preserved explicit loading/unavailable states. Fixed-width desktop ID column, wrapping IDs and stacked narrow layout are visual changes; no new tests added or executed.
+
+
+## Reusable Lab steps and configuration preview - September 17, 2026
+
+Added ConfigurationPreview.test.tsx for production-form validation, reset/disposal, direct conditional-step inspection, output-allocation isolation and action buttons that do not submit the enclosing editor. Updated protocol-definition roundtrips to retain occurrence/capture keys; added rename/reorder/provenance coverage. Tests are authored, not executed. Verify catalog search/paging, draft authoring, exact version adoption, independent approval/override, retirement/usage, and keyboard/focus/theme/reflow manually.
+
+September 17 clarification: new preparation definitions/captures/QC default to batch; barcode fields remain tube-scoped. Existing missing-scope validation coverage explicitly clears scopes before asserting rejection. Tests remain authored, not executed.
+
+Scientific entry controls: verify symbols at a caret and over selected text, keyboard menu selection/focus return, common and custom units, Unicode display in unsaved preview, and discard without changing saved configuration. Updated existing label expectations for Step record and batch entry terminology. Automated tests are not requested for this checkpoint.
+
+PreparationStepDialog tests add required-file preview validation and explicit exclusion despite a QC gate. Automated tests remain unexecuted under repository policy.
+
+Updated failure/coverage expectations for the read-only summary, automatic inclusion and exclusion after failure. Automated tests remain unexecuted under repository policy.
+
+### Inline resource fields and sample exception disclosure (September 17)
+
+PreparationStepDialog: batch-only hiding, optional shared exceptions, clearing unchecked overrides and mixed individual/shared visibility. preparation-resource-fields tests: manual material, invalid product/quantity, common output values, individual overrides and retained outputs. Updated; not executed. Preview browser acceptance covers batch/shared scope and product selection.
+
+### Material identity at configuration
+
+Configured vendor/product/material definition roundtrip, missing configuration validation, read-only runtime material and quantity-only payload coverage added/updated. Tests authored, not executed.
+
+Material unit configuration follow-up: require authoring units, preserve them in save/reopen, show fixed runtime labels, reject tracked lots or submitted units that differ, and keep legacy definitions runnable. Regression cases added/updated; not executed. Manual preview checks cover symbol insertion and report placement after step-entry fields.
+
+Attestation simplification: update form/preview cases to submit without a coverage checkbox; retain configured operator validation and verify its position after the report. Check disabled confirmation and skipped entries omit the attestation, and changed coverage clears operator confirmation. Tests updated but not run under repository policy.
+
+### Material amount exceptions
+
+Authored helper cases for common amounts plus sample overrides, unknown/zero amounts, required reason/outcome, aggregate available stock, and ignored unchecked overrides. Dialog regression covers hidden sample cards, explicit material override, required reason/outcome, zero quantity, unknown-only hold/fail choices and clearing discarded overrides. Existing configured units, final report/attestation and batch-only presentation remain covered. Tests authored and typechecked, not executed.

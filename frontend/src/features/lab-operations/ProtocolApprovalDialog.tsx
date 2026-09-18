@@ -23,7 +23,7 @@ import { deserializeProtocolDefinition, protocolDefinitionFormSchema } from './p
 
 type ProtocolVersion = LabProtocol['versions'][number]
 
-const captureScopeLabels = { tube: 'Tube — record individually', batch: 'Batch — one shared observation', shared: 'Shared value with tube exceptions' }
+const captureScopeLabels = { tube: 'Sample — record individually', batch: 'Batch — same entry for all selected samples', shared: 'Same entry with sample exceptions' }
 const qcScopeLabels = { tube: 'Tube — assess individually', batch: 'Batch — applies to all covered tubes', shared: 'Shared outcome with tube exceptions' }
 
 export function ProtocolApprovalDialog({
@@ -118,8 +118,8 @@ export function ProtocolApprovalDialog({
                   {step.equipmentTypes ? <ReviewDetail label="Equipment" value={step.equipmentTypes} /> : null}
                   {step.captures.length > 0 ? (
                     <ReviewDetail
-                      label="Captured values"
-                      value={step.captures.map((capture) => `${capture.label} (${capture.type}${capture.required ? ', required' : ''}${capture.unit ? `, ${capture.unit}` : ''}${capture.type === 'choice' ? `; choices: ${capture.choices}` : ''}${definition.preparationBatchEnabled && capture.scope ? `; evidence scope: ${captureScopeLabels[capture.scope]}` : ''}${capture.sourceTube ? '; must match the selected source tube' : ''})`).join('; ')}
+                      label="Fields to record"
+                      value={step.captures.map((capture) => `${capture.label} (${capture.type}${capture.required ? ', required' : ''}${capture.unit ? `, ${capture.unit}` : ''}${capture.type === 'choice' ? `; choices: ${capture.choices}` : ''}${definition.preparationBatchEnabled && capture.scope ? `; evidence scope: ${captureScopeLabels[capture.scope]}` : ''}${capture.sourceTube ? '; must match the selected source tube' : ''}${capture.material ? `; material: ${capture.material.name}; vendor: ${capture.material.vendor || 'Not specified'}${capture.material.productNumber ? `; product: ${capture.material.productNumber}` : ''}` : ''}${capture.type === 'material' ? `; quantity: ${capture.quantityBasis === 'total' ? 'total batch' : 'per sample'}; ${capture.includeTracking ? 'tracked lot' : 'configured material, no stock use'}` : ''}${capture.type === 'equipment' ? `; ${capture.includeTracking ? 'equipment barcode included' : 'name only'}` : ''})`).join('; ')}
                     />
                   ) : null}
                   {step.qcEnabled ? <ReviewDetail label="QC acceptance criteria" value={step.qcCriteria} /> : null}
@@ -129,6 +129,7 @@ export function ProtocolApprovalDialog({
                       {[step.repeatable ? 'May repeat' : null, step.operatorConfirmation ? 'Confirmation required' : null].filter(Boolean).join(' · ')}
                     </p>
                   ) : null}
+                  {step.attachmentKind && step.attachmentKind !== 'none' ? <p className="text-sm">{step.attachmentRequired ? 'Required' : 'Optional'} batch PDF: {step.attachmentKind === 'qc' ? 'QC report' : 'Preparation report or worksheet'}</p> : null}
                 </li>
               ))}
             </ol>

@@ -53,6 +53,9 @@ public sealed record LabProtocolDefinition
         {
             if (step is null) throw new ArgumentException("Every protocol step must contain a definition.");
             ValidateKey(step.Key, keys, "Step");
+            if (step.AttachmentKind is not (null or "none" or "qc" or "preparation")) throw new ArgumentException("Choose a QC report, preparation worksheet, or no attachment.");
+            if (step.AttachmentRequired && (step.AttachmentKind is not ("qc" or "preparation") || !PreparationBatchEnabled))
+                throw new ArgumentException("A required report needs a report type and preparation batch recording.");
             RequiredText(step.Name, 160, "Step name");
             RequiredText(step.Instructions, 4000, $"{step.Name}: instructions");
             if (step.Condition is not null)
@@ -68,6 +71,7 @@ public sealed record LabProtocolDefinition
             if (step.Captures is null || step.Captures.Count > 30)
                 throw new ArgumentException($"{step.Name}: at most 30 typed captures are allowed.");
             var captureKeys = new HashSet<string>(StringComparer.Ordinal);
+            if (step.Captures.Count(c => c?.Type == "output") > 1) throw new ArgumentException("A step can define one library output field per sample.");
             foreach (var capture in step.Captures)
             {
                 if (capture is null) throw new ArgumentException("Every capture must contain a definition.");
@@ -77,14 +81,28 @@ public sealed record LabProtocolDefinition
                     throw new ArgumentException($"{capture.Label}: explicitly choose Batch, Tube or Shared with exceptions scope.");
                 if (PreparationBatchEnabled && capture.Type == "barcode" && capture.Scope != "tube")
                     throw new ArgumentException("Barcode identity must be confirmed separately for each tube.");
-                if (capture.Type is not ("number" or "text" or "date" or "choice" or "fileReference" or "barcode"))
+                if (capture.Type is not ("number" or "text" or "date" or "choice" or "fileReference" or "barcode" or "material" or "equipment" or "output"))
                     throw new ArgumentException($"{capture.Label}: the capture type is not supported.");
+                if (capture.IsResource && (!PreparationBatchEnabled || (capture.Scope is not ("batch" or "tube") && !(capture.Type == "material" && capture.Scope == "shared" && capture.QuantityBasis != "total")) || capture.Type == "output" && capture.Scope != "tube"))
+                    throw new ArgumentException("Linked resource fields require batch preparation; outputs are recorded for each sample.");
+                if (capture.QuantityBasis is not null && (capture.Type != "material" || capture.QuantityBasis is not ("perSample" or "total")))
+                    throw new ArgumentException("Only material fields can specify per-sample or total quantity.");
+                if (capture.IncludeTracking && capture.Type is not ("material" or "equipment"))
+                    throw new ArgumentException("Lot or equipment tracking applies only to material or equipment fields.");
+                if (capture.Material is not null)
+                {
+                    if (capture.Type != "material") throw new ArgumentException("Only material fields can define a material.");
+                    RequiredText(capture.Material.Name, 1000, "Configured material name");
+                    if (capture.Material.Vendor?.Length > 255 || capture.Material.ProductNumber?.Length > 100) throw new ArgumentException("The configured material details are too long.");
+                    if (capture.Material.MaterialDefinitionId == Guid.Empty || capture.Material.MaterialDefinitionId.HasValue && (capture.Material.ProductId.HasValue || capture.Material.SupplierId.HasValue)) throw new ArgumentException("Prepared materials require a definition and cannot also select a supplier product.");
+                    if (capture.Material.ProductId == Guid.Empty || capture.Material.SupplierId == Guid.Empty || capture.Material.ProductId.HasValue != capture.Material.SupplierId.HasValue) throw new ArgumentException("Catalog materials require valid product and supplier identities.");
+                }
                 if (capture.SourceTube && capture.Type != "barcode")
                     throw new ArgumentException("Only barcode captures can verify the selected source tube.");
                 if (capture.Unit is not null)
                 {
                     RequiredText(capture.Unit, 50, "Capture unit");
-                    if (capture.Type != "number") throw new ArgumentException("Only number captures can specify a unit.");
+                    if (capture.Type is not ("number" or "material")) throw new ArgumentException("Only number and material captures can specify a unit.");
                 }
                 if (capture.Type == "choice")
                 {
@@ -149,6 +167,23 @@ public sealed record LabProtocolDefinition
 
 public sealed record LabProtocolStepDefinition
 {
+    public Guid? LabStepVersionId { get; init; }
+    public string? AttachmentKind { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool AttachmentRequired { get; init; }
+    [JsonIgnore]
+    public string? PreparationReportProperty => AttachmentKind == "none" ? null
+        : AttachmentKind == "preparation" ? "preparationReport"
+        : AttachmentKind == "qc" || QcGate is not null ? "qcReport"
+        : Captures.Any(c => LabProtocolEvidence.IsPreparationReportReference(this, c)) ? "preparationReport" : null;
+
+    public void ValidatePreparationReport(bool hasReport, string outcome)
+    {
+        if (hasReport && (PreparationReportProperty is null || outcome != "recorded"))
+            throw new ArgumentException("This step does not accept a report for this entry.");
+        if (AttachmentRequired && outcome == "recorded" && !hasReport)
+            throw new ArgumentException("Attach the required report before saving the step record.");
+    }
     public required string Key { get; init; }
     public required string Name { get; init; }
     public required string Instructions { get; init; }
@@ -166,6 +201,13 @@ public sealed record LabProtocolStepDefinition
 
 public sealed record LabProtocolCaptureDefinition
 {
+    [JsonIgnore]
+    public bool IsResource => Type is "material" or "equipment" or "output";
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public LabConfiguredMaterial? Material { get; init; }
+    public string? QuantityBasis { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool IncludeTracking { get; init; }
     public string? Scope { get; init; }
     public required string Key { get; init; }
     public required string Label { get; init; }
@@ -183,3 +225,10 @@ public sealed record LabProtocolQcGate
     public required string Criteria { get; init; }
     public required IReadOnlyList<string> Outcomes { get; init; }
 }
+
+public sealed record LabConfiguredMaterial(string Name,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Vendor = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] Guid? ProductId = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] Guid? SupplierId = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? ProductNumber = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] Guid? MaterialDefinitionId = null);
