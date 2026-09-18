@@ -32,4 +32,11 @@ Storage, scanning and Clerk identity settings are preserved. The public Website 
 
 ## Deployment evidence
 
-Pending: application commit, API workflow/migration evidence, matching Vercel production build, public health probes and final documentation commit. Record exact identities after deployment; a local build alone is not production proof.
+- Application commit: `b4daafcf160d30d98578dd14c769821e8eed98ca`, pushed on `codex/portal-documentation-search-release` and independently matched to the remote branch.
+- API: [Deploy Portal Green run 35404132011](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/35404132011) succeeded. Running image `sha-b4daafcf160d-run-35404132011-1` verified the exact source revision; deployment completed at 2026-09-18 23:08 UTC.
+- Backup: `pre-migration-20260918T230748Z-b4daafcf160d`; restore and cleanup checks passed, and encrypted dump/key checksums passed. Logs confirm both named migrations were applied successfully.
+- UI: [Production deployment 3c4Lea6moZmJwhVVRHYGUcchrGuq](https://vercel.com/cadexgenomics/phaeno-ops-mgmt-system/3c4Lea6moZmJwhVVRHYGUcchrGuq) is Ready, built using Production settings from the same application commit and assigned to `portal.phaenobiotech.com`. Both deployment checks passed. The source preview was `GEP5fNcgG1Vv9QmL8EDf7pvpAHrG`.
+- Post-release public checks: API health 200/healthy, database ping 204, Portal root 200, Portal API proxy health 200. Fresh signed-in navigation rendered POMS and the sentence-case Administration menu in the expected order. Lab settings displayed its six sidebar pages; Holiday calendar loaded its correct unconfigured state. Jobs displayed Active jobs / Closed jobs, collapsed Filters, visible Clear filters and the default summary. No operational records or configuration were saved during this smoke check.
+- The packaged 56-guide corpus check passed with hash `f0d565a56576806318b917649fd2ca028ca80e94beda9de273fb4f92f66b6f95`. Committed whitespace check passed.
+
+An initial UI promotion attempt was rejected by automatic approval review while the API deployment was running. No promotion was made then. After successful API/migration verification, production promotion proceeded successfully. Full populated operational acceptance remains separate from these release checks. Only the local generated private search index remains outside the release. A documentation-only follow-up records this evidence; it does not change the deployed application identity.
