@@ -1,14 +1,12 @@
 # Operations and production-readiness boundary
 
-## Evidence governance — local checkpoint
+## Evidence governance and result-to-tube capture — deployed September 19, 2026
 
-The owner approved indefinite internal evidence preservation, a mandatory scientific minimum and independent Supervisor review of on-behalf entry/performer-time changes. These are implemented locally in [evidence governance](plans/LAB-EVIDENCE-GOVERNANCE-CONTRACT.md). `RequireScientificEvidence` and `RequireResultTraceability` now default on under the September 19 immediate-enforcement decision; migration `20260919050429_AddLabEvidenceGovernance` was applied only to verified local development and isolated reference databases. The cutoff/in-flight decision is settled: all current data are test data, no backfill, and the current requirements apply to all subsequent approvals/releases. Real producer/bench evidence, hosted recovery and production deployment remain gates.
+The owner approved indefinite internal evidence preservation, a mandatory scientific minimum and independent Supervisor review of on-behalf entry/performer-time changes. These requirements and the [result-to-tube capture contract](plans/LAB-RESULT-LINEAGE-CONTRACT.md) are now deployed on matching API/Portal source `9ca9820014af07aa7280bd57a73cb66f5ff6044b`. Both `RequireScientificEvidence` and `RequireResultTraceability` are explicitly enabled in production. The owner classified prior operational records as test data, approved no backfill, and required enforcement for subsequent approvals/releases.
 
-## Result-to-tube capture — local implementation, September 18, 2026
+The [September 19 database reset/release record](operations/database-rebase-20260919.md) supersedes the earlier local-only migration checkpoint. The clean local and production databases use baseline `20260919153100_InitialPSeqOperationsRebased`, incorporating the retired additive capture/governance migrations. Production users/customer/CRM data and reviewed configuration were preserved; local retains only the owner and configuration. Old databases and encrypted recovery points remain protected.
 
-The [phase 1 capture contract](plans/LAB-RESULT-LINEAGE-CONTRACT.md) adds sequencing outputs, exact analysis inputs and immutable result bindings. Migration `20260919015602_AddLabResultLineage` has been applied only to local `phaeno_ops`. `PSeqOrderToCash:RequireResultTraceability` defaults on; each voluntarily linked result nevertheless keeps its own requirement. No production setting was changed. Before enabling new-work enforcement, deploy compatible producers/readers, execute lineage and existing result/Trial regressions, confirm real provider identities/mappings and physical handoffs, and verify the approved immediate cutoff in the deployed runtime, including any environment overrides. Existing unknown results are not automatically backfilled. This phase introduces no new cleanup policy or customer-facing investigation report.
-
-The [investigation recovery rehearsal](testing/runs/2026-09-18-investigation-restore.md) proves a local synthetic database/private-file restore, including original report checksums and result-to-tube relationships. Supporting PDF downloads and saved investigation downloads now reject mismatched bytes/manifests. A hosted recovery rehearsal must still cover the actual storage backend, backup scheduling, concurrent writes, retention/holds and all supported evidence pathways. The new check adds no migration or production activation.
+All 930 backend cases have passing evidence across the full suite and targeted follow-ups; 1,061 UI unit tests and 176 eligible browser cases passed. The [investigation recovery rehearsal](testing/runs/2026-09-18-investigation-restore.md) and a fresh baseline restore prove synthetic database/private-file recovery, including report checksums and result-to-tube relationships. The hosted backup helper also restored the actual new production baseline and checked file references. Production had no real scientific file evidence at reset; populated scientific recovery, real producer/bench handoffs and business sign-off remain separate acceptance gates. The execution record tracks the remaining administrator restart of local PostgreSQL and signed-in browser checks.
 
 ## Repository implementation and rollout evidence
 
@@ -44,8 +42,7 @@ records its 2026-08-29 additive release. The
 records the completed July public cutover and standalone-runtime retirement.
 The [September review closure](plans/REVIEW-GAP-CLOSURE-2026-09-05.md) records
 local implementation, migrations, and verification for the later recovery work.
-This document reconciliation performs no deployment, shared migration, live
-provider delivery, or current production flag/configuration verification.
+Those historical reconciliation records did not themselves perform deployment or live provider acceptance; the September 19 execution record above supplies the current reset/release and runtime-flag evidence.
 
 The [feature inventory](feature-readiness.md) reconciles current implementation
 with the approved commercial roadmap. The [September 7 second release](plans/PORTAL-POMS-CONSISTENCY-SECOND-PASS-2026-09-07.md#production-release-evidence)

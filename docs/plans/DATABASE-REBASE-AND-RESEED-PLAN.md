@@ -1,6 +1,6 @@
 # Database rebase and selective preservation
 
-Status: execution in progress, September 19, 2026. After settling the preservation choices below, the owner instructed **Execute**. That instruction authorizes this reset, migration replacement, local and production cutover, and the matched release. The original databases remain the rollback sources until verification and activation are complete.
+Status: production reset/release activated and local database switched, September 19, 2026. Final local service restart and signed-in acceptance are tracked in the execution record. After settling the preservation choices below, the owner instructed **Execute**. That instruction authorizes this reset, migration replacement, local and production cutover, and the matched release. The original databases remain protected rollback sources; their cleanup is not authorized by this execution.
 
 This is a new reset project. The [July restructuring/reset record](PSEQ-OPERATIONS-MIGRATION-PLAN.md) remains historical evidence and does not authorize this production reset.
 
@@ -25,7 +25,7 @@ Use one reviewed reusable configuration seed in both environments, with environm
 | Production | All users/access, customers and required company/contact relationships, complete approved CRM sales/pipeline data | Reviewed reusable configuration |
 | Local | Only bhaack@phaenobiotech.com and its required organization/access; no customer or CRM sales data | The same reviewed configuration content, including CRM pipeline/stage definitions |
 
-Still to review before execution: exact configuration entries and conflicting local/production values; any retained CRM links to discarded orders/Trials; currently unclassified Website/provisioning records and supporting files; the maintenance window and duration of rollback retention. These are inventory decisions, not permission to discard unclassified data.
+The execution inventory and exact dispositions are recorded in [the reset runbook](../operations/database-rebase-20260919.md). Website customer inquiries were preserved, the production PSeq price retained inactive for review, and exact test-only definitions excluded. CRM handoff dependencies were retained without replay. Keep rollback sources until a separate explicit cleanup decision; no automatic retention deadline was invented.
 
 ## Current repository findings
 

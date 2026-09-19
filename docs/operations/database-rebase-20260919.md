@@ -1,6 +1,6 @@
 # September 19, 2026 database rebase
 
-Status: rehearsal verified; activation and release pending. Owning authorization and scope: [database reset plan](../plans/DATABASE-REBASE-AND-RESEED-PLAN.md), followed by the owner's **Execute** instruction.
+Status: production reset and matching API/Portal release activated; local database switched. Local PostgreSQL service restart and signed-in acceptance remain open as recorded below. Owning authorization and scope: [database reset plan](../plans/DATABASE-REBASE-AND-RESEED-PLAN.md), followed by the owner's **Execute** instruction.
 
 ## Targets and recovery boundary
 
@@ -41,8 +41,9 @@ Prepared manifests contain 127 local rows and 211 production rows. Production in
 - Transactional local and production candidate imports passed exact row comparison. Retained production data matched a fresh live snapshot after normalizing timestamp representations.
 - Guard probes passed: wrong target, raw snapshot, missing foreign-key dependency with complete rollback, valid import, exact replay, conflicting replay, refusing a baseline on populated data, preserved rows after that refusal, and detecting post-import drift.
 - UI unit tests: 1,061 passed. Lint, typecheck and documentation check passed. Release build caught and corrected one non-UTF-8 separator in the performance-review component; the subsequent build passed.
-- Browser run: 174 passed initially; the two keyboard-order cases needed the new performer/time controls in their expected tab order and both passed after correction. Two mobile print cases are intentionally desktop-only.
-- Backend full-suite verification and the final release identity are recorded below when complete. The existing Unix symlink case requires Linux and is explicitly excluded on Windows.
+- Browser final full run: **176 passed, 2 intentionally skipped** desktop-only print cases on mobile. Two outdated keyboard-order expectations were repaired to include the performer/time controls.
+- Backend full run: **927 passed, 1 failed, 2 skipped** of 930. The single failure was the legacy scientific-review fixture, which omitted its explicit legacy controller policy after the default changed to enforcement. After repair, that case and the previously skipped real database/private-file investigation restore both passed in a separate PostgreSQL database. The Unix-only symlink case passed separately in Linux with networking disabled. Thus all 930 cases have passing evidence across the full run and focused follow-ups; this is not represented as one zero-failure run. No unresolved automated failure remains.
+- EF pending-model check, PostgreSQL 17/18 comparisons, release builds and whitespace checks passed. Browser fixtures simulate authentication/providers; these checks do not establish physical bench or real provider acceptance.
 
 ## Cutover procedure
 
@@ -62,4 +63,24 @@ For local rollback, restore only the former database connection value. Do not ov
 
 ## Activation record
 
-Pending successful final tests, matched release and verified cutover.
+- Application source: `9ca9820014af07aa7280bd57a73cb66f5ff6044b`, pushed on `codex/portal-documentation-search-release`.
+- API image: `phaeno-portal-green-api:sha-9ca9820014af-rebase-20260919`; image ID `sha256:fb0116d0fa51e4590390e50db7aa1e2441b2856dec6603b30321d2a8faad303e`. Activation completed at **2026-09-19 16:37:35 UTC**, with a **20-second** API cutover pause.
+- Portal: production deployment [`dpl_5mQmuBRxNeBCh7Rfp4XufXCZst91`](https://vercel.com/cadexgenomics/phaeno-ops-mgmt-system/5mQmuBRxNeBCh7Rfp4XufXCZst91), rebuilt with Production settings from the same exact source and assigned to `portal.phaenobiotech.com`. Vercel reported Ready at 09:38 PDT.
+- Final write-frozen preservation comparison passed. The activated production database then passed the exact package verification before browser activity. Local package SHA-256: `d018db29b7d12f97ffc5fc943cbde557405ae9d4ed4d4bf527096e235d4a9051`; production: `6b9c1cc49deff2e0142068b484a0e1ee7e77a0f9803705e270bae0549381a5e2`.
+- Both databases contain only baseline `20260919153100_InitialPSeqOperationsRebased`. The old local database remains intact; the old production database is retained under its dated name with connections disabled. No old database or file volume was deleted.
+- Production PostgreSQL runs with `track_commit_timestamp=on`; both scientific-evidence and result-traceability environment overrides are true. Bootstrap email was cleared in each environment to prevent startup reprovisioning of preserved accounts; credentials, memberships and external identity bindings were retained.
+- Fresh API health and Portal health/root returned HTTP 200; database ping returned HTTP 204; the public Website search read endpoint returned HTTP 200. No contact form or notification was submitted as a probe.
+- Local development configuration now points to `phaeno_ops_clean_20260919`, and the API/frontend were started on their normal local endpoints. Exactly one owner account and its dependencies were verified before startup. A read-only Clerk lookup independently confirmed the retained owner's external binding.
+
+### Recovery evidence
+
+- Pre-cutover coordinated database/files backup: `snapshot-20260919T163155Z-8aa3bab0-4de1-4d2e-9080-60db23d6cffd`, restore and cleanup verified; API pause **7 seconds**. Its encrypted envelope, key wrapper and receipt were copied off-server and checksums verified.
+- The final write-frozen database dump was independently encrypted to the existing migration-backup recipient. Its encrypted envelope was copied off-server, decrypted with the existing private key, and matched original SHA-256 `55b195eddb0997f14d102525807388228731a5a522cc35aea6728deff669f5ee`. Temporary plaintext decryption/passphrase files were removed. The local encrypted backup likewise passed an exact decryption round trip.
+- Post-rebase coordinated backup: `snapshot-20260919T164729Z-60508cfc-e72f-489f-ab70-9b18b9938e52`; the actual production helper successfully restored the new baseline and verified files/references and cleanup, with a 7-second API pause. Both coordinated snapshots had zero real file references; their populated synthetic file fixture passed. This proves the backup path works after the rebase, not a real populated scientific-evidence recovery or a scheduled trigger.
+- Existing scheduled-backup recipient and scheduler were left unchanged. The canonical database name remains the scheduler target. No manual run is counted as scheduled-run evidence.
+
+### Remaining acceptance
+
+- The local instance still reported `track_commit_timestamp=off` and a September 13 server start after the first reported restart. `ALTER SYSTEM` has saved the required setting, but this session cannot restart the Windows service without administrator rights. An administrator restart of `postgresql-x64-18` and an `on` verification remain required.
+- Production sign-in renders correctly, but no signed-in production session was available for live CRM/settings navigation. The existing local browser session shows Access unavailable; the retained owner's database identity and its Clerk binding match. The session's identity has not been established, so no identity was rebound or broader access granted to make a test pass. A fresh owner sign-in remains required.
+- Configure real scientific definitions, approved workflows, supported sample types and destinations before enabling the retained inactive PSeq catalog item. Real producer, bench, physical handoff and business acceptance are separate from reset/release completion.
