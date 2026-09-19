@@ -1,6 +1,7 @@
 namespace PhaenoPortal.Test;
 
 using System.Text;
+using PSeq.Operations.Laboratory.Domain;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -211,7 +212,11 @@ public sealed class GovernedResultRetentionPostgresTests
             var department = scope.Organization.Departments.Single();
             scope.Order = new(scope.Organization.Id, department.Id, $"RET-{Guid.NewGuid():N}", "Retention fixture", null, 1, false, "RNA", "Frozen", "Safe", "Synthetic");
             scope.Sample = new(scope.Order.Id, "Synthetic sample", "RNA", "Synthetic source", 1, "tube", "Frozen", "Safe", null, null, null, "[]");
-            scope.Package = new(scope.Organization.Id, scope.Order.Id, Guid.NewGuid(), scope.Sample.Id, 1, null,
+            var work = new LabWorkOrder(Guid.NewGuid(), 1, LabAuthorizationSource.CommercialOrder,
+                scope.Order.Id, scope.Organization.Id, OrderServiceKeys.PSeqLabService, 1, "retention-test", scope.Order.OrderNumber);
+            work.Specimens.Add(new LabSpecimen(work.Id, scope.Sample.Id));
+            db.Add(work);
+            scope.Package = new(scope.Organization.Id, scope.Order.Id, work.Id, scope.Sample.Id, 1, null,
                 "synthetic", Guid.NewGuid().ToString("N"), Guid.NewGuid().ToString("N"), "{}", new string('A', 64), 1);
             scope.Artifact = new(scope.Package.Id, "report", "synthetic.txt", "text/plain", 16, new string('A', 64), $"fixture/{Guid.NewGuid():N}");
             scope.Artifact.BeginScan(); scope.Artifact.CompleteScan(true, null, DateTime.UtcNow);

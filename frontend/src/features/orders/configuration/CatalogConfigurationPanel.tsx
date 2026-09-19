@@ -1,12 +1,16 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Link, useNavigate } from '@tanstack/react-router';
+import { LabServiceOfferingsPanel } from './LabServiceOfferingsPanel';
+import { useOrderDraftGuard } from '../use-order-draft-guard';
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import {
   getOrderErrorMessage,
+  getOrderConfiguration,
   saveCatalogItem,
   type OrderConfiguration,
 } from "#/api/order-management";
@@ -23,7 +27,6 @@ import {
 import { Checkbox } from "#/components/ui/checkbox";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -78,10 +81,16 @@ const empty: Values = {
 
 export function CatalogConfigurationPanel({
   configuration,
+  catalogItemId,
+  apiEnabled = true,
 }: {
   configuration: OrderConfiguration;
+  catalogItemId?: string;
+  apiEnabled?: boolean;
 }) {
   const client = useQueryClient();
+  const navigate = useNavigate();
+  const actionRef = useRef<HTMLButtonElement | null>(null);
   const [editing, setEditing] = useState<CatalogItem | null | undefined>(
     undefined,
   );
@@ -96,21 +105,35 @@ export function CatalogConfigurationPanel({
         currency: values.currency.toUpperCase(),
         version: editing?.version,
       }),
-    onSuccess: async () => {
+    onError: async () => {
+      try {
+        const fresh = await client.fetchQuery({ queryKey: ['order-configuration'], queryFn: getOrderConfiguration, staleTime: 0 });
+        const current = fresh.catalogItems.find(item => item.id === editing?.id);
+        if (current) { setEditing(current); form.reset(current, { keepDirtyValues: true }); }
+      } catch { /* Keep the original save error and entered values visible. */ }
+    },
+    onSuccess: async (saved) => {
       await client.invalidateQueries({ queryKey: ["order-configuration"] });
       setEditing(undefined);
       form.reset(empty);
+      if (!editing) await navigate({ to: '/order-configuration/catalog/$catalogItemId', params: { catalogItemId: saved.id }, search: { configurationSection: 'catalog' } });
     },
   });
   const labServiceItem = configuration.catalogItems.find(
     (item) => item.isPSeqLabService,
   );
+  const selected = configuration.catalogItems.find(item => item.id === catalogItemId);
+  useOrderDraftGuard(editing !== undefined && form.formState.isDirty, mutation.isPending);
+  function close() {
+    if (!mutation.isPending && (!form.formState.isDirty || window.confirm('Discard unsaved catalog changes?'))) setEditing(undefined);
+  }
   const labServiceReady = Boolean(
     labServiceItem?.isActive &&
     labServiceItem.salesUnit.toLowerCase() === "specimen",
   );
 
   function open(item: CatalogItem | null) {
+    actionRef.current = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null;
     mutation.reset();
     setEditing(item);
     form.reset(
@@ -130,23 +153,38 @@ export function CatalogConfigurationPanel({
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <CardTitle>Commercial catalog</CardTitle>
-              <CardDescription>
-                Phaeno maintains the item codes, sales units, and base prices
-                used to build Customer quotes and accounting source records.
-              </CardDescription>
-            </div>
-            <Button type="button" onClick={() => open(null)}>
-              <Plus data-icon="inline-start" />
-              Add item
-            </Button>
-          </div>
+      {catalogItemId ? <div className="mb-4"><Link className="text-sm text-primary underline" to="/order-configuration" search={{ configurationSection: 'catalog' }}>Back to service catalog</Link></div> : null}
+      {catalogItemId && !selected ? <Alert variant="destructive"><AlertTitle>Service item not found</AlertTitle><AlertDescription>Return to the catalog and select an available item.</AlertDescription></Alert> : selected ? <div className="space-y-5">
+        <Card className="gap-0 py-0">
+          <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">
+            <CardTitle className="min-w-0">{selected.name}</CardTitle>
+            <Button className="col-start-2 row-start-1 justify-self-end" variant="outline" disabled={!apiEnabled} onClick={() => open(selected)}>Edit item</Button>
+            <CardDescription className="col-span-full">{selected.externalItemId}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 p-4">
+            <p className="text-sm">{selected.description || 'No description provided.'}</p>
+            <dl className="grid gap-3 text-sm sm:grid-cols-3">
+              <div><dt className="text-muted-foreground">Base price</dt><dd>{formatMoney(selected.basePrice, selected.currency)}</dd></div>
+              <div><dt className="text-muted-foreground">Sales unit</dt><dd>{selected.salesUnit}</dd></div>
+              <div><dt className="text-muted-foreground">Availability</dt><dd>{selected.isActive ? 'Active' : 'Inactive'}</dd></div>
+            </dl>
+          </CardContent>
+        </Card>
+        {selected.isPSeqLabService ? <LabServiceOfferingsPanel configuration={configuration} apiEnabled={apiEnabled} catalogItemId={selected.id} /> : <p className="text-sm text-muted-foreground">Scientific definitions for direct laboratory ordering currently apply to the PSeq Lab Service item. Kit and assembly configuration remains in its own settings page.</p>}
+      </div> : (
+      <Card className="gap-0 py-0">
+        <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">
+          <CardTitle className="min-w-0">Service catalog</CardTitle>
+          <Button className="col-start-2 row-start-1 justify-self-end" type="button" disabled={!apiEnabled} onClick={() => open(null)}>
+            <Plus data-icon="inline-start" />
+            Add item
+          </Button>
+          <CardDescription className="col-span-full">
+            Phaeno maintains the item codes, sales units, and base prices
+            used to build Customer quotes and accounting source records.
+          </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4">
           {!labServiceReady ? (
             <Alert variant="destructive" className="mb-5">
               <AlertTitle>PSeq Lab Service pricing is not ready</AlertTitle>
@@ -175,13 +213,14 @@ export function CatalogConfigurationPanel({
                   {configuration.catalogItems.map((item) => (
                     <tr key={item.id} className="border-b last:border-0">
                       <td className="py-3 pr-3">
-                        <button
-                          type="button"
+                        <Link
+                          to="/order-configuration/catalog/$catalogItemId"
+                          params={{ catalogItemId: item.id }}
+                          search={{ configurationSection: 'catalog' }}
                           className="cursor-pointer text-left font-medium text-primary hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-                          onClick={() => open(item)}
                         >
                           {item.name}
-                        </button>
+                        </Link>
                         {item.isPSeqLabService ? (
                           <Badge variant="outline" className="ml-2">
                             PSeq Lab Service
@@ -214,12 +253,22 @@ export function CatalogConfigurationPanel({
           )}
         </CardContent>
       </Card>
+      )}
 
       <Dialog
         open={editing !== undefined}
-        onOpenChange={(openState) => !openState && setEditing(undefined)}
+        onOpenChange={(openState) => !openState && close()}
       >
-        <DialogContent>
+        <DialogContent
+          showCloseButton={!mutation.isPending}
+          aria-busy={mutation.isPending}
+          onCloseAutoFocus={event => {
+            if (actionRef.current?.isConnected) {
+              event.preventDefault();
+              actionRef.current.focus();
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle>
               {editing ? "Edit catalog item" : "Add catalog item"}
@@ -234,8 +283,8 @@ export function CatalogConfigurationPanel({
             id="catalog-item-form"
             noValidate
             onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
-            className="grid gap-4 sm:grid-cols-2"
           >
+            <fieldset disabled={mutation.isPending} className="grid gap-4 sm:grid-cols-2">
             <Field
               id="catalog-code"
               label="Stable item code"
@@ -325,6 +374,7 @@ export function CatalogConfigurationPanel({
                 Available for new pricing
               </Label>
             </div>
+            </fieldset>
           </form>
           {mutation.error ? (
             <Alert variant="destructive">
@@ -334,19 +384,18 @@ export function CatalogConfigurationPanel({
                   mutation.error,
                   "Review the item and try again.",
                 )}
+                {' '}Your edits remain; review them alongside the latest saved values before retrying.
               </AlertDescription>
             </Alert>
           ) : null}
           <RequiredDialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline">
+              <Button type="button" variant="outline" onClick={close} disabled={mutation.isPending}>
                 Cancel
               </Button>
-            </DialogClose>
             <Button
               type="submit"
               form="catalog-item-form"
-              disabled={mutation.isPending}
+              disabled={mutation.isPending || !apiEnabled || Boolean(editing && !form.formState.isDirty)}
             >
               {mutation.isPending ? "Saving…" : "Save item"}
             </Button>

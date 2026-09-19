@@ -2110,6 +2110,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 await DbContext.LabSamples.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabServiceSourceGroups.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabServiceOrders.Where(item => orderIds.Contains(item.Id)).ExecuteDeleteAsync();
+                await DbContext.Set<LabServiceSampleType>().Where(item => configuredOfferingIds.Contains(item.LabServiceOfferingId)).ExecuteDeleteAsync();
                 await DbContext.LabServiceOfferings.Where(item => configuredOfferingIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await DbContext.AnalysisDefinitions.Where(item => configuredAnalysisIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await DbContext.OrderSystemConfigurations.Where(item => configuredSystemIds.Contains(item.Id)).ExecuteDeleteAsync();

@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { ChevronDown, FilePenLine, MapPin, Plus, SearchCheck, TestTubeDiagonal } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useForm, type UseFormRegisterReturn } from 'react-hook-form'
@@ -34,6 +35,7 @@ import { ContainerSizesPanel } from './ContainerSizesPanel'
 import type { ShippingSettingsSection } from './shipping-settings-navigation'
 import { instructionPreviewTime, instructionPreviewUnavailable } from './instruction-rule-preview'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
+import { useOrderDraftGuard } from '../use-order-draft-guard'
 
 const codePattern = /^[A-Za-z0-9][A-Za-z0-9_-]*$/
 const positiveOptionalNumber = z.string().refine(
@@ -137,7 +139,8 @@ const emptyRule: RuleValues = {
   internationalCustomsInstructions: '', requiresSeparateShipment: false, effectiveFrom: toLocalDateTime(new Date()), isActive: false,
 }
 
-export function SampleShippingConfigurationPanel({ apiEnabled, section }: { apiEnabled: boolean; section: ShippingSettingsSection | 'sample-types' }) {
+export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTypeId }: { apiEnabled: boolean; section: ShippingSettingsSection | 'sample-types'; sampleTypeId?: string }) {
+  const navigate = useNavigate()
   const [destinationEditor, setDestinationEditor] = useState<SampleShippingDestination | null | undefined>(undefined)
   const [sampleTypeEditor, setSampleTypeEditor] = useState<SampleTypeDefinition | null | undefined>(undefined)
   const [previewRule, setPreviewRule] = useState<SampleShippingInstructionRule | null>(null)
@@ -152,10 +155,11 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section }: { apiE
   const destinations = useMemo(() => latestRevisions(configuration.data?.destinations ?? []), [configuration.data?.destinations])
   const sampleTypes = useMemo(() => latestRevisions(configuration.data?.sampleTypes ?? []), [configuration.data?.sampleTypes])
   const rules = useMemo(() => latestRevisions(configuration.data?.instructionRules ?? []), [configuration.data?.instructionRules])
+  const selectedSampleType = configuration.data?.sampleTypes.find(item => item.id === sampleTypeId)
 
   if (configuration.isLoading) return <p role="status">Loading sample-shipping configuration…</p>
   if (configuration.error) {
-    return <Alert variant="destructive"><AlertTitle>Sample-shipping configuration could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(configuration.error, 'Refresh the configuration and try again.')}</AlertDescription></Alert>
+    return <Alert variant="destructive"><AlertTitle>Sample-shipping configuration could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(configuration.error, 'Refresh the configuration and try again.')} <Button variant="outline" onClick={() => void configuration.refetch()}>Retry</Button></AlertDescription></Alert>
   }
   if (!configuration.data) return null
 
@@ -188,19 +192,23 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section }: { apiE
         </CardContent>
       </Card> : null}
 
-      {section === 'sample-types' ? <Card className="gap-0 py-0">
-        <CardHeader className="border-b bg-muted/50 p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div><CardTitle>Sample types</CardTitle><CardDescription>Shared material, quantity, container, temperature, packaging, labeling, safety, and transit requirements. New revisions start inactive until approved content is ready.</CardDescription></div>
-            <Button type="button" onClick={() => setSampleTypeEditor(null)}><Plus data-icon="inline-start" />Add sample type</Button>
-          </div>
+      {section === 'sample-types' && sampleTypeId ? <>
+        <Link className="text-sm text-primary underline" to="/order-configuration" search={{ configurationSection: 'sample-types' }}>Back to sample types</Link>
+        {selectedSampleType ? <SampleTypeDetails item={selectedSampleType} revisions={configuration.data.sampleTypes.filter(item => item.definitionKey === selectedSampleType.definitionKey)} onCreateRevision={setSampleTypeEditor} /> : <Alert><AlertTitle>Sample type not found</AlertTitle><AlertDescription>Return to Sample types and choose an available record.</AlertDescription></Alert>}
+      </> : null}
+
+      {section === 'sample-types' && !sampleTypeId ? <Card className="gap-0 py-0">
+        <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">
+          <CardTitle className="min-w-0">Sample types</CardTitle>
+          <Button className="col-start-2 row-start-1 justify-self-end" type="button" onClick={() => setSampleTypeEditor(null)}><Plus data-icon="inline-start" />Add sample type</Button>
+          <CardDescription className="col-span-full">Shared material, quantity, container, temperature, packaging, labeling, safety, and transit requirements. New revisions start inactive until approved content is ready.</CardDescription>
         </CardHeader>
         <CardContent className="p-4">
           <div className="divide-y">
             {sampleTypes.map((item) => (
               <div key={item.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2"><span className="font-medium">{item.name}</span><Badge variant="outline">{item.code} · rev {item.revision}</Badge><EffectiveBadge item={item} /></div>
+                  <div className="flex flex-wrap items-center gap-2"><SampleTypeLink item={item} /><Badge variant="outline">{item.code} · rev {item.revision}</Badge><EffectiveBadge item={item} /></div>
                   <p className="mt-2 text-sm">{item.materialClass} · {quantityRange(item)}</p>
                   <p className="mt-1 text-xs text-muted-foreground">{item.temperatureRequirements}</p>
                 </div>
@@ -245,10 +253,76 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section }: { apiE
       {previewRule ? <InstructionPreview key={previewRule.id} rule={previewRule} configuration={configuration.data} onClose={() => setPreviewRule(null)} restoreFocus={() => ruleActionsRef.current?.focus()} /> : null}
 
       <DestinationDialog item={destinationEditor} onClose={() => setDestinationEditor(undefined)} />
-      <SampleTypeDialog item={sampleTypeEditor} onClose={() => setSampleTypeEditor(undefined)} />
+      {sampleTypeEditor !== undefined ? <SampleTypeDialog item={sampleTypeEditor} onClose={() => setSampleTypeEditor(undefined)} onSaved={item => { void navigate({ to: '/order-configuration/sample-types/$sampleTypeId', params: { sampleTypeId: item.id }, search: { configurationSection: 'sample-types' } }) }} /> : null}
       <InstructionRuleDialog configuration={configuration.data} item={ruleEditor} onClose={() => setRuleEditor(undefined)} restoreFocus={() => ruleActionsRef.current?.focus()} />
     </div>
   )
+}
+
+function SampleTypeLink({ item, children }: { item: SampleTypeDefinition; children?: React.ReactNode }) {
+  return <Link
+    to="/order-configuration/sample-types/$sampleTypeId"
+    params={{ sampleTypeId: item.id }}
+    search={{ configurationSection: 'sample-types' }}
+    className="cursor-pointer font-medium text-primary underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+  >{children ?? item.name}</Link>
+}
+
+function SampleTypeDetails({ item, revisions, onCreateRevision }: {
+  item: SampleTypeDefinition
+  revisions: SampleTypeDefinition[]
+  onCreateRevision: (item: SampleTypeDefinition) => void
+}) {
+  const history = [...revisions].sort((a, b) => b.revision - a.revision)
+  const latest = history[0]
+  const requirements = [
+    ['Primary container', item.primaryContainerRequirements],
+    ['Temperature', item.temperatureRequirements],
+    ['Stabilizer', item.stabilizerRequirements],
+    ['Packaging', item.packagingInstructions],
+    ['Customer labeling', item.labelingInstructions],
+    ['Prohibited identifiers', item.prohibitedIdentifiers],
+    ['Safety and hazards', item.safetyRequirements],
+    ['Carrier restrictions', item.carrierRestrictions],
+  ]
+  return <div className="space-y-5">
+    <Card className="gap-0 py-0">
+      <CardHeader className="border-b bg-muted/50 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="break-words text-xl font-semibold">{item.name}</h2>
+            <div className="mt-2 flex flex-wrap items-center gap-2"><Badge variant="outline">{item.code} · revision {item.revision}</Badge><EffectiveBadge item={item} /></div>
+          </div>
+          {latest?.id === item.id ? <Button className="shrink-0" variant="outline" onClick={() => onCreateRevision(item)}><FilePenLine data-icon="inline-start" />Create revision</Button> : null}
+        </div>
+        <CardDescription className="mt-2 whitespace-pre-wrap">{item.description || 'No description provided.'}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4 p-4">
+        {latest && latest.id !== item.id ? <p className="text-sm">You are viewing a historical revision. <SampleTypeLink item={latest}>View latest revision ({latest.revision})</SampleTypeLink>.</p> : null}
+        <dl className="grid gap-4 text-sm sm:grid-cols-2">
+          <div><dt className="text-muted-foreground">Material class</dt><dd>{item.materialClass}</dd></div>
+          <div><dt className="text-muted-foreground">Quantity</dt><dd>{quantityRange(item)}</dd></div>
+          <div><dt className="text-muted-foreground">Maximum transit time</dt><dd>{item.maximumTransitHours == null ? 'Not specified' : `${item.maximumTransitHours} hours`}</dd></div>
+          <div><dt className="text-muted-foreground">Effective period</dt><dd>{formatDateTime(item.effectiveFrom)} to {item.effectiveTo ? formatDateTime(item.effectiveTo) : 'no end date'} (your local time)</dd></div>
+        </dl>
+      </CardContent>
+    </Card>
+    <Card className="gap-0 py-0">
+      <CardHeader className="border-b bg-muted/50 p-4"><CardTitle>Sample requirements</CardTitle></CardHeader>
+      <CardContent className="p-4"><dl className="space-y-5 text-sm">
+        {requirements.map(([label, value]) => <div key={label}><dt className="font-medium">{label}</dt><dd className="mt-1 whitespace-pre-wrap break-words">{value || 'Not specified'}</dd></div>)}
+      </dl></CardContent>
+    </Card>
+    <Card className="gap-0 py-0">
+      <CardHeader className="border-b bg-muted/50 p-4"><CardTitle>Revision history</CardTitle><CardDescription>Each link opens that exact revision. Existing shipments retain their saved instructions.</CardDescription></CardHeader>
+      <CardContent className="p-4"><ul className="divide-y">
+        {history.map(revision => <li key={revision.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
+          <div><SampleTypeLink item={revision}>Revision {revision.revision} · {revision.name}</SampleTypeLink>{revision.id === item.id ? <span className="ml-2 text-xs text-muted-foreground">Viewing</span> : null}<p className="mt-1 text-xs text-muted-foreground">{formatEffectiveRange(revision)}</p></div>
+          <EffectiveBadge item={revision} />
+        </li>)}
+      </ul></CardContent>
+    </Card>
+  </div>
 }
 
 function DestinationDialog({ item, onClose }: { item: SampleShippingDestination | null | undefined; onClose: () => void }) {
@@ -310,7 +384,7 @@ function DestinationDialog({ item, onClose }: { item: SampleShippingDestination 
   )
 }
 
-function SampleTypeDialog({ item, onClose }: { item: SampleTypeDefinition | null | undefined; onClose: () => void }) {
+function SampleTypeDialog({ item, onClose, onSaved }: { item: SampleTypeDefinition | null | undefined; onClose: () => void; onSaved: (item: SampleTypeDefinition) => void }) {
   const client = useQueryClient()
   const form = useForm<SampleTypeValues>({ resolver: zodResolver(sampleTypeSchema), defaultValues: emptySampleType })
   const mutation = useMutation({
@@ -326,9 +400,13 @@ function SampleTypeDialog({ item, onClose }: { item: SampleTypeDefinition | null
       supersedesSampleTypeId: item?.id ?? null,
       supersededVersion: item?.version ?? null,
     }),
-    onSuccess: async () => { await client.invalidateQueries({ queryKey: ['sample-shipping-configuration'] }); onClose() },
+    onSuccess: async (saved) => { await client.invalidateQueries({ queryKey: ['sample-shipping-configuration'] }); allowNavigation(); form.reset(); onClose(); onSaved(saved) },
   })
   const resetMutation = mutation.reset
+  const allowNavigation = useOrderDraftGuard(item !== undefined && form.formState.isDirty, mutation.isPending)
+  function close() {
+    if (!mutation.isPending && (!form.formState.isDirty || window.confirm('Discard unsaved sample-type changes?'))) onClose()
+  }
 
   useEffect(() => {
     if (item === undefined) return
@@ -337,10 +415,11 @@ function SampleTypeDialog({ item, onClose }: { item: SampleTypeDefinition | null
   }, [form, item, resetMutation])
 
   return (
-    <Dialog open={item !== undefined} onOpenChange={(open) => { if (!open) onClose() }}>
-      <DialogContent className="sm:max-w-3xl">
+    <Dialog open={item !== undefined} onOpenChange={(open) => { if (!open) close() }}>
+      <DialogContent className="sm:max-w-3xl" showCloseButton={!mutation.isPending} aria-busy={mutation.isPending}>
         <DialogHeader><DialogTitle>{item ? `Create ${item.code} revision ${item.revision + 1}` : 'Add sample type'}</DialogTitle><DialogDescription>Describe approved shipment preparation requirements. Do not activate a material type until scientific and operational review is complete.</DialogDescription></DialogHeader>
-        <form id="sample-type-form" noValidate className="grid gap-5 px-1 sm:grid-cols-2" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
+        <form id="sample-type-form" noValidate onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
+          <fieldset disabled={mutation.isPending} className="grid gap-5 px-1 sm:grid-cols-2">
           <Field label="Sample-type code" id="sample-type-code" required error={form.formState.errors.code?.message}><Input id="sample-type-code" disabled={Boolean(item)} {...form.register('code')} /></Field>
           <Field label="Name" id="sample-type-name" required error={form.formState.errors.name?.message}><Input id="sample-type-name" {...form.register('name')} /></Field>
           <Field label="Description" id="sample-type-description" error={form.formState.errors.description?.message} full><TextArea id="sample-type-description" rows={3} registration={form.register('description')} /></Field>
@@ -359,9 +438,10 @@ function SampleTypeDialog({ item, onClose }: { item: SampleTypeDefinition | null
           <Field label="Carrier restrictions" id="sample-type-carrier" error={form.formState.errors.carrierRestrictions?.message} full><TextArea id="sample-type-carrier" rows={3} registration={form.register('carrierRestrictions')} /></Field>
           <Field label="Effective from" id="sample-type-effective" required error={form.formState.errors.effectiveFrom?.message}><Input id="sample-type-effective" type="datetime-local" {...form.register('effectiveFrom')} /></Field>
           <div className="flex items-center gap-2"><Checkbox id="sample-type-active" checked={form.watch('isActive')} onCheckedChange={(value) => form.setValue('isActive', value === true, { shouldDirty: true })} /><Label htmlFor="sample-type-active" className="cursor-pointer font-normal">Active for packet resolution</Label></div>
+          </fieldset>
         </form>
         {mutation.error ? <SaveError title="Sample-type revision was not saved" error={mutation.error} /> : null}
-        <RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" form="sample-type-form" disabled={mutation.isPending}>{mutation.isPending ? 'Saving revision…' : item ? 'Create revision' : 'Add sample type'}</Button></RequiredDialogFooter>
+        <RequiredDialogFooter><Button type="button" variant="outline" onClick={close} disabled={mutation.isPending}>Cancel</Button><Button type="submit" form="sample-type-form" disabled={mutation.isPending}>{mutation.isPending ? 'Saving revision…' : item ? 'Create revision' : 'Add sample type'}</Button></RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )

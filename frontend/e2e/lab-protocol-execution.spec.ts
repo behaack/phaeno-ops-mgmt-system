@@ -50,6 +50,7 @@ async function setup(page: Page, conflict = false) {
     refresh()
     if (url.pathname.includes('/executions/')) return route.fulfill({ json: envelope(url.pathname.endsWith('/transition') ? data.execution : data) })
     if (url.pathname.endsWith('/attempts')) return route.fulfill({ json: envelope({ workOrderId: data.workOrderId, jobName: 'TRAINING-JOB', workOrderVersion: 1, policyKey: null, workflowName: 'Training workflow', workflowVersion: 1, canOperate: true, canAdoptPolicy: false, specimens: [], stages: [{ id: data.execution.labServiceWorkflowStageId, sequence: 1, name: 'Synthetic library preparation', requirement: 'Required', protocolVersionId: data.execution.labProtocolVersionId }] }) })
+    if (url.pathname.endsWith('/deadline')) return route.fulfill({ json: envelope({ summary: { job: { isComplete: false, firstDeliveredAtUtc: null, dueAtUtc: null } }, changes: [] }) })
     if (url.pathname.includes('/work-orders/')) return route.fulfill({ json: envelope({ workOrder: { id: data.workOrderId, commercialOrderNumber: 'TRAINING-JOB', status: 'Processing', version: 1, labServiceWorkflowVersionId: 'workflow', serviceKey: 'pseq-lab-service' }, specimens: [], containers: [], executions: [data.execution], libraries: [], exceptions: [], scientificApprovals: [] }) })
     return route.fulfill({ json: envelope({ workOrders: [], protocols: [], serviceWorkflows: [], marketedServices: [], materialLots: [], materialDefinitions: [], suppliers: [], storageLocations: [], equipment: [], batches: [], roleAssignments: [] }) })
   })

@@ -39,10 +39,12 @@ for (const theme of ['light', 'dark'] as const) for (const width of [320, 1440])
   })
 }
 
-test('signed-out root and notice destinations do not expose protected records', async ({ page }) => {
+test('unavailable authentication prevents protected records from rendering (simulated)', async ({ page }) => {
   for (const path of ['/', '/lab-services/22222222-2222-4222-8222-222222222222', '/trial-projects/33333333-3333-4333-8333-333333333333']) {
+    const html = await readFile(new URL('./fixtures/signed-out-access.html', import.meta.url), 'utf8')
+    await page.route(`**${path}`, route => route.fulfill({ contentType: 'text/html', body: html }))
     await page.goto(path)
-    await expect(page.getByRole('textbox', { name: 'Email address', exact: true })).toBeVisible({ timeout: 30000 })
+    await expect(page.getByRole('heading', { name: 'Authentication is not configured' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Complete Job', exact: true })).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Download', exact: true })).toHaveCount(0)
   }

@@ -27,12 +27,16 @@ public sealed class LabServiceOfferingsAdminController(PSeqOperationsDbContext d
     {
         var actor = await access.RequirePlatformAdminAsync(HttpContext, token);
         var service = new LabServiceOfferingService(db);
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, token);
+        if (await db.Set<LabServiceOffering>().AnyAsync(value => value.CatalogItemId == request.CatalogItemId, token))
+            throw new OrderManagementException("lab_offering_definition_exists", "This service already has a scientific definition. Create a new version within the service item.", StatusCodes.Status409Conflict);
         var offering = LabServiceOfferingService.Build(Guid.NewGuid(), 1, request);
         await service.ValidateConfigurationAsync(offering, token);
         db.Set<LabServiceOffering>().Add(offering);
         AccountAudit.Add(db, HttpContext, nameof(LabServiceOffering), offering.Id, "LabServiceOfferingCreated", null,
             actor.Id, new { offering.FamilyId, offering.OfferingVersion, offering.CatalogItemId });
         await db.SaveChangesAsync(token);
+        await transaction.CommitAsync(token);
         return await service.ReadOneAsync(offering.Id, token);
     }
 
@@ -43,6 +47,8 @@ public sealed class LabServiceOfferingsAdminController(PSeqOperationsDbContext d
         await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, token);
         var previous = await ReadAsync(id, token);
         if (previous.Version != request.Version) throw new DbUpdateConcurrencyException();
+        if (previous.CatalogItemId != request.CatalogItemId)
+            throw new OrderManagementException("lab_offering_parent_immutable", "A scientific version must remain within its service catalog item.", StatusCodes.Status400BadRequest);
         var latest = await db.Set<LabServiceOffering>().Where(value => value.FamilyId == previous.FamilyId)
             .MaxAsync(value => value.OfferingVersion, token);
         if (previous.OfferingVersion != latest)
@@ -52,7 +58,7 @@ public sealed class LabServiceOfferingsAdminController(PSeqOperationsDbContext d
         await service.ValidateConfigurationAsync(next, token);
         if (next.IsActive)
         {
-            var activeVersions = await db.Set<LabServiceOffering>().Where(value => value.FamilyId == previous.FamilyId
+            var activeVersions = await db.Set<LabServiceOffering>().Where(value => value.CatalogItemId == previous.CatalogItemId
                 && value.IsActive && (!value.EffectiveTo.HasValue || value.EffectiveTo > next.EffectiveFrom)
                 && (!next.EffectiveTo.HasValue || value.EffectiveFrom < next.EffectiveTo)).ToListAsync(token);
             foreach (var active in activeVersions)
@@ -78,7 +84,7 @@ public sealed class LabServiceOfferingsAdminController(PSeqOperationsDbContext d
         await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, token);
         var offering = await ReadAsync(id, token);
         if (offering.Version != request.Version) throw new DbUpdateConcurrencyException();
-        if (request.IsActive && await db.Set<LabServiceOffering>().AnyAsync(value => value.FamilyId == offering.FamilyId
+        if (request.IsActive && await db.Set<LabServiceOffering>().AnyAsync(value => value.CatalogItemId == offering.CatalogItemId
             && value.Id != offering.Id && value.IsActive && value.EffectiveFrom < (request.EffectiveTo ?? DateTime.MaxValue)
             && (!value.EffectiveTo.HasValue || value.EffectiveTo > request.EffectiveFrom), token))
             throw new OrderManagementException("lab_offering_window_overlap", "Another version is active in this effective window. Retire it before activating this version.", StatusCodes.Status409Conflict);
@@ -94,6 +100,6 @@ public sealed class LabServiceOfferingsAdminController(PSeqOperationsDbContext d
     }
 
     private async Task<LabServiceOffering> ReadAsync(Guid id, CancellationToken token) =>
-        await db.Set<LabServiceOffering>().SingleOrDefaultAsync(value => value.Id == id, token)
+        await db.Set<LabServiceOffering>().Include(value => value.SupportedSampleTypes).SingleOrDefaultAsync(value => value.Id == id, token)
         ?? throw new OrderManagementException("lab_offering_not_found", "The Lab Service offering was not found.", StatusCodes.Status404NotFound);
 }

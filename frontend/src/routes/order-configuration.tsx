@@ -10,6 +10,9 @@ export const Route = createFileRoute('/order-configuration')({
   }),
   component: OrderConfigurationRoute,
   beforeLoad: ({ search, location }) => {
+    if (search.configurationSection === 'lab-service-offerings') {
+      throw redirect({ to: '/order-configuration', search: { configurationSection: 'catalog' }, replace: true })
+    }
     if (search.configurationSection === 'retention') {
       throw redirect({ to: '/file-management', replace: true })
     }

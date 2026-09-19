@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { createMemoryHistory, createRootRoute, createRoute, createRouter, RouterProvider, useParams } from '@tanstack/react-router'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -90,11 +91,50 @@ describe('SampleShippingConfigurationPanel', () => {
     expect(screen.getByRole('button', { name: 'Add instruction rule' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Preview instructions' })).toBeNull()
   })
+
+  it('opens a shareable revision detail with full requirements and a return link', async () => {
+    renderPanel('sample-types')
+    fireEvent.click(await screen.findByRole('link', { name: 'Extracted RNA' }))
+    expect(await screen.findByRole('heading', { name: 'Extracted RNA' })).toBeTruthy()
+    expect(screen.getByText('Use an approved sealed primary tube.')).toBeTruthy()
+    expect(screen.getByText('Do not include direct identifiers.')).toBeTruthy()
+    expect(screen.getByText('48 hours')).toBeTruthy()
+    expect(apiMocks.createSampleType).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('link', { name: 'Back to sample types' }))
+    expect(await screen.findByRole('button', { name: 'Add sample type' })).toBeTruthy()
+  })
+
+  it('preserves exact historical links and offers revision creation only on the latest revision', async () => {
+    const original = configuration.sampleTypes[0]
+    const latest = { ...original, id: '22222222-2222-4222-8222-222222222223', revision: 2, name: 'Revised RNA' }
+    apiMocks.getConfiguration.mockResolvedValue({ ...configuration, sampleTypes: [original, latest] })
+    renderPanel('sample-types', original.id)
+    expect(await screen.findByRole('heading', { name: 'Extracted RNA' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Create revision' })).toBeNull()
+    fireEvent.click(screen.getByRole('link', { name: 'View latest revision (2)' }))
+    expect(await screen.findByRole('heading', { name: 'Revised RNA' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Create revision' })).toBeTruthy()
+  })
+
+  it('handles a missing direct-link record without displaying another sample type', async () => {
+    renderPanel('sample-types', 'missing')
+    expect(await screen.findByText('Sample type not found')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Create revision' })).toBeNull()
+    expect(screen.getByRole('link', { name: 'Back to sample types' })).toBeTruthy()
+  })
 })
 
-function renderPanel(section: 'destinations' | 'sample-types' | 'instructions') {
+function renderPanel(section: 'destinations' | 'sample-types' | 'instructions', sampleTypeId?: string) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
-  return render(<QueryClientProvider client={client}><SampleShippingConfigurationPanel apiEnabled section={section} /></QueryClientProvider>)
+  const root = createRootRoute()
+  const list = createRoute({ getParentRoute: () => root, path: '/order-configuration', component: () => <SampleShippingConfigurationPanel apiEnabled section={section} /> })
+  function Detail() {
+    const params = useParams({ strict: false })
+    return <SampleShippingConfigurationPanel apiEnabled section="sample-types" sampleTypeId={params.sampleTypeId} />
+  }
+  const detail = createRoute({ getParentRoute: () => root, path: '/order-configuration/sample-types/$sampleTypeId', component: Detail })
+  const router = createRouter({ routeTree: root.addChildren([list, detail]), history: createMemoryHistory({ initialEntries: [sampleTypeId ? `/order-configuration/sample-types/${sampleTypeId}` : '/order-configuration'] }) })
+  return render(<QueryClientProvider client={client}><RouterProvider router={router} /></QueryClientProvider>)
 }
 
 const configuration = {

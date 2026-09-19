@@ -117,6 +117,10 @@ public partial class SampleShippingPostgresTests
     {
         await using var scope = await ShippingTestScope.CreateAsync();
         var fixture = await scope.CreateTransportationShipmentAsync(18);
+        // This manual-service fixture needs a staff deadline before scientific acceptance.
+        var acceptingWork = await scope.DbContext.LabWorkOrders.SingleAsync(w => w.Id == fixture.WorkOrder.Id);
+        acceptingWork.AdjustDeliveryDueDate(DateTime.UtcNow.AddDays(14));
+        await scope.DbContext.SaveChangesAsync();
         var size = await scope.CreateContainerAsync(fixture, 10);
         var packetType = await scope.DbContext.SampleTypeDefinitions.SingleAsync(item => item.Id == fixture.SampleType.Id);
         scope.DbContext.Entry(packetType).Property(item => item.QuantityUnit).CurrentValue = "tubes";

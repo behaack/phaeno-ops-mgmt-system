@@ -1,5 +1,13 @@
 # Playwright E2E Test Plan
 
+## Sample-type detail page (2026-09-18)
+
+Signed-in local manual checks confirmed sample-name navigation to the exact revision URL, full requirements and shaded detail headers, revision history links, Create revision opening the existing editor, cancellation with focus restored to its button, and Back to sample types returning to the list. No sample records were saved. Historical and missing-record cases are authored component coverage, not executed acceptance evidence. Automated suites were not requested and remain unrun.
+
+## Service catalog scientific consolidation (2026-09-18)
+
+The bundled-orders browser fixture now scopes scientific definitions to its catalog item and supplies the sample configuration endpoint. The existing version-dialog scenario opens through the contextual Actions menu. The automated suite remains unrun (not requested). Signed-in read-only checks use the local application; saved-definition publication, conflicting writes, and customer shipping authorization with a retired pinned sample revision remain separate acceptance work. Refer to the Order Management plan for the completed manual checkpoint and any limitations.
+
 ## September 18 jobs/settings release checkpoint
 
 Prior signed-in local checks below remain scoped manual evidence. The current dropdown uses sentence case; Lab settings uses sidebar pages, and shipping instruction preview opens from each rule's Actions menu. Automated E2E suites were not requested or run. Production smoke checks and exact deployment identities are recorded separately in [release evidence](PORTAL-JOBS-SETTINGS-RELEASE-2026-09-18.md); they do not imply complete operational acceptance.
@@ -2719,3 +2727,7 @@ Rule preview refinement: local signed-in browser verified Sample shipping instru
 CRM Settings navigation (September 18, 2026): signed-in local browser confirmed CRM sidebar no longer lists Administration; user dropdown order is Order Settings, Lab Settings, CRM Settings, Sample Shipping Settings, File Retention Policies, User Management. Resources and Sign Out use consistent title case. CRM Settings opens existing pipelines, fields, duplicate review, saved views and import/export tools without the operational sidebar. No records changed. Automated suites, restricted-role browser journeys and mobile runtime checks were not run.
 
 Quote/workflow and submission guidance separation (September 18, 2026): signed-in local browser confirmed the Quote & workflow sidebar/header, quote-only editable field with supported workflow review, removal of submission text from Order Settings, and the Default submission instructions sidebar page under Sample Shipping Settings. Dedicated modal showed required guidance, disabled pristine Save, and inline validation on blur. Editors were cancelled without saving. Persistence/conflict, restricted-role and mobile acceptance were not executed; no automated suite was run.
+
+## Full-suite release verification - September 18, 2026
+
+Full desktop Chromium and mobile Chrome runs cover all browser specs. Updated current settings navigation, automatic preparation coverage/exception controls, collapsed tray selection, protocol completion requirements, exact date and shipping messages, and the deadline response in the isolated execution fixture. Restricted the CRM task interception to actual API URLs so it cannot intercept Vite source modules. Department-history assertions allow repeated authorized refreshes while verifying scope removal and role changes. The former signed-out test ran against an always-signed-in mock server; replaced it with an explicit unavailable-authentication fixture using the real AuthGate and asserting protected record controls never render. This is simulated gate coverage, not live Clerk sign-in verification; SessionAccessAcceptance unit coverage and live account acceptance remain distinct. Two mobile print cases are intentionally excluded because the same physical print-layout cases run in desktop Chromium. Final results are recorded in SERVICE-CATALOG-RELEASE-2026-09-18.md.

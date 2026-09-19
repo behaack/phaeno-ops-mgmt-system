@@ -88,7 +88,7 @@ test('exact container claim preserves the scanned barcode across conflicts and f
   const dialog = page.getByRole('dialog'), barcode = dialog.getByRole('group', { name: 'Container 1', exact: true }).getByLabel('Scan or enter container barcode', { exact: false })
   await barcode.fill(kit.kitNumber)
   await barcode.press('Tab')
-  await expect(dialog.getByText('Container identified. It will be reserved when you confirm.')).toBeVisible()
+  await expect(dialog.getByText('Container identified. Confirm assignment to reserve it for this Job.')).toBeVisible()
   state.claimConflicts = true
   await dialog.getByRole('button', { name: 'Confirm assignment', exact: true }).click()
   await expect(dialog.getByText('This container was assigned to another Job. Choose an available container.')).toBeVisible()

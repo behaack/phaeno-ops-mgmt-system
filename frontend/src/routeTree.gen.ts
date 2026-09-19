@@ -64,6 +64,8 @@ import { Route as OrderOperationsResultPackagesPackageIdRouteImport } from './ro
 import { Route as OrderOperationsIntakeOrderIdRouteImport } from './routes/order-operations.intake.$orderId'
 import { Route as OrderOperationsWorkflowOrderIdRouteImport } from './routes/order-operations.$workflow.$orderId'
 import { Route as OrderConfigurationShippingContainersContainerIdRouteImport } from './routes/order-configuration.shipping-containers.$containerId'
+import { Route as OrderConfigurationSampleTypesSampleTypeIdRouteImport } from './routes/order-configuration.sample-types.$sampleTypeId'
+import { Route as OrderConfigurationCatalogCatalogItemIdRouteImport } from './routes/order-configuration.catalog.$catalogItemId'
 import { Route as LabServicesOrderIdEditRouteImport } from './routes/lab-services.$orderId.edit'
 import { Route as LabOperationsSuppliersSupplierIdRouteImport } from './routes/lab-operations.suppliers.$supplierId'
 import { Route as LabOperationsStockKitsKitIdRouteImport } from './routes/lab-operations.stock-kits.$kitId'
@@ -378,6 +380,18 @@ const OrderConfigurationShippingContainersContainerIdRoute =
     path: '/shipping-containers/$containerId',
     getParentRoute: () => OrderConfigurationRoute,
   } as any)
+const OrderConfigurationSampleTypesSampleTypeIdRoute =
+  OrderConfigurationSampleTypesSampleTypeIdRouteImport.update({
+    id: '/sample-types/$sampleTypeId',
+    path: '/sample-types/$sampleTypeId',
+    getParentRoute: () => OrderConfigurationRoute,
+  } as any)
+const OrderConfigurationCatalogCatalogItemIdRoute =
+  OrderConfigurationCatalogCatalogItemIdRouteImport.update({
+    id: '/catalog/$catalogItemId',
+    path: '/catalog/$catalogItemId',
+    getParentRoute: () => OrderConfigurationRoute,
+  } as any)
 const LabServicesOrderIdEditRoute = LabServicesOrderIdEditRouteImport.update({
   id: '/edit',
   path: '/edit',
@@ -597,6 +611,8 @@ export interface FileRoutesByFullPath {
   '/lab-operations/stock-kits/$kitId': typeof LabOperationsStockKitsKitIdRoute
   '/lab-operations/suppliers/$supplierId': typeof LabOperationsSuppliersSupplierIdRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
+  '/order-configuration/catalog/$catalogItemId': typeof OrderConfigurationCatalogCatalogItemIdRoute
+  '/order-configuration/sample-types/$sampleTypeId': typeof OrderConfigurationSampleTypesSampleTypeIdRoute
   '/order-configuration/shipping-containers/$containerId': typeof OrderConfigurationShippingContainersContainerIdRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
@@ -680,6 +696,8 @@ export interface FileRoutesByTo {
   '/lab-operations/stock-kits/$kitId': typeof LabOperationsStockKitsKitIdRoute
   '/lab-operations/suppliers/$supplierId': typeof LabOperationsSuppliersSupplierIdRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
+  '/order-configuration/catalog/$catalogItemId': typeof OrderConfigurationCatalogCatalogItemIdRoute
+  '/order-configuration/sample-types/$sampleTypeId': typeof OrderConfigurationSampleTypesSampleTypeIdRoute
   '/order-configuration/shipping-containers/$containerId': typeof OrderConfigurationShippingContainersContainerIdRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
@@ -764,6 +782,8 @@ export interface FileRoutesById {
   '/lab-operations/stock-kits/$kitId': typeof LabOperationsStockKitsKitIdRoute
   '/lab-operations/suppliers/$supplierId': typeof LabOperationsSuppliersSupplierIdRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
+  '/order-configuration/catalog/$catalogItemId': typeof OrderConfigurationCatalogCatalogItemIdRoute
+  '/order-configuration/sample-types/$sampleTypeId': typeof OrderConfigurationSampleTypesSampleTypeIdRoute
   '/order-configuration/shipping-containers/$containerId': typeof OrderConfigurationShippingContainersContainerIdRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
@@ -849,6 +869,8 @@ export interface FileRouteTypes {
     | '/lab-operations/stock-kits/$kitId'
     | '/lab-operations/suppliers/$supplierId'
     | '/lab-services/$orderId/edit'
+    | '/order-configuration/catalog/$catalogItemId'
+    | '/order-configuration/sample-types/$sampleTypeId'
     | '/order-configuration/shipping-containers/$containerId'
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
@@ -932,6 +954,8 @@ export interface FileRouteTypes {
     | '/lab-operations/stock-kits/$kitId'
     | '/lab-operations/suppliers/$supplierId'
     | '/lab-services/$orderId/edit'
+    | '/order-configuration/catalog/$catalogItemId'
+    | '/order-configuration/sample-types/$sampleTypeId'
     | '/order-configuration/shipping-containers/$containerId'
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
@@ -1015,6 +1039,8 @@ export interface FileRouteTypes {
     | '/lab-operations/stock-kits/$kitId'
     | '/lab-operations/suppliers/$supplierId'
     | '/lab-services/$orderId/edit'
+    | '/order-configuration/catalog/$catalogItemId'
+    | '/order-configuration/sample-types/$sampleTypeId'
     | '/order-configuration/shipping-containers/$containerId'
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
@@ -1447,6 +1473,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrderConfigurationShippingContainersContainerIdRouteImport
       parentRoute: typeof OrderConfigurationRoute
     }
+    '/order-configuration/sample-types/$sampleTypeId': {
+      id: '/order-configuration/sample-types/$sampleTypeId'
+      path: '/sample-types/$sampleTypeId'
+      fullPath: '/order-configuration/sample-types/$sampleTypeId'
+      preLoaderRoute: typeof OrderConfigurationSampleTypesSampleTypeIdRouteImport
+      parentRoute: typeof OrderConfigurationRoute
+    }
+    '/order-configuration/catalog/$catalogItemId': {
+      id: '/order-configuration/catalog/$catalogItemId'
+      path: '/catalog/$catalogItemId'
+      fullPath: '/order-configuration/catalog/$catalogItemId'
+      preLoaderRoute: typeof OrderConfigurationCatalogCatalogItemIdRouteImport
+      parentRoute: typeof OrderConfigurationRoute
+    }
     '/lab-services/$orderId/edit': {
       id: '/lab-services/$orderId/edit'
       path: '/edit'
@@ -1846,10 +1886,16 @@ const LabServicesRouteWithChildren = LabServicesRoute._addFileChildren(
 )
 
 interface OrderConfigurationRouteChildren {
+  OrderConfigurationCatalogCatalogItemIdRoute: typeof OrderConfigurationCatalogCatalogItemIdRoute
+  OrderConfigurationSampleTypesSampleTypeIdRoute: typeof OrderConfigurationSampleTypesSampleTypeIdRoute
   OrderConfigurationShippingContainersContainerIdRoute: typeof OrderConfigurationShippingContainersContainerIdRoute
 }
 
 const OrderConfigurationRouteChildren: OrderConfigurationRouteChildren = {
+  OrderConfigurationCatalogCatalogItemIdRoute:
+    OrderConfigurationCatalogCatalogItemIdRoute,
+  OrderConfigurationSampleTypesSampleTypeIdRoute:
+    OrderConfigurationSampleTypesSampleTypeIdRoute,
   OrderConfigurationShippingContainersContainerIdRoute:
     OrderConfigurationShippingContainersContainerIdRoute,
 }

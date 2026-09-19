@@ -137,7 +137,7 @@ describe('customer transportation kits', () => {
     const expectedStatus = status === 'Pending' ? 'Kits ordered' : status === 'PartiallyDispatched' ? 'Some kits are on the way' : 'Kits on the way'
     expect(await screen.findByText(expectedStatus)).toBeTruthy()
     expect(screen.getByText('Kit delivery')).toBeTruthy()
-    expect(screen.getByText('Confirm kit receipt before preparing samples.')).toBeTruthy()
+    expect(screen.queryByText('Confirm kit receipt before preparing samples.')).toBeNull()
     expect(screen.getByText('Sample preparation controls')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Order transportation kits' })).toBeNull()
     if (status !== 'Pending') {

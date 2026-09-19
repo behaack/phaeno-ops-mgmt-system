@@ -23,7 +23,6 @@ import { ReagentConfigurationPanel } from './ReagentConfigurationPanel'
 import { CatalogConfigurationPanel } from './CatalogConfigurationPanel'
 import { SampleShippingConfigurationPanel } from './SampleShippingConfigurationPanel'
 import { SystemConfigurationPanel } from './SystemConfigurationPanel'
-import { LabServiceOfferingsPanel } from './LabServiceOfferingsPanel'
 
 export type ConfigurationSection = 'system' | 'catalog' | 'lab-service-offerings' | 'shipping' | 'sample-types' | 'analyses' | 'reagents' | 'assembly' | 'commercial' | 'retention'
 export function parseConfigurationSection(value: unknown): ConfigurationSection { return ['system', 'catalog', 'lab-service-offerings', 'shipping', 'sample-types', 'analyses', 'reagents', 'assembly', 'commercial', 'retention'].includes(String(value)) ? value as ConfigurationSection : 'system' }
@@ -36,7 +35,6 @@ const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSec
     icon: Settings,
   },
   { value: 'catalog', label: 'Service catalog', description: 'Active offerings and sales units', icon: BookOpen },
-  { value: 'lab-service-offerings', label: 'Lab Service offerings', description: 'Included scope and published turnaround', icon: ChartSpline },
   { value: 'sample-types', label: 'Sample types', description: 'Accepted materials and sample requirements', icon: TestTubeDiagonal },
   {
     value: 'analyses',
@@ -64,14 +62,14 @@ const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSec
   },
 ]
 
-export function OrderConfigurationPage() {
+export function OrderConfigurationPage({ catalogItemId, sampleTypeId }: { catalogItemId?: string; sampleTypeId?: string } = {}) {
   const { authProvider, session } = usePhaenoSession()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const search = useSearch({ strict: false })
   const canManage = Boolean(session?.capabilities.canManageOrderConfiguration)
   const sections = canManage ? configurationSections : []
-  const requestedSection = parseConfigurationSection(search.configurationSection)
+  const requestedSection = sampleTypeId ? 'sample-types' : catalogItemId ? 'catalog' : parseConfigurationSection(search.configurationSection)
   const section = sections.find(item => item.value === requestedSection)?.value ?? sections[0]?.value
   const showingOrders = Boolean(section && section !== 'retention')
   const setSection = (value: ConfigurationSection) => { void navigate({ to: '/order-configuration', search: { configurationSection: value } }) }
@@ -118,9 +116,8 @@ export function OrderConfigurationPage() {
           ) : null}
           {showingOrders && needsOrderConfiguration && configuration.isLoading ? <p role="status">Loading order configuration…</p> : null}
           {section === 'commercial' ? <div className="mb-5 space-y-3 rounded-lg border p-4"><p className="text-sm text-muted-foreground">Historical accounting mappings and connector recovery. The service catalog is maintained in Service catalog.</p><Button variant="outline" disabled={!apiEnabled || sync.isPending} onClick={() => sync.mutate()}><RefreshCw data-icon="inline-start" />{sync.isPending ? 'Queueing…' : 'Queue QuickBooks catalog recovery'}</Button>{sync.error ? <p role="alert">{getOrderErrorMessage(sync.error, 'Connector recovery is unavailable.')}</p> : null}{sync.isSuccess ? <p role="status">Catalog recovery queued.</p> : null}</div> : null}
-          {configuration.data && section === 'catalog' ? <CatalogConfigurationPanel configuration={configuration.data} /> : null}
-          {configuration.data && section === 'lab-service-offerings' ? <LabServiceOfferingsPanel configuration={configuration.data} apiEnabled={apiEnabled} /> : null}
-          {section === 'sample-types' ? <SampleShippingConfigurationPanel apiEnabled={apiEnabled} section="sample-types" /> : null}
+          {configuration.data && section === 'catalog' ? <CatalogConfigurationPanel configuration={configuration.data} catalogItemId={catalogItemId} apiEnabled={apiEnabled} /> : null}
+          {section === 'sample-types' ? <SampleShippingConfigurationPanel apiEnabled={apiEnabled} section="sample-types" sampleTypeId={sampleTypeId} /> : null}
           {configuration.data && section === 'system' ? <SystemConfigurationPanel configuration={configuration.data} /> : null}
           {configuration.data && section === 'analyses' ? <AnalysisConfigurationPanel configuration={configuration.data} /> : null}
           {configuration.data && section === 'reagents' ? <ReagentConfigurationPanel configuration={configuration.data} /> : null}

@@ -22,15 +22,26 @@ public sealed class LabServiceOfferingService(PSeqOperationsDbContext db)
             throw Invalid("Select existing included analyses; an active offering requires active, non-synthetic analyses.");
         if (offering.IsActive && (!catalog.IsActive || !offering.AllowedMaterialTypes().Contains("extracted_rna", StringComparer.OrdinalIgnoreCase)))
             throw Invalid("An active standard offering requires an active catalog item and the currently supported extracted RNA intake.");
+        var sampleIds = offering.SupportedSampleTypes.Select(value => value.SampleTypeDefinitionId).ToArray();
+        var types = await db.SampleTypeDefinitions.AsNoTracking().Where(value => sampleIds.Contains(value.Id)).ToListAsync(token);
+        if (types.Count != sampleIds.Length || types.Any(type => !offering.AllowedMaterialTypes().Contains(type.MaterialClass, StringComparer.OrdinalIgnoreCase)))
+            throw Invalid("Select existing sample-type revisions matching the service materials.");
+        if (offering.IsActive && (types.Count == 0 || types.Any(type => !type.IsActive
+            || type.EffectiveFrom > offering.EffectiveFrom || type.EffectiveTo <= offering.EffectiveFrom)))
+            throw Invalid("An active scientific definition requires explicitly assigned sample-type revisions available when it begins. Create a new version to review legacy assignments.");
+        if (offering.IsActive && types.Count(type => type.MaterialClass == "extracted_rna" && type.QuantityUnit == "tube") != 1)
+            throw Invalid("The current PSeq intake requires exactly one supported extracted-RNA tube sample type.");
     }
 
     public async Task<IReadOnlyList<LabServiceOfferingDto>> ReadAsync(bool availableOnly, CancellationToken token)
     {
         var now = DateTime.UtcNow;
-        var query = db.Set<LabServiceOffering>().AsNoTracking();
+        var query = db.Set<LabServiceOffering>().Include(value => value.SupportedSampleTypes).AsNoTracking();
         if (availableOnly) query = query.Where(value => value.IsActive && !value.IsSynthetic && value.EffectiveFrom <= now
             && (!value.EffectiveTo.HasValue || value.EffectiveTo > now));
         var offerings = await query.OrderBy(value => value.Name).ThenByDescending(value => value.OfferingVersion).ToListAsync(token);
+        var typeIds = offerings.SelectMany(value => value.SupportedSampleTypes.Select(type => type.SampleTypeDefinitionId)).Distinct().ToArray();
+        var sampleTypes = await db.SampleTypeDefinitions.AsNoTracking().Where(value => typeIds.Contains(value.Id)).ToDictionaryAsync(value => value.Id, token);
         var catalogIds = offerings.Select(value => value.CatalogItemId).Distinct().ToList();
         var catalog = await db.QboCatalogItems.AsNoTracking().Where(value => catalogIds.Contains(value.Id)).ToDictionaryAsync(value => value.Id, token);
         var activeAnalyses = (await db.AnalysisDefinitions.AsNoTracking().Where(value => value.IsActive && !value.IsSynthetic)
@@ -43,7 +54,13 @@ public sealed class LabServiceOfferingService(PSeqOperationsDbContext db)
                 && string.Equals(item.SalesUnit, OrderSalesUnits.Specimen, StringComparison.OrdinalIgnoreCase)
                 && value.AnalysisIds().All(activeAnalyses.Contains)
                 && value.AllowedMaterialTypes().Contains("extracted_rna", StringComparer.OrdinalIgnoreCase);
-            return Map(value, item, available);
+            var supported = value.SupportedSampleTypes.Select(type => sampleTypes[type.SampleTypeDefinitionId])
+                .OrderBy(type => type.Name).Select(type => new ServiceSampleTypeDto(type.Id, type.Code, type.Name,
+                    type.Revision, type.MaterialClass, type.QuantityUnit, type.IsEffectiveAt(now))).ToArray();
+            available = available && supported.Length > 0 && supported.All(type => type.IsAvailable)
+                && supported.Count(type => type.MaterialClass == "extracted_rna" && type.QuantityUnit == "tube") == 1
+                && offerings.Count(other => other.CatalogItemId == value.CatalogItemId && other.IsEffectiveAt(now)) == 1;
+            return Map(value, item, available) with { SupportedSampleTypes = supported };
         }).Where(value => !availableOnly || value.IsAvailable).ToList();
     }
 
@@ -62,10 +79,12 @@ public sealed class LabServiceOfferingService(PSeqOperationsDbContext db)
     {
         try
         {
-            return new(familyId, version, request.Name, request.Description, request.CatalogItemId, request.AnalysisIds,
+            var offering = new LabServiceOffering(familyId, version, request.Name, request.Description, request.CatalogItemId, request.AnalysisIds,
                 request.AllowedMaterialTypes, request.AllowedBiologicalSources, request.IncludedOutputContract,
                 request.MinimumTurnaroundDays, request.MaximumTurnaroundDays, request.EffectiveFrom,
                 request.EffectiveTo, request.IsActive, request.IsSynthetic);
+            offering.AssignSampleTypes(request.SupportedSampleTypeIds ?? []);
+            return offering;
         }
         catch (ArgumentException exception) { throw Invalid(exception.Message); }
     }

@@ -38,6 +38,7 @@ describe('OrderConfigurationPage', () => {
     expect(screen.getByRole('button', { name: /^Quote & workflow/ }).getAttribute('aria-current')).toBe('page')
     expect(screen.getByRole('button', { name: /^Analyses/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: /^Sample types/ })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /^Lab Service offerings/ })).toBeNull()
     expect(screen.queryByRole('button', { name: /^Sample shipping/ })).toBeNull()
     expect(screen.getByRole('button', { name: /^PSeq kits/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: /^Assembly/ })).toBeTruthy()

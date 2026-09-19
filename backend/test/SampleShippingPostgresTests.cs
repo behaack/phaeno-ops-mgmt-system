@@ -275,9 +275,9 @@ public partial class SampleShippingPostgresTests
         await scope.DbContext.SaveChangesAsync();
         intake = await LabIntakeProgress.ReadAsync(scope.DbContext, savedWork, CancellationToken.None);
         Assert.Equal(accessioned.Specimens.Single().AccessionNumber, Assert.Single(intake.Specimens).AccessionNumber);
-        // Accepted tube intake records specimen acceptance; this fixture has no quoted turnaround.
+        // Accepted tube intake starts the configured 14-day turnaround.
         Assert.NotNull(savedWork.Specimens.Single().AcceptedAtUtc);
-        Assert.Null(savedWork.ExpectedCompletionAtUtc);
+        Assert.Equal(savedWork.Specimens.Single().AcceptedAtUtc!.Value.AddDays(14), savedWork.ExpectedCompletionAtUtc);
         Assert.StartsWith("ACC-", accessioned.Specimens.Single(item => item.Id == fixture.Specimen.Id).AccessionNumber);
         var sameTubeReplay = await lab.AccessionShipmentTube(fixture.WorkOrder.Id, fixture.Shipment.Id,
             new ShipmentTubeAccessionRequest(packet.Barcode, firstTubeBarcode, "BOX-001"), CancellationToken.None);

@@ -189,7 +189,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             inactive = await DbContext.QboCatalogItems.SingleAsync(i => i.Id == item.Id);
             DbContext.Entry(inactive).Property(i => i.IsActive).CurrentValue = true;
             var pricedOrder = await DbContext.LabServiceOrders.SingleAsync(o => o.Id == draft.Id);
-            // Explicit negative fixture: proposal attributed to the issuing actor.
+            // Explicit negative fixture: a recorded proposed price attributed to the issuing actor.
+            DbContext.Entry(pricedOrder).Property(o => o.ProposedUnitPrice).CurrentValue = 100m;
             DbContext.Entry(pricedOrder).Property(o => o.PriceProposedByUserId).CurrentValue = PlatformUser.Id;
             await DbContext.SaveChangesAsync();
             request = request with { Version = pricedOrder.Version };

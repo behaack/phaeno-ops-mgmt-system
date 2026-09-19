@@ -45,10 +45,10 @@ Generated from [PSeqOperationsDbContextModelSnapshot.cs](../backend/app/Migratio
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 136 | 2189 | 347 |
+| `commercial_ops` | 137 | 2192 | 349 |
 | `lab_ops` | 49 | 571 | 77 |
 | `website` | 5 | 49 | 4 |
-| **Total** | **191** | **2811** | **428** |
+| **Total** | **192** | **2814** | **430** |
 
 ## `public` schema
 
@@ -1592,6 +1592,11 @@ erDiagram
         uuid updated_by_user_id FK "nullable"
         bigint version "not null"
     }
+    lab_service_sample_types {
+        uuid id PK "not null"
+        uuid lab_service_offering_id FK,UK "not null"
+        uuid sample_type_definition_id FK,UK "not null"
+    }
     transportation_kit_request_lines {
         uuid id PK "not null"
         uuid container_definition_id FK,UK "not null"
@@ -1621,6 +1626,8 @@ erDiagram
     organization_departments ||--o{ customer_delivery_locations : "department_id"
     organizations ||--o{ customer_delivery_locations : "organization_id"
     users o|--o{ customer_delivery_locations : "updated_by_user_id"
+    lab_service_offerings ||--o{ lab_service_sample_types : "lab_service_offering_id"
+    sample_type_definitions ||--o{ lab_service_sample_types : "sample_type_definition_id"
     sample_shipping_container_definitions ||--o{ transportation_kit_request_lines : "container_definition_id"
     transportation_kit_requests ||--o{ transportation_kit_request_lines : "transportation_kit_request_id"
     users o|--o{ transportation_kit_requests : "created_by_user_id"

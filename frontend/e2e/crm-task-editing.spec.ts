@@ -7,7 +7,7 @@ test('reschedules a task through Actions and retains its status and recurrence',
     dueAt: '2026-09-17T12:00:00Z', reminderAt: '2026-09-17T11:00:00Z', recurrenceRule: 'WEEKLY', companyId: '00000000-0000-0000-0000-000000000903', companyName: 'Test Company', contactId: null, contactName: null, leadId: null, leadName: null, opportunityId: null, opportunityName: null, isActive: true, version: 1,
   }
   let submitted: Record<string, unknown> | null = null
-  await page.route('**/api/**', async route => {
+  await page.route(/^https:\/\/127\.0\.0\.1:\d+\/api\//, async route => {
     const path = new URL(route.request().url()).pathname
     let data: unknown = []
     if (path.endsWith('/crm/tasks')) data = { items: [task], page: 1, pageSize: 25, totalCount: 1 }
@@ -37,6 +37,6 @@ test('reschedules a task through Actions and retains its status and recurrence',
   expect(submitted).not.toHaveProperty('status')
   const localDue = await page.evaluate(value => new Date(value!).getDate(), task.dueAt)
   expect(localDue).toBe(20)
-  await expect(page.getByText('Blocked', { exact: true })).toBeVisible()
+  await expect(page.getByRole('table').getByText('Blocked', { exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: `Actions for ${task.title}` })).toBeFocused()
 })

@@ -99,7 +99,7 @@ describe('physical location-container confirmation', () => {
 })
 function container(number: number) { return screen.getByRole('group', { name: `Container ${number}` }) }
 function size(number: number) { return within(container(number)).getByRole('combobox', { name: 'Container' }) }
-function tubes(number: number) { return within(container(number)).getByLabelText(/^Tubes to pack/) }
+function tubes(number: number) { const row = within(container(number)); return row.queryByRole('spinbutton', { name: /^Tubes to pack/ }) ?? row.getByRole('textbox', { name: /^Tubes to pack/ }) }
 function offeredSizes(number: number) { return Array.from((size(number) as HTMLSelectElement).options).map(option => Number(option.value.replace('container-', ''))).sort((left, right) => left - right) }
 function changeSize(number: number, capacity: number) { fireEvent.change(size(number), { target: { value: `container-${capacity}` } }) }
 function pack(number: number, count: number) { fireEvent.change(tubes(number), { target: { value: count } }) }

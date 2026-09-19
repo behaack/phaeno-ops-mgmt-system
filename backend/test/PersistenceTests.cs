@@ -213,7 +213,19 @@ public class PersistenceTests
             .Where(entityType => entityType.ClrType.Assembly == laboratoryAssembly)
             .ToList();
 
-        Assert.Equal(36, laboratoryEntities.Count);
+        Assert.Equal(48, laboratoryEntities.Count);
+        Assert.Equal("lab_product_types", dbContext.Model.FindEntityType(typeof(LabProductType))?.GetTableName());
+        Assert.Equal("lab_supplier_products", dbContext.Model.FindEntityType(typeof(LabSupplierProduct))?.GetTableName());
+        Assert.Equal("lab_steps", dbContext.Model.FindEntityType(typeof(LabStep))?.GetTableName());
+        Assert.Equal("lab_step_versions", dbContext.Model.FindEntityType(typeof(LabStepVersion))?.GetTableName());
+        Assert.Equal("lab_job_deadline_changes", dbContext.Model.FindEntityType(typeof(LabJobDeadlineChange))?.GetTableName());
+        Assert.Equal("lab_business_calendars", dbContext.Model.FindEntityType(typeof(LabBusinessCalendar))?.GetTableName());
+        Assert.Equal("lab_holidays", dbContext.Model.FindEntityType(typeof(LabHoliday))?.GetTableName());
+        Assert.Equal("lab_timing_policies", dbContext.Model.FindEntityType(typeof(LabTimingPolicy))?.GetTableName());
+        Assert.Equal("lab_stage_durations", dbContext.Model.FindEntityType(typeof(LabStageDuration))?.GetTableName());
+        Assert.Equal("lab_job_timing_policies", dbContext.Model.FindEntityType(typeof(LabJobTimingPolicy))?.GetTableName());
+        Assert.Equal("lab_forecast_transitions", dbContext.Model.FindEntityType(typeof(LabForecastTransition))?.GetTableName());
+        Assert.Equal("lab_forecast_snapshots", dbContext.Model.FindEntityType(typeof(LabForecastSnapshot))?.GetTableName());
         var timingHistory = dbContext.Model.FindEntityType(typeof(LabWorkTimingChange));
         Assert.Equal("lab_work_timing_changes", timingHistory?.GetTableName());
         Assert.Equal(typeof(LabServiceOrder).Assembly, timingHistory?.ClrType.Assembly);

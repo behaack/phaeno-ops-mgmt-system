@@ -53,6 +53,7 @@ async function fixture(page: Page, screen: string, patch: Partial<LabServiceOrde
       const labPath = `/lab-service-orders/${bundleIds.order}`
       const assemblyPath = `/data-assembly-requests/${bundleIds.request}`
       if (method === 'GET') {
+        if (path === '/platform/sample-shipping/configuration') return send({ destinations: [], sampleTypes: [], instructionRules: [] })
         if (path === labPath) return send(lab)
         if (path === `${labPath}/standard-preview`) return send(bundlePreview)
         if (
@@ -386,14 +387,13 @@ test('configuration and operational timing use the owning panels', async ({
   const state = await fixture(page, 'configuration')
   await expect(
     page.getByRole('heading', {
-      name: `${bundleOffering.name} · version 2`,
+      name: `Version 2 · ${bundleOffering.name}`,
       exact: true,
     }),
   ).toBeVisible()
   await capture(page, info, 'bundle-offering-configuration')
-  await page
-    .getByRole('button', { name: 'Create new version', exact: true })
-    .click()
+  await page.getByRole('button', { name: 'Actions', exact: true }).first().click()
+  await page.getByRole('menuitem', { name: 'Create new version', exact: true }).click()
   await expect(page.getByRole('dialog')).toBeVisible()
   await capture(page, info, 'lab-offering-version')
   await page

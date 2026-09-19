@@ -36,7 +36,7 @@ describe("opportunity stage summary", () => {
   it("selects a stage and clears the selection with All stages", () => {
     const select = vi.fn();
     render(<CrmOpportunityStageSummary stages={stages} selectedStageId="discovery" showPipeline onSelect={select} />);
-    const stage = screen.getByRole("button", { name: /General Sales Discovery/ });
+    const stage = screen.getByRole("button", { name: /General Sales\s*Discovery/ });
     expect(stage.getAttribute("aria-pressed")).toBe("true");
     fireEvent.click(stage);
     expect(select).toHaveBeenLastCalledWith("discovery");

@@ -7,6 +7,30 @@ using PhaenoPortal.App.Features.OrderManagement.Domain;
 public sealed class ConfiguredLabServiceDomainTests
 {
     [Fact]
+    public void ScientificSampleAssignmentsRequireExplicitDistinctIdsAndCannotBeRewritten()
+    {
+        var offering = Offering(DateTime.UtcNow);
+        Assert.Throws<ArgumentException>(() => offering.AssignSampleTypes([]));
+        var id = Guid.NewGuid();
+        Assert.Throws<ArgumentException>(() => offering.AssignSampleTypes([id, id]));
+        offering.AssignSampleTypes([id]);
+        Assert.Equal(id, Assert.Single(offering.SupportedSampleTypes).SampleTypeDefinitionId);
+        Assert.Throws<InvalidOperationException>(() => offering.AssignSampleTypes([Guid.NewGuid()]));
+        offering.SetAvailability(offering.EffectiveFrom, null, false);
+        Assert.Equal(id, Assert.Single(offering.SupportedSampleTypes).SampleTypeDefinitionId);
+    }
+
+    [Fact]
+    public void LegacyCommitmentRetainsNullSampleScopeWhileNewCommitmentPinsExactRevisions()
+    {
+        var snapshot = Snapshot(DateTime.UtcNow, 2);
+        Assert.Null(snapshot.SupportedSampleTypeIds);
+        var id = Guid.NewGuid();
+        var pinned = snapshot with { SupportedSampleTypeIds = [id] };
+        var serialized = System.Text.Json.JsonSerializer.Serialize(pinned);
+        Assert.Equal(id, Assert.Single(System.Text.Json.JsonSerializer.Deserialize<ConfiguredLabServiceSnapshot>(serialized)!.SupportedSampleTypeIds!));
+    }
+    [Fact]
     public void OfferingPublishesOneCompatibleEffectiveVersionAndPreservesItsScopeWhenWithdrawn()
     {
         var now = DateTime.UtcNow;

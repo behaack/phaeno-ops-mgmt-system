@@ -76,7 +76,6 @@ test("creates a standalone CRM company without changing Portal access", async ({
     "Opportunities",
     "Tasks",
     "Reports",
-    "Administration",
   ]) {
     await expect(
       crmNavigation.getByRole("button", { name: new RegExp(`^${label}`) }),

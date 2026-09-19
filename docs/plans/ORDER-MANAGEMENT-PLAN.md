@@ -1,21 +1,29 @@
 # Order Management Plan
 
-## Service-owned scientific configuration — discovery, September 18, 2026
+## Service-owned scientific configuration — implemented locally, September 18, 2026
 
 Product direction: Lab service offerings belong within Service catalog items, and each service explicitly identifies its supported sample types. They must not appear as independent peer configuration subjects.
 
-Current implementation links `LabServiceOffering.CatalogItemId` to the commercial catalog and versions scientific scope, but exposes offerings through a separate settings sidebar item. Allowed material types are text values, not relationships to the shared sample-type definitions. Moving navigation alone would not establish service/sample compatibility.
+The previous implementation linked `LabServiceOffering.CatalogItemId` to the commercial catalog but exposed offerings in a separate settings sidebar and represented material compatibility as text. The implementation now owns scientific version management inside the catalog item's view-first detail page and persists explicit supported sample-type revision relationships.
 
-Proposed implementation scope:
+Implemented scope:
 
 - Open a catalog item in a dedicated, view-first service workspace. Show commercial details, included analyses and outputs, turnaround, supported sample types and scientific revision history under that item. Bounded changes use existing modal conventions and shaded section headers.
 - Retain reusable sample-type definitions while explicitly assigning supported types within each service. Do not infer support merely because a type is globally active or has a shipping rule.
-- Enforce service compatibility in the backend as well as customer/staff sample selection and authorization. Existing destination, packaging and sample-handling checks remain additional requirements.
+- Enforce service compatibility in backend availability, configured commitment and shipping authorization. Customer review displays the assigned sample types. The existing PSeq automatic intake resolves the single assigned extracted-RNA tube type; no new sample picker or material workflow is introduced. Existing destination, packaging and sample-handling checks remain additional requirements.
 - Preserve committed order definitions, scientific versions, accepted sample scope and shipment snapshots. Review ambiguous existing text-to-type matches rather than assuming all sample types are supported.
 - Preserve existing entry URLs with redirects or contextual links. Retire the independent Lab service offerings navigation after its capabilities are available inside service items. The treatment of a shared sample-definition maintenance surface must preserve shared revisions and shipping references.
-- Update the database ERD and migration when explicit persisted relationships are implemented; do not alter shared data or migrate existing scientific commitments as part of discovery.
+- Add `commercial_ops.lab_service_sample_types`, with unique offering/revision pairs and restrictive foreign keys. Migration `20260918232810_ConsolidateServiceSampleTypes` was applied only to verified local `phaeno_ops` at localhost:5432. The complete database ERD is regenerated. No inferred assignment backfill or shared-database migration is included.
 
-Confirmed product decision: each service catalog item has one current scientific definition, with prior versions retained for accepted work. It does not contain independently selectable packages. Prevent overlapping active definitions across all version families for the same item; creating another version must not allow moving its parent item. Existing backend validation currently limits configured direct laboratory purchases to the designated PSeq specimen-priced catalog item. This reorganization must preserve that supported execution boundary rather than silently enabling other service workflows. Discovery is complete for this structure; implementation remains pending, and no runtime or schema changes have been made for this proposal.
+Confirmed product decision: each service catalog item has one current scientific definition, with prior versions retained for accepted work. It does not contain independently selectable packages. Serializable admin writes prevent overlapping active definitions across all version families for the same item; creating another version cannot move its parent item. Existing backend validation still limits configured direct laboratory purchases to the designated PSeq specimen-priced catalog item. Other catalog items retain their current Kit/Assembly/manual pricing behavior.
+
+New configured commitments freeze exact supported sample-type revision IDs. Null assignments in legacy snapshots retain their former shipping resolution; they are not rewritten. Existing scientific versions with no reviewed mapping remain visible but unavailable for new configured purchases. Staff create a new version to assign supported types explicitly. If a pinned type ceases to be effective before new shipping authorization, the operation blocks for review rather than replacing it with a globally matching material. Shipping snapshots already issued stay unchanged.
+
+The separate offering sidebar entry is removed, old `configurationSection=lab-service-offerings` links redirect to the catalog, and shared Sample types maintenance remains available. Scientific definition and catalog edits use bounded dialogs, unsaved-change guards, and concurrency recovery. Contextual version actions share one Actions menu. New scientific versions default inactive.
+
+Regression coverage was authored for immutable parent ownership, duplicate definitions, explicit mapping, frozen snapshots, and navigation. Automated suites remain unrun under the repository's request-only rule. Release build, frontend typecheck, scoped lint, migration/model checks and manual browser findings are recorded at the implementation checkpoint below. Deployment and production migration are not part of this implementation turn.
+
+Implementation checkpoint: Release solution build passed with zero warnings/errors; TypeScript, scoped ESLint, generated documentation consistency, whitespace and EF pending-model checks passed. Signed-in local browser checks confirmed catalog-name navigation to the owned detail, removal of independent offering navigation, legacy-link redirection to the catalog, empty scientific-definition guidance, fixed parent in the editor, explicit sample-revision choices, required-field validation, inactive defaults, pristine catalog Save disabled, and cancellation/focus restoration without saving temporary edits. The local item has no saved scientific definition or approved analyses, so populated history/publication and customer shipping acceptance were not exercised. Browser screenshot capture became unavailable; responsive visual and theme verification remain unconfirmed. These checks are local implementation evidence, not a production release.
 
 ## Service-based commercial jobs — September 16, 2026
 

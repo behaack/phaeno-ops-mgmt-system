@@ -11,6 +11,7 @@ public sealed class LabServiceOffering : IAudit, IConcurrency
     public string Name { get; private set; } = null!;
     public string Description { get; private set; } = null!;
     public Guid CatalogItemId { get; private set; }
+    public ICollection<LabServiceSampleType> SupportedSampleTypes { get; private set; } = new List<LabServiceSampleType>();
     public string AnalysisIdsJson { get; private set; } = "[]";
     public string AllowedMaterialTypesJson { get; private set; } = "[]";
     public string AllowedBiologicalSourcesJson { get; private set; } = "[]";
@@ -65,6 +66,13 @@ public sealed class LabServiceOffering : IAudit, IConcurrency
     public bool IsEffectiveAt(DateTime utcNow) => IsActive && !IsSynthetic
         && EffectiveFrom <= utcNow && (!EffectiveTo.HasValue || EffectiveTo > utcNow);
     public IReadOnlyList<Guid> AnalysisIds() => JsonSerializer.Deserialize<List<Guid>>(AnalysisIdsJson)!;
+    public void AssignSampleTypes(IReadOnlyList<Guid> ids)
+    {
+        if (SupportedSampleTypes.Count != 0) throw new InvalidOperationException("Create a new scientific version to change supported sample types.");
+        if (ids.Count is < 1 or > 100 || ids.Any(id => id == Guid.Empty) || ids.Distinct().Count() != ids.Count)
+            throw new ArgumentException("Select between one and 100 distinct sample-type revisions.");
+        foreach (var id in ids) SupportedSampleTypes.Add(new(Id, id));
+    }
     public IReadOnlyList<string> AllowedMaterialTypes() => JsonSerializer.Deserialize<List<string>>(AllowedMaterialTypesJson)!;
     public IReadOnlyList<string> AllowedBiologicalSources() => JsonSerializer.Deserialize<List<string>>(AllowedBiologicalSourcesJson)!;
     public bool Supports(string materialType, IEnumerable<string> sources) =>
@@ -91,4 +99,19 @@ public sealed record ConfiguredLabServiceSnapshot(
     Guid CatalogItemId, string CatalogCode, long CatalogItemVersion, string Currency, decimal UnitPrice,
     int SpecimenCount, decimal Subtotal, decimal Tax, decimal Total, IReadOnlyList<Guid> AnalysisIds,
     string AnalysesSnapshotJson, string IncludedOutputContract, int MinimumTurnaroundDays,
-    int MaximumTurnaroundDays, DateTime CommittedAtUtc);
+    int MaximumTurnaroundDays, DateTime CommittedAtUtc,
+    IReadOnlyList<Guid>? SupportedSampleTypeIds = null);
+
+public sealed class LabServiceSampleType
+{
+    public Guid Id { get; private set; } = Guid.NewGuid();
+    public Guid LabServiceOfferingId { get; private set; }
+    public Guid SampleTypeDefinitionId { get; private set; }
+    private LabServiceSampleType() { }
+    public LabServiceSampleType(Guid offeringId, Guid sampleTypeId)
+    {
+        if (offeringId == Guid.Empty || sampleTypeId == Guid.Empty) throw new ArgumentException("Service and sample-type revisions are required.");
+        LabServiceOfferingId = offeringId;
+        SampleTypeDefinitionId = sampleTypeId;
+    }
+}

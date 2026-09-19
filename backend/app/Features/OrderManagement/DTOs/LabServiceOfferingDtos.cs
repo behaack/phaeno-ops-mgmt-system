@@ -7,14 +7,17 @@ public sealed record LabServiceOfferingDto(
     IReadOnlyList<string> AllowedBiologicalSources, string IncludedOutputContract,
     int MinimumTurnaroundDays, int MaximumTurnaroundDays,
     DateTime EffectiveFrom, DateTime? EffectiveTo, bool IsActive, bool IsSynthetic,
-    bool IsAvailable, long Version);
+    bool IsAvailable, long Version, IReadOnlyList<ServiceSampleTypeDto>? SupportedSampleTypes = null);
+
+public sealed record ServiceSampleTypeDto(Guid Id, string Code, string Name, int Revision,
+    string MaterialClass, string QuantityUnit, bool IsAvailable);
 
 public sealed record LabServiceOfferingWriteRequest(
     string Name, string Description, Guid CatalogItemId, IReadOnlyList<Guid> AnalysisIds,
     IReadOnlyList<string> AllowedMaterialTypes, IReadOnlyList<string> AllowedBiologicalSources,
     string IncludedOutputContract, int MinimumTurnaroundDays, int MaximumTurnaroundDays,
     DateTime EffectiveFrom, DateTime? EffectiveTo, bool IsActive, bool IsSynthetic,
-    long? Version = null);
+    long? Version = null, IReadOnlyList<Guid>? SupportedSampleTypeIds = null);
 
 public sealed record LabServiceOfferingAvailabilityRequest(
     long Version, DateTime EffectiveFrom, DateTime? EffectiveTo, bool IsActive);

@@ -73,7 +73,7 @@ describe('Lab Job step information', () => {
     const panel = await screen.findByRole('dialog', { name: 'Review and confirm the order' })
     expect(document.activeElement).toBe(trigger)
     expect(within(panel).getByText('Complete')).toBeTruthy()
-    expect(within(panel).getByText(/Review the scope and price/)).toBeTruthy()
+    expect(within(panel).getByText(/Review and accept or decline that pricing/)).toBeTruthy()
     expect(within(panel).getByText('The order is confirmed.')).toBeTruthy()
     expect(within(panel).queryByText(/With:/)).toBeNull()
     expect(trigger.getAttribute('aria-describedby')).toBe(panel.getAttribute('aria-describedby'))

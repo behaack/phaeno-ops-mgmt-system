@@ -19,6 +19,34 @@ using PhaenoPortal.App.Features.OrderManagement.Services;
 public partial class LabOperationsCommercialHandoffPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task ScientificDefinitionCannotMoveToAnotherItemOrCreateAnotherFamilyForTheSameItem()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        var (_, original) = await scope.ConfigureStandardAsync();
+        var request = new LabServiceOfferingWriteRequest(original.Name, original.Description, original.CatalogItemId,
+            original.AnalysisIds(), original.AllowedMaterialTypes(), original.AllowedBiologicalSources(), original.IncludedOutputContract,
+            7, 14, DateTime.UtcNow, null, false, false, original.Version,
+            original.SupportedSampleTypes.Select(type => type.SampleTypeDefinitionId).ToArray());
+        var controller = scope.StandardOfferingController();
+        var duplicate = await Assert.ThrowsAsync<OrderManagementException>(() => controller.Create(request, default));
+        Assert.Equal("lab_offering_definition_exists", duplicate.ErrorCode);
+        var moved = await Assert.ThrowsAsync<OrderManagementException>(() => controller.CreateVersion(original.Id,
+            request with { CatalogItemId = Guid.NewGuid() }, default));
+        Assert.Equal("lab_offering_parent_immutable", moved.ErrorCode);
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task MaterialNameAloneDoesNotMakeALegacyDefinitionPurchasable()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        var (_, original) = await scope.ConfigureStandardAsync();
+        await scope.DbContext.Set<LabServiceSampleType>().Where(type => type.LabServiceOfferingId == original.Id).ExecuteDeleteAsync();
+        var read = await new LabServiceOfferingService(scope.DbContext).ReadOneAsync(original.Id, default);
+        Assert.False(read.IsAvailable);
+        Assert.Empty(read.SupportedSampleTypes!);
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task StandardLabOfferingDraftVersionPreservesCurrentAvailabilityUntilPublishedWindow()
     {
         await using var scope = await HandoffTestScope.CreateAsync();
@@ -27,7 +55,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         var future = DateTime.UtcNow.Date.AddDays(10);
         var body = new LabServiceOfferingWriteRequest(original.Name, original.Description, original.CatalogItemId,
             original.AnalysisIds(), original.AllowedMaterialTypes(), original.AllowedBiologicalSources(), original.IncludedOutputContract,
-            8, 15, future, null, false, false, original.Version);
+            8, 15, future, null, false, false, original.Version, original.SupportedSampleTypes.Select(type => type.SampleTypeDefinitionId).ToArray());
         var draft = await controller.CreateVersion(original.Id, body, default); scope.TrackStandardOffering(draft.Id);
         Assert.True((await scope.DbContext.LabServiceOfferings.AsNoTracking().SingleAsync(value => value.Id == original.Id)).IsActive);
         var published = await controller.CreateVersion(draft.Id, body with { Version = draft.Version, IsActive = true }, default);
@@ -53,6 +81,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         Assert.Equal(placed.Id, replay.Id); Assert.Equal("ConfiguredDirect", placed.EntryMode);
         Assert.Equal("PlacedAwaitingSamples", placed.Status); Assert.Empty(placed.Samples);
         Assert.Equal(expectedTotal, Assert.Single(placed.Quotes).Total);
+        var committed = await scope.DbContext.LabServiceOrders.AsNoTracking().SingleAsync(value => value.Id == order.Id);
+        Assert.Equal(offering.SupportedSampleTypes.Select(type => type.SampleTypeDefinitionId), committed.ReadConfiguredSnapshot()!.SupportedSampleTypeIds!);
         Assert.Equal(14, placed.StandardCommercialSnapshot!.MaximumTurnaroundDays);
         Assert.Single(await scope.DbContext.LabServiceQuotes.Where(value => value.LabServiceOrderId == order.Id).ToListAsync());
         Assert.False(await scope.DbContext.CommercialLabAuthorizations.AnyAsync(value => value.CommercialOrderId == order.Id));
@@ -182,6 +212,9 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             var offering = new LabServiceOffering(Guid.NewGuid(), 1, "Standard Lab", "Processing and assembly", catalog.Id,
                 [analysis.Id], ["extracted_rna"], ["Human PBMC"], "FASTQ and assembled outputs", 7, 14, now.AddDays(-1), null, true, false);
             configuredOfferingIds.Add(offering.Id);
+            var sampleType = await DbContext.SampleTypeDefinitions.SingleAsync(type => type.IsActive && type.MaterialClass == "extracted_rna"
+                && type.QuantityUnit == "tube" && type.EffectiveFrom <= now && (!type.EffectiveTo.HasValue || type.EffectiveTo > now));
+            offering.AssignSampleTypes([sampleType.Id]);
             var system = new OrderSystemConfiguration(30, "Follow shipping instructions", "{}");
             system.UpdatePSeqReadinessConfiguration("{\"mode\":\"ExactSampleRoster\"}", "{\"destination\":\"GovernedPortal\"}");
             configuredSystemIds.Add(system.Id);

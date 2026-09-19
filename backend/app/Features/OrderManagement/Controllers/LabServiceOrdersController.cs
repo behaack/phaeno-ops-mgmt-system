@@ -640,7 +640,7 @@ public sealed partial class LabServiceOrdersController(
                     throw Conflict("lab_authorization_exists", "There is no accepted additional sample list to authorize.");
                 Execute(() => order.FinalizeSampleRoster(tenant.Actor.Id, DateTime.UtcNow));
 
-                var shipping = await ResolveShippingConfigurationAsync(operationCancellationToken);
+                var shipping = await ResolveShippingConfigurationAsync(order, operationCancellationToken);
                 var authorizationId = existingAuthorization?.AuthorizationId ?? Guid.NewGuid();
                 var commandId = Guid.NewGuid();
                 var now = DateTime.UtcNow;
@@ -656,7 +656,7 @@ public sealed partial class LabServiceOrdersController(
                     MinimumTurnaroundDays: order.ReadConfiguredSnapshot()?.MinimumTurnaroundDays,
                     MaximumTurnaroundDays: order.ReadConfiguredSnapshot()?.MaximumTurnaroundDays,
                     IncludedScientificScopeJson: order.ReadConfiguredSnapshot() is { } configured ? JsonSerializer.Serialize(new {
-                        configured.AnalysisIds, configured.AnalysesSnapshotJson, configured.IncludedOutputContract
+                        configured.AnalysisIds, configured.AnalysesSnapshotJson, configured.IncludedOutputContract, configured.SupportedSampleTypeIds
                     }, JsonSerializerOptions) : null);
                 LabCommandAcknowledgment acknowledgment;
                 CommercialLabAuthorization authorization;
@@ -959,17 +959,22 @@ public sealed partial class LabServiceOrdersController(
         SampleTypeDefinition SampleType,
         SampleShippingInstructionRule Rule);
 
-    private async Task<ResolvedShippingConfiguration> ResolveShippingConfigurationAsync(CancellationToken cancellationToken)
+    private async Task<ResolvedShippingConfiguration> ResolveShippingConfigurationAsync(LabServiceOrder order, CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
-        var sampleTypes = await dbContext.SampleTypeDefinitions.AsNoTracking()
+        // Null preserves committed legacy/manual scope; new configured commitments pin exact revisions.
+        var supportedIds = order.ReadConfiguredSnapshot()?.SupportedSampleTypeIds;
+        var sampleTypeQuery = dbContext.SampleTypeDefinitions.AsNoTracking()
             .Where(item => item.IsActive && item.MaterialClass == StandardMaterialType
                 && item.QuantityUnit == StandardQuantityUnit && item.EffectiveFrom <= now
-                && (!item.EffectiveTo.HasValue || item.EffectiveTo > now))
-            .ToListAsync(cancellationToken);
+                && (!item.EffectiveTo.HasValue || item.EffectiveTo > now));
+        if (supportedIds is not null) sampleTypeQuery = sampleTypeQuery.Where(item => supportedIds.Contains(item.Id));
+        var sampleTypes = await sampleTypeQuery.ToListAsync(cancellationToken);
         if (sampleTypes.Count != 1)
             throw Conflict("sample_shipping_configuration_required",
-                "Phaeno must activate exactly one extracted-RNA tube sample type before this sample list can be finalized.");
+                supportedIds is null
+                    ? "Phaeno must activate exactly one extracted-RNA tube sample type before this sample list can be finalized."
+                    : "Phaeno must review this service's supported sample-type revision and shipping configuration before this sample list can be finalized.");
         var sampleType = sampleTypes[0];
         var destinations = await dbContext.SampleShippingDestinations.AsNoTracking()
             .Where(item => item.IsActive && item.EffectiveFrom <= now

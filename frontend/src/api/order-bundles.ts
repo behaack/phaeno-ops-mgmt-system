@@ -43,6 +43,7 @@ export type LabServiceOffering = {
   currency: string
   analysisIds: string[]
   allowedMaterialTypes: string[]
+  supportedSampleTypes?: { id: string; code: string; name: string; revision: number; materialClass: string; quantityUnit: string; isAvailable: boolean }[]
   allowedBiologicalSources: string[]
   includedOutputContract: string
   minimumTurnaroundDays: number
@@ -69,7 +70,7 @@ export type LabServiceOfferingWrite = Pick<
   | 'effectiveTo'
   | 'isActive'
   | 'isSynthetic'
-> & { version?: number }
+> & { version?: number; supportedSampleTypeIds: string[] }
 export type LabServiceCommercialSnapshot = {
   offeringId: string
   familyId: string

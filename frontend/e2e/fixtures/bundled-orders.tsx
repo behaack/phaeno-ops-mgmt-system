@@ -147,6 +147,7 @@ const config = createRoute({
       <h1 className="text-3xl font-semibold">Order configuration</h1>
       <LabServiceOfferingsPanel
         configuration={bundleConfiguration}
+        catalogItemId={bundleConfiguration.catalogItems.find(item => item.isPSeqLabService)!.id}
         apiEnabled
       />
       <ReagentConfigurationPanel configuration={bundleConfiguration} />

@@ -22,6 +22,14 @@ public static class LabServiceBundleModelConfiguration
             entity.Property(value => value.AllowedBiologicalSourcesJson).HasColumnType("jsonb").IsRequired();
             entity.Property(value => value.Version).IsConcurrencyToken();
             entity.HasOne<QboCatalogItem>().WithMany().HasForeignKey(value => value.CatalogItemId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(value => new { value.CatalogItemId, value.IsActive, value.EffectiveFrom });
+            entity.HasMany(value => value.SupportedSampleTypes).WithOne().HasForeignKey(value => value.LabServiceOfferingId).OnDelete(DeleteBehavior.Restrict);
+        });
+        builder.Entity<LabServiceSampleType>(entity => {
+            entity.ToTable("lab_service_sample_types", commercialSchema);
+            entity.HasKey(value => value.Id);
+            entity.HasIndex(value => new { value.LabServiceOfferingId, value.SampleTypeDefinitionId }).IsUnique();
+            entity.HasOne<SampleTypeDefinition>().WithMany().HasForeignKey(value => value.SampleTypeDefinitionId).OnDelete(DeleteBehavior.Restrict);
         });
         builder.Entity<LabServiceOrder>(entity => {
             entity.Property(value => value.EntryMode).HasConversion<string>().HasMaxLength(40).HasDefaultValue(LabServiceEntryMode.ManualQuote);

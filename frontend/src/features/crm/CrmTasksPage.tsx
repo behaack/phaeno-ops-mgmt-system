@@ -132,7 +132,7 @@ export function CrmTasksPage() {
                   <th className="p-3">Due</th>
                   <th className="p-3">Priority</th>
                   <th className="p-3">Status</th>
-                  <th className="p-3">
+                  <th className="relative p-3">
                     <span className="sr-only">Actions</span>
                   </th>
                 </tr>

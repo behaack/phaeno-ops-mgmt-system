@@ -57,6 +57,7 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
   const [failureNotice, setFailureNotice] = useState('')
   const [failureError, setFailureError] = useState<string>()
   const failing = useRef(false)
+  const [savingFailure, setSavingFailure] = useState(false)
   const failureButtons = useRef<Record<string, HTMLButtonElement | null>>({})
   const returnTo = useRef<string | null>(null)
   const noticeRef = useRef<HTMLParagraphElement>(null)
@@ -120,7 +121,7 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
   }
   const skipped = form.watch('outcome') === 'skipped'
   const showSamples = !skipped && (hasIndividual || hasExceptions && recordException)
-  const visibleMembers = showSamples ? batch.members.filter(m => isFailed(m.id) || covered.includes(m.id)) : []
+  const visibleMembers = batch.members.filter(m => isFailed(m.id) || showSamples && covered.includes(m.id))
   const toggleExceptions = (checked: boolean) => {
     setRecordException(checked)
     if (!checked) for (const member of batch.members) {
@@ -130,7 +131,7 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
       if (step.qcGate?.scope !== 'tube') { form.setValue(`values.${member.id}_reason`, ''); form.clearErrors(`values.${member.id}_reason`) }
     }
   }
-  const failurePending = pending || failureForm.formState.isSubmitting
+  const failurePending = pending || savingFailure || failureForm.formState.isSubmitting
   const canFail = Boolean(onFail) && batch.canOperate && batch.status === 'InProgress'
   const returnFromFailure = () => {
     if (failing.current || pending) return
@@ -150,6 +151,7 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
   const submitFailure = async (values: z.infer<typeof failureSchema>) => {
     if (!failureMember || !canFail || failing.current || pending) return
     failing.current = true
+    setSavingFailure(true)
     setFailureError(undefined)
     try {
       await onFail!(failureMember.id, values.code, values.reason)
@@ -162,6 +164,7 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
       setFailureError(getLabOperationsError(cause, 'The failure could not be saved. Review the tube and try again.'))
     } finally {
       failing.current = false
+      setSavingFailure(false)
     }
   }
   const captureInput = (capture: Step['captures'][number], prefix: string, required: boolean) => {
@@ -196,7 +199,7 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
       <div className="space-y-2 rounded-lg border p-3" aria-label="Tube coverage">
         <p className="text-sm font-medium">Applies to {covered.length} {covered.length === 1 ? 'tube' : 'tubes'}{excluded.length ? ` · ${excluded.length} excluded` : ''}</p>
         <p className="text-sm text-muted-foreground">Every eligible tube is included automatically.</p>
-        <details className="text-sm"><summary className="cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">View tube coverage</summary><ul className="mt-2 space-y-2">{batch.members.map(member => <li key={member.id}>{member.position} · {member.barcode} · {member.jobName} — {covered.includes(member.id) ? 'Included' : exclusionReason(member)}{!showSamples && canFail && covered.includes(member.id) ? <Button type="button" variant="outline" size="sm" className="ml-2 text-destructive" disabled={pending} ref={element => { failureButtons.current[member.id] = element }} onClick={() => { returnTo.current = member.id; failureForm.reset({ code: '', reason: '' }); setFailureError(undefined); setFailureMemberId(member.id) }}>Close attempt as failed</Button> : null}</li>)}</ul></details>
+        <details className="text-sm"><summary className="cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">View tube coverage</summary><ul className="mt-2 space-y-2">{batch.members.map(member => <li key={member.id}>{member.position} · {member.barcode} · {member.jobName} — {covered.includes(member.id) ? 'Included' : exclusionReason(member)}{!skipped && !showSamples && canFail && covered.includes(member.id) ? <Button type="button" variant="outline" size="sm" className="ml-2 text-destructive" disabled={pending} ref={element => { failureButtons.current[member.id] = element }} onClick={() => { returnTo.current = member.id; failureForm.reset({ code: '', reason: '' }); setFailureError(undefined); setFailureMemberId(member.id) }}>Close attempt as failed</Button> : null}</li>)}</ul></details>
         {!applicable.length ? <p>No tubes are eligible for this action.</p> : null}
         {form.formState.errors.covered ? <p role="alert" className="text-sm text-destructive">{form.formState.errors.covered.message}</p> : null}
       </div>

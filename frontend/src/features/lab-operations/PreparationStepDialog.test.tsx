@@ -362,7 +362,7 @@ describe('failure from step entry', () => {
     expect(screen.getByText('Recorded discrepancy.')).toBeTruthy()
     first.unmount()
     render(<PreparationStepDialog {...props} />)
-    expect(screen.getByText(/1 active · 1 failed/)).toBeTruthy()
+    expect(screen.getByText('Recorded discrepancy.')).toBeTruthy()
     expect(screen.getByText('Applies to 1 tube · 1 excluded')).toBeTruthy()
     expect(screen.getAllByLabelText(/Source container barcode/)).toHaveLength(1)
     fireEvent.change(screen.getByLabelText(/Decision/), { target: { value: 'skipped' } })

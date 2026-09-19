@@ -1,5 +1,9 @@
 # Backend Test Plan
 
+## Service catalog scientific consolidation (2026-09-18)
+
+`ConfiguredLabServiceDomainTests` covers distinct required sample assignments, immutable assignment and legacy/new snapshot round trips. `ConfiguredLabServicePostgresTests` adds parent immutability, duplicate definition rejection, no availability from material text alone, and frozen supported revision IDs; configured-order fixtures now assign an explicit RNA type and cleanup removes the new children. These cases compile but were not executed (tests not requested). The additive migration was applied to verified local `phaeno_ops`; the Release solution build and pending-model check pass. Concurrent cross-family writes and rejection of a retired pinned type at authorization remain acceptance cases to execute before production release. No production migration occurred.
+
 ## September 18 jobs/settings release checkpoint
 
 Release solution build passed with zero warnings/errors, and EF reports no model changes missing a migration. Automated suites were not requested or run; authored Jobs/forecast integration coverage remains unexecuted. See [release evidence](PORTAL-JOBS-SETTINGS-RELEASE-2026-09-18.md) for production migration and health results.
@@ -2006,3 +2010,7 @@ Active/Closed Jobs: added stage classification, partial delivery/hold/cancelled 
 ## Progress-based completion forecast — September 18, 2026
 
 Authored `LabCompletionForecastTests` covers mixed day bases, weekend/observed holidays, fractional eligible days, daylight saving, exact exhaustion and repeatable actual-plus-one overruns, missing coverage, future entry, duplicate holidays, zero downstream duration and per-stage validation. Authored `LabCompletionForecastPostgresTests` covers latest-sample delivery, a real mixed-stage policy, read-only preview, missing-duration coverage, preserved pinned binding and no read-triggered snapshots. Suites not executed (not requested). Build and read-only local database projection checks are recorded in the owning plan. Remaining acceptance: atomic state tracking/no-op edits/retry, configuration permissions/concurrency, policy application, parallel library joins/provider waits, rework/holds/publication withdrawal, scheduler history and large queues.
+
+## Full-suite release verification - September 18, 2026
+
+Ran every API test with PSEQ_OPERATIONS_REFERENCE_CONNECTION pointing to a separately initialized loopback PostgreSQL 18 cluster on port 55439, migrated from empty. Database-backed suites are enabled. Corrected the complete laboratory model assertion (48 entities), a release fixture lacking its laboratory job/specimen, sequential workflow revision creation, configured 14-day acceptance expectation, an explicit manual due date before accession, and a self-approval negative fixture missing the proposed price. The five affected cases all pass. Final full-suite result is recorded in SERVICE-CATALOG-RELEASE-2026-09-18.md. The Unix-only symlink case remains a declared Windows platform exclusion.

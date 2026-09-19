@@ -11,11 +11,11 @@ const protocol: LabProtocol = { id: 'protocol', name: 'Library preparation', key
 describe('formal protocol review', () => {
   it('shows the procedure and permitted choices and requires attestation', () => {
     const values = createLibraryPreparationExample()
-    values.steps[0].captures.push({ label: 'Preparation method', type: 'choice', required: true, unit: '', choices: 'Method A, Method B' })
+    values.steps[0].captures.push({ label: 'Preparation method', type: 'choice', required: true, unit: '', choices: 'Method A, Method B', scope: 'batch' })
     const approve = vi.fn()
     render(<ProtocolApprovalDialog protocol={protocol} version={{ id: 'version', protocolVersion: 1, status: 'Draft', definitionJson: serializeProtocolDefinition(values), authoredByUserId: 'author', authoredAtUtc: '', approvedByUserId: null, approvedAtUtc: null }} isPending={false} onApprove={approve} onOpenChange={vi.fn()} />)
     expect(screen.getByText(/choices: Method A, Method B/)).toBeTruthy()
-    expect(screen.getByText('Not enabled for this version.')).toBeTruthy()
+    expect(screen.getByText(/^Enabled/)).toBeTruthy()
     const button = screen.getByRole('button', { name: 'Approve version 1' }) as HTMLButtonElement
     expect(button.disabled).toBe(true)
     fireEvent.click(screen.getByRole('checkbox'))
@@ -39,7 +39,7 @@ describe('formal protocol review', () => {
     values.steps[1].captures.push({ label: 'Shared temperature', type: 'number', required: true, unit: 'C', choices: '', scope: 'batch' })
     values.steps[1].captures.push({ label: 'Duration exceptions', type: 'number', required: true, unit: 'min', choices: '', scope: 'shared' })
     render(<ProtocolApprovalDialog protocol={protocol} version={{ id: 'scoped-version', protocolVersion: 1, status: 'Draft', definitionJson: serializeProtocolDefinition(values), authoredByUserId: 'author', authoredAtUtc: '', approvedByUserId: null, approvedAtUtc: null }} isPending={false} onApprove={vi.fn()} onOpenChange={vi.fn()} />)
-    expect(screen.getByText('Enabled — review the evidence and QC scopes below.')).toBeTruthy()
+    expect(screen.getByText(/^Enabled/)).toBeTruthy()
     const definition = screen.getByRole('region', { name: 'Ordered protocol definition' }).textContent
     expect(definition).toContain('Sample — record individually')
     expect(definition).toContain('Batch — same entry for all selected samples')

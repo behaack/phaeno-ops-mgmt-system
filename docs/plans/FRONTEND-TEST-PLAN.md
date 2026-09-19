@@ -1,5 +1,13 @@
 # Frontend Test Plan
 
+## Sample-type detail navigation (2026-09-18)
+
+`SampleShippingConfigurationPanel.test.tsx` now uses an actual memory router and adds list/detail/return, exact historical revision, latest-only creation, and missing-record checks. Viewing details must not write configuration. Automated tests were not requested and remain unrun. Typecheck, scoped lint, documentation consistency and signed-in local navigation form the implementation checkpoint.
+
+## Service catalog scientific consolidation (2026-09-18)
+
+The Order configuration navigation regression now rejects a standalone Lab Service offerings entry. Scientific-form schema cases require explicit sample assignments while allowing legacy availability withdrawal. The service item owns its scientific-version panel and explicit sample-revision controls. Typecheck and scoped lint passed; automated component tests remain unrun because they were not requested. See the owning Order Management plan for manual browser evidence. Remaining acceptance includes populated current/history display, stale-save recovery and narrow-layout keyboard access.
+
 ## September 18 jobs/settings release checkpoint
 
 Full frontend typecheck, lint and production build passed. Updated user guides are included in the generated documentation package. Automated suites were not requested or run. Earlier navigation acceptance records are historical; the current dropdown uses sentence case and the shipping preview is a rule action. See [release evidence](PORTAL-JOBS-SETTINGS-RELEASE-2026-09-18.md).
@@ -2472,3 +2480,7 @@ CRM Settings navigation (September 18, 2026): updated title-case navigation expe
 Quote/workflow and submission guidance separation (September 18, 2026): updated existing sidebar/editor expectations; quote editor coverage retains instruction text while converting supported workflows. Added guidance-editor coverage for required validation and preserving quote/shipping values while omitting optional workflow fields. TypeScript and scoped lint pass. Automated suites were not requested or run.
 
 User dropdown sentence case correction (September 18, 2026): navigation label expectations now capitalize only the first word, retaining CRM and PSeq. This supersedes the earlier title-case decision; menu placement and permissions are unchanged. Scoped lint and whitespace checks pass; automated suites were not requested or run.
+
+## Full-suite release verification - September 18, 2026
+
+The owner explicitly requested every UI/API/E2E suite and production release. The full Vitest run passed all 1,047 tests in 166 files. Updated older expectations for lexical sample IDs, shipping control accessible names, automatic preparation coverage, failed-tube inspection and the enabled preparation protocol example. Fixed pending-state protection against overlapping failure submissions and subscribed approval-override dirty state; existing tests prove both. Follow-up browser findings corrected the positioned CRM Tasks table header and email recovery focus on dialog close; final UI rerun is a release gate. No test was disabled to clear a failure.

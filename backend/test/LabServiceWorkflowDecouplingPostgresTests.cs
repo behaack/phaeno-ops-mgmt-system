@@ -18,6 +18,7 @@ public partial class SampleShippingPostgresTests
         var lab = scope.CreateLabController();
         var now = DateTime.UtcNow;
         var workflow = new LabServiceWorkflow("decouple-" + scope.Suffix, "TEST ONLY service workflow", null);
+        workflow.RecordVersion(1);
         workflow.RecordVersion(2);
         var protocol = new LabProtocol("decouple-" + scope.Suffix, "TEST ONLY preparation", null);
         protocol.RecordVersion(1);

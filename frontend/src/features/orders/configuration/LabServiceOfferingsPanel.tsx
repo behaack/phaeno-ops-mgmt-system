@@ -1,6 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { ChevronDown } from 'lucide-react'
+import { getSampleShippingConfiguration } from '#/api/sample-shipping'
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import {
@@ -54,10 +57,9 @@ export const offeringSchema = z
     analysisIds: z
       .array(z.string().uuid())
       .min(1, 'Select an included analysis.'),
-    allowedMaterialTypes: z
-      .string()
-      .trim()
-      .min(1, 'Enter the allowed material types.'),
+    allowedMaterialTypes: z.string(),
+    supportedSampleTypeIds: z.array(z.string().uuid()),
+    availabilityOnly: z.boolean(),
     allowedBiologicalSources: z
       .string()
       .trim()
@@ -75,6 +77,8 @@ export const offeringSchema = z
     isSynthetic: z.boolean(),
   })
   .superRefine((value, context) => {
+    if (!value.availabilityOnly && value.supportedSampleTypeIds.length === 0)
+      context.addIssue({ code: 'custom', path: ['supportedSampleTypeIds'], message: 'Select at least one supported sample type.' })
     if (value.maximumTurnaroundDays < value.minimumTurnaroundDays)
       context.addIssue({
         code: 'custom',
@@ -95,6 +99,8 @@ const empty = (): Values => ({
   catalogItemId: '',
   analysisIds: [],
   allowedMaterialTypes: '',
+  supportedSampleTypeIds: [],
+  availabilityOnly: false,
   allowedBiologicalSources: '',
   includedOutputContract: '',
   minimumTurnaroundDays: 1,
@@ -107,6 +113,8 @@ const empty = (): Values => ({
 const toValues = (item: LabServiceOffering): Values => ({
   ...item,
   allowedMaterialTypes: item.allowedMaterialTypes.join('\n'),
+  supportedSampleTypeIds: item.supportedSampleTypes?.map(type => type.id) ?? [],
+  availabilityOnly: false,
   allowedBiologicalSources: item.allowedBiologicalSources.join('\n'),
   effectiveFrom: item.effectiveFrom.slice(0, 10),
   effectiveTo: item.effectiveTo?.slice(0, 10) ?? '',
@@ -123,11 +131,16 @@ const lines = (value: string) => [
 export function LabServiceOfferingsPanel({
   configuration,
   apiEnabled,
+  catalogItemId,
 }: {
   configuration: OrderConfiguration
   apiEnabled: boolean
+  catalogItemId: string
 }) {
   const client = useQueryClient()
+  const actionRef = useRef<HTMLButtonElement | null>(null)
+  const samples = useQuery({ queryKey: ['sample-shipping-configuration'], queryFn: getSampleShippingConfiguration, enabled: apiEnabled })
+  const parentItem = configuration.catalogItems.find(item => item.id === catalogItemId)!
   const offerings = useQuery({
     queryKey: ['lab-service-offerings', 'platform'],
     queryFn: () => listLabServiceOfferings(true),
@@ -137,6 +150,8 @@ export function LabServiceOfferingsPanel({
     item: LabServiceOffering | null
     availability: boolean
   } | null>(null)
+  const versions = (offerings.data ?? []).filter(item => item.catalogItemId === catalogItemId)
+    .sort((a, b) => b.offeringVersion - a.offeringVersion || b.effectiveFrom.localeCompare(a.effectiveFrom))
   const form = useForm<z.input<typeof offeringSchema>, unknown, Values>({
     resolver: zodResolver(offeringSchema),
     defaultValues: empty(),
@@ -159,9 +174,18 @@ export function LabServiceOfferingsPanel({
             effectiveTo: values.effectiveTo
               ? `${values.effectiveTo}T23:59:59Z`
               : null,
-            allowedMaterialTypes: lines(values.allowedMaterialTypes),
+            catalogItemId,
+            allowedMaterialTypes: [...new Set((samples.data?.sampleTypes ?? []).filter(type => values.supportedSampleTypeIds.includes(type.id)).map(type => type.materialClass))],
             allowedBiologicalSources: lines(values.allowedBiologicalSources),
           }),
+    onError: async () => {
+      const fresh = await offerings.refetch()
+      const current = fresh.data?.find(item => item.id === editing?.item?.id)
+      if (current && editing) {
+        setEditing({ ...editing, item: current })
+        form.reset({ ...toValues(current), availabilityOnly: editing.availability }, { keepDirtyValues: true })
+      }
+    },
     onSuccess: async () => {
       setEditing(null)
       form.reset(empty())
@@ -177,7 +201,11 @@ export function LabServiceOfferingsPanel({
   )
   function open(item: LabServiceOffering | null, availability = false) {
     mutation.reset()
-    form.reset(item ? toValues(item) : empty())
+    form.reset({
+      ...(item ? toValues(item) : { ...empty(), name: parentItem.name, catalogItemId }),
+      ...(!availability ? { isActive: false, effectiveFrom: empty().effectiveFrom, effectiveTo: '' } : {}),
+      availabilityOnly: availability,
+    })
     setEditing({ item, availability })
   }
   function close() {
@@ -193,6 +221,7 @@ export function LabServiceOfferingsPanel({
     (item) => item.id === form.watch('catalogItemId'),
   )
   const selectedAnalyses = form.watch('analysisIds')
+  const selectedSampleTypes = form.watch('supportedSampleTypeIds')
   function error(name: keyof Values) {
     const message = errors[name]?.message
     return message ? (
@@ -249,22 +278,20 @@ export function LabServiceOfferingsPanel({
   return (
     <section
       aria-labelledby="lab-offerings-heading"
-      className="rounded-lg border p-5"
+      className="overflow-hidden rounded-xl bg-card text-card-foreground ring-1 ring-foreground/10"
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3 border-b bg-muted/50 p-4">
         <div>
-          <h2 id="lab-offerings-heading" className="text-lg font-semibold">
-            Lab Service offerings
+          <h2 id="lab-offerings-heading" className="font-heading text-base leading-snug font-medium">
+            Scientific definition
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            One specimen-priced product includes processing and data assembly.
+            Included analyses, supported sample types, outputs and turnaround.
             Scope changes create a new version; accepted orders keep their
             original terms.
           </p>
         </div>
-        <Button disabled={!apiEnabled} onClick={() => open(null)}>
-          Add offering
-        </Button>
+        {!offerings.isLoading && !offerings.error && versions.length === 0 ? <Button disabled={!apiEnabled} onClick={event => { actionRef.current = event.currentTarget; open(null) }}>Add definition</Button> : null}
       </div>
       {offerings.isLoading ? (
         <p role="status" className="mt-4">
@@ -282,12 +309,12 @@ export function LabServiceOfferingsPanel({
           </AlertDescription>
         </Alert>
       ) : null}
-      <div className="mt-4 divide-y">
-        {(offerings.data ?? []).map((item) => (
+      <div className="divide-y px-5">
+        {versions.map((item) => (
           <article key={item.id} className="py-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h3 className="font-medium">
-                {item.name} · version {item.offeringVersion}
+                Version {item.offeringVersion} · {item.name}
               </h3>
               <Badge variant="outline">
                 {item.isAvailable
@@ -298,6 +325,8 @@ export function LabServiceOfferingsPanel({
               </Badge>
             </div>
             <p className="mt-1 text-sm">{item.description}</p>
+            <p className="mt-2 text-sm"><span className="font-medium">Included analyses:</span> {item.analysisIds.map(id => configuration.analyses.find(analysis => analysis.id === id)?.name ?? 'Unavailable analysis').join(', ')}</p>
+            <p className="mt-2 text-sm"><span className="font-medium">Supported sample types:</span> {item.supportedSampleTypes?.length ? item.supportedSampleTypes.map(type => `${type.name} · revision ${type.revision}${type.isAvailable ? '' : ' (not currently available)'}`).join('; ') : 'Review required — create a new version and explicitly select supported sample types. Existing accepted orders keep their scope.'}</p>
             <p className="mt-2 text-sm text-muted-foreground">
               {new Intl.NumberFormat('en-US', {
                 style: 'currency',
@@ -329,25 +358,13 @@ export function LabServiceOfferingsPanel({
                 .
               </p>
             </details>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => open(item, true)}
-              >
-                Edit availability
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => open(item)}>
-                Create new version
-              </Button>
-            </div>
+            <div className="mt-3 flex justify-end"><ActionMenu><DropdownMenuTrigger asChild><Button variant="outline" size="sm" disabled={!apiEnabled} onPointerDown={event => { actionRef.current = event.currentTarget }} onFocus={event => { actionRef.current = event.currentTarget }}>Actions <ChevronDown className="size-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-52"><DropdownMenuItem onSelect={() => open(item, true)}>Edit availability</DropdownMenuItem><DropdownMenuItem disabled={versions.some(version => version.familyId === item.familyId && version.offeringVersion > item.offeringVersion)} onSelect={() => open(item)}>Create new version</DropdownMenuItem></DropdownMenuContent></ActionMenu></div>
           </article>
         ))}
       </div>
-      {!offerings.isLoading && !offerings.error && !offerings.data?.length ? (
-        <p className="mt-4 text-sm text-muted-foreground">
-          No Lab Service offerings are configured. Manual pricing remains
-          available.
+      {!offerings.isLoading && !offerings.error && !versions.length ? (
+        <p className="p-5 text-sm text-muted-foreground">
+          No scientific definition is configured for this service. Manual pricing remains available.
         </p>
       ) : null}
       <Dialog
@@ -359,14 +376,15 @@ export function LabServiceOfferingsPanel({
         <DialogContent
           showCloseButton={!mutation.isPending}
           aria-busy={mutation.isPending}
+          onCloseAutoFocus={event => { if (actionRef.current?.isConnected) { event.preventDefault(); actionRef.current.focus() } }}
         >
           <DialogHeader>
             <DialogTitle>
               {editing?.availability
-                ? 'Edit offering availability'
+                ? 'Edit definition availability'
                 : editing?.item
-                  ? 'Create offering version'
-                  : 'Add Lab Service offering'}
+                  ? 'Create scientific version'
+                  : 'Add scientific definition'}
             </DialogTitle>
             <DialogDescription>
               {editing?.availability
@@ -376,14 +394,13 @@ export function LabServiceOfferingsPanel({
           </DialogHeader>
           {mutation.error ? (
             <Alert variant="destructive">
-              <AlertTitle>Offering was not saved</AlertTitle>
+              <AlertTitle>Scientific definition was not saved</AlertTitle>
               <AlertDescription>
                 {getOrderErrorMessage(
                   mutation.error,
                   'Review the values and try again.',
                 )}{' '}
-                Existing edits remain here. If another user changed the
-                offering, close and reopen it after refreshing.
+                Latest saved values have been refreshed where available; your edits remain. Review them before saving again.
               </AlertDescription>
             </Alert>
           ) : null}
@@ -395,7 +412,7 @@ export function LabServiceOfferingsPanel({
             <fieldset disabled={mutation.isPending} className="space-y-5">
               {!editing?.availability ? (
                 <>
-                  {field('name', 'Offering name')}
+                  <p className="text-sm font-medium">{parentItem.name}</p>
                   {field('description', 'Description', undefined, true)}
                   <div>
                     <Label htmlFor="offering-catalog">
@@ -404,21 +421,18 @@ export function LabServiceOfferingsPanel({
                       </RequiredFieldName>
                     </Label>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      Choose the designated active PSeq Lab Service product priced per specimen. Maintain its
-                      price in Service catalog.
+                      This definition belongs to the service shown here. Maintain its price on the service item.
                     </p>
                     <select
                       id="offering-catalog"
+                      disabled
                       className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                       {...form.register('catalogItemId')}
                     >
-                      <option value="">Select catalog item</option>
                       {configuration.catalogItems
                         .filter(
                           (item) =>
-                            item.isActive &&
-                            item.isPSeqLabService &&
-                            item.salesUnit.toLowerCase() === 'specimen',
+                            item.id === catalogItemId,
                         )
                         .map((item) => (
                           <option key={item.id} value={item.id}>
@@ -441,7 +455,7 @@ export function LabServiceOfferingsPanel({
                     </legend>
                     <div className="mt-2 space-y-2">
                       {configuration.analyses
-                        .filter((item) => item.isActive && !item.isSynthetic)
+                        .filter((item) => item.isActive && !item.isSynthetic || selectedAnalyses.includes(item.id))
                         .map((item) => (
                           <label
                             key={item.id}
@@ -461,18 +475,20 @@ export function LabServiceOfferingsPanel({
                                 )
                               }
                             />
-                            {item.name}
+                            {item.name}{!item.isActive || item.isSynthetic ? ' (not available for new orders)' : ''}
                           </label>
                         ))}
                     </div>
+                    {!configuration.analyses.some(item => item.isActive && !item.isSynthetic) ? <p className="mt-2 text-sm">Create or activate an approved analysis in Order settings → Analyses before activating this service definition.</p> : null}
                     {error('analysisIds')}
                   </fieldset>
-                  {field(
-                    'allowedMaterialTypes',
-                    'Allowed material types',
-                    'Enter one supported material type per line.',
-                    true,
-                  )}
+                  <fieldset><legend className="text-sm font-medium"><RequiredFieldName>Supported sample types</RequiredFieldName></legend><p className="mt-1 text-sm text-muted-foreground">Select the exact approved revisions. PSeq ordering currently requires one extracted-RNA tube type; other materials do not enable new intake workflows.</p>
+                    {samples.isLoading ? <p role="status">Loading sample types…</p> : null}
+                    {samples.error ? <p role="alert">Sample types could not be loaded. <Button variant="outline" onClick={() => void samples.refetch()} type="button">Retry</Button></p> : null}
+                    <div className="mt-2 space-y-2">{(samples.data?.sampleTypes ?? []).filter(type => type.isActive || selectedSampleTypes.includes(type.id)).map(type => <label key={type.id} className="flex cursor-pointer items-start gap-2 text-sm"><Checkbox checked={selectedSampleTypes.includes(type.id)} onCheckedChange={checked => form.setValue('supportedSampleTypeIds', checked ? [...selectedSampleTypes, type.id] : selectedSampleTypes.filter(id => id !== type.id), { shouldDirty: true, shouldValidate: true })} />{type.name} · revision {type.revision} · {type.materialClass}{type.isActive ? '' : ' (inactive)'}</label>)}</div>
+                    {samples.data && samples.data.sampleTypes.length === 0 ? <p className="mt-2 text-sm">Create a shared sample-type definition in Order settings → Sample types first.</p> : null}
+                    {error('supportedSampleTypeIds')}
+                  </fieldset>
                   {field(
                     'allowedBiologicalSources',
                     'Allowed biological sources',
@@ -585,7 +601,7 @@ export function LabServiceOfferingsPanel({
             <Button
               type="submit"
               form="lab-offering-form"
-              disabled={mutation.isPending || !apiEnabled}
+              disabled={mutation.isPending || !apiEnabled || Boolean(editing?.availability && !form.formState.isDirty) || (!editing?.availability && !samples.data)}
             >
               {mutation.isPending
                 ? 'Saving…'
@@ -593,7 +609,7 @@ export function LabServiceOfferingsPanel({
                   ? 'Save availability'
                   : editing?.item
                     ? 'Create version'
-                    : 'Create offering'}
+                    : 'Create definition'}
             </Button>
           </RequiredDialogFooter>
         </DialogContent>

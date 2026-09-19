@@ -69,7 +69,8 @@ public sealed partial class LabServiceOrdersController
                     offering.Version, offering.Name, offering.CatalogItemId, offering.CatalogCode, offering.CatalogItemVersion,
                     offering.Currency, offering.UnitPrice, order.RequestedSpecimenCount, preview.Subtotal, preview.Tax!.Value,
                     preview.Total!.Value, offering.AnalysisIds, JsonSerializer.Serialize(analyses, JsonSerializerOptions),
-                    offering.IncludedOutputContract, offering.MinimumTurnaroundDays, offering.MaximumTurnaroundDays, now);
+                    offering.IncludedOutputContract, offering.MinimumTurnaroundDays, offering.MaximumTurnaroundDays, now,
+                    offering.SupportedSampleTypes!.Select(type => type.Id).ToArray());
                 var lines = JsonSerializer.Serialize(new[] { new { catalogItemId = offering.CatalogItemId,
                     externalItemId = offering.CatalogCode, description = offering.Name,
                     quantity = order.RequestedSpecimenCount, unitPrice = offering.UnitPrice } }, JsonSerializerOptions);

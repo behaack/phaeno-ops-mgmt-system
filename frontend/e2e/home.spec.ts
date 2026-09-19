@@ -158,7 +158,7 @@ test('keeps workspace navigation concise and groups the user menu', async ({
       header.getByRole('link', { name: 'Portal accounts' }),
     ).toHaveCount(0)
     await expect(
-      header.getByRole('link', { name: 'Order & retention settings' }),
+      header.getByRole('link', { name: 'Order settings' }),
     ).toHaveCount(0)
   }
 
@@ -177,7 +177,7 @@ test('keeps workspace navigation concise and groups the user menu', async ({
     page.getByRole('menuitem', { name: 'Portal accounts' }),
   ).toHaveCount(0)
   await expect(
-    page.getByRole('menuitem', { name: 'Order & retention settings' }),
+    page.getByRole('menuitem', { name: 'Order settings' }),
   ).toBeVisible()
   await expect(page.getByText('Resources', { exact: true })).toBeVisible()
   await expect(
@@ -202,7 +202,7 @@ test('keeps workspace navigation concise and groups the user menu', async ({
     '[role="menuitemradio"][data-state="checked"]',
   )
   await expect(selectedDisplayChoice).toHaveCount(1)
-  await page.getByRole('menuitem', { name: 'Order & retention settings' }).focus()
+  await page.getByRole('menuitem', { name: 'Order settings' }).focus()
   const selectedDisplayBackground = await selectedDisplayChoice.evaluate(
     (choice) => getComputedStyle(choice).backgroundColor,
   )
@@ -249,7 +249,7 @@ test('keeps workspace navigation concise and groups the user menu', async ({
   })
   await darkThemeChoice.focus()
   await darkThemeChoice.press('ArrowDown')
-  const nextMenuItemName = isMobile ? 'Dashboard' : 'Order & retention settings'
+  const nextMenuItemName = isMobile ? 'Dashboard' : 'Order settings'
   await expect(
     page.getByRole('menuitem', { name: nextMenuItemName }),
   ).toBeFocused()

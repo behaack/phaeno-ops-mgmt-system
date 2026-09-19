@@ -24,7 +24,6 @@ export function WebOpsDeliveryPanel() {
   const resend = useMutation({ mutationFn: resendWebOpsNotification, onSuccess: async () => { await client.invalidateQueries({ queryKey: ['web-ops'] }) } })
   function closeDialog() {
     setSelected(undefined)
-    requestAnimationFrame(() => (actionButton.current?.isConnected ? actionButton.current : heading.current)?.focus())
   }
   async function confirm() {
     if (!selected) return
@@ -65,7 +64,7 @@ export function WebOpsDeliveryPanel() {
       </nav>}
     </CardContent>
     <Dialog open={Boolean(selected)} onOpenChange={open => { if (!open && !resend.isPending) closeDialog() }}>
-      <DialogContent>
+      <DialogContent onCloseAutoFocus={event => { event.preventDefault(); (actionButton.current?.isConnected ? actionButton.current : heading.current)?.focus() }}>
         <DialogHeader><DialogTitle>Queue this email again?</DialogTitle></DialogHeader>
         <DialogDescription>{selected ? `${kindLabels[selected.kind]} for ${selected.contactName} at ${selected.organizationName}. Recipient: ${selected.recipientEmail ?? 'Phaeno staff'}. ` : ''}This can send a duplicate if an earlier attempt reached the recipient. Check the request and delivery history before continuing.</DialogDescription>
         {resend.isError && <Alert variant="destructive"><AlertDescription>{getWebOpsErrorMessage(resend.error, 'The email could not be queued.')}<Button size="sm" variant="outline" onClick={async () => { const current = await query.refetch(); if (current.error) return; const refreshed = current.data?.items.find(item => item.id === selected?.id); if (refreshed?.canResend) { setSelected(refreshed); resend.reset() } else closeDialog() }}>Refresh delivery status</Button></AlertDescription></Alert>}

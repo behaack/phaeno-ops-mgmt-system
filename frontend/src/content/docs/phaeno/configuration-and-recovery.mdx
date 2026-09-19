@@ -6,11 +6,11 @@ Open the user dropdown menu, then choose **Administration → Order settings**.
 
 The separate **File retention policies** page, after **Order settings**, **Lab settings**, **CRM settings**, and **Sample shipping settings** in the user menu, controls the retention policy used by future released result and output packages. Only a Phaeno platform administrator can change these settings.
 
-Use the far-left **Order settings** sidebar to move among **Quote & workflow**, **Service catalog**, **Lab Service offerings**, **Analyses**, **Sample types**, **PSeq kits**, **Assembly**, and **Legacy links**. On wider screens the sidebar can remain pinned; when it is unpinned or the screen is narrow, open the same non-modal navigation from the edge tab. The selected subject appears in the main pane without duplicating the navigation above the configuration form.
+Use the far-left **Order settings** sidebar to move among **Quote & workflow**, **Service catalog**, **Sample types**, **Analyses**, **PSeq kits**, **Assembly**, and **Legacy links**. Scientific service definitions are managed inside their catalog item. On wider screens the sidebar can remain pinned; when it is unpinned or the screen is narrow, open the same non-modal navigation from the edge tab. The selected subject appears in the main pane without duplicating the navigation above the configuration form.
 
 ## Maintain commercial configuration
 
-Maintain active billable items under **Service catalog**, including a permanent item code, name, description, sales unit, base price, currency, and availability. Link these Phaeno-owned items to portal analyses, Partner reagent offerings, or assembly profiles.
+Maintain active billable items under **Service catalog**. Open an item's name to review its details, then use **Edit item** to change its name, description, sales unit, base price, currency, or availability. The item code remains permanent. Use **Add item** from the list to create an item. Link these Phaeno-owned items to portal analyses, Partner reagent offerings, or assembly profiles.
 
 The designated laboratory-service item must use the permanent code `pseq-lab-service`, the sales unit `specimen`, and an active state. The catalog identifies it as **PSeq Lab Service**. POMS blocks laboratory quote issuance when this exact item is missing, inactive, or uses another unit; an unrelated specimen fee cannot replace it.
 
@@ -20,11 +20,17 @@ Historical credit and accounting links are retained under **Legacy links**. Part
 
 Open **Quote & workflow → Edit settings** to maintain quote validity and review the supported sample and result workflows. The initial quote validity is 30 days, and an issued quote snapshots its own expiration. The supported sample workflow uses an exact roster after quote acceptance; the supported result destination is governed Portal delivery. Free-form configuration text no longer establishes readiness. Review and save older workflow settings once, then maintain shared definitions in **Order settings → Sample types** and destinations and rules in **Sample shipping settings**. Each order and shipment still checks its specific requirements.
 
-## Maintain configured Lab Service offerings
+## Maintain a service's scientific definition
 
-Use **Lab Service offerings** to define the specimen-priced bundle: catalog item, included analyses, allowed material types and biological sources, included outputs, published minimum and maximum turnaround, availability dates and active state. The price comes from the selected catalog item. New offerings start inactive; activate only approved complete definitions. Synthetic test offerings cannot be purchased.
+Open **Service catalog → PSeq Lab Service** and review **Scientific definition** beneath the commercial details. This defines the included analyses, supported sample-type revisions, biological sources, outputs, published minimum and maximum turnaround, availability dates, and active state. The price comes from the parent catalog item. Use **Add definition** when none exists; otherwise use a version's **Actions → Create new version**. New definitions and versions start inactive. Activate only approved, complete definitions. Synthetic definitions cannot be purchased.
 
-**Edit availability** changes when the existing version can be selected. **Create new version** records changed scientific scope as a new version. Accepted orders retain the version, scope, price and tax reviewed at commitment; later catalog or profile changes do not silently alter them. Review all final terms after a concurrent configuration change.
+Select the exact supported sample-type revisions. **Order settings → Sample types** maintains reusable definitions; a globally active type or matching shipping rule does not automatically make it supported by a service. Materials follow the selected types. Current configured PSeq ordering requires exactly one supported extracted-RNA tube type; assigning other types does not enable a new intake workflow. Kit and Assembly configuration remain in their own settings pages.
+
+Each item has one current scientific definition, with prior versions retained. A scientific version cannot move to another catalog item. **Actions → Edit availability** changes when an existing version can be selected. Publishing a new active version closes overlapping prior availability for that item; editing availability cannot introduce an overlap.
+
+Older definitions without explicit sample assignments show **Review required** and cannot be selected for new configured orders. Create a new version, review the supported sample types, and activate the approved definition. Existing accepted orders retain their saved version, scope, price, tax, and shipment instructions. New configured commitments also freeze supported sample-type revision IDs. If that revision becomes unavailable before a new shipment is authorized, staff must review the shipping configuration; POMS will not silently substitute an unrelated type. Legacy and manually quoted commitments keep their existing shipping checks.
+
+After a concurrent configuration change, a failed save retains your edits and refreshes saved values where available. Review the latest terms before retrying. Closing an editor with unsaved changes asks whether to discard them.
 
 ## Maintain scientific configuration
 
@@ -44,6 +50,8 @@ Open **Administration → Sample shipping settings**, after **CRM settings** in 
 - container sizes with a required SKU, common name, approved usable tube capacity, exact compatible sample-and-rule choices, supplier product references, packing instructions, effective dates, and display order.
 
 New records default to inactive. Activate a revision only after the address and scientific and operational instructions are approved. Selecting **Create revision** copies the current content into a new record; it does not rewrite history or any packet snapshot already issued. A new active revision replaces its predecessor when it becomes effective.
+
+In **Order settings → Sample types**, open a sample type's name to see its dedicated detail page. It shows the complete requirements, quantity and transit limits, availability, and revision history. Copy the page address to share a link with another authorized Phaeno administrator; the link always opens that exact revision. Select a revision in the history to review it, or use **View latest revision** from an older page. **Create revision** on the latest page opens the existing revision editor. Saving opens the new revision's details; **Back to sample types** returns to the list.
 
 The **Container sizes** list supports search and status filtering. Open a common name to review its details and revision history. Use **Add container size** or **Create revision** for bounded changes. The SKU stays fixed across revisions, including leading zeros and separators. Saving an inactive container revision creates a draft and leaves the preceding active revision available. To stop an active revision from future selection, open its detail page and choose **Actions → Deactivate revision**. Existing kits and manifests retain the container facts recorded when they were prepared.
 

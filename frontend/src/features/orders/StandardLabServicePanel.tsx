@@ -452,7 +452,7 @@ export function OfferingSummary({
       <p>{offering.description}</p>
       <p className="whitespace-pre-wrap">{offering.includedOutputContract}</p>
       <p>
-        Materials: {offering.allowedMaterialTypes.join(', ')}. Biological
+        Materials: {offering.supportedSampleTypes?.length ? offering.supportedSampleTypes.map(type => type.name).join(', ') : offering.allowedMaterialTypes.join(', ')}. Biological
         sources: {offering.allowedBiologicalSources.join(', ')}.
       </p>
       <p>

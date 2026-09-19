@@ -111,7 +111,7 @@ describe('Customer sample-list authorization', () => {
     expect(screen.getByText('0 of 2 tubes matched')).toBeTruthy()
     expect(screen.queryByText('Sample receipt progress')).toBeNull()
   })
-  it('paginates ten naturally ordered samples across source groups with whole-group counts', () => {
+  it('paginates ten lexically ordered sample IDs across source groups with whole-group counts', () => {
     const samples = Array.from({ length: 12 }, (_, index) => ({ ...order.samples[0], id: `human-${12 - index}`, customerSampleId: `S-${12 - index}` }))
     renderPanel({ ...order, requestedSpecimenCount: 13,
       sourceGroups: [{ ...order.sourceGroups[0], specimenCount: 12 }, { id: 'mouse', biologicalSource: 'Mouse liver', specimenCount: 1, version: 1 }],
@@ -119,7 +119,7 @@ describe('Customer sample-list authorization', () => {
     })
     const roster = screen.getByRole('region', { name: 'Samples by biological source' })
     expect(within(roster).getAllByRole('listitem')).toHaveLength(10)
-    expect(within(roster).getAllByRole('listitem').map(row => within(row).getByText(/^S-\d+$/).textContent)).toEqual(Array.from({ length: 10 }, (_, index) => `S-${index + 1}`))
+    expect(within(roster).getAllByRole('listitem').map(row => within(row).getByText(/^S-\d+$/).textContent)).toEqual(['S-1', 'S-10', 'S-11', 'S-12', 'S-2', 'S-3', 'S-4', 'S-5', 'S-6', 'S-7'])
     expect(within(roster).getByText('12 of 12 samples')).toBeTruthy()
     expect(screen.getByText('Samples 1–10 of 13')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Previous samples' })).toHaveProperty('disabled', true)
@@ -128,8 +128,8 @@ describe('Customer sample-list authorization', () => {
     const continued = within(roster).getByRole('region', { name: 'Human PBMCs (continued)' })
     expect(within(continued).getByText('12 of 12 samples')).toBeTruthy()
     expect(within(continued).getAllByRole('listitem')).toHaveLength(2)
-    expect(within(continued).getByText('S-11')).toBeTruthy()
-    expect(within(continued).getByText('S-12')).toBeTruthy()
+    expect(within(continued).getByText('S-8')).toBeTruthy()
+    expect(within(continued).getByText('S-9')).toBeTruthy()
     expect(within(roster).getByRole('region', { name: 'Mouse liver' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Next samples' })).toHaveProperty('disabled', true)
     expect(screen.getByText('13 of 13 sample IDs saved')).toBeTruthy()
