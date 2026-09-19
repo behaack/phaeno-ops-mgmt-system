@@ -2,7 +2,7 @@
 
 Status: production reset and matching API/Portal release activated; local database switched. Local PostgreSQL service restart and signed-in acceptance remain open as recorded below. Owning authorization and scope: [database reset plan](../plans/DATABASE-REBASE-AND-RESEED-PLAN.md), followed by the owner's **Execute** instruction.
 
-Production was subsequently upgraded to PostgreSQL 18.6 in the separately authorized [engine upgrade](../plans/POSTGRESQL-18-UPGRADE-PLAN.md#production-execution-record). The version 17 targets below describe the rebase checkpoint; its old cluster remains protected rollback storage.
+Production was subsequently upgraded to PostgreSQL 18.6 in the separately authorized [engine upgrade](../plans/POSTGRESQL-18-UPGRADE-PLAN.md#production-execution-record). The version 17 targets below describe the rebase checkpoint. The owner later authorized [retirement of Portal's old production storage](../plans/POSTGRESQL-18-UPGRADE-PLAN.md#authorized-postgresql-17-storage-retirement) after verification; encrypted recovery archives remain retained. The old local database and the separate Emmaus PostgreSQL 17 server were unchanged.
 
 ## Targets and recovery boundary
 
@@ -59,6 +59,8 @@ Prepared manifests contain 127 local rows and 211 production rows. Production in
 
 ## Rollback
 
+The production rename procedure below describes the original rebase cutover only. After the separately authorized PostgreSQL 17 storage retirement, recover production from a verified encrypted backup with its matched application/runtime records; the dated old database is no longer present on the host. Local rollback is unchanged.
+
 Before reopening writes, stop the new API. If activation failed, retain the failed replacement under a distinct dated name, rename `phaeno_portal_green_before_20260919` back to `phaeno_portal_green`, restore the saved runtime files and old image, then check API health/database ping. Never pair the old image with the new schema or erase migration history. Existing managed-file volumes remain intact; restore the matched encrypted file/database backup if files changed. After writes reopen, reconcile new records before rollback; a blind rename could lose new business data.
 
 For local rollback, restore only the former database connection value. Do not overwrite the user's complete local settings file. Cleanup of the old databases, protected manifests or recovery archives requires a separate explicit decision.
@@ -69,7 +71,7 @@ For local rollback, restore only the former database connection value. Do not ov
 - API image: `phaeno-portal-green-api:sha-9ca9820014af-rebase-20260919`; image ID `sha256:fb0116d0fa51e4590390e50db7aa1e2441b2856dec6603b30321d2a8faad303e`. Activation completed at **2026-09-19 16:37:35 UTC**, with a **20-second** API cutover pause.
 - Portal: production deployment [`dpl_5mQmuBRxNeBCh7Rfp4XufXCZst91`](https://vercel.com/cadexgenomics/phaeno-ops-mgmt-system/5mQmuBRxNeBCh7Rfp4XufXCZst91), rebuilt with Production settings from the same exact source and assigned to `portal.phaenobiotech.com`. Vercel reported Ready at 09:38 PDT.
 - Final write-frozen preservation comparison passed. The activated production database then passed the exact package verification before browser activity. Local package SHA-256: `d018db29b7d12f97ffc5fc943cbde557405ae9d4ed4d4bf527096e235d4a9051`; production: `6b9c1cc49deff2e0142068b484a0e1ee7e77a0f9803705e270bae0549381a5e2`.
-- Both databases contain only baseline `20260919153100_InitialPSeqOperationsRebased`. The old local database remains intact; the old production database is retained under its dated name with connections disabled. No old database or file volume was deleted.
+- Both databases contain only baseline `20260919153100_InitialPSeqOperationsRebased`. At this rebase checkpoint, the old local database remained intact and the old production database was retained under its dated name with connections disabled; no old database or file volume was deleted during activation. The later production-only storage retirement is linked above.
 - Production PostgreSQL runs with `track_commit_timestamp=on`; both scientific-evidence and result-traceability environment overrides are true. Bootstrap email was cleared in each environment to prevent startup reprovisioning of preserved accounts; credentials, memberships and external identity bindings were retained.
 - Fresh API health and Portal health/root returned HTTP 200; database ping returned HTTP 204; the public Website search read endpoint returned HTTP 200. No contact form or notification was submitted as a probe.
 - Local development configuration now points to `phaeno_ops_clean_20260919`, and the API/frontend were started on their normal local endpoints. Exactly one owner account and its dependencies were verified before startup. A read-only Clerk lookup independently confirmed the retained owner's external binding.

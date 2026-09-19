@@ -16,6 +16,7 @@ artifacts
 # Test and coverage output
 **/coverage/
 **/test-results/
+**/TestResults/
 **/playwright-report/
 
 # Local configuration, documents and secrets

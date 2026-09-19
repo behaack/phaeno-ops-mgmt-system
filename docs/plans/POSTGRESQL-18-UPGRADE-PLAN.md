@@ -6,7 +6,7 @@ Status: completed in production, September 19, 2026. The owner accepted the prop
 
 Align production with the PostgreSQL 18 major version already used locally. Preserve every current production row, identity, authorization, CRM relationship, configuration revision and database object. This is a full transfer, not another selective reset. Keep the deployed API/UI application and authentication settings unchanged. Other applications on the shared host are outside scope.
 
-The [September 19 rebase](../operations/database-rebase-20260919.md) left a roughly 21 MB active database on PostgreSQL 17.10, Debian trixie, with only the standard plpgsql extension. The separately retained pre-rebase database remains on its original PostgreSQL 17 volume; it is not copied into the active version 18 instance.
+The [September 19 rebase](../operations/database-rebase-20260919.md) left a roughly 21 MB active database on PostgreSQL 17.10, Debian trixie, with only the standard plpgsql extension. The pre-rebase database stayed on the original PostgreSQL 17 volume during cutover and was not copied into the active version 18 instance. That retired volume was subsequently removed with separate owner authorization; encrypted recovery archives remain available as recorded below.
 
 ## Engineering decisions
 
@@ -28,11 +28,11 @@ The [September 19 rebase](../operations/database-rebase-20260919.md) left a roug
 6. Verify an encrypted version 18 backup/restore, install the new timer helpers, record the next scheduled time and measured outage. Manual execution is not scheduled-run evidence.
 7. Retain old storage and recovery packages until separately authorized cleanup.
 
-Before writes reopen, rollback stops the new database, recreates the version 17 container from its retained volume and matched configuration, and restarts the API. After writes reopen, reconcile new records before rollback; a blind rollback can lose new business data. Never run the old engine on new-version storage.
+During the original cutover, before writes reopened, rollback could stop the new database, recreate the version 17 container from its retained volume and matched configuration, and restart the API. Following the separately authorized storage retirement below, that volume-based rollback is no longer available; recovery requires the matched encrypted backup and application release. After writes reopen, reconcile new records before rollback; a blind rollback can lose new business data. Never run the old engine on new-version storage.
 
 ## Acceptance
 
-All current data and schema compare equal; the single EF baseline remains unchanged. Production reports 18.6, expected persistent volume, no public database port, commit timestamps on, and healthy API/Portal/Website reads. Backup restore succeeds and the original timer schedule uses the updated helpers. Old PostgreSQL 17 storage retains both reset recovery databases. Local administrative restart and signed-in acceptance from the prior reset remain separately tracked.
+All current data and schema compare equal; the single EF baseline remains unchanged. Production reports 18.6, expected persistent volume, no public database port, commit timestamps on, and healthy API/Portal/Website reads. Backup restore succeeds and the original timer schedule uses the updated helpers. Both reset recovery databases were retained on PostgreSQL 17 storage through cutover; verified encrypted archives preserve those recovery points after the separately authorized storage retirement. Local administrative restart and signed-in acceptance from the prior reset remain separately tracked.
 
 References: [PostgreSQL major upgrades](https://www.postgresql.org/docs/18/upgrading.html), [version 18 migration notes](https://www.postgresql.org/docs/18/release-18.html), [official Docker storage layout](https://hub.docker.com/_/postgres).
 
@@ -58,7 +58,19 @@ Pre-upgrade encrypted coordinated backup: `snapshot-20260919T171454Z-3089b820-09
 
 The existing host timer now points to immutable helpers at infrastructure revision `28b6e8c2a67e839e98e8a815710c2dd5f2f3313d`. It is enabled and active, retains 02:00 America/Los_Angeles plus the 03:00 DST fallback, and reported its next execution at **September 20, 2026, 09:00 UTC (2 a.m. Pacific)**. The recipient key and off-server collection workflow were unchanged. This verifies configuration and manual backup execution, not the next scheduled run.
 
-The protected PostgreSQL 17 volume `phaeno-portal-green_portal_green_postgres_data` still contains its original version 17 cluster, including the active pre-upgrade database and separately retained pre-rebase database. Its `PG_VERSION` was read as 17 using the PostgreSQL file owner with a read-only mount. The exact old image, Compose definition, runtime manifest and encrypted recovery points are retained. No rollback volume or old database was deleted. Private snapshots, scripts and receipts are under ignored `artifacts/postgres18-upgrade-20260919` locally and root-only `/opt/phaeno.portal-green/upgrade-postgres18-20260919` on the host.
+At the cutover checkpoint, the protected PostgreSQL 17 volume `phaeno-portal-green_portal_green_postgres_data` retained the original version 17 cluster, including the active pre-upgrade database and separately retained pre-rebase database. Its `PG_VERSION` was read as 17 using the PostgreSQL file owner with a read-only mount. The original cutover deleted no rollback volume or old database. The later authorized retirement is recorded below; the historical Compose definition, runtime manifest and encrypted recovery points remain retained. Private snapshots, scripts and receipts are under ignored `artifacts/postgres18-upgrade-20260919` locally and root-only `/opt/phaeno.portal-green/upgrade-postgres18-20260919` on the host.
+
+### Authorized PostgreSQL 17 storage retirement
+
+The owner subsequently instructed, "Once verified, please remove 17." At **2026-09-19 17:30:40 UTC**, a guarded operation under the deployment lock removed only the unused Portal volume `phaeno-portal-green_portal_green_postgres_data`. This removed its pre-upgrade and pre-rebase database copies from live host storage. The old Portal database container had already been removed during cutover.
+
+Before deletion, verification confirmed the volume's Portal ownership, `PG_VERSION=17`, no container references, the exact active PostgreSQL 18 image/volume, and healthy API/database endpoints. Server and off-server encrypted archive checksums passed. Both final pre-rebase and pre-upgrade dumps were independently decrypted off-server and matched their original plaintext hashes; the pre/post-upgrade coordinated backups retained their successful restore/cleanup receipts and verified encrypted checksums.
+
+After deletion, the old volume was confirmed absent. PostgreSQL 18.6 remained healthy on `phaeno-portal-green-postgres18-data`, with transaction timestamps and checksums on; API health returned 200 and database ping 204. No application or database restart was needed. All encrypted recovery archives were retained. The private receipt is `pg17-retirement-receipt.json` in the local and server upgrade artifact directories listed above.
+
+The shared `postgres:17` image, ID `sha256:2d6ecff94c7417f93799039c2884c5d86515ec6e8289b1141ce6773de40f538d`, remains required by the separate `ociaapi-db-1` container. Emmaus/OCIA remained on PostgreSQL 17.10 with the same container, image and start time. The owner explicitly chose to leave Portal on 18.6 and Emmaus on 17.10. No shared image or unrelated application storage was removed.
+
+For current Portal recovery, restore the appropriate verified PostgreSQL 18 backup into separately prepared version 18 storage. Historical pre-upgrade/pre-rebase archives remain available with their matched application/runtime recovery records. The former database-rename or old-volume reattachment shortcuts no longer apply in production. Reconcile any newer writes before restoring an older recovery point. Local database retention is unchanged.
 
 ### Separate remaining acceptance
 

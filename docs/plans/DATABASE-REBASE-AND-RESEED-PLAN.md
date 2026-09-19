@@ -1,6 +1,6 @@
 # Database rebase and selective preservation
 
-Status: production reset/release activated and local database switched, September 19, 2026. Final local service restart and signed-in acceptance are tracked in the execution record. After settling the preservation choices below, the owner instructed **Execute**. That instruction authorizes this reset, migration replacement, local and production cutover, and the matched release. The original databases remain protected rollback sources; their cleanup is not authorized by this execution.
+Status: production reset/release activated and local database switched, September 19, 2026. Final local service restart and signed-in acceptance are tracked in the execution record. After settling the preservation choices below, the owner instructed **Execute**. That instruction authorizes this reset, migration replacement, local and production cutover, and the matched release. The reset execution retained the original databases and did not itself authorize cleanup. After the separate PostgreSQL 18 upgrade, the owner authorized [retirement of Portal's old production storage](POSTGRESQL-18-UPGRADE-PLAN.md#authorized-postgresql-17-storage-retirement). Encrypted recovery archives and the original local database remain retained.
 
 This is a new reset project. The [July restructuring/reset record](PSEQ-OPERATIONS-MIGRATION-PLAN.md) remains historical evidence and does not authorize this production reset.
 
@@ -27,7 +27,7 @@ Use one reviewed reusable configuration seed in both environments, with environm
 
 The execution inventory and exact dispositions are recorded in [the reset runbook](../operations/database-rebase-20260919.md). Website customer inquiries were preserved, the production PSeq price retained inactive for review, and exact test-only definitions excluded. CRM handoff dependencies were retained without replay. Keep rollback sources until a separate explicit cleanup decision; no automatic retention deadline was invented.
 
-## Current repository findings
+## Repository findings at the reset planning checkpoint
 
 - There are 76 migration source files at this planning checkpoint. This is a repository count, not a claim about migrations applied to production. Current uncommitted traceability changes are part of the proposed target and must be frozen and verified before generating its baseline.
 - `PSeqOperationsDbContext` spans `commercial_ops`, `lab_ops` and `website`; migration history is `public.__ef_migrations_history`. A reset limited to the visible Lab and Order screens would miss part of the database.
