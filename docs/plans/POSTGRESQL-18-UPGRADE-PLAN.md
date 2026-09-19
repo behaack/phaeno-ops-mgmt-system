@@ -1,6 +1,6 @@
 # Production PostgreSQL 18 upgrade
 
-Status: authorized and in progress, September 19, 2026. The owner accepted the proposed production upgrade with "Okay. Let's do it now." Scope includes rehearsal, backup/deployment changes, verification, source commit/push and the production engine switch. No application schema or EF migration change is planned.
+Status: completed in production, September 19, 2026. The owner accepted the proposed production upgrade with "Okay. Let's do it now." Scope includes rehearsal, backup/deployment changes, verification, source commit/push and the production engine switch. No application schema or EF migration change is planned.
 
 ## Product outcome
 
@@ -39,3 +39,27 @@ References: [PostgreSQL major upgrades](https://www.postgresql.org/docs/18/upgra
 ## Rehearsal evidence
 
 The PostgreSQL 18.6 candidate restored all 197 tables and all 211 current rows with equal data, foreign keys, migration history and normalized schema definitions. The deployed API's migration-only check reported the database already up to date. Commit timestamps and data checksums are on. Sixteen governed-download and managed-retention regression tests passed against a separate network-isolated PostgreSQL 18.6 container, with zero failures or skips; that disposable test container was removed without touching candidate or production storage.
+
+## Production execution record
+
+- Infrastructure revision: `28b6e8c2a67e839e98e8a815710c2dd5f2f3313d`, committed and pushed on `codex/portal-documentation-search-release`. Active infrastructure release: `/opt/phaeno.portal-green/releases/postgres18-28b6e8c2a67e`.
+- Production version: **PostgreSQL 18.6** (`18.6-1.pgdg13+2`, Debian trixie). Official image digest `sha256:86c951e05bf56c93d95d397747fb8820ac76cc3bedb78f43abd83eedbe3666ae`; local image ID `sha256:662db3da228c2ea2649b3ae04db4b4479e85fea5979f6a917a7f6d5cb1e7ec39`.
+- Switch completed **2026-09-19 17:16:48 UTC**, with **18 seconds** of API pause. Pre/post coordinated backups each paused the API for 7 seconds, for 32 seconds across three separate maintenance pauses.
+- Final write-frozen source, restored candidate and activated database comparisons all passed: **197 tables, 211 rows**, exact data/column/foreign-key/migration equality, and reviewed equivalent schema representation. Users 2, organizations 2, CRM opportunities 1 and Lab orders 0 remain intact. The original reset import receipt was preserved as a database comment.
+- No new EF migration was generated or applied. Baseline remains `20260919153100_InitialPSeqOperationsRebased`. The deployed API migration-only rehearsal reported already up to date.
+- Running application remains `phaeno-portal-green-api:sha-9ca9820014af-rebase-20260919`, source `9ca9820014af07aa7280bd57a73cb66f5ff6044b`. The existing Portal deployment remains unchanged; this release changes infrastructure only. Runtime records distinguish application and infrastructure revisions.
+- Active database volume is `phaeno-portal-green-postgres18-data`, mounted at `/var/lib/postgresql`, with no host database port. Locale is `en_US.utf8`; recorded and actual collation versions both equal 2.41. Data checksums and commit timestamps are on; a fresh committed transaction produced an actual commit timestamp.
+- Result traceability and scientific evidence runtime flags remain true. API health, Portal health/root and public Website search returned HTTP 200; database ping returned HTTP 204. The post-switch API log check found no failure or unhandled-exception entries.
+- The ordinary deployment guard was exercised against version 17 and rejected the operation before any runtime file changed. Shell syntax and documentation link/whitespace checks passed. All 16 focused version 18.6 timing/retention tests passed with no skips.
+
+### Recovery and scheduler
+
+Pre-upgrade encrypted coordinated backup: `snapshot-20260919T171454Z-3089b820-0928-49a9-99e5-01ea87423e13`. Post-upgrade backup: `snapshot-20260919T171740Z-c6f90f08-d29b-42ac-b321-8ed131490b41`. Both passed database restoration, file-reference checks, a populated synthetic file fixture and helper cleanup. Actual production file references were zero; this is not a claim of real scientific-file recovery acceptance. Encrypted snapshots and manifests were copied off-server and checksums verified. The additional final write-frozen dump was independently encrypted, copied off-server and decrypted with the existing migration-backup private key to verify exact bytes; temporary decrypted output/passphrase files were removed.
+
+The existing host timer now points to immutable helpers at infrastructure revision `28b6e8c2a67e839e98e8a815710c2dd5f2f3313d`. It is enabled and active, retains 02:00 America/Los_Angeles plus the 03:00 DST fallback, and reported its next execution at **September 20, 2026, 09:00 UTC (2 a.m. Pacific)**. The recipient key and off-server collection workflow were unchanged. This verifies configuration and manual backup execution, not the next scheduled run.
+
+The protected PostgreSQL 17 volume `phaeno-portal-green_portal_green_postgres_data` still contains its original version 17 cluster, including the active pre-upgrade database and separately retained pre-rebase database. Its `PG_VERSION` was read as 17 using the PostgreSQL file owner with a read-only mount. The exact old image, Compose definition, runtime manifest and encrypted recovery points are retained. No rollback volume or old database was deleted. Private snapshots, scripts and receipts are under ignored `artifacts/postgres18-upgrade-20260919` locally and root-only `/opt/phaeno.portal-green/upgrade-postgres18-20260919` on the host.
+
+### Separate remaining acceptance
+
+Local PostgreSQL remains version 18.3; its earlier administrator restart requirement still reports `track_commit_timestamp=off` and is not resolved by upgrading production. The previously recorded fresh owner sign-in checks also remain separate. No identities or access permissions were changed during this engine upgrade.

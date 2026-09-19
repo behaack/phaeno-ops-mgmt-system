@@ -2,6 +2,8 @@
 
 Status: production reset and matching API/Portal release activated; local database switched. Local PostgreSQL service restart and signed-in acceptance remain open as recorded below. Owning authorization and scope: [database reset plan](../plans/DATABASE-REBASE-AND-RESEED-PLAN.md), followed by the owner's **Execute** instruction.
 
+Production was subsequently upgraded to PostgreSQL 18.6 in the separately authorized [engine upgrade](../plans/POSTGRESQL-18-UPGRADE-PLAN.md#production-execution-record). The version 17 targets below describe the rebase checkpoint; its old cluster remains protected rollback storage.
+
 ## Targets and recovery boundary
 
 | Environment | Original database | Prepared replacement | Activated name |

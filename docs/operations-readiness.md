@@ -8,6 +8,8 @@ The [September 19 database reset/release record](operations/database-rebase-2026
 
 All 930 backend cases have passing evidence across the full suite and targeted follow-ups; 1,061 UI unit tests and 176 eligible browser cases passed. The [investigation recovery rehearsal](testing/runs/2026-09-18-investigation-restore.md) and a fresh baseline restore prove synthetic database/private-file recovery, including report checksums and result-to-tube relationships. The hosted backup helper also restored the actual new production baseline and checked file references. Production had no real scientific file evidence at reset; populated scientific recovery, real producer/bench handoffs and business sign-off remain separate acceptance gates. The execution record tracks the remaining administrator restart of local PostgreSQL and signed-in browser checks.
 
+Production now runs **PostgreSQL 18.6**, as recorded in the [September 19 engine upgrade](plans/POSTGRESQL-18-UPGRADE-PLAN.md#production-execution-record). Complete row/schema comparisons, 16 focused engine regressions, unchanged EF baseline, enabled transaction timestamps, healthy endpoints and version 18 backup restoration passed. The nightly host timer uses the updated helpers; its next scheduled execution remains distinct from the successful manual recovery checks.
+
 ## Repository implementation and rollout evidence
 
 The [September 9 location inventory and shipping insert release](plans/PORTAL-SHIPPING-RELEASE-2026-09-08.md#september-9-location-inventory-and-shipping-insert-release--completed)
