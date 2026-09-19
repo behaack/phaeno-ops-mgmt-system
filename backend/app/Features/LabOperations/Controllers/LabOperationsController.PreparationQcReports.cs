@@ -72,10 +72,10 @@ public sealed partial class LabOperationsController
         if (!details.RootElement.TryGetProperty("qcReport", out var attachment)
             && !details.RootElement.TryGetProperty("preparationReport", out attachment)) throw Missing();
         var report = attachment.Deserialize<PreparationQcReport>(JsonOptions) ?? throw Missing();
-        if (report.ScanStatus != "Clean") throw Conflict("qc_report_unavailable", "This report is unavailable for download.");
-        var content = await storage.OpenReadAsync(report.StorageKey, ct);
+        var content = await ReadVerifiedPreparationReportAsync(report, storage, ct);
         Response.Headers.CacheControl = "no-store";
         Response.Headers["X-Content-Type-Options"] = "nosniff";
+        Response.Headers["X-Content-SHA256"] = report.Sha256;
         return File(content, "application/pdf", report.FileName);
     }
 

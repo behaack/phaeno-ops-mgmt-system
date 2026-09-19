@@ -121,6 +121,12 @@ public sealed partial class LabOperationsController
         var protocolIds = stages.Select(s => s.LabProtocolVersionId).ToList();
         var protocols = await dbContext.LabProtocolVersions.AsNoTracking().Where(p => protocolIds.Contains(p.Id)).ToDictionaryAsync(p => p.Id, ct);
         var records = await dbContext.LabPreparationRecords.AsNoTracking().Where(r => r.LabPreparationBatchId == batch.Id).OrderBy(r => r.RecordedAtUtc).ToListAsync(ct);
+        var evidenceByExecution = executions.ToDictionary(e => e.Id, e => LabProtocolEvidence.Read(e.CapturedResultsJson));
+        var peopleIds = evidenceByExecution.Values.SelectMany(e => e.Records)
+            .SelectMany(r => new[] { r.RecordedByUserId, r.Performance?.PerformedByUserId ?? r.RecordedByUserId })
+            .Concat(records.Select(r => r.ActorUserId)).Distinct().ToList();
+        var recorders = await dbContext.Users.AsNoTracking().Where(u => peopleIds.Contains(u.Id))
+            .Select(u => new LabExecutionRecorderDto(u.Id, u.FirstName + " " + u.LastName)).ToListAsync(ct);
         var outputs = await dbContext.LabContainers.AsNoTracking().Where(c => members.Select(m => m.OutputContainerId).Contains(c.Id)).ToListAsync(ct);
         var libraries = await dbContext.LabLibraries.AsNoTracking().Where(l => members.Select(m => m.LabLibraryId).Contains(l.Id)).ToListAsync(ct);
         var availableOutputs = await dbContext.LabContainers.AsNoTracking().Where(c => c.LabSpecimenAttemptId.HasValue && ids.Contains(c.LabSpecimenAttemptId.Value)
@@ -149,9 +155,9 @@ public sealed partial class LabOperationsController
                         .Select(o => new { o.Id, o.Barcode, o.Quantity, o.QuantityUnit }),
                     library = libraries.Where(l => l.Id == m.LabLibraryId).Select(l => new { l.Id, l.LibraryKey, status = l.Status.ToString(), sequencing = sequencing.FirstOrDefault(s => s.LabLibraryId == l.Id) }).SingleOrDefault(),
                     stageSkips = a.ReadStageSkips(), executions = executions.Where(e => e.LabSpecimenAttemptId == a.Id).Select(e => new { e.Id, stageId = e.LabServiceWorkflowStageId, status = e.Status.ToString(),
-                        evidence = LabProtocolEvidence.Read(e.CapturedResultsJson), blockers = LabProtocolEvidence.Read(e.CapturedResultsJson).CompletionBlockers(LabProtocolDefinition.Parse(protocols[e.LabProtocolVersionId].DefinitionJson)),
+                        evidence = evidenceByExecution[e.Id], blockers = evidenceByExecution[e.Id].CompletionBlockers(LabProtocolDefinition.Parse(protocols[e.LabProtocolVersionId].DefinitionJson)),
                         stepPrerequisites = PreparationStepPrerequisites(e, protocols[e.LabProtocolVersionId]) }) }; }),
-            records = records.Select(r => new { r.Id, r.Action, r.RecordedAtUtc, r.ActorUserId, details = PublicPreparationDetails(r.DetailsJson) }) };
+            recorders, records = records.Select(r => new { r.Id, r.Action, r.RecordedAtUtc, r.ActorUserId, details = PublicPreparationDetails(r.DetailsJson) }) };
     }
 
     [HttpGet("preparation/batches/{preparationBatchId:guid}/tubes")]

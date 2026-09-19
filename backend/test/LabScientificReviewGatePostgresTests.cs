@@ -39,9 +39,9 @@ public class LabScientificReviewGatePostgresTests
         await db.SaveChangesAsync();
         var context = new LabOperationsRequestContext(db,
             new Identity(new("clerk", reviewer.ExternalSubjectId!, reviewer.Email, true)),
-            Options.Create(new PSeqOrderToCashOptions { GovernedPSeqResults = true, DualControlEnforced = true }),
+            Options.Create(new PSeqOrderToCashOptions { GovernedPSeqResults = true, DualControlEnforced = true, RequireResultTraceability = false, RequireScientificEvidence = false }),
             NullLogger<LabOperationsRequestContext>.Instance);
-        var controller = new LabOperationsController(db, context)
+        var controller = new LabOperationsController(db, context, traceabilityOptions: Options.Create(new PSeqOrderToCashOptions { RequireResultTraceability = false, RequireScientificEvidence = false }))
             { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() } };
 
         async Task Reject(string expected, ResultOutputPackage? package = null)
@@ -118,9 +118,9 @@ public class LabScientificReviewGatePostgresTests
         Assert.False(await db.LabWorkEvents.AnyAsync(x => x.ActorUserId == independent.Id));
         var independentContext = new LabOperationsRequestContext(db,
             new Identity(new("clerk", independent.ExternalSubjectId!, independent.Email, true)),
-            Options.Create(new PSeqOrderToCashOptions { GovernedPSeqResults = true, DualControlEnforced = true }),
+            Options.Create(new PSeqOrderToCashOptions { GovernedPSeqResults = true, DualControlEnforced = true, RequireResultTraceability = false, RequireScientificEvidence = false }),
             NullLogger<LabOperationsRequestContext>.Instance);
-        var independentController = new LabOperationsController(db, independentContext)
+        var independentController = new LabOperationsController(db, independentContext, traceabilityOptions: Options.Create(new PSeqOrderToCashOptions { RequireResultTraceability = false, RequireScientificEvidence = false }))
             { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() } };
         await independentController.ApproveScientificReview(work.Id,
             new("test-only", 1, null, work.Version, readyPackage.Id), default);

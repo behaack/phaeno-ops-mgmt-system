@@ -357,3 +357,7 @@ counts.
 This is the post-cutover production deployment path. The standalone Website
 API, bridge, File Browser, and legacy database resources were retired on
 2026-07-18 after the final encrypted backup and Portal verification passed.
+
+## September 2026 baseline reset
+
+The [guarded reset runbook](../../../docs/operations/database-rebase-20260919.md) replaces the old migration chain with one initial migration. Do not run that baseline against an old populated database. The controlled rename retains the canonical `phaeno_portal_green` database name so normal deployment and backup targeting remain valid. PostgreSQL now starts with `track_commit_timestamp=on`, required for verifiable governed-download commit timing. Keep the matched old database, image, runtime configuration and encrypted file/database backup until separately approved cleanup.

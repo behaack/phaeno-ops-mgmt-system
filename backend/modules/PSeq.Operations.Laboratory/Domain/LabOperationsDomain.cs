@@ -688,6 +688,7 @@ public sealed class LabPreparedReagentComponent
 
 public sealed class LabMaterialConsumption
 {
+    public string? ResourceSnapshotJson { get; private set; }
     public Guid? LabPreparationRecordId { get; private set; }
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid LabProtocolExecutionId { get; private set; }
@@ -701,12 +702,13 @@ public sealed class LabMaterialConsumption
     private LabMaterialConsumption() { }
 
     public LabMaterialConsumption(Guid executionId, Guid lotId, Guid? outputContainerId,
-        decimal quantity, string quantityUnit, Guid actorUserId, DateTime utcNow, Guid? preparationRecordId = null)
+        decimal quantity, string quantityUnit, Guid actorUserId, DateTime utcNow, Guid? preparationRecordId = null, string? resourceSnapshotJson = null)
     {
         if (executionId == Guid.Empty || lotId == Guid.Empty || actorUserId == Guid.Empty || quantity <= 0)
             throw new ArgumentException("Execution, lot, actor, and positive quantity are required.");
         LabProtocolExecutionId = executionId;
         LabMaterialLotId = lotId;
+        ResourceSnapshotJson = resourceSnapshotJson;
         LabPreparationRecordId = preparationRecordId;
         OutputContainerId = outputContainerId;
         Quantity = quantity;
@@ -772,6 +774,7 @@ public sealed class LabEquipment : LabAuditedEntity
 
 public sealed class LabEquipmentUsage
 {
+    public string? ResourceSnapshotJson { get; private set; }
     public Guid? LabPreparationRecordId { get; private set; }
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid LabProtocolExecutionId { get; private set; }
@@ -783,12 +786,13 @@ public sealed class LabEquipmentUsage
     private LabEquipmentUsage() { }
 
     public LabEquipmentUsage(Guid executionId, Guid equipmentId, DateTime usedAtUtc,
-        Guid usedByUserId, string? runReference, Guid? preparationRecordId = null)
+        Guid usedByUserId, string? runReference, Guid? preparationRecordId = null, string? resourceSnapshotJson = null)
     {
         if (executionId == Guid.Empty || equipmentId == Guid.Empty || usedByUserId == Guid.Empty)
             throw new ArgumentException("Execution, equipment, and user are required.");
         LabProtocolExecutionId = executionId;
         LabEquipmentId = equipmentId;
+        ResourceSnapshotJson = resourceSnapshotJson;
         LabPreparationRecordId = preparationRecordId;
         UsedAtUtc = usedAtUtc;
         UsedByUserId = usedByUserId;

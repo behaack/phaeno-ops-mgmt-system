@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import type { LabExecutionStep, LabExecutionStepInput } from '#/api/lab-operations'
+import { emptyStepTiming, performanceInput, stepTimingSchema, timingIssues } from './step-performance'
 
 export const executionStepFormSchema = z.object({
   outcome: z.enum(['recorded', 'skipped']),
@@ -9,6 +10,7 @@ export const executionStepFormSchema = z.object({
   resourcesConfirmed: z.boolean(),
   qcOutcome: z.enum(['', 'pass', 'fail', 'hold']),
   reason: z.string().trim().max(4000),
+  timing: stepTimingSchema,
 })
 export type ExecutionStepFormValues = z.infer<typeof executionStepFormSchema>
 
@@ -26,7 +28,8 @@ export function stepFormSchema(step: LabExecutionStep['definition'], action: Lab
       return
     }
     if (step.condition && !values.reason) issue(['reason'], 'Record how you assessed the condition.')
-    if (step.operatorConfirmation && !values.operatorConfirmed) issue(['operatorConfirmed'], 'Confirm that you performed this step.')
+    if ((action !== 'correct' || step.operatorConfirmation) && !values.operatorConfirmed) issue(['operatorConfirmed'], action === 'correct' ? 'Confirm that you reviewed this correction.' : values.timing.otherPerformer ? 'Confirm the actual performer and time.' : 'Confirm that you personally performed this step.')
+    if (action !== 'correct') timingIssues(values.timing).forEach(error => issue(['timing', error.field], error.message))
     if (hasResourceRequirements(step) && !values.resourcesConfirmed) issue(['resourcesConfirmed'], 'Confirm the listed resources and their job traceability.')
     if (step.qcGate && !values.qcOutcome) issue(['qcOutcome'], 'Choose the QC outcome.')
     if (step.qcGate && ['fail', 'hold'].includes(values.qcOutcome) && !values.reason) issue(['reason'], 'Explain the QC failure or hold.')
@@ -55,6 +58,7 @@ export function stepFormDefaults(step: LabExecutionStep, action: LabExecutionSte
     resourcesConfirmed: false,
     qcOutcome: previous?.qcOutcome ?? '',
     reason: '',
+    timing: { ...emptyStepTiming },
   }
 }
 
@@ -70,5 +74,6 @@ export function stepInput(step: LabExecutionStep['definition'], action: LabExecu
     resourcesConfirmed: !skipped && values.resourcesConfirmed,
     qcOutcome: !skipped && step.qcGate && values.qcOutcome ? values.qcOutcome : null,
     reason: values.reason.trim() || null,
+    ...(!skipped && action !== 'correct' ? { performance: performanceInput(values.timing, values.operatorConfirmed) } : {}),
   }
 }

@@ -55,7 +55,7 @@ public sealed partial class LabOperationsController
         }
         string? reportProperty = null;
         IReadOnlyList<PreparationOutputResult>? outputResults = null;
-        var now = DateTime.UtcNow;
+        var now = LabEvidenceTime.UtcNow;
         var trayConfirmed = PreparationTrayConfirmed(await dbContext.LabPreparationRecords.AsNoTracking()
             .Where(r => r.LabPreparationBatchId == batch.Id && (r.Action == "confirm-tray" || r.Action == "reopen-tray")).ToListAsync(ct));
         if (trayConfirmed && request.Action is "assign-tray" or "add" or "move" or "remove")
@@ -163,7 +163,7 @@ public sealed partial class LabOperationsController
                 {
                     case "evaluate-conditions": break; // Reconciliation below rechecks saved evidence under the batch lock.
                     case "step":
-                        reportProperty = await RecordPreparationStepAsync(batch, members, attempts, request, actor, ct, uploadReport is not null); break;
+                        reportProperty = await RecordPreparationStepAsync(batch, members, attempts, request, actor, ct, uploadReport is not null, now); break;
                     case "advance":
                         await AdvancePreparationAsync(batch, members, attempts, request, actor, ct); break;
                     case "skip-stage":
@@ -210,6 +210,7 @@ public sealed partial class LabOperationsController
         catch (ArgumentException e) { throw Invalid("preparation_details_invalid", e.Message); }
         catch (InvalidOperationException e) { throw Conflict("preparation_blocked", e.Message); }
         var report = uploadReport is null ? null : await uploadReport(ct);
+        if (report is not null) await SampleShippingPackingData.LockAsync(dbContext, "investigation-file:" + report.StorageKey, ct);
         var details = JsonSerializer.SerializeToNode(request, JsonOptions)!.AsObject();
         if (outputResults is not null) details["outputResults"] = JsonSerializer.SerializeToNode(outputResults, JsonOptions);
         if (report is not null) details[reportProperty ?? throw new InvalidOperationException("Report step was not validated.")] = JsonSerializer.SerializeToNode(report, JsonOptions);

@@ -1,5 +1,13 @@
 # Lab Operations Plan
 
+## Step performance evidence — September 18, 2026
+
+The next traceability slice is implemented locally for individual and preparation step entry. New UI records/repeats require personal confirmation and distinguish Now from Earlier, retaining entered time/offset/precision and a late-entry reason. Corrections preserve the original performer/time and record the correcting user separately. History shows both identities/times, with older omissions labeled unknown. See the [step performance contract](LAB-STEP-PERFORMANCE-CONTRACT.md) for compatibility, no-migration storage, pending policy and validation boundaries. This partially delivers phase 2; provider profiles, performance amendments/on-behalf recording and later investigation/preservation/rollout work remain open.
+
+## Sample investigation and traceability — phase 1, September 18, 2026
+
+The owner confirmed Lab ops → Closed jobs → Job → Sample as the investigation entry point, using the same sample workspace from Active jobs. The highest-priority requirement is capturing and retaining the unambiguous relationship from a specific result to its exact physical sample tube. Phase 1 now adds immutable sequencing-output/analysis-input capture, result bindings, resource snapshots, intake before/after evidence and shared prospective release guards. The [capture contract and writer matrix](LAB-RESULT-LINEAGE-CONTRACT.md) document these additions. The [owning plan](SAMPLE-TRACEABILITY-AND-INVESTIGATION-PLAN.md) retains remaining performance-attribution policies, full scientific metadata, supporting documents, preservation, investigation UI and reports. Migration is local only; automated/provider acceptance and production enforcement are pending. Existing history remains readable and unknown links are not guessed.
+
 ## Standalone Lab Settings — September 18, 2026
 
 Lab Settings moves from the Lab operations sidebar to Administration in the user dropdown, directly after Order Settings and before File retention policies. Its own /lab-configuration page uses the shared workspace sidebar for Lab steps, Protocols, Workflows, Stage durations, Holiday calendar and Library tray formats, replacing the horizontal tabs. Existing Lab access and action capabilities are preserved. Legacy configuration links redirect with their selected section and Lab step filters; builder returns target the standalone page. No laboratory data, approvals or configuration rules change.

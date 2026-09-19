@@ -4,8 +4,9 @@ import { Input } from '#/components/ui/input'
 import { PreparationField, prepSelectClass } from './preparation-ui'
 import { materialLotMatches } from './preparation-resource-fields'
 import type { ResourceCatalog, ResourceField } from './preparation-resource-fields'
+import type { StepTimingValues } from './step-performance'
 
-export type StepEntryValues = { values: Record<string, string>; covered: string[]; outcome: 'recorded' | 'skipped'; operator: boolean; resources: boolean }
+export type StepEntryValues = { values: Record<string, string>; covered: string[]; outcome: 'recorded' | 'skipped'; operator: boolean; resources: boolean; timing: StepTimingValues }
 export function PreparationResourceField({ field, form, catalog, member, count, defaults = false, correction = false, previous }: {
   field: ResourceField; form: UseFormReturn<StepEntryValues>; catalog: ResourceCatalog; member?: PreparationMember; count: number; defaults?: boolean; correction?: boolean; previous?: unknown
 }) {

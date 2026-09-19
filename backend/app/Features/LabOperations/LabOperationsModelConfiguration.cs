@@ -9,6 +9,7 @@ public static class LabOperationsModelConfiguration
     public static void Configure(ModelBuilder modelBuilder, string laboratorySchema)
     {
         LabForecastModelConfiguration.Configure(modelBuilder, laboratorySchema);
+        LabResultLineageModelConfiguration.Configure(modelBuilder, laboratorySchema);
         modelBuilder.Entity<LabJobDeadlineChange>(entity =>
         {
             entity.ToTable("lab_job_deadline_changes", laboratorySchema);

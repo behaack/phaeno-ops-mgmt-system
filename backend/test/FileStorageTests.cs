@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
+using PhaenoPortal.App.Infrastructure.Persistence;
+using PhaenoPortal.App.Features.LabOperations.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
@@ -160,7 +163,8 @@ public sealed class FileStorageTests
 
             Assert.IsType<LocalFileStorage>(provider.GetRequiredService<IFileStorage>());
             Assert.IsType<ManagedFileStorageAdapter>(provider.GetRequiredService<IManagedFileStorage>());
-            Assert.IsType<OperationalFileStorageAdapter>(provider.GetRequiredService<IOperationalFileStorage>());
+            using var scope = provider.CreateScope();
+            Assert.IsType<InvestigationPreservingFileStorage>(scope.ServiceProvider.GetRequiredService<IOperationalFileStorage>());
         }
         finally
         {
@@ -342,6 +346,8 @@ public sealed class FileStorageTests
             .Build();
         var environment = new TestWebHostEnvironment(environmentName, Environment.CurrentDirectory);
         var services = new ServiceCollection();
+        services.AddSingleton(Options.Create(new PersistenceOptions()));
+        services.AddDbContext<PSeqOperationsDbContext>(options => options.UseNpgsql("Host=localhost;Database=unused_storage_di_test"));
         services.AddSingleton<IWebHostEnvironment>(environment);
         services.AddSingleton<IHostEnvironment>(environment);
         services.AddFileStorage(configuration, environment);

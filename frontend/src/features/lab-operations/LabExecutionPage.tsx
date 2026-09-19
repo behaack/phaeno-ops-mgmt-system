@@ -20,6 +20,7 @@ import { Textarea } from '#/components/ui/textarea'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
 import { ExecutionStepDialog } from './ExecutionStepDialog'
+import { StepPerformanceEvidence } from './StepPerformanceEvidence'
 import { parseLabSection, type LabSection } from './lab-sections'
 
 export function LabExecutionPage({ executionId, returnSection, returnShipmentId }: { executionId: string; returnSection?: LabSection; returnShipmentId?: string }) {
@@ -81,7 +82,7 @@ export function LabExecutionWorkspace({ data, returnLink, reviewTubesLink, speci
   const active = ['InProgress', 'Blocked'].includes(data.execution.status)
   const completed = data.execution.status === 'Completed'
   const recorders = new Map(data.recorders.map(actor => [actor.id, actor.name]))
-  const open = (key: string, action: LabExecutionStepInput['action']) => { trigger.current = document.activeElement as HTMLElement; setTarget({ key, action }) }
+  const open = (key: string, action: LabExecutionStepInput['action'], source = document.activeElement as HTMLElement | null) => { trigger.current = source; setTarget({ key, action }) }
   const openFinish = (action: 'complete' | 'abandon') => { trigger.current = actionTrigger.current; setFinish(action) }
 
   return <main className="page-wrap space-y-6 px-4 py-8">
@@ -118,15 +119,14 @@ export function LabExecutionWorkspace({ data, returnLink, reviewTubesLink, speci
             {latest ? <div className="space-y-2 rounded-lg bg-muted/40 p-3 text-sm">
               {def.captures.filter(capture => latest.captures[capture.key] !== undefined).map(capture => <p key={capture.key} className="break-words"><strong>{capture.label}:</strong> {String(latest.captures[capture.key])}{capture.unit ? ` ${capture.unit}` : ''}</p>)}
               {latest.reason ? <p className="whitespace-pre-wrap"><strong>Reason:</strong> {latest.reason}</p> : null}
-              <p className="text-xs text-muted-foreground">{recorders.get(latest.recordedByUserId) ?? 'Recorded operator'} · {formatTime(latest.recordedAtUtc)}</p>
+              <StepPerformanceEvidence record={latest} people={recorders} />
             </div> : null}
             {active && step.actionBlocker ? <p className="text-xs text-muted-foreground">{step.actionBlocker}</p> : null}
             <div className="flex flex-wrap gap-2">
               {step.canRecord ? <Button size="sm" disabled={pending} onClick={() => open(def.key, 'record')}>{def.name === 'Record simulated library preparation and traceability' ? 'Record preparation and traceability' : /^record\b/i.test(def.name) ? def.name : `Record ${def.name}`}</Button> : null}
-              {step.canRepeat ? <Button size="sm" variant="outline" disabled={pending} onClick={() => open(def.key, 'repeat')}>Repeat {def.name}</Button> : null}
-              {step.canCorrect ? <Button size="sm" variant="outline" disabled={pending} onClick={() => open(def.key, 'correct')}>Correct {def.name}</Button> : null}
+              {step.canRepeat && step.canCorrect ? <DropdownMenu><DropdownMenuTrigger asChild><Button id={`step-actions-${def.key}`} size="sm" variant="outline" disabled={pending} aria-label={`Actions for ${def.name}`}>Actions <ChevronDown /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]"><DropdownMenuItem onSelect={() => open(def.key, 'repeat', document.getElementById(`step-actions-${def.key}`))}>Repeat {def.name}</DropdownMenuItem><DropdownMenuItem onSelect={() => open(def.key, 'correct', document.getElementById(`step-actions-${def.key}`))}>Correct {def.name}</DropdownMenuItem></DropdownMenuContent></DropdownMenu> : step.canRepeat ? <Button size="sm" variant="outline" disabled={pending} onClick={() => open(def.key, 'repeat')}>Repeat {def.name}</Button> : step.canCorrect ? <Button size="sm" variant="outline" disabled={pending} onClick={() => open(def.key, 'correct')}>Correct {def.name}</Button> : null}
             </div>
-            {step.records.length > 0 ? <details className="text-sm"><summary className="cursor-pointer font-medium">Step history ({step.records.length})</summary><ol className="mt-3 space-y-3 border-l pl-4">{step.records.map((record, recordIndex) => <li key={record.id} className="space-y-1 break-words"><p className="font-medium">{recordIndex + 1}. {record.action} · {record.outcome}{record.qcOutcome ? ` · QC ${record.qcOutcome}` : ''}</p>{def.captures.filter(capture => record.captures[capture.key] !== undefined).map(capture => <p key={capture.key}>{capture.label}: {String(record.captures[capture.key])}{capture.unit ? ` ${capture.unit}` : ''}</p>)}{record.reason ? <p className="whitespace-pre-wrap">{record.reason}</p> : null}{record.operatorConfirmed ? <p>Step confirmation recorded.</p> : null}{record.resourcesConfirmed ? <p>Resource traceability confirmed.</p> : null}<p className="text-xs text-muted-foreground">{recorders.get(record.recordedByUserId) ?? 'Recorded operator'} · {formatTime(record.recordedAtUtc)}</p></li>)}</ol></details> : null}
+            {step.records.length > 0 ? <details className="text-sm"><summary className="cursor-pointer font-medium">Step history ({step.records.length})</summary><ol className="mt-3 space-y-3 border-l pl-4">{step.records.map((record, recordIndex) => <li key={record.id} className="space-y-1 break-words"><p className="font-medium">{recordIndex + 1}. {record.action} · {record.outcome}{record.qcOutcome ? ` · QC ${record.qcOutcome}` : ''}</p>{def.captures.filter(capture => record.captures[capture.key] !== undefined).map(capture => <p key={capture.key}>{capture.label}: {String(record.captures[capture.key])}{capture.unit ? ` ${capture.unit}` : ''}</p>)}{record.reason ? <p className="whitespace-pre-wrap">{record.reason}</p> : null}{record.operatorConfirmed ? <p>Step confirmation recorded.</p> : null}{record.resourcesConfirmed ? <p>Resource traceability confirmed.</p> : null}<StepPerformanceEvidence record={record} people={recorders} /></li>)}</ol></details> : null}
           </li>
         })}
       </ol>

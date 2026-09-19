@@ -19,7 +19,8 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [Route("api/platform/lab-operations")]
 public sealed partial class LabOperationsController(
     PSeqOperationsDbContext dbContext,
-    LabOperationsRequestContext requestContext) : ControllerBase
+    LabOperationsRequestContext requestContext,
+    Microsoft.Extensions.Options.IOptions<PhaenoPortal.App.Features.Accounts.Services.PSeqOrderToCashOptions>? traceabilityOptions = null) : ControllerBase
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 

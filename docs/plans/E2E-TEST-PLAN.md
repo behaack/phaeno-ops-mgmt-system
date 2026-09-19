@@ -1,5 +1,23 @@
 # Playwright E2E Test Plan
 
+## Sample traceability — verified September 18, 2026
+
+**12 browser cases passed** across `lab-protocol-execution.spec.ts` and `sample-investigation.spec.ts`, on Chromium desktop and Pixel 5 layouts. Investigation runs in both light and dark themes using the application's theme initializer, checks keyboard menu focus, historical unknown lineage, report creation, related-sample results, visible source errors, disabled reporting after a failure, accessibility scans and 320-pixel reflow. Protocol execution covers stale writes, guided evidence/QC/correction/skip flow and DST gaps/repeated hours. These use simulated API fixtures; PostgreSQL/controller proof is separate. Screenshots and boundaries are recorded in [the verification record](../testing/runs/2026-09-18-sample-traceability.md).
+
+## Supporting reports — continuation verification
+
+Continuation verification reran the **four investigation desktop/mobile light/dark cases: all passed in 14.2 seconds**. They now check supporting-report integrity errors, successful retry/download, and React runtime/duplicate-key errors in addition to the existing investigation assertions. The eight previously passing protocol cases were unchanged and not rerun for this attachment-only change. See the [continuation record](../testing/runs/2026-09-18-investigation-restore.md).
+
+## Step performance slice — initial authoring checkpoint, superseded above
+
+`lab-protocol-execution.spec.ts` updates the simulated API fixture to return resolved performance evidence and preserve it on corrections, covers the step Actions menu and universal personal confirmation, and adds a Los Angeles time-zone case for a nonexistent spring-forward minute and explicit repeated fall-back minute/offset choice. These scenarios remain mocked UI acceptance and have not been executed. Real backend-connected step/report retries, desktop/mobile keyboard and focus, operator identity, and laboratory-record comparison remain pending. This slice does not establish complete sample-investigation acceptance.
+
+## Sample traceability — planned, September 18, 2026
+
+Phase 1 adds backend capture/read contracts and prospective guards, with no new browser workflow. No E2E run occurred. Execute actual provider-to-result registration and release rejection alongside the later browser investigation journey; authored PostgreSQL service coverage is not provider/bench acceptance.
+
+The [Sample traceability acceptance matrix](SAMPLE-TRACEABILITY-AND-INVESTIGATION-PLAN.md#12-acceptance-and-verification-matrix) owns the planned Closed/Active job → sample → exact result → source-tube investigation journeys. Include failed-source/reserve success, shared-run isolation, missing-link release rejection, historical unknowns, cleanup/holds, report snapshots and return context. Separate mocked browser coverage from database-connected, actual provider/bench and laboratory-owner acceptance. No tests have been added or executed for this planned feature.
+
 ## Sample-type detail page (2026-09-18)
 
 Signed-in local manual checks confirmed sample-name navigation to the exact revision URL, full requirements and shaded detail headers, revision history links, Create revision opening the existing editor, cancellation with focus restored to its button, and Back to sample types returning to the list. No sample records were saved. Historical and missing-record cases are authored component coverage, not executed acceptance evidence. Automated suites were not requested and remain unrun.
@@ -2731,3 +2749,15 @@ Quote/workflow and submission guidance separation (September 18, 2026): signed-i
 ## Full-suite release verification - September 18, 2026
 
 Full desktop Chromium and mobile Chrome runs cover all browser specs. Updated current settings navigation, automatic preparation coverage/exception controls, collapsed tray selection, protocol completion requirements, exact date and shipping messages, and the deadline response in the isolated execution fixture. Restricted the CRM task interception to actual API URLs so it cannot intercept Vite source modules. Department-history assertions allow repeated authorized refreshes while verifying scope removal and role changes. The former signed-out test ran against an always-signed-in mock server; replaced it with an explicit unavailable-authentication fixture using the real AuthGate and asserting protected record controls never render. This is simulated gate coverage, not live Clerk sign-in verification; SessionAccessAcceptance unit coverage and live account acceptance remain distinct. Two mobile print cases are intentionally excluded because the same physical print-layout cases run in desktop Chromium. Final results are recorded in SERVICE-CATALOG-RELEASE-2026-09-18.md.
+
+## Evidence governance checkpoint — September 18, 2026
+
+See [the governance verification record](../testing/runs/2026-09-18-evidence-governance.md) for executed scope and limitations. Coverage includes actual-person capture and preview isolation; independent review, self/stale/scope/retry rejection; retained original evidence; scientific profile requirements and explained exceptions; private evidence preservation versus customer-byte deletion; and desktop/mobile proposal/review accessibility. Production, real producer/bench and hosted recovery acceptance remain separate.
+
+## Staff scientific capture and delivery history — September 19, 2026
+
+The [capture/history verification record](../testing/runs/2026-09-19-scientific-capture-history.md) records 19 backend, 13 frontend and 12 browser passes, including sample-scoped commercial/Trial history, immutable report snapshots, staff sequencing/analysis capture and linked corrections, unchanged retries, exact manual-upload attribution, access limits, error recovery, keyboard focus and light/dark mobile accessibility. TypeScript, focused ESLint, EF model consistency and documentation checks pass. No new migration; no production activation. Browser evidence is simulated, and real producer/bench/hosted recovery acceptance remains separate.
+
+## Database baseline and preservation release — September 19, 2026
+
+The [reset execution record](../operations/database-rebase-20260919.md) tracks the full release verification. The baseline-only discovery assertion replaces the retired additive-migration assertion; downgrade still must refuse loss of commit evidence. The legacy scientific-review gate fixture explicitly selects legacy evidence policy, while enforcement suites retain current defaults. Browser keyboard coverage includes the added performer and performed-time controls. Export/import probes cover wrong targets, transactional rollback, replay conflicts, source preservation and drift detection. Production identity, physical scientific evidence and real provider delivery remain separate from automated fixtures.

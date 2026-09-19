@@ -34,7 +34,9 @@ public sealed partial class LabOperationsController
         var attempt = await RequireExecutionAttemptAsync(execution, cancellationToken);
         var protocol = await dbContext.LabProtocolVersions.AsNoTracking()
             .SingleAsync(item => item.Id == execution.LabProtocolVersionId, cancellationToken);
-        var utcNow = DateTime.UtcNow;
+        var utcNow = LabEvidenceTime.UtcNow;
+        if (request.Performance?.PerformedByUserId is { } performerId)
+            await new LabPerformanceReviewService(dbContext).RequirePerformerAsync(performerId, cancellationToken);
         var reportStep = RequireProtocolDefinition(protocol.DefinitionJson).Steps.SingleOrDefault(s => s.Key == request.StepKey);
         if (reportStep?.Captures.Any(c => c.IsResource) == true) throw Invalid("preparation_fields_required", "Record linked material, equipment and output fields in Library prep.");
         if (reportStep?.AttachmentRequired == true && request.Outcome == "recorded")
@@ -58,7 +60,7 @@ public sealed partial class LabOperationsController
         }
         Execute(() => execution.RecordStep(protocol,
             new(request.StepKey, request.Action, request.Outcome, request.Captures,
-                request.OperatorConfirmed, request.ResourcesConfirmed, request.QcOutcome, request.Reason),
+                request.OperatorConfirmed, request.ResourcesConfirmed, request.QcOutcome, request.Reason, Performance: request.Performance),
             actor.User.Id, EffectiveExecutionRoles(actor), utcNow));
         if (attempt is not null)
         {
@@ -67,6 +69,7 @@ public sealed partial class LabOperationsController
             await RefreshAttemptOutcomeAsync(work, specimen, attempt, actor.User.Id, cancellationToken);
         }
         var record = LabProtocolEvidence.Read(execution.CapturedResultsJson).Records.Last();
+        new LabPerformanceReviewService(dbContext).CaptureOnBehalf(execution, actor.User.Id, utcNow);
         dbContext.LabWorkEvents.Add(new LabWorkEvent(execution.LabWorkOrderId, execution.LabSpecimenId,
             "ExecutionStepRecorded", utcNow, actor.User.Id,
             JsonSerializer.Serialize(new { execution.Id, execution.LabProtocolVersionId, record }, JsonOptions)));
@@ -123,7 +126,7 @@ public sealed partial class LabOperationsController
                 !workOpen ? "The laboratory job is held or finished. Resume a held job before recording work."
                     : !permitted ? $"Requires {step.RequiredRole ?? "Operator or Supervisor"}." : precedingBlocker);
         }).ToList();
-        var actorIds = evidence?.Records.Select(record => record.RecordedByUserId).Distinct().ToList() ?? [];
+        var actorIds = evidence?.Records.SelectMany(record => new[] { record.RecordedByUserId, record.Performance?.PerformedByUserId ?? record.RecordedByUserId }).Distinct().ToList() ?? [];
         var actors = await dbContext.Users.AsNoTracking().Where(user => actorIds.Contains(user.Id))
             .Select(user => new LabExecutionRecorderDto(user.Id, user.FirstName + " " + user.LastName)).ToListAsync(cancellationToken);
         var materialUse = await (

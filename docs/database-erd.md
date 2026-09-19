@@ -1,40 +1,10 @@
 # `phaeno_ops` database ERD
 
-## Reusable Lab steps - September 17, 2026
-
-Additive migration `AddReusableLabSteps` introduces `lab_ops.lab_steps` (audited identity, optimistic concurrency and retirement) and `lab_ops.lab_step_versions` (immutable approved scoped definition, author, independent approval/override). The version-to-step FK restricts deletion; `(lab_step_id, step_version)` and identity `key` are unique. The generated diagrams below enumerate every field.
-
-Protocol `definition_json.steps[].labStepVersionId` is a logical reference to an exact retained catalog version, validated on draft save/approval. Each occurrence keeps its own stable `key` and resolved content in the protocol snapshot; no operational lookup follows mutable catalog data. `attachmentKind` controls PDF presentation (`none`, `qc`, `preparation`; absent retains legacy inference). `attachmentRequired` requires a PDF for performed batch entries, including repeats/corrections; false or absent remains optional. These fields are retained inside versioned definition JSON; no relational columns change. Existing embedded definitions and execution evidence are unchanged. No backfill or deduplication is performed.
-
-## Shared output command metadata (2026-09-17)
-
-No schema change. lab_ops.lab_preparation_records.details_json retains outputs input rows and outputResults with memberId, outputContainerId and generated barcode for shared output creation. Each row still produces a separate existing lab container linked to its own specimen attempt/source and preparation member. Existing output-confirmation and library-eligibility fields retain their meaning.
-
-## Automatic preparation skip provenance — September 17, 2026
-
-No schema migration. Generated conditional-review skips reuse `lab_ops.lab_preparation_records` and existing per-execution step evidence. Their `details_json` contains the normal skipped step command, `automatic: true` and `triggerRequestId` identifying the parent preparation command. Existing actor/time fields identify the authorized session that triggered evaluation; coverage and the automatic reason are retained. No performed-work attestation is generated.
-
-
-## Preparation QC report metadata — September 17, 2026
-
-No new table or column. A preparation step's existing `lab_ops.lab_preparation_records.details_json` may contain `qcReport` or `preparationReport` with `fileName`, `contentType`, `sizeBytes`, `sha256`, private `storageKey`, and `scanStatus`. The record ID, actor, timestamp, stage/step and covered member IDs supply attachment provenance. Blob bytes use the existing private order-files area. API responses omit the storage key; downloads authorize the batch/record pair. The backup reference manifest includes these JSON references. Reports are internal execution evidence, not released customer deliverables.
-
-
-## Physical preparation trays — September 17, 2026
-
-`lab_ops.lab_preparation_batches.tray_barcode` retains the scanned physical tray identity separately from the batch name. Its unique index applies only to non-null barcodes in Draft or InProgress batches; completed/cancelled history retains the barcode and permits later reuse. Existing batches remain null until a physical tray is scanned.
-
-## Final Lab outcomes — September 15, 2026
-
-The existing text-backed `lab_samples.status` now includes distinct `Failed` and `Cancelled` values alongside `Completed` and `Rejected` as terminal outcomes. Failed means processing ended without success, not intake rejection. Accepted quote, placement, invoice and PDF snapshots remain unchanged by this outcome. Selected cancellation outcomes retain per-sample order events and Lab command receipts. No table, column, key, persisted model shape or migration changed.
-
-## Completion forecasting — September 18, 2026
-
-`20260918191923_AddLabCompletionForecast` adds versioned business calendars and explicit holiday exclusions, immutable workflow timing policies and stage durations, append-only job timing assignments, source state transitions, and evaluated forecast snapshots. Each job may retain assignments for several actual sample workflow versions; the latest assignment for a given workflow is resolved through its timing-policy FK. These records do not overwrite delivery commitments or manual estimates. The generated sections below enumerate their columns and relationships.
-
 This document covers every table, column, key, and relationship in the application-owned EF Core model, plus the configured EF migration-history table in `public`.
 
 Generated from [PSeqOperationsDbContextModelSnapshot.cs](../backend/app/Migrations/PSeqOperationsDbContextModelSnapshot.cs) by [generate-database-erd.py](../scripts/generate-database-erd.py). Re-run the script after persisted-model changes. This is model evidence; verify applied migrations separately for each environment.
+
+The additive [step performance JSON contract](plans/LAB-STEP-PERFORMANCE-CONTRACT.md#persistence-and-reads) describes performer/time/offset/precision and correction-record references inside existing laboratory execution and preparation evidence columns. These are logical JSON references, not additional tables, columns or database foreign keys.
 
 ## Legend and totals
 
@@ -45,10 +15,10 @@ Generated from [PSeqOperationsDbContextModelSnapshot.cs](../backend/app/Migratio
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 137 | 2192 | 349 |
-| `lab_ops` | 49 | 571 | 77 |
-| `website` | 5 | 49 | 4 |
-| **Total** | **192** | **2814** | **430** |
+| `commercial_ops` | 137 | 2198 | 351 |
+| `lab_ops` | 55 | 637 | 97 |
+| `website` | 5 | 51 | 4 |
+| **Total** | **198** | **2888** | **452** |
 
 ## `public` schema
 
@@ -1008,6 +978,7 @@ erDiagram
         character_varying_255 file_name UK "not null"
         character_varying_100 logical_role UK "not null"
         character_varying_1000 object_storage_key UK "not null"
+        character_varying_1000 result_locator "nullable"
         uuid result_output_package_id FK,UK "not null"
         timestamp_with_time_zone scan_completed_at_utc "nullable"
         character_varying_2000 scan_detail "nullable"
@@ -1036,6 +1007,7 @@ erDiagram
         character_varying_100 failure_code "nullable"
         character_varying_2000 failure_detail "nullable"
         character_varying_255 idempotency_key UK "not null"
+        uuid lab_analysis_run_id FK "nullable"
         uuid lab_sample_id FK,UK "nullable"
         uuid lab_service_order_id FK "nullable"
         uuid lab_work_order_id "not null"
@@ -1051,6 +1023,7 @@ erDiagram
         timestamp_with_time_zone scientifically_approved_at_utc "nullable"
         uuid scientifically_approved_by_user_id "nullable"
         character_varying_100 state "not null"
+        boolean traceability_required "not null"
         uuid trial_project_id FK "nullable"
         uuid trial_sample_id FK,UK "nullable"
         timestamp_with_time_zone updated_at "not null"
@@ -1080,6 +1053,7 @@ erDiagram
     result_artifacts o|--o{ result_delivery_evidence : "result_artifact_id"
     result_output_packages ||--o{ result_delivery_evidence : "result_output_package_id"
     result_output_packages o|--o{ result_output_packages : "corrects_package_id"
+    lab_analysis_runs o|--o{ result_output_packages : "lab_analysis_run_id"
     lab_samples o|--o{ result_output_packages : "lab_sample_id"
     lab_service_orders o|--o{ result_output_packages : "lab_service_order_id"
     organizations ||--o{ result_output_packages : "organization_id"
@@ -1183,6 +1157,7 @@ erDiagram
         timestamp_with_time_zone created_at "not null"
         uuid created_by_user_id "nullable"
         timestamp_with_time_zone generated_at "not null"
+        uuid lab_analysis_run_id FK "nullable"
         uuid lab_sample_id FK,UK "not null"
         uuid lab_service_order_id FK "not null"
         jsonb manifest_json "not null"
@@ -1193,6 +1168,8 @@ erDiagram
         character_varying_100 release_status "not null"
         integer release_version UK "not null"
         timestamp_with_time_zone released_at "nullable"
+        character_varying_1000 result_locator "nullable"
+        boolean traceability_required "not null"
         timestamp_with_time_zone updated_at "not null"
         uuid updated_by_user_id "nullable"
         bigint version "not null"
@@ -1365,6 +1342,7 @@ erDiagram
         bigint projection_version "not null"
         character_varying_50 schedule_health "not null"
     }
+    lab_analysis_runs o|--o{ lab_result_releases : "lab_analysis_run_id"
     lab_samples ||--o{ lab_result_releases : "lab_sample_id"
     lab_service_orders ||--o{ lab_result_releases : "lab_service_order_id"
     organizations ||--o{ lab_result_releases : "organization_id"
@@ -2999,6 +2977,66 @@ erDiagram
 
 ```mermaid
 erDiagram
+    lab_performance_decisions {
+        uuid id PK,FK "not null"
+        boolean approved "not null"
+        character_varying_4000 reason "not null"
+        timestamp_with_time_zone reviewed_at_utc "not null"
+        uuid reviewed_by_user_id "not null"
+    }
+    lab_performance_proposals {
+        uuid id PK "not null"
+        uuid based_on_proposal_id FK "nullable"
+        character_varying_30 kind "not null"
+        uuid lab_protocol_execution_id FK "not null"
+        uuid lab_specimen_id FK "not null"
+        uuid lab_work_order_id FK "not null"
+        jsonb original_performance_json "not null"
+        jsonb performance_json "not null"
+        character_varying_4000 reason "not null"
+        timestamp_with_time_zone requested_at_utc "not null"
+        uuid requested_by_user_id "not null"
+        uuid step_record_id "not null"
+    }
+    lab_performance_proposals ||--o| lab_performance_decisions : "id"
+    lab_performance_proposals o|--o{ lab_performance_proposals : "based_on_proposal_id"
+    lab_protocol_executions ||--o{ lab_performance_proposals : "lab_protocol_execution_id"
+    lab_specimens ||--o{ lab_performance_proposals : "lab_specimen_id"
+    lab_work_orders ||--o{ lab_performance_proposals : "lab_work_order_id"
+```
+
+### Domain (1) (1)
+
+```mermaid
+erDiagram
+    lab_analysis_inputs {
+        uuid id PK "not null"
+        uuid lab_analysis_run_id FK,UK "not null"
+        uuid lab_sequencing_output_id FK,UK "not null"
+    }
+    lab_analysis_runs {
+        uuid id PK "not null"
+        uuid lab_specimen_attempt_id FK "not null"
+        uuid lab_specimen_id FK,UK "not null"
+        uuid lab_work_order_id FK "not null"
+        uuid previous_analysis_run_id FK "nullable"
+        character_varying_100 provider_key UK "not null"
+        character_varying_2000 reanalysis_reason "nullable"
+        timestamp_with_time_zone recorded_at_utc "not null"
+        character_varying_150 recorded_by_source "not null"
+        uuid recorded_by_user_id "nullable"
+        character_varying_64 request_sha256 "not null"
+        jsonb requirements_snapshot_json "nullable"
+        character_varying_255 run_reference UK "not null"
+        jsonb scientific_evidence_json "nullable"
+    }
+    lab_attempt_command_receipts {
+        uuid id PK "not null"
+        uuid actor_user_id "not null"
+        timestamp_with_time_zone applied_at_utc "not null"
+        uuid lab_work_order_id FK "not null"
+        character_varying_64 request_hash "not null"
+    }
     lab_business_calendars {
         uuid id PK "not null"
         date coverage_from "not null"
@@ -3035,6 +3073,16 @@ erDiagram
         uuid lab_business_calendar_id FK,UK "not null"
         character_varying_255 name "not null"
     }
+    lab_investigation_reports {
+        uuid id PK "not null"
+        text body_json "not null"
+        integer format_version "not null"
+        timestamp_with_time_zone generated_at_utc "not null"
+        uuid generated_by_user_id "not null"
+        uuid lab_specimen_id FK "not null"
+        uuid lab_work_order_id FK "not null"
+        character_varying_64 sha256 "not null"
+    }
     lab_job_timing_policies {
         uuid id PK "not null"
         timestamp_with_time_zone created_at "not null"
@@ -3046,47 +3094,6 @@ erDiagram
         timestamp_with_time_zone updated_at "not null"
         uuid updated_by_user_id "nullable"
         bigint version "not null"
-    }
-    lab_stage_durations {
-        uuid id PK "not null"
-        character_varying_20 day_basis "not null"
-        numeric_7_2 days "not null"
-        uuid lab_timing_policy_id FK,UK "not null"
-        character_varying_100 stage_key UK "not null"
-    }
-    lab_timing_policies {
-        uuid id PK "not null"
-        timestamp_with_time_zone created_at "not null"
-        uuid created_by_user_id "nullable"
-        uuid lab_business_calendar_id FK "not null"
-        uuid lab_service_workflow_version_id FK,UK "not null"
-        character_varying_2000 reason "not null"
-        boolean requires_sequencing "not null"
-        integer revision UK "not null"
-        timestamp_with_time_zone updated_at "not null"
-        uuid updated_by_user_id "nullable"
-        bigint version "not null"
-    }
-    lab_work_orders ||--o{ lab_forecast_snapshots : "lab_work_order_id"
-    lab_work_orders ||--o{ lab_forecast_transitions : "lab_work_order_id"
-    lab_business_calendars ||--o{ lab_holidays : "lab_business_calendar_id"
-    lab_timing_policies ||--o{ lab_job_timing_policies : "lab_timing_policy_id"
-    lab_work_orders ||--o{ lab_job_timing_policies : "lab_work_order_id"
-    lab_timing_policies ||--o{ lab_stage_durations : "lab_timing_policy_id"
-    lab_business_calendars ||--o{ lab_timing_policies : "lab_business_calendar_id"
-    lab_service_workflow_versions ||--o{ lab_timing_policies : "lab_service_workflow_version_id"
-```
-
-### Domain (1)
-
-```mermaid
-erDiagram
-    lab_attempt_command_receipts {
-        uuid id PK "not null"
-        uuid actor_user_id "not null"
-        timestamp_with_time_zone applied_at_utc "not null"
-        uuid lab_work_order_id FK "not null"
-        character_varying_64 request_hash "not null"
     }
     lab_preparation_batches {
         uuid id PK "not null"
@@ -3104,6 +3111,28 @@ erDiagram
         uuid updated_by_user_id "nullable"
         bigint version "not null"
     }
+    lab_analysis_runs ||--o{ lab_analysis_inputs : "lab_analysis_run_id"
+    lab_sequencing_outputs ||--o{ lab_analysis_inputs : "lab_sequencing_output_id"
+    lab_specimen_attempts ||--o{ lab_analysis_runs : "lab_specimen_attempt_id"
+    lab_specimens ||--o{ lab_analysis_runs : "lab_specimen_id"
+    lab_work_orders ||--o{ lab_analysis_runs : "lab_work_order_id"
+    lab_analysis_runs o|--o{ lab_analysis_runs : "previous_analysis_run_id"
+    lab_work_orders ||--o{ lab_attempt_command_receipts : "lab_work_order_id"
+    lab_work_orders ||--o{ lab_forecast_snapshots : "lab_work_order_id"
+    lab_work_orders ||--o{ lab_forecast_transitions : "lab_work_order_id"
+    lab_business_calendars ||--o{ lab_holidays : "lab_business_calendar_id"
+    lab_specimens ||--o{ lab_investigation_reports : "lab_specimen_id"
+    lab_work_orders ||--o{ lab_investigation_reports : "lab_work_order_id"
+    lab_timing_policies ||--o{ lab_job_timing_policies : "lab_timing_policy_id"
+    lab_work_orders ||--o{ lab_job_timing_policies : "lab_work_order_id"
+    lab_service_workflow_versions ||--o{ lab_preparation_batches : "lab_service_workflow_version_id"
+    lab_tray_formats ||--o{ lab_preparation_batches : "lab_tray_format_id"
+```
+
+### Domain (1) (2)
+
+```mermaid
+erDiagram
     lab_preparation_members {
         uuid id PK "not null"
         character_varying_100 confirmed_barcode "not null"
@@ -3137,6 +3166,30 @@ erDiagram
         uuid updated_by_user_id "nullable"
         bigint version "not null"
     }
+    lab_sequencing_outputs {
+        uuid id PK "not null"
+        character_varying_2000 correction_reason "nullable"
+        uuid corrects_output_id FK "nullable"
+        character_varying_1000 external_file_reference "not null"
+        character_varying_64 external_identity_sha256 UK "not null"
+        uuid lab_library_id FK "not null"
+        uuid lab_ngs_sendout_id FK "not null"
+        uuid lab_specimen_attempt_id FK "not null"
+        uuid lab_specimen_id FK "not null"
+        uuid lab_work_order_id FK "not null"
+        jsonb lineage_snapshot_json "not null"
+        character_varying_100 provider_key "not null"
+        character_varying_255 provider_run_reference "not null"
+        timestamp_with_time_zone recorded_at_utc "not null"
+        character_varying_150 recorded_by_source "not null"
+        uuid recorded_by_user_id "nullable"
+        character_varying_64 request_sha256 "not null"
+        character_varying_1000 sample_mapping_reference "not null"
+        jsonb scientific_evidence_json "nullable"
+        character_varying_64 sha256 "not null"
+        bigint size_bytes "not null"
+        uuid source_container_id FK "not null"
+    }
     lab_specimen_attempts {
         uuid id PK "not null"
         timestamp_with_time_zone closed_at_utc "nullable"
@@ -3161,6 +3214,13 @@ erDiagram
         timestamp_with_time_zone updated_at "not null"
         uuid updated_by_user_id "nullable"
         bigint version "not null"
+    }
+    lab_stage_durations {
+        uuid id PK "not null"
+        character_varying_20 day_basis "not null"
+        numeric_7_2 days "not null"
+        uuid lab_timing_policy_id FK,UK "not null"
+        character_varying_100 stage_key UK "not null"
     }
     lab_step_versions {
         uuid id PK "not null"
@@ -3213,20 +3273,25 @@ erDiagram
         uuid updated_by_user_id "nullable"
         bigint version "not null"
     }
-    lab_work_orders ||--o{ lab_attempt_command_receipts : "lab_work_order_id"
-    lab_service_workflow_versions ||--o{ lab_preparation_batches : "lab_service_workflow_version_id"
-    lab_tray_formats ||--o{ lab_preparation_batches : "lab_tray_format_id"
     lab_libraries o|--o{ lab_preparation_members : "lab_library_id"
     lab_preparation_batches ||--o{ lab_preparation_members : "lab_preparation_batch_id"
     lab_specimen_attempts ||--o{ lab_preparation_members : "lab_specimen_attempt_id"
     lab_containers o|--o{ lab_preparation_members : "output_container_id"
     lab_preparation_batches ||--o{ lab_preparation_records : "lab_preparation_batch_id"
+    lab_sequencing_outputs o|--o{ lab_sequencing_outputs : "corrects_output_id"
+    lab_libraries ||--o{ lab_sequencing_outputs : "lab_library_id"
+    lab_ngs_sendouts ||--o{ lab_sequencing_outputs : "lab_ngs_sendout_id"
+    lab_specimen_attempts ||--o{ lab_sequencing_outputs : "lab_specimen_attempt_id"
+    lab_specimens ||--o{ lab_sequencing_outputs : "lab_specimen_id"
+    lab_work_orders ||--o{ lab_sequencing_outputs : "lab_work_order_id"
+    lab_containers ||--o{ lab_sequencing_outputs : "source_container_id"
     lab_protocol_executions o|--o{ lab_specimen_attempts : "failed_execution_id"
     lab_service_workflow_versions ||--o{ lab_specimen_attempts : "lab_service_workflow_version_id"
     lab_specimens ||--o{ lab_specimen_attempts : "lab_specimen_id"
     lab_work_orders ||--o{ lab_specimen_attempts : "lab_work_order_id"
     lab_specimen_attempts o|--o{ lab_specimen_attempts : "previous_attempt_id"
     lab_containers ||--o{ lab_specimen_attempts : "source_container_id"
+    lab_timing_policies ||--o{ lab_stage_durations : "lab_timing_policy_id"
     lab_steps ||--o{ lab_step_versions : "lab_step_id"
     lab_product_types ||--o{ lab_supplier_products : "product_type_id"
     lab_suppliers ||--o{ lab_supplier_products : "supplier_id"
@@ -3236,6 +3301,19 @@ erDiagram
 
 ```mermaid
 erDiagram
+    lab_timing_policies {
+        uuid id PK "not null"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id "nullable"
+        uuid lab_business_calendar_id FK "not null"
+        uuid lab_service_workflow_version_id FK,UK "not null"
+        character_varying_2000 reason "not null"
+        boolean requires_sequencing "not null"
+        integer revision UK "not null"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
     lab_work_timing_changes {
         uuid id PK "not null"
         character_varying_2000 customer_safe_note "nullable"
@@ -3248,6 +3326,8 @@ erDiagram
         character_varying_100 reason "not null"
         uuid timing_changed_by_user_id FK "not null"
     }
+    lab_business_calendars ||--o{ lab_timing_policies : "lab_business_calendar_id"
+    lab_service_workflow_versions ||--o{ lab_timing_policies : "lab_service_workflow_version_id"
     lab_work_orders ||--o{ lab_work_timing_changes : "lab_work_order_id"
     order_notifications o|--o{ lab_work_timing_changes : "notification_id"
     users ||--o{ lab_work_timing_changes : "timing_changed_by_user_id"
@@ -3307,6 +3387,7 @@ erDiagram
         uuid lab_equipment_id FK "not null"
         uuid lab_preparation_record_id FK "nullable"
         uuid lab_protocol_execution_id FK "not null"
+        jsonb resource_snapshot_json "nullable"
         character_varying_255 run_reference "nullable"
         timestamp_with_time_zone used_at_utc "not null"
         uuid used_by_user_id "not null"
@@ -3321,6 +3402,7 @@ erDiagram
         character_varying_50 quantity_unit "not null"
         timestamp_with_time_zone recorded_at_utc "not null"
         uuid recorded_by_user_id "not null"
+        jsonb resource_snapshot_json "nullable"
     }
     lab_material_definitions {
         uuid id PK "not null"
@@ -3763,15 +3845,15 @@ erDiagram
         timestamp_with_time_zone created_at "not null"
         uuid created_by_user_id "nullable"
         integer current_authorization_version "not null"
-        timestamp_with_time_zone delivery_due_at_first_delivery_utc "nullable; historical deadline"
+        timestamp_with_time_zone delivery_due_at_first_delivery_utc "nullable"
         timestamp_with_time_zone expected_completion_at_utc "nullable"
-        timestamp_with_time_zone first_delivered_at_utc "nullable; first full Portal publication"
+        timestamp_with_time_zone first_delivered_at_utc "nullable"
         boolean has_timing_override "not null"
         uuid lab_service_workflow_version_id FK "nullable"
         integer maximum_turnaround_days "nullable"
         integer minimum_turnaround_days "nullable"
         character_varying_500 opaque_submitter_reference "nullable"
-        timestamp_with_time_zone original_delivery_due_at_utc "nullable; frozen baseline"
+        timestamp_with_time_zone original_delivery_due_at_utc "nullable"
         timestamp_with_time_zone original_target_at_utc "nullable"
         bigint projection_version "not null"
         character_varying_255 service_key "not null"
@@ -3800,6 +3882,7 @@ erDiagram
         timestamp_with_time_zone created_at_utc "not null"
         character_varying_256 email "not null"
         character_varying_60 first_name "not null"
+        character_varying_35 language "not null"
         character_varying_60 last_name "not null"
         character_varying_256 normalized_email UK "not null"
         character_varying_250 organization_name "not null"
@@ -3814,6 +3897,7 @@ erDiagram
         text description "not null"
         character_varying_256 email "not null"
         character_varying_60 first_name "not null"
+        character_varying_35 language "not null"
         character_varying_60 last_name "not null"
         character_varying_250 organization_name "not null"
     }

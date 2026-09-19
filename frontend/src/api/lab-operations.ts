@@ -51,6 +51,8 @@ export type LabContainerScan = { labWorkOrderId: string; commercialOrderNumber: 
 export type LabLabelPrintEvent = { id: string; labContainerId: string; outcome: string; reason: string; failureDetails: string | null; printNumber: number | null; actorUserId: string | null; occurredAtUtc: string }
 export type LabContainerLabel = { labWorkOrderId: string; commercialOrderNumber: string | null; accessionNumber: string | null; parentBarcode: string | null; container: LabContainer; printHistory: LabLabelPrintEvent[] }
 export type LabExecution = { id: string; labSpecimenId: string | null; labProtocolVersionId: string; assignedToUserId: string | null; status: string; capturedResultsJson: string; deviationNote: string | null; startedAtUtc: string | null; completedAtUtc: string | null; version: number; labServiceWorkflowStageId: string | null }
+export type LabStepPerformanceInput = { mode: 'now' | 'earlier'; personallyPerformed: boolean; performedAt?: string; lateEntryReason?: string; performedByUserId?: string }
+export type LabStepPerformance = { performedByUserId: string; performedAtUtc: string; utcOffsetMinutes: number; precision: 'server' | 'minute'; entryMode: 'now' | 'earlier'; lateEntryReason: string | null; verificationStatus?: 'PendingReview' | null }
 export type LabExecutionStepInput = {
   stepKey: string
   action: 'record' | 'repeat' | 'correct'
@@ -61,9 +63,11 @@ export type LabExecutionStepInput = {
   qcOutcome: 'pass' | 'fail' | 'hold' | null
   reason: string | null
   version: number
+  performance?: LabStepPerformanceInput
 }
-export type LabExecutionStepRecord = Omit<LabExecutionStepInput, 'version'> & {
+export type LabExecutionStepRecord = Omit<LabExecutionStepInput, 'version' | 'performance'> & {
   id: string; recordedByUserId: string; recordedAtUtc: string
+  performance?: LabStepPerformance | null; correctsRecordId?: string | null
 }
 export type LabExecutionStep = {
   definition: ProtocolDefinition['steps'][number]

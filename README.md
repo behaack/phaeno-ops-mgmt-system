@@ -118,17 +118,20 @@ The backend uses Entity Framework Core with PostgreSQL through the Npgsql provid
 - Current business-model target: Commercial/current-flow and Lab projection
   entities map to `commercial_ops`; Laboratory execution entities map to
   `lab_ops`; Website intake entities map to `website`; no default schema is used
-- Laboratory schema: `lab_ops`, with 27 explicitly mapped Laboratory tables
+- Laboratory schema: `lab_ops`, with 55 explicitly mapped Laboratory tables
 - EF migrations history table: `public.__ef_migrations_history`
 - Connection string key: `ConnectionStrings:DefaultConnection`
 
-The verified disposable Development database is named `phaeno_ops`. It was
-rebuilt on 2026-07-16 from `InitialPSeqOperations` and extended through the
-current feature migrations. The latest sample-shipping migrations are
-`AddSampleShippingFoundation` and `AddRegisteredSampleTubeWorkflow`; both were
-applied to the confirmed local database. The current model contains 63 tables
-in `commercial_ops`, 27 Laboratory tables in `lab_ops`, two Website tables
-in `website`, and migration history in `public`; it has no `portal` schema.
+The September 2026 baseline is `20260919153100_InitialPSeqOperationsRebased`.
+It creates 137 tables in `commercial_ops`, 55 in `lab_ops` and five in `website`,
+with migration history in `public`; it has no `portal` schema. Apply it only to
+a new empty database. It refuses populated schemas and cannot be downgraded.
+Existing installations require the reviewed selective-preservation procedure,
+not deletion of migration-history rows. The [reset runbook](docs/operations/database-rebase-20260919.md)
+records actual local/production target names, seed content and rollback.
+Keep credentials in ignored environment-specific settings. Fresh development
+databases get system reference defaults; reusable laboratory and commercial
+configuration requires an explicitly reviewed seed or normal administration.
 
 Use environment configuration for non-development database credentials. In ASP.NET Core configuration, the connection string can be supplied with `ConnectionStrings__DefaultConnection`.
 

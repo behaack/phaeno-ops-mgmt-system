@@ -274,7 +274,8 @@ public partial class SampleShippingPostgresTests
             Assert.Equal(98, (await db.LabMaterialLots.AsNoTracking().SingleAsync(l => l.Id == lot.Id)).AvailableQuantity);
             Assert.Equal(1, await db.LabMaterialConsumptions.CountAsync(c => c.LabMaterialLotId == lot.Id));
             var step = new LabPreparationStepInput(stage.Id, "qc", "record", "recorded", [first, second], new Dictionary<string, JsonElement> { ["value"] = JsonSerializer.SerializeToElement(20) },
-                [new(second, new Dictionary<string, JsonElement> { ["value"] = JsonSerializer.SerializeToElement(2) }, "hold", "TEST ONLY hold")], "pass", null, true, true, false);
+                [new(second, new Dictionary<string, JsonElement> { ["value"] = JsonSerializer.SerializeToElement(2) }, "hold", "TEST ONLY hold")], "pass", null, true, true, false,
+                Performance: new("now", true));
             if (inlineFields)
             {
                 step = step with { ResourceEntries = [new("reagent", ResourceId: lot.Id, ResourceVersion: (await db.LabMaterialLots.SingleAsync(l => l.Id == lot.Id)).Version, Quantity: 2, QuantityUnit: "mL")] };
@@ -350,6 +351,9 @@ public partial class SampleShippingPostgresTests
             await Assert.ThrowsAsync<OrderManagementException>(() => Command("step", v => new(Guid.NewGuid(), v, "step", Step: step with { CoveredMemberIds = [first], Tubes = [] })));
             scope.ClearTrackedState();
             Assert.Equal(recordsBeforePartial, await db.LabPreparationRecords.CountAsync(r => r.LabPreparationBatchId == id));
+            await Assert.ThrowsAsync<OrderManagementException>(() => Command("step", v => new(Guid.NewGuid(), v, "step", Step: step with { Performance = new("earlier", true, "2020-01-01T08:00-08:00", " ") })));
+            scope.ClearTrackedState();
+            Assert.Equal(recordsBeforePartial, await db.LabPreparationRecords.CountAsync(r => r.LabPreparationBatchId == id));
             if (skipFinal) batch = await Command("step", v => new(Guid.NewGuid(), v, "step", Step: step));
             else
             {
@@ -378,13 +382,55 @@ public partial class SampleShippingPostgresTests
                 Assert.Equal("qc.pdf", details.GetProperty("qcReport").GetProperty("fileName").GetString());
                 Assert.False(details.GetProperty("qcReport").TryGetProperty("storageKey", out _));
                 Assert.Equal(2, details.GetProperty("step").GetProperty("coveredMemberIds").GetArrayLength());
-                var downloaded = Assert.IsType<FileStreamResult>(await lab.DownloadPreparationQcReport(id, reportCommand.RequestId, files, default));
-                using (downloaded.FileStream) Assert.Equal("%PDF-TEST ONLY", await new StreamReader(downloaded.FileStream).ReadToEndAsync());
+                var investigatedMember = batch.GetProperty("members")[0];
+                var investigation = Json(await lab.Investigation(investigatedMember.GetProperty("workOrderId").GetGuid(), investigatedMember.GetProperty("specimenId").GetGuid(), default));
+                Assert.Single(investigation.GetProperty("evidence").GetProperty("attachments").EnumerateArray());
+                Assert.Equal("qc.pdf", investigation.GetProperty("evidence").GetProperty("attachments")[0].GetProperty("fileName").GetString());
+                Assert.DoesNotContain("storageKey", investigation.GetRawText());
+                var downloaded = Assert.IsType<FileContentResult>(await lab.DownloadPreparationQcReport(id, reportCommand.RequestId, files, default));
+                Assert.Equal("%PDF-TEST ONLY", System.Text.Encoding.UTF8.GetString(downloaded.FileContents));
+                var workId = investigatedMember.GetProperty("workOrderId").GetGuid();
+                var specimenId = investigatedMember.GetProperty("specimenId").GetGuid();
+                var scopedDownload = Assert.IsType<FileContentResult>(await lab.DownloadInvestigationAttachment(workId, specimenId, reportCommand.RequestId, "qcReport", files, default));
+                Assert.Equal(downloaded.FileContents, scopedDownload.FileContents);
+                Assert.Single(await db.LabWorkEvents.Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId && x.EventCode == "InvestigationAttachmentDownloadRequested").ToListAsync());
+                await Assert.ThrowsAsync<OrderManagementException>(() => lab.DownloadInvestigationAttachment(workId, specimenId, reportCommand.RequestId, "preparationReport", files, default));
+                await Assert.ThrowsAsync<OrderManagementException>(() => lab.DownloadInvestigationAttachment(workId, specimenId, Guid.NewGuid(), "qcReport", files, default));
+                await Assert.ThrowsAsync<OrderManagementException>(() => lab.DownloadInvestigationAttachment(Guid.NewGuid(), specimenId, reportCommand.RequestId, "qcReport", files, default));
+                var uncovered = new LabSpecimen(workId, Guid.NewGuid());
+                db.LabSpecimens.Add(uncovered); await db.SaveChangesAsync();
+                await Assert.ThrowsAsync<OrderManagementException>(() => lab.DownloadInvestigationAttachment(workId, uncovered.Id, reportCommand.RequestId, "qcReport", files, default));
+                var storedKey = files.Objects.Keys.Single(); var originalBytes = files.Objects[storedKey];
+                foreach (var corrupted in new[] { "%PDF-TEST ONLX", "%PDF-SHORT", "%PDF-TEST ONLY EXTRA" })
+                {
+                    files.Objects[storedKey] = System.Text.Encoding.UTF8.GetBytes(corrupted);
+                    var error = await Assert.ThrowsAsync<OrderManagementException>(() => lab.DownloadInvestigationAttachment(workId, specimenId, reportCommand.RequestId, "qcReport", files, default));
+                    Assert.Equal("qc_report_integrity_failed", error.ErrorCode);
+                    await Assert.ThrowsAsync<OrderManagementException>(() => lab.DownloadPreparationQcReport(id, reportCommand.RequestId, files, default));
+                }
+                files.Objects.Remove(storedKey);
+                var missing = await Assert.ThrowsAsync<OrderManagementException>(() => lab.DownloadInvestigationAttachment(workId, specimenId, reportCommand.RequestId, "qcReport", files, default));
+                Assert.Equal("managed_file_missing", missing.ErrorCode);
+                files.Objects[storedKey] = originalBytes;
+                Assert.Single(await db.LabWorkEvents.Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId && x.EventCode == "InvestigationAttachmentDownloadRequested").ToListAsync());
                 await Assert.ThrowsAsync<OrderManagementException>(() => lab.DownloadPreparationQcReport(Guid.NewGuid(), reportCommand.RequestId, files, default));
                 await using var deniedDb = scope.CreateAdditionalContext();
+                await Assert.ThrowsAsync<OrderManagementException>(() => scope.CreatePreparationController(deniedDb, true).Investigation(investigatedMember.GetProperty("workOrderId").GetGuid(), investigatedMember.GetProperty("specimenId").GetGuid(), default));
                 await Assert.ThrowsAsync<OrderManagementException>(() => scope.CreatePreparationController(deniedDb, true).DownloadPreparationQcReport(id, reportCommand.RequestId, files, default));
+                await Assert.ThrowsAsync<OrderManagementException>(() => scope.CreatePreparationController(deniedDb, true).DownloadInvestigationAttachment(workId, specimenId, reportCommand.RequestId, "qcReport", files, default));
                 await Assert.ThrowsAsync<OrderManagementException>(() => lab.ApplyPreparationWithQcReport(id, payload, files.Upload("%PDF-DIFFERENT"), files, files, default));
                 scope.ClearTrackedState();
+            }
+            var stepEvidence = batch.GetProperty("members").EnumerateArray().SelectMany(m => m.GetProperty("executions").EnumerateArray())
+                .SelectMany(e => e.GetProperty("evidence").GetProperty("records").EnumerateArray())
+                .Where(r => r.GetProperty("stepKey").GetString() == "qc" && r.GetProperty("action").GetString() == "record").ToList();
+            Assert.Equal(2, stepEvidence.Count);
+            Assert.Single(stepEvidence.Select(r => r.GetProperty("performance").GetProperty("performedAtUtc").GetDateTime()).Distinct());
+            foreach (var evidence in stepEvidence)
+            {
+                Assert.Equal(scope.PlatformUser.Id, evidence.GetProperty("performance").GetProperty("performedByUserId").GetGuid());
+                var receipt = batch.GetProperty("records").EnumerateArray().Single(r => r.GetProperty("id").GetGuid() == evidence.GetProperty("preparationRecordId").GetGuid());
+                Assert.Equal(receipt.GetProperty("recordedAtUtc").GetDateTime(), evidence.GetProperty("recordedAtUtc").GetDateTime());
             }
             if (inlineFields)
             {
@@ -432,8 +478,10 @@ public partial class SampleShippingPostgresTests
                     Assert.False(details.TryGetProperty("qcReport", out _));
                     Assert.False(report.TryGetProperty("storageKey", out _));
                     Assert.Equal(1, details.GetProperty("step").GetProperty("coveredMemberIds").GetArrayLength());
-                    var download = Assert.IsType<FileStreamResult>(await lab.DownloadPreparationQcReport(id, preparationCommand.RequestId, files, default));
-                    using (download.FileStream) Assert.Equal("%PDF-TEST ONLY", await new StreamReader(download.FileStream).ReadToEndAsync());
+                    var download = Assert.IsType<FileContentResult>(await lab.DownloadPreparationQcReport(id, preparationCommand.RequestId, files, default));
+                    Assert.Equal("%PDF-TEST ONLY", System.Text.Encoding.UTF8.GetString(download.FileContents));
+                    var otherMember = batch.GetProperty("members").EnumerateArray().Single(m => m.GetProperty("id").GetGuid() == second);
+                    await Assert.ThrowsAsync<OrderManagementException>(() => lab.DownloadInvestigationAttachment(otherMember.GetProperty("workOrderId").GetGuid(), otherMember.GetProperty("specimenId").GetGuid(), preparationCommand.RequestId, "preparationReport", files, default));
                     await Assert.ThrowsAsync<OrderManagementException>(() => lab.DownloadPreparationQcReport(Guid.NewGuid(), preparationCommand.RequestId, files, default));
                 }
             }
@@ -530,7 +578,9 @@ public partial class SampleShippingPostgresTests
             var key = Guid.NewGuid() + extension; Objects.Add(key, bytes); Saves++;
             return new(key, bytes.Length, Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant());
         }
-        public Task<Stream> OpenReadAsync(string key, CancellationToken cancellationToken) => Task.FromResult<Stream>(new MemoryStream(Objects[key]));
+        public Task<Stream> OpenReadAsync(string key, CancellationToken cancellationToken) => Objects.TryGetValue(key, out var bytes)
+            ? Task.FromResult<Stream>(new MemoryStream(bytes))
+            : throw new OrderManagementException("managed_file_missing", "The managed file is unavailable.", 409);
         public Task DeleteIfExistsAsync(string key, CancellationToken cancellationToken) { Objects.Remove(key); return Task.CompletedTask; }
         public Task<OperationalScanResult> ScanAsync(string key, CancellationToken cancellationToken) => Task.FromResult(new OperationalScanResult(Clean ? PhaenoPortal.App.Features.OrderManagement.Domain.OperationalFileScanStatus.Clean : PhaenoPortal.App.Features.OrderManagement.Domain.OperationalFileScanStatus.Pending, null));
     }

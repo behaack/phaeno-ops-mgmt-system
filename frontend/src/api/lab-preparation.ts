@@ -1,5 +1,5 @@
 import { api } from './client'
-import type { LabExecutionStepRecord, LabServiceWorkflow } from './lab-operations'
+import type { LabExecutionStepRecord, LabServiceWorkflow, LabStepPerformanceInput } from './lab-operations'
 import type { ProtocolDefinition } from '#/features/lab-operations/protocol-definition'
 
 type Envelope<T> = { data: T }
@@ -15,13 +15,13 @@ export type PreparationMember = { id: string; position: string; barcode: string;
   output: { id: string; barcode: string; quantity: number; quantityUnit: string; confirmed: boolean } | null;
   availableOutputs?: { id: string; barcode: string; quantity: number; quantityUnit: string }[];
   library: { id: string; libraryKey: string; status: string; sequencing: { id: string; batchNumber: string; name: string } | null } | null }
-export type PreparationDetail = PreparationSummary & { inlineResourceFields?: boolean; configuredMaterials?: boolean; automaticSkipAvailable?: boolean; automaticSpecimenReferences?: boolean; optionalQcReports?: boolean; optionalPreparationReports?: boolean; bulkOutputs?: boolean; trayBarcode?: string | null; trayConfirmed?: boolean; notes?: string | null; layout: TrayLayout; labServiceWorkflowVersionId: string; stages: PreparationStage[]; members: PreparationMember[]; canOperate: boolean; canCorrect: boolean; roles: string[];
+export type PreparationDetail = PreparationSummary & { recorders?: { id: string; name: string }[]; inlineResourceFields?: boolean; configuredMaterials?: boolean; automaticSkipAvailable?: boolean; automaticSpecimenReferences?: boolean; optionalQcReports?: boolean; optionalPreparationReports?: boolean; bulkOutputs?: boolean; trayBarcode?: string | null; trayConfirmed?: boolean; notes?: string | null; layout: TrayLayout; labServiceWorkflowVersionId: string; stages: PreparationStage[]; members: PreparationMember[]; canOperate: boolean; canCorrect: boolean; roles: string[];
   records: { id: string; action: string; recordedAtUtc: string; actorUserId: string; details: PreparationCommand & { automatic?: boolean; outputResults?: { memberId: string; outputContainerId: string; barcode: string }[]; qcReport?: { fileName: string; contentType: string; sizeBytes: number; sha256: string; scanStatus: string }; preparationReport?: { fileName: string; contentType: string; sizeBytes: number; sha256: string; scanStatus: string } } }[] }
 export type PreparationTube = { id: string; barcode: string; location: string | null; specimenId: string; specimenName: string; jobName: string }
 export type PreparationTubePage = { items: PreparationTube[]; totalCount: number; page: number; pageSize: number; totalPages: number }
 export type PreparationStepInput = { stageId: string; stepKey: string; action: 'record' | 'repeat' | 'correct'; outcome: 'recorded' | 'skipped'; coveredMemberIds: string[]; sharedCaptures: Record<string, unknown>;
   tubes: { memberId: string; captures: Record<string, unknown>; qcOutcome: string | null; reason: string | null }[];
-  sharedQcOutcome: string | null; reason: string | null; coverageConfirmed: boolean; operatorConfirmed: boolean; resourcesConfirmed: boolean; resourceEntries?: PreparationResourceInput[] }
+  sharedQcOutcome: string | null; reason: string | null; coverageConfirmed: boolean; operatorConfirmed: boolean; resourcesConfirmed: boolean; resourceEntries?: PreparationResourceInput[]; performance?: LabStepPerformanceInput }
 export type PreparationResourceInput = { fieldKey: string; memberId?: string; resourceId?: string; resourceVersion?: number; productId?: string; name?: string; vendor?: string; quantity?: number; quantityUnit?: string; location?: string; runReference?: string; amountUnknown?: boolean; exceptionReason?: string; disposition?: 'continue' | 'hold' | 'fail' }
 export type PreparationOutputInput = { memberId: string; quantity: number; quantityUnit: string; location: string }
 export type PreparationCommand = { requestId: string; version: number; action: string; memberId?: string; position?: string; barcode?: string; confirmed?: boolean; stageId?: string;

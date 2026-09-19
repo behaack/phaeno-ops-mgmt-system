@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useBlocker } from '@tanstack/react-router'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 
 import type { LabExecutionStep, LabExecutionStepInput } from '#/api/lab-operations'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
@@ -13,6 +13,7 @@ import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/require
 import { Textarea } from '#/components/ui/textarea'
 
 import { hasResourceRequirements, stepFormDefaults, stepFormSchema, stepInput, type ExecutionStepFormValues } from './protocol-execution'
+import { StepTimingFields } from './StepTimingFields'
 
 const selectClass = 'h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-2 focus-visible:outline-ring'
 
@@ -65,6 +66,7 @@ export function ExecutionStepDialog({ step, action, version, error, pending, onC
           {definition.condition ? <p className="rounded-lg bg-muted p-3 text-sm"><strong>Condition:</strong> {definition.condition}</p> : null}
           {canSkip ? <div className="space-y-1.5"><Label htmlFor="step-outcome"><RequiredFieldName>Step decision</RequiredFieldName></Label><select id="step-outcome" className={selectClass} {...form.register('outcome')}><option value="recorded">Record performed step</option><option value="skipped">Skip with reason</option></select></div> : null}
           {!skipped ? <>
+            {action === 'correct' ? <p className="text-sm text-muted-foreground">This correction preserves the earlier performer and performed time, including any unknowns. It does not record new work.</p> : <Controller name="timing" control={form.control} render={({ field }) => <StepTimingFields value={field.value} onChange={field.onChange} onBlur={field.onBlur} inputRef={field.ref} errors={errors.timing} />} />}
             {definition.captures.map(capture => {
               const id = `capture-${capture.key}`
               const message = errors.captures?.[capture.key]?.message
@@ -88,7 +90,7 @@ export function ExecutionStepDialog({ step, action, version, error, pending, onC
               <div className="space-y-1.5"><Label htmlFor="step-qc"><RequiredFieldName>QC outcome</RequiredFieldName></Label><select id="step-qc" className={selectClass} aria-invalid={Boolean(errors.qcOutcome)} aria-describedby="step-qc-error" {...form.register('qcOutcome')}><option value="">Choose an outcome</option><option value="pass">Pass</option><option value="fail">Fail</option><option value="hold">Hold</option></select>
               <FieldError id="step-qc-error">{errors.qcOutcome?.message}</FieldError><p className="text-xs text-muted-foreground">Fail or Hold is saved as evidence and blocks later steps and completion.</p></div></div>
             </fieldset> : null}
-            {definition.operatorConfirmation ? <div><Label className="items-start gap-2 leading-snug" htmlFor="step-confirmation"><input type="checkbox" id="step-confirmation" className="mt-0.5 size-4 shrink-0 cursor-pointer accent-primary" aria-invalid={Boolean(errors.operatorConfirmed)} aria-describedby="step-confirmation-error" {...form.register('operatorConfirmed')} /><RequiredFieldName>I performed this step according to the pinned instructions.</RequiredFieldName></Label><FieldError id="step-confirmation-error">{errors.operatorConfirmed?.message}</FieldError></div> : null}
+            {action !== 'correct' || definition.operatorConfirmation ? <div><Label className="items-start gap-2 leading-snug" htmlFor="step-confirmation"><input type="checkbox" id="step-confirmation" className="mt-0.5 size-4 shrink-0 cursor-pointer accent-primary" aria-required aria-invalid={Boolean(errors.operatorConfirmed)} aria-describedby="step-confirmation-error" {...form.register('operatorConfirmed')} /><RequiredFieldName>{action === 'correct' ? 'I reviewed this correction against the pinned instructions.' : form.watch('timing.otherPerformer') ? 'I confirm this entry identifies the actual performer and time.' : definition.operatorConfirmation ? 'I performed this step according to the pinned instructions.' : 'I performed this step at the time selected above.'}</RequiredFieldName></Label><FieldError id="step-confirmation-error">{errors.operatorConfirmed?.message}</FieldError></div> : null}
           </> : null}
           <div className="space-y-1.5"><Label htmlFor="step-reason">{reasonRequired ? <RequiredFieldName>Reason or condition assessment</RequiredFieldName> : 'Note (optional)'}</Label><Textarea id="step-reason" rows={3} maxLength={4000} aria-invalid={Boolean(errors.reason)} aria-describedby="step-reason-error" {...form.register('reason')} /><FieldError id="step-reason-error">{errors.reason?.message}</FieldError></div>
         </form>

@@ -119,7 +119,7 @@ public sealed class PSeqResultRegistrationConcurrencyPostgresTests
     private static PSeqResultPipelineController Controller(PSeqOperationsDbContext db, IPSeqResultPipelineAdapter adapter)
     {
         const string secret = "test-only-registration-secret-not-a-credential";
-        var options = Options.Create(new PSeqOrderToCashOptions {
+        var options = Options.Create(new PSeqOrderToCashOptions { RequireResultTraceability = false, RequireScientificEvidence = false,
             GovernedPSeqResults = true, PipelineServiceSecret = secret,
             PipelineProviderKey = "test-only", ObjectStorageTransferBaseUrl = "https://example.test/upload"
         });

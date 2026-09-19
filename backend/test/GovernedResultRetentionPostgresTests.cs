@@ -35,7 +35,7 @@ public sealed class GovernedResultRetentionPostgresTests
             45, null, 8, global.ReadValues(), "Synthetic contracted policy");
         scope.Db.AddRange(policyOverride, new BusinessRoleAssignment(scope.Actor.Id, BusinessRole.ResultReleaseManager));
         await scope.Db.SaveChangesAsync();
-        var controller = new PSeqResultReleaseController(scope.Db, scope.Context, Options.Create(new PSeqOrderToCashOptions {
+        var controller = new PSeqResultReleaseController(scope.Db, scope.Context, Options.Create(new PSeqOrderToCashOptions { RequireResultTraceability = false, RequireScientificEvidence = false,
             GovernedPSeqResults = true, BusinessRoles = true, PipelineServiceSecret = new string('s', 24),
             PipelineProviderKey = "synthetic", ObjectStorageTransferBaseUrl = "https://example.test/transfers" }), new(scope.Db), new(scope.Db))
             { ControllerContext = new() { HttpContext = scope.Http } };

@@ -15,12 +15,21 @@ const definition: ProtocolDefinition = { schemaVersion: 1, preparationBatchEnabl
   condition: 'Only when applicable', repeatable: false, operatorConfirmation: false, captures: [], inputMaterials: [], equipmentTypes: [], preparedOutputs: [] }] }
 
 describe('configuration authoring preview isolation', () => {
+  it('previews another performer without loading the real staff directory', () => {
+    render(<ConfigurationPreview definition={definition} name="Example draft" onClose={vi.fn()} />)
+    fireEvent.change(screen.getByLabelText('Performed by'), { target: { value: 'other' } })
+    expect(screen.getByRole('option', { name: 'Example operator (preview only)' })).toBeTruthy()
+    fireEvent.change(screen.getByLabelText(/Actual performer/), { target: { value: 'preview-performer' } })
+    expect(operational).not.toHaveBeenCalled()
+  })
+
   it('validates the production capture form without saving and resets disposable entries', async () => {
     const snapshot = JSON.stringify(definition)
     render(<ConfigurationPreview definition={definition} name="Example draft" onClose={vi.fn()} />)
     fireEvent.click(screen.getByRole('button', { name: 'Validate entry' }))
     await screen.findByText('Observation is required.')
     fireEvent.change(screen.getByLabelText(/Observation/), { target: { value: 'Example only' } })
+    fireEvent.click(screen.getByRole('checkbox', { name: /I performed this step/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Validate entry' }))
     await screen.findByText('Example entry is valid. Nothing was saved.')
     expect(operational).not.toHaveBeenCalled()

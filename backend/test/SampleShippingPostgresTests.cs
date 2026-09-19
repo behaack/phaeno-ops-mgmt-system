@@ -454,9 +454,9 @@ public partial class SampleShippingPostgresTests
 
         public void ClearTrackedState() => DbContext.ChangeTracker.Clear();
 
-        public static async Task<ShippingTestScope> CreateAsync()
+        public static async Task<ShippingTestScope> CreateAsync(string? isolatedConnection = null)
         {
-            var connectionString = Environment.GetEnvironmentVariable(ConnectionEnvironmentVariable)
+            var connectionString = isolatedConnection ?? Environment.GetEnvironmentVariable(ConnectionEnvironmentVariable)
                 ?? throw new InvalidOperationException(
                     $"Set {ConnectionEnvironmentVariable} before running PostgreSQL reference tests.");
             var persistenceOptions = new PersistenceOptions

@@ -128,7 +128,9 @@ public sealed record LabExecutionDto(
 
 public sealed record RecordLabExecutionStepRequest(
     string StepKey, string Action, string Outcome, IReadOnlyDictionary<string, JsonElement> Captures,
-    bool OperatorConfirmed, bool ResourcesConfirmed, string? QcOutcome, string? Reason, long Version);
+    bool OperatorConfirmed, bool ResourcesConfirmed, string? QcOutcome, string? Reason, long Version,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    LabStepPerformanceInput? Performance = null);
 
 public sealed record LabExecutionStepDto(LabProtocolStepDefinition Definition,
     IReadOnlyList<LabProtocolStepRecord> Records, string? CompletionBlocker,

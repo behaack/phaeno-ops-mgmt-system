@@ -1920,7 +1920,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             var package = await DbContext.ResultOutputPackages.SingleAsync(value => value.Id == packageId);
             DbContext.Add(new BusinessRoleAssignment(PlatformUser.Id, BusinessRole.ResultReleaseManager));
             await DbContext.SaveChangesAsync();
-            var options = Options.Create(new PSeqOrderToCashOptions { GovernedPSeqResults = true, BusinessRoles = true,
+            var options = Options.Create(new PSeqOrderToCashOptions { RequireResultTraceability = false, RequireScientificEvidence = false, GovernedPSeqResults = true, BusinessRoles = true,
                 DualControlEnforced = true, PipelineServiceSecret = new string('s', 24), PipelineProviderKey = "simulated",
                 ObjectStorageTransferBaseUrl = "https://example.test/simulated" });
             var release = new PSeqResultReleaseController(DbContext, new(DbContext, new FixedIdentityContext(platformIdentity)),
@@ -1960,14 +1960,16 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             Assert.Equal(releasedAt, package.ReleasedAtUtc);
         }
 
+        // Historical handoff fixtures deliberately retain the pre-enforcement policy; current guards have separate enforcement coverage.
         public LabOperationsController CreateLabController(ExternalIdentity identity, bool governed = false) =>
             new(
                 DbContext,
                 new LabOperationsRequestContext(
                     DbContext,
                     new FixedIdentityContext(identity),
-                    Options.Create(new PSeqOrderToCashOptions { GovernedPSeqResults = governed, DualControlEnforced = governed }),
-                    NullLogger<LabOperationsRequestContext>.Instance))
+                    Options.Create(new PSeqOrderToCashOptions { RequireResultTraceability = false, RequireScientificEvidence = false, GovernedPSeqResults = governed, DualControlEnforced = governed }),
+                    NullLogger<LabOperationsRequestContext>.Instance),
+                Options.Create(new PSeqOrderToCashOptions { RequireResultTraceability = false, RequireScientificEvidence = false }))
             {
                 ControllerContext = new ControllerContext
                 {
@@ -1990,6 +1992,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 NullOperationalFileStorage.Instance,
                 Options.Create(new PSeqOrderToCashOptions
                 {
+                    RequireResultTraceability = false, RequireScientificEvidence = false,
                     NativePSeqAccountsReceivable = true
                 }),
                 provider,
@@ -2024,6 +2027,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 Options.Create(new OrderManagementOptions()),
                 Options.Create(new PSeqOrderToCashOptions
                 {
+                    RequireResultTraceability = false, RequireScientificEvidence = false,
                     NativePSeqAccountsReceivable = true,
                     DerivedReadiness = derivedReadiness,
                     DualControlEnforced = dualControl

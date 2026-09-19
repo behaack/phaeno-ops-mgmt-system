@@ -26,7 +26,7 @@ using PhaenoPortal.App.Features.Trials;
 
 namespace PhaenoPortal.App.Infrastructure.Persistence;
 
-public sealed class PSeqOperationsDbContext(
+public sealed partial class PSeqOperationsDbContext(
     DbContextOptions<PSeqOperationsDbContext> options,
     IOptions<PersistenceOptions> persistenceOptions) : DbContext(options)
 {
@@ -243,6 +243,12 @@ public sealed class PSeqOperationsDbContext(
     public DbSet<LabMaterialConsumption> LabMaterialConsumptions { get; set; }
     public DbSet<LabEquipment> LabEquipment { get; set; }
     public DbSet<LabEquipmentUsage> LabEquipmentUsages { get; set; }
+    public DbSet<LabSequencingOutput> LabSequencingOutputs { get; set; }
+    public DbSet<LabAnalysisRun> LabAnalysisRuns { get; set; }
+    public DbSet<LabAnalysisInput> LabAnalysisInputs { get; set; }
+    public DbSet<LabInvestigationReport> LabInvestigationReports { get; set; }
+    public DbSet<LabPerformanceProposal> LabPerformanceProposals { get; set; }
+    public DbSet<LabPerformanceDecision> LabPerformanceDecisions { get; set; }
     public DbSet<LabLibrary> LabLibraries { get; set; }
     public DbSet<LabOperationalBatch> LabOperationalBatches { get; set; }
     public DbSet<LabBatchMember> LabBatchMembers { get; set; }

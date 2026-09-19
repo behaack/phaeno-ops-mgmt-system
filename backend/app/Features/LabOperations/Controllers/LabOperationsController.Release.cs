@@ -187,6 +187,23 @@ public sealed partial class LabOperationsController
             await RequireSpecimenReviewReadinessAsync(work, cancellationToken, outputPackage.LabSampleId ?? outputPackage.TrialSampleId);
             if (outputPackage.State != ResultOutputPackageState.ReadyForReview)
                 throw Conflict("result_output_package_not_ready", "The output package must be complete, checksummed, and malware-clean before scientific approval.");
+            await new Services.LabResultLineageService(dbContext).RequirePackageAsync(outputPackage, cancellationToken, traceabilityOptions?.Value);
+        }
+        else if ((traceabilityOptions?.Value.RequireResultTraceability ?? true) || (traceabilityOptions?.Value.RequireScientificEvidence ?? true))
+        {
+            // The legacy upload path still needs the same evidence before job-level approval.
+            var sampleIds = await dbContext.LabSpecimens.Where(s => s.LabWorkOrderId == work.Id
+                && s.IntakeDisposition != LabSpecimenIntakeDisposition.Cancelled && s.ProcessingState != LabSpecimenProcessingState.Failed)
+                .Select(s => s.SubmittedSpecimenId).ToListAsync(cancellationToken);
+            var releases = await dbContext.LabResultReleases.Where(r => r.LabServiceOrderId == work.AuthorizationSourceId
+                && r.OrganizationId == work.SubmittingOrganizationId && sampleIds.Contains(r.LabSampleId)
+                && r.ReleaseStatus != PhaenoPortal.App.Features.OrderManagement.Domain.FileReleaseStatus.Withdrawn)
+                .OrderByDescending(r => r.ReleaseVersion).ToListAsync(cancellationToken);
+            if (sampleIds.Count == 0 || sampleIds.Any(id => releases.All(r => r.LabSampleId != id)))
+                throw Conflict("result_evidence_required", "Record an attributed result for every successful sample before scientific approval.");
+            var lineage = new Services.LabResultLineageService(dbContext);
+            foreach (var id in sampleIds)
+                await lineage.RequireReleaseAsync(releases.First(r => r.LabSampleId == id), cancellationToken, traceabilityOptions?.Value);
         }
         var approvalVersion = await dbContext.LabScientificApprovals
             .CountAsync(item => item.LabWorkOrderId == work.Id, cancellationToken) + 1;

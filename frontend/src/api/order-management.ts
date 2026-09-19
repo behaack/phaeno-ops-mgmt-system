@@ -1314,6 +1314,8 @@ export async function uploadPlatformLabResult(
     pipelineVersion: string;
     provenance: string;
     qcStatus: string;
+    labAnalysisRunId: string;
+    resultLocator: string;
   },
 ) {
   const form = new FormData();
@@ -1322,6 +1324,8 @@ export async function uploadPlatformLabResult(
   form.append("pipelineVersion", input.pipelineVersion);
   form.append("provenance", input.provenance);
   form.append("qcStatus", input.qcStatus);
+  form.append("labAnalysisRunId", input.labAnalysisRunId);
+  form.append("resultLocator", input.resultLocator);
   const response = await api.post<ApiEnvelope<OperationalFile>>(
     `/platform/lab-service-orders/${orderId}/samples/${sampleId}/results`,
     form,

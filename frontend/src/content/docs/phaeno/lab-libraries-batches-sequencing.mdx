@@ -2,6 +2,20 @@
 
 Library and batch records preserve the physical lineage from submitted specimen through prepared library and outsourced sequencing custody.
 
+## Record sequencing and analysis evidence
+
+Open a job, select its specimen, and go to **Sample history**. Operators and Supervisors can choose **Record sequencing output** or **Record analysis run**. Reviewers can open the saved records without changing them. Each file or run name links to its own detail page.
+
+For sequencing, select the recorded **Library / tube** and **Sequencing submission**. The submission must contain the exact library and barcode in its saved manifest. Enter the actual sequencing run reference, sample/index/lane mapping, exact external file version, SHA-256 checksum and byte size. Record the actual run start and completion times, plus a QC summary and named measurements or a supporting document with role `qc`. The library must have completed the required preparation and QC before the record can be saved.
+
+For analysis, select every exact sequencing input and describe each input's role. Inputs must come from the same source-tube attempt. Record the actual analysis run, start/completion times, software and reference versions, and settings checksum. Every new staff-recorded analysis pins the scientific evidence requirements in effect for this screen. Where inapplicable, QC, software, settings or reference evidence may use **Not applicable** with an explanation; source identity, times and file attribution cannot be waived.
+
+Times use your browser's local timezone, displayed above the fields. If a clock change repeats a time, choose its occurrence. **Additional run details** includes instrument, flowcell, lane, pool, index mapping, workflow version and optional submission/receipt times. Supporting documents require an exact external version, checksum and byte size. These references do not upload the underlying files or confirm their availability.
+
+Use **Record correction** from a sequencing record or **Record reanalysis** from an analysis record to create a linked replacement with a reason. Review the prefilled facts against the actual work before saving. Earlier records remain unchanged and can be opened through **View preceding record**. Failed saves retain your entries; retrying unchanged evidence does not create a duplicate record.
+
+Where the legacy manual-upload workflow is still enabled, authorized platform administrators can choose **Upload result** from an analysis record. The selected analysis is carried into the upload. Identify the exact row, entry or range for this sample, or confirm that the entire file belongs to it. Upload does not approve or release the result. This action is unavailable when governed result delivery has retired manual uploads.
+
 ## Prepare a library
 
 For tray-based preparation, open **Library prep** and the preparation batch. From a tube's actions choose **Create library output**, record the actual quantity, unit and storage location, then label the output and **Confirm output identity** by scanning its barcode. The job, specimen, source and preparation attempt are carried forward. Completing the final preparation stage creates the library and reuses its recorded QC evidence; do not enter the same measurements or disposition again. Complete the preparation batch before adding its eligible libraries to a sequencing batch.

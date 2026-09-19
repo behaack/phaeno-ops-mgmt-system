@@ -1,5 +1,25 @@
 # Backend Test Plan
 
+## Immediate traceability enforcement — verified September 19, 2026
+
+**105 backend tests passed, zero failures/skips:** 104 lineage, scientific governance, Trial, retention, concurrency and commercial handoff/domain regressions plus one isolated legacy approval boundary test. New tests prove default-on enforcement for preexisting unlinked or unprofiled results, unchanged historical records, complete profiled replacement acceptance, and Trial approval/release rejection. Historical compatibility fixtures explicitly retain their original policy. Full solution build passes with zero warnings/errors. No migration/backfill or production activation occurred; see the [enforcement verification record](../testing/runs/2026-09-19-traceability-enforcement.md).
+
+## Sample traceability — verified September 18, 2026
+
+The [focused verification record](../testing/runs/2026-09-18-sample-traceability.md) supersedes the initial unrun notes below. **44 backend tests passed across the 43-case regression run and one isolated restore rehearsal, zero failures/skips in the final runs**. Coverage includes isolated PostgreSQL result-to-reserve-tube attribution, shared preparation performance/report retries, metadata privacy and external-actor denial, immutable investigation reports, organization-scoped lookup, scientific evidence validation and 10,000-event cursor traversal. The continuation adds exact attachment coverage/size/checksum checks, missing and altered files, same-batch noncoverage denial, corrupt-manifest rejection, and native database/private-file restoration; see the [restore record](../testing/runs/2026-09-18-investigation-restore.md). Solution build passes. No model or migration changes were needed for the continuation. Real producers, hosted recovery, retention/holds and policy activation remain gates.
+
+## Step performance slice — initial authoring checkpoint, superseded above
+
+`LabStepPerformanceTests` covers explicit self/now capture, offset and minute-preserving late entry, required reasons, future/invalid/offset-free rejection, legacy unknowns and unchanged null-field serialization, correction identity preservation, repeats and skip/coverage guards. `LabPreparationPostgresTests` now submits performance in its shared QC journey, checks invalid late-entry rollback, equal member/receipt timestamps and actor attribution after the existing report retry. These are authored cases, not passing-test evidence; execution remains pending. Actual physical times, independent performer verification, on-behalf entry, time/performer amendments and late-entry review policy are outside this slice.
+
+Checkpoint: the full backend solution build passed with zero warnings/errors; EF reports no model changes since the last migration. Frontend typecheck, changed-file lint, documentation generation/check (56 guides) and diff/link checks passed. Automated suites and browser acceptance were not executed. No migration, Git publication, deployment or production activation occurred for this slice.
+
+## Sample traceability — phase 1 authored, September 18, 2026
+
+`LabResultLineageTests` adds compatibility/default-off release, required analysis/locator, sticky voluntary binding, correction predecessor/reason, immutable input sets/resource evidence, restrictive links and immutable bindings. `LabResultLineagePostgresTests` adds a rolled-back persisted failed-first/reserve-success journey through paired sequencing inputs, analysis, package/legacy release and the restricted lineage reader, plus wrong specimen/organization, missing input, changed replay and checksum rejection. `PersistenceTests` now expects all 51 Laboratory entities, including the three new lineage tables. These cases compile; tests were not executed because the implementation request did not request test execution. The full backend build and additive local migration are implementation checks, not passing-test evidence.
+
+Remaining coverage is specified in [Sample traceability acceptance](SAMPLE-TRACEABILITY-AND-INVESTIGATION-PLAN.md#12-acceptance-and-verification-matrix), especially ST-19/ST-20. Execute the authored cases and existing result/Trial/preparation/retention regressions before rollout. Complete independent-connection races, all controller authorization/bypass cases, full resource snapshot evolution, actual provider/physical handoffs and phase-2/3 performed-time, preservation/restore and report cases separately. No full traceability acceptance claim is made.
+
 ## Service catalog scientific consolidation (2026-09-18)
 
 `ConfiguredLabServiceDomainTests` covers distinct required sample assignments, immutable assignment and legacy/new snapshot round trips. `ConfiguredLabServicePostgresTests` adds parent immutability, duplicate definition rejection, no availability from material text alone, and frozen supported revision IDs; configured-order fixtures now assign an explicit RNA type and cleanup removes the new children. These cases compile but were not executed (tests not requested). The additive migration was applied to verified local `phaeno_ops`; the Release solution build and pending-model check pass. Concurrent cross-family writes and rejection of a retired pinned type at authorization remain acceptance cases to execute before production release. No production migration occurred.
@@ -2014,3 +2034,15 @@ Authored `LabCompletionForecastTests` covers mixed day bases, weekend/observed h
 ## Full-suite release verification - September 18, 2026
 
 Ran every API test with PSEQ_OPERATIONS_REFERENCE_CONNECTION pointing to a separately initialized loopback PostgreSQL 18 cluster on port 55439, migrated from empty. Database-backed suites are enabled. Corrected the complete laboratory model assertion (48 entities), a release fixture lacking its laboratory job/specimen, sequential workflow revision creation, configured 14-day acceptance expectation, an explicit manual due date before accession, and a self-approval negative fixture missing the proposed price. The five affected cases all pass. Final full-suite result is recorded in SERVICE-CATALOG-RELEASE-2026-09-18.md. The Unix-only symlink case remains a declared Windows platform exclusion.
+
+## Evidence governance checkpoint — September 18, 2026
+
+See [the governance verification record](../testing/runs/2026-09-18-evidence-governance.md) for executed scope and limitations. Coverage includes actual-person capture and preview isolation; independent review, self/stale/scope/retry rejection; retained original evidence; scientific profile requirements and explained exceptions; private evidence preservation versus customer-byte deletion; and desktop/mobile proposal/review accessibility. Production, real producer/bench and hosted recovery acceptance remain separate.
+
+## Staff scientific capture and delivery history — September 19, 2026
+
+The [capture/history verification record](../testing/runs/2026-09-19-scientific-capture-history.md) records 19 backend, 13 frontend and 12 browser passes, including sample-scoped commercial/Trial history, immutable report snapshots, staff sequencing/analysis capture and linked corrections, unchanged retries, exact manual-upload attribution, access limits, error recovery, keyboard focus and light/dark mobile accessibility. TypeScript, focused ESLint, EF model consistency and documentation checks pass. No new migration; no production activation. Browser evidence is simulated, and real producer/bench/hosted recovery acceptance remains separate.
+
+## Database baseline and preservation release — September 19, 2026
+
+The [reset execution record](../operations/database-rebase-20260919.md) tracks the full release verification. The baseline-only discovery assertion replaces the retired additive-migration assertion; downgrade still must refuse loss of commit evidence. The legacy scientific-review gate fixture explicitly selects legacy evidence policy, while enforcement suites retain current defaults. Browser keyboard coverage includes the added performer and performed-time controls. Export/import probes cover wrong targets, transactional rollback, replay conflicts, source preservation and drift detection. Production identity, physical scientific evidence and real provider delivery remain separate from automated fixtures.

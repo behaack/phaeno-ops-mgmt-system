@@ -657,7 +657,8 @@ public sealed class PlatformLabServiceOrdersController(
     [RequestSizeLimit(104_857_600)]
     public async Task<OperationalFileDto> UploadResult(Guid orderId, Guid sampleId, [FromForm] IFormFile file,
         [FromForm] string analysisProfile, [FromForm] string pipelineVersion, [FromForm] string provenance,
-        [FromForm] string qcStatus, CancellationToken cancellationToken)
+        [FromForm] string qcStatus, CancellationToken cancellationToken,
+        [FromForm] Guid? labAnalysisRunId = null, [FromForm] string? resultLocator = null)
     {
         if (orderToCashOptions.Value.GovernedPSeqResults)
             throw new OrderManagementException("manual_result_upload_retired",
@@ -668,6 +669,13 @@ public sealed class PlatformLabServiceOrdersController(
         var sample = order.Samples.SingleOrDefault(item => item.Id == sampleId) ?? throw Missing();
         if (sample.Status is not (LabSampleStatus.DataProcessing or LabSampleStatus.DataAvailable))
             throw Conflict("result_upload_not_allowed", "Results can be uploaded only during data processing or review.");
+        if (orderToCashOptions.Value.RequireResultTraceability || orderToCashOptions.Value.RequireScientificEvidence || labAnalysisRunId.HasValue)
+        {
+            await new LabOperations.Services.LabResultLineageService(dbContext).RequireResultAsync(labAnalysisRunId,
+                orderToCashOptions.Value.RequireResultTraceability, order.OrganizationId, null, sample.Id, cancellationToken, orderToCashOptions.Value.RequireScientificEvidence);
+            if (string.IsNullOrWhiteSpace(resultLocator) || resultLocator.Length > 1000)
+                throw Invalid("result_locator_required", "Identify the result within the file. Use '*' only when the entire file belongs to this sample and analysis.");
+        }
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!options.Value.AllowedFileKinds.ContainsKey(extension))
             throw Invalid("file_kind_not_allowed", "This result file type is not allowed.");
@@ -683,7 +691,8 @@ public sealed class PlatformLabServiceOrdersController(
             managed.RecordScan(scan.Status, scan.Message);
             var releaseVersion = await dbContext.LabResultReleases.CountAsync(item => item.LabSampleId == sample.Id, cancellationToken) + 1;
             var release = new LabResultRelease(order.OrganizationId, order.Id, sample.Id, releaseVersion, analysisProfile,
-                pipelineVersion, provenance, qcStatus, JsonSerializer.Serialize(new { fileId = managed.Id }, JsonOptions), DateTime.UtcNow);
+                pipelineVersion, provenance, qcStatus, JsonSerializer.Serialize(new { fileId = managed.Id }, JsonOptions), DateTime.UtcNow,
+                labAnalysisRunId, orderToCashOptions.Value.RequireResultTraceability || orderToCashOptions.Value.RequireScientificEvidence, resultLocator);
             dbContext.ManagedOperationalFiles.Add(managed);
             dbContext.LabResultReleases.Add(release);
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -717,6 +726,7 @@ public sealed class PlatformLabServiceOrdersController(
                 EnsureVersion(order.Version, request.Version);
                 var sample = order.Samples.SingleOrDefault(item => item.Id == sampleId) ?? throw Missing();
                 var release = await dbContext.LabResultReleases.FirstOrDefaultAsync(item => item.Id == releaseId && item.LabServiceOrderId == orderId && item.LabSampleId == sampleId, operationCancellationToken) ?? throw Missing();
+                await new LabOperations.Services.LabResultLineageService(dbContext).RequireReleaseAsync(release, operationCancellationToken, orderToCashOptions.Value);
                 var releaseFileIds = ResultFileIds(release.ManifestJson);
                 var files = await dbContext.ManagedOperationalFiles.Where(item => releaseFileIds.Contains(item.Id) && item.WorkflowId == orderId && item.ParentRecordId == sampleId
                     && item.Purpose == OperationalFilePurpose.LabResult && item.ReleaseStatus == FileReleaseStatus.Internal).ToListAsync(operationCancellationToken);

@@ -129,7 +129,7 @@ public sealed class GovernedDownloadCommitPostgresTests
             Assert.False(await observer.OperationalDownloadCommitEvidence.AnyAsync(value => value.Id == rolled.Id));
             var retainedCount = await observer.OperationalDownloadCommitEvidence.CountAsync();
             var refused = await Assert.ThrowsAsync<PostgresException>(() => observer.Database.GetService<IMigrator>()
-                .MigrateAsync("20260905031439_AddGovernedRetentionCheckpoints"));
+                .MigrateAsync("0"));
             Assert.Equal("P0001", refused.SqlState);
             Assert.Equal(retainedCount, await observer.OperationalDownloadCommitEvidence.CountAsync());
         }

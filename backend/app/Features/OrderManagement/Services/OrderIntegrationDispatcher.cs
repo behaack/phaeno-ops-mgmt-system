@@ -2,6 +2,8 @@ namespace PhaenoPortal.App.Features.OrderManagement.Services;
 
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using PhaenoPortal.App.Features.Accounts.Services;
 using PSeq.Operations.Commercial.OrderManagement.Application;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.FileManagement.Services;
@@ -25,7 +27,8 @@ public sealed record PaymentRefreshOutboxPayload(
 
 public sealed class OrderIntegrationDispatcher(
     IServiceScopeFactory scopeFactory,
-    ILogger<OrderIntegrationDispatcher> logger) : BackgroundService
+    ILogger<OrderIntegrationDispatcher> logger,
+    IOptions<PSeqOrderToCashOptions>? pseqOptions = null) : BackgroundService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -100,7 +103,7 @@ public sealed class OrderIntegrationDispatcher(
         }
     }
 
-    private static async Task DispatchAsync(
+    private async Task DispatchAsync(
         PSeqOperationsDbContext dbContext,
         IQuickBooksGateway gateway,
         ReleasedDeliverableRetentionSnapshotService retentionSnapshots,
@@ -144,7 +147,7 @@ public sealed class OrderIntegrationDispatcher(
         }
     }
 
-    private static async Task CreateDocumentAsync(
+    private async Task CreateDocumentAsync(
         PSeqOperationsDbContext dbContext,
         IQuickBooksGateway gateway,
         ReleasedDeliverableRetentionSnapshotService retentionSnapshots,
@@ -207,7 +210,7 @@ public sealed class OrderIntegrationDispatcher(
         }
     }
 
-    private static async Task RefreshPaymentAsync(
+    private async Task RefreshPaymentAsync(
         PSeqOperationsDbContext dbContext,
         IQuickBooksGateway gateway,
         ReleasedDeliverableRetentionSnapshotService retentionSnapshots,
@@ -266,13 +269,15 @@ public sealed class OrderIntegrationDispatcher(
         }
     }
 
-    private static async Task ReleaseLabPaymentHoldsAsync(
+    private async Task ReleaseLabPaymentHoldsAsync(
         PSeqOperationsDbContext dbContext,
         ReleasedDeliverableRetentionSnapshotService retentionSnapshots,
         Guid orderId,
         CancellationToken cancellationToken)
     {
         var releases = await dbContext.LabResultReleases.Where(release => release.LabServiceOrderId == orderId && release.ReleaseStatus == FileReleaseStatus.PaymentHold).ToListAsync(cancellationToken);
+        foreach (var release in releases)
+            await new LabOperations.Services.LabResultLineageService(dbContext).RequireReleaseAsync(release, cancellationToken, pseqOptions?.Value);
         var files = await dbContext.ManagedOperationalFiles.Where(file => file.WorkflowId == orderId && file.Purpose == OperationalFilePurpose.LabResult && file.ReleaseStatus == FileReleaseStatus.PaymentHold).ToListAsync(cancellationToken);
         var releasedAtUtc = DateTime.UtcNow;
         foreach (var release in releases)

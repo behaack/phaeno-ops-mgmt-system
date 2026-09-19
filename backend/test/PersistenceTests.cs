@@ -213,7 +213,10 @@ public class PersistenceTests
             .Where(entityType => entityType.ClrType.Assembly == laboratoryAssembly)
             .ToList();
 
-        Assert.Equal(48, laboratoryEntities.Count);
+        Assert.Equal(54, laboratoryEntities.Count);
+        Assert.Equal("lab_sequencing_outputs", dbContext.Model.FindEntityType(typeof(LabSequencingOutput))?.GetTableName());
+        Assert.Equal("lab_analysis_runs", dbContext.Model.FindEntityType(typeof(LabAnalysisRun))?.GetTableName());
+        Assert.Equal("lab_analysis_inputs", dbContext.Model.FindEntityType(typeof(LabAnalysisInput))?.GetTableName());
         Assert.Equal("lab_product_types", dbContext.Model.FindEntityType(typeof(LabProductType))?.GetTableName());
         Assert.Equal("lab_supplier_products", dbContext.Model.FindEntityType(typeof(LabSupplierProduct))?.GetTableName());
         Assert.Equal("lab_steps", dbContext.Model.FindEntityType(typeof(LabStep))?.GetTableName());
@@ -562,12 +565,10 @@ public class PersistenceTests
     }
 
     [Fact]
-    public void PSeqOrderToCashMigrationIsDiscoveredWithoutConnectingToPostgres()
+    public void RebasedMigrationIsTheOnlyMigrationDiscoveredWithoutConnectingToPostgres()
     {
         using var dbContext = CreateDbContext();
-        Assert.Contains(
-            dbContext.Database.GetMigrations(),
-            migration => migration == "20260829204102_AddPSeqOrderToCashGapClosure");
+        Assert.EndsWith("_InitialPSeqOperationsRebased", Assert.Single(dbContext.Database.GetMigrations()));
     }
 
     private static void AssertUniqueIndex<TEntity>(

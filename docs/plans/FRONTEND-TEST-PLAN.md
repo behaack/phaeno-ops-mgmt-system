@@ -1,5 +1,23 @@
 # Frontend Test Plan
 
+## Sample traceability — verified September 18, 2026
+
+The [focused verification record](../testing/runs/2026-09-18-sample-traceability.md) supersedes the initial unrun notes below. **41 focused frontend tests passed** across performance input, DST handling, evidence presentation, execution, preparation and configuration preview. Typecheck and touched-file lint pass. Sample history includes exact-result selection, explicit unknown/unavailable states, saved reports and organization-scoped lookup; browser evidence is recorded in the E2E plan. Existing protocol and preparation screens remain the authoritative detailed work views.
+
+## Supporting reports — continuation verification
+
+The attachment continuation adds a specimen-scoped **Supporting reports** section, preserves failed-download metadata and permits retry, and displays server integrity errors from binary-download responses. It is verified in four passing desktop/mobile light/dark browser cases, documented in the [restore/attachment record](../testing/runs/2026-09-18-investigation-restore.md). The prior 41 unit cases are unchanged; they were not rerun for this continuation.
+
+## Step performance slice — initial authoring checkpoint, superseded above
+
+`step-performance.test.ts` covers confirmation without a configured instruction checkbox, server-owned Now timestamps, late-entry validation and offset serialization, future/invalid dates, and omission of hidden performance fields for skips/corrections. `StepPerformanceEvidence.test.tsx` distinguishes original performer from correcting recorder, retained offset/reason, historical unknowns and skips. Existing preparation, configuration-preview and execution-form fixtures include the new personal confirmation. Authored tests remain unrun. Frontend typecheck and lint on every touched TypeScript/TSX file passed; documentation generation/check passed for 56 guides. Browser, keyboard, focus, desktop/mobile and dark-theme acceptance remain pending; typecheck/lint are not substitutes for these checks. Touched execution steps group repeat/correct into one Actions menu and retain a direct action when only one is available.
+
+## Sample traceability — planned, September 18, 2026
+
+Phase 1 is backend capture/read contracts with Phaeno guide updates; no investigation UI or capture form is added in this phase. Documentation catalog review dates and generated search content are refreshed. Frontend automated tests were not run for this implementation.
+
+Pending coverage follows the [Sample traceability acceptance matrix](SAMPLE-TRACEABILITY-AND-INVESTIGATION-PLAN.md#12-acceptance-and-verification-matrix): exact selected-result/tube identity, preserved attempt/correction history, required capture forms, honest coverage and load failures, document availability, scoped reports, and accessible desktop/mobile navigation. The display must never infer missing source relationships. No tests have been added or executed for this planned feature.
+
 ## Sample-type detail navigation (2026-09-18)
 
 `SampleShippingConfigurationPanel.test.tsx` now uses an actual memory router and adds list/detail/return, exact historical revision, latest-only creation, and missing-record checks. Viewing details must not write configuration. Automated tests were not requested and remain unrun. Typecheck, scoped lint, documentation consistency and signed-in local navigation form the implementation checkpoint.
@@ -2484,3 +2502,15 @@ User dropdown sentence case correction (September 18, 2026): navigation label ex
 ## Full-suite release verification - September 18, 2026
 
 The owner explicitly requested every UI/API/E2E suite and production release. The full Vitest run passed all 1,047 tests in 166 files. Updated older expectations for lexical sample IDs, shipping control accessible names, automatic preparation coverage, failed-tube inspection and the enabled preparation protocol example. Fixed pending-state protection against overlapping failure submissions and subscribed approval-override dirty state; existing tests prove both. Follow-up browser findings corrected the positioned CRM Tasks table header and email recovery focus on dialog close; final UI rerun is a release gate. No test was disabled to clear a failure.
+
+## Evidence governance checkpoint — September 18, 2026
+
+See [the governance verification record](../testing/runs/2026-09-18-evidence-governance.md) for executed scope and limitations. Coverage includes actual-person capture and preview isolation; independent review, self/stale/scope/retry rejection; retained original evidence; scientific profile requirements and explained exceptions; private evidence preservation versus customer-byte deletion; and desktop/mobile proposal/review accessibility. Production, real producer/bench and hosted recovery acceptance remain separate.
+
+## Staff scientific capture and delivery history — September 19, 2026
+
+The [capture/history verification record](../testing/runs/2026-09-19-scientific-capture-history.md) records 19 backend, 13 frontend and 12 browser passes, including sample-scoped commercial/Trial history, immutable report snapshots, staff sequencing/analysis capture and linked corrections, unchanged retries, exact manual-upload attribution, access limits, error recovery, keyboard focus and light/dark mobile accessibility. TypeScript, focused ESLint, EF model consistency and documentation checks pass. No new migration; no production activation. Browser evidence is simulated, and real producer/bench/hosted recovery acceptance remains separate.
+
+## Database baseline and preservation release — September 19, 2026
+
+The [reset execution record](../operations/database-rebase-20260919.md) tracks the full release verification. The baseline-only discovery assertion replaces the retired additive-migration assertion; downgrade still must refuse loss of commit evidence. The legacy scientific-review gate fixture explicitly selects legacy evidence policy, while enforcement suites retain current defaults. Browser keyboard coverage includes the added performer and performed-time controls. Export/import probes cover wrong targets, transactional rollback, replay conflicts, source preservation and drift detection. Production identity, physical scientific evidence and real provider delivery remain separate from automated fixtures.

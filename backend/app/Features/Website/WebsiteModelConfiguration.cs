@@ -48,6 +48,8 @@ public static class WebsiteModelConfiguration
         modelBuilder.Entity<WebContact>(entity =>
         {
             entity.ToTable("web_contacts", schema);
+            // Preserve the legacy inquiry language already stored in deployed databases.
+            entity.Property<string>("Language").HasColumnName("language").HasMaxLength(35).HasDefaultValue("en-US").IsRequired();
             entity.HasKey(item => item.Id);
             entity.Property(item => item.FirstName).IsRequired().HasMaxLength(60);
             entity.Property(item => item.LastName).IsRequired().HasMaxLength(60);
@@ -65,6 +67,7 @@ public static class WebsiteModelConfiguration
         modelBuilder.Entity<WebOrder>(entity =>
         {
             entity.ToTable("web_orders", schema);
+            entity.Property<string>("Language").HasColumnName("language").HasMaxLength(35).HasDefaultValue("en-US").IsRequired();
             entity.HasKey(item => item.Id);
             entity.Property(item => item.FirstName).IsRequired().HasMaxLength(60);
             entity.Property(item => item.LastName).IsRequired().HasMaxLength(60);

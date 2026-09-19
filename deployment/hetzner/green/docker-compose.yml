@@ -3,6 +3,7 @@ name: phaeno-portal-green
 services:
   db:
     image: postgres:17
+    command: ["postgres", "-c", "track_commit_timestamp=on"]
     container_name: phaeno-portal-green-db
     restart: unless-stopped
     env_file:

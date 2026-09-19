@@ -1,5 +1,9 @@
 # Commercial to Lab Operations Contract
 
+Personal step performance and recorder separation are specified in the [step performance contract](LAB-STEP-PERFORMANCE-CONTRACT.md). This additive internal execution/preparation extension preserves existing authorization and compatible clients; it does not change the commercial authorization envelope or activate new release gates.
+
+Phase 1 result lineage is specified in the [result capture contract](LAB-RESULT-LINEAGE-CONTRACT.md). It adds explicit sequencing outputs, completed-analysis inputs and result-to-tube binding under existing Lab/pipeline authorization. It does not change this provider's commercial authorization envelope. Capture and guards are implemented locally; traceability and scientific-evidence enforcement default on following the September 19 immediate-cutoff decision. Existing test jobs receive no backfill or exemption for subsequent approval/release; production deployment remains separate.
+
 ## Shared library outputs (2026-09-17)
 
 Preparation detail advertises bulkOutputs. The existing versioned commands endpoint accepts action outputs, stageId and outputs [{memberId, quantity, quantityUnit, location}]. Outputs is omitted when null to preserve existing request hashes. Validate distinct current-batch members, active output-producing protocol, open unheld attempts, no existing output, positive quantities and required bounded unit/location strings. All outputs use individual generated barcodes and attempt/source lineage. Save once under existing batch/job locks and transaction, with outputResults [{memberId, outputContainerId, barcode}] in history. Exact retries return the original receipt without new outputs. Creation does not confirm physical barcodes or QC. The individual output command remains supported.

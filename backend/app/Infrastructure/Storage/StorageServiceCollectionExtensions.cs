@@ -64,7 +64,9 @@ public static class StorageServiceCollectionExtensions
         }
 
         services.AddSingleton<IManagedFileStorage, ManagedFileStorageAdapter>();
-        services.AddSingleton<IOperationalFileStorage, OperationalFileStorageAdapter>();
+        services.AddScoped<IOperationalFileStorage>(provider => new PhaenoPortal.App.Features.LabOperations.Services.InvestigationPreservingFileStorage(
+            new OperationalFileStorageAdapter(provider.GetRequiredService<IFileStorage>()),
+            provider.GetRequiredService<PhaenoPortal.App.Infrastructure.Persistence.PSeqOperationsDbContext>()));
         services.AddHostedService<LocalFileStorageStartupCheck>();
         return services;
     }

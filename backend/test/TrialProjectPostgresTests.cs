@@ -130,6 +130,65 @@ public sealed partial class TrialProjectPostgresTests
     }
 
     [PostgreSqlReferenceFact]
+    public async Task InvestigationHistoryIncludesOnlyThisSamplesFilesInSharedTrialReleases()
+    {
+        await using var scope = await Fixture.Create(); var trial = await scope.CreateApprovedTrial();
+        await scope.Submit(trial, "RNA-HISTORY-1"); await scope.Submit(trial, "RNA-HISTORY-2");
+        var samples = trial.Samples.ToArray(); var first = await scope.ReadyPackage(samples[0]); var second = await scope.ReadyPackage(samples[1]);
+        await scope.Results.ReleaseAsync(trial, scope.Scientific, new(trial.Version, [first.Id], false, "First sample ready"), default); await scope.Db.SaveChangesAsync();
+        await scope.Results.ReleaseAsync(trial, scope.Scientific, new(trial.Version, [first.Id, second.Id], true, "Shared release ready"), default); await scope.Db.SaveChangesAsync();
+        var release = await scope.Db.TrialResultReleases.SingleAsync(r => r.Id == trial.CompleteReleaseId);
+        var files = await scope.Db.TrialResultFiles.Where(f => f.TrialSampleId == samples[0].Id || f.TrialSampleId == samples[1].Id).ToListAsync();
+        var now = DateTime.UtcNow;
+        foreach (var file in files) scope.Db.Add(new OperationalFileDownload(Guid.NewGuid(), file.ManagedOperationalFileId, scope.Organization.Id, scope.Customer.Id,
+            ReleasedDeliverablePackageType.TrialResult, release.Id, OperationalFileDownloadScope.IndividualFile, now, now.AddMinutes(5), "private-address", "private-agent"));
+        var snapshot = await scope.Db.ReleasedDeliverableRetentionSnapshots.SingleAsync(s => s.TrialResultReleaseId == release.Id);
+        scope.Db.Add(new ReleasedDeliverablePreservationHold(snapshot.Id, ReleasedDeliverableHoldKind.Preservation, scope.Scientific.User.Id, "Shared package review", now)); await scope.Db.SaveChangesAsync();
+        var work = await scope.Db.LabWorkOrders.SingleAsync(w => w.Id == samples[0].LabWorkOrderId);
+        var specimen = await scope.Db.LabSpecimens.SingleAsync(s => s.LabWorkOrderId == work.Id && s.SubmittedSpecimenId == samples[0].Id);
+        var service = new PhaenoPortal.App.Features.LabOperations.Services.LabInvestigationService(scope.Db);
+        var evidence = JsonSerializer.SerializeToElement((await service.ReadAsync(work.Id, specimen.Id, default)).Evidence, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        Assert.Equal(2, evidence.GetProperty("trialReleases").GetArrayLength());
+        Assert.Single(evidence.GetProperty("downloads").EnumerateArray());
+        Assert.Equal(files.Single(f => f.TrialSampleId == samples[0].Id).ManagedOperationalFileId, evidence.GetProperty("downloads")[0].GetProperty("managedOperationalFileId").GetGuid());
+        Assert.Single(evidence.GetProperty("preservationHolds").EnumerateArray());
+        Assert.DoesNotContain(files.Single(f => f.TrialSampleId == samples[1].Id).ManagedOperationalFileId.ToString(), evidence.ToString());
+        Assert.DoesNotContain("private-address", evidence.ToString()); Assert.DoesNotContain("private-agent", evidence.ToString());
+        scope.Db.Entry(release).Property(r => r.ManifestJson).CurrentValue = "{}"; await scope.Db.SaveChangesAsync();
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ReadAsync(work.Id, specimen.Id, default));
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task ImmediateEnforcementBlocksOldTrialPackageApprovalAndRelease()
+    {
+        await using var scope = await Fixture.Create(); var trial = await scope.CreateApprovedTrial();
+        await scope.Submit(trial, "RNA-ENFORCEMENT");
+        var approval = await Assert.ThrowsAsync<OrderManagementException>(() => scope.ReadyPackage(trial.Samples.Single(), enforceTraceability: true));
+        Assert.Contains("producing analysis", approval.Message);
+        var package = await scope.Db.ResultOutputPackages.SingleAsync(p => p.TrialProjectId == trial.Id);
+        Assert.Equal(ResultOutputPackageState.ReadyForReview, package.State); Assert.Null(package.ScientificApprovalId);
+        var enforced = new TrialResultService(scope.Db, scope.Workflow, Options.Create(new PSeqOrderToCashOptions {
+            GovernedPSeqResults = true, PipelineServiceSecret = new string('s', 24), PipelineProviderKey = "fixture", ObjectStorageTransferBaseUrl = "https://storage.example.test"
+        }), Options.Create(new OrderManagementOptions { ReleasedDeliverableRetentionEnforcement = true }));
+        var release = await Assert.ThrowsAsync<OrderManagementException>(() => enforced.ReleaseAsync(trial, scope.Scientific, new(trial.Version, [package.Id], true, "TEST required evidence"), default));
+        Assert.Contains("producing analysis", release.Message);
+        Assert.False(await scope.Db.TrialResultReleases.AnyAsync(r => r.TrialProjectId == trial.Id));
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task ImmediateEnforcementBlocksLegacyScientificApprovalWithoutAttributedResults()
+    {
+        await using var scope = await Fixture.Create(); var trial = await scope.CreateApprovedTrial();
+        await scope.Submit(trial, "RNA-LEGACY-ENFORCEMENT");
+        var error = await Assert.ThrowsAsync<OrderManagementException>(() => scope.ReadyPackage(
+            trial.Samples.Single(), enforceTraceability: true, governed: false));
+        Assert.Equal("result_evidence_required", error.ErrorCode);
+        var package = await scope.Db.ResultOutputPackages.SingleAsync(p => p.TrialProjectId == trial.Id);
+        Assert.Null(package.ScientificApprovalId);
+        Assert.False(await scope.Db.LabScientificApprovals.AnyAsync(a => a.LabWorkOrderId == package.LabWorkOrderId));
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task PartialThenWholeTrialReleaseFreezesRetentionAndSurvivesConversion()
     {
         await using var scope = await Fixture.Create(); var trial = await scope.CreateApprovedTrial();
@@ -381,7 +440,8 @@ public sealed partial class TrialProjectPostgresTests
         public TrialAccess Access => new(db, new Identity(), new(db, new Identity()));
         public TrialWorkflowService Workflow => new(db, new InternalLabOperationsProvider(db), Access);
         public TrialReader Reader => new(db, Workflow, orders: Options.Create(new OrderManagementOptions { ReleasedDeliverableRetentionEnforcement = true }));
-        public TrialResultService Results => new(db, Workflow, Options.Create(new PSeqOrderToCashOptions { GovernedPSeqResults = true, PipelineServiceSecret = new string('s', 24), PipelineProviderKey = "fixture", ObjectStorageTransferBaseUrl = "https://storage.example.test" }), Options.Create(new OrderManagementOptions { ReleasedDeliverableRetentionEnforcement = true }));
+        // These release/retention fixtures model historical packages without manufactured scientific evidence.
+        public TrialResultService Results => new(db, Workflow, Options.Create(new PSeqOrderToCashOptions { GovernedPSeqResults = true, RequireResultTraceability = false, RequireScientificEvidence = false, PipelineServiceSecret = new string('s', 24), PipelineProviderKey = "fixture", ObjectStorageTransferBaseUrl = "https://storage.example.test" }), Options.Create(new OrderManagementOptions { ReleasedDeliverableRetentionEnforcement = true }));
         public static async Task<Fixture> Create(string? disposableConnection = null, string materialClass = "Extracted RNA")
         {
             if (disposableConnection is not null)
@@ -445,7 +505,7 @@ public sealed partial class TrialProjectPostgresTests
         public TrialSubmitRequest Submission(TrialProject trial, string reference) => new(trial.Version, destination.Id, sampleType.Id, true, [new(reference, "Synthetic RNA", 2, 100, "ng", 10, "Frozen", "Nonhazardous; no PHI", new() { ["organism"] = "Synthetic organism" }, null, null)]);
         public async Task Submit(TrialProject trial, string reference)
         { if (trial.Status == TrialStatus.AwaitingAcceptance) { Workflow.Accept(trial, Prospect, new(trial.Version, trial.CurrentScopeRevision, TrialRules.TermsVersion, true)); await db.SaveChangesAsync(); } await Workflow.SubmitAsync(trial, Prospect, Submission(trial, reference), default); await db.SaveChangesAsync(); }
-        public async Task<ResultOutputPackage> ReadyPackage(TrialSample sample, Guid? corrects = null)
+        public async Task<ResultOutputPackage> ReadyPackage(TrialSample sample, Guid? corrects = null, bool enforceTraceability = false, bool governed = true)
         {
             var work = await db.LabWorkOrders.SingleAsync(value => value.Id == sample.LabWorkOrderId);
             // Release/retention fixture only: arrange a resolved sample without claiming an executed laboratory journey.
@@ -460,8 +520,9 @@ public sealed partial class TrialProjectPostgresTests
             package.BeginScanning(); package.MarkReadyForReview(1, true, true);
             db.AddRange(package, artifact); await db.SaveChangesAsync();
             var identity = new ScientificIdentity(new("clerk", Scientific.User.ExternalSubjectId!, Scientific.User.Email, true));
-            var labContext = new LabOperationsRequestContext(db, identity, Options.Create(new PSeqOrderToCashOptions { GovernedPSeqResults = true }), Microsoft.Extensions.Logging.Abstractions.NullLogger<LabOperationsRequestContext>.Instance);
-            var controller = new PhaenoPortal.App.Features.LabOperations.Controllers.LabOperationsController(db, labContext)
+            var labContext = new LabOperationsRequestContext(db, identity, Options.Create(new PSeqOrderToCashOptions { GovernedPSeqResults = governed }), Microsoft.Extensions.Logging.Abstractions.NullLogger<LabOperationsRequestContext>.Instance);
+            var controller = new PhaenoPortal.App.Features.LabOperations.Controllers.LabOperationsController(db, labContext,
+                Options.Create(new PSeqOrderToCashOptions { RequireResultTraceability = enforceTraceability, RequireScientificEvidence = enforceTraceability }))
                 { ControllerContext = new() { HttpContext = new DefaultHttpContext() } };
             await controller.ApproveScientificReview(work.Id, new("trial", 1, null, work.Version, package.Id), default);
             return package;

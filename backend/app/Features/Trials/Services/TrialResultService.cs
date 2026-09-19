@@ -48,6 +48,7 @@ public sealed class TrialResultService(PSeqOperationsDbContext db, TrialWorkflow
         var files = new List<ManagedOperationalFile>();
         foreach (var package in packages)
         {
+            await new PhaenoPortal.App.Features.LabOperations.Services.LabResultLineageService(db).RequirePackageAsync(package, token, pseq.Value);
             var sample = trial.Samples.SingleOrDefault(value => value.Id == package.TrialSampleId && value.LabWorkOrderId == package.LabWorkOrderId) ?? throw Missing();
             var canReuseReleased = package.State == ResultOutputPackageState.Released && request.CompletePackage && !request.SupersedesReleaseId.HasValue;
             if (package.State != ResultOutputPackageState.ReadyForRelease && !canReuseReleased || !package.ScientificApprovalId.HasValue

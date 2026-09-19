@@ -143,7 +143,9 @@ public sealed record LabPreparationStepInput(Guid StageId, string StepKey, strin
     IReadOnlyList<Guid> CoveredMemberIds, IReadOnlyDictionary<string, JsonElement> SharedCaptures,
     IReadOnlyList<LabPreparationTubeInput> Tubes, string? SharedQcOutcome, string? Reason,
     bool CoverageConfirmed, bool OperatorConfirmed, bool ResourcesConfirmed,
-    IReadOnlyList<LabPreparationResourceFieldInput>? ResourceEntries = null);
+    IReadOnlyList<LabPreparationResourceFieldInput>? ResourceEntries = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    LabStepPerformanceInput? Performance = null);
 
 public sealed record LabPreparationResourceFieldInput(string FieldKey, Guid? MemberId = null,
     Guid? ResourceId = null, long? ResourceVersion = null, decimal? Quantity = null,
@@ -166,6 +168,7 @@ public static class LabPreparationEvidence
         var tube = input.Tubes.SingleOrDefault(t => t.MemberId == memberId);
         if (input.Outcome == "skipped")
         {
+            if (input.Performance is not null) throw new ArgumentException("A skipped step cannot claim performed work.");
             if (input.SharedCaptures.Count > 0 || input.Tubes.Any(t => t.Captures.Count > 0 || t.QcOutcome is not null) || input.SharedQcOutcome is not null)
                 throw new ArgumentException("A skipped step cannot contain performed work or QC.");
             return new(step.Key, input.Action, input.Outcome, new Dictionary<string, JsonElement>(), false, false, null, tube?.Reason ?? input.Reason, recordId);
@@ -194,6 +197,6 @@ public static class LabPreparationEvidence
             throw new ArgumentException("QC must use the scope defined by the approved protocol.");
         if (step.QcGate?.Scope == "shared" && tube?.QcOutcome is not null) LabProtocolDefinition.RequiredText(tube.Reason, 4000, "Tube QC exception reason");
         var qc = step.QcGate?.Scope == "tube" ? tube?.QcOutcome : tube?.QcOutcome ?? input.SharedQcOutcome;
-        return new(step.Key, input.Action, input.Outcome, values, input.OperatorConfirmed, input.ResourcesConfirmed, qc, tube?.Reason ?? input.Reason, recordId);
+        return new(step.Key, input.Action, input.Outcome, values, input.OperatorConfirmed, input.ResourcesConfirmed, qc, tube?.Reason ?? input.Reason, recordId, input.Performance);
     }
 }

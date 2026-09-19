@@ -199,7 +199,8 @@ public sealed partial class LabOperationsController
             throw Conflict("material_quantity_unavailable", exception.Message);
         }
         dbContext.LabMaterialConsumptions.Add(new LabMaterialConsumption(execution.Id, lot.Id,
-            request.OutputContainerId, request.Quantity, request.QuantityUnit, actor.User.Id, DateTime.UtcNow));
+            request.OutputContainerId, request.Quantity, request.QuantityUnit, actor.User.Id, DateTime.UtcNow,
+            resourceSnapshotJson: await Services.LabResourceSnapshot.MaterialAsync(dbContext, lot, cancellationToken)));
         dbContext.Entry(execution).Property(item => item.UpdatedAt).IsModified = true;
         await dbContext.SaveChangesAsync(cancellationToken);
         return MapExecution(execution);
@@ -267,7 +268,8 @@ public sealed partial class LabOperationsController
         // Save usage and the equipment version atomically against concurrent retirement.
         dbContext.Entry(equipment).Property(item => item.UpdatedAt).IsModified = true;
         dbContext.LabEquipmentUsages.Add(new LabEquipmentUsage(execution.Id, equipment.Id,
-            request.UsedAtUtc, actor.User.Id, request.RunReference));
+            request.UsedAtUtc, actor.User.Id, request.RunReference,
+            resourceSnapshotJson: Services.LabResourceSnapshot.Equipment(equipment)));
         dbContext.Entry(execution).Property(item => item.UpdatedAt).IsModified = true;
         await dbContext.SaveChangesAsync(cancellationToken);
         return MapExecution(execution);

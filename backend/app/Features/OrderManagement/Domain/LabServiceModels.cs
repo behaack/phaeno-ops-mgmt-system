@@ -749,6 +749,9 @@ public sealed class LabSample : IAudit, IConcurrency
 
 public sealed class LabResultRelease : IAudit, IConcurrency
 {
+    public Guid? LabAnalysisRunId { get; private set; }
+    public bool TraceabilityRequired { get; private set; }
+    public string? ResultLocator { get; private set; }
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid OrganizationId { get; private set; }
     public Guid LabServiceOrderId { get; private set; }
@@ -780,7 +783,7 @@ public sealed class LabResultRelease : IAudit, IConcurrency
         string provenance,
         string qcStatus,
         string manifestJson,
-        DateTime generatedAt)
+        DateTime generatedAt, Guid? labAnalysisRunId = null, bool traceabilityRequired = false, string? resultLocator = null)
     {
         if (releaseVersion <= 0) throw new ArgumentOutOfRangeException(nameof(releaseVersion));
         OrganizationId = organizationId;
@@ -793,16 +796,22 @@ public sealed class LabResultRelease : IAudit, IConcurrency
         QcStatus = OrderText.Required(qcStatus, nameof(qcStatus), 500);
         ManifestJson = OrderText.Json(manifestJson);
         GeneratedAt = generatedAt;
+        LabAnalysisRunId = labAnalysisRunId;
+        TraceabilityRequired = traceabilityRequired || labAnalysisRunId.HasValue;
+        ResultLocator = resultLocator is null ? null : OrderText.Required(resultLocator, nameof(resultLocator), 1000);
+        RequireLineage();
     }
 
     public void MarkReady(bool holdForPayment)
     {
+        RequireLineage();
         if (ReleaseStatus is FileReleaseStatus.Released or FileReleaseStatus.Withdrawn) return;
         ReleaseStatus = holdForPayment ? FileReleaseStatus.PaymentHold : FileReleaseStatus.Ready;
     }
 
     public bool Release(DateTime utcNow)
     {
+        RequireLineage();
         if (ReleaseStatus == FileReleaseStatus.Released) return false;
         if (ReleaseStatus == FileReleaseStatus.Withdrawn)
             throw new InvalidOperationException("A withdrawn result release cannot be released again.");
@@ -811,6 +820,13 @@ public sealed class LabResultRelease : IAudit, IConcurrency
         ReleaseStatus = FileReleaseStatus.Released;
         ReleasedAt = utcNow;
         return true;
+    }
+    private void RequireLineage()
+    {
+        // Legacy/default-off releases retain their current behavior, including payment-hold release.
+        if (!TraceabilityRequired && !LabAnalysisRunId.HasValue) return;
+        if (!LabAnalysisRunId.HasValue || LabAnalysisRunId.Value == Guid.Empty || string.IsNullOrWhiteSpace(ResultLocator))
+            throw new InvalidOperationException("Record the producing analysis, result locator and source-tube lineage before releasing this result.");
     }
     public void Withdraw() => ReleaseStatus = FileReleaseStatus.Withdrawn;
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }

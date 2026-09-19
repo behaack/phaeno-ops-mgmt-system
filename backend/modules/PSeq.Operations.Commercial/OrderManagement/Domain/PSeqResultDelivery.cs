@@ -25,6 +25,8 @@ public sealed class ResultOutputPackage : CommercialReceivableEntity
     public Guid? TrialSampleId { get; private set; }
     public int PackageVersion { get; private set; }
     public Guid? CorrectsPackageId { get; private set; }
+    public Guid? LabAnalysisRunId { get; private set; }
+    public bool TraceabilityRequired { get; private set; }
     public string PipelineProviderKey { get; private set; } = null!;
     public string PipelineSubmissionId { get; private set; } = null!;
     public string IdempotencyKey { get; private set; } = null!;
@@ -49,7 +51,8 @@ public sealed class ResultOutputPackage : CommercialReceivableEntity
         Guid labWorkOrderId, Guid? labSampleId, int packageVersion,
         Guid? correctsPackageId, string pipelineProviderKey,
         string pipelineSubmissionId, string idempotencyKey, string manifestJson,
-        string manifestSha256, int expectedArtifactCount, Guid? trialProjectId = null, Guid? trialSampleId = null)
+        string manifestSha256, int expectedArtifactCount, Guid? trialProjectId = null, Guid? trialSampleId = null,
+        Guid? labAnalysisRunId = null, bool traceabilityRequired = false)
     {
         if (organizationId == Guid.Empty || labServiceOrderId == Guid.Empty || trialProjectId == Guid.Empty || trialSampleId == Guid.Empty
             || labWorkOrderId == Guid.Empty || labSampleId == Guid.Empty
@@ -65,12 +68,15 @@ public sealed class ResultOutputPackage : CommercialReceivableEntity
         TrialProjectId = trialProjectId; TrialSampleId = trialSampleId;
         PackageVersion = packageVersion;
         CorrectsPackageId = correctsPackageId;
+        LabAnalysisRunId = labAnalysisRunId;
+        TraceabilityRequired = traceabilityRequired || labAnalysisRunId.HasValue;
         PipelineProviderKey = Required(pipelineProviderKey, nameof(pipelineProviderKey), 100);
         PipelineSubmissionId = Required(pipelineSubmissionId, nameof(pipelineSubmissionId), 255);
         IdempotencyKey = Required(idempotencyKey, nameof(idempotencyKey), 255);
         ManifestJson = OrderText.Json(manifestJson);
         ManifestSha256 = Required(manifestSha256, nameof(manifestSha256), 64).ToUpperInvariant();
         ExpectedArtifactCount = expectedArtifactCount;
+        RequireLineage();
     }
 
     public void BeginScanning()
@@ -82,6 +88,7 @@ public sealed class ResultOutputPackage : CommercialReceivableEntity
 
     public void MarkReadyForReview(int actualArtifactCount, bool allChecksumsMatch, bool allMalwareClean)
     {
+        RequireLineage();
         if (State != ResultOutputPackageState.Scanning)
             throw new InvalidOperationException("Only a scanning package can become ready for review.");
         if (actualArtifactCount != ExpectedArtifactCount)
@@ -97,6 +104,7 @@ public sealed class ResultOutputPackage : CommercialReceivableEntity
 
     public void RecordScientificApproval(Guid approvalId, Guid actorUserId, DateTime utcNow)
     {
+        RequireLineage();
         if (State != ResultOutputPackageState.ReadyForReview)
             throw new InvalidOperationException("Only a complete, checksummed, malware-clean package can be scientifically approved.");
         if (approvalId == Guid.Empty || actorUserId == Guid.Empty)
@@ -117,11 +125,29 @@ public sealed class ResultOutputPackage : CommercialReceivableEntity
 
     public void Release(Guid actorUserId, DateTime utcNow)
     {
+        RequireLineage();
         if (State != ResultOutputPackageState.ReadyForRelease)
             throw new InvalidOperationException("Only an approved release candidate can be released.");
         State = ResultOutputPackageState.Released;
         ReleasedByUserId = actorUserId != Guid.Empty ? actorUserId : throw new ArgumentException("A release actor is required.");
         ReleasedAtUtc = utcNow;
+    }
+
+    private void RequireLineage()
+    {
+        // Legacy/default-off results remain valid without inferred lineage.
+        if (!TraceabilityRequired && !LabAnalysisRunId.HasValue) return;
+        if (!LabAnalysisRunId.HasValue || LabAnalysisRunId.Value == Guid.Empty)
+            throw new InvalidOperationException("Record the producing analysis and its source-tube lineage before finalizing this result.");
+        if (CorrectsPackageId.HasValue)
+        {
+            using var manifest = System.Text.Json.JsonDocument.Parse(ManifestJson);
+            if (manifest.RootElement.ValueKind != System.Text.Json.JsonValueKind.Object
+                || !manifest.RootElement.TryGetProperty("correctionReason", out var reason)
+                || reason.ValueKind != System.Text.Json.JsonValueKind.String || string.IsNullOrWhiteSpace(reason.GetString())
+                || reason.GetString()!.Length > 2000)
+                throw new InvalidOperationException("A traceable result correction needs a reason in its retained manifest.");
+        }
     }
 
     public void Fail(string code, string detail)
@@ -163,6 +189,7 @@ public sealed class ResultArtifact : CommercialReceivableEntity
     public long SizeBytes { get; private set; }
     public string Sha256 { get; private set; } = null!;
     public string ObjectStorageKey { get; private set; } = null!;
+    public string? ResultLocator { get; private set; }
     public ResultArtifactScanState ScanState { get; private set; } = ResultArtifactScanState.Pending;
     public DateTime? ScanCompletedAtUtc { get; private set; }
     public string? ScanDetail { get; private set; }
@@ -171,7 +198,7 @@ public sealed class ResultArtifact : CommercialReceivableEntity
     private ResultArtifact() { }
 
     public ResultArtifact(Guid packageId, string logicalRole, string fileName,
-        string contentType, long sizeBytes, string sha256, string objectStorageKey)
+        string contentType, long sizeBytes, string sha256, string objectStorageKey, string? resultLocator = null)
     {
         if (packageId == Guid.Empty) throw new ArgumentException("A package is required.");
         if (sizeBytes <= 0) throw new ArgumentOutOfRangeException(nameof(sizeBytes));
@@ -182,6 +209,7 @@ public sealed class ResultArtifact : CommercialReceivableEntity
         SizeBytes = sizeBytes;
         Sha256 = Required(sha256, nameof(sha256), 64).ToUpperInvariant();
         ObjectStorageKey = Required(objectStorageKey, nameof(objectStorageKey), 1000);
+        ResultLocator = resultLocator is null ? null : Required(resultLocator, nameof(resultLocator), 1000);
     }
 
     public void BeginScan()

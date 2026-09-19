@@ -6,13 +6,19 @@ using System.Text.Json;
 public sealed record LabProtocolStepInput(
     string StepKey, string Action, string Outcome,
     IReadOnlyDictionary<string, JsonElement> Captures,
-    bool OperatorConfirmed, bool ResourcesConfirmed, string? QcOutcome, string? Reason, Guid? PreparationRecordId = null);
+    bool OperatorConfirmed, bool ResourcesConfirmed, string? QcOutcome, string? Reason, Guid? PreparationRecordId = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    LabStepPerformanceInput? Performance = null);
 
 public sealed record LabProtocolStepRecord(
     Guid Id, string StepKey, string Action, string Outcome,
     IReadOnlyDictionary<string, JsonElement> Captures,
     bool OperatorConfirmed, bool ResourcesConfirmed, string? QcOutcome, string? Reason,
-    Guid RecordedByUserId, DateTime RecordedAtUtc, Guid? PreparationRecordId = null);
+    Guid RecordedByUserId, DateTime RecordedAtUtc, Guid? PreparationRecordId = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    LabStepPerformance? Performance = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    Guid? CorrectsRecordId = null);
 
 public sealed record LabProtocolEvidence(int SchemaVersion, IReadOnlyList<LabProtocolStepRecord> Records)
 {
@@ -38,7 +44,17 @@ public sealed record LabProtocolEvidence(int SchemaVersion, IReadOnlyList<LabPro
                 || record.Id == Guid.Empty || record.RecordedByUserId == Guid.Empty
                 || record.RecordedAtUtc == default || string.IsNullOrWhiteSpace(record.StepKey)
                 || record.Captures is null || record.Action is not ("record" or "repeat" or "correct")
-                || record.Outcome is not ("recorded" or "skipped"))
+                || record.Outcome is not ("recorded" or "skipped")
+                || record.Performance is { } performance && (record.Outcome != "recorded"
+                    || performance.PerformedByUserId == Guid.Empty || performance.PerformedAtUtc == default
+                    || performance.PerformedAtUtc.Kind != DateTimeKind.Utc || performance.PerformedAtUtc > record.RecordedAtUtc
+                    || performance.UtcOffsetMinutes is < -840 or > 840
+                    || performance.VerificationStatus is not (null or "PendingReview")
+                    || performance.VerificationStatus == "PendingReview" && (string.IsNullOrWhiteSpace(performance.LateEntryReason) || performance.LateEntryReason.Length > 4000)
+                    || performance.EntryMode == "now" && (performance.Precision != "server" || performance.UtcOffsetMinutes != 0 || performance.VerificationStatus is null && performance.LateEntryReason is not null)
+                    || performance.EntryMode == "earlier" && (performance.Precision != "minute" || performance.PerformedAtUtc.Ticks % TimeSpan.TicksPerMinute != 0 || string.IsNullOrWhiteSpace(performance.LateEntryReason) || performance.LateEntryReason.Length > 4000)
+                    || performance.EntryMode is not ("now" or "earlier"))
+                || record.CorrectsRecordId.HasValue && (record.Action != "correct" || record.CorrectsRecordId == Guid.Empty))
                 || result.Records.Select(record => record.Id).Distinct().Count() != result.Records.Count)
                 throw new JsonException();
             return result;
@@ -81,11 +97,16 @@ public sealed record LabProtocolEvidence(int SchemaVersion, IReadOnlyList<LabPro
             if (blocker is not null) throw new InvalidOperationException(blocker);
         }
         ValidateValues(step, input);
+        if (input.Performance is not null && (input.Outcome == "skipped" || input.Action == "correct"))
+            throw new ArgumentException("Skipped steps cannot claim performed work. Corrections retain the original performed evidence.");
+        var performance = input.Action == "correct" ? prior?.Performance
+            : input.Performance is null ? null : LabStepPerformance.Capture(input.Performance, actorId, utcNow);
         if (Records.Count >= 5000) throw new InvalidOperationException("This execution has reached its evidence limit. Arrange a new execution.");
         var record = new LabProtocolStepRecord(Guid.NewGuid(), step.Key, input.Action, input.Outcome,
             input.Captures.ToDictionary(pair => pair.Key, pair => pair.Value.Clone(), StringComparer.Ordinal),
             input.OperatorConfirmed, input.ResourcesConfirmed, input.QcOutcome,
-            string.IsNullOrWhiteSpace(input.Reason) ? null : input.Reason.Trim(), actorId, utcNow, input.PreparationRecordId);
+            string.IsNullOrWhiteSpace(input.Reason) ? null : input.Reason.Trim(), actorId, utcNow, input.PreparationRecordId,
+            performance, input.Action == "correct" ? prior?.Id : null);
         return new(1, [.. Records, record]);
     }
 

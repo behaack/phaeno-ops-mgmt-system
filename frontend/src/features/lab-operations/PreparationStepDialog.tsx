@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { getLabOperationsError } from '#/api/lab-operations'
 import { Button } from '#/components/ui/button'
@@ -17,10 +17,12 @@ import { isAutomaticSpecimenReference, isOptionalPreparationReference, isOptiona
 import { PreparationField, prepRowClass, prepSelectClass } from './preparation-ui'
 
 import { PreparationResourceField } from './PreparationResourceField'
+import { StepTimingFields } from './StepTimingFields'
+import { emptyStepTiming, performanceInput, stepTimingSchema, timingIssues } from './step-performance'
 import { eligibleResources, emptyResourceCatalog, isResourceField, resourceEntries, stepResourceFields, type ResourceCatalog } from './preparation-resource-fields'
 
 type Step = ProtocolDefinition['steps'][number]
-const baseSchema = z.object({ values: z.record(z.string(), z.string()), covered: z.array(z.string()), outcome: z.enum(['recorded', 'skipped']), operator: z.boolean(), resources: z.boolean() })
+const baseSchema = z.object({ values: z.record(z.string(), z.string()), covered: z.array(z.string()), outcome: z.enum(['recorded', 'skipped']), operator: z.boolean(), resources: z.boolean(), timing: stepTimingSchema })
 const failureSchema = z.object({
   code: z.string().refine(value => preparationFailureReasons.some(reason => reason.value === value), 'Choose a failure reason.'),
   reason: z.string().trim().min(1, 'Record the reason and evidence.').max(4000, 'Use 4,000 characters or fewer.'),
@@ -84,7 +86,8 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
     if (v.outcome === 'skipped') return
     if (reportRequired && !qcReport) ctx.addIssue({ code: 'custom', path: ['values', 'qc_report'], message: 'Attach the required report before saving the step record.' })
     if (qcReport && (!qcReport.name.toLowerCase().endsWith('.pdf') || qcReport.size < 5 || qcReport.size > 10 * 1024 * 1024)) ctx.addIssue({ code: 'custom', path: ['values', 'qc_report'], message: 'Choose a nonempty PDF report no larger than 10 MB.' })
-    if (step.operatorConfirmation && !v.operator) ctx.addIssue({ code: 'custom', path: ['operator'], message: 'Confirm that you performed this step.' })
+    if ((action !== 'correct' || step.operatorConfirmation) && !v.operator) ctx.addIssue({ code: 'custom', path: ['operator'], message: action === 'correct' ? 'Confirm that you reviewed this correction.' : v.timing.otherPerformer ? 'Confirm the actual performer and time.' : 'Confirm that you personally performed this step.' })
+    if (action !== 'correct') timingIssues(v.timing).forEach(error => ctx.addIssue({ code: 'custom', path: ['timing', error.field], message: error.message }))
     if (step.inputMaterials.length + step.equipmentTypes.length + step.preparedOutputs.length > 0 && !v.resources) ctx.addIssue({ code: 'custom', path: ['resources'], message: 'Confirm the listed resources and outputs.' })
     for (const capture of manualCaptures) {
       const keys = capture.scope === 'tube' ? v.covered.map(id => `${id}_${capture.key}`) : [`shared_${capture.key}`, ...(capture.scope === 'shared' && recordException && !isSharedIdentityCheckDate(capture) ? v.covered.map(id => `${id}_${capture.key}`) : [])]
@@ -107,7 +110,7 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
         || step.qcGate?.scope === 'tube' && v.values[`${id}_qc`] && v.values[`${id}_qc`] !== 'pass') requiredValue(`${id}_reason`, 'Tube exception or QC reason')
     }
   })
-  const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { values: {}, covered: applicable.map(m => m.id), outcome: 'recorded', operator: false, resources: false } })
+  const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { values: {}, covered: applicable.map(m => m.id), outcome: 'recorded', operator: false, resources: false, timing: { ...emptyStepTiming } } })
   const covered = applicable.map(m => m.id)
   const excluded = batch.members.filter(m => !covered.includes(m.id))
   const exclusionReason = (member: PreparationDetail['members'][number]) => {
@@ -184,7 +187,8 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
       tubes: skipped ? [] : v.covered.map(id => ({ memberId: id, captures: captures(id, ['tube', 'shared']), qcOutcome: step.qcGate?.scope === 'tube' || recordException && step.qcGate?.scope === 'shared' ? v.values[`${id}_qc`] || null : null, reason: showTubeReason ? v.values[`${id}_reason`] || null : null })),
       sharedQcOutcome: skipped ? null : v.values.shared_qc || null,
       reason: !skipped && rationaleSuppliesCondition ? v.values['shared_review-rationale']?.trim() || null : v.values.reason || null, coverageConfirmed: true,
-      operatorConfirmed: !skipped && v.operator, resourcesConfirmed: !skipped && v.resources, resourceEntries: skipped || action === 'correct' ? [] : resourceEntries(resources, applicable, v.values, catalog).entries }, skipped ? undefined : qcReport)
+      operatorConfirmed: !skipped && v.operator, resourcesConfirmed: !skipped && v.resources, resourceEntries: skipped || action === 'correct' ? [] : resourceEntries(resources, applicable, v.values, catalog).entries,
+      ...(!skipped && action !== 'correct' ? { performance: performanceInput(v.timing, v.operator) } : {}) }, skipped ? undefined : qcReport)
   }
   return <Dialog open={!suspended} onOpenChange={open => { if (!open && !pending && !failing.current) { if (failureMember) returnFromFailure(); else onClose() } }}><DialogContent className={failureMember ? 'sm:max-w-lg' : 'sm:max-w-3xl'}>{failureMember ? <form className="contents" onSubmit={failureForm.handleSubmit(submitFailure)} noValidate>
     <DialogHeader><DialogTitle>Close attempt as failed: {failureMember.position} · {failureMember.barcode}</DialogTitle><DialogDescription>This closes this tube attempt and prevents it from producing a successful library. The tube remains visible in its tray position with its failure reason and history. Entries for the other tubes will be preserved.</DialogDescription>{failureError ? <p role="alert" className="text-sm text-destructive">{failureError}</p> : null}</DialogHeader>
@@ -205,6 +209,7 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
       </div>
       {!step.required ? <PreparationField label="Decision" id="prep-decision" required><select id="prep-decision" className={prepSelectClass} {...form.register('outcome')}><option value="recorded">Performed</option><option value="skipped">Skip with reason</option></select></PreparationField> : null}
       {!skipped ? <>
+        {action === 'correct' ? <p className="text-sm text-muted-foreground">This correction preserves each tube’s earlier performer and performed time, including any unknowns. It does not record new work.</p> : <Controller name="timing" control={form.control} render={({ field }) => <StepTimingFields value={field.value} onChange={field.onChange} onBlur={field.onBlur} inputRef={field.ref} errors={form.formState.errors.timing} shared preview={Boolean(preview)} />} />}
         {manualCaptures.some(c => c.scope !== 'tube') || resources.length > 0 || step.qcGate && step.qcGate.scope !== 'tube' ? <div className={`${prepRowClass} space-y-4`}>
           <h3 className="font-medium">Batch entries</h3>
           {manualCaptures.filter(c => c.scope !== 'tube').map(c => captureInput(c, 'shared', c.required))}
@@ -250,7 +255,7 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
           <p id="prep-qc-report-help" className="text-xs leading-relaxed text-muted-foreground">Attach a PDF up to 10 MB for the included tubes. {preview ? 'The selection stays local and is discarded when preview closes.' : 'It uploads when you save the step record.'} {reportRequired ? 'A report is required for a performed step.' : 'You can continue without a report.'}</p>
           {qcReport ? <div className="flex flex-wrap items-center gap-2"><p className="min-w-0 break-all text-sm">Selected: {qcReport.name}</p><Button type="button" variant="outline" size="sm" disabled={pending} onClick={() => { setQcReport(undefined); if (reportInput.current) reportInput.current.value = ''; form.clearErrors('values.qc_report') }}>Remove report</Button></div> : null}
         </div> : null}
-        {!skipped && step.operatorConfirmation ? <label className="flex cursor-pointer items-start gap-2 text-sm leading-snug"><input type="checkbox" aria-required aria-invalid={Boolean(form.formState.errors.operator)} className="mt-0.5 size-4 shrink-0" {...form.register('operator')} /><RequiredFieldName>I performed this step according to its pinned instructions.</RequiredFieldName></label> : null}
+        {!skipped && (action !== 'correct' || step.operatorConfirmation) ? <label className="flex cursor-pointer items-start gap-2 text-sm leading-snug"><input type="checkbox" aria-required aria-invalid={Boolean(form.formState.errors.operator)} className="mt-0.5 size-4 shrink-0" {...form.register('operator')} /><RequiredFieldName>{action === 'correct' ? 'I reviewed this correction against its pinned instructions.' : form.watch('timing.otherPerformer') ? 'I confirm this entry identifies the actual performer and time.' : step.operatorConfirmation ? 'I performed this step according to its pinned instructions.' : 'I performed this step at the time selected above.'}</RequiredFieldName></label> : null}
       {(['operator', 'resources'] as const).map(key => form.formState.errors[key] ? <p key={key} role="alert" className="text-sm text-destructive">{form.formState.errors[key]?.message}</p> : null)}
     </div><RequiredDialogFooter><Button type="button" variant="outline" disabled={pending} onClick={onClose}>{preview ? 'Return to configuration' : 'Cancel'}</Button><Button type="submit" disabled={pending || !applicable.length || resources.length > 0 && !preview && (!batch.inlineResourceFields || resources.some(f => f.type === 'material') && !batch.configuredMaterials)}>{pending ? 'Saving…' : preview ? 'Validate entry' : 'Save step record'}</Button></RequiredDialogFooter>
   </form>}</DialogContent></Dialog>

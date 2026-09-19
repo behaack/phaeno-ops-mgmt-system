@@ -8,6 +8,8 @@ public sealed class PSeqOrderToCashOptions
     public bool DerivedReadiness { get; init; }
     public bool BusinessRoles { get; init; }
     public bool GovernedPSeqResults { get; init; }
+    public bool RequireResultTraceability { get; init; } = true;
+    public bool RequireScientificEvidence { get; init; } = true;
     public bool GovernedRetentionProcessing { get; init; }
     public bool NativePSeqAccountsReceivable { get; init; }
     public bool AttentionOperations { get; init; }

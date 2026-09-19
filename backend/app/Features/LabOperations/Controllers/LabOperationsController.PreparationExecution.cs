@@ -9,9 +9,12 @@ using PhaenoPortal.App.Features.LabOperations.Services;
 public sealed partial class LabOperationsController
 {
     private async Task<string?> RecordPreparationStepAsync(LabPreparationBatch batch, List<LabPreparationMember> members, List<LabSpecimenAttempt> attempts,
-        LabPreparationCommand request, LabOperationsActor actor, CancellationToken ct, bool hasReport = false)
+        LabPreparationCommand request, LabOperationsActor actor, CancellationToken ct, bool hasReport = false, DateTime? recordedAt = null)
     {
         var input = request.Step ?? throw new ArgumentException("Enter the preparation step evidence.");
+        if (input.Performance?.PerformedByUserId is { } performerId)
+            await new LabPerformanceReviewService(dbContext).RequirePerformerAsync(performerId, ct);
+        var recordedAtUtc = recordedAt ?? LabEvidenceTime.UtcNow;
         if (input.CoveredMemberIds.Count == 0 || input.CoveredMemberIds.Any(id => members.All(m => m.Id != id))) throw new ArgumentException("Select tubes in this batch.");
         var stage = await dbContext.LabServiceWorkflowStages.SingleOrDefaultAsync(s => s.Id == input.StageId && s.LabServiceWorkflowVersionId == batch.LabServiceWorkflowVersionId, ct) ?? throw Missing();
         var protocol = await dbContext.LabProtocolVersions.SingleAsync(p => p.Id == stage.LabProtocolVersionId, ct);
@@ -51,7 +54,8 @@ public sealed partial class LabOperationsController
                 var container = await dbContext.LabContainers.AsNoTracking().SingleOrDefaultAsync(t => t.Barcode == barcode, ct);
                 if (container is not null) await RequireAttemptLineageAsync(container.Id, attempt, ct);
             }
-            execution.RecordStep(protocol, effective, actor.User.Id, EffectiveExecutionRoles(actor), DateTime.UtcNow);
+            execution.RecordStep(protocol, effective, actor.User.Id, EffectiveExecutionRoles(actor), recordedAtUtc);
+            new LabPerformanceReviewService(dbContext).CaptureOnBehalf(execution, actor.User.Id, recordedAtUtc);
             var exceptions = (input.ResourceEntries ?? []).Where(e => e.MemberId == member.Id && e.Disposition is not null).ToArray();
             if (exceptions.Length > 0 && !actor.HasAny(LabRole.Operator, LabRole.Supervisor)) throw new InvalidOperationException("An Operator or Supervisor must record material exceptions.");
             var disposition = exceptions.Any(e => e.Disposition == "fail") ? "fail" : exceptions.Any(e => e.Disposition == "hold") ? "hold" : null;
@@ -228,14 +232,16 @@ public sealed partial class LabOperationsController
                 throw new InvalidOperationException("The material lot must be within date and released for use.");
             if (request.QuantityUnit != lot.QuantityUnit || request.Quantity is null or <= 0) throw new ArgumentException("Enter a positive quantity in the lot's tracked unit.");
             lot.Consume(request.Quantity.Value);
-            dbContext.LabMaterialConsumptions.Add(new(executions[0].Id, lot.Id, null, request.Quantity.Value, lot.QuantityUnit, actorId, DateTime.UtcNow, request.RequestId));
+            dbContext.LabMaterialConsumptions.Add(new(executions[0].Id, lot.Id, null, request.Quantity.Value, lot.QuantityUnit, actorId, DateTime.UtcNow,
+                request.RequestId, await Services.LabResourceSnapshot.MaterialAsync(dbContext, lot, ct)));
         }
         else
         {
             var equipment = await dbContext.LabEquipment.SingleOrDefaultAsync(e => e.Id == request.ResourceId, ct) ?? throw Missing();
             if (!equipment.CanRecordUsage(DateOnly.FromDateTime(DateTime.UtcNow))) throw new InvalidOperationException("Equipment must be active and within calibration.");
             dbContext.Entry(equipment).Property(e => e.UpdatedAt).IsModified = true;
-            dbContext.LabEquipmentUsages.Add(new(executions[0].Id, equipment.Id, DateTime.UtcNow, actorId, request.Reason, request.RequestId));
+            dbContext.LabEquipmentUsages.Add(new(executions[0].Id, equipment.Id, DateTime.UtcNow, actorId, request.Reason,
+                request.RequestId, Services.LabResourceSnapshot.Equipment(equipment)));
         }
         foreach (var execution in executions) dbContext.Entry(execution).Property(e => e.UpdatedAt).IsModified = true;
     }

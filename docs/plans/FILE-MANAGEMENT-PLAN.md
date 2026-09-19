@@ -1,5 +1,11 @@
 # File Management Plan
 
+## Sample investigation evidence — local implementation, September 18, 2026
+
+The owner approved indefinite internal sample-history, traceability, investigation-report and supporting-report preservation, independently of customer downloadable result retention. The [governance contract](LAB-EVIDENCE-GOVERNANCE-CONTRACT.md) documents the implemented deletion guards and versioned evidence/review controls. No new evidence deletion schedule or external file ownership is introduced.
+
+Phase 1 now stores explicit result→analysis→sequencing→tube links and per-artifact locators, including copied bindings on legacy release projections. It adds no byte deletion or retention policy. Referenced Lab records use restrictive foreign keys and remain separate from artifact byte deletion. The [local restore rehearsal](../testing/runs/2026-09-18-investigation-restore.md) now proves native database/private-file restoration of a synthetic result chain, saved report and QC attachment, including continued access after result-byte deletion through the storage adapter. Supporting-report downloads verify exact size/checksum and sample-step coverage. Hosted scheduling, cleanup/hold acceptance and recovery remain operational gates; the internal retention decision is now settled in the governance contract, while the [capture contract](LAB-RESULT-LINEAGE-CONTRACT.md) describes current limits.
+
 ## Optional preparation QC reports — September 17, 2026
 
 Preparation step submissions may attach one PDF up to 10 MiB. Reuse private operational storage and scanning; persist metadata in the existing preparation record and authorize download through its batch/record identity. This is internal execution evidence, outside customer release/retention workflows. The coordinated-backup reference manifest includes its storage key, digest and length. A rejected scan removes the unsaved object. An uncertain database commit does not delete bytes that could already be referenced; unreferenced objects remain private for storage reconciliation. No automatic orphan deletion or new retention policy is introduced.

@@ -12,7 +12,7 @@ describe('guided protocol evidence', () => {
 
   it('validates numbers, real dates, choices, references, and explicit QC without a default pass', () => {
     const step = labExecutionFixture().steps[1]
-    const values = { ...stepFormDefaults(step, 'record'), captures: { concentration: '0', measured: '2026-09-05', method: 'Fluorometry', file: 'qc-record-001' }, qcOutcome: 'pass' as const }
+    const values = { ...stepFormDefaults(step, 'record'), captures: { concentration: '0', measured: '2026-09-05', method: 'Fluorometry', file: 'qc-record-001' }, qcOutcome: 'pass' as const, operatorConfirmed: true }
     const schema = stepFormSchema(step.definition, 'record')
     expect(schema.safeParse(values).success).toBe(true)
     expect(stepInput(step.definition, 'record', values, 7).captures.concentration).toBe(0)
@@ -35,7 +35,7 @@ describe('guided protocol evidence', () => {
 
   it('prefills corrections with prior values but requires fresh confirmation and a reason', () => {
     const step = labExecutionFixture().steps[0]
-    step.records = [{ id: 'record', recordedByUserId: 'operator', recordedAtUtc: '2026-09-05T12:00:00Z', ...stepInput(step.definition, 'record', { ...stepFormDefaults(step, 'record'), captures: { barcode: 'original' }, operatorConfirmed: true }, 1) }]
+    step.records = [{ id: 'record', recordedByUserId: 'operator', recordedAtUtc: '2026-09-05T12:00:00Z', ...stepInput(step.definition, 'record', { ...stepFormDefaults(step, 'record'), captures: { barcode: 'original' }, operatorConfirmed: true }, 1), performance: null }]
     const values = stepFormDefaults(step, 'correct')
     expect(values.captures.barcode).toBe('original')
     expect(values.operatorConfirmed).toBe(false)

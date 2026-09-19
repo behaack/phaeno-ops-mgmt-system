@@ -38,7 +38,14 @@ async function setup(page: Page, conflict = false) {
         data.execution.version += 1
         return route.fulfill({ status: 409, json: { success: false, data: null, error: { code: 'concurrency_conflict', message: 'The execution changed.' } } })
       }
-      data.steps.find(step => step.definition.key === body.stepKey)!.records.push({ ...body, id: `record-${bodies.length}`, recordedByUserId: recordingUserId, recordedAtUtc: '2026-09-05T12:00:00Z' })
+      const target = data.steps.find(step => step.definition.key === body.stepKey)!
+      const prior = target.records.at(-1)
+      const recordedAtUtc = '2026-09-05T12:00:00Z'
+      const offset = body.performance?.performedAt?.slice(-6) as string | undefined
+      const utcOffsetMinutes = offset ? (offset[0] === '-' ? -1 : 1) * (Number(offset.slice(1, 3)) * 60 + Number(offset.slice(4))) : 0
+      target.records.push({ ...body, id: `record-${bodies.length}`, recordedByUserId: recordingUserId, recordedAtUtc,
+        performance: body.action === 'correct' ? prior?.performance : body.performance ? { performedByUserId: recordingUserId, performedAtUtc: body.performance.mode === 'earlier' ? new Date(body.performance.performedAt).toISOString() : recordedAtUtc, utcOffsetMinutes, precision: body.performance.mode === 'earlier' ? 'minute' : 'server', entryMode: body.performance.mode, lateEntryReason: body.performance.lateEntryReason ?? null } : null,
+        correctsRecordId: body.action === 'correct' ? prior?.id : null })
       data.execution.version += 1
       data.execution.status = body.qcOutcome === 'hold' ? 'Blocked' : 'InProgress'
     }
@@ -86,6 +93,7 @@ test('guided execution preserves typed evidence, QC hold, correction, skip, and 
   await page.getByLabel('QC file reference', { exact: false }).fill('training-qc-001')
   await page.getByLabel('QC outcome', { exact: false }).selectOption('hold')
   await page.getByLabel('Reason or condition assessment', { exact: false }).fill('Waiting for supervisor review')
+  await page.getByLabel('I performed this step', { exact: false }).check()
   await page.screenshot({ path: info.outputPath('typed-step.png'), fullPage: true })
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([])
   await page.getByRole('button', { name: 'Save step record' }).click()
@@ -93,7 +101,8 @@ test('guided execution preserves typed evidence, QC hold, correction, skip, and 
   await expect(page.getByRole('menuitem', { name: 'Complete execution', exact: true })).toHaveAttribute('aria-disabled', 'true')
   await page.keyboard.press('Escape')
   await expect(page.getByText('QC is hold', { exact: false })).toBeVisible()
-  await page.getByRole('button', { name: 'Correct Review library QC' }).click()
+  await page.getByRole('button', { name: 'Actions for Review library QC' }).click()
+  await page.getByRole('menuitem', { name: 'Correct Review library QC' }).click()
   await expect(page.getByLabel('Library concentration', { exact: false })).toHaveValue('0')
   await page.getByLabel('QC outcome', { exact: false }).selectOption('pass')
   await page.getByLabel('Reason or condition assessment', { exact: false }).fill('Corrected recorded QC after supervisor review')
@@ -149,4 +158,32 @@ test('keyboard dismissal protects unsaved evidence and restores focus', async ({
   await page.getByRole('button', { name: 'Cancel', exact: true }).click()
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await expect(recordButton).toBeFocused()
+})
+
+
+test.describe('late step recording', () => {
+  test.use({ timezoneId: 'America/Los_Angeles' })
+  test('rejects a missing clock hour and requires an explicit repeated-hour selection', async ({ page }) => {
+    const { bodies } = await setup(page)
+    await page.getByRole('button', { name: 'Actions', exact: true }).click()
+    await page.getByRole('menuitem', { name: 'Start execution', exact: true }).click()
+    await page.getByRole('button', { name: 'Record Verify sample identity' }).click()
+    await page.getByLabel('Source barcode', { exact: false }).fill('TRAINING-001')
+    await page.getByLabel('I performed this step', { exact: false }).check()
+    await page.getByLabel('Performed time', { exact: false }).selectOption('earlier')
+    await page.getByLabel('Actual date and time', { exact: false }).fill('2020-03-08T02:30')
+    await page.getByLabel('Late-entry reason', { exact: false }).fill('Entered from worksheet')
+    await page.getByRole('button', { name: 'Save step record' }).click()
+    await expect(page.getByText(/A daylight-saving clock change/)).toBeVisible()
+    expect(bodies).toHaveLength(0)
+    await page.getByLabel('Actual date and time', { exact: false }).fill('2020-11-01T01:30')
+    await page.getByRole('button', { name: 'Save step record' }).click()
+    await expect(page.getByText('This time occurs twice. Choose which occurrence you mean.')).toBeVisible()
+    await page.getByLabel('Which occurrence?', { exact: false }).selectOption('2020-11-01T01:30-08:00')
+    await page.getByRole('button', { name: 'Save step record' }).click()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    expect(bodies[0].performance).toEqual({ mode: 'earlier', personallyPerformed: true, performedAt: '2020-11-01T01:30-08:00', lateEntryReason: 'Entered from worksheet' })
+    await expect(page.getByText(/Performed by.*UTC-08:00/).first()).toBeVisible()
+    await expect(page.getByText(/Late-entry reason: Entered from worksheet/).first()).toBeVisible()
+  })
 })

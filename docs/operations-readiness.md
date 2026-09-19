@@ -1,5 +1,15 @@
 # Operations and production-readiness boundary
 
+## Evidence governance — local checkpoint
+
+The owner approved indefinite internal evidence preservation, a mandatory scientific minimum and independent Supervisor review of on-behalf entry/performer-time changes. These are implemented locally in [evidence governance](plans/LAB-EVIDENCE-GOVERNANCE-CONTRACT.md). `RequireScientificEvidence` and `RequireResultTraceability` now default on under the September 19 immediate-enforcement decision; migration `20260919050429_AddLabEvidenceGovernance` was applied only to verified local development and isolated reference databases. The cutoff/in-flight decision is settled: all current data are test data, no backfill, and the current requirements apply to all subsequent approvals/releases. Real producer/bench evidence, hosted recovery and production deployment remain gates.
+
+## Result-to-tube capture — local implementation, September 18, 2026
+
+The [phase 1 capture contract](plans/LAB-RESULT-LINEAGE-CONTRACT.md) adds sequencing outputs, exact analysis inputs and immutable result bindings. Migration `20260919015602_AddLabResultLineage` has been applied only to local `phaeno_ops`. `PSeqOrderToCash:RequireResultTraceability` defaults on; each voluntarily linked result nevertheless keeps its own requirement. No production setting was changed. Before enabling new-work enforcement, deploy compatible producers/readers, execute lineage and existing result/Trial regressions, confirm real provider identities/mappings and physical handoffs, and verify the approved immediate cutoff in the deployed runtime, including any environment overrides. Existing unknown results are not automatically backfilled. This phase introduces no new cleanup policy or customer-facing investigation report.
+
+The [investigation recovery rehearsal](testing/runs/2026-09-18-investigation-restore.md) proves a local synthetic database/private-file restore, including original report checksums and result-to-tube relationships. Supporting PDF downloads and saved investigation downloads now reject mismatched bytes/manifests. A hosted recovery rehearsal must still cover the actual storage backend, backup scheduling, concurrent writes, retention/holds and all supported evidence pathways. The new check adds no migration or production activation.
+
 ## Repository implementation and rollout evidence
 
 The [September 9 location inventory and shipping insert release](plans/PORTAL-SHIPPING-RELEASE-2026-09-08.md#september-9-location-inventory-and-shipping-insert-release--completed)

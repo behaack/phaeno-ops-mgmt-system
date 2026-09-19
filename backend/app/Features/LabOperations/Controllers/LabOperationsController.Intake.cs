@@ -35,6 +35,7 @@ public sealed partial class LabOperationsController
         await RequireUnusedTubeIntakeAsync(work, specimen, tube, cancellationToken);
         if (string.IsNullOrWhiteSpace(request.Notes))
             throw Invalid("intake_correction_reason_required", "Explain why the recorded intake decision is being corrected.");
+        var previousIntake = new { tube.IntakeDisposition, tube.IntakeReasonCode, tube.IntakeNotes, tube.Location };
         if (!string.IsNullOrWhiteSpace(request.RetainedStorageLocation))
         {
             if (tube.Location is not null) throw Invalid("intake_location_unchanged", "An intake correction does not move stored material.");
@@ -43,6 +44,9 @@ public sealed partial class LabOperationsController
         if (!Enum.TryParse<LabSpecimenIntakeDisposition>(request.Disposition, true, out var disposition))
             throw Invalid("tube_intake_invalid", "Choose Accepted, On hold or Rejected.");
         Execute(() => tube.ReviewIntake(disposition, request.ReasonCode, request.Notes, actor.User.Id, DateTime.UtcNow));
+        dbContext.LabWorkEvents.Add(new LabWorkEvent(work.Id, specimen.Id, "TubeIntakeCorrected", DateTime.UtcNow,
+            actor.User.Id, JsonSerializer.Serialize(new { containerId = tube.Id, tube.Barcode, previous = previousIntake,
+                current = new { tube.IntakeDisposition, tube.IntakeReasonCode, tube.IntakeNotes, tube.Location } }, JsonOptions)));
         await RefreshSpecimenTubeIntakeAsync(work, specimen, tube, actor.User.Id, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
         if (transaction is not null) await transaction.CommitAsync(cancellationToken);

@@ -60,6 +60,7 @@ counts = {schema: (sum(len(v) for v in groups.values()), sum(len(entities[n]['pr
 lines = ['# `phaeno_ops` database ERD', '',
 'This document covers every table, column, key, and relationship in the application-owned EF Core model, plus the configured EF migration-history table in `public`.', '',
 'Generated from [PSeqOperationsDbContextModelSnapshot.cs](../backend/app/Migrations/PSeqOperationsDbContextModelSnapshot.cs) by [generate-database-erd.py](../scripts/generate-database-erd.py). Re-run the script after persisted-model changes. This is model evidence; verify applied migrations separately for each environment.', '',
+'The additive [step performance JSON contract](plans/LAB-STEP-PERFORMANCE-CONTRACT.md#persistence-and-reads) describes performer/time/offset/precision and correction-record references inside existing laboratory execution and preparation evidence columns. These are logical JSON references, not additional tables, columns or database foreign keys.', '',
 '## Legend and totals', '', '- `PK` = primary key; `FK` = database-enforced foreign key; `UK` = a column participating in a unique key/index. Filtered uniqueness remains subject to its model predicate.', '- Field comments state nullability. Relationship labels identify the child foreign-key columns.', '- Logical identifiers without database foreign keys are ordinary fields. PostgreSQL system schemas are excluded.', '',
 '| Schema | Entities | Fields | Foreign keys |', '| --- | ---: | ---: | ---: |', '| `public` | 1 | 2 | 0 |']
 for schema in sorted(counts):
