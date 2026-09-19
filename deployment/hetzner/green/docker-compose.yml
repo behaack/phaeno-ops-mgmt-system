@@ -2,14 +2,14 @@ name: phaeno-portal-green
 
 services:
   db:
-    image: postgres:17
+    image: postgres:18.6-trixie
     command: ["postgres", "-c", "track_commit_timestamp=on"]
     container_name: phaeno-portal-green-db
     restart: unless-stopped
     env_file:
       - /opt/phaeno.portal-green/runtime/database.env
     volumes:
-      - portal_green_postgres_data:/var/lib/postgresql/data
+      - portal_green_postgres18_data:/var/lib/postgresql
     healthcheck:
       test:
         - CMD-SHELL
@@ -138,7 +138,9 @@ services:
       - scanner_updates
 
 volumes:
-  portal_green_postgres_data:
+  portal_green_postgres18_data:
+    external: true
+    name: phaeno-portal-green-postgres18-data
   portal_green_app_data:
   portal_green_managed_files:
   portal_green_scanner_signatures:

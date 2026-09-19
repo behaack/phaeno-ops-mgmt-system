@@ -89,7 +89,7 @@ dump_bytes="$(stat --format '%s' -- "${dump_path}")"
 available_kib="$(awk '/^MemAvailable:/ {print $2}' /proc/meminfo)"
 [[ "${available_kib}" =~ ^[0-9]+$ ]] && (( available_kib >= 1536 * 1024 )) || fail
 # Do not pull an image or expand the approved resource/storage scope implicitly.
-timeout --kill-after=5s 15s docker image inspect postgres:17 >/dev/null 2>&1 || fail
+timeout --kill-after=5s 15s docker image inspect postgres:18.6-trixie >/dev/null 2>&1 || fail
 owner_token="$(cat /proc/sys/kernel/random/uuid)"
 [[ "${owner_token}" =~ ^[0-9a-f-]{36}$ ]] || fail
 container_name="phaeno-backup-verify-${owner_token}"
@@ -105,12 +105,12 @@ container_id="$(timeout --kill-after=5s 30s docker create \
     --security-opt no-new-privileges --log-driver none \
     --memory 1024m --memory-swap 1024m --cpus 1 --pids-limit 128 \
     --ulimit core=0 --shm-size 16m \
-    --tmpfs /var/lib/postgresql/data:rw,nosuid,nodev,noexec,size=512m,mode=1777 \
+    --tmpfs /var/lib/postgresql:rw,nosuid,nodev,noexec,size=512m,mode=1777 \
     --tmpfs /var/run/postgresql:rw,nosuid,nodev,noexec,size=16m,mode=1777 \
     --tmpfs /tmp:rw,nosuid,nodev,noexec,size=16m,mode=1777 \
     --mount "type=bind,source=${dump_path},target=/backup.dump,readonly" \
-    --env PGDATA=/var/lib/postgresql/data/restore \
-    --entrypoint /bin/sh postgres:17 -ceu '
+    --env PGDATA=/var/lib/postgresql/restore \
+    --entrypoint /bin/sh postgres:18.6-trixie -ceu '
         initdb --pgdata="$PGDATA" --username=postgres --encoding=UTF8 --locale=C \
             --auth-local=trust --auth-host=reject >/dev/null 2>&1
         exec postgres -D "$PGDATA" -c listen_addresses= \

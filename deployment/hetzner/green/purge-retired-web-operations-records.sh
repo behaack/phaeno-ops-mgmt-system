@@ -203,7 +203,7 @@ if [[ "${MODE}" == "delete" ]]; then
         --rm \
         --user 0:0 \
         --volume "${database_dump}:/backup/database.dump:ro" \
-        postgres:17 \
+        postgres:18.6-trixie \
         pg_restore --list /backup/database.dump \
         > /dev/null
 

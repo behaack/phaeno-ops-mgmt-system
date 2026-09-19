@@ -59,6 +59,16 @@ for path in "${COMPOSE_FILE}" "${COMPOSE_ENV}" "${DATABASE_ENV}" "${PORTAL_ENV}"
     [[ -f "${path}" ]] || fail "Required deployment file '${path}' is missing."
 done
 
+# Major engine changes require the dedicated, rehearsed upgrade procedure.
+# Fail before changing runtime files or allowing Compose to attach new storage.
+database_major="$(docker exec phaeno-portal-green-db sh -ceu 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -X -At -v ON_ERROR_STOP=1 -c "SHOW server_version_num"')" \
+    || fail 'Cannot verify the current production database engine.'
+[[ "${database_major}" =~ ^18[0-9]{4}$ ]] \
+    || fail 'Production must first complete the approved PostgreSQL 18 upgrade.'
+database_mount="$(docker inspect phaeno-portal-green-db --format '{{range .Mounts}}{{if eq .Destination "/var/lib/postgresql"}}{{.Name}}{{end}}{{end}}')"
+[[ "${database_mount}" == phaeno-portal-green-postgres18-data ]] \
+    || fail 'Production database storage does not match the verified PostgreSQL 18 volume.'
+
 for secret_file in "${COMPOSE_ENV}" "${DATABASE_ENV}" "${PORTAL_ENV}"; do
     mode="$(stat -c '%a' "${secret_file}")"
     (( 10#${mode} % 100 == 0 )) \

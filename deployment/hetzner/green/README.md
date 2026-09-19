@@ -361,3 +361,13 @@ API, bridge, File Browser, and legacy database resources were retired on
 ## September 2026 baseline reset
 
 The [guarded reset runbook](../../../docs/operations/database-rebase-20260919.md) replaces the old migration chain with one initial migration. Do not run that baseline against an old populated database. The controlled rename retains the canonical `phaeno_portal_green` database name so normal deployment and backup targeting remain valid. PostgreSQL now starts with `track_commit_timestamp=on`, required for verifiable governed-download commit timing. Keep the matched old database, image, runtime configuration and encrypted file/database backup until separately approved cleanup.
+
+## PostgreSQL 18 production engine
+
+The approved [PostgreSQL 18 upgrade plan](../../../docs/plans/POSTGRESQL-18-UPGRADE-PLAN.md) moves the active database to official `postgres:18.6-trixie`, with transaction timestamps enabled and an external named volume `phaeno-portal-green-postgres18-data` mounted at `/var/lib/postgresql`. The old `phaeno-portal-green_portal_green_postgres_data` volume is a protected PostgreSQL 17 rollback source, not the active database. Never attach it to version 18 or delete it as part of routine release cleanup.
+
+Normal releases verify the live major version and exact volume before any mutation. A missing external volume or a version 17 server requires the dedicated approved upgrade procedure; changing an image tag alone is insufficient. Fresh infrastructure also needs an explicitly initialized and verified cluster before ordinary application deployment.
+
+Backup restore checks and the legacy maintenance catalog check use the same version 18 image. Keep that image available locally on the host. Reinstall the existing coordinated-backup timer from the exact upgraded helper revision after proving a version 18 encrypted backup and isolated restore. Preserve its key and 2 a.m. Pacific schedule with the existing 3 a.m. DST fallback. Scheduled GitHub collection retrieves the latest encrypted snapshot; it does not change the host helper revision.
+
+The engine upgrade changes neither the application EF baseline nor the Portal frontend. Record infrastructure revision separately from the running API image and frontend source. See the plan for full-transfer verification, commit-evidence preconditions, rollback and execution results.
