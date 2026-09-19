@@ -18,6 +18,15 @@ Full-suite fixes also protect in-flight preparation failure records, preserve fa
 
 ## Migration and deployment
 
-Production deployment is gated on final test success. The existing protected deployment workflow will create and restore-verify an encrypted backup before applying pending migrations. Storage, scanning and identity settings remain Preserve. The generated private local search index is excluded. The public Website is outside this Portal release.
+Production deployment followed final test success. The protected deployment workflow created and restore-verified an encrypted backup before applying pending migrations. Storage, scanning and identity settings remained Preserve. The generated private local search index is excluded. The public Website is outside this Portal release.
 
-Exact commit, production migration backup, API workflow, Vercel deployment and runtime checks will be recorded here after release.
+- Application commit: `f1d31e49f58a14e5ed58df2a4790a50496508c93`, pushed to `codex/portal-documentation-search-release` and independently matched to the remote branch.
+- API: [Deploy Portal Green run 35410313810](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/35410313810) succeeded. Runtime source revision matches the application commit; image `sha-f1d31e49f58a-run-35410313810-1`, verified at 2026-09-19 00:48 UTC.
+- Backup: `pre-migration-20260919T004802Z-f1d31e49f58a`; restore, migration-history and cleanup checks passed, as did encrypted dump/key checksums. Logs confirm `20260918232810_ConsolidateServiceSampleTypes` was applied successfully.
+- Post-API-release checks: public API health 200/healthy and database ping 204.
+- Frontend: [Production deployment 9NLUU18FUTdKSiQrcoy9WhACvawx](https://vercel.com/cadexgenomics/phaeno-ops-mgmt-system/9NLUU18FUTdKSiQrcoy9WhACvawx) is Ready, rebuilt using Production settings from the same application commit and assigned to `portal.phaenobiotech.com`; both deployment checks passed. Source preview: `F2694QstYodU9K1afCe4NnVEn9Mq`.
+- Post-frontend-release checks: Portal root 200 and Portal API proxy health 200. Fresh signed-in navigation loaded the service catalog, its new item detail route and embedded Scientific definition section, the sample-type list and exact-revision detail route, and all four corrected settings lists (Analyses, PSeq kits, Assembly and Legacy links). Screenshots confirmed consistent shaded headers, matching title styling and right-aligned creation actions. The production catalog has no scientific definition yet; its explicit empty state and manual-pricing availability are correct. No configuration or business records were changed during browser verification.
+
+Automatic approval review blocked an initial frontend promotion action while the API was still deploying. No promotion occurred then. After API and migration success was verified, the production-environment frontend rebuild proceeded.
+
+The owned isolated PostgreSQL test instance was stopped after the suites passed. Only the pre-existing generated private search index remains outside the release. A documentation-only follow-up records deployment evidence; it does not change the deployed application identity.
