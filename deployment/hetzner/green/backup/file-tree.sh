@@ -75,13 +75,16 @@ case "$1" in
         phase=archive_safety
         listing="$(tar --absolute-names --list --quoting-style=literal --file "$archive" 2>/dev/null)" || fail
         declare -A archive_paths=()
-        while IFS= read -r entry; do
-            [[ "$entry" == ./ ]] && continue
-            path="${entry#./}"; path="${path%/}"
-            valid_path "$path" || fail
-            [[ -z "${archive_paths[$path]+set}" ]] || fail
-            archive_paths[$path]=1
-        done <<< "$listing"
+        # Referenced-only capture creates a zero-entry tar when no files are referenced.
+        if [[ -n "$listing" ]]; then
+            while IFS= read -r entry; do
+                [[ "$entry" == ./ ]] && continue
+                path="${entry#./}"; path="${path%/}"
+                valid_path "$path" || fail
+                [[ -z "${archive_paths[$path]+set}" ]] || fail
+                archive_paths[$path]=1
+            done <<< "$listing"
+        fi
         # Hard/symbolic links, devices, sparse huge entries and other types are
         # rejected before extraction. Numeric-owner listing keeps the size field fixed.
         tar --absolute-names --list --verbose --numeric-owner --full-time --file "$archive" 2>/dev/null |

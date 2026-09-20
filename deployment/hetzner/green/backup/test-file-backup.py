@@ -170,6 +170,14 @@ class FileBackupTests(unittest.TestCase):
                 archive.addfile(member, io.BytesIO(b"X"))
         self.verify(False)
 
+    def test_zero_entry_archive_matches_referenced_only_capture(self):
+        with tarfile.open(self.archive, "w", format=tarfile.GNU_FORMAT):
+            pass
+        self.rows = []
+        self.manifest.write_text("")
+        self.references.write_text("")
+        self.verify(True)
+
     def test_empty_archive_and_reference_set(self):
         shutil.rmtree(self.source)
         self.source.mkdir()

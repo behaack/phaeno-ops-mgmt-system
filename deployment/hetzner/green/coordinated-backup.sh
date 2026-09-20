@@ -170,7 +170,7 @@ create_helper() {
         --memory 256m --memory-swap 256m --cpus 1 --pids-limit 64 --ulimit core=0 \
         --mount "type=bind,source=$script_dir/backup,target=/helpers,readonly" \
         --mount "type=bind,source=$work,target=/backup,readonly" \
-        "${mount_args[@]}" --volume /restore --tmpfs /tmp:rw,nosuid,nodev,noexec,size=16m \
+        "${mount_args[@]}" --volume /restore --tmpfs /tmp:rw,nosuid,nodev,noexec,size=128m \
         --entrypoint /bin/sh "$api_image" -c 'exec sleep 14400' 2>/dev/null)" || fail
     [[ "$helper_id" =~ ^[0-9a-f]{64}$ ]] || fail
     docker start "$helper_id" >/dev/null 2>&1 || fail
