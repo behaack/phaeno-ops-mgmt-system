@@ -1,5 +1,5 @@
 # Managed scientific files
-Status: implemented locally; authenticated upload walkthrough and production activation pending.
+Status: implemented and deployed to production; authenticated specimen upload/download walkthrough remains unverified.
 
 ## Approved behavior
 Replace staff-entered external file references, hashes and byte counts with uploads for sequencing output and supporting documents. Preserve specimen/library/run/analysis attribution and immutable corrections. Reuse private local/S3 storage with automatic metadata, scan admission and verified scoped retrieval. Keep historical external references readable and pipeline contracts compatible.
@@ -9,7 +9,7 @@ Add immutable specimen-scoped file receipts. Existing lineage fields carry a res
 
 Preserve receipts and bytes indefinitely under the approved internal-evidence policy, including uploads not yet attached to a run. Customer expiry cannot delete them. Retain a managed file for corrections or upload its replacement; never claim old reference-only records are managed. Existing Operator/Supervisor and reader permissions remain unchanged.
 
-Add an additive migration and ERD documentation; apply only to the verified local development database. No production storage provisioning, deployment or migration in this change. Update Phaeno guide and test plans. Build/type/lint checks at the checkpoint; tests only when requested per AGENTS.md.
+Add an additive migration and ERD documentation; initially apply to the verified local development database. The owner subsequently authorized commit/push/deployment and explicitly approved the production migration; activation is recorded below. No new storage infrastructure was provisioned. Update Phaeno guide and test plans. Build/type/lint checks at the checkpoint; tests only when requested per AGENTS.md.
 
 ## Acceptance
 No manual file path/hash/size entry. Visible upload progress and failures; saving cannot race uploads; a failed replacement keeps the prior file. Recognizable names and scoped downloads on saved evidence. Source attribution and scientific review remain required.
@@ -23,4 +23,4 @@ No manual file path/hash/size entry. Visible upload progress and failures; savin
 
 - Frontend typecheck and targeted ESLint passed; regression sources are added but not executed per repository request-only testing rule.
 - Signed-in Edge verification reached Lab Operations. Both Active jobs and Closed jobs reported zero jobs, so no existing specimen was available for the new form/upload/download walkthrough. No synthetic scientific record was inserted into the operating database.
-- Visual Studio rebuild/restart was requested for the local API; no confirmation received at this checkpoint. No production deployment or shared-database migration performed.
+- At the local checkpoint, Visual Studio rebuild/restart was requested but not confirmed. The subsequent approved production deployment and migration are complete; see [release evidence](../operations/managed-scientific-files-release-20260920.md).
