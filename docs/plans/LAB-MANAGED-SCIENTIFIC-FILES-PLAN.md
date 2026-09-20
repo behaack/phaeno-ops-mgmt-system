@@ -24,3 +24,7 @@ No manual file path/hash/size entry. Visible upload progress and failures; savin
 - Frontend typecheck and targeted ESLint passed; regression sources are added but not executed per repository request-only testing rule.
 - Signed-in Edge verification reached Lab Operations. Both Active jobs and Closed jobs reported zero jobs, so no existing specimen was available for the new form/upload/download walkthrough. No synthetic scientific record was inserted into the operating database.
 - At the local checkpoint, Visual Studio rebuild/restart was requested but not confirmed. The subsequent approved production deployment and migration are complete; see [release evidence](../operations/managed-scientific-files-release-20260920.md).
+
+## September 20 gap-closure follow-up
+
+Resumable upload sessions now stage private 4 MiB portions through the configured Local or S3 adapter, with actor/specimen ownership, a 24-hour expiry and a maximum of 20 pending sessions per actor. Complete-file SHA-256, size, malware scanning and read-back verification precede an immutable scientific receipt. Cleanup removes staging only; existing one-request integrations remain supported. The 100 MiB default is unchanged. A simulated S3 adapter test and a 50 MiB connected controller test cover exact-byte storage; an actual production S3 bucket rehearsal remains a cutover gate. The earlier unexecuted-test checkpoint is superseded by the current [gap closure evidence](OPERATIONAL-GAP-CLOSURE-20260920.md).

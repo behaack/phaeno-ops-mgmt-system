@@ -63,6 +63,7 @@ async function fixture(page: Page, screen: string, patch: Partial<LabServiceOrde
           return send([bundleOffering])
         if (path === '/accounts-receivable/invoices') return send([])
         if (path === `${labPath}/result-packages`) return send(packages)
+        if (path === `${labPath}/specimen-holds`) return send({ workOrderId: null, specimens: [], holds: [], canRequest: false, canDecide: false })
         if (path === `/reagent-orders/${bundleIds.order}`) return send(kit)
         if (path === assemblyPath) return send(assembly)
         if (path === '/organizations')

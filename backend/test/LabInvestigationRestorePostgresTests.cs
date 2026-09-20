@@ -77,6 +77,23 @@ public partial class SampleShippingPostgresTests
             Assert.Single(trace.GetProperty("inputs").EnumerateArray());
             var restoredEvidence = await new LabInvestigationService(restoredDb).ReadAsync(fixture.WorkId, fixture.SpecimenId, default);
             foreach (var (key, count) in counts) Assert.Equal(count, JsonSerializer.SerializeToElement(restoredEvidence.Evidence[key]).GetArrayLength());
+            var scientificReceipt = await restoredDb.LabScientificFiles.AsNoTracking().SingleAsync();
+            var repository = new DirectoryInfo(AppContext.BaseDirectory);
+            while (repository is not null && !File.Exists(Path.Combine(repository.FullName, "deployment/hetzner/green/backup/file-references.sql"))) repository = repository.Parent;
+            Assert.NotNull(repository);
+            await using (var referenceConnection = new NpgsqlConnection(connection.ConnectionString))
+            {
+                await referenceConnection.OpenAsync();
+                await using var references = new NpgsqlCommand(await File.ReadAllTextAsync(Path.Combine(repository.FullName, "deployment/hetzner/green/backup/file-references.sql")), referenceConnection);
+                await using var rows = await references.ExecuteReaderAsync();
+                var found = false;
+                do { while (await rows.ReadAsync()) { if (rows.FieldCount == 1 && rows.GetString(0).StartsWith("order-files/" + scientificReceipt.StorageKey + "\t")) found = true; } } while (await rows.NextResultAsync());
+                Assert.True(found, "The production recovery manifest must include the managed scientific receipt.");
+            }
+            var scientificDownload = Assert.IsType<FileStreamResult>(await restoredController.DownloadScientificFile(fixture.WorkId, fixture.SpecimenId, scientificReceipt.Id, restoredFiles, default));
+            await using (var stream = scientificDownload.FileStream)
+                Assert.Equal(scientificReceipt.Sha256, Convert.ToHexString(await SHA256.HashDataAsync(stream)), ignoreCase: true);
+            await Assert.ThrowsAsync<OrderManagementException>(() => new InvestigationPreservingFileStorage(restoredFiles, restoredDb).DeleteIfExistsAsync(scientificReceipt.StorageKey, default));
             var restoredReport = await restoredDb.LabInvestigationReports.AsNoTracking().SingleAsync();
             Assert.Equal(frozen.BodyJson, restoredReport.BodyJson); Assert.Equal(frozen.Sha256, restoredReport.Sha256);
             var manifest = Assert.IsType<FileContentResult>(await restoredController.DownloadInvestigationReport(fixture.WorkId, fixture.SpecimenId, frozen.Id, default));
@@ -154,8 +171,12 @@ public partial class SampleShippingPostgresTests
         var batch = new LabOperationalBatch("RESTORE-SEQ-" + scope.Suffix, "TEST sequencing", null); batch.Start(now);
         var sendout = new LabNgsSendout(batch.Id, "TEST provider", "TEST submission", JsonSerializer.Serialize(new { members = new[] { new { libraryId = library.Id, libraryKey = library.LibraryKey, containerBarcode = output.Barcode } } }), null);
         sendout.SetStatus(LabNgsSendoutStatus.Complete, now); db.AddRange(batch, sendout, new LabBatchMember(batch.Id, work.Id, library.Id, now)); await db.SaveChangesAsync();
+        await using var rawBytes = new MemoryStream(Encoding.UTF8.GetBytes("TEST ONLY sequencing bytes"));
+        var rawFile = await files.SaveAsync(rawBytes, ".bin", 1024, default);
+        var receipt = new LabScientificFile(work.Id, specimen.Id, "restore-sequencing.txt", rawFile.StorageKey, rawFile.Sha256, rawFile.SizeBytes, actor, now);
+        db.Add(receipt); await db.SaveChangesAsync();
         var lineage = new LabResultLineageService(db);
-        var sequence = await lineage.RegisterOutputAsync(new(Guid.NewGuid(), work.Id, specimen.Id, library.Id, sendout.Id, "TEST provider", "TEST run", "TEST sample mapping", "TEST raw:v1", new string('B', 64), 100), actor, "lab-staff", default);
+        var sequence = await lineage.RegisterOutputAsync(new(Guid.NewGuid(), work.Id, specimen.Id, library.Id, sendout.Id, "TEST provider", "TEST run", "TEST sample mapping", LabScientificFiles.Prefix + receipt.Id, receipt.Sha256, receipt.SizeBytes), actor, "lab-staff", default);
         var run = await lineage.RegisterAnalysisAsync(new(Guid.NewGuid(), work.Id, specimen.Id, "TEST analysis", "TEST analysis run", [sequence.Id]), actor, "lab-staff", default);
         var package = new ResultOutputPackage(order.OrganizationId, order.Id, work.Id, sample.Id, 1, null, "TEST analysis", "TEST transfer", "restore-" + scope.Suffix, "{}", new string('C', 64), 1, labAnalysisRunId: run.Id);
         await using var resultBytes = new MemoryStream(Encoding.UTF8.GetBytes("TEST ONLY result bytes"));

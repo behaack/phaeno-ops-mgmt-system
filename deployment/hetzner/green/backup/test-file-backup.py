@@ -67,6 +67,25 @@ class FileBackupTests(unittest.TestCase):
             self.assertNotIn(row[0], result.stdout + result.stderr)
         return result
 
+    def test_reference_capture_ignores_uncommitted_files_and_checks_receipts(self):
+        (self.source / "order-files/uncommitted.bin").write_bytes(b"not in the database snapshot")
+        result = subprocess.run([SHELL, shell_path(HERE / "file-tree.sh"), "referenced-manifest",
+                                 shell_path(self.source), shell_path(self.references)],
+                                capture_output=True, text=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(set(result.stdout.splitlines()), {"\t".join(row) for row in self.rows})
+        target = self.source / self.rows[0][0]
+        target.write_bytes(b"altered")
+        damaged = subprocess.run([SHELL, shell_path(HERE / "file-tree.sh"), "referenced-manifest",
+                                  shell_path(self.source), shell_path(self.references)],
+                                 capture_output=True, text=True, timeout=30)
+        self.assertNotEqual(damaged.returncode, 0)
+        target.unlink()
+        missing = subprocess.run([SHELL, shell_path(HERE / "file-tree.sh"), "referenced-manifest",
+                                  shell_path(self.source), shell_path(self.references)],
+                                 capture_output=True, text=True, timeout=30)
+        self.assertNotEqual(missing.returncode, 0)
+
     def test_populated_archive_restores_both_areas(self):
         self.verify(True)
         for row in self.rows:

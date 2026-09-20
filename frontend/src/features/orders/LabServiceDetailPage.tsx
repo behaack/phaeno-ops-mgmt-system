@@ -1,3 +1,4 @@
+import { SpecimenHolds } from './SpecimenHolds'
 import { LabCustomerProgressPanel } from './LabCustomerProgressPanel'
 import { LabChangeQuotes } from './LabChangeQuotes'
 import { customerLabStatus } from './lab-customer-progress'
@@ -182,6 +183,7 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
         <LabJobAfterSend orderId={order.id} />
         <LabServiceTimingPanel orderId={order.id} timing={order.timing} />
       <LabCustomerProgressPanel order={order} />
+      <SpecimenHolds orderId={order.id} />
           <Card id="results">
             <CardHeader>
               <CardTitle>Files and results</CardTitle>

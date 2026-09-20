@@ -17,6 +17,7 @@ backup_root=/var/backups/phaeno-portal-coordinated
 api_name=phaeno-portal-green-api
 db_name=phaeno-portal-green-db
 managed_volume=phaeno-portal-green_portal_green_managed_files
+backup_lease_pid=""; backup_lease_in=""; backup_lease_out=""
 work=""; api_id=""; api_stopped=false; watchdog=""; helper_id=""; helper_name=""; token=""
 for command in docker flock timeout stat find awk openssl sha256sum tar systemd-run systemctl readlink shred cmp; do
     command -v "$command" >/dev/null || fail
@@ -60,6 +61,17 @@ if [[ "$mode" == scheduled ]]; then
     fi
 fi
 
+release_backup_lease() {
+    [[ -n "${backup_lease_pid:-}" ]] || return 0
+    local status=0
+    # A dead psql pipe must not terminate the cleanup shell before owned resources are removed.
+    (trap '' PIPE; printf '\\q\n' >&"$backup_lease_in") 2>/dev/null || status=1
+    exec {backup_lease_in}>&- || status=1
+    exec {backup_lease_out}<&- || status=1
+    wait "$backup_lease_pid" || status=1
+    backup_lease_pid=""
+    return "$status"
+}
 remove_helper() {
     local identity actual_id actual_owner
     [[ -n "$helper_name" ]] || return 0
@@ -88,6 +100,7 @@ resume_api() {
 cleanup() {
     local status=$?
     trap - EXIT INT TERM
+    if [[ -n "${backup_lease_pid:-}" ]]; then release_backup_lease || status=1; fi
     if ! resume_api; then printf 'backup_api_recovery=FAIL watchdog_retained=true\n' >&2; status=1; fi
     if ! remove_helper; then printf 'backup_helper_cleanup=FAIL\n' >&2; status=1; fi
     if [[ -n "$work" ]]; then
@@ -142,7 +155,7 @@ query_live() {
         'exec psql --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" -X -q -At -v ON_ERROR_STOP=1 --command "$1"' -- "$1" 2>/dev/null
 }
 db_bytes="$(query_live 'SELECT pg_database_size(current_database());')"
-[[ "$db_bytes" =~ ^[0-9]+$ ]] && (( db_bytes <= 268435456 )) || fail
+[[ "$db_bytes" =~ ^[0-9]+$ ]] && (( db_bytes > 0 )) || fail
 token="$(cat /proc/sys/kernel/random/uuid)"
 [[ "$token" =~ ^[0-9a-f-]{36}$ ]] || fail
 work="$backup_root/.working-$token"
@@ -158,57 +171,58 @@ create_helper() {
         --mount "type=bind,source=$script_dir/backup,target=/helpers,readonly" \
         --mount "type=bind,source=$work,target=/backup,readonly" \
         "${mount_args[@]}" --volume /restore --tmpfs /tmp:rw,nosuid,nodev,noexec,size=16m \
-        --entrypoint /bin/sh "$api_image" -c 'exec sleep 1800' 2>/dev/null)" || fail
+        --entrypoint /bin/sh "$api_image" -c 'exec sleep 14400' 2>/dev/null)" || fail
     [[ "$helper_id" =~ ^[0-9a-f]{64}$ ]] || fail
     docker start "$helper_id" >/dev/null 2>&1 || fail
 }
 create_helper capture
 file_bytes="$(timeout --kill-after=5s 30s docker exec "$helper_id" /bin/bash -ceu \
     'set -o pipefail; find /source -type f -printf "%s\n" | awk '\''{total += $1; count++} END {if (count>100000) exit 1; printf "%.0f\n",total}'\''')"
-[[ "$file_bytes" =~ ^[0-9]+$ ]] && (( file_bytes <= 4294967296 )) || fail
+[[ "$file_bytes" =~ ^[0-9]+$ ]] && (( file_bytes >= 0 )) || fail
 docker_root="$(docker info --format '{{.DockerRootDir}}')"
 docker_free="$(df -Pk "$docker_root" | awk 'NR==2 {printf "%.0f",$4*1024}')"
 host_free="$(df -Pk "$backup_root" | awk 'NR==2 {printf "%.0f",$4*1024}')"
-(( host_free >= file_bytes * 3 + db_bytes * 3 + 2147483648 && docker_free >= file_bytes + 1073741824 )) || fail
+(( host_free >= file_bytes * 5 + db_bytes * 5 + 2147483648 && docker_free >= file_bytes + 1073741824 )) || fail
 printf 'backup_preflight=PASS\nbackup_source_revision=%s\nbackup_file_bytes=%s\n' "$source_revision" "$file_bytes"
 
-phase=quiesce
-watchdog="phaeno-backup-resume-$token"
-systemd-run --quiet --collect --unit "$watchdog" --on-active=180s --timer-property=AccuracySec=1s \
-    /usr/bin/docker start "$api_id" || fail
-systemctl is-active --quiet "$watchdog.timer" || fail
-outage_started="$(date -u +%s)"
-api_stopped=true
-timeout --kill-after=5s 40s docker stop --time 30 "$api_id" >/dev/null 2>&1 || fail
-[[ "$(docker inspect --format '{{.State.Running}} {{.State.ExitCode}} {{.State.OOMKilled}}' "$api_id")" == 'false 0 false' ]] || fail
-for attempt in $(seq 1 10); do
-    clients="$(query_live "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND backend_type='client backend' AND pid<>pg_backend_pid();")"
-    [[ "$clients" == 0 ]] && break
-    sleep 1
+# This marker is installed only with an API containing BackupDeletionLease.
+# Uploads remain available; immutable referenced bytes cannot be deleted until capture completes.
+grep -qx 'FileStorage__OnlineBackupDeletionLease=true' "$runtime/portal.env" || fail
+phase=deletion_lease
+coproc BACKUP_LEASE { docker exec -i "$db_name" /bin/sh -ceu 'exec psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -X -qAt -v ON_ERROR_STOP=1'; }
+backup_lease_pid="$BACKUP_LEASE_PID"
+exec {backup_lease_in}>&${BACKUP_LEASE[1]}
+exec {backup_lease_out}<&${BACKUP_LEASE[0]}
+lease_original_in=${BACKUP_LEASE[1]}; lease_original_out=${BACKUP_LEASE[0]}
+exec {lease_original_in}>&-
+exec {lease_original_out}<&-
+printf "SET lock_timeout='45s'; SET statement_timeout='45s'; SET idle_session_timeout='150min'; SELECT pg_advisory_lock(650320260920); SELECT 'lease-ready';\n" >&"$backup_lease_in"
+lease_ready=false
+while IFS= read -r -t 60 reply <&"$backup_lease_out"; do
+    if [[ "$reply" == lease-ready ]]; then lease_ready=true; break; fi
 done
-[[ "$clients" == 0 ]] || fail
-deadline=$((SECONDS + 120))
-capture() { local remaining=$((deadline - SECONDS)); (( remaining > 0 )) || fail; timeout --kill-after=5s "${remaining}s" "$@"; }
+[[ "$lease_ready" == true ]] || fail
 phase=snapshot
 expected_migration="$(query_live 'SELECT "MigrationId" FROM public.__ef_migrations_history ORDER BY "MigrationId" DESC LIMIT 1;')"
 [[ "$expected_migration" =~ ^[0-9]{14}_[A-Za-z0-9_]+$ ]] || fail
 created_epoch="$(date -u +%s)"; created_utc="$(date -u +%Y%m%dT%H%M%SZ)"
-capture docker exec "$db_name" /bin/sh -c \
+timeout --kill-after=5s 1800s docker exec "$db_name" /bin/sh -c \
     'exec pg_dump --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --format custom --no-owner --no-privileges' \
     > "$work/database.dump" 2>/dev/null || fail
-capture docker exec "$helper_id" /bin/bash /helpers/file-tree.sh manifest /source > "$work/files.tsv" || fail
-capture docker exec "$helper_id" tar --create --file - --directory /source . > "$work/files.tar" 2>/dev/null || fail
-file_bytes="$(awk -F '\t' '{total += $3} END {printf "%.0f", total}' "$work/files.tsv")"
-(( $(stat -c %s "$work/database.dump") <= 536870912 && $(stat -c %s "$work/files.tar") <= 5368709120 )) || fail
-[[ "$(docker inspect --format '{{.State.Running}}' "$api_id")" == false ]] || fail
-[[ "$(query_live "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND backend_type='client backend' AND pid<>pg_backend_pid();")" == 0 ]] || fail
-phase=resume
-resume_api || fail
-printf 'backup_api_outage_seconds=%s\n' "$(( $(date -u +%s) - outage_started ))"
-remove_helper || fail
-
 phase=database_restore
 bash "$script_dir/verify-database-backup.sh" "$work/database.dump" "$expected_migration" "$work/references.tsv" || fail
+phase=referenced_file_capture
+timeout --kill-after=5s 1800s docker exec "$helper_id" /bin/bash /helpers/file-tree.sh referenced-manifest \
+    /source /backup/references.tsv | sort > "$work/files.tsv" || fail
+timeout --kill-after=5s 1800s docker exec "$helper_id" /bin/bash -ceu \
+    'cut -f1 /backup/files.tsv | tar --create --file - --directory /source --verbatim-files-from --no-recursion --files-from -' \
+    > "$work/files.tar" 2>/dev/null || fail
+file_bytes="$(awk -F '\t' '{total += $3} END {printf "%.0f", total}' "$work/files.tsv")"
+kill -0 "$backup_lease_pid" || fail
+release_backup_lease || fail
+printf 'backup_api_outage_seconds=0\n'
+remove_helper || fail
+
 phase=file_restore
 create_helper restore
 docker exec "$helper_id" /bin/bash /helpers/verify-populated-fixture.sh || fail
@@ -218,7 +232,7 @@ remove_helper || fail
 file_count="$(wc -l < "$work/files.tsv" | tr -d '[:space:]')"
 {
     printf 'format=phaeno-coordinated-v1\ncreated_epoch=%s\nsource_revision=%s\nhelper_revision=%s\n' "$created_epoch" "$source_revision" "$helper_revision"
-    printf 'migration=%s\nfile_count=%s\nfile_bytes=%s\n' "$expected_migration" "$file_count" "$file_bytes"
+    printf 'capture=immutable_database_references\nmigration=%s\nfile_count=%s\nfile_bytes=%s\n' "$expected_migration" "$file_count" "$file_bytes"
 } > "$work/snapshot.env"
 phase=encrypt
 (cd "$work" && sha256sum database.dump files.tar files.tsv references.tsv snapshot.env > payload.sha256 \

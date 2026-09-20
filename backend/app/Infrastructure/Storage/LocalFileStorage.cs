@@ -32,10 +32,13 @@ public sealed class LocalFileStorage : IFileStorage
         }
     }
 
+    private readonly BackupDeletionLease? deletionLease;
+
     public LocalFileStorage(
         IWebHostEnvironment environment,
-        IOptions<FileStorageOptions> options)
+        IOptions<FileStorageOptions> options, BackupDeletionLease? deletionLease = null)
     {
+        this.deletionLease = deletionLease;
         storageRoot = ResolveRoot(environment, options.Value);
     }
 
@@ -157,19 +160,19 @@ public sealed class LocalFileStorage : IFileStorage
         return Task.FromResult(stream);
     }
 
-    public Task DeleteIfExistsAsync(
+    public async Task DeleteIfExistsAsync(
         string area,
         string storageKey,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        await using var lease = deletionLease is null ? null : await deletionLease.AcquireAsync(cancellationToken);
         var fullPath = Resolve(area, storageKey);
         if (File.Exists(fullPath))
         {
             File.Delete(fullPath);
         }
 
-        return Task.CompletedTask;
     }
 
     private string Resolve(string area, string storageKey)

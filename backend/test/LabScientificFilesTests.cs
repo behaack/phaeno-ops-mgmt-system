@@ -36,6 +36,17 @@ public sealed class LabScientificFilesTests
         Assert.Contains("fingerprint or size", exception.Message);
     }
 
+    [Fact]
+    public async Task FiftyMegabyteFileVerifiesWithoutTruncation()
+    {
+        var bytes = new byte[50 * 1024 * 1024];
+        RandomNumberGenerator.Fill(bytes);
+        var hash = Convert.ToHexString(SHA256.HashData(bytes));
+        await using var verified = await LabScientificFiles.OpenVerifiedAsync(new BytesStorage(bytes), "fifty-megabyte", hash, bytes.Length, default);
+        Assert.Equal(bytes.LongLength, verified.Length);
+        Assert.Equal(hash, Convert.ToHexString(await SHA256.HashDataAsync(verified)));
+    }
+
     private sealed class BytesStorage(byte[] bytes) : IOperationalFileStorage
     {
         public Task<Stream> OpenReadAsync(string key, CancellationToken ct) => Task.FromResult<Stream>(new MemoryStream(bytes));

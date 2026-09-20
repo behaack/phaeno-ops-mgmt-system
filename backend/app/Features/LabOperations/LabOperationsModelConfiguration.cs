@@ -8,6 +8,32 @@ public static class LabOperationsModelConfiguration
 {
     public static void Configure(ModelBuilder modelBuilder, string laboratorySchema)
     {
+        modelBuilder.Entity<LabCustomerHold>(entity =>
+        {
+            entity.ToTable("lab_customer_holds", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.State).HasMaxLength(32);
+            entity.Property(e => e.Reason).HasMaxLength(2000);
+            entity.Property(e => e.Response).HasMaxLength(2000);
+            entity.Property(e => e.Version).IsConcurrencyToken();
+            entity.HasIndex(e => e.LabSpecimenId).IsUnique().HasFilter("state <> 'Released'");
+            entity.HasIndex(e => new { e.LabWorkOrderId, e.RequestedAtUtc });
+            entity.HasOne<LabWorkOrder>().WithMany().HasForeignKey(e => e.LabWorkOrderId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabSpecimen>().WithMany().HasForeignKey(e => e.LabSpecimenId).OnDelete(DeleteBehavior.Restrict);
+        });
+        modelBuilder.Entity<LabScientificUpload>(entity =>
+        {
+            entity.ToTable("lab_scientific_uploads", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.FileName).HasMaxLength(255);
+            entity.Property(e => e.Sha256).HasMaxLength(64);
+            entity.Property(e => e.ChunksJson).HasColumnType("jsonb");
+            entity.Property(e => e.Version).IsConcurrencyToken();
+            entity.HasIndex(e => e.ExpiresAtUtc);
+            entity.HasOne<LabWorkOrder>().WithMany().HasForeignKey(e => e.LabWorkOrderId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabSpecimen>().WithMany().HasForeignKey(e => e.LabSpecimenId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabScientificFile>().WithMany().HasForeignKey(e => e.CompletedFileId).OnDelete(DeleteBehavior.Restrict);
+        });
         LabForecastModelConfiguration.Configure(modelBuilder, laboratorySchema);
         LabResultLineageModelConfiguration.Configure(modelBuilder, laboratorySchema);
         modelBuilder.Entity<LabJobDeadlineChange>(entity =>

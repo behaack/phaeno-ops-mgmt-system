@@ -213,7 +213,10 @@ public class PersistenceTests
             .Where(entityType => entityType.ClrType.Assembly == laboratoryAssembly)
             .ToList();
 
-        Assert.Equal(54, laboratoryEntities.Count);
+        Assert.Equal(57, laboratoryEntities.Count);
+        Assert.Equal("lab_scientific_files", dbContext.Model.FindEntityType(typeof(LabScientificFile))?.GetTableName());
+        Assert.Equal("lab_scientific_uploads", dbContext.Model.FindEntityType(typeof(LabScientificUpload))?.GetTableName());
+        Assert.Equal("lab_customer_holds", dbContext.Model.FindEntityType(typeof(LabCustomerHold))?.GetTableName());
         Assert.Equal("lab_sequencing_outputs", dbContext.Model.FindEntityType(typeof(LabSequencingOutput))?.GetTableName());
         Assert.Equal("lab_analysis_runs", dbContext.Model.FindEntityType(typeof(LabAnalysisRun))?.GetTableName());
         Assert.Equal("lab_analysis_inputs", dbContext.Model.FindEntityType(typeof(LabAnalysisInput))?.GetTableName());
@@ -569,11 +572,13 @@ public class PersistenceTests
     {
         using var dbContext = CreateDbContext();
         var migrations = dbContext.Database.GetMigrations().ToArray();
-        Assert.Equal(4, migrations.Length);
+        Assert.Equal(6, migrations.Length);
         Assert.EndsWith("_InitialPSeqOperationsRebased", migrations[0]);
         Assert.EndsWith("_AddSampleSequencingRuns", migrations[1]);
         Assert.EndsWith("_AddSequencingRunLineage", migrations[2]);
         Assert.EndsWith("_AllowRepeatedLibraryPreparation", migrations[3]);
+        Assert.EndsWith("_AddManagedScientificFiles", migrations[4]);
+        Assert.EndsWith("_AddScientificUploadsAndCustomerHolds", migrations[5]);
     }
 
     private static void AssertUniqueIndex<TEntity>(

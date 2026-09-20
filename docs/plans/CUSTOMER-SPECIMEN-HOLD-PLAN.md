@@ -1,12 +1,16 @@
 # Customer-requested specimen holds
 
-Status: **IMPLEMENTATION BLOCKED by Product Owner direction, September 11, 2026.** This is a planning outline only. Separate design approval and explicit implementation authorization are required to remove the block.
+Status: implementation authorized September 20, 2026; local verification in progress. The owner explicitly approved customer requests, staff-controlled safe pause/resumption, immediate blocking of new work/release, and unchanged charges/retention. See [current gap closure](OPERATIONAL-GAP-CLOSURE-20260920.md). The earlier deferral below is retained as historical planning context, not a current implementation prohibition.
 
-## Purpose and boundary
+## Approved implementation
+
+Organization and assigned-department administrators request a per-specimen hold/resumption. Lab Supervisors or Operations Administrators decide. Pending and unable-to-pause states block new work/release; physical pause confirmation is recorded separately so a resumption request does not invent a prior physical stop. Already-running work may be documented until a pause is confirmed. Released results remain accessible, including when remaining repeat runs are held. Existing work-entry gates still check authorization, material and workflow eligibility after the customer hold clears. A separate Job hold/cancellation prevents approving resumption. The Jobs blocked queue and 15-second refreshed customer/staff cards expose outstanding requests; no new email channel or response-time guarantee is introduced. Audit events retain every shared reason and decision.
+
+## Historical purpose and boundary
 
 Allow a Customer to request that specified specimens stop progressing, and allow Phaeno to acknowledge what can safely be paused. This is distinct from tube intake suitability, internal QC holds, terminal specimen failure, order cancellation and an existing generic Lab milestone.
 
-Do not implement request/resume UI, new endpoints, notifications or persistence for this workflow as part of tube intake or attempt/fallback work. Do not represent existing generic Lab hold controls as satisfying a Customer-request workflow. Existing operational controls are unchanged by this document.
+Historical September 11 direction (superseded by the explicit September 20 authorization): Do not implement request/resume UI, new endpoints, notifications or persistence for this workflow as part of tube intake or attempt/fallback work. Do not represent existing generic Lab hold controls as satisfying a Customer-request workflow. Existing operational controls are unchanged by this document.
 
 ## Proposed scope for later design
 
@@ -28,7 +32,7 @@ Do not implement request/resume UI, new endpoints, notifications or persistence 
 
 ## Future acceptance coverage
 
-All Not run and blocked from implementation: requester permissions and tenant scope; selected-specimen scope; request versus effective pause; race with execution start/complete and external handoff; duplicate requests; multiple independent blockers; partial application; resume authorization; accurate Customer/Phaeno messaging; audit trail; no retroactive rewriting of completed work.
+Original deferred acceptance outline (current evidence is in the linked gap plan): requester permissions and tenant scope; selected-specimen scope; request versus effective pause; race with execution start/complete and external handoff; duplicate requests; multiple independent blockers; partial application; resume authorization; accurate Customer/Phaeno messaging; audit trail; no retroactive rewriting of completed work.
 
 ## Related plans
 

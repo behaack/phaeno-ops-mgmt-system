@@ -7,12 +7,24 @@ for (const theme of ['light', 'dark']) test(`scientific capture, linked correcti
   const html = await readFile(new URL('./fixtures/scientific-capture.html', import.meta.url), 'utf8')
   await page.route('**/e2e/fixtures/scientific-capture.html*', r => r.fulfill({ contentType: 'text/html', body: html }))
   const data = { workOrderId: 'test-job', specimenId: 'test-sample', accessionNumber: 'ACC-1', canRecord: true, canManualUpload: true, governedResults: false, orderId: 'order', submittedSampleId: 'sample', libraries: [{ id: 'library', libraryKey: 'LIB-1', barcode: 'TUBE-1', status: 'QcPassed' }], outputs: [] as Record<string, unknown>[], analyses: [] as Record<string, unknown>[], inputs: [] as Record<string, unknown>[] }
+  const files: Record<string, unknown>[] = []; const uploads = new Map<string, Record<string, unknown>>()
   let failedOnce = false; const attempts: Record<string, unknown>[] = []; let upload = ''
   await page.route('**/api/platform/lab-service-orders/**', async r => { upload = r.request().postData() ?? ''; await r.fulfill({ json: { success: true, data: { id: 'file' } } }) })
   await page.route('**/api/platform/lab-operations/**', async r => {
     const path = new URL(r.request().url()).pathname
     const reply = (value: unknown) => r.fulfill({ json: { success: true, data: value } })
     if (path.endsWith('/scientific-evidence')) return reply(data)
+    if (path.endsWith('/scientific-evidence/files')) return reply({ maximumBytes: 100 * 1024 * 1024, files })
+    if (path.endsWith('/uploads')) {
+      const body = r.request().postDataJSON(); uploads.set(body.id, body)
+      return reply({ id: body.id, receivedBytes: 0, chunkBytes: 4 * 1024 * 1024, expiresAtUtc: '2099-01-01T00:00:00Z', file: null })
+    }
+    if (path.includes('/chunks/')) return reply({ receivedBytes: r.request().postDataBuffer()?.length ?? 0 })
+    if (path.endsWith('/complete')) {
+      const id = path.split('/').at(-2)!; const body = uploads.get(id)!
+      const file = { ...body, externalFileReference: `poms-file:${id}`, recordedAtUtc: '2026-09-20T00:00:00Z' }; files.push(file)
+      return reply({ file })
+    }
     if (path.endsWith('/sendouts')) return reply([{ id: 'submission', providerName: 'Sequencer', providerReference: 'SHIP-1', status: 'Shipped' }])
     const body = r.request().postDataJSON() as Record<string, unknown>; attempts.push(body)
     if (!failedOnce) { failedOnce = true; return r.fulfill({ status: 503, json: { success: false, error: { message: 'Temporary recording failure. Retry the same evidence.' } } }) }
@@ -31,9 +43,8 @@ for (const theme of ['light', 'dark']) test(`scientific capture, linked correcti
   await page.getByLabel('Run started', { exact: false }).first().fill('2025-01-01T08:00')
   await page.getByLabel('Run completed', { exact: false }).first().fill('2025-01-01T09:00')
   await page.getByLabel('Sample mapping / index / lane reference').fill('lane-1:index-A')
-  await page.getByLabel('Exact external file and version').fill('reads.fastq:v1')
-  await page.getByLabel('File SHA-256 checksum').fill('a'.repeat(64))
-  await page.getByLabel('File size in bytes', { exact: false }).fill('1234')
+  await page.getByLabel('Sequencing file', { exact: false }).setInputFiles({ name: 'reads-v1.fastq', mimeType: 'application/octet-stream', buffer: Buffer.from('TEST ONLY reads') })
+  await expect(page.getByText('reads-v1.fastq', { exact: true })).toBeVisible()
   await page.getByLabel('QC summary').fill('Passed')
   await page.getByRole('button', { name: 'Add QC metric' }).click()
   await page.getByLabel('Metric name 1').fill('yield'); await page.getByLabel('Metric value 1').fill('2.5'); await page.getByLabel('Metric unit 1').fill('Gb')
@@ -48,14 +59,15 @@ for (const theme of ['light', 'dark']) test(`scientific capture, linked correcti
   expect(attempts[1].libraryPreparationChoice).toBe('ExistingLibrary')
   await page.getByRole('button', { name: 'Record correction' }).click()
   await page.getByLabel('Correction reason').fill('Corrected external version')
-  await page.getByLabel('Exact external file and version').fill('reads.fastq:v2')
+  await page.getByLabel('Sequencing file', { exact: false }).setInputFiles({ name: 'reads-v2.fastq', mimeType: 'application/octet-stream', buffer: Buffer.from('TEST ONLY corrected reads') })
+  await expect(page.getByText('reads-v2.fastq', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Save evidence' }).click()
   await expect(page.getByRole('link', { name: 'View preceding record' })).toBeVisible()
   expect(attempts[2].correctsOutputId).toBe(attempts[0].id)
   await page.getByRole('link', { name: 'Back to sample ACC-1' }).click()
   await page.getByRole('link', { name: 'Record analysis run' }).click()
-  await page.getByLabel('reads.fastq:v2 · RUN-1').check()
-  await page.getByLabel('Input role for reads.fastq:v2').fill('reads')
+  await page.getByLabel('reads-v2.fastq · RUN-1').check()
+  await page.getByLabel('Input role for reads-v2.fastq').fill('reads')
   await page.getByLabel('Provider / producing team').fill('Analysis team'); await page.getByLabel('Actual run reference').fill('ANALYSIS-1')
   await page.getByLabel('Run started', { exact: false }).first().fill('2025-01-01T10:00'); await page.getByLabel('Run completed', { exact: false }).first().fill('2025-01-01T11:00')
   for (const label of ['Software', 'Settings', 'Reference data']) { await page.getByLabel(`${label} is not applicable`, { exact: true }).check(); await page.getByLabel(`Why ${label.toLowerCase()} is not applicable`).fill('TEST ONLY approved manual procedure') }

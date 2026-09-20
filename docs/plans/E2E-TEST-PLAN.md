@@ -2821,3 +2821,9 @@ The [reset execution record](../operations/database-rebase-20260919.md) records 
 ### September 19 repeated-sequencing release coverage
 
 Scientific capture browser coverage now selects an explicit existing-library choice and asserts the recorded purchased run number and library choice, while retaining linked corrections, accessibility, desktop/mobile themes and read-only checks. Release checkpoint: passing evidence covers 176 browser cases. The full run had 174 passes and two stale CRM menu-fixture failures; the corrected Company fixture passed all six focused desktop/mobile cases. Two mobile print cases remain intentionally skipped. This is combined full-run and focused follow-up evidence, not one zero-failure full run. See the [release record](../operations/repeated-sequencing-release-20260919.md) for source identity, final backend results and production activation.
+
+## September 20 operational gap closure
+
+Updated scientific-capture browser fixtures from manual external references to managed resumable uploads. Added specimen hold requests. Ten synthetic desktop/mobile light/dark browser cases passed with accessibility and no-overflow checks. These are not authenticated provider or physical laboratory acceptance. See OPERATIONAL-GAP-CLOSURE-20260920.md.
+
+Final release rerun: 180 browser cases passed in one full desktop/mobile run; two mobile-only duplicates of desktop print tests were intentionally skipped. Bundled-order fixtures now answer the specimen-hold read without weakening unexpected-request or no-write assertions. The initial CRM timeout passed on retry and on the clean full rerun.

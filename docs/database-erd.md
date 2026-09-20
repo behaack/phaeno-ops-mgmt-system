@@ -15,10 +15,10 @@ The additive [step performance JSON contract](plans/LAB-STEP-PERFORMANCE-CONTRAC
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 137 | 2198 | 351 |
-| `lab_ops` | 55 | 637 | 97 |
+| `commercial_ops` | 137 | 2200 | 351 |
+| `lab_ops` | 58 | 671 | 104 |
 | `website` | 5 | 51 | 4 |
-| **Total** | **198** | **2888** | **452** |
+| **Total** | **201** | **2924** | **459** |
 
 ## `public` schema
 
@@ -1193,7 +1193,6 @@ erDiagram
         bigint version "not null"
     }
     lab_samples {
-        integer sequencing_run_count "not null; default 1"
         uuid id PK "not null"
         character_varying_100 accession_id UK "nullable"
         jsonb analysis_definition_ids_json "not null"
@@ -1216,6 +1215,7 @@ erDiagram
         uuid replacement_for_sample_id FK "nullable"
         character_varying_100 resume_status "nullable"
         character_varying_2000 safety_declaration "not null"
+        integer sequencing_run_count "not null"
         character_varying_100 status "not null"
         character_varying_2000 storage_requirements "not null"
         character_varying_2000 tenant_safe_reason "nullable"
@@ -1225,7 +1225,6 @@ erDiagram
         bigint version "not null"
     }
     lab_service_orders {
-        integer sequencing_run_count "nullable; null uses requested_specimen_count"
         uuid id PK "not null"
         uuid accepted_quote_id "nullable"
         uuid assigned_to_user_id FK "nullable"
@@ -1258,6 +1257,7 @@ erDiagram
         character_varying_2000 safety_declaration "not null"
         timestamp_with_time_zone sample_roster_finalized_at "nullable"
         uuid sample_roster_finalized_by_user_id FK "nullable"
+        integer sequencing_run_count "nullable"
         character_varying_500 shared_biological_source "nullable"
         uuid source_request_id FK,UK "nullable"
         character_varying_100 status "not null"
@@ -2979,6 +2979,20 @@ erDiagram
 
 ```mermaid
 erDiagram
+    lab_customer_holds {
+        uuid id PK "not null"
+        uuid lab_specimen_id FK,UK "not null"
+        uuid lab_work_order_id FK "not null"
+        timestamp_with_time_zone paused_at_utc "nullable"
+        character_varying_2000 reason "not null"
+        timestamp_with_time_zone requested_at_utc "not null"
+        uuid requested_by_user_id "not null"
+        timestamp_with_time_zone responded_at_utc "nullable"
+        uuid responded_by_user_id "nullable"
+        character_varying_2000 response "nullable"
+        character_varying_32 state "not null"
+        integer version "not null"
+    }
     lab_performance_decisions {
         uuid id PK,FK "not null"
         boolean approved "not null"
@@ -3000,14 +3014,32 @@ erDiagram
         uuid requested_by_user_id "not null"
         uuid step_record_id "not null"
     }
+    lab_scientific_uploads {
+        uuid id PK "not null"
+        jsonb chunks_json "not null"
+        uuid completed_file_id FK "nullable"
+        timestamp_with_time_zone expires_at_utc "not null"
+        character_varying_255 file_name "not null"
+        uuid lab_specimen_id FK "not null"
+        uuid lab_work_order_id FK "not null"
+        character_varying_64 sha256 "not null"
+        bigint size_bytes "not null"
+        uuid user_id "not null"
+        integer version "not null"
+    }
+    lab_specimens ||--o{ lab_customer_holds : "lab_specimen_id"
+    lab_work_orders ||--o{ lab_customer_holds : "lab_work_order_id"
     lab_performance_proposals ||--o| lab_performance_decisions : "id"
     lab_performance_proposals o|--o{ lab_performance_proposals : "based_on_proposal_id"
     lab_protocol_executions ||--o{ lab_performance_proposals : "lab_protocol_execution_id"
     lab_specimens ||--o{ lab_performance_proposals : "lab_specimen_id"
     lab_work_orders ||--o{ lab_performance_proposals : "lab_work_order_id"
+    lab_scientific_files o|--o{ lab_scientific_uploads : "completed_file_id"
+    lab_specimens ||--o{ lab_scientific_uploads : "lab_specimen_id"
+    lab_work_orders ||--o{ lab_scientific_uploads : "lab_work_order_id"
 ```
 
-### Domain (1) (1)
+### Domain (1) (1) (1)
 
 ```mermaid
 erDiagram
@@ -3113,19 +3145,6 @@ erDiagram
         uuid updated_by_user_id "nullable"
         bigint version "not null"
     }
-    lab_scientific_files {
-        uuid id PK "not null"
-        uuid lab_work_order_id FK "not null"
-        uuid lab_specimen_id FK "not null"
-        character_varying_255 file_name "not null"
-        character_varying_1000 storage_key UK "not null"
-        character_varying_64 sha256 "not null"
-        bigint size_bytes "not null"
-        uuid recorded_by_user_id "not null; recorded actor identity"
-        timestamp_with_time_zone recorded_at_utc "not null"
-    }
-    lab_work_orders ||--o{ lab_scientific_files : "lab_work_order_id"
-    lab_specimens ||--o{ lab_scientific_files : "lab_specimen_id"
     lab_analysis_runs ||--o{ lab_analysis_inputs : "lab_analysis_run_id"
     lab_sequencing_outputs ||--o{ lab_analysis_inputs : "lab_sequencing_output_id"
     lab_specimen_attempts ||--o{ lab_analysis_runs : "lab_specimen_attempt_id"
@@ -3142,6 +3161,25 @@ erDiagram
     lab_work_orders ||--o{ lab_job_timing_policies : "lab_work_order_id"
     lab_service_workflow_versions ||--o{ lab_preparation_batches : "lab_service_workflow_version_id"
     lab_tray_formats ||--o{ lab_preparation_batches : "lab_tray_format_id"
+```
+
+### Domain (1) (1) (2)
+
+```mermaid
+erDiagram
+    lab_scientific_files {
+        uuid id PK "not null"
+        character_varying_255 file_name "not null"
+        uuid lab_specimen_id FK "not null"
+        uuid lab_work_order_id FK "not null"
+        timestamp_with_time_zone recorded_at_utc "not null"
+        uuid recorded_by_user_id "not null"
+        character_varying_64 sha256 "not null"
+        bigint size_bytes "not null"
+        character_varying_1000 storage_key UK "not null"
+    }
+    lab_specimens ||--o{ lab_scientific_files : "lab_specimen_id"
+    lab_work_orders ||--o{ lab_scientific_files : "lab_work_order_id"
 ```
 
 ### Domain (1) (2)
@@ -3183,8 +3221,6 @@ erDiagram
     }
     lab_sequencing_outputs {
         uuid id PK "not null"
-        integer sequencing_run_number "nullable; legacy run 1"
-        character_varying_32 library_preparation_choice "nullable; legacy unspecified"
         character_varying_2000 correction_reason "nullable"
         uuid corrects_output_id FK "nullable"
         character_varying_1000 external_file_reference "not null"
@@ -3194,6 +3230,7 @@ erDiagram
         uuid lab_specimen_attempt_id FK "not null"
         uuid lab_specimen_id FK "not null"
         uuid lab_work_order_id FK "not null"
+        character_varying_32 library_preparation_choice "nullable"
         jsonb lineage_snapshot_json "not null"
         character_varying_100 provider_key "not null"
         character_varying_255 provider_run_reference "not null"
@@ -3203,6 +3240,7 @@ erDiagram
         character_varying_64 request_sha256 "not null"
         character_varying_1000 sample_mapping_reference "not null"
         jsonb scientific_evidence_json "nullable"
+        integer sequencing_run_number "nullable"
         character_varying_64 sha256 "not null"
         bigint size_bytes "not null"
         uuid source_container_id FK "not null"
@@ -3966,8 +4004,3 @@ erDiagram
     web_orders o|--o{ web_notification_deliveries : "web_order_id"
     users o|--o{ web_notification_processing_controls : "updated_by_user_id"
 ```
-
-
-Repeated sequencing retains one active (`Planned`, `InProgress`, `OnHold`) preparation per specimen and source container through filtered unique indexes. Completed preparation history may contain multiple attempts; authorization and source-material guards govern new attempts. Sequencing-output run numbers group files and corrections by purchased sample-run allocation, independently of the producing preparation.
-
-Managed scientific files use immutable receipts in lab_ops.lab_scientific_files. The storage key is private and unique; sample/work/time has a composite index. Existing sequencing-output and supporting-document references may carry a poms-file identity, validated against the scoped receipt by the shared capture service. Those references are logical links rather than new foreign-key columns. Receipts and bytes are retained independently of customer deliverable expiry.

@@ -35,6 +35,10 @@ public sealed partial class PSeqOperationsDbContext(
     /// <summary>
     /// Organizations in the system.
     /// </summary>
+    public DbSet<LabCustomerHold> LabCustomerHolds { get; set; }
+
+    public DbSet<LabScientificUpload> LabScientificUploads { get; set; }
+
     public DbSet<Organization> Organizations { get; set; }
 
     /// <summary>

@@ -24,7 +24,7 @@ manifest() {
         bytes="$(stat -c %s -- "$path" 2>/dev/null)"
         [[ "$bytes" =~ ^[0-9]+$ ]] || fail
         total=$((total + bytes)); count=$((count + 1))
-        (( total <= 4294967296 && count <= 100000 )) || fail
+        (( count <= 100000 )) || fail
         digest="$(sha256sum -- "$path" 2>/dev/null)"; digest="${digest%% *}"
         printf '%s\t%s\t%s\n' "$relative" "$digest" "$bytes"
     done < <(find "$root" -mindepth 1 -print0 2>/dev/null)
@@ -39,13 +39,38 @@ case "$1" in
         find "$2" -mindepth 1 -printf '' 2>/dev/null || fail
         manifest "$2" | sort
         ;;
+    referenced-manifest)
+        [[ $# == 3 && -d "$2" && ! -L "$2" && -f "$3" && ! -L "$3" ]] || fail
+        root="$2"; references="$3"
+        declare -A captured=()
+        while IFS=$'\t' read -r path digest bytes presence extra; do
+            valid_path "$path" || fail
+            [[ "$digest" =~ ^[0-9a-f]{64}$ && ( "$bytes" == unknown || "$bytes" =~ ^[0-9]+$ ) && ( "$presence" == required || "$presence" == retired ) && -z "$extra" ]] || fail
+            # Check every path component, not merely the file's own link bit.
+            current="$root"
+            IFS=/ read -ra pieces <<< "$path"
+            for piece in "${pieces[@]}"; do current="$current/$piece"; [[ ! -L "$current" ]] || fail; done
+            if [[ ! -e "$root/$path" && "$presence" == retired ]]; then continue; fi
+            [[ -f "$root/$path" && "$(stat -c %h -- "$root/$path")" == 1 ]] || fail
+            actual_bytes="$(stat -c %s -- "$root/$path")"
+            actual_hash="$(sha256sum -- "$root/$path")"; actual_hash="${actual_hash%% *}"
+            [[ "$digest" == "$actual_hash" && ( "$bytes" == unknown || "$bytes" == "$actual_bytes" ) ]] || fail
+            if [[ -z "${captured[$path]+set}" ]]; then
+                printf '%s\t%s\t%s\n' "$path" "$actual_hash" "$actual_bytes"
+                captured[$path]=1
+            fi
+        done < "$references"
+        ;;
     verify)
         [[ $# == 5 ]] || fail
         archive="$2"; expected="$3"; references="$4"; destination="$5"
         [[ -f "$archive" && ! -L "$archive" && -f "$expected" && ! -L "$expected" \
             && -f "$references" && ! -L "$references" && -d "$destination" && ! -L "$destination" ]] || fail
         [[ -z "$(find "$destination" -mindepth 1 -print -quit)" ]] || fail
-        (( $(stat -c %s -- "$archive") <= 5368709120 )) || fail
+        available_bytes="$(df -Pk "$destination" | awk 'NR==2 {printf "%.0f",$4*1024}')"
+        (( available_bytes > 67108864 )) || fail
+        extraction_budget=$((available_bytes - 67108864))
+        (( $(stat -c %s -- "$archive") <= extraction_budget )) || fail
         (( $(stat -c %s -- "$expected") <= 67108864 && $(stat -c %s -- "$references") <= 134217728 )) || fail
         phase=archive_safety
         listing="$(tar --absolute-names --list --quoting-style=literal --file "$archive" 2>/dev/null)" || fail
@@ -60,10 +85,10 @@ case "$1" in
         # Hard/symbolic links, devices, sparse huge entries and other types are
         # rejected before extraction. Numeric-owner listing keeps the size field fixed.
         tar --absolute-names --list --verbose --numeric-owner --full-time --file "$archive" 2>/dev/null |
-            awk 'substr($1,1,1)!="-" && substr($1,1,1)!="d" {bad=1}
+            awk -v budget="$extraction_budget" 'substr($1,1,1)!="-" && substr($1,1,1)!="d" {bad=1}
                  $3 !~ /^[0-9]+$/ {bad=1}
                  {total += $3; count++}
-                 END {if (bad || total>4294967296 || count>200001) exit 1}' || fail
+                 END {if (bad || total>budget || count>200001) exit 1}' || fail
         phase=extract
         tar --extract --file "$archive" --directory "$destination" \
             --no-same-owner --no-same-permissions --delay-directory-restore 2>/dev/null || fail

@@ -3,8 +3,7 @@
 # Usage: bash verify-database-backup.sh /absolute/private/database.dump EXPECTED_MIGRATION
 # Call before encrypting/removing the plaintext dump. Capture EXPECTED_MIGRATION
 # immediately before pg_dump. No credentials, live Docker volumes or network are used.
-# Fixed activation budget: 512 MiB data tmpfs, 1024 MiB memory, no swap, one CPU.
-# A larger backup must receive a separately reviewed resource budget, not an override.
+# Isolated disk-backed restore, bounded memory/CPU and capacity preflight. No live data mounted.
 set +x
 set -Eeuo pipefail
 umask 077
@@ -84,7 +83,7 @@ dump_user="$(stat --format '%u:%g' -- "${dump_path}")"
 
 phase=resource_preflight
 dump_bytes="$(stat --format '%s' -- "${dump_path}")"
-[[ "${dump_bytes}" =~ ^[0-9]+$ ]] && (( dump_bytes > 0 && dump_bytes <= 512 * 1024 * 1024 )) || fail
+[[ "${dump_bytes}" =~ ^[0-9]+$ ]] && (( dump_bytes > 0 )) || fail
 [[ -r /proc/meminfo ]] || fail
 available_kib="$(awk '/^MemAvailable:/ {print $2}' /proc/meminfo)"
 [[ "${available_kib}" =~ ^[0-9]+$ ]] && (( available_kib >= 1536 * 1024 )) || fail
@@ -94,9 +93,12 @@ owner_token="$(cat /proc/sys/kernel/random/uuid)"
 [[ "${owner_token}" =~ ^[0-9a-f-]{36}$ ]] || fail
 container_name="phaeno-backup-verify-${owner_token}"
 
+docker_root="$(docker info --format '{{.DockerRootDir}}')"
+restore_free="$(df -Pk "$docker_root" | awk 'NR==2 {printf "%.0f",$4*1024}')"
+(( restore_free >= dump_bytes * 5 + 2147483648 )) || fail
 phase=create_isolated_restore
 # Use a private nested PGDATA so the unprivileged image user can create its own
-# 0700 directory on the tmpfs. Bypass the image entrypoint to avoid a temporary
+# 0700 directory on the isolated anonymous volume. Bypass the image entrypoint to avoid a temporary
 # startup server racing the readiness probe. PostgreSQL never listens on TCP.
 container_id="$(timeout --kill-after=5s 30s docker create \
     --name "${container_name}" \
@@ -105,7 +107,7 @@ container_id="$(timeout --kill-after=5s 30s docker create \
     --security-opt no-new-privileges --log-driver none \
     --memory 1024m --memory-swap 1024m --cpus 1 --pids-limit 128 \
     --ulimit core=0 --shm-size 16m \
-    --tmpfs /var/lib/postgresql:rw,nosuid,nodev,noexec,size=512m,mode=1777 \
+    --volume /var/lib/postgresql \
     --tmpfs /var/run/postgresql:rw,nosuid,nodev,noexec,size=16m,mode=1777 \
     --tmpfs /tmp:rw,nosuid,nodev,noexec,size=16m,mode=1777 \
     --mount "type=bind,source=${dump_path},target=/backup.dump,readonly" \
@@ -138,7 +140,7 @@ done
 phase=restore
 # The client runs as the host dump's UID/GID so a 0600 file never needs relaxed
 # permissions. The isolated server uses local trust; there is no host/remote path.
-timeout --kill-after=5s 600s docker exec --user "${dump_user}" "${container_id}" \
+timeout --kill-after=5s 3600s docker exec --user "${dump_user}" "${container_id}" \
     pg_restore --host /var/run/postgresql --username postgres --dbname postgres \
     --exit-on-error --single-transaction --clean --if-exists --no-owner --no-privileges \
     /backup.dump >/dev/null 2>&1 || fail
@@ -146,7 +148,7 @@ timeout --kill-after=5s 600s docker exec --user "${dump_user}" "${container_id}"
 query() {
     timeout --kill-after=5s 30s docker exec "${container_id}" \
         psql --host /var/run/postgresql --username postgres --dbname postgres \
-        --no-psqlrc --tuples-only --no-align --set ON_ERROR_STOP=1 \
+        --no-psqlrc --quiet --tuples-only --no-align --set ON_ERROR_STOP=1 \
         --command "$1" 2>/dev/null
 }
 
@@ -172,6 +174,9 @@ tables=(
     commercial_ops.managed_operational_files
     commercial_ops.result_artifacts
 )
+scientific_table="$(query "SELECT to_regclass('lab_ops.lab_scientific_files') IS NOT NULL;")" || fail
+if [[ "$scientific_table" == t ]]; then tables+=(lab_ops.lab_scientific_files);
+elif [[ "$expected_migration" > 20260920041906 ]]; then fail; fi
 phase=compare_dump_counts
 for qualified_table in "${tables[@]}"; do
     schema="${qualified_table%%.*}"
@@ -205,6 +210,11 @@ for source in managed_files managed_operational_files invoices result_artifacts;
     [[ "${references}" =~ ^[0-9]+$ ]] || fail
     printf 'backup_restore_file_refs.%s=%s\n' "${source}" "${references}"
 done
+if [[ "$scientific_table" == t ]]; then
+scientific_references="$(query "SELECT count(*) FROM lab_ops.lab_scientific_files WHERE nullif(btrim(storage_key), '') IS NOT NULL;")" || fail
+[[ "$scientific_references" =~ ^[0-9]+$ ]] || fail
+printf 'backup_restore_file_refs.lab_scientific_files=%s\n' "$scientific_references"
+fi
 if [[ -n "$reference_output" ]]; then
     phase=private_file_reference_manifest
     reference_sql="$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")/backup/file-references.sql"

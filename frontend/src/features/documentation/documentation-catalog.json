@@ -542,7 +542,7 @@
       "title": "Request laboratory services",
       "summary": "Complete ordering and shipping on the Job, then follow receipt, laboratory progress and results.",
       "order": 30,
-      "reviewedAt": "2026-09-19",
+      "reviewedAt": "2026-09-20",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -1706,7 +1706,7 @@
       "title": "Libraries, batches, and sequencing",
       "summary": "Reuse preparation QC, hand passing libraries to sequencing batches, and track sendout manifests and custody.",
       "order": 56,
-      "reviewedAt": "2026-09-19",
+      "reviewedAt": "2026-09-20",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1739,7 +1739,7 @@
       "title": "Exceptions, rework, and cancellation",
       "summary": "Classify exceptions, preserve rework history, and respond safely to cancellation requests.",
       "order": 57,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-20",
       "navigationGroup": "laboratory-operations",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1874,7 +1874,7 @@
       "title": "Use Partner Lab services",
       "summary": "Complete Partner ordering and shipping on the Job, then track sample receipt and laboratory results.",
       "order": 25,
-      "reviewedAt": "2026-09-19",
+      "reviewedAt": "2026-09-20",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [

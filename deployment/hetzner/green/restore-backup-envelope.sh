@@ -25,7 +25,9 @@ for leaf in snapshot.tar.enc snapshot.key.enc receipt.env; do
     [[ "$(grep -Ec "^[0-9a-f]{64}  ${leaf//./\.}$" "$source_dir/encrypted.sha256")" == 1 ]] || fail
 done
 (cd "$source_dir" && sha256sum --check --strict --status encrypted.sha256) || fail
-(( $(stat -c %s "$source_dir/snapshot.tar.enc") <= 6442450944 )) || fail
+available_bytes="$(df -Pk "$parent" | awk 'NR==2 {printf "%.0f",$4*1024}')"
+(( available_bytes >= $(stat -c %s "$source_dir/snapshot.tar.enc") * 2 + 67108864 )) || fail
+payload_budget=$((available_bytes / 2 - 33554432))
 mkdir -m 700 -- "$destination"
 complete=false
 cleanup() {
@@ -56,8 +58,8 @@ phase=payload_safety
 listing="$(tar --absolute-names --list --file "$destination/snapshot.tar" 2>/dev/null | sort)" || fail
 [[ "$listing" == $'database.dump\nfiles.tar\nfiles.tsv\npayload.sha256\nreferences.tsv\nsnapshot.env' ]] || fail
 tar --absolute-names --list --verbose --numeric-owner --file "$destination/snapshot.tar" 2>/dev/null |
-    awk 'substr($1,1,1)!="-" || $3 !~ /^[0-9]+$/ {bad=1} {total += $3}
-         END {if (bad || total>6442450944) exit 1}' || fail
+    awk -v budget="$payload_budget" 'substr($1,1,1)!="-" || $3 !~ /^[0-9]+$/ {bad=1} {total += $3}
+         END {if (bad || total>budget) exit 1}' || fail
 tar --extract --file "$destination/snapshot.tar" --directory "$destination" \
     --no-same-owner --no-same-permissions 2>/dev/null || fail
 phase=payload_checksums

@@ -143,7 +143,7 @@ public sealed class LabJobQuery(PSeqOperationsDbContext db)
                 ? w.FirstDeliveredAtUtc ?? samples.Where(s => s.LabWorkOrderId == w.Id).Max(s => s.ReleasedAt) : null,
             NextSampleDueAtUtc = samples.Where(s => s.LabWorkOrderId == w.Id && s.ReleasedAt == null).Min(s => s.OriginalTargetAtUtc),
             HasAcceptedSamples = samples.Any(s => s.LabWorkOrderId == w.Id && s.AcceptedAtUtc != null),
-            IsBlocked = w.Status == LabWorkOrderStatus.OnHold || db.LabExceptions.Any(e => e.LabWorkOrderId == w.Id
+            IsBlocked = w.Status == LabWorkOrderStatus.OnHold || db.LabCustomerHolds.Any(h => h.LabWorkOrderId == w.Id && h.State != "Released") || db.LabExceptions.Any(e => e.LabWorkOrderId == w.Id
                 && e.Status == LabExceptionStatus.Open && e.IsBlocking)
         });
     }

@@ -2622,3 +2622,9 @@ Submission-count follow-up: updated sample configuration regressions to check th
 ### September 19 repeated-sequencing release coverage
 
 Repeated sequencing: scientific capture requires a positive whole purchased run number and explicit new-preparation/existing-library choice. Tests also cover the revised commercial run labels and preserved quantity submissions. CRM menu mocks forward DOM refs and attributes so keyboard focus is tested correctly. Release checkpoint: 1,094 tests passed across 174 files, with lint, TypeScript and the production build passing. See the [release record](../operations/repeated-sequencing-release-20260919.md) for source identity, final backend results and production activation.
+
+## September 20 operational gap closure
+
+Added upload resume API tests and specimen-hold component tests; eight focused tests passed with the existing file-picker suite. Covers retained offsets, lost completion acknowledgment, request capability and safe-boundary confirmation. See OPERATIONAL-GAP-CLOSURE-20260920.md.
+
+Final release rerun: all 177 test files and 1,102 tests passed. Full lint, TypeScript, production build and documentation consistency checks passed. The tube-receipt test isolates the unrelated hold child, whose interactions have dedicated coverage.

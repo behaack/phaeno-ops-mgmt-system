@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { LabWorkOrderPage } from './LabWorkOrderPage'
 const mocks = vi.hoisted(() => ({ work: vi.fn(), dashboard: vi.fn(), packet: vi.fn(), tube: vi.fn(), receive: vi.fn(), accession: vi.fn() }))
 vi.mock('#/api/lab-operations', async original => ({ ...await original<typeof import('#/api/lab-operations')>(), getLabWorkOrder: mocks.work, getLabOperationsDashboard: mocks.dashboard, receiveLabSpecimen: mocks.receive, accessionLabSpecimen: mocks.accession }))
+// Hold interactions have their own component and browser coverage.
+vi.mock('#/features/orders/SpecimenHolds', () => ({ SpecimenHolds: () => null }))
 vi.mock('#/api/sample-shipping', () => ({ scanSampleShippingPacket: mocks.packet, scanRegisteredSampleTube: mocks.tube }))
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn(), Link: ({children}:{children:ReactNode}) => <a href="#lab">{children}</a> }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider:'clerk',session:{capabilities:{canManageLabOperations:true,canOperateLabWork:true}} }) }))

@@ -62,3 +62,11 @@ For a fresh preparation, open the specimen and select **Prepare a new library**.
 Open the sample's **Scientific evidence** and select **Record sequencing output**. Enter the **Purchased run number** (1 through the sample's authorized total), explicitly choose **New preparation for this run** or **Use an existing prepared library**, and select the library and recorded submission actually used. Complete the provider run reference, exact file identity, checksum, sample mapping and scientific evidence. The same machine run can contain several purchased runs of a sample; record their distinct sample mappings and purchased run numbers.
 
 Additional files use the same purchased run number. A linked correction or a replacement after failed sequencing retains that number and records its reason. Corrections and reanalysis do not purchase or complete another unit. Each output retains its producing library and preparation attempt. A successful preparation alone does not complete a purchased run: approved results must cover every allocated run, and delivery remains incomplete until the results for all runs are published.
+
+## Resuming scientific file uploads
+
+The file picker shows the current limit (normally 100 MiB). A 50 MB file is within this limit. POMS transfers the file in portions and verifies its full size, fingerprint and malware-scan result before it can be used as evidence. This does not establish the scientific validity of its contents.
+
+If the connection fails, choose **Resume upload**. In the same browser tab, selecting the same file after returning to the page also resumes confirmed portions for up to 24 hours. Keep the original file unchanged. After expiry, select it again to start a new transfer. A failed replacement preserves the previously selected evidence file. If complete-file scanning is unavailable, retry verification after the service recovers.
+
+Abandoned transfer portions expire; admitted scientific files and their receipts remain protected internal evidence. Customer result retention does not delete these internal files. Names, sample and run attribution stay the same when the configured private storage provider changes.

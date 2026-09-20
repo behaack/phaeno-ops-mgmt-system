@@ -362,7 +362,7 @@
       "title": "Request laboratory services",
       "summary": "Complete ordering and shipping on the Job, then follow receipt, laboratory progress and results.",
       "order": 30,
-      "reviewedAt": "2026-09-19",
+      "reviewedAt": "2026-09-20",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -388,7 +388,7 @@
       "publicationStatus": "published",
       "id": "customer/en-US/lab-services",
       "route": "/docs/customer/lab-services",
-      "contentHash": "1fc6039f7bdff3a668fb769bf0e4cb61f5e863e6ddf83d2dafabf65496f429ae",
+      "contentHash": "efc66d56ba496a546715977fcb2af410b27406f355e600a0922341ee592b8100",
       "sections": [
         {
           "heading": "Request laboratory services",
@@ -469,6 +469,11 @@
           "heading": "Delivery due date",
           "anchor": "delivery-due-date",
           "text": "The delivery due date is separate from the current expected completion. Phaeno may adjust it with a recorded customer-safe reason; the original delivery target remains visible, and the change queues a notice. A forecast change alone does not move the delivery due date. Results are delivered when data for every in-scope sample has been made available through the Portal; you do not have to download or acknowledge them. Partial results and laboratory completion do not by themselves complete delivery. Standard turnaround remains an operating target unless your agreement explicitly provides a guarantee."
+        },
+        {
+          "heading": "Requesting a specimen pause or resumption",
+          "anchor": "requesting-a-specimen-pause-or-resumption",
+          "text": "An organization administrator or administrator of the assigned Department can open a Lab Job and use Specimen holds. Choose Request pause for the affected sample and enter a reason. Other samples are unaffected. The request immediately blocks new preparation, new sequencing handoffs, new analysis and result release for that sample. Pause requested does not mean an ongoing physical procedure has stopped. Phaeno must confirm a safe pause, including any work already with an external provider. If that procedure cannot pause, its facts can still be recorded; new work and release remain blocked. Use Request resumption when ready. Work remains blocked until Phaeno approves resumption. Other authorization, material, quality and workflow requirements still apply, and approval does not automatically start work. Read Hold history for the recorded reasons and decisions. A hold does not automatically change charges, deadlines or retention dates, and results already delivered remain available. Contact Phaeno directly for an urgent request or a separate commercial or retention adjustment."
         }
       ]
     },
@@ -1000,7 +1005,7 @@
       "title": "Use Partner Lab services",
       "summary": "Complete Partner ordering and shipping on the Job, then track sample receipt and laboratory results.",
       "order": 25,
-      "reviewedAt": "2026-09-19",
+      "reviewedAt": "2026-09-20",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [
@@ -1026,7 +1031,7 @@
       "publicationStatus": "published",
       "id": "partner/en-US/lab-services",
       "route": "/docs/partner/lab-services",
-      "contentHash": "71491662876d8a0f5520c19842123a65acca36902b5aa3b7660a788e1b70ec87",
+      "contentHash": "a8a0ceec8b0385b5b7646e7df7b14104c4562bb64176ba45def4ba022161c60e",
       "sections": [
         {
           "heading": "Use Partner Lab services",
@@ -1107,6 +1112,11 @@
           "heading": "Delivery due date",
           "anchor": "delivery-due-date",
           "text": "The delivery due date is separate from the current expected completion. Phaeno may adjust it with a recorded customer-safe reason; the original delivery target remains visible, and the change queues a notice. A forecast change alone does not move the delivery due date. Results are delivered when data for every in-scope sample has been made available through the Portal; you do not have to download or acknowledge them. Partial results and laboratory completion do not by themselves complete delivery. Standard turnaround remains an operating target unless your agreement explicitly provides a guarantee."
+        },
+        {
+          "heading": "Requesting a specimen pause or resumption",
+          "anchor": "requesting-a-specimen-pause-or-resumption",
+          "text": "An organization administrator or administrator of the assigned Department can open a Lab Job and use Specimen holds. Choose Request pause for the affected sample and enter a reason. Other samples are unaffected. The request immediately blocks new preparation, new sequencing handoffs, new analysis and result release for that sample. Pause requested does not mean an ongoing physical procedure has stopped. Phaeno must confirm a safe pause, including any work already with an external provider. If that procedure cannot pause, its facts can still be recorded; new work and release remain blocked. Use Request resumption when ready. Work remains blocked until Phaeno approves resumption. Other authorization, material, quality and workflow requirements still apply, and approval does not automatically start work. Read Hold history for the recorded reasons and decisions. A hold does not automatically change charges, deadlines or retention dates, and results already delivered remain available. Contact Phaeno directly for an urgent request or a separate commercial or retention adjustment."
         }
       ]
     },
@@ -2296,7 +2306,7 @@
       "title": "Exceptions, rework, and cancellation",
       "summary": "Classify exceptions, preserve rework history, and respond safely to cancellation requests.",
       "order": 57,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-20",
       "navigationGroup": "laboratory-operations",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -2324,7 +2334,7 @@
       "publicationStatus": "published",
       "id": "phaeno/lab-exceptions-rework",
       "route": "/docs/phaeno/lab-exceptions-rework",
-      "contentHash": "9e75a2369eea06f35847356137ae968803fa720069af143562eff3e3c636fabe",
+      "contentHash": "ec1d3777a72429d7044c2abe9bb4235f2f717c2a7ba5e9034e315e0c0382b76c",
       "sections": [
         {
           "heading": "Exceptions, rework, and cancellation",
@@ -2350,6 +2360,11 @@
           "heading": "Recover projections",
           "anchor": "recover-projections",
           "text": "Commercial receives only safe action counts, summaries, milestones, schedule health, and timing projections. If a projection is delayed, refresh and retry the durable event. Never copy internal exception data into Commercial tables or create a duplicate work order."
+        },
+        {
+          "heading": "Customer-requested specimen holds",
+          "anchor": "customer-requested-specimen-holds",
+          "text": "Open the Lab Job's Specimen holds card. A customer request immediately blocks new attempts, new protocol executions, new sequencing handoffs, new analysis and result release for the selected sample. Jobs with an outstanding request appear blocked in the Jobs queue. Other samples can continue. A Lab Supervisor or Operations Administrator records the decision. Use Confirm safe pause only after checking the physical procedure and any external provider. Record what already happened before confirming a pause. Use Cannot pause ongoing work when necessary; this preserves the difference between a request and a physical stop, while continuing to block new work and release. Reasons are visible to the customer. After the customer requests resumption, choose Approve resumption or Keep paused, with a reason and confirmation of the safe operational boundary. Resolve a separate Job hold or cancellation before approving resumption. Clearing this customer hold does not clear other restrictions: the normal authorization, material, protocol and quality gates are checked when work actually starts. No work starts automatically. Hold history retains requests and decisions. Holds do not rewrite prior evidence, revoke results already delivered, extend retention or change prices or deadlines. Handle those decisions through their separate approved workflows."
         }
       ]
     },
@@ -2361,7 +2376,7 @@
       "title": "Libraries, batches, and sequencing",
       "summary": "Reuse preparation QC, hand passing libraries to sequencing batches, and track sendout manifests and custody.",
       "order": 56,
-      "reviewedAt": "2026-09-19",
+      "reviewedAt": "2026-09-20",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -2386,7 +2401,7 @@
       "publicationStatus": "published",
       "id": "phaeno/lab-libraries-batches-sequencing",
       "route": "/docs/phaeno/lab-libraries-batches-sequencing",
-      "contentHash": "95e646a91ba766176e0ade9c520b20e5378bfdbe0af0f922fdcfe2d961745e4c",
+      "contentHash": "4355f6b67f9a5faf805dfa3f79cd0399cd07fd6d57513bbece7a4c9cb45b68c6",
       "sections": [
         {
           "heading": "Libraries, batches, and sequencing",
@@ -2427,6 +2442,11 @@
           "heading": "Sequence a sample more than once",
           "anchor": "sequence-a-sample-more-than-once",
           "text": "A purchased sample-sequencing run is one sequencing of one sample. Twenty samples sequenced once and one sample sequenced twenty times both use 20 purchased runs. Tube count and library-preparation count are separate. One prepared library can supply multiple sequencing runs. To use it again, retain the original preparation and QC evidence and select that library when recording sequencing output. If another batch is needed, complete the previous batch and sendout, then use Add to batch in the job's library list or scan the library into a draft sequencing batch. POMS checks for outstanding authorized runs and rejects simultaneous batch assignments. For a fresh preparation, open the specimen and select Prepare a new library. Select and scan an eligible source tube. If using a previously successful source tube, confirm material remains and record the supporting evidence. Complete the new preparation, output identity and QC through the existing workflow. Open the sample's Scientific evidence and select Record sequencing output. Enter the Purchased run number (1 through the sample's authorized total), explicitly choose New preparation for this run or Use an existing prepared library, and select the library and recorded submission actually used. Complete the provider run reference, exact file identity, checksum, sample mapping and scientific evidence. The same machine run can contain several purchased runs of a sample; record their distinct sample mappings and purchased run numbers. Additional files use the same purchased run number. A linked correction or a replacement after failed sequencing retains that number and records its reason. Corrections and reanalysis do not purchase or complete another unit. Each output retains its producing library and preparation attempt. A successful preparation alone does not complete a purchased run: approved results must cover every allocated run, and delivery remains incomplete until the results for all runs are published."
+        },
+        {
+          "heading": "Resuming scientific file uploads",
+          "anchor": "resuming-scientific-file-uploads",
+          "text": "The file picker shows the current limit (normally 100 MiB). A 50 MB file is within this limit. POMS transfers the file in portions and verifies its full size, fingerprint and malware-scan result before it can be used as evidence. This does not establish the scientific validity of its contents. If the connection fails, choose Resume upload. In the same browser tab, selecting the same file after returning to the page also resumes confirmed portions for up to 24 hours. Keep the original file unchanged. After expiry, select it again to start a new transfer. A failed replacement preserves the previously selected evidence file. If complete-file scanning is unavailable, retry verification after the service recovers. Abandoned transfer portions expire; admitted scientific files and their receipts remain protected internal evidence. Customer result retention does not delete these internal files. Names, sample and run attribution stay the same when the configured private storage provider changes."
         }
       ]
     },
@@ -4090,5 +4110,5 @@
       ]
     }
   ],
-  "corpusHash": "259f155c9f18948c87610463db78fc2b7a83a15fcb176131e6e6b22ebad5e722"
+  "corpusHash": "d64b86cf65ea2f5dd050b7a4aaf5dc3936b79564368801665fc12d4976340462"
 }

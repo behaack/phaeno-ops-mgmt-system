@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 
 public sealed class S3FileStorage(
     IAmazonS3 s3Client,
-    IOptions<FileStorageOptions> options) : IFileStorage
+    IOptions<FileStorageOptions> options, BackupDeletionLease? deletionLease = null) : IFileStorage
 {
     private readonly S3FileStorageOptions s3Options = options.Value.S3;
 
@@ -104,6 +104,7 @@ public sealed class S3FileStorage(
         string storageKey,
         CancellationToken cancellationToken)
     {
+        await using var lease = deletionLease is null ? null : await deletionLease.AcquireAsync(cancellationToken);
         await s3Client.DeleteObjectAsync(
             new DeleteObjectRequest
             {

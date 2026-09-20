@@ -43,10 +43,12 @@ export function ScientificFilePicker({ work, specimen, label, reference, require
     <Input id={id} type="file" disabled={mutation.isPending || !query.data || query.isError}
       aria-required={required} aria-invalid={Boolean(error || selectionError)} aria-describedby={id + '-help ' + id + '-error'}
       onChange={event => { choose(event.target.files?.[0]); event.target.value = '' }} />
-    <p id={id + '-help'} className="text-xs text-muted-foreground">{query.data ? `Up to ${Math.round(query.data.maximumBytes / 1024 / 1024)} MiB. Files upload when selected; POMS verifies and retains them automatically.` : 'Loading upload limits…'}</p>
+    <p id={id + '-help'} className="text-xs text-muted-foreground">{query.data ? `Up to ${Math.round(query.data.maximumBytes / 1024 / 1024)} MiB. Uploads can resume for 24 hours. POMS verifies the complete file before retaining it as evidence.` : 'Loading upload limits…'}</p>
     {mutation.isPending ? <p role="status" className="text-sm">{progress < 100 ? `Uploading… ${progress}%` : 'Verifying and scanning…'}</p> : null}
     <FieldError id={id + '-error'}>{selectionError || error}</FieldError>
-    {mutation.isError ? <EvidenceError error={mutation.error} /> : null}
+    {mutation.isError ? <><EvidenceError error={mutation.error} />
+      <p className="text-xs text-muted-foreground">Completed portions are retained for 24 hours. Resume here, or select the same file after reopening this page.</p>
+      <Button type="button" variant="outline" onClick={() => choose(mutation.variables)}>Resume upload</Button></> : null}
     {query.isError ? <><EvidenceError error={query.error} /><Button type="button" variant="outline" onClick={() => void query.refetch()}>Reload file options</Button></> : null}
   </div>
 }

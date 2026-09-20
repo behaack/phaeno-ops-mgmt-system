@@ -6,21 +6,15 @@ using PSeq.Operations.Laboratory.Domain;
 public sealed partial class PSeqOperationsDbContext
 {
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
-    {
-        ProtectLineageHistory();
-        return base.SaveChanges(acceptAllChangesOnSuccess);
-    }
+        => SaveWithCustomerHoldsAsync(acceptAllChangesOnSuccess, CancellationToken.None).GetAwaiter().GetResult();
 
     public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
-    {
-        ProtectLineageHistory();
-        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-    }
+        => SaveWithCustomerHoldsAsync(acceptAllChangesOnSuccess, cancellationToken);
 
     private void ProtectLineageHistory()
     {
         ChangeTracker.DetectChanges();
-        if (ChangeTracker.Entries().Any(e => e.State == EntityState.Deleted && e.Entity is LabWorkOrder or LabSpecimen
+        if (ChangeTracker.Entries().Any(e => e.State == EntityState.Deleted && e.Entity is LabCustomerHold or LabWorkOrder or LabSpecimen
             or LabContainer or LabSpecimenAttempt or LabProtocolExecution or LabWorkEvent or LabPreparationBatch or LabPreparationMember
             or LabPreparationRecord or LabLibrary or LabNgsSendout))
             throw new InvalidOperationException("Internal sample history is retained indefinitely. Deactivate or record a linked correction rather than deleting evidence.");
