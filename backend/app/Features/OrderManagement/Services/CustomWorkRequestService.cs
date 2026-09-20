@@ -8,11 +8,11 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 
 public sealed class CustomWorkRequestService(PSeqOperationsDbContext dbContext)
 {
-    public static void RequireOrganizationAdministrator(OrderTenantContext tenant)
+    public static void RequireDepartmentAdministrator(OrderTenantContext tenant)
     {
-        if (!tenant.Membership.IsOrganizationAdmin)
+        if (!tenant.IsDepartmentAdmin)
             throw new OrderManagementException("organization_administrator_required",
-                "An organization administrator must request custom work.", StatusCodes.Status403Forbidden);
+                "An organization or assigned-department administrator must request custom work.", StatusCodes.Status403Forbidden);
     }
 
     public static CreateCustomWorkRequest Normalize(CreateCustomWorkRequest request, OrganizationKind kind)
@@ -31,7 +31,7 @@ public sealed class CustomWorkRequestService(PSeqOperationsDbContext dbContext)
     public async Task<CustomWorkSubmissionDto> CreateAsync(OrderTenantContext tenant,
         CreateCustomWorkRequest request, CancellationToken cancellationToken)
     {
-        RequireOrganizationAdministrator(tenant);
+        RequireDepartmentAdministrator(tenant);
         request = Normalize(request, tenant.Organization.Kind);
         var company = await dbContext.CrmCompanies.AsNoTracking()
             .SingleOrDefaultAsync(value => value.AccessOrganizationId == tenant.Organization.Id

@@ -203,7 +203,7 @@ export function StandardLabServicePanel({
             </p>
             <p>
               {money(committed.unitPrice, committed.currency)} ×{' '}
-              {committed.specimenCount} specimens · Total{' '}
+              {committed.specimenCount} samples · {committed.sequencingRunCount || committed.specimenCount} sample-sequencing runs · Total{' '}
               {money(committed.total, committed.currency)}
             </p>
             <p className="whitespace-pre-wrap text-sm">
@@ -257,7 +257,7 @@ export function StandardLabServicePanel({
                 {selected ? (
                   <OfferingSummary
                     offering={selected}
-                    quantity={order.requestedSpecimenCount}
+                    quantity={order.requestedSequencingRunCount ?? order.requestedSpecimenCount}
                   />
                 ) : null}
                 {preview.isLoading ? (
@@ -293,7 +293,7 @@ export function StandardLabServicePanel({
                 </Button>
                 {!order.canPlaceStandardOrder ? (
                   <p className="text-sm text-muted-foreground">
-                    An organization administrator must place standard orders.
+                    An organization or assigned-department administrator must place standard orders.
                     Complete the Job pricing details and ordering setup before
                     commitment.
                   </p>
@@ -327,7 +327,7 @@ export function StandardLabServicePanel({
                 sample-list preparation; laboratory work and shipping begin only
                 after you finalize the accepted sample list.
               </DialogDescription>
-              <p className="text-sm">Tube use: run one tube per specimen; use a reserve only after the attempt fails.</p>
+              <p className="text-sm">Run the purchased number of sample-sequencing runs. Submitted tube counts are separate; failure-recovery attempts do not add purchased runs.</p>
             </DialogHeader>
             {mutation.error ? (
               <Alert variant="destructive">
@@ -351,7 +351,7 @@ export function StandardLabServicePanel({
               <>
                 <OfferingSummary
                   offering={review.preview.offering}
-                  quantity={review.preview.specimenCount}
+                  quantity={review.preview.sequencingRunCount || review.preview.specimenCount}
                 />
                 <PreviewTotal preview={review.preview} />
               </>
@@ -460,7 +460,7 @@ export function OfferingSummary({
         {offering.maximumTurnaroundDays} days after scientific acceptance.
       </p>
       <p className="text-base font-semibold">
-        {money(offering.unitPrice, offering.currency)} × {quantity} specimens ={' '}
+        {money(offering.unitPrice, offering.currency)} × {quantity} sample-sequencing runs ={' '}
         {money(offering.unitPrice * quantity, offering.currency)}
       </p>
       <p className="text-muted-foreground">

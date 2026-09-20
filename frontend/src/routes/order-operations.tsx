@@ -3,13 +3,14 @@ import { Outlet, createFileRoute, useRouterState } from '@tanstack/react-router'
 import { parseOrderSection, type OrderSection } from '#/features/orders/order-sections'
 import { OrderOperationsPage } from '#/features/orders/OrderOperationsPage'
 
-export const Route = createFileRoute('/order-operations')({ validateSearch: (search: Record<string, unknown>): { orderSection?: OrderSection; intakeView?: 'active' | 'holds' | 'all'; intakeSearch?: string; intakePage?: number; financeSection?: string; financeCustomer?: string; resultState?: string; queueSearch?: string; queueOrganization?: string; queueStatus?: string; queueView?: 'all' | 'mine' | 'unassigned' | 'overdue' | 'holds'; queueFrom?: string; queueTo?: string; queuePage?: number } => ({
+export const Route = createFileRoute('/order-operations')({ validateSearch: (search: Record<string, unknown>): { orderSection?: OrderSection; intakeView?: 'active' | 'holds' | 'all'; intakeSearch?: string; intakePage?: number; financeSection?: string; financeCustomer?: string; financeSearch?: string; resultState?: string; queueSearch?: string; queueOrganization?: string; queueStatus?: string; queueView?: 'all' | 'mine' | 'unassigned' | 'overdue' | 'holds'; queueFrom?: string; queueTo?: string; queuePage?: number } => ({
   orderSection: parseOrderSection(search.orderSection),
   intakeView: search.intakeView === 'all' || search.intakeView === 'holds' ? search.intakeView : undefined,
   intakeSearch: typeof search.intakeSearch === 'string' ? search.intakeSearch : undefined,
   intakePage: Number.isSafeInteger(Number(search.intakePage)) && Number(search.intakePage) > 0 ? Number(search.intakePage) : 1,
   financeSection: typeof search.financeSection === 'string' ? search.financeSection : undefined,
   financeCustomer: typeof search.financeCustomer === 'string' ? search.financeCustomer : undefined,
+  financeSearch: typeof search.financeSearch === 'string' ? search.financeSearch : undefined,
   queueSearch: typeof search.queueSearch === 'string' ? search.queueSearch : undefined,
   queueOrganization: typeof search.queueOrganization === 'string' ? search.queueOrganization : undefined,
   queueStatus: typeof search.queueStatus === 'string' ? search.queueStatus : undefined,

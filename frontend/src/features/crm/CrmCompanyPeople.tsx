@@ -1,7 +1,7 @@
 import { useCrmPermissions } from './use-crm-permissions';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { Link2, Plus, Send, Unlink } from 'lucide-react'
+import { ChevronDown, Link2, Plus, Send, Unlink } from 'lucide-react'
 import { useState } from 'react'
 
 import {
@@ -41,12 +41,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 import { Textarea } from '#/components/ui/textarea'
 import { OrganizationInvitationDialog, type OrganizationInviteValues } from '#/features/invitations/OrganizationInvitationDialog'
 import { CrmPersonAccessDialog } from './CrmPersonAccessDialog'
+import { CrmPersonInvitationDialog, type PersonInvitationAction } from './CrmPersonInvitationDialog'
 import { CrmCompanyContactEditDialog } from './CrmCompanyContactEditDialog'
 import { CrmContactDialog } from './CrmContactDialog'
 import { CrmAssociationRecordCombobox } from './CrmAssociationRecordCombobox'
@@ -73,12 +75,16 @@ export function CrmCompanyPeople({
   const [associateOpen, setAssociateOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [relationshipTarget, setRelationshipTarget] = useState<CrmCompanyContact | null>(null)
+  const [personActionTrigger, setPersonActionTrigger] = useState<HTMLElement | null>(null)
+  const [invitationAction, setInvitationAction] = useState<{ person: CrmCompanyPerson; action: PersonInvitationAction } | null>(null)
+  const [invitationFeedback, setInvitationFeedback] = useState<string | null>(null)
   const [accessTarget, setAccessTarget] = useState<CrmCompanyPerson | null>(null)
   const [inviteTarget, setInviteTarget] = useState<CrmCompanyPerson | null>(null)
   const [identityAction, setIdentityAction] = useState<IdentityAction>(null)
   const people = useQuery({
     queryKey: ['crm-company-people', companyId],
     queryFn: () => listCrmCompanyPeople(companyId),
+    refetchInterval: 60_000, // Keep time-derived invitation expiry current while People stays open.
     enabled: canAdminister,
   })
   const contacts = useQuery({
@@ -175,6 +181,7 @@ export function CrmCompanyPeople({
           </CardAction>
         </CardHeader>
         <CardContent className="space-y-3">
+          {invitationFeedback ? <p role="status" className="text-sm">{invitationFeedback}</p> : null}
           {canAdminister ? <CrmCollectionFeedback name="people" query={people} /> : null}
           <CrmCollectionFeedback name="contacts" query={contacts} />
           {canAdminister && accessOrganizationId ? <CrmCollectionFeedback name="departments" query={departments} /> : null}
@@ -185,7 +192,8 @@ export function CrmCompanyPeople({
               person={person}
               canInvite={Boolean(people.isSuccess && departments.isSuccess && accessOrganizationId && person.contactId && person.isContactActive && person.email && ['NotInvited', 'MembershipInactive', 'Inactive'].includes(person.portalAccessState) && !person.suggestedPortalUserId && !person.suggestedInvitationId)}
               onInvite={() => { invite.reset(); setInviteTarget(person) }}
-              onManageAccess={accessOrganizationId ? () => setAccessTarget(person) : undefined}
+              onManageAccess={accessOrganizationId ? () => { setPersonActionTrigger(document.getElementById(personActionsId(person))); setAccessTarget(person) } : undefined}
+              onInvitationAction={accessOrganizationId ? action => { setPersonActionTrigger(document.getElementById(personActionsId(person))); setInvitationFeedback(null); setInvitationAction({ person, action }) } : undefined}
               onEditRelationship={contacts.data?.some(value => value.id === person.contactAssociationId) ? () => { editRelationship.reset(); setRelationshipTarget(contacts.data?.find(value => value.id === person.contactAssociationId) ?? null) } : undefined}
               onIdentityAction={(action) => { identity.reset(); setIdentityAction(action) }}
             />
@@ -216,7 +224,10 @@ export function CrmCompanyPeople({
         contact={{ firstName: inviteTarget.firstName, lastName: inviteTarget.lastName, email: inviteTarget.email }}
         isPending={invite.isPending} error={invite.error} onOpenChange={open => { if (!open) setInviteTarget(null) }}
         onSubmit={values => invite.mutateAsync(values)} /> : null}
-      {accessTarget && accessOrganizationId ? <CrmPersonAccessDialog organizationId={accessOrganizationId} person={accessTarget} onClose={() => setAccessTarget(null)} /> : null}
+      {accessTarget && accessOrganizationId ? <CrmPersonAccessDialog organizationId={accessOrganizationId} person={accessTarget} returnFocusTo={personActionTrigger} onClose={() => setAccessTarget(null)} /> : null}
+      {invitationAction && accessOrganizationId ? <CrmPersonInvitationDialog organizationId={accessOrganizationId}
+        person={invitationAction.person} action={invitationAction.action} returnFocusTo={personActionTrigger}
+        onClose={() => setInvitationAction(null)} onCompleted={async message => { setInvitationFeedback(message); await refresh() }} /> : null}
       <IdentityReviewDialog
         key={`${identityAction?.kind ?? ''}-${identityAction?.person.contactId ?? ''}`}
         action={identityAction}
@@ -237,15 +248,18 @@ function PersonRow({
   onInvite,
   onIdentityAction,
   onManageAccess,
+  onInvitationAction,
   onEditRelationship,
 }: {
   person: CrmCompanyPerson
   canInvite: boolean
   onInvite: () => void
   onManageAccess?: () => void
+  onInvitationAction?: (action: PersonInvitationAction) => void
   onEditRelationship?: () => void
   onIdentityAction: (action: NonNullable<IdentityAction>) => void
 }) {
+  const hasInvitation = Boolean(person.invitationId || person.suggestedInvitationId) && ['InvitationPending', 'InvitationExpired', 'NotInvited', 'MembershipInactive'].includes(person.portalAccessState)
   const identityLabel = person.contactUserLinkId
     ? 'Contact and Portal user linked'
     : person.recordKind === 'Contact'
@@ -295,28 +309,21 @@ function PersonRow({
             ) : null}
           </div>
         </div>
-        <div className="flex shrink-0 flex-wrap gap-2">
-          {canInvite ? (
-            <Button size="sm" onClick={onInvite}>
-              <Send data-icon="inline-start" />
-              Invite to Portal
-            </Button>
-          ) : null}
-          {onEditRelationship ? <Button size="sm" variant="outline" onClick={onEditRelationship}>Edit relationship</Button> : null}
-          {onManageAccess && (person.organizationMembershipId || person.invitationId || person.suggestedInvitationId) ? <Button size="sm" variant="outline" onClick={onManageAccess}>Manage access</Button> : null}
-          {person.suggestedPortalUserId ? (
-            <Button size="sm" variant="outline" onClick={() => onIdentityAction({ kind: 'link', person })}>
-              <Link2 data-icon="inline-start" />
-              Review and link
-            </Button>
-          ) : null}
-          {person.contactUserLinkId ? (
-            <Button size="sm" variant="outline" onClick={() => onIdentityAction({ kind: 'unlink', person })}>
-              <Unlink data-icon="inline-start" />
-              Unlink identity
-            </Button>
-          ) : null}
-        </div>
+        <ActionMenu>
+          <DropdownMenuTrigger asChild><Button id={personActionsId(person)} size="sm" variant="outline" className="shrink-0" aria-label={`Actions for ${person.displayName}`}>Actions<ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]">
+            {onEditRelationship ? <DropdownMenuItem onSelect={onEditRelationship}>Edit relationship</DropdownMenuItem> : null}
+            {canInvite ? <DropdownMenuItem onSelect={onInvite}><Send aria-hidden="true" />Invite to Portal</DropdownMenuItem> : null}
+            {hasInvitation && onInvitationAction ? <>
+              <DropdownMenuItem onSelect={() => onInvitationAction('edit')}>Edit invited access</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onInvitationAction('resend')}>Resend invite</DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onSelect={() => onInvitationAction('revoke')}>Revoke invite</DropdownMenuItem>
+            </> : null}
+            {!hasInvitation && person.portalAccessState === 'Active' && onManageAccess ? <DropdownMenuItem onSelect={onManageAccess}>Manage access</DropdownMenuItem> : null}
+            {person.suggestedPortalUserId ? <DropdownMenuItem onSelect={() => onIdentityAction({ kind: 'link', person })}><Link2 aria-hidden="true" />Review and link</DropdownMenuItem> : null}
+            {person.contactUserLinkId ? <DropdownMenuItem onSelect={() => onIdentityAction({ kind: 'unlink', person })}><Unlink aria-hidden="true" />Unlink identity</DropdownMenuItem> : null}
+          </DropdownMenuContent>
+        </ActionMenu>
       </div>
     </article>
   )
@@ -436,6 +443,10 @@ function AssociatePersonDialog({
       </DialogContent>
     </Dialog>
   )
+}
+
+function personActionsId(person: CrmCompanyPerson) {
+  return `company-person-actions-${person.contactAssociationId ?? person.contactId ?? person.portalUserId ?? person.invitationId}`
 }
 
 function portalAccessLabel(value: string) {

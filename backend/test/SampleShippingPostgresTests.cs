@@ -157,6 +157,9 @@ public partial class SampleShippingPostgresTests
             new AssignSampleTubeRequest(firstTubeBarcode, null, expectedTube.Version, expectedTube.TubeSlotId),
             CancellationToken.None);
         scope.ClearTrackedState();
+        var currentSample = await configuration.CreateSampleType(scope.SampleTypeRequest(
+            DateTime.UtcNow.AddHours(-1), fixture.SampleType.Id, fixture.SampleType.Version, "Current RNA handling"), CancellationToken.None);
+        scope.ClearTrackedState();
         var issued = await customerWorkflow.IssuePacket(
             fixture.Shipment.Id,
             new IssueSampleShippingPacketRequest(assigned.Version, null),
@@ -165,6 +168,14 @@ public partial class SampleShippingPostgresTests
         Assert.NotNull(issued.CurrentPacket);
         var packetV1 = await scope.DbContext.SampleShippingPacketRevisions.AsNoTracking()
             .SingleAsync(item => item.Id == issued.CurrentPacket!.Id);
+
+        using (var sampleSnapshot = JsonDocument.Parse(packetV1.InstructionSnapshotJson))
+            Assert.Equal(currentSample.Id, sampleSnapshot.RootElement.GetProperty("samples")[0].GetProperty("sampleType").GetProperty("id").GetGuid());
+        using (var manifestSnapshot = JsonDocument.Parse(packetV1.ManifestSnapshotJson))
+            Assert.Contains(currentSample.Id.ToString(), packetV1.ManifestSnapshotJson);
+        await configuration.CreateSampleType(scope.SampleTypeRequest(DateTime.UtcNow, currentSample.Id, currentSample.Version, "Later RNA handling"), CancellationToken.None);
+        scope.ClearTrackedState();
+        Assert.Equal(packetV1.InstructionSnapshotJson, (await scope.DbContext.SampleShippingPacketRevisions.AsNoTracking().SingleAsync(value => value.Id == packetV1.Id)).InstructionSnapshotJson);
 
         using (var destinationSnapshot = JsonDocument.Parse(packetV1.DestinationSnapshotJson))
             Assert.Equal("Reference receiving", destinationSnapshot.RootElement.GetProperty("name").GetString());

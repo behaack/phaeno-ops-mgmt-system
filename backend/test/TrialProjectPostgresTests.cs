@@ -29,6 +29,30 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 public sealed partial class TrialProjectPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task DepartmentAdministratorAcceptsTrialWhileMembersAndOtherDepartmentsRemainExcluded()
+    {
+        await using var scope = await Fixture.Create();
+        var trial = await scope.CreateApprovedTrial();
+        scope.Prospect.Tenant!.Membership.SetOrganizationAdmin(false);
+        scope.Db.Add(new OrganizationDepartmentMembership(scope.Prospect.Tenant.Membership.Id, scope.Department.Id, true));
+        await scope.Db.SaveChangesAsync();
+        var member = scope.Prospect with { Tenant = scope.Prospect.Tenant with { IsDepartmentAdmin = false } };
+        Assert.False((await scope.Reader.DetailAsync(trial, member, default)).CanAccept);
+        Assert.Throws<OrderManagementException>(() => scope.Workflow.Accept(trial, member,
+            new(trial.Version, trial.CurrentScopeRevision, TrialRules.TermsVersion, true)));
+        var other = new OrganizationDepartment(scope.Organization.Id, "OTHER", "Other");
+        scope.Db.Add(other); await scope.Db.SaveChangesAsync();
+        var otherActor = scope.Prospect with { Tenant = scope.Prospect.Tenant with { Department = other } };
+        await Assert.ThrowsAsync<OrderManagementException>(() => scope.Workflow.ReadAsync(trial.Id, otherActor, default));
+        Assert.Throws<OrderManagementException>(() => scope.Workflow.Accept(trial, otherActor,
+            new(trial.Version, trial.CurrentScopeRevision, TrialRules.TermsVersion, true)));
+        Assert.True((await scope.Reader.DetailAsync(trial, scope.Prospect, default)).CanAccept);
+        scope.Workflow.Accept(trial, scope.Prospect, new(trial.Version, trial.CurrentScopeRevision, TrialRules.TermsVersion, true));
+        await scope.Db.SaveChangesAsync();
+        Assert.Equal(trial.CurrentScopeRevision, trial.AcceptedScopeRevision);
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task ScopeDraftIsSharedAmongStaffVersionedAndHiddenFromProspectWithoutNewAuthority()
     {
         await using var scope = await Fixture.Create(); var trial = await scope.CreateApprovedTrial();
@@ -116,13 +140,13 @@ public sealed partial class TrialProjectPostgresTests
     }
 
     [PostgreSqlReferenceFact]
-    public async Task DepartmentAdminCannotAcceptOrSubmitAndOtherDepartmentCannotRead()
+    public async Task DepartmentMemberCannotAcceptOrSubmitAndOtherDepartmentCannotRead()
     {
         await using var scope = await Fixture.Create(); var trial = await scope.CreateApprovedTrial();
         var membership = new OrganizationMembership(scope.Customer.Id, scope.Organization.Id, false);
-        var departmentAdmin = new TrialActor(scope.Customer, false, false, new(scope.Customer, scope.Organization, membership, scope.Department, true));
-        Assert.Throws<OrderManagementException>(() => scope.Workflow.Accept(trial, departmentAdmin, new(trial.Version, 1, TrialRules.TermsVersion, true)));
-        await Assert.ThrowsAsync<OrderManagementException>(() => scope.Workflow.SubmitAsync(trial, departmentAdmin, scope.Submission(trial, "RNA-1"), default));
+        var departmentMember = new TrialActor(scope.Customer, false, false, new(scope.Customer, scope.Organization, membership, scope.Department, false));
+        Assert.Throws<OrderManagementException>(() => scope.Workflow.Accept(trial, departmentMember, new(trial.Version, 1, TrialRules.TermsVersion, true)));
+        await Assert.ThrowsAsync<OrderManagementException>(() => scope.Workflow.SubmitAsync(trial, departmentMember, scope.Submission(trial, "RNA-1"), default));
         var other = new OrganizationDepartment(scope.Organization.Id, "OTHER", "Other department"); scope.Db.Add(other); await scope.Db.SaveChangesAsync();
         var otherActor = scope.Prospect with { Tenant = scope.Prospect.Tenant! with { Department = other } };
         await Assert.ThrowsAsync<OrderManagementException>(() => scope.Workflow.ReadAsync(trial.Id, otherActor, default));

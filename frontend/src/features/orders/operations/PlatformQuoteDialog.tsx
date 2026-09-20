@@ -259,7 +259,7 @@ export function PlatformQuoteDialog({
         form.setError("root", {
           type: "manual",
           message:
-            "Configure one active PSeq Lab Service catalog item with code pseq-lab-service and sales unit specimen before issuing this quote.",
+            "Configure one active PSeq Lab Service catalog item with code pseq-lab-service and the per-sample-sequencing-run sales unit before issuing this quote.",
         });
         return;
       }
@@ -351,7 +351,7 @@ export function PlatformQuoteDialog({
             <AlertDescription>
               Commercial configuration must contain one active item with code{" "}
               <span className="font-mono">pseq-lab-service</span> and sales unit{" "}
-              <span className="font-mono">specimen</span>. Quote issuance is
+              <span>Per sample-sequencing run</span>. Quote issuance is
               paused until that configuration is corrected.
             </AlertDescription>
           </Alert>
@@ -369,12 +369,12 @@ export function PlatformQuoteDialog({
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Proposed price</p>
                   <p className="mt-1 text-lg font-semibold">{formatMoney(proposedUnitPrice, priceProposal?.currency ?? "USD")}</p>
-                  <p className="text-xs text-muted-foreground">per specimen</p>
+                  <p className="text-xs text-muted-foreground">per sample-sequencing run</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Catalog price</p>
                   <p className="mt-1 text-lg font-semibold">{formatMoney(requiredLabItem?.basePrice ?? 0, priceProposal?.currency ?? "USD")}</p>
-                  <p className="text-xs text-muted-foreground">per specimen</p>
+                  <p className="text-xs text-muted-foreground">per sample-sequencing run</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Difference</p>
@@ -384,7 +384,7 @@ export function PlatformQuoteDialog({
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Quantity</p>
                   <p className="mt-1 text-lg font-semibold">{defaultQuantity ?? 1}</p>
-                  <p className="text-xs text-muted-foreground">committed specimens</p>
+                  <p className="text-xs text-muted-foreground">sample-sequencing runs</p>
                 </div>
                 <div className="sm:col-span-2 lg:col-span-4">
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Proposed subtotal</p>
@@ -551,7 +551,7 @@ export function PlatformQuoteDialog({
                         className="-mt-2 text-xs text-muted-foreground md:col-span-5 md:col-start-1 md:row-start-2"
                       >
                         {isRequiredLabLine
-                          ? "Priced per specimen · quantity set from the committed specimen count"
+                          ? "Priced per sample-sequencing run · quantity set from the requested sample-sequencing run count"
                           : "Priced per unit · set the quantity for this quote"}
                       </p>
                     ) : null}

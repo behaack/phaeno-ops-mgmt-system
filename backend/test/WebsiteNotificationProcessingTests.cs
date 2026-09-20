@@ -19,8 +19,8 @@ public sealed class WebsiteNotificationProcessingPostgresTests
     public async Task PausePersistsAcrossConnectionsWithoutWaitingForInFlightProviderAndResumeRetainsQueue()
     {
         var source = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("PSEQ_OPERATIONS_REFERENCE_CONNECTION")!);
-        if (source.Host is not ("localhost" or "127.0.0.1") || source.Database != "phaeno_ops")
-            throw new InvalidOperationException("Concurrent verification requires the configured localhost/phaeno_ops source.");
+        if (source.Host is not ("localhost" or "127.0.0.1") || source.Database != "phaeno_ops" && source.Database?.StartsWith("phaeno_release_verification_", StringComparison.Ordinal) != true)
+            throw new InvalidOperationException("Concurrent verification requires the configured localhost development or isolated release-verification source.");
         var name = $"pseq_website_test_{Guid.NewGuid():N}";
         await using var admin = new NpgsqlConnection(source.ConnectionString);
         await admin.OpenAsync();

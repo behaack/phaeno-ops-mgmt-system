@@ -1193,6 +1193,7 @@ erDiagram
         bigint version "not null"
     }
     lab_samples {
+        integer sequencing_run_count "not null; default 1"
         uuid id PK "not null"
         character_varying_100 accession_id UK "nullable"
         jsonb analysis_definition_ids_json "not null"
@@ -1224,6 +1225,7 @@ erDiagram
         bigint version "not null"
     }
     lab_service_orders {
+        integer sequencing_run_count "nullable; null uses requested_specimen_count"
         uuid id PK "not null"
         uuid accepted_quote_id "nullable"
         uuid assigned_to_user_id FK "nullable"
@@ -3168,6 +3170,8 @@ erDiagram
     }
     lab_sequencing_outputs {
         uuid id PK "not null"
+        integer sequencing_run_number "nullable; legacy run 1"
+        character_varying_32 library_preparation_choice "nullable; legacy unspecified"
         character_varying_2000 correction_reason "nullable"
         uuid corrects_output_id FK "nullable"
         character_varying_1000 external_file_reference "not null"
@@ -3949,3 +3953,6 @@ erDiagram
     web_orders o|--o{ web_notification_deliveries : "web_order_id"
     users o|--o{ web_notification_processing_controls : "updated_by_user_id"
 ```
+
+
+Repeated sequencing retains one active (`Planned`, `InProgress`, `OnHold`) preparation per specimen and source container through filtered unique indexes. Completed preparation history may contain multiple attempts; authorization and source-material guards govern new attempts. Sequencing-output run numbers group files and corrections by purchased sample-run allocation, independently of the producing preparation.

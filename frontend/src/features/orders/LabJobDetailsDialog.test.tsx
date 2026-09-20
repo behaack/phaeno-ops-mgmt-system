@@ -117,6 +117,7 @@ describe("LabJobDetailsDialog request submission", () => {
     expect(screen.getByText(/pricing for you to accept or decline/)).toBeTruthy();
     fireEvent.change(screen.getByRole("textbox", { name: "Storage requirements" }), { target: { value: "Ship frozen." } });
     fireEvent.change(screen.getByRole("textbox", { name: "Safety declaration" }), { target: { value: "No known hazards." } });
+    fireEvent.change(screen.getByRole("spinbutton", { name: "Sample-sequencing runs" }), { target: { value: "20" } });
     fireEvent.click(screen.getByRole("button", { name: "Submit request" }));
 
     await waitFor(() => expect(api.createLabOrder).toHaveBeenCalledWith(
@@ -126,6 +127,7 @@ describe("LabJobDetailsDialog request submission", () => {
         proposedUnitPrice: undefined,
         priceProposalNote: undefined,
         requestedSpecimenCount: 1,
+        sequencingRunCount: 20,
       }),
     ));
   });

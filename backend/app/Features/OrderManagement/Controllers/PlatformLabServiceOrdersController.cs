@@ -298,6 +298,7 @@ public sealed class PlatformLabServiceOrdersController(
                         group.SpecimenCount));
                 }
 
+                Execute(() => order.SetSequencingRunCount(request.SequencingRunCount));
                 var initiatedAt = DateTime.UtcNow;
                 Execute(() => order.UpdatePriceProposal(
                     request.ProposedUnitPrice,
@@ -464,7 +465,7 @@ public sealed class PlatformLabServiceOrdersController(
         if (orderToCashOptions.Value.DerivedReadiness)
         {
             var readiness = await new OperationalReadinessService(dbContext)
-                .EvaluateAsync(order.OrganizationId, cancellationToken);
+                .EvaluateAsync(order.OrganizationId, cancellationToken, order.DepartmentId);
             if (!readiness.Evaluation.CanIssueQuote)
                 throw new OrderManagementException("operational_readiness_incomplete",
                     "Resolve every quote-readiness blocker before issuing a Customer quote.",
@@ -486,8 +487,11 @@ public sealed class PlatformLabServiceOrdersController(
                 || additions.Select(s => LabServiceSourceGroup.Normalize(s.BiologicalSource)).Distinct().Count() != additions.Count
                 || additions.Sum(s => s.SpecimenCount) + order.RequestedSpecimenCount > 100)
                 throw Invalid("change_scope_invalid", "Specify unique biological sources and positive additional counts, up to 100 total samples per Job.");
+            var addedRuns = request.AdditionalSequencingRunCount ?? additions.Sum(s => s.SpecimenCount);
+            if (addedRuns < additions.Sum(s => s.SpecimenCount) || addedRuns > 10000 - order.RequestedSequencingRunCount)
+                throw Invalid("change_runs_invalid", "Additional runs must cover every new sample without exceeding 10,000 total runs.");
             changeScope = new(order.AcceptedQuoteId!.Value, order.RequestedSpecimenCount,
-                additions.Select(s => new LabChangeSource(s.BiologicalSource.Trim(), s.SpecimenCount)).ToList());
+                additions.Select(s => new LabChangeSource(s.BiologicalSource.Trim(), s.SpecimenCount)).ToList(), addedRuns);
         }
         else if (order.Status == LabServiceOrderStatus.SubmittedForQuote) Execute(order.BeginQuotePreparation);
         if (!isChange && order.Status != LabServiceOrderStatus.QuoteInPreparation && order.Status != LabServiceOrderStatus.QuoteIssued)
@@ -512,8 +516,8 @@ public sealed class PlatformLabServiceOrdersController(
         if (labServiceLines.Count != 1)
             throw Invalid("quote_lab_service_line_required", "Include the active PSeq Lab Service specimen item exactly once.");
         var labServiceLine = labServiceLines[0];
-        if (labServiceLine.Quantity != (changeScope?.AdditionalSources.Sum(s => s.SpecimenCount) ?? order.RequestedSpecimenCount))
-            throw Invalid("quote_lab_service_quantity_mismatch", "The PSeq Lab Service quantity must equal the requested specimen count.");
+        if (labServiceLine.Quantity != (changeScope?.AdditionalSequencingRunCount ?? changeScope?.AdditionalSources.Sum(s => s.SpecimenCount) ?? order.RequestedSequencingRunCount))
+            throw Invalid("quote_lab_service_quantity_mismatch", "The PSeq Lab Service quantity must equal the requested sample-sequencing run count.");
         var commercial = await dbContext.OrganizationCommercialProfiles.AsNoTracking()
             .FirstOrDefaultAsync(item => item.OrganizationId == order.OrganizationId, cancellationToken);
         var department = await dbContext.OrganizationDepartments.AsNoTracking().Include(value => value.Organization)
@@ -1102,7 +1106,10 @@ public sealed class PlatformLabServiceOrdersController(
             .Where(membership => membership.OrganizationId == order.OrganizationId
                 && membership.UserId == candidateId.Value
                 && membership.IsActive
-                && membership.IsOrganizationAdmin
+                && (membership.IsOrganizationAdmin || dbContext.OrganizationDepartmentMemberships.Any(access =>
+                    access.OrganizationMembershipId == membership.Id && access.IsActive && access.IsDepartmentAdmin
+                    && access.DepartmentId == order.DepartmentId && access.Department.IsActive
+                    && access.Department.OrganizationId == order.OrganizationId))
                 && membership.User != null
                 && membership.User.IsActive
                 && membership.User.Status == UserAccountStatus.Active)
@@ -1166,6 +1173,7 @@ public sealed class PlatformLabServiceOrdersController(
             LabReadyForRelease: projection?.Milestone == "ReadyForRelease",
             TubeUsePolicyKey: order.TubeUsePolicyKey, TubeUsePolicyVersion: order.TubeUsePolicyVersion,
             RequestedSpecimenCount: order.RequestedSpecimenCount,
+            RequestedSequencingRunCount: order.RequestedSequencingRunCount,
             SourceGroups: order.SourceGroups.OrderBy(group => group.BiologicalSource)
                 .Select(group => new LabServiceSourceGroupDto(group.Id, group.BiologicalSource, group.SpecimenCount, group.Version)).ToList(),
             SampleRosterFinalizedAt: order.SampleRosterFinalizedAt,
@@ -1277,7 +1285,7 @@ public sealed class PlatformLabServiceOrdersController(
             jobNotes = order.Description,
             order.HasMixedBiologicalSources,
             order.SharedBiologicalSource,
-            order.RequestedSpecimenCount,
+            order.RequestedSpecimenCount, order.RequestedSequencingRunCount,
             sourceGroups = order.SourceGroups.OrderBy(group => group.BiologicalSource).Select(group => new
             {
                 group.BiologicalSource,
@@ -1301,8 +1309,8 @@ public sealed class PlatformLabServiceOrdersController(
     private static string PricingDecisionAudit(LabServiceQuote quote)
         => quote.PricingDecision switch
         {
-            QuotePricingDecision.ApprovedAsProposed => $"Approved the proposed USD {quote.ProposedUnitPriceSnapshot:0.00} per specimen and issued quote revision {quote.Revision}.",
-            QuotePricingDecision.AmendedProposal => $"Amended the proposed USD {quote.ProposedUnitPriceSnapshot:0.00} per specimen and issued quote revision {quote.Revision}. Reason: {quote.PricingDecisionReason}",
+            QuotePricingDecision.ApprovedAsProposed => $"Approved the proposed USD {quote.ProposedUnitPriceSnapshot:0.00} per sample-sequencing run and issued quote revision {quote.Revision}.",
+            QuotePricingDecision.AmendedProposal => $"Amended the proposed USD {quote.ProposedUnitPriceSnapshot:0.00} per sample-sequencing run and issued quote revision {quote.Revision}. Reason: {quote.PricingDecisionReason}",
             _ => $"Set pricing without a proposal and issued quote revision {quote.Revision}."
         };
 

@@ -83,7 +83,9 @@ test("creates a standalone CRM company without changing Portal access", async ({
   }
   await closeCrmNavigationIfOpen(page);
   await expect(
-    page.getByText("Companies are the customer record"),
+    page.getByText(
+      "Creating a Company alone does not grant access or start work.",
+    ),
   ).toBeVisible();
 
   await page.getByRole("link", { name: "Atlas Research" }).click();

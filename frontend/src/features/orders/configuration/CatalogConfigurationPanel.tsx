@@ -24,7 +24,6 @@ import {
   CardHeader,
   CardTitle,
 } from "#/components/ui/card";
-import { Checkbox } from "#/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -69,6 +68,16 @@ const schema = z
 type FormValues = z.input<typeof schema>;
 type Values = z.output<typeof schema>;
 type CatalogItem = OrderConfiguration["catalogItems"][number];
+const salesUnits = [
+  { value: 'specimen', label: 'Per sample-sequencing run' },
+  { value: 'kit', label: 'Per kit' },
+  { value: 'each', label: 'Per item' },
+  { value: 'service', label: 'Per service' },
+];
+const selectClass = 'h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none';
+function salesUnitLabel(value: string) {
+  return salesUnits.find(unit => unit.value === value)?.label ?? value;
+}
 const empty: Values = {
   externalItemId: "",
   name: "",
@@ -94,6 +103,7 @@ export function CatalogConfigurationPanel({
   const [editing, setEditing] = useState<CatalogItem | null | undefined>(
     undefined,
   );
+  const generatedCode = useRef('');
   const form = useForm<FormValues, unknown, Values>({
     resolver: zodResolver(schema),
     defaultValues: empty,
@@ -123,6 +133,9 @@ export function CatalogConfigurationPanel({
     (item) => item.isPSeqLabService,
   );
   const selected = configuration.catalogItems.find(item => item.id === catalogItemId);
+  const isLabService = form.watch('externalItemId').trim().toLowerCase() === 'pseq-lab-service';
+  const selectedUnit = form.watch('salesUnit');
+  const unitOptions = Array.from(new Set([...salesUnits.map(unit => unit.value), ...configuration.catalogItems.map(item => item.salesUnit), selectedUnit])).filter(Boolean);
   useOrderDraftGuard(editing !== undefined && form.formState.isDirty, mutation.isPending);
   function close() {
     if (!mutation.isPending && (!form.formState.isDirty || window.confirm('Discard unsaved catalog changes?'))) setEditing(undefined);
@@ -136,6 +149,7 @@ export function CatalogConfigurationPanel({
     actionRef.current = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null;
     mutation.reset();
     setEditing(item);
+    if (!item) generatedCode.current = 'ITEM-' + crypto.randomUUID().replaceAll('-', '').toUpperCase();
     form.reset(
       item
         ? {
@@ -147,8 +161,9 @@ export function CatalogConfigurationPanel({
             currency: item.currency,
             isActive: item.isActive,
           }
-        : empty,
+        : { ...empty, externalItemId: labServiceItem ? generatedCode.current : 'pseq-lab-service', name: labServiceItem ? '' : 'PSeq Lab Service', salesUnit: labServiceItem ? 'each' : 'specimen' },
     );
+    if (item?.isPSeqLabService && item.salesUnit !== 'specimen') form.setValue('salesUnit', 'specimen', { shouldDirty: true, shouldValidate: true });
   }
 
   return (
@@ -159,15 +174,17 @@ export function CatalogConfigurationPanel({
           <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">
             <CardTitle className="min-w-0">{selected.name}</CardTitle>
             <Button className="col-start-2 row-start-1 justify-self-end" variant="outline" disabled={!apiEnabled} onClick={() => open(selected)}>Edit item</Button>
-            <CardDescription className="col-span-full">{selected.externalItemId}</CardDescription>
+            <CardDescription className="col-span-full">Commercial pricing and availability</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 p-4">
             <p className="text-sm">{selected.description || 'No description provided.'}</p>
             <dl className="grid gap-3 text-sm sm:grid-cols-3">
               <div><dt className="text-muted-foreground">Base price</dt><dd>{formatMoney(selected.basePrice, selected.currency)}</dd></div>
-              <div><dt className="text-muted-foreground">Sales unit</dt><dd>{selected.salesUnit}</dd></div>
-              <div><dt className="text-muted-foreground">Availability</dt><dd>{selected.isActive ? 'Active' : 'Inactive'}</dd></div>
+              <div><dt className="text-muted-foreground">Sales unit</dt><dd>{salesUnitLabel(selected.salesUnit)}</dd></div>
+              <div><dt className="text-muted-foreground">Status</dt><dd>{selected.isActive ? 'Active' : 'Inactive'}</dd></div>
             </dl>
+            {!selected.isActive ? <p className="text-sm text-muted-foreground">To activate this item, select Edit item, set Status to Active, and save.</p> : null}
+            <details className="text-sm"><summary className="w-fit cursor-pointer rounded-sm text-primary focus-visible:ring-2 focus-visible:ring-ring">Reference details</summary><p className="mt-2 break-all text-muted-foreground">Item reference: {selected.externalItemId}. This permanent reference links pricing and accounting records and stays the same when the item is renamed.</p></details>
           </CardContent>
         </Card>
         {selected.isPSeqLabService ? <LabServiceOfferingsPanel configuration={configuration} apiEnabled={apiEnabled} catalogItemId={selected.id} /> : <p className="text-sm text-muted-foreground">Scientific definitions for direct laboratory ordering currently apply to the PSeq Lab Service item. Kit and assembly configuration remains in its own settings page.</p>}
@@ -180,8 +197,7 @@ export function CatalogConfigurationPanel({
             Add item
           </Button>
           <CardDescription className="col-span-full">
-            Phaeno maintains the item codes, sales units, and base prices
-            used to build Customer quotes and accounting source records.
+            Maintain what each price covers, its amount, and whether the item is active for new pricing.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4">
@@ -189,10 +205,7 @@ export function CatalogConfigurationPanel({
             <Alert variant="destructive" className="mb-5">
               <AlertTitle>PSeq Lab Service pricing is not ready</AlertTitle>
               <AlertDescription>
-                Create or activate the permanent{" "}
-                <span className="font-mono">pseq-lab-service</span> item with
-                the <span className="font-mono">specimen</span> sales unit
-                before issuing Customer laboratory quotes.
+                {labServiceItem ? 'Open PSeq Lab Service, select Edit item, set Status to Active, and save.' : 'Select Add item and choose PSeq Lab Service. Its required reference and per-sample-sequencing-run pricing are supplied automatically.'}
               </AlertDescription>
             </Alert>
           ) : null}
@@ -226,11 +239,8 @@ export function CatalogConfigurationPanel({
                             PSeq Lab Service
                           </Badge>
                         ) : null}
-                        <span className="mt-1 block font-mono text-xs text-muted-foreground">
-                          {item.externalItemId}
-                        </span>
                       </td>
-                      <td className="px-3 py-3">{item.salesUnit}</td>
+                      <td className="px-3 py-3">{salesUnitLabel(item.salesUnit)}</td>
                       <td className="px-3 py-3 text-right">
                         {formatMoney(item.basePrice, item.currency)}
                       </td>
@@ -274,9 +284,7 @@ export function CatalogConfigurationPanel({
               {editing ? "Edit catalog item" : "Add catalog item"}
             </DialogTitle>
             <DialogDescription>
-              The item code is a permanent accounting reference. The required
-              PSeq Lab Service item uses code “pseq-lab-service” and sales unit
-              “specimen”.
+              Set the item’s price and status. Active items are available for new pricing; existing orders keep their saved details. Item references are managed automatically.
             </DialogDescription>
           </DialogHeader>
           <form
@@ -284,21 +292,25 @@ export function CatalogConfigurationPanel({
             noValidate
             onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
           >
-            <fieldset disabled={mutation.isPending} className="grid gap-4 sm:grid-cols-2">
-            <Field
-              id="catalog-code"
-              label="Stable item code"
-              error={form.formState.errors.externalItemId?.message}
-            >
-              <Input
-                id="catalog-code"
-                readOnly={Boolean(editing)}
-                aria-readonly={Boolean(editing)}
-                className="font-mono read-only:bg-muted"
-                aria-invalid={Boolean(form.formState.errors.externalItemId)}
-                {...form.register("externalItemId")}
-              />
-            </Field>
+            <fieldset disabled={mutation.isPending} className="grid grid-cols-1 gap-4">
+            {!editing ? <Field id="catalog-type" label="Item type">
+              <select id="catalog-type" className={selectClass} value={isLabService ? 'lab' : 'other'} onChange={event => {
+                const lab = event.target.value === 'lab';
+                form.setValue('externalItemId', lab ? 'pseq-lab-service' : generatedCode.current, { shouldDirty: true, shouldValidate: true });
+                form.setValue('salesUnit', lab ? 'specimen' : 'each', { shouldDirty: true, shouldValidate: true });
+                if (!form.getValues('name') || form.getValues('name') === 'PSeq Lab Service') form.setValue('name', lab ? 'PSeq Lab Service' : '', { shouldDirty: true });
+              }}>
+                <option value="lab" disabled={Boolean(labServiceItem)}>PSeq Lab Service{labServiceItem ? ' (already configured)' : ''}</option>
+                <option value="other">Other catalog item</option>
+              </select>
+            </Field> : null}
+            <div className="space-y-2">
+              <Label htmlFor="catalog-status"><RequiredFieldName>Status</RequiredFieldName></Label>
+              <select id="catalog-status" className={selectClass} value={form.watch('isActive') ? 'active' : 'inactive'} aria-describedby="catalog-status-help" onChange={event => form.setValue('isActive', event.target.value === 'active', { shouldDirty: true })}>
+                <option value="active">Active</option><option value="inactive">Inactive</option>
+              </select>
+              <p id="catalog-status-help" className="text-xs text-muted-foreground">Active makes this item available for new pricing. Inactive keeps it out of new pricing; saved orders retain their details.</p>
+            </div>
             <Field
               id="catalog-name"
               label="Name"
@@ -310,7 +322,7 @@ export function CatalogConfigurationPanel({
                 {...form.register("name")}
               />
             </Field>
-            <div className="sm:col-span-2">
+            <div>
               <Label htmlFor="catalog-description">Description</Label>
               <textarea
                 id="catalog-description"
@@ -324,11 +336,15 @@ export function CatalogConfigurationPanel({
               label="Sales unit"
               error={form.formState.errors.salesUnit?.message}
             >
-              <Input
-                id="catalog-unit"
-                aria-invalid={Boolean(form.formState.errors.salesUnit)}
-                {...form.register("salesUnit")}
-              />
+              {isLabService ? <>
+                <select id="catalog-unit" className={selectClass} value="specimen" disabled aria-describedby="catalog-unit-fixed-help"><option value="specimen">Per sample-sequencing run</option></select>
+                <p id="catalog-unit-fixed-help" className="mt-1 text-xs text-muted-foreground">PSeq Lab Service is priced per sample-sequencing run. One sample sequenced 20 times counts as 20 runs. This unit is fixed automatically.</p>
+              </> : <>
+                <select id="catalog-unit" className={selectClass} aria-invalid={Boolean(form.formState.errors.salesUnit)} aria-describedby="catalog-unit-help" {...form.register('salesUnit')}>
+                  {unitOptions.map(unit => <option key={unit} value={unit}>{salesUnitLabel(unit)}</option>)}
+                </select>
+                <p id="catalog-unit-help" className="mt-1 text-xs text-muted-foreground">Choose what one unit of the base price covers. Existing catalog units remain available.</p>
+              </>}
             </Field>
             <Field
               id="catalog-price"
@@ -357,23 +373,6 @@ export function CatalogConfigurationPanel({
                 {...form.register("currency")}
               />
             </Field>
-            <div className="flex items-center gap-2 self-end pb-2">
-              <Checkbox
-                id="catalog-active"
-                checked={form.watch("isActive")}
-                onCheckedChange={(value) =>
-                  form.setValue("isActive", value === true, {
-                    shouldDirty: true,
-                  })
-                }
-              />
-              <Label
-                htmlFor="catalog-active"
-                className="cursor-pointer font-normal"
-              >
-                Available for new pricing
-              </Label>
-            </div>
             </fieldset>
           </form>
           {mutation.error ? (

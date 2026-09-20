@@ -21,7 +21,7 @@ vi.mock('@clerk/react', () => ({
   },
   SignOutButton: ({ children }: { children: ReactNode }) => children,
 }))
-const invitation = { firstName: 'Joe', lastName: 'Blow', email: 'invited@example.com', organizationName: 'Research University', expiresAt: '2026-12-01T00:00:00Z' }
+const invitation = { version: 4, isOrganizationAdmin: false, departments: [{ departmentId: 'research', departmentName: 'Research', isDepartmentAdmin: false }], firstName: 'Joe', lastName: 'Blow', email: 'invited@example.com', organizationName: 'Research University', expiresAt: '2026-12-01T00:00:00Z' }
 const signedOut = { authConfigured: true, clerkLoaded: true, signedIn: false, authProvider: 'clerk', session: null }
 beforeEach(() => {
   vi.clearAllMocks()
@@ -92,7 +92,7 @@ describe('invitation acceptance', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Accept invitation' }))
     expect(screen.queryByLabelText(/First name/)).toBeNull()
     await screen.findByRole('heading', { name: 'Welcome to Portal' })
-    expect(mocks.acceptInvitation).toHaveBeenCalledWith({ token: 'test-invitation-token', firstName: 'Joe', lastName: 'Blow' })
+    expect(mocks.acceptInvitation).toHaveBeenCalledWith({ token: 'test-invitation-token', firstName: 'Joe', lastName: 'Blow', version: 4 })
     expect(readStoredInviteToken()).toBeNull()
   })
   it('does not treat an unverified invited address as a match', async () => {
@@ -133,4 +133,21 @@ describe('invitation acceptance', () => {
     await screen.findByRole('heading', { name: 'Open your invitation email' })
     expect(mocks.previewInvitation).not.toHaveBeenCalled()
   })
+})
+
+it('requires explicit acceptance again after access changed since the recipient review', async () => {
+  mocks.session.mockReturnValue({ ...signedOut, signedIn: true })
+  mocks.acceptInvitation.mockRejectedValueOnce({ isAxiosError: true, response: { status: 409 } })
+  setup()
+  await screen.findByRole('button', { name: 'Accept invitation' })
+  mocks.previewInvitation.mockResolvedValue({ ...invitation, version: 5, isOrganizationAdmin: true })
+  fireEvent.click(screen.getByRole('button', { name: 'Accept invitation' }))
+  await screen.findByText(/The invitation changed. Review the updated access/)
+  await screen.findByText('Organization administrator — all departments')
+  expect(mocks.acceptInvitation).toHaveBeenCalledTimes(1)
+  expect(readStoredInviteToken()).toBe('test-invitation-token')
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Accept invitation' })).toHaveProperty('disabled', false))
+  fireEvent.click(screen.getByRole('button', { name: 'Accept invitation' }))
+  await screen.findByRole('heading', { name: 'Welcome to Portal' })
+  expect(mocks.acceptInvitation).toHaveBeenLastCalledWith({ token: 'test-invitation-token', firstName: 'Joe', lastName: 'Blow', version: 5 })
 })

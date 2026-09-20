@@ -24,7 +24,7 @@ public sealed class GovernedRetentionConcurrencyPostgresTests
     {
         // A disposable local database is necessary: rollback fixtures are invisible to independent connections.
         var source = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("PSEQ_OPERATIONS_REFERENCE_CONNECTION")!);
-        if (source.Host is not ("localhost" or "127.0.0.1") || source.Database is not ("phaeno_ops" or "phaeno_ops_lab06_uat"))
+        if (source.Host is not ("localhost" or "127.0.0.1") || (source.Database is not ("phaeno_ops" or "phaeno_ops_lab06_uat") && source.Database?.StartsWith("phaeno_release_verification_", StringComparison.Ordinal) != true))
             throw new InvalidOperationException("Concurrent verification requires a known local development or isolated UAT source.");
         var name = $"pseq_retention_test_{Guid.NewGuid():N}";
         var original = source.ConnectionString;

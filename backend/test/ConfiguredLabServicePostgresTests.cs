@@ -19,6 +19,28 @@ using PhaenoPortal.App.Features.OrderManagement.Services;
 public partial class LabOperationsCommercialHandoffPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task StandardPriceAndCommitmentCountTwentyRunsForOnePhysicalSample()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        var (order, offering) = await scope.ConfigureStandardAsync();
+        var trackedOrder = await scope.DbContext.LabServiceOrders.SingleAsync(value => value.Id == order.Id);
+        trackedOrder.SetSequencingRunCount(20);
+        await scope.DbContext.SaveChangesAsync();
+        var controller = scope.StandardController();
+        var preview = await controller.PreviewStandard(order.Id, offering.Id, default);
+        Assert.Equal(1, preview.SpecimenCount);
+        Assert.Equal(20, preview.SequencingRunCount);
+        Assert.Equal(preview.Offering.UnitPrice * 20, preview.Subtotal);
+        var placed = await controller.PlaceStandard(order.Id, StandardRequest(preview), default);
+        Assert.Equal(1, placed.RequestedSpecimenCount);
+        Assert.Equal(20, placed.RequestedSequencingRunCount);
+        Assert.Equal(20, placed.StandardCommercialSnapshot!.SequencingRunCount);
+        var summary = await scope.DbContext.CommercialSaleSummaries.SingleAsync(s => s.OrderId == order.Id);
+        Assert.Equal(20, summary.Quantity);
+        Assert.False(await scope.DbContext.CommercialLabAuthorizations.AnyAsync(a => a.CommercialOrderId == order.Id));
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task ScientificDefinitionCannotMoveToAnotherItemOrCreateAnotherFamilyForTheSameItem()
     {
         await using var scope = await HandoffTestScope.CreateAsync();
@@ -122,7 +144,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
     }
 
     [PostgreSqlReferenceFact]
-    public async Task PartnerStandardLabCommitmentRequiresOrganizationAdminAndKeepsOtherTenantsHidden()
+    public async Task PartnerDepartmentAdministratorCanCommitOnlyInAssignedDepartment()
     {
         await using var scope = await HandoffTestScope.CreateAsync(OrganizationKind.Partner);
         var (order, offering) = await scope.ConfigureStandardAsync(); var controller = scope.StandardController();
@@ -140,8 +162,17 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         scope.DbContext.Add(new OrganizationDepartmentMembership(membership.Id, order.DepartmentId, true));
         await scope.DbContext.SaveChangesAsync();
         Assert.True((await controller.Get(order.Id, default)).CanEdit);
-        Assert.False((await controller.Get(order.Id, default)).CanPlaceStandardOrder);
-        Assert.Equal(403, (await Assert.ThrowsAsync<OrderManagementException>(() => controller.PlaceStandard(order.Id, StandardRequest(preview), default))).StatusCode);
+        Assert.True((await controller.Get(order.Id, default)).CanPlaceStandardOrder);
+        var current = await controller.PreviewStandard(order.Id, offering.Id, default);
+        Assert.True(current.CanPlaceStandardOrder, string.Join("; ", current.Blockers));
+        controller.HttpContext.Request.Headers["X-Department-Id"] = Guid.NewGuid().ToString();
+        Assert.Equal(404, (await Assert.ThrowsAsync<OrderManagementException>(() => controller.Get(order.Id, default))).StatusCode);
+        controller.HttpContext.Request.Headers["X-Department-Id"] = order.DepartmentId.ToString();
+        var assignment = await scope.DbContext.OrganizationDepartmentMemberships.SingleAsync(value => value.OrganizationMembershipId == membership.Id);
+        assignment.SetDepartmentAdmin(false); await scope.DbContext.SaveChangesAsync();
+        Assert.Equal(403, (await Assert.ThrowsAsync<OrderManagementException>(() => controller.PlaceStandard(order.Id, StandardRequest(current), default))).StatusCode);
+        assignment.SetDepartmentAdmin(true); await scope.DbContext.SaveChangesAsync();
+        Assert.Equal("PlacedAwaitingSamples", (await controller.PlaceStandard(order.Id, StandardRequest(current), default)).Status);
     }
 
     [PostgreSqlReferenceFact]

@@ -258,12 +258,15 @@ public sealed partial class KitBundlePostgresTests
         var unauthorized = scope.TenantController(); unauthorized.HttpContext.Request.Headers["X-Organization-Id"] = Guid.NewGuid().ToString();
         Assert.Equal(404, (await Assert.ThrowsAsync<OrderManagementException>(() => unauthorized.Get(draft.Id, default))).StatusCode);
         var placeKey = Guid.NewGuid().ToString(); var place = scope.Placement(draft);
-        await scope.TenantController(placeKey).Place(draft.Id, place, default);
-        scope.Db.ChangeTracker.Clear();
         var membership = await scope.Db.OrganizationMemberships.SingleAsync(x => x.Id == scope.Membership.Id);
         membership.SetOrganizationAdmin(false);
         scope.Db.Add(new OrganizationDepartmentMembership(membership.Id, scope.Department.Id, true));
         await scope.Db.SaveChangesAsync();
+        await scope.TenantController(placeKey).Place(draft.Id, place, default);
+        scope.Db.ChangeTracker.Clear();
+        Assert.Equal(draft.Id, (await scope.TenantController(placeKey).Place(draft.Id, place, default)).Id);
+        var departmentAccess = await scope.Db.OrganizationDepartmentMemberships.SingleAsync(value => value.OrganizationMembershipId == membership.Id);
+        departmentAccess.SetDepartmentAdmin(false); await scope.Db.SaveChangesAsync();
         Assert.Equal(403, (await Assert.ThrowsAsync<OrderManagementException>(() =>
             scope.TenantController(placeKey).Place(draft.Id, place, default))).StatusCode);
         // The controller identity, not caller-supplied tenant headers, owns staff
@@ -294,7 +297,7 @@ public sealed partial class KitBundlePostgresTests
         public static async Task<Scope> Create()
         {
             var source = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("PSEQ_OPERATIONS_REFERENCE_CONNECTION")!);
-            if (source.Host is not ("localhost" or "127.0.0.1") || source.Database is not ("phaeno_ops" or "phaeno_ops_lab06_uat"))
+            if (source.Host is not ("localhost" or "127.0.0.1") || (source.Database is not ("phaeno_ops" or "phaeno_ops_lab06_uat") && source.Database?.StartsWith("phaeno_release_verification_", StringComparison.Ordinal) != true))
                 throw new InvalidOperationException("Kit acceptance requires a known loopback reference source and a disposable database.");
             var name = "pseq_kit_test_" + Guid.NewGuid().ToString("N");
             var admin = new NpgsqlConnection(source.ConnectionString); await admin.OpenAsync();

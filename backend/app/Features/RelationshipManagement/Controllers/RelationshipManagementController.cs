@@ -19,7 +19,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [ApiController]
 [Authorize]
 [Route("api/platform/relationships")]
-public sealed class RelationshipManagementController(
+public sealed partial class RelationshipManagementController(
     PSeqOperationsDbContext dbContext,
     IExternalIdentityContext externalIdentityContext) : ControllerBase
 {
@@ -33,25 +33,15 @@ public sealed class RelationshipManagementController(
         var now = DateTime.UtcNow;
         var activeMembers = await dbContext.OrganizationMemberships
             .CountAsync(value => value.OrganizationId == organizationId && value.IsActive, cancellationToken);
-        var hasActiveAdmin = await dbContext.OrganizationMemberships
-            .AnyAsync(value => value.OrganizationId == organizationId
-                && value.IsActive
-                && value.IsOrganizationAdmin
-                && value.User != null
-                && value.User.IsActive
-                && value.User.Status == UserAccountStatus.Active,
-                cancellationToken);
+        var hasActiveAdmin = await OrganizationAdministratorReadiness.HasActiveAsync(
+            dbContext, organizationId, cancellationToken);
         var pendingInvitations = await dbContext.OrganizationInvitations
             .CountAsync(value => value.OrganizationId == organizationId
                 && value.Status == InvitationStatus.Pending
                 && value.ExpiresAt > now,
                 cancellationToken);
-        var hasPendingAdminInvitation = await dbContext.OrganizationInvitations
-            .AnyAsync(value => value.OrganizationId == organizationId
-                && value.Status == InvitationStatus.Pending
-                && value.IsOrganizationAdmin
-                && value.ExpiresAt > now,
-                cancellationToken);
+        var hasPendingAdminInvitation = await OrganizationAdministratorReadiness.HasPendingInvitationAsync(
+            dbContext, organizationId, now, cancellationToken);
         var services = await dbContext.OrganizationServiceEntitlements
             .Where(value => value.OrganizationId == organizationId
                 && value.ConfigurationStatus == EntitlementConfigurationStatus.Ready
@@ -198,7 +188,8 @@ public sealed class RelationshipManagementController(
     public async Task<IReadOnlyList<PortalIntegrationRequestDto>> ListRequests(
         [FromQuery] Guid? organizationId,
         [FromQuery] PortalIntegrationRequestStatus? status,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [FromQuery] bool activeOnly = false)
     {
         await RequirePlatformAdminAsync(cancellationToken);
         var query = dbContext.PortalIntegrationRequests
@@ -213,6 +204,12 @@ public sealed class RelationshipManagementController(
         if (status.HasValue)
         {
             query = query.Where(value => value.Status == status);
+        }
+
+        if (activeOnly)
+        {
+            query = query.Where(value => value.Status == PortalIntegrationRequestStatus.PendingReview
+                || value.Status == PortalIntegrationRequestStatus.Approved);
         }
 
         var values = await query
@@ -294,6 +291,7 @@ public sealed class RelationshipManagementController(
         if (request.Approved)
         {
             await EnsureCompanyPortalAccessAsync(value, actor.Id, cancellationToken);
+            await OnlineAccessRequestCompletion.CompleteIfReadyAsync(dbContext, value, actor.Id, cancellationToken);
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -314,6 +312,7 @@ public sealed class RelationshipManagementController(
             request.ExistingOrganizationId,
             cancellationToken);
         await EnsureCompanyPortalAccessAsync(value, actor.Id, cancellationToken);
+        await OnlineAccessRequestCompletion.CompleteIfReadyAsync(dbContext, value, actor.Id, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return ToDto(organization);
@@ -344,6 +343,15 @@ public sealed class RelationshipManagementController(
         var appliedOrganization = await RequireOrganizationAsync(
             value.OrganizationId ?? request.OrganizationId!.Value,
             cancellationToken);
+        var completion = await EvaluateRequestCompletionAsync(value, appliedOrganization, cancellationToken);
+        if (!completion.CanComplete)
+        {
+            throw new RelationshipManagementException(
+                "request_work_incomplete",
+                "Complete the minimum requirements before closing this request. " + string.Join(" ", completion.Blockers),
+                StatusCodes.Status409Conflict,
+                completion.Blockers);
+        }
         if (value.RequestType == PortalIntegrationRequestType.RelationshipChange)
         {
             if (value.Status != PortalIntegrationRequestStatus.Approved)

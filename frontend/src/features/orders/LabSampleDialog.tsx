@@ -41,6 +41,7 @@ const sampleSchema = z.object({
     .trim()
     .min(1, 'Biological source is required.')
     .max(500),
+  sequencingRunCount: z.coerce.number().int("Use a whole number.").min(1, "Enter at least one run.").max(10000),
   quantity: z.coerce
     .number()
     .int('Quantity must be a whole number of tubes.')
@@ -101,6 +102,7 @@ export function LabSampleDialog({
         customerSampleId: values.customerSampleId,
         biologicalSource: order.sourceGroups.find(group => normalizeBiologicalSource(group.biologicalSource) === normalizeBiologicalSource(values.biologicalSource))?.biologicalSource ?? values.biologicalSource,
         tubeCount: values.quantity,
+        sequencingRunCount: values.sequencingRunCount,
         collectionDate: sample?.collectionDate,
         concentration: sample?.concentration,
         notes: sample?.notes,
@@ -203,6 +205,12 @@ export function LabSampleDialog({
                   </select>
                 </Field>
               ) : null}
+              <Field label="Sample-sequencing runs" id={`${formId}-runs`} required
+                description={`Allocate this sample's runs from the ${order.requestedSequencingRunCount ?? order.requestedSpecimenCount} purchased for this Job.`}
+                error={form.formState.errors.sequencingRunCount?.message}>
+                <Input id={`${formId}-runs`} type="number" min={1} max={10000} step={1} inputMode="numeric" disabled={mutation.isPending}
+                  aria-invalid={Boolean(form.formState.errors.sequencingRunCount)} aria-describedby={fieldDescriptionIds(`${formId}-runs`, form.formState.errors.sequencingRunCount?.message)} {...form.register('sequencingRunCount')} />
+              </Field>
               <Field
                 label="Quantity (tubes)"
                 id={`${formId}-quantity`}
@@ -281,6 +289,7 @@ function sampleToForm(
     customerSampleId: sample?.customerSampleId ?? '',
     biologicalSource: sample?.biologicalSource ?? biologicalSource ?? '',
     quantity: sample?.quantity ?? 1,
+    sequencingRunCount: sample?.sequencingRunCount ?? 1,
   }
 }
 

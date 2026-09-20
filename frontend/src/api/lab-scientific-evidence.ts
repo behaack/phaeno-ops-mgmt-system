@@ -12,6 +12,7 @@ export type ScientificMetadata = {
   notApplicable?: Record<string, string>
 }
 export type SequencingRecord = {
+  sequencingRunNumber?: number | null; libraryPreparationChoice?: string | null
   id: string; labWorkOrderId: string; labSpecimenId: string; labSpecimenAttemptId: string; sourceContainerId: string
   labLibraryId: string; labNgsSendoutId: string; providerKey: string; providerRunReference: string
   sampleMappingReference: string; externalFileReference: string; sha256: string; sizeBytes: number
@@ -22,6 +23,7 @@ export type AnalysisRecord = {
   previousAnalysisRunId: string | null; reanalysisReason: string | null; scientificEvidenceJson: string | null; requirementsSnapshotJson: string | null; recordedAtUtc: string
 }
 export type ScientificWorkspace = {
+  sequencingRunCount?: number
   workOrderId: string; specimenId: string; accessionNumber: string | null; canRecord: boolean; canManualUpload: boolean; governedResults: boolean; orderId: string; submittedSampleId: string
   libraries: { id: string; libraryKey: string; barcode: string; status: string; labSpecimenAttemptId: string | null }[]
   outputs: SequencingRecord[]; analyses: AnalysisRecord[]; inputs: { labAnalysisRunId: string; labSequencingOutputId: string }[]

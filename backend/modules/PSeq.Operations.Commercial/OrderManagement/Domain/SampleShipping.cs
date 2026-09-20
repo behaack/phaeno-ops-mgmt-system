@@ -368,7 +368,8 @@ public static class SampleShippingCompatibilityResolver
         SampleShippingDestination destination,
         IReadOnlyCollection<SampleTypeDefinition> sampleTypes,
         IReadOnlyCollection<SampleShippingInstructionRule> instructionRules,
-        DateTime effectiveAt)
+        DateTime effectiveAt,
+        IReadOnlyDictionary<Guid, Guid>? sampleTypeDefinitionKeys = null)
     {
         if (!destination.IsEffectiveAt(effectiveAt))
             throw new InvalidOperationException("The selected shipping destination is not effective at the requested time.");
@@ -385,7 +386,10 @@ public static class SampleShippingCompatibilityResolver
 
             var matches = instructionRules
                 .Where(rule => rule.DestinationId == destination.Id
-                    && rule.SampleTypeDefinitionId == sampleType.Id
+                    && (rule.SampleTypeDefinitionId == sampleType.Id
+                        || (sampleTypeDefinitionKeys != null
+                            && sampleTypeDefinitionKeys.TryGetValue(rule.SampleTypeDefinitionId, out var key)
+                            && key == sampleType.DefinitionKey))
                     && rule.IsEffectiveAt(effectiveAt))
                 .ToList();
             if (matches.Count == 0)

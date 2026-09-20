@@ -28,7 +28,7 @@ Use **Record kit shipment** to choose matching, fully registered physical kits a
 
 Dispatch adds those kits to the Customer delivery location's inventory as **On the way**. The Customer acknowledges the containers that arrive, moving them to **Available**. Unused available stock may supply any eligible Job at that Customer/Department/location; the originating Job is delivery history, not a restriction on use. Cancelling the originating Job does not consume delivered unused stock. Customer acknowledgment is separate from the laboratory's later receipt of returned samples. Kits not yet acknowledged remain unavailable, and a partial receipt permits only the received portion.
 
-Maintain delivery locations from the Customer's **Departments & services** workspace or the Department's delivery-location screen. Open a location and use **Actions → Edit location** in the page header. These locations belong to the Customer and Department, and are separate from global lab receiving destinations. Changing a saved location does not rewrite a confirmed kit order's delivery address. The Customer location workspace provides inventory and receipt access even if the originating Job has been cancelled.
+Maintain delivery locations from the Customer's **Departments** workspace or the Department's delivery-location screen. Open a location and use **Actions → Edit location** in the page header. These locations belong to the Customer and Department, and are separate from global lab receiving destinations. Changing a saved location does not rewrite a confirmed kit order's delivery address. The Customer location workspace provides inventory and receipt access even if the originating Job has been cancelled.
 
 
 The request shows what to do next. If no matching kits are ready, choose
@@ -134,6 +134,6 @@ requires the correct workflow and does not by itself confirm receipt or accessio
 
 ## Choose which tube to process
 
-Open the sample's identifier in **Specimens** to see its tubes together. The tube-use instruction is **Run one tube per specimen; use a reserve only after failure**. Acceptance and physical availability determine which sources can be selected; receipt itself never starts work. **Tubes** precedes **Execution** in the job navigation.
+Open the sample's identifier in **Specimens** to see its tubes together. For a single purchased run, use one source tube and a reserve only after failure. When the sample has multiple purchased runs, one prepared library can supply several runs. Prepare another library only when that is the recorded choice; confirm remaining material before reusing a successful source tube. See **Libraries, batches, and sequencing** for the repeated-run workflow. Acceptance and physical availability determine which sources can be selected; receipt itself never starts work. **Tubes** precedes **Execution** in the job navigation.
 
 Once a source attempt starts, that source's intake history is locked. Record an attempt hold or failure when processing cannot continue; unused reserve intake can be completed during accessioning or corrected by a supervisor. A specimen's intake can remain Accepted even when processing ultimately fails. See the protocol execution guide for source selection, explicit failure, reserve restart and confirmed material exhaustion.

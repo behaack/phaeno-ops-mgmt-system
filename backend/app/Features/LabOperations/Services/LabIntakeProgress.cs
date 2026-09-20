@@ -43,15 +43,22 @@ public sealed record LabIntakeProgress(bool HasPhysicalReceipt, IReadOnlyList<La
             && value.OrganizationId == work.SubmittingOrganizationId).ToListAsync(cancellationToken);
         foreach (var entry in db.ChangeTracker.Entries<ResultOutputPackage>())
             if (entry.Entity.LabWorkOrderId == work.Id && !packages.Any(value => value.Id == entry.Entity.Id)) packages.Add(entry.Entity);
+        var runProgress = new LabSequencingRunProgress(db);
+        var runCounts = await runProgress.AllocationsAsync(work.Id, cancellationToken);
+        var analysisRuns = await runProgress.AnalysisRunsAsync(work.Id, cancellationToken);
+        bool HasApprovedRuns(Guid submittedId)
+        {
+            var approved = packages.Where(p => (p.LabSampleId ?? p.TrialSampleId) == submittedId && p.ScientificApprovalId.HasValue
+                && p.State is ResultOutputPackageState.ReadyForRelease or ResultOutputPackageState.Released).ToList();
+            var required = runCounts.GetValueOrDefault(submittedId, 1);
+            return required == 1 ? approved.Count > 0 : LabSequencingRunProgress.Count(approved.Select(p => p.LabAnalysisRunId), analysisRuns) >= required;
+        }
         var outcomes = work.Specimens.Select(specimen => new LabSpecimenTerminalProgress(specimen.SubmittedSpecimenId,
             specimen.IntakeDisposition == LabSpecimenIntakeDisposition.OnHold || specimen.ProcessingState == LabSpecimenProcessingState.OnHold ? ""
             : specimen.IntakeDisposition == LabSpecimenIntakeDisposition.Cancelled ? "Cancelled"
             : specimen.IntakeDisposition == LabSpecimenIntakeDisposition.Rejected ? "Rejected"
             : specimen.ProcessingState == LabSpecimenProcessingState.Failed ? "Failed"
-            : specimen.ProcessingState == LabSpecimenProcessingState.Succeeded && packages.Any(package =>
-                (package.LabSampleId ?? package.TrialSampleId) == specimen.SubmittedSpecimenId && package.ScientificApprovalId.HasValue
-                && package.State is ResultOutputPackageState.ReadyForRelease
-                    or ResultOutputPackageState.Released) ? "Completed" : ""))
+            : specimen.ProcessingState == LabSpecimenProcessingState.Succeeded && HasApprovedRuns(specimen.SubmittedSpecimenId) ? "Completed" : ""))
             .Where(value => value.Outcome.Length > 0).ToArray();
         return new(specimens.Length > 0 || shipments.Any(item => !item.IsPackingPool
             && (item.DeliveredAt.HasValue || item.ReceivedAt.HasValue)), specimens, outcomes);

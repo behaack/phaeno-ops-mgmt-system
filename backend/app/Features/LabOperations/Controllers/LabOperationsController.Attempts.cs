@@ -27,6 +27,8 @@ public sealed partial class LabOperationsController
         var executions = await dbContext.LabProtocolExecutions.AsNoTracking().Where(e => e.LabWorkOrderId == work.Id).ToListAsync(cancellationToken);
         var snapshot = await dbContext.LabWorkAuthorizationVersions.AsNoTracking().Where(a => a.LabWorkOrderId == work.Id)
             .OrderByDescending(a => a.AuthorizationVersion).Select(a => a.SnapshotJson).FirstOrDefaultAsync(cancellationToken);
+        var runAllocations = await ReadSequencingRunAllocationsAsync(work.Id, cancellationToken);
+        var approvedRuns = await new LabSequencingRunProgress(dbContext).ApprovedCountsAsync(work.Id, cancellationToken);
         var names = new Dictionary<Guid, string>();
         if (snapshot is not null)
         {
@@ -64,7 +66,7 @@ public sealed partial class LabOperationsController
                 var inputs = tubes.Where(t => t.LabSpecimenId == s.Id).Select(t =>
                 {
                     var used = history.LastOrDefault(a => a.SourceContainerId == t.Id && a.State != LabSpecimenAttemptState.Cancelled);
-                    var reason = TubeUnavailableReason(s, t, used);
+                    var reason = TubeUnavailableReason(s, t, used, runAllocations.GetValueOrDefault(s.SubmittedSpecimenId, 1) > approvedRuns.GetValueOrDefault(s.SubmittedSpecimenId));
                     return new LabAttemptTubeDto(t.Id, t.Barcode, t.Location, t.IntakeDisposition?.ToString(), t.Status.ToString(),
                         used is null ? reason is null ? "Reserve" : "Unavailable" : used.State is LabSpecimenAttemptState.Planned or LabSpecimenAttemptState.InProgress or LabSpecimenAttemptState.OnHold ? "Selected" : "Previously attempted", reason);
                 }).ToList();
@@ -77,7 +79,8 @@ public sealed partial class LabOperationsController
                         tubes.First(t => t.Id == a.SourceContainerId).Barcode, a.State.ToString(), a.Version, a.StartedAtUtc, a.ClosedAtUtc,
                         a.FailureReasonCode, a.FailureEvidence, a.FailedExecutionId, a.HoldReason, a.HoldNextAction, a.HoldOwnerUserId,
                         a.ReadStageSkips(), executions.Where(e => e.LabSpecimenAttemptId == a.Id).Select(e => e.Id).ToList(), prepMemberships.GetValueOrDefault(a.Id), a.LabServiceWorkflowVersionId, workflows.GetValueOrDefault(a.LabServiceWorkflowVersionId)?.Name, workflows.GetValueOrDefault(a.LabServiceWorkflowVersionId)?.WorkflowVersion)).ToList(),
-                    legacy ? "Historical processing has no selected-source evidence. Supervisor review is required; do not infer a tube." : work.TubeUsePolicyKey is null ? "Confirm the order's tube-use instruction before selecting a source." : s.ProcessingState == LabSpecimenProcessingState.Failed ? "Material exhausted. Specimen processing failed." : null);
+                    legacy ? "Historical processing has no selected-source evidence. Supervisor review is required; do not infer a tube." : work.TubeUsePolicyKey is null ? "Confirm the order's tube-use instruction before selecting a source." : s.ProcessingState == LabSpecimenProcessingState.Failed ? "Material exhausted. Specimen processing failed." : null,
+                    runAllocations.GetValueOrDefault(s.SubmittedSpecimenId, 1), approvedRuns.GetValueOrDefault(s.SubmittedSpecimenId));
             }).OrderBy(s => s.Name).ToList(), defaultWorkflowId);
     }
 
@@ -107,10 +110,11 @@ public sealed partial class LabOperationsController
         }
         else
         {
-            if (work.TubeUsePolicyKey != LabTubeUsePolicy.RunOneWithFailureFallback)
+            if (work.TubeUsePolicyKey != LabTubeUsePolicy.RunOneWithFailureFallback && work.TubeUsePolicyKey != LabTubeUsePolicy.RunAuthorizedWithFailureFallback)
                 throw Conflict("tube_policy_required", "A supervisor must confirm this order's tube-use instruction first.");
             var specimen = await RequireSpecimenAsync(work.Id, request.SpecimenId ?? Guid.Empty, cancellationToken);
-            if (specimen.ProcessingState is LabSpecimenProcessingState.Failed or LabSpecimenProcessingState.Succeeded)
+            if (specimen.ProcessingState == LabSpecimenProcessingState.Failed || specimen.ProcessingState == LabSpecimenProcessingState.Succeeded
+                && (await ReadSequencingRunAllocationsAsync(work.Id, cancellationToken)).GetValueOrDefault(specimen.SubmittedSpecimenId, 1) == 1)
                 throw Conflict("specimen_processing_final", "This specimen has a final processing outcome. A new source attempt is not permitted.");
             if (request.Action == "select") await SelectAttemptAsync(work, specimen, request, actor.User.Id, cancellationToken);
             else if (request.Action == "confirm-exhaustion")
@@ -165,10 +169,17 @@ public sealed partial class LabOperationsController
     private async Task SelectAttemptAsync(LabWorkOrder work, LabSpecimen specimen, LabAttemptCommand request, Guid actorId, CancellationToken ct, Guid? selectedWorkflowId = null)
     {
         var attempts = await dbContext.LabSpecimenAttempts.Where(a => a.LabSpecimenId == specimen.Id).OrderBy(a => a.Sequence).ToListAsync(ct);
-        if (attempts.Any(a => a.State is not (LabSpecimenAttemptState.Failed or LabSpecimenAttemptState.Cancelled)))
-            throw Conflict("attempt_already_owned", "This specimen already has an active or successful attempt.");
+        var authorizedRuns = (await ReadSequencingRunAllocationsAsync(work.Id, ct)).GetValueOrDefault(specimen.SubmittedSpecimenId, 1);
+        if (attempts.Any(a => a.State is LabSpecimenAttemptState.Planned or LabSpecimenAttemptState.InProgress or LabSpecimenAttemptState.OnHold))
+            throw Conflict("attempt_already_owned", "This specimen already has an active attempt.");
+        if (authorizedRuns == 1 && attempts.Any(a => a.State == LabSpecimenAttemptState.Succeeded)
+            || (await new LabSequencingRunProgress(dbContext).ApprovedCountsAsync(work.Id, ct)).GetValueOrDefault(specimen.SubmittedSpecimenId) >= authorizedRuns)
+            throw Conflict("sequencing_runs_complete", "All authorized sample-sequencing runs are complete.");
         var tube = await dbContext.LabContainers.SingleOrDefaultAsync(t => t.Id == request.SourceContainerId && t.LabWorkOrderId == work.Id && t.LabSpecimenId == specimen.Id, ct) ?? throw Missing();
-        var unavailable = TubeUnavailableReason(specimen, tube, attempts.LastOrDefault(a => a.SourceContainerId == tube.Id && a.State != LabSpecimenAttemptState.Cancelled));
+        var previousUse = attempts.LastOrDefault(a => a.SourceContainerId == tube.Id && a.State != LabSpecimenAttemptState.Cancelled);
+        var unavailable = TubeUnavailableReason(specimen, tube, previousUse, authorizedRuns > 1);
+        if (previousUse?.State == LabSpecimenAttemptState.Succeeded && (!request.ConfirmMaterialAvailable || string.IsNullOrWhiteSpace(request.Note)))
+            throw Invalid("repeat_material_confirmation_required", "Confirm sufficient material remains in the selected source and record the evidence before another purchased run.");
         if (unavailable is not null) throw Conflict("attempt_source_unavailable", unavailable);
         if (!string.Equals(tube.Barcode, request.Barcode?.Trim(), StringComparison.Ordinal)) throw Invalid("attempt_barcode_mismatch", "Scan the source tube you selected.");
         var legacy = await dbContext.LabProtocolExecutions.Where(e => e.LabWorkOrderId == work.Id && e.LabSpecimenId == specimen.Id && e.LabSpecimenAttemptId == null && e.Status != LabExecutionStatus.Abandoned).ToListAsync(ct);
@@ -185,6 +196,8 @@ public sealed partial class LabOperationsController
             ?? throw Conflict("workflow_empty", "The workflow has no stages.");
         await RequireCurrentProtocolsAsync([first.LabProtocolVersionId], ct);
         RequireProtocolDefinition((await dbContext.LabProtocolVersions.SingleAsync(p => p.Id == first.LabProtocolVersionId, ct)).DefinitionJson);
+        if (specimen.ProcessingState == LabSpecimenProcessingState.Succeeded)
+            specimen.BeginAdditionalPreparation(actorId, DateTime.UtcNow);
         var attempt = new LabSpecimenAttempt(work.Id, specimen.Id, tube.Id, workflowId, (attempts.LastOrDefault()?.Sequence ?? 0) + 1, attempts.LastOrDefault()?.Id);
         dbContext.LabSpecimenAttempts.Add(attempt);
         var execution = legacy.SingleOrDefault();
@@ -196,9 +209,9 @@ public sealed partial class LabOperationsController
         dbContext.Entry(tube).Property(t => t.UpdatedAt).IsModified = true;
     }
 
-    private static string? TubeUnavailableReason(LabSpecimen specimen, LabContainer tube, LabSpecimenAttempt? used) =>
+    private static string? TubeUnavailableReason(LabSpecimen specimen, LabContainer tube, LabSpecimenAttempt? used, bool allowSuccessfulReuse = false) =>
         tube.Kind != LabContainerKind.SubmittedSpecimen ? "Select a submitted specimen tube."
-        : used is not null ? "This source is reserved or was already attempted."
+        : used is not null && !(allowSuccessfulReuse && used.State == LabSpecimenAttemptState.Succeeded) ? "This source is reserved or was already attempted."
         : specimen.IntakeDisposition == LabSpecimenIntakeDisposition.Cancelled || specimen.ReceivedAtUtc is null || specimen.AccessionNumber is null ? "Receipt and accession are required."
         : tube.IntakeDisposition != LabSpecimenIntakeDisposition.Accepted ? $"Tube intake is {tube.IntakeDisposition?.ToString() ?? "not reviewed"}."
         : tube.Status != LabContainerStatus.Available ? $"Tube is {tube.Status}." : null;
@@ -258,7 +271,9 @@ public sealed partial class LabOperationsController
 
     private async Task<List<LabContainer>> UnusedAttemptTubesAsync(LabSpecimen specimen, Guid? excluding, CancellationToken ct)
     {
-        var used = await dbContext.LabSpecimenAttempts.Where(a => a.LabSpecimenId == specimen.Id && a.State != LabSpecimenAttemptState.Cancelled).Select(a => a.SourceContainerId).ToListAsync(ct);
+        var runCount = (await ReadSequencingRunAllocationsAsync(specimen.LabWorkOrderId, ct)).GetValueOrDefault(specimen.SubmittedSpecimenId, 1);
+        var used = await dbContext.LabSpecimenAttempts.Where(a => a.LabSpecimenId == specimen.Id && a.State != LabSpecimenAttemptState.Cancelled
+            && (runCount == 1 || a.State != LabSpecimenAttemptState.Succeeded)).Select(a => a.SourceContainerId).ToListAsync(ct);
         if (excluding.HasValue) used.Add(excluding.Value);
         return await dbContext.LabContainers.Where(t => t.LabSpecimenId == specimen.Id && t.LabWorkOrderId == specimen.LabWorkOrderId && t.Kind == LabContainerKind.SubmittedSpecimen && !used.Contains(t.Id)).ToListAsync(ct);
     }
@@ -267,7 +282,7 @@ public sealed partial class LabOperationsController
     {
         var history = await dbContext.LabSpecimenAttempts.Where(a => a.LabSpecimenId == specimen.Id).ToListAsync(ct);
         if (!request.ConfirmMaterialExhausted || string.IsNullOrWhiteSpace(request.Note) || !history.Any(a => a.State == LabSpecimenAttemptState.Failed)
-            || history.Any(a => a.State is LabSpecimenAttemptState.Planned or LabSpecimenAttemptState.InProgress or LabSpecimenAttemptState.OnHold or LabSpecimenAttemptState.Succeeded))
+            || history.Any(a => a.State is LabSpecimenAttemptState.Planned or LabSpecimenAttemptState.InProgress or LabSpecimenAttemptState.OnHold))
             throw Invalid("material_exhaustion_confirmation_required", "After terminal attempt failure, confirm that no material remains for further permitted analysis and record the evidence.");
         var unused = await UnusedAttemptTubesAsync(specimen, null, ct);
         if (unused.Any(t => t.Status == LabContainerStatus.Available && t.IntakeDisposition != LabSpecimenIntakeDisposition.Rejected))

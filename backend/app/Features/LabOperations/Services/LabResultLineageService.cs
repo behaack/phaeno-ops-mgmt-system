@@ -33,6 +33,8 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
             return existing;
         }
         var specimen = await RequireSpecimenAsync(request.LabWorkOrderId, request.LabSpecimenId, ct);
+        await SampleShippingPackingData.LockAsync(db, $"sample-sequencing:{specimen.Id}", ct);
+        await ValidatePurchasedRunAsync(normalized, specimen, ct);
         var library = await db.LabLibraries.SingleOrDefaultAsync(x => x.Id == request.LabLibraryId
             && x.LabWorkOrderId == specimen.LabWorkOrderId && x.LabSpecimenId == specimen.Id, ct)
             ?? throw Invalid("The selected library does not belong to this specimen and job.");
@@ -82,7 +84,7 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
         var output = new LabSequencingOutput(normalized.Id, specimen.LabWorkOrderId, specimen.Id, attempt.Id,
             attempt.SourceContainerId, library.Id, sendout.Id, normalized.ProviderKey, normalized.ProviderRunReference,
             normalized.SampleMappingReference, normalized.ExternalFileReference, normalized.Sha256, normalized.SizeBytes,
-            normalized.CorrectsOutputId, normalized.CorrectionReason, snapshot, hash, actorId, recordedBySource, DateTime.UtcNow, normalized.ScientificEvidence);
+            normalized.CorrectsOutputId, normalized.CorrectionReason, snapshot, hash, actorId, recordedBySource, DateTime.UtcNow, normalized.ScientificEvidence, normalized.SequencingRunNumber, normalized.LibraryPreparationChoice);
         db.LabSequencingOutputs.Add(output);
         db.LabWorkEvents.Add(new LabWorkEvent(specimen.LabWorkOrderId, specimen.Id, "SequencingOutputRecorded", DateTime.UtcNow,
             actorId, JsonSerializer.Serialize(new { outputId = output.Id, output.LabSpecimenAttemptId, output.SourceContainerId, recordedBySource }, JsonOptions)));
@@ -253,6 +255,36 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
             throw new OrderManagementException("lineage_capture_conflict", "This identity was registered concurrently or already describes another output. Retry the original request unchanged; use an explicit correction for changed evidence.", 409);
         }
     }
+    private async Task ValidatePurchasedRunAsync(RegisterSequencingOutputRequest request, LabSpecimen specimen, CancellationToken ct)
+    {
+        var required = (await new LabSequencingRunProgress(db).AllocationsAsync(specimen.LabWorkOrderId, ct))
+            .GetValueOrDefault(specimen.SubmittedSpecimenId, 1);
+        var number = request.SequencingRunNumber ?? 1;
+        if (number < 1 || number > required) throw Invalid($"Choose a purchased run number from 1 to {required}.");
+        if (required > 1 && (request.SequencingRunNumber is null || request.LibraryPreparationChoice is null))
+            throw Invalid("Repeated sequencing requires an explicit purchased run number and library preparation choice.");
+        if (request.LibraryPreparationChoice is not (null or "NewPreparation" or "ExistingLibrary"))
+            throw Invalid("Choose new library preparation or an existing prepared library.");
+        if (required == 1 && request.SequencingRunNumber is null && request.LibraryPreparationChoice is null) return;
+        var history = await db.LabSequencingOutputs.AsNoTracking().Where(o => o.LabSpecimenId == specimen.Id).ToListAsync(ct);
+        if (request.CorrectsOutputId.HasValue)
+        {
+            var original = history.SingleOrDefault(o => o.Id == request.CorrectsOutputId);
+            if (original is null || (original.SequencingRunNumber ?? 1) != number)
+                throw Invalid("A correction must retain the original purchased run number.");
+        }
+        var sameRun = history.Where(o => (o.SequencingRunNumber ?? 1) == number).ToList();
+        // Additional files and corrections preserve the physical run and preparation identity.
+        if (!request.CorrectsOutputId.HasValue && sameRun.Where(o => !history.Any(c => c.CorrectsOutputId == o.Id)).Any(o => o.LabLibraryId != request.LabLibraryId || o.ProviderKey != request.ProviderKey
+            || o.ProviderRunReference != request.ProviderRunReference || o.LibraryPreparationChoice != request.LibraryPreparationChoice
+                && o.LibraryPreparationChoice is not null))
+            throw Invalid("Files for one purchased run must use the same library, preparation choice and actual provider run. Use another authorized run number for distinct sequencing.");
+        if (request.LibraryPreparationChoice == "NewPreparation"
+            && !sameRun.Any(o => o.LabLibraryId == request.LabLibraryId && o.LibraryPreparationChoice == "NewPreparation") && history.Any(o => o.LabLibraryId == request.LabLibraryId
+            && (o.SequencingRunNumber ?? 1) != number))
+            throw Invalid("This library already supplies another run. Choose existing prepared library, or select the newly prepared library.");
+    }
+
     private static RegisterSequencingOutputRequest Normalize(RegisterSequencingOutputRequest r)
     {
         try

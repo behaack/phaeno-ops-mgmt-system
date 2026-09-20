@@ -54,6 +54,7 @@ public sealed class LabCompletionForecastService(PSeqOperationsDbContext db)
         var packages = await db.ResultOutputPackages.AsNoTracking().Where(p => jobIds.Contains(p.LabWorkOrderId)).ToListAsync(token);
         var transitions = await db.Set<LabForecastTransition>().AsNoTracking().Where(t => jobIds.Contains(t.LabWorkOrderId)).ToListAsync(token);
         var submittedIds = samples.Select(s => s.SubmittedSpecimenId).ToArray();
+        var requestedRuns = await db.LabSamples.AsNoTracking().Where(s => submittedIds.Contains(s.Id) && s.SequencingRunCount > 1).ToDictionaryAsync(s => s.Id, s => s.SequencingRunCount, token);
         var releases = await new LabJobQuery(db).Releases().Where(r => submittedIds.Contains(r.SampleId)).ToListAsync(token);
         var blockedJobs = await db.LabExceptions.AsNoTracking().Where(e => jobIds.Contains(e.LabWorkOrderId) && e.IsBlocking && e.Status == LabExceptionStatus.Open)
             .Select(e => e.LabWorkOrderId).Distinct().ToListAsync(token);
@@ -86,6 +87,10 @@ public sealed class LabCompletionForecastService(PSeqOperationsDbContext db)
                     new(sample.Id, sample.AccessionNumber ?? sample.SubmittedSpecimenId.ToString(), stage, entered, null, null, status, reason, [], policy?.Id, policy?.Revision, calendar?.Revision);
                 var release = releases.Where(r => r.SampleId == sample.SubmittedSpecimenId).Select(r => r.ReleasedAtUtc).Min();
                 if (release is not null) { sampleResults.Add(new(sample.Id, sample.AccessionNumber ?? sample.SubmittedSpecimenId.ToString(), "Delivered", release, release, 0, "Delivered", "Results available in the Portal.", [])); continue; }
+                if (requestedRuns.TryGetValue(sample.SubmittedSpecimenId, out var runCount)
+                    && runCount > 1
+                    && work.Status != LabWorkOrderStatus.Cancelled)
+                { sampleResults.Add(Unknown("Repeated sequencing", "The sample has outstanding purchased runs. Review run progress; a single-run forecast does not cover the full allocation.")); continue; }
                 if (work.Status == LabWorkOrderStatus.Cancelled) { sampleResults.Add(Unknown("Cancelled", "The job is cancelled.", "Cancelled")); continue; }
                 var sampleExecutions = executions.Where(e => e.LabSpecimenId == sample.Id && e.Status != LabExecutionStatus.Abandoned
                     && (attempt is null || e.LabSpecimenAttemptId == attempt.Id)).ToList();

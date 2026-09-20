@@ -61,5 +61,5 @@ public sealed class LabServiceTimingService(PSeqOperationsDbContext db)
     public static LabServiceCommercialSnapshotDto? CommercialSnapshot(ConfiguredLabServiceSnapshot? value) => value is null ? null : new(
         value.OfferingId, value.FamilyId, value.OfferingVersion, value.ProductName, value.CatalogItemId, value.CatalogCode,
         value.CatalogItemVersion, value.Currency, value.UnitPrice, value.SpecimenCount, value.Subtotal, value.Tax, value.Total,
-        value.AnalysisIds, value.IncludedOutputContract, value.MinimumTurnaroundDays, value.MaximumTurnaroundDays, value.CommittedAtUtc);
+        value.AnalysisIds, value.IncludedOutputContract, value.MinimumTurnaroundDays, value.MaximumTurnaroundDays, value.CommittedAtUtc, value.SequencingRunCount ?? value.SpecimenCount);
 }

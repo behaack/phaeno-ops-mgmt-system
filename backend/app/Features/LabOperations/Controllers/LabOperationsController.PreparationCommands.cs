@@ -49,8 +49,8 @@ public sealed partial class LabOperationsController
         foreach (var workId in workIds)
         {
             var work = await RequireOpenExecutionWorkAsync(workId, ct);
-            if (work.TubeUsePolicyKey != LabTubeUsePolicy.RunOneWithFailureFallback)
-                throw Conflict("preparation_workflow_mismatch", "Every job must have the run-one-with-failure-fallback instruction.");
+            if (work.TubeUsePolicyKey != LabTubeUsePolicy.RunOneWithFailureFallback && work.TubeUsePolicyKey != LabTubeUsePolicy.RunAuthorizedWithFailureFallback)
+                throw Conflict("preparation_workflow_mismatch", "Every job must have an authorized run and failure-recovery instruction.");
             jobs.Add(work.Id, work);
         }
         string? reportProperty = null;
@@ -95,7 +95,8 @@ public sealed partial class LabOperationsController
                 var work = jobs[candidate!.LabWorkOrderId];
                 await RequireExecutionWorkflowAsync(work, batch.LabServiceWorkflowVersionId, ct);
                 var specimen = await RequireSpecimenAsync(work.Id, candidate.LabSpecimenId ?? Guid.Empty, ct);
-                if (specimen.ProcessingState is LabSpecimenProcessingState.Succeeded or LabSpecimenProcessingState.Failed)
+                if (specimen.ProcessingState == LabSpecimenProcessingState.Failed || specimen.ProcessingState == LabSpecimenProcessingState.Succeeded
+                    && (await ReadSequencingRunAllocationsAsync(work.Id, ct)).GetValueOrDefault(specimen.SubmittedSpecimenId, 1) == 1)
                     throw Conflict("specimen_processing_final", "This specimen already has a final processing outcome.");
                 var attempt = await dbContext.LabSpecimenAttempts.SingleOrDefaultAsync(a => a.LabSpecimenId == specimen.Id && a.State == LabSpecimenAttemptState.Planned, ct);
                 if (attempt is not null)

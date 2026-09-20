@@ -36,12 +36,13 @@ public static class LabSampleCsvParser
         }
 
         var headers = parsed.Rows[0].Select(value => value.Trim()).ToList();
-        if (headers.Count != RequiredHeaders.Length
+        if (headers.Count is not (3 or 4)
             || headers.Distinct(StringComparer.OrdinalIgnoreCase).Count() != headers.Count
-            || !headers.SequenceEqual(RequiredHeaders, StringComparer.OrdinalIgnoreCase))
+            || !headers.Take(3).SequenceEqual(RequiredHeaders, StringComparer.OrdinalIgnoreCase)
+            || (headers.Count == 4 && !headers[3].Equals("sequencing_runs", StringComparison.OrdinalIgnoreCase)))
         {
             errors.Add(new LabSampleImportErrorDto(1, "header",
-                "Use exactly these columns in this order: customer_sample_id, biological_source, tube_count."));
+                "Use customer_sample_id, biological_source, tube_count, and optional sequencing_runs, in that order. Omitted sequencing_runs defaults to one."));
             return new LabSampleCsvParseResult([], errors, 0, new Dictionary<string, int>());
         }
 
@@ -60,10 +61,10 @@ public static class LabSampleCsvParser
                 blankRows++;
                 continue;
             }
-            if (sourceRow.Count != RequiredHeaders.Length)
+            if (sourceRow.Count != headers.Count)
             {
                 errors.Add(new LabSampleImportErrorDto(rowNumber, "row",
-                    "This row must contain exactly three columns."));
+                    "Each row must contain the same number of columns as the header."));
                 continue;
             }
 
@@ -102,8 +103,14 @@ public static class LabSampleCsvParser
                     "Tube count must be a whole number between 1 and 100."));
                 rowHasError = true;
             }
+            var runs = 1;
+            if (headers.Count == 4 && (!int.TryParse(sourceRow[3].Trim(), out runs) || runs is < 1 or > 10000))
+            {
+                errors.Add(new(rowNumber, "sequencing_runs", "Enter a whole number from one to 10,000."));
+                rowHasError = true;
+            }
             if (!rowHasError)
-                rows.Add(new LabSampleImportRowDto(rowNumber, customerSampleId, biologicalSource, tubeCount));
+                rows.Add(new LabSampleImportRowDto(rowNumber, customerSampleId, biologicalSource, tubeCount, runs));
         }
 
         errors.AddRange(ValidateRows(rows, order));
@@ -131,6 +138,9 @@ public static class LabSampleCsvParser
                 errors.Add(new LabSampleImportErrorDto(row.RowNumber, "customer_sample_id",
                     $"Customer sample ID '{row.CustomerSampleId}' appears more than once."));
 
+        if (rows.Any(row => row.SequencingRunCount is < 1 or > 10000)
+            || rows.Sum(row => (long)row.SequencingRunCount) != order.RequestedSequencingRunCount)
+            errors.Add(new(0, "sequencing_runs", $"Allocate exactly {order.RequestedSequencingRunCount} sample-sequencing runs across the sample list."));
         if (rows.Count != order.RequestedSpecimenCount)
             errors.Add(new LabSampleImportErrorDto(0, "sample_count",
                 $"The accepted Job requires exactly {order.RequestedSpecimenCount} samples; this file contains {rows.Count} valid rows."));

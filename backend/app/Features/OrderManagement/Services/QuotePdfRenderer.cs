@@ -9,7 +9,7 @@ using UglyToad.PdfPig.Writer;
 
 public sealed record QuotePdfLine(string Description, decimal Quantity, decimal UnitPrice);
 public sealed record QuotePdfSource(string BiologicalSource, int SpecimenCount);
-public sealed record QuotePdfScope(int RequestedSpecimenCount, IReadOnlyList<QuotePdfSource> SourceGroups);
+public sealed record QuotePdfScope(int RequestedSpecimenCount, IReadOnlyList<QuotePdfSource> SourceGroups, int? RequestedSequencingRunCount = null);
 
 public sealed record QuotePdfDocument(
     string OrderNumber, string? JobName, string OrganizationName, string DepartmentName,
@@ -213,7 +213,7 @@ public static class QuotePdfRenderer
             page.SetTextAndFillColor(242, 247, 249);
             page.SetStrokeColor(242, 247, 249);
             page.DrawRectangle(new PdfPoint(Left, y - 18), Right - Left, 29, 0, true);
-            Text($"Sample scope · {Number(total)} samples", Left + 10, y - 6, 11, strong: true);
+            Text($"Sample scope · {Number(total)} samples · {Number(document.SampleScope?.RequestedSequencingRunCount ?? total)} sample-sequencing runs", Left + 10, y - 6, 11, strong: true);
             y -= 37;
             Text("Biological source", Left + 10, y, 9, strong: true);
             RightText("Samples", Right - 10, y, 9, strong: true);

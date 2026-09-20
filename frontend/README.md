@@ -31,6 +31,19 @@ pnpm run build
 
 Run `pnpm run lint` periodically while working to catch code quality, React hooks, and JSX accessibility issues before verification.
 
+## Development dependency caches
+
+The Portal uses `node_modules/.vite-portal-${mode}` for Vite's generated dependency
+cache. Development and test mode use separate directories, and standalone previews
+using Vite's default cache cannot overwrite the running Portal's optimized modules.
+
+Give every temporary preview with its own configuration a distinct `cacheDir`,
+especially when it imports or extends this configuration. Sharing a dependency cache
+between different Vite configurations can leave open pages requesting removed module
+files and cause dynamic-import or MIME-type errors. After a cache configuration change,
+Vite restarts automatically; reload affected browser pages or reopen the original
+invitation link. Do not issue a replacement invitation for a module-loading failure.
+
 ## File Structure
 
 ```text

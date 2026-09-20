@@ -19,6 +19,9 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
     public bool HasMixedBiologicalSources { get; private set; }
     public string? SharedBiologicalSource { get; private set; }
     public int RequestedSpecimenCount { get; private set; }
+    public int? SequencingRunCount { get; private set; }
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public int RequestedSequencingRunCount => SequencingRunCount ?? RequestedSpecimenCount;
     public string? TubeUsePolicyKey { get; private set; }
     public int? TubeUsePolicyVersion { get; private set; }
     public string StorageRequirements { get; private set; } = null!;
@@ -132,6 +135,17 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         SafetyDeclaration = OrderText.Required(safetyDeclaration, "Safety declaration", 2000);
     }
 
+    public void SetSequencingRunCount(int? count)
+    {
+        EnsureStatus(LabServiceOrderStatus.DraftRequest, LabServiceOrderStatus.ChangesRequested);
+        if (count.HasValue && (count < RequestedSpecimenCount || count > 10000))
+            throw new ArgumentOutOfRangeException(nameof(count), "Sample-sequencing runs must cover every sample and cannot exceed 10,000.");
+        SequencingRunCount = count;
+        TubeUsePolicyKey = RequestedSequencingRunCount > RequestedSpecimenCount
+            ? "run_authorized_with_failure_fallback" : "run_one_with_failure_fallback";
+        TubeUsePolicyVersion = 1;
+    }
+
     public void UpdatePriceProposal(decimal? proposedUnitPrice, string? proposalNote, Guid actorUserId, DateTime utcNow)
     {
         EnsureStatus(LabServiceOrderStatus.DraftRequest, LabServiceOrderStatus.ChangesRequested);
@@ -203,7 +217,7 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         if (SourceRequestId.HasValue || ProposedUnitPrice.HasValue)
             throw new InvalidOperationException("Sales-assisted work and negotiated prices require the manual quote path.");
         if (Samples.Count != 0 || SourceGroups.Count == 0 || SourceGroups.Sum(group => group.SpecimenCount) != RequestedSpecimenCount
-            || snapshot.SpecimenCount != RequestedSpecimenCount || snapshot.OfferingId == Guid.Empty
+            || snapshot.SpecimenCount != RequestedSpecimenCount || (snapshot.SequencingRunCount ?? snapshot.SpecimenCount) != RequestedSequencingRunCount || snapshot.OfferingId == Guid.Empty
             || snapshot.CommittedAtUtc != utcNow || utcNow.Kind != DateTimeKind.Utc)
             throw new InvalidOperationException("Review a complete Job profile and current standard offering before placement.");
         var quote = Quotes.SingleOrDefault(value => value.Id == quoteId);
@@ -348,7 +362,12 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         if (scope.AdditionalSources.Count == 0 || scope.AdditionalSources.Any(s => s.SpecimenCount < 1)
             || scope.AdditionalSources.Select(s => LabServiceSourceGroup.Normalize(s.BiologicalSource)).Distinct().Count() != scope.AdditionalSources.Count)
             throw new InvalidOperationException("Specify positive additional counts for unique biological sources.");
+        var additionalRuns = scope.AdditionalSequencingRunCount ?? scope.AdditionalSources.Sum(s => s.SpecimenCount);
+        if (additionalRuns < scope.AdditionalSources.Sum(s => s.SpecimenCount) || additionalRuns > 10000 - RequestedSequencingRunCount)
+            throw new InvalidOperationException("Additional runs must cover the new samples without exceeding 10,000 total runs.");
+        var totalRuns = RequestedSequencingRunCount + additionalRuns;
         SetRequestedSpecimenCount(RequestedSpecimenCount + scope.AdditionalSources.Sum(s => s.SpecimenCount));
+        SequencingRunCount = totalRuns;
         foreach (var source in scope.AdditionalSources)
         {
             var existing = SourceGroups.SingleOrDefault(g => g.NormalizedBiologicalSource == LabServiceSourceGroup.Normalize(source.BiologicalSource));
@@ -360,6 +379,7 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
 
     public bool HasAcceptedSampleSourceCounts => SourceGroups.Count > 0
         && Samples.Count == RequestedSpecimenCount
+        && Samples.Sum(sample => sample.SequencingRunCount) == RequestedSequencingRunCount
         && SourceGroups.All(group => Samples.Count(sample =>
             LabServiceSourceGroup.Normalize(sample.BiologicalSource) == group.NormalizedBiologicalSource) == group.SpecimenCount);
 
@@ -386,9 +406,9 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
     public void ConfirmTubeUsePolicy()
     {
         EnsureSampleRosterEditable();
-        if (TubeUsePolicyKey is not null && (TubeUsePolicyKey != "run_one_with_failure_fallback" || TubeUsePolicyVersion != 1))
+        if (TubeUsePolicyKey is not null && ((TubeUsePolicyKey != "run_one_with_failure_fallback" && TubeUsePolicyKey != "run_authorized_with_failure_fallback") || TubeUsePolicyVersion != 1))
             throw new InvalidOperationException("The recorded tube-use instruction cannot be replaced.");
-        TubeUsePolicyKey = "run_one_with_failure_fallback";
+        TubeUsePolicyKey ??= "run_one_with_failure_fallback";
         TubeUsePolicyVersion = 1;
     }
 
@@ -397,6 +417,8 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         EnsureSampleRosterEditable();
         if (Samples.Count != RequestedSpecimenCount)
             throw new InvalidOperationException($"Enter exactly {RequestedSpecimenCount} samples before finalizing the sample list.");
+        if (Samples.Sum(sample => sample.SequencingRunCount) != RequestedSequencingRunCount)
+            throw new InvalidOperationException($"Allocate exactly {RequestedSequencingRunCount} sample-sequencing runs before finalizing the sample list.");
         if (SourceGroups.Count == 0)
             throw new InvalidOperationException("The accepted biological-source counts are unavailable. Contact Phaeno before finalizing the sample list.");
         var duplicate = Samples.GroupBy(sample => sample.CustomerSampleId.Trim(), StringComparer.OrdinalIgnoreCase)
@@ -551,6 +573,7 @@ public sealed class LabSample : IAudit, IConcurrency
     public string CustomerSampleId { get; private set; } = null!;
     public string MaterialType { get; private set; } = null!;
     public string BiologicalSource { get; private set; } = null!;
+    public int SequencingRunCount { get; private set; } = 1;
     public decimal Quantity { get; private set; }
     public string QuantityUnit { get; private set; } = null!;
     public string StorageRequirements { get; private set; } = null!;
@@ -625,6 +648,13 @@ public sealed class LabSample : IAudit, IConcurrency
         Concentration = concentration;
         Notes = OrderText.Optional(notes, 4000);
         AnalysisDefinitionIdsJson = OrderText.Json(analysisDefinitionIdsJson);
+    }
+
+    public void SetSequencingRunCount(int count)
+    {
+        if (Status != LabSampleStatus.Expected) throw new InvalidOperationException("Only an expected sample can be edited.");
+        if (count is < 1 or > 10000) throw new ArgumentOutOfRangeException(nameof(count), "Enter between one and 10,000 sample-sequencing runs.");
+        SequencingRunCount = count;
     }
 
     public void RecordCustomerShipment(string? carrier, string? trackingNumber, DateTime? shippedAt)

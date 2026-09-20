@@ -70,6 +70,9 @@ export type InvitationPreview = {
   lastName: string | null
   organizationName: string
   expiresAt: string
+  isOrganizationAdmin?: boolean
+  departments?: Array<{ departmentId: string; departmentName: string; isDepartmentAdmin: boolean }>
+  version?: number
 }
 
 export async function previewInvitation(token: string) {
@@ -97,6 +100,7 @@ export async function createInvitation(input: {
 
 export async function acceptInvitation(input: {
   token: string
+  version?: number
   firstName: string
   lastName: string
 }) {

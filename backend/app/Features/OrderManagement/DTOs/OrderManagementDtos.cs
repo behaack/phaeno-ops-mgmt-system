@@ -170,7 +170,7 @@ public sealed record LabSampleDto(
     DateTime? CustomerShippedAt,
     string? TenantSafeReason,
     string? InternalNote,
-    long Version);
+    long Version, int SequencingRunCount = 1);
 
 public sealed record LabServiceSourceGroupDto(
     Guid Id,
@@ -291,7 +291,7 @@ public sealed record LabServiceOrderDto(
     bool CanManageQuotes = false,
     string? QuoteAcceptanceBlockedReason = null,
     LabCustomerProgress? LaboratoryProgress = null, string? TubeUsePolicyKey = null, int? TubeUsePolicyVersion = null,
-    IReadOnlyList<Guid>? AuthorizedSampleIds = null, bool CanProposeChange = false);
+    IReadOnlyList<Guid>? AuthorizedSampleIds = null, bool CanProposeChange = false, int RequestedSequencingRunCount = 0);
 
 public sealed record ReagentOrderLineDto(
     Guid Id,
@@ -611,7 +611,7 @@ public sealed record LabOrderWriteRequest(
     IReadOnlyList<LabServiceSourceGroupWriteRequest>? SourceGroups = null,
     decimal? ProposedUnitPrice = null,
     string? PriceProposalNote = null,
-    bool SubmitForPricing = false);
+    bool SubmitForPricing = false, int? SequencingRunCount = null);
 public sealed record InitiateCustomerLabOrderRequest(
     Guid OrganizationId,
     string? CustomerReference,
@@ -624,7 +624,7 @@ public sealed record InitiateCustomerLabOrderRequest(
     Guid? SourceRequestId = null,
     decimal? ProposedUnitPrice = null,
     string? PriceProposalNote = null,
-    Guid? DepartmentId = null);
+    Guid? DepartmentId = null, int? SequencingRunCount = null);
 public sealed record LabServiceSourceGroupWriteRequest(string BiologicalSource, int SpecimenCount);
 public sealed record LabSampleRosterWriteRequest(
     string CustomerSampleId,
@@ -634,12 +634,12 @@ public sealed record LabSampleRosterWriteRequest(
     decimal? Concentration = null,
     string? Notes = null,
     long? Version = null,
-    long? OrderVersion = null);
+    long? OrderVersion = null, int? SequencingRunCount = null);
 public sealed record LabSampleImportRowDto(
     int RowNumber,
     string CustomerSampleId,
     string BiologicalSource,
-    int TubeCount);
+    int TubeCount, int SequencingRunCount = 1);
 public sealed record LabSampleImportErrorDto(int RowNumber, string Column, string Message);
 public sealed record LabSampleImportPreviewDto(
     Guid PreviewId,
@@ -656,7 +656,7 @@ public sealed record LabSampleAccessionRequest(long Version, string AccessionId)
 public sealed record LabSampleTransitionRequest(long Version, string Status, string? Reason, string? InternalNote);
 public sealed record QuoteLineRequest(Guid CatalogItemId, string Description, decimal Quantity, decimal UnitPrice);
 public sealed record IssueQuoteRequest(long Version, IReadOnlyList<QuoteLineRequest> Lines, decimal Tax, string Currency, DateTime? ExpiresAt, string Purpose = "Initial", string? PricingDecisionReason = null, Guid? SourceQuoteId = null,
-    IReadOnlyList<LabChangeSource>? AdditionalSources = null);
+    IReadOnlyList<LabChangeSource>? AdditionalSources = null, int? AdditionalSequencingRunCount = null);
 public sealed record QuoteExtensionRequestBody(long Version, string? Reason = null);
 public sealed record AcceptQuoteRequest(long Version, Guid QuoteId, string? PurchaseOrderNumber = null);
 
@@ -776,7 +776,7 @@ public static class OrderManagementMappings
         sample.Concentration, sample.Notes, sample.AnalysisDefinitionIdsJson, sample.AccessionId,
         sample.Status.ToString(), sample.ReplacementForSampleId, sample.ReceivedAt, sample.ReceiptCondition,
         sample.Carrier, sample.TrackingNumber, sample.CustomerShippedAt, sample.TenantSafeReason,
-        platform ? sample.InternalNote : null, sample.Version);
+        platform ? sample.InternalNote : null, sample.Version, sample.SequencingRunCount);
 
     public static LabResultReleaseDto ToDto(
         this LabResultRelease release,

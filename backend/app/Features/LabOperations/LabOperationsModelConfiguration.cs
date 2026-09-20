@@ -30,8 +30,8 @@ public static class LabOperationsModelConfiguration
             entity.Property(e => e.StageSkipsJson).HasColumnType("jsonb");
             entity.Property(e => e.Version).IsConcurrencyToken();
             entity.HasIndex(e => new { e.LabSpecimenId, e.Sequence }).IsUnique();
-            entity.HasIndex(e => e.LabSpecimenId).IsUnique().HasFilter("state IN ('Planned', 'InProgress', 'OnHold', 'Succeeded')");
-            entity.HasIndex(e => e.SourceContainerId).IsUnique().HasFilter("state <> 'Cancelled'");
+            entity.HasIndex(e => e.LabSpecimenId).IsUnique().HasFilter("state IN ('Planned', 'InProgress', 'OnHold')");
+            entity.HasIndex(e => e.SourceContainerId).IsUnique().HasFilter("state IN ('Planned', 'InProgress', 'OnHold')");
             entity.HasOne<LabWorkOrder>().WithMany().HasForeignKey(e => e.LabWorkOrderId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<LabSpecimen>().WithMany().HasForeignKey(e => e.LabSpecimenId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<LabContainer>().WithMany().HasForeignKey(e => e.SourceContainerId).OnDelete(DeleteBehavior.Restrict);

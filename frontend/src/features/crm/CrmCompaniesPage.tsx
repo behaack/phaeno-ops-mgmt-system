@@ -16,6 +16,7 @@ import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -79,20 +80,7 @@ export function CrmCompaniesPage() {
             Portal access, services, and operational readiness.
           </p>
         </div>
-        <Button className="cursor-pointer" onClick={() => setCreateOpen(true)}>
-          <Plus data-icon="inline-start" />
-          New company
-        </Button>
       </section>
-
-      <Alert>
-        <AlertTitle>Companies are the customer record</AlertTitle>
-        <AlertDescription>
-          Portal access, users, services, and readiness are enabled and managed
-          from each Company. Creating a Company alone does not grant access or
-          start work.
-        </AlertDescription>
-      </Alert>
 
       {companiesQuery.error ? (
         <Alert variant="destructive">
@@ -105,10 +93,17 @@ export function CrmCompaniesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Company directory</CardTitle>
-          <CardDescription>
+          <CardTitle className="self-center">Company directory</CardTitle>
+          <CardAction className="row-span-1">
+            <Button className="cursor-pointer" onClick={() => setCreateOpen(true)}>
+              <Plus data-icon="inline-start" />
+              New company
+            </Button>
+          </CardAction>
+          <CardDescription className="col-span-2">
             Search by company, domain, or industry. Open the company name to
-            view its complete CRM record.
+            view its complete CRM record. Creating a Company alone does not
+            grant access or start work.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

@@ -16,6 +16,7 @@ import { useQuoteStatus } from './use-quote-status'
 
 const changeSchema = z.object({
   sources: z.array(z.object({ biologicalSource: z.string().trim().min(1).max(500), specimenCount: z.coerce.number().int().min(1).max(100) })).min(1),
+  runs: z.string().trim().refine(v => !v || (/^\d+$/.test(v) && Number(v) > 0 && Number(v) <= 10000), "Enter a whole number from 1 to 10,000."),
   unitPrice: z.coerce.number().positive().refine(value => Math.round(value * 100) / 100 === value, 'Use at most two decimal places.'),
 })
 
@@ -23,15 +24,17 @@ export function IssueLabChangeQuote({ order, catalogItems, onSaved }: { order: L
   const [open, setOpen] = useState(false)
   const [reviewVersion, setReviewVersion] = useState(order.version)
   const catalog = catalogItems.find(item => item.isPSeqLabService && item.isActive && item.salesUnit.toLowerCase() === 'specimen')
-  const form = useForm<z.input<typeof changeSchema>, unknown, z.output<typeof changeSchema>>({ resolver: zodResolver(changeSchema), defaultValues: { sources: [{ biologicalSource: '', specimenCount: 1 }], unitPrice: catalog?.basePrice ?? 0 } })
+  const form = useForm<z.input<typeof changeSchema>, unknown, z.output<typeof changeSchema>>({ resolver: zodResolver(changeSchema), defaultValues: { sources: [{ biologicalSource: '', specimenCount: 1 }], runs: '', unitPrice: catalog?.basePrice ?? 0 } })
   const sources = useFieldArray({ control: form.control, name: 'sources' })
   const change = useMutation({
     mutationFn: async (values: z.output<typeof changeSchema>) => {
       if (!catalog) throw new Error('An active PSeq Lab Service specimen item is required.')
       const quantity = values.sources.reduce((total, source) => total + source.specimenCount, 0)
       if (quantity + order.requestedSpecimenCount > 100) throw new Error('A Job can contain at most 100 accepted samples.')
-      return issuePlatformQuote('lab', order.id, { version: reviewVersion, purpose: 'Change', currency: 'USD', tax: 0, additionalSources: values.sources,
-        lines: [{ catalogItemId: catalog.id, description: 'Additional PSeq Lab Service samples', quantity, unitPrice: values.unitPrice }] })
+      const runs = values.runs ? Number(values.runs) : quantity
+      if (runs < quantity || runs + (order.requestedSequencingRunCount ?? order.requestedSpecimenCount) > 10000) throw new Error('Runs must cover every new sample without exceeding 10,000 total runs.')
+      return issuePlatformQuote('lab', order.id, { version: reviewVersion, purpose: 'Change', currency: 'USD', tax: 0, additionalSources: values.sources, additionalSequencingRunCount: runs,
+        lines: [{ catalogItemId: catalog.id, description: 'Additional PSeq Lab Service sample-sequencing runs', quantity: runs, unitPrice: values.unitPrice }] })
     },
     onSuccess: async () => { await onSaved(); setOpen(false); form.reset() },
   })
@@ -50,9 +53,11 @@ export function IssueLabChangeQuote({ order, catalogItems, onSaved }: { order: L
             {sources.fields.length > 1 ? <Button type="button" variant="ghost" onClick={() => sources.remove(index)}>Remove source {index + 1}</Button> : null}
           </div>)}
           <Button type="button" variant="outline" onClick={() => sources.append({ biologicalSource: '', specimenCount: 1 })}>Add biological source</Button>
-          <Label htmlFor="change-price">Price per additional sample (USD) *</Label><Input id="change-price" type="number" min="0.01" step="0.01" {...form.register('unitPrice')} aria-invalid={Boolean(form.formState.errors.unitPrice)} aria-describedby="change-price-error" />
+          <Label htmlFor="change-runs">Additional sample-sequencing runs</Label><Input id="change-runs" type="number" min={1} max={10000} step={1} placeholder="One per additional sample" {...form.register('runs')} aria-invalid={Boolean(form.formState.errors.runs)} aria-describedby="change-runs-help" />
+          <p id="change-runs-help" className="text-xs text-muted-foreground">{form.formState.errors.runs?.message ?? 'Leave blank for one run per new sample. Allocate these runs when identifying the additional samples.'}</p>
+          <Label htmlFor="change-price">Price per sample-sequencing run (USD) *</Label><Input id="change-price" type="number" min="0.01" step="0.01" {...form.register('unitPrice')} aria-invalid={Boolean(form.formState.errors.unitPrice)} aria-describedby="change-price-error" />
           <p id="change-price-error" role="alert" className="text-sm text-destructive">{form.formState.errors.unitPrice?.message}</p>
-          <p className="text-sm">Additional subtotal: {money(form.watch('sources').reduce((sum, source) => sum + (Number(source.specimenCount) || 0), 0) * (Number(form.watch('unitPrice')) || 0))}. Tax is included when approved information is available; otherwise it is calculated at invoicing.</p>
+          <p className="text-sm">Additional subtotal: {money((Number(form.watch('runs')) || form.watch('sources').reduce((sum, source) => sum + (Number(source.specimenCount) || 0), 0)) * (Number(form.watch('unitPrice')) || 0))}. Tax is included when approved information is available; otherwise it is calculated at invoicing.</p>
         </fieldset>
       </form>
       {change.error ? <Alert variant="destructive"><AlertTitle>Quote was not issued</AlertTitle><AlertDescription>{getOrderErrorMessage(change.error, 'Refresh the Job and review the additional scope again.')}</AlertDescription></Alert> : null}
@@ -71,8 +76,7 @@ function ChangeQuote({ order, quote, onSaved }: { order: LabServiceOrder; quote:
   const [decision, setDecision] = useState<{ kind: 'accept' | 'decline'; version: number } | null>(null)
   const [po, setPo] = useState('')
   const [confirmed, setConfirmed] = useState(false)
-  const organizationAdmin = session?.memberships.some(membership => membership.organizationId === order.organizationId && membership.isOrganizationAdmin) === true
-  const canDecide = organizationAdmin && session?.capabilities.canAcceptLabServiceQuotes === true && status === 'Issued' && ['PlacedAwaitingSamples', 'InProgress', 'ResultsAvailable'].includes(order.status)
+  const canDecide = session?.selectedOrganization?.organizationId === order.organizationId && session?.capabilities.canAcceptLabServiceQuotes === true && status === 'Issued' && ['PlacedAwaitingSamples', 'InProgress', 'ResultsAvailable'].includes(order.status)
   const requiresPo = session?.selectedDepartment?.purchaseOrderRequired === true
   const scope = readScope(quote)
   const save = useMutation({ mutationFn: async () => {

@@ -147,13 +147,19 @@ public sealed class SampleShipmentPackingResetService(PSeqOperationsDbContext db
     {
         var destinationIds = shipments.Select(item => item.DestinationId).Distinct().ToArray();
         var typeIds = shipments.SelectMany(item => item.Items.Select(row => row.SampleTypeDefinitionId)).Distinct().ToArray();
+        var familyKeys = await db.SampleTypeDefinitions.AsNoTracking().Where(item => typeIds.Contains(item.Id))
+            .Select(item => item.DefinitionKey).Distinct().ToArrayAsync(ct);
+        var keys = await db.SampleTypeDefinitions.AsNoTracking().Where(item => familyKeys.Contains(item.DefinitionKey))
+            .ToDictionaryAsync(item => item.Id, item => item.DefinitionKey, ct);
+        var revisionIds = keys.Keys.ToArray();
         var rules = await db.SampleShippingInstructionRules.AsNoTracking().Where(item => destinationIds.Contains(item.DestinationId)
-            && typeIds.Contains(item.SampleTypeDefinitionId)).ToArrayAsync(ct);
+            && revisionIds.Contains(item.SampleTypeDefinitionId)).ToArrayAsync(ct);
         var now = DateTime.UtcNow;
         return shipments.SelectMany(shipment => shipment.Items.Select(item =>
         {
             var matches = rules.Where(rule => rule.DestinationId == shipment.DestinationId
-                && rule.SampleTypeDefinitionId == item.SampleTypeDefinitionId && rule.IsEffectiveAt(now)).ToArray();
+                && keys.TryGetValue(rule.SampleTypeDefinitionId, out var ruleKey)
+                && keys.TryGetValue(item.SampleTypeDefinitionId, out var sampleKey) && ruleKey == sampleKey && rule.IsEffectiveAt(now)).ToArray();
             // Missing/changed configuration must not mix unknown handling requirements during an otherwise safe reset.
             var handling = matches.Length == 1 && !matches[0].RequiresSeparateShipment
                 ? $"group:{matches[0].CompatibilityGroup.ToUpperInvariant()}" : $"type:{item.SampleTypeDefinitionId:N}";

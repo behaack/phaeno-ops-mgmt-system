@@ -21,6 +21,11 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         var fixture = await scope.CreateQuotedOrderAsync("Change acceptance", 2);
         var accepted = await scope.AcceptQuoteAsync(fixture);
         var original = await scope.DbContext.LabServiceOrders.AsNoTracking().SingleAsync(o => o.Id == fixture.OrderId);
+        var departmentMembership = await scope.DbContext.OrganizationMemberships.SingleAsync(value => value.UserId == scope.CustomerUser.Id);
+        departmentMembership.SetOrganizationAdmin(false);
+        var departmentOrder = await scope.DbContext.LabServiceOrders.SingleAsync(value => value.Id == fixture.OrderId);
+        scope.DbContext.Add(new OrganizationDepartmentMembership(departmentMembership.Id, departmentOrder.DepartmentId, true));
+        await scope.DbContext.SaveChangesAsync();
         var originalSnapshot = original.PlacementSnapshotJson;
         var proposed = await scope.IssueAddition(fixture.OrderId, accepted.Version);
         Assert.Equal(2, proposed.RequestedSpecimenCount);

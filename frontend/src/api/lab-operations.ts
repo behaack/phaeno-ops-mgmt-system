@@ -200,6 +200,7 @@ export type LabAttempt = {
   stageSkips: { stageId: string; reason: string; actorId: string; recordedAtUtc: string }[]; executionIds: string[];
 }
 export type LabAttemptSpecimen = {
+  sequencingRunCount?: number; successfulRunCount?: number;
   id: string; name: string; accessionNumber: string | null; intakeDisposition: string; processingState: string;
   reasonCode: string | null; note: string | null; nextAction: string | null; expectedTubes: number; receivedTubes: number; eligibleTubes: number;
   tubes: { id: string; barcode: string; location: string | null; intakeDisposition: string | null; physicalStatus: string; use: string; unavailableReason: string | null }[];
@@ -212,6 +213,7 @@ export type LabAttemptWorkspace = {
   stages: { id: string; sequence: number; name: string; requirement: string; protocolVersionId: string; workflowVersionId?: string | null }[];
 }
 export type LabAttemptCommand = {
+  confirmMaterialAvailable?: boolean;
   requestId: string; workOrderVersion: number; action: string; specimenId?: string; attemptId?: string; attemptVersion?: number;
   sourceContainerId?: string; barcode?: string; stageId?: string; reasonCode?: string; note?: string; nextAction?: string;
   failedExecutionId?: string; confirmMaterialExhausted?: boolean; confirmPolicy?: boolean; workflowVersionId?: string;

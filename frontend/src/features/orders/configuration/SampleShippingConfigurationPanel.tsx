@@ -31,10 +31,12 @@ import {
   RequiredDialogFooter,
   RequiredFieldName,
 } from '#/components/ui/required-field'
+import { sampleTypeChoices } from './sample-type-options'
 import { ContainerSizesPanel } from './ContainerSizesPanel'
 import type { ShippingSettingsSection } from './shipping-settings-navigation'
 import { instructionPreviewTime, instructionPreviewUnavailable } from './instruction-rule-preview'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
+import { ScientificTextField } from '#/features/lab-operations/ScientificTextField'
 import { useOrderDraftGuard } from '../use-order-draft-guard'
 
 const codePattern = /^[A-Za-z0-9][A-Za-z0-9_-]*$/
@@ -42,10 +44,25 @@ const positiveOptionalNumber = z.string().refine(
   (value) => value === '' || (Number.isFinite(Number(value)) && Number(value) > 0),
   'Enter a number greater than zero.',
 )
-const nonnegativeOptionalNumber = z.string().refine(
-  (value) => value === '' || (Number.isFinite(Number(value)) && Number(value) >= 0),
-  'Enter zero or a positive number.',
+const optionalQuantity = z.string().trim().refine(
+  value => value === '' || (/^\d+$/.test(value) && Number.isSafeInteger(Number(value)) && Number(value) >= 1),
+  'Enter a whole number of 1 or more.',
 )
+const sampleSizeUnits = ['µL', 'mL']
+const instructionUnits = [
+  'nL', 'µL', 'mL', 'L', 'pg', 'ng', 'µg', 'mg', 'g', 'kg',
+  'ng/µL', 'µg/µL', 'µg/mL', 'mg/mL', 'g/L', 'nM', 'µM', 'mM', 'M',
+  'µm', 'mm', 'cm', 'm', '°C', '°F', 'K', 's', 'min', 'h', 'day',
+  '%', '% v/v', '% w/v', '% w/w', 'rpm', '× g', 'kPa', 'psi',
+]
+const instructionSymbols = [
+  ['µ', 'Micro'], ['Δ', 'Delta'], ['°', 'Degree'], ['±', 'Plus or minus'],
+  ['×', 'Multiplication'], ['÷', 'Division'], ['≤', 'Less than or equal to'],
+  ['≥', 'Greater than or equal to'], ['≈', 'Approximately equal to'], ['≠', 'Not equal to'],
+  ['−', 'Minus'], ['–', 'Range'], ['→', 'Arrow'], ['α', 'Alpha'], ['β', 'Beta'],
+  ['γ', 'Gamma'], ['²', 'Squared'], ['³', 'Cubed'], ['₂', 'Subscript two'], ['₃', 'Subscript three'],
+] as const
+
 
 const destinationSchema = z.object({
   code: z.string().trim().min(1, 'Enter a destination code.').max(50).regex(codePattern, 'Use letters, numbers, hyphens, or underscores.'),
@@ -76,9 +93,9 @@ const sampleTypeSchema = z.object({
   code: z.string().trim().min(1, 'Enter a sample-type code.').max(50).regex(codePattern, 'Use letters, numbers, hyphens, or underscores.'),
   name: z.string().trim().min(1, 'Enter a sample-type name.').max(255),
   description: z.string().trim().max(2000),
-  materialClass: z.string().trim().min(1, 'Enter the material class.').max(255),
-  minimumQuantity: nonnegativeOptionalNumber,
-  maximumQuantity: positiveOptionalNumber,
+  materialClass: z.string().trim().min(1, 'Select a material type.').max(255),
+  minimumQuantity: optionalQuantity,
+  maximumQuantity: optionalQuantity,
   quantityUnit: z.string().trim().min(1, 'Enter the quantity unit.').max(100),
   primaryContainerRequirements: z.string().trim().min(1, 'Enter primary-container requirements.').max(2000),
   temperatureRequirements: z.string().trim().min(1, 'Enter temperature requirements.').max(2000),
@@ -93,8 +110,9 @@ const sampleTypeSchema = z.object({
   isActive: z.boolean(),
 }).superRefine((values, context) => {
   if (values.minimumQuantity !== '' && values.maximumQuantity !== ''
+    && Number(values.minimumQuantity) >= 0 && Number(values.maximumQuantity) > 0
     && Number(values.maximumQuantity) < Number(values.minimumQuantity)) {
-    context.addIssue({ code: 'custom', message: 'Maximum quantity cannot be less than minimum quantity.', path: ['maximumQuantity'] })
+    context.addIssue({ code: 'custom', message: 'Max must be greater than or equal to Min.', path: ['maximumQuantity'] })
   }
 })
 
@@ -127,7 +145,7 @@ const emptyDestination: DestinationValues = {
 }
 
 const emptySampleType: SampleTypeValues = {
-  code: '', name: '', description: '', materialClass: '', minimumQuantity: '', maximumQuantity: '', quantityUnit: '',
+  code: '', name: '', description: '', materialClass: '', minimumQuantity: '1', maximumQuantity: '', quantityUnit: '',
   primaryContainerRequirements: '', temperatureRequirements: '', stabilizerRequirements: '', packagingInstructions: '',
   labelingInstructions: '', prohibitedIdentifiers: '', safetyRequirements: '', carrierRestrictions: '', maximumTransitHours: '',
   effectiveFrom: toLocalDateTime(new Date()), isActive: false,
@@ -179,7 +197,7 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
             {destinations.map((item) => (
               <div key={item.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2"><span className="font-medium">{item.name}</span><Badge variant="outline">{item.code} · rev {item.revision}</Badge><EffectiveBadge item={item} /></div>
+                  <div className="flex flex-wrap items-center gap-2"><span className="font-medium">{item.name}</span><Badge variant="outline" className="h-auto max-w-full whitespace-normal break-all">{item.code} · rev {item.revision}</Badge><EffectiveBadge item={item} /></div>
                   <p className="mt-2 text-sm">{item.organizationName} · {item.city}, {item.stateOrProvince} {item.postalCode} · {item.countryCode}</p>
                   <p className="mt-1 text-xs text-muted-foreground">Receiving: {item.receivingHours} · {item.timeZoneId}</p>
                 </div>
@@ -208,8 +226,8 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
             {sampleTypes.map((item) => (
               <div key={item.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2"><SampleTypeLink item={item} /><Badge variant="outline">{item.code} · rev {item.revision}</Badge><EffectiveBadge item={item} /></div>
-                  <p className="mt-2 text-sm">{item.materialClass} · {quantityRange(item)}</p>
+                  <div className="flex flex-wrap items-center gap-2"><SampleTypeLink item={item} /><Badge variant="outline" className="h-auto max-w-full whitespace-normal break-all">{item.code} · rev {item.revision}</Badge><EffectiveBadge item={item} /></div>
+                  <p className="mt-2 text-sm">{item.materialClass === 'extracted_rna' ? 'Total RNA' : item.materialClass === 'enriched_rna' ? 'Enriched RNA' : item.materialClass} · {quantityRange(item)}</p>
                   <p className="mt-1 text-xs text-muted-foreground">{item.temperatureRequirements}</p>
                 </div>
                 <Button type="button" variant="outline" onClick={() => setSampleTypeEditor(item)}><FilePenLine data-icon="inline-start" />Create revision</Button>
@@ -291,7 +309,7 @@ function SampleTypeDetails({ item, revisions, onCreateRevision }: {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="break-words text-xl font-semibold">{item.name}</h2>
-            <div className="mt-2 flex flex-wrap items-center gap-2"><Badge variant="outline">{item.code} · revision {item.revision}</Badge><EffectiveBadge item={item} /></div>
+            <div className="mt-2 flex flex-wrap items-center gap-2"><Badge variant="outline" className="h-auto max-w-full whitespace-normal break-all">{item.code} · revision {item.revision}</Badge><EffectiveBadge item={item} /></div>
           </div>
           {latest?.id === item.id ? <Button className="shrink-0" variant="outline" onClick={() => onCreateRevision(item)}><FilePenLine data-icon="inline-start" />Create revision</Button> : null}
         </div>
@@ -300,7 +318,7 @@ function SampleTypeDetails({ item, revisions, onCreateRevision }: {
       <CardContent className="space-y-4 p-4">
         {latest && latest.id !== item.id ? <p className="text-sm">You are viewing a historical revision. <SampleTypeLink item={latest}>View latest revision ({latest.revision})</SampleTypeLink>.</p> : null}
         <dl className="grid gap-4 text-sm sm:grid-cols-2">
-          <div><dt className="text-muted-foreground">Material class</dt><dd>{item.materialClass}</dd></div>
+          <div><dt className="text-muted-foreground">Material type</dt><dd>{item.materialClass === 'extracted_rna' ? 'Total RNA' : item.materialClass === 'enriched_rna' ? 'Enriched RNA' : item.materialClass}</dd></div>
           <div><dt className="text-muted-foreground">Quantity</dt><dd>{quantityRange(item)}</dd></div>
           <div><dt className="text-muted-foreground">Maximum transit time</dt><dd>{item.maximumTransitHours == null ? 'Not specified' : `${item.maximumTransitHours} hours`}</dd></div>
           <div><dt className="text-muted-foreground">Effective period</dt><dd>{formatDateTime(item.effectiveFrom)} to {item.effectiveTo ? formatDateTime(item.effectiveTo) : 'no end date'} (your local time)</dd></div>
@@ -347,17 +365,16 @@ function DestinationDialog({ item, onClose }: { item: SampleShippingDestination 
 
   useEffect(() => {
     if (item === undefined) return
-    form.reset(item ? destinationValues(item) : { ...emptyDestination, effectiveFrom: toLocalDateTime(new Date()) })
+    form.reset(item ? destinationValues(item) : { ...emptyDestination, code: 'DEST-' + crypto.randomUUID().replaceAll('-', '').toUpperCase(), effectiveFrom: toLocalDateTime(new Date()) })
     resetMutation()
   }, [form, item, resetMutation])
 
   return (
     <Dialog open={item !== undefined} onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent className="sm:max-w-3xl">
-        <DialogHeader><DialogTitle>{item ? `Create ${item.code} revision ${item.revision + 1}` : 'Add ship-to destination'}</DialogTitle><DialogDescription>{item ? 'The current revision will end when this new immutable revision begins.' : 'New destinations default to inactive until the operational content is approved.'}</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>{item ? `Create ${item.name} revision ${item.revision + 1}` : 'Add ship-to destination'}</DialogTitle><DialogDescription>{item ? 'The current revision will end when this new immutable revision begins.' : 'New destinations default to inactive until the operational content is approved.'}</DialogDescription></DialogHeader>
         <form id="sample-shipping-destination-form" noValidate className="grid gap-5 px-1 sm:grid-cols-2" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
-          <Field label="Destination code" id="destination-code" required error={form.formState.errors.code?.message}><Input id="destination-code" disabled={Boolean(item)} aria-invalid={Boolean(form.formState.errors.code)} {...form.register('code')} /></Field>
-          <Field label="Display name" id="destination-name" required error={form.formState.errors.name?.message}><Input id="destination-name" aria-invalid={Boolean(form.formState.errors.name)} {...form.register('name')} /></Field>
+          <Field label="Display name" id="destination-name" required error={form.formState.errors.name?.message} full><Input id="destination-name" aria-invalid={Boolean(form.formState.errors.name)} {...form.register('name')} /></Field>
           <Field label="Recipient or receiving team" id="destination-recipient" required error={form.formState.errors.recipientName?.message}><Input id="destination-recipient" {...form.register('recipientName')} /></Field>
           <Field label="Receiving organization" id="destination-organization" required error={form.formState.errors.organizationName?.message}><Input id="destination-organization" {...form.register('organizationName')} /></Field>
           <Field label="Address line 1" id="destination-line1" required error={form.formState.errors.addressLine1?.message}><Input id="destination-line1" {...form.register('addressLine1')} /></Field>
@@ -410,34 +427,71 @@ function SampleTypeDialog({ item, onClose, onSaved }: { item: SampleTypeDefiniti
 
   useEffect(() => {
     if (item === undefined) return
-    form.reset(item ? sampleTypeValues(item) : { ...emptySampleType, effectiveFrom: toLocalDateTime(new Date()) })
+    form.reset(item ? sampleTypeValues(item) : { ...emptySampleType, code: 'SAMPLE-' + crypto.randomUUID().replaceAll('-', '').toUpperCase(), effectiveFrom: toLocalDateTime(new Date()) })
     resetMutation()
   }, [form, item, resetMutation])
 
   return (
     <Dialog open={item !== undefined} onOpenChange={(open) => { if (!open) close() }}>
-      <DialogContent className="sm:max-w-3xl" showCloseButton={!mutation.isPending} aria-busy={mutation.isPending}>
-        <DialogHeader><DialogTitle>{item ? `Create ${item.code} revision ${item.revision + 1}` : 'Add sample type'}</DialogTitle><DialogDescription>Describe approved shipment preparation requirements. Do not activate a material type until scientific and operational review is complete.</DialogDescription></DialogHeader>
+      <DialogContent className="sm:max-w-3xl" showCloseButton={!mutation.isPending} aria-busy={mutation.isPending} aria-describedby={undefined}>
+        <DialogHeader><DialogTitle>{item ? `Create ${item.name} revision ${item.revision + 1}` : 'Add sample type'}</DialogTitle></DialogHeader>
         <form id="sample-type-form" noValidate onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
           <fieldset disabled={mutation.isPending} className="grid gap-5 px-1 sm:grid-cols-2">
-          <Field label="Sample-type code" id="sample-type-code" required error={form.formState.errors.code?.message}><Input id="sample-type-code" disabled={Boolean(item)} {...form.register('code')} /></Field>
-          <Field label="Name" id="sample-type-name" required error={form.formState.errors.name?.message}><Input id="sample-type-name" {...form.register('name')} /></Field>
+          <Field label="Name" id="sample-type-name" required error={form.formState.errors.name?.message} full><Input id="sample-type-name" {...form.register('name')} /></Field>
           <Field label="Description" id="sample-type-description" error={form.formState.errors.description?.message} full><TextArea id="sample-type-description" rows={3} registration={form.register('description')} /></Field>
-          <Field label="Material class" id="sample-type-material" required error={form.formState.errors.materialClass?.message}><Input id="sample-type-material" {...form.register('materialClass')} /></Field>
-          <Field label="Quantity unit" id="sample-type-unit" required error={form.formState.errors.quantityUnit?.message}><Input id="sample-type-unit" placeholder="e.g. ng, µg, tube" {...form.register('quantityUnit')} /></Field>
-          <Field label="Minimum quantity" id="sample-type-minimum" error={form.formState.errors.minimumQuantity?.message}><Input id="sample-type-minimum" inputMode="decimal" {...form.register('minimumQuantity')} /></Field>
-          <Field label="Maximum quantity" id="sample-type-maximum" error={form.formState.errors.maximumQuantity?.message}><Input id="sample-type-maximum" inputMode="decimal" {...form.register('maximumQuantity')} /></Field>
+          <Field label="Material type" id="sample-type-material" required error={form.formState.errors.materialClass?.message} full>
+            <select id="sample-type-material" className="h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" aria-invalid={Boolean(form.formState.errors.materialClass)} {...form.register('materialClass')}>
+              <option value="" disabled>Select material type…</option>
+              <option value="extracted_rna">Total RNA</option>
+              <option value="enriched_rna">Enriched RNA</option>
+              {item && !['extracted_rna', 'enriched_rna'].includes(item.materialClass) ? <option value={item.materialClass}>{item.materialClass} (previously saved)</option> : null}
+            </select>
+          </Field>
+          <Card role="group" aria-label="Quantity" className="min-w-0 gap-0 rounded-lg py-0 sm:col-span-2">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 rounded-t-lg border-b bg-muted/50 px-3 py-1.5">
+              <h3 className="text-sm font-medium">Quantity</h3>
+            </div>
+            <CardContent className="grid grid-cols-1 gap-x-3 gap-y-2 p-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+              <div className="min-w-0 space-y-1">
+                <Label htmlFor="sample-type-unit"><RequiredFieldName>Submission unit</RequiredFieldName></Label>
+                <ScientificTextField control={form.control} name="quantityUnit" id="sample-type-unit" label="Submission unit" unit insertUnits unitOptions={sampleSizeUnits} showSymbols={false} disabled={mutation.isPending} placeholder="e.g. 20 mL tube" describedBy={form.formState.errors.quantityUnit ? 'sample-type-unit-error' : undefined} />
+                <ErrorText id="sample-type-unit-error" message={form.formState.errors.quantityUnit?.message} />
+              </div>
+              <div className="min-w-0 space-y-1">
+                <Label htmlFor="sample-type-minimum">Min</Label>
+                <Input id="sample-type-minimum" type="text" inputMode="numeric" placeholder="1" aria-invalid={Boolean(form.formState.errors.minimumQuantity)} aria-describedby={form.formState.errors.minimumQuantity ? 'sample-type-minimum-error' : undefined} {...form.register('minimumQuantity', {
+                  onBlur: () => { void form.trigger(['minimumQuantity', 'maximumQuantity']) },
+                  onChange: () => { if (form.formState.errors.minimumQuantity || form.formState.errors.maximumQuantity) void form.trigger(['minimumQuantity', 'maximumQuantity']) },
+                })} />
+                <ErrorText id="sample-type-minimum-error" message={form.formState.errors.minimumQuantity?.message} />
+              </div>
+              <div className="min-w-0 space-y-1">
+                <Label htmlFor="sample-type-maximum">Max <span className="font-normal text-muted-foreground">(optional)</span></Label>
+                <Input id="sample-type-maximum" type="text" inputMode="numeric" placeholder="No limit" aria-invalid={Boolean(form.formState.errors.maximumQuantity)} aria-describedby={form.formState.errors.maximumQuantity ? 'sample-type-maximum-error' : undefined} {...form.register('maximumQuantity', {
+                  onBlur: () => { void form.trigger(['minimumQuantity', 'maximumQuantity']) },
+                  onChange: () => { if (form.formState.errors.minimumQuantity || form.formState.errors.maximumQuantity) void form.trigger(['minimumQuantity', 'maximumQuantity']) },
+                })} />
+                <ErrorText id="sample-type-maximum-error" message={form.formState.errors.maximumQuantity?.message} />
+              </div>
+            </CardContent>
+          </Card>
           <Field label="Maximum transit hours" id="sample-type-transit" error={form.formState.errors.maximumTransitHours?.message}><Input id="sample-type-transit" inputMode="numeric" {...form.register('maximumTransitHours')} /></Field>
-          <Field label="Primary-container requirements" id="sample-type-container" required error={form.formState.errors.primaryContainerRequirements?.message} full><TextArea id="sample-type-container" rows={3} registration={form.register('primaryContainerRequirements')} /></Field>
-          <Field label="Temperature requirements" id="sample-type-temperature" required error={form.formState.errors.temperatureRequirements?.message} full><TextArea id="sample-type-temperature" rows={3} registration={form.register('temperatureRequirements')} /></Field>
-          <Field label="Stabilizer requirements" id="sample-type-stabilizer" error={form.formState.errors.stabilizerRequirements?.message} full><TextArea id="sample-type-stabilizer" rows={3} registration={form.register('stabilizerRequirements')} /></Field>
-          <Field label="Sample-type packaging instructions" id="sample-type-packaging" required error={form.formState.errors.packagingInstructions?.message} full><TextArea id="sample-type-packaging" rows={4} registration={form.register('packagingInstructions')} /></Field>
-          <Field label="Customer label instructions" id="sample-type-labeling" required error={form.formState.errors.labelingInstructions?.message} full><TextArea id="sample-type-labeling" rows={4} registration={form.register('labelingInstructions')} /></Field>
-          <Field label="Prohibited identifiers" id="sample-type-prohibited" required error={form.formState.errors.prohibitedIdentifiers?.message} full><TextArea id="sample-type-prohibited" rows={3} registration={form.register('prohibitedIdentifiers')} /></Field>
-          <Field label="Safety and hazard requirements" id="sample-type-safety" required error={form.formState.errors.safetyRequirements?.message} full><TextArea id="sample-type-safety" rows={3} registration={form.register('safetyRequirements')} /></Field>
-          <Field label="Carrier restrictions" id="sample-type-carrier" error={form.formState.errors.carrierRestrictions?.message} full><TextArea id="sample-type-carrier" rows={3} registration={form.register('carrierRestrictions')} /></Field>
-          <Field label="Effective from" id="sample-type-effective" required error={form.formState.errors.effectiveFrom?.message}><Input id="sample-type-effective" type="datetime-local" {...form.register('effectiveFrom')} /></Field>
-          <div className="flex items-center gap-2"><Checkbox id="sample-type-active" checked={form.watch('isActive')} onCheckedChange={(value) => form.setValue('isActive', value === true, { shouldDirty: true })} /><Label htmlFor="sample-type-active" className="cursor-pointer font-normal">Active for packet resolution</Label></div>
+          <Field label="Primary-container requirements" id="sample-type-container" required error={form.formState.errors.primaryContainerRequirements?.message} full><ScientificTextField control={form.control} name="primaryContainerRequirements" id="sample-type-container" label="Primary-container requirements" multiline rows={3} unit insertUnits unitOptions={instructionUnits} symbolOptions={instructionSymbols} disabled={mutation.isPending} describedBy={form.formState.errors.primaryContainerRequirements ? 'sample-type-container-error' : undefined} /></Field>
+          <Field label="Temperature requirements" id="sample-type-temperature" required error={form.formState.errors.temperatureRequirements?.message} full><ScientificTextField control={form.control} name="temperatureRequirements" id="sample-type-temperature" label="Temperature requirements" multiline rows={3} unit insertUnits unitOptions={instructionUnits} symbolOptions={instructionSymbols} disabled={mutation.isPending} describedBy={form.formState.errors.temperatureRequirements ? 'sample-type-temperature-error' : undefined} /></Field>
+          <Field label="Stabilizer requirements" id="sample-type-stabilizer" error={form.formState.errors.stabilizerRequirements?.message} full><ScientificTextField control={form.control} name="stabilizerRequirements" id="sample-type-stabilizer" label="Stabilizer requirements" multiline rows={3} unit insertUnits unitOptions={instructionUnits} symbolOptions={instructionSymbols} disabled={mutation.isPending} describedBy={form.formState.errors.stabilizerRequirements ? 'sample-type-stabilizer-error' : undefined} /></Field>
+          <Field label="Sample-type packaging instructions" id="sample-type-packaging" required error={form.formState.errors.packagingInstructions?.message} full><ScientificTextField control={form.control} name="packagingInstructions" id="sample-type-packaging" label="Sample-type packaging instructions" multiline rows={4} unit insertUnits unitOptions={instructionUnits} symbolOptions={instructionSymbols} disabled={mutation.isPending} describedBy={form.formState.errors.packagingInstructions ? 'sample-type-packaging-error' : undefined} /></Field>
+          <Field label="Customer label instructions" id="sample-type-labeling" required error={form.formState.errors.labelingInstructions?.message} full><ScientificTextField control={form.control} name="labelingInstructions" id="sample-type-labeling" label="Customer label instructions" multiline rows={4} unit insertUnits unitOptions={instructionUnits} symbolOptions={instructionSymbols} disabled={mutation.isPending} describedBy={form.formState.errors.labelingInstructions ? 'sample-type-labeling-error' : undefined} /></Field>
+          <Field label="Prohibited identifiers" id="sample-type-prohibited" required error={form.formState.errors.prohibitedIdentifiers?.message} full><ScientificTextField control={form.control} name="prohibitedIdentifiers" id="sample-type-prohibited" label="Prohibited identifiers" multiline rows={3} unit insertUnits unitOptions={instructionUnits} symbolOptions={instructionSymbols} disabled={mutation.isPending} describedBy={form.formState.errors.prohibitedIdentifiers ? 'sample-type-prohibited-error' : undefined} /></Field>
+          <Field label="Safety and hazard requirements" id="sample-type-safety" required error={form.formState.errors.safetyRequirements?.message} full><ScientificTextField control={form.control} name="safetyRequirements" id="sample-type-safety" label="Safety and hazard requirements" multiline rows={3} unit insertUnits unitOptions={instructionUnits} symbolOptions={instructionSymbols} disabled={mutation.isPending} describedBy={form.formState.errors.safetyRequirements ? 'sample-type-safety-error' : undefined} /></Field>
+          <Field label="Carrier restrictions" id="sample-type-carrier" error={form.formState.errors.carrierRestrictions?.message} full><ScientificTextField control={form.control} name="carrierRestrictions" id="sample-type-carrier" label="Carrier restrictions" multiline rows={3} unit insertUnits unitOptions={instructionUnits} symbolOptions={instructionSymbols} disabled={mutation.isPending} describedBy={form.formState.errors.carrierRestrictions ? 'sample-type-carrier-error' : undefined} /></Field>
+          <div className="grid gap-x-5 gap-y-2 sm:col-span-2 sm:grid-cols-2">
+            <Label htmlFor="sample-type-effective" className="sm:col-span-2"><RequiredFieldName>Effective from</RequiredFieldName></Label>
+            <div>
+              <Input id="sample-type-effective" type="datetime-local" aria-invalid={Boolean(form.formState.errors.effectiveFrom)} aria-describedby={form.formState.errors.effectiveFrom ? 'sample-type-effective-error' : undefined} {...form.register('effectiveFrom')} />
+              <ErrorText id="sample-type-effective-error" message={form.formState.errors.effectiveFrom?.message} />
+            </div>
+            <div className="flex min-h-8 items-center gap-2 self-start"><Checkbox id="sample-type-active" checked={form.watch('isActive')} onCheckedChange={(value) => form.setValue('isActive', value === true, { shouldDirty: true })} /><Label htmlFor="sample-type-active" className="cursor-pointer font-normal">Active for packet resolution</Label></div>
+          </div>
           </fieldset>
         </form>
         {mutation.error ? <SaveError title="Sample-type revision was not saved" error={mutation.error} /> : null}
@@ -451,6 +505,16 @@ function InstructionRuleDialog({ configuration, item, onClose, restoreFocus }: {
   const client = useQueryClient()
   const openedFromRule = useRef(false)
   const form = useForm<RuleValues>({ resolver: zodResolver(ruleSchema), defaultValues: emptyRule })
+  const [selectionTime, setSelectionTime] = useState(Date.now)
+  useEffect(() => {
+    if (item === undefined) return
+    const timer = window.setInterval(() => setSelectionTime(Date.now()), 15_000)
+    return () => window.clearInterval(timer)
+  }, [item])
+  const choices = useMemo(() => sampleTypeChoices(configuration.sampleTypes, selectionTime), [configuration.sampleTypes, selectionTime])
+  const selectedSampleId = form.watch('sampleTypeDefinitionId')
+  const selectedSample = choices.find(choice => choice.revisions.some(revision => revision.id === selectedSampleId))
+
   const mutation = useMutation({
     mutationFn: (values: RuleValues) => createSampleShippingInstructionRule({
       ...values,
@@ -474,11 +538,23 @@ function InstructionRuleDialog({ configuration, item, onClose, restoreFocus }: {
   return (
     <Dialog open={item !== undefined} onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent className="sm:max-w-3xl" onCloseAutoFocus={event => { if (openedFromRule.current) { event.preventDefault(); restoreFocus() } }}>
-        <DialogHeader><DialogTitle>{item ? `Create instruction revision ${item.revision + 1}` : 'Add sample shipping instruction rule'}</DialogTitle><DialogDescription>The destination and sample-type revisions are fixed for this rule. Create another rule when either revision changes.</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>{item ? `Create instruction revision ${item.revision + 1}` : 'Add sample shipping instruction rule'}</DialogTitle><DialogDescription>The destination revision is fixed. The sample type automatically uses its latest active, effective revision for new shipments. Issued instructions keep their recorded revision.</DialogDescription></DialogHeader>
         <form id="sample-shipping-rule-form" noValidate className="grid gap-5 px-1 sm:grid-cols-2" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
           <Field label="Destination revision" id="shipping-rule-destination" required error={form.formState.errors.destinationId?.message}><select id="shipping-rule-destination" disabled={Boolean(item)} className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" {...form.register('destinationId')}><option value="">Select destination…</option>{configuration.destinations.map((destination) => <option key={destination.id} value={destination.id}>{destination.code} · rev {destination.revision} · {destination.name}</option>)}</select></Field>
-          <Field label="Sample-type revision" id="shipping-rule-sample" required error={form.formState.errors.sampleTypeDefinitionId?.message}><select id="shipping-rule-sample" disabled={Boolean(item)} className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" {...form.register('sampleTypeDefinitionId')}><option value="">Select sample type…</option>{configuration.sampleTypes.map((sampleType) => <option key={sampleType.id} value={sampleType.id}>{sampleType.code} · rev {sampleType.revision} · {sampleType.name}</option>)}</select></Field>
-          <Field label="Compatibility group" id="shipping-rule-group" required error={form.formState.errors.compatibilityGroup?.message}><Input id="shipping-rule-group" placeholder="e.g. FROZEN_RNA" {...form.register('compatibilityGroup')} /></Field>
+          <Field label="Sample type" id="shipping-rule-sample" required error={form.formState.errors.sampleTypeDefinitionId?.message}>
+            <select id="shipping-rule-sample" disabled={Boolean(item)} aria-describedby="shipping-rule-sample-status" className="h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm" {...form.register('sampleTypeDefinitionId')}>
+              <option value="">Select sample type…</option>
+              {choices.map(choice => <option key={choice.key} value={choice.revisions.some(revision => revision.id === selectedSampleId) ? selectedSampleId : choice.anchor.id}>{choice.name}</option>)}
+            </select>
+            <p id="shipping-rule-sample-status" className={selectedSample && !selectedSample.current ? 'mt-1 text-xs text-destructive' : 'mt-1 text-xs text-muted-foreground'}>
+              {selectedSample ? selectedSample.current ? `Currently using revision ${selectedSample.current.revision} · Active` : 'No active revision is currently effective. Shipping instructions cannot be issued until an approved revision becomes active.' : 'Automatically follows the latest active, effective revision.'}
+            </p>
+          </Field>
+          <Field label="Compatibility group" id="shipping-rule-group" required error={form.formState.errors.compatibilityGroup?.message}>
+            <Input id="shipping-rule-group" list="shipping-compatibility-groups" aria-describedby="shipping-rule-group-help" placeholder="e.g. FROZEN_RNA" {...form.register('compatibilityGroup')} />
+            <datalist id="shipping-compatibility-groups">{[...new Set(['FROZEN_RNA', ...configuration.instructionRules.map(rule => rule.compatibilityGroup)])].sort().map(group => <option key={group} value={group} />)}</datalist>
+            <p id="shipping-rule-group-help" className="mt-1 text-xs text-muted-foreground">A shared handling label. Use FROZEN_RNA for frozen RNA. Give sample types the same group only when they can safely share a shipment. The separate-shipment setting below always takes priority.</p>
+          </Field>
           <Field label="Effective from" id="shipping-rule-effective" required error={form.formState.errors.effectiveFrom?.message}><Input id="shipping-rule-effective" type="datetime-local" {...form.register('effectiveFrom')} /></Field>
           <Field label="Packing instructions" id="shipping-rule-packing" required error={form.formState.errors.packingInstructions?.message} full><TextArea id="shipping-rule-packing" rows={4} registration={form.register('packingInstructions')} /></Field>
           <Field label="Temperature instructions" id="shipping-rule-temperature" required error={form.formState.errors.temperatureInstructions?.message} full><TextArea id="shipping-rule-temperature" rows={4} registration={form.register('temperatureInstructions')} /></Field>
@@ -578,14 +654,14 @@ function SaveError({ title, error }: { title: string; error: unknown }) {
 }
 
 function Field({ children, error, full, id, label, required }: { children: React.ReactNode; error?: string; full?: boolean; id: string; label: string; required?: boolean }) {
-  return <div className={full ? 'sm:col-span-2' : undefined}><Label htmlFor={id}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label><div className="mt-2">{children}</div><ErrorText message={error} /></div>
+  return <div className={full ? 'sm:col-span-2' : undefined}><Label htmlFor={id}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label><div className="mt-2">{children}</div><ErrorText id={`${id}-error`} message={error} /></div>
 }
 
 function TextArea({ id, registration, rows }: { id: string; registration: UseFormRegisterReturn; rows: number }) {
   return <textarea id={id} rows={rows} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" {...registration} />
 }
 
-function ErrorText({ message }: { message?: string }) { return message ? <p className="mt-1 text-sm text-destructive" role="alert">{message}</p> : null }
+function ErrorText({ message, id }: { message?: string; id?: string }) { return message ? <p id={id} className="mt-1 text-sm text-destructive" role="alert">{message}</p> : null }
 
 function destinationValues(item: SampleShippingDestination): DestinationValues {
   return { code: item.code, name: item.name, recipientName: item.recipientName, organizationName: item.organizationName, addressLine1: item.addressLine1, addressLine2: item.addressLine2 ?? '', city: item.city, stateOrProvince: item.stateOrProvince, postalCode: item.postalCode, countryCode: item.countryCode, receivingPhone: item.receivingPhone ?? '', receivingEmail: item.receivingEmail ?? '', receivingHours: item.receivingHours, timeZoneId: item.timeZoneId, closureInstructions: item.closureInstructions ?? '', deliveryInstructions: item.deliveryInstructions, carrierRestrictions: item.carrierRestrictions ?? '', internationalShippingAllowed: item.internationalShippingAllowed, effectiveFrom: toLocalDateTime(new Date()), isActive: item.isActive }

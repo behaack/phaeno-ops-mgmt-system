@@ -152,7 +152,19 @@ describe('PSeq order-to-cash panels', () => {
     expect((await screen.findByRole('link', { name: 'Atlas Research' })).getAttribute('href')).toBe('/order-operations/finance/customer/customer-id')
     expect(screen.queryByRole('textbox', { name: /Billing contact name/ })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Record receipt' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Import receipts' })).toBeNull()
+    expect(screen.queryByRole('tab', { name: 'Import receipts' })).toBeNull()
+  })
+
+  it('filters Customer billing by partial name and clears the saved search', async () => {
+    router.search = { financeSection: 'customers', financeSearch: '  ATLAS  ' }
+    mocks.listAccountsReceivableCustomers.mockResolvedValue([customer, { ...customer, organizationId: 'other-id', organizationName: 'Other Laboratory' }])
+    renderPanel(<FinanceOperationsPanel apiEnabled canBill canManageCash={false} canReconcile={false} />)
+    expect(await screen.findByRole('link', { name: 'Atlas Research' })).toBeTruthy()
+    expect(screen.queryByRole('link', { name: 'Other Laboratory' })).toBeNull()
+    expect(screen.getByRole('textbox', { name: 'Search customers' })).toHaveProperty('value', '  ATLAS  ')
+    expect(screen.getByRole('tab', { name: 'Customer billing' }).getAttribute('aria-selected')).toBe('true')
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filter' }))
+    expect(router.navigate.mock.calls.at(-1)?.[0].search(router.search)).toMatchObject({ financeSection: 'customers', financeSearch: undefined, financeCustomer: undefined })
   })
 
   it('shows a Cash Reconciler submitted batch details without Cash Operator controls', async () => {

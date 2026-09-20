@@ -1,10 +1,10 @@
 # Request laboratory services
 
-Use Lab services within the selected Department to describe and price a Job before entering its exact sample list. Organization and Department administrators may prepare a Job. Only an organization administrator may place a configured standard order; existing Department authority for manual quote workflows remains available.
+Use Lab services within the selected Department to describe and price a Job before entering its exact sample list. Organization and Department administrators may prepare a Job. An organization administrator or an administrator of the selected Department may place a configured standard order or accept an applicable manual quote.
 
 ## Additional samples after acceptance
 
-Phaeno can issue a separate **Change quote** for additional samples on an active accepted Job. Review the added source counts, incremental charge, tax status and expiry. An organization administrator can **Review and accept addition**, enter a required purchase order number and affirm the exact scope and price, or **Decline addition**. The original agreement and existing laboratory work remain in effect. Expired or superseded proposals cannot be accepted.
+Phaeno can issue a separate **Change quote** for additional samples on an active accepted Job. Review the added source counts, incremental charge, tax status and expiry. An organization or assigned-Department administrator can **Review and accept addition**, enter a required purchase order number and affirm the exact scope and price, or **Decline addition**. The original agreement and existing laboratory work remain in effect. Expired or superseded proposals cannot be accepted.
 
 Acceptance opens sample entry for the additional counts. Previously authorized samples remain locked. Add the new samples individually, then review and finalize the full list; only new samples receive additional laboratory and shipping authorization. If laboratory review is required, no partial authorization is saved. Completion bills the original accepted quote plus accepted additions; declining a proposal does not cancel the Job.
 
@@ -37,15 +37,15 @@ For a manually quoted Job, individual sample entry remains unavailable until you
 3. Select **Submit request**. The portal assigns an immutable eight-character **Job number** using unambiguous uppercase letters and numbers.
 4. The request opens on its detail page at **Pricing review**, with **Waiting for pricing** as its next step. Phaeno prepares pricing for you to accept or decline. Submission does not authorize work; individual sample entry remains unavailable until you accept.
 
-Members can review work in their assigned Department. Organization and Department administrators may create, edit, submit and accept applicable manual quotes in that Department. New configured standard orders require an organization administrator. Department authority does not grant access to other Departments.
+Members can review work in their assigned Department. Organization and Department administrators may create, edit, submit and accept applicable manual quotes in that Department. Organization and assigned-Department administrators may also place configured standard orders. Department authority does not grant access to other Departments.
 
 If an older draft still contains sample rows from the former workflow, the Job identifies them as legacy rows. Clear each row’s details before submitting for pricing; enter the current sample roster again only after accepting the price.
 
 ## Existing configured standard drafts
 
-For an existing unsubmitted draft with a configured standard offering, in **Standard PSeq Lab Service**, choose an available **Offering**. Review its allowed material types and biological sources, included scientific outputs, published turnaround range, specimen count, and unit price. The bundle includes laboratory processing and data assembly; it does not require a separate assembly purchase.
+For an existing unsubmitted draft with a configured standard offering, in **Standard PSeq Lab Service**, choose an available **Offering**. Review its allowed material types and biological sources, included scientific outputs, published turnaround range, sample count, purchased sample-sequencing runs, and price per run. The bundle includes laboratory processing and data assembly; it does not require a separate assembly purchase.
 
-Choose **Review standard order**. The review shows the current subtotal, approved tax, and final total. An organization administrator supplies a PO when required, confirms the scope and prohibited-data statement, and selects **Place standard order**. The offering, scope, price and approved tax are retained with the Job. Detailed samples are entered afterward.
+Choose **Review standard order**. The review shows the current subtotal, approved tax, and final total. An organization or assigned-Department administrator supplies a PO when required, confirms the scope and prohibited-data statement, and selects **Place standard order**. The offering, scope, price and approved tax are retained with the Job. Detailed samples are entered afterward.
 
 If a readiness or billing requirement is incomplete, the displayed blockers explain why placement is unavailable. Phaeno must resolve the relevant service, shipping, billing or tax setup. A standard order cannot be committed with an unknown final total. If the offering, scientific definitions, price or organization settings change while reviewing, select **Refresh terms and review again** and affirm the new terms before placing.
 
@@ -101,7 +101,7 @@ Do not ship physical samples before the order is commercially committed and the 
 
 The final list must contain exactly the accepted number of unique non-PHI sample IDs, match every accepted source-group count, and give each sample a positive whole-number tube count. A green check beside the overall counter means the total and source counts are complete; it does not finalize the list.
 
-After saving every required sample ID and matching the accepted source counts, select **Review and finalize list** at the right of the **Samples and shipping** heading or in **Your next step**. Both buttons open the same review. Clearing sample details returns the card to its incomplete-list controls and hides the finalization shortcut until the required details are saved again. The review follows the same biological-source grouping as the sample area. Both views sort sample IDs in natural numeric order within each group, such as TEST-2 before TEST-10. The review shows source counts and the overall sample and tube totals. Review every sample and affirm the no-PHI confirmation before selecting **Finalize sample list**. Finalization authorizes the specimen-specific Lab work and opens shipment preparation.
+After saving every required sample ID and matching the accepted source counts, select **Review and finalize list** at the right of the **Samples and shipping** heading or in **Your next step**. Both buttons open the same review. Clearing sample details returns the card to its incomplete-list controls and hides the finalization shortcut until the required details are saved again. The review follows the same biological-source grouping as the sample area. Both views sort sample IDs in natural numeric order within each group, such as TEST-2 before TEST-10. The review shows source counts and the overall sample, allocated run and tube totals. Review every sample and affirm the no-PHI confirmation before selecting **Finalize sample list**. Finalization authorizes the specimen-specific Lab work and opens shipment preparation.
 
 Use **Prepare containers** from the Job's **Actions**, or use the container preparation area in **Samples and shipping**, and select the location you will ship from. Use compatible received containers available there, including unused kits originally requested for another Job. Order additional transportation kits when needed; kits and outbound delivery are included. Confirm physical arrivals from the location inventory or the Job's kit-delivery area. Links to delivery-location management retain **Return to Lab Job** with your selected container.
 
@@ -163,7 +163,9 @@ for your attention remains visible above the work areas.
 
 ## Multiple tubes for one sample
 
-Lab orders use **Run one tube per specimen; use a reserve only after the current attempt fails**. Extra tubes for the same sample are reserves, not extra ordered analyses. Review this instruction with the sample list before finalization. For an older order without a recorded instruction, your finalization confirmation records it before laboratory work is authorized; previous order history remains unchanged.
+Pricing counts **sample-sequencing runs**. Twenty samples sequenced once and one sample sequenced twenty times both count as 20. In the Job profile, leave **Sample-sequencing runs** blank for one run per sample, or enter the total requested runs. A machine batch is not the pricing unit.
+
+After accepting pricing, enter each sample once and allocate its **Runs** independently of **Tubes**. Use **Edit sample** to correct an allocation. The total must equal the purchased run count before **Review and finalize list** becomes available. The CSV template includes **sequencing_runs**; an older three-column CSV defaults each sample to one run. Submitted tube counts control shipping, not the price. Extra tubes alone do not authorize extra runs. Existing accepted prices and previously recorded scope are preserved.
 
 Phaeno reviews each received tube independently and selects one suitable source. A reserve is used only after the preceding processing attempt is explicitly closed as failed. If no material remains for further permitted analysis, the sample can have a failed processing outcome even though a tube passed receipt checks. Follow the Job's customer-facing progress and any request for additional information.
 

@@ -30,14 +30,14 @@ public sealed record PlaceStandardLabOrderRequest(
 public sealed record StandardLabOrderPreviewDto(
     LabServiceOfferingDto Offering, int SpecimenCount, decimal Subtotal, decimal? Tax, decimal? Total,
     string Currency, bool CanPlaceStandardOrder, IReadOnlyList<string> Blockers,
-    long OrderVersion, long? CommercialProfileVersion, long DepartmentVersion, long OrganizationVersion, string ReviewToken);
+    long OrderVersion, long? CommercialProfileVersion, long DepartmentVersion, long OrganizationVersion, string ReviewToken, int SequencingRunCount = 0);
 
 public sealed record LabServiceCommercialSnapshotDto(
     Guid OfferingId, Guid FamilyId, int OfferingVersion, string ProductName,
     Guid CatalogItemId, string CatalogCode, long CatalogItemVersion, string Currency,
     decimal UnitPrice, int SpecimenCount, decimal Subtotal, decimal Tax, decimal Total,
     IReadOnlyList<Guid> AnalysisIds, string IncludedOutputContract,
-    int MinimumTurnaroundDays, int MaximumTurnaroundDays, DateTime CommittedAtUtc);
+    int MinimumTurnaroundDays, int MaximumTurnaroundDays, DateTime CommittedAtUtc, int SequencingRunCount = 0);
 
 public sealed record LabServiceTimingDto(
     DateTime? FirstReceivedAtUtc, DateTime? AcceptedAtUtc, DateTime? OriginalTargetAtUtc,

@@ -67,7 +67,8 @@ test("reviews Portal access in CRM without a separate customer directory", async
     0,
   );
 
-  await page.getByRole("button", { name: "Approve and enable access" }).click();
+  await page.getByRole("button", { name: /^Actions for/ }).click();
+  await page.getByRole("menuitem", { name: "Approve and enable access" }).click();
   const dialog = page.getByRole("dialog", {
     name: "Approve and enable Portal access",
   });
@@ -228,14 +229,14 @@ test("resolves a legacy access link to the canonical Company workspace", async (
   await page.goto(`/customers/${organizationId}`);
   await expect(page.getByRole("heading", { name: "Atlas Research" })).toBeVisible();
   await expect(page.getByText("Company", { exact: true })).toBeVisible();
-  await page.getByRole("tab", { name: "Departments & services" }).click();
+  await page.getByRole("tab", { name: "Services", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Portal access and services" }),
   ).toBeVisible();
   await expect(page.getByRole("link", { name: "Back to companies" })).toBeVisible();
   await expect(page.getByText("Back to Portal accounts")).toHaveCount(0);
 
-  await page.getByRole("tab", { name: "Services", exact: true }).click();
+  await page.getByRole("tab", { name: "Entitlements", exact: true }).click();
   await expect(page.getByText("PSeq Lab Service", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "End now" }).click();
   const endDialog = page.getByRole("dialog", {

@@ -33,12 +33,12 @@ it('requires a new review when the included profile changed without a price chan
   expect(mocks.update).toHaveBeenCalledTimes(1)
 })
 
-it('lets a Department administrator prepare a draft while requiring an organization administrator to place it', async () => {
+it('lets a Department administrator review a purchase within the selected Department', async () => {
   mocks.orgAdmin = false
-  mocks.get.mockResolvedValue({ ...draft, canPlace: false })
+  mocks.get.mockResolvedValue({ ...draft, canPlace: true })
   show()
   await waitFor(() => expect(screen.getByRole('button', { name: 'Save draft' })).toHaveProperty('disabled', false))
-  expect(screen.getByRole('button', { name: 'Review PSeq Kit order' })).toHaveProperty('disabled', true)
-  expect(screen.getByText(/Department administrators may prepare and save a draft/)).toBeTruthy()
+  expect(screen.getByRole('button', { name: 'Review PSeq Kit order' })).toHaveProperty('disabled', false)
+  expect(screen.getByText(/assigned-department administrator places the order/)).toBeTruthy()
   expect(mocks.place).not.toHaveBeenCalled()
 })

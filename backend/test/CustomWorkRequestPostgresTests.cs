@@ -73,16 +73,15 @@ public sealed class CustomWorkRequestPostgresTests
     }
 
     [PostgreSqlReferenceFact]
-    public async Task DepartmentAdministratorCannotSubmitOnBehalfOfOrganization()
+    public async Task DepartmentAdministratorCanRequestWorkOnlyForAssignedDepartment()
     {
         await using var scope = await Scope.Create();
         scope.Membership.SetOrganizationAdmin(false);
         scope.Db.OrganizationDepartmentMemberships.Add(new(scope.Membership.Id, scope.Department.Id, true));
         await scope.Db.SaveChangesAsync();
-        var failure = await Assert.ThrowsAsync<OrderManagementException>(() =>
-            scope.Submit(new("PSeqLabService", "Custom scope", "Synthetic needs")));
-        Assert.Equal("organization_administrator_required", failure.ErrorCode);
-        Assert.False(await scope.Db.CrmOpportunities.AnyAsync(value => value.CompanyId == scope.Company.Id));
+        var submitted = await scope.Submit(new("PSeqLabService", "Custom scope", "Synthetic needs"));
+        Assert.Equal(scope.Department.Id, submitted.DepartmentId);
+        Assert.True(await scope.Db.CrmOpportunities.AnyAsync(value => value.CompanyId == scope.Company.Id));
     }
 
     [PostgreSqlReferenceFact]

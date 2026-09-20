@@ -123,7 +123,7 @@ export function OrganizationDepartmentsPanel({ organizationId, organizationAdmin
                   <DropdownMenuTrigger asChild>
                     <Button id={`department-actions-${department.id}`} size="icon-sm" variant="outline" disabled={lifecycle.isPending} aria-label={m.actionsFor(department.name)}><Ellipsis aria-hidden="true" /></Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]">
                     <DropdownMenuItem onSelect={() => { save.reset(); setSaveConflict(null); setEditTarget(department) }}><Pencil aria-hidden="true" />{m.editSettings}</DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => setMemberTarget(department)}><UsersRound aria-hidden="true" />{m.manageMembers}</DropdownMenuItem>
                     {organizationAdmin && !department.isDefault && department.isActive ? (

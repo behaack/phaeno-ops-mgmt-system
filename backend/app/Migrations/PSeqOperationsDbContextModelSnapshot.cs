@@ -13247,6 +13247,11 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("lab_work_order_id");
 
+                    b.Property<string>("LibraryPreparationChoice")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("library_preparation_choice");
+
                     b.Property<string>("LineageSnapshotJson")
                         .IsRequired()
                         .HasColumnType("jsonb")
@@ -13294,6 +13299,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("scientific_evidence_json");
 
+                    b.Property<int?>("SequencingRunNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("sequencing_run_number");
+
                     b.Property<string>("Sha256")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -13321,9 +13330,9 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("LabSpecimenAttemptId");
 
-                    b.HasIndex("LabSpecimenId");
-
                     b.HasIndex("SourceContainerId");
+
+                    b.HasIndex("LabSpecimenId", "SequencingRunNumber");
 
                     b.HasIndex("LabWorkOrderId", "LabSpecimenId", "RecordedAtUtc");
 
@@ -13757,7 +13766,7 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("LabSpecimenId")
                         .IsUnique()
-                        .HasFilter("state IN ('Planned', 'InProgress', 'OnHold', 'Succeeded')");
+                        .HasFilter("state IN ('Planned', 'InProgress', 'OnHold')");
 
                     b.HasIndex("LabWorkOrderId");
 
@@ -13765,7 +13774,7 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("SourceContainerId")
                         .IsUnique()
-                        .HasFilter("state <> 'Cancelled'");
+                        .HasFilter("state IN ('Planned', 'InProgress', 'OnHold')");
 
                     b.HasIndex("LabSpecimenId", "Sequence")
                         .IsUnique();
@@ -15305,6 +15314,12 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(2000)")
                         .HasColumnName("safety_declaration");
 
+                    b.Property<int>("SequencingRunCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1)
+                        .HasColumnName("sequencing_run_count");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -15588,6 +15603,10 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid?>("SampleRosterFinalizedByUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("sample_roster_finalized_by_user_id");
+
+                    b.Property<int?>("SequencingRunCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("sequencing_run_count");
 
                     b.Property<string>("SharedBiologicalSource")
                         .HasMaxLength(500)

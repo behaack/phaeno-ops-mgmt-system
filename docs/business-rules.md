@@ -1,11 +1,46 @@
 # Business rules
 
+## Department-led external Companies
+
+Organization administration is optional for external Companies. Active Company access plus
+accepted organization-admin or active-Department-admin access satisfies access-only onboarding
+and Portal evaluation. Readiness for a specific Department requires an active administrator of
+that Department or an organization administrator; unrelated Departments do not satisfy it.
+Organization and assigned-Department administrators may place configured Lab/Kit purchases,
+accept or decline changed prices, request custom work, and accept Prospect Trial terms and
+submit samples within the assigned Department. Ordinary members cannot commit work.
+Phaeno staff retain company-wide setup and invitation support when no organization admin exists.
+Company-wide identity, roles, defaults, governance attestations and cross-Department visibility
+are not delegated. Last-administrator protection remains: an external organization's last
+organization admin may be removed/demoted when an active Department administrator remains;
+Phaeno's platform-admin protection is unchanged.
+
+
+## Department-led external Companies
+
+Organization administration is optional for external Companies. Active Company access plus
+accepted organization-admin or active-Department-admin access satisfies access-only onboarding
+and Portal evaluation. Readiness for a specific Department requires an active administrator of
+that Department or an organization administrator; unrelated Departments do not satisfy it.
+Organization and assigned-Department administrators may place configured Lab/Kit purchases,
+accept or decline changed prices, request custom work, and accept Prospect Trial terms and
+submit samples within the assigned Department. Ordinary members cannot commit work.
+Phaeno staff retain company-wide setup and invitation support when no organization admin exists.
+Company-wide identity, roles, defaults, governance attestations and cross-Department visibility
+are not delegated. Last-administrator protection remains: an external organization's last
+organization admin may be removed/demoted when an active Department administrator remains;
+Phaeno's platform-admin protection is unchanged.
+
+
 ## Accounts and tenants
 
 - A Clerk identity must resolve to an active internal `User` before it can act in the product.
 - Users receive access through active `OrganizationMembership` records.
 - Every organization has one active default Department; existing records use
   the backfilled General department until a deliberate department is selected.
+- New administrator-created Departments receive an automatic DEPT-000001-style
+  reference unique within their Organization. Saved references are immutable; renaming
+  or deactivating a Department preserves its reference, including legacy codes and GENERAL.
 - Non-organization administrators can act only in Departments granted through
   an active `OrganizationDepartmentMembership`. Organization administrators
   can act across all active Departments in their Organization.
@@ -31,6 +66,17 @@
 - Onboarding is invite-only; public self-registration is not the product model.
 - Invitations are organization-scoped and have explicit lifecycle states: `Pending`, `Accepted`, `Revoked`, and `Declined`.
 - Invitation tokens must be protected and expire according to configuration.
+- Authorized administrators may edit a pending external invitation's Organization role and
+  Department intent in place. Preserve recipient, link, expiry and delivery history; no email
+  or membership is created by an intent edit. Department-only edits advance the parent version.
+  Terminal invitations reject edits; expired Pending invitations remain expired until resend.
+- Current web recipients review offered roles and Departments and send the reviewed version on
+  acceptance. Changed intent requires a fresh review and explicit acceptance. Legacy clients
+  retain the optional-version contract; concurrent acceptance and edits still use tracked versions.
+- Actual active external membership/Department-role changes and removals queue an informational
+  access notice in the same transaction as the audited update. No-op or rejected updates queue
+  none. The exact affected user is the only recipient, including after removal; never substitute
+  an administrator or a Department routing address. Delivery retries do not reverse access.
 - Email delivery uses Mailgun when configured and a logging implementation only
   in Development/Test. Invitation delivery status is tracked durably and
   independently from invitation access state; signed webhook events record
@@ -257,7 +303,7 @@ Confirmed Prospect rules:
   creates the corresponding Lab authorization, Lab work, shipment, specimen
   identities, and physical tube slots.
 - An authorized Phaeno order-pricing user may initiate the same Job pricing
-  profile for an active Customer that has an active organization administrator.
+  profile for an active Customer; quote readiness requires an active organization or assigned-Department administrator.
   After the Phaeno user makes the no-PHI attestation, the Phaeno-initiated Job
   enters quote preparation with an immutable submitted request revision. It does
   not let Phaeno accept on the Customer's behalf and creates no Lab authorization
@@ -316,9 +362,9 @@ Confirmed Prospect rules:
   assembled data/results for availability to the Partner's customers.
 - Seed data is separate from lab service results and data assembly inputs or
   outputs.
-- Active Customer and Partner organization administrators create and submit or
+- Active Customer and Partner organization or assigned-Department administrators create and submit or
   place work, accept applicable quotes or commercial changes, request
-  cancellations, and manage their own organization memberships. Active
+  cancellations within their Department. Organization administrators manage organization memberships. Active
   non-admin members have read, progress, and eligible released-file access.
 - Prospect memberships never grant ordering capabilities.
 - Customer laboratory work and Partner data assembly are priced per job through
@@ -416,12 +462,17 @@ organization's download audit; staff investigation reasons remain Phaeno-only.
 
 A Trial is a no-charge Prospect project linked to a first-party CRM Opportunity.
 Commercial and Scientific Operations approvals must come from different active
-authorized people for the same immutable scope version. An organization
+authorized people for the same immutable scope version. An organization or assigned-Department
 administrator accepts that scope and RUO/no-PHI terms before coded extracted-RNA
-submissions within the frozen allowance and dates. Department administrators do
-not gain this acceptance authority. Initial analyses and acceptance rules reuse
+submissions within the frozen allowance and dates. Department authority stays
+within the Trial’s Department. Initial analyses and acceptance rules reuse
 PSeq definitions and the pinned Lab workflow. Complete result release alone marks
 successful completion and starts the shared frozen retention policy. Partial
 release does neither. Conversion preserves department ownership and original
 download/deletion dates. Commercial closeout and explicit Prospect deactivation
 remain separate audited actions.
+
+
+### Repeated sample sequencing
+
+Commercial quantity counts sample-sequencing runs: one sample sequenced twenty times and twenty samples sequenced once both have quantity 20. Physical tubes and preparation attempts do not determine the purchased quantity. A library preparation may provide enough material for multiple runs. For each run, Lab explicitly records a new preparation or use of an existing prepared library, preserving the actual library, source and preparation evidence. Authorized allocations are frozen in the Lab authorization. Additional files, linked replacements after failure and reanalysis retain the purchased run number and count once. Approved and released results must cover all allocated runs before completion and full delivery, respectively. Accepted pricing is immutable.

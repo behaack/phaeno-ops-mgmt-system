@@ -45,7 +45,7 @@ export function ScientificCaptureForm({ kind, data, source, saved, cancel }: { k
   const sendouts = useQuery({ queryKey: ['scientific-sendouts', data.workOrderId, data.specimenId, libraryId], queryFn: () => getScientificSendouts(data.workOrderId, data.specimenId, libraryId), enabled: kind === 'sequencing' && Boolean(libraryId) })
   const mutation = useMutation({ mutationFn: async (v: CaptureValues) => {
     const common = { labWorkOrderId: data.workOrderId, labSpecimenId: data.specimenId, providerKey: v.providerKey, scientificEvidence: captureMetadata(v, source?.scientificEvidenceJson ? JSON.parse(source.scientificEvidenceJson) : undefined) }
-    const body = kind === 'sequencing' ? { ...common, labLibraryId: v.libraryId, labNgsSendoutId: v.sendoutId, providerRunReference: v.runReference, sampleMappingReference: v.mapping, externalFileReference: v.fileReference, sha256: v.checksum, sizeBytes: Number(v.size), correctsOutputId: source?.id ?? null, correctionReason: source ? v.reason : null }
+    const body = kind === 'sequencing' ? { ...common, sequencingRunNumber: Number(v.sequencingRunNumber), libraryPreparationChoice: v.libraryPreparationChoice, labLibraryId: v.libraryId, labNgsSendoutId: v.sendoutId, providerRunReference: v.runReference, sampleMappingReference: v.mapping, externalFileReference: v.fileReference, sha256: v.checksum, sizeBytes: Number(v.size), correctsOutputId: source?.id ?? null, correctionReason: source ? v.reason : null }
       : { ...common, runReference: v.runReference, sequencingOutputIds: v.inputs.map(i => i.id), previousAnalysisRunId: source?.id ?? null, reanalysisReason: source ? v.reason : null, requirementsVersion: 1 as const }
     const fingerprint = JSON.stringify(body)
     if (request.current?.fingerprint !== fingerprint) request.current = { fingerprint, id: crypto.randomUUID() }
@@ -58,6 +58,9 @@ export function ScientificCaptureForm({ kind, data, source, saved, cancel }: { k
   const inputs = form.watch('inputs')
   const firstAttempt = data.outputs.find(o => o.id === inputs[0]?.id)?.labSpecimenAttemptId
   const submit = (v: CaptureValues) => {
+    if (kind === 'sequencing' && Number(v.sequencingRunNumber) > (data.sequencingRunCount ?? 1)) {
+      form.setError('sequencingRunNumber', { message: `This sample has ${data.sequencingRunCount ?? 1} purchased runs.` }); return
+    }
     if (kind === 'analysis' && (v.inputs.some(i => !data.outputs.some(o => o.id === i.id)) || new Set(v.inputs.map(i => data.outputs.find(o => o.id === i.id)?.labSpecimenAttemptId)).size !== 1)) {
       form.setError('inputs', { message: 'Choose exact inputs belonging to a single source-tube attempt.' }); return
     }
@@ -67,6 +70,16 @@ export function ScientificCaptureForm({ kind, data, source, saved, cancel }: { k
     <p className="text-sm text-muted-foreground">Record actual completed work. Saving retains this evidence permanently; later changes create a linked record. Required evidence does not replace scientific review.</p>
     <fieldset disabled={mutation.isPending} className="space-y-5">
       <section className="space-y-3 rounded-lg border p-4"><h2 className="font-medium">Source and run</h2>
+        {kind === 'sequencing' ? <>
+          <p className="text-sm text-muted-foreground">This sample has {data.sequencingRunCount ?? 1} purchased runs. Use the same purchased run number for its additional files or corrections. One prepared library can supply multiple runs.</p>
+          <div className="grid gap-3 sm:grid-cols-2"><Field form={form} name="sequencingRunNumber" label="Purchased run number" required type="number" />
+            <div><Label htmlFor="capture-preparation-choice"><RequiredFieldName>Library preparation</RequiredFieldName></Label>
+              <select id="capture-preparation-choice" className={selectClass} required {...form.register('libraryPreparationChoice')} aria-invalid={Boolean(form.formState.errors.libraryPreparationChoice)} aria-describedby="capture-preparation-choice-error">
+                <option value="">Choose preparation</option><option value="NewPreparation">New preparation for this run</option><option value="ExistingLibrary">Use an existing prepared library</option>
+              </select><FieldError id="capture-preparation-choice-error">{form.formState.errors.libraryPreparationChoice?.message}</FieldError>
+            </div></div>
+          <p className="text-sm text-muted-foreground">Select the library actually used. For a new preparation, complete its preparation and QC first. Reusing a library retains its original preparation evidence.</p>
+        </> : null}
         {kind === 'sequencing' ? <div className="grid gap-3 sm:grid-cols-2"><div><Label htmlFor="capture-library"><RequiredFieldName>Library / tube</RequiredFieldName></Label><select id="capture-library" className={selectClass} required {...form.register('libraryId', { onChange: () => form.setValue('sendoutId', '') })} aria-invalid={Boolean(form.formState.errors.libraryId)} aria-describedby="capture-library-error"><option value="">Select a library</option>{data.libraries.map(l => <option key={l.id} value={l.id}>{l.libraryKey} · {l.barcode} · {l.status}</option>)}</select><FieldError id="capture-library-error">{form.formState.errors.libraryId?.message}</FieldError></div>
           <div><Label htmlFor="capture-sendout"><RequiredFieldName>Sequencing submission</RequiredFieldName></Label><select id="capture-sendout" className={selectClass} required {...form.register('sendoutId')} disabled={!libraryId || sendouts.isPending || sendouts.isError} aria-invalid={Boolean(form.formState.errors.sendoutId)} aria-describedby="capture-sendout-error"><option value="">Select a recorded submission</option>{sendouts.data?.map(s => <option key={s.id} value={s.id}>{s.providerName} · {s.providerReference ?? s.id.slice(0, 8)} · {s.status}</option>)}</select><FieldError id="capture-sendout-error">{form.formState.errors.sendoutId?.message}</FieldError>{libraryId && sendouts.data?.length === 0 ? <p className="text-sm">No eligible submission contains this exact library and barcode. Review its sequencing handoff.</p> : null}{sendouts.isError ? <><EvidenceError error={sendouts.error} /><Button type="button" variant="outline" onClick={() => void sendouts.refetch()}>Reload submissions</Button></> : null}</div></div> : <div className="space-y-2"><p className="text-sm">Select the exact inputs. Inputs from different source-tube attempts cannot be combined.</p>{data.outputs.map(output => {
           const selected = inputs.find(i => i.id === output.id)

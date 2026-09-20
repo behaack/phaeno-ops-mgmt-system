@@ -62,8 +62,9 @@ public sealed partial class LabOperationsController
                 throw Invalid("derived_specimen_required", "Choose the specimen when creating a child container.");
             return;
         }
-        var attempt = await dbContext.LabSpecimenAttempts.SingleOrDefaultAsync(a => a.LabSpecimenId == container.LabSpecimenId && a.LabWorkOrderId == work.Id
-            && (a.State == LabSpecimenAttemptState.InProgress || a.State == LabSpecimenAttemptState.OnHold || a.State == LabSpecimenAttemptState.Succeeded), ct)
+        var attempt = await dbContext.LabSpecimenAttempts.Where(a => a.LabSpecimenId == container.LabSpecimenId && a.LabWorkOrderId == work.Id
+            && (a.State == LabSpecimenAttemptState.InProgress || a.State == LabSpecimenAttemptState.OnHold || a.State == LabSpecimenAttemptState.Succeeded))
+            .OrderBy(a => a.State == LabSpecimenAttemptState.Succeeded).ThenByDescending(a => a.Sequence).FirstOrDefaultAsync(ct)
             ?? throw Conflict("derived_attempt_required", "Start the specimen's source attempt before recording derived material.");
         if (attempt.State != LabSpecimenAttemptState.Succeeded) Execute(() => attempt.RequireOpen());
         await RequireOutsidePreparationAsync(attempt.Id, ct);

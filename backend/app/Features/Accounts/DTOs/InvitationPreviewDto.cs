@@ -8,4 +8,7 @@ public sealed record InvitationPreviewDto(
     string? FirstName,
     string? LastName,
     string OrganizationName,
-    DateTime ExpiresAt);
+    DateTime ExpiresAt,
+    bool IsOrganizationAdmin = false,
+    IReadOnlyList<InvitationDepartmentDto>? Departments = null,
+    long? Version = null);

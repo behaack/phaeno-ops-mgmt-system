@@ -54,8 +54,8 @@ describe('Expected sample identification rows', () => {
     save()
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith(second))
     expect(api.add).toHaveBeenCalledTimes(2)
-    expect(api.add).toHaveBeenNthCalledWith(1, 'job', { customerSampleId: 'S-1', biologicalSource: 'Human kidney', tubeCount: 1, orderVersion: 4 })
-    expect(api.add).toHaveBeenNthCalledWith(2, 'job', { customerSampleId: 'S-2', biologicalSource: 'Human kidney', tubeCount: 1, orderVersion: 5 })
+    expect(api.add).toHaveBeenNthCalledWith(1, 'job', { customerSampleId: 'S-1', biologicalSource: 'Human kidney', tubeCount: 1, sequencingRunCount: 1, orderVersion: 4 })
+    expect(api.add).toHaveBeenNthCalledWith(2, 'job', { customerSampleId: 'S-2', biologicalSource: 'Human kidney', tubeCount: 1, sequencingRunCount: 1, orderVersion: 5 })
     expect(screen.getAllByRole('textbox').every(input => !(input as HTMLInputElement).value)).toBe(true)
   })
   it('rejects duplicate IDs across saved samples and draft rows before writing', async () => {

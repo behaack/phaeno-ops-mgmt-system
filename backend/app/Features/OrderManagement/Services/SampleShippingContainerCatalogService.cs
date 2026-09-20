@@ -37,8 +37,14 @@ public sealed class SampleShippingContainerCatalogService(PSeqOperationsDbContex
                 throw Invalid("Only an inactive draft that has not ended or been deactivated can be included for preview. Preview active containers without a draft override.");
             records.RemoveAll(item => item.ContainerTypeId == draft.ContainerTypeId && item.Id != draft.Id);
         }
+        var typeIds = records.SelectMany(item => item.Compatibilities.Select(pair => pair.SampleTypeDefinitionId))
+            .Concat(contexts.Select(item => item.SampleTypeDefinitionId)).Distinct().ToArray();
+        var keys = await dbContext.SampleTypeDefinitions.AsNoTracking().Where(item => typeIds.Contains(item.Id))
+            .ToDictionaryAsync(item => item.Id, item => item.DefinitionKey, cancellationToken);
         return records.Where(item => contexts.All(context => item.Compatibilities.Any(pair =>
-                pair.SampleTypeDefinitionId == context.SampleTypeDefinitionId && pair.InstructionRuleId == context.InstructionRuleId)))
+                keys.TryGetValue(pair.SampleTypeDefinitionId, out var pairKey)
+                && keys.TryGetValue(context.SampleTypeDefinitionId, out var contextKey) && pairKey == contextKey
+                && pair.InstructionRuleId == context.InstructionRuleId)))
             .OrderBy(item => item.DisplayOrder).ThenBy(item => item.ContainerType.NormalizedSku).ThenBy(item => item.Id).Select(Map).ToArray();
     }
 
@@ -71,8 +77,14 @@ public sealed class SampleShippingContainerCatalogService(PSeqOperationsDbContex
         // Publishing a successor is not a recall of already manufactured stock. Explicit withdrawal still blocks it.
         var records = await Query().Where(item => definitionIds.Contains(item.Id) && item.IsActive
             && !item.DeactivatedAt.HasValue && item.EffectiveFrom <= now).ToListAsync(ct);
+        var typeIds = records.SelectMany(item => item.Compatibilities.Select(pair => pair.SampleTypeDefinitionId))
+            .Concat(contexts.Select(item => item.SampleTypeDefinitionId)).Distinct().ToArray();
+        var keys = await dbContext.SampleTypeDefinitions.AsNoTracking().Where(item => typeIds.Contains(item.Id))
+            .ToDictionaryAsync(item => item.Id, item => item.DefinitionKey, ct);
         return records.Where(item => contexts.All(context => item.Compatibilities.Any(pair =>
-                pair.SampleTypeDefinitionId == context.SampleTypeDefinitionId && pair.InstructionRuleId == context.InstructionRuleId)))
+                keys.TryGetValue(pair.SampleTypeDefinitionId, out var pairKey)
+                && keys.TryGetValue(context.SampleTypeDefinitionId, out var contextKey) && pairKey == contextKey
+                && pair.InstructionRuleId == context.InstructionRuleId)))
             .OrderBy(item => item.DisplayOrder).ThenBy(item => item.ContainerType.NormalizedSku).ThenBy(item => item.Id).Select(Map).ToArray();
     }
 
@@ -119,8 +131,13 @@ public sealed class SampleShippingContainerCatalogService(PSeqOperationsDbContex
         var ids = contexts.Select(item => item.InstructionRuleId).ToArray();
         var rules = await dbContext.SampleShippingInstructionRules.AsNoTracking().Where(item => ids.Contains(item.Id))
             .Select(item => new { item.Id, item.SampleTypeDefinitionId }).ToDictionaryAsync(item => item.Id, cancellationToken);
+        var typeIds = contexts.Select(item => item.SampleTypeDefinitionId).Concat(rules.Values.Select(item => item.SampleTypeDefinitionId)).Distinct().ToArray();
+        var keys = await dbContext.SampleTypeDefinitions.AsNoTracking().Where(item => typeIds.Contains(item.Id))
+            .ToDictionaryAsync(item => item.Id, item => item.DefinitionKey, cancellationToken);
         foreach (var pair in contexts)
-            if (!rules.TryGetValue(pair.InstructionRuleId, out var rule) || rule.SampleTypeDefinitionId != pair.SampleTypeDefinitionId)
+            if (!rules.TryGetValue(pair.InstructionRuleId, out var rule)
+                || !keys.TryGetValue(rule.SampleTypeDefinitionId, out var ruleKey)
+                || !keys.TryGetValue(pair.SampleTypeDefinitionId, out var pairKey) || ruleKey != pairKey)
                 throw Invalid("Each handling rule must belong to its selected sample type.");
     }
 

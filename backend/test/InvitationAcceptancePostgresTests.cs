@@ -213,7 +213,7 @@ public sealed partial class InvitationAcceptancePostgresTests
         public static async Task<Scope> Create()
         {
             var source = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("PSEQ_OPERATIONS_REFERENCE_CONNECTION")!);
-            if (source.Host is not ("localhost" or "127.0.0.1") || source.Database is not ("phaeno_ops" or "phaeno_ops_lab06_uat"))
+            if (source.Host is not ("localhost" or "127.0.0.1") || (source.Database is not ("phaeno_ops" or "phaeno_ops_lab06_uat") && source.Database?.StartsWith("phaeno_release_verification_", StringComparison.Ordinal) != true))
                 throw new InvalidOperationException("Invitation acceptance requires a known loopback source and a disposable database.");
             var name = "pseq_invite_test_" + Guid.NewGuid().ToString("N");
             var admin = new NpgsqlConnection(source.ConnectionString); await admin.OpenAsync();
@@ -241,8 +241,8 @@ public sealed partial class InvitationAcceptancePostgresTests
             Db.AddRange(contact, new CrmCompanyContact(Company.Id, contact.Id, "Researcher", null, true, DateOnly.FromDateTime(DateTime.UtcNow)));
             await Db.SaveChangesAsync(); return contact;
         }
-        public async Task<InvitationDto> Invite(CrmContact contact, bool linkContact = true) => Assert.IsType<Created<InvitationDto>>(await InvitationEndpoints.CreateInvitation(
-            new() { OrganizationId = Organization.Id, FirstName = contact.FirstName, LastName = contact.LastName, Email = contact.Email!, CrmContactId = linkContact ? contact.Id : null, Departments = [new(Research.Id, false)] }, Http, Db, Tokens, Sender, Protector, AdminIdentity, InviteOptions, Features, default)).Value!;
+        public async Task<InvitationDto> Invite(CrmContact contact, bool linkContact = true, bool organizationAdmin = false) => Assert.IsType<Created<InvitationDto>>(await InvitationEndpoints.CreateInvitation(
+            new() { OrganizationId = Organization.Id, IsOrganizationAdmin = organizationAdmin, FirstName = contact.FirstName, LastName = contact.LastName, Email = contact.Email!, CrmContactId = linkContact ? contact.Id : null, Departments = [new(Research.Id, false)] }, Http, Db, Tokens, Sender, Protector, AdminIdentity, InviteOptions, Features, default)).Value!;
         public async Task<string> Token(Guid id)
         {
             var attempt = await Db.InvitationDeliveryAttempts.AsNoTracking().Where(item => item.OrganizationInvitationId == id).OrderByDescending(item => item.QueuedAtUtc).FirstAsync();

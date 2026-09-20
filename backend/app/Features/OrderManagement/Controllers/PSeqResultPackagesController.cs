@@ -115,8 +115,10 @@ public sealed partial class PSeqResultPipelineController(
             && item.State == ResultOutputPackageState.Released, cancellationToken))
             throw Invalid("result_correction_target_invalid", "A correction must reference a released package for the same sample.");
 
-        // Preserve existing registration unchanged while the prospective contract is disabled.
-        if (Rollout.RequireResultTraceability || Rollout.RequireScientificEvidence || request.LabAnalysisRunId.HasValue)
+        var repeatedSample = request.LabSampleId.HasValue && await dbContext.LabSamples.AsNoTracking()
+            .AnyAsync(s => s.Id == request.LabSampleId && s.SequencingRunCount > 1, cancellationToken);
+        // Repeated runs always need an attributable producing attempt; preserve legacy single-run rollout behavior.
+        if (repeatedSample || Rollout.RequireResultTraceability || Rollout.RequireScientificEvidence || request.LabAnalysisRunId.HasValue)
         {
             if (request.CorrectsPackageId.HasValue)
             {
@@ -127,7 +129,7 @@ public sealed partial class PSeqResultPipelineController(
                     || reason.GetString()!.Length > 2000)
                     throw Invalid("result_correction_reason_required", "Include correctionReason (up to 2,000 characters) in the checksummed manifest for a replacement result.");
             }
-            await new LabResultLineageService(dbContext).RequireResultAsync(request.LabAnalysisRunId, Rollout.RequireResultTraceability,
+            await new LabResultLineageService(dbContext).RequireResultAsync(request.LabAnalysisRunId, repeatedSample || Rollout.RequireResultTraceability,
                 request.OrganizationId, request.LabWorkOrderId, (request.LabSampleId ?? request.TrialSampleId)!.Value, cancellationToken, Rollout.RequireScientificEvidence);
         }
         var packageVersion = await dbContext.ResultOutputPackages
@@ -140,7 +142,7 @@ public sealed partial class PSeqResultPipelineController(
             request.LabWorkOrderId, request.LabSampleId, packageVersion, request.CorrectsPackageId,
             transfer.ProviderKey, transfer.PipelineSubmissionId, request.IdempotencyKey,
             normalizedManifest, calculatedHash, request.ExpectedArtifactCount, request.TrialProjectId, request.TrialSampleId,
-            request.LabAnalysisRunId, Rollout.RequireResultTraceability || Rollout.RequireScientificEvidence);
+            request.LabAnalysisRunId, repeatedSample || Rollout.RequireResultTraceability || Rollout.RequireScientificEvidence);
         dbContext.ResultOutputPackages.Add(package);
         try
         {

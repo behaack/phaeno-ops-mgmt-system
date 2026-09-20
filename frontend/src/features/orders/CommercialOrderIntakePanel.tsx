@@ -247,7 +247,7 @@ function CommercialOrderRow({
         </p>
         {order.orderType === 'PSeqLabService' && order.proposedUnitPrice != null ? (
           <p className="mt-1 text-xs font-medium text-foreground">
-            Price proposed · {formatMoney(order.proposedUnitPrice, order.proposedCurrency ?? 'USD')} per specimen
+            Price proposed · {formatMoney(order.proposedUnitPrice, order.proposedCurrency ?? 'USD')} per sample-sequencing run
           </p>
         ) : null}
       </div>

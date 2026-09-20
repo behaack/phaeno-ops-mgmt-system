@@ -1,4 +1,5 @@
 import { SignOutButton, useUser } from '@clerk/react'
+import { isAxiosError } from 'axios'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { ArrowRight, CheckCircle2, LockKeyhole, Mail } from 'lucide-react'
@@ -25,6 +26,7 @@ export function AcceptInvitePage() {
   const [token, setToken] = useState<string | null>(null)
   const [registrationTicket, setRegistrationTicket] = useState<string | null>(null)
   const [tokenReady, setTokenReady] = useState(false)
+  const [reviewChanged, setReviewChanged] = useState(false)
   const [outcome, setOutcome] = useState<{ status: 'accepted' | 'declined'; organizationName: string | null } | null>(null)
   // Scope private data to this page without putting the secret token in cache keys.
   const previewId = useId()
@@ -56,7 +58,13 @@ export function AcceptInvitePage() {
   }, [])
 
   const accept = useMutation({
-    mutationFn: (names: { firstName: string; lastName: string }) => acceptInvitation({ token: token!, ...names }),
+    mutationFn: (names: { firstName: string; lastName: string }) => acceptInvitation({ token: token!, version: preview.data?.version, ...names }),
+    onError: async error => {
+      if (isAxiosError(error) && error.response?.status === 409) {
+        setReviewChanged(true)
+        await preview.refetch()
+      }
+    },
     onSuccess: async (invitation) => {
       setOutcome({ status: 'accepted', organizationName: invitation.organizationName })
       clearStoredInviteToken()
@@ -105,14 +113,22 @@ export function AcceptInvitePage() {
         <p className="mt-1 break-all text-muted-foreground">{invitation.email}</p>
       </div>
     </div>
+    {invitation.isOrganizationAdmin !== undefined ? <section className="mb-6 rounded-lg border p-4" aria-labelledby="invitation-proposed-access">
+      <h2 id="invitation-proposed-access" className="font-semibold">Access after acceptance</h2>
+      {invitation.isOrganizationAdmin ? <p className="mt-2">Organization administrator — all departments</p> : <>
+        <p className="mt-2">Member — assigned departments only</p>
+        <ul className="mt-2 list-disc pl-5">{invitation.departments?.map(department => <li key={department.departmentId}>{department.departmentName} — {department.isDepartmentAdmin ? 'Department administrator' : 'Member'}</li>)}</ul>
+      </>}
+    </section> : null}
+    {reviewChanged ? <p role="alert" className="mb-4 text-sm">The invitation changed. Review the updated access above, then select Accept invitation again if you agree.</p> : null}
     {!auth.clerkLoaded ? <p role="status">Preparing secure sign-in…</p> : !auth.signedIn ? (
       !auth.authConfigured ? <p role="alert">Sign-in is temporarily unavailable. Please try again later or contact the sender.</p> : <InvitationAuthentication invitation={invitation} token={token} registrationTicket={registrationTicket} />
     ) : auth.authProvider === 'clerk' ? (
-      <ClerkInvitationReview invitation={invitation} pending={accept.isPending || decline.isPending} onAccept={(names) => accept.mutate(names)} onDecline={() => decline.mutate()} />
+      <ClerkInvitationReview invitation={invitation} pending={accept.isPending || decline.isPending || preview.isFetching} onAccept={(names) => { setReviewChanged(false); accept.mutate(names) }} onDecline={() => decline.mutate()} />
     ) : (
-      <InvitationReview invitation={invitation} emailMatches={auth.session?.user?.email?.toLowerCase() === invitation.email.toLowerCase()} signedInEmail={auth.session?.user?.email} pending={accept.isPending || decline.isPending} onAccept={(names) => accept.mutate(names)} onDecline={() => decline.mutate()} />
+      <InvitationReview invitation={invitation} emailMatches={auth.session?.user?.email?.toLowerCase() === invitation.email.toLowerCase()} signedInEmail={auth.session?.user?.email} pending={accept.isPending || decline.isPending || preview.isFetching} onAccept={(names) => { setReviewChanged(false); accept.mutate(names) }} onDecline={() => decline.mutate()} />
     )}
-    {accept.error || decline.error ? <Alert className="mt-4" variant="destructive">
+    {(accept.error && !reviewChanged) || decline.error ? <Alert className="mt-4" variant="destructive">
       <AlertTitle>Invitation could not be completed</AlertTitle>
       <AlertDescription>{apiErrorMessage(accept.error ?? decline.error)}</AlertDescription>
     </Alert> : null}

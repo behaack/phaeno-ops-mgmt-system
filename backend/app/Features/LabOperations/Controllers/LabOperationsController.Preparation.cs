@@ -133,7 +133,7 @@ public sealed partial class LabOperationsController
             && c.Kind == LabContainerKind.Library && c.Status == LabContainerStatus.Available && c.Quantity > 0 && c.QuantityUnit != null
             && !dbContext.LabLibraries.Any(l => l.LibraryContainerId == c.Id)).ToListAsync(ct);
         var sequencing = await (from m in dbContext.LabBatchMembers.AsNoTracking() join b in dbContext.LabOperationalBatches.AsNoTracking() on m.LabOperationalBatchId equals b.Id
-            where libraries.Select(l => l.Id).Contains(m.LabLibraryId) select new { m.LabLibraryId, b.Id, b.BatchNumber, b.Name }).ToListAsync(ct);
+            where libraries.Select(l => l.Id).Contains(m.LabLibraryId) orderby m.AddedAtUtc descending, m.Id descending select new { m.LabLibraryId, b.Id, b.BatchNumber, b.Name }).ToListAsync(ct);
         var creation = records.FirstOrDefault(r => r.Action == "create");
         var notes = creation is null ? null : JsonSerializer.Deserialize<CreateLabPreparationRequest>(creation.DetailsJson, JsonOptions)?.Notes;
         return new { batch.Id, batch.Name, batch.TrayBarcode, inlineResourceFields = true, configuredMaterials = true, automaticSpecimenReferences = true, bulkOutputs = true, optionalPreparationReports = true, optionalQcReports = true, trayConfirmed = batch.StartedAtUtc.HasValue || PreparationTrayConfirmed(records), notes, batch.Version, status = batch.Status.ToString(), batch.LabServiceWorkflowVersionId,
@@ -178,10 +178,10 @@ public sealed partial class LabOperationsController
             where t.Kind == LabContainerKind.SubmittedSpecimen && t.IntakeDisposition == LabSpecimenIntakeDisposition.Accepted && t.Status == LabContainerStatus.Available
                 && w.ServiceKey == serviceKey
                 && (w.AuthorizationSource != LabAuthorizationSource.TrialProject || w.LabServiceWorkflowVersionId == null || w.LabServiceWorkflowVersionId == batch.LabServiceWorkflowVersionId)
-                && w.TubeUsePolicyKey == LabTubeUsePolicy.RunOneWithFailureFallback
+                && (w.TubeUsePolicyKey == LabTubeUsePolicy.RunOneWithFailureFallback || w.TubeUsePolicyKey == LabTubeUsePolicy.RunAuthorizedWithFailureFallback)
                 && w.Status != LabWorkOrderStatus.OnHold && w.Status != LabWorkOrderStatus.Cancelled && w.Status != LabWorkOrderStatus.ReadyForRelease
                 && s.AccessionNumber != null && s.ReceivedAtUtc != null && s.IntakeDisposition != LabSpecimenIntakeDisposition.Cancelled
-                && s.ProcessingState != LabSpecimenProcessingState.Succeeded && s.ProcessingState != LabSpecimenProcessingState.Failed
+                && (s.ProcessingState != LabSpecimenProcessingState.Succeeded || attempts.Any(a => a.LabSpecimenId == s.Id && a.State == LabSpecimenAttemptState.Planned)) && s.ProcessingState != LabSpecimenProcessingState.Failed
                 && (query == null || t.Barcode.Contains(query) || (w.OpaqueSubmitterReference != null && w.OpaqueSubmitterReference.Contains(query)))
                 && (freezerBox == null || (t.Location != null && t.Location.Contains(freezerBox)))
                 && !executions.Any(e => e.LabSpecimenId == s.Id && (
@@ -189,8 +189,10 @@ public sealed partial class LabOperationsController
                     || attempts.Any(a => a.Id == e.LabSpecimenAttemptId && a.State == LabSpecimenAttemptState.Planned)
                         && (e.StartedAtUtc != null || e.Status != LabExecutionStatus.Planned)))
                 && executions.Count(e => e.LabSpecimenId == s.Id && e.LabSpecimenAttemptId == null) <= 1
+                && (!attempts.Any(a => a.SourceContainerId == t.Id && a.State == LabSpecimenAttemptState.Succeeded)
+                    || attempts.Any(a => a.SourceContainerId == t.Id && a.State == LabSpecimenAttemptState.Planned))
                 && !attempts.Any(a => a.LabSpecimenId == s.Id && (
-                    a.State != LabSpecimenAttemptState.Failed && (a.State != LabSpecimenAttemptState.Planned || a.SourceContainerId != t.Id
+                    a.State != LabSpecimenAttemptState.Failed && a.State != LabSpecimenAttemptState.Succeeded && (a.State != LabSpecimenAttemptState.Planned || a.SourceContainerId != t.Id
                         || a.LabServiceWorkflowVersionId != batch.LabServiceWorkflowVersionId
                         || dbContext.LabPreparationMembers.Any(m => !m.Removed && m.LabSpecimenAttemptId == a.Id))
                     || a.SourceContainerId == t.Id && a.State == LabSpecimenAttemptState.Failed))

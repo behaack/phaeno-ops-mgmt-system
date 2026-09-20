@@ -48,6 +48,14 @@ public sealed class LabSpecimen : IAudit, IConcurrency
         ProcessingNote = LabAuditedEntity.Optional(note); ProcessingNextAction = LabAuditedEntity.Optional(nextAction, 2000);
         ProcessingOwnerUserId = actorId; ProcessingUpdatedAtUtc = utcNow;
     }
+    public void BeginAdditionalPreparation(Guid actorId, DateTime utcNow)
+    {
+        if (ProcessingState != LabSpecimenProcessingState.Succeeded)
+            throw new InvalidOperationException("Only a completed preparation can be reopened for an additional authorized preparation.");
+        ProcessingState = LabSpecimenProcessingState.Ready;
+        RecordProcessingState(LabSpecimenProcessingState.Ready, actorId, utcNow,
+            "additional_preparation", "New preparation for an outstanding purchased sequencing run.");
+    }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;

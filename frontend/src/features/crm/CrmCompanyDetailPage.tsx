@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
+  ChevronDown,
   Combine,
   ExternalLink,
   Pencil,
@@ -11,7 +12,7 @@ import {
   PowerOff,
   UserRoundCog,
 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import axios from "axios";
 
 import {
@@ -41,6 +42,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "#/components/ui/dialog";
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "#/components/ui/dropdown-menu";
 import { Label } from "#/components/ui/label";
 import {
   Tabs,
@@ -82,6 +84,8 @@ function reviewValue(value: CrmCompany[keyof CrmCompany]) {
 
 export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
   const { canAdminister } = useCrmPermissions();
+  const actionsTrigger = useRef<HTMLButtonElement>(null);
+  const selectedAction = useRef<(() => void) | null>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [editTarget, setEditTarget] = useState<CrmCompany | null>(null);
@@ -93,9 +97,9 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
   const lifecycleOpen = Boolean(lifecycleTarget);
   const ownerOpen = Boolean(ownerTarget);
   const [storedSection, setActiveSection] = useCrmState<
-    "overview" | "people" | "sales" | "departments" | "requests" | "activity"
+    "overview" | "people" | "sales" | "departments" | "services" | "requests" | "activity"
   >("section", "overview");
-  const allowedSections = canAdminister ? ["overview", "people", "sales", "departments", "requests", "activity"] : ["overview", "people", "sales", "activity"];
+  const allowedSections = canAdminister ? ["overview", "people", "sales", "departments", "services", "requests", "activity"] : ["overview", "people", "sales", "activity"];
   const activeSection = allowedSections.includes(storedSection) ? storedSection : "overview";
   const companyQuery = useQuery({
     queryKey: ["crm-company", companyId],
@@ -244,31 +248,37 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
             Customer and commercial relationship owned by {company.ownerName}.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => setOwnerTarget(company)}>
-            <UserRoundCog data-icon="inline-start" />
-            Change owner
-          </Button>
-          <Button variant="outline" onClick={() => setEditTarget(company)}>
-            <Pencil data-icon="inline-start" />
-            Edit
-          </Button>
-          {canAdminister ? <><Button variant="outline" onClick={() => { mergeMutation.reset(); setMergeSource({ id: company.id, name: company.name, version: company.version }); }}>
-            <Combine data-icon="inline-start" />
-            Merge
-          </Button>
-          <Button
-            variant={company.isActive ? "destructive" : "outline"}
-            onClick={() => setLifecycleTarget(company)}
-          >
-            {company.isActive ? (
-              <PowerOff data-icon="inline-start" />
-            ) : (
-              <Power data-icon="inline-start" />
-            )}
-            {company.isActive ? "Deactivate" : "Reactivate"}
-          </Button></> : null}
-        </div>
+        <ActionMenu>
+          <DropdownMenuTrigger asChild>
+            <Button ref={actionsTrigger} variant="outline" className="shrink-0 self-start" aria-label={`Actions for ${company.name}`}>
+              Actions <ChevronDown aria-hidden="true" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]" onCloseAutoFocus={(event) => {
+            // Open dialogs after the menu restores focus to its persistent trigger.
+            event.preventDefault();
+            actionsTrigger.current?.focus();
+            const action = selectedAction.current;
+            selectedAction.current = null;
+            action?.();
+          }}>
+            <DropdownMenuItem onSelect={() => { selectedAction.current = () => setOwnerTarget(company); }}>
+              <UserRoundCog aria-hidden="true" />Change owner
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => { selectedAction.current = () => setEditTarget(company); }}>
+              <Pencil aria-hidden="true" />Edit
+            </DropdownMenuItem>
+            {canAdminister ? <>
+              <DropdownMenuItem onSelect={() => { selectedAction.current = () => { mergeMutation.reset(); setMergeSource({ id: company.id, name: company.name, version: company.version }); }; }}>
+                <Combine aria-hidden="true" />Merge
+              </DropdownMenuItem>
+              <DropdownMenuItem variant={company.isActive ? "destructive" : "default"} onSelect={() => { selectedAction.current = () => setLifecycleTarget(company); }}>
+                {company.isActive ? <PowerOff aria-hidden="true" /> : <Power aria-hidden="true" />}
+                {company.isActive ? "Deactivate" : "Reactivate"}
+              </DropdownMenuItem>
+            </> : null}
+          </DropdownMenuContent>
+        </ActionMenu>
       </section>
 
       <Tabs
@@ -292,7 +302,10 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
             Sales
           </TabsTrigger>
           {canAdminister ? <><TabsTrigger className="min-w-fit flex-none" value="departments">
-            Departments &amp; services
+            Departments
+          </TabsTrigger>
+          <TabsTrigger className="min-w-fit flex-none" value="services">
+            Services
           </TabsTrigger>
           <TabsTrigger className="min-w-fit flex-none" value="requests">
             Requests
@@ -412,18 +425,35 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
 
         {canAdminister ? <TabsContent value="departments" className="space-y-6">
           {company.accessOrganizationId ? (
-            <>
-              <OrganizationDepartmentsPanel organizationId={company.accessOrganizationId} deliveryLocations={company.portalRelationship === 'Customer'} companyId={companyId} />
-              <OrganizationDetailPage
-                organizationId={company.accessOrganizationId}
-                embedded
-                showUsers={false}
-              />
-            </>
+            <OrganizationDepartmentsPanel organizationId={company.accessOrganizationId} deliveryLocations={company.portalRelationship === 'Customer'} companyId={companyId} />
           ) : (
             <Card>
               <CardHeader>
-                <CardTitle>Departments &amp; services</CardTitle>
+                <CardTitle>Departments</CardTitle>
+                <CardDescription>
+                  Online access has not been approved for this Company.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button type="button" onClick={() => setActiveSection("requests")}>
+                  Open Company requests
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent> : null}
+
+        {canAdminister ? <TabsContent value="services" className="space-y-6">
+          {company.accessOrganizationId ? (
+            <OrganizationDetailPage
+              organizationId={company.accessOrganizationId}
+              embedded
+              showUsers={false}
+            />
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Services</CardTitle>
                 <CardDescription>
                   Online access has not been approved for this Company.
                 </CardDescription>

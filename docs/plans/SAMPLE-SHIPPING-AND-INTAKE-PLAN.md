@@ -1,5 +1,65 @@
 # Sample Shipping and Intake Plan
 
+## Enriched RNA configuration — September 19, 2026
+
+Owner requested a second active sample type for Enriched RNA and shipping rules for Total RNA and Enriched RNA at Santa Barbara Lab. Material selection now includes Enriched RNA (enriched_rna), distinct from Total RNA (extracted_rna). This adds configurable shipping content; it does not silently expand service or Trial ordering eligibility. Source: owner-supplied PSeq submission PDF and confirmed dry-ice instructions.
+
+Local configuration completed: Enriched RNA revision 1 (8e9e5077-32df-4cf3-aad3-8bbc8a0d814c) is active, with minimum one Tube and no maximum count. Both Santa Barbara Lab shipping rules are revision 1 and active, using FROZEN_RNA and the existing destination revision 1. Signed-in previews resolved both rules successfully. Existing Total RNA revision 4 was retained. Shipping content uses Phaeno-supplied tubes and container, 2–4 kg dry ice, de-identified labels, printed submission form, saved receiving hours, and shipment/exception contact instructions. The PDF conflicts on Enriched RNA volume (10 µL maximum versus 20–50 µL preferred); 10 µL maximum was used provisionally under the owner's do-your-best instruction and flagged for review. The destination's existing Delivery instruction remains TBD. No shipment packet was issued. TypeScript, scoped lint, generated-help consistency, and whitespace checks passed; automated suites were not run.
+## Current sample-type selection — September 19, 2026
+
+Owner approved following the named sample type's latest active, effective revision. [Current-revision implementation](SAMPLE-TYPE-CURRENT-REVISION-PLAN.md) supersedes exact sample-revision pinning for new shipping-rule resolution, readiness and compatible container selection. Issued packets keep their immutable snapshots; destination references remain exact.
+
+## Automatic destination references — September 19, 2026
+
+New destination drafts generate a DEST- UUID reference once on opening, consistent with sample-type references. Remove manual code entry and place Display name first. Retries preserve the draft code; renames and revisions retain the existing code. Existing API contracts and saved references are unchanged.
+
+## Total RNA terminology — September 19, 2026
+
+The owner renamed the canonical material label from Whole RNA to Total RNA. The selector, list, details and user guide use Total RNA; the existing extracted_rna value and eligibility remain unchanged. This supersedes the earlier display-label decision below.
+
+## Instruction-field scientific helpers — September 19, 2026
+
+All eight sample-type handling/instruction textareas use the shared ScientificTextField with the full instruction-specific unit and symbol lists. Both units and symbols insert at the remembered cursor or replace selected text, preserve surrounding instructions, and restore focus/caret. Labels, validation links, required markers, multiline sizing and pending-save disabling are retained. Submission unit keeps its restricted µL/mL helper and now also inserts at the cursor rather than replacing the field; Lab Steps keeps its existing selection behavior. The owner requested a quieter form: remove the introductory description, quantity-count helper and repeated insertion messages; underline the Units/Units and symbols buttons and place them directly beneath the inputs. Keep the dialog title, field labels, Material type selection, Quantity heading and validation. Detailed guidance remains in the user guide. No saved records or contracts change.
+
+## Submission counts and compact quantity card — September 19, 2026
+
+Current owner direction supersedes the decimal-count and measurement/symbol-helper sections below. Quantity describes submitted items such as a sized tube, FPET block, or section from block. Use input-matching rounded-lg corners, a compact header, aligned Submission unit / Min / Max fields, Min default 1 and optional Max with one concise helper line. The owner rejected the Choose submission unit header menu. Restore the ScientificTextField helper beneath the editable field, labeled Units and restricted to µL and mL for sample sizes. Exclude symbol insertion and unrelated measurement units here; preserve the full Lab Steps helper. Editable text still accommodates descriptions such as 20 mL tube, FPET block or Section from block. Counts use positive whole-number validation and numeric keyboards. Existing saved records are not rewritten.
+
+The owner clarified the intended commercial unit as **sample-sequencing run**: 20 samples sequenced once count as 20; one sample sequenced 20 times also counts as 20. A machine batch is not the commercial unit, and submission item counts do not determine the run count. This resolves the cardinality question. The compact configuration form removes the misleading statement that ordering uses tube and does not modify prices or accepted work.
+
+Repeated-run ordering and pricing implementation and remaining laboratory decisions are tracked in [Sample Sequencing Runs](SAMPLE-SEQUENCING-RUNS-PLAN.md). Purchased quantities remain separate from sample identities and physical submission counts; preserve existing accepted prices and historical records. Current configured intake also selects exactly one extracted-RNA tube type and retains tube_count roster and tube-use rules; saving a block, section or sized-tube definition alone does not authorize a new operational intake workflow. Review service eligibility, roster/CSV, Trial compatibility, container packing, and shipment authorization before enabling those workflows.
+
+Verification: TypeScript, scoped ESLint, generated-help consistency and whitespace checks passed. Signed-in browser checks verified the picker choices, keyboard opening, sized-tube selection and restored input focus. The card and inputs both use 8px corners; the card measures about 128px high, fields align at the checked viewport, and the modal has no horizontal overflow. No record was saved. Regression sources were updated; automated suites were not run under repository policy.
+
+
+## Quantity numeric entry — September 19, 2026
+
+Min/Max keep plain text controls with decimal keyboard hints and no spinners. Validate decimal numeric strings (including scientific notation for existing numeric values), reject hexadecimal and nonnumeric values, trim surrounding whitespace, and save blank limits as null. Min is nonnegative; Max is positive and cannot be below Min. Validate both fields on blur and recheck existing errors on change. Inline errors are associated with inputs; helpers explain units, allowable values, and blank/unbounded limits. The API and its existing numeric constraints are unchanged. Regression sources cover negative/zero/nonnumeric/hex input, dependent range updates, decimals and blank-to-null payloads; suites remain request-only.
+
+Verification: TypeScript, scoped ESLint, generated-help consistency, and whitespace checks passed. Signed-in browser checks verified negative Min, zero Max, reversed-range errors and clearing the range error after entering a valid decimal Min. No sample type was saved. Empty-fill automation did not clear the browser inputs, so blank-to-null behavior is covered by source inspection and the authored regression rather than claimed as live verification. Cleanup hit the browser discard-confirmation limitation.
+
+## Quantity field layout — September 19, 2026
+
+Material type spans its own row. A full-width Quantity card groups Unit, Min and Max in that order, with the unit helper retained inside the Unit field. Wider layouts use three columns with more room for Unit; narrow layouts stack the fields in the same reading order. Labels in existing regression sources and Phaeno help match the new grouping. Validation and saved data are unchanged. TypeScript, scoped ESLint, generated-help and whitespace checks passed. Live browser inspection confirmed the full-width Material type row, a Quantity group with Unit/Min/Max aligned on one row, the retained unit helper, and no modal horizontal overflow. The unchanged form and verification tab were closed without saving.
+
+## Quantity unit helper — September 19, 2026
+
+Reuse the Lab Steps ScientificTextField for sample-type Quantity unit. Generalize its form typing while keeping Lab Steps defaults intact, and allow additional per-field units. Sample types add tube to the common-unit list and explain the current PSeq requirement. Common units replace the input; symbols insert at the remembered selection and return keyboard focus to the input. Custom entry remains supported and values are not converted. Disable input and helper while saving. No API or scientific eligibility changes. Phaeno help and focused regression source cover unit replacement and cursor insertion; automated suites remain request-only.
+
+Verification: TypeScript, scoped ESLint, generated-help consistency, and whitespace checks passed. Signed-in browser inspection verified the full menu, tube selection, µ insertion before g, and input focus/caret restoration. No sample record was saved. Browser cleanup encountered the existing discard-confirmation automation limitation; the verification draft remained unsaved.
+
+
+## Material type selection — September 19, 2026
+
+The owner selected Whole RNA as the single currently supported choice. Replace the free-text Material class field with Material type, offering Whole RNA for new definitions and persisting the existing extracted_rna key so current PSeq and Trial eligibility checks keep working. Existing noncanonical values remain visible as previously saved choices when revising their own records; never silently reclassify them. The sample-type list and details show Whole RNA for the canonical key. This is a presentation/input change, not authorization of a new material workflow. Regression sources verify the exact submitted key, single new choice, and legacy-value preservation.
+
+Verification: TypeScript, scoped ESLint, generated-help consistency, and whitespace checks passed. Signed-in browser inspection confirmed Name-first entry with no code input and exactly one enabled material choice, Whole RNA, mapped to extracted_rna. The modal had no horizontal overflow. No sample type was saved; retry and legacy revision behavior have regression source coverage but suites were not run under repository policy.
+
+## Automatic sample-type references — September 19, 2026
+
+Generate a SAMPLE-prefixed UUID reference when a new sample-type form opens and retain it through validation and save retries. Remove code entry from the form, keep Name as its primary label, and identify revision dialogs by name. Revisions reuse the saved reference even when renamed, including legacy references. Existing backend uniqueness and frozen-code enforcement remain unchanged; no migration, contract change, or saved-record update is required. Long generated references wrap in the detail badge. Phaeno configuration help describes the behavior. Regression sources cover automatic generation, retry stability, and reference preservation on renamed revisions; suites are not run unless requested.
+
+
 ## Linkable sample-type details — September 18, 2026
 
 In Order settings → Sample types, each sample name links to `/order-configuration/sample-types/{sampleTypeId}`. This view-first page retains the owning sidebar and shows the exact revision's identity, availability, effective dates, material and quantity limits, transit limit, and full container, temperature, stabilizer, packaging, labeling, prohibited-identifier, safety and carrier requirements. Shaded headers group the details and revision history. History links open exact retained revisions; historical pages link to the latest revision. Only the latest revision exposes Create revision, using the existing bounded dialog. Successful creation opens the saved revision's detail. Back to sample types returns to the list. Missing IDs show an explicit not-found state; load failures support retry. Existing administrator access, backend revision rules and shipment snapshots remain unchanged; no migration or new API is needed.

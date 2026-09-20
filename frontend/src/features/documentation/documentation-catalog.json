@@ -143,7 +143,7 @@
       "title": "Trial Projects",
       "summary": "Configure authorities and deliverables, approve scope, oversee samples and Lab work, release results, and close Trials.",
       "order": 26,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-19",
       "navigationGroup": "trial-project",
       "contentType": "guide",
       "topicIds": [
@@ -235,7 +235,7 @@
       "title": "Trial Projects",
       "summary": "Review and accept approved Trial scope, submit coded RNA, and download released results.",
       "order": 24,
-      "reviewedAt": "2026-09-11",
+      "reviewedAt": "2026-09-19",
       "navigationGroup": "trial-project",
       "contentType": "guide",
       "topicIds": [
@@ -267,7 +267,7 @@
       "title": "Getting started",
       "summary": "Find approved Trials, authorized shipping, curated data, and access for the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-09-14",
+      "reviewedAt": "2026-09-19",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -293,7 +293,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-15",
+      "reviewedAt": "2026-09-19",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -325,7 +325,7 @@
       "title": "Prepare and ship samples",
       "summary": "Choose Trial containers, retain tube identities, print shipping inserts and record dispatch.",
       "order": 25,
-      "reviewedAt": "2026-09-16",
+      "reviewedAt": "2026-09-19",
       "navigationGroup": "trial-project",
       "contentType": "guide",
       "topicIds": [
@@ -455,7 +455,7 @@
       "title": "Statuses and troubleshooting",
       "summary": "Resolve Trial acceptance, sample allowance, shipping, result availability, and curated-data access problems.",
       "order": 60,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-19",
       "navigationGroup": "support",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -510,7 +510,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-15",
+      "reviewedAt": "2026-09-19",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -542,7 +542,7 @@
       "title": "Request laboratory services",
       "summary": "Complete ordering and shipping on the Job, then follow receipt, laboratory progress and results.",
       "order": 30,
-      "reviewedAt": "2026-09-18",
+      "reviewedAt": "2026-09-19",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -700,7 +700,7 @@
       "title": "Getting started",
       "summary": "Find reagent orders, Assembly requests, curated data, and retained Trials in the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-09-14",
+      "reviewedAt": "2026-09-19",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -726,7 +726,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-15",
+      "reviewedAt": "2026-09-19",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -758,7 +758,7 @@
       "title": "Order PSeq Kits",
       "summary": "Review negotiated Kit bundles, track each shipped unit and prepare its included Assembly case.",
       "order": 30,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-19",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [
@@ -871,7 +871,7 @@
       "title": "Phaeno operations guide",
       "summary": "Find each workflow, its owning workspace, reusable configuration, and the roles needed to act.",
       "order": 10,
-      "reviewedAt": "2026-09-18",
+      "reviewedAt": "2026-09-19",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -925,7 +925,7 @@
       "title": "Companies and Contacts",
       "summary": "Maintain Company identity, contextual People, relationships, invitations, and Portal access in one workspace.",
       "order": 16,
-      "reviewedAt": "2026-09-15",
+      "reviewedAt": "2026-09-19",
       "navigationGroup": "customer-relationship-management",
       "contentType": "guide",
       "topicIds": [
@@ -1078,7 +1078,7 @@
       "title": "Company requests and approvals",
       "summary": "Create Company requests, decide them centrally, complete approved work, and apply reviewed Prospect conversions.",
       "order": 21,
-      "reviewedAt": "2026-09-16",
+      "reviewedAt": "2026-09-19",
       "navigationGroup": "customer-relationship-management",
       "contentType": "guide",
       "topicIds": [
@@ -1139,7 +1139,7 @@
       "title": "Company access and user administration",
       "summary": "Manage Company access, staged Department readiness, service entitlements, invitation recovery, and membership lifecycle.",
       "order": 25,
-      "reviewedAt": "2026-09-16",
+      "reviewedAt": "2026-09-19",
       "navigationGroup": "platform-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1172,7 +1172,7 @@
       "title": "Data provisioning",
       "summary": "Manage Phaeno-owned sources, immutable packages, exact-version grants, and governance events.",
       "order": 30,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-19",
       "navigationGroup": "data-provisioning",
       "contentType": "overview",
       "topicIds": [
@@ -1373,7 +1373,7 @@
       "title": "Customer lab authorization",
       "summary": "Start a Customer Job for its Department, resolve readiness by stage, issue pricing, and authorize Lab work after sample finalization.",
       "order": 41,
-      "reviewedAt": "2026-09-18",
+      "reviewedAt": "2026-09-19",
       "navigationGroup": "order-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1402,7 +1402,7 @@
       "title": "PSeq kit fulfillment",
       "summary": "Review Partner kit orders commercially, then open Lab work for substitutions, backorders, and shipment fulfillment.",
       "order": 52,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-19",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1595,7 +1595,7 @@
       "title": "Receipt and accession",
       "summary": "Dispatch barcoded containers to Customer locations, track inventory and assignments, and record receipt and accession for each registered tube.",
       "order": 51,
-      "reviewedAt": "2026-09-18",
+      "reviewedAt": "2026-09-19",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1809,7 +1809,7 @@
       "title": "Configuration and file retention",
       "summary": "Maintain reusable defaults, services, analyses, Partner rules, shipping container sizes and compatibility, and released-file retention.",
       "order": 60,
-      "reviewedAt": "2026-09-18",
+      "reviewedAt": "2026-09-19",
       "navigationGroup": "platform-operations",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1842,7 +1842,7 @@
       "title": "Statuses and recovery",
       "summary": "Find each owning workspace and recover readiness, Lab work, releases, Finance, notifications, and retained history.",
       "order": 70,
-      "reviewedAt": "2026-09-16",
+      "reviewedAt": "2026-09-19",
       "navigationGroup": "support",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1874,7 +1874,7 @@
       "title": "Use Partner Lab services",
       "summary": "Complete Partner ordering and shipping on the Job, then track sample receipt and laboratory results.",
       "order": 25,
-      "reviewedAt": "2026-09-18",
+      "reviewedAt": "2026-09-19",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [

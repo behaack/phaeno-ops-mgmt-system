@@ -56,18 +56,28 @@ public sealed class LabJobQuery(PSeqOperationsDbContext db)
 {
     // Release gates establish availability. Expiration of the agreed download period does
     // not undo delivery, but an explicit withdrawal removes that release's coverage.
-    public IQueryable<LabJobRelease> Releases() =>
-        db.LabResultReleases.AsNoTracking()
-            .Where(r => r.ReleaseStatus == FileReleaseStatus.Released && r.ReleasedAt != null)
-            .Select(r => new LabJobRelease { SampleId = r.LabSampleId, ReleasedAtUtc = r.ReleasedAt })
-        .Concat(db.ResultOutputPackages.AsNoTracking()
-            .Where(p => p.TrialSampleId != null && p.State == ResultOutputPackageState.Released
-                && p.ReleasedAtUtc != null
+    public IQueryable<LabJobRelease> Releases()
+    {
+        var released = db.LabResultReleases.AsNoTracking().Where(r => r.ReleaseStatus == FileReleaseStatus.Released && r.ReleasedAt != null);
+        var individual = released.Where(r => !db.LabSamples.Any(s => s.Id == r.LabSampleId && s.SequencingRunCount > 1))
+            .Select(r => new LabJobRelease { SampleId = r.LabSampleId, ReleasedAtUtc = r.ReleasedAt });
+        var runs = from result in released
+            join sample in db.LabSamples on result.LabSampleId equals sample.Id
+            join input in db.LabAnalysisInputs on result.LabAnalysisRunId equals input.LabAnalysisRunId
+            join output in db.LabSequencingOutputs on input.LabSequencingOutputId equals output.Id
+            where sample.SequencingRunCount > 1
+            group result by new { result.LabSampleId, sample.SequencingRunCount, RunNumber = output.SequencingRunNumber ?? 1 } into g
+            select new { g.Key.LabSampleId, g.Key.SequencingRunCount, FirstRelease = g.Min(r => r.ReleasedAt) };
+        var repeated = runs.GroupBy(r => new { r.LabSampleId, r.SequencingRunCount }).Where(g => g.Count() >= g.Key.SequencingRunCount)
+            .Select(g => new LabJobRelease { SampleId = g.Key.LabSampleId, ReleasedAtUtc = g.Max(r => r.FirstRelease) });
+        var trials = db.ResultOutputPackages.AsNoTracking()
+            .Where(p => p.TrialSampleId != null && p.State == ResultOutputPackageState.Released && p.ReleasedAtUtc != null
                 && db.TrialResultFiles.Any(f => f.ResultOutputPackageId == p.Id)
                 && !db.TrialResultFiles.Any(f => f.ResultOutputPackageId == p.Id
-                    && db.ManagedOperationalFiles.Any(m => m.Id == f.ManagedOperationalFileId
-                        && m.ReleaseStatus != FileReleaseStatus.Released)))
-            .Select(p => new LabJobRelease { SampleId = p.TrialSampleId!.Value, ReleasedAtUtc = p.ReleasedAtUtc }));
+                    && db.ManagedOperationalFiles.Any(m => m.Id == f.ManagedOperationalFileId && m.ReleaseStatus != FileReleaseStatus.Released)))
+            .Select(p => new LabJobRelease { SampleId = p.TrialSampleId!.Value, ReleasedAtUtc = p.ReleasedAtUtc });
+        return individual.Concat(repeated).Concat(trials);
+    }
 
     // Queue eligibility does not restrict direct job details or delivery recording.
     public IQueryable<LabJobRow> QueueRows() => Rows().Where(j =>

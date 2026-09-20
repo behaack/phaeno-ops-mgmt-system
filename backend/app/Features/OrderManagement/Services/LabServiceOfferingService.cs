@@ -41,7 +41,12 @@ public sealed class LabServiceOfferingService(PSeqOperationsDbContext db)
             && (!value.EffectiveTo.HasValue || value.EffectiveTo > now));
         var offerings = await query.OrderBy(value => value.Name).ThenByDescending(value => value.OfferingVersion).ToListAsync(token);
         var typeIds = offerings.SelectMany(value => value.SupportedSampleTypes.Select(type => type.SampleTypeDefinitionId)).Distinct().ToArray();
-        var sampleTypes = await db.SampleTypeDefinitions.AsNoTracking().Where(value => typeIds.Contains(value.Id)).ToDictionaryAsync(value => value.Id, token);
+        var anchors = await db.SampleTypeDefinitions.AsNoTracking().Where(value => typeIds.Contains(value.Id)).ToDictionaryAsync(value => value.Id, token);
+        var keys = anchors.Values.Select(value => value.DefinitionKey).Distinct().ToArray();
+        var revisions = await db.SampleTypeDefinitions.AsNoTracking().Where(value => keys.Contains(value.DefinitionKey)).ToListAsync(token);
+        var current = revisions.Where(value => value.IsEffectiveAt(now)).GroupBy(value => value.DefinitionKey)
+            .ToDictionary(group => group.Key, group => group.OrderByDescending(value => value.Revision).First());
+        var sampleTypes = anchors.ToDictionary(pair => pair.Key, pair => current.GetValueOrDefault(pair.Value.DefinitionKey) ?? pair.Value);
         var catalogIds = offerings.Select(value => value.CatalogItemId).Distinct().ToList();
         var catalog = await db.QboCatalogItems.AsNoTracking().Where(value => catalogIds.Contains(value.Id)).ToDictionaryAsync(value => value.Id, token);
         var activeAnalyses = (await db.AnalysisDefinitions.AsNoTracking().Where(value => value.IsActive && !value.IsSynthetic)

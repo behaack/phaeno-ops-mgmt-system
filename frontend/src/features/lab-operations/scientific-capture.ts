@@ -7,6 +7,7 @@ const hash = z.string().trim().regex(/^[a-f\d]{64}$/i, 'Enter the complete 64-ch
 const version = z.object({ name: z.string().trim(), version: z.string().trim(), sha256: z.string().trim() })
 export const captureSchema = z.object({
   kind: z.enum(['sequencing', 'analysis']), providerKey: text('Provider', 100), runReference: text('Run reference', 255),
+  sequencingRunNumber: z.string(), libraryPreparationChoice: z.string(),
   libraryId: z.string(), sendoutId: z.string(), mapping: z.string().trim().max(1000), fileReference: z.string().trim().max(1000), checksum: z.string().trim(), size: z.string(),
   start: z.string(), startOccurrence: z.string(), end: z.string(), endOccurrence: z.string(), reason: z.string().trim().max(2000), isCorrection: z.boolean(),
   submitted: z.string(), submittedOccurrence: z.string(), received: z.string(), receivedOccurrence: z.string(),
@@ -34,6 +35,8 @@ export const captureSchema = z.object({
   const positive = (s: string) => Number.isSafeInteger(Number(s)) && Number(s) > 0
   if (v.documents.some(d => !positive(d.sizeBytes))) error('documents', 'Every document needs a positive whole-byte size.')
   if (v.kind === 'sequencing') {
+    if (!positive(v.sequencingRunNumber)) error('sequencingRunNumber', 'Enter a positive purchased run number.')
+    if (!['NewPreparation', 'ExistingLibrary'].includes(v.libraryPreparationChoice)) error('libraryPreparationChoice', 'Choose new preparation or an existing library.')
     for (const field of ['libraryId', 'sendoutId', 'mapping', 'fileReference'] as const) if (!v[field]) error(field, 'This field is required.')
     if (!hash.safeParse(v.checksum).success) error('checksum', 'Enter the complete 64-character SHA-256 checksum.')
     if (!positive(v.size)) error('size', 'Enter a positive whole-byte file size.')
@@ -71,7 +74,7 @@ export function captureDefaults(kind: 'sequencing' | 'analysis', source: Sequenc
   const m = source?.scientificEvidenceJson ? JSON.parse(source.scientificEvidenceJson) as ScientificMetadata : undefined
   const seq = source && 'labLibraryId' in source ? source : undefined
   const versions = (values?: ScientificMetadata['software']) => (values ?? []).map(v => ({ ...v, sha256: v.sha256 ?? '' }))
-  return { kind, providerKey: source?.providerKey ?? '', runReference: seq?.providerRunReference ?? (source && 'runReference' in source ? source.runReference : ''),
+  return { kind, sequencingRunNumber: String(seq?.sequencingRunNumber ?? 1), libraryPreparationChoice: seq?.libraryPreparationChoice ?? '', providerKey: source?.providerKey ?? '', runReference: seq?.providerRunReference ?? (source && 'runReference' in source ? source.runReference : ''),
     libraryId: seq?.labLibraryId ?? '', sendoutId: seq?.labNgsSendoutId ?? '', mapping: seq?.sampleMappingReference ?? '', fileReference: seq?.externalFileReference ?? '', checksum: seq?.sha256 ?? '', size: seq ? String(seq.sizeBytes) : '',
     start: localDate(m?.runStartedAtUtc), startOccurrence: '', end: localDate(m?.runCompletedAtUtc), endOccurrence: '', reason: '', isCorrection: Boolean(source),
     submitted: localDate(m?.submittedAtUtc), submittedOccurrence: '', received: localDate(m?.receivedAtUtc), receivedOccurrence: '',

@@ -186,7 +186,9 @@ public sealed class OrderNotificationDispatcher(
 
         try
         {
-            var recipients = item.WorkflowType == OrderWorkflowTypes.LabService && item.EventType is ("lab-timing-delayed" or "lab-deadline-changed")
+            var recipients = item.WorkflowType == CompanyAccessNotifications.WorkflowType
+                ? await CompanyAccessNotifications.ReadRecipientsAsync(dbContext, item, cancellationToken)
+                : item.WorkflowType == OrderWorkflowTypes.LabService && item.EventType is ("lab-timing-delayed" or "lab-deadline-changed")
                 ? await LabServiceTimingService.DelayRecipientsAsync(dbContext, item.OrganizationId, item.DepartmentId, item.RecipientUserId, cancellationToken)
                 : await OrganizationNotificationRecipients.ReadAsync(dbContext,
                 item.OrganizationId, isRetention ? null : item.DepartmentId, isRetention ? null : item.RecipientUserId,

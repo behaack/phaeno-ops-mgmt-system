@@ -1,5 +1,56 @@
 # Playwright E2E Test Plan
 
+## Current sample-type revisions — September 19, 2026
+
+See [owning plan](SAMPLE-TYPE-CURRENT-REVISION-PLAN.md). Coverage added for family-based previews, inactive/future exclusion, readiness, existing container compatibility, duplicate-family rules, missing effective revisions, and immutable issued packet snapshots. UI coverage verifies one named choice per family and current revision readback. Manual acceptance: publish an approved successor, confirm rule/container/readiness continuity for new shipments and unchanged old packet content; an inactive or future successor must not interrupt current use. Automated suites remain request-only and were not run.
+
+
+## Sample-sequencing runs — September 19, 2026
+
+Repeated sequencing acceptance: create one sample/20-run pricing profile and 20-sample/20-run profile; verify equal unit-price quantities, preserve sample/tube counts, allocate runs and reject a mismatched final roster. Verify repeated successful attempts through authorized quota, concurrent selection and exhaustion guards, distinct result lineage, and no early completion/delivery after only one result. Exercise both configured/manual pricing and additional-sample Change quotes. New runtime flow not yet verified end to end; no financial commitments or scientific evidence are inferred from builds.
+
+## September 19, 2026 — Department-led administration
+
+After the owner restarted the local API, the existing access-only onboarding request completed automatically. People readback confirmed Company Member, Cardiology Department administrator and no General access. Services shows Administrator Active; General retains the administrator-readiness blocker while Cardiology removes it. No invitation or access role changed, and no browser errors were observed. Department purchasing/Trial provider and business commitment flows are covered by regression sources, not live business writes. Automated suites were not requested or run.
+
+
+## September 19, 2026 — Company directory header
+
+Updated the existing Company creation browser source to expect the concise access/work reminder within the directory description after removal of the separate informational card. Signed-in local browser verification confirmed the New company button at the right end of the title row, the full-width description, removal of the old notice, and the existing creation dialog. Keyboard activation and Cancel returned focus to New company; no business record was created. No page overflow or browser console errors were observed. TypeScript, scoped ESLint, help consistency (56 guides, hash 434d1187e3c0) and whitespace checks passed. Automated suites were not requested or run.
+
+## September 19, 2026 — Company header Actions
+
+Signed-in read-only verification confirmed the Company header has one Actions trigger with Change owner, Edit, Merge and Deactivate. The settled menu measured 192px; all four labels occupy one line with no clipping. ArrowDown opens the menu; owner and deactivation dialogs retain their existing content. Cancel closes the dialog and restores focus to the Company Actions trigger. No Company data or access was changed. Automated suites were not requested or run.
+
+## September 19, 2026 — Focused Company People access actions
+
+Signed-in, read-only local verification confirmed Joe's single four-item Actions menu, direct
+Edit invited access with saved Cardiology administrator intent, disabled unchanged Save and
+Cancel returning focus to the person menu. No real record was changed or invitation sent.
+An isolated preview of the actual People/dialog components with synthetic API responses verified:
+pending versus expired badges; separate edit/resend/revoke dialogs; required Department gating;
+unsaved draft protection; successful in-place intent save and refreshed card; conflict preserving
+the draft until explicit reload; saving the new revision; active-only Manage access; direct role
+update and informational notice feedback. Provider calls were blocked by the simulation adapter.
+Default-width menu measured 192px and fit the viewport; a requested narrow override was not
+reflected in the measured viewport, so narrow-layout proof is not claimed. No preview console
+errors were observed. Automated suites were not requested or run. API restart/rebuild is needed
+for the new endpoint and email queue behavior; live delivery and acceptance remain separate.
+
+## September 19, 2026 — Company Departments and Services tabs
+
+The existing Customer service-entitlement and Department editing browser sources now select
+the separate Company tabs; the inner service tab is named Entitlements to distinguish it from
+the Company Services tab. Verify desktop/narrow full-width strips, intact labels, keyboard
+navigation, service/readiness/retention panels, department-only content and direct section links.
+Signed-in local read-only checks passed: separate Department content, direct Services navigation, readiness/entitlement/retention panels and keyboard selection. DOM measurements at desktop and a measured 433px narrow viewport confirmed each strip fills its parent, labels remain intact and the page has no horizontal overflow. Screenshot capture timed out, so this is DOM/navigation evidence. TypeScript, scoped ESLint, generated-help consistency and whitespace checks passed. No business records changed. Automated suites were not requested or run.
+
+## September 19, 2026 — Request work progress
+
+Local signed-in readback verified the existing approved onboarding request at 1 of 3, specific missing-administrator instructions and disabled completion after the API restart. Desktop/narrow layout and keyboard menu/focus checks passed. An isolated preview of the actual card/hook verified missing, invited/waiting, active and failed-refresh/retry states with synthetic read responses. No real invitations or records were changed; delivery and recipient acceptance remain separate. Automated suites were not requested or run. See [the work-progress plan](CRM-REQUEST-WORK-PROGRESS-PLAN.md) for evidence and boundaries.
+
+Automatic access-completion follow-up: local signed-in readback after rebuild/restart confirmed automatic guidance and no Complete request action for the existing access-only request. The isolated real-card preview verified missing invitation, Waiting for acceptance, automatic history transition with notes, older-ready reconciliation, failed-completion recovery, failed-progress blocking and retained manual gates. Real recipient acceptance remains separate from this simulated evidence; no real invitation was sent or accepted and no automated suite was run. Temporary preview files/server were removed.
+
 ## Sample traceability — verified September 18, 2026
 
 **12 browser cases passed** across `lab-protocol-execution.spec.ts` and `sample-investigation.spec.ts`, on Chromium desktop and Pixel 5 layouts. Investigation runs in both light and dark themes using the application's theme initializer, checks keyboard menu focus, historical unknown lineage, report creation, related-sample results, visible source errors, disabled reporting after a failure, accessibility scans and 320-pixel reflow. Protocol execution covers stale writes, guided evidence/QC/correction/skip flow and DST gaps/repeated hours. These use simulated API fixtures; PostgreSQL/controller proof is separate. Screenshots and boundaries are recorded in [the verification record](../testing/runs/2026-09-18-sample-traceability.md).
@@ -2761,3 +2812,8 @@ The [capture/history verification record](../testing/runs/2026-09-19-scientific-
 ## Database baseline and preservation release — September 19, 2026
 
 The [reset execution record](../operations/database-rebase-20260919.md) records the completed production release: all 930 backend cases have passing evidence across the full run and focused follow-ups, 1,061 UI unit tests passed, and the final browser run passed 176 cases with two intentional mobile print skips. Signed-in hosted acceptance remains separate. The baseline-only discovery assertion replaces the retired additive-migration assertion; downgrade still must refuse loss of commit evidence. The legacy scientific-review gate fixture explicitly selects legacy evidence policy, while enforcement suites retain current defaults. Browser keyboard coverage includes the added performer and performed-time controls. Export/import probes cover wrong targets, transactional rollback, replay conflicts, source preservation and drift detection. Production identity, physical scientific evidence and real provider delivery remain separate from automated fixtures.
+
+
+### September 19 repeated-sequencing release coverage
+
+Scientific capture browser coverage now selects an explicit existing-library choice and asserts the recorded purchased run number and library choice, while retaining linked corrections, accessibility, desktop/mobile themes and read-only checks. Release checkpoint: passing evidence covers 176 browser cases. The full run had 174 passes and two stale CRM menu-fixture failures; the corrected Company fixture passed all six focused desktop/mobile cases. Two mobile print cases remain intentionally skipped. This is combined full-run and focused follow-up evidence, not one zero-failure full run. See the [release record](../operations/repeated-sequencing-release-20260919.md) for source identity, final backend results and production activation.

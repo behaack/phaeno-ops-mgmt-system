@@ -149,3 +149,7 @@ public sealed record CancelPortalIntegrationRequest
     public required string Reason { get; init; }
     public required long Version { get; init; }
 }
+
+public sealed record RequestCompletionReadinessDto(bool CanComplete, IReadOnlyList<string> Blockers, bool CompletesAutomatically = false);
+
+public sealed record ReconcileOnlineAccessRequest(long Version);

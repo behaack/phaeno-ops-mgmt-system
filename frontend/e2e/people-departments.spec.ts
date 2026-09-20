@@ -64,7 +64,7 @@ async function accessibleDialog(page: Page) {
 test('department edit validates, preserves entries on conflict, restores focus, and confirms lifecycle changes', async ({ page }, testInfo) => {
   if (testInfo.project.name === 'mobile-chrome') await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
   const writes = await fixture(page, { conflict: true })
-  await page.getByRole('tab', { name: 'Departments & services' }).click()
+  await page.getByRole('tab', { name: 'Departments', exact: true }).click()
   const actions = page.getByRole('button', { name: 'Actions for Research' })
   await actions.click()
   await page.getByRole('menuitem', { name: 'Edit settings' }).click()

@@ -10,7 +10,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 
 public sealed record TrialActor(User User, bool IsStaff, bool IsPlatformAdmin, OrderTenantContext? Tenant)
 {
-    public bool IsOrganizationAdmin => Tenant?.Membership.IsOrganizationAdmin == true;
+    public bool IsDepartmentAdmin => Tenant?.IsDepartmentAdmin == true;
 }
 public sealed class TrialAccess(PSeqOperationsDbContext db, IExternalIdentityContext identity, OrderRequestContext context)
 {
@@ -44,8 +44,9 @@ public sealed class TrialAccess(PSeqOperationsDbContext db, IExternalIdentityCon
             && await db.TrialProjects.AnyAsync(value => value.OrganizationId == organizationId, token))
             throw Error("trial_closeout_required", "Use the Trial Project's Close Prospect access action to review remaining relationships and record a deactivation reason.", 409);
     }
-    public static void RequireTenantAdmin(TrialActor actor)
-    { if (actor.IsStaff || !actor.IsOrganizationAdmin || actor.Tenant?.Organization.Kind != OrganizationKind.Prospect) throw Error("trial_organization_admin_required", "An active Prospect organization administrator must perform this action.", 403); }
+    public static void RequireTenantAdmin(TrialActor actor, TrialProject trial)
+    { if (actor.IsStaff || !actor.IsDepartmentAdmin || actor.Tenant?.Organization.Kind != OrganizationKind.Prospect
+        || trial.OrganizationId != actor.Tenant.Organization.Id || trial.DepartmentId != actor.Tenant.Department.Id) throw Error("trial_organization_admin_required", "An active Prospect organization or assigned-department administrator must perform this action.", 403); }
     public static IQueryable<TrialProject> Scope(IQueryable<TrialProject> query, TrialActor actor) => actor.IsStaff ? query
         : query.Where(value => value.OrganizationId == actor.Tenant!.Organization.Id && value.DepartmentId == actor.Tenant.Department.Id && value.ApprovedScopeRevision != null);
     public async Task<TrialApprovalAuthority> RequireAuthorityAsync(TrialActor actor, TrialApprovalDomain domain, CancellationToken token)

@@ -62,7 +62,7 @@ public sealed class TrialWorkGuard(PSeqOperationsDbContext db, OrderRequestConte
             if (path.StartsWith("/api/sample-shipping/", StringComparison.Ordinal))
             {
                 var tenant = await context.RequireSampleShippingTenantAsync(action.HttpContext, true, token);
-                if (!tenant.Membership.IsOrganizationAdmin || trial.OrganizationId != tenant.Organization.Id || trial.DepartmentId != tenant.Department.Id)
+                if (!tenant.IsDepartmentAdmin || trial.OrganizationId != tenant.Organization.Id || trial.DepartmentId != tenant.Department.Id)
                     throw TrialAccess.Error("trial_shipping_admin_required", "The Trial organization's administrator must prepare its shipment.", 403);
             }
         }

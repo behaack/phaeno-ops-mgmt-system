@@ -207,20 +207,36 @@ public sealed partial class LabOperationsController
         }
         var approvalVersion = await dbContext.LabScientificApprovals
             .CountAsync(item => item.LabWorkOrderId == work.Id, cancellationToken) + 1;
-        if (work.Status != LabWorkOrderStatus.ReadyForRelease) work.RecordMilestone(LabWorkOrderStatus.ReadyForRelease);
-        else work.AdvanceProjectionVersion();
         var permittedQcProjectionJson = NormalizeOptionalJson(
             request.PermittedQcProjectionJson, "qc_projection_invalid");
         var approval = new LabScientificApproval(work.Id, approvalVersion,
             request.ReleaseDefinitionKey, request.ReleaseDefinitionVersion,
             permittedQcProjectionJson,
-            actor.User.Id, DateTime.UtcNow, work.ProjectionVersion, outputPackage?.Id);
+            actor.User.Id, DateTime.UtcNow, work.ProjectionVersion + 1, outputPackage?.Id);
         dbContext.LabScientificApprovals.Add(approval);
         if (outputPackage is not null)
         {
             outputPackage.RecordScientificApproval(approval.Id, actor.User.Id, DateTime.UtcNow);
             outputPackage.MarkReadyForRelease(approval.Id);
         }
+        var progress = new Services.LabSequencingRunProgress(dbContext);
+        var allocations = await progress.AllocationsAsync(work.Id, cancellationToken);
+        var approvedCounts = await progress.ApprovedCountsAsync(work.Id, cancellationToken);
+        var allPurchasedRunsApproved = allocations.Where(a => a.Value > 1).All(a => approvedCounts.GetValueOrDefault(a.Key) >= a.Value);
+        if (outputPackage is null && allocations.Any(a => a.Value > 1))
+        {
+            var analyses = await progress.AnalysisRunsAsync(work.Id, cancellationToken);
+            var releases = await dbContext.LabResultReleases.Where(r => r.LabServiceOrderId == work.AuthorizationSourceId
+                && r.OrganizationId == work.SubmittingOrganizationId && r.ReleaseStatus != PhaenoPortal.App.Features.OrderManagement.Domain.FileReleaseStatus.Withdrawn).ToListAsync(cancellationToken);
+            allPurchasedRunsApproved = allocations.Where(a => a.Value > 1).All(a => Services.LabSequencingRunProgress.Count(
+                releases.Where(r => r.LabSampleId == a.Key).Select(r => r.LabAnalysisRunId), analyses) >= a.Value);
+            if (!allPurchasedRunsApproved) throw Conflict("sequencing_runs_incomplete", "Record results for every purchased sequencing run before approving the job.");
+            foreach (var release in releases.Where(r => allocations.GetValueOrDefault(r.LabSampleId, 1) > 1))
+                await new Services.LabResultLineageService(dbContext).RequireReleaseAsync(release, cancellationToken, traceabilityOptions?.Value);
+        }
+        if (work.Status != LabWorkOrderStatus.ReadyForRelease && allPurchasedRunsApproved)
+            work.RecordMilestone(LabWorkOrderStatus.ReadyForRelease);
+        else work.AdvanceProjectionVersion();
         dbContext.LabWorkEvents.Add(new LabWorkEvent(work.Id, null, "ScientificApprovalRecorded",
             DateTime.UtcNow, actor.User.Id, JsonSerializer.Serialize(new
             {

@@ -85,12 +85,11 @@ public static class SampleShippingPackingData
     {
         var destination = await db.SampleShippingDestinations.AsNoTracking().SingleAsync(item => item.Id == shipment.DestinationId, ct);
         var typeIds = shipment.Items.Select(item => item.SampleTypeDefinitionId).Distinct().ToArray();
-        var types = await db.SampleTypeDefinitions.AsNoTracking().Where(item => typeIds.Contains(item.Id)).ToListAsync(ct);
-        var rules = await db.SampleShippingInstructionRules.AsNoTracking()
-            .Where(item => item.DestinationId == shipment.DestinationId && typeIds.Contains(item.SampleTypeDefinitionId)).ToListAsync(ct);
+        var effectiveAt = DateTime.UtcNow;
+        var selected = await SampleShippingRevisionData.ReadAsync(db, shipment.DestinationId, typeIds, effectiveAt, ct);
         try
         {
-            return SampleShippingCompatibilityResolver.Resolve(destination, types, rules, DateTime.UtcNow).Rules
+            return selected.Resolve(destination, effectiveAt).Rules
                 .Select(item => new ContainerCompatibilityRequest(item.SampleType.Id, item.Rule.Id)).ToArray();
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)

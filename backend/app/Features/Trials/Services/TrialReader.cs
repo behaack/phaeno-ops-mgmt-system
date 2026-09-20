@@ -62,7 +62,7 @@ public sealed class TrialReader(PSeqOperationsDbContext db, TrialWorkflowService
         var remaining = Math.Max(0, (scope?.Read().SampleAllowance ?? 0) - trial.Samples.Count(value => !value.ReplacesSampleId.HasValue));
         var replacements = await db.TrialReplacementAuthorizations.AsNoTracking().Where(value => value.TrialProjectId == trial.Id).ToListAsync(token);
         var blocker = trial.SubmissionBlocker(now);
-        if (blocker is null && !actor.IsOrganizationAdmin) blocker = "An organization administrator submits Trial samples.";
+        if (blocker is null && !actor.IsDepartmentAdmin) blocker = "An organization or assigned-department administrator submits Trial samples.";
         if (blocker is null && actor.Tenant?.Organization.Kind != OrganizationKind.Prospect) blocker = "New Trial submissions require Prospect status; contact Phaeno for further work.";
         if (blocker is null && remaining == 0 && !replacements.Any(value => !value.UsedBySampleId.HasValue)) blocker = "The approved sample allowance is full.";
         var releases = await db.TrialResultReleases.AsNoTracking().Where(value => value.TrialProjectId == trial.Id).OrderByDescending(value => value.ReleaseVersion).ToListAsync(token);
@@ -103,7 +103,7 @@ public sealed class TrialReader(PSeqOperationsDbContext db, TrialWorkflowService
             .OrderByDescending(value => value.OccurredAtUtc).Take(100).Select(value => new TrialTimelineDto(value.Kind, value.Summary, value.OccurredAtUtc)).ToListAsync(token);
         return new(trial.Id, trial.Number, name, actor.IsStaff ? trial.CompanyId : Guid.Empty, actor.IsStaff ? trial.OpportunityId : Guid.Empty,
             trial.OrganizationId, trial.DepartmentId, trial.Status.ToString(), trial.Version, actor.IsStaff, actor.IsStaff,
-            actor.IsOrganizationAdmin && actor.Tenant?.Organization.Kind == OrganizationKind.Prospect && !trial.IsOnHold && trial.Status == TrialStatus.AwaitingAcceptance
+            actor.IsDepartmentAdmin && actor.Tenant?.Organization.Kind == OrganizationKind.Prospect && !trial.IsOnHold && trial.Status == TrialStatus.AwaitingAcceptance
                 && scope?.Read().SubmissionClosesAtUtc > now,
             !actor.IsStaff && blocker is null, blocker, domains, remaining, trial.IsOnHold, trial.HoldReason,
             trial.ScheduleEstimate, trial.ClosureReason, trial.ClosedAtUtc, trial.ResidualRetainUntilUtc, trial.ActualMaterialDisposition,

@@ -2,11 +2,11 @@
 
 Companies and Contacts are durable relationship records. The Company is also the canonical Customer, Partner, or Prospect identity. A Company does not become accessible to external users until Portal access is reviewed and enabled; a Contact never becomes a Portal user automatically.
 
-Commercial staff can maintain identity, ownership, Company relationships, Sales, and ordinary Activity. Company People shows Contact relationships for Commercial staff. Portal identities, invitations, memberships, Departments & services, Requests, merge, and Company/Contact deactivation or reactivation are administrator-only.
+Commercial staff can maintain identity, ownership, Company relationships, Sales, and ordinary Activity. Company People shows Contact relationships for Commercial staff. Portal identities, invitations, memberships, Departments, Services, Requests, merge, and Company/Contact deactivation or reactivation are administrator-only.
 
 ## Create and find a Company
 
-Open **Companies** from the CRM sidebar. Search by the known organization identity and review possible duplicates before selecting **New company**. **Company name** is required; Website and relationship stage remain visible for quick entry. Open **Additional details** only when you need to record:
+Open **Companies** from the CRM sidebar. Search by the known organization identity and review possible duplicates before selecting **New company** at the right end of the **Company directory** header. Creating a Company alone does not grant access or start work. **Company name** is required; Website and relationship stage remain visible for quick entry. Open **Additional details** only when you need to record:
 
 - an explicit normalized domain; when left blank, POMS derives it from Website
 - source, industry, employee count, phone, and postal address
@@ -14,7 +14,7 @@ Open **Companies** from the CRM sidebar. Search by the known organization identi
 
 Company, Contact, Lead, Opportunity, and Task lists show total counts and pages. Searches update after a short pause; **Clear all** resets active filters. Opening a record and using its Back link retains the list search, filters, and page. Company sections remain in the URL.
 
-POMS assigns the creator as owner unless another supported owner is selected later. The Company name opens a stable, view-first workspace. Use **Overview** for the Company profile and custom data, **People** for Contacts and Portal identity/access state, **Sales** for Opportunities, **Departments & services** for approved operational access and configuration, **Requests** for request creation and history, and **Activity** for the commercial timeline and Tasks. Use CRM's central **Requests** queue for approve, decline, recovery, application, and completion decisions.
+POMS assigns the creator as owner unless another supported owner is selected later. The Company name opens a stable, view-first workspace. Its header **Actions** menu contains **Change owner**, **Edit**, and, for administrators, **Merge** and **Deactivate** or **Reactivate**. Each opens the existing review or editing dialog. Use **Overview** for the Company profile and custom data, **People** for Contacts and Portal identity/access state, **Sales** for Opportunities, **Departments** for department settings, membership and delivery locations, **Services** for readiness, entitlements and retention, **Requests** for request creation and history, and **Activity** for the commercial timeline and Tasks. Use CRM's central **Requests** queue for approve, decline, recovery, application, and completion decisions.
 
 Changing a CRM lifecycle to Active customer or Partner is descriptive only. It does not enable or reclassify Portal access, grant membership, activate services, or authorize orders.
 
@@ -38,7 +38,7 @@ These decisions are recorded for staff reference. CRM does not currently send sa
 
 A Contact is not a Portal user. Email equality does not link identities, issue an invitation, or grant access.
 
-From a Company’s **People** section, use **Invite to Portal** for a reviewed Contact and choose Organization-administrator or explicit Department access. **Manage access** provides role changes, Department access, membership deactivation, and invitation resend/revoke. Successful acceptance creates the Portal membership and the explicit Contact/User identity link. If POMS finds an existing Portal user with the same email, it shows **Identity review**; select **Review and link**, verify that both records identify the same person, and record the reason. Never treat the suggestion as proof. Unlinked Portal users and invitations remain visible until staff intentionally resolve them.
+From a Company’s **People** section, use **Invite to Portal** for a reviewed Contact and choose Organization-administrator or explicit Department access. The **Actions** menu for each person separates these tasks: **Manage access** changes active membership and Department roles; pending or expired invitations have separate **Edit invited access**, **Resend invite**, and **Revoke invite** dialogs. Successful acceptance creates the Portal membership and the explicit Contact/User identity link. If POMS finds an existing Portal user with the same email, it shows **Identity review**; select **Review and link**, verify that both records identify the same person, and record the reason. Never treat the suggestion as proof. Unlinked Portal users and invitations remain visible until staff intentionally resolve them.
 
 The **Invite to Portal** dialog shows the reviewed Contact and Company as a recipient summary. Under **Access after acceptance**, review the role descriptions and selected Departments; the indented administrator option applies only to its Department. **Send invitation** sends the email invitation. It does not immediately grant Portal access. For a Member, selecting no Department disables Send invitation and immediately explains that at least one Department is required.
 

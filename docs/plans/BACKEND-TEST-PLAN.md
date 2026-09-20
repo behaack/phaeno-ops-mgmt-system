@@ -1,5 +1,51 @@
 # Backend Test Plan
 
+## Company request history search and pagination — September 19, 2026
+
+Owner limited this change to Completed / history. Add a read-only, platform-admin history endpoint with database filtering by company name, request number, summary, decision and completion notes; case-insensitive literal matching, newest-updated ordering with ID tie-breaker, 25-row pages, bounded page sizes and stale-page clamping. The active queues remain unpaginated and load only active requests; legacy API callers retain their existing response. History search/page stay in CRM route state; searching resets page, direct request links retain their exact target, and only history shows the search/paginator. No schema, permission or migration changes. Regression sources cover authorization, page boundaries, global search, empty matches, pinned requests and active/history separation. Automated suites remain request-only.
+
+## Current sample-type revisions — September 19, 2026
+
+See [owning plan](SAMPLE-TYPE-CURRENT-REVISION-PLAN.md). Coverage added for family-based previews, inactive/future exclusion, readiness, existing container compatibility, duplicate-family rules, missing effective revisions, and immutable issued packet snapshots. UI coverage verifies one named choice per family and current revision readback. Manual acceptance: publish an approved successor, confirm rule/container/readiness continuity for new shipments and unchanged old packet content; an inactive or future successor must not interrupt current use. Automated suites remain request-only and were not run.
+
+
+## Sample-sequencing runs — September 19, 2026
+
+SampleSequencingRunTests covers one sample with 20 purchased runs versus 20 samples with one each, legacy defaults, immutable submitted scope, allocation totals and CSV validation. ConfiguredLabServicePostgresTests includes a one-sample/20-run pricing, commitment and sale-summary regression. Test sources compile; suites were not run (request-only). Manual/integration acceptance remains required for sequential successful attempts, duplicate selection locks, material-reuse confirmation, recovery attempts, result coverage per distinct producing attempt, and additional-sample quotes.
+
+## September 19, 2026 — Department-led administration
+
+Regression sources cover department-led onboarding/reconciliation, invitation acceptance in the same transaction, active/inactive membership and Department evidence, Department-specific readiness, standard/Kit role admission and replay, custom-work origin, and Trial acceptance/member and cross-Department denial. Company-wide permissions remain restricted. Automated suites were not requested or run.
+
+
+## September 19, 2026 — Invited access edits and active access notices
+
+InvitationAccessChangesPostgresTests.cs covers Department-only version increments; retained
+invitation/link/expiry/delivery; no membership or email on edit; current preview and stale-review
+acceptance; terminal, unauthorized, cross-Company, empty and stale edits; expired intent editing;
+no-op stability; active Organization/Department changes without reinvitation; exact recipient
+resolution after membership removal; no duplicate notices on no-op/rejected changes; and failed
+transport followed by successful retry without reversing access. Source coverage compiled;
+automated suites were not requested or run. Live provider delivery and recipient acceptance
+remain separate. No schema changes or migrations.
+
+## September 19, 2026 — Automatic Department references
+
+Added DepartmentAccessPostgresTests sources for missing Code, server allocation, ignored legacy
+Code payloads, inactive/legacy-numbered reservations, saved rename stability, existing GENERAL
+and RESEARCH preservation, and audit creation. DepartmentAccessDomainTests covers immutable
+references through rename. Existing administrator/permission/concurrency sources remain.
+Full solution compilation passed with zero warnings/errors using temporary output to avoid the
+running API's locks. Automated suites were not requested or run; concurrent database allocation
+is serialized by a transaction-scoped Organization advisory lock but not runtime-tested here.
+
+
+## September 19, 2026 — Request completion minimums
+
+CrmRequestCompletionPostgresTests.cs adds administrator-only readiness access; missing and revoked active-admin rejection; successful onboarding closeout; exact source/current/Ready service requirements; stale entitlement rejection; and offboarding access deactivation. Existing relationship conversion remains covered by TrialClosureAcceptancePostgresTests. Suites are not executed without explicit request.
+
+Automatic access-completion follow-up adds InvitationRequestCompletionPostgresTests for actual acceptance orchestration, non-admin exclusion, pending/cancelled/other-Company/Trial/service exclusions, recorded actor/time/notes and repeat-acceptance stability. CrmAutomaticAccessCompletionPostgresTests covers already-ready approval and idempotent reconciliation. Sources compile; suites remain unexecuted.
+
 ## Immediate traceability enforcement — verified September 19, 2026
 
 **105 backend tests passed, zero failures/skips:** 104 lineage, scientific governance, Trial, retention, concurrency and commercial handoff/domain regressions plus one isolated legacy approval boundary test. New tests prove default-on enforcement for preexisting unlinked or unprofiled results, unchanged historical records, complete profiled replacement acceptance, and Trial approval/release rejection. Historical compatibility fixtures explicitly retain their original policy. Full solution build passes with zero warnings/errors. No migration/backfill or production activation occurred; see the [enforcement verification record](../testing/runs/2026-09-19-traceability-enforcement.md).
@@ -2050,3 +2096,8 @@ The [reset execution record](../operations/database-rebase-20260919.md) records 
 ## PostgreSQL 18 production engine verification — September 19, 2026
 
 The [engine upgrade plan](POSTGRESQL-18-UPGRADE-PLAN.md) requires a full PostgreSQL 17-to-18 data/schema comparison, unchanged EF migration check using the deployed application, isolated version 18.6 governed-download commit and managed-retention tests, normal-deployment engine/volume guard checks, and encrypted backup restoration on the new engine. Execution completed with all 16 focused PostgreSQL 18.6 cases passing (zero skips), equal data/schema across all 197 tables/211 rows, deployment-guard rejection on version 17, and successful pre/post encrypted backup restores. No application behavior or frontend test fixture changes are part of this upgrade; the preceding full application suites remain the application-code checkpoint. Hosted signed-in and physical/provider acceptance are recorded separately.
+
+
+### September 19 repeated-sequencing release coverage
+
+Repeated sequencing: `RepeatedSequencingLineagePostgresTests` exercises frozen allocations, explicit preparation choices, same-library reuse, corrections using a new preparation, over-allocation/missing-choice rejection, idempotent capture, reanalysis deduplication, and first delivery after every run is covered. Baseline discovery now expects three follow-up migrations: run counts, output lineage, and active-preparation uniqueness. Scientific approval keeps repeated-run work open until all allocations have approved results; package publication is a separate step. Disposable database tests also accept the explicitly isolated localhost `phaeno_release_verification_` prefix. Final full release run: 957 passed, zero failed, one Windows-only skip; the skipped Unix filesystem case passed separately in an isolated Linux container. All 958 cases have passing evidence. See the [release record](../operations/repeated-sequencing-release-20260919.md) for the exact migration and production activation boundaries.

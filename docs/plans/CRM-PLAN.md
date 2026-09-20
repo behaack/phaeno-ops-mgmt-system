@@ -1,5 +1,57 @@
 # First-Party CRM Plan
 
+## Company request history search and pagination — September 19, 2026
+
+Owner limited this change to Completed / history. Add a read-only, platform-admin history endpoint with database filtering by company name, request number, summary, decision and completion notes; case-insensitive literal matching, newest-updated ordering with ID tie-breaker, 25-row pages, bounded page sizes and stale-page clamping. The active queues remain unpaginated and load only active requests; legacy API callers retain their existing response. History search/page stay in CRM route state; searching resets page, direct request links retain their exact target, and only history shows the search/paginator. No schema, permission or migration changes. Regression sources cover authorization, page boundaries, global search, empty matches, pinned requests and active/history separation. Automated suites remain request-only.
+
+Verification: solution build (including regression sources), frontend TypeScript, scoped lint, generated-help consistency and whitespace checks passed. After the owner rebuilt/restarted the local API, signed-in history loaded the two existing completed requests; mixed-case summary search returned one match, an unmatched search returned zero, and Clear filter restored both. Pagination showed page 1 of 1 with disabled boundaries. Multiple-page navigation remains covered by authored regression sources, not claimed as live execution; no fixture records were created and automated suites were not run.
+
+## September 19, 2026 — Department-led Companies
+
+The owner approved optional organization administrators, department-aware onboarding/readiness,
+and assigned-Department purchasing, changed-price decisions and Trial acceptance. Company-wide
+setup remains with authorized Phaeno staff where no organization administrator exists. See
+[the request work plan](CRM-REQUEST-WORK-PROGRESS-PLAN.md#september-19-follow-up--department-led-administration)
+for scope, acceptance and verification. Earlier organization-admin-only commercial rules in
+this plan are superseded for the assigned Department only.
+
+
+## September 19, 2026 — Organization access heading action
+
+Manage access now places the existing Organization access Actions menu at the right end of its heading row. Role descriptions, confirmation behavior and permissions are unchanged. Local browser DOM measurements confirmed vertical alignment and right-edge placement; TypeScript, scoped ESLint and whitespace checks passed. Existing access help remains accurate. No automated suites were run or access records changed.
+
+## September 19, 2026 — Compact Company directory header
+
+The New company button now sits at the right end of the Company directory title row. The separate Companies are the customer record notice is removed; the directory description retains the concise reminder that creating a Company alone does not grant access or start work. The existing creation dialog, search and permissions are unchanged.
+
+## September 19, 2026 — Company header Actions
+
+Company headers now group Change owner, Edit, Merge and Deactivate/Reactivate under the shared Actions menu. Content-sized width with a 192px minimum keeps all labels on one line. Existing permissions, reviewed record snapshots, confirmations and API calls are unchanged. Dialogs open after focus returns to the persistent trigger.
+
+## September 19, 2026 — Separate Company Departments and Services
+
+The owner requested separate Company tabs and consistent tab formatting. Departments owns
+Organization defaults, department settings/members and Customer delivery locations. Services
+owns the existing Portal access/readiness, service entitlements and retention panels. Both
+remain administrator-only and retain the existing request-based empty state when access is
+not enabled. Existing `section=departments` links continue to open Departments; the new
+`section=services` opens Services. Request-work service links/instructions follow the new tab.
+The inner service tab strip uses the same full-width, left-aligned, content-sized triggers as
+the Company strip, keeping words intact on desktop and wrapping whole tabs on narrow screens.
+No API, schema, permission, Department Code or dropdown-width changes are part of this slice.
+The inner tabs are Overview, Entitlements and Retention, distinguishing Entitlements from the
+Company Services tab. Validation passed: TypeScript, scoped ESLint, generated-help consistency
+(56 guides, hash 19aa1f8f1b31) and whitespace checks. Signed-in local navigation confirmed
+Department-only content, the Services direct link, readiness/entitlement/retention panels and
+keyboard tab selection. DOM measurements confirmed full-parent-width strips and intact labels
+at desktop and a measured 433px narrow viewport, with no horizontal page overflow. Screenshot
+capture timed out; no visual screenshot proof is claimed. No business records changed.
+Automated suites were not requested or run; existing browser-source selectors were updated.
+
+## September 19, 2026 — Request work and completion requirements
+
+See [the request work progress plan](CRM-REQUEST-WORK-PROGRESS-PLAN.md). Approved requests now show live, type-specific work and waiting states. Completion uses a read-only server readiness check and revalidates the same minimum requirements on submission. Company request actions use the shared Actions menu. No schema or permission changes.
+
 ## September 18, 2026 — CRM Settings navigation
 
 CRM configuration now opens from Administration → CRM Settings in the user dropdown, immediately after Lab Settings. The former Administration sidebar item is removed; the settings page uses the CRM Settings heading and retains its existing tools and address at `/crm/administration`, including direct links from data-quality warnings. It renders independently of the operational CRM sidebar. CRM access and administrator capabilities remain required, and unauthorized direct links do not mount configuration content. User-dropdown labels use sentence case (only the first word capitalized), preserving CRM and PSeq capitalization; this corrects the initial title-case interpretation. No API, authorization policy, or persisted data changes.

@@ -154,7 +154,7 @@ public sealed partial class LabServiceOrdersController(
             eligibility.OfferingAvailable,
             eligibility.CanOrder,
             reason,
-            tenant.Membership.IsOrganizationAdmin && eligibility.CanOrder);
+            tenant.IsDepartmentAdmin && eligibility.CanOrder);
     }
 
     [HttpPost]
@@ -195,6 +195,7 @@ public sealed partial class LabServiceOrdersController(
                     throw Invalid("customer_price_proposal_unavailable", "Phaeno prepares pricing for your request.");
                 foreach (var group in sourceGroups)
                     order.SourceGroups.Add(new LabServiceSourceGroup(order.Id, group.BiologicalSource, group.SpecimenCount));
+                Execute(() => order.SetSequencingRunCount(request.SequencingRunCount));
                 dbContext.LabServiceOrders.Add(order);
                 dbContext.OrderStatusEvents.Add(NewEvent(order, "Created", order.Status.ToString(), tenant.Actor.Id));
                 if (request.SubmitForPricing)
@@ -231,6 +232,7 @@ public sealed partial class LabServiceOrdersController(
             sourceGroups.Count == 1 ? sourceGroups[0].BiologicalSource : null,
             request.StorageRequirements,
             request.SafetyDeclaration));
+        Execute(() => order.SetSequencingRunCount(request.SequencingRunCount ?? order.SequencingRunCount));
         // Customer scope edits retain any Commercial-authored proposal without allowing price changes.
         if (request.ProposedUnitPrice.HasValue || !string.IsNullOrWhiteSpace(request.PriceProposalNote))
             throw Invalid("customer_price_proposal_unavailable", "Phaeno prepares pricing for your request.");
@@ -383,7 +385,7 @@ public sealed partial class LabServiceOrdersController(
                         tenant.Configuration.ResultDeliveryInstructions
                     },
                     purchaseOrderNumber,
-                    order.RequestedSpecimenCount,
+                    order.RequestedSpecimenCount, order.RequestedSequencingRunCount,
                     sourceGroups = order.SourceGroups.OrderBy(group => group.BiologicalSource).Select(group => new
                     {
                         group.BiologicalSource,
@@ -406,8 +408,8 @@ public sealed partial class LabServiceOrdersController(
                 }, JsonSerializerOptions);
                 if (isChange)
                 {
-                    if (!tenant.Membership.IsOrganizationAdmin)
-                        throw new OrderManagementException("organization_admin_required", "An organization administrator must accept a Change quote.", StatusCodes.Status403Forbidden);
+                    if (!tenant.IsDepartmentAdmin)
+                        throw new OrderManagementException("organization_admin_required", "An organization or assigned-department administrator must accept a Change quote.", StatusCodes.Status403Forbidden);
                     var change = quote.ChangeScopeSnapshotJson is null ? null : JsonSerializer.Deserialize<LabChangeScope>(quote.ChangeScopeSnapshotJson, JsonSerializerOptions);
                     if (change is null) throw Conflict("change_scope_missing", "The Change quote scope is unavailable.");
                     Execute(() => order.AcceptAdditionalScope(change));
@@ -438,8 +440,8 @@ public sealed partial class LabServiceOrdersController(
     public async Task<LabServiceOrderDto> DeclineChangeQuote(Guid orderId, Guid quoteId, [FromBody] VersionRequest request, CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
-        if (!tenant.Membership.IsOrganizationAdmin)
-            throw new OrderManagementException("organization_admin_required", "An organization administrator must decide a Change quote.", StatusCodes.Status403Forbidden);
+        if (!tenant.IsDepartmentAdmin)
+            throw new OrderManagementException("organization_admin_required", "An organization or assigned-department administrator must decide a Change quote.", StatusCodes.Status403Forbidden);
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var order = await ReadLockedRosterAsync(orderId, tenant, cancellationToken);
         EnsureVersion(order.Version, request.Version);
@@ -459,10 +461,10 @@ public sealed partial class LabServiceOrdersController(
         var order = await ReadOrderAsync(orderId, tenant, cancellationToken);
         if (order.Status != LabServiceOrderStatus.PlacedAwaitingSamples)
             throw Conflict("sample_template_not_available", "The sample-list template is available after the Job price is accepted.");
-        var builder = new StringBuilder("customer_sample_id,biological_source,tube_count\r\n");
+        var builder = new StringBuilder("customer_sample_id,biological_source,tube_count,sequencing_runs\r\n");
         foreach (var group in order.SourceGroups.OrderBy(group => group.BiologicalSource))
             for (var index = 0; index < group.SpecimenCount; index++)
-                builder.Append(',').Append(Csv(group.BiologicalSource)).Append(',').Append("\r\n");
+                builder.Append(',').Append(Csv(group.BiologicalSource)).Append(",1,1\r\n");
         return File(new UTF8Encoding(true).GetBytes(builder.ToString()), "text/csv; charset=utf-8",
             $"{order.OrderNumber}-sample-list.csv");
     }
@@ -509,6 +511,7 @@ public sealed partial class LabServiceOrdersController(
             source, request.TubeCount, StandardQuantityUnit,
             order.StorageRequirements, order.SafetyDeclaration, request.CollectionDate, request.Concentration,
             request.Notes, sample.AnalysisDefinitionIdsJson));
+        Execute(() => sample.SetSequencingRunCount(request.SequencingRunCount ?? sample.SequencingRunCount));
         order.MarkUpdated(DateTime.UtcNow, tenant.Actor.Id);
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -595,7 +598,7 @@ public sealed partial class LabServiceOrdersController(
         foreach (var row in rows)
         {
             var sample = ToRosterSample(order, new LabSampleRosterWriteRequest(
-                row.CustomerSampleId, row.BiologicalSource, row.TubeCount));
+                row.CustomerSampleId, row.BiologicalSource, row.TubeCount, SequencingRunCount: row.SequencingRunCount));
             order.Samples.Add(sample);
             dbContext.LabSamples.Add(sample);
         }
@@ -630,7 +633,7 @@ public sealed partial class LabServiceOrdersController(
                     dbContext.OrderStatusEvents.Add(NewEvent(order, order.Status.ToString(), order.Status.ToString(), tenant.Actor.Id,
                         "Tube-use instruction confirmed: run one tube per specimen; use a reserve only after failure. Original order snapshots retained."));
                 }
-                if (order.TubeUsePolicyKey != "run_one_with_failure_fallback" || order.TubeUsePolicyVersion != 1)
+                if ((order.TubeUsePolicyKey != "run_one_with_failure_fallback" && order.TubeUsePolicyKey != "run_authorized_with_failure_fallback") || order.TubeUsePolicyVersion != 1)
                     throw Conflict("tube_policy_unsupported", "Review the unsupported tube-use instruction with Phaeno before authorizing work.");
                 var existingAuthorization = await dbContext.CommercialLabAuthorizations.SingleOrDefaultAsync(item => item.CommercialOrderId == order.Id, operationCancellationToken);
                 var originalCommand = existingAuthorization is null ? null : JsonSerializer.Deserialize<AuthorizeLabWorkCommand>(existingAuthorization.AuthorizationSnapshotJson, JsonSerializerOptions);
@@ -651,7 +654,7 @@ public sealed partial class LabServiceOrdersController(
                     order.Samples.Select(sample => new AuthorizedSpecimen(
                         sample.Id, sample.CustomerSampleId, sample.MaterialType, sample.BiologicalSource,
                         sample.Quantity, sample.QuantityUnit, sample.StorageRequirements, sample.SafetyDeclaration,
-                        sample.CollectionDate, sample.Concentration, sample.Notes, [OrderServiceKeys.PSeqLabService])).ToList(),
+                        sample.CollectionDate, sample.Concentration, sample.Notes, [OrderServiceKeys.PSeqLabService], sample.SequencingRunCount)).ToList(),
                     TubeUsePolicyKey: order.TubeUsePolicyKey, TubeUsePolicyVersion: order.TubeUsePolicyVersion,
                     MinimumTurnaroundDays: order.ReadConfiguredSnapshot()?.MinimumTurnaroundDays,
                     MaximumTurnaroundDays: order.ReadConfiguredSnapshot()?.MaximumTurnaroundDays,
@@ -919,10 +922,12 @@ public sealed partial class LabServiceOrdersController(
     private static LabSample ToRosterSample(LabServiceOrder order, LabSampleRosterWriteRequest request)
     {
         ValidateRosterTubeCount(request.TubeCount);
-        return new(order.Id, request.CustomerSampleId, StandardMaterialType,
+        var sample = new LabSample(order.Id, request.CustomerSampleId, StandardMaterialType,
             ResolveRosterSource(order, request.BiologicalSource), request.TubeCount, StandardQuantityUnit,
             order.StorageRequirements, order.SafetyDeclaration, request.CollectionDate, request.Concentration,
             request.Notes, JsonSerializer.Serialize(order.ReadConfiguredSnapshot()?.AnalysisIds ?? [], JsonSerializerOptions));
+        Execute(() => sample.SetSequencingRunCount(request.SequencingRunCount ?? sample.SequencingRunCount));
+        return sample;
     }
 
     private static void ValidateRosterTubeCount(int count)
@@ -962,14 +967,16 @@ public sealed partial class LabServiceOrdersController(
     private async Task<ResolvedShippingConfiguration> ResolveShippingConfigurationAsync(LabServiceOrder order, CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
-        // Null preserves committed legacy/manual scope; new configured commitments pin exact revisions.
+        // Commitments retain their sample identity; new shipping resolves its current active revision.
         var supportedIds = order.ReadConfiguredSnapshot()?.SupportedSampleTypeIds;
         var sampleTypeQuery = dbContext.SampleTypeDefinitions.AsNoTracking()
             .Where(item => item.IsActive && item.MaterialClass == StandardMaterialType
                 && item.QuantityUnit == StandardQuantityUnit && item.EffectiveFrom <= now
                 && (!item.EffectiveTo.HasValue || item.EffectiveTo > now));
-        if (supportedIds is not null) sampleTypeQuery = sampleTypeQuery.Where(item => supportedIds.Contains(item.Id));
-        var sampleTypes = await sampleTypeQuery.ToListAsync(cancellationToken);
+        if (supportedIds is not null) sampleTypeQuery = sampleTypeQuery.Where(item => dbContext.SampleTypeDefinitions.Any(anchor =>
+            supportedIds.Contains(anchor.Id) && anchor.DefinitionKey == item.DefinitionKey));
+        var sampleTypes = (await sampleTypeQuery.ToListAsync(cancellationToken)).GroupBy(item => item.DefinitionKey)
+            .Select(group => group.OrderByDescending(item => item.Revision).First()).ToList();
         if (sampleTypes.Count != 1)
             throw Conflict("sample_shipping_configuration_required",
                 supportedIds is null
@@ -982,7 +989,7 @@ public sealed partial class LabServiceOrdersController(
             .ToListAsync(cancellationToken);
         var destinationIds = destinations.Select(item => item.Id).ToList();
         var rules = await dbContext.SampleShippingInstructionRules.AsNoTracking()
-            .Where(item => item.IsActive && item.SampleTypeDefinitionId == sampleType.Id
+            .Where(item => item.IsActive && dbContext.SampleTypeDefinitions.Any(anchor => anchor.Id == item.SampleTypeDefinitionId && anchor.DefinitionKey == sampleType.DefinitionKey)
                 && destinationIds.Contains(item.DestinationId) && item.EffectiveFrom <= now
                 && (!item.EffectiveTo.HasValue || item.EffectiveTo > now))
             .ToListAsync(cancellationToken);
@@ -1119,6 +1126,7 @@ public sealed partial class LabServiceOrdersController(
             LabReadyForRelease: projection?.Milestone == "ReadyForRelease",
             TubeUsePolicyKey: order.TubeUsePolicyKey, TubeUsePolicyVersion: order.TubeUsePolicyVersion,
             RequestedSpecimenCount: order.RequestedSpecimenCount,
+            RequestedSequencingRunCount: order.RequestedSequencingRunCount,
             SourceGroups: order.SourceGroups.OrderBy(group => group.BiologicalSource)
                 .Select(group => new LabServiceSourceGroupDto(group.Id, group.BiologicalSource, group.SpecimenCount, group.Version)).ToList(),
             SampleRosterFinalizedAt: order.SampleRosterFinalizedAt,
@@ -1132,7 +1140,7 @@ public sealed partial class LabServiceOrdersController(
             EntryMode: order.EntryMode.ToString(),
             StandardCommercialSnapshot: LabServiceTimingService.CommercialSnapshot(order.ReadConfiguredSnapshot()),
             CanPlaceStandardOrder: submittable && orderingEligible && order.SourceRequestId is null && order.ProposedUnitPrice is null
-                && (await requestContext.RequireLabServiceTenantAsync(HttpContext, false, cancellationToken)).Membership.IsOrganizationAdmin,
+                && (await requestContext.RequireLabServiceTenantAsync(HttpContext, false, cancellationToken)).IsDepartmentAdmin,
             Timing: timing,
             CanRequestQuoteExtension: canManage && order.Status == LabServiceOrderStatus.QuoteIssued
                 && currentQuoteStatus == QuoteStatus.Expired && currentQuote is not null
@@ -1154,7 +1162,7 @@ public sealed partial class LabServiceOrdersController(
             jobNotes = order.Description,
             order.HasMixedBiologicalSources,
             order.SharedBiologicalSource,
-            order.RequestedSpecimenCount,
+            order.RequestedSpecimenCount, order.RequestedSequencingRunCount,
             sourceGroups = order.SourceGroups.OrderBy(group => group.BiologicalSource).Select(group => new
             {
                 group.BiologicalSource,

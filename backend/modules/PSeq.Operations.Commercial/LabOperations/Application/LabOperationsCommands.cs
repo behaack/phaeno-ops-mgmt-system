@@ -32,7 +32,7 @@ public sealed record AuthorizedSpecimen(
     DateTime? DeclaredCollectionDate,
     decimal? DeclaredConcentration,
     string? SubmissionNote,
-    IReadOnlyList<string> RequestedServiceKeys);
+    IReadOnlyList<string> RequestedServiceKeys, int SequencingRunCount = 1);
 
 public sealed record AuthorizeLabWorkCommand(
     LabOperationsCommandMetadata Metadata,

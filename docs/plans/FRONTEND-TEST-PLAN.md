@@ -1,5 +1,86 @@
 # Frontend Test Plan
 
+## Company request history search and pagination — September 19, 2026
+
+Owner limited this change to Completed / history. Add a read-only, platform-admin history endpoint with database filtering by company name, request number, summary, decision and completion notes; case-insensitive literal matching, newest-updated ordering with ID tie-breaker, 25-row pages, bounded page sizes and stale-page clamping. The active queues remain unpaginated and load only active requests; legacy API callers retain their existing response. History search/page stay in CRM route state; searching resets page, direct request links retain their exact target, and only history shows the search/paginator. No schema, permission or migration changes. Regression sources cover authorization, page boundaries, global search, empty matches, pinned requests and active/history separation. Automated suites remain request-only.
+
+## Finance tabs and customer-name filtering — September 19, 2026
+
+Finance uses the shared standard tab bar. Invoice, receipt, and Customer billing lists place a customer-name text search and Clear filter in the shaded, bordered card header. Search matches partial names without case sensitivity and persists in route state across tabs and record navigation. Existing customer-ID links remain supported. Focused regression source covers partial-name filtering, selection and clearing; automated suites remain request-only.
+
+## Current sample-type revisions — September 19, 2026
+
+See [owning plan](SAMPLE-TYPE-CURRENT-REVISION-PLAN.md). Coverage added for family-based previews, inactive/future exclusion, readiness, existing container compatibility, duplicate-family rules, missing effective revisions, and immutable issued packet snapshots. UI coverage verifies one named choice per family and current revision readback. Manual acceptance: publish an approved successor, confirm rule/container/readiness continuity for new shipments and unchanged old packet content; an inactive or future successor must not interrupt current use. Automated suites remain request-only and were not run.
+
+
+## Automatic destination references — September 19, 2026
+
+Destination regression coverage verifies hidden manual-code entry, generated DEST- references, reuse on failed-save retry, and original-code preservation when renaming in a revision. TypeScript, scoped ESLint, documentation consistency and diff checks passed. Browser verification was blocked by the local Access check failed screen, including after one reload. Automated suites were not requested or run.
+
+## Sample instruction units and symbols — September 19, 2026
+
+SampleShippingConfigurationPanel regression covers all eight helpers, replacing selected instruction text with a unit, subsequent symbol insertion at the cursor, focus/caret restoration and no premature save. Existing coverage keeps the submission-unit menu restricted and verifies insertion between existing text with caret restoration. TypeScript, scoped ESLint, generated documentation consistency and diff whitespace checks passed. Browser verification reached sign-in, so visual verification remains pending. Automated suites are request-only and were not run.
+
+## Restricted sample-size helper — September 19, 2026
+
+SampleShippingConfigurationPanel coverage now expects the restored Units helper, exactly µL/mL choices, no header submission-unit menu or symbol insertion, and focus returned to the editable field after choosing a unit. Lab Steps retains its existing full helper. Min defaults to 1 and optional Max remains unchanged. TypeScript, scoped ESLint, documentation consistency and diff whitespace checks passed. The fresh browser verification tab required sign-in, so visual verification remains pending. Automated suites were not requested or run.
+
+## Sample-sequencing runs — September 19, 2026
+
+Job profile, quote review, additional-sample quotes, per-sample entry/edit, CSV preview and laboratory progress expose sample-sequencing-run quantities separately from physical samples and tubes. LabJobDetailsDialog regression includes one sample with 20 runs. Verify whole positive counts, allocation mismatch messaging, dirty drafts, keyboard labels, responsive layouts, and material-reuse confirmation. Existing strict request-body expectations need the additive sequencingRunCount field. Typecheck/lint run; test suites remain request-only.
+
+## September 19, 2026 — Department-led administration
+
+Updated checklist copy and existing Kit purchase/Change-quote coverage to use server-provided selected-Department capabilities. Department administrators may review purchases and changed prices; ordinary members retain disabled/absent decisions. Automated suites were not requested or run.
+
+
+## September 19, 2026 — Company header Actions
+
+CrmRecordEditSnapshots.test.tsx now opens Company edit, owner and lifecycle dialogs through the Actions menu; existing conflict/draft/version assertions are retained. No new tests are needed for this presentation-only change. TypeScript and scoped ESLint pass. Automated suites were not requested or run.
+
+## September 19, 2026 — Development invitation module recovery
+
+A standalone verification preview had replaced the running Portal's shared Vite
+optimization cache; the active app still referenced the missing @clerk/react/errors
+output. Portal now uses node_modules/.vite-portal-${mode}, isolated from default
+standalone previews and from test mode. The dev server restarted automatically and
+rebuilt the missing module in the new cache. Signed-in browser navigation to
+/accept-invite rendered the normal missing-link guidance, with no module/MIME/runtime
+errors. No invitation token was read, renewed, submitted or accepted. Scoped ESLint
+and TypeScript checks pass; this reversible cache change adds no automated tests.
+Automated suites were not requested or run. Frontend README records the isolation rule.
+
+## September 19, 2026 — Focused People actions and invitation editing
+
+CrmCompanyWorkspaces.test.tsx covers one contextual Actions menu and pending-to-expired readback.
+CrmPersonInvitationDialog.test.tsx covers direct edit, separate resend/revoke review, hard-bounce
+blocking and resend failure. CrmPersonAccessDialog.test.tsx covers active-only role/removal work,
+confirmation and no invitation controls. InvitationAccessDialog.test.tsx covers versioned saves,
+required Departments, protected drafts and explicit conflict reload. AcceptInvitePage.test.tsx
+covers proposed access and an explicit second acceptance after stale review. Sources typecheck;
+automated suites were not requested or run. Scoped lint passes. Manual browser evidence is in
+the E2E plan; provider delivery and actual acceptance remain unverified.
+
+## September 19, 2026 — Automatic Department references
+
+DepartmentSettingsDialog.test.tsx covers creating with only a name, required-name validation,
+absence of editable Code/Reference fields, displayed saved references, and rename submissions
+omitting Code. Sources added; automated suites were not requested or run. Type/lint/help checks
+passed. After local access recovered, signed-in read-only browser checks confirmed no Code input
+on Add, automatic-reference guidance, required-name validation/focus, the saved GENERAL reference
+as read-only edit context and Cancel restoring trigger focus. No department was created or renamed.
+
+
+## September 19, 2026 — Department menu width
+
+Presentation-only change: signed-in DOM checks confirm a 192px menu and one-line action labels without clipping; scoped ESLint passes. No new tests are needed for the width adjustment, and automated suites were not requested or run.
+
+## September 19, 2026 — Request work and guarded completion
+
+Added crm-request-work.test.ts for administrator invitation/activation/expiration, source-linked and future-effective service changes, relationship conversion, offboarding review, exact order creation, and current Trial scope decisions. CrmRequestCard.test.tsx covers live invalidation, disabled-to-enabled completion, failed refresh with cached success, and retry. Updated the existing queue completion test for Actions and readiness. Test sources added; suites not executed unless requested.
+
+Automatic access-completion follow-up updates CrmRequestCard.test.tsx for Waiting for acceptance, absence of manual completion, ready-state reconciliation, preserved Company link/history cache, failure/retry and unchanged manual-work gates. Sources added; suites remain unexecuted.
+
 ## Sample traceability — verified September 18, 2026
 
 The [focused verification record](../testing/runs/2026-09-18-sample-traceability.md) supersedes the initial unrun notes below. **41 focused frontend tests passed** across performance input, DST handling, evidence presentation, execution, preparation and configuration preview. Typecheck and touched-file lint pass. Sample history includes exact-result selection, explicit unknown/unavailable states, saved reports and organization-scoped lookup; browser evidence is recorded in the E2E plan. Existing protocol and preparation screens remain the authoritative detailed work views.
@@ -2514,3 +2595,26 @@ The [capture/history verification record](../testing/runs/2026-09-19-scientific-
 ## Database baseline and preservation release — September 19, 2026
 
 The [reset execution record](../operations/database-rebase-20260919.md) records the completed production release: all 930 backend cases have passing evidence across the full run and focused follow-ups, 1,061 UI unit tests passed, and the final browser run passed 176 cases with two intentional mobile print skips. Signed-in hosted acceptance remains separate. The baseline-only discovery assertion replaces the retired additive-migration assertion; downgrade still must refuse loss of commit evidence. The legacy scientific-review gate fixture explicitly selects legacy evidence policy, while enforcement suites retain current defaults. Browser keyboard coverage includes the added performer and performed-time controls. Export/import probes cover wrong targets, transactional rollback, replay conflicts, source preservation and drift detection. Production identity, physical scientific evidence and real provider delivery remain separate from automated fixtures.
+
+### Request checklist copy follow-up (September 19)
+
+Updated the existing CrmRequestCard manual-completion regression source for the concise checklist reminder and absence of repeated blocker text; disabled/enabled completion and failed-refresh checks remain. Suites were not run, per repository policy.
+
+### Automatic sample-type references (September 19)
+
+Added SampleShippingConfigurationPanel regression sources for automatic reference generation without a code input, preservation across failed-save retry, and retention of the legacy reference when a revision changes Name. The same coverage verifies Whole RNA as the only new material choice, its extracted_rna payload, and preservation of previously saved material values on revisions. Suites were not run, per repository policy.
+
+### Sample-type unit helper (September 19)
+
+Added a regression source for choosing tube through the shared Lab Steps helper, replacing the prior value, inserting µ at the cursor, and returning focus without saving a sample type. Suites were not run, per repository policy.
+
+Quantity layout follow-up: updated existing sample-type regression queries to use Unit within the Quantity card. No suites run.
+
+Quantity numeric-entry follow-up: added regression sources for invalid values on blur, Min/Max range revalidation, decimal values and whitespace-only limits saved as null. Suites not run under repository policy.
+
+Submission-count follow-up: updated sample configuration regressions to check the submission-only picker, absence of symbol insertion, Min default 1, fractional-count rejection, optional Max, and selected-unit focus restoration. These supersede the prior decimal-count and scientific-symbol expectations for this field. Suites not run.
+
+
+### September 19 repeated-sequencing release coverage
+
+Repeated sequencing: scientific capture requires a positive whole purchased run number and explicit new-preparation/existing-library choice. Tests also cover the revised commercial run labels and preserved quantity submissions. CRM menu mocks forward DOM refs and attributes so keyboard focus is tested correctly. Release checkpoint: 1,094 tests passed across 174 files, with lint, TypeScript and the production build passing. See the [release record](../operations/repeated-sequencing-release-20260919.md) for source identity, final backend results and production activation.

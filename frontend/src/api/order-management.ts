@@ -142,6 +142,7 @@ export type CancellationRequest = {
 };
 
 export type LabSample = {
+  sequencingRunCount?: number;
   id: string;
   customerSampleId: string;
   materialType: string;
@@ -263,6 +264,7 @@ export type LabRequestRevision = {
 };
 
 export type LabServiceOrder = {
+  requestedSequencingRunCount?: number;
   authorizedSampleIds?: string[];
   canProposeChange?: boolean;
   tubeUsePolicyKey?: string | null;
@@ -692,6 +694,7 @@ export async function listAnalysisDefinitions() {
   return get<AnalysisDefinition[]>("/order-catalog/analyses");
 }
 export type LabPricingProfileWrite = {
+  sequencingRunCount?: number;
   submitForPricing?: boolean;
   requestedSpecimenCount: number;
   sourceGroups: Array<{ biologicalSource: string; specimenCount: number }>;
@@ -781,6 +784,7 @@ export async function requestLabQuoteExtension(
 }
 
 export type LabSampleRosterWrite = {
+  sequencingRunCount?: number;
   customerSampleId: string;
   biologicalSource: string;
   tubeCount: number;
@@ -825,7 +829,7 @@ export type LabSampleImportPreview = {
     rowNumber: number;
     customerSampleId: string;
     biologicalSource: string;
-    tubeCount: number;
+    tubeCount: number; sequencingRunCount?: number;
   }>;
   errors: Array<{ rowNumber: number; column: string; message: string }>;
   sourceCounts: Record<string, number>;
@@ -1260,6 +1264,7 @@ export async function issuePlatformQuote(
     pricingDecisionReason?: string | null;
     sourceQuoteId?: string;
     additionalSources?: Array<{ biologicalSource: string; specimenCount: number }>;
+    additionalSequencingRunCount?: number;
   },
 ) {
   const path =

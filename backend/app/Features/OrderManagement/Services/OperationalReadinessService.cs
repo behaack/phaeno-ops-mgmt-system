@@ -1,6 +1,7 @@
 namespace PhaenoPortal.App.Features.OrderManagement.Services;
 
 using Microsoft.EntityFrameworkCore;
+using PhaenoPortal.App.Features.Accounts.Services;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Commercial.Relationships.Application;
@@ -27,10 +28,8 @@ public sealed class OperationalReadinessService(PSeqOperationsDbContext dbContex
         Organization organization, CancellationToken cancellationToken, Guid? departmentId = null)
     {
         var now = DateTime.UtcNow;
-        var hasAdministrator = await dbContext.OrganizationMemberships.AsNoTracking().AnyAsync(item =>
-            item.OrganizationId == organization.Id && item.IsActive && item.IsOrganizationAdmin
-            && dbContext.Users.Any(user => user.Id == item.UserId && user.IsActive
-                && user.Status == UserAccountStatus.Active), cancellationToken);
+        var hasAdministrator = await OrganizationAdministratorReadiness.HasActiveAsync(
+            dbContext, organization.Id, cancellationToken, departmentId);
         var hasEntitlement = await dbContext.OrganizationServiceEntitlements.AsNoTracking().AnyAsync(item =>
             item.OrganizationId == organization.Id && item.Service == PortalService.PSeqLabService
             && item.ConfigurationStatus == EntitlementConfigurationStatus.Ready
@@ -54,7 +53,8 @@ public sealed class OperationalReadinessService(PSeqOperationsDbContext dbContex
             && rule.EffectiveFrom <= now && (!rule.EffectiveTo.HasValue || rule.EffectiveTo > now)
             && dbContext.SampleShippingDestinations.Any(destination => destination.Id == rule.DestinationId && destination.IsActive
                 && destination.EffectiveFrom <= now && (!destination.EffectiveTo.HasValue || destination.EffectiveTo > now))
-            && dbContext.SampleTypeDefinitions.Any(sample => sample.Id == rule.SampleTypeDefinitionId && sample.IsActive
+            && dbContext.SampleTypeDefinitions.Any(sample => sample.IsActive
+                && dbContext.SampleTypeDefinitions.Any(anchor => anchor.Id == rule.SampleTypeDefinitionId && anchor.DefinitionKey == sample.DefinitionKey)
                 && sample.EffectiveFrom <= now && (!sample.EffectiveTo.HasValue || sample.EffectiveTo > now)), cancellationToken);
         var evaluation = OperationalReadinessPolicy.Evaluate(new OperationalReadinessInput(
             organization is { IsActive: true, Kind: OrganizationKind.Customer or OrganizationKind.Partner },

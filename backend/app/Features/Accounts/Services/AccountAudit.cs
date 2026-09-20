@@ -9,6 +9,7 @@ public static class AccountAudit
     public const string InviteCreated = nameof(InviteCreated);
     public const string DevelopmentInviteLinkCreated = nameof(DevelopmentInviteLinkCreated);
     public const string InviteResent = nameof(InviteResent);
+    public const string InviteAccessUpdated = nameof(InviteAccessUpdated);
     public const string InviteRevoked = nameof(InviteRevoked);
     public const string InviteDeclined = nameof(InviteDeclined);
     public const string InviteAccepted = nameof(InviteAccepted);

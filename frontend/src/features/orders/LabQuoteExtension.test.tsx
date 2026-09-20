@@ -56,7 +56,7 @@ describe('Lab quote acceptance and extensions', () => {
     expect(accept.closest('[aria-labelledby="order-details-heading"]')).toBe(screen.getByRole('region', { name: 'Order details and billing' }))
     expect(accept.closest('[data-slot="card"]')).toBeNull()
     const scope = screen.getByRole('region', { name: 'Samples in this order' })
-    expect(within(scope).getByText('7 samples in this order')).toBeTruthy()
+    expect(within(scope).getByText('7 samples · 7 sample-sequencing runs in this order')).toBeTruthy()
     expect(within(scope).getByRole('row', { name: 'Heart tissue 4' })).toBeTruthy()
     expect(within(scope).getByRole('row', { name: 'Liver tissue 3' })).toBeTruthy()
     const details = screen.getByRole('region', { name: 'Order details and billing' })

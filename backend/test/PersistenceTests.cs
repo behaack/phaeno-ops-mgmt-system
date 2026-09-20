@@ -565,10 +565,15 @@ public class PersistenceTests
     }
 
     [Fact]
-    public void RebasedMigrationIsTheOnlyMigrationDiscoveredWithoutConnectingToPostgres()
+    public void RebasedBaselineAndAdditiveRunMigrationsAreDiscoveredWithoutConnectingToPostgres()
     {
         using var dbContext = CreateDbContext();
-        Assert.EndsWith("_InitialPSeqOperationsRebased", Assert.Single(dbContext.Database.GetMigrations()));
+        var migrations = dbContext.Database.GetMigrations().ToArray();
+        Assert.Equal(4, migrations.Length);
+        Assert.EndsWith("_InitialPSeqOperationsRebased", migrations[0]);
+        Assert.EndsWith("_AddSampleSequencingRuns", migrations[1]);
+        Assert.EndsWith("_AddSequencingRunLineage", migrations[2]);
+        Assert.EndsWith("_AllowRepeatedLibraryPreparation", migrations[3]);
     }
 
     private static void AssertUniqueIndex<TEntity>(

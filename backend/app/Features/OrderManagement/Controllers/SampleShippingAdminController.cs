@@ -39,7 +39,11 @@ public sealed class SampleShippingAdminController(
             .ThenByDescending(item => item.Revision)
             .ToListAsync(cancellationToken);
         var destinationNames = destinations.ToDictionary(item => item.Id, item => item.Name);
-        var sampleTypeNames = sampleTypes.ToDictionary(item => item.Id, item => item.Name);
+        var now = DateTime.UtcNow;
+        var currentNames = sampleTypes.GroupBy(item => item.DefinitionKey).ToDictionary(group => group.Key,
+            group => (group.Where(item => item.IsEffectiveAt(now)).OrderByDescending(item => item.Revision).FirstOrDefault()
+                ?? group.OrderByDescending(item => item.Revision).First()).Name);
+        var sampleTypeNames = sampleTypes.ToDictionary(item => item.Id, item => currentNames[item.DefinitionKey]);
 
         return new SampleShippingConfigurationDto(
             destinations.Select(Map).ToList(),
@@ -188,8 +192,14 @@ public sealed class SampleShippingAdminController(
                 effectiveFrom,
                 request.IsActive));
 
-        if (predecessor != null && (!predecessor.EffectiveTo.HasValue || effectiveFrom < predecessor.EffectiveTo.Value))
-            Execute("sample_type_period_invalid", () => predecessor.EndAt(effectiveFrom));
+        // Saving an inactive revision must not retire the currently approved revision.
+        if (request.IsActive)
+        {
+            var activePredecessors = await dbContext.SampleTypeDefinitions.Where(value => value.DefinitionKey == definitionKey
+                && value.IsActive && (!value.EffectiveTo.HasValue || value.EffectiveTo > effectiveFrom)).ToListAsync(cancellationToken);
+            foreach (var previous in activePredecessors)
+                Execute("sample_type_period_invalid", () => previous.EndAt(effectiveFrom));
+        }
         dbContext.SampleTypeDefinitions.Add(item);
         await dbContext.SaveChangesAsync(cancellationToken);
         Response.StatusCode = StatusCodes.Status201Created;
@@ -211,7 +221,11 @@ public sealed class SampleShippingAdminController(
             ?? throw Invalid("sample_type_unavailable", "Select an available sample-type revision.");
         if (request.IsActive && !destination.IsEffectiveAt(effectiveFrom))
             throw Invalid("shipping_destination_not_effective", "The destination is not effective when this instruction rule begins.");
-        if (request.IsActive && !sampleType.IsEffectiveAt(effectiveFrom))
+        var sampleFamilyIds = await dbContext.SampleTypeDefinitions.AsNoTracking()
+            .Where(value => value.DefinitionKey == sampleType.DefinitionKey).Select(value => value.Id).ToArrayAsync(cancellationToken);
+        if (request.IsActive && !await dbContext.SampleTypeDefinitions.AsNoTracking().AnyAsync(value =>
+            value.DefinitionKey == sampleType.DefinitionKey && value.IsActive && value.EffectiveFrom <= effectiveFrom
+            && (!value.EffectiveTo.HasValue || value.EffectiveTo > effectiveFrom), cancellationToken))
             throw Invalid("sample_type_not_effective", "The sample type is not effective when this instruction rule begins.");
 
         SampleShippingInstructionRule? predecessor = null;
@@ -227,7 +241,7 @@ public sealed class SampleShippingAdminController(
                 .AnyAsync(item => item.SupersedesInstructionRuleId == predecessor.Id, cancellationToken))
                 throw Conflict("shipping_instruction_rule_already_superseded", "The selected instruction rule already has a later revision.");
             if (predecessor.DestinationId != request.DestinationId
-                || predecessor.SampleTypeDefinitionId != request.SampleTypeDefinitionId)
+                || !sampleFamilyIds.Contains(predecessor.SampleTypeDefinitionId))
                 throw Conflict("shipping_instruction_rule_scope_frozen", "Create a new rule when changing its destination or sample type.");
             if (effectiveFrom <= predecessor.EffectiveFrom)
                 throw Invalid("shipping_instruction_period_invalid", "An instruction-rule revision must begin after the revision it supersedes.");
@@ -245,7 +259,7 @@ public sealed class SampleShippingAdminController(
             item => (!excludedRuleId.HasValue || item.Id != excludedRuleId.Value)
                 && item.IsActive
                 && item.DestinationId == request.DestinationId
-                && item.SampleTypeDefinitionId == request.SampleTypeDefinitionId
+                && sampleFamilyIds.Contains(item.SampleTypeDefinitionId)
                 && (!item.EffectiveTo.HasValue || item.EffectiveTo > effectiveFrom),
             cancellationToken))
             throw Conflict("shipping_instruction_period_overlap", "An active instruction rule already covers this destination and sample type.");
@@ -298,20 +312,14 @@ public sealed class SampleShippingAdminController(
         var destination = await dbContext.SampleShippingDestinations.AsNoTracking()
             .FirstOrDefaultAsync(item => item.Id == request.DestinationId, cancellationToken)
             ?? throw Missing("shipping_destination_not_found", "The selected shipping destination was not found.");
-        var sampleTypes = await dbContext.SampleTypeDefinitions.AsNoTracking()
-            .Where(item => sampleTypeIds.Contains(item.Id))
-            .ToListAsync(cancellationToken);
-        if (sampleTypes.Count != sampleTypeIds.Count)
-            throw Missing("sample_type_not_found", "One or more selected sample types were not found.");
-        var rules = await dbContext.SampleShippingInstructionRules.AsNoTracking()
-            .Where(item => item.DestinationId == request.DestinationId
-                && sampleTypeIds.Contains(item.SampleTypeDefinitionId))
-            .ToListAsync(cancellationToken);
+        var selected = await SampleShippingRevisionData.ReadAsync(dbContext, request.DestinationId, sampleTypeIds, effectiveAt, cancellationToken);
+        if (selected.CurrentTypes.Count != sampleTypeIds.Count)
+            throw Invalid("sample_type_duplicate", "Select each sample type only once, regardless of revision.");
 
         SampleShippingResolution resolution;
         try
         {
-            resolution = SampleShippingCompatibilityResolver.Resolve(destination, sampleTypes, rules, effectiveAt);
+            resolution = selected.Resolve(destination, effectiveAt);
         }
         catch (ArgumentException exception)
         {

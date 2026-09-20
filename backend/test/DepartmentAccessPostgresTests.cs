@@ -25,6 +25,56 @@ using UglyToad.PdfPig;
 public sealed class DepartmentAccessPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task DepartmentReferencesAreGeneratedWithoutCodeAndRetainInactiveReservations()
+    {
+        await using var scope = await Scope.Create();
+        var request = JsonSerializer.Deserialize<UpsertDepartmentRequest>(
+            """{"name":"Department of Cardiology"}""", new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+        Assert.Null(request.Code);
+        var created = Assert.IsType<Created<DepartmentDto>>(await DepartmentEndpoints.CreateDepartment(
+            scope.Organization.Id, request, scope.Http, scope.Db, scope.Identity, default)).Value!;
+        Assert.Equal("DEPT-000001", created.Code);
+        Assert.Equal("Department of Cardiology", created.Name);
+        Assert.True(await scope.Db.AuditEvents.AnyAsync(value => value.EntityId == created.Id.ToString()));
+
+        // Old clients cannot choose the reference. Inactive and legacy-numbered rows reserve theirs.
+        var reserved = new OrganizationDepartment(scope.Organization.Id, "DEPT-000123", "Archived unit");
+        reserved.Deactivate();
+        scope.Db.Add(reserved);
+        await scope.Db.SaveChangesAsync();
+        var next = Assert.IsType<Created<DepartmentDto>>(await DepartmentEndpoints.CreateDepartment(
+            scope.Organization.Id, request with { Name = "Neurology", Code = "MY-CODE" },
+            scope.Http, scope.Db, scope.Identity, default)).Value!;
+        Assert.Equal("DEPT-000124", next.Code);
+        Assert.Equal("GENERAL", scope.General.Code);
+        Assert.Equal("RESEARCH", scope.Research.Code);
+
+        var renamed = Assert.IsType<Ok<DepartmentDto>>(await DepartmentEndpoints.UpdateDepartment(
+            scope.Organization.Id, created.Id,
+            request with { Name = "Cardiology", Code = "REPLACEMENT", Version = created.Version },
+            scope.Http, scope.Db, scope.Identity, default)).Value!;
+        Assert.Equal(created.Code, renamed.Code);
+        Assert.Equal("Cardiology", renamed.Name);
+        scope.Db.ChangeTracker.Clear();
+        Assert.Equal(created.Code, (await scope.Db.OrganizationDepartments.SingleAsync(value => value.Id == created.Id)).Code);
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task ExistingDepartmentReferencesSurviveEditsWithOrWithoutLegacyCode()
+    {
+        await using var scope = await Scope.Create();
+        var request = new UpsertDepartmentRequest("Renamed research", null, null, null, null, null, null, scope.Research.Version);
+        var renamed = Assert.IsType<Ok<DepartmentDto>>(await DepartmentEndpoints.UpdateDepartment(
+            scope.Organization.Id, scope.Research.Id, request, scope.Http, scope.Db, scope.Identity, default)).Value!;
+        Assert.Equal("RESEARCH", renamed.Code);
+        var updated = Assert.IsType<Ok<DepartmentDto>>(await DepartmentEndpoints.UpdateDepartment(
+            scope.Organization.Id, scope.General.Id,
+            request with { Name = "Main department", Code = "CHANGE-GENERAL", Version = scope.General.Version },
+            scope.Http, scope.Db, scope.Identity, default)).Value!;
+        Assert.Equal("GENERAL", updated.Code);
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task InvitationPreviewShowsOnlyPendingRecipientDetailsWithoutGrantingAccess()
     {
         await using var scope = await Scope.Create();
@@ -134,7 +184,7 @@ public sealed class DepartmentAccessPostgresTests
         scope.AdminMembership.SetOrganizationAdmin(false);
         scope.Db.Add(new OrganizationDepartmentMembership(scope.AdminMembership.Id, scope.Research.Id, true));
         await scope.Db.SaveChangesAsync();
-        var request = new UpsertDepartmentRequest("RESEARCH", "Research updated", null,
+        var request = new UpsertDepartmentRequest("Research updated", null,
             true, "billing@example.com", null, "Frozen", "Portal", scope.Research.Version);
         Assert.IsType<Ok<DepartmentDto>>(await DepartmentEndpoints.UpdateDepartment(scope.Organization.Id,
             scope.Research.Id, request, scope.Http, scope.Db, scope.Identity, default));
@@ -160,7 +210,7 @@ public sealed class DepartmentAccessPostgresTests
         scope.Db.Add(new OrganizationDepartmentMembership(scope.AdminMembership.Id, scope.Research.Id, false));
         await scope.Db.SaveChangesAsync();
         Assert.IsType<ForbidHttpResult>(await DepartmentEndpoints.UpdateDepartment(scope.Organization.Id, scope.Research.Id,
-            new("RESEARCH", "Denied", null, null, null, null, null, null, scope.Research.Version), scope.Http, scope.Db, scope.Identity, default));
+            new("Denied", null, null, null, null, null, null, scope.Research.Version), scope.Http, scope.Db, scope.Identity, default));
         Assert.IsType<ForbidHttpResult>(await DepartmentEndpoints.LookupDepartmentMember(scope.Organization.Id, scope.Research.Id,
             new(scope.Actor.Email), scope.Http, scope.Db, scope.Identity, default));
     }

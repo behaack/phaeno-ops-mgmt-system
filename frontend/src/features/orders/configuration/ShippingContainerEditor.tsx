@@ -89,7 +89,7 @@ export function ShippingContainerEditor({ source, configuration, onClose, onSave
     onClose()
   }
   function input(name: 'sku' | 'commonName' | 'supplierName' | 'supplierProductNumber' | 'tubeCapacity' | 'displayOrder' | 'effectiveFrom' | 'effectiveTo', label: string, type = 'text', required = false, help?: string) {
-    return <ContainerField id={`container-${name}`} label={label} required={required} error={errors[name]?.message} help={help} alignWithAdjacentField>
+    return <ContainerField id={`container-${name}`} label={label} required={required} error={errors[name]?.message} help={help} alignWithAdjacentField helpBelow={name === 'sku' || name === 'commonName'}>
       <Input id={`container-${name}`} type={type} disabled={mutation.isPending || name === 'sku' && Boolean(source)}
         min={name === 'tubeCapacity' ? 1 : name === 'displayOrder' ? 0 : undefined}
         step={type === 'number' ? 1 : undefined} aria-invalid={Boolean(errors[name])}
@@ -139,7 +139,11 @@ export function ShippingContainerEditor({ source, configuration, onClose, onSave
   </DialogContent></Dialog>
 }
 
-export function ContainerField({ id, label, required, error, help, children, alignWithAdjacentField = false }: { id: string; label: string; required?: boolean; error?: string; help?: string; children: ReactNode; alignWithAdjacentField?: boolean }) {
+export function ContainerField({ id, label, required, error, help, children, alignWithAdjacentField = false, helpBelow = false }: { id: string; label: string; required?: boolean; error?: string; help?: string; children: ReactNode; alignWithAdjacentField?: boolean; helpBelow?: boolean }) {
+  if (alignWithAdjacentField && helpBelow) return <div className="grid gap-y-1.5 sm:row-span-2 sm:grid-rows-subgrid">
+    <Label htmlFor={id}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label>
+    <div>{children}{help ? <p id={`${id}-help`} className="mt-[2px] text-xs text-muted-foreground">{help}</p> : null}<ContainerFieldError id={`${id}-error`} message={error} /></div>
+  </div>
   if (alignWithAdjacentField) return <div className="grid gap-y-1.5 sm:row-span-3 sm:grid-rows-subgrid">
     <Label htmlFor={id}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label>
     {help ? <p id={`${id}-help`} className="text-xs text-muted-foreground">{help}</p> : <span className="hidden sm:block" aria-hidden="true" />}

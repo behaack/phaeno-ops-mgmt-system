@@ -1,5 +1,73 @@
 # People and Department Access Plan
 
+## September 19, 2026 — Department-led Companies
+
+The owner approved optional organization administrators, department-aware onboarding/readiness,
+and assigned-Department purchasing, changed-price decisions and Trial acceptance. Company-wide
+setup remains with authorized Phaeno staff where no organization administrator exists. See
+[the request work plan](CRM-REQUEST-WORK-PROGRESS-PLAN.md#september-19-follow-up--department-led-administration)
+for scope, acceptance and verification. Earlier organization-admin-only commercial rules in
+this plan are superseded for the assigned Department only.
+
+
+## September 19, 2026 — Edit invited access and notify active members
+
+Owner approved the preceding recommendation. Company administrators can edit the Organization
+role and Department assignments of a pending external invitation in place. Keep recipient,
+invitation identity, secret link, expiry and delivery history; do not resend or grant membership
+when saving intent. Use the existing invitation authority, active-Department validation, audit
+and optimistic version checks, including Department-only edits. Accepted/revoked/declined
+invitations cannot be edited. Expired pending invitations remain expired until explicit resend.
+
+Company People uses one Actions menu. Pending/expired invitations have separate Edit invited
+access, Resend invite and Revoke invite dialogs; Manage access is limited to active memberships.
+Edit relationship stays separate. People refreshes time-derived expiry every minute. Active membership changes remain immediate. Queue an
+informational email atomically with each actual Organization/Department role or access change;
+no-op/failed writes queue nothing. Reuse the durable notification outbox/dispatcher with a
+Company-access workflow and exact affected-user recipient resolution, including removal notices.
+Never route these personal notices to Department routing addresses or unrelated administrators.
+Delivery failures retry separately and do not undo access. No live email is sent for verification.
+
+The recipient preview displays proposed access and a revision; current web acceptance sends
+that revision, rejects stale review and refreshes for explicit acceptance again. Legacy clients
+without a revision retain their existing acceptance contract; tracked invitation concurrency
+still prevents an edit racing a committed acceptance. No identity-provider, authentication-rule,
+schema, migration, dependency or inactive-membership restoration-policy changes.
+
+Update source coverage and audience help; build/type/lint/docs/read-only browser verification.
+Automated suites are not requested. Live email delivery and actual recipient acceptance are
+separate verification boundaries. Implementation complete. API and regression sources compile
+with zero warnings/errors; frontend typecheck and scoped lint pass. Four audience guides and
+business rules updated; generated help contains 56 guides (f1ac5275d479). Live read-only People
+verification and isolated simulated editing/expiry/role/conflict/focus flows are recorded in
+E2E-TEST-PLAN.md. No real recipient access, invitation or email was changed. Automated suites
+remain unexecuted. The running API must be rebuilt/restarted to use these server changes.
+
+## September 19, 2026 — Automatic Department references
+
+Owner-approved scope: administrators enter a Department name and optional settings, without
+inventing a Code. The API assigns the next DEPT-000001-style reference within its Organization
+at creation, retaining inactive references and using a transaction-scoped Organization lock
+so concurrent creates cannot allocate the same reference. The existing unique constraint remains.
+References are immutable across rename and configuration changes. Existing codes, including
+GENERAL, are preserved. Names remain the primary labels; references remain secondary/read-only.
+
+Keep the optional legacy Code request property accepted but ignored on create/update; new web
+requests omit it. Preserve authorization, validation, concurrency versions and audit events.
+No schema, migration, dependency or permission changes. Update the shared settings dialog,
+contracts and current audience help. Add regression sources for generation, omission, legacy
+payloads, inactive-reference reservation and rename stability. Run builds, type/lint/docs and
+read-only browser checks; automated suites require a separate request.
+
+Implementation and build/type/lint/help/whitespace checks pass (56 guides, corpus be1bc32ebb4b).
+The solution compiled into temporary output with zero warnings/errors, without replacing the
+running API binaries. Regression sources are authored and compiled, not executed. Local access
+recovered after an initial Access check failed state. Signed-in read-only browser checks
+confirmed no Code input on Add, automatic-reference guidance, required-name validation/focus,
+GENERAL as read-only edit context and Cancel restoring trigger focus. No Company departments
+were created or renamed; live save/allocation and concurrent database execution are not claimed.
+Temporary build output and verification tab were removed.
+
 Invitation readiness follow-up: Send invitation now stays disabled for a Member with no Department or stale Department selections, with an immediate inline explanation; selecting valid access re-enables it. Organization-administrator intent requires the existing active default Department. Existing validation and invitation payload remain unchanged.
 
 ## Invitation clarity — September 8, 2026

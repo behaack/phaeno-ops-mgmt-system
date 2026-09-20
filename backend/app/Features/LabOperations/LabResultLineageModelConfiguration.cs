@@ -42,6 +42,8 @@ internal static class LabResultLineageModelConfiguration
         modelBuilder.Entity<LabSequencingOutput>(e =>
         {
             e.ToTable("lab_sequencing_outputs", schema);
+            e.Property(x => x.LibraryPreparationChoice).HasMaxLength(32);
+            e.HasIndex(x => new { x.LabSpecimenId, x.SequencingRunNumber });
             e.HasKey(x => x.Id);
             e.Property(x => x.ProviderKey).HasMaxLength(100).IsRequired();
             e.Property(x => x.ProviderRunReference).HasMaxLength(255).IsRequired();

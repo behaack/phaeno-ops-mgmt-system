@@ -27,9 +27,9 @@ public sealed partial class LabServiceOrdersController
         CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
-        if (!tenant.Membership.IsOrganizationAdmin)
+        if (!tenant.IsDepartmentAdmin)
             throw new OrderManagementException("organization_administrator_required",
-                "An organization administrator must place a standard order.", StatusCodes.Status403Forbidden);
+                "An organization or assigned-department administrator must place a standard order.", StatusCodes.Status403Forbidden);
         if (!request.ProhibitedDataConfirmed)
             throw Invalid("prohibited_data_confirmation_required", "Confirm that the order contains no prohibited data.");
         await ReadOrderAsync(orderId, tenant, cancellationToken);
@@ -39,9 +39,9 @@ public sealed partial class LabServiceOrdersController
                 // Re-read the selected membership and Department inside the commitment transaction.
                 dbContext.ChangeTracker.Clear();
                 var currentTenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, token);
-                if (!currentTenant.Membership.IsOrganizationAdmin)
+                if (!currentTenant.IsDepartmentAdmin)
                     throw new OrderManagementException("organization_administrator_required",
-                        "An organization administrator must place a standard order.", StatusCodes.Status403Forbidden);
+                        "An organization or assigned-department administrator must place a standard order.", StatusCodes.Status403Forbidden);
                 var order = await ReadOrderAsync(orderId, currentTenant, token);
                 EnsureVersion(order.Version, request.Version);
                 var preview = await BuildStandardPreviewAsync(order, currentTenant, request.OfferingId, token);
@@ -70,10 +70,10 @@ public sealed partial class LabServiceOrdersController
                     offering.Currency, offering.UnitPrice, order.RequestedSpecimenCount, preview.Subtotal, preview.Tax!.Value,
                     preview.Total!.Value, offering.AnalysisIds, JsonSerializer.Serialize(analyses, JsonSerializerOptions),
                     offering.IncludedOutputContract, offering.MinimumTurnaroundDays, offering.MaximumTurnaroundDays, now,
-                    offering.SupportedSampleTypes!.Select(type => type.Id).ToArray());
+                    offering.SupportedSampleTypes!.Select(type => type.Id).ToArray(), order.RequestedSequencingRunCount);
                 var lines = JsonSerializer.Serialize(new[] { new { catalogItemId = offering.CatalogItemId,
                     externalItemId = offering.CatalogCode, description = offering.Name,
-                    quantity = order.RequestedSpecimenCount, unitPrice = offering.UnitPrice } }, JsonSerializerOptions);
+                    quantity = order.RequestedSequencingRunCount, unitPrice = offering.UnitPrice } }, JsonSerializerOptions);
                 var quote = new LabServiceQuote(order.Id, order.Quotes.Select(value => value.Revision).DefaultIfEmpty(0).Max() + 1,
                     QuotePurpose.Initial, lines, preview.Subtotal, preview.Tax.Value, offering.Currency, now, now.AddDays(1));
                 quote.FreezeCommercialTerms(JsonSerializer.Serialize(new { name = profile.BillingContactName,
@@ -91,7 +91,7 @@ public sealed partial class LabServiceOrdersController
                         currentTenant.Configuration.PurchaseOrderRequired, currentTenant.Configuration.BillingContactEmail,
                         currentTenant.Configuration.NotificationEmail, currentTenant.Configuration.ShippingInstructions,
                         currentTenant.Configuration.ResultDeliveryInstructions },
-                    purchaseOrderNumber = purchaseOrder, order.RequestedSpecimenCount,
+                    purchaseOrderNumber = purchaseOrder, order.RequestedSpecimenCount, order.RequestedSequencingRunCount,
                     sourceGroups = order.SourceGroups.Select(value => new { value.BiologicalSource, value.SpecimenCount }),
                     order.TubeUsePolicyKey, order.TubeUsePolicyVersion,
                     order.StorageRequirements, order.SafetyDeclaration, serviceKey = OrderServiceKeys.PSeqLabService,
@@ -105,7 +105,7 @@ public sealed partial class LabServiceOrdersController
                 QueueNotice(order, "lab-standard-order-placed", "Standard laboratory order placed",
                     $"{order.OrderNumber} is placed and awaiting its sample roster.", currentTenant.Actor.Id);
                 await new CommercialSaleSummaryService(dbContext).StageAsync(OrderWorkflowTypes.LabService, order.Id,
-                    order.OrganizationId, null, offering.Name, order.RequestedSpecimenCount, quote.Total, quote.Currency,
+                    order.OrganizationId, null, offering.Name, order.RequestedSequencingRunCount, quote.Total, quote.Currency,
                     now, currentTenant.Actor.Id, token);
                 await dbContext.SaveChangesAsync(token);
                 return await MapAsync(order, true, false, token);
@@ -118,7 +118,7 @@ public sealed partial class LabServiceOrdersController
     {
         var offering = await new LabServiceOfferingService(dbContext).ReadOneAsync(offeringId, token);
         var blockers = new List<string>();
-        if (!tenant.Membership.IsOrganizationAdmin) blockers.Add("An organization administrator must place a standard order.");
+        if (!tenant.IsDepartmentAdmin) blockers.Add("An organization or assigned-department administrator must place a standard order.");
         if (order.Status is not (LabServiceOrderStatus.DraftRequest or LabServiceOrderStatus.ChangesRequested))
             blockers.Add("Only an unplaced draft can be placed as a standard order.");
         if (order.SourceRequestId.HasValue || order.ProposedUnitPrice.HasValue)
@@ -140,7 +140,7 @@ public sealed partial class LabServiceOrdersController
             && System.Net.Mail.MailAddress.TryCreate(billingEmail, out _) && profile.HasCompleteBillingAddress
             && profile.PaymentTermsDays is >= 0 and <= 365 && profile.HasEffectiveTaxDecision && profile.HasFinanceApprovedTaxDecision;
         if (!financeReady) blockers.Add("Complete billing details and Finance-approved tax before reviewing a final standard total.");
-        var subtotal = decimal.Round(offering.UnitPrice * order.RequestedSpecimenCount, 2, MidpointRounding.AwayFromZero);
+        var subtotal = decimal.Round(offering.UnitPrice * order.RequestedSequencingRunCount, 2, MidpointRounding.AwayFromZero);
         decimal? tax = financeReady ? profile!.TaxDecision == EffectiveTaxDecision.Taxable
             ? decimal.Round(subtotal * profile.ApprovedTaxRate!.Value, 2, MidpointRounding.AwayFromZero) : 0 : null;
         var analysisVersions = await dbContext.AnalysisDefinitions.AsNoTracking().Where(value => offering.AnalysisIds.Contains(value.Id))
@@ -154,6 +154,6 @@ public sealed partial class LabServiceOrdersController
         }, JsonSerializerOptions))));
         return new(offering, order.RequestedSpecimenCount, subtotal, tax, tax.HasValue ? subtotal + tax.Value : null,
             offering.Currency, blockers.Count == 0, blockers.Distinct().ToList(), order.Version, profile?.Version,
-            tenant.Department.Version, tenant.Organization.Version, reviewToken);
+            tenant.Department.Version, tenant.Organization.Version, reviewToken, order.RequestedSequencingRunCount);
     }
 }

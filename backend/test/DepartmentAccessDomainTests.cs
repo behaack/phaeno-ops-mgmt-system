@@ -5,6 +5,19 @@ using PSeq.Operations.Commercial.Crm.Domain;
 
 public sealed class DepartmentAccessDomainTests
 {
+    [Theory]
+    [InlineData("DEPT-000123")]
+    [InlineData("GENERAL")]
+    [InlineData("RESEARCH")]
+    public void RenamingDepartmentPreservesItsReference(string reference)
+    {
+        var department = new OrganizationDepartment(Guid.NewGuid(), reference, "Department of Cardiology");
+        department.Update("Cardiology", "Updated description");
+        Assert.Equal(reference, department.Code);
+        Assert.Equal("Cardiology", department.Name);
+        Assert.Equal("Updated description", department.Description);
+    }
+
     [Fact]
     public void NewOrganizationBeginsWithOneActiveGeneralDepartment()
     {

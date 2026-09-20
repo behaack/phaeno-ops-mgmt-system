@@ -43,11 +43,12 @@ export function RequestCustomWorkButton({
   defaultSubject?: string
 }) {
   const { authProvider, session } = usePhaenoSession()
-  const mayRequest =
-    session?.memberships?.find(
-      (item) =>
-        item.organizationId === session.selectedOrganization?.organizationId,
-    )?.isOrganizationAdmin === true
+  const selectedOrganizationId = session?.selectedOrganization?.organizationId
+  const mayRequest = session?.memberships?.some(item =>
+    item.organizationId === selectedOrganizationId && item.isOrganizationAdmin) === true
+    || (session?.selectedDepartment?.organizationId === selectedOrganizationId
+      && session?.selectedDepartment?.isAvailable === true
+      && session?.selectedDepartment?.isDepartmentAdmin === true)
   const [open, setOpen] = useState(false)
   const key = useRef('')
   const form = useForm<z.infer<typeof schema>>({

@@ -681,7 +681,7 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
     private static bool IsValidAuthorization(AuthorizeLabWorkCommand command) =>
         IsValidMetadata(command.Metadata) && (command.Metadata.ContractVersion == LabOperationsContractVersions.V1
             ? command.TubeUsePolicyKey is null && command.TubeUsePolicyVersion is null
-            : command.TubeUsePolicyKey == LabTubeUsePolicy.RunOneWithFailureFallback && command.TubeUsePolicyVersion == LabTubeUsePolicy.Version)
+            : (command.TubeUsePolicyKey == LabTubeUsePolicy.RunOneWithFailureFallback || command.TubeUsePolicyKey == LabTubeUsePolicy.RunAuthorizedWithFailureFallback) && command.TubeUsePolicyVersion == LabTubeUsePolicy.Version)
         &&
         IsValidMetadata(command.Metadata)
         && command.AuthorizationId != Guid.Empty
@@ -708,6 +708,7 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
         && HasValue(specimen.DeclaredMaterialType)
         && HasValue(specimen.DeclaredBiologicalSource)
         && specimen.DeclaredQuantity > 0
+        && specimen.SequencingRunCount is >= 1 and <= 10000
         && HasValue(specimen.DeclaredQuantityUnit)
         && HasValue(specimen.DeclaredStorageRequirements)
         && HasValue(specimen.DeclaredSafetyInformation)

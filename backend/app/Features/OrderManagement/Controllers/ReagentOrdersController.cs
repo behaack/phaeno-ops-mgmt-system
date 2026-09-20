@@ -85,7 +85,7 @@ public sealed partial class ReagentOrdersController(
     public async Task<PartnerReagentOrderDto> Get(Guid orderId, CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, false, cancellationToken);
-        return await MapAsync(await ReadAsync(orderId, tenant, cancellationToken), tenant.IsDepartmentAdmin, false, cancellationToken, tenant.Membership.IsOrganizationAdmin);
+        return await MapAsync(await ReadAsync(orderId, tenant, cancellationToken), tenant.IsDepartmentAdmin, false, cancellationToken, tenant.IsDepartmentAdmin);
     }
 
     [HttpPost]
@@ -112,7 +112,7 @@ public sealed partial class ReagentOrdersController(
                 dbContext.PartnerReagentOrders.Add(order);
                 Event(order, "Created", order.Status.ToString(), tenant.Actor.Id);
                 await dbContext.SaveChangesAsync(operationCancellationToken);
-                return await MapAsync(order, true, false, operationCancellationToken, tenant.Membership.IsOrganizationAdmin);
+                return await MapAsync(order, true, false, operationCancellationToken, tenant.IsDepartmentAdmin);
             },
             StatusCodes.Status201Created,
             cancellationToken);
@@ -162,7 +162,7 @@ public sealed partial class ReagentOrdersController(
                 dbContext.PartnerReagentOrders.Add(draft);
                 Event(draft, "CreatedFromPrior", draft.Status.ToString(), tenant.Actor.Id, $"Created from {source.OrderNumber}.");
                 await dbContext.SaveChangesAsync(operationCancellationToken);
-                return await MapAsync(draft, true, false, operationCancellationToken, tenant.Membership.IsOrganizationAdmin);
+                return await MapAsync(draft, true, false, operationCancellationToken, tenant.IsDepartmentAdmin);
             },
             StatusCodes.Status201Created,
             cancellationToken);
@@ -188,7 +188,7 @@ public sealed partial class ReagentOrdersController(
         dbContext.Entry(order).Property(value => value.UpdatedAt).IsModified = true;
         await new KitBundleService(dbContext).SnapshotDraftProfilesAsync(order, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
-        return await MapAsync(order, true, false, cancellationToken, tenant.Membership.IsOrganizationAdmin);
+        return await MapAsync(order, true, false, cancellationToken, tenant.IsDepartmentAdmin);
     }
 
     private async Task SaveDraftDetailsAsync(PartnerReagentOrder order, ReagentDraftDetailsRequest? details,
@@ -208,8 +208,8 @@ public sealed partial class ReagentOrdersController(
     {
         var tenant = await requestContext.RequireTenantAsync(HttpContext, OrganizationKind.Partner, true, cancellationToken);
         var scopedOrder = await ReadAsync(orderId, tenant, cancellationToken);
-        if (scopedOrder.IsKitBundle && !tenant.Membership.IsOrganizationAdmin)
-            throw new OrderManagementException("organization_admin_required", "An organization administrator must place a new Kit order.", StatusCodes.Status403Forbidden);
+        if (scopedOrder.IsKitBundle && !tenant.IsDepartmentAdmin)
+            throw new OrderManagementException("organization_admin_required", "An organization or assigned-department administrator must place a new Kit order.", StatusCodes.Status403Forbidden);
         var key = idempotency.RequireKey(HttpContext);
         var scope = $"reagent-order:{orderId}:place";
         var execution = await idempotency.ExecuteAsync(
@@ -237,7 +237,7 @@ public sealed partial class ReagentOrdersController(
                         throw Invalid("reagent_destination_restricted", $"{line.Description} cannot be shipped to the selected destination.");
                 }
                 var before = order.Status.ToString();
-                if (order.IsKitBundle && !tenant.Membership.IsOrganizationAdmin) throw new OrderManagementException("organization_admin_required", "An organization administrator must place a new Kit order.", StatusCodes.Status403Forbidden);
+                if (order.IsKitBundle && !tenant.IsDepartmentAdmin) throw new OrderManagementException("organization_admin_required", "An organization or assigned-department administrator must place a new Kit order.", StatusCodes.Status403Forbidden);
                 await new KitBundleService(dbContext).CreatePurchasedCasesAsync(order, operationCancellationToken);
                 Execute(() => order.Place(request.PurchaseOrderNumber, address.Id, JsonSerializer.Serialize(address.ToDto(), JsonOptions),
                     request.RequestedDeliveryDate, request.ShippingInstructions, DateTime.UtcNow));
@@ -272,7 +272,7 @@ public sealed partial class ReagentOrdersController(
                 Event(order, placed, order.Status.ToString(), tenant.Actor.Id);
                 Notice(order, "reagent-order-placed", "Reagent order placed", $"{order.OrderNumber} was placed for Phaeno review.");
                 await dbContext.SaveChangesAsync(operationCancellationToken);
-                return await MapAsync(order, true, false, operationCancellationToken, tenant.Membership.IsOrganizationAdmin);
+                return await MapAsync(order, true, false, operationCancellationToken, tenant.IsDepartmentAdmin);
             },
             cancellationToken: cancellationToken, concurrencyScope: scope, isolationLevel: System.Data.IsolationLevel.Serializable);
         return execution.Response;
@@ -289,7 +289,7 @@ public sealed partial class ReagentOrdersController(
         await new KitBundleService(dbContext).CancelUnshippedAsync(order, tenant.Actor.Id, request.Reason, cancellationToken);
         Event(order, before, order.Status.ToString(), tenant.Actor.Id, request.Reason);
         await dbContext.SaveChangesAsync(cancellationToken);
-        return await MapAsync(order, true, false, cancellationToken, tenant.Membership.IsOrganizationAdmin);
+        return await MapAsync(order, true, false, cancellationToken, tenant.IsDepartmentAdmin);
     }
 
     [HttpPost("{orderId:guid}/cancellation-requests")]
@@ -314,7 +314,7 @@ public sealed partial class ReagentOrdersController(
                 Event(order, before, order.Status.ToString(), tenant.Actor.Id, request.Reason);
                 Notice(order, "reagent-cancellation-requested", "Reagent cancellation requested", $"A cancellation decision is required for {order.OrderNumber}.");
                 await dbContext.SaveChangesAsync(operationCancellationToken);
-                return await MapAsync(order, true, false, operationCancellationToken, tenant.Membership.IsOrganizationAdmin);
+                return await MapAsync(order, true, false, operationCancellationToken, tenant.IsDepartmentAdmin);
             },
             cancellationToken: cancellationToken);
         return execution.Response;
@@ -349,7 +349,7 @@ public sealed partial class ReagentOrdersController(
         Execute(() => adjustment.Decide(request.Approved, tenant.Actor.Id, DateTime.UtcNow));
         Event(order, "AdjustmentProposed", request.Approved ? "AdjustmentApproved" : "AdjustmentDeclined", tenant.Actor.Id);
         await dbContext.SaveChangesAsync(cancellationToken);
-        return await MapAsync(order, true, false, cancellationToken, tenant.Membership.IsOrganizationAdmin);
+        return await MapAsync(order, true, false, cancellationToken, tenant.IsDepartmentAdmin);
     }
 
     [HttpGet("{orderId:guid}/shipments")]
@@ -417,7 +417,7 @@ public sealed partial class ReagentOrdersController(
             && line.UnitPrice == offering.UnitPrice
             && string.Equals(line.Currency, offering.Currency, StringComparison.OrdinalIgnoreCase);
 
-    private async Task<PartnerReagentOrderDto> MapAsync(PartnerReagentOrder order, bool canManage, bool platform, CancellationToken cancellationToken, bool organizationAdmin = false)
+    private async Task<PartnerReagentOrderDto> MapAsync(PartnerReagentOrder order, bool canManage, bool platform, CancellationToken cancellationToken, bool canCommit = false)
     {
         var adjustments = await dbContext.ReagentOrderAdjustments.AsNoTracking().Where(item => item.PartnerReagentOrderId == order.Id).OrderBy(item => item.CreatedAt).ToListAsync(cancellationToken);
         var docs = await dbContext.CommercialDocumentLinks.AsNoTracking().Where(item => item.WorkflowType == OrderWorkflowTypes.Reagent && item.WorkflowId == order.Id).OrderBy(item => item.CreatedAt).ToListAsync(cancellationToken);
@@ -427,7 +427,7 @@ public sealed partial class ReagentOrdersController(
             order.ShippingAddressId, order.ShippingAddressSnapshotJson, order.RequestedDeliveryDate, order.ShippingInstructions,
             order.PlacedAt, order.AcceptedAt, order.FulfilledAt, order.TenantSafeReason, platform ? order.InternalNote : null,
             order.CreatedAt, order.UpdatedAt, order.Version, canManage && order.Status == ReagentOrderStatus.Draft,
-            canManage && (!order.IsKitBundle || organizationAdmin) && order.Status == ReagentOrderStatus.Draft, canManage && order.Status is ReagentOrderStatus.Draft or ReagentOrderStatus.Placed or ReagentOrderStatus.UnderReview,
+            canManage && (!order.IsKitBundle || canCommit) && order.Status == ReagentOrderStatus.Draft, canManage && order.Status is ReagentOrderStatus.Draft or ReagentOrderStatus.Placed or ReagentOrderStatus.UnderReview,
             canManage && order.Status is ReagentOrderStatus.Accepted or ReagentOrderStatus.Processing or ReagentOrderStatus.PartiallyShipped or ReagentOrderStatus.OnHold,
             order.Lines.OrderBy(item => item.CreatedAt).Select(item => item.ToDto()).ToList(), order.Shipments.OrderBy(item => item.ShippedAt).Select(item => item.ToDto()).ToList(),
             adjustments.Select(item => new ReagentAdjustmentDto(item.Id, item.OriginalLineId, item.ProposedOfferingId, item.BeforeJson,

@@ -21,7 +21,6 @@ public sealed record DepartmentDto
 }
 
 public sealed record UpsertDepartmentRequest(
-    string Code,
     string Name,
     string? Description,
     bool? PurchaseOrderRequired,
@@ -29,7 +28,9 @@ public sealed record UpsertDepartmentRequest(
     string? NotificationEmail,
     string? ShippingInstructions,
     string? ResultDeliveryInstructions,
-    long? Version);
+    long? Version,
+    // Accepted for older clients; the server owns this immutable reference.
+    string? Code = null);
 
 public sealed record ChangeDepartmentLifecycleRequest(long Version);
 

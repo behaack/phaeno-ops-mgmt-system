@@ -11,11 +11,12 @@ using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.Crm.Domain;
 using PhaenoPortal.App.Features.Accounts.DTOs;
 using PhaenoPortal.App.Features.Accounts.Services;
+using PhaenoPortal.App.Features.RelationshipManagement.Services;
 using PhaenoPortal.App.Infrastructure.Api;
 using PhaenoPortal.App.Infrastructure.Persistence;
 using PSeq.Operations.Laboratory.Domain;
 
-public static class InvitationEndpoints
+public static partial class InvitationEndpoints
 {
     public static async Task<IResult> PreviewInvitation(
         [FromBody] InvitationPreviewRequest request,
@@ -29,7 +30,8 @@ public static class InvitationEndpoints
 
         return TypedResults.Ok(new InvitationPreviewDto(
             invitation.Email, invitation.FirstName, invitation.LastName,
-            invitation.Organization!.Name, invitation.ExpiresAt));
+            invitation.Organization!.Name, invitation.ExpiresAt,
+            invitation.IsOrganizationAdmin, await ReadDepartmentIntentAsync(dbContext, invitation.Id, cancellationToken), invitation.Version));
     }
 
     public static async Task<IResult> BeginAuthentication(
@@ -686,6 +688,8 @@ public static class InvitationEndpoints
 
         identity = identity with { Email = invitation.Email, IsEmailVerified = true };
         ValidateInvitationForAuthenticatedEmail(invitation, identity, utcNow);
+        if (request.Version.HasValue && request.Version != invitation.Version)
+            throw new DbUpdateConcurrencyException("Invitation access changed. Review the current invitation before accepting.");
         await ValidateDepartmentIntentAsync(dbContext, invitation, cancellationToken);
         var intendedLabRoles = await ReadIntendedLabRolesAsync(
             dbContext,
@@ -923,6 +927,10 @@ public static class InvitationEndpoints
                     InvitationId = invitation.Id
                 });
         }
+        await OnlineAccessRequestCompletion.CompleteAfterAcceptanceAsync(
+            dbContext, invitation.Organization, membership, user, utcNow,
+            hasValidatedDepartmentAdministratorAccess: intendedDepartments.Any(value => value.IsDepartmentAdmin),
+            cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
@@ -1235,6 +1243,14 @@ public static class InvitationEndpoints
             .Produces<InvitationDto>(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden)
+            .Produces<ApiResponse<object>>(StatusCodes.Status409Conflict);
+
+        group.MapPatch("/{id:guid}/access", UpdateInvitationAccess)
+            .WithName("UpdateInvitationAccess")
+            .WithSummary("Edit the access offered by an existing pending Company invitation")
+            .Produces<InvitationDto>()
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces(StatusCodes.Status400BadRequest)
             .Produces<ApiResponse<object>>(StatusCodes.Status409Conflict);
 
         group.MapPost("/{id}/resend", ResendInvitation)

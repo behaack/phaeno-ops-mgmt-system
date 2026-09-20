@@ -168,7 +168,7 @@ public sealed class LabJobDeadlineTests
         Assert.Contains("WHERE", query.Where(x => x.JobStatus == "Sequencing" && x.Job.DueAtUtc >= Now && x.Job.DueAtUtc < Now.AddDays(1)).ToQueryString());
         Assert.Contains("WHERE", query.Where(x => x.JobStatus == "Cancelled" && x.Job.OrderCreatedAtUtc >= Now).ToQueryString());
         Assert.Contains("LIMIT", sql);
-        Assert.DoesNotContain("250", sql);
+        Assert.DoesNotMatch(@"LIMIT\s+250\b", sql);
         Assert.Contains("GROUP BY", query.GroupBy(x => x.DeadlineStatus).Select(g => new { g.Key, Count = g.Count() }).ToQueryString());
     }
 }

@@ -26,11 +26,11 @@ Only a library with passed QC can enter a sequencing batch. If QC fails, preserv
 
 ## Build a batch
 
-A **preparation batch** is a tray of source tubes that stays together through library preparation. A **sequencing batch** groups completed, eligible libraries for sequencing. These are separate records. The preparation workspace shows each library's current sequencing membership and offers **Add to sequencing batch** for eligible, unassigned libraries after the preparation batch is complete. Repeated membership is rejected with an existing-membership message.
+A **preparation batch** is a tray of source tubes that stays together through library preparation. A **sequencing batch** groups completed, eligible libraries for sequencing. These are separate records. The preparation workspace shows each library's current sequencing membership and offers **Add to sequencing batch** for eligible, unassigned libraries after the preparation batch is complete. Duplicate membership within a batch is rejected. A library may supply another sequencing batch when its previous batches and sendouts are complete and purchased runs remain outstanding.
 
 A batch may contain libraries from different organizations and Commercial orders. Give it a human-friendly name and optional notes. POMS assigns the current **External sequencing** type and a date-stamped, scanner-safe batch number when the batch is created. The name helps operators recognize the run; the batch number remains the immutable identifier. Add only the required library identifiers and operational facts. Do not copy Customer names, prices, order notes, or other confidential Commercial details into the batch manifest.
 
-For scan-first entry, open **Sequencing batches**, expand **Scan libraries** in the list header, select a draft batch, and scan each physical library container. The scan section starts collapsed and retains your entries when collapsed again. POMS accepts only a container linked to a **QC passed** library. An unknown barcode, non-library container, library in another state, or duplicate membership is rejected without changing the batch. If a library is already assigned, open its preparation record to view the sequencing assignment. A successful scan clears and refocuses the field for the next container.
+For scan-first entry, open **Sequencing batches**, expand **Scan libraries** in the list header, select a draft batch, and scan each physical library container. The scan section starts collapsed and retains your entries when collapsed again. POMS accepts a container linked to a library with passed QC. A previously sequenced library can be reused while purchased runs remain, provided its material is available and its earlier batches and sendouts are complete. An unknown barcode, non-library container, failed QC, active earlier assignment, or duplicate membership is rejected without changing the batch. Open the library record to review its sequencing history. A successful scan clears and refocuses the field for the next container.
 
 Confirm membership before starting the batch. Once started, preserve the membership history and use supported add, remove, or exception actions rather than rewriting the original manifest. Scanning proves the container identity used for entry; it does not replace the approved physical manifest and custody checks.
 
@@ -49,3 +49,16 @@ The sendout tracks material, manifest, timing, provider status, and custody. Raw
 ## Record library quality evidence
 
 For library QC, select Pass or Fail and record the observations and decision basis. Add named measurements with their values and units as needed. POMS retains those structured observations with the library; operators do not need to prepare JSON. The applicable method still determines the scientific acceptance criteria.
+
+
+## Sequence a sample more than once
+
+A purchased sample-sequencing run is one sequencing of one sample. Twenty samples sequenced once and one sample sequenced twenty times both use 20 purchased runs. Tube count and library-preparation count are separate.
+
+One prepared library can supply multiple sequencing runs. To use it again, retain the original preparation and QC evidence and select that library when recording sequencing output. If another batch is needed, complete the previous batch and sendout, then use **Add to batch** in the job's library list or scan the library into a draft sequencing batch. POMS checks for outstanding authorized runs and rejects simultaneous batch assignments.
+
+For a fresh preparation, open the specimen and select **Prepare a new library**. Select and scan an eligible source tube. If using a previously successful source tube, confirm material remains and record the supporting evidence. Complete the new preparation, output identity and QC through the existing workflow.
+
+Open the sample's **Scientific evidence** and select **Record sequencing output**. Enter the **Purchased run number** (1 through the sample's authorized total), explicitly choose **New preparation for this run** or **Use an existing prepared library**, and select the library and recorded submission actually used. Complete the provider run reference, exact file identity, checksum, sample mapping and scientific evidence. The same machine run can contain several purchased runs of a sample; record their distinct sample mappings and purchased run numbers.
+
+Additional files use the same purchased run number. A linked correction or a replacement after failed sequencing retains that number and records its reason. Corrections and reanalysis do not purchase or complete another unit. Each output retains its producing library and preparation attempt. A successful preparation alone does not complete a purchased run: approved results must cover every allocated run, and delivery remains incomplete until the results for all runs are published.

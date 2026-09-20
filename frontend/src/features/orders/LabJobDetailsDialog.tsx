@@ -70,6 +70,7 @@ const jobDetailsSchema = z
         }),
       )
       .min(1, "Add at least one biological source."),
+    sequencingRunCount: z.string().trim().refine(v => v === "" || (/^\d+$/.test(v) && Number(v) >= 1 && Number(v) <= 10000), "Enter a whole number from 1 to 10,000."),
     proposePrice: z.boolean(),
     proposedUnitPrice: z.string().trim().max(30),
     priceProposalNote: z
@@ -96,6 +97,7 @@ const jobDetailsSchema = z
       (sum, group) => sum + group.specimenCount,
       0,
     );
+    if (values.sequencingRunCount && Number(values.sequencingRunCount) < sourceTotal) context.addIssue({ code: "custom", path: ["sequencingRunCount"], message: "Include at least one run for every sample." });
     if (sourceTotal > 100)
       context.addIssue({
         code: "custom",
@@ -185,6 +187,7 @@ export function LabJobDetailsDialog({
     defaultValues: {
       customerReference: "",
       sourceGroups: [{ biologicalSource: "", specimenCount: 1 }],
+      sequencingRunCount: "",
       proposePrice: false,
       proposedUnitPrice: "",
       priceProposalNote: "",
@@ -240,6 +243,7 @@ export function LabJobDetailsDialog({
             prohibitedDataConfirmed,
             requestedSpecimenCount,
             sourceGroups: values.sourceGroups,
+            sequencingRunCount: Number(values.sequencingRunCount) || requestedSpecimenCount,
             sourceRequestId: sourceHandoff?.requestId,
             proposedUnitPrice,
             priceProposalNote,
@@ -256,6 +260,7 @@ export function LabJobDetailsDialog({
           samples: [],
           requestedSpecimenCount,
           sourceGroups: values.sourceGroups,
+            sequencingRunCount: Number(values.sequencingRunCount) || requestedSpecimenCount,
           proposedUnitPrice,
           priceProposalNote,
         });
@@ -276,6 +281,7 @@ export function LabJobDetailsDialog({
           version,
           requestedSpecimenCount,
           sourceGroups: values.sourceGroups,
+            sequencingRunCount: Number(values.sequencingRunCount) || requestedSpecimenCount,
           proposedUnitPrice,
           priceProposalNote,
         });
@@ -359,7 +365,7 @@ export function LabJobDetailsDialog({
   );
   const proposedSubtotal =
     proposesPrice && Number.isFinite(proposedUnitPriceValue)
-      ? sourceTotal * proposedUnitPriceValue
+      ? (Number(form.watch("sequencingRunCount")) || sourceTotal) * proposedUnitPriceValue
       : null;
   const normalizedSources = normalizedBiologicalSources(watchedSourceGroups);
   const hasDuplicateSources =
@@ -443,7 +449,7 @@ export function LabJobDetailsDialog({
 
         <div className="px-5 py-4">
           <form id={formId} noValidate onSubmit={form.handleSubmit(submit)}>
-            <p className="mb-4 rounded-lg border bg-muted/30 p-3 text-sm"><strong>Tube use:</strong> Run one tube per specimen. Use a reserve only after the current attempt fails. This instruction applies to every specimen in this order.</p>
+            <p className="mb-4 rounded-lg border bg-muted/30 p-3 text-sm"><strong>Tube use:</strong> Submitted tubes and purchased runs are separate. Allocate runs after pricing; the laboratory confirms material availability for repeated runs.</p>
             {platformMode ? (
               <>
                 {sourceHandoff ? (
@@ -676,6 +682,16 @@ export function LabJobDetailsDialog({
               </div>
             </fieldset>
 
+            <div className="mt-4 space-y-1">
+              <Label htmlFor={`${formId}-sequencing-runs`}>Sample-sequencing runs</Label>
+              <Input id={`${formId}-sequencing-runs`} type="number" min={sourceTotal || 1} max={10000} step={1} inputMode="numeric"
+                placeholder={String(sourceTotal)} disabled={mutation.isPending}
+                aria-invalid={Boolean(form.formState.errors.sequencingRunCount)}
+                aria-describedby={`${formId}-sequencing-runs-help ${formId}-sequencing-runs-error`}
+                {...form.register("sequencingRunCount")} />
+              <p id={`${formId}-sequencing-runs-help`} className="text-xs text-muted-foreground">Leave blank for one run per sample. One sample sequenced 20 times is 20 runs. Allocate the purchased runs to individual samples after accepting pricing. Submitted tubes are counted separately.</p>
+              <p id={`${formId}-sequencing-runs-error`} className="text-xs text-destructive">{form.formState.errors.sequencingRunCount?.message}</p>
+            </div>
             {platformMode ? (
             <section className="mt-4 rounded-lg border p-4">
               <label
@@ -706,10 +722,10 @@ export function LabJobDetailsDialog({
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   <div>
                     <Label htmlFor={`${formId}-proposed-unit-price`}>
-                      <RequiredFieldName>Proposed price per specimen</RequiredFieldName>
+                      <RequiredFieldName>Proposed price per sample-sequencing run</RequiredFieldName>
                     </Label>
                     <FieldDescription id={`${formId}-proposed-unit-price-help`}>
-                      USD per specimen. Phaeno may approve or amend this amount.
+                      USD per sample-sequencing run. Phaeno may approve or amend this amount.
                     </FieldDescription>
                     <div className="relative mt-2">
                       <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground">$</span>
@@ -738,7 +754,7 @@ export function LabJobDetailsDialog({
                         : formatUsd(proposedSubtotal)}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {sourceTotal} specimen{sourceTotal === 1 ? "" : "s"}
+                      {Number(form.watch("sequencingRunCount")) || sourceTotal} sample-sequencing runs
                     </p>
                   </div>
                   <div className="sm:col-span-2">
@@ -925,6 +941,7 @@ function jobDetailsFormValues(
             specimenCount: order?.requestedSpecimenCount || 1,
           },
         ],
+    sequencingRunCount: order?.requestedSequencingRunCount && order.requestedSequencingRunCount !== order.requestedSpecimenCount ? String(order.requestedSequencingRunCount) : "",
     proposePrice: order?.proposedUnitPrice != null,
     proposedUnitPrice: order?.proposedUnitPrice?.toFixed(2) ?? "",
     priceProposalNote: order?.priceProposalNote ?? "",
@@ -947,6 +964,7 @@ function editableJobDetails(order: LabServiceOrder) {
     customerReference: order.customerReference,
     description: order.description ?? "",
     requestedSpecimenCount: order.requestedSpecimenCount,
+    requestedSequencingRunCount: order.requestedSequencingRunCount ?? order.requestedSpecimenCount,
     sourceGroups: order.sourceGroups
       .map((group) => ({
         biologicalSource: group.biologicalSource.trim().toLocaleLowerCase(),

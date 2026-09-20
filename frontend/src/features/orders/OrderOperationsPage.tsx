@@ -307,7 +307,7 @@ function OperationalSummary({ workflow, item }: { workflow: Workflow; item: LabS
                 <dt className="font-medium">Proposed price</dt>
                 <dd className="mt-1 text-muted-foreground">
                   {item.proposedUnitPrice != null
-                    ? `${formatMoney(item.proposedUnitPrice, item.proposedCurrency ?? 'USD')} per specimen · ${formatMoney(item.proposedUnitPrice * item.requestedSpecimenCount, item.proposedCurrency ?? 'USD')} proposed subtotal`
+                    ? `${formatMoney(item.proposedUnitPrice, item.proposedCurrency ?? 'USD')} per sample-sequencing run · ${formatMoney(item.proposedUnitPrice * (item.requestedSequencingRunCount ?? item.requestedSpecimenCount), item.proposedCurrency ?? 'USD')} proposed subtotal`
                     : 'No price proposed'}
                 </dd>
               </div>
@@ -423,7 +423,7 @@ export function CommercialControlPanel({
           open={quoteOpen}
           workflow={workflow}
           recordId={item.id}
-          defaultQuantity={workflow === 'lab' && 'requestedSpecimenCount' in item ? item.requestedSpecimenCount : undefined}
+          defaultQuantity={workflow === 'lab' && 'requestedSpecimenCount' in item ? (item.requestedSequencingRunCount ?? item.requestedSpecimenCount) : undefined}
           sourceQuote={issuedQuote}
           priceProposal={workflow === 'lab' && 'proposedUnitPrice' in item && item.proposedUnitPrice != null ? {
             unitPrice: item.proposedUnitPrice,

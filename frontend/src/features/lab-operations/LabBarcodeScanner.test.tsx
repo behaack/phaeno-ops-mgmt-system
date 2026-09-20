@@ -22,14 +22,14 @@ describe('LabBatchBarcodeScanner', () => {
     api.scanLabContainer.mockReset()
   })
 
-  it('adds a scanned QC-passed library and keeps the scanner ready', async () => {
+  it.each(['QcPassed', 'Batched', 'Complete'])('submits a scanned %s library for server eligibility checks and keeps the scanner ready', async status => {
     api.scanLabContainer.mockResolvedValue({
       labWorkOrderId: 'work-1',
       commercialOrderNumber: 'LAB-1001',
       accessionNumber: 'ACC-1',
       parentBarcode: 'PH-S-23456789AB-C',
       labLibraryId: 'library-1',
-      libraryStatus: 'QcPassed',
+      libraryStatus: status,
       container: {
         id: 'container-1',
         labSpecimenId: 'specimen-1',
@@ -88,7 +88,6 @@ describe('LabBatchBarcodeScanner', () => {
 
   it.each([
     [null, null, 'The scanned container is not a prepared library.'],
-    ['library-1', 'Batched', 'This library is already assigned to a sequencing batch. Open its preparation record to view the assignment.'],
     ['library-1', 'QcFailed', 'Only a QC-passed library can be added to a draft batch.'],
   ])('rejects scanned library %s in state %s with specific feedback', async (labLibraryId, libraryStatus, message) => {
     api.scanLabContainer.mockResolvedValue({

@@ -39,13 +39,16 @@ public static class MembershipEndpoints
 
         if (membership.IsOrganizationAdmin && !request.IsOrganizationAdmin)
         {
-            await EnsureNotLastActiveOrganizationAdminAsync(dbContext, membership, cancellationToken);
+            await EnsureNotLastActiveOrganizationAdminAsync(dbContext, membership, cancellationToken, demoting: true);
         }
 
         var previousIsOrganizationAdmin = membership.IsOrganizationAdmin;
         membership.SetOrganizationAdmin(request.IsOrganizationAdmin);
         if (previousIsOrganizationAdmin != membership.IsOrganizationAdmin)
         {
+            await CompanyAccessNotifications.QueueAsync(dbContext, membership,
+                membership.IsOrganizationAdmin ? "Your role is now Organization administrator, with access to every department."
+                    : "Your role is now Member, with access limited to your assigned departments.", cancellationToken);
             AccountAudit.Add(
                 dbContext,
                 httpContext,
@@ -104,6 +107,8 @@ public static class MembershipEndpoints
         {
             departmentMembership.Deactivate();
         }
+        await CompanyAccessNotifications.QueueAsync(dbContext, membership,
+            "Your membership in this Company has been deactivated. You no longer have access to this Company.", cancellationToken);
         AccountAudit.Add(
             dbContext,
             httpContext,
@@ -243,8 +248,21 @@ public static class MembershipEndpoints
     private static async Task EnsureNotLastActiveOrganizationAdminAsync(
         PSeqOperationsDbContext dbContext,
         OrganizationMembership membership,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool demoting = false)
     {
+        // External Companies may be department-led; never relax the last Phaeno admin guard.
+        if (membership.Organization?.IsExternalOrganization() == true
+            && await dbContext.OrganizationDepartmentMemberships.AnyAsync(access =>
+                access.Department.OrganizationId == membership.OrganizationId && access.Department.IsActive
+                && access.IsActive && access.IsDepartmentAdmin
+                && access.OrganizationMembership.OrganizationId == membership.OrganizationId
+                && access.OrganizationMembership.IsActive
+                && (demoting || access.OrganizationMembershipId != membership.Id)
+                && access.OrganizationMembership.User != null && access.OrganizationMembership.User.IsActive
+                && access.OrganizationMembership.User.Status == UserAccountStatus.Active, cancellationToken))
+            return;
+
         var activeAdminCount = await dbContext.OrganizationMemberships
             .CountAsync(
                 m => m.OrganizationId == membership.OrganizationId
@@ -254,7 +272,7 @@ public static class MembershipEndpoints
 
         if (activeAdminCount <= 1)
         {
-            throw new BadRequestException("Cannot remove or demote the last active organization admin.");
+            throw new BadRequestException("Keep an active administrator before removing this role. External Companies may use an active department administrator instead.");
         }
     }
 

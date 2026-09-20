@@ -72,6 +72,7 @@ export type LabServiceOfferingWrite = Pick<
   | 'isSynthetic'
 > & { version?: number; supportedSampleTypeIds: string[] }
 export type LabServiceCommercialSnapshot = {
+  sequencingRunCount?: number;
   offeringId: string
   familyId: string
   offeringVersion: number
@@ -92,6 +93,7 @@ export type LabServiceCommercialSnapshot = {
   committedAtUtc: string
 }
 export type StandardLabOrderPreview = {
+  sequencingRunCount?: number;
   reviewToken: string
   offering: LabServiceOffering
   specimenCount: number

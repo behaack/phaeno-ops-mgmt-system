@@ -2,9 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { captureDefaults, captureMetadata, captureSchema } from './scientific-capture'
 import type { ScientificWorkspace } from '#/api/lab-scientific-evidence'
 const data = { inputs: [] } as unknown as ScientificWorkspace
-const valid = (kind: 'sequencing' | 'analysis') => ({ ...captureDefaults(kind, undefined, data), providerKey: 'Lab', runReference: 'Run 1', start: '2025-01-01T08:00', end: '2025-01-01T09:00', libraryId: 'library', sendoutId: 'submission', mapping: 'lane-1:index-A', fileReference: 'reads.fastq:v1', checksum: 'a'.repeat(64), size: '42', qcSummary: 'Passed', metrics: [{ name: 'yield', value: '2.5', unit: 'Gb' }], inputs: [{ id: 'output', role: 'reads' }], software: [{ name: 'pipeline', version: '1', sha256: '' }], references: [{ name: 'reference', version: '1', sha256: '' }], parameters: 'b'.repeat(64) })
+const valid = (kind: 'sequencing' | 'analysis') => ({ ...captureDefaults(kind, undefined, data), providerKey: 'Lab', runReference: 'Run 1', start: '2025-01-01T08:00', end: '2025-01-01T09:00', libraryPreparationChoice: 'ExistingLibrary', libraryId: 'library', sendoutId: 'submission', mapping: 'lane-1:index-A', fileReference: 'reads.fastq:v1', checksum: 'a'.repeat(64), size: '42', qcSummary: 'Passed', metrics: [{ name: 'yield', value: '2.5', unit: 'Gb' }], inputs: [{ id: 'output', role: 'reads' }], software: [{ name: 'pipeline', version: '1', sha256: '' }], references: [{ name: 'reference', version: '1', sha256: '' }], parameters: 'b'.repeat(64) })
 describe('scientific capture', () => {
   it.each(['sequencing', 'analysis'] as const)('preserves required %s metadata and exact file attribution', kind => { const v = captureSchema.parse(valid(kind)); const m = captureMetadata(v); expect(m.runStartedAtUtc).toMatch(/Z$/); if (kind === 'analysis') expect(m.inputRoles).toEqual([{ sequencingOutputId: 'output', role: 'reads' }]); else expect(m.qcMetrics?.yield.value).toBe(2.5) })
+  it('requires an explicit library choice and a whole purchased run number', () => {
+    for (const choice of ['ExistingLibrary', 'NewPreparation']) expect(captureSchema.safeParse({ ...valid('sequencing'), libraryPreparationChoice: choice, sequencingRunNumber: '20' }).success).toBe(true)
+    for (const patch of [{ libraryPreparationChoice: '' }, { sequencingRunNumber: '0' }, { sequencingRunNumber: '1.5' }]) expect(captureSchema.safeParse({ ...valid('sequencing'), ...patch }).success).toBe(false)
+  })
   it('requires exact hashes, positive whole bytes, QC and ordered real dates', () => {
     for (const patch of [{ checksum: 'short' }, { size: '0' }, { size: '1.2' }, { metrics: [] }, { start: '2025-02-30T08:00' }, { end: '2024-01-01T08:00' }, { isCorrection: true }, { metrics: [{ name: '', value: 'NaN', unit: '' }] }]) expect(captureSchema.safeParse({ ...valid('sequencing'), ...patch }).success).toBe(false)
   })

@@ -4,6 +4,7 @@ using System.Text.Json;
 
 public static class LabTubeUsePolicy
 {
+    public const string RunAuthorizedWithFailureFallback = "run_authorized_with_failure_fallback";
     public const string RunOneWithFailureFallback = "run_one_with_failure_fallback";
     public const int Version = 1;
 }

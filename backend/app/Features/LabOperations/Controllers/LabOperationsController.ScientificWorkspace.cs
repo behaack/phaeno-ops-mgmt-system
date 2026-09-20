@@ -30,7 +30,9 @@ public sealed partial class LabOperationsController
             .Select(i => new { i.LabAnalysisRunId, i.LabSequencingOutputId }).ToListAsync(ct);
         var commercialSample = await dbContext.LabSamples.AsNoTracking().Where(s => s.Id == specimen.SubmittedSpecimenId && s.LabServiceOrderId == work.AuthorizationSourceId)
             .Select(s => new { s.Status }).SingleOrDefaultAsync(ct);
+        var allocations = await ReadSequencingRunAllocationsAsync(workOrderId, ct);
         return new { specimenId, workOrderId, specimen.AccessionNumber, libraries, outputs, analyses, inputs,
+            sequencingRunCount = allocations.GetValueOrDefault(specimen.SubmittedSpecimenId, 1),
             canRecord = actor.HasAny(LabRole.Operator, LabRole.Supervisor) && work.Status is not (LabWorkOrderStatus.OnHold or LabWorkOrderStatus.Cancelled),
             canManualUpload = actor.IsPlatformAdmin && traceabilityOptions?.Value.GovernedPSeqResults != true && commercialSample != null
                 && commercialSample.Status is PhaenoPortal.App.Features.OrderManagement.Domain.LabSampleStatus.DataProcessing or PhaenoPortal.App.Features.OrderManagement.Domain.LabSampleStatus.DataAvailable,

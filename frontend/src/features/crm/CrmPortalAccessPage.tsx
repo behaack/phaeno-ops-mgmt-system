@@ -1,6 +1,6 @@
 import { CrmProvisioningReturn } from "./CrmListNavigation";
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
+import { CrmRequestCard } from './CrmRequestCard'
 
 import {
   apiErrorMessage,
@@ -10,11 +10,11 @@ import {
   completeRelationshipRequestAccountCreation,
   decideRelationshipRequest,
   listRelationshipRequests,
+  listRelationshipRequestHistory,
   type RelationshipRequest,
 } from '#/api/organization-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
-import { Button } from '#/components/ui/button'
 import {
   Card,
   CardContent,
@@ -30,12 +30,17 @@ import {
 import { useState } from 'react'
 import { useCrmState, CrmClearFilters } from './CrmListNavigation'
 import { Tabs, TabsList, TabsTrigger } from '#/components/ui/tabs'
+import { Input } from '#/components/ui/input'
+import { Label } from '#/components/ui/label'
+import { CrmListPagination, useCrmSearch } from './CrmListNavigation'
 
 export function CrmPortalAccessPage() {
   const client = useQueryClient()
   const [storedView, setView] = useCrmState<string>('section', 'decision')
   const view = ['decision', 'work', 'history'].includes(storedView) ? storedView : 'decision'
   const [requestId] = useCrmState<string>('requestId', '')
+  const [page, setPage] = useCrmState<number>('page', 1)
+  const [draftSearch, setDraftSearch, search] = useCrmSearch()
   const organizations = useQuery({ queryKey: ['organizations', 'all'], queryFn: () => listOrganizations(true) })
   const [actionTarget, setActionTarget] = useState<{
     action: RequestAction
@@ -44,8 +49,17 @@ export function CrmPortalAccessPage() {
   const [recoveryTarget, setRecoveryTarget] =
     useState<RelationshipRequest | null>(null)
   const requests = useQuery({
-    queryKey: ['relationship-requests', 'crm-access-review'],
-    queryFn: () => listRelationshipRequests(),
+    queryKey: ['relationship-requests', 'crm-access-review', 'active'],
+    queryFn: () => listRelationshipRequests({ activeOnly: true }),
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: 'always',
+  })
+  const history = useQuery({
+    queryKey: ['relationship-requests', 'crm-access-review', 'history', search, page, requestId],
+    queryFn: () => listRelationshipRequestHistory({ search: search || undefined, page, pageSize: 25, requestId: requestId || undefined }),
+    enabled: view === 'history' || Boolean(requestId),
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: 'always',
   })
   const refresh = () =>
     Promise.all([
@@ -54,6 +68,8 @@ export function CrmPortalAccessPage() {
       client.invalidateQueries({ queryKey: ['crm-companies'] }),
       client.invalidateQueries({ queryKey: ['crm-company'] }),
       client.invalidateQueries({ queryKey: ['organizations'] }),
+      client.invalidateQueries({ queryKey: ['organization-summary'] }),
+      client.invalidateQueries({ queryKey: ['request-completion-readiness'] }),
     ])
   const action = useMutation({
     mutationFn: ({
@@ -101,10 +117,13 @@ export function CrmPortalAccessPage() {
   })
 
   const allRequests = (requests.data ?? []).filter(request => request.source === 'FirstPartyCrm')
-  const reviewQueue = allRequests.filter(request => requestId ? request.id === requestId : view === 'decision'
-    ? request.status === 'PendingReview'
-    : view === 'work' ? request.status === 'Approved' : !['PendingReview', 'Approved'].includes(request.status))
-  const error = requests.error
+  const reviewQueue = requestId
+    ? [...allRequests, ...(history.data?.items ?? [])].filter(request => request.id === requestId)
+    : view === 'history' ? history.data?.items ?? []
+    : allRequests.filter(request => request.status === (view === 'decision' ? 'PendingReview' : 'Approved'))
+  const displayedQuery = view === 'history' || requestId ? history : requests
+  const error = displayedQuery.error ?? requests.error
+
 
   return (
     <main className="page-wrap space-y-6 px-4 py-8">
@@ -130,122 +149,43 @@ export function CrmPortalAccessPage() {
         </Alert>
       ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Company requests</CardTitle><CrmClearFilters />
-          <Tabs value={view} onValueChange={setView}><TabsList className="flex flex-wrap"><TabsTrigger value="decision">Needs decision ({allRequests.filter(r => r.status === 'PendingReview').length})</TabsTrigger><TabsTrigger value="work">Approved / needs work ({allRequests.filter(r => r.status === 'Approved').length})</TabsTrigger><TabsTrigger value="history">Completed / history</TabsTrigger></TabsList></Tabs>
+      <Card className="gap-0 py-0">
+        <CardHeader className="border-b bg-muted/50 p-4">
+          <CardTitle>Company requests</CardTitle>
+          <Tabs value={view} onValueChange={setView}><TabsList aria-label="Company request views" className="grid w-full grid-cols-3"><TabsTrigger value="decision">Needs decision ({allRequests.filter(r => r.status === 'PendingReview').length})</TabsTrigger><TabsTrigger value="work">Approved / needs work ({allRequests.filter(r => r.status === 'Approved').length})</TabsTrigger><TabsTrigger value="history">Completed / history</TabsTrigger></TabsList></Tabs>
           <CardDescription>
             Requests originate from their owning Company or Opportunity. Open
             the Company for its full relationship, access, service, and user
             context.
           </CardDescription>
+          {view === 'history' ? <div className="mt-3 flex flex-wrap items-end gap-3">
+            <div className="min-w-0 flex-1 basis-60"><Label htmlFor="request-history-search">Search completed requests</Label><Input id="request-history-search" className="mt-2" value={draftSearch} onChange={event => setDraftSearch(event.target.value)} disabled={Boolean(requestId)} placeholder="Company, request number, or request details" /></div>
+            <CrmClearFilters label="Clear filter" keepVisible />
+          </div> : <CrmClearFilters />}
         </CardHeader>
-        <CardContent>
-          {requests.isLoading ? (
+        <CardContent className="p-4">
+          {displayedQuery.isLoading ? (
             <p role="status" className="text-sm text-muted-foreground">
               Loading Company requests…
             </p>
           ) : reviewQueue.length ? (
             <div className="space-y-3">
               {reviewQueue.map((request) => (
-                <div key={request.id} className="rounded-lg border p-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        {request.companyId ? (
-                          <Link
-                            to="/crm/companies/$companyId"
-                            params={{ companyId: request.companyId }}
-                            search={previous => ({ ...previous, section: 'requests' })}
-                            className="cursor-pointer font-medium underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-                          >
-                            {request.candidateOrganizationName}
-                          </Link>
-                        ) : (
-                          <span className="font-medium">
-                            {request.candidateOrganizationName}
-                          </span>
-                        )}
-                        <Badge variant="outline">{request.requestNumber}</Badge>
-                        <Badge
-                          variant={
-                            request.status === 'Approved'
-                              ? 'secondary'
-                              : 'outline'
-                          }
-                        >
-                          {request.status === 'PendingReview'
-                            ? 'Pending review'
-                            : request.status}
-                        </Badge>
-                      </div>
-                      <p className="mt-2 text-sm">{request.summary}</p>
-                      {request.decisionReason ? <p className="mt-1 text-sm text-muted-foreground">Decision: {request.decisionReason}</p> : null}
-                      {request.applicationNotes ? <p className="mt-1 text-sm text-muted-foreground">Completed work: {request.applicationNotes}</p> : null}
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {spaced(request.requestType)}{request.requestedOrganizationKind ? ` → ${request.requestedOrganizationKind}` : ''} ·{' '}
-                        {request.requestedServices.length
-                          ? request.requestedServices
-                              .map(serviceLabel)
-                              .join(', ')
-                          : 'No service change'}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {request.status === 'PendingReview' ? (
-                        <>
-                          <Button
-                            size="sm"
-                            disabled={action.isPending}
-                            onClick={() =>
-                              setActionTarget({ action: 'approve', request })
-                            }
-                          >
-                            {enablesAccess(request)
-                              ? 'Approve and enable access'
-                              : 'Approve'}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={action.isPending}
-                            onClick={() =>
-                              setActionTarget({ action: 'decline', request })
-                            }
-                          >
-                            Decline
-                          </Button>
-                        </>
-                      ) : request.status === 'Approved' && enablesAccess(request) ? (
-                        <Button
-                          size="sm"
-                          disabled={recovery.isPending}
-                          onClick={() => setRecoveryTarget(request)}
-                        >
-                          Complete access enablement
-                        </Button>
-                      ) : request.status === 'Approved' ? <Button size="sm" disabled={action.isPending} onClick={() => { action.reset(); setActionTarget({ action: 'apply', request }) }}>{request.requestType === 'RelationshipChange' ? `Apply ${request.requestedOrganizationKind} relationship` : 'Complete request'}</Button> : null}
-                      {request.companyId && request.status === 'Approved' ? <Button asChild size="sm" variant="outline"><Link to="/crm/companies/$companyId" params={{ companyId: request.companyId }} search={previous => ({ ...previous, section: request.requestType === 'Onboarding' || request.requestType === 'Evaluation' ? 'people' : 'departments' })}>Open Company setup</Link></Button> : null}
-                      {['PendingReview', 'Approved'].includes(request.status) ? <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={action.isPending}
-                        onClick={() =>
-                          setActionTarget({ action: 'cancel', request })
-                        }
-                      >
-                        Cancel
-                      </Button> : null}
-                    </div>
-                  </div>
-                </div>
+                <CrmRequestCard
+                  key={request.id}
+                  request={request}
+                  isPending={action.isPending || recovery.isPending}
+                  onAction={(nextAction, target) => { action.reset(); setActionTarget({ action: nextAction, request: target }) }}
+                  onRecover={setRecoveryTarget}
+                />
               ))}
             </div>
           ) : !error ? (
             <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">
-              No Company requests in this view.
+              {view === 'history' && search ? 'No completed requests match your search.' : 'No Company requests in this view.'}
             </p>
           ) : null}
+          {view === 'history' && !error ? <CrmListPagination result={history.data} page={history.data?.page ?? page} onPageChange={setPage} busy={history.isFetching} /> : null}
         </CardContent>
       </Card>
 
@@ -293,22 +233,4 @@ export function CrmPortalAccessPage() {
       />
     </main>
   )
-}
-
-function enablesAccess(request: RelationshipRequest) {
-  return (
-    !request.organizationId &&
-    (request.requestType === 'Onboarding' ||
-      request.requestType === 'Evaluation')
-  )
-}
-
-function serviceLabel(value: string) {
-  return value === 'PSeqLabService'
-    ? 'PSeq Lab Service'
-    : 'PSeq Kit + data assembly'
-}
-
-function spaced(value: string) {
-  return value.replace(/([a-z])([A-Z])/g, '$1 $2')
 }

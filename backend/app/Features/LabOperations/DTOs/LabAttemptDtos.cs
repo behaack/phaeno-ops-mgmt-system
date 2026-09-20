@@ -6,7 +6,7 @@ public sealed record LabAttemptCommand(Guid RequestId, long WorkOrderVersion, st
     Guid? SpecimenId = null, Guid? AttemptId = null, long? AttemptVersion = null,
     Guid? SourceContainerId = null, string? Barcode = null, Guid? StageId = null,
     string? ReasonCode = null, string? Note = null, string? NextAction = null,
-    Guid? FailedExecutionId = null, bool ConfirmMaterialExhausted = false, bool ConfirmPolicy = false, Guid? WorkflowVersionId = null);
+    Guid? FailedExecutionId = null, bool ConfirmMaterialExhausted = false, bool ConfirmPolicy = false, Guid? WorkflowVersionId = null, bool ConfirmMaterialAvailable = false);
 public sealed record LabAttemptDto(Guid Id, Guid SpecimenId, int Sequence, Guid? PreviousAttemptId,
     Guid SourceContainerId, string SourceBarcode, string State, long Version,
     DateTime? StartedAtUtc, DateTime? ClosedAtUtc, string? FailureReasonCode, string? FailureEvidence,
@@ -17,7 +17,7 @@ public sealed record LabAttemptTubeDto(Guid Id, string Barcode, string? Location
 public sealed record LabAttemptSpecimenDto(Guid Id, string Name, string? AccessionNumber,
     string IntakeDisposition, string ProcessingState, string? ReasonCode, string? Note,
     string? NextAction, int ExpectedTubes, int ReceivedTubes, int EligibleTubes,
-    IReadOnlyList<LabAttemptTubeDto> Tubes, IReadOnlyList<LabAttemptDto> Attempts, string? Blocker);
+    IReadOnlyList<LabAttemptTubeDto> Tubes, IReadOnlyList<LabAttemptDto> Attempts, string? Blocker, int SequencingRunCount = 1, int SuccessfulRunCount = 0);
 public sealed record LabAttemptStageDto(Guid Id, int Sequence, string Name, string Requirement, Guid ProtocolVersionId, Guid? WorkflowVersionId = null);
 public sealed record LabAttemptWorkspaceDto(Guid WorkOrderId, string JobName, long WorkOrderVersion,
     string? PolicyKey, string? WorkflowName, int? WorkflowVersion, bool CanOperate, bool CanAdoptPolicy,

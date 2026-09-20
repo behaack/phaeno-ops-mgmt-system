@@ -124,15 +124,8 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
                 "The shipment destination revision was not found.",
                 StatusCodes.Status409Conflict);
         var sampleTypeIds = shipment.Items.Select(item => item.SampleTypeDefinitionId).Distinct().ToList();
-        var sampleTypes = await dbContext.SampleTypeDefinitions.AsNoTracking()
-            .Where(item => sampleTypeIds.Contains(item.Id))
-            .ToListAsync(cancellationToken);
-        if (sampleTypes.Count != sampleTypeIds.Count)
-            throw new OrderManagementException(
-                "sample_type_not_found",
-                "One or more shipment sample-type revisions were not found.",
-                StatusCodes.Status409Conflict);
-        var sampleTypesById = sampleTypes.ToDictionary(item => item.Id);
+        var selected = await SampleShippingRevisionData.ReadAsync(dbContext, shipment.DestinationId, sampleTypeIds, issuedAt, cancellationToken);
+        var sampleTypesById = selected.CurrentByRequestedId;
         foreach (var shipmentItem in shipment.Items)
         {
             var sampleType = sampleTypesById[shipmentItem.SampleTypeDefinitionId];
@@ -144,19 +137,10 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
                     $"Sample '{shipmentItem.CustomerSampleId}' does not meet the selected sample-type quantity requirements.",
                     StatusCodes.Status409Conflict);
         }
-        var rules = await dbContext.SampleShippingInstructionRules.AsNoTracking()
-            .Where(item => item.DestinationId == shipment.DestinationId
-                && sampleTypeIds.Contains(item.SampleTypeDefinitionId))
-            .ToListAsync(cancellationToken);
-
         SampleShippingResolution resolution;
         try
         {
-            resolution = SampleShippingCompatibilityResolver.Resolve(
-                destination,
-                sampleTypes,
-                rules,
-                issuedAt);
+            resolution = selected.Resolve(destination, issuedAt);
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
         {
@@ -319,7 +303,7 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
             foreach (var slot in slots) rows.Add(new
             {
                 item.SubmittedSpecimenId,
-                item.SampleTypeDefinitionId,
+                sampleTypeDefinitionId = sampleTypesById[item.SampleTypeDefinitionId].Id,
                 sampleBarcode = SampleShippingIdentity.Sample(item.SubmittedSpecimenId),
                 sampleTypeName = sampleTypesById[item.SampleTypeDefinitionId].Name,
                 item.CustomerSampleId,

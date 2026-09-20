@@ -64,7 +64,7 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
 
     public void SetTubeUsePolicy(string key, int version)
     {
-        if (key != LabTubeUsePolicy.RunOneWithFailureFallback || version != LabTubeUsePolicy.Version)
+        if ((key != LabTubeUsePolicy.RunOneWithFailureFallback && key != LabTubeUsePolicy.RunAuthorizedWithFailureFallback) || version != LabTubeUsePolicy.Version)
             throw new ArgumentException("The tube-use policy is not supported.");
         if (TubeUsePolicyKey is not null && (TubeUsePolicyKey != key || TubeUsePolicyVersion != version))
             throw new InvalidOperationException("The authorized tube-use policy cannot be replaced.");
@@ -188,6 +188,8 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
             (LabWorkOrderStatus.AwaitingExternalSequencing, LabWorkOrderStatus.OnHold) => true,
             (LabWorkOrderStatus.AwaitingExternalSequencing, LabWorkOrderStatus.DataProcessing) => true,
             (LabWorkOrderStatus.DataProcessing, LabWorkOrderStatus.OnHold) => true,
+            (LabWorkOrderStatus.DataProcessing, LabWorkOrderStatus.AwaitingExternalSequencing) => TubeUsePolicyKey == LabTubeUsePolicy.RunAuthorizedWithFailureFallback,
+            (LabWorkOrderStatus.ScientificReview, LabWorkOrderStatus.AwaitingExternalSequencing) => TubeUsePolicyKey == LabTubeUsePolicy.RunAuthorizedWithFailureFallback,
             (LabWorkOrderStatus.DataProcessing, LabWorkOrderStatus.ScientificReview) => true,
             (LabWorkOrderStatus.ScientificReview, LabWorkOrderStatus.OnHold) => true,
             (LabWorkOrderStatus.ScientificReview, LabWorkOrderStatus.Processing) => true,

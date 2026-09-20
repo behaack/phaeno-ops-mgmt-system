@@ -200,3 +200,26 @@ function mount(accessOrganizationId: string | null = null) {
   render(<QueryClientProvider client={client}><CrmCompanyPeople companyId="company-1" accessOrganizationId={accessOrganizationId} /><CrmCompanySales companyId="company-1" /></QueryClientProvider>)
   return client
 }
+
+it('groups pending invitation actions and changes the badge after expiry', async () => {
+  vi.resetAllMocks()
+  permissions.canAdminister = true
+  api.listDepartments.mockResolvedValue([department])
+  api.listCrmOpportunities.mockResolvedValue({ items: [] })
+  api.listCrmCompanyPeople.mockResolvedValue([{ ...person, invitationId: 'invite-1', portalAccessState: 'InvitationPending' }])
+  api.listCompanyContacts.mockResolvedValue([{ id: person.contactAssociationId, contactId: person.contactId, isActive: true }])
+  const client = mount('organization-1')
+  await screen.findByText('Invitation pending')
+  expect(screen.queryByRole('button', { name: 'Edit relationship' })).toBeNull()
+  fireEvent.keyDown(screen.getByRole('button', { name: 'Actions for Avery Scientist' }), { key: 'ArrowDown' })
+  expect(await screen.findByRole('menuitem', { name: 'Edit relationship' })).toBeTruthy()
+  expect(screen.getByRole('menuitem', { name: 'Edit invited access' })).toBeTruthy()
+  expect(screen.getByRole('menuitem', { name: 'Resend invite' })).toBeTruthy()
+  expect(screen.getByRole('menuitem', { name: 'Revoke invite' })).toBeTruthy()
+  expect(screen.queryByRole('menuitem', { name: 'Manage access' })).toBeNull()
+  fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' })
+  api.listCrmCompanyPeople.mockResolvedValue([{ ...person, invitationId: 'invite-1', portalAccessState: 'InvitationExpired' }])
+  await act(async () => { await client.invalidateQueries({ queryKey: ['crm-company-people', 'company-1'] }) })
+  await screen.findByText('Invitation expired')
+  expect(screen.queryByText('Invitation pending')).toBeNull()
+})

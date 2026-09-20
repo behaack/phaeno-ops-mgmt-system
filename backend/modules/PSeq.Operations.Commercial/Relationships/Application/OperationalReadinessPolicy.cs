@@ -90,7 +90,7 @@ public static class OperationalReadinessPolicy
         AddIfMissing(input.HasActiveCustomerAdministrator,
             OperationalReadinessBlockerCode.ActiveCustomerAdministratorRequired,
             "Active Customer administrator",
-            "Deliver and accept an administrator invitation.", blockers);
+            "Invite an organization administrator or an administrator for the relevant department and have them accept access.", blockers);
         AddIfMissing(input.HasReadyPSeqEntitlement,
             OperationalReadinessBlockerCode.PSeqServiceEntitlementNotReady,
             "PSeq service entitlement",

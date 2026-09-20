@@ -799,6 +799,7 @@ public static class OrderManagementModelConfiguration
 
         modelBuilder.Entity<LabSample>(entity =>
         {
+            entity.Property(e => e.SequencingRunCount).HasDefaultValue(1);
             entity.ToTable("lab_samples", commercialSchema);
             entity.HasKey(e => e.Id);
             Text(entity.Property(e => e.CustomerSampleId), 255);

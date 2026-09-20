@@ -42,7 +42,7 @@ export function ReagentOrderCreatePage({ orderId }: { orderId?: string }) {
   const queryClient = useQueryClient()
   const [addressOpen, setAddressOpen] = useState(false)
   const [review, setReview] = useState<KitOrderReview | null>(null)
-  const canCommit = session?.memberships?.find(item => item.organizationId === session.selectedOrganization?.organizationId)?.isOrganizationAdmin === true
+  const canCommit = session?.capabilities.canCreateReagentOrders === true
   const canCreate = Boolean(session?.capabilities.canCreateReagentOrders)
   const apiEnabled = canCreate && authProvider !== 'mock'
   const offerings = useQuery({ queryKey: ['order-catalog', 'reagent-offerings'], queryFn: listReagentOfferings, enabled: apiEnabled })
@@ -68,7 +68,7 @@ export function ReagentOrderCreatePage({ orderId }: { orderId?: string }) {
   const placeKey = useRef<{ payload: string; key: string } | null>(null)
   const placeMutation = useMutation({
     mutationFn: async ({ values, place, reviewed }: { values: Values; place: boolean; reviewed?: KitOrderReview }) => {
-      if (place && !canCommit) throw new Error('An organization administrator must place the PSeq Kit order. Department administrators may save a draft.')
+      if (place && !canCommit) throw new Error('An organization or assigned-department administrator must place the PSeq Kit order.')
       if (place && (!values.purchaseOrderNumber || !values.shippingAddressId)) {
         if (!values.purchaseOrderNumber) form.setError('purchaseOrderNumber', { message: 'Enter a purchase order number before placing the order.' })
         if (!values.shippingAddressId) form.setError('shippingAddressId', { message: 'Select a shipping address before placing the order.' })
@@ -126,7 +126,7 @@ export function ReagentOrderCreatePage({ orderId }: { orderId?: string }) {
   }
   if (!canCreate) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Order creation unavailable</AlertTitle><AlertDescription>An active organization or Department administrator is required.</AlertDescription></Alert></main>
   return <main className="page-wrap px-4 py-8">
-    <section className="mb-6 max-w-3xl"><p className="text-sm text-muted-foreground"><Link to="/reagent-orders" search={previous => previous} className="hover:underline">PSeq Kit orders</Link> / {orderId ? 'Edit order' : 'New order'}</p><h1 className="mt-2 text-3xl font-semibold">{orderId ? 'Edit PSeq Kit order' : 'Review PSeq Kit order'}</h1><p className="mt-2 text-sm leading-6 text-muted-foreground">Select only offerings negotiated for your Partner organization. An organization administrator places the order after reviewing the included scope and price. Department administrators may prepare and save a draft.</p></section>
+    <section className="mb-6 max-w-3xl"><p className="text-sm text-muted-foreground"><Link to="/reagent-orders" search={previous => previous} className="hover:underline">PSeq Kit orders</Link> / {orderId ? 'Edit order' : 'New order'}</p><h1 className="mt-2 text-3xl font-semibold">{orderId ? 'Edit PSeq Kit order' : 'Review PSeq Kit order'}</h1><p className="mt-2 text-sm leading-6 text-muted-foreground">Select only offerings negotiated for your Partner organization. An organization or assigned-department administrator places the order after reviewing the included scope and price.</p></section>
     {offerings.error || addresses.error || existingOrder.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Order choices could not be loaded</AlertTitle><AlertDescription>Retry without leaving your draft. <Button type="button" variant="outline" onClick={() => { void offerings.refetch(); void addresses.refetch(); if (orderId) void existingOrder.refetch() }}>Retry</Button></AlertDescription></Alert> : null}
     {authProvider === 'mock' ? <Alert className="mb-5"><AlertTitle>Ordering is paused in mock-session mode</AlertTitle><AlertDescription>Connect a real Partner session to place an order.</AlertDescription></Alert> : null}
     {existingOrder.data && !existingOrder.data.canEdit ? <Alert variant="destructive" className="mb-5"><AlertTitle>Order is no longer editable</AlertTitle><AlertDescription>Return to the order to review its current status.</AlertDescription></Alert> : null}

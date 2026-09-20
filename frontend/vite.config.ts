@@ -11,6 +11,8 @@ import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 const config = defineConfig(({ command, mode }) => ({
+  // Keep the running Portal separate from standalone previews and test optimization.
+  cacheDir: `node_modules/.vite-portal-${mode}`,
   server: {
     host: '127.0.0.1',
     port: 3000,

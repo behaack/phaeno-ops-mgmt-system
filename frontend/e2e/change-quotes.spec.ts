@@ -13,7 +13,7 @@ for (const width of [320, 1440]) for (const colorScheme of ['light', 'dark'] as 
     await page.getByRole('button', { name: 'Issue Change quote' }).click()
     await page.getByLabel('Biological source', { exact: false }).fill('Mouse liver')
     await page.getByRole('spinbutton', { name: 'Additional samples', exact: true }).fill('1')
-    await page.getByLabel('Price per additional sample', { exact: false }).fill('100')
+    await page.getByLabel('Price per sample-sequencing run', { exact: false }).fill('100')
     expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([])
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await page.screenshot({ path: info.outputPath('issue-change.png'), fullPage: true })

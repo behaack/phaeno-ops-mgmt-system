@@ -12,10 +12,10 @@ import { RequiredFieldName, RequiredLegend } from '#/components/ui/required-fiel
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { normalizeBiologicalSource } from './sample-source-capacity'
 
-const blankRow = () => ({ customerSampleId: '', tubeCount: '1' })
-const schema = z.object({ rows: z.array(z.object({ customerSampleId: z.string().trim().max(255), tubeCount: z.string() })) })
+const blankRow = () => ({ customerSampleId: '', tubeCount: '1', sequencingRunCount: '1' })
+const schema = z.object({ rows: z.array(z.object({ customerSampleId: z.string().trim().max(255), tubeCount: z.string(), sequencingRunCount: z.string() })) })
 type Values = z.infer<typeof schema>
-const hasDraft = (row: Partial<Values['rows'][number]> | undefined) => Boolean(row?.customerSampleId || (row?.tubeCount !== undefined && row.tubeCount !== '1'))
+const hasDraft = (row: Partial<Values['rows'][number]> | undefined) => Boolean(row?.customerSampleId || (row?.tubeCount !== undefined && row.tubeCount !== '1') || (row?.sequencingRunCount !== undefined && row.sequencingRunCount !== '1'))
 const normalizedId = (value: string) => value.trim().toUpperCase()
 
 export function SampleIdentificationRows({ order, source, expectedCount, savedCount, disabled, onDirtyChange, onBusyChange, onSaved }: {
@@ -48,7 +48,7 @@ export function SampleIdentificationRows({ order, source, expectedCount, savedCo
         for (const [index, row] of values.rows.entries()) {
           if (!row.customerSampleId) continue
           current = await addLabSample(order.id, { customerSampleId: row.customerSampleId, biologicalSource: source,
-            tubeCount: Number(row.tubeCount), orderVersion: current.version })
+            tubeCount: Number(row.tubeCount), sequencingRunCount: Number(row.sequencingRunCount), orderVersion: current.version })
           savedIndexes.add(index)
         }
       } catch (error) {
@@ -59,10 +59,10 @@ export function SampleIdentificationRows({ order, source, expectedCount, savedCo
           if (current.samples.some(sample => !knownSamples.has(sample.id)
             && normalizedId(sample.customerSampleId) === normalizedId(row.customerSampleId)
             && normalizeBiologicalSource(sample.biologicalSource) === normalizeBiologicalSource(source)
-            && sample.quantity === Number(row.tubeCount))) savedIndexes.add(index)
+            && sample.quantity === Number(row.tubeCount) && (sample.sequencingRunCount ?? 1) === Number(row.sequencingRunCount))) savedIndexes.add(index)
         })
       }
-      const retained = values.rows.filter((row, index) => !savedIndexes.has(index) && (row.customerSampleId || row.tubeCount !== '1'))
+      const retained = values.rows.filter((row, index) => !savedIndexes.has(index) && hasDraft(row))
       const currentSource = current.sourceGroups.find(group => normalizeBiologicalSource(group.biologicalSource) === normalizeBiologicalSource(source))
       const slots = Math.max(0, (currentSource?.specimenCount ?? expectedCount)
         - current.samples.filter(sample => normalizeBiologicalSource(sample.biologicalSource) === normalizeBiologicalSource(source)).length)
@@ -77,12 +77,17 @@ export function SampleIdentificationRows({ order, source, expectedCount, savedCo
     if (busy.current || disabled || authProvider === 'mock' || !order.canEditSamples) return
     const ids = new Set(order.samples.map(sample => normalizedId(sample.customerSampleId)))
     let invalid = false
-    let firstError: `rows.${number}.customerSampleId` | `rows.${number}.tubeCount` | undefined
+    let firstError: `rows.${number}.customerSampleId` | `rows.${number}.tubeCount` | `rows.${number}.sequencingRunCount` | undefined
     for (const [index, row] of values.rows.entries()) {
       if (!row.customerSampleId) continue
       const duplicate = ids.has(normalizedId(row.customerSampleId))
       ids.add(normalizedId(row.customerSampleId))
       const invalidTubes = !/^\d+$/.test(row.tubeCount) || !Number.isSafeInteger(Number(row.tubeCount)) || Number(row.tubeCount) < 1
+      const invalidRuns = !/^\d+$/.test(row.sequencingRunCount) || Number(row.sequencingRunCount) < 1 || Number(row.sequencingRunCount) > 10000
+      if (invalidRuns) {
+        const key = `rows.${index}.sequencingRunCount` as const
+        form.setError(key, { message: 'Enter a whole number from 1 to 10,000.' }); firstError ??= key; invalid = true
+      }
       if (duplicate || invalidTubes) {
         const field = `rows.${index}.${duplicate ? 'customerSampleId' : 'tubeCount'}` as const
         form.setError(field, { message: duplicate ? 'Use a unique sample ID within this Job.' : 'Enter a whole number of at least one tube.' })
@@ -99,12 +104,13 @@ export function SampleIdentificationRows({ order, source, expectedCount, savedCo
   if (!rowCount) return null
   return <form aria-label={`Identify ${source} samples`} noValidate className="space-y-3 px-3 py-3"
     onChange={() => onDirtyChange(form.getValues('rows').some(hasDraft))} onSubmit={form.handleSubmit(submit)}>
-    <p className="text-xs text-muted-foreground">Enter a unique ID for each sample. One tube per sample is prefilled; change it if you have reserve tubes. Do not enter patient names or identifiers.</p>
+    <p className="text-xs text-muted-foreground">Enter a unique ID for each sample. One tube and one sequencing run per sample are prefilled. Allocate the purchased runs independently of submitted tubes. Do not enter patient names or identifiers.</p>
     {Array.from({ length: rowCount }, (_, index) => {
       const idError = form.formState.errors.rows?.[index]?.customerSampleId?.message
       const tubeError = form.formState.errors.rows?.[index]?.tubeCount?.message
+      const runError = form.formState.errors.rows?.[index]?.sequencingRunCount?.message
       const id = `${prefix}-${index}`
-      return <div key={index} className="grid grid-cols-[2rem_minmax(0,1fr)_5rem] items-start gap-3 border-b pb-3 last:border-0">
+      return <div key={index} className="grid grid-cols-[2rem_minmax(0,1fr)] sm:grid-cols-[2rem_minmax(0,1fr)_5rem_6rem] items-start gap-3 border-b pb-3 last:border-0">
         <span className="pt-7 text-sm text-muted-foreground" aria-label={`Sample ${savedCount + index + 1}`}>{savedCount + index + 1}</span>
         <div className="space-y-1"><Label htmlFor={`${id}-sample`}><RequiredFieldName>Sample ID</RequiredFieldName></Label>
           <Input id={`${id}-sample`} aria-label={`Sample ID ${savedCount + index + 1} for ${source}`} maxLength={255} defaultValue="" aria-required="true"
@@ -116,6 +122,10 @@ export function SampleIdentificationRows({ order, source, expectedCount, savedCo
             disabled={disabled || save.isPending} aria-invalid={Boolean(tubeError)} aria-describedby={tubeError ? `${id}-tube-error` : undefined}
             {...form.register(`rows.${index}.tubeCount`)} />
           {tubeError ? <p id={`${id}-tube-error`} className="text-xs text-destructive">{tubeError}</p> : null}</div>
+        <div className="space-y-1"><Label htmlFor={`${id}-runs`}><RequiredFieldName>Runs</RequiredFieldName></Label>
+          <Input id={`${id}-runs`} aria-label={`Sequencing runs ${savedCount + index + 1} for ${source}`} type="number" min={1} max={10000} step={1} defaultValue="1" aria-required="true"
+            disabled={disabled || save.isPending} aria-invalid={Boolean(runError)} aria-describedby={runError ? `${id}-run-error` : undefined} {...form.register(`rows.${index}.sequencingRunCount`)} />
+          {runError ? <p id={`${id}-run-error`} className="text-xs text-destructive">{runError}</p> : null}</div>
       </div>
     })}
     {entered > capacity ? <p role="alert" className="text-sm text-destructive">The accepted scope has room for {capacity} more samples. Review these entries before saving.</p> : null}

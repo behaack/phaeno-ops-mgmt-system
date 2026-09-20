@@ -57,7 +57,7 @@ describe("PlatformQuoteDialog", () => {
     expect(screen.queryByText("pseq-lab-service")).toBeNull();
     expect(
       screen.getByText(
-        "Priced per specimen · quantity set from the committed specimen count",
+        "Priced per sample-sequencing run · quantity set from the requested sample-sequencing run count",
       ),
     ).toBeTruthy();
     expect(screen.getByLabelText(/Quantity/)).toHaveProperty("value", "3");

@@ -352,8 +352,24 @@ public sealed partial class LabOperationsController
             cancellationToken))
             throw Conflict("batch_member_duplicate", "This library is already in the selected batch.");
         await RequireLibraryAttemptAsync(library, cancellationToken);
+        var libraryContainer = await dbContext.LabContainers.SingleAsync(c => c.Id == library.LibraryContainerId, cancellationToken);
+        if (libraryContainer.Status != LabContainerStatus.Available)
+            throw Conflict("library_material_unavailable", "Confirm the library's physical availability before adding it to a sequencing batch.");
+        dbContext.Entry(libraryContainer).Property(c => c.UpdatedAt).IsModified = true;
         if (library.Status != LabLibraryStatus.QcPassed)
-            throw Conflict("library_qc_required", "Only a QC-passed library can be batched.");
+        {
+            var specimen = await RequireSpecimenAsync(library.LabWorkOrderId, library.LabSpecimenId, cancellationToken);
+            var required = (await ReadSequencingRunAllocationsAsync(library.LabWorkOrderId, cancellationToken)).GetValueOrDefault(specimen.SubmittedSpecimenId, 1);
+            var approved = (await new LabSequencingRunProgress(dbContext).ApprovedCountsAsync(library.LabWorkOrderId, cancellationToken)).GetValueOrDefault(specimen.SubmittedSpecimenId);
+            if (library.Status is not (LabLibraryStatus.Batched or LabLibraryStatus.Complete or LabLibraryStatus.SentForSequencing)
+                || required <= 1 || approved >= required)
+                throw Conflict("library_qc_required", "Use a QC-passed library with outstanding authorized sequencing runs.");
+            if (await (from member in dbContext.LabBatchMembers join previousBatch in dbContext.LabOperationalBatches on member.LabOperationalBatchId equals previousBatch.Id
+                where member.LabLibraryId == library.Id && previousBatch.Status != LabBatchStatus.Complete select member.Id).AnyAsync(cancellationToken)
+                || await (from member in dbContext.LabBatchMembers join sendout in dbContext.LabNgsSendouts on member.LabOperationalBatchId equals sendout.LabOperationalBatchId
+                where member.LabLibraryId == library.Id && sendout.Status != LabNgsSendoutStatus.Complete select sendout.Id).AnyAsync(cancellationToken))
+                throw Conflict("library_sequencing_active", "Complete this library's previous sequencing batch and sendout before reusing it in another batch.");
+        }
         dbContext.LabBatchMembers.Add(new LabBatchMember(batch.Id, request.LabWorkOrderId, library.Id, DateTime.UtcNow));
         library.SetStatus(LabLibraryStatus.Batched);
         await dbContext.SaveChangesAsync(cancellationToken);

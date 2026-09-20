@@ -121,10 +121,7 @@ export function LabBatchBarcodeScanner({
       if (!scanned.labLibraryId) {
         throw new Error('The scanned container is not a prepared library.')
       }
-      if (scanned.libraryStatus === 'Batched') {
-        throw new Error('This library is already assigned to a sequencing batch. Open its preparation record to view the assignment.')
-      }
-      if (scanned.libraryStatus !== 'QcPassed') {
+      if (!['QcPassed', 'Batched', 'Complete', 'SentForSequencing'].includes(scanned.libraryStatus ?? '')) {
         throw new Error('Only a QC-passed library can be added to a draft batch.')
       }
       await addLabBatchMember(batchId, {

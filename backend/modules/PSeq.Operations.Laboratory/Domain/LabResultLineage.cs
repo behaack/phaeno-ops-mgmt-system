@@ -3,6 +3,8 @@ namespace PSeq.Operations.Laboratory.Domain;
 /// <summary>Immutable identity of one sample's actual sequencing output, not a transfer acknowledgement.</summary>
 public sealed class LabSequencingOutput
 {
+    public int? SequencingRunNumber { get; private set; }
+    public string? LibraryPreparationChoice { get; private set; }
     public string? ScientificEvidenceJson { get; private set; }
     public Guid Id { get; private set; }
     public Guid LabWorkOrderId { get; private set; }
@@ -31,8 +33,11 @@ public sealed class LabSequencingOutput
     public LabSequencingOutput(Guid id, Guid workId, Guid specimenId, Guid attemptId, Guid sourceId,
         Guid libraryId, Guid sendoutId, string providerKey, string runReference, string mappingReference,
         string fileReference, string sha256, long sizeBytes, Guid? correctsId, string? reason,
-        string snapshotJson, string requestSha256, Guid? actorId, string source, DateTime now, LabScientificEvidence? scientificEvidence = null)
+        string snapshotJson, string requestSha256, Guid? actorId, string source, DateTime now, LabScientificEvidence? scientificEvidence = null, int? sequencingRunNumber = null, string? libraryPreparationChoice = null)
     {
+        if (sequencingRunNumber is < 1 || libraryPreparationChoice is not (null or "NewPreparation" or "ExistingLibrary"))
+            throw new ArgumentException("Choose a positive purchased run number and a supported library preparation choice.");
+        SequencingRunNumber = sequencingRunNumber; LibraryPreparationChoice = libraryPreparationChoice;
         if (new[] { id, workId, specimenId, attemptId, sourceId, libraryId, sendoutId }.Contains(Guid.Empty) || sizeBytes < 1)
             throw new ArgumentException("Output identity, complete tube lineage, and positive file size are required.");
         LabLineageText.RequireCorrection(correctsId, reason);

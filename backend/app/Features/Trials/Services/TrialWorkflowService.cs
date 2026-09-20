@@ -118,14 +118,14 @@ public sealed class TrialWorkflowService(PSeqOperationsDbContext db, ILabOperati
     }
     public void Accept(TrialProject trial, TrialActor actor, TrialAcceptRequest request)
     {
-        RequireTenantAdmin(actor); Version(trial.Version, request.Version);
+        RequireTenantAdmin(actor, trial); Version(trial.Version, request.Version);
         trial.Accept(request.ScopeRevision, request.TermsVersion, request.RuoNoPhiConfirmed, actor.User.Id, DateTime.UtcNow);
-        Record(trial, actor, "Accepted", $"The organization administrator accepted scope revision {request.ScopeRevision} and its RUO/no-PHI terms.", request);
+        Record(trial, actor, "Accepted", $"The organization or assigned-department administrator accepted scope revision {request.ScopeRevision} and its RUO/no-PHI terms.", request);
     }
 
     public async Task SubmitAsync(TrialProject trial, TrialActor actor, TrialSubmitRequest request, CancellationToken token)
     {
-        RequireTenantAdmin(actor); Version(trial.Version, request.Version);
+        RequireTenantAdmin(actor, trial); Version(trial.Version, request.Version);
         if (!request.RuoNoPhiConfirmed) throw Error("trial_confirmation_required", "Confirm that the samples and entered information are RUO and contain no PHI.");
         if (request.Samples is null || request.Samples.Count is < 1 or > 100) throw Error("trial_samples_invalid", "Submit between 1 and 100 samples per batch, within the approved allowance.");
         var now = DateTime.UtcNow;
@@ -136,7 +136,7 @@ public sealed class TrialWorkflowService(PSeqOperationsDbContext db, ILabOperati
             && value.EffectiveFrom <= now && (value.EffectiveTo == null || value.EffectiveTo > now), token) ?? throw Error("trial_sample_type_unavailable", "Choose an active extracted-RNA sample type.");
         if (!string.Equals(sampleType.MaterialClass.Replace(" ", "").Replace("-", "").Replace("_", ""), "extractedrna", StringComparison.OrdinalIgnoreCase))
             throw Error("trial_material_invalid", "Initial Trials accept extracted RNA only.");
-        if (!await db.SampleShippingInstructionRules.AnyAsync(value => value.SampleTypeDefinitionId == sampleType.Id && value.DestinationId == destination.Id
+        if (!await db.SampleShippingInstructionRules.AnyAsync(value => db.SampleTypeDefinitions.Any(anchor => anchor.Id == value.SampleTypeDefinitionId && anchor.DefinitionKey == sampleType.DefinitionKey) && value.DestinationId == destination.Id
             && value.IsActive && value.EffectiveFrom <= now && (value.EffectiveTo == null || value.EffectiveTo > now), token))
             throw Error("trial_shipping_instructions_unavailable", "Phaeno must configure approved instructions for this sample type and destination.");
         var values = trial.CurrentScope().Read(); var samples = new List<TrialSample>();

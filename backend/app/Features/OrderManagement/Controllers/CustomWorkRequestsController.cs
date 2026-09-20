@@ -23,7 +23,7 @@ public sealed class CustomWorkRequestsController(
         [FromBody] CreateCustomWorkRequest request, CancellationToken cancellationToken)
     {
         var tenant = await RequireSelectedTenantAsync(request.Service, cancellationToken);
-        CustomWorkRequestService.RequireOrganizationAdministrator(tenant);
+        CustomWorkRequestService.RequireDepartmentAdministrator(tenant);
         var normalized = CustomWorkRequestService.Normalize(request, tenant.Organization.Kind);
         var result = await idempotency.ExecuteAsync(tenant.Actor.Id, "order-catalog:custom-work",
             idempotency.RequireKey(HttpContext),
@@ -34,7 +34,7 @@ public sealed class CustomWorkRequestsController(
                 // check also protects idempotent replays after access is withdrawn.
                 dbContext.ChangeTracker.Clear();
                 var current = await RequireSelectedTenantAsync(normalized.Service, token);
-                CustomWorkRequestService.RequireOrganizationAdministrator(current);
+                CustomWorkRequestService.RequireDepartmentAdministrator(current);
                 return await service.CreateAsync(current, normalized, token);
             },
             StatusCodes.Status201Created, cancellationToken,

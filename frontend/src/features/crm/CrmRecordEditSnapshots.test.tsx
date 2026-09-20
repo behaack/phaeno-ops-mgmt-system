@@ -53,7 +53,7 @@ describe('CRM reviewed record snapshots', () => {
     vi.mocked(api.updateCrmCompany).mockRejectedValueOnce({ isAxiosError: true, response: { status: 409 } })
       .mockResolvedValueOnce({ ...current, name: 'Retained draft' })
     mount(<CrmCompanyDetailPage companyId={company.id} />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }))
+    await selectCompanyAction('Edit')
     fireEvent.change(screen.getByLabelText(/Company name/), { target: { value: 'Retained draft' } })
     vi.mocked(api.getCrmCompany).mockRejectedValueOnce(new Error('Temporary read failure')).mockResolvedValue(current)
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
@@ -73,7 +73,7 @@ describe('CRM reviewed record snapshots', () => {
   it('preserves Company draft fields and its reviewed version through refresh and failed save, then captures a fresh snapshot on reopen', async () => {
     vi.mocked(api.updateCrmCompany).mockRejectedValue(new Error('Company changed'))
     const client = mount(<CrmCompanyDetailPage companyId={company.id} />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit' }))
+    await selectCompanyAction('Edit')
     fireEvent.change(screen.getByLabelText(/Company name/), { target: { value: 'Keep drafted Company name' } })
     act(() => client.setQueryData(['crm-company', company.id], { ...company, name: 'Refreshed Company', websiteUrl: 'https://refreshed.example', version: 2 }))
     expect(screen.getByLabelText(/Company name/)).toHaveProperty('value', 'Keep drafted Company name')
@@ -83,7 +83,7 @@ describe('CRM reviewed record snapshots', () => {
     await screen.findByText('Company changed')
     expect(screen.getByLabelText(/Company name/)).toHaveProperty('value', 'Keep drafted Company name')
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    await selectCompanyAction('Edit')
     expect(screen.getByLabelText(/Company name/)).toHaveProperty('value', 'Refreshed Company')
     expect(screen.getByLabelText('Website')).toHaveProperty('value', 'https://refreshed.example')
   })
@@ -112,7 +112,7 @@ describe('CRM reviewed record snapshots', () => {
   it('keeps Company deactivation tied to the name, action, and version reviewed at confirmation-open', async () => {
     vi.mocked(api.setCrmCompanyActive).mockRejectedValue(new Error('Company changed'))
     const client = mount(<CrmCompanyDetailPage companyId={company.id} />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Deactivate' }))
+    await selectCompanyAction('Deactivate')
     act(() => client.setQueryData(['crm-company', company.id], { ...company, name: 'Refreshed Company', isActive: false, version: 2 }))
     const dialog = within(screen.getByRole('dialog', { name: 'Deactivate company' }))
     expect(dialog.getByText(/Deactivate Reviewed Research Company/)).toBeTruthy()
@@ -123,7 +123,7 @@ describe('CRM reviewed record snapshots', () => {
   it('keeps Company ownership reassignment tied to the reviewed owner and version', async () => {
     vi.mocked(api.assignCrmCompanyOwner).mockRejectedValue(new Error('Company changed'))
     const client = mount(<CrmCompanyDetailPage companyId={company.id} />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Change owner' }))
+    await selectCompanyAction('Change owner')
     fireEvent.change(screen.getByRole('textbox', { name: 'Owner' }), { target: { value: 'owner-2' } })
     act(() => client.setQueryData(['crm-company', company.id], { ...company, ownerUserId: 'owner-3', ownerName: 'Refreshed owner', version: 2 }))
     const dialog = within(screen.getByRole('dialog', { name: 'Change Company owner' }))
@@ -134,3 +134,9 @@ describe('CRM reviewed record snapshots', () => {
     expect(screen.getByRole('textbox', { name: 'Owner' })).toHaveProperty('value', 'owner-2')
   })
 })
+
+async function selectCompanyAction(name: string) {
+  fireEvent.keyDown(await screen.findByRole('button', { name: /^Actions for/ }), { key: 'ArrowDown' })
+  fireEvent.click(await screen.findByRole('menuitem', { name }))
+  await screen.findByRole('dialog')
+}
