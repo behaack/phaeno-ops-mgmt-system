@@ -1,5 +1,11 @@
 # Operations and production-readiness boundary
 
+## Company workflows and repeated sequencing — deployed September 19, 2026
+
+The [release record](operations/repeated-sequencing-release-20260919.md) records the latest matching API/Portal source, `268ba93dbacd66b93c3f9f7f434bd2bf8e76d7e9`. All three explicitly approved EF migrations are applied above the rebased baseline. One prepared library can supply multiple purchased runs with explicit preparation choice and preserved run lineage; pricing, approval and delivery count purchased allocations rather than preparation/file counts. Company access/readiness, completed-request search/pagination and shipping/settings improvements are included.
+
+All 958 backend cases have passing evidence (957 in the full Windows run, one Unix fixture separately), 1,094 frontend tests pass, and 176 applicable browser cases have passing full-run/focused evidence. The production backup was restore-verified and encrypted recovery envelopes were copied off-server with matching checksums. API health, database access, scanner health and fresh Portal sign-in rendering pass. Prior scientific enforcement and disabled bootstrap configuration remain intact. Authenticated hosted workflow, real provider and physical/scientific acceptance are separate boundaries.
+
 ## Evidence governance and result-to-tube capture — deployed September 19, 2026
 
 The owner approved indefinite internal evidence preservation, a mandatory scientific minimum and independent Supervisor review of on-behalf entry/performer-time changes. These requirements and the [result-to-tube capture contract](plans/LAB-RESULT-LINEAGE-CONTRACT.md) are now deployed on matching API/Portal source `9ca9820014af07aa7280bd57a73cb66f5ff6044b`. Both `RequireScientificEvidence` and `RequireResultTraceability` are explicitly enabled in production. The owner classified prior operational records as test data, approved no backfill, and required enforcement for subsequent approvals/releases.

@@ -8,7 +8,7 @@ One preparation can supply several purchased sample-sequencing runs. Each output
 
 ## Database review
 
-Production application of these three migrations requires explicit approval under [AGENTS.md](../../AGENTS.md). They are applied only to verified localhost development and the separate release-verification database at this checkpoint:
+The owner explicitly approved production EF updates after reviewing this release. The following three migrations are now applied to production as well as verified localhost development and the separate release-verification database:
 
 1. `20260919231447_AddSampleSequencingRuns`: optional order run count; sample allocation defaults to one.
 2. `20260920022358_AddSequencingRunLineage`: optional output run number and preparation choice; specimen/run lookup index. Historical records retain unspecified preparation choice and count as run one.
@@ -34,9 +34,24 @@ The Portal Vercel project is `phaeno-ops-mgmt-system`, ID `prj_wbE9S9mT46sJxlM3e
 - Unix-only linked-directory protection: passed in a network-disabled, read-only Linux container with no production data mounted. Windows skips this test because its symlink fixture requires separate host privileges.
 - Documentation corpus (`6edf2a542e36`), EF pending-model and whitespace checks pass. Release identity is verified when publishing.
 
-Browser and database fixtures simulate authentication, provider responses and scientific records. These results do not establish real bench work, physical material sufficiency, provider delivery, production sign-in acceptance or final scientific/business approval. Production migration and deployment are not yet performed.
+Browser and database fixtures simulate authentication, provider responses and scientific records. These results do not establish real bench work, physical material sufficiency, provider delivery, production sign-in acceptance or final scientific/business approval. Production activation completed as recorded below; signed-in hosted workflow acceptance remains separate.
 
 
 ## Activation preparation correction
 
 The first activation attempt stopped before the backup/migrations because the scanner startup/configuration files were exported with CRLF by Windows Git archive. The tracked blobs contained LF, but `.gitattributes` did not cover the nested scanner directory. The API stayed healthy on its previous image. The mounted scanner files were normalized and the scanner restarted; the release now enforces LF for every scanner configuration/script in Git exports. Application code and the three reviewed migrations are unchanged. Activation resumes from a new exact commit containing this packaging correction.
+
+
+## Completed production activation
+
+The owner approved the EF updates in this task. The matching API and Portal source is `268ba93dbacd66b93c3f9f7f434bd2bf8e76d7e9`; it contains tested application commit `3c8e65be01dc4a5db4c12d0cd1767096a411f334` plus the scanner archive-format correction.
+
+- API activation completed at **2026-09-20 03:25:01 UTC**. Image: `phaeno-portal-green-api:sha-268ba93dbacd-manual-20260920`; actual image ID: `sha256:6a51fb8696b08235367339b8af51dc2a515b3d4cfde427003ee5227bbc375658`.
+- Production migration history contains the baseline and all three reviewed migrations, ending in `20260920023907_AllowRepeatedLibraryPreparation`.
+- The API and scanner are healthy. The intentionally blank bootstrap email remains blank. Authentication, scientific enforcement, and storage/scanning configuration were preserved. Public Website intake counts remained unchanged by deployment probes.
+- Vercel Production deployment `dpl_9QutCTrURqqgfmkJyhBxUghCdtjQ` is Ready, reports the same source SHA, and owns `portal.phaenobiotech.com`.
+- Public API health returned HTTP 200, database ping HTTP 204, and Portal root HTTP 200. A fresh Edge reload rendered the production sign-in form; captured browser error logs were empty. No signed-in production session was available, so this is sign-in rendering and release-health evidence, not authenticated workflow acceptance.
+- Pre-migration backup: `pre-migration-20260920T032442Z-268ba93dbacd`. The actual backup restore and cleanup checks passed before migration. Encrypted database/key envelopes and their checksum receipt were copied to the ignored local `artifacts/repeated-sequencing-release-20260919` directory and both envelope hashes matched. No plaintext recovery data or private key was transferred to source control.
+- The exported scanner directory passed an LF-only check for all four files, and all three scanner shell scripts passed shell syntax validation. No application-code or migration changes were needed after the full passing test checkpoint.
+
+This closes the requested documentation, tests, commit, push, EF update and deployment work. Real provider, physical laboratory and final scientific/business acceptance remain the previously documented external boundaries.
