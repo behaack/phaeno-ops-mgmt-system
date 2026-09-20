@@ -28,7 +28,7 @@ public sealed partial class PSeqOperationsDbContext
         if (ChangeTracker.Entries<LabAnalysisInput>().Any(e => e.State == EntityState.Added && !newRuns.Contains(e.Entity.LabAnalysisRunId)))
             throw new InvalidOperationException("Analysis inputs must be saved atomically with a new analysis run. Record reanalysis to change the input set.");
         if (ChangeTracker.Entries().Any(e => e.State is EntityState.Modified or EntityState.Deleted
-            && e.Entity is LabSequencingOutput or LabAnalysisRun or LabAnalysisInput
+            && e.Entity is LabScientificFile or LabSequencingOutput or LabAnalysisRun or LabAnalysisInput
                 or LabMaterialConsumption or LabEquipmentUsage or LabCustodyEvent or LabInvestigationReport
                 or LabPerformanceProposal or LabPerformanceDecision or LabPreparationRecord))
             throw new InvalidOperationException("Recorded lineage, resource use and custody evidence cannot be overwritten or deleted. Record a linked correction instead.");

@@ -10,6 +10,17 @@ internal static class LabResultLineageModelConfiguration
 {
     public static void Configure(ModelBuilder modelBuilder, string schema)
     {
+        modelBuilder.Entity<LabScientificFile>(e =>
+        {
+            e.ToTable("lab_scientific_files", schema); e.HasKey(x => x.Id);
+            e.Property(x => x.FileName).HasMaxLength(255).IsRequired();
+            e.Property(x => x.StorageKey).HasMaxLength(1000).IsRequired();
+            e.Property(x => x.Sha256).HasMaxLength(64).IsRequired();
+            e.HasIndex(x => x.StorageKey).IsUnique();
+            e.HasIndex(x => new { x.LabWorkOrderId, x.LabSpecimenId, x.RecordedAtUtc });
+            e.HasOne<LabWorkOrder>().WithMany().HasForeignKey(x => x.LabWorkOrderId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<LabSpecimen>().WithMany().HasForeignKey(x => x.LabSpecimenId).OnDelete(DeleteBehavior.Restrict);
+        });
         modelBuilder.Entity<LabPerformanceProposal>(e =>
         {
             e.ToTable("lab_performance_proposals", schema); e.HasKey(x => x.Id);
@@ -104,7 +115,7 @@ internal static class LabResultLineageModelConfiguration
         modelBuilder.Entity<ResultArtifact>().Property(x => x.ResultLocator).HasMaxLength(1000);
         modelBuilder.Entity<LabMaterialConsumption>().Property(x => x.ResourceSnapshotJson).HasColumnType("jsonb");
         modelBuilder.Entity<LabEquipmentUsage>().Property(x => x.ResourceSnapshotJson).HasColumnType("jsonb");
-        foreach (var type in new[] { typeof(LabSequencingOutput), typeof(LabAnalysisRun), typeof(LabAnalysisInput), typeof(LabInvestigationReport), typeof(LabPerformanceProposal), typeof(LabPerformanceDecision) })
+        foreach (var type in new[] { typeof(LabScientificFile), typeof(LabSequencingOutput), typeof(LabAnalysisRun), typeof(LabAnalysisInput), typeof(LabInvestigationReport), typeof(LabPerformanceProposal), typeof(LabPerformanceDecision) })
             foreach (var property in modelBuilder.Entity(type).Metadata.GetProperties())
                 property.SetAfterSaveBehavior(PropertySaveBehavior.Throw);
         foreach (var type in new[] { typeof(ResultOutputPackage), typeof(LabResultRelease) })

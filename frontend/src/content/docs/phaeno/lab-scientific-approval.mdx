@@ -22,6 +22,18 @@ Scientific evidence requirements apply before new approvals and releases, includ
 
 Missing evidence or pending performer/time review blocks approval and release. A rejected on-behalf entry remains unverified until corrected and independently approved. Review those proposals under **Performer and time reviews**. Recorded coverage still requires your scientific judgment. Historical analyses without a saved requirements profile remain readable; their evidence is not invented or automatically backfilled. Capture the required evidence and create an attributed replacement before approving or releasing an incomplete older result.
 
+## Upload scientific files
+
+In **Record sequencing output**, select the sequencing file under **File and sample mapping**. POMS uploads and scans the actual file, verifies the stored bytes, and records its fingerprint, size and immutable file identity automatically. Continue selecting the library, submission, purchased run and exact sample/index/lane mapping that produced the file.
+
+Use **Add document** for QC reports and other supporting evidence. Specify what the document represents, then select its file. For analysis settings, upload the configuration file actually used. Software and reference names and versions still describe the scientific process; they are not inferred from file contents.
+
+The picker shows the configured maximum size. Wait for uploading, verification and scanning to finish before saving evidence. A rejected upload leaves the previous selection unchanged. Files larger than the limit require an approved larger-file import workflow; entering an external reference is not a substitute in this form.
+
+Open the saved scientific record to download its managed files. POMS checks their saved fingerprint and size before returning bytes. Corrections preserve the original record and file; upload a replacement when the file changes. Uploaded files are retained as internal evidence, including uploads made before cancelling an unsaved evidence form, independently of Customer download expiry.
+
+Historical references remain visible and are explicitly labelled **Not stored in POMS**. They are not automatically imported or verified. Upload the original file when recording an attributed correction. A retained historical settings fingerprint also does not establish file custody.
+
 ## Record the approval
 
 Choose **Record scientific approval**, then select the complete output package by Customer sample, version, and file count. Review its file names and manifest checksum. POMS uses the service workflow for the release definition and records the reviewer and approval time. Enter an optional Customer-visible QC summary using ordinary text. Approval pins that immutable package; it does not upload or alter artifacts.

@@ -1,5 +1,9 @@
 # Frontend Test Plan
 
+## Managed scientific uploads — September 19, 2026
+
+Added ScientificFilePicker.test.tsx for server-generated metadata, no manual reference fields, invalid-size rejection and retaining the prior file after failed replacement. Sources added; not executed (tests remain request-only). See [plan](LAB-MANAGED-SCIENTIFIC-FILES-PLAN.md).
+
 ## Company request history search and pagination — September 19, 2026
 
 Owner limited this change to Completed / history. Add a read-only, platform-admin history endpoint with database filtering by company name, request number, summary, decision and completion notes; case-insensitive literal matching, newest-updated ordering with ID tie-breaker, 25-row pages, bounded page sizes and stale-page clamping. The active queues remain unpaginated and load only active requests; legacy API callers retain their existing response. History search/page stay in CRM route state; searching resets page, direct request links retain their exact target, and only history shows the search/paginator. No schema, permission or migration changes. Regression sources cover authorization, page boundaries, global search, empty matches, pinned requests and active/history separation. Automated suites remain request-only.

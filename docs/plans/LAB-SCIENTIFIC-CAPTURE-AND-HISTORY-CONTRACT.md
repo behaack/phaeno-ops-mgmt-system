@@ -23,3 +23,7 @@ Reuse existing tables and capture guards; add scoped read endpoints and frontend
 - Internal report generation includes these projections in its existing repeatable-read snapshot. Later hold releases or delivery changes cannot rewrite an earlier report.
 
 No new migration was needed. Phaeno user guides, reviewed dates, search corpus and the owning plans are updated. Local tests use synthetic records; no production rollout or real producer/bench acceptance is claimed. The subsequent September 19 decision approves immediate enforcement with no backfill or grandfathered future approval/release; the [governance contract](LAB-EVIDENCE-GOVERNANCE-CONTRACT.md) records the now-enabled defaults and current-policy checks.
+
+## Managed-file follow-up
+
+The approved [managed scientific files change](LAB-MANAGED-SCIENTIFIC-FILES-PLAN.md) replaces staff file-reference/hash/size entry with private uploads, automatic verified metadata and scoped retrieval. Its additive file-receipt migration supersedes the original no-model-change boundary for this follow-up only. Historical/provider reference-only capture remains supported and is labelled separately.

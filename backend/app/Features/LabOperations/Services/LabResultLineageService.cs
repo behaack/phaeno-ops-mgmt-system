@@ -22,6 +22,9 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
         Guid? actorId, string recordedBySource, CancellationToken ct)
     {
         var normalized = Normalize(request);
+        await LabScientificFiles.ValidateAsync(db, normalized.LabWorkOrderId, normalized.LabSpecimenId,
+            normalized.ExternalFileReference, normalized.Sha256, normalized.SizeBytes, ct);
+        await LabScientificFiles.ValidateDocumentsAsync(db, normalized.LabWorkOrderId, normalized.LabSpecimenId, normalized.ScientificEvidence, ct);
         var hash = Hash(normalized);
         await using var transaction = await SampleShippingPackingData.BeginAsync(db, $"sequencing-output:{request.Id}", ct);
         await SampleShippingPackingData.LockAsync(db, "sequencing-file:" + Hash(new[] {
@@ -118,6 +121,7 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
                 throw new ArgumentException("When input roles are supplied, map every registered analysis input exactly once.");
         }
         catch (ArgumentException e) { throw Invalid(e.Message); }
+        await LabScientificFiles.ValidateDocumentsAsync(db, normalized.LabWorkOrderId, normalized.LabSpecimenId, normalized.ScientificEvidence, ct);
         if (request.Id == Guid.Empty) throw Invalid("An analysis identity is required for safe retries.");
         var hash = Hash(normalized);
         await using var transaction = await SampleShippingPackingData.BeginAsync(db, $"analysis-run:{request.Id}", ct);

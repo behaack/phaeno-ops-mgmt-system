@@ -3113,6 +3113,19 @@ erDiagram
         uuid updated_by_user_id "nullable"
         bigint version "not null"
     }
+    lab_scientific_files {
+        uuid id PK "not null"
+        uuid lab_work_order_id FK "not null"
+        uuid lab_specimen_id FK "not null"
+        character_varying_255 file_name "not null"
+        character_varying_1000 storage_key UK "not null"
+        character_varying_64 sha256 "not null"
+        bigint size_bytes "not null"
+        uuid recorded_by_user_id "not null; recorded actor identity"
+        timestamp_with_time_zone recorded_at_utc "not null"
+    }
+    lab_work_orders ||--o{ lab_scientific_files : "lab_work_order_id"
+    lab_specimens ||--o{ lab_scientific_files : "lab_specimen_id"
     lab_analysis_runs ||--o{ lab_analysis_inputs : "lab_analysis_run_id"
     lab_sequencing_outputs ||--o{ lab_analysis_inputs : "lab_sequencing_output_id"
     lab_specimen_attempts ||--o{ lab_analysis_runs : "lab_specimen_attempt_id"
@@ -3956,3 +3969,5 @@ erDiagram
 
 
 Repeated sequencing retains one active (`Planned`, `InProgress`, `OnHold`) preparation per specimen and source container through filtered unique indexes. Completed preparation history may contain multiple attempts; authorization and source-material guards govern new attempts. Sequencing-output run numbers group files and corrections by purchased sample-run allocation, independently of the producing preparation.
+
+Managed scientific files use immutable receipts in lab_ops.lab_scientific_files. The storage key is private and unique; sample/work/time has a composite index. Existing sequencing-output and supporting-document references may carry a poms-file identity, validated against the scoped receipt by the shared capture service. Those references are logical links rather than new foreign-key columns. Receipts and bytes are retained independently of customer deliverable expiry.

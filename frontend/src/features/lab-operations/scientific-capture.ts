@@ -14,7 +14,7 @@ export const captureSchema = z.object({
   instrument: z.string().trim().max(1000), flowcell: z.string().trim().max(1000), lane: z.string().trim().max(1000), pool: z.string().trim().max(1000), indexMapping: z.string().trim().max(1000), workflowVersion: z.string().trim().max(1000),
   qcSummary: z.string().trim().max(8000), qcNa: z.boolean(), qcReason: z.string().trim().max(4000),
   metrics: z.array(z.object({ name: z.string().trim(), value: z.string().trim(), unit: z.string().trim() })).max(128),
-  documents: z.array(z.object({ role: text('Document role', 100), externalFileReference: text('Document reference'), sha256: hash, sizeBytes: text('Size') })).max(64),
+  documents: z.array(z.object({ role: text('Document role', 100), externalFileReference: text('Document upload'), sha256: hash, sizeBytes: text('Size') })).max(64),
   software: z.array(version).max(64), softwareNa: z.boolean(), softwareReason: z.string().trim().max(4000),
   references: z.array(version).max(64), referenceNa: z.boolean(), referenceReason: z.string().trim().max(4000),
   parameters: z.string().trim(), parametersNa: z.boolean(), parametersReason: z.string().trim().max(4000),
@@ -33,13 +33,14 @@ export const captureSchema = z.object({
   if (submitted && received && Date.parse(submitted) > Date.parse(received)) error('received', 'Receipt must follow submission.')
   if (v.isCorrection && !v.reason) error('reason', 'Explain why this new record replaces or follows the previous evidence.')
   const positive = (s: string) => Number.isSafeInteger(Number(s)) && Number(s) > 0
-  if (v.documents.some(d => !positive(d.sizeBytes))) error('documents', 'Every document needs a positive whole-byte size.')
+  if (v.documents.some(d => !positive(d.sizeBytes))) error('documents', 'Finish uploading each document before saving.')
   if (v.kind === 'sequencing') {
     if (!positive(v.sequencingRunNumber)) error('sequencingRunNumber', 'Enter a positive purchased run number.')
     if (!['NewPreparation', 'ExistingLibrary'].includes(v.libraryPreparationChoice)) error('libraryPreparationChoice', 'Choose new preparation or an existing library.')
-    for (const field of ['libraryId', 'sendoutId', 'mapping', 'fileReference'] as const) if (!v[field]) error(field, 'This field is required.')
-    if (!hash.safeParse(v.checksum).success) error('checksum', 'Enter the complete 64-character SHA-256 checksum.')
-    if (!positive(v.size)) error('size', 'Enter a positive whole-byte file size.')
+    for (const field of ['libraryId', 'sendoutId', 'mapping'] as const) if (!v[field]) error(field, 'This field is required.')
+    if (!v.fileReference) error('fileReference', 'Upload the sequencing file.')
+    if (v.fileReference && !hash.safeParse(v.checksum).success) error('checksum', 'The uploaded file fingerprint is incomplete. Select the file again.')
+    if (v.fileReference && !positive(v.size)) error('size', 'The upload is incomplete. Select the file again.')
     if (v.qcNa ? !v.qcReason : !v.qcSummary || !v.metrics.length && !v.documents.some(d => d.role === 'qc')) error('qcSummary', 'Provide a QC summary with metrics or a QC document, or explain why QC is not applicable.')
     if (!v.qcNa) {
       v.metrics.forEach((m, index) => { for (const field of ['name', 'unit'] as const) if (!m[field] || m[field].length > 100) ctx.addIssue({ code: 'custom', path: ['metrics', index, field], message: 'Enter 1–100 characters.' }); if (!m.value || !Number.isFinite(Number(m.value))) ctx.addIssue({ code: 'custom', path: ['metrics', index, 'value'], message: 'Enter a finite number.' }) })
@@ -50,7 +51,7 @@ export const captureSchema = z.object({
     if (new Set(v.inputs.map(i => i.id)).size !== v.inputs.length) error('inputs', 'Each input may be included only once.')
     if (v.softwareNa ? !v.softwareReason : !v.software.length) error('software', 'Record software versions or explain why they are not applicable.')
     if (v.referenceNa ? !v.referenceReason : !v.references.length) error('references', 'Record reference versions or explain why they are not applicable.')
-    if (v.parametersNa ? !v.parametersReason : !hash.safeParse(v.parameters).success) error('parameters', 'Provide a settings checksum or an explanation.')
+    if (v.parametersNa ? !v.parametersReason : !hash.safeParse(v.documents.find(d => d.role === 'parameters')?.sha256 || v.parameters).success) error('parameters', 'Upload the analysis settings file or explain why settings are not applicable.')
     for (const field of ['software', 'references'] as const) if (!(field === 'software' ? v.softwareNa : v.referenceNa)) v[field].forEach((row, index) => {
       for (const key of ['name', 'version', 'sha256'] as const) {
         const check = key === 'sha256' ? z.union([hash, z.literal('')]) : text(key, key === 'name' ? 255 : 1000)
@@ -104,8 +105,8 @@ export function captureMetadata(v: CaptureValues, original?: ScientificMetadata)
   return { schemaVersion: 1, runStartedAtUtc: time('start', original?.runStartedAtUtc), runCompletedAtUtc: time('end', original?.runCompletedAtUtc),
     submittedAtUtc: time('submitted', original?.submittedAtUtc), receivedAtUtc: time('received', original?.receivedAtUtc),
     ...(v.kind === 'sequencing' && !v.qcNa ? { qcSummary: v.qcSummary, qcMetrics: Object.fromEntries(v.metrics.map(m => [m.name, { value: Number(m.value), unit: m.unit }])) } : {}),
-    ...(v.kind === 'analysis' ? { software: v.softwareNa ? undefined : versions(v.software), referenceData: v.referenceNa ? undefined : versions(v.references), parametersSha256: v.parametersNa ? undefined : v.parameters, inputRoles: v.inputs.map(i => ({ sequencingOutputId: i.id, role: i.role })) } : {}),
-    documents: v.documents.filter(d => !(v.qcNa && d.role === 'qc')).map(d => ({ ...d, sizeBytes: Number(d.sizeBytes) })),
+    ...(v.kind === 'analysis' ? { software: v.softwareNa ? undefined : versions(v.software), referenceData: v.referenceNa ? undefined : versions(v.references), parametersSha256: v.parametersNa ? undefined : v.documents.find(d => d.role === 'parameters')?.sha256 || v.parameters, inputRoles: v.inputs.map(i => ({ sequencingOutputId: i.id, role: i.role })) } : {}),
+    documents: v.documents.filter(d => !(v.qcNa && d.role === 'qc') && !(v.parametersNa && d.role === 'parameters')).map(d => ({ ...d, sizeBytes: Number(d.sizeBytes) })),
     ...Object.fromEntries((['instrument', 'flowcell', 'lane', 'pool', 'indexMapping', 'workflowVersion'] as const).filter(k => v[k]).map(k => [k, v[k]])),
     ...(Object.keys(na).length ? { notApplicable: na } : {}) }
 }

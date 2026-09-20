@@ -1,5 +1,9 @@
 # Playwright E2E Test Plan
 
+## Managed scientific uploads — September 19, 2026
+
+Pending authenticated acceptance: upload a small sequencing file and QC document, save evidence, download identical bytes, record a correction retaining the old file, reject a foreign-sample file identity, and inspect upload/scan failure, keyboard and mobile layouts. No claim of real-provider or production acceptance. See [plan](LAB-MANAGED-SCIENTIFIC-FILES-PLAN.md).
+
 ## Current sample-type revisions — September 19, 2026
 
 See [owning plan](SAMPLE-TYPE-CURRENT-REVISION-PLAN.md). Coverage added for family-based previews, inactive/future exclusion, readiness, existing container compatibility, duplicate-family rules, missing effective revisions, and immutable issued packet snapshots. UI coverage verifies one named choice per family and current revision readback. Manual acceptance: publish an approved successor, confirm rule/container/readiness continuity for new shipments and unchanged old packet content; an inactive or future successor must not interrupt current use. Automated suites remain request-only and were not run.

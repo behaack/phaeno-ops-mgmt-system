@@ -23,6 +23,11 @@ public sealed class LabInvestigationService(PSeqOperationsDbContext db)
             evidence[key] = rows;
             return rows;
         }
+        var scientificFiles = await db.LabScientificFiles.AsNoTracking()
+            .Where(f => f.LabWorkOrderId == workId && f.LabSpecimenId == specimenId)
+            .OrderBy(f => f.RecordedAtUtc).ThenBy(f => f.Id).Take(limit + 1).ToListAsync(ct);
+        if (scientificFiles.Count > limit) { limited.Add("scientificFiles"); scientificFiles.RemoveAt(limit); }
+        evidence["scientificFiles"] = scientificFiles.Select(LabScientificFiles.Public).ToArray();
         var containers = await Read("containers", db.LabContainers.AsNoTracking().Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId).OrderBy(x => x.Id));
         var attempts = await Read("attempts", db.LabSpecimenAttempts.AsNoTracking().Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId).OrderBy(x => x.Sequence));
         var executions = await Read("executions", db.LabProtocolExecutions.AsNoTracking().Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId).OrderBy(x => x.Id));

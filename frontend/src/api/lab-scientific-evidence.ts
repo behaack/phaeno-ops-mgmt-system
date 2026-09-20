@@ -37,3 +37,17 @@ export const getScientificWorkspace = async (work: string, specimen: string) => 
 export const getScientificSendouts = async (work: string, specimen: string, libraryId: string) => (await api.get<{ data: ScientificSendout[] }>(`${base(work, specimen)}/sendouts`, { params: { libraryId } })).data.data
 export const recordSequencing = async (input: SequencingInput) => (await api.post<{ data: SequencingRecord }>('/platform/lab-operations/pseq-results/sequencing-outputs', input)).data.data
 export const recordAnalysis = async (input: AnalysisInput) => (await api.post<{ data: AnalysisRecord }>('/platform/lab-operations/pseq-results/analysis-runs', input)).data.data
+
+export type ScientificFile = { id: string; fileName: string; sha256: string; sizeBytes: number; externalFileReference: string; recordedAtUtc: string }
+export const scientificFilesKey = (work: string, specimen: string) => ['lab-scientific-files', work, specimen] as const
+export const getScientificFiles = async (work: string, specimen: string) =>
+  (await api.get<{ data: { maximumBytes: number; files: ScientificFile[] } }>(`${base(work, specimen)}/files`)).data.data
+export const uploadScientificFile = async (work: string, specimen: string, file: File, progress: (value: number) => void) =>
+  (await api.post<{ data: ScientificFile }>(`${base(work, specimen)}/files`, file, {
+    params: { fileName: file.name }, headers: { 'Content-Type': 'application/octet-stream' },
+    onUploadProgress: event => progress(Math.min(100, Math.round(event.loaded / (event.total || file.size) * 100))),
+  })).data.data
+export const downloadScientificFile = async (work: string, specimen: string, id: string) =>
+  (await api.get<Blob>(`${base(work, specimen)}/files/${id}`, { responseType: 'blob' })).data
+export const scientificFileLabel = (reference: string, files?: ScientificFile[]) =>
+  files?.find(f => f.externalFileReference === reference)?.fileName ?? (reference.startsWith('poms-file:') ? 'Uploaded sequencing file' : reference)

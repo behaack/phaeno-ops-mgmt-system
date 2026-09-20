@@ -2853,7 +2853,7 @@
       "publicationStatus": "published",
       "id": "phaeno/lab-scientific-approval",
       "route": "/docs/phaeno/lab-scientific-approval",
-      "contentHash": "16fe57a6223445caa8786deae13fe0cd725b9ab2822e0359d3f46b43b9a0bfd7",
+      "contentHash": "cc64a3f1ad3ece1551bec3d462bc4a2bd8c0ca100afe974432e61456e73d8130",
       "sections": [
         {
           "heading": "Scientific approval and release readiness",
@@ -2869,6 +2869,11 @@
           "heading": "Scientific evidence requirements",
           "anchor": "scientific-evidence-requirements",
           "text": "The producing team can record the required information from the specimen's Sample history, using Record sequencing output and Record analysis run. Both staff and pipeline registration pin the current scientific requirements on new analyses. File and run names open the detailed evidence; corrections and reanalysis preserve the preceding record. Reviewers retain read access without receiving capture authority. Scientific evidence requirements apply before new approvals and releases, including work already in progress. Sample history shows each analysis's saved requirement assessment. The producing team must record sequencing QC and run times, analysis software versions, settings checksum, reference versions, exact input roles/checksums and result attribution. QC needs a summary with named metrics or a referenced QC report. A meaningful Not applicable requires an explanation and is available only for QC, software, settings or references. It cannot waive the source tube, sample/run identity, times or file attribution. Missing evidence or pending performer/time review blocks approval and release. A rejected on-behalf entry remains unverified until corrected and independently approved. Review those proposals under Performer and time reviews. Recorded coverage still requires your scientific judgment. Historical analyses without a saved requirements profile remain readable; their evidence is not invented or automatically backfilled. Capture the required evidence and create an attributed replacement before approving or releasing an incomplete older result."
+        },
+        {
+          "heading": "Upload scientific files",
+          "anchor": "upload-scientific-files",
+          "text": "In Record sequencing output, select the sequencing file under File and sample mapping. POMS uploads and scans the actual file, verifies the stored bytes, and records its fingerprint, size and immutable file identity automatically. Continue selecting the library, submission, purchased run and exact sample/index/lane mapping that produced the file. Use Add document for QC reports and other supporting evidence. Specify what the document represents, then select its file. For analysis settings, upload the configuration file actually used. Software and reference names and versions still describe the scientific process; they are not inferred from file contents. The picker shows the configured maximum size. Wait for uploading, verification and scanning to finish before saving evidence. A rejected upload leaves the previous selection unchanged. Files larger than the limit require an approved larger-file import workflow; entering an external reference is not a substitute in this form. Open the saved scientific record to download its managed files. POMS checks their saved fingerprint and size before returning bytes. Corrections preserve the original record and file; upload a replacement when the file changes. Uploaded files are retained as internal evidence, including uploads made before cancelling an unsaved evidence form, independently of Customer download expiry. Historical references remain visible and are explicitly labelled Not stored in POMS. They are not automatically imported or verified. Upload the original file when recording an attributed correction. A retained historical settings fingerprint also does not establish file custody."
         },
         {
           "heading": "Record the approval",
@@ -4085,5 +4090,5 @@
       ]
     }
   ],
-  "corpusHash": "6edf2a542e3686cdc8addddbd82305dbd7a4e3b7a9942a8b1fd03d487687cc14"
+  "corpusHash": "259f155c9f18948c87610463db78fc2b7a83a15fcb176131e6e6b22ebad5e722"
 }
