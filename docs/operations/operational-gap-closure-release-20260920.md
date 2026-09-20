@@ -21,7 +21,7 @@ Release validation passed before publication:
 - Browser: 180 desktop/mobile cases passed in one full rerun; two mobile duplicates of desktop print checks intentionally skipped.
 - Backup: 28 archive/envelope/failure checks passed, plus actual isolated Linux database restoration and deletion-lease/file-capture rehearsal.
 
-Activation is pending. Record the application commit, API image, migration, Vercel deployment, backup receipt and public health checks below after activation.
+Activation completed; exact application and helper identities and acceptance boundaries are recorded below.
 
 ## Acceptance boundaries
 
@@ -32,3 +32,14 @@ Synthetic laboratory journeys and mocked provider calls verify software behavior
 Application commit `63725485b616becfd12200af4ec4d9d26f89aeae` is pushed and active. API image `sha-63725485b616-gap-closure` is healthy, migration `20260920141548_AddScientificUploadsAndCustomerHolds` applied, and Vercel deployment `dpl_5gSzzP4FH3hy3jAof6LEv1ZvvmiY` is Ready with the matching source and production domain. Public probes returned API 200, database ping 204 and Portal 200. Pre-migration recovery point `pre-migration-20260920T145630Z-63725485b616` passed isolated restoration; encrypted envelopes were copied off-host and both hashes verified.
 
 The first online production backup correctly failed before publication: the synthetic restore proof ran on a 16 MiB temporary volume while the capacity check reserves 64 MiB. The helper temporary volume is now bounded at 128 MiB under the unchanged 256 MiB container memory limit. Referenced-only capture also needs to accept a zero-entry tar when no files are referenced; a regression now covers that exact archive. All 29 backup tests passed after these corrections. The application remained healthy and the prior timer was retained. Record the corrected helper revision and successful activation below.
+
+## Completed release
+
+- Application source: `63725485b616becfd12200af4ec4d9d26f89aeae`. API activation: **2026-09-20 14:56:50 UTC**. Image: `phaeno-portal-green-api:sha-63725485b616-gap-closure`. The additive migration is applied. API, scanner and PostgreSQL are healthy; Website counts remain 12 contacts and 5 orders.
+- Portal: Vercel Production `dpl_5gSzzP4FH3hy3jAof6LEv1ZvvmiY`, Ready, matching application source, serving `portal.phaenobiotech.com`. A fresh browser rendered the sign-in page with no captured console errors. Authenticated scientific workflows remain covered by isolated tests, not new production fixtures.
+- Online backup helper: `03cf69b24f839ef7da4f0ef7b1cbf6e3454b9e0f`. Recovery point `snapshot-20260920T150112Z-ec22e490-619d-4382-80c5-8a2813bd7cdb` passed database restore, exact reference manifest, file restore, encryption round trip and cleanup. Current production contains no managed files; the helper separately restored and compared two synthetic files in its isolated container. The populated scientific lineage/file restoration remains isolated rehearsal evidence.
+- The API container identity remained unchanged and healthy throughout backup; recorded outage was **0 seconds**. No recovery helper containers remained. Encrypted payload/key and receipt were copied off-host into the ignored release artifacts and all recorded hashes matched.
+- Daily timer installation passed and its service points to the exact helper revision above. Next genuine scheduled invocation: **September 21, 2026, 2:00 a.m. America/Los_Angeles (09:00 UTC)**, with the existing 3:00 a.m. spring-DST fallback. That future scheduled success has not yet been observed; this release has a verified manual production backup and an active timer.
+- Final public checks after activation: API health **200**, database ping **204**, Portal root **200**. Local storage and the 100 MiB scan limit are unchanged; the S3 runbook remains a future production cutover gate.
+
+The source and backup correction commits are pushed. This final documentation receipt does not change application or helper runtime identities. The unrelated pre-existing `AGENTS.md` edit was left uncommitted.

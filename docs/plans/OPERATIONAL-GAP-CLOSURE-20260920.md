@@ -1,6 +1,6 @@
 # Operational gap closure — September 20, 2026
 
-Status: software implementation and focused verification complete locally; deployment and new scheduled-backup evidence pending. Owner authorized closing all five findings, including the outstanding automated and connected verification. This supersedes the earlier implementation deferral for customer-requested specimen holds; the owner approved the proposed hold rules and identified 50 MB as a candidate scientific file size. Keep the current 100 MiB complete-scan limit and verify 50 MB with resumable transfers. Future production uses S3; upload staging must use the injected provider and the S3 cutover must verify recovery before activation. No AWS provisioning is requested.
+Status: implemented, fully regression-tested, committed, pushed and deployed; manual production recovery verified and the updated daily timer active. The next genuine scheduled invocation remains unobserved. Owner authorized closing all five findings, including the outstanding automated and connected verification. This supersedes the earlier implementation deferral for customer-requested specimen holds; the owner approved the proposed hold rules and identified 50 MB as a candidate scientific file size. Keep the current 100 MiB complete-scan limit and verify 50 MB with resumable transfers. Future production uses S3; upload staging must use the injected provider and the S3 cutover must verify recovery before activation. No AWS provisioning is requested.
 
 ## Outcomes and acceptance
 1. Recovery: every managed scientific receipt participates in restored database/file reference checks. Missing bytes, wrong size/hash and damaged lineage fail recovery verification. Preserve all immutable receipts.
@@ -51,3 +51,7 @@ The owner subsequently requested documentation (including user help), successful
 ## Release verification
 
 Full final reruns passed: 968 backend tests (one Unix-only skip), 1,102 frontend tests, and 180 browser cases (two intentional mobile print skips). API Release build, frontend production build, full lint, types, documentation consistency and staged diff checks passed. The 28 backup archive/envelope/failure cases and isolated Linux restore/lease rehearsal remain the backup evidence. Initial stale schema/fixture assertions and the scratch-name mismatch were corrected; the final full runs have zero failures.
+
+## Production completion
+
+See the [release receipt](../operations/operational-gap-closure-release-20260920.md). Application `63725485` and corrected backup helper `03cf69b2` are live. All 29 final backup tests passed; the online production backup and encrypted off-host copy passed with zero API downtime. Production health and a fresh signed-out browser were verified. The next scheduled run is September 21 at 2 a.m. Pacific; actual S3/provider/bench acceptance remains a distinct boundary. Historical local-only checkpoints above are superseded by this release.
