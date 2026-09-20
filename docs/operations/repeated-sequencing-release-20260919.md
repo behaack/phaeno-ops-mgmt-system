@@ -35,3 +35,8 @@ The Portal Vercel project is `phaeno-ops-mgmt-system`, ID `prj_wbE9S9mT46sJxlM3e
 - Documentation corpus (`6edf2a542e36`), EF pending-model and whitespace checks pass. Release identity is verified when publishing.
 
 Browser and database fixtures simulate authentication, provider responses and scientific records. These results do not establish real bench work, physical material sufficiency, provider delivery, production sign-in acceptance or final scientific/business approval. Production migration and deployment are not yet performed.
+
+
+## Activation preparation correction
+
+The first activation attempt stopped before the backup/migrations because the scanner startup/configuration files were exported with CRLF by Windows Git archive. The tracked blobs contained LF, but `.gitattributes` did not cover the nested scanner directory. The API stayed healthy on its previous image. The mounted scanner files were normalized and the scanner restarted; the release now enforces LF for every scanner configuration/script in Git exports. Application code and the three reviewed migrations are unchanged. Activation resumes from a new exact commit containing this packaging correction.
