@@ -182,7 +182,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
       Boolean(session.capabilities.canAccessCrm && session.capabilities.canAdministerCrm),
   },
   {
-    label: 'Sample shipping settings',
+    label: 'Samples & shipping',
     to: '/sample-shipping-settings',
     icon: Truck,
     group: 'administration',

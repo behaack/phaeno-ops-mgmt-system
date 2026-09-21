@@ -89,11 +89,16 @@ public sealed class SampleShippingContainerCompatibility
     public Guid ContainerDefinitionId { get; private set; }
     public Guid SampleTypeDefinitionId { get; private set; }
     public Guid InstructionRuleId { get; private set; }
+    public string? TemperatureControlInstructions { get; private set; }
+    public string? PackingInstructions { get; private set; }
     private SampleShippingContainerCompatibility() { }
-    public SampleShippingContainerCompatibility(Guid containerDefinitionId, Guid sampleTypeDefinitionId, Guid instructionRuleId)
+    public SampleShippingContainerCompatibility(Guid containerDefinitionId, Guid sampleTypeDefinitionId, Guid instructionRuleId,
+        string? temperatureControlInstructions = null, string? packingInstructions = null)
     {
         if (containerDefinitionId == Guid.Empty || sampleTypeDefinitionId == Guid.Empty || instructionRuleId == Guid.Empty)
             throw new ArgumentException("A container, sample type, and handling rule are required.");
         ContainerDefinitionId = containerDefinitionId; SampleTypeDefinitionId = sampleTypeDefinitionId; InstructionRuleId = instructionRuleId;
+        TemperatureControlInstructions = OrderText.Optional(temperatureControlInstructions, 2000);
+        PackingInstructions = OrderText.Optional(packingInstructions, 4000);
     }
 }

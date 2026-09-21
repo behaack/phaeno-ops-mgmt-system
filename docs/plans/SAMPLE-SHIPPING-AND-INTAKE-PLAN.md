@@ -1,5 +1,11 @@
 # Sample Shipping and Intake Plan
 
+## Approved simplification - September 21, 2026
+
+The owner approved [shared shipping procedures and sample/container packing
+details](SAMPLE-SHIPPING-PACKING-REFINEMENT-PLAN.md), including flexible temperature
+control, consolidated setup and preserved shipment instructions.
+
 ## Enriched RNA configuration — September 19, 2026
 
 Owner requested a second active sample type for Enriched RNA and shipping rules for Total RNA and Enriched RNA at Santa Barbara Lab. Material selection now includes Enriched RNA (enriched_rna), distinct from Total RNA (extracted_rna). This adds configurable shipping content; it does not silently expand service or Trial ordering eligibility. Source: owner-supplied PSeq submission PDF and confirmed dry-ice instructions.

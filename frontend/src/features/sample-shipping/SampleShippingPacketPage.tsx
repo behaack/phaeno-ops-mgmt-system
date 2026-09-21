@@ -25,7 +25,8 @@ type FrozenSample = {
   tubes: Array<{ barcode: string; ordinal: string; quantity: string; quantityUnit: string }>
 }
 
-export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAutoPrint, onFailure, embedded = false }: { shipmentId: string; autoPrint?: boolean; onAutoPrint?: (insert: ShippingInsertIdentity) => void; onFailure?: (message: string) => void; embedded?: boolean }) {
+export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAutoPrint, onFailure, embedded = false, packingOnly = false, onPrint }: { shipmentId: string; autoPrint?: boolean; onAutoPrint?: (insert: ShippingInsertIdentity) => void; onFailure?: (message: string) => void; embedded?: boolean; packingOnly?: boolean; onPrint?: () => void }) {
+  const Page = packingOnly ? 'div' : 'main'
   const autoPrintHandled = useRef(false)
   const [manifestPage, setManifestPage] = useState<{ revisionKey: string; page: number } | null>(null)
   const query = useQuery({
@@ -55,17 +56,17 @@ export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAuto
   }, [autoPrint, currentPacket, onAutoPrint, printable])
 
   if (query.isLoading || query.isFetching) {
-    return <main className="page-wrap space-y-5 px-4 py-8"><PacketReturnLink shipmentId={shipmentId} /><p role="status">Checking the current shipping insert…</p></main>
+    return <Page className="page-wrap space-y-5 px-4 py-8">{!packingOnly ? <PacketReturnLink shipmentId={shipmentId} /> : null}<p role="status">Checking the current shipping insert…</p></Page>
   }
 
   if (query.fetchStatus === 'paused') {
-    return <main className="page-wrap space-y-5 px-4 py-8"><PacketReturnLink shipmentId={shipmentId} /><Alert><AlertTitle>Connection needed</AlertTitle><AlertDescription>Reconnect so the Portal can check the current shipping insert revision before printing.</AlertDescription></Alert></main>
+    return <Page className="page-wrap space-y-5 px-4 py-8">{!packingOnly ? <PacketReturnLink shipmentId={shipmentId} /> : null}<Alert><AlertTitle>Connection needed</AlertTitle><AlertDescription>Reconnect so the Portal can check the current shipping insert revision before printing.</AlertDescription></Alert></Page>
   }
 
   if (query.error || !query.data) {
     return (
-      <main className="page-wrap space-y-5 px-4 py-8">
-        <PacketReturnLink shipmentId={shipmentId} />
+      <Page className="page-wrap space-y-5 px-4 py-8">
+        {!packingOnly ? <PacketReturnLink shipmentId={shipmentId} /> : null}
         <Alert variant="destructive">
           <AlertTitle>Shipping insert unavailable</AlertTitle>
           <AlertDescription>
@@ -73,13 +74,13 @@ export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAuto
           </AlertDescription>
         </Alert>
         <Button variant="outline" onClick={() => void query.refetch()}>Try again</Button>
-      </main>
+      </Page>
     )
   }
 
   const { shipment } = query.data
   const packet = shipment.currentPacket
-  if (!packet || packet.isVoided) return <main className="page-wrap space-y-5 px-4 py-8"><PacketReturnLink shipmentId={shipmentId} /><Alert><AlertTitle>Shipping insert no longer current</AlertTitle><AlertDescription>Return to the shipment to review its current contents and shipping insert revision before printing.</AlertDescription></Alert><Button variant="outline" onClick={() => void query.refetch()}>Try again</Button></main>
+  if (!packet || packet.isVoided) return <Page className="page-wrap space-y-5 px-4 py-8">{!packingOnly ? <PacketReturnLink shipmentId={shipmentId} /> : null}<Alert><AlertTitle>Shipping insert no longer current</AlertTitle><AlertDescription>Return to the shipment to review its current contents and shipping insert revision before printing.</AlertDescription></Alert><Button variant="outline" onClick={() => void query.refetch()}>Try again</Button></Page>
   const destination = parseObject(query.data.destinationSnapshotJson)
   const instructions = parseObject(query.data.instructionSnapshotJson)
   const manifest = parseObject(query.data.manifestSnapshotJson)
@@ -89,11 +90,17 @@ export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAuto
   const page = manifestPage?.revisionKey === revisionKey ? Math.min(manifestPage.page, manifestPages - 1) : 0
   const visibleSamples = frozenSamples.slice(page * manifestPageSize, (page + 1) * manifestPageSize)
 
+  if (packingOnly) return <div className="space-y-6 wrap-anywhere" data-packet-id={packet.id} data-packet-revision={packet.revision}>
+    <p className="text-sm text-muted-foreground">Shipment {shipment.shipmentNumber} · Shipping insert {packet.packetNumber} · revision {packet.revision}</p>
+    <FrozenPackingInstructions destination={destination} instructions={instructions} />
+    {onPrint ? <div className="border-t pt-4"><p className="mb-3 text-sm text-muted-foreground">Printing creates the receiving sheet to place inside this container. Return to these instructions at any time from the shipment’s Actions menu.</p><Button onClick={onPrint}><Printer aria-hidden="true" data-icon="inline-start" />Print shipping insert</Button></div> : null}
+  </div>
+
   return (
-    <main className="shipping-packet-page page-wrap px-4 py-8 print:max-w-none print:px-0 print:py-0">
+    <Page className="shipping-packet-page page-wrap px-4 py-8 print:max-w-none print:px-0 print:py-0">
       <style>{`@media print { @page { margin: 10mm 12mm 15mm !important; @bottom-left { content: ${JSON.stringify(`Shipping insert ${packet.packetNumber} · Barcode ${packet.barcode} · Shipment ${shipment.shipmentNumber}`)}; font: 8pt Arial, sans-serif; color: black; } } }`}</style>
       {!embedded ? <div className="mb-6 flex items-center justify-between gap-3 print:hidden">
-        <PacketReturnLink shipmentId={shipmentId} />
+        {!packingOnly ? <PacketReturnLink shipmentId={shipmentId} /> : null}
         <Button onClick={() => window.print()}>
           <Printer data-icon="inline-start" />
           Print shipping insert
@@ -142,37 +149,7 @@ export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAuto
           {text(manifest.orderBarcode) ? <ShippingBarcode value={text(manifest.orderBarcode)} label="Order barcode" /> : null}
           {text(manifest.shipmentBarcode) ? <ShippingBarcode value={text(manifest.shipmentBarcode)} label="Shipment barcode" /> : null}
 
-        <section className="packet-destination break-inside-avoid">
-          <h2 className="text-xl font-semibold">Ship to</h2>
-          <div className="mt-3 text-sm leading-6">
-            <p className="font-medium">{text(destination.recipientName)}</p>
-            <p>{text(destination.organizationName)}</p>
-            <p>{text(destination.addressLine1)}</p>
-            {destination.addressLine2 ? <p>{text(destination.addressLine2)}</p> : null}
-            <p>
-              {text(destination.city)}, {text(destination.stateOrProvince)} {text(destination.postalCode)}
-            </p>
-            <p>{text(destination.countryCode)}</p>
-            {destination.receivingPhone ? <p>Phone: {text(destination.receivingPhone)}</p> : null}
-            {destination.receivingEmail ? <p>Email: {text(destination.receivingEmail)}</p> : null}
-          </div>
-          <Instruction label="Receiving hours" value={destination.receivingHours} />
-          <Instruction label="Closure guidance" value={destination.closureInstructions} />
-          <Instruction label="Delivery directions" value={destination.deliveryInstructions} />
-          <Instruction label="Carrier restrictions" value={destination.carrierRestrictions} />
-        </section>
-
-        <section className="packet-instructions">
-          <h2 className="text-xl font-semibold">Preparation, packing, and delivery instructions</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Follow every instruction for each sample type in this shipping insert. Contact Phaeno before shipping if any requirement cannot be met.
-          </p>
-          <div className="mt-5 space-y-6">
-            {asObjects(instructions.samples).map((entry, index) => (
-              <SampleInstructions entry={entry} index={index} key={index} />
-            ))}
-          </div>
-        </section>
+        <FrozenPackingInstructions destination={destination} instructions={instructions} />
 
         <section className="packet-manifest">
           <h2 className="text-xl font-semibold">Sample and tube list</h2>
@@ -205,12 +182,55 @@ export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAuto
           <p>Shipping insert {packet?.packetNumber} · Barcode {packet?.barcode} · Shipment {shipment.shipmentNumber}</p>
         </footer>
       </article>
-    </main>
+    </Page>
   )
+}
+
+function FrozenPackingInstructions({ destination, instructions }: { destination: JsonObject; instructions: JsonObject }) {
+  const containerPacking = asObject(instructions.containerPacking)
+  const sharedProcedures = [...new Map(asObjects(instructions.samples).map(entry => asObject(entry.instructionRule)).filter(rule => rule.shippingProcedureId).map(rule => [text(rule.shippingProcedureId), rule])).values()]
+  return <div className="space-y-8">
+        <section className="packet-destination break-inside-avoid">
+          <h2 className="text-xl font-semibold">Ship to</h2>
+          <div className="mt-3 text-sm leading-6">
+            <p className="font-medium">{text(destination.recipientName)}</p>
+            <p>{text(destination.organizationName)}</p>
+            <p>{text(destination.addressLine1)}</p>
+            {destination.addressLine2 ? <p>{text(destination.addressLine2)}</p> : null}
+            <p>
+              {text(destination.city)}, {text(destination.stateOrProvince)} {text(destination.postalCode)}
+            </p>
+            <p>{text(destination.countryCode)}</p>
+            {destination.receivingPhone ? <p>Phone: {text(destination.receivingPhone)}</p> : null}
+            {destination.receivingEmail ? <p>Email: {text(destination.receivingEmail)}</p> : null}
+          </div>
+          <Instruction label="Receiving hours" value={[text(destination.receivingHours), text(destination.timeZoneId)].filter(Boolean).join(' · ')} />
+          <Instruction label="Closure guidance" value={destination.closureInstructions} />
+          <Instruction label="Delivery directions" value={destination.deliveryInstructions} />
+          <Instruction label="Carrier restrictions" value={destination.carrierRestrictions} />
+        </section>
+
+        <section className="packet-instructions">
+          <h2 className="text-xl font-semibold">Preparation, packing, and delivery instructions</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Follow every instruction for each sample type in this shipping insert. Contact Phaeno before shipping if any requirement cannot be met.
+          </p>
+          <div className="mt-5 space-y-6">
+            {sharedProcedures.map((rule, index) => <article key={text(rule.shippingProcedureId)} className="rounded-lg border p-4"><h3 className="font-semibold">Common shipping steps{sharedProcedures.length > 1 ? ` ${index + 1}` : ''}</h3><p className="mt-1 text-sm text-muted-foreground">Applies to: {[...new Set(asObjects(instructions.samples).filter(entry => asObject(entry.instructionRule).shippingProcedureId === rule.shippingProcedureId).map(entry => text(asObject(entry.sampleType).name)).filter(Boolean))].join(', ')}</p><ShippingSteps rule={rule} /></article>)}
+            {containerPacking.temperatureControlInstructions ? <article className="rounded-lg border p-4"><h3 className="font-semibold">Temperature control for this container</h3><p className="mt-1 text-sm">{text(containerPacking.commonName)} · revision {text(containerPacking.revision)}</p><Instruction label="Approved method and amount" value={containerPacking.temperatureControlInstructions} /><Instruction label="Container notes" value={containerPacking.packingInstructions} /></article> : null}
+            {asObjects(instructions.samples).map((entry, index) => (
+              <SampleInstructions entry={entry} index={index} key={index} packing={asObjects(containerPacking.samples).find(pair => pair.sampleTypeId === asObject(entry.sampleType).id)} />
+            ))}
+          </div>
+        </section>
+
+  </div>
 }
 
 function receivingInstructions(instructions: JsonObject): string[] {
   const notes = new Set<string>()
+  const control = text(asObject(instructions.containerPacking).temperatureControlInstructions).trim()
+  if (control) notes.add(control)
   for (const entry of asObjects(instructions.samples)) {
     const sampleType = asObject(entry.sampleType)
     const rule = asObject(entry.instructionRule)
@@ -222,7 +242,7 @@ function receivingInstructions(instructions: JsonObject): string[] {
   return [...notes]
 }
 
-function SampleInstructions({ entry, index }: { entry: JsonObject; index: number }) {
+function SampleInstructions({ entry, index, packing }: { entry: JsonObject; index: number; packing?: JsonObject }) {
   const sampleType = asObject(entry.sampleType)
   const rule = asObject(entry.instructionRule)
   return (
@@ -231,24 +251,25 @@ function SampleInstructions({ entry, index }: { entry: JsonObject; index: number
       <div className="packet-instruction-fields">
         <Instruction label="Material" value={materialClassLabel(sampleType.materialClass)} />
         <Instruction label="Required quantity" value={quantityRange(sampleType)} />
-        <Instruction label="Primary container" value={sampleType.primaryContainerRequirements} />
-        <Instruction label="Temperature" value={sampleType.temperatureRequirements} />
+        <Instruction label="Sample tube or vessel" value={sampleType.primaryContainerRequirements} />
+        <Instruction label="Preservation requirements" value={sampleType.temperatureRequirements} />
         <Instruction label="Stabilizer" value={sampleType.stabilizerRequirements} />
-        <Instruction label="Sample preparation and packaging" value={sampleType.packagingInstructions} />
+        <Instruction label="Maximum transit time" value={text(sampleType.maximumTransitHours) ? `${text(sampleType.maximumTransitHours)} hours` : ''} />
+        {!rule.shippingProcedureId ? <Instruction label="Sample preparation and packaging" value={sampleType.packagingInstructions} /> : null}
         <Instruction label="Customer labeling" value={sampleType.labelingInstructions} />
         <Instruction label="Prohibited identifiers" value={sampleType.prohibitedIdentifiers} />
         <Instruction label="Safety" value={sampleType.safetyRequirements} />
-        <Instruction label="Packing" value={rule.packingInstructions} />
-        <Instruction label="Temperature during transit" value={rule.temperatureInstructions} />
-        <Instruction label="Carrier" value={rule.carrierInstructions} />
-        <Instruction label="Dispatch timing" value={rule.dispatchInstructions} />
+        <Instruction label="Packing steps for this sample and container" value={packing?.packingInstructions} />
+        {!rule.shippingProcedureId ? <><Instruction label="Sample carrier restrictions" value={sampleType.carrierRestrictions} /><ShippingSteps rule={rule} /></> : null}
+        <Instruction label="Destination-specific additions" value={rule.destinationInstructions} />
         <Instruction label="Delivery" value={rule.deliveryInstructions} />
-        <Instruction label="Documents to include" value={rule.requiredDocuments} />
-        <Instruction label="Exceptions" value={rule.exceptionInstructions} />
-        <Instruction label="International customs" value={rule.internationalCustomsInstructions} />
       </div>
     </article>
   )
+}
+
+function ShippingSteps({ rule }: { rule: JsonObject }) {
+  return <><Instruction label="Packing" value={rule.packingInstructions} /><Instruction label="Transit handling" value={rule.temperatureInstructions} /><Instruction label="Carrier" value={rule.carrierInstructions} /><Instruction label="Dispatch timing" value={rule.dispatchInstructions} /><Instruction label="Documents to include" value={rule.requiredDocuments} /><Instruction label="Exceptions" value={rule.exceptionInstructions} /><Instruction label="International customs" value={rule.internationalCustomsInstructions} /></>
 }
 
 function readFrozenSamples(manifest: JsonObject): FrozenSample[] {

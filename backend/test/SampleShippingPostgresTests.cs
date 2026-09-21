@@ -806,6 +806,7 @@ public partial class SampleShippingPostgresTests
                     .ToListAsync();
                 DbContext.SampleShippingInstructionRules.RemoveRange(rules);
                 await DbContext.SaveChangesAsync();
+                await CleanupShippingProceduresAsync();
                 var sampleTypes = await DbContext.SampleTypeDefinitions
                     .Where(item => sampleTypeIds.Contains(item.Id))
                     .OrderByDescending(item => item.Revision)

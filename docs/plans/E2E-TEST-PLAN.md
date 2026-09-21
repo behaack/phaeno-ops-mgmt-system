@@ -1,5 +1,10 @@
 # Playwright E2E Test Plan
 
+## Flexible shipping acceptance - September 21, 2026
+
+Manual acceptance pending: create and approve a reusable procedure, assign it to multiple sample types, save two container sizes with distinct regular-ice or dry-ice instructions, verify explicit no-cooling and cold-pack cases, issue a packet, revise configuration and confirm the frozen packet remains unchanged. Missing details and conflicting mixed controls must prevent issuance. Check desktop/mobile layout, required-field focus, dirty cancellation and Actions menus. Browser verification is blocked by the disconnected Edge integration; no automated E2E suite was requested or run.
+
+
 ## Managed scientific uploads — September 19, 2026
 
 Pending authenticated acceptance: upload a small sequencing file and QC document, save evidence, download identical bytes, record a correction retaining the old file, reject a foreign-sample file identity, and inspect upload/scan failure, keyboard and mobile layouts. No claim of real-provider or production acceptance. See [plan](LAB-MANAGED-SCIENTIFIC-FILES-PLAN.md).
@@ -2827,3 +2832,29 @@ Scientific capture browser coverage now selects an explicit existing-library cho
 Updated scientific-capture browser fixtures from manual external references to managed resumable uploads. Added specimen hold requests. Ten synthetic desktop/mobile light/dark browser cases passed with accessibility and no-overflow checks. These are not authenticated provider or physical laboratory acceptance. See OPERATIONAL-GAP-CLOSURE-20260920.md.
 
 Final release rerun: 180 browser cases passed in one full desktop/mobile run; two mobile-only duplicates of desktop print tests were intentionally skipped. Bundled-order fixtures now answer the specimen-hold read without weakening unexpected-request or no-write assertions. The initial CRM timeout passed on retry and on the clean full rerun.
+
+## September 21 samples and shipping screen review
+
+Signed-in local review verified desktop and 390 x 844 navigation, setup ownership
+guide, prerequisite links, sample/procedure fields, procedure validation focus
+and Escape return focus, retained container details, and separated order guidance.
+The local configuration is empty apart from retained container definitions; no
+records were saved or activated. Still required before release: populate approved
+test configuration, save/revise assignments and container combinations, verify
+regular ice/dry ice/no cooling and different container amounts, review the actual
+shipment packing dialog then print, confirm the exact printed revision, and check
+historical packets, mixed samples, mobile/theme/accessibility behavior and focus.
+See [the owning plan](SAMPLE-SHIPPING-PACKING-REFINEMENT-PLAN.md). Automated browser
+suites and physical/scientific acceptance were not run by this design review.
+
+Deployment verification adds `shipping-packing-review.spec.ts`: actual packet
+rendering with two sample types sharing one procedure, explicit regular ice or
+no cooling, one container amount, separate sample packing, mobile width and
+light/dark WCAG scans. All four new desktop/mobile cases pass. The existing print
+suite also passes (four cases; two mobile duplicates intentionally skipped),
+including one-page Letter/A4 receiving sheets in both themes. Actual packing-dialog
+focus, print cancellation and revision acknowledgment are covered by component
+tests; provider/scientific/physical acceptance is separate from synthetic fixtures.
+
+Final full release run: 184 desktop/mobile cases passed, zero failures, with only
+the two intentional mobile physical-label print duplicates skipped.

@@ -1,10 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { OrderConfigurationPage } from '#/features/orders/configuration/OrderConfigurationPage'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/order-configuration/sample-types/$sampleTypeId')({
-  component: SampleTypeRoute,
+  beforeLoad: ({ params }) => { throw redirect({ to: '/sample-shipping-settings', search: { shippingSection: 'sample-types', sampleTypeId: params.sampleTypeId }, replace: true }) },
 })
-
-function SampleTypeRoute() {
-  return <OrderConfigurationPage sampleTypeId={Route.useParams().sampleTypeId} />
-}

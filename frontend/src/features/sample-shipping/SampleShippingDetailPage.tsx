@@ -30,6 +30,7 @@ import { SampleShipmentPackingPanel } from './SampleShipmentPackingPanel'
 import { SampleShipmentResetPacking } from './SampleShipmentResetPacking'
 import { ShippingContainerSelector } from './ShippingContainerSelector'
 import { ShippingInsertPrintFrame } from './ShippingInsertPrintFrame'
+import { SampleShippingPacketPage } from './SampleShippingPacketPage'
 import { acknowledgeShippingInsert, isShippingInsertAcknowledged, shippingInsertScope, type ShippingInsertIdentity } from './shipping-insert-acknowledgement'
 import { TransportationKitsPanel } from './TransportationKitsPanel'
 import { getShipmentKitSupply, type ShipmentKitSupply } from '#/api/transportation-kit-requests'
@@ -85,6 +86,7 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false,
   const [kitActionOpen, setKitActionOpen] = useState(false)
   const [resetOpen, setResetOpen] = useState(false)
   const [shipmentOpen, setShipmentOpen] = useState(false)
+  const [instructionsOpen, setInstructionsOpen] = useState(false)
   const [packetAction, setPacketAction] = useState<'confirm' | null>(null)
   const [printRequest, setPrintRequest] = useState<{ shipmentId: string; scope: string | null } | null>(null)
   const [printFailure, setPrintFailure] = useState<{ shipmentId: string; message: string } | null>(null)
@@ -137,11 +139,11 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false,
   const download = useMutation({ mutationFn: () => downloadSampleShippingCrosswalk(shipmentId), onSuccess: (blob) => { const href = URL.createObjectURL(blob); const anchor = document.createElement('a'); anchor.href = href; anchor.download = `${query.data?.shipmentNumber ?? 'sample-shipment'}-tube-crosswalk.csv`; anchor.click(); URL.revokeObjectURL(href) } })
   const writePending = assignment.isPending || issue.isPending || shipped.isPending
   useBlocker({ shouldBlockFn: () => writePending || printing || Boolean(printedConfirmation), enableBeforeUnload: writePending })
-  const workspaceActive = scanActive || packingOpen || kitActionOpen || resetOpen || Boolean(assignmentItem) || Boolean(packetAction) || shipmentOpen || printing || Boolean(printedConfirmation) || assignment.isPending || issue.isPending || shipped.isPending
+  const workspaceActive = scanActive || packingOpen || kitActionOpen || resetOpen || Boolean(assignmentItem) || Boolean(packetAction) || shipmentOpen || instructionsOpen || printing || Boolean(printedConfirmation) || assignment.isPending || issue.isPending || shipped.isPending
   const onActivityChange = embedded?.onActivityChange
   useEffect(() => { onActivityChange?.(workspaceActive) }, [onActivityChange, workspaceActive])
   useEffect(() => () => { onActivityChange?.(false) }, [onActivityChange])
-  const routeNavigationLocked = scanPending || packingOpen || resetOpen || Boolean(assignmentItem) || Boolean(packetAction) || shipmentOpen || printing || Boolean(printedConfirmation) || assignment.isPending || issue.isPending || shipped.isPending
+  const routeNavigationLocked = scanPending || packingOpen || resetOpen || Boolean(assignmentItem) || Boolean(packetAction) || shipmentOpen || instructionsOpen || printing || Boolean(printedConfirmation) || assignment.isPending || issue.isPending || shipped.isPending
   // Kit dialogs guard their own dirty/pending writes and allow their address-setup link.
   const navigationLocked = routeNavigationLocked || kitActionOpen
   const onNavigationLockChange = embedded?.onNavigationLockChange
@@ -155,7 +157,7 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false,
   const Workspace = embedded ? 'div' : 'main'
   const SupportingContext = embedded ? 'details' : 'div'
   const workspaceClassName = embedded ? 'min-w-0' : 'page-wrap px-4 py-8'
-  const dialogOpen = Boolean(packetAction) || shipmentOpen || Boolean(printedConfirmation) || printing
+  const dialogOpen = Boolean(packetAction) || shipmentOpen || instructionsOpen || Boolean(printedConfirmation) || printing
   const unavailableActions = () => <>{embedded?.renderActions([], headerActionRef, dialogOpen)}{embedded?.renderSendAction?.(null, sendActionRef)}</>
   if (!canView) return <Workspace className={workspaceClassName}>{unavailableActions()}{embedded?.renderSamples?.()}<Alert variant="destructive"><AlertTitle>Sample shipping unavailable</AlertTitle><AlertDescription>Select an active Prospect or Customer organization with shipping access.</AlertDescription></Alert></Workspace>
   if (query.isLoading) return <Workspace className={workspaceClassName}>{unavailableActions()}{embedded?.renderSamples?.()}<p role="status" className="text-sm text-muted-foreground">Loading sample shipment…</p></Workspace>
@@ -183,13 +185,14 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false,
     if (sendActionBlocked || !canManage || shipment.status !== 'ReadyToShip' || !preparationAllowed) return
     actionOrigin.current = origin; shipped.reset(); setShipmentOpen(true)
   }
+  const openInstructions = (origin: 'header' | 'send') => { actionOrigin.current = origin; setInstructionsOpen(true) }
   let sendAction: ShipmentHeaderAction | null = null
   if (canManage && readyToConfirm && !currentPacket) {
     sendAction = { kind: 'command', label: 'Review and confirm shipping insert', disabled: sendActionBlocked, onSelect: () => openConfirmation('send') }
   } else if (shipment.status === 'ReadyToShip' && currentPacket) {
     sendAction = insertAcknowledged && canManage
       ? { kind: 'command', label: 'Record shipment', disabled: sendActionBlocked || !preparationAllowed, onSelect: () => openRecordShipment('send') }
-      : { kind: 'command', label: 'Print shipping insert', icon: Printer, disabled: sendActionBlocked, busy: printing, onSelect: () => startPrint('send') }
+      : { kind: 'command', label: 'Review packing and print', icon: Printer, disabled: sendActionBlocked, busy: printing, onSelect: () => openInstructions('send') }
   }
   const error = download.error
   const headerActions: ShipmentHeaderAction[] = []
@@ -199,6 +202,7 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false,
   }
   if (shipment.currentPacket) {
     headerActions.push(
+      { kind: 'command', label: 'Review packing instructions', variant: 'outline', disabled: navigationLocked, onSelect: () => openInstructions('header') },
       { kind: 'command', label: 'Print shipping insert', icon: Printer, variant: 'outline', disabled: printing || Boolean(printedConfirmation), onSelect: () => startPrint('header') },
       { kind: 'command', label: 'Download tube list (CSV)', icon: Download, variant: 'outline', disabled: download.isPending, onSelect: () => download.mutate() },
     )
@@ -271,6 +275,13 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false,
       </> : null}
 
       <TubeAssignmentDialog item={assignmentItem} replacesPacket={Boolean(shipment.currentPacket)} isPending={assignment.isPending} error={assignment.error ? apiErrorMessage(assignment.error) : undefined} onOpenChange={(open) => { if (!open) setAssignmentItem(null) }} onSubmit={(values) => { if (assignmentItem) assignment.mutate({ item: assignmentItem, values }) }} />
+      <Dialog open={instructionsOpen} onOpenChange={setInstructionsOpen}>
+        <DialogContent className="sm:max-w-3xl" onCloseAutoFocus={event => { event.preventDefault(); if (!printing) restoreActionFocus() }}>
+          <DialogHeader><DialogTitle>Packing instructions</DialogTitle><DialogDescription>Follow the approved instructions for this shipment’s samples, destination and container. Review the cooling method and amount before packing.</DialogDescription></DialogHeader>
+          {instructionsOpen ? <SampleShippingPacketPage shipmentId={shipmentId} embedded packingOnly onPrint={() => { setInstructionsOpen(false); startPrint() }} /> : null}
+          <DialogFooter><Button variant="outline" onClick={() => setInstructionsOpen(false)}>Close</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
       <ConfirmPacketDialog action={packetAction} shipmentNumber={shipment.shipmentNumber} sampleCount={new Set(shipment.crosswalk.map((item) => item.shipmentItemId)).size} tubeCount={shipment.crosswalk.length} isPending={issue.isPending} error={issue.error ? apiErrorMessage(issue.error) : undefined} onOpenChange={(open) => { if (!open) setPacketAction(null) }} onConfirm={() => issue.mutate(null)} onReturnFocus={restoreActionFocus} />
       <RecordShipmentDialog open={shipmentOpen} isPending={shipped.isPending} error={shipped.error ? apiErrorMessage(shipped.error) : undefined} onOpenChange={setShipmentOpen} onSubmit={(values) => shipped.mutate(values)} onReturnFocus={restoreActionFocus} />
       <Dialog open={Boolean(printedConfirmation)} onOpenChange={open => { if (!open) setPrintedInsert(null) }}>

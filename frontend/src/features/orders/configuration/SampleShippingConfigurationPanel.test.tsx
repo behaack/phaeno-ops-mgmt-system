@@ -1,14 +1,17 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { createMemoryHistory, createRootRoute, createRoute, createRouter, RouterProvider, useParams } from '@tanstack/react-router'
+import { createMemoryHistory, createRootRoute, createRoute, createRouter, RouterProvider, useSearch } from '@tanstack/react-router'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { SampleShippingConfigurationPanel } from './SampleShippingConfigurationPanel'
 
+vi.mock('#/api/shipping-containers', () => ({ getShippingContainerDefinitions: async () => [] }))
+
 vi.mock('./ContainerSizesPanel', () => ({ ContainerSizesPanel: () => <div>Container sizes</div> }))
 
 const apiMocks = vi.hoisted(() => ({
   createDestination: vi.fn(),
+  createProcedure: vi.fn(),
   createRule: vi.fn(),
   createSampleType: vi.fn(),
   getConfiguration: vi.fn(),
@@ -16,6 +19,7 @@ const apiMocks = vi.hoisted(() => ({
 }))
 
 vi.mock('#/api/sample-shipping', () => ({
+  createSampleShippingProcedure: apiMocks.createProcedure,
   createSampleShippingDestination: apiMocks.createDestination,
   createSampleShippingInstructionRule: apiMocks.createRule,
   createSampleTypeDefinition: apiMocks.createSampleType,
@@ -27,6 +31,31 @@ describe('SampleShippingConfigurationPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     apiMocks.getConfiguration.mockResolvedValue(configuration)
+  })
+
+  it('explains missing setup and prevents an assignment with no approved procedure', async () => {
+    apiMocks.getConfiguration.mockResolvedValue({ ...configuration, procedures: [] })
+    renderPanel('instructions')
+    expect(await screen.findByRole('button', { name: 'Add assignment' })).toHaveProperty('disabled', true)
+    expect(screen.getByRole('link', { name: 'Add and approve a shared shipping procedure' })).toBeTruthy()
+    expect(apiMocks.createRule).not.toHaveBeenCalled()
+  })
+
+  it('selects shared instructions without requiring duplicate packing text', async () => {
+    const procedure = { id: '44444444-4444-4444-8444-444444444444', name: 'Approved general shipping', revision: 1, isActive: true, packingInstructions: 'Common sealed containment steps.', temperatureInstructions: 'Protect the approved conditions.', carrierInstructions: 'Approved carrier', dispatchInstructions: 'Approved dispatch', requiredDocuments: 'Include the insert', exceptionInstructions: 'Contact receiving' }
+    apiMocks.getConfiguration.mockResolvedValue({ ...configuration, procedures: [procedure] })
+    apiMocks.createRule.mockRejectedValue(new Error('Synthetic save failure'))
+    renderPanel('instructions')
+    fireEvent.click(await screen.findByRole('button', { name: 'Add assignment' }))
+    fireEvent.change(screen.getByLabelText(/^Destination revision/), { target: { value: configuration.destinations[0].id } })
+    fireEvent.change(screen.getByLabelText(/^Sample type/), { target: { value: configuration.sampleTypes[0].id } })
+    fireEvent.change(screen.getByLabelText(/^Compatibility group/), { target: { value: 'APPROVED' } })
+    fireEvent.change(screen.getByLabelText(/^Shared shipping procedure/), { target: { value: procedure.id } })
+    fireEvent.change(screen.getByLabelText('Destination-specific additions'), { target: { value: 'Use the approved receiving entrance.' } })
+    expect(screen.getByText('Common sealed containment steps.')).toBeTruthy()
+    expect(screen.queryByRole('textbox', { name: 'Packing instructions' })).toBeNull()
+    fireEvent.submit(document.getElementById('sample-shipping-rule-form')!)
+    await waitFor(() => expect(apiMocks.createRule).toHaveBeenCalledWith(expect.objectContaining({ shippingProcedureId: procedure.id, destinationInstructions: 'Use the approved receiving entrance.', packingInstructions: '' })))
   })
 
   it('automatically previews the selected rule without asking for destination or sample again', async () => {
@@ -52,11 +81,11 @@ describe('SampleShippingConfigurationPanel', () => {
     renderPanel('instructions')
     const actions = await screen.findByRole('button', { name: 'Actions' })
     fireEvent.keyDown(actions, { key: 'ArrowDown' })
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Preview instructions' }))
-    expect(await screen.findByRole('dialog', { name: 'Instructions preview' })).toBeTruthy()
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Preview shared steps' }))
+    expect(await screen.findByRole('dialog', { name: 'Shared instructions preview' })).toBeTruthy()
     expect(screen.queryByLabelText('Destination revision')).toBeNull()
     expect(screen.queryByLabelText('Effective at')).toBeNull()
-    expect(await screen.findByText('Resolved packet instructions')).toBeTruthy()
+    expect(await screen.findByText('Shared shipping instructions')).toBeTruthy()
     expect(apiMocks.preview).toHaveBeenCalledWith(expect.objectContaining({
       destinationId: configuration.destinations[0].id,
       sampleTypeDefinitionIds: [configuration.sampleTypes[0].id],
@@ -109,7 +138,7 @@ describe('SampleShippingConfigurationPanel', () => {
       { ...original, id: '22222222-2222-4222-8222-222222222225', revision: 4, name: 'Future RNA', effectiveFrom: '2099-01-01T00:00:00Z' },
     ] })
     renderPanel('instructions')
-    fireEvent.click(await screen.findByRole('button', { name: 'Add instruction rule' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Add assignment' }))
     const selector = screen.getByRole('combobox', { name: 'Sample type' })
     expect(within(selector).getAllByRole('option')).toHaveLength(2)
     expect(within(selector).getByRole('option', { name: 'Current Total RNA' })).toBeTruthy()
@@ -144,16 +173,16 @@ describe('SampleShippingConfigurationPanel', () => {
   it('inserts instruction units and symbols at the selection without replacing surrounding text', async () => {
     renderPanel('sample-types')
     fireEvent.click(await screen.findByRole('button', { name: 'Add sample type' }))
-    for (const label of ['Primary-container requirements', 'Temperature requirements', 'Stabilizer requirements', 'Sample-type packaging instructions', 'Customer label instructions', 'Prohibited identifiers', 'Safety and hazard requirements', 'Carrier restrictions']) {
+    for (const label of ['Sample tube or vessel requirements', 'Preservation requirements', 'Stabilizer requirements', 'Customer label instructions', 'Prohibited identifiers', 'Safety and hazard requirements']) {
       expect(screen.getByRole('button', { name: `Units and symbols for ${label}` })).toBeTruthy()
     }
-    const temperature = screen.getByRole('textbox', { name: 'Temperature requirements' }) as HTMLTextAreaElement
+    const temperature = screen.getByRole('textbox', { name: 'Preservation requirements' }) as HTMLTextAreaElement
     fireEvent.change(temperature, { target: { value: 'Store at 4 degrees until arrival.' } })
     temperature.focus()
     temperature.setSelectionRange(11, 18)
     fireEvent.select(temperature)
     fireEvent.blur(temperature)
-    fireEvent.keyDown(screen.getByRole('button', { name: 'Units and symbols for Temperature requirements' }), { key: 'ArrowDown' })
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Units and symbols for Preservation requirements' }), { key: 'ArrowDown' })
     fireEvent.click(await screen.findByRole('menuitem', { name: '°C' }))
     await waitFor(() => expect(temperature.value).toBe('Store at 4 °C until arrival.'))
     expect(document.activeElement).toBe(temperature)
@@ -162,7 +191,7 @@ describe('SampleShippingConfigurationPanel', () => {
     temperature.setSelectionRange(9, 9)
     fireEvent.select(temperature)
     fireEvent.blur(temperature)
-    fireEvent.keyDown(screen.getByRole('button', { name: 'Units and symbols for Temperature requirements' }), { key: 'ArrowDown' })
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Units and symbols for Preservation requirements' }), { key: 'ArrowDown' })
     fireEvent.click(await screen.findByRole('menuitem', { name: '≤ Less than or equal to' }))
     await waitFor(() => expect(temperature.value).toBe('Store at ≤4 °C until arrival.'))
     expect(document.activeElement).toBe(temperature)
@@ -212,8 +241,8 @@ describe('SampleShippingConfigurationPanel', () => {
     expect(dialog.queryByLabelText(/Sample-type code/)).toBeNull()
     for (const [label, value] of [
       ['Name', 'Frozen RNA'], ['Material type', 'extracted_rna'], ['Submission unit', 'tube'],
-      ['Primary-container requirements', 'Approved tubes'], ['Temperature requirements', 'Approved conditions'],
-      ['Sample-type packaging instructions', 'Approved packing'], ['Customer label instructions', 'Use sample ID'],
+      ['Sample tube or vessel requirements', 'Approved tubes'], ['Preservation requirements', 'Approved conditions'],
+      ['Customer label instructions', 'Use sample ID'],
       ['Prohibited identifiers', 'No personal identifiers'], ['Safety and hazard requirements', 'Reviewed handling'],
     ]) fireEvent.change(dialog.getByLabelText(new RegExp('^' + label)), { target: { value } })
     fireEvent.click(dialog.getByRole('button', { name: 'Add sample type' }))
@@ -253,15 +282,15 @@ describe('SampleShippingConfigurationPanel', () => {
     expect(screen.getByText('Extracted RNA')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Add sample type' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Add destination' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Add instruction rule' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Preview instructions' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Add assignment' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Preview shared steps' })).toBeNull()
   })
 
   it('shows instruction rules separately from the preview form', async () => {
     renderPanel('instructions')
     expect(await screen.findByText('West laboratory + Extracted RNA')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Add instruction rule' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Preview instructions' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Add assignment' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Preview shared steps' })).toBeNull()
   })
 
   it('opens a shareable revision detail with full requirements and a return link', async () => {
@@ -299,17 +328,17 @@ describe('SampleShippingConfigurationPanel', () => {
 function renderPanel(section: 'destinations' | 'sample-types' | 'instructions', sampleTypeId?: string) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   const root = createRootRoute()
-  const list = createRoute({ getParentRoute: () => root, path: '/order-configuration', component: () => <SampleShippingConfigurationPanel apiEnabled section={section} /> })
-  function Detail() {
-    const params = useParams({ strict: false })
-    return <SampleShippingConfigurationPanel apiEnabled section="sample-types" sampleTypeId={params.sampleTypeId} />
+  function Page() {
+    const search = useSearch({ strict: false })
+    return <SampleShippingConfigurationPanel apiEnabled section={section} sampleTypeId={search.sampleTypeId} />
   }
-  const detail = createRoute({ getParentRoute: () => root, path: '/order-configuration/sample-types/$sampleTypeId', component: Detail })
-  const router = createRouter({ routeTree: root.addChildren([list, detail]), history: createMemoryHistory({ initialEntries: [sampleTypeId ? `/order-configuration/sample-types/${sampleTypeId}` : '/order-configuration'] }) })
+  const page = createRoute({ getParentRoute: () => root, path: '/sample-shipping-settings', validateSearch: (search: Record<string, unknown>) => ({ sampleTypeId: typeof search.sampleTypeId === 'string' ? search.sampleTypeId : undefined }), component: Page })
+  const router = createRouter({ routeTree: root.addChildren([page]), history: createMemoryHistory({ initialEntries: [sampleTypeId ? `/sample-shipping-settings?sampleTypeId=${sampleTypeId}` : '/sample-shipping-settings'] }) })
   return render(<QueryClientProvider client={client}><RouterProvider router={router} /></QueryClientProvider>)
 }
 
 const configuration = {
+  procedures: [{ id: '44444444-4444-4444-8444-444444444444', definitionKey: '44444444-4444-4444-8444-444444444445', name: 'Approved shared procedure', revision: 1, isActive: true, packingInstructions: 'Shared packing', temperatureInstructions: 'Maintain sample conditions', carrierInstructions: 'Approved carrier', dispatchInstructions: 'Dispatch guidance', requiredDocuments: 'Insert', exceptionInstructions: 'Contact receiving' }],
   destinations: [{
     id: '11111111-1111-4111-8111-111111111111',
     definitionKey: '11111111-1111-4111-8111-111111111112',

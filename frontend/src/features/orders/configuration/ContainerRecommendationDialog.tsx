@@ -18,7 +18,7 @@ import { containerEffectiveState } from './shipping-container-utils'
 const availabilityValue = z.string().trim().refine(value => value === '' || /^\d+$/.test(value) && Number.isSafeInteger(Number(value)), 'Enter zero or a positive whole number, or leave blank for unknown.')
 const previewSchema = z.object({
   tubeCount: z.coerce.number().int('Enter a whole number of tubes.').positive('Enter at least one tube.'),
-  ruleIds: z.array(z.string()).min(1, 'Select the applicable sample and handling context.'),
+  ruleIds: z.array(z.string()).min(1, 'Select the applicable sample and shipping assignment.'),
   availability: z.record(z.string(), availabilityValue),
 })
 type Values = z.output<typeof previewSchema>
@@ -43,7 +43,7 @@ export function ContainerRecommendationDialog({ definitions, configuration, draf
         tubeCount: values.tubeCount,
         contexts: values.ruleIds.map(id => {
           const rule = configuration.instructionRules.find(value => value.id === id)
-          if (!rule) throw new Error('An applicable handling rule is unavailable. Reload configuration before previewing.')
+          if (!rule) throw new Error('An applicable shipping assignment is unavailable. Reload configuration before previewing.')
           return { sampleTypeDefinitionId: rule.sampleTypeDefinitionId, instructionRuleId: rule.id }
         }),
         ...(availability.length ? { availability } : {}),
@@ -54,16 +54,16 @@ export function ContainerRecommendationDialog({ definitions, configuration, draf
   const selectedRules = form.watch('ruleIds')
   const errors = form.formState.errors
   return <Dialog open onOpenChange={open => { if (!open && !preview.isPending) onClose() }}><DialogContent className="max-w-2xl">
-    <DialogHeader><DialogTitle>Preview recommendation</DialogTitle><DialogDescription>Compare containers for a tube count and handling context. This preview does not create kits, reserve stock, or create shipments.</DialogDescription></DialogHeader>
+    <DialogHeader><DialogTitle>Preview recommendation</DialogTitle><DialogDescription>Compare containers for a tube count and shipping assignment. This preview does not create kits, reserve stock, or create shipments.</DialogDescription></DialogHeader>
     {preview.error ? <Alert variant="destructive"><AlertTitle>Recommendation unavailable</AlertTitle><AlertDescription>{getOrderErrorMessage(preview.error, 'Review the context and available quantities, then try again.')}</AlertDescription></Alert> : null}
     <form id="container-recommendation-preview" className="space-y-5" noValidate onChangeCapture={() => preview.reset()} onSubmit={form.handleSubmit(values => { if (!preview.isPending) preview.mutate(values) })}>
-      {draftDefinition ? <p className="rounded-md border bg-muted/40 p-3 text-sm">{includeDraft ? 'Including draft' : 'Using the handling context from'} {draftDefinition.commonName} · SKU {draftDefinition.sku} · revision {draftDefinition.revision} for this preview only.</p> : null}
+      {draftDefinition ? <p className="rounded-md border bg-muted/40 p-3 text-sm">{includeDraft ? 'Including draft' : 'Using the shipping assignment from'} {draftDefinition.commonName} · SKU {draftDefinition.sku} · revision {draftDefinition.revision} for this preview only.</p> : null}
       <ContainerField id="container-preview-tubes" label="Tubes to ship" required error={errors.tubeCount?.message}><Input id="container-preview-tubes" type="number" min={1} step={1} className="max-w-32" disabled={preview.isPending} aria-invalid={Boolean(errors.tubeCount)} aria-describedby={errors.tubeCount ? 'container-preview-tubes-error' : undefined} {...form.register('tubeCount')} /></ContainerField>
       <fieldset aria-describedby={errors.ruleIds ? 'container-preview-context-error' : undefined}>
-        <legend className="text-sm font-medium"><RequiredFieldName>Sample and handling context</RequiredFieldName></legend>
+        <legend className="text-sm font-medium"><RequiredFieldName>Sample and destination assignments</RequiredFieldName></legend>
         <div className="mt-2 max-h-40 space-y-2 overflow-y-auto rounded-md border p-3">
           {configuration.instructionRules.map(rule => <label key={rule.id} className="flex cursor-pointer items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={selectedRules.includes(rule.id)} disabled={preview.isPending} onChange={event => form.setValue('ruleIds', event.target.checked ? [...selectedRules, rule.id] : selectedRules.filter(id => id !== rule.id), { shouldDirty: true, shouldValidate: true })} /><span className="min-w-0 wrap-anywhere">{rule.sampleTypeName} · {rule.destinationName}<span className="block text-xs text-muted-foreground">{rule.compatibilityGroup} · revision {rule.revision}{rule.isActive ? '' : ' · inactive'}</span></span></label>)}
-          {!configuration.instructionRules.length ? <p className="text-sm text-muted-foreground">Configure a sample type and instruction rule before previewing.</p> : null}
+          {!configuration.instructionRules.length ? <p className="text-sm text-muted-foreground">Configure a sample type and shipping assignment before previewing.</p> : null}
         </div><ContainerFieldError id="container-preview-context-error" message={errors.ruleIds?.message} />
       </fieldset>
       <fieldset><legend className="text-sm font-medium">Available containers</legend><p className="mt-1 text-xs text-muted-foreground">Optional upper limits for this preview. Leave blank when availability is unknown; enter zero to exclude a size.</p>

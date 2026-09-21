@@ -6,7 +6,6 @@ import {
   RefreshCw,
   Settings,
   Workflow,
-  TestTubeDiagonal,
   BookOpen,
 } from 'lucide-react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
@@ -35,7 +34,6 @@ const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSec
     icon: Settings,
   },
   { value: 'catalog', label: 'Service catalog', description: 'Active offerings and sales units', icon: BookOpen },
-  { value: 'sample-types', label: 'Sample types', description: 'Accepted materials and sample requirements', icon: TestTubeDiagonal },
   {
     value: 'analyses',
     label: 'Analyses',

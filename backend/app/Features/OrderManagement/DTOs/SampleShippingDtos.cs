@@ -3,7 +3,8 @@ namespace PhaenoPortal.App.Features.OrderManagement.DTOs;
 public sealed record SampleShippingConfigurationDto(
     IReadOnlyList<SampleShippingDestinationDto> Destinations,
     IReadOnlyList<SampleTypeDefinitionDto> SampleTypes,
-    IReadOnlyList<SampleShippingInstructionRuleDto> InstructionRules);
+    IReadOnlyList<SampleShippingInstructionRuleDto> InstructionRules,
+    IReadOnlyList<SampleShippingProcedureDto>? Procedures = null);
 
 public sealed record SampleShippingDestinationDto(
     Guid Id,
@@ -127,7 +128,9 @@ public sealed record SampleShippingInstructionRuleDto(
     DateTime EffectiveFrom,
     DateTime? EffectiveTo,
     bool IsActive,
-    long Version);
+    long Version,
+    Guid? ShippingProcedureId = null,
+    string? DestinationInstructions = null);
 
 public sealed record SampleShippingInstructionRuleWriteRequest(
     Guid? SupersedesInstructionRuleId,
@@ -145,7 +148,9 @@ public sealed record SampleShippingInstructionRuleWriteRequest(
     string? InternationalCustomsInstructions,
     bool RequiresSeparateShipment,
     DateTime EffectiveFrom,
-    bool IsActive);
+    bool IsActive,
+    Guid? ShippingProcedureId = null,
+    string? DestinationInstructions = null);
 
 public sealed record SampleShippingPreviewRequest(
     Guid DestinationId,
@@ -169,7 +174,9 @@ public sealed record SampleShippingPreviewRuleDto(
     string RequiredDocuments,
     string ExceptionInstructions,
     string? InternationalCustomsInstructions,
-    bool RequiresSeparateShipment);
+    bool RequiresSeparateShipment,
+    Guid? ShippingProcedureId = null,
+    string? DestinationInstructions = null);
 
 public sealed record SampleShippingPacketScanDto(
     Guid PacketRevisionId,

@@ -1,5 +1,10 @@
 # Frontend Test Plan
 
+## Samples and shipping workspace - September 21, 2026
+
+Updated sample configuration/navigation coverage for the consolidated workspace and optional legacy packaging. Added frozen-packet rendering cases for regular ice and no cooling, common-step deduplication, per-sample packing and historical standalone text. Automated suites remain request-only. Type checking and focused lint are build/static checks, not test execution.
+
+
 ## Managed scientific uploads — September 19, 2026
 
 Added ScientificFilePicker.test.tsx for server-generated metadata, no manual reference fields, invalid-size rejection and retaining the prior file after failed replacement. Sources added; not executed (tests remain request-only). See [plan](LAB-MANAGED-SCIENTIFIC-FILES-PLAN.md).
@@ -2628,3 +2633,18 @@ Repeated sequencing: scientific capture requires a positive whole purchased run 
 Added upload resume API tests and specimen-hold component tests; eight focused tests passed with the existing file-picker suite. Covers retained offsets, lost completion acknowledgment, request capability and safe-boundary confirmation. See OPERATIONAL-GAP-CLOSURE-20260920.md.
 
 Final release rerun: all 177 test files and 1,102 tests passed. Full lint, TypeScript, production build and documentation consistency checks passed. The tube-receipt test isolates the unrelated hold child, whose interactions have dedicated coverage.
+
+## September 21 samples and shipping screen review
+
+Updated regression sources for approved-procedure prerequisites, revised field
+labels, and the Send packing-review-before-print path, including retained focus,
+revision acknowledgment, frozen regular-ice/no-cooling content and shared-step
+deduplication. Read-only packing review must not issue or record a shipment.
+Manual local desktop/mobile configuration review is recorded in
+[SAMPLE-SHIPPING-PACKING-REFINEMENT-PLAN.md](SAMPLE-SHIPPING-PACKING-REFINEMENT-PLAN.md).
+The subsequent deployment request authorized verification. All 1,110 tests across
+177 files pass, including the actual packing-dialog and exact printed-revision
+acknowledgment cases. Full lint, TypeScript, production build and 56-guide
+documentation consistency pass. The first full run found a stale Order Settings
+sample-navigation assertion and a load-related destination-form timeout; the
+corrected full rerun passes with bounded worker concurrency.

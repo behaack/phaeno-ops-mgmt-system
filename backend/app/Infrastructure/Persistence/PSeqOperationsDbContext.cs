@@ -137,6 +137,7 @@ public sealed partial class PSeqOperationsDbContext(
     public DbSet<TransportationKitRequestLine> TransportationKitRequestLines { get; set; }
     public DbSet<SampleTypeDefinition> SampleTypeDefinitions { get; set; }
     public DbSet<SampleShippingInstructionRule> SampleShippingInstructionRules { get; set; }
+    public DbSet<SampleShippingProcedure> SampleShippingProcedures { get; set; }
     public DbSet<SampleShipment> SampleShipments { get; set; }
     public DbSet<SampleShipmentItem> SampleShipmentItems { get; set; }
     public DbSet<SampleShipmentTubeSlot> SampleShipmentTubeSlots { get; set; }

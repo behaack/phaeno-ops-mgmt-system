@@ -40,6 +40,8 @@ public static class SampleShippingContainerModelConfiguration
         {
             entity.ToTable("sample_shipping_container_compatibilities", commercialSchema);
             entity.HasKey(item => item.Id);
+            entity.Property(item => item.TemperatureControlInstructions).HasMaxLength(2000);
+            entity.Property(item => item.PackingInstructions).HasMaxLength(4000);
             entity.HasIndex(item => new { item.ContainerDefinitionId, item.SampleTypeDefinitionId, item.InstructionRuleId }).IsUnique();
             entity.HasOne<SampleShippingContainerDefinition>().WithMany(item => item.Compatibilities)
                 .HasForeignKey(item => item.ContainerDefinitionId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_shipping_container_compat_revision");

@@ -29,6 +29,44 @@ describe('SampleShippingPacketPage', () => {
   beforeEach(() => { api.getPacket.mockReset(); vi.spyOn(window, 'print').mockImplementation(() => undefined) })
   afterEach(() => { vi.restoreAllMocks() })
 
+  it.each(['Regular ice: approved amount for this container.', 'No cooling required.'])('uses frozen container instructions and deduplicates a shared procedure: %s', async control => {
+    const instructionRule = { shippingProcedureId: 'procedure-1', packingInstructions: 'Shared sealed containment steps.', destinationInstructions: 'Use the receiving entrance.' }
+    api.getPacket.mockResolvedValue({ ...packet, instructionSnapshotJson: JSON.stringify({
+      containerPacking: { commonName: 'Small shipper', revision: 2, temperatureControlInstructions: control, samples: [{ sampleTypeId: 'type-1', packingInstructions: 'Approved insert for sample one.' }, { sampleTypeId: 'type-2', packingInstructions: 'Approved insert for sample two.' }] },
+      samples: [{ sampleType: { id: 'type-1', name: 'Sample one', packagingInstructions: 'Superseded sample packing.' }, instructionRule }, { sampleType: { id: 'type-2', name: 'Sample two' }, instructionRule }],
+    }) })
+    show()
+    await screen.findByRole('button', { name: 'Print shipping insert' })
+    screen.getByText('Full packing instructions and sample / tube list').closest('details')!.open = true
+    expect(screen.getAllByText('Shared sealed containment steps.')).toHaveLength(1)
+    expect(screen.getByText('Approved insert for sample one.')).toBeTruthy()
+    expect(screen.getByText('Approved insert for sample two.')).toBeTruthy()
+    expect(screen.queryByText('Superseded sample packing.')).toBeNull()
+    expect(document.querySelector('.packet-receiving-notes')?.textContent).toContain(control)
+  })
+
+  it('shows frozen packing immediately in the shipment review without a second page or print side effect', async () => {
+    api.getPacket.mockResolvedValue({ ...packet, instructionSnapshotJson: JSON.stringify({ containerPacking: { commonName: 'Reviewed shipper', revision: 2, temperatureControlInstructions: 'No cooling required.' } }) })
+    const onPrint = vi.fn()
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(<QueryClientProvider client={client}><SampleShippingPacketPage shipmentId="shipment-1" embedded packingOnly onPrint={onPrint} /></QueryClientProvider>)
+    expect(await screen.findByText('No cooling required.')).toBeTruthy()
+    expect(screen.queryByRole('main')).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Back to shipment' })).toBeNull()
+    expect(screen.queryByText('Full packing instructions and sample / tube list')).toBeNull()
+    expect(window.print).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Print shipping insert' }))
+    expect(onPrint).toHaveBeenCalledOnce()
+  })
+
+  it('retains standalone packing in historical packets', async () => {
+    api.getPacket.mockResolvedValue({ ...packet, instructionSnapshotJson: JSON.stringify({ samples: [{ sampleType: { packagingInstructions: 'Historical sample preparation.' }, instructionRule: { packingInstructions: 'Historical packing.' } }] }) })
+    show()
+    await screen.findByRole('button', { name: 'Print shipping insert' })
+    expect(screen.getByText('Historical sample preparation.')).toBeTruthy()
+    expect(screen.getByText('Historical packing.')).toBeTruthy()
+  })
+
   it('checks a fresh cached packet and renders the current revision before printing once', async () => {
     let resolvePacket!: (value: typeof packet) => void
     api.getPacket.mockImplementation(() => new Promise<typeof packet>((resolve) => { resolvePacket = resolve }))

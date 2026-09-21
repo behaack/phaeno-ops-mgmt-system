@@ -26,6 +26,22 @@ public static class OrderManagementModelConfiguration
 
     private static void ConfigureSampleShipping(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<SampleShippingProcedure>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.Name), 255);
+            Text(entity.Property(e => e.PackingInstructions), 4000);
+            Text(entity.Property(e => e.TemperatureInstructions), 4000);
+            Text(entity.Property(e => e.CarrierInstructions), 4000);
+            Text(entity.Property(e => e.DispatchInstructions), 4000);
+            Text(entity.Property(e => e.RequiredDocuments), 4000);
+            Text(entity.Property(e => e.ExceptionInstructions), 4000);
+            Text(entity.Property(e => e.InternationalCustomsInstructions), 4000, false);
+            entity.HasIndex(e => new { e.DefinitionKey, e.Revision }).IsUnique();
+            entity.HasIndex(e => e.SupersedesProcedureId).IsUnique();
+            entity.HasOne<SampleShippingProcedure>().WithMany().HasForeignKey(e => e.SupersedesProcedureId).OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
         modelBuilder.Entity<SampleShippingDestination>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -87,6 +103,8 @@ public static class OrderManagementModelConfiguration
         modelBuilder.Entity<SampleShippingInstructionRule>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.HasOne<SampleShippingProcedure>().WithMany().HasForeignKey(e => e.ShippingProcedureId).OnDelete(DeleteBehavior.Restrict);
+            Text(entity.Property(e => e.DestinationInstructions), 4000, false);
             Text(entity.Property(e => e.CompatibilityGroup), 50);
             Text(entity.Property(e => e.PackingInstructions), 4000);
             Text(entity.Property(e => e.TemperatureInstructions), 4000);

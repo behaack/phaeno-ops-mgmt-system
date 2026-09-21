@@ -21,9 +21,23 @@ const labLabel = { container, accessionNumber: 'ACC-1', commercialOrderNumber: '
 const kit: ShippingStockKit = { id: 'kit-example', kitNumber: 'KIT-58073414ED6C47109A3E073EE5F9311F', container: { definitionId: 'container-example', commonName: '20-tube insulated container', sku: '000-20', capacity: 20 }, tubeSupplierName: 'Example', tubeProductNumber: 'Example', tubeLotNumber: null, shipperSupplierName: 'Example', shipperProductNumber: 'Example', status: 'Available', organizationId: null, authorizationSourceId: null, authorizationReference: null, boundSampleShipmentId: null, outboundCarrier: null, outboundTrackingNumber: null, fulfilledAt: null, version: 1, tubes: [] }
 const kitMode = new URLSearchParams(window.location.search).has('stockKit')
 const labMode = new URLSearchParams(window.location.search).has('labLabel')
+const packingMode = new URLSearchParams(window.location.search).has('packingReview')
+if (packingMode) {
+  const control = new URLSearchParams(window.location.search).has('ambient')
+    ? 'No cooling required for this approved container.'
+    : 'Regular ice: 1 kg for the entire small container.'
+  packet.instructionSnapshotJson = JSON.stringify({
+    destination: { receivingHours: 'Monday through Thursday', timeZoneId: 'America/Los_Angeles' },
+    containerPacking: { commonName: 'Small container', revision: 1, temperatureControlInstructions: control,
+      samples: ['rna', 'dna'].map(sampleTypeId => ({ sampleTypeId, packingInstructions: `Seal the ${sampleTypeId.toUpperCase()} secondary bag.` })) },
+    samples: ['rna', 'dna'].map(id => ({ sampleType: { id, name: id.toUpperCase(), maximumTransitHours: 24 },
+      instructionRule: { shippingProcedureId: 'shared-procedure', packingInstructions: 'Use the shared approved outer packaging.',
+        dispatchInstructions: 'Dispatch within the receiving window.' } })),
+  })
+}
 api.defaults.adapter = async config => ({ config, status: 200, statusText: 'OK', headers: {}, data: { success: true, data: labMode ? labLabel : packet, error: null } })
 const root = createRootRoute({ component: () => <div data-portal-shell className="flex min-h-screen flex-col"><header data-portal-header className="h-24">Portal navigation</header><div className="flex flex-1 flex-col"><Outlet /></div><footer className="h-24">Portal legal footer</footer></div> })
-const route = createRoute({ getParentRoute: () => root, path: '/e2e/fixtures/shipping-insert.html', component: () => kitMode ? <StockKitBarcodeDialog kit={kit} onClose={() => undefined} /> : labMode ? <LabLabelDialog container={container} onClose={() => undefined} onRecorded={() => Promise.resolve()} /> : <SampleShippingPacketPage shipmentId="example" /> })
+const route = createRoute({ getParentRoute: () => root, path: '/e2e/fixtures/shipping-insert.html', component: () => kitMode ? <StockKitBarcodeDialog kit={kit} onClose={() => undefined} /> : labMode ? <LabLabelDialog container={container} onClose={() => undefined} onRecorded={() => Promise.resolve()} /> : packingMode ? <main className="page-wrap p-4"><h1 className="mb-4 text-2xl font-semibold">Packing instructions</h1><SampleShippingPacketPage shipmentId="example" embedded packingOnly /></main> : <SampleShippingPacketPage shipmentId="example" /> })
 const router = createRouter({ routeTree: root.addChildren([route]) })
 const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
 createRoot(document.getElementById('root')!).render(<QueryClientProvider client={client}><RouterProvider router={router} /></QueryClientProvider>)

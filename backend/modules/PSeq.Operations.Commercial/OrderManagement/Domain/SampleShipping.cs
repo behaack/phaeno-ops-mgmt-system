@@ -233,7 +233,7 @@ public sealed class SampleTypeDefinition : IAudit, IConcurrency
         PrimaryContainerRequirements = OrderText.Required(primaryContainerRequirements, nameof(primaryContainerRequirements), 2000);
         TemperatureRequirements = OrderText.Required(temperatureRequirements, nameof(temperatureRequirements), 2000);
         StabilizerRequirements = OrderText.Optional(stabilizerRequirements, 2000);
-        PackagingInstructions = OrderText.Required(packagingInstructions, nameof(packagingInstructions), 4000);
+        PackagingInstructions = OrderText.Optional(packagingInstructions, 4000) ?? string.Empty;
         LabelingInstructions = OrderText.Required(labelingInstructions, nameof(labelingInstructions), 4000);
         ProhibitedIdentifiers = OrderText.Required(prohibitedIdentifiers, nameof(prohibitedIdentifiers), 2000);
         SafetyRequirements = OrderText.Required(safetyRequirements, nameof(safetyRequirements), 2000);
@@ -266,6 +266,8 @@ public sealed class SampleShippingInstructionRule : IAudit, IConcurrency
     public Guid DefinitionKey { get; private set; }
     public int Revision { get; private set; }
     public Guid? SupersedesInstructionRuleId { get; private set; }
+    public Guid? ShippingProcedureId { get; private set; }
+    public string? DestinationInstructions { get; private set; }
     public Guid DestinationId { get; private set; }
     public Guid SampleTypeDefinitionId { get; private set; }
     public string CompatibilityGroup { get; private set; } = null!;
@@ -306,7 +308,9 @@ public sealed class SampleShippingInstructionRule : IAudit, IConcurrency
         string? internationalCustomsInstructions,
         bool requiresSeparateShipment,
         DateTime effectiveFrom,
-        bool isActive)
+        bool isActive,
+        SampleShippingProcedure? procedure = null,
+        string? destinationInstructions = null)
     {
         if (definitionKey == Guid.Empty || destinationId == Guid.Empty || sampleTypeDefinitionId == Guid.Empty)
             throw new ArgumentException("Instruction-rule, destination, and sample-type identifiers are required.");
@@ -321,12 +325,27 @@ public sealed class SampleShippingInstructionRule : IAudit, IConcurrency
         SupersedesInstructionRuleId = supersedesInstructionRuleId;
         DestinationId = destinationId;
         SampleTypeDefinitionId = sampleTypeDefinitionId;
+        if (procedure is { IsActive: false }) throw new ArgumentException("Select an approved shipping procedure.");
+        ShippingProcedureId = procedure?.Id;
+        DestinationInstructions = OrderText.Optional(destinationInstructions, 4000);
+        if (procedure is not null)
+        {
+            packingInstructions = procedure.PackingInstructions;
+            temperatureInstructions = procedure.TemperatureInstructions;
+            carrierInstructions = procedure.CarrierInstructions;
+            dispatchInstructions = procedure.DispatchInstructions;
+            requiredDocuments = procedure.RequiredDocuments;
+            exceptionInstructions = procedure.ExceptionInstructions;
+            internationalCustomsInstructions = procedure.InternationalCustomsInstructions;
+        }
         CompatibilityGroup = SampleShippingText.Code(compatibilityGroup, nameof(compatibilityGroup));
         PackingInstructions = OrderText.Required(packingInstructions, nameof(packingInstructions), 4000);
         TemperatureInstructions = OrderText.Required(temperatureInstructions, nameof(temperatureInstructions), 4000);
         CarrierInstructions = OrderText.Required(carrierInstructions, nameof(carrierInstructions), 4000);
         DispatchInstructions = OrderText.Required(dispatchInstructions, nameof(dispatchInstructions), 4000);
-        DeliveryInstructions = OrderText.Required(deliveryInstructions, nameof(deliveryInstructions), 4000);
+        DeliveryInstructions = procedure is null
+            ? OrderText.Required(deliveryInstructions, nameof(deliveryInstructions), 4000)
+            : string.Empty;
         RequiredDocuments = OrderText.Required(requiredDocuments, nameof(requiredDocuments), 4000);
         ExceptionInstructions = OrderText.Required(exceptionInstructions, nameof(exceptionInstructions), 4000);
         InternationalCustomsInstructions = OrderText.Optional(internationalCustomsInstructions, 4000);

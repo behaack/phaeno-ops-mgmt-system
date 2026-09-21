@@ -3,7 +3,7 @@ import type { SampleShipmentWorkflow } from './sample-shipping'
 
 type Envelope<T> = { success: boolean; data: T; error: { code: string; message: string } | null }
 
-export type ContainerCompatibility = { sampleTypeDefinitionId: string; instructionRuleId: string }
+export type ContainerCompatibility = { sampleTypeDefinitionId: string; instructionRuleId: string; temperatureControlInstructions?: string | null; packingInstructions?: string | null }
 export type ShippingContainerDefinition = {
   id: string
   definitionKey: string

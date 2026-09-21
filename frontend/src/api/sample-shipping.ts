@@ -66,6 +66,8 @@ export type SampleTypeDefinition = {
 }
 
 export type SampleShippingInstructionRule = {
+  shippingProcedureId?: string | null
+  destinationInstructions?: string | null
   id: string
   definitionKey: string
   revision: number
@@ -91,6 +93,7 @@ export type SampleShippingInstructionRule = {
 }
 
 export type SampleShippingConfiguration = {
+  procedures?: SampleShippingProcedure[]
   destinations: SampleShippingDestination[]
   sampleTypes: SampleTypeDefinition[]
   instructionRules: SampleShippingInstructionRule[]
@@ -126,6 +129,8 @@ export type SampleShippingPreview = {
   compatibilityGroup: string
   requiresSeparateShipment: boolean
   sampleRules: Array<{
+    shippingProcedureId?: string | null
+    destinationInstructions?: string | null
     sampleType: SampleTypeDefinition
     packingInstructions: string
     temperatureInstructions: string
@@ -262,6 +267,31 @@ export type SampleShipmentWorkflow = {
     isVoided: boolean
   } | null
 }
+
+export type SampleShippingProcedure = {
+  id: string
+  definitionKey: string
+  revision: number
+  supersedesProcedureId: string | null
+  name: string
+  packingInstructions: string
+  temperatureInstructions: string
+  carrierInstructions: string
+  dispatchInstructions: string
+  requiredDocuments: string
+  exceptionInstructions: string
+  internationalCustomsInstructions: string | null
+  isActive: boolean
+  version: number
+}
+export type SampleShippingProcedureWrite = Omit<SampleShippingProcedure, 'id' | 'definitionKey' | 'revision' | 'version'> & { supersededVersion: number | null }
+export async function createSampleShippingProcedure(input: SampleShippingProcedureWrite) {
+  const response = (await api.post<ApiEnvelope<SampleShippingProcedure>>('/platform/sample-shipping/procedures', input)).data
+  if (!response.success) throw new Error(response.error?.message ?? 'The shipping procedure could not be saved.')
+  return response.data
+}
+
+
 
 export type SampleShipmentPacking = {
   shipmentId: string

@@ -325,7 +325,7 @@
       "title": "Prepare and ship samples",
       "summary": "Choose Trial containers, retain tube identities, print shipping inserts and record dispatch.",
       "order": 25,
-      "reviewedAt": "2026-09-19",
+      "reviewedAt": "2026-09-21",
       "navigationGroup": "trial-project",
       "contentType": "guide",
       "topicIds": [
@@ -575,7 +575,7 @@
       "title": "Prepare and ship samples",
       "summary": "Use the Job workspace to receive kits, assign containers, scan tubes, print inserts and record dispatch.",
       "order": 35,
-      "reviewedAt": "2026-09-16",
+      "reviewedAt": "2026-09-21",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -871,7 +871,7 @@
       "title": "Phaeno operations guide",
       "summary": "Find each workflow, its owning workspace, reusable configuration, and the roles needed to act.",
       "order": 10,
-      "reviewedAt": "2026-09-19",
+      "reviewedAt": "2026-09-21",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -1078,7 +1078,7 @@
       "title": "Company requests and approvals",
       "summary": "Create Company requests, decide them centrally, complete approved work, and apply reviewed Prospect conversions.",
       "order": 21,
-      "reviewedAt": "2026-09-19",
+      "reviewedAt": "2026-09-21",
       "navigationGroup": "customer-relationship-management",
       "contentType": "guide",
       "topicIds": [
@@ -1809,7 +1809,7 @@
       "title": "Configuration and file retention",
       "summary": "Maintain reusable defaults, services, analyses, Partner rules, shipping container sizes and compatibility, and released-file retention.",
       "order": 60,
-      "reviewedAt": "2026-09-19",
+      "reviewedAt": "2026-09-21",
       "navigationGroup": "platform-operations",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1874,7 +1874,7 @@
       "title": "Use Partner Lab services",
       "summary": "Complete Partner ordering and shipping on the Job, then track sample receipt and laboratory results.",
       "order": 25,
-      "reviewedAt": "2026-09-20",
+      "reviewedAt": "2026-09-21",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [

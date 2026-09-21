@@ -50,7 +50,7 @@ public sealed class SampleShippingContainerCatalogService(PSeqOperationsDbContex
 
     public async Task<SampleShippingContainerDefinitionDto> CreateAsync(CreateSampleShippingContainerRequest request, CancellationToken cancellationToken)
     {
-        await ValidateContextsAsync(request.Compatibilities, cancellationToken);
+        await ValidatePackingDetailsAsync(request.Compatibilities, request.IsActive, cancellationToken);
         SampleShippingContainerType type;
         SampleShippingContainerDefinition definition;
         try
@@ -90,7 +90,7 @@ public sealed class SampleShippingContainerCatalogService(PSeqOperationsDbContex
 
     public async Task<SampleShippingContainerDefinitionDto> ReviseAsync(Guid id, ReviseSampleShippingContainerRequest request, CancellationToken cancellationToken)
     {
-        await ValidateContextsAsync(request.Compatibilities, cancellationToken);
+        await ValidatePackingDetailsAsync(request.Compatibilities, request.IsActive, cancellationToken);
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var previous = await dbContext.SampleShippingContainerDefinitions.Include(item => item.ContainerType)
             .SingleOrDefaultAsync(item => item.Id == id, cancellationToken) ?? throw Missing();
@@ -126,7 +126,8 @@ public sealed class SampleShippingContainerCatalogService(PSeqOperationsDbContex
 
     public async Task ValidateContextsAsync(IReadOnlyList<ContainerCompatibilityRequest>? contexts, CancellationToken cancellationToken)
     {
-        if (contexts is null || contexts.Count == 0 || contexts.Count > 100 || contexts.Distinct().Count() != contexts.Count)
+        if (contexts is null || contexts.Count == 0 || contexts.Count > 100
+            || contexts.Select(item => (item.SampleTypeDefinitionId, item.InstructionRuleId)).Distinct().Count() != contexts.Count)
             throw Invalid("Choose at least one distinct sample type and handling rule, up to 100 combinations.");
         var ids = contexts.Select(item => item.InstructionRuleId).ToArray();
         var rules = await dbContext.SampleShippingInstructionRules.AsNoTracking().Where(item => ids.Contains(item.Id))
@@ -139,6 +140,8 @@ public sealed class SampleShippingContainerCatalogService(PSeqOperationsDbContex
                 || !keys.TryGetValue(rule.SampleTypeDefinitionId, out var ruleKey)
                 || !keys.TryGetValue(pair.SampleTypeDefinitionId, out var pairKey) || ruleKey != pairKey)
                 throw Invalid("Each handling rule must belong to its selected sample type.");
+        if (contexts.Select(pair => (keys[pair.SampleTypeDefinitionId], pair.InstructionRuleId)).Distinct().Count() != contexts.Count)
+            throw Invalid("Choose only one packing instruction for each sample type and handling rule.");
     }
 
     public async Task<SampleShippingContainerDefinitionDto> DeactivateAsync(Guid id, long version, CancellationToken cancellationToken)
@@ -158,13 +161,28 @@ public sealed class SampleShippingContainerCatalogService(PSeqOperationsDbContex
         item.ContainerType.Sku, item.CommonName, item.TubeCapacity, item.Revision, item.SupersedesDefinitionId,
         item.SupplierName, item.SupplierProductNumber, item.PackingInstructions, item.EffectiveFrom, item.EffectiveTo,
         item.IsActive, item.DisplayOrder, item.Version, item.Compatibilities.OrderBy(pair => pair.SampleTypeDefinitionId).ThenBy(pair => pair.InstructionRuleId)
-            .Select(pair => new ContainerCompatibilityRequest(pair.SampleTypeDefinitionId, pair.InstructionRuleId)).ToArray(), item.DeactivatedAt);
+            .Select(pair => new ContainerCompatibilityRequest(pair.SampleTypeDefinitionId, pair.InstructionRuleId, pair.TemperatureControlInstructions, pair.PackingInstructions)).ToArray(), item.DeactivatedAt);
 
     private IQueryable<SampleShippingContainerDefinition> Query() => dbContext.SampleShippingContainerDefinitions.AsNoTracking()
         .Include(item => item.ContainerType).Include(item => item.Compatibilities);
     private static void AddContexts(SampleShippingContainerDefinition definition, IReadOnlyList<ContainerCompatibilityRequest> contexts)
     {
-        foreach (var pair in contexts) definition.Compatibilities.Add(new(definition.Id, pair.SampleTypeDefinitionId, pair.InstructionRuleId));
+        foreach (var pair in contexts) definition.Compatibilities.Add(new(definition.Id, pair.SampleTypeDefinitionId, pair.InstructionRuleId, pair.TemperatureControlInstructions, pair.PackingInstructions));
+    }
+    private async Task ValidatePackingDetailsAsync(IReadOnlyList<ContainerCompatibilityRequest> contexts, bool active, CancellationToken ct)
+    {
+        await ValidateContextsAsync(contexts, ct);
+        var ids = contexts.Select(item => item.InstructionRuleId).ToArray();
+        var sharedRules = await dbContext.SampleShippingInstructionRules.AsNoTracking()
+            .Where(item => ids.Contains(item.Id) && item.ShippingProcedureId != null).Select(item => item.Id).ToListAsync(ct);
+        foreach (var pair in contexts)
+        {
+            if (pair.TemperatureControlInstructions?.Length > 2000 || pair.PackingInstructions?.Length > 4000)
+                throw Invalid("Use at most 2,000 characters for temperature control and 4,000 for packing steps.");
+            if (active && sharedRules.Contains(pair.InstructionRuleId)
+                && (string.IsNullOrWhiteSpace(pair.TemperatureControlInstructions) || string.IsNullOrWhiteSpace(pair.PackingInstructions)))
+                throw Invalid("Every approved sample/container combination needs packing steps and temperature-control instructions, including when no cooling is needed.");
+        }
     }
     private async Task SaveAsync(CancellationToken cancellationToken)
     {

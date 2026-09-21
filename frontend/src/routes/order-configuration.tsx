@@ -16,6 +16,9 @@ export const Route = createFileRoute('/order-configuration')({
     if (search.configurationSection === 'retention') {
       throw redirect({ to: '/file-management', replace: true })
     }
+    if (location.pathname === '/order-configuration' && search.configurationSection === 'sample-types') {
+      throw redirect({ to: '/sample-shipping-settings', search: { shippingSection: 'sample-types' }, replace: true })
+    }
     if (location.pathname === '/order-configuration' && search.configurationSection === 'shipping') {
       throw redirect({ to: '/sample-shipping-settings', search: { ...parseShippingContainerListSearch(search), shippingSection: 'containers' }, replace: true })
     }

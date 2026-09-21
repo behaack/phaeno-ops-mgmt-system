@@ -1,6 +1,7 @@
 namespace PhaenoPortal.App.Features.OrderManagement.DTOs;
 
-public sealed record ContainerCompatibilityRequest(Guid SampleTypeDefinitionId, Guid InstructionRuleId);
+public sealed record ContainerCompatibilityRequest(Guid SampleTypeDefinitionId, Guid InstructionRuleId,
+    string? TemperatureControlInstructions = null, string? PackingInstructions = null);
 public sealed record ContainerQuantityRequest(Guid ContainerDefinitionId, int Quantity);
 public sealed record DeactivateSampleShippingContainerRequest(long Version);
 public sealed record SampleShippingContainerDefinitionDto(Guid Id, Guid DefinitionKey, string Sku,

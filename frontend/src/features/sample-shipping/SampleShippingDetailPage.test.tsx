@@ -18,6 +18,7 @@ const api = vi.hoisted(() => ({
   assignSampleTube: vi.fn(),
   downloadSampleShippingCrosswalk: vi.fn(),
   getSampleShipment: vi.fn(),
+  getSampleShippingPacket: vi.fn(),
   issueSampleShippingPacket: vi.fn(),
   recordSampleShipment: vi.fn(),
   getSampleShipments: vi.fn(),
@@ -39,6 +40,7 @@ vi.mock('#/api/sample-shipping', () => ({
   assignSampleTube: api.assignSampleTube,
   downloadSampleShippingCrosswalk: api.downloadSampleShippingCrosswalk,
   getSampleShipment: api.getSampleShipment,
+  getSampleShippingPacket: api.getSampleShippingPacket,
   issueSampleShippingPacket: api.issueSampleShippingPacket,
   recordSampleShipment: api.recordSampleShipment,
   getSourceSampleShipments: api.getSampleShipments,
@@ -49,6 +51,7 @@ describe('SampleShippingDetailPage', () => {
     vi.clearAllMocks()
     window.sessionStorage.clear()
     api.printedInsert = shipment.currentPacket!
+    api.getSampleShippingPacket.mockResolvedValue({ shipment, destinationSnapshotJson: '{}', instructionSnapshotJson: JSON.stringify({ containerPacking: { commonName: 'Review container', temperatureControlInstructions: 'Regular ice: approved amount.' } }), manifestSnapshotJson: '{}' })
     api.getSampleShipment.mockResolvedValue(shipment)
     api.getSampleShipments.mockResolvedValue([shipment])
     api.assignSampleTube.mockResolvedValue(shipment)
@@ -113,12 +116,16 @@ describe('SampleShippingDetailPage', () => {
     expect(api.assignSampleTube).not.toHaveBeenCalled()
   })
 
-  it('keeps Print as the next action after cancelled printing and restores its focus after Not yet', async () => {
+  it('keeps packing review as the next action after cancelled printing and restores its focus after Not yet', async () => {
     const navigation = vi.fn()
     renderPage(undefined, customerSession(), sendHost({ onNavigationLockChange: navigation }))
-    const print = await waitFor(() => currentNext().getByRole('button', { name: 'Print shipping insert' }))
+    const print = await waitFor(() => currentNext().getByRole('button', { name: 'Review packing and print' }))
     await waitFor(() => expect((print as HTMLButtonElement).disabled).toBe(false))
     fireEvent.click(print)
+    const packing = await screen.findByRole('dialog', { name: 'Packing instructions' })
+    expect(await within(packing).findByText('Regular ice: approved amount.')).toBeTruthy()
+    expect(screen.queryByTestId('shipping-insert-print-frame')).toBeNull()
+    fireEvent.click(within(packing).getByRole('button', { name: 'Print shipping insert' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Close print dialog' }))
     const dialog = await screen.findByRole('dialog', { name: 'Confirm printed and packed' })
     expect(dialog.textContent).toContain(shipment.currentPacket!.packetNumber)
@@ -127,7 +134,7 @@ describe('SampleShippingDetailPage', () => {
     expect(api.recordSampleShipment).not.toHaveBeenCalled()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Not yet' }))
     await waitFor(() => expect(navigation).toHaveBeenLastCalledWith(false))
-    await waitFor(() => expect(currentNext().getByRole('button', { name: 'Print shipping insert' })).toBeTruthy())
+    await waitFor(() => expect(currentNext().getByRole('button', { name: 'Review packing and print' })).toBeTruthy())
     expect(currentNext().queryByRole('button', { name: 'Record shipment' })).toBeNull()
     await waitFor(() => expect(document.activeElement).toBe(print))
   })
@@ -135,7 +142,8 @@ describe('SampleShippingDetailPage', () => {
   it('requires explicit acknowledgement, keeps it across remount and reprint cancellation, and invalidates it for a new revision', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
     const view = renderPage(client, customerSession(), sendHost())
-    fireEvent.click(await waitFor(() => currentNext().getByRole('button', { name: 'Print shipping insert' })))
+    fireEvent.click(await waitFor(() => currentNext().getByRole('button', { name: 'Review packing and print' })))
+    fireEvent.click(await within(await screen.findByRole('dialog', { name: 'Packing instructions' })).findByRole('button', { name: 'Print shipping insert' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Close print dialog' }))
     const confirmed = await screen.findByRole('button', { name: 'Printed and packed' })
     await waitFor(() => expect((confirmed as HTMLButtonElement).disabled).toBe(false))
@@ -154,13 +162,14 @@ describe('SampleShippingDetailPage', () => {
     const revised = { ...shipment, currentPacket: { ...shipment.currentPacket!, id: 'revised-insert', revision: 2 } }
     api.getSampleShipment.mockResolvedValue(revised)
     await act(async () => { await client.refetchQueries({ queryKey: ['sample-shipment', shipment.id] }) })
-    await waitFor(() => expect(currentNext().getByRole('button', { name: 'Print shipping insert' })).toBeTruthy())
+    await waitFor(() => expect(currentNext().getByRole('button', { name: 'Review packing and print' })).toBeTruthy())
     expect(currentNext().queryByRole('button', { name: 'Record shipment' })).toBeNull()
   })
 
   it('rechecks after print and only acknowledges the exact revision actually printed', async () => {
     renderPage(undefined, customerSession(), sendHost())
-    fireEvent.click(await waitFor(() => currentNext().getByRole('button', { name: 'Print shipping insert' })))
+    fireEvent.click(await waitFor(() => currentNext().getByRole('button', { name: 'Review packing and print' })))
+    fireEvent.click(await within(await screen.findByRole('dialog', { name: 'Packing instructions' })).findByRole('button', { name: 'Print shipping insert' }))
     let resolveRefresh!: (value: SampleShipmentWorkflow) => void
     api.getSampleShipment.mockImplementation(() => new Promise<SampleShipmentWorkflow>(resolve => { resolveRefresh = resolve }))
     fireEvent.click(await screen.findByRole('button', { name: 'Close print dialog' }))
@@ -175,7 +184,8 @@ describe('SampleShippingDetailPage', () => {
 
   it('accepts a newer validated frame revision only after the shipment refresh confirms it', async () => {
     renderPage(undefined, customerSession(), sendHost())
-    fireEvent.click(await waitFor(() => currentNext().getByRole('button', { name: 'Print shipping insert' })))
+    fireEvent.click(await waitFor(() => currentNext().getByRole('button', { name: 'Review packing and print' })))
+    fireEvent.click(await within(await screen.findByRole('dialog', { name: 'Packing instructions' })).findByRole('button', { name: 'Print shipping insert' }))
     api.printedInsert = { ...shipment.currentPacket!, id: 'new-frame-insert', revision: 2 }
     api.getSampleShipment.mockResolvedValue({ ...shipment, currentPacket: { ...shipment.currentPacket!, ...api.printedInsert } })
     fireEvent.click(await screen.findByRole('button', { name: 'Close print dialog' }))
@@ -190,14 +200,15 @@ describe('SampleShippingDetailPage', () => {
     const session = customerSession()
     session.session!.capabilities.canManageSampleShipping = false
     renderPage(undefined, session, sendHost())
-    fireEvent.click(await waitFor(() => currentNext().getByRole('button', { name: 'Print shipping insert' })))
+    fireEvent.click(await waitFor(() => currentNext().getByRole('button', { name: 'Review packing and print' })))
+    fireEvent.click(await within(await screen.findByRole('dialog', { name: 'Packing instructions' })).findByRole('button', { name: 'Print shipping insert' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Fail print preparation' }))
     expect(screen.queryByRole('dialog', { name: 'Confirm printed and packed' })).toBeNull()
     expect(currentNext().queryByRole('button', { name: 'Record shipment' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Close print dialog' }))
     expect(screen.queryByRole('dialog', { name: 'Confirm printed and packed' })).toBeNull()
-    expect(currentNext().getByRole('button', { name: 'Print shipping insert' })).toBeTruthy()
+    expect(currentNext().getByRole('button', { name: 'Review packing and print' })).toBeTruthy()
   })
 
   it('offers direct insert confirmation only for a fully matched eligible container', async () => {

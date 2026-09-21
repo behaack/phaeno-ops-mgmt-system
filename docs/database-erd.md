@@ -15,10 +15,10 @@ The additive [step performance JSON contract](plans/LAB-STEP-PERFORMANCE-CONTRAC
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 137 | 2200 | 351 |
+| `commercial_ops` | 138 | 2222 | 353 |
 | `lab_ops` | 58 | 671 | 104 |
 | `website` | 5 | 51 | 4 |
-| **Total** | **201** | **2924** | **459** |
+| **Total** | **202** | **2946** | **461** |
 
 ## `public` schema
 
@@ -1577,6 +1577,26 @@ erDiagram
         uuid lab_service_offering_id FK,UK "not null"
         uuid sample_type_definition_id FK,UK "not null"
     }
+    sample_shipping_procedures {
+        uuid id PK "not null"
+        character_varying_4000 carrier_instructions "not null"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id "nullable"
+        uuid definition_key UK "not null"
+        character_varying_4000 dispatch_instructions "not null"
+        character_varying_4000 exception_instructions "not null"
+        character_varying_4000 international_customs_instructions "nullable"
+        boolean is_active "not null"
+        character_varying_255 name "not null"
+        character_varying_4000 packing_instructions "not null"
+        character_varying_4000 required_documents "not null"
+        integer revision UK "not null"
+        uuid supersedes_procedure_id FK,UK "nullable"
+        character_varying_4000 temperature_instructions "not null"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
     transportation_kit_request_lines {
         uuid id PK "not null"
         uuid container_definition_id FK,UK "not null"
@@ -1608,6 +1628,7 @@ erDiagram
     users o|--o{ customer_delivery_locations : "updated_by_user_id"
     lab_service_offerings ||--o{ lab_service_sample_types : "lab_service_offering_id"
     sample_type_definitions ||--o{ lab_service_sample_types : "sample_type_definition_id"
+    sample_shipping_procedures o|--o{ sample_shipping_procedures : "supersedes_procedure_id"
     sample_shipping_container_definitions ||--o{ transportation_kit_request_lines : "container_definition_id"
     transportation_kit_requests ||--o{ transportation_kit_request_lines : "transportation_kit_request_id"
     users o|--o{ transportation_kit_requests : "created_by_user_id"
@@ -1759,7 +1780,9 @@ erDiagram
         uuid id PK "not null"
         uuid container_definition_id FK,UK "not null"
         uuid instruction_rule_id FK,UK "not null"
+        character_varying_4000 packing_instructions "nullable"
         uuid sample_type_definition_id FK,UK "not null"
+        character_varying_2000 temperature_control_instructions "nullable"
     }
     sample_shipping_container_definitions {
         uuid id PK "not null"
@@ -2635,6 +2658,7 @@ erDiagram
         uuid definition_key UK "not null"
         character_varying_4000 delivery_instructions "not null"
         uuid destination_id FK "not null"
+        character_varying_4000 destination_instructions "nullable"
         character_varying_4000 dispatch_instructions "not null"
         timestamp_with_time_zone effective_from "not null"
         timestamp_with_time_zone effective_to "nullable"
@@ -2646,6 +2670,7 @@ erDiagram
         boolean requires_separate_shipment "not null"
         integer revision UK "not null"
         uuid sample_type_definition_id FK "not null"
+        uuid shipping_procedure_id FK "nullable"
         uuid supersedes_instruction_rule_id FK "nullable"
         character_varying_4000 temperature_instructions "not null"
         timestamp_with_time_zone updated_at "not null"
@@ -2730,6 +2755,7 @@ erDiagram
     sample_shipping_destinations o|--o{ sample_shipping_destinations : "supersedes_destination_id"
     sample_shipping_destinations ||--o{ sample_shipping_instruction_rules : "destination_id"
     sample_type_definitions ||--o{ sample_shipping_instruction_rules : "sample_type_definition_id"
+    sample_shipping_procedures o|--o{ sample_shipping_instruction_rules : "shipping_procedure_id"
     sample_shipping_instruction_rules o|--o{ sample_shipping_instruction_rules : "supersedes_instruction_rule_id"
     sample_shipping_packet_revisions o|--o{ sample_shipping_packet_revisions : "replaced_by_packet_revision_id"
     sample_shipments ||--o{ sample_shipping_packet_revisions : "sample_shipment_id"

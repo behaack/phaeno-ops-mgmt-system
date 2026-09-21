@@ -1,5 +1,5 @@
 const orderSettings = 'A Phaeno platform administrator handles this shared setup. Open the user menu → Order settings.'
-const shippingSettings = 'A Phaeno platform administrator handles this shared setup. Open the user menu → Sample shipping settings.'
+const shippingSettings = 'A Phaeno platform administrator handles this shared setup. Open the user menu → Samples & shipping.'
 const billingSettings = 'Finance handles this Company’s billing setup. Open Order operations → Finance → Customer billing, open this Company, and select Edit billing and tax.'
 const saveBilling = 'Complete the other required billing and tax fields in the same form, then select Save changes. Saving any billing or tax change requires a fresh Finance approval.'
 
@@ -17,16 +17,16 @@ const instructions: Record<string, string[]> = {
     'This requirement clears when quote validity is configured and the supported sample workflow is saved. These defaults apply across Companies.',
   ],
   'readiness-SampleConfigurationIncomplete': [
-    orderSettings + ' Select Sample types. Open the appropriate material definition; use Create revision to update it, or Add sample type if no approved definition exists.',
-    'Enter the approved material class, quantity unit and limits, container and temperature requirements, packaging, customer labeling, prohibited identifiers, and safety requirements. Obtain the scientific and operational requirements from the responsible team.',
+    shippingSettings + ' Select Sample types. Open the appropriate material definition; use Create revision to update it, or Add sample type if no approved definition exists.',
+    'Enter the approved material class, quantity unit and limits, primary-container and preservation requirements, customer labeling, prohibited identifiers, and safety requirements. Obtain the scientific and operational requirements from the responsible team.',
     'Set Effective from to the approved start date. After review, select Active for packet resolution and save with Add sample type or Create revision.',
     'This requirement clears when at least one sample type is active and currently effective. An inactive or future-dated definition does not clear it; each later shipment still checks its own samples.',
   ],
   'readiness-ShippingConfigurationIncomplete': [
     shippingSettings + ' Select Ship-to destinations. Review an existing destination or use Add destination. Use Create revision for changes.',
     'Complete the approved receiving address, hours, time zone, and delivery instructions. Set the approved Effective from date, select Active for packet resolution after review, and save the destination.',
-    'Select Sample shipping instructions. Add an instruction rule, or use Create revision on an existing rule. Choose the exact Destination revision and the named Sample type. The sample type automatically follows its latest active, effective revision; the form shows the revision currently in use.',
-    'Complete the compatibility group, packing, temperature, carrier, dispatch, delivery-window, required-document, and exception instructions. Set the approved Effective from date, select Active for packet resolution after review, then save.',
+    'Select Shipping assignments. Use Add assignment, or Actions then Create revision on an existing assignment. Choose the exact Destination revision and the named Sample type. The sample type automatically follows its latest active, effective revision; the form shows the revision currently in use.',
+    'Select an approved shared Shipping procedure, enter the compatibility group and add only destination-specific exceptions. Maintain each sample/container combination\'s packing and temperature-control instructions under Container sizes. Set the approved Effective from date, select Active for packet resolution after review, then save.',
     'This requirement clears when the rule and destination revision are active and currently effective, and the selected sample type has an active, currently effective revision. New sample-type revisions are followed automatically. A replacement destination still needs a rule linked to that destination revision.',
   ],
   'readiness-ResultDestinationIncomplete': [
@@ -35,8 +35,8 @@ const instructions: Record<string, string[]> = {
     'Review the other settings and select Save changes to apply this supported result workflow. This requirement clears when the workflow is saved; no customer email address or file-storage path is entered here.',
   ],
   'readiness-SubmissionInstructionsIncomplete': [
-    shippingSettings + ' Select Default submission instructions → Edit instructions.',
-    'Enter the approved general guidance a customer should follow before submitting samples, including preparation and the next shipping step. Use instructions agreed with the laboratory; detailed destination-specific packing rules belong in Sample shipping instructions.',
+    shippingSettings + ' Select Order submission guidance → Edit instructions.',
+    'Enter the approved general guidance a customer should follow before submitting samples, including preparation and the next shipping step. Use instructions agreed with the laboratory; detailed destination-specific packing rules belong in Shipping assignments.',
     'Select Save changes. This requirement clears when non-empty default instructions are saved. New orders use this guidance when no customer-specific instructions are configured; existing orders keep their saved instructions.',
   ],
   'readiness-BillingContactIncomplete': [

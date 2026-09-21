@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -21,10 +22,11 @@ export const shippingContainerSchema = z.object({
   sku: z.string().trim().min(1, 'Enter the SKU number.').max(100),
   commonName: z.string().trim().min(1, 'Enter the common name.').max(255),
   tubeCapacity: z.coerce.number().int('Capacity must be a whole number of tubes.').positive('Enter a usable capacity greater than zero.'),
-  ruleIds: z.array(z.string().uuid()).min(1, 'Select at least one compatible sample and handling rule.'),
+  ruleIds: z.array(z.string().uuid()).min(1, 'Select at least one sample and destination assignment.'),
   supplierName: z.string().trim().max(255),
   supplierProductNumber: z.string().trim().max(100),
   packingInstructions: z.string().trim().max(4000),
+  packingDetails: z.record(z.string(), z.object({ temperatureControlInstructions: z.string().trim().max(2000), packingInstructions: z.string().trim().max(4000) })).default({}),
   effectiveFrom: effectiveDate,
   effectiveTo: z.union([z.literal(''), effectiveDate]),
   displayOrder: z.coerce.number().int('Display order must be a whole number.').min(0, 'Use zero or a positive display order.'),
@@ -44,10 +46,19 @@ export function ShippingContainerEditor({ source, configuration, onClose, onSave
 }) {
   const [productDetailsOpen, setProductDetailsOpen] = useState(Boolean(source?.supplierName || source?.supplierProductNumber || source?.packingInstructions))
   const form = useForm<z.input<typeof shippingContainerSchema>, unknown, Values>({
-    resolver: zodResolver(shippingContainerSchema),
+    resolver: zodResolver(shippingContainerSchema.superRefine((values, context) => {
+      if (!values.isActive) return
+      for (const id of values.ruleIds) {
+        if (!configuration.instructionRules.find(rule => rule.id === id)?.shippingProcedureId) continue
+        for (const field of ['temperatureControlInstructions', 'packingInstructions'] as const) {
+          if (!values.packingDetails[id]?.[field]) context.addIssue({ code: 'custom', path: ['packingDetails', id, field], message: field === 'temperatureControlInstructions' ? 'Enter the approved temperature control, including when no cooling is needed.' : 'Enter the approved packing steps for this combination.' })
+        }
+      }
+    })),
     defaultValues: {
       sku: source?.sku ?? '', commonName: source?.commonName ?? '', tubeCapacity: source?.tubeCapacity ?? '',
       ruleIds: source?.compatibilities.map(value => value.instructionRuleId) ?? [],
+      packingDetails: Object.fromEntries((source?.compatibilities ?? []).map(value => [value.instructionRuleId, { temperatureControlInstructions: value.temperatureControlInstructions ?? '', packingInstructions: value.packingInstructions ?? '' }])),
       supplierName: source?.supplierName ?? '', supplierProductNumber: source?.supplierProductNumber ?? '',
       packingInstructions: source?.packingInstructions ?? '', effectiveFrom: localContainerDateTime(),
       effectiveTo: '', displayOrder: source?.displayOrder ?? 0, isActive: source?.isActive ?? false,
@@ -64,8 +75,9 @@ export function ShippingContainerEditor({ source, configuration, onClose, onSave
         displayOrder: values.displayOrder, isActive: values.isActive,
         compatibilities: values.ruleIds.map(id => {
           const rule = configuration.instructionRules.find(value => value.id === id)
-          if (!rule) throw new Error('A selected handling rule is no longer available. Reload the configuration before saving.')
-          return { sampleTypeDefinitionId: rule.sampleTypeDefinitionId, instructionRuleId: rule.id }
+          if (!rule) throw new Error('A selected shipping assignment is no longer available. Reload the configuration before saving.')
+          const details = values.packingDetails[id]
+          return { sampleTypeDefinitionId: rule.sampleTypeDefinitionId, instructionRuleId: rule.id, temperatureControlInstructions: details?.temperatureControlInstructions || null, packingInstructions: details?.packingInstructions || null }
         }),
       }
       return source ? reviseShippingContainerDefinition(source.id, { ...input, version: source.version })
@@ -98,7 +110,7 @@ export function ShippingContainerEditor({ source, configuration, onClose, onSave
   }
   return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent className="max-w-2xl">
     <DialogHeader><DialogTitle>{source ? `Revise ${source.commonName}` : 'Add container size'}</DialogTitle>
-      <DialogDescription>{source ? `Create revision ${source.revision + 1}. SKU ${source.sku} and existing shipment records stay unchanged.` : 'Set the approved capacity and handling rules. New sizes start as drafts.'}</DialogDescription></DialogHeader>
+      <DialogDescription>{source ? `Create revision ${source.revision + 1}. SKU ${source.sku} and existing shipment records stay unchanged.` : 'Set the approved capacity and shipping assignments. New sizes start as drafts.'}</DialogDescription></DialogHeader>
     {mutation.error ? <Alert variant="destructive"><AlertTitle>Container size was not saved</AlertTitle><AlertDescription>{getOrderErrorMessage(mutation.error, 'Review the values and try again.')}</AlertDescription></Alert> : null}
     <form id="shipping-container-editor" className="space-y-4" noValidate onSubmit={form.handleSubmit(values => { if (!mutation.isPending) mutation.mutate(values) })}>
       <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
@@ -108,25 +120,34 @@ export function ShippingContainerEditor({ source, configuration, onClose, onSave
         {input('displayOrder', 'Display order', 'number', true, 'Lower numbers appear first.')}
       </div>
       <fieldset aria-describedby={fieldHelpIds('container-rules', 'Choose exact controlled rules.', errors.ruleIds?.message)}>
-        <legend className="text-sm font-medium"><RequiredFieldName>Compatible sample and handling rules</RequiredFieldName></legend>
-        <p id="container-rules-help" className="mt-1 text-xs text-muted-foreground">Select the approved sample and destination combinations.</p>
+        <legend className="text-sm font-medium"><RequiredFieldName>Sample and destination assignments</RequiredFieldName></legend>
+        <p id="container-rules-help" className="mt-1 text-xs text-muted-foreground">Select the sample and destination assignments this container can support. Complete their packing instructions below.</p>
         <div className="mt-2 max-h-48 space-y-2 overflow-y-auto rounded-md border p-3">
           {rules.map(rule => <label key={rule.id} className="flex cursor-pointer items-start gap-2 text-sm">
             <input type="checkbox" className="mt-1" checked={ruleIds.includes(rule.id)} disabled={mutation.isPending}
               onChange={event => form.setValue('ruleIds', event.target.checked ? [...ruleIds, rule.id] : ruleIds.filter(id => id !== rule.id), { shouldDirty: true, shouldValidate: true })} />
             <span className="min-w-0 wrap-anywhere">{rule.sampleTypeName} · {rule.destinationName}<span className="block text-xs text-muted-foreground">{rule.compatibilityGroup} · revision {rule.revision}{rule.isActive ? '' : ' · inactive'}</span></span>
           </label>)}
-          {!rules.length ? <p className="text-sm text-muted-foreground">Add sample types and instruction rules in Sample shipping before defining compatibility.</p> : null}
+          {!rules.length ? <p className="text-sm text-muted-foreground">Create a <Link className="underline" to="/sample-shipping-settings" search={{ shippingSection: 'instructions' }}>shipping assignment</Link> before approving this container.</p> : null}
         </div>
         <ContainerFieldError id="container-rules-error" message={errors.ruleIds?.message} />
       </fieldset>
+      {rules.filter(rule => ruleIds.includes(rule.id)).map(rule => <section key={rule.id} className="space-y-3 rounded-lg border p-4" aria-labelledby={`packing-${rule.id}`}>
+        <h3 id={`packing-${rule.id}`} className="text-sm font-semibold">{rule.sampleTypeName} · {rule.destinationName}</h3>
+        <ContainerField id={`cooling-${rule.id}`} label="Temperature control for this container" required={Boolean(rule.shippingProcedureId) && form.watch('isActive')} help="State the method, amount, units and preparation for one complete container: regular ice, dry ice, cold packs, another method, or no cooling. Samples sharing a container must use the same approved instruction; amounts are not added per sample." error={errors.packingDetails?.[rule.id]?.temperatureControlInstructions?.message}>
+          <Textarea id={`cooling-${rule.id}`} rows={3} disabled={mutation.isPending} aria-invalid={Boolean(errors.packingDetails?.[rule.id]?.temperatureControlInstructions)} aria-describedby={fieldHelpIds(`cooling-${rule.id}`, 'Cooling guidance', errors.packingDetails?.[rule.id]?.temperatureControlInstructions?.message)} {...form.register(`packingDetails.${rule.id}.temperatureControlInstructions`)} />
+        </ContainerField>
+        <ContainerField id={`steps-${rule.id}`} label="Packing steps for this combination" required={Boolean(rule.shippingProcedureId) && form.watch('isActive')} help="Add the steps specific to this sample and container. Common shipping steps come from the assigned procedure." error={errors.packingDetails?.[rule.id]?.packingInstructions?.message}>
+          <Textarea id={`steps-${rule.id}`} rows={3} disabled={mutation.isPending} aria-invalid={Boolean(errors.packingDetails?.[rule.id]?.packingInstructions)} aria-describedby={fieldHelpIds(`steps-${rule.id}`, 'Packing guidance', errors.packingDetails?.[rule.id]?.packingInstructions?.message)} {...form.register(`packingDetails.${rule.id}.packingInstructions`)} />
+        </ContainerField>
+      </section>)}
       <details open={productDetailsOpen || hasProductDetailsError} onToggle={event => setProductDetailsOpen(event.currentTarget.open)} className="rounded-md border px-3 py-2.5">
-        <summary className="cursor-pointer rounded-sm text-sm font-medium focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">Supplier and packing <span className="ml-1 text-xs font-normal text-muted-foreground">Optional</span></summary>
+        <summary className="cursor-pointer rounded-sm text-sm font-medium focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">Supplier details <span className="ml-1 text-xs font-normal text-muted-foreground">Optional</span></summary>
         <div className="mt-3 space-y-3">
           <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">{input('supplierName', 'Supplier')}{input('supplierProductNumber', 'Supplier product number')}</div>
-          <ContainerField id="container-packingInstructions" label="Packing instructions" error={errors.packingInstructions?.message}>
-            <Textarea id="container-packingInstructions" rows={2} disabled={mutation.isPending} aria-invalid={Boolean(errors.packingInstructions)} aria-describedby={errors.packingInstructions ? 'container-packingInstructions-error' : undefined} {...form.register('packingInstructions')} />
-          </ContainerField>
+          {source?.packingInstructions ? <ContainerField id="container-packingInstructions" label="Earlier container notes" error={errors.packingInstructions?.message}>
+            <Textarea id="container-packingInstructions" rows={2} disabled={mutation.isPending} aria-invalid={Boolean(errors.packingInstructions)} aria-describedby={errors.packingInstructions ? 'container-packingInstructions-error' : undefined} {...form.register('packingInstructions')} /><p className="mt-1 text-xs text-muted-foreground">Retained from the earlier container setup. Review these notes with the combination instructions and clear them if they repeat the approved steps.</p>
+          </ContainerField> : null}
         </div>
       </details>
       <section aria-labelledby="container-availability-heading" className="space-y-3 border-t pt-4">

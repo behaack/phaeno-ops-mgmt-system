@@ -1,5 +1,10 @@
 # Backend Test Plan
 
+## Flexible sample/container packing - September 21, 2026
+
+Added SampleShippingPackingInstructionsTests for regular ice, dry ice, cold packs, no cooling, distinct container amounts, missing or conflicting controls, authoritative approved procedures and legacy preservation. Added an additive procedure/compatibility migration. Sources compile; automated suites are not run because they remain request-only. Integration follow-up: issue a real local packet for each approved method and verify its snapshot survives configuration revisions.
+
+
 ## Managed scientific uploads — September 19, 2026
 
 Added LabScientificFilesTests and LabScientificFilesPostgresTests for actual-byte download integrity, truncated/extra/altered content, temporary-file disposal, specimen/job/metadata scoping, supporting-document validation, private-key exclusion and customer-retention protection. Sources added; not executed (tests remain request-only). See [plan](LAB-MANAGED-SCIENTIFIC-FILES-PLAN.md).
@@ -2113,3 +2118,20 @@ Added `LabOperationalGapPostgresTests`, `LabCustomerHoldTests`, `S3ScientificSto
 Final release rerun: 968 passed, zero failed, one Unix-only symlink test skipped on Windows. All connected cases ran against disposable databases; the driver verified scratch-database removal and no remaining synthetic notification rows. Updated model/migration discovery assertions cover the scientific receipt, upload session and hold additions.
 
 Backup release follow-up: all 29 archive/envelope/failure cases passed after covering a zero-entry referenced-file archive and sizing the synthetic restore workspace. Actual online production backup restoration/encryption/cleanup passed; no API outage occurred. See the operational gap closure release receipt for the manual-versus-scheduled evidence boundary.
+
+## September 21 samples and shipping release coverage
+
+`SampleShippingPackingInstructionsTests` covers regular ice, dry ice, cold packs,
+no cooling, distinct container amounts, missing/conflicting instructions, approved
+procedure authority and legacy compatibility. `SampleShippingProcedurePostgresTests`
+adds the real save/assign/issue/revise journey: authorization, exact procedure
+revision, different small/large quantities, actual-container packet content,
+revision conflicts and unchanged historical packets. Cleanup removes only the
+fixture's uniquely named procedure revisions after its assignments are removed.
+Persistence discovery now includes the additive shared-procedure migration.
+Release tests use a verified loopback disposable `phaeno_release_verification_`
+database and verify its removal; the application development database is untouched.
+
+Final full release run: 977 passed, zero failed and one Unix-only symlink test
+skipped on Windows. The new connected shipping-procedure case passes. Synthetic
+notification count is zero and the disposable database was verified removed.

@@ -572,13 +572,14 @@ public class PersistenceTests
     {
         using var dbContext = CreateDbContext();
         var migrations = dbContext.Database.GetMigrations().ToArray();
-        Assert.Equal(6, migrations.Length);
+        Assert.Equal(7, migrations.Length);
         Assert.EndsWith("_InitialPSeqOperationsRebased", migrations[0]);
         Assert.EndsWith("_AddSampleSequencingRuns", migrations[1]);
         Assert.EndsWith("_AddSequencingRunLineage", migrations[2]);
         Assert.EndsWith("_AllowRepeatedLibraryPreparation", migrations[3]);
         Assert.EndsWith("_AddManagedScientificFiles", migrations[4]);
         Assert.EndsWith("_AddScientificUploadsAndCustomerHolds", migrations[5]);
+        Assert.EndsWith("_AddSharedShippingProceduresAndContainerPacking", migrations[6]);
     }
 
     private static void AssertUniqueIndex<TEntity>(

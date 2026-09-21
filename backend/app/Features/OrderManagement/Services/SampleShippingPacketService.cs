@@ -161,13 +161,14 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
         var family = await SampleShippingPackingData.FamilyAsync(dbContext, shipment, cancellationToken);
         var physicalKitId = await dbContext.SampleShippingStockKits.AsNoTracking().Where(item => item.BoundSampleShipmentId == shipment.Id)
             .Select(item => (Guid?)item.Id).SingleOrDefaultAsync(cancellationToken) ?? returnKit.Id;
+        var packing = await ResolveContainerPackingAsync(shipment, resolution, cancellationToken);
         var packet = new SampleShippingPacketRevision(
             shipment.Id,
             revision,
             packetNumber,
             barcode,
             SerializeDestination(resolution.Destination),
-            SerializeInstructions(resolution),
+            SerializeInstructions(resolution, packing),
             SerializeManifest(shipment, tubesById, sampleTypesById, family,
                 new SampleContainerKitIdentityDto(physicalKitId, returnKit.KitNumber, returnKit.KitNumber)),
             issuedAt);
@@ -224,9 +225,29 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
             item.InternationalShippingAllowed
         }, SnapshotOptions);
 
-    private static string SerializeInstructions(SampleShippingResolution resolution) =>
+    private async Task<object?> ResolveContainerPackingAsync(SampleShipment shipment, SampleShippingResolution resolution, CancellationToken ct)
+    {
+        var container = shipment.ContainerDefinitionId.HasValue
+            ? await dbContext.SampleShippingContainerDefinitions.AsNoTracking().Include(item => item.Compatibilities)
+                .SingleOrDefaultAsync(item => item.Id == shipment.ContainerDefinitionId, ct) : null;
+        var ids = container?.Compatibilities.Select(item => item.SampleTypeDefinitionId).ToArray() ?? [];
+        var keys = await dbContext.SampleTypeDefinitions.AsNoTracking().Where(item => ids.Contains(item.Id))
+            .ToDictionaryAsync(item => item.Id, item => item.DefinitionKey, ct);
+        IReadOnlyList<ResolvedContainerPacking> combinations;
+        try { combinations = SampleShippingPackingInstructions.Resolve(resolution, container?.Compatibilities.ToArray() ?? [], keys); }
+        catch (InvalidOperationException error) { throw new OrderManagementException("sample_container_packing_unavailable", error.Message, 409); }
+        return combinations.Count == 0 ? null : new
+        {
+            containerDefinitionId = container!.Id, container.CommonName, container.Revision, container.PackingInstructions,
+            temperatureControlInstructions = combinations[0].TemperatureControlInstructions,
+            samples = combinations
+        };
+    }
+
+    private static string SerializeInstructions(SampleShippingResolution resolution, object? containerPacking) =>
         JsonSerializer.Serialize(new
         {
+            containerPacking,
             resolution.CompatibilityGroup,
             resolution.RequiresSeparateShipment,
             destination = new
@@ -263,6 +284,8 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
                 },
                 instructionRule = new
                 {
+                    item.Rule.ShippingProcedureId,
+                    item.Rule.DestinationInstructions,
                     item.Rule.Id,
                     item.Rule.DefinitionKey,
                     item.Rule.Revision,

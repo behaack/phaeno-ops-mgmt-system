@@ -39,6 +39,8 @@ public sealed class SampleShippingAdminController(
             .ThenByDescending(item => item.Revision)
             .ToListAsync(cancellationToken);
         var destinationNames = destinations.ToDictionary(item => item.Id, item => item.Name);
+        var procedures = await dbContext.SampleShippingProcedures.AsNoTracking()
+            .OrderBy(item => item.Name).ThenByDescending(item => item.Revision).ToListAsync(cancellationToken);
         var now = DateTime.UtcNow;
         var currentNames = sampleTypes.GroupBy(item => item.DefinitionKey).ToDictionary(group => group.Key,
             group => (group.Where(item => item.IsEffectiveAt(now)).OrderByDescending(item => item.Revision).FirstOrDefault()
@@ -51,7 +53,8 @@ public sealed class SampleShippingAdminController(
             rules.Select(item => Map(
                 item,
                 destinationNames.GetValueOrDefault(item.DestinationId, "Unavailable destination"),
-                sampleTypeNames.GetValueOrDefault(item.SampleTypeDefinitionId, "Unavailable sample type"))).ToList());
+                sampleTypeNames.GetValueOrDefault(item.SampleTypeDefinitionId, "Unavailable sample type"))).ToList(),
+            procedures.Select(SampleShippingProceduresController.Map).ToArray());
     }
 
     [HttpPost("destinations")]
@@ -213,6 +216,10 @@ public sealed class SampleShippingAdminController(
     {
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var effectiveFrom = RequireUtc(request.EffectiveFrom, "Instruction-rule effective-from");
+        var procedure = request.ShippingProcedureId.HasValue
+            ? await dbContext.SampleShippingProcedures.AsNoTracking().SingleOrDefaultAsync(item => item.Id == request.ShippingProcedureId, cancellationToken)
+                ?? throw Invalid("shipping_procedure_unavailable", "Select an available approved shipping procedure.")
+            : null;
         var destination = await dbContext.SampleShippingDestinations.AsNoTracking()
             .FirstOrDefaultAsync(item => item.Id == request.DestinationId, cancellationToken)
             ?? throw Invalid("shipping_destination_unavailable", "Select an available shipping destination revision.");
@@ -283,7 +290,9 @@ public sealed class SampleShippingAdminController(
                 request.InternationalCustomsInstructions,
                 request.RequiresSeparateShipment,
                 effectiveFrom,
-                request.IsActive));
+                request.IsActive,
+                procedure,
+                request.DestinationInstructions));
 
         if (predecessor != null && (!predecessor.EffectiveTo.HasValue || effectiveFrom < predecessor.EffectiveTo.Value))
             Execute("shipping_instruction_period_invalid", () => predecessor.EndAt(effectiveFrom));
@@ -345,7 +354,9 @@ public sealed class SampleShippingAdminController(
                 item.Rule.RequiredDocuments,
                 item.Rule.ExceptionInstructions,
                 item.Rule.InternationalCustomsInstructions,
-                item.Rule.RequiresSeparateShipment)).ToList());
+                item.Rule.RequiresSeparateShipment,
+                item.Rule.ShippingProcedureId,
+                item.Rule.DestinationInstructions)).ToList());
     }
 
     [HttpGet("packets/scan")]
@@ -530,7 +541,9 @@ public sealed class SampleShippingAdminController(
             item.EffectiveFrom,
             item.EffectiveTo,
             item.IsActive,
-            item.Version);
+            item.Version,
+            item.ShippingProcedureId,
+            item.DestinationInstructions);
 
     private static DateTime RequireUtc(DateTime value, string label)
     {
