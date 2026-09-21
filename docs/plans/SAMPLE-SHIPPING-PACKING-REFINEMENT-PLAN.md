@@ -158,3 +158,7 @@ separately from the earlier release above.
 
 Allow long sidebar headings to wrap so the complete settings name stays visible
 beside the pin control at the standard sidebar width.
+
+## Completed availability and naming deployment
+
+The owner-authorized release is live. See [September 21 release evidence](../operations/shipping-availability-release-20260921.md) for exact API/Portal source identities, production checks and remaining acceptance boundaries. Earlier local-only statements above describe their implementation checkpoint. No production configuration was rewritten.

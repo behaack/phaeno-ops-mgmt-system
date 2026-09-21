@@ -66,3 +66,7 @@ or open unsaved form was changed. Runtime transition and browser acceptance rema
 pending. No database migration, commit, push or deployment was performed.
 
 Follow-up live investigation confirmed the assignment retains destination revision 1 (inactive and ended), while destination revision 2 is active. The same name does not make these references interchangeable. The new status preflight correctly blocks the historical destination and directs creation of an assignment for the current destination. Owner authorized deployment of the completed correction and settings naming follow-up; production configuration changes remain separate.
+
+## Completed availability and naming deployment
+
+The owner-authorized release is live. See [September 21 release evidence](../operations/shipping-availability-release-20260921.md) for exact API/Portal source identities, production checks and remaining acceptance boundaries. Earlier local-only statements above describe their implementation checkpoint. No production configuration was rewritten.
