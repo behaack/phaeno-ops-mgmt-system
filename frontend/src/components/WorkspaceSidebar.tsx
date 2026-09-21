@@ -187,7 +187,7 @@ export function ResponsiveSidebar({
         )}
       >
         <header className="flex items-center justify-between gap-3 border-b pb-3">
-          <h2 className="truncate px-1 text-sm font-semibold">{workspaceLabel}</h2>
+          <h2 className="min-w-0 px-1 text-sm font-semibold">{workspaceLabel}</h2>
           {isWideLayout ? (
             <Button
               type="button"

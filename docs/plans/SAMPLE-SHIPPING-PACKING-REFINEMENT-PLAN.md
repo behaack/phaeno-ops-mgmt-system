@@ -155,3 +155,6 @@ sidebar title and page heading. Apply that label consistently to Phaeno help and
 CRM handoff guidance. Preserve the Prospect operational Samples & shipping label.
 No migration is required. Record API/UI source identities and live verification
 separately from the earlier release above.
+
+Allow long sidebar headings to wrap so the complete settings name stays visible
+beside the pin control at the standard sidebar width.
