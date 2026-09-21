@@ -1,5 +1,17 @@
 # Playwright E2E Test Plan
 
+## First-time MFA return path - September 21, 2026
+
+Pending live recipient acceptance: open a valid invitation, complete password
+and required authenticator setup, and verify direct return to invitation review
+without the Access unavailable detour. Select Accept invitation, retain Welcome
+to Portal through session refresh, and use Open Portal to reach the approved
+organization. Include completed-setup reload, session-loss recovery and ordinary
+MFA completion without an invitation. Invalid-link and identity-mismatch checks
+remain applicable. Six route regressions and the 35-check focused frontend batch
+pass with simulated provider state; these are not live provider enrollment or
+an authenticated browser E2E run.
+
 ## Shipping availability transitions — September 21, 2026
 
 Pending authenticated acceptance: activate/deactivate a saved sample, destination and assignment without creating a revision; prepare inactive successor content while its predecessor remains usable; activate now and at a scheduled future start; verify old revisions never reopen after deactivation. Reproduce an assignment with an inactive destination and an earlier draft start: follow the prerequisite link, activate the destination, then activate the same assignment. Verify ended destination and duplicate active assignments stay blocked, stale changes retain the confirmation, Actions and keyboard focus work on narrow/wide screens, and previously issued packets remain unchanged. Read-only production inspection confirmed the reported inactive destination; no live records or the user's open draft were changed. Browser mutation acceptance and automated suites were not run.

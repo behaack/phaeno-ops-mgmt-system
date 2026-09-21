@@ -26,7 +26,7 @@ import {
   type SessionResponse,
 } from '#/api/session'
 import { Button } from '#/components/ui/button'
-import { readStoredInviteToken } from '#/features/auth/invitation-storage'
+import { getInvitationReturnPath, readStoredInviteToken } from '#/features/auth/invitation-storage'
 
 const SELECTED_ORGANIZATION_STORAGE_KEY = 'phaeno.selectedOrganizationId'
 const SELECTED_DEPARTMENT_STORAGE_KEY = 'phaeno.selectedDepartmentId'
@@ -462,7 +462,7 @@ export function MfaSetupAccessState() {
       description="Connect an authenticator app, then save your one-time backup codes somewhere safe."
     >
       <div className="phaeno-mfa-setup flex w-full justify-center">
-        <TaskSetupMFA redirectUrlComplete={readStoredInviteToken() ? '/accept-invite' : '/'} />
+        <TaskSetupMFA redirectUrlComplete={getInvitationReturnPath()} />
       </div>
     </AuthenticationPanel>
   )

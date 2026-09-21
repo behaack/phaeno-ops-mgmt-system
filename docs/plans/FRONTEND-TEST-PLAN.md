@@ -1,5 +1,16 @@
 # Frontend Test Plan
 
+## First-time MFA return path - September 21, 2026
+
+`SetupMfaRoute.test.tsx` covers loading, pending MFA, completion with/without a
+saved invitation, reopening completed setup, and missing-session recovery.
+Tokens remain available for explicit acceptance. Three cases reproduced the
+old dashboard redirect; all six pass after correction. The five-file focused
+account/invitation batch passed 35/35, including SessionAccessAcceptance,
+AcceptInvitePage, AcceptInviteSession and InvitationAuthentication. TypeScript
+and scoped ESLint passed. Provider state is simulated; live recipient MFA
+acceptance remains separate.
+
 ## Shipping availability actions — September 21, 2026
 
 `SampleShippingConfigurationPanel.test.tsx` now covers separate Activate/Deactivate actions for sample types, destinations and assignments; unchanged revision identifiers; content revisions saved inactive; cancellation/error retention; ended-history controls; older active revisions behind drafts; and named prerequisite guidance before assignment activation. Status actions share the existing Actions menu and confirmation/focus patterns. Automated suites remain request-only and have not been executed for this change.

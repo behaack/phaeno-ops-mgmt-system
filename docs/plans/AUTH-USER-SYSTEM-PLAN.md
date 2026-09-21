@@ -1,5 +1,34 @@
 # Auth and User System Plan
 
+## September 21, 2026 - First-time setup return path
+
+The owner approved the focused authentication return-path correction and its
+regression checks, then authorized commit, push and deployment. Both the Clerk
+MFA task and its route now use the same saved invitation destination:
+`/accept-invite` when a token is saved, otherwise `/`. Previously, the route
+redirected to `/` as soon as `currentTask` cleared, even though the task component
+was configured to return to the invitation. This could unmount the task component
+and reach the access gate before explicit acceptance.
+
+Loading and required MFA guards remain intact. Returning to the invitation
+retains revalidation, verified-email matching and explicit acceptance; it does
+not consume the saved token or grant access. No provider settings, backend
+contracts, access grants or database records changed.
+
+`SetupMfaRoute.test.tsx` reproduced three wrong-destination failures before the
+fix. All six route checks now pass: loading, required MFA, task completion with
+and without an invitation, reopening completed setup, and missing provider
+sessions. The focused five-file account/invitation batch passed 35/35, including
+review, identity matching, acceptance and Welcome/session continuity. TypeScript
+and scoped ESLint passed. Audience-specific account and Phaeno administration
+help clarify the return to invitation review after setup.
+
+Live recipient acceptance must still verify password/MFA setup, direct return
+to review, **Accept invitation**, **Welcome to Portal**, and **Open Portal** in
+the approved organization. The affected account and exact provider/browser
+event sequence have not been inspected; simulated regressions do not prove
+live recipient acceptance. Release evidence follows deployment.
+
 ## September 16, 2026 — Production invitation onboarding repair
 
 Read-only production investigation confirmed a pending Portal invitation for a first-time recipient, while Clerk Production had neither that identity nor an application invitation. Production is Invite-only. The previous `signUpIfMissing: import.meta.env.DEV` flow attempted existing-account sign-in only in production. Portal email delivery succeeded, but the account setup bridge was missing.

@@ -9,6 +9,10 @@ export function readStoredInviteToken() {
   return window.sessionStorage.getItem(INVITE_TOKEN_STORAGE_KEY)
 }
 
+export function getInvitationReturnPath() {
+  return readStoredInviteToken() ? '/accept-invite' : '/'
+}
+
 export function storeInviteToken(token: string) {
   if (readStoredInviteToken() !== token) clearInviteRegistrationTicket()
   window.sessionStorage.setItem(INVITE_TOKEN_STORAGE_KEY, token)
