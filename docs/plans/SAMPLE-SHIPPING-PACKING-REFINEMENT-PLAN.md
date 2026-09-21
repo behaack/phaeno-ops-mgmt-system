@@ -121,3 +121,37 @@ free-form and explicitly supports regular ice, dry ice, other methods or no cool
   fresh signed-in configuration navigation. Production retains three container
   sizes and no sample/procedure/assignment setup; approved scientific content is
   a separate operational task, not seeded as part of deployment.
+
+## Container supplier dropdowns — September 21 follow-up
+
+The owner requested catalog dropdowns in the container-size editor. Phaeno
+configuration administrators choose a saved supplier, then an active shipping-
+container product from that supplier. Reuse the existing supplier-catalog query
+and native select pattern from kit preparation; exclude inactive suppliers,
+products and product types, and products whose kit use is not Shipping Container.
+Changing or clearing a supplier clears its product. Both references remain optional.
+
+Keep the existing immutable supplier-name/product-number snapshots and write
+contract. An earlier reference that no longer matches an active catalog choice
+stays visible as a saved value and can be retained unchanged or cleared/replaced;
+do not invent a catalog association or erase historical data. Loading and failure
+states disable new choices, offer retry, and retain the draft. Add meaningful
+regression coverage for filtering, dependent clearing, saved references and failed
+catalog reads; update the Phaeno guide. No database, permission or backend change
+is needed. This follow-up is local implementation; release evidence above describes
+the preceding deployed revision.
+
+Implemented with the existing catalog hook and native dropdowns. TypeScript,
+scoped ESLint, documentation generation/consistency (56 guides), and whitespace
+checks pass. Regression sources and living test plans are updated; automated
+suites and browser acceptance were not run for this follow-up. No commit, push,
+migration or deployment was performed.
+
+## Settings naming and availability release — September 21 follow-up
+
+The owner authorized deployment of the pending supplier dropdown and availability
+fixes, and requested **Samples & shipping settings** for the administration menu,
+sidebar title and page heading. Apply that label consistently to Phaeno help and
+CRM handoff guidance. Preserve the Prospect operational Samples & shipping label.
+No migration is required. Record API/UI source identities and live verification
+separately from the earlier release above.

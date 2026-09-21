@@ -1,5 +1,5 @@
 const orderSettings = 'A Phaeno platform administrator handles this shared setup. Open the user menu → Order settings.'
-const shippingSettings = 'A Phaeno platform administrator handles this shared setup. Open the user menu → Samples & shipping.'
+const shippingSettings = 'A Phaeno platform administrator handles this shared setup. Open the user menu → Samples & shipping settings.'
 const billingSettings = 'Finance handles this Company’s billing setup. Open Order operations → Finance → Customer billing, open this Company, and select Edit billing and tax.'
 const saveBilling = 'Complete the other required billing and tax fields in the same form, then select Save changes. Saving any billing or tax change requires a fresh Finance approval.'
 

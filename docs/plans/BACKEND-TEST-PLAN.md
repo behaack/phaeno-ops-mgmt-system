@@ -1,5 +1,9 @@
 # Backend Test Plan
 
+## Shipping availability without content revisions — September 21, 2026
+
+Regression sources: `SampleTypeStatusPostgresTests`, `SampleShippingAvailabilityPostgresTests`, `SampleShippingDomainTests`, and the issued-packet journey in `SampleShippingProcedurePostgresTests`. Cover same-ID/revision status changes, audit/version increments, admin-only access, stale requests, draft retention, scheduled activation, no fallback after retirement, exact destination references, assignment overlap and activation after an inactive destination becomes available. Issued packet instruction and manifest snapshots remain unchanged. No schema change. Sources compile with the solution; suites remain request-only and have not been executed for this change.
+
 ## Flexible sample/container packing - September 21, 2026
 
 Added SampleShippingPackingInstructionsTests for regular ice, dry ice, cold packs, no cooling, distinct container amounts, missing or conflicting controls, authoritative approved procedures and legacy preservation. Added an additive procedure/compatibility migration. Sources compile; automated suites are not run because they remain request-only. Integration follow-up: issue a real local packet for each approved method and verify its snapshot survives configuration revisions.

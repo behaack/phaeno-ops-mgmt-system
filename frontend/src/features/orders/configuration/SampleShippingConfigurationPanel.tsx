@@ -34,6 +34,8 @@ import {
 import { sampleTypeChoices } from './sample-type-options'
 import { ShippingProceduresPanel, procedureFields } from './ShippingProceduresPanel'
 import { SampleTypePackingPanel } from './SampleTypePackingPanel'
+import { SampleTypeActions, SampleTypeActiveRevisionNote } from './SampleTypeActions'
+import { ShippingAvailabilityDialog, type ShippingStatusChange } from './ShippingAvailabilityDialog'
 import { ContainerSizesPanel } from './ContainerSizesPanel'
 import type { ShippingSettingsSection } from './shipping-settings-navigation'
 import { instructionPreviewTime, instructionPreviewUnavailable } from './instruction-rule-preview'
@@ -178,6 +180,8 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
   const [sampleTypeEditor, setSampleTypeEditor] = useState<SampleTypeDefinition | null | undefined>(undefined)
   const [previewRule, setPreviewRule] = useState<SampleShippingInstructionRule | null>(null)
   const ruleActionsRef = useRef<HTMLButtonElement | null>(null)
+  const statusActionsRef = useRef<HTMLButtonElement | null>(null)
+  const [statusChange, setStatusChange] = useState<ShippingStatusChange | null>(null)
   const [ruleEditor, setRuleEditor] = useState<SampleShippingInstructionRule | null | undefined>(undefined)
   const configuration = useQuery({
     queryKey: ['sample-shipping-configuration'],
@@ -219,8 +223,13 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
                   <div className="flex flex-wrap items-center gap-2"><span className="font-medium">{item.name}</span><Badge variant="outline" className="h-auto max-w-full whitespace-normal break-all">{item.code} · rev {item.revision}</Badge><EffectiveBadge item={item} /></div>
                   <p className="mt-2 text-sm">{item.organizationName} · {item.city}, {item.stateOrProvince} {item.postalCode} · {item.countryCode}</p>
                   <p className="mt-1 text-xs text-muted-foreground">Receiving: {item.receivingHours} · {item.timeZoneId}</p>
+                  {!item.isActive && configuration.data.destinations.some(value => value.definitionKey === item.definitionKey && value.id !== item.id && value.isActive && revisionHasNotEnded(value)) ? <p className="mt-1 text-xs text-muted-foreground">An earlier revision is still approved. Use Actions to deactivate it or activate this revision.</p> : null}
                 </div>
-                <Button type="button" variant="outline" onClick={() => setDestinationEditor(item)}><FilePenLine data-icon="inline-start" />Create revision</Button>
+                <ActionMenu><DropdownMenuTrigger asChild><Button type="button" variant="outline" onFocus={event => { statusActionsRef.current = event.currentTarget }}>Actions<ChevronDown aria-hidden="true" className="size-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={() => setDestinationEditor(item)}><FilePenLine aria-hidden="true" />Create revision</DropdownMenuItem>
+                  {revisionHasNotEnded(item) ? <DropdownMenuItem variant={item.isActive ? 'destructive' : 'default'} onSelect={() => setStatusChange({ kind: 'destination', item, isActive: !item.isActive })}>{item.isActive ? 'Deactivate' : 'Activate'}</DropdownMenuItem> : null}
+                  {configuration.data.destinations.filter(value => value.definitionKey === item.definitionKey && value.id !== item.id && value.isActive && revisionHasNotEnded(value)).map(value => <DropdownMenuItem key={value.id} variant="destructive" onSelect={() => setStatusChange({ kind: 'destination', item: value, isActive: false })}>Deactivate revision {value.revision}</DropdownMenuItem>)}
+                </DropdownMenuContent></ActionMenu>
               </div>
             ))}
           </div>
@@ -248,8 +257,9 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
                   <div className="flex flex-wrap items-center gap-2"><SampleTypeLink item={item} /><Badge variant="outline" className="h-auto max-w-full whitespace-normal break-all">{item.code} · rev {item.revision}</Badge><EffectiveBadge item={item} /></div>
                   <p className="mt-2 text-sm">{item.materialClass === 'extracted_rna' ? 'Total RNA' : item.materialClass === 'enriched_rna' ? 'Enriched RNA' : item.materialClass} · {quantityRange(item)}</p>
                   <p className="mt-1 text-xs text-muted-foreground">{item.temperatureRequirements}</p>
+                  <SampleTypeActiveRevisionNote item={item} revisions={configuration.data.sampleTypes.filter(value => value.definitionKey === item.definitionKey)} />
                 </div>
-                <Button type="button" variant="outline" onClick={() => setSampleTypeEditor(item)}><FilePenLine data-icon="inline-start" />Create revision</Button>
+                <SampleTypeActions item={item} revisions={configuration.data.sampleTypes.filter(value => value.definitionKey === item.definitionKey)} onCreateRevision={setSampleTypeEditor} />
               </div>
             ))}
           </div>
@@ -277,6 +287,7 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2"><span className="font-medium">{item.destinationName} + {item.sampleTypeName}</span><Badge variant="outline">{item.compatibilityGroup} · rev {item.revision}</Badge><EffectiveBadge item={item} /></div>
                   <p className="mt-2 text-sm text-muted-foreground">{item.requiresSeparateShipment ? 'Must ship separately' : 'May share a container when the group and approved temperature control agree'}</p>
+                  {!item.isActive && scopedRules.some(value => value.definitionKey === item.definitionKey && value.id !== item.id && value.isActive && revisionHasNotEnded(value)) ? <p className="mt-1 text-xs text-muted-foreground">An earlier revision is still approved. Use Actions to deactivate it or activate this revision.</p> : null}
                 </div>
                 <ActionMenu>
                   <DropdownMenuTrigger asChild><Button type="button" variant="outline" onPointerDown={event => { ruleActionsRef.current = event.currentTarget }} onFocus={event => { ruleActionsRef.current = event.currentTarget }}>Actions<ChevronDown aria-hidden="true" className="size-4" /></Button></DropdownMenuTrigger>
@@ -284,6 +295,8 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
                     <DropdownMenuItem onSelect={() => setPreviewRule(item)}><SearchCheck aria-hidden="true" />Preview shared steps</DropdownMenuItem>
                     <DropdownMenuItem asChild><Link to="/sample-shipping-settings" search={{ shippingSection: 'sample-types', sampleTypeId: item.sampleTypeDefinitionId }}>View container packing</Link></DropdownMenuItem>
                     <DropdownMenuItem onSelect={() => setRuleEditor(item)}><FilePenLine aria-hidden="true" />Create revision</DropdownMenuItem>
+                    {revisionHasNotEnded(item) ? <DropdownMenuItem variant={item.isActive ? 'destructive' : 'default'} onSelect={() => { statusActionsRef.current = ruleActionsRef.current; setStatusChange({ kind: 'assignment', item, isActive: !item.isActive }) }}>{item.isActive ? 'Deactivate' : 'Activate'}</DropdownMenuItem> : null}
+                    {scopedRules.filter(value => value.definitionKey === item.definitionKey && value.id !== item.id && value.isActive && revisionHasNotEnded(value)).map(value => <DropdownMenuItem key={value.id} variant="destructive" onSelect={() => { statusActionsRef.current = ruleActionsRef.current; setStatusChange({ kind: 'assignment', item: value, isActive: false }) }}>Deactivate revision {value.revision}</DropdownMenuItem>)}
                   </DropdownMenuContent>
                 </ActionMenu>
               </div>
@@ -297,6 +310,7 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
       {previewRule ? <InstructionPreview key={previewRule.id} rule={previewRule} configuration={configuration.data} onClose={() => setPreviewRule(null)} restoreFocus={() => ruleActionsRef.current?.focus()} /> : null}
 
       <DestinationDialog item={destinationEditor} onClose={() => setDestinationEditor(undefined)} />
+      {statusChange ? <ShippingAvailabilityDialog change={statusChange} configuration={configuration.data} onClose={() => setStatusChange(null)} restoreFocus={() => statusActionsRef.current?.focus()} /> : null}
       {sampleTypeEditor !== undefined ? <SampleTypeDialog item={sampleTypeEditor} onClose={() => setSampleTypeEditor(undefined)} onSaved={item => { void navigate({ to: '/sample-shipping-settings', search: { shippingSection: 'sample-types', sampleTypeId: item.id } }) }} /> : null}
       <InstructionRuleDialog initialSampleTypeId={selectedSampleType?.id} configuration={configuration.data} item={ruleEditor} onClose={() => setRuleEditor(undefined)} restoreFocus={() => ruleActionsRef.current?.focus()} />
     </div>
@@ -335,9 +349,10 @@ function SampleTypeDetails({ item, revisions, onCreateRevision, configuration }:
             <h2 className="break-words text-xl font-semibold">{item.name}</h2>
             <div className="mt-2 flex flex-wrap items-center gap-2"><Badge variant="outline" className="h-auto max-w-full whitespace-normal break-all">{item.code} · revision {item.revision}</Badge><EffectiveBadge item={item} /></div>
           </div>
-          {latest?.id === item.id ? <Button className="shrink-0" variant="outline" onClick={() => onCreateRevision(item)}><FilePenLine data-icon="inline-start" />Create revision</Button> : null}
+          <SampleTypeActions item={item} revisions={revisions} onCreateRevision={onCreateRevision} />
         </div>
         <CardDescription className="mt-2 whitespace-pre-wrap">{item.description || 'No description provided.'}</CardDescription>
+        {latest?.id === item.id ? <SampleTypeActiveRevisionNote item={item} revisions={revisions} /> : null}
       </CardHeader>
       <CardContent className="space-y-4 p-4">
         {latest && latest.id !== item.id ? <p className="text-sm">You are viewing a historical revision. <SampleTypeLink item={latest}>View latest revision ({latest.revision})</SampleTypeLink>.</p> : null}
@@ -375,6 +390,7 @@ function DestinationDialog({ item, onClose }: { item: SampleShippingDestination 
   const mutation = useMutation({
     mutationFn: (values: DestinationValues) => createSampleShippingDestination({
       ...values,
+      isActive: false,
       code: values.code.toUpperCase(),
       addressLine2: values.addressLine2 || null,
       receivingPhone: values.receivingPhone || null,
@@ -398,7 +414,7 @@ function DestinationDialog({ item, onClose }: { item: SampleShippingDestination 
   return (
     <Dialog open={item !== undefined} onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent className="sm:max-w-3xl">
-        <DialogHeader><DialogTitle>{item ? `Create ${item.name} revision ${item.revision + 1}` : 'Add ship-to destination'}</DialogTitle><DialogDescription>{item ? 'The current revision will end when this new immutable revision begins.' : 'New destinations default to inactive until the operational content is approved.'}</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>{item ? `Create ${item.name} revision ${item.revision + 1}` : 'Add ship-to destination'}</DialogTitle><DialogDescription>Save the destination inactive, then choose Actions → Activate after reviewing its details. An earlier active revision remains available until replaced or deactivated.</DialogDescription></DialogHeader>
         <form id="sample-shipping-destination-form" noValidate className="grid gap-5 px-1 sm:grid-cols-2" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
           <Field label="Display name" id="destination-name" required error={form.formState.errors.name?.message} full><Input id="destination-name" aria-invalid={Boolean(form.formState.errors.name)} {...form.register('name')} /></Field>
           <Field label="Recipient or receiving team" id="destination-recipient" required error={form.formState.errors.recipientName?.message}><Input id="destination-recipient" {...form.register('recipientName')} /></Field>
@@ -418,10 +434,10 @@ function DestinationDialog({ item, onClose }: { item: SampleShippingDestination 
           <Field label="Detailed delivery instructions" id="destination-delivery" required error={form.formState.errors.deliveryInstructions?.message} full><TextArea id="destination-delivery" rows={5} registration={form.register('deliveryInstructions')} /></Field>
           <Field label="Carrier restrictions" id="destination-carrier" error={form.formState.errors.carrierRestrictions?.message} full><TextArea id="destination-carrier" rows={3} registration={form.register('carrierRestrictions')} /></Field>
           <div className="flex items-center gap-2"><Checkbox id="destination-international" checked={form.watch('internationalShippingAllowed')} onCheckedChange={(value) => form.setValue('internationalShippingAllowed', value === true, { shouldDirty: true })} /><Label htmlFor="destination-international" className="cursor-pointer font-normal">International shipments are allowed</Label></div>
-          <div className="flex items-center gap-2"><Checkbox id="destination-active" checked={form.watch('isActive')} onCheckedChange={(value) => form.setValue('isActive', value === true, { shouldDirty: true })} /><Label htmlFor="destination-active" className="cursor-pointer font-normal">Approved for new shipments</Label></div>
+          <p className="text-sm text-muted-foreground sm:col-span-2">Activating this destination is a separate action and keeps its revision number. Existing assignments retain their selected destination revision.</p>
         </form>
         {mutation.error ? <SaveError title="Destination revision was not saved" error={mutation.error} /> : null}
-        <RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" form="sample-shipping-destination-form" disabled={mutation.isPending}>{mutation.isPending ? 'Saving revision…' : item ? 'Create revision' : 'Add destination'}</Button></RequiredDialogFooter>
+        <RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" form="sample-shipping-destination-form" disabled={mutation.isPending || Boolean(item && !form.formState.isDirty)}>{mutation.isPending ? 'Saving revision…' : item ? 'Create revision' : 'Add destination'}</Button></RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -433,6 +449,7 @@ function SampleTypeDialog({ item, onClose, onSaved }: { item: SampleTypeDefiniti
   const mutation = useMutation({
     mutationFn: (values: SampleTypeValues) => createSampleTypeDefinition({
       ...values,
+      isActive: false,
       code: values.code.toUpperCase(),
       minimumQuantity: optionalNumber(values.minimumQuantity),
       maximumQuantity: optionalNumber(values.maximumQuantity),
@@ -516,12 +533,12 @@ function SampleTypeDialog({ item, onClose, onSaved }: { item: SampleTypeDefiniti
               <Input id="sample-type-effective" type="datetime-local" aria-invalid={Boolean(form.formState.errors.effectiveFrom)} aria-describedby={form.formState.errors.effectiveFrom ? 'sample-type-effective-error' : undefined} {...form.register('effectiveFrom')} />
               <ErrorText id="sample-type-effective-error" message={form.formState.errors.effectiveFrom?.message} />
             </div>
-            <div className="flex min-h-8 items-center gap-2 self-start"><Checkbox id="sample-type-active" checked={form.watch('isActive')} onCheckedChange={(value) => form.setValue('isActive', value === true, { shouldDirty: true })} /><Label htmlFor="sample-type-active" className="cursor-pointer font-normal">Approved for new shipments</Label></div>
+            <p className="text-sm text-muted-foreground">Save this revision inactive, then choose Actions → Activate after reviewing its requirements. An earlier active revision stays available until replaced or deactivated.</p>
           </div>
           </fieldset>
         </form>
         {mutation.error ? <SaveError title="Sample-type revision was not saved" error={mutation.error} /> : null}
-        <RequiredDialogFooter><Button type="button" variant="outline" onClick={close} disabled={mutation.isPending}>Cancel</Button><Button type="submit" form="sample-type-form" disabled={mutation.isPending}>{mutation.isPending ? 'Saving revision…' : item ? 'Create revision' : 'Add sample type'}</Button></RequiredDialogFooter>
+        <RequiredDialogFooter><Button type="button" variant="outline" onClick={close} disabled={mutation.isPending}>Cancel</Button><Button type="submit" form="sample-type-form" disabled={mutation.isPending || Boolean(item && !form.formState.isDirty)}>{mutation.isPending ? 'Saving revision…' : item ? 'Create revision' : 'Add sample type'}</Button></RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -551,6 +568,7 @@ function InstructionRuleDialog({ configuration, initialSampleTypeId, item, onClo
       return createSampleShippingInstructionRule({
         ...values,
         shippingProcedureId: values.shippingProcedureId || null,
+        isActive: false,
         destinationInstructions: values.destinationInstructions || null,
         compatibilityGroup: values.compatibilityGroup.toUpperCase(),
         internationalCustomsInstructions: values.internationalCustomsInstructions || null,
@@ -613,10 +631,10 @@ function InstructionRuleDialog({ configuration, initialSampleTypeId, item, onClo
           </> : null}
           <Field label="Destination-specific additions" id="shipping-rule-additions" error={form.formState.errors.destinationInstructions?.message} full><TextArea id="shipping-rule-additions" rows={3} error={form.formState.errors.destinationInstructions?.message} registration={form.register('destinationInstructions')} /><p className="mt-1 text-xs text-muted-foreground">Add genuine exceptions for this sample and destination. Address, receiving hours and delivery directions come from the destination record.</p></Field>
           <div className="flex items-center gap-2 sm:col-span-2"><Checkbox id="shipping-rule-separate" checked={form.watch('requiresSeparateShipment')} onCheckedChange={(value) => form.setValue('requiresSeparateShipment', value === true, { shouldDirty: true })} /><Label htmlFor="shipping-rule-separate" className="cursor-pointer font-normal">This sample type must have a separate shipment packet</Label></div>
-          <div className="flex items-center gap-2 sm:col-span-2"><Checkbox id="shipping-rule-active" checked={form.watch('isActive')} onCheckedChange={(value) => form.setValue('isActive', value === true, { shouldDirty: true })} /><Label htmlFor="shipping-rule-active" className="cursor-pointer font-normal">Approved for new shipments</Label></div>
+          <p className="text-sm text-muted-foreground sm:col-span-2">Save inactive, then choose Actions → Activate. The destination, sample type and shared procedure must be approved and available at activation time.</p>
         </fieldset></form>
         {mutation.error ? <SaveError title="Shipping assignment was not saved" error={mutation.error} /> : null}
-        <RequiredDialogFooter><Button type="button" variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="sample-shipping-rule-form" disabled={mutation.isPending}>{mutation.isPending ? 'Saving revision…' : item ? 'Create revision' : 'Add assignment'}</Button></RequiredDialogFooter>
+        <RequiredDialogFooter><Button type="button" variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="sample-shipping-rule-form" disabled={mutation.isPending || Boolean(item && !form.formState.isDirty)}>{mutation.isPending ? 'Saving revision…' : item ? 'Create revision' : 'Add assignment'}</Button></RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -699,6 +717,8 @@ function Instruction({ label, value }: { label: string; value: string }) {
   if (!value.trim()) return null
   return <p className="mt-2 whitespace-pre-wrap text-sm"><strong>{label}:</strong> {value}</p>
 }
+
+function revisionHasNotEnded(item: { effectiveTo: string | null }) { return !item.effectiveTo || new Date(item.effectiveTo).getTime() > Date.now() }
 
 function EffectiveBadge({ item }: { item: { effectiveFrom: string; effectiveTo: string | null; isActive: boolean } }) {
   const state = effectiveState(item)

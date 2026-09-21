@@ -1,5 +1,9 @@
 # Sample Shipping and Intake Plan
 
+## Availability separate from content — September 21, 2026
+
+Owner approved explicit Activate/Deactivate actions for sample types, destinations and shipping assignments. Status changes retain revision identity and use the existing audit/concurrency mechanisms. New UI-created content revisions start inactive; drafts preserve previous active intervals. Assignment activation validates named prerequisites at the actual activation time and retains exact destination references. See [availability behavior and implementation](SAMPLE-TYPE-CURRENT-REVISION-PLAN.md). This local correction does not activate production configuration or deploy the application.
+
 ## Approved simplification - September 21, 2026
 
 The owner approved [shared shipping procedures and sample/container packing

@@ -81,6 +81,23 @@ public class SampleShippingDomainTests
     }
 
     [Fact]
+    public void SampleTypeAvailabilityDoesNotReviseContentAndCannotReopenEndedHistory()
+    {
+        var sample = SampleType("RNA", "Extracted RNA");
+        var id = sample.Id;
+        var from = sample.EffectiveFrom;
+        sample.SetActive(false, Now);
+        Assert.False(sample.IsEffectiveAt(Now));
+        sample.SetActive(true, Now);
+        Assert.True(sample.IsEffectiveAt(Now));
+        Assert.Equal(id, sample.Id);
+        Assert.Equal(1, sample.Revision);
+        Assert.Equal(from, sample.EffectiveFrom);
+        sample.EndAt(Now.AddDays(1));
+        Assert.Throws<InvalidOperationException>(() => sample.SetActive(true, Now.AddDays(2)));
+    }
+
+    [Fact]
     public void PacketRevisionFreezesSnapshotsAndRetainsReplacementIdentity()
     {
         var shipmentId = Guid.NewGuid();

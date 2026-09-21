@@ -1,5 +1,9 @@
 # Playwright E2E Test Plan
 
+## Shipping availability transitions — September 21, 2026
+
+Pending authenticated acceptance: activate/deactivate a saved sample, destination and assignment without creating a revision; prepare inactive successor content while its predecessor remains usable; activate now and at a scheduled future start; verify old revisions never reopen after deactivation. Reproduce an assignment with an inactive destination and an earlier draft start: follow the prerequisite link, activate the destination, then activate the same assignment. Verify ended destination and duplicate active assignments stay blocked, stale changes retain the confirmation, Actions and keyboard focus work on narrow/wide screens, and previously issued packets remain unchanged. Read-only production inspection confirmed the reported inactive destination; no live records or the user's open draft were changed. Browser mutation acceptance and automated suites were not run.
+
 ## Flexible shipping acceptance - September 21, 2026
 
 Manual acceptance pending: create and approve a reusable procedure, assign it to multiple sample types, save two container sizes with distinct regular-ice or dry-ice instructions, verify explicit no-cooling and cold-pack cases, issue a packet, revise configuration and confirm the frozen packet remains unchanged. Missing details and conflicting mixed controls must prevent issuance. Check desktop/mobile layout, required-field focus, dirty cancellation and Actions menus. Browser verification is blocked by the disconnected Edge integration; no automated E2E suite was requested or run.
@@ -2858,3 +2862,14 @@ tests; provider/scientific/physical acceptance is separate from synthetic fixtur
 
 Final full release run: 184 desktop/mobile cases passed, zero failures, with only
 the two intentional mobile physical-label print duplicates skipped.
+
+### Container supplier dropdowns follow-up (September 21)
+
+The container-size modal now reads Supplier and Supplier product number choices
+from the supplier catalog. Before the next release, verify keyboard selection,
+supplier-dependent product choices and clearing, inactive-product exclusion,
+legacy-reference retention, catalog failure/retry, and narrow-screen layout.
+No browser suite was requested or run for this local follow-up; prior release
+results above do not verify these dropdown changes.
+
+Release acceptance also checks Samples & shipping settings in the user menu, sidebar and page heading. Inspect existing data read-only: the reported assignment references ended destination revision 1 while revision 2 is active. Activation must explain this exact-reference mismatch and must not silently move an assignment or rewrite issued packets.

@@ -189,7 +189,7 @@ describe('navigation placement', () => {
     const context = { selectedOrganizationKind: 'Phaeno' as const }
     const items = getVisibleMainMenuItems(session, context, 'administration')
     expect(items.map(item => item.label)).toEqual([
-      ...(orders ? ['Order settings', 'Samples & shipping'] : []),
+      ...(orders ? ['Order settings', 'Samples & shipping settings'] : []),
       ...(retention ? ['File retention policies'] : []),
     ])
     expect(getVisibleMainMenuItems(session, context, 'workspace').some(item => item.label === 'Order ops')).toBe(false)
@@ -231,7 +231,7 @@ describe('navigation placement', () => {
       getVisibleMainMenuItems(session, context, 'administration').map(
         (item) => item.label,
       ),
-    ).toEqual(['Order settings', 'Lab settings', 'CRM settings', 'Samples & shipping', 'File retention policies'])
+    ).toEqual(['Order settings', 'Lab settings', 'CRM settings', 'Samples & shipping settings', 'File retention policies'])
     expect(
       getVisibleMainMenuItems(session, context, 'resources').map(
         (item) => item.label,

@@ -84,6 +84,8 @@ public sealed record SampleTypeDefinitionDto(
     bool IsActive,
     long Version);
 
+public sealed record SampleShippingStatusRequest(bool IsActive, long Version);
+
 public sealed record SampleTypeDefinitionWriteRequest(
     Guid? SupersedesSampleTypeId,
     long? SupersededVersion,

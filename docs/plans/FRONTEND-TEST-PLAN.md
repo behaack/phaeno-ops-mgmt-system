@@ -1,5 +1,9 @@
 # Frontend Test Plan
 
+## Shipping availability actions — September 21, 2026
+
+`SampleShippingConfigurationPanel.test.tsx` now covers separate Activate/Deactivate actions for sample types, destinations and assignments; unchanged revision identifiers; content revisions saved inactive; cancellation/error retention; ended-history controls; older active revisions behind drafts; and named prerequisite guidance before assignment activation. Status actions share the existing Actions menu and confirmation/focus patterns. Automated suites remain request-only and have not been executed for this change.
+
 ## Samples and shipping workspace - September 21, 2026
 
 Updated sample configuration/navigation coverage for the consolidated workspace and optional legacy packaging. Added frozen-packet rendering cases for regular ice and no cooling, common-step deduplication, per-sample packing and historical standalone text. Automated suites remain request-only. Type checking and focused lint are build/static checks, not test execution.
@@ -2648,3 +2652,14 @@ acknowledgment cases. Full lint, TypeScript, production build and 56-guide
 documentation consistency pass. The first full run found a stale Order Settings
 sample-navigation assertion and a load-related destination-form timeout; the
 corrected full rerun passes with bounded worker concurrency.
+
+### Container supplier dropdowns follow-up (September 21)
+
+Updated `ShippingContainers.test.tsx` regression sources for active supplier and
+shipping-container product filtering, supplier-dependent product clearing, optional
+reference removal, unchanged legacy references, and catalog failure/retry with
+draft retention. Hidden-field validation now uses earlier notes because supplier
+references are dropdowns. These follow-up cases have not been run; the full-suite
+results above cover the preceding release.
+
+Navigation expectations now use Samples & shipping settings for Phaeno administration; the Prospect operational workspace retains Samples & shipping. Page and sidebar headings, CRM handoff guidance and Phaeno help use the settings label. TypeScript and scoped lint pass; no new test suite was requested.

@@ -147,6 +147,13 @@ public sealed class SampleShippingDestination : IAudit, IConcurrency
         EffectiveTo = effectiveTo;
     }
 
+    public void SetActive(bool isActive, DateTime utcNow)
+    {
+        if (EffectiveTo.HasValue && EffectiveTo <= utcNow)
+            throw new InvalidOperationException("An ended destination revision cannot change availability.");
+        IsActive = isActive;
+    }
+
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
     public void MarkUpdated(DateTime utcNow, Guid? actorUserId) { UpdatedAt = utcNow; UpdatedByUserId = actorUserId; }
     public void IncrementVersion() => Version++;
@@ -245,6 +252,13 @@ public sealed class SampleTypeDefinition : IAudit, IConcurrency
 
     public bool IsEffectiveAt(DateTime utcNow) =>
         IsActive && EffectiveFrom <= utcNow && (!EffectiveTo.HasValue || EffectiveTo > utcNow);
+
+    public void SetActive(bool isActive, DateTime utcNow)
+    {
+        if (EffectiveTo.HasValue && EffectiveTo <= utcNow)
+            throw new InvalidOperationException("An ended sample-type revision cannot change availability.");
+        IsActive = isActive;
+    }
 
     public void EndAt(DateTime effectiveTo)
     {
@@ -364,6 +378,13 @@ public sealed class SampleShippingInstructionRule : IAudit, IConcurrency
         if (EffectiveTo.HasValue && effectiveTo > EffectiveTo.Value)
             throw new InvalidOperationException("An instruction-rule revision cannot be extended after it has been bounded.");
         EffectiveTo = effectiveTo;
+    }
+
+    public void SetActive(bool isActive, DateTime utcNow)
+    {
+        if (EffectiveTo.HasValue && EffectiveTo <= utcNow)
+            throw new InvalidOperationException("An ended shipping-assignment revision cannot change availability.");
+        IsActive = isActive;
     }
 
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }

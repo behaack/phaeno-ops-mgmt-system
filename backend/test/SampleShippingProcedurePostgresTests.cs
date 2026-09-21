@@ -68,6 +68,13 @@ public partial class SampleShippingPostgresTests
             Assert.Equal(procedure.Id, rule.GetProperty("shippingProcedureId").GetGuid());
             Assert.Equal("Synthetic side entrance", rule.GetProperty("destinationInstructions").GetString());
         }
+        var sampleStatus = await scope.CreateConfigurationController().SetSampleTypeStatus(fixture.SampleType.Id, new(false, fixture.SampleType.Version), default);
+        scope.ClearTrackedState();
+        var frozenWhileInactive = await scope.DbContext.SampleShippingPacketRevisions.AsNoTracking().SingleAsync(value => value.Id == packet.Id);
+        Assert.Equal(packet.InstructionSnapshotJson, frozenWhileInactive.InstructionSnapshotJson);
+        Assert.Equal(packet.ManifestSnapshotJson, frozenWhileInactive.ManifestSnapshotJson);
+        await scope.CreateConfigurationController().SetSampleTypeStatus(fixture.SampleType.Id, new(true, sampleStatus.Version), default);
+        scope.ClearTrackedState();
         var revised = await scope.ProcedureController().Create(request with { SupersedesProcedureId = procedure.Id,
             SupersededVersion = procedure.Version, PackingInstructions = "Later shared instructions" }, default);
         scope.ClearTrackedState();

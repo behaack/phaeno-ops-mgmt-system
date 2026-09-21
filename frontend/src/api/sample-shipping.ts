@@ -382,6 +382,21 @@ export async function createSampleShippingDestination(input: SampleShippingDesti
   return unwrap(response.data)
 }
 
+export async function setSampleTypeStatus(id: string, input: { isActive: boolean; version: number }) {
+  const response = await api.post<ApiEnvelope<SampleTypeDefinition>>(`/platform/sample-shipping/sample-types/${id}/status`, input)
+  return unwrap(response.data)
+}
+
+export async function setShippingDestinationStatus(id: string, input: { isActive: boolean; version: number }) {
+  const response = await api.post<ApiEnvelope<SampleShippingDestination>>(`/platform/sample-shipping/destinations/${id}/status`, input)
+  return unwrap(response.data)
+}
+
+export async function setShippingAssignmentStatus(id: string, input: { isActive: boolean; version: number }) {
+  const response = await api.post<ApiEnvelope<SampleShippingInstructionRule>>(`/platform/sample-shipping/instruction-rules/${id}/status`, input)
+  return unwrap(response.data)
+}
+
 export async function createSampleTypeDefinition(input: SampleTypeDefinitionWrite) {
   const response = await api.post<ApiEnvelope<SampleTypeDefinition>>('/platform/sample-shipping/sample-types', input)
   return unwrap(response.data)

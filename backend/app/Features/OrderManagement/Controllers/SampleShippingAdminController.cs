@@ -13,7 +13,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [Authorize]
 [Route("api/platform/sample-shipping")]
 [Route("api/platform/lab-operations/sample-shipping")]
-public sealed class SampleShippingAdminController(
+public sealed partial class SampleShippingAdminController(
     PSeqOperationsDbContext dbContext,
     OrderRequestContext requestContext,
     SampleShippingWorkflowReader workflowReader) : ControllerBase
@@ -64,6 +64,9 @@ public sealed class SampleShippingAdminController(
     {
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var effectiveFrom = RequireUtc(request.EffectiveFrom, "Destination effective-from");
+        var familyKey = request.SupersedesDestinationId.HasValue
+            ? await DestinationFamilyKeyAsync(request.SupersedesDestinationId.Value, cancellationToken) : Guid.NewGuid();
+        await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext, $"shipping-destination:{familyKey}", cancellationToken);
         SampleShippingDestination? predecessor = null;
         Guid definitionKey;
         int revision;
@@ -123,10 +126,15 @@ public sealed class SampleShippingAdminController(
                 effectiveFrom,
                 request.IsActive));
 
-        if (predecessor != null && (!predecessor.EffectiveTo.HasValue || effectiveFrom < predecessor.EffectiveTo.Value))
-            Execute("shipping_destination_period_invalid", () => predecessor.EndAt(effectiveFrom));
+        if (request.IsActive)
+        {
+            var previous = await dbContext.SampleShippingDestinations.Where(value => value.DefinitionKey == definitionKey
+                && value.IsActive && (!value.EffectiveTo.HasValue || value.EffectiveTo > effectiveFrom)).ToListAsync(cancellationToken);
+            foreach (var value in previous) Execute("shipping_destination_period_invalid", () => value.EndAt(effectiveFrom));
+        }
         dbContext.SampleShippingDestinations.Add(item);
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction != null) await transaction.CommitAsync(cancellationToken);
         Response.StatusCode = StatusCodes.Status201Created;
         return Map(item);
     }
@@ -138,6 +146,10 @@ public sealed class SampleShippingAdminController(
     {
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var effectiveFrom = RequireUtc(request.EffectiveFrom, "Sample-type effective-from");
+        var familyKey = request.SupersedesSampleTypeId.HasValue
+            ? await SampleTypeFamilyKeyAsync(request.SupersedesSampleTypeId.Value, cancellationToken)
+            : Guid.NewGuid();
+        await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext, $"sample-type:{familyKey}", cancellationToken);
         SampleTypeDefinition? predecessor = null;
         Guid definitionKey;
         int revision;
@@ -205,9 +217,41 @@ public sealed class SampleShippingAdminController(
         }
         dbContext.SampleTypeDefinitions.Add(item);
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction != null) await transaction.CommitAsync(cancellationToken);
         Response.StatusCode = StatusCodes.Status201Created;
         return Map(item);
     }
+
+    [HttpPost("sample-types/{id:guid}/status")]
+    public async Task<SampleTypeDefinitionDto> SetSampleTypeStatus(Guid id,
+        [FromBody] SampleShippingStatusRequest request, CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var familyKey = await SampleTypeFamilyKeyAsync(id, cancellationToken);
+        await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext, $"sample-type:{familyKey}", cancellationToken);
+        var family = await dbContext.SampleTypeDefinitions.Where(value => value.DefinitionKey == familyKey).ToListAsync(cancellationToken);
+        var item = family.Single(value => value.Id == id);
+        EnsureVersion(item.Version, request.Version);
+        var now = DateTime.UtcNow;
+        if (request.IsActive && family.Any(value => value.Revision > item.Revision))
+            throw Conflict("sample_type_already_superseded", "Only the latest sample-type revision can be activated. Open the latest revision to continue.");
+        Execute("sample_type_status_invalid", () => item.SetActive(request.IsActive, now));
+        if (request.IsActive)
+        {
+            var activationAt = item.EffectiveFrom > now ? item.EffectiveFrom : now;
+            foreach (var previous in family.Where(value => value.Id != id && value.IsActive
+                && (!value.EffectiveTo.HasValue || value.EffectiveTo > activationAt)))
+                Execute("sample_type_period_invalid", () => previous.EndAt(activationAt));
+        }
+        await dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction != null) await transaction.CommitAsync(cancellationToken);
+        return Map(item);
+    }
+
+    private async Task<Guid> SampleTypeFamilyKeyAsync(Guid id, CancellationToken cancellationToken)
+        => await dbContext.SampleTypeDefinitions.AsNoTracking().Where(value => value.Id == id)
+            .Select(value => (Guid?)value.DefinitionKey).SingleOrDefaultAsync(cancellationToken)
+            ?? throw Missing("sample_type_not_found", "The sample-type revision was not found.");
 
     [HttpPost("instruction-rules")]
     public async Task<SampleShippingInstructionRuleDto> CreateInstructionRule(
@@ -216,6 +260,11 @@ public sealed class SampleShippingAdminController(
     {
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         var effectiveFrom = RequireUtc(request.EffectiveFrom, "Instruction-rule effective-from");
+        var destinationFamilyKey = await DestinationFamilyKeyAsync(request.DestinationId, cancellationToken);
+        var sampleFamilyKey = await SampleTypeFamilyKeyAsync(request.SampleTypeDefinitionId, cancellationToken);
+        await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext, $"shipping-destination:{destinationFamilyKey}", cancellationToken);
+        await SampleShippingPackingData.LockAsync(dbContext, $"sample-type:{sampleFamilyKey}", cancellationToken);
+        await SampleShippingPackingData.LockAsync(dbContext, $"shipping-rule:{request.DestinationId}:{sampleFamilyKey}", cancellationToken);
         var procedure = request.ShippingProcedureId.HasValue
             ? await dbContext.SampleShippingProcedures.AsNoTracking().SingleOrDefaultAsync(item => item.Id == request.ShippingProcedureId, cancellationToken)
                 ?? throw Invalid("shipping_procedure_unavailable", "Select an available approved shipping procedure.")
@@ -227,7 +276,7 @@ public sealed class SampleShippingAdminController(
             .FirstOrDefaultAsync(item => item.Id == request.SampleTypeDefinitionId, cancellationToken)
             ?? throw Invalid("sample_type_unavailable", "Select an available sample-type revision.");
         if (request.IsActive && !destination.IsEffectiveAt(effectiveFrom))
-            throw Invalid("shipping_destination_not_effective", "The destination is not effective when this instruction rule begins.");
+            throw Invalid("shipping_destination_not_effective", DestinationAvailabilityError(destination, effectiveFrom));
         var sampleFamilyIds = await dbContext.SampleTypeDefinitions.AsNoTracking()
             .Where(value => value.DefinitionKey == sampleType.DefinitionKey).Select(value => value.Id).ToArrayAsync(cancellationToken);
         if (request.IsActive && !await dbContext.SampleTypeDefinitions.AsNoTracking().AnyAsync(value =>
@@ -261,9 +310,8 @@ public sealed class SampleShippingAdminController(
             revision = 1;
         }
 
-        var excludedRuleId = predecessor?.Id;
         if (request.IsActive && await dbContext.SampleShippingInstructionRules.AsNoTracking().AnyAsync(
-            item => (!excludedRuleId.HasValue || item.Id != excludedRuleId.Value)
+            item => item.DefinitionKey != definitionKey
                 && item.IsActive
                 && item.DestinationId == request.DestinationId
                 && sampleFamilyIds.Contains(item.SampleTypeDefinitionId)
@@ -294,10 +342,15 @@ public sealed class SampleShippingAdminController(
                 procedure,
                 request.DestinationInstructions));
 
-        if (predecessor != null && (!predecessor.EffectiveTo.HasValue || effectiveFrom < predecessor.EffectiveTo.Value))
-            Execute("shipping_instruction_period_invalid", () => predecessor.EndAt(effectiveFrom));
+        if (request.IsActive)
+        {
+            var previous = await dbContext.SampleShippingInstructionRules.Where(value => value.DefinitionKey == definitionKey
+                && value.IsActive && (!value.EffectiveTo.HasValue || value.EffectiveTo > effectiveFrom)).ToListAsync(cancellationToken);
+            foreach (var value in previous) Execute("shipping_instruction_period_invalid", () => value.EndAt(effectiveFrom));
+        }
         dbContext.SampleShippingInstructionRules.Add(item);
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction != null) await transaction.CommitAsync(cancellationToken);
         Response.StatusCode = StatusCodes.Status201Created;
         return Map(item, destination.Name, sampleType.Name);
     }
@@ -556,7 +609,7 @@ public sealed class SampleShippingAdminController(
     private static void EnsureVersion(long current, long? requested)
     {
         if (!requested.HasValue || current != requested.Value)
-            throw Conflict("sample_shipping_version_conflict", "This configuration changed after it was loaded. Refresh before creating a revision.");
+            throw Conflict("sample_shipping_version_conflict", "This configuration changed after it was loaded. Refresh before making changes.");
     }
 
     private static T Execute<T>(string code, Func<T> action)

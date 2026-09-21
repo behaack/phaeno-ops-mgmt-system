@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { getOrderErrorMessage } from '#/api/order-management'
 import type { SampleShippingConfiguration } from '#/api/sample-shipping'
+import { useSupplierCatalog } from '#/api/supplier-catalog'
 import { createShippingContainerDefinition, reviseShippingContainerDefinition, type ShippingContainerDefinition } from '#/api/shipping-containers'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
@@ -18,6 +19,8 @@ import { useOrderDraftGuard } from '../use-order-draft-guard'
 import { localContainerDateTime } from './shipping-container-utils'
 
 const effectiveDate = z.string().min(1, 'Choose an effective date and time.').refine(value => Number.isFinite(new Date(value).getTime()), 'Choose a valid date and time.')
+const selectClass = 'h-9 w-full min-w-0 cursor-pointer rounded-md border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50'
+const catalogKey = (value: string) => value.trim().toUpperCase()
 export const shippingContainerSchema = z.object({
   sku: z.string().trim().min(1, 'Enter the SKU number.').max(100),
   commonName: z.string().trim().min(1, 'Enter the common name.').max(255),
@@ -44,9 +47,21 @@ export function ShippingContainerEditor({ source, configuration, onClose, onSave
   onClose: () => void
   onSaved: (value: ShippingContainerDefinition) => void | Promise<void>
 }) {
+  const catalog = useSupplierCatalog()
+  const suppliers = (catalog.data ?? []).filter(item => item.isActive)
   const [productDetailsOpen, setProductDetailsOpen] = useState(Boolean(source?.supplierName || source?.supplierProductNumber || source?.packingInstructions))
   const form = useForm<z.input<typeof shippingContainerSchema>, unknown, Values>({
     resolver: zodResolver(shippingContainerSchema.superRefine((values, context) => {
+      const supplier = suppliers.find(item => catalogKey(item.name) === catalogKey(values.supplierName))
+      const sameSupplier = values.supplierName === (source?.supplierName ?? '')
+      const sameProduct = sameSupplier && values.supplierProductNumber === (source?.supplierProductNumber ?? '')
+      if (values.supplierName && !sameSupplier && (catalog.isPending || catalog.isError || !supplier)) {
+        context.addIssue({ code: 'custom', path: ['supplierName'], message: 'Choose an active supplier from the catalog.' })
+      }
+      if (values.supplierProductNumber && !sameProduct && (catalog.isPending || catalog.isError || !supplier?.products.some(item =>
+        item.isActive && item.productTypeIsActive && item.kind === 'ShippingContainer' && catalogKey(item.productNumber) === catalogKey(values.supplierProductNumber)))) {
+        context.addIssue({ code: 'custom', path: ['supplierProductNumber'], message: 'Choose an active shipping-container product from this supplier.' })
+      }
       if (!values.isActive) return
       for (const id of values.ruleIds) {
         if (!configuration.instructionRules.find(rule => rule.id === id)?.shippingProcedureId) continue
@@ -88,6 +103,13 @@ export function ShippingContainerEditor({ source, configuration, onClose, onSave
   const isDirty = form.formState.isDirty
   const allowSavedNavigation = useOrderDraftGuard(isDirty, mutation.isPending)
   const ruleIds = form.watch('ruleIds')
+  const supplierName = form.watch('supplierName')
+  const productNumber = form.watch('supplierProductNumber')
+  const supplier = suppliers.find(item => catalogKey(item.name) === catalogKey(supplierName))
+  const products = supplier?.products.filter(item => item.isActive && item.productTypeIsActive && item.kind === 'ShippingContainer') ?? []
+  const retainedSupplier = Boolean(supplierName && !supplier)
+  const retainedProduct = Boolean(productNumber && !products.some(item => catalogKey(item.productNumber) === catalogKey(productNumber)))
+  const catalogUnavailable = catalog.isPending || catalog.isError
   const latestRuleIds = new Map<string, { id: string; revision: number }>()
   for (const rule of configuration.instructionRules) {
     const current = latestRuleIds.get(rule.definitionKey)
@@ -100,7 +122,7 @@ export function ShippingContainerEditor({ source, configuration, onClose, onSave
     if (mutation.isPending || isDirty && !window.confirm('Discard the unsaved container-size changes?')) return
     onClose()
   }
-  function input(name: 'sku' | 'commonName' | 'supplierName' | 'supplierProductNumber' | 'tubeCapacity' | 'displayOrder' | 'effectiveFrom' | 'effectiveTo', label: string, type = 'text', required = false, help?: string) {
+  function input(name: 'sku' | 'commonName' | 'tubeCapacity' | 'displayOrder' | 'effectiveFrom' | 'effectiveTo', label: string, type = 'text', required = false, help?: string) {
     return <ContainerField id={`container-${name}`} label={label} required={required} error={errors[name]?.message} help={help} alignWithAdjacentField helpBelow={name === 'sku' || name === 'commonName'}>
       <Input id={`container-${name}`} type={type} disabled={mutation.isPending || name === 'sku' && Boolean(source)}
         min={name === 'tubeCapacity' ? 1 : name === 'displayOrder' ? 0 : undefined}
@@ -144,7 +166,34 @@ export function ShippingContainerEditor({ source, configuration, onClose, onSave
       <details open={productDetailsOpen || hasProductDetailsError} onToggle={event => setProductDetailsOpen(event.currentTarget.open)} className="rounded-md border px-3 py-2.5">
         <summary className="cursor-pointer rounded-sm text-sm font-medium focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50">Supplier details <span className="ml-1 text-xs font-normal text-muted-foreground">Optional</span></summary>
         <div className="mt-3 space-y-3">
-          <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">{input('supplierName', 'Supplier')}{input('supplierProductNumber', 'Supplier product number')}</div>
+          <p className="text-xs text-muted-foreground">Choose a supplier, then its shipping-container product. Manage the available choices in <Link className="underline" to="/lab-operations" search={{ section: 'suppliers' }}>Suppliers &amp; products</Link>.</p>
+          {catalog.isPending ? <p role="status" className="text-sm">Loading suppliers and products…</p> : null}
+          {catalog.isError ? <Alert variant="destructive"><AlertTitle>Supplier catalog unavailable</AlertTitle><AlertDescription><p>{getOrderErrorMessage(catalog.error, 'Try loading the supplier catalog again.')}</p><Button type="button" variant="outline" disabled={catalog.isFetching || mutation.isPending} onClick={() => void catalog.refetch()}>Retry supplier catalog</Button></AlertDescription></Alert> : null}
+          <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
+            <ContainerField id="container-supplierName" label="Supplier" error={errors.supplierName?.message}>
+              <select id="container-supplierName" className={selectClass} disabled={mutation.isPending || catalogUnavailable}
+                aria-invalid={Boolean(errors.supplierName)} aria-describedby={errors.supplierName ? 'container-supplierName-error' : undefined}
+                {...form.register('supplierName')} value={supplierName} onChange={event => {
+                  form.setValue('supplierName', event.target.value, { shouldDirty: true, shouldValidate: true })
+                  form.setValue('supplierProductNumber', '', { shouldDirty: true, shouldValidate: true })
+                }}>
+                <option value="">Not specified</option>
+                {retainedSupplier ? <option value={supplierName} disabled>{supplierName} (saved reference)</option> : null}
+                {suppliers.map(item => <option key={item.id} value={catalogKey(item.name) === catalogKey(supplierName) ? supplierName : item.name}>{item.name}</option>)}
+              </select>
+            </ContainerField>
+            <ContainerField id="container-supplierProductNumber" label="Supplier product number" error={errors.supplierProductNumber?.message}>
+              <select id="container-supplierProductNumber" className={selectClass} disabled={mutation.isPending || catalogUnavailable || ((!supplier || !products.length) && !productNumber)}
+                aria-invalid={Boolean(errors.supplierProductNumber)} aria-describedby={errors.supplierProductNumber ? 'container-supplierProductNumber-error' : undefined}
+                {...form.register('supplierProductNumber')} value={productNumber}>
+                <option value="">{!supplier && !productNumber ? 'Select a supplier first' : !products.length && !productNumber ? 'No active shipping-container products' : 'Not specified'}</option>
+                {retainedProduct ? <option value={productNumber} disabled>{productNumber} (saved reference)</option> : null}
+                {products.map(item => <option key={item.id} value={catalogKey(item.productNumber) === catalogKey(productNumber) ? productNumber : item.productNumber}>{item.productNumber} — {item.description}</option>)}
+              </select>
+            </ContainerField>
+          </div>
+          {!catalogUnavailable && !suppliers.length ? <p className="text-sm text-muted-foreground">No active suppliers are configured. Add or activate one in Suppliers &amp; products to select it here.</p> : null}
+          {!catalogUnavailable && (retainedSupplier || retainedProduct) ? <p className="text-xs text-muted-foreground">The saved reference is not an active catalog choice. Keep it unchanged for this revision, or clear it and select a replacement.</p> : null}
           {source?.packingInstructions ? <ContainerField id="container-packingInstructions" label="Earlier container notes" error={errors.packingInstructions?.message}>
             <Textarea id="container-packingInstructions" rows={2} disabled={mutation.isPending} aria-invalid={Boolean(errors.packingInstructions)} aria-describedby={errors.packingInstructions ? 'container-packingInstructions-error' : undefined} {...form.register('packingInstructions')} /><p className="mt-1 text-xs text-muted-foreground">Retained from the earlier container setup. Review these notes with the combination instructions and clear them if they repeat the approved steps.</p>
           </ContainerField> : null}

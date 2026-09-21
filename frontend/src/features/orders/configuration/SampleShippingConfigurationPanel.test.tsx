@@ -14,6 +14,9 @@ const apiMocks = vi.hoisted(() => ({
   createProcedure: vi.fn(),
   createRule: vi.fn(),
   createSampleType: vi.fn(),
+  setSampleTypeStatus: vi.fn(),
+  setDestinationStatus: vi.fn(),
+  setAssignmentStatus: vi.fn(),
   getConfiguration: vi.fn(),
   preview: vi.fn(),
 }))
@@ -23,6 +26,9 @@ vi.mock('#/api/sample-shipping', () => ({
   createSampleShippingDestination: apiMocks.createDestination,
   createSampleShippingInstructionRule: apiMocks.createRule,
   createSampleTypeDefinition: apiMocks.createSampleType,
+  setSampleTypeStatus: apiMocks.setSampleTypeStatus,
+  setShippingDestinationStatus: apiMocks.setDestinationStatus,
+  setShippingAssignmentStatus: apiMocks.setAssignmentStatus,
   getSampleShippingConfiguration: apiMocks.getConfiguration,
   previewSampleShipping: apiMocks.preview,
 }))
@@ -97,7 +103,8 @@ describe('SampleShippingConfigurationPanel', () => {
     renderPanel('destinations')
 
     await screen.findByText('Ship-to destinations')
-    fireEvent.click(screen.getAllByRole('button', { name: 'Create revision' })[0])
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Actions' }), { key: 'ArrowDown' })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Create revision' }))
 
     expect(screen.getByRole('heading', { name: 'Create West laboratory revision 2' })).toBeTruthy()
     expect(screen.queryByRole('textbox', { name: 'Destination code' })).toBeNull()
@@ -105,7 +112,7 @@ describe('SampleShippingConfigurationPanel', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Display name' }), { target: { value: 'Renamed receiving lab' } })
     fireEvent.submit(document.getElementById('sample-shipping-destination-form')!)
     await waitFor(() => expect(apiMocks.createDestination).toHaveBeenCalledWith(expect.objectContaining({ code: configuration.destinations[0].code, name: 'Renamed receiving lab', supersedesDestinationId: configuration.destinations[0].id })))
-    expect(screen.getByText(/current revision will end/i)).toBeTruthy()
+    expect(screen.getByText(/An earlier active revision remains available/i)).toBeTruthy()
   })
 
   it('generates a destination reference once and keeps it when retrying a failed save', async () => {
@@ -218,7 +225,8 @@ describe('SampleShippingConfigurationPanel', () => {
   it('rechecks the quantity range when Min changes and accepts whole-number and blank limits', async () => {
     apiMocks.createSampleType.mockRejectedValue(new Error('Save unavailable'))
     renderPanel('sample-types')
-    fireEvent.click(await screen.findByRole('button', { name: 'Create revision' }))
+    fireEvent.keyDown(await screen.findByRole('button', { name: 'Actions' }), { key: 'ArrowDown' })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Create revision' }))
     const min = screen.getByRole('textbox', { name: 'Min' })
     const max = screen.getByRole('textbox', { name: 'Max (optional)' })
     fireEvent.change(min, { target: { value: '11' } })
@@ -262,7 +270,8 @@ describe('SampleShippingConfigurationPanel', () => {
   it('preserves an existing sample reference when a revision changes its name', async () => {
     apiMocks.createSampleType.mockRejectedValue(new Error('Save unavailable'))
     renderPanel('sample-types')
-    fireEvent.click(await screen.findByRole('button', { name: 'Create revision' }))
+    fireEvent.keyDown(await screen.findByRole('button', { name: 'Actions' }), { key: 'ArrowDown' })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Create revision' }))
     const dialog = within(screen.getByRole('dialog', { name: 'Create Extracted RNA revision 2' }))
     expect(dialog.queryByLabelText(/Sample-type code/)).toBeNull()
     fireEvent.change(dialog.getByLabelText(/^Name/), { target: { value: 'Renamed RNA' } })
@@ -273,6 +282,7 @@ describe('SampleShippingConfigurationPanel', () => {
       materialClass: configuration.sampleTypes[0].materialClass,
       supersedesSampleTypeId: configuration.sampleTypes[0].id,
       supersededVersion: configuration.sampleTypes[0].version,
+      isActive: false,
     })))
   })
 
@@ -314,7 +324,121 @@ describe('SampleShippingConfigurationPanel', () => {
     expect(screen.queryByRole('button', { name: 'Create revision' })).toBeNull()
     fireEvent.click(screen.getByRole('link', { name: 'View latest revision (2)' }))
     expect(await screen.findByRole('heading', { name: 'Revised RNA' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Create revision' })).toBeTruthy()
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Actions' }), { key: 'ArrowDown' })
+    expect(await screen.findByRole('menuitem', { name: 'Create revision' })).toBeTruthy()
+  })
+
+  it.each([false, true])('changes availability in place from active=%s without creating a revision', async isActive => {
+    const original = { ...configuration.sampleTypes[0], isActive }
+    const updated = { ...original, isActive: !isActive, version: original.version + 1 }
+    apiMocks.getConfiguration.mockResolvedValue({ ...configuration, sampleTypes: [original] })
+    apiMocks.setSampleTypeStatus.mockImplementation(async () => {
+      apiMocks.getConfiguration.mockResolvedValue({ ...configuration, sampleTypes: [updated] })
+      return updated
+    })
+    renderPanel('sample-types')
+    const action = isActive ? 'Deactivate' : 'Activate'
+    fireEvent.keyDown(await screen.findByRole('button', { name: 'Actions' }), { key: 'ArrowDown' })
+    fireEvent.click(await screen.findByRole('menuitem', { name: action }))
+    const dialog = within(await screen.findByRole('dialog', { name: `${action} sample type?` }))
+    expect(apiMocks.setSampleTypeStatus).not.toHaveBeenCalled()
+    fireEvent.click(dialog.getByRole('button', { name: action }))
+    await waitFor(() => expect(apiMocks.setSampleTypeStatus).toHaveBeenCalledWith(original.id, { isActive: !isActive, version: original.version }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(screen.getByText(isActive ? 'Inactive' : 'Active now')).toBeTruthy()
+    expect(screen.getByText(`${original.code} · rev ${original.revision}`)).toBeTruthy()
+    expect(apiMocks.createSampleType).not.toHaveBeenCalled()
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Actions' })))
+  })
+
+  it('keeps a failed status confirmation open and allows cancellation without saving', async () => {
+    apiMocks.setSampleTypeStatus.mockRejectedValue(new Error('This configuration changed. Refresh before making changes.'))
+    renderPanel('sample-types', configuration.sampleTypes[0].id)
+    fireEvent.keyDown(await screen.findByRole('button', { name: 'Actions' }), { key: 'ArrowDown' })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Deactivate' }))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Deactivate' }))
+    expect(await screen.findByText('Sample-type status was not changed')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Refresh sample types' })).toBeTruthy()
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }))
+    expect(apiMocks.setSampleTypeStatus).toHaveBeenCalledTimes(1)
+    expect(apiMocks.createSampleType).not.toHaveBeenCalled()
+  })
+
+  it('exposes the earlier active revision when a newer inactive revision exists', async () => {
+    const active = configuration.sampleTypes[0]
+    const draft = { ...active, id: 'draft', revision: 2, isActive: false }
+    apiMocks.getConfiguration.mockResolvedValue({ ...configuration, sampleTypes: [active, draft] })
+    renderPanel('sample-types')
+    expect(await screen.findByText(/Revision 1 is currently active for new shipments/)).toBeTruthy()
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Actions' }), { key: 'ArrowDown' })
+    expect(await screen.findByRole('menuitem', { name: 'Activate' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Deactivate revision 1' }))
+    expect(screen.getByRole('dialog').textContent).toContain('Extracted RNA · revision 1')
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }))
+    expect(apiMocks.setSampleTypeStatus).not.toHaveBeenCalled()
+  })
+
+  it('does not offer activation for ended history or an approval checkbox in the content editor', async () => {
+    const ended = { ...configuration.sampleTypes[0], effectiveFrom: '2019-01-01T00:00:00Z', effectiveTo: '2020-01-01T00:00:00Z' }
+    apiMocks.getConfiguration.mockResolvedValue({ ...configuration, sampleTypes: [ended] })
+    renderPanel('sample-types')
+    fireEvent.click(await screen.findByRole('button', { name: 'Create revision' }))
+    const dialog = within(screen.getByRole('dialog'))
+    expect(dialog.queryByRole('checkbox', { name: 'Approved for new shipments' })).toBeNull()
+    expect(dialog.getByRole('button', { name: 'Create revision' })).toHaveProperty('disabled', true)
+  })
+
+  it.each(['destinations', 'instructions'] as const)('activates an existing %s revision without opening a content editor', async section => {
+    const original = section === 'destinations' ? configuration.destinations[0] : configuration.instructionRules[0]
+    const field = section === 'destinations' ? 'destinations' : 'instructionRules'
+    apiMocks.getConfiguration.mockResolvedValue({ ...configuration, [field]: [{ ...original, isActive: false }] })
+    const statusApi = section === 'destinations' ? apiMocks.setDestinationStatus : apiMocks.setAssignmentStatus
+    statusApi.mockImplementation(async () => {
+      const updated = { ...original, isActive: true, version: original.version + 1 }
+      apiMocks.getConfiguration.mockResolvedValue({ ...configuration, [field]: [updated] })
+      return updated
+    })
+    renderPanel(section)
+    fireEvent.keyDown(await screen.findByRole('button', { name: 'Actions' }), { key: 'ArrowDown' })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Activate' }))
+    const dialog = within(await screen.findByRole('dialog', { name: section === 'destinations' ? 'Activate destination?' : 'Activate shipping assignment?' }))
+    expect(dialog.getByText(/revision 1/)).toBeTruthy()
+    fireEvent.click(dialog.getByRole('button', { name: 'Activate' }))
+    await waitFor(() => expect(statusApi).toHaveBeenCalledWith(original.id, { isActive: true, version: original.version }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(screen.getByText('Active now')).toBeTruthy()
+    expect(apiMocks.createDestination).not.toHaveBeenCalled()
+    expect(apiMocks.createRule).not.toHaveBeenCalled()
+  })
+
+  it('explains an inactive destination before assignment activation and links to its setup', async () => {
+    apiMocks.getConfiguration.mockResolvedValue({ ...configuration,
+      destinations: [{ ...configuration.destinations[0], isActive: false }],
+      instructionRules: [{ ...configuration.instructionRules[0], isActive: false }],
+    })
+    renderPanel('instructions')
+    fireEvent.keyDown(await screen.findByRole('button', { name: 'Actions' }), { key: 'ArrowDown' })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Activate' }))
+    const dialog = within(screen.getByRole('dialog'))
+    expect(dialog.getByText(/West laboratory revision 1 is inactive/)).toBeTruthy()
+    expect(dialog.getByRole('button', { name: 'Activate' })).toHaveProperty('disabled', true)
+    fireEvent.click(dialog.getByRole('link', { name: 'Open Ship-to destinations' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(apiMocks.setAssignmentStatus).not.toHaveBeenCalled()
+  })
+
+  it.each(['destinations', 'instructions'] as const)('keeps earlier active %s accessible behind a newer draft', async section => {
+    const original = section === 'destinations' ? configuration.destinations[0] : configuration.instructionRules[0]
+    const field = section === 'destinations' ? 'destinations' : 'instructionRules'
+    apiMocks.getConfiguration.mockResolvedValue({ ...configuration, [field]: [original, { ...original, id: 'draft', revision: 2, isActive: false }] })
+    renderPanel(section)
+    expect(await screen.findByText(/An earlier revision is still approved/)).toBeTruthy()
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Actions' }), { key: 'ArrowDown' })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Deactivate revision 1' }))
+    expect(within(screen.getByRole('dialog')).getByText(/revision 1/)).toBeTruthy()
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }))
+    expect(apiMocks.setDestinationStatus).not.toHaveBeenCalled()
+    expect(apiMocks.setAssignmentStatus).not.toHaveBeenCalled()
   })
 
   it('handles a missing direct-link record without displaying another sample type', async () => {
