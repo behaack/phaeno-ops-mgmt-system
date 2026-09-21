@@ -52,4 +52,31 @@ The unrelated local database-rebase note is excluded from this release.
 
 ## Activation evidence
 
-All release checks passed. Production activation evidence is recorded after release.
+- Application source: `a3c4d587f83ed6c94c8285ee2daf09bf8f281a66`, published on
+  `codex/portal-documentation-search-release`. API activation completed at
+  **2026-09-21 18:28:46 UTC** with image
+  `phaeno-portal-green-api:sha-a3c4d587f83e-sample-shipping` and the matching
+  revision label. The current release symlink and deployment manifest agree.
+- Migration `20260921171011_AddSharedShippingProceduresAndContainerPacking` is
+  applied in production. API, PostgreSQL 18.6 and ClamAV are healthy. Storage,
+  scanner settings and blank bootstrap email are preserved. Website row counts
+  remain 12 contacts and 5 orders. The new procedure table is empty, as intended.
+- Recovery point `pre-migration-20260921T182826Z-a3c4d587f83e` passed isolated
+  database restoration and helper cleanup before migration. Its encrypted dump
+  and wrapped key were copied off-host; both SHA-256 checksums match. Evidence
+  is retained in ignored `artifacts/sample-shipping-release-20260921`.
+- Vercel production deployment `dpl_AZXp6ZAiUnABrTPfdVekSXWZcLZB` is **Ready**,
+  has the exact matching application source, and is the active production target
+  serving `portal.phaenobiotech.com`. Domain assignment is confirmed.
+- Final public probes at **18:32 UTC**: API health **200**, database ping **204**,
+  Portal root **200**.
+- A fresh signed-in production navigation verified the new Samples & shipping
+  menu entry, sample types, shared procedures, disabled assignment creation with
+  explicit prerequisite links, and all three retained active container sizes.
+  No browser console errors were captured. No production configuration or
+  shipment records were created or changed during verification.
+
+The subsequent documentation receipt commit records activation only; it does not
+change the application runtime identity above. Populated shipping journeys remain
+isolated synthetic evidence, while live verification covers the deployed screens
+and existing data. Scientific content and physical operations remain separate.

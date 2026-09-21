@@ -1,6 +1,7 @@
 # Samples and shipping refinement
 
-Status: release verification passed September 21, 2026; deployment authorized by the owner after screen/process review.
+Status: fully deployed and verified September 21, 2026. API, migration and Portal
+frontend use application commit `a3c4d587f83ed6c94c8285ee2daf09bf8f281a66`.
 
 ## Approved product outcome
 
@@ -115,3 +116,8 @@ free-form and explicitly supports regular ice, dry ice, other methods or no cool
   notifications remain and disposable database removal is verified. Production
   identities and recovery evidence are recorded in the
   [release receipt](../operations/sample-shipping-refinement-release-20260921.md).
+- Production activation passed: restored encrypted pre-migration backup, matching
+  API/Vercel source identities, healthy API/database/scanner, public probes and
+  fresh signed-in configuration navigation. Production retains three container
+  sizes and no sample/procedure/assignment setup; approved scientific content is
+  a separate operational task, not seeded as part of deployment.
