@@ -125,7 +125,7 @@ public sealed record CreatePortalIntegrationRequest
 public sealed record DecidePortalIntegrationRequest
 {
     public required bool Approved { get; init; }
-    public required string Reason { get; init; }
+    public string? Reason { get; init; }
     public required long Version { get; init; }
     public Guid? ExistingOrganizationId { get; init; }
 }

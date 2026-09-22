@@ -24,12 +24,13 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { ActionMenu as DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 
-export function OrganizationDepartmentsPanel({ organizationId, organizationAdmin = true, managedDepartmentIds = [], deliveryLocations = false, companyId }: {
+export function OrganizationDepartmentsPanel({ organizationId, organizationAdmin = true, managedDepartmentIds = [], deliveryLocations = false, companyId, manageMembers = true }: {
   organizationId: string
   organizationAdmin?: boolean
   managedDepartmentIds?: string[]
   deliveryLocations?: boolean
   companyId?: string
+  manageMembers?: boolean
 }) {
   const client = useQueryClient()
   const [editTarget, setEditTarget] = useState<Department | 'new' | null>(null)
@@ -117,15 +118,19 @@ export function OrganizationDepartmentsPanel({ organizationId, organizationAdmin
                   <p className="mt-2 text-xs text-muted-foreground">
                     {m.activeMembers(department.activeMemberCount)} · {overrideSummary(department)}
                   </p>
-                  {deliveryLocations && department.isActive ? <Button asChild variant="link" className="mt-2 h-auto p-0"><Link to="/delivery-locations" search={{ organizationId, departmentId: department.id, companyId }}>Delivery locations</Link></Button> : null}
                 </div>
-                <DropdownMenu modal={false}>
+                {!manageMembers && (!organizationAdmin || department.isDefault) && !(deliveryLocations && department.isActive) ? (
+                  <Button id={`department-actions-${department.id}`} size="sm" variant="outline" onClick={() => { save.reset(); setSaveConflict(null); setEditTarget(department) }}>
+                    <Pencil aria-hidden="true" />{m.editSettings}
+                  </Button>
+                ) : <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Button id={`department-actions-${department.id}`} size="icon-sm" variant="outline" disabled={lifecycle.isPending} aria-label={m.actionsFor(department.name)}><Ellipsis aria-hidden="true" /></Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]">
                     <DropdownMenuItem onSelect={() => { save.reset(); setSaveConflict(null); setEditTarget(department) }}><Pencil aria-hidden="true" />{m.editSettings}</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => setMemberTarget(department)}><UsersRound aria-hidden="true" />{m.manageMembers}</DropdownMenuItem>
+                    {manageMembers ? <DropdownMenuItem onSelect={() => setMemberTarget(department)}><UsersRound aria-hidden="true" />{m.manageMembers}</DropdownMenuItem> : null}
+                    {deliveryLocations && department.isActive ? <DropdownMenuItem asChild><Link to="/delivery-locations" search={{ organizationId, departmentId: department.id, companyId }}>Delivery locations</Link></DropdownMenuItem> : null}
                     {organizationAdmin && !department.isDefault && department.isActive ? (
                       <DropdownMenuItem onSelect={() => { lifecycle.reset(); setLifecycleTarget({ department, action: 'default' }) }}><Star aria-hidden="true" />{m.makeDefault}</DropdownMenuItem>
                     ) : null}
@@ -133,7 +138,7 @@ export function OrganizationDepartmentsPanel({ organizationId, organizationAdmin
                       <DropdownMenuItem onSelect={() => { lifecycle.reset(); setLifecycleTarget({ department, action: 'toggle' }) }}>{department.isActive ? m.deactivate : m.reactivate}</DropdownMenuItem>
                     ) : null}
                   </DropdownMenuContent>
-                </DropdownMenu>
+                </DropdownMenu>}
               </div>
             </article>
           ))}

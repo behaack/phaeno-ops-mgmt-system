@@ -154,6 +154,8 @@ public sealed class CrmCompaniesController(
         {
             Execute(() => company.AccessOrganization.UpdateProfile(company.Name, company.Description));
         }
+        if (company.SetupOrganization is not null)
+            Execute(() => company.SetupOrganization.UpdateProfile(company.Name, company.Description is { Length: > 1000 } ? company.Description[..1000] : company.Description));
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return ToDto(company);
@@ -256,11 +258,12 @@ public sealed class CrmCompaniesController(
         foreach (var task in await dbContext.CrmTasks.Where(value => value.CompanyId == source.Id).ToListAsync(cancellationToken)) task.ReassignCompany(target.Id);
         foreach (var handoff in await dbContext.CrmHandoffs.Where(value => value.CompanyId == source.Id).ToListAsync(cancellationToken)) handoff.ReassignCompany(target.Id);
 
-        if (source.AccessOrganizationId.HasValue && target.AccessOrganizationId.HasValue)
+        if ((source.AccessOrganizationId.HasValue || source.SetupOrganizationId.HasValue)
+            && (target.AccessOrganizationId.HasValue || target.SetupOrganizationId.HasValue))
         {
             throw Conflict(
                 "crm_company_merge_access_conflict",
-                "These Companies cannot be merged while both have Portal access. Resolve their tenant data as a separate administrative operation first.");
+                "These Companies cannot be merged while both have department or Portal data. Resolve their tenant data as a separate administrative operation first.");
         }
         Execute(() => source.TransferPortalAccessTo(target));
 
@@ -314,6 +317,7 @@ public sealed class CrmCompaniesController(
         var query = dbContext.CrmCompanies
             .Include(value => value.Owner)
             .Include(value => value.AccessOrganization)
+            .Include(value => value.SetupOrganization)
             .AsQueryable();
         if (!tracking)
         {
@@ -375,6 +379,7 @@ public sealed class CrmCompaniesController(
             OwnerUserId = value.OwnerUserId,
             OwnerName = $"{resolvedOwner.FirstName} {resolvedOwner.LastName}".Trim(),
             AccessOrganizationId = value.AccessOrganizationId,
+            SetupOrganizationId = value.SetupOrganizationId,
             PortalRelationship = value.AccessOrganization?.Kind,
             PortalReadiness = value.AccessOrganization?.PortalReadiness,
             PortalAccessStatus = value.AccessOrganization is null

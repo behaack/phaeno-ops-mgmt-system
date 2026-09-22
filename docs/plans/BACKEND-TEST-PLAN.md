@@ -1,5 +1,13 @@
 # Backend Test Plan
 
+## September 22, 2026 — Optional Company approval notes
+
+`RelationshipManagementDomainTests` now covers omitted/null/empty/whitespace approval notes for onboarding, evaluation, offboarding and service changes; retained decision/reviewer/time; trimmed notes and the 2,000-character limit; reasons required for every decline and other approval types; and invalid reasons leaving decision state unchanged. The decision DTO can deserialize an omitted reason. Sources are compiled by the solution build; automated execution remains request-only.
+
+## September 22, 2026 — Company departments before online access
+
+Authored `CrmCompanyDepartmentSetupTests` and `CrmCompanyDepartmentSetupPostgresTests` cover separate setup/access identities, merge retention/conflicts, platform-admin-only creation, inactive setup, generated references, editing, no requests/invitations/memberships/entitlements, rejection of direct activation, approval retaining department settings, and inactive-Company denial. Automated execution remains deferred under the repository request-only rule. Solution build compiles the regression sources.
+
 ## Sequencing assembly runner — September 22, 2026
 
 New `LabAssemblyTests` cover actual start/stop and disposition, delayed/duplicate/conflicting outcomes, cancellation races and unstarted cancellation, timestamp precision, transient percentage expiry, no persisted progress fields, disabled production provider and rejection of combined-run completion counts. `LabAssemblyPostgresTests` adds an opt-in reference fixture for recovery without duplicate dispatch, a percentage stream producing no job-version/audit/event writes, restart recovery, failure retention, late-progress rejection and the unique active-attempt constraint. The simulated adapter exists only in the test project. Sources compile; test execution remains request-only. Remaining acceptance includes real provider idempotency/replay, S3 byte verification, input admission and independent-connection start/cancel/hold races, completed output import and provider/scientific acceptance.

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.Accounts.Application;
 using PhaenoPortal.App.Common.Exceptions.Accounts;
+using PhaenoPortal.App.Common.Exceptions.Conflict;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.Crm.Domain;
 using PSeq.Operations.Commercial.Relationships.Domain;
@@ -342,6 +343,8 @@ public static class OrganizationEndpoints
         }
 
         var wasInactive = !organization.IsActive;
+        if (await dbContext.CrmCompanies.AnyAsync(value => value.SetupOrganizationId == id, cancellationToken))
+            throw new BadRequestException("Approve the Company's online-access request before activating its department setup.");
         organization.Activate();
         var company = await dbContext.CrmCompanies
             .FirstOrDefaultAsync(value => value.AccessOrganizationId == id, cancellationToken);

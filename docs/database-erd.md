@@ -15,10 +15,10 @@ The additive [step performance JSON contract](plans/LAB-STEP-PERFORMANCE-CONTRAC
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 138 | 2222 | 353 |
+| `commercial_ops` | 138 | 2223 | 354 |
 | `lab_ops` | 60 | 704 | 109 |
 | `website` | 5 | 51 | 4 |
-| **Total** | **204** | **2979** | **466** |
+| **Total** | **204** | **2980** | **467** |
 
 ## `public` schema
 
@@ -221,6 +221,7 @@ erDiagram
         character_varying_50 phone "nullable"
         character_varying_30 postal_code "nullable"
         character_varying_150 region "nullable"
+        uuid setup_organization_id FK,UK "nullable"
         character_varying_150 source "nullable"
         text_array tags "not null"
         timestamp_with_time_zone updated_at "not null"
@@ -355,6 +356,7 @@ erDiagram
     organizations o|--o| crm_companies : "access_organization_id"
     crm_companies o|--o{ crm_companies : "merged_into_company_id"
     users ||--o{ crm_companies : "owner_user_id"
+    organizations o|--o| crm_companies : "setup_organization_id"
     crm_companies ||--o{ crm_company_contacts : "company_id"
     crm_contacts ||--o{ crm_company_contacts : "contact_id"
     crm_contacts ||--o{ crm_contact_user_links : "contact_id"

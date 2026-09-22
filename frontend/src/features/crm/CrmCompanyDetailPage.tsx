@@ -65,7 +65,7 @@ import { CrmOwnerSelect } from "./CrmOwnerSelect";
 import { toInput } from "./CrmCompaniesPage";
 import { OrganizationDetailPage } from "#/features/organizations/OrganizationDetailPage";
 import { useCrmState } from './CrmListNavigation';
-import { OrganizationDepartmentsPanel } from "#/features/organizations/OrganizationDepartmentsPanel";
+import { CrmCompanyDepartments } from "./CrmCompanyDepartments";
 
 const companyReviewFields: ReadonlyArray<readonly [keyof CrmCompany, string]> = [
   ["name", "Company name"], ["websiteUrl", "Website"], ["domainName", "Domain"],
@@ -424,23 +424,7 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
         </TabsContent> : null}
 
         {canAdminister ? <TabsContent value="departments" className="space-y-6">
-          {company.accessOrganizationId ? (
-            <OrganizationDepartmentsPanel organizationId={company.accessOrganizationId} deliveryLocations={company.portalRelationship === 'Customer'} companyId={companyId} />
-          ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle>Departments</CardTitle>
-                <CardDescription>
-                  Online access has not been approved for this Company.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button type="button" onClick={() => setActiveSection("requests")}>
-                  Open Company requests
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+          <CrmCompanyDepartments company={company} />
         </TabsContent> : null}
 
         {canAdminister ? <TabsContent value="services" className="space-y-6">

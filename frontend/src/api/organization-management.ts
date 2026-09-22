@@ -419,7 +419,7 @@ export async function decideRelationshipRequest(
   input: {
     approved: boolean
     existingOrganizationId?: string
-    reason: string
+    reason?: string | null
     version: number
   },
 ) {

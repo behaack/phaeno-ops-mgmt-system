@@ -17,9 +17,7 @@ public static class DepartmentEndpoints
     {
         var actor = await RequireActor(httpContext, dbContext, externalIdentityContext, cancellationToken);
         if (!CanManageOrganization(actor, organizationId)) return TypedResults.Forbid();
-        var organization = await dbContext.Organizations.AsNoTracking()
-            .SingleOrDefaultAsync(value => value.Id == organizationId && value.IsActive, cancellationToken)
-            ?? throw new BadRequestException("The active organization was not found.");
+        var organization = await RequireConfigurableOrganization(actor, organizationId, dbContext, cancellationToken);
         return TypedResults.Ok(ConfigurationDto(organization));
     }
 
@@ -29,9 +27,7 @@ public static class DepartmentEndpoints
     {
         var actor = await RequireActor(httpContext, dbContext, externalIdentityContext, cancellationToken);
         if (!CanManageOrganization(actor, organizationId)) return TypedResults.Forbid();
-        var organization = await dbContext.Organizations
-            .SingleOrDefaultAsync(value => value.Id == organizationId && value.IsActive, cancellationToken)
-            ?? throw new BadRequestException("The active organization was not found.");
+        var organization = await RequireConfigurableOrganization(actor, organizationId, dbContext, cancellationToken);
         EnsureVersion(organization.Version, request.Version);
         var previous = organization.GetConfigurationDefaults();
         Execute(() => organization.UpdateConfigurationDefaults(new(request.PurchaseOrderRequired,
@@ -108,12 +104,7 @@ public static class DepartmentEndpoints
             return TypedResults.Forbid();
         }
 
-        var organizationExists = await dbContext.Organizations.AsNoTracking()
-            .AnyAsync(value => value.Id == organizationId && value.IsActive, cancellationToken);
-        if (!organizationExists)
-        {
-            throw new BadRequestException("The organization is inactive or unavailable.");
-        }
+        await RequireConfigurableOrganization(actor, organizationId, dbContext, cancellationToken);
 
         await using var ownedTransaction = dbContext.Database.CurrentTransaction is null
             ? await dbContext.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted, cancellationToken) : null;
@@ -166,7 +157,7 @@ public static class DepartmentEndpoints
         CancellationToken cancellationToken)
     {
         var actor = await RequireActor(httpContext, dbContext, externalIdentityContext, cancellationToken);
-        if (!await CanManageDepartment(actor, organizationId, departmentId, dbContext, cancellationToken))
+        if (!await CanManageDepartment(actor, organizationId, departmentId, dbContext, cancellationToken, allowCompanySetup: true))
         {
             return TypedResults.Forbid();
         }
@@ -203,6 +194,7 @@ public static class DepartmentEndpoints
             return TypedResults.Forbid();
         }
 
+        await RequireConfigurableOrganization(actor, organizationId, dbContext, cancellationToken);
         var department = await RequireDepartment(dbContext, organizationId, departmentId, cancellationToken);
         EnsureVersion(department.Version, request.Version);
         if (lifecycleAction == "deactivate")
@@ -255,6 +247,7 @@ public static class DepartmentEndpoints
             return TypedResults.Forbid();
         }
 
+        await RequireConfigurableOrganization(actor, organizationId, dbContext, cancellationToken);
         var department = await RequireDepartment(dbContext, organizationId, departmentId, cancellationToken);
         EnsureVersion(department.Version, request.Version);
         if (!department.IsActive)
@@ -520,19 +513,40 @@ public static class DepartmentEndpoints
         AccountAuthorization.IsPlatformAdmin(actor)
         || AccountAuthorization.IsOrganizationAdmin(actor, organizationId);
 
+    private static async Task<Organization> RequireConfigurableOrganization(User actor, Guid organizationId,
+        PSeqOperationsDbContext dbContext, CancellationToken cancellationToken)
+    {
+        var organization = await dbContext.Organizations.SingleOrDefaultAsync(value => value.Id == organizationId, cancellationToken)
+            ?? throw new BadRequestException("The organization is unavailable.");
+        if (!organization.IsActive && !await CanConfigureCompanySetup(actor, organizationId, dbContext, cancellationToken))
+            throw new BadRequestException("The organization is inactive or unavailable.");
+        return organization;
+    }
+
+    private static Task<bool> CanConfigureCompanySetup(User actor, Guid organizationId,
+        PSeqOperationsDbContext dbContext, CancellationToken cancellationToken) =>
+        AccountAuthorization.IsPlatformAdmin(actor)
+            ? dbContext.CrmCompanies.AnyAsync(value => value.IsActive && value.SetupOrganizationId == organizationId
+                && value.AccessOrganizationId == null, cancellationToken)
+            : Task.FromResult(false);
+
     private static async Task<bool> CanManageDepartment(
         User actor,
         Guid organizationId,
         Guid departmentId,
         PSeqOperationsDbContext dbContext,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool allowCompanySetup = false)
     {
         if (!await dbContext.OrganizationDepartments.AsNoTracking().AnyAsync(value =>
-                value.Id == departmentId && value.OrganizationId == organizationId
-                && value.Organization.IsActive, cancellationToken))
+                value.Id == departmentId && value.OrganizationId == organizationId, cancellationToken))
         {
             return false;
         }
+
+        if (!await dbContext.Organizations.AnyAsync(value => value.Id == organizationId && value.IsActive, cancellationToken)
+            && !(allowCompanySetup && await CanConfigureCompanySetup(actor, organizationId, dbContext, cancellationToken)))
+            return false;
 
         if (CanManageOrganization(actor, organizationId))
         {

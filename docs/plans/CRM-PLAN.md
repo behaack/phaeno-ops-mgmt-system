@@ -1,5 +1,87 @@
 # First-Party CRM Plan
 
+## September 22, 2026 — Commit/push deployment hold
+
+The owner authorized committing and pushing the department-setup and optional
+approval-note changes, with deployment explicitly held. Both `frontend/vercel.json`
+and `website/vercel.json` disable automatic Git deployments only for
+`codex/portal-documentation-search-release`, covering the Portal and both Website
+projects connected to this repository. Keep this branch hold until deployment is
+authorized; remove the matching entries when automatic deployment is approved
+again. The manual backend deployment workflow and shared/production migrations
+remain uninvoked by this publishing task.
+
+## September 22, 2026 — Optional approval notes
+
+Platform administrators reviewing Company requests can approve online access
+(onboarding, evaluation or offboarding) and service changes without entering a
+reason. **Approval note (optional)** remains visible in the dialog. Every decline still
+requires a nonblank reason. Relationship-change and sales-assisted-order
+approvals retain their required reasons; completion and cancellation rules are
+unchanged. The decision, reviewer and timestamp remain recorded with or without
+a note. Success means the ordinary approval can be confirmed without typing,
+while an unexplained decline cannot be submitted or saved.
+
+The existing decision payload accepts an omitted/null reason; domain validation
+applies the rule before changing decision state. Existing nullable storage needs
+no migration. Permissions, concurrency and approval consequences are unchanged.
+Regression sources cover all request types, empty/whitespace notes, note length,
+retained decision identity and invalid-decision state. Automated execution
+remains request-only.
+
+Verification: solution build including regression sources passed with zero
+warnings/errors using separate output folders because the running Visual
+Studio/IIS Express session locked the normal output. Frontend TypeScript,
+scoped ESLint and generated-help consistency passed. A simulated browser
+preview verified the always-visible optional note, blank and annotated
+approvals, required decline feedback and successful decline with a reason,
+focus return, desktop light and 390 px dark layouts. Live decision persistence
+and automated suites were not exercised. Restart/rebuild the local API to use
+the updated backend validation.
+
+## September 22, 2026 — Departments before online access
+
+The owner approved direct department setup from Company → Departments → Add
+department, without an online-access request. Platform administrators retain
+ownership of this action. Success means saving and maintaining departments on
+an active Company with no request, invitation, membership or service grant.
+
+Implementation scope: retain the existing department model and editor. The first
+save atomically creates an inactive, Company-owned setup Organization and the
+department. A separate nullable `SetupOrganizationId` distinguishes internal
+setup from approved `AccessOrganizationId`; merely opening or cancelling the
+editor writes nothing. Existing department configuration operations permit this
+scope only for platform administrators of an active Company. Membership and
+invitation operations keep their active-organization requirements. Direct
+reactivation of a setup Organization is blocked. Online-access approval promotes
+the same Organization, retaining department identities, references and settings.
+Company setup and approval serialize against the same Company lock. Company
+merge preserves a single setup scope and rejects combining two occupied scopes.
+
+This supersedes the Departments request-based empty state recorded below;
+Services and online-access approvals retain their existing workflow. A nullable
+foreign key and unique index require an additive migration; no existing data is
+backfilled or activated. Shared/production migration, deployment and Git changes
+are outside this implementation authorization. Automated suites remain
+request-only; regression sources and verification results are recorded below.
+
+Implemented locally with migration `20260922163113_AddCompanyDepartmentSetup`.
+The migration adds only the nullable setup foreign key and unique index and was
+applied to the verified local Development database `phaeno_ops_clean_20260919`
+on localhost:5432. No other migration was pending; no shared or production
+migration was applied. The ERD matches the updated snapshot.
+
+Verification: solution build including regression sources passed with zero
+warnings/errors; frontend TypeScript, scoped ESLint, generated-help consistency,
+model/migration consistency and whitespace checks passed. A simulated browser
+preview verified direct creation, the existing editor, saved department display,
+no membership controls before approval, cancel/Escape focus restoration,
+desktop light theme and the 390 px dark-theme form without horizontal overflow.
+The final preview reported no browser errors. Automated tests and a real
+Company-to-approved-access journey were not run; the PostgreSQL regression
+sources cover that transition. The reported CS0246 is resolved by the missing
+exception namespace import.
+
 ## Company request history search and pagination — September 19, 2026
 
 Owner limited this change to Completed / history. Add a read-only, platform-admin history endpoint with database filtering by company name, request number, summary, decision and completion notes; case-insensitive literal matching, newest-updated ordering with ID tie-breaker, 25-row pages, bounded page sizes and stale-page clamping. The active queues remain unpaginated and load only active requests; legacy API callers retain their existing response. History search/page stay in CRM route state; searching resets page, direct request links retain their exact target, and only history shows the search/paginator. No schema, permission or migration changes. Regression sources cover authorization, page boundaries, global search, empty matches, pinned requests and active/history separation. Automated suites remain request-only.

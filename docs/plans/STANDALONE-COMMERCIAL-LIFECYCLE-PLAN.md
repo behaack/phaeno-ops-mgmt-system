@@ -120,8 +120,10 @@ POMS owns all state required to operate the standalone product:
 - committed-sale records and the approved manual-accounting boundary
 
 A CRM company or contact is not a Portal organization or Portal user. Only an
-explicit approved transition creates or links a Portal account, and only the
-invitation flow creates access.
+explicit approved transition enables or links a Portal account, and only the
+invitation flow creates user access. Company department setup may create an
+inactive internal Organization beforehand; this is not approved Portal access.
+See [Departments before online access](CRM-PLAN.md#september-22-2026--departments-before-online-access).
 
 A future external CRM may import, export, or synchronize approved
 relationship-safe facts through an adapter. It may not be required to use any
@@ -168,9 +170,9 @@ executable scientific work, or overwrite POMS-owned operational state.
    records the actor and time.
 4. An authorized reviewer approves, returns, or declines the request using the
    existing review queue and optimistic-concurrency rules.
-5. Online-access approval atomically creates and associates the pending
-   internal tenant scope when one does not already exist. It does not add or
-   remove product or service entitlements, grant membership, or create an
+5. Online-access approval atomically enables and associates existing Company
+   department setup, or creates the pending internal tenant scope if needed.
+   It does not add or remove product or service entitlements, grant membership, or create an
    order.
 6. Staff complete readiness, review or add any remaining approved services,
    and invite the designated organization administrator through explicit

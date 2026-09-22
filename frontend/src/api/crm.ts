@@ -1,6 +1,12 @@
 import { api } from "./client";
+import type { Department, DepartmentInput } from './organization-management';
 
 export { apiErrorMessage, existingAccessScopeCandidate } from "./api-error";
+
+export async function createCrmCompanyDepartment(companyId: string, input: DepartmentInput) {
+  const response = await api.post<ApiEnvelope<Department>>(`/platform/crm/companies/${companyId}/departments`, input);
+  return unwrap(response.data);
+}
 
 type ApiEnvelope<T> = {
   success: boolean;
@@ -36,6 +42,7 @@ export type CrmCompany = {
   ownerUserId: string;
   ownerName: string;
   accessOrganizationId: string | null;
+  setupOrganizationId?: string | null;
   portalRelationship: "Prospect" | "Customer" | "Partner" | null;
   portalReadiness: "NotReviewed" | "Pending" | "Ready" | "Blocked" | null;
   portalAccessStatus: "NotEnabled" | "Enabled" | "Suspended";

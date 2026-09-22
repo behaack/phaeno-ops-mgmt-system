@@ -1,5 +1,15 @@
 # Playwright E2E Test Plan
 
+## September 22, 2026 — Optional Company approval notes
+
+Manual acceptance covers approval with no note, submitting an optional note from the always-visible field, a blank decline blocked with accessible feedback, a valid decline, retained required reasons for relationship/order approvals, keyboard focus, desktop/mobile and light/dark layouts. Use a simulated component preview for local UI checks; real authenticated decision persistence and automated E2E execution remain deferred under the request-only rule.
+
+Verified in a simulated component preview: visible optional note, approval without a note, trimmed optional note submission, blank decline blocked with linked error/focus, valid decline submission, focus restoration and desktop light/390 px dark layouts. This does not establish live decision persistence.
+
+## September 22, 2026 — Company departments before online access
+
+Acceptance to exercise when authorized: an administrator opens a Company without online access, creates and edits a department directly, reloads it, verifies access remains Not enabled and Services stays gated, then approves online access and verifies the same department references/settings are retained. Include cancel/no-write, save error/retry, inactive Company, Commercial/external denial, desktop/narrow layouts, keyboard focus and dark theme. Automated E2E execution and real approval mutations are deferred; a simulated component preview verified direct creation, saved list rendering, focus restoration, desktop light and 390 px dark form layout with no horizontal overflow or final browser errors. This does not establish real backend approval execution.
+
 ## Sequencing assembly — September 22, 2026
 
 The endpoint-independent implementation adds Data assembly > Sequencing runs, preserves Assembly cases, adds a stable assembly-job detail route and sample-scoped history, and disables live Start until a real adapter is configured. Browser acceptance is pending and test execution remains request-only. Cover desktop/mobile/keyboard setup and empty states; separate sample/run inputs; live percentage recovery after refresh without progress history; actual start/stop/final disposition; cancellation races; role denial; retry and analysis-link validation; preserved commercial assembly routes; and QC/release remaining separate. Actual dispatch, S3 integrity, completion imports and outage recovery need the external contract and a staging provider. Simulations must remain explicitly labeled and must not be counted as scientific/provider acceptance.

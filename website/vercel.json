@@ -1,4 +1,9 @@
 {
+  "git": {
+    "deploymentEnabled": {
+      "codex/portal-documentation-search-release": false
+    }
+  },
   "redirects": [
     {
       "source": "/join-us",

@@ -47,9 +47,11 @@ public static class CrmModelConfiguration
             entity.HasIndex(value => new { value.IsActive, value.Name });
             entity.HasIndex(value => value.LifecycleState);
             entity.HasIndex(value => value.AccessOrganizationId).IsUnique();
+            entity.HasIndex(value => value.SetupOrganizationId).IsUnique();
             entity.HasOne(value => value.Owner).WithMany().HasForeignKey(value => value.OwnerUserId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(value => value.MergedIntoCompany).WithMany().HasForeignKey(value => value.MergedIntoCompanyId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(value => value.AccessOrganization).WithOne().HasForeignKey<CrmCompany>(value => value.AccessOrganizationId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(value => value.SetupOrganization).WithOne().HasForeignKey<CrmCompany>(value => value.SetupOrganizationId).OnDelete(DeleteBehavior.Restrict);
         });
     }
 

@@ -1,5 +1,13 @@
 # Frontend Test Plan
 
+## September 22, 2026 — Optional Company approval notes
+
+`RequestActionDialog.test.tsx` covers blank approval submission for the four eligible request types, the visible optional-note field without a Required legend, submitting an optional note, reasons required for all declines and other approval types, and preserved existing-scope confirmation. TypeScript and scoped lint are the static checkpoint. Automated test execution remains request-only.
+
+## September 22, 2026 — Company departments before online access
+
+Authored `CrmCompanyDepartments.test.tsx` covers direct Add department, opening/cancelling without writes, Company-scoped saving, retained draft on failure, setup without membership controls, approved-scope controls, and inactive-Company feedback. Automated execution remains deferred under the repository request-only rule. TypeScript and scoped lint are the static checkpoint.
+
 ## Sequencing assembly workspace — September 22, 2026
 
 `assembly-jobs.test.ts` and `AssemblyJobs.test.tsx` cover fresh versus missing/stale/invalid percentages, final disposition replacing progress, actual elapsed-time formatting and unavailable-provider messaging with Start disabled. Build, TypeScript and touched-file lint checks are the implementation checkpoint; automated test execution remains request-only. Further interaction acceptance covers input/run selection, retry reasons, cancellation/analysis-link dialogs, navigation/search restoration, read-only roles and focus return. The runtime contains no simulated provider or fabricated scientific results.

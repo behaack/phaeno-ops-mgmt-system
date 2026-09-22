@@ -111,13 +111,84 @@ public class RelationshipManagementDomainTests
         Assert.Equal("Configured from the approved service request.", entitlement.Notes);
     }
 
+    [Theory]
+    [InlineData(PortalIntegrationRequestType.Onboarding)]
+    [InlineData(PortalIntegrationRequestType.Evaluation)]
+    [InlineData(PortalIntegrationRequestType.Offboarding)]
+    [InlineData(PortalIntegrationRequestType.ServiceChange)]
+    public void RoutineApprovalsAllowEmptyNotesAndRetainDecisionIdentity(PortalIntegrationRequestType type)
+    {
+        var actor = Guid.NewGuid();
+        foreach (var note in new string?[] { null, "", "  " })
+        {
+            var request = CreateRequest(null, [], type);
+            request.Decide(true, note, actor, Now);
+            Assert.Equal(PortalIntegrationRequestStatus.Approved, request.Status);
+            Assert.Equal(actor, request.ReviewedByUserId);
+            Assert.Equal(Now, request.ReviewedAt);
+            Assert.Null(request.DecisionReason);
+        }
+        var annotated = CreateRequest(null, [], type);
+        annotated.Decide(true, "  Reviewed the request.  ", actor, Now);
+        Assert.Equal("Reviewed the request.", annotated.DecisionReason);
+        var tooLong = CreateRequest(null, [], type);
+        Assert.Throws<ArgumentException>(() => tooLong.Decide(true, new string('x', 2001), actor, Now));
+        Assert.Equal(PortalIntegrationRequestStatus.PendingReview, tooLong.Status);
+        Assert.Null(tooLong.ReviewedAt);
+    }
+
+    [Theory]
+    [InlineData(PortalIntegrationRequestType.Onboarding)]
+    [InlineData(PortalIntegrationRequestType.Evaluation)]
+    [InlineData(PortalIntegrationRequestType.Offboarding)]
+    [InlineData(PortalIntegrationRequestType.ServiceChange)]
+    [InlineData(PortalIntegrationRequestType.RelationshipChange)]
+    [InlineData(PortalIntegrationRequestType.SalesAssistedOrder)]
+    public void EveryDeclineRequiresAReasonBeforeChangingDecisionState(PortalIntegrationRequestType type)
+    {
+        var request = CreateRequest(null, [], type);
+        var actor = Guid.NewGuid();
+        foreach (var reason in new string?[] { null, "", "  " })
+        {
+            Assert.Throws<ArgumentException>(() => request.Decide(false, reason, actor, Now));
+            Assert.Equal(PortalIntegrationRequestStatus.PendingReview, request.Status);
+            Assert.Null(request.ReviewedByUserId);
+            Assert.Null(request.ReviewedAt);
+        }
+        request.Decide(false, "  Correct the request.  ", actor, Now);
+        Assert.Equal(PortalIntegrationRequestStatus.Declined, request.Status);
+        Assert.Equal("Correct the request.", request.DecisionReason);
+        Assert.Equal(actor, request.ReviewedByUserId);
+        Assert.Equal(Now, request.ReviewedAt);
+    }
+
+    [Theory]
+    [InlineData(PortalIntegrationRequestType.RelationshipChange)]
+    [InlineData(PortalIntegrationRequestType.SalesAssistedOrder)]
+    public void OtherApprovalsStillRequireReasons(PortalIntegrationRequestType type)
+    {
+        var request = CreateRequest(null, [], type);
+        Assert.Throws<ArgumentException>(() => request.Decide(true, null, Guid.NewGuid(), Now));
+        Assert.Equal(PortalIntegrationRequestStatus.PendingReview, request.Status);
+    }
+
+    [Fact]
+    public void DecisionPayloadMayOmitAnApprovalNote()
+    {
+        var input = System.Text.Json.JsonSerializer.Deserialize<DecidePortalIntegrationRequest>(
+            """{"approved":true,"version":1}""", new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web))!;
+        Assert.True(input.Approved);
+        Assert.Null(input.Reason);
+    }
+
     private static PortalIntegrationRequest CreateRequest(
         Guid? organizationId,
-        IEnumerable<PortalService> services) =>
+        IEnumerable<PortalService> services,
+        PortalIntegrationRequestType requestType = PortalIntegrationRequestType.Onboarding) =>
         new(
             organizationId,
             "Acceptance organization",
-            PortalIntegrationRequestType.Onboarding,
+            requestType,
             PortalIntegrationRequestSource.Manual,
             OrganizationKind.Customer,
             null,

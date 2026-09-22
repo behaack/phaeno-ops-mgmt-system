@@ -276,6 +276,9 @@ public sealed partial class RelationshipManagementController(
         CancellationToken cancellationToken)
     {
         var actor = await RequirePlatformAdminAsync(cancellationToken);
+        await using var transaction = dbContext.Database.CurrentTransaction is null
+            ? await dbContext.Database.BeginTransactionAsync(cancellationToken) : null;
+        await LockCompanySetupAsync(requestId, cancellationToken);
         var value = await RequireRequestAsync(requestId, tracking: true, cancellationToken);
         EnsureVersion(value.Version, request.Version);
         Execute(() => value.Decide(request.Approved, request.Reason, actor.Id, DateTime.UtcNow));
@@ -295,6 +298,7 @@ public sealed partial class RelationshipManagementController(
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         return ToDto(value);
     }
 
@@ -305,6 +309,9 @@ public sealed partial class RelationshipManagementController(
         CancellationToken cancellationToken)
     {
         var actor = await RequirePlatformAdminAsync(cancellationToken);
+        await using var transaction = dbContext.Database.CurrentTransaction is null
+            ? await dbContext.Database.BeginTransactionAsync(cancellationToken) : null;
+        await LockCompanySetupAsync(requestId, cancellationToken);
         var value = await RequireRequestAsync(requestId, tracking: true, cancellationToken);
         EnsureVersion(value.Version, request.Version);
         var organization = await CreateOrAssociateAccountAsync(
@@ -314,6 +321,7 @@ public sealed partial class RelationshipManagementController(
         await EnsureCompanyPortalAccessAsync(value, actor.Id, cancellationToken);
         await OnlineAccessRequestCompletion.CompleteIfReadyAsync(dbContext, value, actor.Id, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
 
         return ToDto(organization);
     }
@@ -443,6 +451,14 @@ public sealed partial class RelationshipManagementController(
             ?? throw NotFound("relationship_request_not_found", "The Portal integration request was not found.");
     }
 
+    private async Task LockCompanySetupAsync(Guid requestId, CancellationToken cancellationToken)
+    {
+        var companyId = await dbContext.CrmHandoffs.Where(value => value.RelationshipRequestId == requestId)
+            .Select(value => (Guid?)value.CompanyId).SingleOrDefaultAsync(cancellationToken);
+        if (companyId.HasValue)
+            await PhaenoPortal.App.Features.Crm.Services.CrmCompanySetup.LockAsync(dbContext, companyId.Value, cancellationToken);
+    }
+
     private static bool IsNewAccountRequest(PortalIntegrationRequest value) =>
         !value.OrganizationId.HasValue
         && value.RequestType is PortalIntegrationRequestType.Onboarding or PortalIntegrationRequestType.Evaluation
@@ -498,6 +514,26 @@ public sealed partial class RelationshipManagementController(
             throw Conflict(
                 "company_portal_access_exists",
                 "Portal access is already enabled for this Company.");
+        }
+
+        if (!handoff.Company.IsActive)
+            throw Conflict("company_inactive", "Reactivate the Company before approving online access.");
+
+        if (handoff.Company.SetupOrganizationId is { } setupId)
+        {
+            if (confirmedExistingOrganizationId.HasValue && confirmedExistingOrganizationId != setupId)
+                throw Conflict("existing_access_scope_changed", "This Company already has department setup. Review the latest Company state before approving access.");
+            var setup = await dbContext.Organizations.SingleAsync(item => item.Id == setupId, cancellationToken);
+            if (setup.IsActive || await dbContext.OrganizationMemberships.AnyAsync(item => item.OrganizationId == setupId, cancellationToken))
+                throw Conflict("company_setup_invalid", "The Company's department setup needs administrative review before access can be approved.");
+            setup.Update(handoff.Company.Name, value.RequestedOrganizationKind.Value, setup.Description);
+            setup.Activate();
+            setup.UpdatePortalReadiness(PortalReadinessStatus.Pending,
+                $"Online access approved through request {value.RequestNumber}. Existing Company departments retained.");
+            Execute(() => value.AssociateOrganization(setup.Id));
+            Execute(() => handoff.Company.EnablePortalAccess(setup.Id));
+            await AssociateUnlinkedCompanyRequestsAsync(handoff.Company.Id, setup.Id, cancellationToken);
+            return setup;
         }
 
         var existingOrganization = await dbContext.Organizations
@@ -657,6 +693,9 @@ public sealed partial class RelationshipManagementController(
         {
             return;
         }
+
+        if (await dbContext.CrmCompanies.AnyAsync(company => company.SetupOrganizationId == request.OrganizationId, cancellationToken))
+            throw Conflict("company_setup_access_not_approved", "Enable this Company's online access through its onboarding or evaluation approval.");
 
         Execute(() => handoff.Company.EnablePortalAccess(request.OrganizationId.Value));
         dbContext.CrmActivities.Add(new CrmActivity(

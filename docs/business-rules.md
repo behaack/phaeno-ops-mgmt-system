@@ -1,5 +1,22 @@
 # Business rules
 
+## Company request decision reasons
+
+Online-access approvals (onboarding, evaluation and offboarding) and service-change
+approvals may omit a reason. Optional notes are retained when supplied. Every
+decline requires a reason; relationship-change and sales-assisted-order approvals
+still require one. The request, decision, reviewer and timestamp are retained even
+when an approval note is absent. Completion and cancellation notes remain required.
+
+## Company departments before online access
+
+Platform administrators may create and configure departments on an active CRM
+Company before online-access approval. Internal department setup remains
+inactive for sign-in and grants no invitations, memberships, entitlements or
+work. Later onboarding/evaluation approval retains those departments and
+settings in the same Organization. Department setup alone is not an approved
+Prospect, Customer or Partner relationship.
+
 ## Department-led external Companies
 
 Organization administration is optional for external Companies. Active Company access plus

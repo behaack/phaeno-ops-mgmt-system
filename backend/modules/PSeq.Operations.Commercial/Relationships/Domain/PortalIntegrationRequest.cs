@@ -63,17 +63,24 @@ public sealed class PortalIntegrationRequest : IAudit, IConcurrency
         }
     }
 
-    public void Decide(bool approved, string reason, Guid actorUserId, DateTime utcNow)
+    public void Decide(bool approved, string? reason, Guid actorUserId, DateTime utcNow)
     {
         if (Status != PortalIntegrationRequestStatus.PendingReview)
         {
             throw new InvalidOperationException("Only a pending request can be reviewed.");
         }
 
+        var optionalApprovalNote = approved && RequestType is (
+            PortalIntegrationRequestType.Onboarding or PortalIntegrationRequestType.Evaluation
+            or PortalIntegrationRequestType.Offboarding or PortalIntegrationRequestType.ServiceChange);
+        var decisionReason = optionalApprovalNote
+            ? RelationshipText.Optional(reason, 2000)
+            : RelationshipText.Required(reason, nameof(reason), 2000);
+
         Status = approved ? PortalIntegrationRequestStatus.Approved : PortalIntegrationRequestStatus.Declined;
         ReviewedByUserId = actorUserId;
         ReviewedAt = utcNow;
-        DecisionReason = RelationshipText.Required(reason, nameof(reason), 2000);
+        DecisionReason = decisionReason;
     }
 
     public void MarkApplied(string notes, Guid actorUserId, DateTime utcNow)

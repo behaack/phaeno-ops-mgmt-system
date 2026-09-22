@@ -29,16 +29,17 @@ import { selectClass, textareaClass } from './OrganizationFormDialog'
 
 export type RequestAction = 'approve' | 'decline' | 'apply' | 'cancel'
 
-const schema = z.object({
-  explanation: z
-    .string()
-    .trim()
-    .min(1, 'Record the reason or completed work.')
-    .max(2000),
-  organizationId: z.string(),
-})
+const schema = (optionalApprovalNote: boolean) =>
+  z.object({
+    explanation: z
+      .string()
+      .trim()
+      .min(optionalApprovalNote ? 0 : 1, 'Record the reason or completed work.')
+      .max(2000),
+    organizationId: z.string(),
+  })
 
-type Values = z.infer<typeof schema>
+type Values = z.infer<ReturnType<typeof schema>>
 
 export function RequestActionDialog({
   action,
@@ -62,15 +63,19 @@ export function RequestActionDialog({
   request: RelationshipRequest | null
 }) {
   const open = Boolean(action && request)
+  const optionalApprovalNote = action === 'approve' && Boolean(request && (
+    request.requestType === 'Onboarding' || request.requestType === 'Evaluation'
+    || request.requestType === 'Offboarding' || request.requestType === 'ServiceChange'
+  ))
   const form = useForm<Values>({
     defaultValues: { explanation: '', organizationId: '' },
     mode: 'onBlur',
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema(optionalApprovalNote)),
   })
 
   useEffect(() => {
     if (open) form.reset({ explanation: '', organizationId: request?.organizationId ?? '' })
-  }, [form, open, request?.organizationId])
+  }, [form, open, action, request?.id, request?.organizationId])
 
   if (!action || !request) return null
 
@@ -156,22 +161,25 @@ export function RequestActionDialog({
             </div>
           ) : null}
           <Label htmlFor="request-action-explanation">
-            <RequiredFieldName>{content.label}</RequiredFieldName>
+            {optionalApprovalNote ? 'Approval note (optional)' : <RequiredFieldName>{content.label}</RequiredFieldName>}
           </Label>
           <textarea
             id="request-action-explanation"
             className={textareaClass}
             rows={4}
+            required={!optionalApprovalNote}
+            maxLength={2000}
             aria-invalid={Boolean(form.formState.errors.explanation)}
+            aria-describedby={form.formState.errors.explanation ? 'request-action-explanation-error' : undefined}
             {...form.register('explanation')}
           />
           {form.formState.errors.explanation ? (
-            <p className="text-sm text-destructive" role="alert">
+            <p id="request-action-explanation-error" className="text-sm text-destructive" role="alert">
               {form.formState.errors.explanation.message}
             </p>
           ) : null}
         </form>
-        <RequiredDialogFooter>
+        <RequiredDialogFooter showLegend={!optionalApprovalNote}>
           <Button
             type="button"
             variant="outline"

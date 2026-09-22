@@ -27,6 +27,7 @@ public sealed record CrmCompanyDto
     public required Guid OwnerUserId { get; init; }
     public required string OwnerName { get; init; }
     public Guid? AccessOrganizationId { get; init; }
+    public Guid? SetupOrganizationId { get; init; }
     public OrganizationKind? PortalRelationship { get; init; }
     public PortalReadinessStatus? PortalReadiness { get; init; }
     public string PortalAccessStatus { get; init; } = "NotEnabled";
