@@ -88,3 +88,29 @@ For local rollback, restore only the former database connection value. Do not ov
 - The local instance still reported `track_commit_timestamp=off` and a September 13 server start after the first reported restart. `ALTER SYSTEM` has saved the required setting, but this session cannot restart the Windows service without administrator rights. An administrator restart of `postgresql-x64-18` and an `on` verification remain required.
 - Production sign-in renders correctly, but no signed-in production session was available for live CRM/settings navigation. The existing local browser session shows Access unavailable; the retained owner's database identity and its Clerk binding match. The session's identity has not been established, so no identity was rebound or broader access granted to make a test pass. A fresh owner sign-in remains required.
 - Configure real scientific definitions, approved workflows, supported sample types and destinations before enabling the retained inactive PSeq catalog item. Real producer, bench, physical handoff and business acceptance are separate from reset/release completion.
+
+### September 21 local recovery and acceptance
+
+The local login request failed with PostgreSQL `3D000` because the configured
+`phaeno_ops_clean_20260919` database was absent. The owner explicitly approved
+restoring the reviewed clean local setup. This recovery did not establish why
+the database was absent.
+
+- Recreated only `localhost:5432/phaeno_ops_clean_20260919`, applied the reviewed
+  baseline, and imported the original local package with SHA-256
+  `d018db29b7d12f97ffc5fc943cbde557405ae9d4ed4d4bf527096e235d4a9051`.
+  All 197 package tables and 127 retained rows passed exact comparison.
+- Applied the five subsequent application migrations through
+  `20260920141548_AddScientificUploadsAndCustomerHolds`, then verified the
+  preserved package again. The current local database has 200 application
+  tables, six migrations and one active user; the three new scientific-file,
+  upload and customer-hold tables are empty. The existing `phaeno_ops` database
+  was not changed.
+- Confirmed `track_commit_timestamp=on`, closing the earlier local restart
+  gate. Restarted the local API with its Development launch settings. API health
+  and frontend-proxied API health both returned HTTP 200. Reloading the owner's
+  existing local browser session opened the signed-in POMS dashboard with CRM,
+  Order ops and Lab ops navigation, closing the local sign-in gate.
+- Recovery logs, the guarded recovery script and the import/verification receipt
+  are in ignored `artifacts/local-login-recovery-20260921`. Production acceptance
+  and real scientific/physical workflow gates above remain separate.
