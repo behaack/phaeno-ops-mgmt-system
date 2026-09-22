@@ -119,6 +119,12 @@ export function CrmRequestCard({ request, isPending, onAction, onRecover }: {
                       {step.instructions?.length ? <ol className="list-decimal space-y-1 pl-5">
                         {step.instructions.map(instruction => <li key={instruction}>{instruction}</li>)}
                       </ol> : null}
+                      {step.catalogItem ? <Link to="/order-configuration/catalog/$catalogItemId"
+                        params={{ catalogItemId: step.catalogItem.id }} search={{ configurationSection: 'catalog' }}
+                        target="_blank" rel="noopener noreferrer"
+                        className="inline-block cursor-pointer rounded-sm text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                        Review {step.catalogItem.name} (opens in a new tab)
+                      </Link> : null}
                     </div>
                   </details>
                 </div>

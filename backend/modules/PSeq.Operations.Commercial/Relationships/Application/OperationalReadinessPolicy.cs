@@ -98,7 +98,7 @@ public static class OperationalReadinessPolicy
         AddIfMissing(input.HasActivePSeqOffering,
             OperationalReadinessBlockerCode.ActivePSeqOfferingRequired,
             "Active PSeq offering",
-            "Activate an approved PSeq Lab Service offering.", blockers);
+            "Activate at least one approved offering in the PSeq Lab Service family. Other offerings may remain inactive.", blockers);
         AddIfMissing(input.HasCompleteOrderConfiguration,
             OperationalReadinessBlockerCode.OrderConfigurationIncomplete,
             "Order configuration",

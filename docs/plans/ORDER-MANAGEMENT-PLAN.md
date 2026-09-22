@@ -1,5 +1,112 @@
 # Order Management Plan
 
+## Catalog readiness clarity - September 22, 2026
+
+Implemented locally. Migration `20260922194907_AddCatalogServiceFamily` was
+applied only to the verified development target `phaeno_ops_clean_20260919` on
+localhost:5432; it was the only pending migration. The full ERD is updated.
+Through the signed-in catalog editor, PSeq RNA Service was classified as
+PSeq Lab Service while retaining Active status, its permanent reference,
+Per sample-sequencing run unit and USD 1,250 price. PSeq Service remains inactive.
+The actual CRM request no longer contains the active-offering blocker.
+
+Verification: Release and Debug solution builds passed with zero warnings or
+errors, including the added backend regression sources. Frontend type checking,
+scoped lint, documentation consistency and EF model/migration consistency passed.
+Signed-in local checks verified the quiet catalog, saved family, unchanged prices
+and statuses, inactive creation default, pristine editor, cancellation/focus return,
+and the legacy item's disabled deletion with an incomplete-history explanation.
+No catalog item was deleted. Screenshot capture timed out, so full responsive/theme
+visual verification remains unconfirmed. Automated tests were authored but not run
+under the request-only rule; successful destructive confirmation, independent-connection
+races and new quote acceptance remain integration acceptance work. No deployment,
+production migration, staging, commit or push was performed for this correction.
+
+The owner clarified the product distinction: PSeq Lab Service is the service
+family; PSeq RNA Service is a specific offering within that family. The generic
+PSeq Service row is an existing priced catalog record, not the parent family.
+Its inactive state should not block a different approved active offering in
+the same family. Company entitlements remain family-level permissions.
+
+The owner reaffirmed the readiness rule on September 22: this catalog checklist
+passes when at least one offering in the entitled PSeq Lab Service family is
+active. It must not require the generic PSeq Service record, or every offering,
+to be active. An unrelated active Kit or other-family item does not establish
+Lab Service availability. Keep Company/Department service permission and the
+selected offering's scientific, sample and commercial requirements separate.
+
+Acceptance examples for the approved correction:
+
+- Active PSeq RNA Service plus inactive PSeq Service: catalog readiness passes;
+  ordering selects PSeq RNA Service and retains its identity and price.
+- Multiple active Lab offerings: catalog readiness passes; ordering permits an
+  explicit offering choice and retains that choice in accepted work.
+- No active Lab offering: the checklist explains that an approved Lab offering
+  must be activated, without directing staff to a particular legacy row.
+- Only unrelated active catalog items: Lab catalog readiness remains incomplete.
+- Inactive historical offerings and existing accepted Jobs remain unchanged.
+
+The implementation replaces the old reference-based restriction across catalog
+readiness, manual quoting, configured offering availability, Trials and Lab catalog
+lookups. Quotes select one actual offering; initial acceptance records that item's
+identity and additional-work quotes must retain the original service. Family
+changes are rejected once saved work or configuration references the item.
+
+This supersedes the earlier interim warning/role-label change and older plan
+sections that describe one designated catalog reference. The catalog now uses
+ordinary Active/Inactive status without a warning banner or special-role badge.
+
+### Approved family/offerings correction - September 22, 2026
+
+The owner explicitly approved implementation and the local database update on
+September 22. This supersedes the earlier approval-review block for this scope.
+The approved scope is:
+
+1. Add `service_family` to commercial catalog items, with `Other` and
+   `PSeqLabService` values. Existing stable item references remain immutable and
+   separate from service classification. Add an optional family input to catalog
+   writes, retaining the existing derived `isPSeqLabService` response for clients.
+2. Add an additive migration. Backfill only the existing `pseq-lab-service`
+   reference into the family so current installations preserve behavior; leave
+   other records unclassified until explicitly reviewed. Do not infer a family
+   from names or prices. Update the complete database ERD.
+3. Expose Service family in the bounded catalog editor. The specific item owns
+   its name, price, status, sales unit and scientific definition. Multiple
+   specific offerings can belong to the family; no duplicate generic offering
+   is required. Supported scientific/intake constraints remain enforced.
+4. Update readiness, commercial pricing, scientific definition availability,
+   Trial analysis choices and Lab catalog lookups to use the saved family.
+   Quotes select one actual offering explicitly when several are available.
+   Accepted quotes and additional-sample quotes retain the selected item;
+   never switch an existing Job to whichever catalog row is first. Preserve
+   immutable prices, scope, shipping, scientific and order snapshots.
+5. After approval and verification of the local development database target,
+   apply the additive migration locally and classify the existing PSeq RNA
+   Service as PSeq Lab Service through the application. Keep its current price,
+   unit and Active state; leave the older PSeq Service inactive. No production
+   migration, deployment, automatic activation or catalog deletion is included.
+
+Validation: build backend, check frontend types/lint, author focused regression
+coverage for family classification, multiple offerings, selected quote identity
+and historical continuity; automated test execution remains request-only. Verify
+the actual catalog/checklist and editing without accidental saves, and update
+audience-specific help and generated documentation. Git publishing is excluded.
+
+### Catalog deletion and quiet inactive states - September 22, 2026
+
+The owner also requested deletion of items never made active and removal of the
+prominent inactive-item warning and confusing Catalog role callout. Implement
+platform-admin-only deletion with optimistic concurrency and a named confirmation.
+Use existing audit history to prove creation as inactive and no later activation;
+missing or malformed history remains protected. Reject deletion when saved
+scientific/configuration records or order snapshots reference the item. Retain
+the audit trail. No activation-history schema change is needed. Add a read-only
+deletion-eligibility endpoint and a versioned delete endpoint, with one Actions
+menu containing Edit item and Delete item. No actual user record is to be deleted
+as part of implementation verification. Inactive status is ordinary catalog state,
+not an error banner; service family is an explicit field rather than a special
+role derived from an item reference.
+
 ## Service-owned scientific configuration — implemented locally, September 18, 2026
 
 Product direction: Lab service offerings belong within Service catalog items, and each service explicitly identifies its supported sample types. They must not appear as independent peer configuration subjects.

@@ -188,7 +188,7 @@ public sealed class CrmHandoffsController(PSeqOperationsDbContext dbContext, IEx
         if (!eligibility.OrderingAuthorized)
             return (false, "Enable a current Ready PSeq Lab Service entitlement for this Customer.");
         if (!eligibility.OfferingAvailable)
-            return (false, "Activate the canonical PSeq Lab Service specimen catalog item.");
+            return (false, "Activate at least one approved offering in the PSeq Lab Service family.");
         return (true, null);
     }
     private static CrmException Missing(string code, string message) => CrmAccess.NotFound(code, message);

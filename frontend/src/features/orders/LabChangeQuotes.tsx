@@ -23,18 +23,21 @@ const changeSchema = z.object({
 export function IssueLabChangeQuote({ order, catalogItems, onSaved }: { order: LabServiceOrder; catalogItems: OrderConfiguration['catalogItems']; onSaved: () => Promise<void> }) {
   const [open, setOpen] = useState(false)
   const [reviewVersion, setReviewVersion] = useState(order.version)
-  const catalog = catalogItems.find(item => item.isPSeqLabService && item.isActive && item.salesUnit.toLowerCase() === 'specimen')
+  const accepted = order.quotes.find(quote => quote.purpose === 'Initial' && quote.status === 'Accepted')
+  const acceptedIds = acceptedCatalogIds(accepted)
+  const matched = catalogItems.filter(item => acceptedIds.includes(item.id) && item.isPSeqLabService && item.isActive && item.salesUnit.toLowerCase() === 'specimen')
+  const catalog = matched.length === 1 ? matched[0] : undefined
   const form = useForm<z.input<typeof changeSchema>, unknown, z.output<typeof changeSchema>>({ resolver: zodResolver(changeSchema), defaultValues: { sources: [{ biologicalSource: '', specimenCount: 1 }], runs: '', unitPrice: catalog?.basePrice ?? 0 } })
   const sources = useFieldArray({ control: form.control, name: 'sources' })
   const change = useMutation({
     mutationFn: async (values: z.output<typeof changeSchema>) => {
-      if (!catalog) throw new Error('An active PSeq Lab Service specimen item is required.')
+      if (!catalog) throw new Error('The accepted Job’s laboratory offering must be available for additional work.')
       const quantity = values.sources.reduce((total, source) => total + source.specimenCount, 0)
       if (quantity + order.requestedSpecimenCount > 100) throw new Error('A Job can contain at most 100 accepted samples.')
       const runs = values.runs ? Number(values.runs) : quantity
       if (runs < quantity || runs + (order.requestedSequencingRunCount ?? order.requestedSpecimenCount) > 10000) throw new Error('Runs must cover every new sample without exceeding 10,000 total runs.')
       return issuePlatformQuote('lab', order.id, { version: reviewVersion, purpose: 'Change', currency: 'USD', tax: 0, additionalSources: values.sources, additionalSequencingRunCount: runs,
-        lines: [{ catalogItemId: catalog.id, description: 'Additional PSeq Lab Service sample-sequencing runs', quantity: runs, unitPrice: values.unitPrice }] })
+        lines: [{ catalogItemId: catalog.id, description: `Additional ${catalog.name} sample-sequencing runs`, quantity: runs, unitPrice: values.unitPrice }] })
     },
     onSuccess: async () => { await onSaved(); setOpen(false); form.reset() },
   })
@@ -43,6 +46,7 @@ export function IssueLabChangeQuote({ order, catalogItems, onSaved }: { order: L
     <Button variant="outline" onClick={() => { setReviewVersion(order.version); change.reset(); setOpen(true) }}>Issue Change quote</Button>
     <Dialog open={open} onOpenChange={value => { if (!value) close() }}><DialogContent>
       <DialogHeader><DialogTitle>Quote additional samples</DialogTitle><DialogDescription>These counts and charges are additions to the accepted Job. The Customer must accept before entering additional samples. Existing work continues under its original agreement.</DialogDescription></DialogHeader>
+      <p className="text-sm">{catalog ? `Service: ${catalog.name}` : 'The accepted Job’s offering is unavailable. Review that service before quoting additional work.'}</p>
       <form id="change-quote" onSubmit={form.handleSubmit(values => change.mutate(values))} className="max-h-[60vh] space-y-4 overflow-y-auto">
         <fieldset disabled={change.isPending} className="space-y-4">
           {sources.fields.map((field, index) => <div key={field.id} className="space-y-2 rounded-md border p-3">
@@ -104,5 +108,12 @@ function ChangeQuote({ order, quote, onSaved }: { order: LabServiceOrder; quote:
 
 function readScope(quote: Quote): { additionalSources: Array<{ biologicalSource: string; specimenCount: number }> } | null {
   try { const value = JSON.parse(quote.changeScopeSnapshotJson ?? 'null'); return Array.isArray(value?.additionalSources) ? value : null } catch { return null }
+}
+function acceptedCatalogIds(quote: Quote | undefined): string[] {
+  try {
+    const lines: unknown = JSON.parse(quote?.linesJson ?? '[]')
+    if (!Array.isArray(lines)) return []
+    return lines.flatMap(line => typeof line?.catalogItemId === 'string' ? [line.catalogItemId] : [])
+  } catch { return [] }
 }
 function money(value: number) { return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value) }

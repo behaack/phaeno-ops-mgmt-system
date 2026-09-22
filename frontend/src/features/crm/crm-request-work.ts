@@ -2,6 +2,7 @@ import type { CrmHandoff } from '#/api/crm'
 import type { Department, OperationalReadiness, OrganizationSummary, RelationshipRequest, ServiceEntitlement } from '#/api/organization-management'
 import type { TrialDetail } from '#/api/trials'
 import { getRequestWorkInstructions } from './crm-request-instructions'
+import { getLaboratoryOrderingItem, laboratoryOrderingInstructions, laboratoryOrderingIssue, type CatalogItem } from '#/features/orders/configuration/catalog-lab-service'
 
 export type RequestWorkStep = {
   id: string
@@ -9,6 +10,7 @@ export type RequestWorkStep = {
   detail: string
   instructions?: string[]
   status: 'done' | 'todo' | 'waiting' | 'review'
+  catalogItem?: { id: string; name: string }
 }
 
 export type RequestWorkFacts = {
@@ -18,6 +20,7 @@ export type RequestWorkFacts = {
   departments?: Department[]
   readiness?: OperationalReadiness
   trial?: TrialDetail
+  catalogItems?: CatalogItem[]
 }
 
 export function requestNeedsReadiness(request: RelationshipRequest) {
@@ -128,7 +131,18 @@ export function buildRequestWork(request: RelationshipRequest, facts: RequestWor
         add('readiness', 'Complete Customer operational readiness', 'done', 'The existing PSeq operational-readiness checks pass.')
       } else {
         for (const blocker of readiness.blockers) {
-          add('readiness-' + blocker.code, blocker.label, 'todo', blocker.nextAction)
+          if (blocker.code === 'ActivePSeqOfferingRequired' && facts.catalogItems) {
+            const item = getLaboratoryOrderingItem(facts.catalogItems)
+            steps.push({ id: 'readiness-' + blocker.code, label: 'Active laboratory offering', status: 'todo',
+              detail: laboratoryOrderingIssue(item), instructions: laboratoryOrderingInstructions(item),
+              catalogItem: item ? { id: item.id, name: item.name } : undefined })
+          } else {
+            add('readiness-' + blocker.code,
+              blocker.code === 'ActivePSeqOfferingRequired' ? 'Active laboratory offering' : blocker.label,
+              'todo', blocker.code === 'ActivePSeqOfferingRequired'
+                ? 'Activate at least one approved offering in the PSeq Lab Service family. Other offerings may remain inactive.'
+                : blocker.nextAction)
+          }
         }
         if (!readiness.blockers.length) {
           add('readiness', 'Complete Customer operational readiness', 'todo',

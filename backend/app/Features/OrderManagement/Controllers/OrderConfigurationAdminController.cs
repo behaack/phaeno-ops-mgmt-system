@@ -244,13 +244,15 @@ public sealed class OrderConfigurationAdminController(
     public async Task<CatalogItemDto> CreateCatalogItem([FromBody] CatalogItemWriteRequest request, CancellationToken cancellationToken)
     {
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
-        ValidateCatalogConvention(request);
+        var family = request.ServiceFamily ?? (OrderServiceKeys.IsPSeqLabService(request.ExternalItemId)
+            ? CatalogServiceFamily.PSeqLabService : CatalogServiceFamily.Other);
+        ValidateCatalogConvention(request, family);
         await EnsureCatalogCodeAvailableAsync(request.ExternalItemId, null, cancellationToken);
         QboCatalogItem item;
         try
         {
             item = new QboCatalogItem(request.ExternalItemId, request.Name, request.Description, request.SalesUnit,
-                request.BasePrice, request.Currency, request.IsActive, DateTime.UtcNow);
+                request.BasePrice, request.Currency, request.IsActive, DateTime.UtcNow, family);
         }
         catch (ArgumentException exception) { throw Invalid("catalog_item_invalid", exception.Message); }
         dbContext.QboCatalogItems.Add(item);
@@ -266,7 +268,10 @@ public sealed class OrderConfigurationAdminController(
         var item = await dbContext.QboCatalogItems.FirstOrDefaultAsync(value => value.Id == catalogItemId, cancellationToken)
             ?? throw Missing("catalog_item_not_found", "The commercial catalog item was not found.");
         EnsureVersion(item.Version, request.Version);
-        ValidateCatalogConvention(request);
+        var family = request.ServiceFamily ?? item.ServiceFamily;
+        ValidateCatalogConvention(request, family);
+        if (family != item.ServiceFamily && await CatalogItemDeletion.HasReferencesAsync(dbContext, item.Id, cancellationToken))
+            throw Conflict("catalog_item_family_in_use", "This item's service family is retained because saved work or configuration uses it. Create a new item for a different family.");
         if (!string.Equals(item.ExternalItemId, request.ExternalItemId.Trim(), StringComparison.Ordinal))
             throw Conflict("catalog_item_code_frozen", "Create a new catalog item to use a different stable item code.");
         await EnsureCatalogCodeAvailableAsync(request.ExternalItemId, catalogItemId, cancellationToken);
@@ -274,10 +279,37 @@ public sealed class OrderConfigurationAdminController(
         {
             item.Sync(request.ExternalItemId, request.Name, request.Description, request.SalesUnit,
                 request.BasePrice, request.Currency, request.IsActive, DateTime.UtcNow);
+            item.SetServiceFamily(family);
         }
         catch (ArgumentException exception) { throw Invalid("catalog_item_invalid", exception.Message); }
         await dbContext.SaveChangesAsync(cancellationToken);
         return Catalog(item);
+    }
+
+    [HttpGet("catalog/items/{catalogItemId:guid}/deletion")]
+    public async Task<CatalogItemDeletionDto> CatalogDeletion(Guid catalogItemId, CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var item = await dbContext.QboCatalogItems.AsNoTracking().SingleOrDefaultAsync(value => value.Id == catalogItemId, cancellationToken)
+            ?? throw Missing("catalog_item_not_found", "The commercial catalog item was not found.");
+        var reason = await CatalogItemDeletion.BlockerAsync(dbContext, item, cancellationToken);
+        return new(reason == null, reason, item.Version);
+    }
+
+    [HttpDelete("catalog/items/{catalogItemId:guid}")]
+    public async Task<IActionResult> DeleteCatalogItem(Guid catalogItemId, [FromQuery] long version, CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        var item = await dbContext.QboCatalogItems.SingleOrDefaultAsync(value => value.Id == catalogItemId, cancellationToken)
+            ?? throw Missing("catalog_item_not_found", "The commercial catalog item was not found.");
+        EnsureVersion(item.Version, version);
+        var reason = await CatalogItemDeletion.BlockerAsync(dbContext, item, cancellationToken);
+        if (reason != null) throw Conflict("catalog_item_delete_blocked", reason);
+        dbContext.QboCatalogItems.Remove(item);
+        try { await dbContext.SaveChangesAsync(cancellationToken); }
+        catch (DbUpdateException exception) when (exception.InnerException is Npgsql.PostgresException { SqlState: "23503" })
+        { throw Conflict("catalog_item_in_use", "Saved work or configuration now references this item. Refresh the catalog."); }
+        return NoContent();
     }
 
     private async Task<OrderSystemConfiguration> EnsureSystemAsync(CancellationToken cancellationToken)
@@ -368,7 +400,7 @@ public sealed class OrderConfigurationAdminController(
         catch (ArgumentException exception) { throw Invalid("assembly_profile_invalid", exception.Message); }
     }
     private static CatalogItemDto Catalog(QboCatalogItem item) => new(item.Id, item.ExternalItemId, item.Name, item.Description,
-        item.SalesUnit, item.BasePrice, item.Currency, item.IsActive, OrderServiceKeys.IsPSeqLabService(item.ExternalItemId),
+        item.SalesUnit, item.BasePrice, item.Currency, item.IsActive, item.ServiceFamily == CatalogServiceFamily.PSeqLabService,
         item.LastSyncedAt, item.Version);
     private static AnalysisDefinitionDto Analysis(AnalysisDefinition item) => new(item.Id, item.QboCatalogItemId, item.Name,
         item.Description, item.SubmissionInstructions, item.RequiredIntakeFieldsJson, item.ResultContractJson, item.IsActive, item.IsSynthetic, item.Version);
@@ -387,14 +419,15 @@ public sealed class OrderConfigurationAdminController(
         item.FinanceApprovalNotes, item.ConfigurationVersion, item.Version);
     private static IntegrationMessageDto Integration(OrderOutboxMessage item) => new(item.Id, item.Operation.ToString(), item.WorkflowType,
         item.WorkflowId, item.Status.ToString(), item.AttemptCount, item.NextAttemptAt, item.LastError, item.CreatedAt, item.Version);
-    private static void ValidateCatalogConvention(CatalogItemWriteRequest request)
+    private static void ValidateCatalogConvention(CatalogItemWriteRequest request, CatalogServiceFamily family)
     {
-        if (OrderServiceKeys.IsPSeqLabService(request.ExternalItemId)
+        if (!Enum.IsDefined(family)) throw Invalid("catalog_family_invalid", "Choose an available service family.");
+        if (family == CatalogServiceFamily.PSeqLabService
             && !OrderSalesUnits.IsSpecimen(request.SalesUnit))
         {
             throw Invalid(
                 "pseq_lab_service_unit_invalid",
-                $"The {OrderServiceKeys.PSeqLabService} catalog item must use the {OrderSalesUnits.Specimen} sales unit.");
+                "PSeq Lab Service offerings must use the Per sample-sequencing run sales unit.");
         }
     }
     private static void EnsureVersion(long current, long? supplied) { if (!supplied.HasValue || supplied.Value != current) throw new DbUpdateConcurrencyException(); }

@@ -15,6 +15,7 @@ import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -62,10 +63,6 @@ export function CrmContactsPage() {
             their identity.
           </p>
         </div>
-        <Button onClick={() => setOpen(true)}>
-          <Plus data-icon="inline-start" />
-          New contact
-        </Button>
       </section>
       {query.error ? (
         <Alert variant="destructive">
@@ -74,8 +71,14 @@ export function CrmContactsPage() {
       ) : null}
       <Card>
         <CardHeader>
-          <CardTitle>Contact directory</CardTitle>
-          <CardDescription>
+          <CardTitle className="self-center">Contact directory</CardTitle>
+          <CardAction className="row-span-1">
+            <Button className="cursor-pointer" onClick={() => setOpen(true)}>
+              <Plus data-icon="inline-start" />
+              New contact
+            </Button>
+          </CardAction>
+          <CardDescription className="col-span-2">
             Search names, email addresses, and Company-specific job titles.
           </CardDescription>
         </CardHeader>

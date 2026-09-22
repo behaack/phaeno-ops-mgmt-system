@@ -1,5 +1,9 @@
 # Backend Test Plan
 
+## September 22, 2026 — Catalog families and unused-item deletion
+
+Catalog family and deletion regression sources: CatalogItemPolicyTests and CatalogOfferingPostgresTests cover explicit family membership independent of names/references, legacy inactive plus specific active offerings, multiple-offering quote identity, active/ever-active/unknown-history deletion protection, and saved configuration references. Controller deletion retains platform-admin checks, version concurrency and restrictive foreign keys. Automated execution remains request-only; sources are compiled. Integration acceptance still includes independent-connection activation/delete and reference/delete races.
+
 ## September 22, 2026 — Optional Company approval notes
 
 `RelationshipManagementDomainTests` now covers omitted/null/empty/whitespace approval notes for onboarding, evaluation, offboarding and service changes; retained decision/reviewer/time; trimmed notes and the 2,000-character limit; reasons required for every decline and other approval types; and invalid reasons leaving decision state unchanged. The decision DTO can deserialize an omitted reason. Sources are compiled by the solution build; automated execution remains request-only.

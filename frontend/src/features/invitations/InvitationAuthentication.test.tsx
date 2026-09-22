@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { InvitationAuthentication } from './InvitationAuthentication'
 
-const mocks = vi.hoisted(() => ({ begin: vi.fn(), preview: vi.fn(), signIn: {} as ReturnType<typeof createSignInMock>, signUp: {} as ReturnType<typeof createSignUpMock> }))
+const mocks = vi.hoisted(() => ({ begin: vi.fn(), preview: vi.fn(), continue: vi.fn(), signIn: {} as ReturnType<typeof createSignInMock>, signUp: {} as ReturnType<typeof createSignUpMock> }))
 vi.mock('#/api/invitations', () => ({ beginInvitationAuthentication: mocks.begin, previewInvitation: mocks.preview }))
 vi.mock('@clerk/react', () => ({ useSignIn: () => ({ signIn: mocks.signIn }), useSignUp: () => ({ signUp: mocks.signUp }) }))
 vi.mock('@clerk/react/errors', () => ({ isClerkAPIResponseError: (error: unknown) => Boolean(error && typeof error === 'object' && 'errors' in error) }))
@@ -30,8 +30,8 @@ beforeEach(() => {
 })
 afterEach(() => { cleanup(); vi.unstubAllEnvs() })
 async function start() {
-  render(<InvitationAuthentication invitation={invitation} token="portal-invite" />)
-  fireEvent.click(screen.getByRole('button', { name: `Continue with ${invitation.email}` }))
+  render(<InvitationAuthentication invitation={invitation} token="portal-invite" onContinue={mocks.continue} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Accept invitation and continue' }))
   await screen.findByRole('heading', { name: 'Check your email' })
 }
 async function submitCode() {
@@ -42,6 +42,7 @@ async function submitCode() {
 describe('fixed-email invitation authentication', () => {
   it('goes directly from Continue to verification and never renders an editable email', async () => {
     await start()
+    expect(mocks.continue).toHaveBeenCalledTimes(1)
     expect(mocks.signIn.create).toHaveBeenCalledWith({ identifier: invitation.email, signUpIfMissing: false })
     expect(mocks.signIn.emailCode.sendCode).toHaveBeenCalledTimes(1)
     expect(screen.queryByLabelText(/Email address/)).toBeNull()
@@ -49,6 +50,7 @@ describe('fixed-email invitation authentication', () => {
     expect(screen.getByRole('button', { name: /request a new code/ })).toHaveProperty('disabled', true)
     await submitCode()
     await waitFor(() => expect(mocks.signIn.finalize).toHaveBeenCalledTimes(1))
+    expect(mocks.continue).toHaveBeenCalledTimes(1)
     expect(mocks.signUp.ticket).not.toHaveBeenCalled()
   })
   it('retains verification requirements and supports authenticator backup codes', async () => {
@@ -67,8 +69,9 @@ describe('fixed-email invitation authentication', () => {
   })
   it.each([true, false])('completes invitation-ticket setup with DEV=%s and preserves the required password', async (dev) => {
     vi.stubEnv('DEV', dev)
-    render(<InvitationAuthentication invitation={invitation} token="portal-invite" registrationTicket="provider-ticket" />)
-    fireEvent.click(screen.getByRole('button', { name: `Continue with ${invitation.email}` }))
+    render(<InvitationAuthentication invitation={invitation} token="portal-invite" onContinue={mocks.continue} registrationTicket="provider-ticket" accessAccepted />)
+    expect(screen.queryByRole('button', { name: 'Accept invitation and continue' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Continue account setup' }))
     await screen.findByRole('heading', { name: 'Create your password' })
     expect(mocks.preview).toHaveBeenCalledWith('portal-invite')
     expect(mocks.signIn.create).not.toHaveBeenCalled()
@@ -80,15 +83,15 @@ describe('fixed-email invitation authentication', () => {
   })
   it('does not consume a provider ticket if the Portal invitation has expired or been revoked', async () => {
     mocks.preview.mockRejectedValue(new Error('This invitation is unavailable.'))
-    render(<InvitationAuthentication invitation={invitation} token="portal-invite" registrationTicket="provider-ticket" />)
-    fireEvent.click(screen.getByRole('button', { name: `Continue with ${invitation.email}` }))
+    render(<InvitationAuthentication invitation={invitation} token="portal-invite" onContinue={mocks.continue} registrationTicket="provider-ticket" />)
+    fireEvent.click(screen.getByRole('button', { name: 'Accept invitation and continue' }))
     await screen.findByText('This invitation is unavailable.')
     expect(mocks.signUp.ticket).not.toHaveBeenCalled()
   })
   it('keeps the invitation available after the registration service fails', async () => {
     mocks.begin.mockRejectedValue(new Error('Account setup is temporarily unavailable.'))
-    render(<InvitationAuthentication invitation={invitation} token="portal-invite" />)
-    fireEvent.click(screen.getByRole('button', { name: `Continue with ${invitation.email}` }))
+    render(<InvitationAuthentication invitation={invitation} token="portal-invite" onContinue={mocks.continue} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Accept invitation and continue' }))
     await screen.findByText('Account setup is temporarily unavailable.')
     expect(mocks.signIn.create).not.toHaveBeenCalled()
     expect(mocks.signUp.ticket).not.toHaveBeenCalled()
@@ -111,11 +114,11 @@ describe('fixed-email invitation authentication', () => {
   })
   it('keeps retry available when preparing verification fails', async () => {
     mocks.signIn.create.mockResolvedValueOnce({ error: new Error('Please try again.') })
-    render(<InvitationAuthentication invitation={invitation} token="portal-invite" />)
-    fireEvent.click(screen.getByRole('button', { name: /Continue with/ }))
+    render(<InvitationAuthentication invitation={invitation} token="portal-invite" onContinue={mocks.continue} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Accept invitation and continue' }))
     await screen.findByText('Please try again.')
     expect(mocks.signIn.emailCode.sendCode).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('button', { name: /Continue with/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Accept invitation and continue' }))
     await screen.findByRole('heading', { name: 'Check your email' })
     expect(mocks.signIn.create).toHaveBeenCalledTimes(2)
   })

@@ -362,6 +362,13 @@ public sealed partial class LabServiceOrdersController(
                     operationCancellationToken,
                     tenant.Department.Id);
                 var quote = order.Quotes.SingleOrDefault(item => item.Id == quoteId) ?? throw Missing();
+                var selectedCatalogItemId = await LabQuoteCatalog.ReadItemAsync(dbContext, quote.LinesJson, true, operationCancellationToken);
+                if (isChange)
+                {
+                    var original = order.Quotes.SingleOrDefault(item => item.Id == order.AcceptedQuoteId) ?? throw Missing();
+                    if (selectedCatalogItemId != await LabQuoteCatalog.ReadItemAsync(dbContext, original.LinesJson, false, operationCancellationToken))
+                        throw Conflict("change_quote_service_mismatch", "Additional work must retain the service from the accepted Job.");
+                }
                 var before = order.Status.ToString();
                 var acceptedAt = DateTime.UtcNow;
                 var purchaseOrderNumber = string.IsNullOrWhiteSpace(request.PurchaseOrderNumber)
@@ -396,7 +403,7 @@ public sealed partial class LabServiceOrdersController(
                     order.SafetyDeclaration,
                     serviceKey = OrderServiceKeys.PSeqLabService,
                     serviceEntitlementId = eligibility.EntitlementId,
-                    serviceCatalogItemId = eligibility.CatalogItemId,
+                    serviceCatalogItemId = selectedCatalogItemId,
                     materialType = StandardMaterialType,
                     quantityUnit = StandardQuantityUnit,
                     quoteId = quote.Id,

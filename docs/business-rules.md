@@ -80,6 +80,12 @@ Phaeno's platform-admin protection is unchanged.
 
 ## Invitations
 
+- Recipients explicitly accept the reviewed access before account verification.
+  Their choice may resume after email/password/MFA setup only for the same
+  invitation token and reviewed version. The authenticated acceptance endpoint
+  still validates verified email, lifecycle and current access intent before
+  granting membership. Changed access requires a new explicit review. Successful
+  acceptance refreshes access and opens home in the invited organization.
 - Onboarding is invite-only; public self-registration is not the product model.
 - Invitations are organization-scoped and have explicit lifecycle states: `Pending`, `Accepted`, `Revoked`, and `Declined`.
 - Invitation tokens must be protected and expire according to configuration.

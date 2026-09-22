@@ -54,7 +54,7 @@ public sealed partial class LabOperationsController(
         var workflows = await ReadServiceWorkflowsAsync(cancellationToken);
         var marketedServices = await dbContext.QboCatalogItems.AsNoTracking()
             .Where(item => item.IsActive
-                && item.ExternalItemId.ToLower() == OrderServiceKeys.PSeqLabService
+                && item.ServiceFamily == CatalogServiceFamily.PSeqLabService
                 && item.SalesUnit.ToLower() == OrderSalesUnits.Specimen)
             .OrderBy(item => item.Name)
             .Select(item => new LabMarketedServiceDto(item.ExternalItemId.ToLower(), item.Name))

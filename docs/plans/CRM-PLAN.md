@@ -1,5 +1,18 @@
 # First-Party CRM Plan
 
+## September 22, 2026 — Contact directory heading action
+
+The existing **New contact** button now sits at the right end of the **Contact
+directory** heading row, matching the Company directory. The description spans
+the row below. The creation dialog, permissions and search behavior are unchanged;
+the Phaeno guide identifies the new button location. Automated suites remain
+request-only for this placement change.
+
+Verification: the signed-in local browser confirmed one button aligned with the
+heading at the right edge in desktop and narrow layouts. The existing dialog
+opened, and Cancel restored focus to the moved button. TypeScript, scoped ESLint,
+generated-help consistency and whitespace checks passed. No records were saved.
+
 ## September 22, 2026 — Commit/push deployment hold
 
 The owner authorized committing and pushing the department-setup and optional

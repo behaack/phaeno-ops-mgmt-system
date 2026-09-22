@@ -1,5 +1,47 @@
 # Playwright E2E Test Plan
 
+## September 22, 2026 — Catalog families and unused-item deletion
+
+Local signed-in checkpoint: saved RNA family classification without changing
+price or activation; CRM active-offering blocker cleared with generic PSeq Service
+still inactive; catalog banner/role badge removed; legacy deletion disabled because
+activation history is incomplete; Add item defaults inactive and Cancel restores
+focus without creating a record. No records were deleted. Screenshot capture was
+unavailable; responsive/theme visual acceptance and successful deletion remain
+unverified. Automated suites were not executed.
+
+Catalog family/deletion acceptance: verify active PSeq RNA Service under PSeq Lab Service clears the CRM catalog check while generic PSeq Service remains inactive; no catalog warning or role badge; inactive create defaults; one Actions menu; deletion blocked for active, previously active, unknown-history and referenced items; eligible deletion confirmation starts on Cancel and cancel makes no write. Verify explicit offering selection and accepted-service retention on additional quotes. No user catalog item is deleted during verification. Automated execution remains request-only.
+
+## Catalog readiness guidance - September 22, 2026
+
+Signed-in local checks confirm that an inactive designated item is named and
+linked in both Service catalog and Company request instructions, while the
+separately active RNA item shows its distinct current role in detail and editing.
+Pristine Save stays disabled; cancel retains values and returns focus. Request
+page browser logs contain no errors. No catalog writes or automated suites were
+performed. Family-based eligibility is a separate proposed correction recorded
+in ORDER-MANAGEMENT-PLAN.md and awaits schema/API approval.
+
+## September 22, 2026 - Invitation setup to home
+
+Supersedes the September 21 return-to-review destination for new flows: review
+offered access, choose Accept invitation and continue, verify the fixed email,
+create the password and complete required authenticator setup. Confirm one
+server acceptance and automatic home entry in the invited organization, with no
+second Accept invitation or Open Portal action. Also cover existing-user sign-in,
+replaced/expired/revoked links, changed access during setup, identity mismatch,
+missing legacy names and explicit retry after failure. A flow begun before this
+change has no saved acceptance and still requires one review. Live recipient
+MFA enrollment and automated E2E execution remain separate, unperformed checks.
+
+Simulated browser verification passed: a full sample password/MFA journey opened
+home automatically with one acceptance request, the invited organization selected
+and saved invitation/acceptance cleared. Changed-version review required a click;
+a failed acceptance allowed an explicit retry to home without repeating setup;
+an unverified address stayed blocked. Desktop light and 390 px dark layouts had
+no horizontal overflow or final browser errors. This does not establish live
+Clerk enrollment, email delivery or real membership persistence.
+
 ## September 22, 2026 — Optional Company approval notes
 
 Manual acceptance covers approval with no note, submitting an optional note from the always-visible field, a blank decline blocked with accessible feedback, a valid decline, retained required reasons for relationship/order approvals, keyboard focus, desktop/mobile and light/dark layouts. Use a simulated component preview for local UI checks; real authenticated decision persistence and automated E2E execution remain deferred under the request-only rule.

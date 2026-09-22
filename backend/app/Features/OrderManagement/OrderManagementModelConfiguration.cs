@@ -306,6 +306,7 @@ public static class OrderManagementModelConfiguration
             Text(entity.Property(e => e.Name), 255);
             Text(entity.Property(e => e.Description), 2000);
             Text(entity.Property(e => e.SalesUnit), 100);
+            EnumText(entity.Property(e => e.ServiceFamily));
             Money(entity.Property(e => e.BasePrice));
             Text(entity.Property(e => e.Currency), 3);
             entity.HasIndex(e => e.ExternalItemId).IsUnique();

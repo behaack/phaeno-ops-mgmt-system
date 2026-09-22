@@ -8,7 +8,7 @@ import { currentLabQuote } from './use-quote-status'
 const identity = vi.hoisted(() => ({ allowed: true }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ session: { selectedOrganization: { organizationId: 'org' }, memberships: [{ organizationId: 'org', isOrganizationAdmin: false }], capabilities: { canAcceptLabServiceQuotes: identity.allowed }, selectedDepartment: { purchaseOrderRequired: true } } }) }))
 vi.mock('#/api/order-management', async original => ({ ...await original<typeof import('#/api/order-management')>(), acceptLabQuote: vi.fn(), declineLabChangeQuote: vi.fn(), issuePlatformQuote: vi.fn(), downloadLabQuotePdf: vi.fn() }))
-const initial = { id: 'initial', purpose: 'Initial', status: 'Accepted', revision: 1 } as Quote
+const initial = { id: 'initial', purpose: 'Initial', status: 'Accepted', revision: 1, linesJson: JSON.stringify([{ catalogItemId: '00000000-0000-4000-8000-000000000001' }]) } as Quote
 const change = { id: 'change', purpose: 'Change', status: 'Issued', revision: 2, total: 100, subtotal: 100, currency: 'USD', expiresAt: '2099-01-01T00:00:00Z', changeScopeSnapshotJson: JSON.stringify({ additionalSources: [{ biologicalSource: 'Mouse liver', specimenCount: 1 }] }) } as Quote
 const order = { id: 'job', organizationId: 'org', orderNumber: 'TEST-CHANGE', version: 5, requestedSpecimenCount: 2, status: 'InProgress', quotes: [change, initial] } as LabServiceOrder
 function renderQuotes(value = order) { return render(<QueryClientProvider client={new QueryClient()}><LabChangeQuotes order={value} onSaved={vi.fn().mockResolvedValue(undefined)} /></QueryClientProvider>) }
@@ -39,7 +39,10 @@ describe('separate Change-quote decisions', () => {
   it('does not offer a decision to a member', () => { identity.allowed = false; renderQuotes(); expect(screen.queryByRole('button', { name: 'Review and accept addition' })).toBeNull() })
   it('retains the reviewed version and additive counts during issuance', async () => {
     vi.mocked(issuePlatformQuote).mockResolvedValue(order)
-    const catalog = [{ id: '00000000-0000-4000-8000-000000000001', isPSeqLabService: true, isActive: true, salesUnit: 'specimen', basePrice: 100 }] as OrderConfiguration['catalogItems']
+    const catalog = [
+      { id: '00000000-0000-4000-8000-000000000002', name: 'Different service', isPSeqLabService: true, isActive: true, salesUnit: 'specimen', basePrice: 999 },
+      { id: '00000000-0000-4000-8000-000000000001', name: 'Accepted service', isPSeqLabService: true, isActive: true, salesUnit: 'specimen', basePrice: 100 },
+    ] as OrderConfiguration['catalogItems']
     render(<QueryClientProvider client={new QueryClient()}><IssueLabChangeQuote order={order} catalogItems={catalog} onSaved={vi.fn().mockResolvedValue(undefined)} /></QueryClientProvider>)
     fireEvent.click(screen.getByRole('button', { name: 'Issue Change quote' }))
     fireEvent.change(screen.getByLabelText('Biological source *'), { target: { value: 'Mouse liver' } })

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AcceptInvitePage } from './AcceptInvitePage'
 import type { SessionResponse } from '#/api/session'
-import { readStoredInviteToken, storeInviteToken } from '#/features/auth/invitation-storage'
+import { readStoredInviteToken, storeInviteToken, storeInviteAcceptance } from '#/features/auth/invitation-storage'
 import { PhaenoSessionProvider, usePhaenoSession } from '#/features/auth/session-context'
 import { noSessionCapabilities } from '#/test-helpers/session'
 
@@ -34,7 +34,7 @@ vi.mock('@clerk/react', () => ({
 }))
 
 const invitation = {
-  firstName: 'Joe', lastName: 'Blow', email: 'invited@example.com',
+  version: 4, firstName: 'Joe', lastName: 'Blow', email: 'invited@example.com',
   organizationName: 'Research University', expiresAt: '2026-12-01T00:00:00Z',
 }
 const unauthorizedSession: SessionResponse = {
@@ -111,6 +111,34 @@ function StatefulWorkspace() {
 }
 
 describe('invitation completion across session changes', () => {
+  it('waits for verified authentication and refreshed access before opening home', async () => {
+    let consumed = false
+    let releaseAccess!: () => void
+    const refreshedAccess = new Promise<SessionResponse>(resolve => { releaseAccess = () => resolve(acceptedSession) })
+    storeInviteToken('test-invitation-token')
+    storeInviteAcceptance(4)
+    mocks.auth.mockReturnValue({ isLoaded: true, isSignedIn: false, userId: null, getToken: mocks.getToken })
+    mocks.getSession.mockImplementation(async () => consumed ? refreshedAccess : unauthorizedSession)
+    mocks.acceptInvitation.mockImplementation(async () => {
+      consumed = true
+      return { organizationId: 'university', organizationName: invitation.organizationName, status: 'Accepted' }
+    })
+    const { rerender } = setup(<><AcceptInvitePage /><SessionStatus /></>, true)
+    await screen.findByText('Joe Blow')
+    expect(mocks.acceptInvitation).not.toHaveBeenCalled()
+
+    // The provider activates the session only after email verification and MFA.
+    mocks.auth.mockReturnValue({ isLoaded: true, isSignedIn: true, userId: 'clerk-joe', getToken: mocks.getToken })
+    rerender()
+    await waitFor(() => expect(mocks.acceptInvitation).toHaveBeenCalledTimes(1))
+    expect(mocks.navigate).not.toHaveBeenCalled()
+    releaseAccess()
+    await screen.findByText('ready:university:general')
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith({ to: '/', replace: true }))
+    expect(mocks.acceptInvitation).toHaveBeenCalledTimes(1)
+    expect(readStoredInviteToken()).toBeNull()
+  })
+
   it('keeps Welcome after accepting the first membership and selecting its default department', async () => {
     let consumed = false
     storeInviteToken('test-invitation-token')
@@ -121,7 +149,7 @@ describe('invitation completion across session changes', () => {
     })
     mocks.acceptInvitation.mockImplementation(async () => {
       consumed = true
-      return { organizationName: invitation.organizationName, status: 'Accepted' }
+      return { organizationId: 'university', organizationName: invitation.organizationName, status: 'Accepted' }
     })
     const { client } = setup(<><AcceptInvitePage /><SessionStatus /></>, true)
 
@@ -136,13 +164,12 @@ describe('invitation completion across session changes', () => {
     expect(screen.queryByRole('heading', { name: 'We couldn’t open this invitation' })).toBeNull()
     expect(readStoredInviteToken()).toBeNull()
     expect(mocks.acceptInvitation).toHaveBeenCalledExactlyOnceWith({
-      token: 'test-invitation-token', firstName: 'Joe', lastName: 'Blow',
+      token: 'test-invitation-token', firstName: 'Joe', lastName: 'Blow', version: 4,
     })
     expect(mocks.previewInvitation).toHaveBeenCalledExactlyOnceWith('test-invitation-token')
     expect(client.getQueryData(['session', 'clerk-joe', 'university', 'general'])).toEqual(acceptedSession)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open Portal' }))
-    expect(mocks.navigate).toHaveBeenCalledWith({ to: '/' })
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith({ to: '/', replace: true }))
   })
 
   it('selects only invited Research access and preserves the accepted session across reload', async () => {
@@ -150,7 +177,7 @@ describe('invitation completion across session changes', () => {
     let accepted = false
     storeInviteToken('test-invitation-token')
     mocks.getSession.mockImplementation(async () => accepted ? research : unauthorizedSession)
-    mocks.acceptInvitation.mockImplementation(async () => { accepted = true; return { organizationName: invitation.organizationName, status: 'Accepted' } })
+    mocks.acceptInvitation.mockImplementation(async () => { accepted = true; return { organizationId: 'university', organizationName: invitation.organizationName, status: 'Accepted' } })
     setup(<><AcceptInvitePage /><SessionStatus /></>, true)
     await screen.findByText('unauthorized:none:none')
     fireEvent.click(await screen.findByRole('button', { name: 'Accept invitation' }))
@@ -168,7 +195,7 @@ describe('invitation completion across session changes', () => {
     let accepted = false
     storeInviteToken('test-invitation-token')
     mocks.getSession.mockImplementation(async () => accepted ? research : unauthorizedSession)
-    mocks.acceptInvitation.mockImplementation(async () => { accepted = true; return { organizationName: invitation.organizationName, status: 'Accepted' } })
+    mocks.acceptInvitation.mockImplementation(async () => { accepted = true; return { organizationId: 'university', organizationName: invitation.organizationName, status: 'Accepted' } })
     setup(<><AcceptInvitePage /><SessionStatus /></>, true)
     await screen.findByText('unauthorized:none:none')
     fireEvent.click(await screen.findByRole('button', { name: 'Accept invitation' }))

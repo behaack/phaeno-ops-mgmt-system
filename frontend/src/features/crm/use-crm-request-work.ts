@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { listCrmHandoffs } from '#/api/crm'
 import { getOperationalReadiness, getOrganizationSummary, getRequestCompletionReadiness, reconcileOnlineAccessRequest, listDepartments, listEntitlements, type RelationshipRequest } from '#/api/organization-management'
 import { getTrial } from '#/api/trials'
+import { getOrderConfiguration } from '#/api/order-management'
+import { usePhaenoSession } from '#/features/auth/session-context'
 import { buildRequestWork, requestNeedsReadiness } from './crm-request-work'
 
 const refreshOptions = {
@@ -14,6 +16,7 @@ const refreshOptions = {
 }
 
 export function useCrmRequestWork(request: RelationshipRequest) {
+  const { session } = usePhaenoSession()
   const enabled = request.status === 'Approved'
   const handoffs = useQuery({
     queryKey: ['crm-handoffs', request.companyId],
@@ -46,6 +49,15 @@ export function useCrmRequestWork(request: RelationshipRequest) {
     queryKey: ['organization-operational-readiness', request.organizationId],
     queryFn: () => getOperationalReadiness(request.organizationId!),
     enabled: needsReadiness,
+    ...refreshOptions,
+  })
+  // Optional setup context is restricted to the existing configuration capability.
+  // Its loading or failure must not replace authoritative Company readiness.
+  const canReadCatalog = needsReadiness && session?.capabilities.canManageOrderConfiguration === true
+  const catalog = useQuery({
+    queryKey: ['order-configuration'],
+    queryFn: getOrderConfiguration,
+    enabled: canReadCatalog,
     ...refreshOptions,
   })
   const trial = useQuery({
@@ -99,7 +111,7 @@ export function useCrmRequestWork(request: RelationshipRequest) {
     isError,
     isCompleting,
     completionFailed,
-    refetch: () => Promise.all(queries.map(query => query.refetch())),
+    refetch: () => Promise.all([...queries, ...(canReadCatalog ? [catalog] : [])].map(query => query.refetch())),
     steps: buildRequestWork(request, {
       summary: summary.data,
       handoff,
@@ -107,6 +119,7 @@ export function useCrmRequestWork(request: RelationshipRequest) {
       departments: departments.data,
       readiness: readiness.data,
       trial: trial.data,
+      catalogItems: canReadCatalog && !catalog.isError ? catalog.data?.catalogItems : undefined,
     }),
   }
 }

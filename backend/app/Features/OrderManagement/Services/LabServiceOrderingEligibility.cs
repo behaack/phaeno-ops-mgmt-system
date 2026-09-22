@@ -43,7 +43,7 @@ public static class LabServiceOrderingEligibility
         var catalogItemId = await dbContext.QboCatalogItems
             .AsNoTracking()
             .Where(item => item.IsActive
-                && item.ExternalItemId.ToLower() == OrderServiceKeys.PSeqLabService
+                && item.ServiceFamily == CatalogServiceFamily.PSeqLabService
                 && item.SalesUnit.ToLower() == OrderSalesUnits.Specimen)
             .Select(item => (Guid?)item.Id)
             .FirstOrDefaultAsync(cancellationToken);
@@ -78,7 +78,7 @@ public static class LabServiceOrderingEligibility
         {
             throw new OrderManagementException(
                 "lab_service_offering_unavailable",
-                "PSeq Lab Service is not currently available for ordering. Activate the canonical specimen catalog item before continuing.",
+                "PSeq Lab Service is not currently available for ordering. Activate a PSeq Lab Service offering with the Per sample-sequencing run sales unit before continuing.",
                 StatusCodes.Status409Conflict);
         }
 

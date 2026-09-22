@@ -1,5 +1,27 @@
 # Frontend Test Plan
 
+## September 22, 2026 — Catalog families and unused-item deletion
+
+`CatalogItemActions.test.tsx` adds coverage for active-item protection, disabled
+deletion explanations, named confirmation, Cancel focus/restoration, no write on
+cancel, and submission of the reviewed version only after confirmation.
+
+Catalog family regression sources: PlatformQuoteDialog tests cover an active specific offering alongside the inactive generic record, explicit choice with multiple offerings and exact selected item/price. LabChangeQuotes retains the accepted offering when another active item appears first. Manual coverage includes the quiet inactive catalog, editable family, inactive create defaults, protected deletion, named confirmation/cancellation, and focus restoration. Automated suites remain request-only.
+
+## September 22, 2026 - Invitation completion after account setup
+
+Invitation component and session regression sources cover storing explicit
+acceptance before verification, completing once after authentication, waiting
+for access refresh before home navigation, selecting the invited organization,
+changed-version review, mismatched/unverified identity, missing names, unavailable
+links and recoverable acceptance failure. Storage cases cover replacement-token
+isolation and cleanup. The existing MFA route still preserves the invitation
+through required setup; completion now resumes the reviewed acceptance there.
+Automated execution remains request-only; provider state in these cases is simulated.
+TypeScript, scoped ESLint and generated-documentation validation passed. An
+isolated browser preview exercised the real invitation components with synthetic
+provider/API state; no real account, membership or MFA enrollment was changed.
+
 ## September 22, 2026 — Optional Company approval notes
 
 `RequestActionDialog.test.tsx` covers blank approval submission for the four eligible request types, the visible optional-note field without a Required legend, submitting an optional note, reasons required for all declines and other approval types, and preserved existing-scope confirmation. TypeScript and scoped lint are the static checkpoint. Automated test execution remains request-only.

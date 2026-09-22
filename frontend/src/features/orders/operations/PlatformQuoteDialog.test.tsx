@@ -53,7 +53,7 @@ describe("PlatformQuoteDialog", () => {
 
     const catalog = screen.getByLabelText(/Commercial catalog item/);
     expect(catalog).toHaveProperty("value", canonicalItem.id);
-    expect(catalog).toHaveProperty("disabled", true);
+    expect(catalog).toHaveProperty("disabled", false);
     expect(screen.queryByText("pseq-lab-service")).toBeNull();
     expect(
       screen.getByText(
@@ -77,6 +77,27 @@ describe("PlatformQuoteDialog", () => {
       ),
     ).toBeTruthy();
     expect(api.issuePlatformQuote).not.toHaveBeenCalled();
+  });
+
+  it('uses the active specific offering while the legacy generic item is inactive', () => {
+    const rna = { ...canonicalItem, id: '33333333-3333-4333-8333-333333333333', externalItemId: 'ITEM-RNA', name: 'PSeq RNA Service' };
+    renderDialog([{ ...canonicalItem, isActive: false }, rna]);
+    expect(screen.getByLabelText(/Commercial catalog item/)).toHaveProperty('value', rna.id);
+    expect(screen.queryByText('PSeq Lab Service item is not ready')).toBeNull();
+  });
+
+  it('requires a choice between multiple active offerings and submits that exact item', async () => {
+    const rna = { ...canonicalItem, id: '33333333-3333-4333-8333-333333333333', externalItemId: 'ITEM-RNA', name: 'PSeq RNA Service', basePrice: 250 };
+    renderDialog([canonicalItem, rna]);
+    const select = screen.getByLabelText(/Commercial catalog item/);
+    expect(select).toHaveProperty('value', '');
+    expect(screen.getByRole('button', { name: 'Issue quote' })).toHaveProperty('disabled', true);
+    fireEvent.change(select, { target: { value: rna.id } });
+    expect(screen.getByLabelText(/Unit price/)).toHaveProperty('value', '250');
+    fireEvent.click(screen.getByRole('button', { name: 'Issue quote' }));
+    await waitFor(() => expect(api.issuePlatformQuote).toHaveBeenCalledWith('lab', expect.any(String), expect.objectContaining({
+      lines: [expect.objectContaining({ catalogItemId: rna.id, quantity: 3, unitPrice: 250 })],
+    })));
   });
 
   it("uses user-facing per-unit guidance for optional quote lines", () => {
@@ -132,7 +153,7 @@ describe("PlatformQuoteDialog", () => {
     expect(api.issuePlatformQuote).not.toHaveBeenCalled();
   });
 
-  it("pauses quote issuance when the canonical catalog item is unavailable", () => {
+  it("pauses quote issuance when no active family offering is available", () => {
     renderDialog([unrelatedSpecimenItem]);
 
     expect(screen.getByText("PSeq Lab Service item is not ready")).toBeTruthy();

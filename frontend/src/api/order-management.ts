@@ -1389,6 +1389,7 @@ export async function saveCatalogItem(
     currency: string;
     isActive: boolean;
     version?: number;
+    serviceFamily?: 'Other' | 'PSeqLabService';
   },
 ) {
   return id
@@ -1400,6 +1401,12 @@ export async function saveCatalogItem(
         "/platform/order-configuration/catalog/items",
         input,
       );
+}
+export async function getCatalogItemDeletion(id: string) {
+  return get<{ canDelete: boolean; reason: string | null; version: number }>(`/platform/order-configuration/catalog/items/${id}/deletion`);
+}
+export async function deleteCatalogItem(id: string, version: number) {
+  await api.delete(`/platform/order-configuration/catalog/items/${id}`, { params: { version } });
 }
 export async function saveAnalysisDefinition(
   id: string | null,

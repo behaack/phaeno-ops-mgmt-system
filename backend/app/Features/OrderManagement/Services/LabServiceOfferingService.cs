@@ -11,9 +11,9 @@ public sealed class LabServiceOfferingService(PSeqOperationsDbContext db)
     {
         var catalog = await db.QboCatalogItems.AsNoTracking().SingleOrDefaultAsync(value => value.Id == offering.CatalogItemId, token)
             ?? throw Invalid("Select an existing POMS catalog item.");
-        if (!OrderServiceKeys.IsPSeqLabService(catalog.ExternalItemId)
+        if (catalog.ServiceFamily != CatalogServiceFamily.PSeqLabService
             || !string.Equals(catalog.SalesUnit, OrderSalesUnits.Specimen, StringComparison.OrdinalIgnoreCase))
-            throw Invalid("Select the designated PSeq Lab Service catalog item sold by specimen.");
+            throw Invalid("Select a PSeq Lab Service offering sold per sample-sequencing run.");
         if (offering.IsActive && (catalog.BasePrice <= 0 || catalog.Currency != "USD"))
             throw Invalid("Standard PSeq Lab Service requires a positive USD catalog price.");
         var ids = offering.AnalysisIds();
@@ -55,7 +55,7 @@ public sealed class LabServiceOfferingService(PSeqOperationsDbContext db)
         {
             var item = catalog[value.CatalogItemId];
             var available = value.IsEffectiveAt(now) && item.IsActive && item.BasePrice > 0 && item.Currency == "USD"
-                && OrderServiceKeys.IsPSeqLabService(item.ExternalItemId)
+                && item.ServiceFamily == CatalogServiceFamily.PSeqLabService
                 && string.Equals(item.SalesUnit, OrderSalesUnits.Specimen, StringComparison.OrdinalIgnoreCase)
                 && value.AnalysisIds().All(activeAnalyses.Contains)
                 && value.AllowedMaterialTypes().Contains("extracted_rna", StringComparer.OrdinalIgnoreCase);

@@ -2,6 +2,8 @@ namespace PSeq.Operations.Commercial.OrderManagement.Domain;
 
 using PSeq.Operations.Commercial.Common.Persistence;
 
+public enum CatalogServiceFamily { Other, PSeqLabService }
+
 public sealed class QboCatalogItem : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
@@ -12,6 +14,7 @@ public sealed class QboCatalogItem : IAudit, IConcurrency
     public decimal BasePrice { get; private set; }
     public string Currency { get; private set; } = "USD";
     public bool IsActive { get; private set; } = true;
+    public CatalogServiceFamily ServiceFamily { get; private set; }
     public DateTime LastSyncedAt { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
@@ -29,9 +32,18 @@ public sealed class QboCatalogItem : IAudit, IConcurrency
         decimal basePrice,
         string currency,
         bool isActive,
-        DateTime syncedAt)
+        DateTime syncedAt,
+        CatalogServiceFamily? serviceFamily = null)
     {
         Sync(externalItemId, name, description, salesUnit, basePrice, currency, isActive, syncedAt);
+        SetServiceFamily(serviceFamily ?? (OrderServiceKeys.IsPSeqLabService(externalItemId)
+            ? CatalogServiceFamily.PSeqLabService : CatalogServiceFamily.Other));
+    }
+
+    public void SetServiceFamily(CatalogServiceFamily family)
+    {
+        if (!Enum.IsDefined(family)) throw new ArgumentOutOfRangeException(nameof(family));
+        ServiceFamily = family;
     }
 
     public void Sync(

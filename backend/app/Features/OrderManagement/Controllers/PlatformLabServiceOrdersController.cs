@@ -69,7 +69,7 @@ public sealed class PlatformLabServiceOrdersController(
     {
         await RequireCommercialAsync(true, cancellationToken);
         return await dbContext.QboCatalogItems.AsNoTracking()
-            .Where(value => value.ExternalItemId.ToLower() == OrderServiceKeys.PSeqLabService)
+            .Where(value => value.ServiceFamily == CatalogServiceFamily.PSeqLabService)
             .Select(value => new CatalogItemDto(value.Id, value.ExternalItemId, value.Name,
                 value.Description, value.SalesUnit, value.BasePrice, value.Currency, value.IsActive,
                 true, value.LastSyncedAt, value.Version)).ToListAsync(cancellationToken);
@@ -99,7 +99,7 @@ public sealed class PlatformLabServiceOrdersController(
         var now = DateTime.UtcNow;
         var offeringAvailable = await dbContext.QboCatalogItems.AsNoTracking()
             .AnyAsync(item => item.IsActive
-                && item.ExternalItemId.ToLower() == OrderServiceKeys.PSeqLabService
+                && item.ServiceFamily == CatalogServiceFamily.PSeqLabService
                 && item.SalesUnit.ToLower() == OrderSalesUnits.Specimen,
                 cancellationToken);
         if (!offeringAvailable)
@@ -511,11 +511,18 @@ public sealed class PlatformLabServiceOrdersController(
         if (catalog.Count != itemIds.Count) throw Invalid("catalog_item_unavailable", "One or more QuickBooks items are unavailable.");
         var labServiceLines = request.Lines.Where(line =>
             catalog.TryGetValue(line.CatalogItemId, out var item)
-            && string.Equals(item.ExternalItemId, OrderServiceKeys.PSeqLabService, StringComparison.OrdinalIgnoreCase)
+            && item.ServiceFamily == CatalogServiceFamily.PSeqLabService
             && string.Equals(item.SalesUnit, OrderSalesUnits.Specimen, StringComparison.OrdinalIgnoreCase)).ToList();
         if (labServiceLines.Count != 1)
             throw Invalid("quote_lab_service_line_required", "Include the active PSeq Lab Service specimen item exactly once.");
         var labServiceLine = labServiceLines[0];
+        if (changeScope != null)
+        {
+            var original = order.Quotes.SingleOrDefault(item => item.Id == order.AcceptedQuoteId)
+                ?? throw Conflict("accepted_quote_missing", "The accepted Job quote is unavailable.");
+            if (labServiceLine.CatalogItemId != await LabQuoteCatalog.ReadItemAsync(dbContext, original.LinesJson, false, cancellationToken))
+                throw Conflict("change_quote_service_mismatch", "Additional work must retain the service from the accepted Job.");
+        }
         if (labServiceLine.Quantity != (changeScope?.AdditionalSequencingRunCount ?? changeScope?.AdditionalSources.Sum(s => s.SpecimenCount) ?? order.RequestedSequencingRunCount))
             throw Invalid("quote_lab_service_quantity_mismatch", "The PSeq Lab Service quantity must equal the requested sample-sequencing run count.");
         var commercial = await dbContext.OrganizationCommercialProfiles.AsNoTracking()

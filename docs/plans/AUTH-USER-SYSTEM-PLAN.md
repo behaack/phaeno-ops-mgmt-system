@@ -1,5 +1,33 @@
 # Auth and User System Plan
 
+## September 22, 2026 - Invitation setup completes at home
+
+The owner reported that completing email/account setup and required 2FA returns
+recipients to the initial invitation instead of home. The September 21 change
+intentionally returned to review; this follow-up replaces that extra acceptance
+and Open Portal sequence. Recipients review the offered access and choose
+**Accept invitation and continue** before authentication. Keep that explicit
+choice in the current tab, bound to the private invitation token and reviewed
+version. After verification and required MFA, revalidate the invitation and
+complete acceptance once for the matching verified email, then refresh access
+and open home in the invited organization. Changed access requires fresh explicit
+review; missing consent, incomplete names, mismatched identities and failures
+must retain a recoverable review instead of accepting automatically.
+
+Scope is frontend invitation continuation and audience-specific help. The
+existing authenticated acceptance endpoint remains authoritative for verified
+email, lifecycle, concurrency, membership and Department intent. No provider
+settings, authentication requirements, backend contracts or database changes.
+Regression sources cover continuation and its failure boundaries; execution
+remains request-only. Commit, push and deployment are outside this follow-up.
+
+Implementation checkpoint: TypeScript, scoped lint and documentation checks
+passed. An isolated browser preview confirmed automatic home entry with one
+acceptance request, changed-access review, recovery after failure and rejection
+of an unverified email. Desktop light and narrow dark layouts passed visual
+inspection. Provider/API state was synthetic; live email, MFA enrollment and
+membership persistence remain unverified.
+
 ## September 21, 2026 - First-time setup return path
 
 The owner approved the focused authentication return-path correction and its

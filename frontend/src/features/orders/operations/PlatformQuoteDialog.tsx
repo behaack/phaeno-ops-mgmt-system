@@ -93,21 +93,14 @@ export function PlatformQuoteDialog({
   onOpenChange: (open: boolean) => void;
   onSaved: () => Promise<void>;
 }) {
-  const canonicalLabItem =
-    workflow === "lab"
-      ? catalogItems.find((item) => item.isPSeqLabService)
-      : undefined;
-  const requiredLabItem =
-    canonicalLabItem?.isActive &&
-    canonicalLabItem.salesUnit.trim().toLowerCase() === "specimen"
-      ? canonicalLabItem
-      : undefined;
+  const labItems = workflow === 'lab' ? catalogItems.filter(item => item.isPSeqLabService && item.isActive && item.salesUnit.toLowerCase() === 'specimen') : [];
+  const defaultLabItem = labItems.length === 1 ? labItems[0] : undefined;
   const proposedUnitPrice = workflow === "lab" ? priceProposal?.unitPrice : undefined;
   const savedQuoteUnavailable = Boolean(sourceQuote && readSavedQuoteLines(sourceQuote).length === 0);
   const defaultValues = createDefaultValues(
     workflow,
     defaultQuantity,
-    requiredLabItem,
+    defaultLabItem,
     proposedUnitPrice,
     sourceQuote,
   );
@@ -122,6 +115,7 @@ export function PlatformQuoteDialog({
   const openerRef = useRef<HTMLElement | null>(null);
   const lines = useFieldArray({ control: form.control, name: "lines" });
   const watchedLines = form.watch("lines");
+  const requiredLabItem = labItems.find(item => watchedLines.some(line => line.catalogItemId === item.id));
   const watchedCurrency = form.watch("currency");
   const watchedTax = Number(form.watch("tax"));
   const quoteSubtotal = roundMoney(
@@ -145,7 +139,7 @@ export function PlatformQuoteDialog({
     : "USD";
   const requiredLabLineCount = requiredLabItem
     ? watchedLines.filter(
-        (line) => line.catalogItemId === requiredLabItem.id,
+        (line) => labItems.some(item => item.id === line.catalogItemId),
       ).length
     : 0;
   const currentLabUnitPrice = Number(
@@ -189,14 +183,14 @@ export function PlatformQuoteDialog({
 
   useEffect(() => {
     if (!open || form.formState.isDirty) return;
-    form.reset(createDefaultValues(workflow, defaultQuantity, requiredLabItem, proposedUnitPrice, sourceQuote));
+    form.reset(createDefaultValues(workflow, defaultQuantity, defaultLabItem, proposedUnitPrice, sourceQuote));
   }, [
     defaultQuantity,
     form,
     form.formState.isDirty,
     open,
     proposedUnitPrice,
-    requiredLabItem,
+    defaultLabItem,
     sourceQuote,
     workflow,
   ]);
@@ -216,13 +210,14 @@ export function PlatformQuoteDialog({
       shouldDirty: true,
     });
     form.setValue("currency", item.currency, { shouldDirty: true });
+    if (workflow === 'lab' && item.isPSeqLabService) form.setValue(`lines.${index}.quantity`, defaultQuantity ?? 1, { shouldDirty: true });
   }
 
   function close() {
     mutation.reset();
     setConfirmDiscard(false);
     setRecordRefreshed(false);
-    form.reset(createDefaultValues(workflow, defaultQuantity, requiredLabItem, proposedUnitPrice, sourceQuote));
+    form.reset(createDefaultValues(workflow, defaultQuantity, defaultLabItem, proposedUnitPrice, sourceQuote));
     onOpenChange(false);
   }
 
@@ -259,13 +254,13 @@ export function PlatformQuoteDialog({
         form.setError("root", {
           type: "manual",
           message:
-            "Configure one active PSeq Lab Service catalog item with code pseq-lab-service and the per-sample-sequencing-run sales unit before issuing this quote.",
+            "Select an active offering in the PSeq Lab Service family with the Per sample-sequencing run sales unit.",
         });
         return;
       }
 
       const requiredLines = values.lines.filter(
-        (line) => line.catalogItemId === requiredLabItem.id,
+        (line) => labItems.some(item => item.id === line.catalogItemId),
       );
       if (requiredLines.length !== 1) {
         form.setError("root", {
@@ -345,14 +340,11 @@ export function PlatformQuoteDialog({
           </DialogFeedback>
         ) : null}
         {savedQuoteUnavailable ? <Alert variant="destructive"><AlertTitle>Saved quote lines could not be loaded</AlertTitle><AlertDescription>Reload the Job before reissuing this quote. The stored prices must be available for review.</AlertDescription></Alert> : null}
-        {workflow === "lab" && !requiredLabItem ? (
+        {workflow === "lab" && labItems.length === 0 ? (
           <Alert variant="destructive">
             <AlertTitle>PSeq Lab Service item is not ready</AlertTitle>
             <AlertDescription>
-              Commercial configuration must contain one active item with code{" "}
-              <span className="font-mono">pseq-lab-service</span> and sales unit{" "}
-              <span>Per sample-sequencing run</span>. Quote issuance is
-              paused until that configuration is corrected.
+              Activate at least one approved offering in the PSeq Lab Service family with the Per sample-sequencing run sales unit before issuing a quote.
             </AlertDescription>
           </Alert>
         ) : null}
@@ -373,12 +365,12 @@ export function PlatformQuoteDialog({
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Catalog price</p>
-                  <p className="mt-1 text-lg font-semibold">{formatMoney(requiredLabItem?.basePrice ?? 0, priceProposal?.currency ?? "USD")}</p>
+                  <p className="mt-1 text-lg font-semibold">{requiredLabItem ? formatMoney(requiredLabItem.basePrice, requiredLabItem.currency) : 'Select offering'}</p>
                   <p className="text-xs text-muted-foreground">per sample-sequencing run</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Difference</p>
-                  <p className="mt-1 text-lg font-semibold">{formatSignedMoney(proposedUnitPrice - (requiredLabItem?.basePrice ?? 0), priceProposal?.currency ?? "USD")}</p>
+                  <p className="mt-1 text-lg font-semibold">{requiredLabItem ? formatSignedMoney(proposedUnitPrice - requiredLabItem.basePrice, priceProposal?.currency ?? "USD") : 'Select offering'}</p>
                   <p className="text-xs text-muted-foreground">from catalog</p>
                 </div>
                 <div>
@@ -492,7 +484,7 @@ export function PlatformQuoteDialog({
                   (item) => item.id === selectedItemId,
                 );
                 const isRequiredLabLine =
-                  workflow === "lab" && selectedItemId === requiredLabItem?.id;
+                  workflow === "lab" && labItems.some(item => item.id === selectedItemId);
                 const isLockedRequiredLabLine =
                   isRequiredLabLine && requiredLabLineCount === 1;
 
@@ -513,7 +505,6 @@ export function PlatformQuoteDialog({
                       <select
                         id={`quoteItem-${index}`}
                         value={selectedItemId}
-                        disabled={isLockedRequiredLabLine}
                         onChange={(event) =>
                           selectCatalogItem(index, event.target.value)
                         }
@@ -525,21 +516,22 @@ export function PlatformQuoteDialog({
                         className="mt-2 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm lg:mt-0"
                       >
                         <option value="">Select item</option>
+                        {selectedItem && !selectedItem.isActive ? <option value={selectedItem.id} disabled>{selectedItem.name} · Inactive</option> : null}
                         {catalogItems
-                          .filter((item) => item.isActive)
+                          .filter((item) => item.isActive && (!isLockedRequiredLabLine || labItems.some(lab => lab.id === item.id)))
                           .map((item) => (
                             <option
                               key={item.id}
                               value={item.id}
                               disabled={
-                                item.id === requiredLabItem?.id &&
+                                item.isPSeqLabService &&
                                 requiredLabLineCount > 0 &&
                                 !isRequiredLabLine
                               }
                             >
                               {item.name}
                               {item.isPSeqLabService
-                                ? " · required service"
+                                ? " · PSeq Lab Service"
                                 : ""}
                             </option>
                           ))}

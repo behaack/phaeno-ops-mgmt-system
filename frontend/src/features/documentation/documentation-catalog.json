@@ -293,7 +293,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-21",
+      "reviewedAt": "2026-09-22",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -510,7 +510,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-21",
+      "reviewedAt": "2026-09-22",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -542,7 +542,7 @@
       "title": "Request laboratory services",
       "summary": "Complete ordering and shipping on the Job, then follow receipt, laboratory progress and results.",
       "order": 30,
-      "reviewedAt": "2026-09-20",
+      "reviewedAt": "2026-09-22",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -726,7 +726,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-21",
+      "reviewedAt": "2026-09-22",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -1809,7 +1809,7 @@
       "title": "Configuration and file retention",
       "summary": "Maintain reusable defaults, services, analyses, Partner rules, shipping container sizes and compatibility, and released-file retention.",
       "order": 60,
-      "reviewedAt": "2026-09-21",
+      "reviewedAt": "2026-09-22",
       "navigationGroup": "platform-operations",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1874,7 +1874,7 @@
       "title": "Use Partner Lab services",
       "summary": "Complete Partner ordering and shipping on the Job, then track sample receipt and laboratory results.",
       "order": 25,
-      "reviewedAt": "2026-09-21",
+      "reviewedAt": "2026-09-22",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [

@@ -6,9 +6,9 @@ const saveBilling = 'Complete the other required billing and tax fields in the s
 const instructions: Record<string, string[]> = {
   'readiness-ActivePSeqOfferingRequired': [
     orderSettings + ' Select Service catalog.',
-    'Open the approved PSeq Lab Service item by selecting its name, then select Edit item. Its required reference and Per sample-sequencing run sales unit are supplied automatically. If it is missing, select Add item in Service catalog and choose Item type: PSeq Lab Service; a different item with a similar name will not satisfy this check.',
-    'Review Name, Base price, and Currency against the approved offering. Set Status to Active, then select Save item.',
-    'This requirement clears when that catalog item is active with the sample-sequencing run sales unit. This is shared catalog setup; Company service permission is a separate item in this checklist.',
+    'Open any approved laboratory offering and select Edit item, or select Add item. Choose Service family: PSeq Lab Service and the Per sample-sequencing run sales unit.',
+    'Review the name, description, base price and currency. Set Status to Active only when the offering is approved, then select Save item.',
+    'One active offering in that family clears this catalog requirement. Other offerings may remain inactive. Company service permission and the selected offering’s scientific and sample requirements are separate.',
   ],
   'readiness-OrderConfigurationIncomplete': [
     orderSettings + ' Select Quote & workflow → Edit settings.',

@@ -3,7 +3,7 @@ import { isAxiosError } from 'axios'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { ArrowRight, CheckCircle2, LockKeyhole, Mail } from 'lucide-react'
-import { useEffect, useId, useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -16,7 +16,7 @@ import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredFieldName, RequiredLegend } from '#/components/ui/required-field'
-import { clearStoredInviteToken, readStoredInviteToken, storeInviteToken, readInviteRegistrationTicket, storeInviteRegistrationTicket } from '#/features/auth/invitation-storage'
+import { clearStoredInviteToken, readStoredInviteToken, storeInviteToken, readInviteRegistrationTicket, storeInviteRegistrationTicket, clearInviteAcceptance, readInviteAcceptanceVersion, storeInviteAcceptance } from '#/features/auth/invitation-storage'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
 export function AcceptInvitePage() {
@@ -60,6 +60,7 @@ export function AcceptInvitePage() {
   const accept = useMutation({
     mutationFn: (names: { firstName: string; lastName: string }) => acceptInvitation({ token: token!, version: preview.data?.version, ...names }),
     onError: async error => {
+      clearInviteAcceptance()
       if (isAxiosError(error) && error.response?.status === 409) {
         setReviewChanged(true)
         await preview.refetch()
@@ -68,7 +69,9 @@ export function AcceptInvitePage() {
     onSuccess: async (invitation) => {
       setOutcome({ status: 'accepted', organizationName: invitation.organizationName })
       clearStoredInviteToken()
+      auth.setSelectedOrganizationId(invitation.organizationId)
       await queryClient.invalidateQueries({ queryKey: ['session'] })
+      await navigate({ to: '/', replace: true })
     },
   })
   const decline = useMutation({
@@ -104,6 +107,10 @@ export function AcceptInvitePage() {
   }
 
   const invitation = preview.data
+  const acceptedVersion = readInviteAcceptanceVersion()
+  const accessChanged = acceptedVersion !== null && acceptedVersion !== invitation.version
+  const completeAfterSignIn = acceptedVersion !== null && acceptedVersion === invitation.version
+    && Boolean(invitation.firstName?.trim() && invitation.lastName?.trim())
   const title = `${invitation.firstName ? `${invitation.firstName}, you’re` : 'You’re'} invited to ${invitation.organizationName}`
   return <InvitationFrame title={title}>
     <div className="mb-6 flex items-start gap-3 rounded-lg border bg-muted/40 p-4">
@@ -120,13 +127,13 @@ export function AcceptInvitePage() {
         <ul className="mt-2 list-disc pl-5">{invitation.departments?.map(department => <li key={department.departmentId}>{department.departmentName} — {department.isDepartmentAdmin ? 'Department administrator' : 'Member'}</li>)}</ul>
       </>}
     </section> : null}
-    {reviewChanged ? <p role="alert" className="mb-4 text-sm">The invitation changed. Review the updated access above, then select Accept invitation again if you agree.</p> : null}
+    {reviewChanged || accessChanged ? <p role="alert" className="mb-4 text-sm">The invitation changed. Review the updated access above, then select Accept invitation again if you agree.</p> : null}
     {!auth.clerkLoaded ? <p role="status">Preparing secure sign-in…</p> : !auth.signedIn ? (
-      !auth.authConfigured ? <p role="alert">Sign-in is temporarily unavailable. Please try again later or contact the sender.</p> : <InvitationAuthentication invitation={invitation} token={token} registrationTicket={registrationTicket} />
+      !auth.authConfigured ? <p role="alert">Sign-in is temporarily unavailable. Please try again later or contact the sender.</p> : <InvitationAuthentication invitation={invitation} token={token} registrationTicket={registrationTicket} accessAccepted={acceptedVersion !== null && acceptedVersion === invitation.version} onContinue={() => storeInviteAcceptance(invitation.version)} />
     ) : auth.authProvider === 'clerk' ? (
-      <ClerkInvitationReview invitation={invitation} pending={accept.isPending || decline.isPending || preview.isFetching} onAccept={(names) => { setReviewChanged(false); accept.mutate(names) }} onDecline={() => decline.mutate()} />
+      <ClerkInvitationReview invitation={invitation} completeAfterSignIn={completeAfterSignIn} pending={accept.isPending || decline.isPending || preview.isFetching} onAccept={(names) => { setReviewChanged(false); accept.mutate(names) }} onDecline={() => decline.mutate()} />
     ) : (
-      <InvitationReview invitation={invitation} emailMatches={auth.session?.user?.email?.toLowerCase() === invitation.email.toLowerCase()} signedInEmail={auth.session?.user?.email} pending={accept.isPending || decline.isPending || preview.isFetching} onAccept={(names) => { setReviewChanged(false); accept.mutate(names) }} onDecline={() => decline.mutate()} />
+      <InvitationReview invitation={invitation} completeAfterSignIn={completeAfterSignIn} emailMatches={auth.session?.user?.email?.toLowerCase() === invitation.email.toLowerCase()} signedInEmail={auth.session?.user?.email} pending={accept.isPending || decline.isPending || preview.isFetching} onAccept={(names) => { setReviewChanged(false); accept.mutate(names) }} onDecline={() => decline.mutate()} />
     )}
     {(accept.error && !reviewChanged) || decline.error ? <Alert className="mt-4" variant="destructive">
       <AlertTitle>Invitation could not be completed</AlertTitle>
@@ -137,6 +144,7 @@ export function AcceptInvitePage() {
 
 type ReviewProps = {
   invitation: InvitationPreview
+  completeAfterSignIn: boolean
   pending: boolean
   onAccept: (names: { firstName: string; lastName: string }) => void
   onDecline: () => void
@@ -155,9 +163,15 @@ function ClerkInvitationReview(props: ReviewProps) {
 
 const namesSchema = z.object({ firstName: z.string().trim().min(1, 'Enter your first name.'), lastName: z.string().trim().min(1, 'Enter your last name.') })
 
-function InvitationReview({ invitation, pending, onAccept, onDecline, emailMatches, signedInEmail, switchAccount }: ReviewProps & { emailMatches: boolean; signedInEmail?: string; switchAccount?: ReactNode }) {
+function InvitationReview({ invitation, completeAfterSignIn, pending, onAccept, onDecline, emailMatches, signedInEmail, switchAccount }: ReviewProps & { emailMatches: boolean; signedInEmail?: string; switchAccount?: ReactNode }) {
   const missingName = !invitation.firstName || !invitation.lastName
   const form = useForm({ resolver: zodResolver(namesSchema), defaultValues: { firstName: invitation.firstName ?? '', lastName: invitation.lastName ?? '' } })
+  const completionStarted = useRef(false)
+  useEffect(() => {
+    if (!completeAfterSignIn || !emailMatches || pending || completionStarted.current) return
+    completionStarted.current = true
+    onAccept({ firstName: invitation.firstName!, lastName: invitation.lastName! })
+  }, [completeAfterSignIn, emailMatches, invitation.firstName, invitation.lastName, onAccept, pending])
   if (!emailMatches) return <div className="grid gap-4">
     <Alert>
       <AlertTitle>Use your invited account</AlertTitle>
@@ -165,6 +179,7 @@ function InvitationReview({ invitation, pending, onAccept, onDecline, emailMatch
     </Alert>
     {switchAccount}
   </div>
+  if (completeAfterSignIn) return <p role="status">Finishing your invitation and opening Portal…</p>
   return <form className="grid gap-4" onSubmit={form.handleSubmit(onAccept)}>
     <div><h2 className="text-lg font-semibold">Ready to join</h2><p className="mt-2 leading-6 text-muted-foreground">You’re signed in with your invited email. Accept to join {invitation.organizationName} with the access selected by your administrator.</p></div>
     {missingName ? <div className="grid gap-3 sm:grid-cols-2">

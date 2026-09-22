@@ -74,7 +74,7 @@ public sealed class TrialWorkflowService(PSeqOperationsDbContext db, ILabOperati
         var analyses = await (from analysis in db.AnalysisDefinitions.AsNoTracking()
             join catalog in db.QboCatalogItems on analysis.QboCatalogItemId equals catalog.Id
             where request.AnalysisIds.Contains(analysis.Id) && analysis.IsActive && !analysis.IsSynthetic
-                && catalog.ExternalItemId == OrderServiceKeys.PSeqLabService
+                && catalog.ServiceFamily == CatalogServiceFamily.PSeqLabService
             select analysis).ToListAsync(token);
         var deliverables = await db.TrialDeliverableDefinitions.AsNoTracking().Where(value => request.DeliverableIds.Contains(value.Id) && value.IsActive).ToListAsync(token);
         if (analyses.Count != request.AnalysisIds.Count || analyses.Count == 0 || deliverables.Count != request.DeliverableIds.Count || deliverables.Count == 0)

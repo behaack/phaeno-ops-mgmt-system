@@ -698,7 +698,8 @@ public sealed record BillingProfileWriteRequest(
     string? TaxExemptionEvidence);
 public sealed record ApproveTaxDecisionRequest(long Version, string Notes);
 public sealed record LocalCatalogItemRequest(string ExternalItemId, string Name, string Description, string SalesUnit, decimal BasePrice, string Currency, bool IsActive);
-public sealed record CatalogItemWriteRequest(string ExternalItemId, string Name, string Description, string SalesUnit, decimal BasePrice, string Currency, bool IsActive, long? Version = null);
+public sealed record CatalogItemWriteRequest(string ExternalItemId, string Name, string Description, string SalesUnit, decimal BasePrice, string Currency, bool IsActive, long? Version = null, CatalogServiceFamily? ServiceFamily = null);
+public sealed record CatalogItemDeletionDto(bool CanDelete, string? Reason, long Version);
 
 public sealed record IntegrationMessageDto(Guid Id, string Operation, string WorkflowType, Guid WorkflowId, string Status, int AttemptCount, DateTime NextAttemptAt, string? LastError, DateTime CreatedAt, long Version);
 public sealed record NotificationMessageDto(Guid Id, string WorkflowType, Guid WorkflowId, string EventType, string Subject, string Status, int AttemptCount, DateTime NextAttemptAt, string? LastError, DateTime CreatedAt, bool CanRetry, long Version);

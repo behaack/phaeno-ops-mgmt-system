@@ -15,10 +15,10 @@ The additive [step performance JSON contract](plans/LAB-STEP-PERFORMANCE-CONTRAC
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 138 | 2223 | 354 |
+| `commercial_ops` | 138 | 2224 | 354 |
 | `lab_ops` | 60 | 704 | 109 |
 | `website` | 5 | 51 | 4 |
-| **Total** | **204** | **2980** | **467** |
+| **Total** | **204** | **2981** | **467** |
 
 ## `public` schema
 
@@ -2389,6 +2389,7 @@ erDiagram
         timestamp_with_time_zone last_synced_at "not null"
         character_varying_255 name "not null"
         character_varying_100 sales_unit "not null"
+        character_varying_100 service_family "not null"
         timestamp_with_time_zone updated_at "not null"
         uuid updated_by_user_id "nullable"
         bigint version "not null"

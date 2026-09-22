@@ -135,7 +135,7 @@ public sealed class TrialReader(PSeqOperationsDbContext db, TrialWorkflowService
             .Select(value => new TrialHandoffChoiceDto(value.Id, value.Company.Name, value.Opportunity!.Name, value.RelationshipRequest.Summary)).Take(250).ToListAsync(token) : [];
         var analyses = actor.IsStaff ? await (from analysis in db.AnalysisDefinitions.AsNoTracking()
             join catalog in db.QboCatalogItems on analysis.QboCatalogItemId equals catalog.Id
-            where analysis.IsActive && !analysis.IsSynthetic && catalog.ExternalItemId == OrderServiceKeys.PSeqLabService
+            where analysis.IsActive && !analysis.IsSynthetic && catalog.ServiceFamily == CatalogServiceFamily.PSeqLabService
             select new TrialChoiceDto(analysis.Id, analysis.Name, analysis.Version)).ToListAsync(token) : [];
         var workflows = actor.IsStaff ? await (from workflow in db.LabServiceWorkflows.AsNoTracking()
             join version in db.LabServiceWorkflowVersions on workflow.Id equals version.LabServiceWorkflowId

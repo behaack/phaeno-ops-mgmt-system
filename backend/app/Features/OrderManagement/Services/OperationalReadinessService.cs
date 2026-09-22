@@ -41,7 +41,7 @@ public sealed class OperationalReadinessService(PSeqOperationsDbContext dbContex
             hasEntitlement = eligibility.OrderingAuthorized;
         }
         var hasOffering = await dbContext.QboCatalogItems.AsNoTracking().AnyAsync(item =>
-            item.IsActive && item.ExternalItemId.ToLower() == OrderServiceKeys.PSeqLabService
+            item.IsActive && item.ServiceFamily == CatalogServiceFamily.PSeqLabService
             && item.SalesUnit.ToLower() == OrderSalesUnits.Specimen, cancellationToken);
         var system = await dbContext.OrderSystemConfigurations.AsNoTracking().OrderBy(item => item.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken);

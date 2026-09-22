@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { useRef, useState } from "react";
 import { Link, useNavigate } from '@tanstack/react-router';
 import { LabServiceOfferingsPanel } from './LabServiceOfferingsPanel';
+import { CatalogItemActions } from './CatalogItemActions';
 import { useOrderDraftGuard } from '../use-order-draft-guard';
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -51,16 +52,17 @@ const schema = z
     basePrice: z.coerce.number().min(0, "Base price cannot be negative."),
     currency: z.string().trim().length(3, "Use a three-letter currency code."),
     isActive: z.boolean(),
+    serviceFamily: z.enum(['Other', 'PSeqLabService']),
   })
   .superRefine((value, context) => {
     if (
-      value.externalItemId.toLowerCase() === "pseq-lab-service" &&
+      value.serviceFamily === 'PSeqLabService' &&
       value.salesUnit.toLowerCase() !== "specimen"
     ) {
       context.addIssue({
         code: "custom",
         path: ["salesUnit"],
-        message: "PSeq Lab Service must use the specimen sales unit.",
+        message: "PSeq Lab Service offerings use Per sample-sequencing run.",
       });
     }
   });
@@ -85,7 +87,8 @@ const empty: Values = {
   salesUnit: "specimen",
   basePrice: 0,
   currency: "USD",
-  isActive: true,
+  isActive: false,
+  serviceFamily: 'PSeqLabService',
 };
 
 export function CatalogConfigurationPanel({
@@ -119,7 +122,7 @@ export function CatalogConfigurationPanel({
       try {
         const fresh = await client.fetchQuery({ queryKey: ['order-configuration'], queryFn: getOrderConfiguration, staleTime: 0 });
         const current = fresh.catalogItems.find(item => item.id === editing?.id);
-        if (current) { setEditing(current); form.reset(current, { keepDirtyValues: true }); }
+        if (current) { setEditing(current); form.reset({ ...current, serviceFamily: current.isPSeqLabService ? 'PSeqLabService' : 'Other' }, { keepDirtyValues: true }); }
       } catch { /* Keep the original save error and entered values visible. */ }
     },
     onSuccess: async (saved) => {
@@ -129,21 +132,14 @@ export function CatalogConfigurationPanel({
       if (!editing) await navigate({ to: '/order-configuration/catalog/$catalogItemId', params: { catalogItemId: saved.id }, search: { configurationSection: 'catalog' } });
     },
   });
-  const labServiceItem = configuration.catalogItems.find(
-    (item) => item.isPSeqLabService,
-  );
   const selected = configuration.catalogItems.find(item => item.id === catalogItemId);
-  const isLabService = form.watch('externalItemId').trim().toLowerCase() === 'pseq-lab-service';
+  const isLabService = form.watch('serviceFamily') === 'PSeqLabService';
   const selectedUnit = form.watch('salesUnit');
   const unitOptions = Array.from(new Set([...salesUnits.map(unit => unit.value), ...configuration.catalogItems.map(item => item.salesUnit), selectedUnit])).filter(Boolean);
   useOrderDraftGuard(editing !== undefined && form.formState.isDirty, mutation.isPending);
   function close() {
     if (!mutation.isPending && (!form.formState.isDirty || window.confirm('Discard unsaved catalog changes?'))) setEditing(undefined);
   }
-  const labServiceReady = Boolean(
-    labServiceItem?.isActive &&
-    labServiceItem.salesUnit.toLowerCase() === "specimen",
-  );
 
   function open(item: CatalogItem | null) {
     actionRef.current = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null;
@@ -160,8 +156,9 @@ export function CatalogConfigurationPanel({
             basePrice: item.basePrice,
             currency: item.currency,
             isActive: item.isActive,
+            serviceFamily: item.isPSeqLabService ? 'PSeqLabService' : 'Other',
           }
-        : { ...empty, externalItemId: labServiceItem ? generatedCode.current : 'pseq-lab-service', name: labServiceItem ? '' : 'PSeq Lab Service', salesUnit: labServiceItem ? 'each' : 'specimen' },
+        : { ...empty, externalItemId: generatedCode.current },
     );
     if (item?.isPSeqLabService && item.salesUnit !== 'specimen') form.setValue('salesUnit', 'specimen', { shouldDirty: true, shouldValidate: true });
   }
@@ -173,7 +170,7 @@ export function CatalogConfigurationPanel({
         <Card className="gap-0 py-0">
           <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">
             <CardTitle className="min-w-0">{selected.name}</CardTitle>
-            <Button className="col-start-2 row-start-1 justify-self-end" variant="outline" disabled={!apiEnabled} onClick={() => open(selected)}>Edit item</Button>
+            <CatalogItemActions key={selected.id} item={selected} apiEnabled={apiEnabled} onEdit={trigger => { open(selected); actionRef.current = trigger }} />
             <CardDescription className="col-span-full">Commercial pricing and availability</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 p-4">
@@ -182,12 +179,13 @@ export function CatalogConfigurationPanel({
               <div><dt className="text-muted-foreground">Base price</dt><dd>{formatMoney(selected.basePrice, selected.currency)}</dd></div>
               <div><dt className="text-muted-foreground">Sales unit</dt><dd>{salesUnitLabel(selected.salesUnit)}</dd></div>
               <div><dt className="text-muted-foreground">Status</dt><dd>{selected.isActive ? 'Active' : 'Inactive'}</dd></div>
+              <div><dt className="text-muted-foreground">Service family</dt><dd>{selected.isPSeqLabService ? 'PSeq Lab Service' : 'Other'}</dd></div>
             </dl>
-            {!selected.isActive ? <p className="text-sm text-muted-foreground">To activate this item, select Edit item, set Status to Active, and save.</p> : null}
+            {!selected.isActive ? <p className="text-sm text-muted-foreground">Inactive items are excluded from new pricing.</p> : null}
             <details className="text-sm"><summary className="w-fit cursor-pointer rounded-sm text-primary focus-visible:ring-2 focus-visible:ring-ring">Reference details</summary><p className="mt-2 break-all text-muted-foreground">Item reference: {selected.externalItemId}. This permanent reference links pricing and accounting records and stays the same when the item is renamed.</p></details>
           </CardContent>
         </Card>
-        {selected.isPSeqLabService ? <LabServiceOfferingsPanel configuration={configuration} apiEnabled={apiEnabled} catalogItemId={selected.id} /> : <p className="text-sm text-muted-foreground">Scientific definitions for direct laboratory ordering currently apply to the PSeq Lab Service item. Kit and assembly configuration remains in its own settings page.</p>}
+        {selected.isPSeqLabService ? <LabServiceOfferingsPanel configuration={configuration} apiEnabled={apiEnabled} catalogItemId={selected.id} /> : null}
       </div> : (
       <Card className="gap-0 py-0">
         <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">
@@ -201,14 +199,6 @@ export function CatalogConfigurationPanel({
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4">
-          {!labServiceReady ? (
-            <Alert variant="destructive" className="mb-5">
-              <AlertTitle>PSeq Lab Service pricing is not ready</AlertTitle>
-              <AlertDescription>
-                {labServiceItem ? 'Open PSeq Lab Service, select Edit item, set Status to Active, and save.' : 'Select Add item and choose PSeq Lab Service. Its required reference and per-sample-sequencing-run pricing are supplied automatically.'}
-              </AlertDescription>
-            </Alert>
-          ) : null}
           {configuration.catalogItems.length ? (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
@@ -234,11 +224,6 @@ export function CatalogConfigurationPanel({
                         >
                           {item.name}
                         </Link>
-                        {item.isPSeqLabService ? (
-                          <Badge variant="outline" className="ml-2">
-                            PSeq Lab Service
-                          </Badge>
-                        ) : null}
                       </td>
                       <td className="px-3 py-3">{salesUnitLabel(item.salesUnit)}</td>
                       <td className="px-3 py-3 text-right">
@@ -293,17 +278,16 @@ export function CatalogConfigurationPanel({
             onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
           >
             <fieldset disabled={mutation.isPending} className="grid grid-cols-1 gap-4">
-            {!editing ? <Field id="catalog-type" label="Item type">
+            <Field id="catalog-type" label="Service family">
               <select id="catalog-type" className={selectClass} value={isLabService ? 'lab' : 'other'} onChange={event => {
                 const lab = event.target.value === 'lab';
-                form.setValue('externalItemId', lab ? 'pseq-lab-service' : generatedCode.current, { shouldDirty: true, shouldValidate: true });
+                form.setValue('serviceFamily', lab ? 'PSeqLabService' : 'Other', { shouldDirty: true, shouldValidate: true });
                 form.setValue('salesUnit', lab ? 'specimen' : 'each', { shouldDirty: true, shouldValidate: true });
-                if (!form.getValues('name') || form.getValues('name') === 'PSeq Lab Service') form.setValue('name', lab ? 'PSeq Lab Service' : '', { shouldDirty: true });
               }}>
-                <option value="lab" disabled={Boolean(labServiceItem)}>PSeq Lab Service{labServiceItem ? ' (already configured)' : ''}</option>
-                <option value="other">Other catalog item</option>
+                <option value="lab">PSeq Lab Service</option>
+                <option value="other">Other</option>
               </select>
-            </Field> : null}
+            </Field>
             <div className="space-y-2">
               <Label htmlFor="catalog-status"><RequiredFieldName>Status</RequiredFieldName></Label>
               <select id="catalog-status" className={selectClass} value={form.watch('isActive') ? 'active' : 'inactive'} aria-describedby="catalog-status-help" onChange={event => form.setValue('isActive', event.target.value === 'active', { shouldDirty: true })}>
@@ -338,7 +322,7 @@ export function CatalogConfigurationPanel({
             >
               {isLabService ? <>
                 <select id="catalog-unit" className={selectClass} value="specimen" disabled aria-describedby="catalog-unit-fixed-help"><option value="specimen">Per sample-sequencing run</option></select>
-                <p id="catalog-unit-fixed-help" className="mt-1 text-xs text-muted-foreground">PSeq Lab Service is priced per sample-sequencing run. One sample sequenced 20 times counts as 20 runs. This unit is fixed automatically.</p>
+                <p id="catalog-unit-fixed-help" className="mt-1 text-xs text-muted-foreground">PSeq Lab Service offerings are priced per sample-sequencing run. One sample sequenced 20 times counts as 20 runs. This unit is fixed automatically.</p>
               </> : <>
                 <select id="catalog-unit" className={selectClass} aria-invalid={Boolean(form.formState.errors.salesUnit)} aria-describedby="catalog-unit-help" {...form.register('salesUnit')}>
                   {unitOptions.map(unit => <option key={unit} value={unit}>{salesUnitLabel(unit)}</option>)}

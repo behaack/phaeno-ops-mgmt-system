@@ -21,7 +21,7 @@ const labels: Record<Step, string> = {
   start: 'Continue securely', email: 'Check your email', password: 'Enter your password',
   'signup-password': 'Create your password', totp: 'Open your authenticator app',
   backup: 'Use a backup code', 'mfa-email': 'Verify this sign-in', 'mfa-phone': 'Check your phone',
-  'reset-code': 'Check your email', 'reset-password': 'Choose a new password', complete: 'Returning to your invitation',
+  'reset-code': 'Check your email', 'reset-password': 'Choose a new password', complete: 'Completing your invitation',
 }
 
 function checked(result: AuthResult) { if (result.error) throw result.error }
@@ -30,10 +30,12 @@ function errorMessage(error: unknown) {
   return apiErrorMessage(error)
 }
 
-export function InvitationAuthentication({ invitation, token, registrationTicket }: {
+export function InvitationAuthentication({ invitation, token, registrationTicket, accessAccepted = false, onContinue }: {
   invitation: InvitationPreview
   token: string
   registrationTicket?: string | null
+  accessAccepted?: boolean
+  onContinue: () => void
 }) {
   const { signIn } = useSignIn()
   const { signUp } = useSignUp()
@@ -192,9 +194,9 @@ export function InvitationAuthentication({ invitation, token, registrationTicket
   const canResend = ['email', 'mfa-email', 'mfa-phone', 'reset-code'].includes(step)
   return <section aria-labelledby={step === 'start' ? undefined : 'invitation-auth-title'}>
     {step === 'start' ? <div className="grid gap-4">
-      <p className="leading-6 text-muted-foreground">Continue to verify your invited email. Your address is fixed to this invitation.</p>
-      <Button className="h-auto min-h-11 w-full whitespace-normal py-3" disabled={pending} onClick={() => void run(start)}>
-        <span className="min-w-0 break-all">{pending ? 'Preparing verification…' : `Continue with ${invitation.email}`}</span><ArrowRight className="shrink-0" aria-hidden="true" />
+      <p className="leading-6 text-muted-foreground">{accessAccepted ? `Continue account setup for ${invitation.email}.` : `Accept the access shown above, then verify ${invitation.email} and complete any required account security steps.`} Portal opens automatically when setup is complete.</p>
+      <Button className="h-auto min-h-11 w-full whitespace-normal py-3" disabled={pending} onClick={() => void run(async () => { onContinue(); await start() })}>
+        <span className="min-w-0">{pending ? 'Preparing verification…' : accessAccepted ? 'Continue account setup' : 'Accept invitation and continue'}</span><ArrowRight className="shrink-0" aria-hidden="true" />
       </Button>
     </div> : <>
       <h2 ref={heading} tabIndex={-1} id="invitation-auth-title" className="text-lg font-semibold focus-visible:outline-2 focus-visible:outline-ring">{labels[step]}</h2>
@@ -205,7 +207,7 @@ export function InvitationAuthentication({ invitation, token, registrationTicket
           : step === 'backup' ? 'Enter one of the backup codes you saved when setting up your account.'
           : step === 'mfa-phone' ? 'Enter the code sent to the phone registered to your account.'
           : step === 'mfa-email' ? 'Enter the additional verification code sent to your account email.'
-          : step === 'complete' ? 'Your identity is verified. Your invitation is ready for review.'
+          : step === 'complete' ? 'Finishing your invitation and opening Portal…'
           : 'Complete secure sign-in for your invited account.'}
       </p>
       {step !== 'complete' ? <form className="grid gap-4" onSubmit={form.handleSubmit(({ value }) => run(() => verify(value)))}>
