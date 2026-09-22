@@ -51,7 +51,8 @@ public sealed record LabIntakeProgress(bool HasPhysicalReceipt, IReadOnlyList<La
             var approved = packages.Where(p => (p.LabSampleId ?? p.TrialSampleId) == submittedId && p.ScientificApprovalId.HasValue
                 && p.State is ResultOutputPackageState.ReadyForRelease or ResultOutputPackageState.Released).ToList();
             var required = runCounts.GetValueOrDefault(submittedId, 1);
-            return required == 1 ? approved.Count > 0 : LabSequencingRunProgress.Count(approved.Select(p => p.LabAnalysisRunId), analysisRuns) >= required;
+            return required == 1 ? approved.Any(p => p.LabAnalysisRunId == null || analysisRuns.ContainsKey(p.LabAnalysisRunId.Value))
+                : LabSequencingRunProgress.Count(approved.Select(p => p.LabAnalysisRunId), analysisRuns) >= required;
         }
         var outcomes = work.Specimens.Select(specimen => new LabSpecimenTerminalProgress(specimen.SubmittedSpecimenId,
             specimen.IntakeDisposition == LabSpecimenIntakeDisposition.OnHold || specimen.ProcessingState == LabSpecimenProcessingState.OnHold ? ""

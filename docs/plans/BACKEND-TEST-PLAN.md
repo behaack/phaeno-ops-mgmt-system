@@ -1,5 +1,9 @@
 # Backend Test Plan
 
+## Sequencing assembly runner — September 22, 2026
+
+New `LabAssemblyTests` cover actual start/stop and disposition, delayed/duplicate/conflicting outcomes, cancellation races and unstarted cancellation, timestamp precision, transient percentage expiry, no persisted progress fields, disabled production provider and rejection of combined-run completion counts. `LabAssemblyPostgresTests` adds an opt-in reference fixture for recovery without duplicate dispatch, a percentage stream producing no job-version/audit/event writes, restart recovery, failure retention, late-progress rejection and the unique active-attempt constraint. The simulated adapter exists only in the test project. Sources compile; test execution remains request-only. Remaining acceptance includes real provider idempotency/replay, S3 byte verification, input admission and independent-connection start/cancel/hold races, completed output import and provider/scientific acceptance.
+
 ## Shipping availability without content revisions — September 21, 2026
 
 Regression sources: `SampleTypeStatusPostgresTests`, `SampleShippingAvailabilityPostgresTests`, `SampleShippingDomainTests`, and the issued-packet journey in `SampleShippingProcedurePostgresTests`. Cover same-ID/revision status changes, audit/version increments, admin-only access, stale requests, draft retention, scheduled activation, no fallback after retirement, exact destination references, assignment overlap and activation after an inactive destination becomes available. Issued packet instruction and manifest snapshots remain unchanged. No schema change. Sources compile with the solution; suites remain request-only and have not been executed for this change.

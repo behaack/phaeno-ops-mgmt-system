@@ -137,11 +137,20 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
         if (inputs.Count != request.SequencingOutputIds.Count || inputs.Select(x => x.LabSpecimenAttemptId).Distinct().Count() != 1
             || inputs.Select(x => x.SourceContainerId).Distinct().Count() != 1)
             throw Invalid("Every analysis input must belong to this specimen, job and one producing tube attempt.");
+        RequireSinglePurchasedRun(inputs);
         var attempt = await RequireSuccessfulAttemptAsync(inputs[0].LabSpecimenAttemptId, specimen, ct);
         if (inputs.Any(x => x.SourceContainerId != attempt.SourceContainerId)) throw Invalid("The analysis inputs have conflicting source tubes.");
         if (request.PreviousAnalysisRunId.HasValue && !await db.LabAnalysisRuns.AnyAsync(x => x.Id == request.PreviousAnalysisRunId
             && x.LabWorkOrderId == specimen.LabWorkOrderId && x.LabSpecimenId == specimen.Id, ct))
             throw Invalid("The previous analysis must belong to this specimen and job.");
+        if (request.PreviousAnalysisRunId.HasValue)
+        {
+            var previousInputs = await (from input in db.LabAnalysisInputs
+                join output in db.LabSequencingOutputs on input.LabSequencingOutputId equals output.Id
+                where input.LabAnalysisRunId == request.PreviousAnalysisRunId select output).ToListAsync(ct);
+            if (RequireSinglePurchasedRun(previousInputs) != RequireSinglePurchasedRun(inputs))
+                throw Invalid("Reanalysis must retain the same purchased sequencing run as its predecessor.");
+        }
         var run = new LabAnalysisRun(normalized.Id, specimen.LabWorkOrderId, specimen.Id, attempt.Id,
             normalized.ProviderKey, normalized.RunReference, normalized.PreviousAnalysisRunId, normalized.ReanalysisReason,
             hash, actorId, recordedBySource, DateTime.UtcNow, normalized.ScientificEvidence, requireScientificEvidence ? 1 : request.RequirementsVersion);
@@ -156,7 +165,8 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
     }
 
     public async Task<LabAnalysisRun?> RequireResultAsync(Guid? analysisRunId, bool required,
-        Guid organizationId, Guid? workOrderId, Guid submittedSampleId, CancellationToken ct, bool requireScientificEvidence = false)
+        Guid organizationId, Guid? workOrderId, Guid submittedSampleId, CancellationToken ct, bool requireScientificEvidence = false,
+        bool allowPendingAssemblyLink = false)
     {
         required |= requireScientificEvidence;
         if (!analysisRunId.HasValue && !required) return null;
@@ -177,6 +187,14 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
         if (inputs.Count == 0 || inputs.Any(x => x.LabWorkOrderId != run.LabWorkOrderId || x.LabSpecimenId != specimen.Id
             || x.LabSpecimenAttemptId != attempt.Id || x.SourceContainerId != attempt.SourceContainerId))
             throw Invalid("The analysis lacks a complete, consistent input-to-tube chain.");
+        RequireSinglePurchasedRun(inputs);
+        var assemblyJobs = await db.Set<LabAssemblyJob>().AsNoTracking().Where(j => j.LabAnalysisRunId == run.Id
+            || j.ProviderKey == run.ProviderKey && j.ProviderJobId == run.RunReference).Take(2).ToListAsync(ct);
+        if (assemblyJobs.Count > 1) throw Invalid("The analysis has conflicting assembly execution bindings.");
+        if (assemblyJobs.SingleOrDefault() is { } assembly && (assembly.State != "Succeeded" || assembly.AttentionReason is not null
+            || assembly.LabWorkOrderId != run.LabWorkOrderId || assembly.LabSpecimenId != run.LabSpecimenId
+            || assembly.LabAnalysisRunId != run.Id && !allowPendingAssemblyLink))
+            throw Invalid("Link this analysis to its successful, reconciled assembly attempt before advancing results.");
         if (requireScientificEvidence && run.RequirementsSnapshotJson is null)
             throw Invalid("Record a new analysis with the approved scientific evidence profile before registering this new result. Historical analyses are not silently reclassified.");
         if (run.RequirementsSnapshotJson is not null)
@@ -207,6 +225,13 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
         if (!release.TraceabilityRequired && !policy.RequireResultTraceability && !policy.RequireScientificEvidence) return;
         await RequireResultAsync(release.LabAnalysisRunId, true, release.OrganizationId, null, release.LabSampleId, ct, policy.RequireScientificEvidence);
         if (string.IsNullOrWhiteSpace(release.ResultLocator)) throw Invalid("The result file needs an explicit result locator before release.");
+    }
+
+    public static int RequireSinglePurchasedRun(IReadOnlyCollection<LabSequencingOutput> inputs)
+    {
+        var numbers = inputs.Select(x => x.SequencingRunNumber ?? 1).Distinct().ToArray();
+        if (numbers.Length != 1) throw Invalid("Each analysis must contain inputs from exactly one purchased sequencing run.");
+        return numbers[0];
     }
 
     private async Task<LabSpecimen> RequireSpecimenAsync(Guid workId, Guid specimenId, CancellationToken ct)

@@ -1,5 +1,9 @@
 # Playwright E2E Test Plan
 
+## Sequencing assembly — September 22, 2026
+
+The endpoint-independent implementation adds Data assembly > Sequencing runs, preserves Assembly cases, adds a stable assembly-job detail route and sample-scoped history, and disables live Start until a real adapter is configured. Browser acceptance is pending and test execution remains request-only. Cover desktop/mobile/keyboard setup and empty states; separate sample/run inputs; live percentage recovery after refresh without progress history; actual start/stop/final disposition; cancellation races; role denial; retry and analysis-link validation; preserved commercial assembly routes; and QC/release remaining separate. Actual dispatch, S3 integrity, completion imports and outage recovery need the external contract and a staging provider. Simulations must remain explicitly labeled and must not be counted as scientific/provider acceptance.
+
 ## First-time MFA return path - September 21, 2026
 
 Pending live recipient acceptance: open a valid invitation, complete password

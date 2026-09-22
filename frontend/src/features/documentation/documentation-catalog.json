@@ -1431,7 +1431,7 @@
       "title": "Data assembly",
       "summary": "Coordinate commercial quotes and decisions with Lab-owned input validation, processing, QC, and output approval.",
       "order": 53,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-09-22",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1564,7 +1564,7 @@
       "title": "Laboratory operations",
       "summary": "Track jobs and specimens, record scientific evidence, investigate result delivery and retention history, and save internal evidence reports.",
       "order": 50,
-      "reviewedAt": "2026-09-19",
+      "reviewedAt": "2026-09-22",
       "navigationGroup": "laboratory-operations",
       "contentType": "overview",
       "topicIds": [
@@ -1706,7 +1706,7 @@
       "title": "Libraries, batches, and sequencing",
       "summary": "Reuse preparation QC, hand passing libraries to sequencing batches, and track sendout manifests and custody.",
       "order": 56,
-      "reviewedAt": "2026-09-20",
+      "reviewedAt": "2026-09-22",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [

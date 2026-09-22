@@ -151,6 +151,13 @@ builder.Services.AddScoped<PhaenoPortal.App.Features.Trials.Services.TrialReader
 builder.Services.AddScoped<PhaenoPortal.App.Features.Trials.Services.TrialResultService>();
 builder.Services.AddScoped<ILabOperationsProvider, InternalLabOperationsProvider>();
 builder.Services.AddScoped<LabOperationsRequestContext>();
+builder.Services.Configure<LabAssemblyOptions>(builder.Configuration.GetSection(LabAssemblyOptions.SectionName));
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<ILabAssemblyProvider, UnavailableLabAssemblyProvider>();
+builder.Services.AddSingleton<LabAssemblyProgress>();
+builder.Services.AddScoped<LabAssemblyService>();
+builder.Services.AddScoped<LabAssemblyProcessor>();
+builder.Services.AddHostedService<LabAssemblyWorker>();
 builder.Services.AddHostedService<LabOperationsProjectionDispatcher>();
 builder.Services.AddHostedService<LabForecastWorker>();
 builder.Services.AddHttpClient("QuickBooksOAuth");

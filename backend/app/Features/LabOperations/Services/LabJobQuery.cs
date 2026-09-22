@@ -58,7 +58,13 @@ public sealed class LabJobQuery(PSeqOperationsDbContext db)
     // not undo delivery, but an explicit withdrawal removes that release's coverage.
     public IQueryable<LabJobRelease> Releases()
     {
-        var released = db.LabResultReleases.AsNoTracking().Where(r => r.ReleaseStatus == FileReleaseStatus.Released && r.ReleasedAt != null);
+        var singleRunAnalyses = from input in db.LabAnalysisInputs
+            join output in db.LabSequencingOutputs on input.LabSequencingOutputId equals output.Id
+            group output by input.LabAnalysisRunId into inputs
+            where inputs.Select(o => o.SequencingRunNumber ?? 1).Distinct().Count() == 1
+            select inputs.Key;
+        var released = db.LabResultReleases.AsNoTracking().Where(r => r.ReleaseStatus == FileReleaseStatus.Released && r.ReleasedAt != null
+            && (r.LabAnalysisRunId == null || singleRunAnalyses.Contains(r.LabAnalysisRunId.Value)));
         var individual = released.Where(r => !db.LabSamples.Any(s => s.Id == r.LabSampleId && s.SequencingRunCount > 1))
             .Select(r => new LabJobRelease { SampleId = r.LabSampleId, ReleasedAtUtc = r.ReleasedAt });
         var runs = from result in released

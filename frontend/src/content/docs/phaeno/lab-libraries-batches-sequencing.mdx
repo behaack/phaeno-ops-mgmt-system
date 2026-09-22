@@ -8,13 +8,27 @@ Open a job, select its specimen, and go to **Sample history**. Operators and Sup
 
 For sequencing, select the recorded **Library / tube** and **Sequencing submission**. The submission must contain the exact library and barcode in its saved manifest. Enter the actual sequencing run reference, sample/index/lane mapping, exact external file version, SHA-256 checksum and byte size. Record the actual run start and completion times, plus a QC summary and named measurements or a supporting document with role `qc`. The library must have completed the required preparation and QC before the record can be saved.
 
-For analysis, select every exact sequencing input and describe each input's role. Inputs must come from the same source-tube attempt. Record the actual analysis run, start/completion times, software and reference versions, and settings checksum. Every new staff-recorded analysis pins the scientific evidence requirements in effect for this screen. Where inapplicable, QC, software, settings or reference evidence may use **Not applicable** with an explanation; source identity, times and file attribution cannot be waived.
+For analysis, select every exact sequencing input and describe each input's role. Inputs must come from the same source-tube attempt and purchased sequencing run. Each purchased run has its own result, even when runs reuse one prepared library. Record the actual analysis run, start/completion times, software and reference versions, and settings checksum. Every new staff-recorded analysis pins the scientific evidence requirements in effect for this screen. Where inapplicable, QC, software, settings or reference evidence may use **Not applicable** with an explanation; source identity, times and file attribution cannot be waived.
 
 Times use your browser's local timezone, displayed above the fields. If a clock change repeats a time, choose its occurrence. **Additional run details** includes instrument, flowcell, lane, pool, index mapping, workflow version and optional submission/receipt times. Supporting documents require an exact external version, checksum and byte size. These references do not upload the underlying files or confirm their availability.
 
 Use **Record correction** from a sequencing record or **Record reanalysis** from an analysis record to create a linked replacement with a reason. Review the prefilled facts against the actual work before saving. Earlier records remain unchanged and can be opened through **View preceding record**. Failed saves retain your entries; retrying unchanged evidence does not create a duplicate record.
 
 Where the legacy manual-upload workflow is still enabled, authorized platform administrators can choose **Upload result** from an analysis record. The selected analysis is carried into the upload. Identify the exact row, entry or range for this sample, or confirm that the entire file belongs to it. Upload does not approve or release the result. This action is unavailable when governed result delivery has retired manual uploads.
+
+## Track sequencing assembly
+
+Open **Lab operations > Data assembly > Sequencing runs**, or the **Sequencing assembly** section on a sample. Select a sample/run in the list to open its assembly attempt. **Assembly cases** contains the existing Partner manufacturing work.
+
+The processing connection is not yet configured. POMS displays **Assembly setup required**, and **Start assembly** remains unavailable until the external service is connected. This notice does not mean a job failed.
+
+For a connected service, Start assembly selects the registered inputs for one sample/run and a configured processing recipe. The server verifies the inputs before accepting the request. Processing continues after the browser closes. Percentage progress is live display information; individual updates are not retained. After a connection interruption, the percentage may be unavailable until a fresh update arrives.
+
+Each attempt retains actual start and stop times and its final disposition: succeeded, failed or terminated. These times are displayed in the browser's local time zone. Elapsed duration is calculated from the recorded start and stop. A request cancelled before execution has no fabricated execution times. **Job history** contains meaningful lifecycle events, not a percentage-update feed.
+
+Repeating an ended attempt requires a reason and keeps it linked to the earlier attempt for the same purchased run. **Request cancellation** is available only when the job can still be stopped; a request does not confirm termination. The external service may complete the job before cancellation takes effect.
+
+Successful execution does not approve or publish results. Record the completed analysis and scientific evidence through the existing capture workflow. When the matching analysis is available, **Link completed analysis** checks its provider execution, inputs and actual start/stop times. Result files still require verification and scientific QC before the separate customer-release workflow.
 
 ## Prepare a library
 
@@ -44,7 +58,7 @@ Add custody events whenever responsibility or location changes. Record the event
 
 ## Respect the implementation boundary
 
-The sendout tracks material, manifest, timing, provider status, and custody. Raw-file ingestion, pipeline orchestration, intermediate provenance, long-term storage, and final-output publication remain outside the current Lab Ops implementation.
+The sendout tracks material, manifest, timing, provider status, and custody. The assembly workspace tracks requested processing attempts and their outcomes, but the external processing connection and automatic result import still require integration setup. Uploading raw sequencing datasets and preserving externally held files remain responsibilities of their producing system. Scientific approval and customer release remain separate steps.
 
 ## Record library quality evidence
 

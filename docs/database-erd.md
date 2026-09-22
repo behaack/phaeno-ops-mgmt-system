@@ -16,9 +16,9 @@ The additive [step performance JSON contract](plans/LAB-STEP-PERFORMANCE-CONTRAC
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
 | `commercial_ops` | 138 | 2222 | 353 |
-| `lab_ops` | 58 | 671 | 104 |
+| `lab_ops` | 60 | 704 | 109 |
 | `website` | 5 | 51 | 4 |
-| **Total** | **202** | **2946** | **461** |
+| **Total** | **204** | **2979** | **466** |
 
 ## `public` schema
 
@@ -3005,6 +3005,43 @@ erDiagram
 
 ```mermaid
 erDiagram
+    lab_assembly_events {
+        uuid id PK "not null"
+        uuid actor_user_id "nullable"
+        jsonb evidence_json "not null"
+        character_varying_60 kind "not null"
+        uuid lab_assembly_job_id FK "not null"
+        timestamp_with_time_zone recorded_at_utc "not null"
+    }
+    lab_assembly_jobs {
+        uuid id PK "not null"
+        character_varying_2000 attention_reason "nullable"
+        character_varying_2000 cancellation_reason "nullable"
+        timestamp_with_time_zone cancellation_requested_at_utc "nullable"
+        uuid cancellation_requested_by_user_id "nullable"
+        timestamp_with_time_zone dispatch_requested_at_utc "nullable"
+        timestamp_with_time_zone disposition_at_utc "nullable"
+        character_varying_2000 disposition_reason "nullable"
+        jsonb inputs_json "not null"
+        uuid lab_analysis_run_id FK,UK "nullable"
+        uuid lab_specimen_id FK,UK "not null"
+        uuid lab_work_order_id FK "not null"
+        uuid organization_id "not null"
+        jsonb output_manifest_json "nullable"
+        uuid previous_job_id FK "nullable"
+        character_varying_255 provider_job_id UK "nullable"
+        character_varying_100 provider_key UK "not null"
+        jsonb recipe_json "not null"
+        character_varying_64 request_sha256 "not null"
+        timestamp_with_time_zone requested_at_utc "not null"
+        uuid requested_by_user_id "not null"
+        character_varying_2000 retry_reason "nullable"
+        integer sequencing_run_number UK "not null"
+        timestamp_with_time_zone started_at_utc "nullable"
+        character_varying_32 state "not null"
+        timestamp_with_time_zone stopped_at_utc "nullable"
+        bigint version "not null"
+    }
     lab_customer_holds {
         uuid id PK "not null"
         uuid lab_specimen_id FK,UK "not null"
@@ -3053,6 +3090,11 @@ erDiagram
         uuid user_id "not null"
         integer version "not null"
     }
+    lab_assembly_jobs ||--o{ lab_assembly_events : "lab_assembly_job_id"
+    lab_analysis_runs o|--o{ lab_assembly_jobs : "lab_analysis_run_id"
+    lab_specimens ||--o{ lab_assembly_jobs : "lab_specimen_id"
+    lab_work_orders ||--o{ lab_assembly_jobs : "lab_work_order_id"
+    lab_assembly_jobs o|--o{ lab_assembly_jobs : "previous_job_id"
     lab_specimens ||--o{ lab_customer_holds : "lab_specimen_id"
     lab_work_orders ||--o{ lab_customer_holds : "lab_work_order_id"
     lab_performance_proposals ||--o| lab_performance_decisions : "id"

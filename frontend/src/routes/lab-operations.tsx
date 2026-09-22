@@ -11,7 +11,9 @@ import { parseStockKitListSearch, type StockKitListSearch } from '#/features/ord
 import { parseKitRequestSearch, type KitRequestListSearch } from '#/features/orders/kit-requests/kit-request-navigation'
 
 export const Route = createFileRoute('/lab-operations')({
-  validateSearch: (search: Record<string, unknown>): StockKitListSearch & KitRequestListSearch & JobListSearch & { section?: LabSection; supplierTab?: SupplierCatalogTab; shipmentId?: string; receiptTab?: LabReceiptTab; configurationTab?: LabConfigurationTab; labStepSearch?: string; labStepRetired?: boolean; labStepPage?: number; returnKitRequestId?: string; supplierSearch?: string; supplierInactive?: boolean; productTypeSearch?: string; productTypeInactive?: boolean } => ({
+  validateSearch: (search: Record<string, unknown>): StockKitListSearch & KitRequestListSearch & JobListSearch & { section?: LabSection; assemblyTab?: 'runs' | 'cases'; assemblySearch?: string; supplierTab?: SupplierCatalogTab; shipmentId?: string; receiptTab?: LabReceiptTab; configurationTab?: LabConfigurationTab; labStepSearch?: string; labStepRetired?: boolean; labStepPage?: number; returnKitRequestId?: string; supplierSearch?: string; supplierInactive?: boolean; productTypeSearch?: string; productTypeInactive?: boolean } => ({
+    assemblyTab: search.assemblyTab === 'cases' ? 'cases' : 'runs',
+    assemblySearch: typeof search.assemblySearch === 'string' ? search.assemblySearch.slice(0, 255) : undefined,
     labStepSearch: typeof search.labStepSearch === 'string' ? search.labStepSearch.slice(0, 255) : undefined,
     labStepRetired: search.labStepRetired === true || search.labStepRetired === 'true' ? true : undefined,
     labStepPage: Number.isInteger(Number(search.labStepPage)) && Number(search.labStepPage) > 0 ? Number(search.labStepPage) : undefined,

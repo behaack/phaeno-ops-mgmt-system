@@ -40,6 +40,10 @@ public sealed class LabInvestigationService(PSeqOperationsDbContext db)
         await Read("libraries", db.LabLibraries.AsNoTracking().Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId).OrderBy(x => x.Id));
         var outputs = await Read("sequencingOutputs", db.LabSequencingOutputs.AsNoTracking().Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId).OrderBy(x => x.RecordedAtUtc).ThenBy(x => x.Id));
         var runs = await Read("analysisRuns", db.LabAnalysisRuns.AsNoTracking().Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId).OrderBy(x => x.RecordedAtUtc).ThenBy(x => x.Id));
+        var assemblyJobs = db.Set<LabAssemblyJob>().AsNoTracking().Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId);
+        await Read("assemblyJobs", assemblyJobs.OrderBy(x => x.RequestedAtUtc).ThenBy(x => x.Id));
+        var assemblyIds = assemblyJobs.Select(x => x.Id);
+        await Read("assemblyEvents", db.Set<LabAssemblyEvent>().AsNoTracking().Where(x => assemblyIds.Contains(x.LabAssemblyJobId)).OrderBy(x => x.RecordedAtUtc).ThenBy(x => x.Id));
         var performanceProposals = await Read("performanceProposals", db.LabPerformanceProposals.AsNoTracking().Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId).OrderBy(x => x.RequestedAtUtc).ThenBy(x => x.Id));
         var proposalIds = db.LabPerformanceProposals.Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId).Select(x => x.Id);
         var performanceDecisions = await Read("performanceDecisions", db.LabPerformanceDecisions.AsNoTracking().Where(x => proposalIds.Contains(x.Id)).OrderBy(x => x.ReviewedAtUtc).ThenBy(x => x.Id));

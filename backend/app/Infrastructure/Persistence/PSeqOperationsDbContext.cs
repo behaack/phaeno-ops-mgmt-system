@@ -565,6 +565,7 @@ public sealed partial class PSeqOperationsDbContext(
         TrialModelConfiguration.Configure(modelBuilder);
         RelationshipManagementModelConfiguration.Configure(modelBuilder);
         LabOperationsModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
+        LabAssemblyModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
         LabPreparationModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
         WebsiteModelConfiguration.Configure(modelBuilder, this.persistenceOptions.WebsiteSchema);
 

@@ -31,7 +31,8 @@ public sealed class LabSequencingRunProgress(PSeqOperationsDbContext db)
             join output in db.LabSequencingOutputs.AsNoTracking() on input.LabSequencingOutputId equals output.Id
             where output.LabWorkOrderId == workId
             select new { input.LabAnalysisRunId, Number = output.SequencingRunNumber ?? 1 }).ToListAsync(ct);
-        return rows.GroupBy(r => r.LabAnalysisRunId).ToDictionary(g => g.Key, g => g.Select(r => r.Number).ToHashSet());
+        return rows.GroupBy(r => r.LabAnalysisRunId).Where(g => g.Select(r => r.Number).Distinct().Count() == 1)
+            .ToDictionary(g => g.Key, g => g.Select(r => r.Number).ToHashSet());
     }
 
     public async Task<Dictionary<Guid, int>> ApprovedCountsAsync(Guid workId, CancellationToken ct)
@@ -46,6 +47,6 @@ public sealed class LabSequencingRunProgress(PSeqOperationsDbContext db)
     }
 
     public static int Count(IEnumerable<Guid?> analyses, IReadOnlyDictionary<Guid, HashSet<int>> runs) =>
-        analyses.Where(id => id.HasValue && runs.ContainsKey(id.Value))
+        analyses.Where(id => id.HasValue && runs.TryGetValue(id.Value, out var allocations) && allocations.Count == 1)
             .SelectMany(id => runs[id!.Value]).Distinct().Count();
 }

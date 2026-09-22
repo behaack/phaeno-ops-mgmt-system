@@ -41,6 +41,8 @@ public sealed class TrialWorkGuard(PSeqOperationsDbContext db, OrderRequestConte
         if (trialIds.Count == 0) { await next(); return; }
         var path = action.HttpContext.Request.Path.Value ?? "";
         var custodyOnly = path.EndsWith("/receipt") || path.EndsWith("/custody-events") || path.EndsWith("/label-print") || path.EndsWith("/exceptions") || path.Contains("/exceptions/");
+        // Stopping an assembly remains possible while its parent is held. The controller still enforces Lab permissions and exact job scope.
+        custodyOnly |= path.Contains("/assembly-jobs/", StringComparison.Ordinal) && path.EndsWith("/cancel", StringComparison.Ordinal);
         var resultOnly = path.Contains("/pseq-results/") || path.EndsWith("/scientific-approval");
         await using var transaction = db.Database.CurrentTransaction is null ? await db.Database.BeginTransactionAsync(token) : null;
         var parents = new List<TrialProject>();

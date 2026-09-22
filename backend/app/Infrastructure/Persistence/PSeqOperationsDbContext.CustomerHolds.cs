@@ -27,6 +27,8 @@ public sealed partial class PSeqOperationsDbContext
                     { if (e.LabSpecimenId is {} id) ongoing.Add(id); }
                     break;
                 case LabAnalysisRun a when added: blocked.Add(a.LabSpecimenId); break;
+                case LabAssemblyJob a when added || entry.Property(nameof(a.DispatchRequestedAtUtc)).IsModified:
+                    blocked.Add(a.LabSpecimenId); break;
                 case LabLibrary l when added: ongoing.Add(l.LabSpecimenId); break;
                 case LabNgsSendout s when added || entry.Property(nameof(s.Status)).IsModified
                     && s.Status is LabNgsSendoutStatus.Shipped or LabNgsSendoutStatus.Sequencing:

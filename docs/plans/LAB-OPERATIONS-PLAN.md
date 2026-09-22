@@ -1,5 +1,9 @@
 # Lab Operations Plan
 
+## Sequencing data assembly runner — endpoint-independent implementation, September 22, 2026
+
+The [sequencing data assembly plan](SEQUENCING-DATA-ASSEMBLY-PLAN.md) records the authorized endpoint-independent implementation: durable attempts and lifecycle evidence, a background runner/provider boundary, transient progress, actual start/stop timestamps, final disposition, POMS queue/detail/sample history and exact-analysis linking. Shared capture/release guards enforce a separate result for each purchased run. The external SignalR adapter, live credentials, real S3 verification and automatic output import remain pending the provider contract. The runtime provider is explicitly unavailable, with dispatch default off; simulation exists only in regression sources. The additive migration is local only, and this is not a production activation claim.
+
 ## Step performance evidence — September 18, 2026
 
 The next traceability slice is implemented locally for individual and preparation step entry. New UI records/repeats require personal confirmation and distinguish Now from Earlier, retaining entered time/offset/precision and a late-entry reason. Corrections preserve the original performer/time and record the correcting user separately. History shows both identities/times, with older omissions labeled unknown. See the [step performance contract](LAB-STEP-PERFORMANCE-CONTRACT.md) for compatibility, no-migration storage, pending policy and validation boundaries. This partially delivers phase 2; provider profiles, performance amendments/on-behalf recording and later investigation/preservation/rollout work remain open.

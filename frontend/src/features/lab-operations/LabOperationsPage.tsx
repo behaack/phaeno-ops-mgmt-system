@@ -56,6 +56,7 @@ import { EquipmentCreateDialog } from './EquipmentCreateDialog'
 import { EquipmentRetirementDialog } from './EquipmentRetirementDialog'
 import { MaterialLotCreateDialog } from './MaterialLotCreateDialog'
 import { LabManufacturingQueue } from './LabManufacturingPage'
+import { DataAssemblyWorkspace } from './AssemblyJobs'
 import { LabReceiptAccessionPanel } from './LabReceiptAccessionPanel'
 import { ProtocolApprovalDialog } from './ProtocolApprovalDialog'
 import { ProtocolIdentityDialog, type ProtocolIdentityFormValues } from './ProtocolIdentityDialog'
@@ -96,13 +97,13 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
   const [localConfigurationTab, setLocalConfigurationTab] = useState<LabConfigurationTab>('steps')
   const configuring = section === 'protocols'
   const activeConfiguration = configurationTab ?? localConfigurationTab
-  const needsDashboard = section !== 'receipt' && section !== 'suppliers' && section !== 'jobs'
+  const needsDashboard = section !== 'receipt' && section !== 'suppliers' && section !== 'jobs' && section !== 'assembly'
   const dashboard = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: apiEnabled && needsDashboard })
   const refresh = () => Promise.all((section === 'suppliers'
     ? ['supplier-product-types', 'supplier-catalog']
     : section === 'receipt'
     ? ['platform-transportation-kit-requests', 'shipping-stock-kits', 'sample-shipping-workflow', 'lab-shipment-queue']
-    : ['lab-operations', 'lab-preparation', 'lab-jobs', 'lab-job-deadline', 'lab-forecast-configuration', 'lab-completion-forecast']).map(key => queryClient.invalidateQueries({ queryKey: [key] })))
+    : ['lab-operations', 'lab-preparation', 'lab-jobs', 'assembly-jobs', 'assembly-job', 'lab-job-deadline', 'lab-forecast-configuration', 'lab-completion-forecast']).map(key => queryClient.invalidateQueries({ queryKey: [key] })))
 
   if (!canView) return <AccessDenied />
 
@@ -141,7 +142,7 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
           {dashboard.data && section === 'work' ? <PreparationBatchList /> : null}
           {dashboard.data && section === 'results' ? <ResultsWorkQueue items={dashboard.data.workOrders.filter((item) => item.status !== 'AwaitingSpecimens')} /> : null}
           {section === 'kits' ? <LabManufacturingQueue workflow="reagent" apiEnabled={apiEnabled} /> : null}
-          {section === 'assembly' ? <LabManufacturingQueue workflow="assembly" apiEnabled={apiEnabled} /> : null}
+          {section === 'assembly' ? <DataAssemblyWorkspace apiEnabled={apiEnabled} /> : null}
           {configuring && activeConfiguration === 'steps' ? <LabStepList /> : null}
           {dashboard.data && configuring && activeConfiguration === 'protocols' ? <ProtocolList actorId={session?.user?.id} canOverride={Boolean(session?.isPlatformAdmin)} protocols={dashboard.data.protocols} canManage={Boolean(session?.capabilities.canManageLabProtocols)} onCreate={() => setCreateKind('protocol')} refresh={refresh} /> : null}
           {dashboard.data && configuring && activeConfiguration === 'workflows' ? <ServiceWorkflowList actorId={session?.user?.id} canOverride={Boolean(session?.isPlatformAdmin)} workflows={dashboard.data.serviceWorkflows} marketedServices={dashboard.data.marketedServices} canManage={Boolean(session?.capabilities.canManageLabProtocols)} refresh={refresh} /> : null}

@@ -1,5 +1,9 @@
 # Frontend Test Plan
 
+## Sequencing assembly workspace — September 22, 2026
+
+`assembly-jobs.test.ts` and `AssemblyJobs.test.tsx` cover fresh versus missing/stale/invalid percentages, final disposition replacing progress, actual elapsed-time formatting and unavailable-provider messaging with Start disabled. Build, TypeScript and touched-file lint checks are the implementation checkpoint; automated test execution remains request-only. Further interaction acceptance covers input/run selection, retry reasons, cancellation/analysis-link dialogs, navigation/search restoration, read-only roles and focus return. The runtime contains no simulated provider or fabricated scientific results.
+
 ## First-time MFA return path - September 21, 2026
 
 `SetupMfaRoute.test.tsx` covers loading, pending MFA, completion with/without a
