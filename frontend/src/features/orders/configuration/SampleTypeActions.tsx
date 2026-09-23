@@ -31,7 +31,7 @@ export function SampleTypeActions({ item, revisions, onCreateRevision }: {
   const future = change && new Date(change.item.effectiveFrom).getTime() > Date.now()
   return <div ref={fallback} tabIndex={-1} aria-label={`${item.name} actions`} className="shrink-0">
     <ActionMenu><DropdownMenuTrigger asChild><Button ref={trigger} type="button" variant="outline">Actions<ChevronDown data-icon="inline-end" /></Button></DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="w-max max-w-[calc(100vw-2rem)]">
         {latest ? <DropdownMenuItem onSelect={() => onCreateRevision(item)}><FilePenLine aria-hidden="true" />Create revision</DropdownMenuItem> : null}
         {hasNotEnded(item) && (latest || item.isActive) ? <DropdownMenuItem variant={item.isActive ? 'destructive' : 'default'} onSelect={() => choose(item, !item.isActive)}>{item.isActive ? 'Deactivate' : 'Activate'}</DropdownMenuItem> : null}
         {earlierActive.map(value => <DropdownMenuItem key={value.id} variant="destructive" onSelect={() => choose(value, false)}>Deactivate revision {value.revision}</DropdownMenuItem>)}

@@ -1,5 +1,13 @@
 # PSeq Order-to-Cash Gap-Closure Plan
 
+## Readable tax-decision label — September 22, 2026
+
+Display NonTaxable as Non-taxable in the Customer billing summary, matching the existing edit-form label. Taxable, Exempt and Not configured remain clear display labels. Preserve the stored enum and API values. Update Phaeno billing help to use the displayed labels. This presentation-only correction needs no new tests; local servers remain stopped.
+
+## Customer billing card action — September 22, 2026
+
+Move Edit billing and tax to the trailing end of the Customer billing card's title row, beside the Customer name. Keep the description below and the billing summary in the body. Retain the existing permission gate, edit dialog and return-focus target. Reviewed Phaeno billing and CRM handoff help; existing navigation and action instructions remain accurate. This presentation-only change needs no new tests. Local servers remain stopped; browser verification and automated suites are not run.
+
 ## Finance list navigation and search — September 19, 2026
 
 Finance uses the shared standard tab bar. Invoice, receipt, and Customer billing lists place a customer-name text search and Clear filter in the shaded, bordered card header. Search matches partial names without case sensitivity and persists in route state across tabs and record navigation. Existing customer-ID links remain supported. Focused regression source covers partial-name filtering, selection and clearing; automated suites remain request-only.

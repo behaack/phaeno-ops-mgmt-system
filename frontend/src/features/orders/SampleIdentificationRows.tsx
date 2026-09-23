@@ -29,6 +29,7 @@ export function SampleIdentificationRows({ order, source, expectedCount, savedCo
   onSaved: (order: LabServiceOrder) => Promise<void>
 }) {
   const { authProvider } = usePhaenoSession()
+  const oneRunPerSample = (order.requestedSequencingRunCount ?? order.requestedSpecimenCount) === order.requestedSpecimenCount
   const remaining = Math.max(0, expectedCount - savedCount)
   const capacity = Math.min(remaining, Math.max(0, order.requestedSpecimenCount - order.samples.length))
   const busy = useRef(false)
@@ -48,7 +49,7 @@ export function SampleIdentificationRows({ order, source, expectedCount, savedCo
         for (const [index, row] of values.rows.entries()) {
           if (!row.customerSampleId) continue
           current = await addLabSample(order.id, { customerSampleId: row.customerSampleId, biologicalSource: source,
-            tubeCount: Number(row.tubeCount), sequencingRunCount: Number(row.sequencingRunCount), orderVersion: current.version })
+            tubeCount: Number(row.tubeCount), sequencingRunCount: oneRunPerSample ? 1 : Number(row.sequencingRunCount), orderVersion: current.version })
           savedIndexes.add(index)
         }
       } catch (error) {
@@ -104,7 +105,7 @@ export function SampleIdentificationRows({ order, source, expectedCount, savedCo
   if (!rowCount) return null
   return <form aria-label={`Identify ${source} samples`} noValidate className="space-y-3 px-3 py-3"
     onChange={() => onDirtyChange(form.getValues('rows').some(hasDraft))} onSubmit={form.handleSubmit(submit)}>
-    <p className="text-xs text-muted-foreground">Enter a unique ID for each sample. One tube and one sequencing run per sample are prefilled. Allocate the purchased runs independently of submitted tubes. Do not enter patient names or identifiers.</p>
+    <p className="text-xs text-muted-foreground">Enter a unique ID for each sample. {oneRunPerSample ? 'Accepted pricing includes one sequencing run per sample; this count is fixed.' : 'Allocate the purchased runs independently of submitted tubes.'} You may send additional tubes as reserve material in case of a failure; extra tubes do not add runs. Do not enter patient names or identifiers.</p>
     {Array.from({ length: rowCount }, (_, index) => {
       const idError = form.formState.errors.rows?.[index]?.customerSampleId?.message
       const tubeError = form.formState.errors.rows?.[index]?.tubeCount?.message
@@ -122,10 +123,12 @@ export function SampleIdentificationRows({ order, source, expectedCount, savedCo
             disabled={disabled || save.isPending} aria-invalid={Boolean(tubeError)} aria-describedby={tubeError ? `${id}-tube-error` : undefined}
             {...form.register(`rows.${index}.tubeCount`)} />
           {tubeError ? <p id={`${id}-tube-error`} className="text-xs text-destructive">{tubeError}</p> : null}</div>
-        <div className="space-y-1"><Label htmlFor={`${id}-runs`}><RequiredFieldName>Runs</RequiredFieldName></Label>
+        {oneRunPerSample ? <div className="space-y-1"><Label htmlFor={`${id}-runs`}>Runs</Label>
+          <output id={`${id}-runs`} aria-label={`Sequencing runs ${savedCount + index + 1} for ${source}`} className="block py-2 text-sm">1</output>
+        </div> : <div className="space-y-1"><Label htmlFor={`${id}-runs`}><RequiredFieldName>Runs</RequiredFieldName></Label>
           <Input id={`${id}-runs`} aria-label={`Sequencing runs ${savedCount + index + 1} for ${source}`} type="number" min={1} max={10000} step={1} defaultValue="1" aria-required="true"
             disabled={disabled || save.isPending} aria-invalid={Boolean(runError)} aria-describedby={runError ? `${id}-run-error` : undefined} {...form.register(`rows.${index}.sequencingRunCount`)} />
-          {runError ? <p id={`${id}-run-error`} className="text-xs text-destructive">{runError}</p> : null}</div>
+          {runError ? <p id={`${id}-run-error`} className="text-xs text-destructive">{runError}</p> : null}</div>}
       </div>
     })}
     {entered > capacity ? <p role="alert" className="text-sm text-destructive">The accepted scope has room for {capacity} more samples. Review these entries before saving.</p> : null}

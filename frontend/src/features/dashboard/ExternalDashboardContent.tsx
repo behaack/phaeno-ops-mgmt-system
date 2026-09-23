@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   ArrowRight,
   FlaskConical,
@@ -19,6 +19,7 @@ import {
   listReagentOrders,
   type OrderListItem,
   type PagedResult,
+  type CustomerLabDashboardView,
 } from '#/api/order-management'
 import { listTrials } from '#/api/trials'
 import { getSampleShipments } from '#/api/sample-shipping'
@@ -35,6 +36,8 @@ import {
   CardTitle,
 } from '#/components/ui/card'
 import { usePhaenoSession } from '#/features/auth/session-context'
+import { CustomerLabRequestsCard } from './CustomerLabRequestsCard'
+import { CustomerDashboardMetrics } from './CustomerDashboardMetrics'
 
 type ExternalDashboardContentProps = {
   membership: SessionMembership | null | undefined
@@ -65,12 +68,13 @@ export function ExternalDashboardContent({
   membership,
 }: ExternalDashboardContentProps) {
   const { authProvider, session, selectedOrganizationId, selectedDepartmentId } = usePhaenoSession()
+  const [requestView, setRequestView] = useState<CustomerLabDashboardView>('active')
   const capabilities = session?.capabilities
   const kind = membership?.organizationKind
   const apiEnabled = authProvider !== 'mock'
   const isCustomer = kind === 'Customer'
   const isPartner = kind === 'Partner'
-  const canViewData = Boolean(capabilities?.canViewOrganizationDatasets)
+  const showDataLibrary = !isCustomer && Boolean(capabilities?.canViewOrganizationDatasets)
   const canViewLab = (isCustomer || isPartner) && Boolean(capabilities?.canViewLabServiceOrders)
   const canViewShipping =
     (kind === 'Prospect' || isCustomer || isPartner) &&
@@ -89,9 +93,9 @@ export function ExternalDashboardContent({
     enabled: apiEnabled && Boolean(capabilities?.canViewTrialProjects),
   })
   const labOrders = useQuery({
-    queryKey: ['dashboard', 'lab-service-orders', selectedOrganizationId],
+    queryKey: ['dashboard', 'lab-service-orders', selectedOrganizationId, selectedDepartmentId],
     queryFn: () => listLabOrders({ page: 1, pageSize: 1 }),
-    enabled: apiEnabled && canViewLab,
+    enabled: apiEnabled && canViewLab && !isCustomer,
   })
   const reagentOrders = useQuery({
     queryKey: ['dashboard', 'reagent-orders', selectedOrganizationId],
@@ -111,7 +115,7 @@ export function ExternalDashboardContent({
   const datasets = useQuery({
     queryKey: ['curated-data', selectedOrganizationId],
     queryFn: listTenantDatasets,
-    enabled: apiEnabled && canViewData,
+    enabled: apiEnabled && showDataLibrary,
   })
 
   if (!membership || !kind || kind === 'Phaeno') {
@@ -138,7 +142,7 @@ export function ExternalDashboardContent({
       isLoading={trials.isLoading} error={Boolean(trials.error)} mock={!apiEnabled} />)
   }
 
-  if (canViewLab) {
+  if (canViewLab && !isCustomer) {
     cards.push(
       <WorkflowCard
         key="lab-services"
@@ -214,7 +218,7 @@ export function ExternalDashboardContent({
     )
   }
 
-  if (canViewData) {
+  if (showDataLibrary) {
     cards.push(
       <WorkflowCard
         key="data-library"
@@ -251,14 +255,19 @@ export function ExternalDashboardContent({
   }
 
   return (
+    <div className="space-y-6">
+    {isCustomer && canViewLab ? <CustomerDashboardMetrics view={requestView} onSelect={setRequestView} /> : null}
     <section aria-labelledby="your-work-heading" className="space-y-4">
-      <div>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
         <h2 id="your-work-heading" className="text-lg font-semibold">
           Your work
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Live activity and starting points for {membership.organizationName}.
         </p>
+        </div>
+        {isCustomer && canViewLab && requestView !== 'active' ? <Button type="button" variant="outline" onClick={() => setRequestView('active')}>All active requests</Button> : null}
       </div>
 
       {!apiEnabled ? (
@@ -270,11 +279,13 @@ export function ExternalDashboardContent({
         </Alert>
       ) : null}
 
+      {isCustomer && canViewLab ? <CustomerLabRequestsCard view={requestView} key={`${selectedOrganizationId}:${selectedDepartmentId}:${requestView}`} /> : null}
+
       {cards.length > 0 ? (
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,20rem),1fr))] gap-4">
           {cards}
         </div>
-      ) : (
+      ) : !(isCustomer && canViewLab) ? (
         <Card className="max-w-2xl border-dashed">
           <CardHeader>
             <CardTitle>No workspace actions available</CardTitle>
@@ -284,8 +295,9 @@ export function ExternalDashboardContent({
             </CardDescription>
           </CardHeader>
         </Card>
-      )}
+      ) : null}
     </section>
+    </div>
   )
 }
 

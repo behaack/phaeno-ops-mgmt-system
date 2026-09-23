@@ -47,6 +47,42 @@ const existingAccessScopeError = {
 }
 
 describe('RequestActionDialog', () => {
+  it.each(['ServiceChange', 'RelationshipChange'] as const)('allows %s completion without notes', async requestType => {
+    const onSubmit = vi.fn()
+    render(<RequestActionDialog action="apply" isPending={false} onOpenChange={vi.fn()}
+      onSubmit={onSubmit} request={{ ...onboardingRequest, requestType, status: 'Approved', organizationId: 'existing-organization' }} />)
+    expect(screen.getByRole('textbox', { name: 'Completed work (optional)' })).toHaveProperty('required', false)
+    expect(screen.getByRole('dialog').querySelector('[data-slot="required-legend"]')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: requestType === 'RelationshipChange' ? 'Apply relationship change' : 'Complete request' }))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ explanation: '', organizationId: 'existing-organization' }))
+  })
+
+  it('still requires a completed organization when completion notes are blank', async () => {
+    const onSubmit = vi.fn()
+    render(<RequestActionDialog action="apply" isPending={false} onOpenChange={vi.fn()}
+      onSubmit={onSubmit} request={{ ...onboardingRequest, status: 'Approved' }} />)
+    expect(screen.getByRole('dialog').querySelector('[data-slot="required-legend"]')).not.toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Complete request' }))
+    await screen.findByText('Select the organization completed from this request.')
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+  it('requires a nonblank reason to cancel and trims the submitted reason', async () => {
+    const onSubmit = vi.fn()
+    render(<RequestActionDialog action="cancel" isPending={false} onOpenChange={vi.fn()}
+      onSubmit={onSubmit} request={onboardingRequest} />)
+    const reason = screen.getByRole('textbox', { name: /Cancellation reason/ })
+    expect(reason).toHaveProperty('required', true)
+    expect(screen.getByRole('dialog').querySelector('[data-slot="required-legend"]')).not.toBeNull()
+    fireEvent.change(reason, { target: { value: '   ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel request' }))
+    await screen.findByText('Record the reason.')
+    expect(onSubmit).not.toHaveBeenCalled()
+    fireEvent.change(reason, { target: { value: '  Customer withdrew the request.  ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel request' }))
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ explanation: 'Customer withdrew the request.', organizationId: undefined }))
+  })
+
   it.each(['Onboarding', 'Evaluation', 'Offboarding', 'ServiceChange'] as const)('allows %s approval without a note', async requestType => {
     const onSubmit = vi.fn()
     render(<RequestActionDialog action="approve" isPending={false}

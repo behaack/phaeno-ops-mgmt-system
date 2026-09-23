@@ -33,9 +33,9 @@ public partial class SampleShippingPostgresTests
         var smallPair = new ContainerCompatibilityRequest(fixture.SampleType.Id, assignment.Id,
             "Synthetic regular ice: 1 kg for this entire container.", "Keep the tubes in the sealed secondary bag.");
         var small = await scope.ContainerCatalog().CreateAsync(new($"PACK-{scope.Suffix}-SMALL", "Synthetic small container", 5,
-            DateTime.UtcNow.AddHours(-1), [smallPair], IsActive: true), default);
+            DateTime.UtcNow.AddHours(-1), [smallPair], IsActive: true, KitContents: await scope.KitContentsAsync(10)), default);
         var large = await scope.ContainerCatalog().CreateAsync(new($"PACK-{scope.Suffix}-LARGE", "Synthetic large container", 20,
-            DateTime.UtcNow.AddHours(-1), [smallPair with { TemperatureControlInstructions = "Synthetic regular ice: 3 kg for this entire container." }], IsActive: true), default);
+            DateTime.UtcNow.AddHours(-1), [smallPair with { TemperatureControlInstructions = "Synthetic regular ice: 3 kg for this entire container." }], IsActive: true, KitContents: await scope.KitContentsAsync(10)), default);
         scope.ClearTrackedState();
         Assert.NotEqual(small.Compatibilities[0].TemperatureControlInstructions, large.Compatibilities[0].TemperatureControlInstructions);
         var source = await scope.DbContext.SampleShipments.SingleAsync(value => value.Id == fixture.Shipment.Id);
@@ -84,7 +84,7 @@ public partial class SampleShippingPostgresTests
         Assert.Equal(409, conflict.StatusCode);
         scope.ClearTrackedState();
         await scope.ContainerCatalog().ReviseAsync(small.Id, new(small.Version, small.CommonName, 5, DateTime.UtcNow,
-            [smallPair with { TemperatureControlInstructions = "Synthetic no cooling required." }], IsActive: true), default);
+            [smallPair with { TemperatureControlInstructions = "Synthetic no cooling required." }], IsActive: true, KitContents: await scope.KitContentsAsync(10)), default);
         scope.ClearTrackedState();
         var persisted = await scope.DbContext.SampleShippingPacketRevisions.AsNoTracking().SingleAsync(value => value.Id == packet.Id);
         Assert.Equal(packet.InstructionSnapshotJson, persisted.InstructionSnapshotJson);

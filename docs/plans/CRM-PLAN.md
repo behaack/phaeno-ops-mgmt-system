@@ -1,5 +1,17 @@
 # First-Party CRM Plan
 
+## September 22, 2026 — Company request completion notes
+
+Completed work is optional; cancellation still requires a reason. Completion keeps
+current readiness checks, confirmation, actor/time and concurrency. The checklist
+distinguishes all-done progress from items needing manual review and emphasizes the
+completion instruction. Scope and acceptance are recorded in
+[Company request work and progress](CRM-REQUEST-WORK-PROGRESS-PLAN.md).
+
+The release documentation review aligns both Company requests and approvals and
+Company access and user administration with optional completion notes, required
+decline/cancellation reasons and automatic completion of access-only requests.
+
 ## September 22, 2026 — Contact directory heading action
 
 The existing **New contact** button now sits at the right end of the **Contact

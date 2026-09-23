@@ -403,6 +403,12 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
             throw new InvalidOperationException("Samples can be changed only after price acceptance and before the sample list is finalized.");
     }
 
+    public void EnsureSampleRunCountMatchesPricing(int count)
+    {
+        if (RequestedSequencingRunCount == RequestedSpecimenCount && count != 1)
+            throw new InvalidOperationException("The accepted pricing includes one sequencing run per sample. Extra tubes do not add runs.");
+    }
+
     public void ConfirmTubeUsePolicy()
     {
         EnsureSampleRosterEditable();

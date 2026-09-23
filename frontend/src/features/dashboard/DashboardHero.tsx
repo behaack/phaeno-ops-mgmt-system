@@ -20,9 +20,11 @@ export function DashboardHero() {
   const eyebrow =
     organizationKind === 'Phaeno'
       ? 'Phaeno operations'
-      : organizationKind
-        ? `${organizationKind} workspace`
-        : 'Organization workspace'
+      : organizationKind === 'Customer'
+        ? 'Customer dashboard'
+        : organizationKind
+          ? `${organizationKind} workspace`
+          : 'Organization workspace'
 
   return (
     <section className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

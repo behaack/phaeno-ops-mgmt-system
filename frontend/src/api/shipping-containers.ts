@@ -4,6 +4,16 @@ import type { SampleShipmentWorkflow } from './sample-shipping'
 type Envelope<T> = { success: boolean; data: T; error: { code: string; message: string } | null }
 
 export type ContainerCompatibility = { sampleTypeDefinitionId: string; instructionRuleId: string; temperatureControlInstructions?: string | null; packingInstructions?: string | null }
+export type ShippingKitContent = {
+  supplierProductId: string
+  supplierId: string
+  supplierName: string
+  productNumber: string
+  productDescription: string
+  productTypeName: string
+  kind: 'ShippingContainer' | 'Tube' | 'Other'
+  quantity: number
+}
 export type ShippingContainerDefinition = {
   id: string
   definitionKey: string
@@ -22,10 +32,11 @@ export type ShippingContainerDefinition = {
   displayOrder: number
   version: number
   compatibilities: ContainerCompatibility[]
+  kitContents?: ShippingKitContent[] | null
 }
 export type ShippingContainerWrite = Pick<ShippingContainerDefinition,
   'commonName' | 'tubeCapacity' | 'supplierName' | 'supplierProductNumber' | 'packingInstructions' |
-  'effectiveFrom' | 'effectiveTo' | 'isActive' | 'displayOrder' | 'compatibilities'>
+  'effectiveFrom' | 'effectiveTo' | 'isActive' | 'displayOrder' | 'compatibilities'> & { kitContents?: Array<{ supplierProductId: string; quantity: number }> }
 export type ContainerQuantity = { containerDefinitionId: string; quantity: number }
 export type ContainerRecommendationRequest = {
   tubeCount: number

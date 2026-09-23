@@ -21,6 +21,18 @@ function fill(label: RegExp | string, value: string, group?: string) { fireEvent
 beforeEach(() => { vi.clearAllMocks(); mocks.catalog.mockReturnValue({ data: supplierCatalogFixture, isPending: false, isError: false, error: null }); mocks.allowed = true; mocks.search = {}; mocks.create.mockResolvedValue(kit); mocks.register.mockResolvedValue(kit); mocks.dispatch.mockResolvedValue({ ...kit, status: 'Fulfilled' }); mocks.list.mockResolvedValue([kit]); mocks.get.mockResolvedValue(kit); mocks.definitions.mockResolvedValue([definition]); mocks.shipments.mockResolvedValue([]) })
 const callbacks = { onClose: vi.fn(), onSaved: vi.fn() }
 describe('standard kit preparation and dispatch', () => {
+  it('shows configured contents and prefills exact tube and container product identities', () => {
+    const kitContents = supplierCatalogFixture.flatMap(supplier => supplier.products.filter(product => product.id === tubeProductId || product.id === shipperProductId).map(product => ({
+      supplierProductId: product.id, supplierId: supplier.id, supplierName: supplier.name, productNumber: product.productNumber,
+      productDescription: product.description, productTypeName: product.productTypeName, kind: product.kind, quantity: product.id === tubeProductId ? 10 : 1,
+    })))
+    mount(<PrepareStandardKitDialog definitions={[{ ...definition, kitContents }]} {...callbacks} />)
+    fill(/Container size/, definition.id)
+    expect(screen.getByRole('list', { name: 'Kit contents' })).toBeTruthy()
+    expect((within(screen.getByRole('group', { name: 'Tubes' })).getByLabelText(/Product name/) as HTMLSelectElement).value).toBe(tubeProductId)
+    expect((within(screen.getByRole('group', { name: 'Shipping Container' })).getByLabelText(/Product name/) as HTMLSelectElement).value).toBe(shipperProductId)
+  })
+
   it('excludes reagents and inactive product types from kit selection', () => {
     mocks.catalog.mockReturnValue({ data: supplierCatalogFixture.map(s => ({ ...s, products: [...s.products.map(p => ({ ...p, productTypeIsActive: false })), { ...s.products[0], id: '83000000-0000-4000-8000-000000000001', kind: 'Other', productTypeName: 'Reagent', productTypeIsActive: true, productNumber: 'REAGENT-1', description: 'Laboratory reagent' }] })), isPending: false, isError: false })
     mount(<PrepareStandardKitDialog definitions={[definition]} {...callbacks} />)

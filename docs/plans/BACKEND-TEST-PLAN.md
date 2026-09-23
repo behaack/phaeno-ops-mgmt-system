@@ -1,5 +1,49 @@
 # Backend Test Plan
 
+## September 22, 2026 — Authorized release regression checkpoint
+
+The owner requested a full database-backed release run. Combined evidence covers **1,046 passing applicable cases and one intentional Windows skip** for the Unix symlink fixture. The full PostgreSQL-enabled run completed 1,047 cases in 15m7s: 1,028 passed, 18 failed and one skipped. A focused 56-case follow-up passed in 2m47s with zero failures/skips; every original failure has a same-name passing result. This is combined evidence, not a single clean full run.
+
+Corrected validation fixtures retain exact assertions: shipping timestamps use PostgreSQL microsecond precision, quoted handoff orders reference the actual active PSeq offering, and persistence checks enumerate all 11 migrations plus the Assembly job/event tables. The final Release solution build has zero warnings/errors and EF reports no model changes after the latest migration. Integration fixtures used isolated loopback databases, which were removed afterward; existing local and production records were untouched. The Unix-only case remains unexecuted because the available Linux environment has no .NET SDK. See the [release record](../operations/shipping-dashboard-release-20260922.md). Earlier unexecuted-suite notes below describe the implementation-time checkpoint and are superseded for current source.
+
+## September 22, 2026 — Shipping kit contents
+
+Regression sources cover multiple supplier products and arbitrary active product types, independent quantities, missing/duplicate/inactive products, empty drafts, and immutable revision labels after catalog changes. Update existing shipping fixtures with explicit contents and cleanup ordering. Compile only; automated execution was not requested.
+
+## September 22, 2026 — Department dashboard metrics
+
+`CustomerDashboardRequestsPostgresTests` covers full attention counts beyond the
+first page, matching list filters, Department isolation and revoked summary
+access. `GovernedResultRetentionPostgresTests` adds completed-Job visibility and
+requires complete verified downloads of every artifact; failures, partial
+completion and missing commit evidence cannot silently clear New results.
+These PostgreSQL regressions are authored but have not been executed.
+
+## September 22, 2026 — Customer dashboard, priced runs and sized tubes
+
+`CustomerDashboardRequestsPostgresTests.cs` adds opt-in coverage for active-only
+paging, pricing priority, tenant/Department boundaries, revoked access and refresh
+after completion. `SampleSequencingRunTests` covers fixed one-per-sample pricing
+and extra reserve tubes through CSV validation. `SampleSubmissionUnitsTests` covers
+plain and sized tubes while excluding volume-only and unsupported units.
+Regression sources are added; automated execution remains request-only.
+
+## September 22, 2026 — Quote notification Job name
+
+The Lab Service quote-issued notice now uses the Job name in its opening sentence
+and retains the order reference on a separate line. No tests added for this copy
+change. Existing quote issuance and notification-recipient coverage remains
+unchanged; automated suites and live email delivery are not run.
+
+## September 22, 2026 — Optional completion notes, required cancellation reasons
+
+`RelationshipManagementDomainTests` covers optional/trimmed completion notes,
+retained completion identity, approval and length validation, omitted DTO notes,
+and blank/oversized cancellation rejection before decision mutation.
+`CrmRequestCompletionPostgresTests` now exercises omitted/blank completion notes
+against current and stale readiness and verifies completion actor/time. Automated
+execution remains request-only; the PostgreSQL cases require the opt-in fixture.
+
 ## September 22, 2026 — Catalog families and unused-item deletion
 
 Catalog family and deletion regression sources: CatalogItemPolicyTests and CatalogOfferingPostgresTests cover explicit family membership independent of names/references, legacy inactive plus specific active offerings, multiple-offering quote identity, active/ever-active/unknown-history deletion protection, and saved configuration references. Controller deletion retains platform-admin checks, version concurrency and restrictive foreign keys. Automated execution remains request-only; sources are compiled. Integration acceptance still includes independent-connection activation/delete and reference/delete races.

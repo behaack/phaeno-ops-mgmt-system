@@ -15,6 +15,8 @@ public partial class SampleShippingPostgresTests
         await using var scope = await ShippingTestScope.CreateAsync();
         var controller = scope.CreateConfigurationController();
         var now = DateTime.UtcNow;
+        // Preserve exact record comparisons across PostgreSQL's microsecond timestamp precision.
+        now = now.AddTicks(-(now.Ticks % 10));
         var destination = await controller.CreateDestination(scope.DestinationRequest(now.AddDays(-3)), default);
         scope.ClearTrackedState();
         var first = await controller.CreateSampleType(scope.SampleTypeRequest(now.AddDays(-2)), default);

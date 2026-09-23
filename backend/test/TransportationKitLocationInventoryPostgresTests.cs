@@ -209,7 +209,7 @@ public partial class SampleShippingPostgresTests
         var location = await scope.CreateTransportationLocationAsync();
         var request = await scope.KitCustomer().Create(fixture.Shipment.Id, new(fixture.Shipment.Version, location.Id, location.Version, [new(size.Id, 1)]), default);
         var kit = await scope.ReadyTransportationKitAsync(size);
-        await scope.ContainerCatalog().ReviseAsync(size.Id, new(size.Version, "Updated wording", 20, DateTime.UtcNow.AddMinutes(-1), size.Compatibilities, IsActive: true), default);
+        await scope.ContainerCatalog().ReviseAsync(size.Id, new(size.Version, "Updated wording", 20, DateTime.UtcNow.AddMinutes(-1), size.Compatibilities, IsActive: true, KitContents: await scope.KitContentsAsync(10)), default);
         scope.ClearTrackedState();
         var dispatched = await scope.KitStaff().Dispatch(request.Id, new(request.Version, [kit.Id], "Carrier", "OLD-REVISION", DateTime.UtcNow), default);
         await scope.KitCustomer().Receive(request.Id, new(dispatched.Request.Version, [kit.Id]), default);

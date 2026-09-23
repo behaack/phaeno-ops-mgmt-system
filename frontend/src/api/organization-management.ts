@@ -444,7 +444,7 @@ export async function completeRelationshipRequestAccountCreation(
 
 export async function applyRelationshipRequest(
   id: string,
-  input: { notes: string; organizationId?: string | null; version: number },
+  input: { notes?: string | null; organizationId?: string | null; version: number },
 ) {
   const response = await api.post<ApiEnvelope<RelationshipRequest>>(
     `/platform/relationships/requests/${id}/applied`,

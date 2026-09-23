@@ -1458,6 +1458,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 var catalogItem = await dbContext.QboCatalogItems
                     .FirstOrDefaultAsync(item => item.IsActive
                         && item.ExternalItemId == OrderServiceKeys.PSeqLabService
+                        && item.ServiceFamily == CatalogServiceFamily.PSeqLabService
                         && item.SalesUnit == OrderSalesUnits.Specimen);
                 var createdCatalogItem = false;
                 if (catalogItem is null)
@@ -1470,7 +1471,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                         100m,
                         "USD",
                         isActive: true,
-                        DateTime.UtcNow);
+                        DateTime.UtcNow,
+                        CatalogServiceFamily.PSeqLabService);
                     dbContext.QboCatalogItems.Add(catalogItem);
                     createdCatalogItem = true;
                 }
@@ -1633,6 +1635,11 @@ public partial class LabOperationsCommercialHandoffPostgresTests
 
         public async Task<QuotedOrderFixture> CreateQuotedOrderAsync(string jobName = "reference-handoff", int specimenCount = 1)
         {
+            var catalogItem = await DbContext.QboCatalogItems.AsNoTracking()
+                .SingleAsync(item => item.IsActive
+                    && item.ExternalItemId == OrderServiceKeys.PSeqLabService
+                    && item.ServiceFamily == CatalogServiceFamily.PSeqLabService
+                    && item.SalesUnit == OrderSalesUnits.Specimen);
             var now = DateTime.UtcNow;
             var order = new LabServiceOrder(
                 CustomerOrganization.Id,
@@ -1656,7 +1663,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 order.Id,
                 1,
                 QuotePurpose.Initial,
-                JsonSerializer.Serialize(new[] { new { catalogItemId = Guid.NewGuid(), externalItemId = OrderServiceKeys.PSeqLabService, description = "PSeq Lab Service", quantity = specimenCount, unitPrice = 100m } }),
+                JsonSerializer.Serialize(new[] { new { catalogItemId = catalogItem.Id, externalItemId = catalogItem.ExternalItemId, description = "PSeq Lab Service", quantity = specimenCount, unitPrice = 100m } }),
                 100 * specimenCount,
                 0,
                 "USD",

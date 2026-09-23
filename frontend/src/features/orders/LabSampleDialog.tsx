@@ -73,6 +73,7 @@ export function LabSampleDialog({
   const canEdit =
     Boolean(session?.capabilities.canCreateLabServiceRequests) && order.canEditSamples
   const apiEnabled = authProvider !== 'mock' && canEdit
+  const oneRunPerSample = (order.requestedSequencingRunCount ?? order.requestedSpecimenCount) === order.requestedSpecimenCount
   const openedDraft = useRef<string | null>(null)
   const draftKey = JSON.stringify([order.id, sample?.id ?? null, sample ? null : biologicalSource ?? ''])
   const form = useForm<SampleFormInput, unknown, SampleValues>({
@@ -102,7 +103,7 @@ export function LabSampleDialog({
         customerSampleId: values.customerSampleId,
         biologicalSource: order.sourceGroups.find(group => normalizeBiologicalSource(group.biologicalSource) === normalizeBiologicalSource(values.biologicalSource))?.biologicalSource ?? values.biologicalSource,
         tubeCount: values.quantity,
-        sequencingRunCount: values.sequencingRunCount,
+        sequencingRunCount: oneRunPerSample ? 1 : values.sequencingRunCount,
         collectionDate: sample?.collectionDate,
         concentration: sample?.concentration,
         notes: sample?.notes,
@@ -205,16 +206,20 @@ export function LabSampleDialog({
                   </select>
                 </Field>
               ) : null}
-              <Field label="Sample-sequencing runs" id={`${formId}-runs`} required
+              {oneRunPerSample ? <div className="space-y-1">
+                <Label htmlFor={`${formId}-runs`}>Sample-sequencing runs</Label>
+                <output id={`${formId}-runs`} className="block text-sm">1</output>
+                <p className="text-xs text-muted-foreground">Fixed by the accepted pricing: one run per sample.</p>
+              </div> : <Field label="Sample-sequencing runs" id={`${formId}-runs`} required
                 description={`Allocate this sample's runs from the ${order.requestedSequencingRunCount ?? order.requestedSpecimenCount} purchased for this Job.`}
                 error={form.formState.errors.sequencingRunCount?.message}>
                 <Input id={`${formId}-runs`} type="number" min={1} max={10000} step={1} inputMode="numeric" disabled={mutation.isPending}
                   aria-invalid={Boolean(form.formState.errors.sequencingRunCount)} aria-describedby={fieldDescriptionIds(`${formId}-runs`, form.formState.errors.sequencingRunCount?.message)} {...form.register('sequencingRunCount')} />
-              </Field>
+              </Field>}
               <Field
                 label="Quantity (tubes)"
                 id={`${formId}-quantity`}
-                description="The number of tubes you will send for this sample."
+                description="You may send extra tubes as reserve material in case of a failure. Extra tubes do not add sequencing runs."
                 required
                 error={form.formState.errors.quantity?.message}
               >

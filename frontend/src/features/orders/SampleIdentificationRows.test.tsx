@@ -33,6 +33,21 @@ function save() { fireEvent.click(screen.getByRole('button', { name: 'Save sampl
 
 beforeEach(() => { vi.resetAllMocks() })
 describe('Expected sample identification rows', () => {
+  it('fixes runs to accepted one-per-sample pricing while allowing extra reserve tubes', async () => {
+    api.add.mockResolvedValue(withSample(order, 'S-1'))
+    show()
+    expect(screen.getByLabelText('Sequencing runs 1 for Human kidney').tagName).toBe('OUTPUT')
+    expect(screen.queryByRole('spinbutton', { name: 'Sequencing runs 1 for Human kidney' })).toBeNull()
+    enter(0, 'S-1')
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Tube count 1 for Human kidney' }), { target: { value: '3' } })
+    save()
+    await waitFor(() => expect(api.add).toHaveBeenCalledWith('job', expect.objectContaining({ tubeCount: 3, sequencingRunCount: 1 })))
+  })
+
+  it('retains allocation for explicitly purchased additional runs', () => {
+    show({ ...order, requestedSequencingRunCount: 5 })
+    expect(screen.getByRole('spinbutton', { name: 'Sequencing runs 1 for Human kidney' })).toBeTruthy()
+  })
   it('displays every expected row with one tube and no persisted placeholders', () => {
     const { dirty } = show()
     expect(screen.getAllByRole('textbox')).toHaveLength(3)

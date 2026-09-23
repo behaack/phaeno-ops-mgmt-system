@@ -77,7 +77,7 @@ test("reviews Portal access in CRM without a separate customer directory", async
   );
   await expectNoSeriousAccessibilityViolations(page, dialog);
   await dialog
-    .getByLabel(/Approval reason/)
+    .getByLabel('Approval note (optional)')
     .fill("Commercial onboarding approved.");
   await dialog
     .getByRole("button", { name: "Approve and enable access" })

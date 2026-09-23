@@ -36,6 +36,25 @@ public static class SampleShippingContainerModelConfiguration
             entity.HasOne<SampleShippingContainerDefinition>().WithMany()
                 .HasForeignKey(item => item.SupersedesDefinitionId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_shipping_container_revision_predecessor");
         });
+        builder.Entity<ShippingKitContent>(entity =>
+        {
+            entity.ToTable("shipping_kit_contents", commercialSchema, table =>
+                table.HasCheckConstraint("ck_shipping_kit_content_quantity", "quantity > 0"));
+            entity.HasKey(item => item.Id);
+            entity.Property(item => item.Kind).HasConversion<string>().HasMaxLength(32);
+            entity.Property(item => item.SupplierName).HasMaxLength(255).IsRequired();
+            entity.Property(item => item.ProductNumber).HasMaxLength(100).IsRequired();
+            entity.Property(item => item.ProductDescription).HasMaxLength(1000).IsRequired();
+            entity.Property(item => item.ProductTypeName).HasMaxLength(255).IsRequired();
+            entity.HasIndex(item => new { item.ContainerDefinitionId, item.SupplierProductId }).IsUnique();
+            entity.HasIndex(item => new { item.ContainerDefinitionId, item.Position }).IsUnique();
+            entity.HasOne<SampleShippingContainerDefinition>().WithMany(item => item.KitContents)
+                .HasForeignKey(item => item.ContainerDefinitionId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<PSeq.Operations.Laboratory.Domain.LabSupplierProduct>().WithMany()
+                .HasForeignKey(item => item.SupplierProductId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<PSeq.Operations.Laboratory.Domain.LabSupplier>().WithMany()
+                .HasForeignKey(item => item.SupplierId).OnDelete(DeleteBehavior.Restrict);
+        });
         builder.Entity<SampleShippingContainerCompatibility>(entity =>
         {
             entity.ToTable("sample_shipping_container_compatibilities", commercialSchema);

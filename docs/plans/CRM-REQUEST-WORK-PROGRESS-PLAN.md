@@ -3,6 +3,36 @@
 Status: implemented; local verification complete, including automatic online-access completion. Requested September 19, 2026.
 Owner: [CRM plan](CRM-PLAN.md).
 
+## September 22 follow-up — Completion feedback and optional notes
+
+For Phaeno staff completing approved Company requests, the owner requested clear
+all-done feedback and removal of the mandatory Completed work narrative. When all
+checklist items are done, the message says so; Needs review instructions appear
+only when review items exist. The instruction **Actions → Complete request to
+record the completed work.** is bold.
+
+The completion dialog labels **Completed work (optional)**. The existing completion
+endpoint accepts omitted, null or blank notes and stores them as null; supplied
+notes are trimmed and limited to 2,000 characters. Completion still rechecks current
+readiness, authorization and request version, and retains actor/time. Manual review
+obligations remain: submitting completion confirms that the work is done. This also
+applies to the existing relationship-change completion action. No persisted-model
+or migration change is needed. The owner explicitly confirmed that **Cancel request**
+must require a reason; cancellation and decline keep their required fields and
+server validation. Invalid cancellation reasons must leave the decision unchanged.
+
+Success: an eligible request can be completed without typing a note; an incomplete
+request remains blocked; cancellation rejects blank reasons; the all-done message
+does not refer to nonexistent review items. Regression sources cover these cases.
+Automated execution and signed-in verification remain deferred. This change does
+not start or stop local servers. User help and living test plans are updated.
+
+Verification: frontend typecheck and scoped lint passed; regenerated help passes
+the consistency check (56 guides, corpus `7a2c3fa4b5dc`); whitespace checks passed.
+The backend solution and regression sources compile with zero warnings/errors in
+an isolated artifacts folder. The normal build output was locked by Visual Studio
+and IIS Express, so no running process was interrupted. Tests were not executed.
+
 ## September 19 follow-up — Department-led administration
 
 Owner-approved scope: an organization administrator is optional. Access-only onboarding and
@@ -88,7 +118,7 @@ requirements are met.
   order creation. Starting the order remains the action that completes the request.
   Other custom work retains explicit manual scope/fulfillment review.
 - Offboarding: review ongoing work, billing, files and retention; verify inactive Company
-  access. Manual review remains an explicit attestation in completion notes.
+  access. Submitting completion confirms that the manual reviews are done; notes are optional.
 - Queries refresh every 15 seconds while visible and on mount/focus/reconnect. Read failures
   disable completion and expose retry; cached success does not conceal a refresh failure.
 - Actions use the shared contextual menu. Request progress is descriptive, not editable
@@ -99,14 +129,14 @@ requirements are met.
 The additive administrator-only GET
 `/api/platform/relationships/requests/{requestId}/completion-readiness` evaluates the
 existing records. The existing completion POST runs the same evaluator again and rejects
-unfinished work with a 409 and specific blockers. The existing request version and notes
-remain required.
+unfinished work with a 409 and specific blockers. The existing request version remains
+required; completion notes are optional.
 
 Minimums: approved request with linked active access (inactive for offboarding); an active
 administrator for onboarding/evaluation; effective Ready source-linked requested entitlements
 at Company or active Department scope; existing Customer PSeq readiness; supported relationship
 conversion; current approved-and-accepted Trial scope for Trial handoffs; exact Customer order
-creation for order handoffs. Manual obligations still require explicit completion notes.
+creation for order handoffs. Manual obligations must be reviewed before confirming completion.
 Access-only onboarding and ordinary Portal evaluation now close automatically under the approved follow-up below. No schema migration, new permission, or identity-lifecycle change.
 
 ## Acceptance and verification

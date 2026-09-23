@@ -140,7 +140,7 @@ public sealed record ApplyPortalIntegrationRequest
 {
     public Guid? OrganizationId { get; init; }
 
-    public required string Notes { get; init; }
+    public string? Notes { get; init; }
     public required long Version { get; init; }
 }
 

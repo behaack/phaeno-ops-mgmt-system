@@ -3,20 +3,25 @@ namespace PhaenoPortal.App.Features.OrderManagement.DTOs;
 public sealed record ContainerCompatibilityRequest(Guid SampleTypeDefinitionId, Guid InstructionRuleId,
     string? TemperatureControlInstructions = null, string? PackingInstructions = null);
 public sealed record ContainerQuantityRequest(Guid ContainerDefinitionId, int Quantity);
+public sealed record ShippingKitContentRequest(Guid SupplierProductId, int Quantity);
+public sealed record ShippingKitContentDto(Guid SupplierProductId, Guid SupplierId, string Kind, int Quantity,
+    string SupplierName, string ProductNumber, string ProductDescription, string ProductTypeName);
 public sealed record DeactivateSampleShippingContainerRequest(long Version);
 public sealed record SampleShippingContainerDefinitionDto(Guid Id, Guid DefinitionKey, string Sku,
     string CommonName, int TubeCapacity, int Revision, Guid? SupersedesDefinitionId, string? SupplierName,
     string? SupplierProductNumber, string? PackingInstructions, DateTime EffectiveFrom, DateTime? EffectiveTo,
     bool IsActive, int DisplayOrder, long Version, IReadOnlyList<ContainerCompatibilityRequest> Compatibilities,
-    DateTime? DeactivatedAt = null);
+    DateTime? DeactivatedAt = null, IReadOnlyList<ShippingKitContentDto>? KitContents = null);
 public sealed record CreateSampleShippingContainerRequest(string Sku, string CommonName, int TubeCapacity,
     DateTime EffectiveFrom, IReadOnlyList<ContainerCompatibilityRequest> Compatibilities,
     string? SupplierName = null, string? SupplierProductNumber = null, string? PackingInstructions = null,
-    DateTime? EffectiveTo = null, bool IsActive = false, int DisplayOrder = 0);
+    DateTime? EffectiveTo = null, bool IsActive = false, int DisplayOrder = 0,
+    IReadOnlyList<ShippingKitContentRequest>? KitContents = null);
 public sealed record ReviseSampleShippingContainerRequest(long Version, string CommonName, int TubeCapacity,
     DateTime EffectiveFrom, IReadOnlyList<ContainerCompatibilityRequest> Compatibilities,
     string? SupplierName = null, string? SupplierProductNumber = null, string? PackingInstructions = null,
-    DateTime? EffectiveTo = null, bool IsActive = false, int DisplayOrder = 0);
+    DateTime? EffectiveTo = null, bool IsActive = false, int DisplayOrder = 0,
+    IReadOnlyList<ShippingKitContentRequest>? KitContents = null);
 public sealed record ContainerPackingPreviewRequest(int TubeCount, IReadOnlyList<ContainerCompatibilityRequest> Contexts,
     IReadOnlyList<ContainerQuantityRequest>? Availability = null, IReadOnlyList<ContainerQuantityRequest>? Selection = null,
     Guid? IncludeDraftDefinitionId = null);

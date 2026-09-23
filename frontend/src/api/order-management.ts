@@ -662,6 +662,14 @@ export async function listLabOrders(
 ) {
   return get<PagedResult<OrderListItem>>("/lab-service-orders", params);
 }
+export type CustomerLabDashboardView = 'active' | 'attention' | 'results';
+export type CustomerLabDashboardSummary = { attentionCount: number; newResultCount: number };
+export async function getCustomerLabDashboardSummary() {
+  return get<CustomerLabDashboardSummary>("/lab-service-orders/dashboard-summary");
+}
+export async function listLabDashboardRequests(page = 1, view: CustomerLabDashboardView = 'active', pageSize = 10) {
+  return get<PagedResult<OrderListItem>>("/lab-service-orders", { page, pageSize, dashboard: true, dashboardView: view });
+}
 export async function getLabServiceOrderingEligibility() {
   return get<LabServiceOrderingEligibility>("/lab-service-orders/eligibility");
 }

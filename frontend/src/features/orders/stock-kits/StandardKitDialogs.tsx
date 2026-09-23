@@ -17,6 +17,7 @@ import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/require
 import { Textarea } from '#/components/ui/textarea'
 import { useOrderDraftGuard } from '../use-order-draft-guard'
 import { containerEffectiveState, localContainerDateTime } from '../configuration/shipping-container-utils'
+import { ShippingKitContents } from '../configuration/ShippingKitContents'
 
 const selectClass = 'h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none'
 const prepareSchema = z.object({ containerDefinitionId: z.string().uuid('Choose an active container size.'), tubeSupplierId: z.string().uuid('Choose a tube supplier.'), tubeSupplierProductId: z.string().uuid('Choose a tube product.'), tubeLotNumber: z.string().trim().max(100), shipperSupplierId: z.string().uuid('Choose a shipping container supplier.'), shipperSupplierProductId: z.string().uuid('Choose a shipping container product.') })
@@ -61,14 +62,21 @@ export function PrepareStandardKitDialog({ definitions, onClose, onSaved }: Edit
       {catalog.isError ? <Button type="button" variant="outline" onClick={() => void catalog.refetch()}>Retry catalog</Button> : null}
       <StockKitField id="stock-container" label="Container size" required error={errors.containerDefinitionId?.message}><select id="stock-container" className={selectClass} {...form.register('containerDefinitionId')} disabled={unavailable} aria-invalid={Boolean(errors.containerDefinitionId)} aria-describedby={errors.containerDefinitionId ? 'stock-container-error' : undefined} onChange={event => {
         const definition = candidates.find(value => value.id === event.target.value)
-        const supplier = suppliers.find(item => item.name.trim().toUpperCase() === definition?.supplierName?.trim().toUpperCase())
-        const product = supplier?.products.find(item => item.isActive && item.productTypeIsActive && item.kind === 'ShippingContainer' && item.productNumber.trim().toUpperCase() === definition?.supplierProductNumber?.trim().toUpperCase())
         form.setValue('containerDefinitionId', event.target.value, { shouldDirty: true, shouldValidate: true })
-        form.setValue('shipperSupplierId', supplier?.id ?? '', { shouldDirty: true, shouldValidate: true })
-        form.setValue('shipperSupplierProductId', product?.id ?? '', { shouldDirty: true, shouldValidate: true })
+        for (const [prefix, kind] of [['tube', 'Tube'], ['shipper', 'ShippingContainer']] as const) {
+          const contents = definition?.kitContents?.filter(item => item.kind === kind) ?? []
+          const configured = contents.length === 1 ? contents[0] : undefined
+          const supplier = configured ? suppliers.find(item => item.id === configured.supplierId)
+            : prefix === 'shipper' && !definition?.kitContents?.length ? suppliers.find(item => item.name.trim().toUpperCase() === definition?.supplierName?.trim().toUpperCase()) : undefined
+          const product = supplier?.products.find(item => item.isActive && item.productTypeIsActive && item.kind === kind
+            && (configured ? item.id === configured.supplierProductId : item.productNumber.trim().toUpperCase() === definition?.supplierProductNumber?.trim().toUpperCase()))
+          form.setValue(`${prefix}SupplierId`, supplier?.id ?? '', { shouldDirty: true, shouldValidate: true })
+          form.setValue(`${prefix}SupplierProductId`, product?.id ?? '', { shouldDirty: true, shouldValidate: true })
+        }
       }}><option value="">Select a configured size</option>{candidates.map(value => <option key={value.id} value={value.id}>{value.commonName} · SKU {value.sku} · {value.tubeCapacity} tubes</option>)}</select></StockKitField>
       {!candidates.length ? <p className="text-sm text-muted-foreground">Activate an approved container size in Order Settings → Sample shipping before preparing stock.</p> : null}
       {selected ? <p className="rounded-md border bg-muted/40 p-3 text-sm">This kit holds {selected.tubeCapacity} tubes. Register all {selected.tubeCapacity} before recording outbound dispatch.</p> : null}
+      {selected?.kitContents?.length ? <section aria-labelledby="prepare-kit-contents" className="rounded-md border p-3"><h3 id="prepare-kit-contents" className="text-sm font-medium">Contents per kit</h3><ShippingKitContents contents={selected.kitContents} /><p className="text-xs text-muted-foreground">Assemble these products and quantities. Record the actual tube and shipping-container products below.</p></section> : null}
       <fieldset className="min-w-0"><legend className="mb-3 text-sm font-medium">Tubes</legend><div className="grid gap-4">{productFields('tube', 'Tube')}<StockKitField id="stock-tubeLotNumber" label="Lot" error={errors.tubeLotNumber?.message}><Input id="stock-tubeLotNumber" disabled={mutation.isPending} aria-invalid={Boolean(errors.tubeLotNumber)} aria-describedby={errors.tubeLotNumber ? 'stock-tubeLotNumber-error' : undefined} {...form.register('tubeLotNumber')} /></StockKitField></div></fieldset>
       <fieldset className="min-w-0"><legend className="mb-3 text-sm font-medium">Shipping Container</legend><div className="grid gap-4">{productFields('shipper', 'ShippingContainer')}</div></fieldset>
       <p className="text-sm text-muted-foreground">Missing a supplier or product? Add it in <Link className="text-primary underline" to="/lab-operations" search={{ section: 'suppliers' }}>Suppliers &amp; Products</Link>, then return to prepare the kit.</p>

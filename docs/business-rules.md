@@ -6,7 +6,9 @@ Online-access approvals (onboarding, evaluation and offboarding) and service-cha
 approvals may omit a reason. Optional notes are retained when supplied. Every
 decline requires a reason; relationship-change and sales-assisted-order approvals
 still require one. The request, decision, reviewer and timestamp are retained even
-when an approval note is absent. Completion and cancellation notes remain required.
+when an approval note is absent. Completed-work notes are optional; completion
+retains its actor and timestamp and still requires the current readiness checks
+and confirmation that the work is done. Cancellation always requires a reason.
 
 ## Company departments before online access
 
@@ -499,3 +501,9 @@ remain separate audited actions.
 ### Repeated sample sequencing
 
 Commercial quantity counts sample-sequencing runs: one sample sequenced twenty times and twenty samples sequenced once both have quantity 20. Physical tubes and preparation attempts do not determine the purchased quantity. A library preparation may provide enough material for multiple runs. For each run, Lab explicitly records a new preparation or use of an existing prepared library, preserving the actual library, source and preparation evidence. Authorized allocations are frozen in the Lab authorization. Additional files, linked replacements after failure and reanalysis retain the purchased run number and count once. Approved and released results must cover all allocated runs before completion and full delivery, respectively. Accepted pricing is immutable.
+
+When the purchased run count equals the accepted sample count, each sample has
+one fixed run during sample identification and editing. Customers may increase
+tube counts to provide reserve material in case of failure; this does not increase
+purchased runs. Explicit additional-run purchases retain allocation of their
+accepted total.

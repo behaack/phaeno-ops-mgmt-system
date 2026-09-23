@@ -98,7 +98,7 @@ const instructions: Record<string, string[]> = {
   'disable-access': [
     'First complete the active-work, billing, files, and retention reviews above with the responsible teams.',
     'Open this Company and use its authorized deactivation action. Review the confirmation for the affected Company before proceeding.',
-    'Return to Work needed and verify Company Portal access is inactive. Historical records remain available for their controlled workflows; record the review outcomes in completion notes.',
+    'Return to Work needed and verify Company Portal access is inactive. Historical records remain available for their controlled workflows.',
   ],
   'trial-outcome': [
     'Open Actions → Open Trial and read the recorded outcome and its reason.',
@@ -153,17 +153,17 @@ const instructions: Record<string, string[]> = {
   'review-work': [
     'Open Actions → Open Order operations and review this Company’s active orders. Also review its linked Trials and other ongoing work in their owning workspaces.',
     'Agree with each responsible team whether the work will finish, be placed on an authorized hold, or be cancelled. Carry out each agreed action in the owning record.',
-    'Record the affected records, decisions, and remaining responsibilities in completion notes when closing this request. This is a manual review item and is not automatically verified.',
+    'Confirm the affected records, decisions, and remaining responsibilities before completing this request. This is a manual review item and is not automatically verified.',
   ],
   'review-obligations': [
     'Have Finance review outstanding invoices, payments, and other commercial obligations for this Company.',
     'Have the responsible operations team review retained results, customer files, and physical materials against the applicable retention and handling requirements.',
-    'Record the agreed disposition and any continuing responsibilities in completion notes. Disabling Portal access does not settle billing or delete retained records.',
+    'Confirm the agreed disposition and any continuing responsibilities before completing this request. Disabling Portal access does not settle billing or delete retained records.',
   ],
   'service-review': [
     'Open the Company and review this request’s approved service scope, affected departments, and effective dates.',
     'Open Services → Entitlements and make the approved permission changes. Review existing permissions before adding new ones, and link the applicable permission to this request where available.',
-    'Verify the saved permissions against the approved scope. Record what changed and the outcome in completion notes; this item requires manual review.',
+    'Verify the saved permissions against the approved scope before completing this request; this item requires manual review.',
   ],
   'order-created': [
     'Open Order operations → Intake and locate this approved Company request. Confirm the Company and linked Opportunity match the intended order.',
@@ -178,7 +178,7 @@ const instructions: Record<string, string[]> = {
   'custom-work': [
     'Open the Company and linked Opportunity. Confirm the agreed deliverables, responsible team, commercial decision, and timing.',
     'Carry out the approved handoff in the workspace that owns the work and record the resulting work reference on the relevant records.',
-    'Once the authorized work for this request is complete, use Complete request and record the outcome in completion notes. This checklist item requires manual review.',
+    'Once the authorized work for this request is complete, use Complete request. You may add completion notes for additional context. This checklist item requires manual review.',
   ],
 }
 

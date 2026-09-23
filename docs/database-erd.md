@@ -15,10 +15,10 @@ The additive [step performance JSON contract](plans/LAB-STEP-PERFORMANCE-CONTRAC
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 138 | 2224 | 354 |
+| `commercial_ops` | 139 | 2235 | 357 |
 | `lab_ops` | 60 | 704 | 109 |
 | `website` | 5 | 51 | 4 |
-| **Total** | **204** | **2981** | **467** |
+| **Total** | **205** | **2992** | **470** |
 
 ## `public` schema
 
@@ -1599,6 +1599,19 @@ erDiagram
         uuid updated_by_user_id "nullable"
         bigint version "not null"
     }
+    shipping_kit_contents {
+        uuid id PK "not null"
+        uuid container_definition_id FK,UK "not null"
+        character_varying_32 kind "not null"
+        integer position UK "not null"
+        character_varying_1000 product_description "not null"
+        character_varying_100 product_number "not null"
+        character_varying_255 product_type_name "not null"
+        integer quantity "not null"
+        uuid supplier_id FK "not null"
+        character_varying_255 supplier_name "not null"
+        uuid supplier_product_id FK,UK "not null"
+    }
     transportation_kit_request_lines {
         uuid id PK "not null"
         uuid container_definition_id FK,UK "not null"
@@ -1631,6 +1644,9 @@ erDiagram
     lab_service_offerings ||--o{ lab_service_sample_types : "lab_service_offering_id"
     sample_type_definitions ||--o{ lab_service_sample_types : "sample_type_definition_id"
     sample_shipping_procedures o|--o{ sample_shipping_procedures : "supersedes_procedure_id"
+    sample_shipping_container_definitions ||--o{ shipping_kit_contents : "container_definition_id"
+    lab_suppliers ||--o{ shipping_kit_contents : "supplier_id"
+    lab_supplier_products ||--o{ shipping_kit_contents : "supplier_product_id"
     sample_shipping_container_definitions ||--o{ transportation_kit_request_lines : "container_definition_id"
     transportation_kit_requests ||--o{ transportation_kit_request_lines : "transportation_kit_request_id"
     users o|--o{ transportation_kit_requests : "created_by_user_id"

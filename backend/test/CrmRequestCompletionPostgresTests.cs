@@ -23,7 +23,7 @@ public sealed partial class CrmCommercialAccessPostgresTests
         scope.Membership.SetOrganizationAdmin(true); await db.SaveChangesAsync();
         Assert.False((await controller.GetRequestCompletionReadiness(request.Id, default)).CanComplete);
         var blocked = await Assert.ThrowsAsync<RelationshipManagementException>(() =>
-            controller.ApplyRequest(request.Id, new() { Version = request.Version, Notes = "Attempt before access" }, default));
+            controller.ApplyRequest(request.Id, new() { Version = request.Version }, default));
         Assert.Equal("request_work_incomplete", blocked.ErrorCode);
         Assert.Equal(PortalIntegrationRequestStatus.Approved, request.Status);
 
@@ -32,12 +32,15 @@ public sealed partial class CrmCommercialAccessPostgresTests
         Assert.True((await controller.GetRequestCompletionReadiness(request.Id, default)).CanComplete);
         membership.Deactivate(); await db.SaveChangesAsync();
         await Assert.ThrowsAsync<RelationshipManagementException>(() =>
-            controller.ApplyRequest(request.Id, new() { Version = request.Version, Notes = "Stale browser completion" }, default));
+            controller.ApplyRequest(request.Id, new() { Version = request.Version, Notes = " " }, default));
         Assert.Equal(PortalIntegrationRequestStatus.Approved,
             (await db.PortalIntegrationRequests.AsNoTracking().SingleAsync(value => value.Id == request.Id)).Status);
         membership.Activate(); await db.SaveChangesAsync();
-        var completed = await controller.ApplyRequest(request.Id, new() { Version = request.Version, Notes = "Administrator access verified" }, default);
+        var completed = await controller.ApplyRequest(request.Id, new() { Version = request.Version }, default);
         Assert.Equal(PortalIntegrationRequestStatus.Applied, completed.Status);
+        Assert.Null(completed.ApplicationNotes);
+        Assert.Equal(scope.Actor.Id, completed.AppliedByUserId);
+        Assert.NotNull(completed.AppliedAt);
     }
 
     [PostgreSqlReferenceFact]

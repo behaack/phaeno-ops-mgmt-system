@@ -581,7 +581,8 @@ public sealed class PlatformLabServiceOrdersController(
                 .Where(item => item.LabServiceOrderId == order.Id && item.ResolvedAt == null).ToListAsync(cancellationToken);
             if (!isChange) foreach (var extension in pendingExtensions) extension.Resolve(quote.Id, now);
             Event(order, previousStatus, order.Status.ToString(), actor.Id, internalNote: PricingDecisionAudit(quote));
-            Notice(order, "lab-quote-issued", "Laboratory quote available", $"Pricing for {order.OrderNumber} is available for review.");
+            Notice(order, "lab-quote-issued", "Laboratory quote available",
+                $"Pricing for {order.CustomerReference} is available for review.\n\nOrder reference: {order.OrderNumber}");
         }
         else
         {

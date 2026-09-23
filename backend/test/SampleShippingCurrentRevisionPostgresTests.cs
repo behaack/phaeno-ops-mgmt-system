@@ -21,7 +21,7 @@ public partial class SampleShippingPostgresTests
         scope.ClearTrackedState();
         var catalog = new SampleShippingContainerCatalogService(scope.DbContext);
         var container = await catalog.CreateAsync(new($"PACK-{scope.Suffix}-FOLLOW", "Current revision test", 5,
-            now.AddDays(-3), [new(first.Id, rule.Id)], IsActive: true), CancellationToken.None);
+            now.AddDays(-3), [new(first.Id, rule.Id)], IsActive: true, KitContents: await scope.KitContentsAsync(10)), CancellationToken.None);
         scope.ClearTrackedState();
         var draft = await controller.CreateSampleType(scope.SampleTypeRequest(now.AddDays(-2), first.Id, first.Version) with { IsActive = false }, CancellationToken.None);
         scope.ClearTrackedState();

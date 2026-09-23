@@ -1,5 +1,9 @@
 # Operations and production-readiness boundary
 
+## Shipping contents and Customer dashboard — September 22, 2026
+
+The [release record](operations/shipping-dashboard-release-20260922.md) covers the pending shipping-kit contents, Department dashboard, sample-entry and CRM guidance release and its verification checkpoint. Production still runs `85fadf139b8953f6293ddb6e59de1ca541b9ac91`; four reviewed database migrations require separate approval before activating the newer API and Portal. The record includes the exact changes, live target, recovery procedure and acceptance boundaries.
+
 ## Company workflows and repeated sequencing — deployed September 19, 2026
 
 The [release record](operations/repeated-sequencing-release-20260919.md) records the latest matching API/Portal source, `268ba93dbacd66b93c3f9f7f434bd2bf8e76d7e9`. All three explicitly approved EF migrations are applied above the rebased baseline. One prepared library can supply multiple purchased runs with explicit preparation choice and preserved run lineage; pricing, approval and delivery count purchased allocations rather than preparation/file counts. Company access/readiness, completed-request search/pagination and shipping/settings improvements are included.

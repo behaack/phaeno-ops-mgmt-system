@@ -82,7 +82,7 @@ public partial class SampleShippingPostgresTests
         var rule = await scope.CreateConfigurationController().CreateInstructionRule(scope.RuleRequest(destination.Id, fixture.SampleType.Id, DateTime.UtcNow.AddDays(-1)), default);
         scope.ClearTrackedState();
         var secondDefinition = await scope.ContainerCatalog().CreateAsync(new($"PACK-{scope.Suffix}-OTHER", "Other destination container", 20,
-            DateTime.UtcNow.AddDays(-1), [new(fixture.SampleType.Id, rule.Id)], IsActive: true), default);
+            DateTime.UtcNow.AddDays(-1), [new(fixture.SampleType.Id, rule.Id)], IsActive: true, KitContents: await scope.KitContentsAsync(10)), default);
         var second = new SampleShipment($"RESET-{scope.Suffix}", fixture.Shipment.OrganizationId, fixture.Shipment.DepartmentId,
             fixture.Shipment.AuthorizationSource, fixture.Shipment.AuthorizationSourceId, fixture.Shipment.AuthorizationReference,
             fixture.Shipment.AuthorizationName, fixture.WorkOrder.Id, destination.Id);

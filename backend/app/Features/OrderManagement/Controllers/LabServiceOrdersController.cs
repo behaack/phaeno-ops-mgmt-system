@@ -50,7 +50,9 @@ public sealed partial class LabServiceOrdersController(
         [FromQuery] Guid? submitterId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 25,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        [FromQuery] bool dashboard = false,
+        [FromQuery] string dashboardView = "active")
     {
         var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, false, cancellationToken);
         page = Math.Max(1, page);
@@ -59,6 +61,20 @@ public sealed partial class LabServiceOrdersController(
             .Where(order => order.OrganizationId == tenant.Organization.Id
                 && order.DepartmentId == tenant.Department.Id
                 && !order.IsDiscarded);
+        if (dashboard && dashboardView is not ("active" or "attention" or "results"))
+            throw Invalid("invalid_dashboard_view", "Choose an available dashboard view.");
+        if (dashboard && dashboardView == "results")
+        {
+            var results = await new CustomerLabDashboardService(dbContext).NewResultsAsync(tenant.Organization.Id, tenant.Department.Id, cancellationToken);
+            var resultOrderIds = results.Select(result => result.LabServiceOrderId!.Value).Distinct().ToArray();
+            query = query.Where(order => resultOrderIds.Contains(order.Id));
+        }
+        else if (dashboard && dashboardView == "attention")
+            query = CustomerLabDashboardService.RequiringAttention(query);
+        else if (dashboard)
+            query = query.Where(order => order.Status != LabServiceOrderStatus.Completed
+                && order.Status != LabServiceOrderStatus.Cancelled
+                && order.Status != LabServiceOrderStatus.Declined);
         if (!string.IsNullOrWhiteSpace(status))
         {
             if (!Enum.TryParse<LabServiceOrderStatus>(status, true, out var parsed))
@@ -77,7 +93,15 @@ public sealed partial class LabServiceOrdersController(
         if (createdTo.HasValue) query = query.Where(order => order.CreatedAt < createdTo.Value);
         if (submitterId.HasValue) query = query.Where(order => order.CreatedByUserId == submitterId.Value);
         var total = await query.CountAsync(cancellationToken);
-        var items = await query.OrderByDescending(order => order.UpdatedAt)
+        var ordered = dashboard
+            ? query.OrderBy(order => order.Status == LabServiceOrderStatus.QuoteIssued ? 0
+                : order.Status == LabServiceOrderStatus.ChangesRequested ? 1
+                : order.Status == LabServiceOrderStatus.DraftRequest ? 2
+                : order.Status == LabServiceOrderStatus.PlacedAwaitingSamples ? 3
+                : order.Status == LabServiceOrderStatus.ResultsAvailable ? 4 : 5)
+                .ThenByDescending(order => order.UpdatedAt).ThenBy(order => order.Id)
+            : query.OrderByDescending(order => order.UpdatedAt).ThenBy(order => order.Id);
+        var items = await ordered
             .Skip((page - 1) * pageSize).Take(pageSize)
             .Select(order => new OrderListItemDto(order.Id, order.OrderNumber, order.Status.ToString(),
                 order.CustomerReference, order.OrganizationId, order.CreatedAt, order.UpdatedAt,
@@ -514,6 +538,7 @@ public sealed partial class LabServiceOrdersController(
         EnsureUniqueSampleId(order, request.CustomerSampleId, sample.Id);
         var source = ResolveRosterSource(order, request.BiologicalSource, sample);
         EnsureRosterSourceCapacity(order, source, sample.Id);
+        Execute(() => order.EnsureSampleRunCountMatchesPricing(request.SequencingRunCount ?? sample.SequencingRunCount));
         Execute(() => sample.UpdateMetadata(request.CustomerSampleId, StandardMaterialType,
             source, request.TubeCount, StandardQuantityUnit,
             order.StorageRequirements, order.SafetyDeclaration, request.CollectionDate, request.Concentration,
@@ -701,7 +726,7 @@ public sealed partial class LabServiceOrdersController(
                 foreach (var sample in newSamples.OrderBy(sample => sample.CreatedAt))
                 {
                     var item = new SampleShipmentItem(shipment.Id, sample.Id, shipping.SampleType.Id,
-                        sample.CustomerSampleId, sample.CustomerSampleId, sample.Quantity, sample.QuantityUnit);
+                        sample.CustomerSampleId, sample.CustomerSampleId, sample.Quantity, shipping.SampleType.QuantityUnit);
                     for (var ordinal = 1; ordinal <= decimal.ToInt32(sample.Quantity); ordinal++)
                         item.TubeSlots.Add(new SampleShipmentTubeSlot(item.Id, ordinal));
                     shipment.Items.Add(item);
@@ -928,6 +953,7 @@ public sealed partial class LabServiceOrdersController(
 
     private static LabSample ToRosterSample(LabServiceOrder order, LabSampleRosterWriteRequest request)
     {
+        Execute(() => order.EnsureSampleRunCountMatchesPricing(request.SequencingRunCount ?? 1));
         ValidateRosterTubeCount(request.TubeCount);
         var sample = new LabSample(order.Id, request.CustomerSampleId, StandardMaterialType,
             ResolveRosterSource(order, request.BiologicalSource), request.TubeCount, StandardQuantityUnit,
@@ -978,16 +1004,18 @@ public sealed partial class LabServiceOrdersController(
         var supportedIds = order.ReadConfiguredSnapshot()?.SupportedSampleTypeIds;
         var sampleTypeQuery = dbContext.SampleTypeDefinitions.AsNoTracking()
             .Where(item => item.IsActive && item.MaterialClass == StandardMaterialType
-                && item.QuantityUnit == StandardQuantityUnit && item.EffectiveFrom <= now
+                && item.EffectiveFrom <= now
                 && (!item.EffectiveTo.HasValue || item.EffectiveTo > now));
         if (supportedIds is not null) sampleTypeQuery = sampleTypeQuery.Where(item => dbContext.SampleTypeDefinitions.Any(anchor =>
             supportedIds.Contains(anchor.Id) && anchor.DefinitionKey == item.DefinitionKey));
-        var sampleTypes = (await sampleTypeQuery.ToListAsync(cancellationToken)).GroupBy(item => item.DefinitionKey)
-            .Select(group => group.OrderByDescending(item => item.Revision).First()).ToList();
+        var sampleTypes = (await sampleTypeQuery.ToListAsync(cancellationToken))
+            .GroupBy(item => item.DefinitionKey)
+            .Select(group => group.OrderByDescending(item => item.Revision).First())
+            .Where(item => SampleSubmissionUnits.IsTubeCount(item.QuantityUnit)).ToList();
         if (sampleTypes.Count != 1)
             throw Conflict("sample_shipping_configuration_required",
                 supportedIds is null
-                    ? "Phaeno must activate exactly one extracted-RNA tube sample type before this sample list can be finalized."
+                    ? "Your sample IDs are saved. Phaeno needs to resolve the extracted-RNA tube sample-type setup before you can finalize this list. Contact Phaeno for help."
                     : "Phaeno must review this service's supported sample-type revision and shipping configuration before this sample list can be finalized.");
         var sampleType = sampleTypes[0];
         var destinations = await dbContext.SampleShippingDestinations.AsNoTracking()

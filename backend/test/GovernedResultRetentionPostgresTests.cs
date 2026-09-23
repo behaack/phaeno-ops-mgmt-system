@@ -27,6 +27,44 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 public sealed class GovernedResultRetentionPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task DashboardNewResultsRemainUntilEveryArtifactHasVerifiedDownloadCompletion()
+    {
+        await using var scope = await Scope.Create();
+        var second = new ResultArtifact(scope.Package.Id, "data", "second.txt", "text/plain", 16, new string('B', 64), $"fixture/{Guid.NewGuid():N}");
+        second.BeginScan(); second.CompleteScan(true, null, DateTime.UtcNow);
+        scope.Db.Add(second);
+        scope.Db.Entry(scope.Package).Property(package => package.ExpectedArtifactCount).CurrentValue = 2;
+        scope.Db.Entry(scope.Order).Property(order => order.Status).CurrentValue = LabServiceOrderStatus.Completed;
+        await scope.Release(DateTime.UtcNow.AddMinutes(-10));
+        var dashboard = new CustomerLabDashboardService(scope.Db);
+        Assert.Equal(1, (await dashboard.ReadAsync(scope.Organization.Id, scope.Order.DepartmentId, default)).NewResultCount);
+        Assert.Equal(0, (await dashboard.ReadAsync(scope.Organization.Id, Guid.NewGuid(), default)).NewResultCount);
+        Assert.Equal(0, (await dashboard.ReadAsync(Guid.NewGuid(), scope.Order.DepartmentId, default)).NewResultCount);
+
+        var started = DateTime.UtcNow.AddMinutes(-2);
+        var failed = OperationalFileDownload.ForPSeqArtifact(Guid.NewGuid(), second.Id, scope.Organization.Id, scope.Actor.Id,
+            scope.Package.Id, started, started.AddMinutes(10), null, null);
+        failed.Complete(OperationalFileDownloadOutcome.Failed, started.AddSeconds(5));
+        var firstDownload = OperationalFileDownload.ForPSeqArtifact(Guid.NewGuid(), scope.Artifact.Id, scope.Organization.Id, scope.Actor.Id,
+            scope.Package.Id, started, started.AddMinutes(10), null, null);
+        firstDownload.Complete(OperationalFileDownloadOutcome.Succeeded, started.AddSeconds(10), countsForReleasedPackageRetention: true);
+        scope.Db.AddRange(failed, firstDownload);
+        AddSyntheticCompletion(scope.Db, firstDownload, firstDownload.CompletedAtUtc!.Value);
+        await scope.Db.SaveChangesAsync();
+        Assert.Equal(1, (await dashboard.ReadAsync(scope.Organization.Id, scope.Order.DepartmentId, default)).NewResultCount);
+
+        var lastDownload = OperationalFileDownload.ForPSeqArtifact(Guid.NewGuid(), second.Id, scope.Organization.Id, scope.Actor.Id,
+            scope.Package.Id, started, started.AddMinutes(10), null, null);
+        lastDownload.Complete(OperationalFileDownloadOutcome.Succeeded, started.AddSeconds(20), countsForReleasedPackageRetention: true);
+        scope.Db.Add(lastDownload);
+        await scope.Db.SaveChangesAsync();
+        await Assert.ThrowsAsync<OrderManagementException>(() => dashboard.ReadAsync(scope.Organization.Id, scope.Order.DepartmentId, default));
+        AddSyntheticCompletion(scope.Db, lastDownload, lastDownload.CompletedAtUtc!.Value);
+        await scope.Db.SaveChangesAsync();
+        Assert.Equal(0, (await dashboard.ReadAsync(scope.Organization.Id, scope.Order.DepartmentId, default)).NewResultCount);
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task GovernedReleaseFreezesOrganizationPolicyAndOneReleaseInstant()
     {
         await using var scope = await Scope.Create();

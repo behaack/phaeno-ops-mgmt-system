@@ -225,13 +225,13 @@ function CommercialOrderRow({
   const workflow = workflowForOrderType(order.orderType)
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 py-4">
-      <div>
+      <div className="min-w-0 flex-1 basis-64">
         <div className="flex flex-wrap items-center gap-2">
           <Link
             to="/order-operations/$workflow/$orderId"
             params={{ workflow, orderId: order.id }}
             search={previous => previous}
-            className="font-medium text-primary hover:underline"
+            className="font-bold text-primary hover:underline"
           >
             {order.reference || order.number}
           </Link>
@@ -248,6 +248,11 @@ function CommercialOrderRow({
         {order.orderType === 'PSeqLabService' && order.proposedUnitPrice != null ? (
           <p className="mt-1 text-xs font-medium text-foreground">
             Price proposed · {formatMoney(order.proposedUnitPrice, order.proposedCurrency ?? 'USD')} per sample-sequencing run
+          </p>
+        ) : null}
+        {order.orderType === 'PSeqLabService' && order.status === 'QuoteInPreparation' ? (
+          <p className="mt-2 text-sm text-foreground">
+            <strong>Next step for Phaeno: Open this Job and select {order.proposedUnitPrice != null ? 'Review and issue quote' : 'Issue quote'} under Commercial control. Review the price and terms, then issue the quote for Customer acceptance.</strong>
           </p>
         ) : null}
       </div>

@@ -29,12 +29,12 @@ import { selectClass, textareaClass } from './OrganizationFormDialog'
 
 export type RequestAction = 'approve' | 'decline' | 'apply' | 'cancel'
 
-const schema = (optionalApprovalNote: boolean) =>
+const schema = (optionalExplanation: boolean) =>
   z.object({
     explanation: z
       .string()
       .trim()
-      .min(optionalApprovalNote ? 0 : 1, 'Record the reason or completed work.')
+      .min(optionalExplanation ? 0 : 1, 'Record the reason.')
       .max(2000),
     organizationId: z.string(),
   })
@@ -67,10 +67,11 @@ export function RequestActionDialog({
     request.requestType === 'Onboarding' || request.requestType === 'Evaluation'
     || request.requestType === 'Offboarding' || request.requestType === 'ServiceChange'
   ))
+  const optionalExplanation = optionalApprovalNote || action === 'apply'
   const form = useForm<Values>({
     defaultValues: { explanation: '', organizationId: '' },
     mode: 'onBlur',
-    resolver: zodResolver(schema(optionalApprovalNote)),
+    resolver: zodResolver(schema(optionalExplanation)),
   })
 
   useEffect(() => {
@@ -161,13 +162,14 @@ export function RequestActionDialog({
             </div>
           ) : null}
           <Label htmlFor="request-action-explanation">
-            {optionalApprovalNote ? 'Approval note (optional)' : <RequiredFieldName>{content.label}</RequiredFieldName>}
+            {optionalApprovalNote ? 'Approval note (optional)' : action === 'apply'
+              ? 'Completed work (optional)' : <RequiredFieldName>{content.label}</RequiredFieldName>}
           </Label>
           <textarea
             id="request-action-explanation"
             className={textareaClass}
             rows={4}
-            required={!optionalApprovalNote}
+            required={!optionalExplanation}
             maxLength={2000}
             aria-invalid={Boolean(form.formState.errors.explanation)}
             aria-describedby={form.formState.errors.explanation ? 'request-action-explanation-error' : undefined}
@@ -179,7 +181,7 @@ export function RequestActionDialog({
             </p>
           ) : null}
         </form>
-        <RequiredDialogFooter showLegend={!optionalApprovalNote}>
+        <RequiredDialogFooter showLegend={!optionalExplanation || (action === 'apply' && !request.organizationId)}>
           <Button
             type="button"
             variant="outline"

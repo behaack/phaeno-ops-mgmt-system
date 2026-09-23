@@ -13,7 +13,7 @@ export async function getSupplierCatalog() { return (await api.get<Envelope<Cata
 export function useSupplierCatalog(enabled = true) { return useQuery({ queryKey: supplierCatalogKey, queryFn: getSupplierCatalog, enabled }) }
 export async function saveSupplier(input: SupplierWrite, id?: string) { return (id ? await api.put<Envelope<CatalogSupplier>>(`${path}/${id}`, input) : await api.post<Envelope<CatalogSupplier>>(path, input)).data.data }
 export async function saveSupplierProduct(supplierId: string, input: ProductWrite, id?: string) { return (id ? await api.put<Envelope<SupplierProduct>>(`${path}/${supplierId}/products/${id}`, input) : await api.post<Envelope<SupplierProduct>>(`${path}/${supplierId}/products`, input)).data.data }
-export function productKindLabel(kind: SupplierProductKind) { return kind === 'Tube' ? 'Tube' : kind === 'ShippingContainer' ? 'Shipping Container' : 'Not used in transportation kits' }
+export function productKindLabel(kind: SupplierProductKind) { return kind === 'Tube' ? 'Tube' : kind === 'ShippingContainer' ? 'Shipping Container' : 'Other product' }
 
 export type ProductType = { id: string; name: string; description: string; kitUse: SupplierProductKind; isActive: boolean; version: number; productCount: number }
 export type ProductTypeWrite = { name: string; description: string; kitUse: SupplierProductKind; isActive: boolean; version?: number }

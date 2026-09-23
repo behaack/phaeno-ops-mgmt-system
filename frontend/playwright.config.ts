@@ -18,7 +18,7 @@ export default defineConfig({
   webServer: {
     // These suites use deterministic sessions and route fixtures, independent of local Clerk/API settings.
     env: { VITE_USE_MOCK_SESSION: 'true', VITE_API_BASE_URL: '/api' },
-    command: `node node_modules/vite/bin/vite.js dev --host 127.0.0.1 --port ${port}`,
+    command: `node node_modules/vite/bin/vite.js dev --mode e2e --host 127.0.0.1 --port ${port}`,
     url: `https://127.0.0.1:${port}`,
     ignoreHTTPSErrors: true,
     reuseExistingServer: !process.env.CI,

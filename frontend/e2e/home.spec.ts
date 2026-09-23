@@ -126,9 +126,9 @@ test('uses Portal branding in an external organization context', async ({ page }
   await expect(page.getByText('Partner links', { exact: true })).toHaveCount(0)
   await expect(
     page.getByRole('link', { name: 'Open Data Library' }),
-  ).toBeVisible()
+  ).toHaveCount(0)
   await expect(
-    page.getByRole('link', { name: 'Open lab services' }),
+    page.getByRole('link', { name: 'View all lab services' }),
   ).toBeVisible()
   await expect(
     page.getByRole('link', { name: 'Open sample shipping' }),

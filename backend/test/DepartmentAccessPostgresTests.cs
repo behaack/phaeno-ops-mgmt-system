@@ -22,7 +22,7 @@ using PSeq.Operations.Commercial.Relationships.Domain;
 using UglyToad.PdfPig;
 
 [Collection(PostgreSqlReferenceCollection.Name)]
-public sealed class DepartmentAccessPostgresTests
+public sealed partial class DepartmentAccessPostgresTests
 {
     [PostgreSqlReferenceFact]
     public async Task DepartmentReferencesAreGeneratedWithoutCodeAndRetainInactiveReservations()

@@ -1,5 +1,59 @@
 # Playwright E2E Test Plan
 
+## September 22, 2026 — Authorized release regression checkpoint
+
+All **184 applicable browser cases have passing evidence** across the full run and focused follow-ups; two mobile print cases remain intentionally skipped. The full 186-case run recorded 178 passed, 3 failed, 3 flaky and 2 skipped. Follow-ups then passed without retries: 22 corrected home/Customer/change-quote cases, 2 Department-history cases, and 16 cancellation/scientific-capture cases. This is combined evidence, not a single clean full run.
+
+Fixtures now include the accepted initial offering for change quotes and use the current optional approval-note and dashboard-link labels. Playwright starts Vite with `--mode e2e` so its existing mode-specific cache is separate from the user's running Portal; the Department-history console check passed after that isolation. Mock sessions, synthetic records and role fixtures do not establish live provider, physical/scientific or signed-in hosted acceptance. See the [release record](../operations/shipping-dashboard-release-20260922.md). Earlier notes below retain their historical implementation-time status.
+
+## September 22, 2026 — Shipping kit contents
+
+Signed-in local form inspection verified adding rows, choosing products from separate suppliers, independent quantities and removal with focus returning to Add product. The temporary unsaved draft was dismissed without saving a revision. Screenshot capture timed out and a viewport override did not take effect; narrow-screen visual acceptance remains open. Persistence/reload, inactive catalog failures and frozen revision history have regression sources; automated execution was not requested. Local API rebuild/restart is required to load the new save behavior.
+
+## September 22, 2026 — Customer dashboard card removal
+
+Update the existing external Customer home scenario to expect no Open Data
+Library card link. The navigation destination remains available. Automated
+execution is deferred because tests were not requested for this presentation change.
+
+## September 22, 2026 — Customer dashboard metrics
+
+Signed-in local browser verification: MD Anderson / Department of Cancer Biology
+shows 2 Items requiring attention and 0 New results above Your work. Selecting
+New results shows the empty results state; selecting attention shows both Jobs;
+All active requests restores the original list. Desktop screenshot reviewed.
+The narrow-screen capture stacks metrics legibly with no horizontal overflow
+(observed layout width 381px); the temporary viewport override was restored.
+No Job, result or download was changed. Nonzero result-download completion cases
+are covered by new regression sources but were not executed. No deployment.
+
+## September 22, 2026 — Dashboard actions and sample identification
+
+Local signed-in read-only verification showed both MD Anderson requests by Job
+name with separate pricing links. The MDA Demonstration Job link opened its own
+quote and Accept/Decline controls. After the owner's acceptance, the dashboard
+showed Brain cancer project with Review pricing and the MDA Job with Continue
+samples and shipping. No quote or roster was changed by this verification.
+The API then stopped responding on localhost:44399, preventing the second link
+and further responsive/roster checks. Browser screenshot capture also timed out;
+no visual-comparison pass is claimed. The existing server was not restarted.
+
+Pending: verify fixed Runs = 1 and editable reserve-tube counts in entry/edit;
+finalize the owner's five-sample roster with its active 20 µL tube definition;
+check the resulting shipment unit and packing instructions. Finalization remains
+an explicit owner action. Backend build, frontend typecheck, scoped lint and
+generated-help consistency passed. Automated suites were not executed.
+
+## September 22, 2026 — Company request completion and cancellation
+
+Pending signed-in acceptance: all-done requests show the all-done message and bold
+completion instruction without a Needs review reminder. Manual-review requests
+retain that reminder. Complete an eligible request with blank Completed work and
+verify actor/time in history; current readiness must still reject stale completion.
+Cancel request must reject blank/whitespace reasons and retain the request until a
+reason is supplied and confirmed. Closing either dialog makes no change. Automated
+suites were not run; this change does not start or stop local servers.
+
 ## September 22, 2026 — Catalog families and unused-item deletion
 
 Local signed-in checkpoint: saved RNA family classification without changing

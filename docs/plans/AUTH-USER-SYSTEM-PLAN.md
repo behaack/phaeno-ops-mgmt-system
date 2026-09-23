@@ -1,5 +1,11 @@
 # Auth and User System Plan
 
+## September 22, 2026 - Customer dashboard label
+
+The Customer home-page badge now reads **Customer dashboard**. This is a display
+label change only. Reviewed Customer getting-started help, which already calls
+this page Dashboard; no guide update or new tests are needed.
+
 ## September 22, 2026 - Invitation setup completes at home
 
 The owner reported that completing email/account setup and required 2FA returns

@@ -10,6 +10,72 @@ public class RelationshipManagementDomainTests
 {
     private static readonly DateTime Now = new(2026, 7, 15, 12, 0, 0, DateTimeKind.Utc);
 
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData("", null)]
+    [InlineData("   ", null)]
+    [InlineData("  Service configured.  ", "Service configured.")]
+    public void CompletionNotesAreOptionalAndRetainCompletionIdentity(string? notes, string? expectedNotes)
+    {
+        var actor = Guid.NewGuid();
+        var request = CreateRequest(Guid.NewGuid(), []);
+        request.Decide(true, null, actor, Now);
+        request.MarkApplied(notes, actor, Now.AddMinutes(1));
+        Assert.Equal(PortalIntegrationRequestStatus.Applied, request.Status);
+        Assert.Equal(expectedNotes, request.ApplicationNotes);
+        Assert.Equal(actor, request.AppliedByUserId);
+        Assert.Equal(Now.AddMinutes(1), request.AppliedAt);
+    }
+
+    [Fact]
+    public void CompletionStillRequiresApprovalAndRejectsOversizedNotesBeforeChangingState()
+    {
+        var actor = Guid.NewGuid();
+        var request = CreateRequest(Guid.NewGuid(), []);
+        Assert.Throws<InvalidOperationException>(() => request.MarkApplied(null, actor, Now));
+        request.Decide(true, null, actor, Now);
+        Assert.Throws<ArgumentException>(() => request.MarkApplied(new string('x', 2001), actor, Now));
+        Assert.Equal(PortalIntegrationRequestStatus.Approved, request.Status);
+        Assert.Null(request.AppliedByUserId);
+        Assert.Null(request.AppliedAt);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CancellationRequiresAReasonBeforeChangingState(bool approved)
+    {
+        var actor = Guid.NewGuid();
+        var request = CreateRequest(Guid.NewGuid(), []);
+        if (approved) request.Decide(true, "Approved", actor, Now);
+        var previousStatus = request.Status;
+        var previousReason = request.DecisionReason;
+        var previousReviewer = request.ReviewedByUserId;
+        var previousReviewedAt = request.ReviewedAt;
+        foreach (var reason in new[] { "", "   ", new string('x', 2001) })
+        {
+            Assert.Throws<ArgumentException>(() => request.Cancel(reason, actor, Now.AddMinutes(1)));
+            Assert.Equal(previousStatus, request.Status);
+            Assert.Equal(previousReason, request.DecisionReason);
+            Assert.Equal(previousReviewer, request.ReviewedByUserId);
+            Assert.Equal(previousReviewedAt, request.ReviewedAt);
+        }
+        request.Cancel("  Customer withdrew the request.  ", actor, Now.AddMinutes(1));
+        Assert.Equal(PortalIntegrationRequestStatus.Cancelled, request.Status);
+        Assert.Equal("Customer withdrew the request.", request.DecisionReason);
+        Assert.Equal(actor, request.ReviewedByUserId);
+        Assert.Equal(Now.AddMinutes(1), request.ReviewedAt);
+    }
+
+    [Fact]
+    public void CompletionPayloadMayOmitNotes()
+    {
+        var input = System.Text.Json.JsonSerializer.Deserialize<ApplyPortalIntegrationRequest>(
+            """{"version":1}""", new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web))!;
+        Assert.Null(input.Notes);
+        Assert.Equal(1, input.Version);
+    }
+
     [Fact]
     public void DirectOrganizationCreationStillDefaultsOrderingAuthorizationOn()
     {

@@ -83,17 +83,18 @@ public sealed class PortalIntegrationRequest : IAudit, IConcurrency
         DecisionReason = decisionReason;
     }
 
-    public void MarkApplied(string notes, Guid actorUserId, DateTime utcNow)
+    public void MarkApplied(string? notes, Guid actorUserId, DateTime utcNow)
     {
         if (Status != PortalIntegrationRequestStatus.Approved)
         {
             throw new InvalidOperationException("Only an approved request can be marked applied.");
         }
 
+        var applicationNotes = RelationshipText.Optional(notes, 2000);
         Status = PortalIntegrationRequestStatus.Applied;
         AppliedByUserId = actorUserId;
         AppliedAt = utcNow;
-        ApplicationNotes = RelationshipText.Required(notes, nameof(notes), 2000);
+        ApplicationNotes = applicationNotes;
     }
 
     public void AssociateOrganization(Guid organizationId)
@@ -118,10 +119,11 @@ public sealed class PortalIntegrationRequest : IAudit, IConcurrency
             throw new InvalidOperationException("This request can no longer be cancelled.");
         }
 
+        var cancellationReason = RelationshipText.Required(reason, nameof(reason), 2000);
         Status = PortalIntegrationRequestStatus.Cancelled;
         ReviewedByUserId = actorUserId;
         ReviewedAt = utcNow;
-        DecisionReason = RelationshipText.Required(reason, nameof(reason), 2000);
+        DecisionReason = cancellationReason;
     }
 
     public void MarkCreated(DateTime utcNow, Guid? actorUserId)

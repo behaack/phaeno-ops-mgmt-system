@@ -38,9 +38,9 @@ An authorized reviewer owns those consequences in the destination workflow. Onli
 
 The Requests queue stays within CRM, with **CRM** selected in the main navigation and **Requests** selected in the sidebar. Older saved Requests links open the same queue and retain the selected request and queue tab.
 
-Open CRM's central **Requests** section to review onboarding, evaluation, products and services, relationship, work, or offboarding requests. Use **Needs decision** for pending review, **Approved / needs work** for fulfillment and access recovery, and **Completed / history** for finished decisions. The Company's **Requests** tab keeps history and links both pending and approved items to the same queue. Access-only onboarding and Portal evaluation complete automatically once Company access is active and an organization administrator or an administrator of an active Department has accepted access. For requests with additional work, perform that work, then select **Complete request** and record what was completed. For an approved relationship change, **Apply Customer relationship** or **Apply Partner relationship** performs the Prospect conversion and completes the request in one action. Open **Order operations** for custom-work or order-intake review when the request is applicable there. Keep CRM Activities and Tasks focused on commercial follow-up; record each decision in its owning workflow.
+Open CRM's central **Requests** section to review onboarding, evaluation, products and services, relationship, work, or offboarding requests. Use **Needs decision** for pending review, **Approved / needs work** for fulfillment and access recovery, and **Completed / history** for finished decisions. The Company's **Requests** tab keeps history and links both pending and approved items to the same queue. Access-only onboarding and Portal evaluation complete automatically once Company access is active and an organization administrator or an administrator of an active Department has accepted access. For requests with additional work, perform that work, then select **Complete request** to confirm completion. For an approved relationship change, **Apply Customer relationship** or **Apply Partner relationship** performs the Prospect conversion and completes the request in one action. Open **Order operations** for custom-work or order-intake review when the request is applicable there. Keep CRM Activities and Tasks focused on commercial follow-up; record each decision in its owning workflow.
 
-Approving **Online access** (onboarding, evaluation or offboarding) or a **Service change** does not require a reason. Use **Approval note (optional)** if you want to retain additional context. Every **Decline request** requires a reason. Relationship-change and sales-assisted-order approvals still require a reason. The decision history retains who reviewed the request and when, even without an approval note. Cancellation reasons and completion notes remain required.
+Approving **Online access** (onboarding, evaluation or offboarding) or a **Service change** does not require a reason. Use **Approval note (optional)** if you want to retain additional context. Every **Decline request** and **Cancel request** requires a reason. Relationship-change and sales-assisted-order approvals still require a reason. The decision history retains who reviewed the request and when, even without an approval note. **Completed work (optional)** can be left blank when completing a request or applying an approved relationship change; completion still records who completed it and when.
 
 ### Follow the work checklist
 
@@ -69,6 +69,10 @@ The message below the checklist points back to the remaining **Work needed** ite
 **Work needed** for the next progress refresh. Resolved readiness blockers leave the list;
 when readiness passes, **Complete Customer operational readiness** shows **Done**.
 
+When all checklist items are done, the message says **All checklist items are complete**
+and highlights **Actions → Complete request to record the completed work.** A reminder
+to finish items marked **Needs review** appears only when those items are present.
+
 Use the request's **Actions** menu to open the owning workspace, apply a relationship change,
 complete access enablement, record completion where needed, or cancel. Access-only onboarding and ordinary Portal evaluation have no **Complete request** action: acceptance records completion automatically and moves the request to **Completed / history**. If active administrator access already exists, approval completes the request immediately. Trial Projects retain their separate scope and acceptance requirements. For other requests, **Complete request** is disabled until
 the displayed minimum requirements pass. The server checks them again when you submit, so a
@@ -81,13 +85,15 @@ previously open page cannot rely on outdated approval, access, or entitlement st
 | Products and services | Apply the approved entitlement in Company Services → Entitlements, link this request as its source, and complete configuration and effective dates. A future start date remains Waiting. Customer PSeq requests also show the existing operational-readiness blockers. |
 | Relationship change | Review the requested Customer or Partner relationship, then use the corresponding Apply action. It performs the supported Prospect conversion and records completion together. |
 | Customer order handoff | Resolve the displayed order-start blockers, then start the Customer order from this handoff in Order operations Intake. Creating the linked order completes the request. |
-| Other custom work | Review the Company and Opportunity, document the agreed scope and commercial decision, and carry out the approved work in its owning workflow. Record the outcome in completion notes. |
+| Other custom work | Review the Company and Opportunity, document the agreed scope and commercial decision, and carry out the approved work in its owning workflow. Add completion notes if useful. |
 | Offboarding | Review active work, billing, files and retention obligations with their owners, then disable Company access. Existing work and historical records are retained for their own controlled workflows. |
 
-Items marked **Needs review** cannot be verified automatically. Complete those reviews and record
-their outcome in the required completion notes. The minimum-requirements check does not attest
-that a person reviewed operational, billing, or retention obligations. For requests requiring manual closeout, after all work is done,
-use **Actions → Complete request**; completion does not send invitations or configure services.
+Items marked **Needs review** cannot be verified automatically. Complete those reviews
+before confirming completion. The minimum-requirements check does not attest that a person
+reviewed operational, billing, or retention obligations. For requests requiring manual
+closeout, after all work is done, use **Actions → Complete request**. Submitting confirms
+the work is complete; the **Completed work (optional)** note is available for additional
+context. Completion does not send invitations or configure services.
 
 For Customer PSeq Lab Service, a Won Opportunity can create a dedicated **Customer order handoff** from its detail page. After Company request review approves the request and confirms the active Company operational scope, Ready ordering entitlement, available service offering, and no manual operational block, **Start Customer order** appears in both the Opportunity and Order intake. An online Customer administrator is not required to begin pricing, but every non-billing readiness item and an active administrator are required before the quote can be issued. Billing readiness may be completed after acceptance and must be complete before invoicing. Starting the order creates one order, marks the request Applied in the same transaction, and links both records. Open the resulting order from either surface. Create a separate reviewed handoff when the same Opportunity legitimately produces another order; never retry by creating a duplicate handoff.
 

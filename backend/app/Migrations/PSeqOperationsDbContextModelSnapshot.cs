@@ -9744,6 +9744,81 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("sample_type_definitions", "commercial_ops");
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.ShippingKitContent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ContainerDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("container_definition_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("kind");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer")
+                        .HasColumnName("position");
+
+                    b.Property<string>("ProductDescription")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("product_description");
+
+                    b.Property<string>("ProductNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("product_number");
+
+                    b.Property<string>("ProductTypeName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("product_type_name");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
+
+                    b.Property<Guid>("SupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<string>("SupplierName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("supplier_name");
+
+                    b.Property<Guid>("SupplierProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_product_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SupplierId");
+
+                    b.HasIndex("SupplierProductId");
+
+                    b.HasIndex("ContainerDefinitionId", "Position")
+                        .IsUnique();
+
+                    b.HasIndex("ContainerDefinitionId", "SupplierProductId")
+                        .IsUnique();
+
+                    b.ToTable("shipping_kit_contents", "commercial_ops", t =>
+                        {
+                            t.HasCheckConstraint("ck_shipping_kit_content_quantity", "quantity > 0");
+                        });
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.TransportationKitRequest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -18671,6 +18746,27 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.ShippingKitContent", b =>
+                {
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerDefinition", null)
+                        .WithMany("KitContents")
+                        .HasForeignKey("ContainerDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplier", null)
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplierProduct", null)
+                        .WithMany()
+                        .HasForeignKey("SupplierProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.TransportationKitRequest", b =>
                 {
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
@@ -20343,6 +20439,8 @@ namespace PSeq.Operations.Api.Migrations
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerDefinition", b =>
                 {
                     b.Navigation("Compatibilities");
+
+                    b.Navigation("KitContents");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerType", b =>

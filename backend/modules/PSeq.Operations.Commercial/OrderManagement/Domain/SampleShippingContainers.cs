@@ -47,6 +47,7 @@ public sealed class SampleShippingContainerDefinition : IAudit, IConcurrency
     public Guid? UpdatedByUserId { get; private set; }
     public long Version { get; private set; } = 1;
     public ICollection<SampleShippingContainerCompatibility> Compatibilities { get; private set; } = [];
+    public ICollection<ShippingKitContent> KitContents { get; private set; } = [];
     private SampleShippingContainerDefinition() { }
 
     public SampleShippingContainerDefinition(Guid containerTypeId, int revision, Guid? supersedesDefinitionId,

@@ -27,6 +27,8 @@ export function CrmRequestCard({ request, isPending, onAction, onRecover }: {
       : request.requestType === 'Offboarding' ? 'Review Company offboarding' : 'Review Company setup'
   const completionAllowed = !work.isPending && !work.isError && work.completion?.canComplete === true
   const verified = work.steps.filter(step => step.status === 'done').length
+  const allItemsComplete = work.steps.length > 0 && verified === work.steps.length
+  const needsReview = !work.isPending && !work.isError && work.steps.some(step => step.status === 'review')
 
   return (
     <article className="rounded-lg border p-4" aria-label={request.candidateOrganizationName + ' request ' + request.requestNumber}>
@@ -139,14 +141,18 @@ export function CrmRequestCard({ request, isPending, onAction, onRecover }: {
                 : 'Once Company access is enabled and an administrator has accepted access, this request moves to Completed / history automatically.'}</p>
             : completionAllowed ? <p>{relationship
               ? 'Minimum requirements met. Use Actions to apply the approved relationship change.'
-              : 'Minimum requirements met. Finish any items marked Needs review, then use Actions → Complete request to record the completed work.'}</p>
+              : <>{allItemsComplete
+                ? 'All checklist items are complete. Use '
+                : needsReview
+                  ? 'Minimum requirements met. Finish the items marked Needs review, then use '
+                  : 'Minimum requirements met. Use '}<strong>Actions → Complete request to record the completed work.</strong></>}</p>
               : <p>Complete the remaining Work needed items above to finish this request.</p>}
         </div>
         {work.completionFailed ? <div role="alert" className="space-y-2 text-sm">
           <p>Access is ready, but automatic completion could not be recorded. Progress will retry on refresh.</p>
           <Button variant="outline" size="sm" onClick={() => { void work.refetch() }}>Retry completion</Button>
         </div> : null}
-        <p className="text-xs text-muted-foreground">Progress updates every 15 seconds while this page is open and when you return.{automatic ? '' : ' Items marked Needs review require your confirmation in completion notes.'}</p>
+        <p className="text-xs text-muted-foreground">Progress updates every 15 seconds while this page is open and when you return.{!automatic && needsReview ? ' Review the items marked Needs review before completing this request.' : ''}</p>
       </section> : null}
     </article>
   )

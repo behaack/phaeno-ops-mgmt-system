@@ -8,6 +8,16 @@ Customers and Phaeno staff can purchase multiple sequencing runs of the same ide
 
 ## Implementation
 
+September 22 clarification: when purchased runs equal accepted sample count,
+sample entry and Edit sample show a fixed one run per sample, enforced on API
+writes. Physical tube counts stay editable for reserve material after failure.
+Jobs explicitly purchasing additional runs retain allocation of that fixed total.
+Regression sources cover fixed runs, reserve tubes and retained additional-run
+allocation; their new cases have not been executed in this change.
+Customer and Partner Lab services help both describe fixed single-run scope,
+reserve tubes and the optional `sequencing_runs` CSV column; the shared entry and
+edit components enforce the same behavior for both audiences.
+
 - [x] Add an optional requested run total to the Job profile and a positive run allocation to each sample, defaulting to one. Roster finalization verifies allocation equals the purchased total.
 - [x] Price configured/manual orders and proposed prices by run total. Freeze both sample and run totals in commitments. Preserve additional-sample amendments and legacy defaults.
 - [x] Carry per-sample run allocations in laboratory authorization. Allow subsequent successful runs up to the authorized count, retaining attempt/result lineage and physical material guards. Do not complete the specimen before all allocated runs succeed or an explicit terminal failure is recorded.

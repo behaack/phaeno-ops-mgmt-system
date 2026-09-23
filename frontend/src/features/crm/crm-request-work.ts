@@ -37,9 +37,9 @@ export function buildRequestWork(request: RelationshipRequest, facts: RequestWor
 
   if (request.requestType === 'Offboarding') {
     add('review-work', 'Review active orders and ongoing work', 'review',
-      'Arrange completion, an authorized hold, or cancellation in Order operations and the owning workspace. Record the outcome in completion notes.')
+      'Arrange completion, an authorized hold, or cancellation in Order operations and the owning workspace.')
     add('review-obligations', 'Review billing, files, and retention obligations', 'review',
-      'Confirm outstanding billing and the approved handling of retained files and materials with the responsible teams. Record the outcome in completion notes.')
+      'Confirm outstanding billing and the approved handling of retained files and materials with the responsible teams.')
     add('disable-access', 'Disable Company Portal access', summary && !summary.isActive ? 'done' : 'todo',
       summary && !summary.isActive
         ? 'Company Portal access is inactive. Historical records are retained.'
@@ -124,7 +124,7 @@ export function buildRequestWork(request: RelationshipRequest, facts: RequestWor
     }
     if (!request.requestedServices.length) {
       add('service-review', 'Apply and verify the approved service change', 'review',
-        'Review the request’s scope in Company Services, including affected services, Departments, and dates. Record the changes in completion notes.')
+        'Review the request’s scope in Company Services, including affected services, Departments, and dates.')
     }
     if (readiness) {
       if (readiness.state === 'Ready') {
@@ -171,7 +171,7 @@ export function buildRequestWork(request: RelationshipRequest, facts: RequestWor
           : 'Open Order operations → Intake, select this approved handoff, and start the Customer order. Order creation also completes the request.')
     } else {
       add('custom-work', 'Scope and carry out the approved custom work', 'review',
-        'Open the Company and linked Opportunity. Record the agreed scope and commercial decision, then perform the authorized handoff in its owning workflow. Record the outcome in completion notes.')
+        'Open the Company and linked Opportunity. Record the agreed scope and commercial decision, then perform the authorized handoff in its owning workflow.')
     }
   }
   return steps

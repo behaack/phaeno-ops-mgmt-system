@@ -7,6 +7,21 @@ using PSeq.Operations.Commercial.OrderManagement.Domain;
 
 public sealed class SampleSequencingRunTests
 {
+    [Fact]
+    public void OneRunPerSamplePricingCannotBeChangedBySampleEntry()
+    {
+        var order = Order(5);
+        order.EnsureSampleRunCountMatchesPricing(1);
+        Assert.Throws<InvalidOperationException>(() => order.EnsureSampleRunCountMatchesPricing(2));
+        Assert.Equal(5, order.RequestedSequencingRunCount);
+        var csv = "customer_sample_id,biological_source,tube_count,sequencing_runs\n" +
+            string.Join('\n', Enumerable.Range(1, 5).Select(index => $"S-{index},,3,1"));
+        var preview = LabSampleCsvParser.Parse(Encoding.UTF8.GetBytes(csv), order);
+        Assert.Empty(preview.Errors);
+        Assert.All(preview.Rows, row => { Assert.Equal(3, row.TubeCount); Assert.Equal(1, row.SequencingRunCount); });
+        Assert.NotEmpty(LabSampleCsvParser.Parse(Encoding.UTF8.GetBytes(csv.Replace("S-1,,3,1", "S-1,,3,2")), order).Errors);
+    }
+
     [Theory]
     [InlineData(1, 20)]
     [InlineData(20, 20)]

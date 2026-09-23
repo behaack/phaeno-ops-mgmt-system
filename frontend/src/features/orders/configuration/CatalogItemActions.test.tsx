@@ -24,7 +24,7 @@ describe('unused catalog item deletion', () => {
   })
   it('explains protected history without enabling deletion', async () => {
     api.eligibility.mockResolvedValue({ canDelete: false, reason: 'This item has been active.', version: 4 })
-    setup(); fireEvent.click(screen.getByRole('button', { name: /Actions/ }))
+    setup(); fireEvent.keyDown(screen.getByRole('button', { name: /Actions/ }), { key: 'ArrowDown' })
     expect(await screen.findByText('This item has been active.')).toBeTruthy()
     expect(screen.getByRole('menuitem', { name: 'Delete item' }).getAttribute('data-disabled')).not.toBeNull()
     expect(api.remove).not.toHaveBeenCalled()
@@ -32,7 +32,7 @@ describe('unused catalog item deletion', () => {
   it('requires a named confirmation, focuses Cancel and cancels without a write', async () => {
     setup()
     const trigger = screen.getByRole('button', { name: /Actions/ })
-    fireEvent.click(trigger)
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' })
     await waitFor(() => expect(screen.getByRole('menuitem', { name: 'Delete item' }).getAttribute('data-disabled')).toBeNull())
     fireEvent.click(screen.getByRole('menuitem', { name: 'Delete item' }))
     expect(await screen.findByRole('heading', { name: 'Delete Unused draft?' })).toBeTruthy()
@@ -42,7 +42,7 @@ describe('unused catalog item deletion', () => {
     expect(api.remove).not.toHaveBeenCalled()
   })
   it('sends the reviewed item version only after confirmation', async () => {
-    setup(); fireEvent.click(screen.getByRole('button', { name: /Actions/ }))
+    setup(); fireEvent.keyDown(screen.getByRole('button', { name: /Actions/ }), { key: 'ArrowDown' })
     await waitFor(() => expect(screen.getByRole('menuitem', { name: 'Delete item' }).getAttribute('data-disabled')).toBeNull())
     fireEvent.click(screen.getByRole('menuitem', { name: 'Delete item' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Delete item' }))

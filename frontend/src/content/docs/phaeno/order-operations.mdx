@@ -8,9 +8,27 @@ When starting a Customer Job, select its Company and Department. A single availa
 
 Use the far-left sidebar beneath the toolbar to move among **Order intake**, **Trial projects**, **PSeq kits**, **Assembly**, **Attention**, **Result release**, **Finance**, and **Legacy integrations**, subject to your explicit roles. **Order intake** owns staff-assisted Customer order creation, Sales handoffs, commercial review, pricing and manual quotes. Eligible organizations can place a configured standard Lab Service bundle from their own Job; that accepted commitment is shown on the same order. **Trial projects** handles no-charge evaluations.
 
-Choose **New Order** in the **Commercial order intake** list header, which also contains the view and search filters. Select the Customer and Department, then review **Customer readiness**. Active Customers remain selectable even when their setup is incomplete. Requirements under **Before starting pricing** must be resolved first. Expand **Later requirements** for additional quote and invoice setup; those items do not block creating the order for pricing. Retry a failed readiness check without discarding your entries.
+Choose **New Order** in the **Commercial order intake** list header, which also contains the view and search filters. Select the Customer and Department, then review **Customer readiness**. Active Customers remain selectable even when their setup is incomplete. Requirements under **Before starting pricing** must be resolved first. **Later requirements** appears only when additional quote or invoice setup is needed. Expand it to review those items; they do not block creating the order for pricing. Retry a failed readiness check without discarding your entries.
 
 Enter the Job name, sample counts by biological source, shared storage requirements, and safety declaration. You may also record a proposed price and optional notes. **Start pricing** saves the order and opens its detail workspace. An active Customer administrator is required before quote issuance. Exact sample IDs and tube counts are entered after quote acceptance; sample-list finalization authorizes the laboratory and shipping workflow. Billing setup may be completed after acceptance, before invoicing. Order intake owns this per-order process; reusable setup is maintained in Order settings and the Company workspace.
+
+Lab Service orders in **Quote In Preparation** show a bold **Next step for Phaeno**
+message in the intake list. Open the Job by selecting its name, then select
+**Review and issue quote** under **Commercial control**, or **Issue quote** if no
+price was proposed. Review the price and terms and issue the quote for Customer
+acceptance. **Quote Issued** means the quote is available for the Customer to review.
+
+The Customer dashboard lists each active Lab Service request in its selected
+Department with a Job name, next step and direct link. Issued quotes have a
+**Review pricing** link for administrators; other members see **View pricing**.
+Requests still being priced show **Waiting for Phaeno**. Customers can page through
+active requests or open **View all lab services** for history.
+
+The Customer dashboard's **Items requiring attention** and **New results** metrics
+cover the selected Department and filter the Jobs below. New results are released,
+downloadable laboratory result packages without a complete Department download;
+failed or partial transfers do not clear them. This count can include completed
+Jobs and can be larger than the number of Jobs containing the results.
 
 The sidebar header identifies Order operations and, on wider screens, provides the pin or unpin icon. Pointer users can preview an unpinned sidebar by approaching the left edge; keyboard and touch users open it from the edge tab. Choosing a section closes an unpinned sidebar.
 
@@ -30,7 +48,7 @@ Order ops opens an available workspace for your responsibilities. Result Release
 - **Finance** owns PSeq invoices, receipts/import, explicit allocation, aging, and reconciliation.
 - **Legacy integrations** covers retained accounting-connector and notification recovery outside the active native PSeq AR workflow.
 
-Search Order intake by order, Job, Company, or request number. Order search runs across all matching records, with 25 orders per page. Pending CRM handoffs appear on the first active-intake page. The view, search and page stay in the address so you can return to the same queue. **Clear filters** restores active intake. A PSeq Lab Service row identifies an optional proposed price so Commercial users can find pricing decisions without opening every record. On the order, **Review proposed price** compares the proposed USD price per specimen with the active catalog price, requested quantity, difference, and subtotal. **Approve price and issue quote** preserves the proposal unchanged; **Amend price and issue quote** requires an internal reason. Tax is system-calculated: include and freeze it when the billing and tax profile is complete and Finance-approved, or issue an explicitly pre-tax quote and calculate tax at invoicing. The issued quote, not the proposal, is the offer a Customer administrator may accept. The operational detail shows the current quote value, revision, and status. **Internal context** in the audit timeline explains Phaeno-only decisions; it is informational, not a Customer-facing warning. Assign an owner and due date when the workflow supports them. A queue assignment coordinates work; it does not grant authorization or change the workflow state.
+Search Order intake by order, Job, Company, or request number. Order search runs across all matching records, with 25 orders per page. Pending CRM handoffs appear on the first active-intake page. The view, search and page stay in the address so you can return to the same queue. **Clear filters** restores active intake. A PSeq Lab Service row identifies an optional proposed price so Commercial users can find pricing decisions without opening every record. On the order, **Review and issue quote** compares the proposed USD price per specimen with the active catalog price, requested quantity, difference, and subtotal. **Approve price and issue quote** preserves the proposal unchanged; **Amend price and issue quote** requires an internal reason. Tax is system-calculated: include and freeze it when the billing and tax profile is complete and Finance-approved, or issue an explicitly pre-tax quote and calculate tax at invoicing. The issued quote, not the proposal, is the offer a Customer administrator may accept. The operational detail shows the current quote value, revision, and status. **Internal context** in the audit timeline explains Phaeno-only decisions; it is informational, not a Customer-facing warning. Assign an owner and due date when the workflow supports them. A queue assignment coordinates work; it does not grant authorization or change the workflow state.
 
 ## Review quote extension requests
 

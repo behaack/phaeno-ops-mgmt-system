@@ -1,5 +1,77 @@
 # Sample Shipping and Intake Plan
 
+## Kit contents by supplier product — September 22, 2026
+
+Owner request: replace the single optional supplier reference with a flexible
+Kit contents list. The owner clarified that any number of products from the entire
+supplier catalog must be supported, each with its own positive whole-number
+quantity. Products may come from different suppliers or share a product type.
+Usable tube capacity remains independent; there is no forced container/tube mix.
+
+Each container revision owns immutable content rows with supplier-product identity,
+quantity, row order and frozen supplier/product/type labels. Reuse active suppliers,
+products and product types, including Other products. New active revisions require
+at least one product; drafts may have an empty list. Reject duplicate products
+with guidance to change quantity. Existing definitions without contents retain
+legacy references, and existing kits/manifests retain their snapshots. Do not infer
+missing contents or silently activate or revise any saved records.
+
+Show contents on the detail page and in physical kit preparation. Prefill the
+actual tube/container selectors only when the recipe has one matching product;
+otherwise preserve explicit selection of actual products. The existing full-capacity
+barcode registration and actual tube/shipper traceability remain separate from the
+flexible configuration list. The kit snapshot also retains the full contents list.
+No inventory deduction, procurement, dependency or authorization changes.
+
+Additive migration 20260923001318_AddShippingKitContents adds only the revision
+contents table and its indexes/foreign keys. Update the ERD and affected guides.
+Apply only to the verified local development database after backup/review under
+the repository's local-migration rule. No shared database or deployment is included.
+Regression sources cover multiple suppliers, arbitrary types, independent quantities,
+invalid/inactive products and frozen history. Automated tests remain request-only.
+
+Local completion: migration applied only to localhost/phaeno_ops_clean_20260919
+and verified in migration history. The new table has no seeded rows. Recoverable
+pre-change backup: artifacts/kit-contents-20260922/before-kit-contents.dump (archive
+listing verified). Backend solution builds with zero warnings/errors, including
+regression sources; frontend typecheck, scoped lint, generated help and whitespace
+checks pass. Automated tests were not run. Signed-in browser inspection confirmed
+supplier-scoped selection, independent quantities, additional rows, row removal
+and focus restoration. Screenshot capture timed out and the viewport override did
+not take effect; narrow-screen visual acceptance remains unverified. The unsaved
+verification draft was dismissed. The user's running API needs rebuild/restart to
+load the new persisted save behavior; it was not interrupted. No Git publishing
+or deployment was performed.
+
+## Container detail Actions menu — September 22, 2026
+
+Add a decorative dropdown chevron to the container detail Actions trigger and
+size its trailing-aligned menu to its labels, capped to the viewport width.
+Preview recommendation and Deactivate revision fit on one line at ordinary
+viewport widths. Actions, permissions and confirmation behavior are unchanged.
+Reviewed the Phaeno configuration guide; its existing Actions instructions remain
+accurate, so no help text change is needed. Automated tests are not requested
+for this presentation-only adjustment.
+
+Local browser inspection confirmed the chevron and all three labels on one line
+in a 182px-wide menu. Typecheck, scoped ESLint and whitespace checks passed.
+
+## September 22 — Sized tubes in existing RNA intake
+
+Correct the literal `tube` comparison that rejected an active `20 µL tube`
+definition despite its active shipping destination and rule. Plain tubes and
+positive µL/mL-sized tubes use the same tube-count roster and packing workflow;
+the size remains part of the sample-type requirements and shipment unit. Keep
+material, effective revision, explicit service assignment and unique shipping
+configuration guards. Volume-only units, blocks, sections and other containers
+remain unsupported by automatic RNA tube intake. This supersedes only the prior
+sized-tube exclusion. Existing saved configuration and shipping approvals remain
+unchanged. The customer's roster is not finalized by this code change.
+
+## Sample-type and destination Actions menu width — September 22, 2026
+
+Size the sample-type and Ship-to destinations Actions menus to their labels so Create revision and earlier-revision actions fit without wrapping at ordinary viewport widths. Retain trailing-edge alignment and a viewport width limit for narrow screens. This is a presentation-only correction; permissions, actions and focus behavior are unchanged. Reviewed the Phaeno configuration guide: existing Actions instructions remain accurate and need no content change. Scoped ESLint and whitespace checks passed. Automated tests and browser verification are not run for these styling changes; local servers remain stopped.
+
 ## Availability separate from content — September 21, 2026
 
 Owner approved explicit Activate/Deactivate actions for sample types, destinations and shipping assignments. Status changes retain revision identity and use the existing audit/concurrency mechanisms. New UI-created content revisions start inactive; drafts preserve previous active intervals. Assignment activation validates named prerequisites at the actual activation time and retains exact destination references. See [availability behavior and implementation](SAMPLE-TYPE-CURRENT-REVISION-PLAN.md). This local correction does not activate production configuration or deploy the application.

@@ -392,7 +392,7 @@ export function CommercialControlPanel({
             </div>
             <div className="flex flex-wrap gap-2">
               {canOperate && labOrder?.canManageQuotes && labOrder.canProposeChange ? <IssueLabChangeQuote order={labOrder} catalogItems={catalogItems} onSaved={onSaved} /> : null}
-              {mayQuote ? <Button type="button" disabled={quoteOpening} onClick={() => void openQuote()}>{quoteOpening ? 'Refreshing…' : extensionRequest ? 'Review extension' : issuedQuote ? 'Reissue quote' : workflow === 'lab' && 'proposedUnitPrice' in item && item.proposedUnitPrice != null ? 'Review proposed price' : 'Issue quote'}</Button> : null}
+              {mayQuote ? <Button type="button" disabled={quoteOpening} onClick={() => void openQuote()}>{quoteOpening ? 'Refreshing…' : extensionRequest ? 'Review extension' : issuedQuote ? 'Reissue quote' : workflow === 'lab' && 'proposedUnitPrice' in item && item.proposedUnitPrice != null ? 'Review and issue quote' : 'Issue quote'}</Button> : null}
               {workflow === 'lab' && labWorkOrderId ? <Button asChild variant="outline"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: labWorkOrderId }} search={{ section: undefined }}>Open Lab work</Link></Button> : null}
             </div>
           </div>

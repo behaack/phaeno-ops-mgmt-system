@@ -1,5 +1,127 @@
 # Order Management Plan
 
+## Customer dashboard card removal — September 22, 2026
+
+Remove the Data Library summary card from the Customer dashboard and skip its
+unused dataset query there. Retain Data Library navigation and access, Job Files
+and results, dashboard metrics and other audiences' existing cards. This removes
+the selected dashboard element only; no datasets or permissions are changed.
+
+Verified the signed-in Customer dashboard: the card is absent, both Job actions
+and summary metrics remain, and Data library is available in navigation.
+
+## Customer dashboard metrics — September 22, 2026
+
+Add two large, responsive metrics above Your work: Items requiring attention and
+New results. Counts cover the selected Department's full accessible Lab Service
+set, independent of pagination. Attention counts Jobs requiring quote review,
+requested corrections, draft completion, sample preparation/shipping or hold
+review; requests being priced or processed by Phaeno are excluded. New results
+counts released, currently downloadable PSeq result packages that have not been
+fully downloaded by the Department, using existing completion/retention evidence.
+The owner selected this definition over a recent-release time window. Partial or
+failed downloads do not clear a package. Completed Jobs can still have new results.
+Completion is measured per file across successful downloads, so different members
+may complete different files within a package. Customer help describes this and
+the separate summary/list retry actions without treating an unavailable list as
+an empty result.
+
+Selecting a metric filters the requests below; All active requests restores the
+normal view. Members can review Department work while existing administrator
+permissions remain authoritative. Scope the new read-only summary and list views
+with the existing tenant/Department authorization. Loading/failure states never
+show invented zero counts. No schema, authentication or deployment change.
+
+## Priced runs and sized-tube finalization — September 22, 2026
+
+For accepted Jobs with the same sample and purchased-run count, sample entry and
+Edit sample display one fixed run per sample. Tubes remain editable for reserve
+material after failure. The API rejects a different per-sample run count for that
+priced scope before adding or changing sample metadata. Explicitly purchased
+additional runs retain their existing allocation workflow and final-total check.
+
+The local saved Job LLW7BD2Y has five accepted samples and five runs. Its active
+sample type uses submission unit `20 µL tube` and has an active destination/rule;
+an exact `tube` comparison incorrectly excluded it. Recognize plain tubes and
+positive µL/mL-sized tubes consistently in scientific configuration, availability
+and finalization. Freeze the selected submission unit on shipment items so packet
+validation agrees with the sample type. Preserve material, effective revision,
+service assignment, unique destination/rule and packing checks. Volume-only,
+block, section and other container units remain outside automatic tube intake.
+This corrects the previous blanket exclusion of sized tubes; it does not change
+saved configuration, accepted pricing or authorize/finalize the user's roster.
+No schema migration is needed.
+
+Verification: isolated backend solution build passed with zero warnings/errors;
+frontend typecheck, scoped lint and generated-help consistency passed. Automated
+tests were not run. Both dashboard requests were observed with their individual
+links and changing next steps. Further live checks stopped when the local API
+became unavailable; the user's server and saved roster were not changed.
+
+## Customer dashboard request actions — September 22, 2026
+
+The Customer dashboard must surface each active Lab Service request by Job name,
+with its next step and a direct link to the owning Job. Replace the one-record
+summary with a paged request card ahead of the other workspace cards. Prioritize
+pricing review, requested corrections, drafts and sample preparation; distinguish
+work waiting on Phaeno. Completed, cancelled, declined and discarded requests stay
+in Lab services history. Pagination exposes the full active set without a silent
+record cap. Ordinary members get review links and administrator guidance; existing
+Job permissions and confirmation dialogs remain authoritative.
+
+Implementation scope: an optional dashboard view on the existing read-only Lab Service list
+using the existing Lab Service tenant/Department access checks and list envelope,
+plus a Customer-only dashboard card. Query caches include organization, Department
+and page, refresh on return, and hide stale records after errors. No schema,
+authentication, workflow mutation or deployment changes. Regression sources cover
+both quote requests, links, waiting/read-only states, pagination, error recovery,
+Department changes and server tenant filtering. Automated execution remains
+request-only. Update Customer and Phaeno help with the implemented entry point.
+
+## Recognizable quote notification — September 22, 2026
+
+New Lab Service quote-issued notices lead with the saved Customer-visible Job name:
+“Pricing for {Job name} is available for review.” A separate line retains
+“Order reference: {Order number}” for tracking. This applies to initial and revised
+quotes through the existing issuance path. Recipients, subject, readiness checks
+and delivery behavior are unchanged; existing notices are not rewritten or resent.
+Updated Phaeno authorization help. No new tests for this copy-only change, and no
+email is sent during verification.
+Verification: isolated backend solution build passed with zero warnings/errors;
+help consistency (56 guides, corpus `b0627e7daa1d`) and whitespace checks passed.
+Automated suites were not executed.
+
+## Pricing next step in intake — September 22, 2026
+
+Lab Service rows in Quote in preparation show a bold next-step message identifying
+Phaeno as responsible: open the Job, select Review and issue quote under Commercial
+control (Issue quote when no price was proposed), review price and terms, and issue
+the quote for Customer acceptance. The message is limited to preparation status
+and disappears after issuance. Keep the Job name as the navigation link and retain
+existing permissions, readiness checks and price-review safeguards. The row text
+can wrap without squeezing the status badge. Updated Phaeno Order operations help.
+The owner selected **Review and issue quote** as the review-entry button label;
+the final **Approve price and issue quote** / **Amend price and issue quote**
+confirmation labels and behavior remain unchanged.
+This presentation change needs no new tests; automated suites remain request-only.
+Frontend typecheck, scoped lint, documentation consistency (56 guides, corpus
+`6c7eaed84ae2`) and whitespace checks passed. Browser verification was not run.
+The subsequent label rename passed scoped lint, whitespace and help consistency
+checks (56 guides, corpus `fda04ef5187b`).
+Intake Job titles now use bold weight so they remain prominent above the next-step
+message. This styling-only adjustment leaves the existing help accurate.
+
+## Empty later requirements — September 22, 2026
+
+In New Customer order, hide the Later requirements disclosure when both quote
+and invoice blocker lists are empty. Keep it when either list has requirements.
+The Ready to start pricing message references later requirements only when the
+disclosure is present. Readiness rules and order creation remain unchanged.
+Updated Phaeno Order operations help; no new tests are needed for this small
+presentation change. Automated suites and browser verification were not run.
+Scoped lint, documentation generation/consistency and whitespace checks passed
+(56 guides, corpus `e913c5c34865`).
+
 ## Catalog readiness clarity - September 22, 2026
 
 Implemented locally. Migration `20260922194907_AddCatalogServiceFamily` was

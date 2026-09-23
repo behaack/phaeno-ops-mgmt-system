@@ -34,9 +34,9 @@ public partial class SampleShippingPostgresTests
         scope.ClearTrackedState();
         var both = new[] { pairs[0], new ContainerCompatibilityRequest(fixture.SampleType.Id, next.Id) };
         await scope.ContainerCatalog().CreateAsync(new($"PACK-{scope.Suffix}-20", "One context", 20,
-            DateTime.UtcNow.AddDays(-2), pairs, IsActive: true), default);
+            DateTime.UtcNow.AddDays(-2), pairs, IsActive: true, KitContents: await scope.KitContentsAsync(20)), default);
         var compatible = await scope.ContainerCatalog().CreateAsync(new($"PACK-{scope.Suffix}-BOTH", "Both contexts", 10,
-            DateTime.UtcNow.AddDays(-2), both, IsActive: true), default);
+            DateTime.UtcNow.AddDays(-2), both, IsActive: true, KitContents: await scope.KitContentsAsync(10)), default);
         scope.ClearTrackedState();
         Assert.Equal(compatible.Id, Assert.Single(await scope.ContainerCatalog().ReadCompatibleAsync(both, default)).Id);
     }
@@ -76,7 +76,7 @@ public partial class SampleShippingPostgresTests
         Assert.Equal("shipping_container_conflict", duplicate.ErrorCode);
         scope.ClearTrackedState();
         var live = await catalog.ReviseAsync(draft.Id, new(draft.Version, "Twenty tubes", 20,
-            DateTime.UtcNow.AddDays(-1), pairs, IsActive: true), default);
+            DateTime.UtcNow.AddDays(-1), pairs, IsActive: true, KitContents: await scope.KitContentsAsync(20)), default);
         scope.ClearTrackedState();
         await Assert.ThrowsAsync<OrderManagementException>(() => catalog.ReadCompatibleAsync(pairs, default, live.Id));
         var source = await scope.DbContext.SampleShipments.SingleAsync(item => item.Id == fixture.Shipment.Id);
@@ -84,7 +84,7 @@ public partial class SampleShippingPostgresTests
         await scope.DbContext.SaveChangesAsync();
         scope.ClearTrackedState();
         var revision = await catalog.ReviseAsync(live.Id, new(live.Version, "Revised container", 25,
-            DateTime.UtcNow.AddHours(-1), pairs, IsActive: true), default);
+            DateTime.UtcNow.AddHours(-1), pairs, IsActive: true, KitContents: await scope.KitContentsAsync(20)), default);
         scope.ClearTrackedState();
         Assert.Equal(revision.Id, Assert.Single(await catalog.ReadCompatibleAsync(pairs, default)).Id);
         Assert.Equal(20, (await catalog.ReadAsync(live.Id, default)).TubeCapacity);
@@ -405,7 +405,7 @@ public partial class SampleShippingPostgresTests
         public async Task<SampleShippingContainerDefinitionDto> CreateContainerAsync(ShippingFixture fixture, int capacity, bool active = true)
         {
             var result = await ContainerCatalog().CreateAsync(new($"PACK-{Suffix}-{capacity}", $"Reference {capacity} tubes", capacity,
-                DateTime.UtcNow.AddDays(-2), await ContainerContextsAsync(fixture), IsActive: active), default);
+                DateTime.UtcNow.AddDays(-2), await ContainerContextsAsync(fixture), IsActive: active, KitContents: await KitContentsAsync(capacity)), default);
             ClearTrackedState();
             return result;
         }
@@ -442,6 +442,12 @@ public partial class SampleShippingPostgresTests
                 new SampleShippingWorkflowReader(db)) { ControllerContext = new() { HttpContext = http } };
         }
 
+        public async Task<IReadOnlyList<ShippingKitContentRequest>> KitContentsAsync(int capacity)
+        {
+            var products = await CatalogKitRequestAsync(Guid.NewGuid());
+            return [new(products.ShipperSupplierProductId, 1), new(products.TubeSupplierProductId, capacity)];
+        }
+
         public async Task<CreateStockKitRequest> CatalogKitRequestAsync(Guid definitionId, string? lot = null)
         {
             var supplier = new PSeq.Operations.Laboratory.Domain.LabSupplier($"TEST-CATALOG-{Suffix}-{Guid.NewGuid():N}");
@@ -459,6 +465,7 @@ public partial class SampleShippingPostgresTests
             var stockIds = await DbContext.SampleShippingStockKits.Where(item => definitionIds.Contains(item.ContainerDefinitionId)).Select(item => item.Id).ToArrayAsync();
             await DbContext.SampleShippingStockTubes.Where(item => stockIds.Contains(item.SampleShippingStockKitId)).ExecuteDeleteAsync();
             await DbContext.SampleShippingStockKits.Where(item => stockIds.Contains(item.Id)).ExecuteDeleteAsync();
+            await DbContext.Set<ShippingKitContent>().Where(item => definitionIds.Contains(item.ContainerDefinitionId)).ExecuteDeleteAsync();
             var supplierIds = await DbContext.LabSuppliers.Where(item => item.Name.StartsWith($"TEST-CATALOG-{Suffix}-")).Select(item => item.Id).ToArrayAsync();
             await DbContext.LabSupplierProducts.Where(item => supplierIds.Contains(item.SupplierId)).ExecuteDeleteAsync();
             await DbContext.LabSuppliers.Where(item => supplierIds.Contains(item.Id)).ExecuteDeleteAsync();

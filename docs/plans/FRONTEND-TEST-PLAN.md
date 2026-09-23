@@ -1,5 +1,54 @@
 # Frontend Test Plan
 
+## September 22, 2026 — Authorized release regression checkpoint
+
+The owner requested the full release checks. All **1,185 unit tests in 185 files passed** with four workers. Shipping-container assertions now follow the Kit contents editor; catalog menu tests use the established keyboard opening interaction. The changed sources pass ESLint and TypeScript, and all 56 generated help guides pass consistency checks. Temporary ignored preview files are excluded from ESLint alongside other generated output. Shipping Supplier, Product name and Quantity controls now announce their required state to assistive technology. See the [release record](../operations/shipping-dashboard-release-20260922.md) for build/deployment status and separate hosted acceptance boundaries. This checkpoint supersedes the earlier unexecuted-suite notes below for current source.
+
+## September 22, 2026 — Shipping kit contents
+
+Update container editor coverage for multiple product rows, supplier-scoped active choices across all types, per-row quantity, removal, activation validation, catalog failure and unavailable saved references. Preserve earlier-notes validation. Add stock preparation prefill coverage. Typecheck/lint only; automated execution was not requested.
+
+## September 22, 2026 — Customer metrics
+
+`CustomerDashboardMetrics.test.tsx` covers full summary counts, zero results,
+metric selection, unavailable/stale data and Department changes.
+`CustomerLabRequestsCard.test.tsx` adds the results view for completed Jobs and
+updates query expectations for the selected view. Regression sources added;
+automated execution remains request-only.
+
+## September 22, 2026 — Customer dashboard and fixed priced runs
+
+`CustomerLabRequestsCard.test.tsx` covers two named pricing links, member guidance,
+waiting on Phaeno, paging, Department reset, failed-refresh recovery and removal
+of completed work after refresh. `SampleIdentificationRows.test.tsx` covers fixed
+one-per-sample runs with editable reserve tubes and retained additional-run
+allocation. Regression sources are added; automated execution remains request-only.
+
+## September 22, 2026 — Pricing next-step guidance
+
+Commercial intake displays bold Phaeno next-step guidance only for Lab Service
+orders in Quote in preparation, choosing Review and issue quote or Issue quote
+from the saved proposal. No tests added for this presentation change; existing
+intake and quote behavior coverage remains unchanged. Automated execution remains
+request-only.
+
+## September 22, 2026 — Empty later requirements
+
+The New Customer order readiness disclosure is hidden only when quote and invoice
+blocker lists are both empty. The ready message omits its reference to hidden
+requirements. Existing nonempty readiness coverage is unchanged; no new tests for
+this small presentation change. Automated execution remains request-only.
+
+## September 22, 2026 — Completion notes and checklist feedback
+
+Updated `RequestActionDialog.test.tsx` covers blank completion notes (including
+relationship changes), the retained required organization, and required cancellation
+reason validation/submission. `CrmPortalAccessPage.test.tsx` covers the all-done
+message, bold completion instruction and blank-note submission. `CrmRequestCard.test.tsx`
+retains manual-review messaging and failed-refresh completion gating. Automated
+execution remains request-only; signed-in verification is deferred. This change
+does not start or stop local servers.
+
 ## September 22, 2026 — Catalog families and unused-item deletion
 
 `CatalogItemActions.test.tsx` adds coverage for active-item protection, disabled

@@ -7,7 +7,7 @@ using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.DTOs;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
-public sealed class SampleShippingContainerCatalogService(PSeqOperationsDbContext dbContext)
+public sealed partial class SampleShippingContainerCatalogService(PSeqOperationsDbContext dbContext)
 {
     public async Task<IReadOnlyList<SampleShippingContainerDefinitionDto>> ReadAllAsync(CancellationToken cancellationToken)
         => (await Query().OrderBy(item => item.ContainerType.NormalizedSku).ThenByDescending(item => item.Revision)
@@ -64,6 +64,7 @@ public sealed class SampleShippingContainerCatalogService(PSeqOperationsDbContex
             throw Conflict("This SKU already exists. Create a revision from its container record.");
         type.Definitions.Add(definition);
         AddContexts(definition, request.Compatibilities);
+        await AddContentsAsync(definition, request.KitContents, cancellationToken);
         dbContext.SampleShippingContainerTypes.Add(type);
         await SaveAsync(cancellationToken);
         return Map(definition);
@@ -115,6 +116,7 @@ public sealed class SampleShippingContainerCatalogService(PSeqOperationsDbContex
         catch (ArgumentException exception) { throw Invalid(exception.Message); }
         catch (InvalidOperationException exception) { throw Conflict(exception.Message); }
         AddContexts(definition, request.Compatibilities);
+        await AddContentsAsync(definition, request.KitContents, cancellationToken);
         previous.ContainerType.Definitions.Add(definition);
         // Shared type concurrency plus unique predecessor prevents concurrent revision forks.
         previous.ContainerType.MarkUpdated(DateTime.UtcNow, null);
@@ -146,7 +148,7 @@ public sealed class SampleShippingContainerCatalogService(PSeqOperationsDbContex
 
     public async Task<SampleShippingContainerDefinitionDto> DeactivateAsync(Guid id, long version, CancellationToken cancellationToken)
     {
-        var definition = await dbContext.SampleShippingContainerDefinitions.Include(item => item.ContainerType).Include(item => item.Compatibilities)
+        var definition = await dbContext.SampleShippingContainerDefinitions.Include(item => item.ContainerType).Include(item => item.Compatibilities).Include(item => item.KitContents)
             .SingleOrDefaultAsync(item => item.Id == id, cancellationToken) ?? throw Missing();
         if (definition.Version != version) throw Conflict("This revision changed. Refresh the container before deactivating it.");
         definition.Deactivate(DateTime.UtcNow);
@@ -161,10 +163,11 @@ public sealed class SampleShippingContainerCatalogService(PSeqOperationsDbContex
         item.ContainerType.Sku, item.CommonName, item.TubeCapacity, item.Revision, item.SupersedesDefinitionId,
         item.SupplierName, item.SupplierProductNumber, item.PackingInstructions, item.EffectiveFrom, item.EffectiveTo,
         item.IsActive, item.DisplayOrder, item.Version, item.Compatibilities.OrderBy(pair => pair.SampleTypeDefinitionId).ThenBy(pair => pair.InstructionRuleId)
-            .Select(pair => new ContainerCompatibilityRequest(pair.SampleTypeDefinitionId, pair.InstructionRuleId, pair.TemperatureControlInstructions, pair.PackingInstructions)).ToArray(), item.DeactivatedAt);
+            .Select(pair => new ContainerCompatibilityRequest(pair.SampleTypeDefinitionId, pair.InstructionRuleId, pair.TemperatureControlInstructions, pair.PackingInstructions)).ToArray(), item.DeactivatedAt, item.KitContents.OrderBy(part => part.Position).Select(part => new ShippingKitContentDto(
+                part.SupplierProductId, part.SupplierId, part.Kind.ToString(), part.Quantity, part.SupplierName, part.ProductNumber, part.ProductDescription, part.ProductTypeName)).ToArray());
 
     private IQueryable<SampleShippingContainerDefinition> Query() => dbContext.SampleShippingContainerDefinitions.AsNoTracking()
-        .Include(item => item.ContainerType).Include(item => item.Compatibilities);
+        .Include(item => item.ContainerType).Include(item => item.Compatibilities).Include(item => item.KitContents);
     private static void AddContexts(SampleShippingContainerDefinition definition, IReadOnlyList<ContainerCompatibilityRequest> contexts)
     {
         foreach (var pair in contexts) definition.Compatibilities.Add(new(definition.Id, pair.SampleTypeDefinitionId, pair.InstructionRuleId, pair.TemperatureControlInstructions, pair.PackingInstructions));

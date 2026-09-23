@@ -29,7 +29,7 @@ public sealed class LabServiceOfferingService(PSeqOperationsDbContext db)
         if (offering.IsActive && (types.Count == 0 || types.Any(type => !type.IsActive
             || type.EffectiveFrom > offering.EffectiveFrom || type.EffectiveTo <= offering.EffectiveFrom)))
             throw Invalid("An active scientific definition requires explicitly assigned sample-type revisions available when it begins. Create a new version to review legacy assignments.");
-        if (offering.IsActive && types.Count(type => type.MaterialClass == "extracted_rna" && type.QuantityUnit == "tube") != 1)
+        if (offering.IsActive && types.Count(type => type.MaterialClass == "extracted_rna" && SampleSubmissionUnits.IsTubeCount(type.QuantityUnit)) != 1)
             throw Invalid("The current PSeq intake requires exactly one supported extracted-RNA tube sample type.");
     }
 
@@ -63,7 +63,7 @@ public sealed class LabServiceOfferingService(PSeqOperationsDbContext db)
                 .OrderBy(type => type.Name).Select(type => new ServiceSampleTypeDto(type.Id, type.Code, type.Name,
                     type.Revision, type.MaterialClass, type.QuantityUnit, type.IsEffectiveAt(now))).ToArray();
             available = available && supported.Length > 0 && supported.All(type => type.IsAvailable)
-                && supported.Count(type => type.MaterialClass == "extracted_rna" && type.QuantityUnit == "tube") == 1
+                && supported.Count(type => type.MaterialClass == "extracted_rna" && SampleSubmissionUnits.IsTubeCount(type.QuantityUnit)) == 1
                 && offerings.Count(other => other.CatalogItemId == value.CatalogItemId && other.IsEffectiveAt(now)) == 1;
             return Map(value, item, available) with { SupportedSampleTypes = supported };
         }).Where(value => !availableOnly || value.IsAvailable).ToList();
