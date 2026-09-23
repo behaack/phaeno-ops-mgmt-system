@@ -1,5 +1,7 @@
 # Shipping contents and Customer dashboard release — September 22, 2026
 
+Activation update, September 23, 2026: the owner approved the production migrations, and this staged scope was activated with source `b056528aa59cbec9f2ebc83d407b08211a7c08da` in the [material-tracking release](material-tracking-release-20260923.md#production-activation-completed). That record supersedes the pending activation status below; this document retains the earlier preparation evidence.
+
 ## Scope and authorization
 
 The owner requested documentation updates, tests, commit, push and redeployment of the pending Portal changes. The release includes supplier-product shipping-kit contents, Department-scoped Customer request and result summaries, fixed purchased sequencing runs with independent reserve tubes, sized sample-submission units, and clearer CRM request completion and pricing guidance. Updated Customer, Partner and Phaeno help describes the implemented behavior.

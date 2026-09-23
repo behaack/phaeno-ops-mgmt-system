@@ -6,13 +6,13 @@ The owner requested completion of the material-tracking implementation, document
 
 Interrupted preparation-step saves retain the exact command and attached report across browser reload; sequencing allocation and transfer commands have the same recovery. Server receipts prevent duplicate allocation or consumption. New shipment-specific return kits require catalog product identities and freeze expiration evidence, closing the older free-text entry path. Existing history remains readable.
 
-Previously staged assembly, Company Department setup, catalog service-family, shipping-kit contents and Customer dashboard changes are also ahead of production. The release must apply all six pending migrations before activating its API and UI. The [operations policy](../operations-readiness.md#database-migrations) requires explicit authorization for production migrations separately from the release preparation below.
+The release also activates the previously staged assembly foundation, Company Department setup, catalog service-family, shipping-kit contents and Customer dashboard changes. The owner explicitly approved the six production migrations on September 23, 2026, after reviewing the prepared release and migration plan. Activation followed the separate migration authorization required by the [operations policy](../operations-readiness.md#database-migrations).
 
-## Verified production target and migration plan
+## Pre-activation target and approved migration plan
 
 Read-only preflight confirmed API source `85fadf139b8953f6293ddb6e59de1ca541b9ac91`, healthy API/database/scanner containers, PostgreSQL 18.6 and the retained `phaeno-portal-green-postgres18-data` volume. The database is `phaeno_portal_green` in `phaeno-portal-green-db`. Seven migrations are applied through `20260921171011_AddSharedShippingProceduresAndContainerPacking`. The production Portal is Ready deployment `dpl_FNsRcLVpxyMTbaH2VTqvM11Aw1N5` at the same source revision.
 
-Apply these migrations in order:
+The following migrations were approved and subsequently applied in this order:
 
 | Migration | Effect |
 | --- | --- |
@@ -39,7 +39,21 @@ Frontend: the complete initial suite passed 1,208 tests in 188 files. After addi
 
 Backend: **1,072 applicable cases have passing evidence**, with one intentional Windows skip for the Unix symlink test and no unresolved failures. The full PostgreSQL run recorded 1,067 passes/four failures/one skip; focused follow-ups recorded 64 passes/two failures, 45 passes/one failure, and two final passes. Every failed case has a later passing result. The dispatch query now uses mapped `VoidedAt`; fixtures represent the catalog-linked kits and third sequencing tube. The new preparation case also checks report-backed rollback/replay and distinguishes operational holds from QC holds. Final Release build has zero warnings/errors, EF reports no pending model changes, and both feature migrations are applied to verified `localhost:5432/phaeno_ops_clean_20260919`. The complete ERD is regenerated and disposable loopback test databases were removed. See the [backend checkpoint](../plans/BACKEND-TEST-PLAN.md#september-23-2026--material-amounts-transfers-and-expiration).
 
-Production migration approval and activation are pending. No production data or active application has been changed by local verification or read-only preflight. Publication and staged deployment do not by themselves establish activation.
+### Production activation completed
+
+Both applications now run source `b056528aa59cbec9f2ebc83d407b08211a7c08da`, committed and pushed on `codex/portal-documentation-search-release`:
+
+| Component | Verified production identity |
+| --- | --- |
+| API | Image `phaeno-portal-green-api:sha-b056528aa59c-material-tracking`; runtime manifest deployed at `2026-09-23T18:01:54Z`; current release directory and image revision label match the source above. |
+| Portal | Ready deployment `dpl_AuGhQtr8WawYdmWn7v4xffXJjxUi`, promoted at `2026-09-23T18:03:13Z`; production target and completed `portal.phaenobiotech.com` alias match this deployment. |
+| Database | All 13 migrations applied through `20260923172325_AddReturnKitProductExpiration`; biological transfer table and material quantity, tube identity and expiry snapshot fields verified. |
+
+The deployment procedure verified an isolated database restore before applying the six approved migrations. Restore and cleanup checks passed. Encrypted backup `pre-migration-20260923T180134Z-b056528aa59c.dump.enc`, its wrapped key and checksum file are retained under `/var/backups/phaeno-portal-deploy/` and copied off-host into the ignored release `recovery/` directory. Both copied envelopes match their SHA-256 checksums. Plaintext temporary recovery material was removed by the procedure. The deployed source archive SHA-256 is `fc5e27ed4367313e45fd5d80f6476d45c0c88b552ad4fee99b28fdf35fca20aa`.
+
+API, PostgreSQL and ClamAV containers are healthy. API health returns HTTP 200, database ping HTTP 204 and Portal root HTTP 200. Scanner clean/EICAR/encrypted/oversize checks and the file-storage smoke check passed. Post-activation inspection confirms Local storage, ClamAV scanning, blank bootstrap email and a disabled assembly worker, with the retained PostgreSQL 18 volume. Users, Companies, catalog items and Website contact/order counts match preflight; the inactive catalog item retains its USD 1,250 per-specimen price and receives the intended service-family classification. No biological transfers were fabricated.
+
+A fresh unauthenticated browser loaded the complete production sign-in form at `2026-09-23T18:07:48Z`, with no uncaught JavaScript errors, failed network requests or HTTP 5xx responses. The screenshot was visually checked. API logs contained no failure, unhandled-exception or fatal entries since startup at the verification checkpoint. Vercel's runtime-error connector returned HTTP 403, so a platform-wide runtime-error query is not claimed; deployment identity, public responses and the fresh browser were independently verified. Signed-in hosted workflow acceptance remains separate from this deployment smoke check.
 
 ## Operational adoption
 

@@ -1,6 +1,6 @@
 # Sample material transfers and tube identity
 
-Status: implemented and software-verified September 23, 2026; production activation is pending the migration gate. Customer-declared shipment amounts, biological transfers, reagent-lot exhaustion and product-dependent expiration capture are connected across the API and UI. Both additive migrations are applied to the verified local development database. See the [release record](../operations/material-tracking-release-20260923.md) for passing evidence and production activation gates. Physical bench and provider acceptance remain separate.
+Status: implemented, software-verified and deployed to production September 23, 2026. Customer-declared shipment amounts, biological transfers, reagent-lot exhaustion and product-dependent expiration capture are connected across the API and UI. Both feature migrations are applied locally and in production; all six pending production migrations were explicitly approved and applied before activating matching API and Portal source `b056528aa59cbec9f2ebc83d407b08211a7c08da`. See the [release record](../operations/material-tracking-release-20260923.md) for tests, recovery checks and production verification. Physical bench, scientific, provider and signed-in hosted workflow acceptance remain separate.
 
 ## Product outcome
 
