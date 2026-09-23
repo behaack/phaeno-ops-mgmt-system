@@ -71,7 +71,7 @@ test('biological material and its report survive a reload after an interrupted s
   await expect(page.getByRole('dialog')).toHaveCount(0)
   expect(bodies).toHaveLength(2)
   expect(bodies[1]).toEqual(bodies[0])
-  expect(bodies[1].step?.resourceEntries?.[0]).toMatchObject({ quantity: 25, resourceVersion: 7 })
+  expect(bodies[1].step?.resourceEntries?.[0]).toMatchObject({ quantityText: '25', resourceVersion: 7 })
   expect(reports).toHaveLength(2)
   for (const report of reports) { expect(report).toContain('filename="transfer.pdf"'); expect(report).toContain('%PDF-1.4\nTEST transfer report\n%%EOF') }
 })

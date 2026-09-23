@@ -3,6 +3,7 @@ import type { LabEquipment, LabMaterialLot } from '#/api/lab-operations'
 import type { CatalogSupplier } from '#/api/supplier-catalog'
 import type { ProtocolDefinition } from './protocol-definition'
 import { normalizeMaterialTubeScan } from './material-transfer-barcode'
+import { combinedDecimalQuantity, exceedsDecimalQuantity, isPositiveDecimalQuantity, remainingDecimalQuantity } from './decimal-quantity'
 
 type Step = ProtocolDefinition['steps'][number]
 export type ResourceField = Step['captures'][number]
@@ -55,10 +56,12 @@ export function resourceEntries(fields: ResourceField[], members: PreparationMem
       entry.barcode = get('barcode')
       entry.materialExhausted = get('exhausted') === 'yes'
       entry.exhaustionReason = entry.materialExhausted ? get('exhaustionReason') || undefined : undefined
-      entry.quantity = Number(get('quantity'))
+      entry.quantityText = get('quantity')
       entry.quantityUnit = field.unit?.trim() || source?.quantityUnit?.trim() || get('unit')
-      if (!get('quantity') || !Number.isFinite(entry.quantity) || entry.quantity <= 0) errors[`${prefix}_quantity`] = 'Enter a positive actual amount transferred.'
-      else if (source?.quantity !== null && source?.quantity !== undefined && entry.quantity > source.quantity) errors[`${prefix}_quantity`] = 'The amount exceeds the known source material remaining.'
+      if (!isPositiveDecimalQuantity(entry.quantityText)) errors[`${prefix}_quantity`] = 'Enter a positive decimal amount with at most 28 fractional places.'
+      else if (source?.quantity !== null && source?.quantity !== undefined && exceedsDecimalQuantity(entry.quantityText, source.quantityText ?? String(source.quantity))) errors[`${prefix}_quantity`] = 'The amount exceeds the known source material remaining.'
+      else if ((source?.quantityText && remainingDecimalQuantity(source.quantityText, entry.quantityText) === null)
+        || (destination?.quantityText && combinedDecimalQuantity(destination.quantityText, entry.quantityText) === null)) errors[`${prefix}_quantity`] = 'Use an amount whose source and library-tube balances can be recorded exactly.'
       if (!entry.quantityUnit) errors[`${prefix}_unit`] = 'Enter the quantity unit.'
       else if (source?.quantityUnit && source.quantityUnit !== entry.quantityUnit) errors[`${prefix}_unit`] = `Use the source material unit (${source.quantityUnit}).`
       if ((entry.exhaustionReason?.length ?? 0) > 2000) errors[`${prefix}_exhaustionReason`] = 'Use 2,000 characters or fewer.'

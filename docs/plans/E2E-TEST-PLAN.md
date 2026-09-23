@@ -1,5 +1,9 @@
 # Playwright E2E Test Plan
 
+## September 23, 2026 — Precision follow-up
+
+`material-transfers.spec.ts` and `lab-preparation.spec.ts` expect transfer commands to retain their decimal text across interrupted-command replay. Six focused desktop/mobile cases passed with a separate E2E Vite port. The new `customer-dashboard.spec.ts` verifies the combined scoped response supplies both metrics and the selected Job list with one request per view, no legacy dashboard request, accessible desktop/mobile presentation, and no horizontal overflow; both browser cases passed. These use synthetic sessions and responses, not a signed-in hosted journey.
+
 ## September 23, 2026 — Material amounts, transfers and expiration
 
 The authorized full browser run recorded **187 passed, one failed and two intentional mobile print skips**. All eight unchanged CRM cases passed in a focused follow-up, including the failed initial company-list case; combined evidence covers **188 applicable cases**, not a clean full run. New desktop/mobile fixtures exercise biological-step report recovery and sequencing transfer recovery across reload, original request/version replay, one debit, barcode normalization, dark theme, reduced motion, WCAG 2.2 AA scanning and horizontal overflow. The report test's fixture now advertises its inline resource-field capability. Evidence logs are under ignored `artifacts/material-tracking-release-20260923`. These browser simulations supersede the initial Not run status for their covered UI cases; they do not establish a continuous signed-in hosted journey, physical scanner use or provider acceptance. See the [release record](../operations/material-tracking-release-20260923.md).

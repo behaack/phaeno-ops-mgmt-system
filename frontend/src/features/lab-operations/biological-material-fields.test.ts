@@ -3,6 +3,7 @@ import type { PreparationMember } from '#/api/lab-preparation'
 import { createPreviewBatch } from './ConfigurationPreview'
 import { emptyResourceCatalog, resourceEntries, type ResourceField } from './preparation-resource-fields'
 import { createLibraryPreparationExample, deserializeProtocolDefinition, protocolDefinitionFormSchema, serializeProtocolDefinition } from './protocol-definition'
+import { remainingDecimalQuantity } from './decimal-quantity'
 
 const field: ResourceField = { key: 'sample-input', label: 'Sample material', type: 'biologicalMaterial', scope: 'tube', required: true }
 const member = createPreviewBatch({ id: 'example-stage', name: 'Example', sequence: 1, requirement: 'Required', definition: { schemaVersion: 1, steps: [] } }).members[0]
@@ -14,13 +15,14 @@ describe('biological material field accounting', () => {
   it('uses the selected source identity and version with positive actual amount and destination scan', () => {
     const result = parse({ ...values, [`${prefix}_resource`]: 'a-different-sample', [`${prefix}_unit`]: 'mL' })
     expect(result.errors).toEqual({})
-    expect(result.entries).toEqual([expect.objectContaining({ memberId: member.id, resourceId: member.sourceMaterial!.id, resourceVersion: 1, quantity: 20, quantityUnit: 'µL', barcode: member.libraryTube!.barcode, materialExhausted: false })])
+    expect(result.entries).toEqual([expect.objectContaining({ memberId: member.id, resourceId: member.sourceMaterial!.id, resourceVersion: 1, quantityText: '20', quantityUnit: 'µL', barcode: member.libraryTube!.barcode, materialExhausted: false })])
+    expect(result.entries[0].quantity).toBeUndefined()
   })
 
   it('retains the actual transferred amount when exhaustion overrides a positive computed balance', () => {
     const result = parse({ ...values, [`${prefix}_exhausted`]: 'yes' })
     expect(result.errors).toEqual({})
-    expect(result.entries[0]).toMatchObject({ quantity: 20, materialExhausted: true })
+    expect(result.entries[0]).toMatchObject({ quantityText: '20', materialExhausted: true })
     expect(result.entries[0].exhaustionReason).toBeUndefined()
     expect(member.sourceMaterial!.quantity).toBe(100)
   })
@@ -44,7 +46,7 @@ describe('biological material field accounting', () => {
     const unknown = { ...member, sourceMaterial: { ...member.sourceMaterial!, quantity: null, quantityUnit: null } }
     const result = parse({ ...values, [`${prefix}_unit`]: 'µL' }, unknown)
     expect(result.errors).toEqual({})
-    expect(result.entries[0]).toMatchObject({ quantity: 20, quantityUnit: 'µL' })
+    expect(result.entries[0]).toMatchObject({ quantityText: '20', quantityUnit: 'µL' })
     expect(unknown.sourceMaterial.quantity).toBeNull()
     expect(parse(values, unknown).errors[`${prefix}_unit`]).toBeTruthy()
   })
@@ -56,6 +58,21 @@ describe('biological material field accounting', () => {
     expect(parse(deliberate, transferred).entries).toHaveLength(1)
     expect(parse({ [`${prefix}_additional`]: 'yes' }, transferred).errors[`${prefix}_quantity`]).toBeTruthy()
     expect(parse(deliberate, { ...transferred, output: { id: transferred.libraryTube.id, barcode: transferred.libraryTube.barcode, quantity: 25, quantityUnit: 'µL', confirmed: true } }).entries).toEqual([])
+  })
+
+  it('compares precise source and transfer amounts without converting them to numbers', () => {
+    const source = { ...member.sourceMaterial!, quantity: 0.12345678901234568, quantityText: '0.1234567890123456789012345678' }
+    const precise = { ...member, sourceMaterial: source }
+    const quantity = `${prefix}_quantity`
+    expect(parse({ ...values, [quantity]: '0.1234567890123456789012345679' }, precise).errors[quantity]).toBeTruthy()
+    const result = parse({ ...values, [quantity]: '0.1234567890123456789012345678' }, precise)
+    expect(result.errors).toEqual({})
+    expect(result.entries[0]).toMatchObject({ quantityText: '0.1234567890123456789012345678' })
+    expect(result.entries[0].quantity).toBeUndefined()
+    expect(remainingDecimalQuantity('0.2234567890123456789012345678', result.entries[0].quantityText!)).toBe('0.1')
+    expect(parse({ ...values, [quantity]: '0.12345678901234567890123456789' }, precise).errors[quantity]).toBeTruthy()
+    const largerSource = { ...member, sourceMaterial: { ...member.sourceMaterial!, quantityText: '20' } }
+    expect(parse({ ...values, [quantity]: '5.0000000000000000000000000001' }, largerSource).errors[quantity]).toBeTruthy()
   })
 })
 

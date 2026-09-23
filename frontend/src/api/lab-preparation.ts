@@ -9,8 +9,8 @@ export type PreparationSummary = { id: string; name: string; status: string; ver
 export type PreparationIndex = { formats: TrayFormat[]; batches: PreparationSummary[]; workflows: LabServiceWorkflow[]; compatibleWorkflowVersionIds: string[]; canOperate: boolean; canConfigure: boolean }
 export type PreparationStage = { id: string; name: string; sequence: number; requirement: string; definition: ProtocolDefinition }
 export type PreparationExecution = { id: string; stageId: string; status: string; evidence: { records: (LabExecutionStepRecord & { preparationRecordId?: string })[] }; blockers: string[]; stepPrerequisites?: Record<string, string[]> }
-export type PreparationSourceMaterial = { id: string; barcode: string; quantity: number | null; quantityUnit: string | null; version: number; status: string }
-export type PreparationLibraryTube = { id: string; barcode: string; barcodeSource: string; quantity: number | null; quantityUnit: string | null; version: number; confirmed: boolean; transferId: string | null }
+export type PreparationSourceMaterial = { id: string; barcode: string; quantity: number | null; quantityText?: string | null; quantityUnit: string | null; version: number; status: string }
+export type PreparationLibraryTube = { id: string; barcode: string; barcodeSource: string; quantity: number | null; quantityText?: string | null; quantityUnit: string | null; version: number; confirmed: boolean; transferId: string | null }
 export type PreparationMember = { id: string; position: string; barcode: string; attemptId: string; sequence: number; workOrderId: string; jobName: string; specimenId: string; specimenName: string; state: string; failureEvidence: string | null; operationalHold?: boolean; blocker: string | null;
   sourceMaterial?: PreparationSourceMaterial | null; libraryTube?: PreparationLibraryTube | null;
   customerSampleId?: string | null; biologicalSource?: string | null; safetyInformation?: string | null;
@@ -25,7 +25,7 @@ export type PreparationTubePage = { items: PreparationTube[]; totalCount: number
 export type PreparationStepInput = { stageId: string; stepKey: string; action: 'record' | 'repeat' | 'correct'; outcome: 'recorded' | 'skipped'; coveredMemberIds: string[]; sharedCaptures: Record<string, unknown>;
   tubes: { memberId: string; captures: Record<string, unknown>; qcOutcome: string | null; reason: string | null }[];
   sharedQcOutcome: string | null; reason: string | null; coverageConfirmed: boolean; operatorConfirmed: boolean; resourcesConfirmed: boolean; resourceEntries?: PreparationResourceInput[]; performance?: LabStepPerformanceInput }
-export type PreparationResourceInput = { fieldKey: string; memberId?: string; resourceId?: string; resourceVersion?: number; productId?: string; name?: string; vendor?: string; quantity?: number; quantityUnit?: string; location?: string; runReference?: string; amountUnknown?: boolean; exceptionReason?: string; disposition?: 'continue' | 'hold' | 'fail'; barcode?: string; sourceBarcode?: string; materialExhausted?: boolean; exhaustionReason?: string }
+export type PreparationResourceInput = { fieldKey: string; memberId?: string; resourceId?: string; resourceVersion?: number; productId?: string; name?: string; vendor?: string; quantity?: number; quantityText?: string; quantityUnit?: string; location?: string; runReference?: string; amountUnknown?: boolean; exceptionReason?: string; disposition?: 'continue' | 'hold' | 'fail'; barcode?: string; sourceBarcode?: string; materialExhausted?: boolean; exhaustionReason?: string }
 export type PreparationOutputInput = { memberId: string; quantity: number; quantityUnit: string; location: string }
 export type PreparationCommand = { requestId: string; version: number; action: string; memberId?: string; position?: string; barcode?: string; confirmed?: boolean; stageId?: string;
   barcodeSource?: 'PhaenoGenerated' | 'Manufacturer';

@@ -44,7 +44,7 @@ describe('preparation access feedback', () => {
     const retry = await screen.findByRole('button', { name: 'Retry same command' })
     expect(screen.queryByLabelText(/Actual amount transferred/)).toBeNull()
     const submitted = state.apply.mock.calls[0][1]
-    expect(submitted.step.resourceEntries[0]).toMatchObject({ quantity: 20, resourceVersion: 1 })
+    expect(submitted.step.resourceEntries[0]).toMatchObject({ quantityText: '20', resourceVersion: 1 })
     state.apply.mockResolvedValueOnce(refreshed)
     fireEvent.click(retry)
     await waitFor(() => expect(state.apply).toHaveBeenCalledTimes(2))

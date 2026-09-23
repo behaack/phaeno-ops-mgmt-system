@@ -42,16 +42,16 @@ public sealed record ReleasedDeliverableDownloadProjection(
             throw new ArgumentException("Projection timestamps must use UTC.", nameof(utcNow));
 
         var distinctFileIds = fileIds.Where(id => id != Guid.Empty).Distinct().ToList();
+        var fileIdSet = distinctFileIds.ToHashSet();
         var relevantAttempts = attempts
-            .Where(attempt => distinctFileIds.Contains(attempt.FileId))
+            .Where(attempt => fileIdSet.Contains(attempt.FileId))
             .ToList();
+        var attemptsByFile = relevantAttempts.ToLookup(attempt => attempt.FileId);
         var files = new Dictionary<Guid, ReleasedDeliverableFileDownloadProjection>();
 
         foreach (var fileId in distinctFileIds)
         {
-            var fileAttempts = relevantAttempts
-                .Where(attempt => attempt.FileId == fileId)
-                .ToList();
+            var fileAttempts = attemptsByFile[fileId];
             var successfulAt = fileAttempts
                 .Where(attempt => attempt.Outcome == OperationalFileDownloadOutcome.Succeeded
                     && attempt.CountsForReleasedPackageRetention
@@ -118,6 +118,7 @@ public sealed class ReleasedDeliverableDownloadProjectionService(PSeqOperationsD
                 && attempt.ReleasedPackageType == packageType
                 && packageIds.Contains(attempt.ReleasedPackageId))
             .ToListAsync(cancellationToken);
+        var attemptsByPackage = attempts.ToLookup(attempt => attempt.ReleasedPackageId);
 
         var enforce = options?.Value.ReleasedDeliverableRetentionEnforcement == true
             && packageType is ReleasedDeliverablePackageType.LabResult or ReleasedDeliverablePackageType.AssemblyOutput;
@@ -125,7 +126,7 @@ public sealed class ReleasedDeliverableDownloadProjectionService(PSeqOperationsD
         var result = new Dictionary<Guid, ReleasedDeliverableDownloadProjection>();
         foreach (var item in fileIdsByPackageId)
         {
-            var packageAttempts = attempts.Where(value => value.ReleasedPackageId == item.Key).ToList();
+            var packageAttempts = attemptsByPackage[item.Key].ToList();
             var snapshot = enforce ? await new ManagedReleaseRetentionService(dbContext)
                 .ReadSnapshotAsync(packageType, item.Key, organizationId, cancellationToken) : null;
             var verified = snapshot is null ? null : await new DownloadCommitEvidenceService(dbContext).ReadCompletionsAsync(packageAttempts, cancellationToken);

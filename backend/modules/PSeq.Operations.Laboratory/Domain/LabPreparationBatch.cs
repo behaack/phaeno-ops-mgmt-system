@@ -165,7 +165,8 @@ public sealed record LabPreparationResourceFieldInput(string FieldKey, Guid? Mem
     Guid? ResourceId = null, long? ResourceVersion = null, decimal? Quantity = null,
     string? QuantityUnit = null, string? Location = null, string? RunReference = null, string? Name = null,
     Guid? ProductId = null, string? Vendor = null, bool AmountUnknown = false, string? ExceptionReason = null, string? Disposition = null,
-    string? Barcode = null, bool MaterialExhausted = false, string? ExhaustionReason = null, string? SourceBarcode = null);
+    string? Barcode = null, bool MaterialExhausted = false, string? ExhaustionReason = null, string? SourceBarcode = null,
+    string? QuantityText = null);
 
 public static class LabPreparationEvidence
 {

@@ -105,7 +105,11 @@ public sealed record LabContainerDto(
     string? IntakeDisposition = null, string? IntakeReasonCode = null, string? IntakeNotes = null,
     DateTime? IntakeReviewedAtUtc = null, Guid? IntakeReviewedByUserId = null,
     decimal? InitialQuantity = null, string? InitialQuantityUnit = null,
-    string? QuantityBasis = null, string QuantityHistoryJson = "[]");
+    string? QuantityBasis = null, string QuantityHistoryJson = "[]")
+{
+    public string? QuantityText => Quantity?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    public string? InitialQuantityText => InitialQuantity?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+}
 
 public sealed record LabContainerScanDto(
     Guid LabWorkOrderId, string? CommercialOrderNumber, string? AccessionNumber,

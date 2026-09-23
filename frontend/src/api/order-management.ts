@@ -664,6 +664,10 @@ export async function listLabOrders(
 }
 export type CustomerLabDashboardView = 'active' | 'attention' | 'results';
 export type CustomerLabDashboardSummary = { attentionCount: number; newResultCount: number };
+export type CustomerLabDashboardResponse = { summary: CustomerLabDashboardSummary; requests: PagedResult<OrderListItem> };
+export async function getCustomerLabDashboard(view: CustomerLabDashboardView, page = 1, pageSize = 10) {
+  return get<CustomerLabDashboardResponse>("/lab-service-orders/dashboard", { dashboardView: view, page, pageSize });
+}
 export async function getCustomerLabDashboardSummary() {
   return get<CustomerLabDashboardSummary>("/lab-service-orders/dashboard-summary");
 }

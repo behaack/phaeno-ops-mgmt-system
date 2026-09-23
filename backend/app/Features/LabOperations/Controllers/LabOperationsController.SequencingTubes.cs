@@ -117,15 +117,26 @@ public sealed partial class LabOperationsController
                 EnsureVersion(destination.Version, request.DestinationVersion.Value);
                 if (!BarcodeMatches(request.ConfirmedSourceBarcode, source.Barcode) || !BarcodeMatches(request.ConfirmedDestinationBarcode, destination.Barcode))
                     throw Invalid("transfer_identity_mismatch", "Scan both the selected library and sequencing tube barcodes.");
-                if (request.Quantity is null || request.Quantity <= 0 || string.IsNullOrWhiteSpace(request.QuantityUnit))
+                if (request.QuantityText is not null && request.Quantity.HasValue)
+                    throw Invalid("transfer_quantity_ambiguous", "Enter the transfer amount once.");
+                decimal? quantity = request.Quantity;
+                if (request.QuantityText is not null)
+                {
+                    if (!ExactDecimalQuantity.TryParse(request.QuantityText, out var parsed))
+                        throw Invalid("transfer_quantity_invalid", "Enter a positive decimal amount with at most 28 fractional places.");
+                    quantity = parsed;
+                }
+                if (quantity is null || quantity <= 0 || string.IsNullOrWhiteSpace(request.QuantityUnit))
                     throw Invalid("transfer_quantity_required", "Enter the positive amount transferred and its unit.");
+                if (source.Quantity.HasValue && !ExactDecimalQuantity.CanSubtract(source.Quantity.Value, quantity.Value))
+                    throw Invalid("transfer_quantity_precision", "Use an amount whose source balance can be recorded exactly.");
                 if (request.Performance is null || !request.Performance.PersonallyPerformed || request.Performance.PerformedByUserId.HasValue)
                     throw Invalid("transfer_performance_required", "Confirm that you personally performed this transfer.");
                 LabStepPerformance? performance = null;
                 Execute(() => performance = LabStepPerformance.Capture(request.Performance, actor.User.Id, now));
                 LabBiologicalMaterialTransfer? transfer = null;
                 Execute(() => transfer = LabBiologicalMaterialTransfer.Record(request.RequestId, hash, source, destination, attempt,
-                    request.Quantity.Value, request.QuantityUnit, request.MaterialExhausted, actor.User.Id, now,
+                    quantity.Value, request.QuantityUnit, request.MaterialExhausted, actor.User.Id, now,
                     sequencingBatchMemberId: member.Id, performedByUserId: performance!.PerformedByUserId, performedAtUtc: performance!.PerformedAtUtc));
                 dbContext.LabBiologicalMaterialTransfers.Add(transfer!);
                 member.AttachSequencingTube(destination.Id, transfer!.Id);

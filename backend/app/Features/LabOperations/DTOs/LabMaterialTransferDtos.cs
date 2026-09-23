@@ -1,5 +1,6 @@
 namespace PhaenoPortal.App.Features.LabOperations.DTOs;
 
+using System.Globalization;
 using PSeq.Operations.Laboratory.Domain;
 
 public sealed record LabSequencingTubeWorkspaceDto(Guid BatchId, long BatchVersion, string BatchStatus,
@@ -11,10 +12,16 @@ public sealed record LabMaterialTransferDto(Guid Id, Guid SourceContainerId, str
     Guid DestinationContainerId, string DestinationBarcode, decimal Quantity, string QuantityUnit,
     decimal? SourceQuantityBefore, decimal? SourceQuantityAfter, string? SourceQuantityBasis,
     bool ExhaustedOverride, decimal? BalanceAdjustmentQuantity, Guid PerformedByUserId,
-    DateTime PerformedAtUtc, Guid RecordedByUserId, DateTime RecordedAtUtc);
+    DateTime PerformedAtUtc, Guid RecordedByUserId, DateTime RecordedAtUtc)
+{
+    public string QuantityText => Quantity.ToString(CultureInfo.InvariantCulture);
+    public string? SourceQuantityBeforeText => SourceQuantityBefore?.ToString(CultureInfo.InvariantCulture);
+    public string? SourceQuantityAfterText => SourceQuantityAfter?.ToString(CultureInfo.InvariantCulture);
+    public string? BalanceAdjustmentQuantityText => BalanceAdjustmentQuantity?.ToString(CultureInfo.InvariantCulture);
+}
 public sealed record LabSequencingTubeCommand(Guid RequestId, long BatchVersion, string Action,
     string? BarcodeSource = null, string? Barcode = null, string? Location = null,
     decimal? Quantity = null, string? QuantityUnit = null, bool MaterialExhausted = false,
     long? SourceVersion = null, long? DestinationVersion = null,
     string? ConfirmedSourceBarcode = null, string? ConfirmedDestinationBarcode = null,
-    LabStepPerformanceInput? Performance = null);
+    LabStepPerformanceInput? Performance = null, string? QuantityText = null);

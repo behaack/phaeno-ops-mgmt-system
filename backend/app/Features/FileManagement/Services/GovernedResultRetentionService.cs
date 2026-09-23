@@ -27,12 +27,14 @@ public sealed class GovernedResultRetentionService(PSeqOperationsDbContext db)
         var attempts = await db.OperationalFileDownloads.AsNoTracking()
             .Where(attempt => attempt.ReleasedPackageType == ReleasedDeliverablePackageType.PSeqResult
                 && ids.Contains(attempt.ReleasedPackageId)).ToListAsync(cancellationToken);
+        var artifactsByPackage = artifacts.ToLookup(artifact => artifact.ResultOutputPackageId);
+        var attemptsByPackage = attempts.ToLookup(attempt => attempt.ReleasedPackageId);
         var governedIds = schedules.Values.Where(value => value.RetentionSnapshotId.HasValue).Select(value => value.ResultOutputPackageId).ToHashSet();
         var committed = await new DownloadCommitEvidenceService(db).ReadCompletionsAsync(
             attempts.Where(value => governedIds.Contains(value.ReleasedPackageId)).ToList(), cancellationToken);
         return packages.ToDictionary(package => package.Id, package =>
         {
-            var files = artifacts.Where(artifact => artifact.ResultOutputPackageId == package.Id).ToList();
+            var files = artifactsByPackage[package.Id].ToList();
             var packageAvailable = package.State == ResultOutputPackageState.Released
                 && files.Count == package.ExpectedArtifactCount
                 && files.All(artifact => artifact.ScanState == ResultArtifactScanState.Clean && !artifact.DeletedAtUtc.HasValue);
@@ -44,7 +46,7 @@ public sealed class GovernedResultRetentionService(PSeqOperationsDbContext db)
             if (!snapshots.TryGetValue(snapshotId, out var snapshot) || snapshot.OrganizationId != package.OrganizationId)
                 throw new InvalidOperationException("The governed package retention snapshot is unavailable.");
             var download = ReleasedDeliverableDownloadProjection.Create(files.Select(file => file.Id).ToList(),
-                attempts.Where(attempt => attempt.ReleasedPackageId == package.Id && attempt.OrganizationId == package.OrganizationId).ToList(), utcNow, committed);
+                attemptsByPackage[package.Id].Where(attempt => attempt.OrganizationId == package.OrganizationId).ToList(), utcNow, committed);
             var decision = ReleasedDeliverableRetentionDecision.Evaluate(snapshot,
                 download.Files.Values.Select(file => file.DownloadedAtUtc).ToList(), utcNow);
             var terminal = schedule.State is ResultRetentionState.Deleted or ResultRetentionState.Reissued;

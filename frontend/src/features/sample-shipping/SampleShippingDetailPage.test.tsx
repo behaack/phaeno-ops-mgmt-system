@@ -302,6 +302,31 @@ describe('SampleShippingDetailPage', () => {
     expect(api.recordSampleShipment).toHaveBeenCalledOnce()
   })
 
+  it('announces shipment errors and confirms before discarding entered dispatch details', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    try {
+      renderPage(undefined, customerSession(), embeddedHost())
+      fireEvent.click(await screen.findByRole('button', { name: 'Record shipment' }))
+      const dialog = screen.getByRole('dialog', { name: 'Record return shipment' })
+      fireEvent.change(within(dialog).getByLabelText(/Carrier/), { target: { value: 'UPS' } })
+      fireEvent.change(within(dialog).getByLabelText(/Tracking number/), { target: { value: '' } })
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Record shipment' }))
+      const tracking = within(dialog).getByLabelText(/Tracking number/)
+      expect(await within(dialog).findByText('Enter the tracking number.')).toBeTruthy()
+      expect(tracking.getAttribute('aria-invalid')).toBe('true')
+      expect(tracking.getAttribute('aria-describedby')).toBe('shipment-tracking-error')
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+      expect(confirm).toHaveBeenCalledWith('Discard the unsaved shipment details?')
+      expect(screen.getByRole('dialog', { name: 'Record return shipment' })).toBeTruthy()
+      confirm.mockReturnValue(true)
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+      await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Record return shipment' })).toBeNull())
+      expect(api.recordSampleShipment).not.toHaveBeenCalled()
+    } finally {
+      confirm.mockRestore()
+    }
+  })
+
   it('shows packet failures inside the dialog and clears them when starting a new attempt', async () => {
     api.getSampleShipment.mockResolvedValue({ ...shipment, status: 'Preparing', currentPacket: null })
     api.issueSampleShippingPacket.mockRejectedValueOnce(new Error('Packet changed. Review the current revision.'))

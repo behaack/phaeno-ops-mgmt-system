@@ -38,6 +38,7 @@ import {
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { CustomerLabRequestsCard } from './CustomerLabRequestsCard'
 import { CustomerDashboardMetrics } from './CustomerDashboardMetrics'
+import { useCustomerDashboardQuery } from './customer-dashboard-query'
 
 type ExternalDashboardContentProps = {
   membership: SessionMembership | null | undefined
@@ -69,6 +70,9 @@ export function ExternalDashboardContent({
 }: ExternalDashboardContentProps) {
   const { authProvider, session, selectedOrganizationId, selectedDepartmentId } = usePhaenoSession()
   const [requestView, setRequestView] = useState<CustomerLabDashboardView>('active')
+  const [requestPagination, setRequestPagination] = useState({ scope: '', page: 1 })
+  const requestScope = `${selectedOrganizationId}:${selectedDepartmentId}`
+  const requestPage = requestPagination.scope === requestScope ? requestPagination.page : 1
   const capabilities = session?.capabilities
   const kind = membership?.organizationKind
   const apiEnabled = authProvider !== 'mock'
@@ -76,6 +80,13 @@ export function ExternalDashboardContent({
   const isPartner = kind === 'Partner'
   const showDataLibrary = !isCustomer && Boolean(capabilities?.canViewOrganizationDatasets)
   const canViewLab = (isCustomer || isPartner) && Boolean(capabilities?.canViewLabServiceOrders)
+  const customerDashboard = useCustomerDashboardQuery(requestView, requestPage,
+    selectedOrganizationId, selectedDepartmentId,
+    apiEnabled && isCustomer && canViewLab && Boolean(selectedOrganizationId && selectedDepartmentId))
+  const selectRequestView = (view: CustomerLabDashboardView) => {
+    setRequestView(view)
+    setRequestPagination({ scope: requestScope, page: 1 })
+  }
   const canViewShipping =
     (kind === 'Prospect' || isCustomer || isPartner) &&
     Boolean(capabilities?.canViewSampleShipping)
@@ -256,7 +267,8 @@ export function ExternalDashboardContent({
 
   return (
     <div className="space-y-6">
-    {isCustomer && canViewLab ? <CustomerDashboardMetrics view={requestView} onSelect={setRequestView} /> : null}
+    {isCustomer && canViewLab ? <CustomerDashboardMetrics view={requestView} onSelect={selectRequestView}
+      query={customerDashboard} enabled={apiEnabled && Boolean(selectedOrganizationId && selectedDepartmentId)} /> : null}
     <section aria-labelledby="your-work-heading" className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -267,7 +279,7 @@ export function ExternalDashboardContent({
           Live activity and starting points for {membership.organizationName}.
         </p>
         </div>
-        {isCustomer && canViewLab && requestView !== 'active' ? <Button type="button" variant="outline" onClick={() => setRequestView('active')}>All active requests</Button> : null}
+        {isCustomer && canViewLab && requestView !== 'active' ? <Button type="button" variant="outline" onClick={() => selectRequestView('active')}>All active requests</Button> : null}
       </div>
 
       {!apiEnabled ? (
@@ -279,7 +291,8 @@ export function ExternalDashboardContent({
         </Alert>
       ) : null}
 
-      {isCustomer && canViewLab ? <CustomerLabRequestsCard view={requestView} key={`${selectedOrganizationId}:${selectedDepartmentId}:${requestView}`} /> : null}
+      {isCustomer && canViewLab ? <CustomerLabRequestsCard view={requestView} page={requestPage}
+        onPageChange={page => setRequestPagination({ scope: requestScope, page })} query={customerDashboard} /> : null}
 
       {cards.length > 0 ? (
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,20rem),1fr))] gap-4">

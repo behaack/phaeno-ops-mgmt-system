@@ -1,7 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { useState } from 'react'
-import { listLabDashboardRequests, type CustomerLabDashboardView, type OrderListItem } from '#/api/order-management'
+import { type CustomerLabDashboardView, type OrderListItem } from '#/api/order-management'
 import type { SessionCapabilities } from '#/api/session'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
@@ -9,25 +7,21 @@ import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '#/components/ui/card'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { OrderStatusBadge } from '#/features/orders/OrderStatusBadge'
+import type { CustomerDashboardQuery } from './customer-dashboard-query'
 
-export function CustomerLabRequestsCard({ view = 'active' }: { view?: CustomerLabDashboardView }) {
+export function CustomerLabRequestsCard({ view, page, onPageChange, query }: {
+  view: CustomerLabDashboardView
+  page: number
+  onPageChange: (page: number) => void
+  query: CustomerDashboardQuery
+}) {
   const { authProvider, session, selectedOrganizationId, selectedDepartmentId } = usePhaenoSession()
-  const [page, setPage] = useState(1)
   const mock = authProvider === 'mock'
   const canView = session?.capabilities.canViewLabServiceOrders === true
   const hasScope = Boolean(selectedOrganizationId && selectedDepartmentId)
-  const requests = useQuery({
-    queryKey: ['lab-service-orders', 'dashboard', selectedOrganizationId, selectedDepartmentId, view, page],
-    queryFn: () => listLabDashboardRequests(page, view),
-    enabled: !mock && canView && hasScope,
-    staleTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: 'always',
-    refetchInterval: 30_000,
-  })
   if (!canView) return null
 
-  const data = !mock && hasScope && !requests.isError ? requests.data : undefined
+  const data = !mock && hasScope && !query.isError ? query.data?.requests : undefined
   return <Card id="customer-lab-requests" aria-labelledby="customer-lab-requests-heading" className="min-w-0">
     <CardHeader>
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -36,14 +30,14 @@ export function CustomerLabRequestsCard({ view = 'active' }: { view?: CustomerLa
       </div>
       <CardDescription>{view === 'results' ? 'Open a Job to download its released results. A Job can contain more than one new result package.' : 'Open each Job to review pricing, complete requested work, or follow progress. Pricing reviews appear first.'}</CardDescription>
     </CardHeader>
-    <CardContent aria-busy={requests.isFetching}>
+    <CardContent aria-busy={query.isFetching}>
       {mock ? <p className="text-sm text-muted-foreground">Live requests are unavailable in mock-session mode.</p>
         : !hasScope ? <p className="text-sm text-muted-foreground">Select a Department to see its requests.</p>
-          : requests.isError ? <Alert variant="destructive"><AlertTitle>Requests could not be loaded</AlertTitle>
+          : query.isError ? <Alert variant="destructive"><AlertTitle>Requests could not be loaded</AlertTitle>
             <AlertDescription>Refresh to see the current work for this Department.
-              <Button type="button" variant="outline" disabled={requests.isFetching} onClick={() => { void requests.refetch() }}>Retry requests</Button>
+              <Button type="button" variant="outline" disabled={query.isFetching} onClick={() => { void query.refetch() }}>Retry requests</Button>
             </AlertDescription></Alert>
-            : requests.isPending ? <p role="status" className="text-sm text-muted-foreground">Loading your requests…</p>
+            : query.isPending ? <p role="status" className="text-sm text-muted-foreground">Loading your requests…</p>
               : data?.items.length ? <ul className="divide-y" aria-label={view === 'results' ? 'Jobs with new results' : 'Active laboratory requests'}>
                 {data.items.map(order => {
                   const next = view === 'results' ? { label: 'View results', owner: 'New results', detail: 'Open Files and results to download the released packages for this Job.' } : requestNextStep(order, session?.capabilities)
@@ -68,8 +62,8 @@ export function CustomerLabRequestsCard({ view = 'active' }: { view?: CustomerLa
       <Button asChild variant="ghost"><Link to="/lab-services">View all lab services</Link></Button>
       {data && (page > 1 || data.totalCount > data.pageSize) ? <nav aria-label="Lab request pages" className="flex flex-wrap items-center gap-2">
         <span className="text-xs text-muted-foreground">Page {page} of {Math.max(page, Math.ceil(data.totalCount / data.pageSize))}</span>
-        <Button type="button" variant="outline" disabled={page === 1 || requests.isFetching} onClick={() => setPage(value => value - 1)}>Previous</Button>
-        <Button type="button" variant="outline" disabled={page * data.pageSize >= data.totalCount || requests.isFetching} onClick={() => setPage(value => value + 1)}>Next</Button>
+        <Button type="button" variant="outline" disabled={page === 1 || query.isFetching} onClick={() => onPageChange(page - 1)}>Previous</Button>
+        <Button type="button" variant="outline" disabled={page * data.pageSize >= data.totalCount || query.isFetching} onClick={() => onPageChange(page + 1)}>Next</Button>
       </nav> : null}
     </CardFooter>
   </Card>

@@ -37,7 +37,7 @@ import { TransportationKitsPanel } from './TransportationKitsPanel'
 import { getShipmentKitSupply, type ShipmentKitSupply } from '#/api/transportation-kit-requests'
 
 const assignmentSchema = z.object({ supplierBarcode: z.string().trim().min(4, 'Scan or enter the complete tube barcode.').max(100), reason: z.string().trim().max(1000), ...tubeMaterialAmountShape })
-const shipmentSchema = z.object({ carrier: z.string().trim().min(1, 'Enter the carrier.').max(255), trackingNumber: z.string().trim().min(1, 'Enter the tracking number.').max(255), shippedAt: z.string().min(1, 'Enter the shipment time.') })
+const shipmentSchema = z.object({ carrier: z.string().trim().min(1, 'Enter the carrier.').max(255), trackingNumber: z.string().trim().min(1, 'Enter the tracking number.').max(255), shippedAt: z.string().min(1, 'Enter the shipment time.').refine(value => Number.isFinite(new Date(value).getTime()), 'Enter a valid shipment time.') })
 type AssignmentValues = z.infer<typeof assignmentSchema>
 type ShipmentValues = z.infer<typeof shipmentSchema>
 export type ShipmentHeaderAction = {
@@ -379,9 +379,30 @@ function ConfirmPacketDialog({ action, shipmentNumber, sampleCount, tubeCount, i
   </Dialog>
 }
 
-function RecordShipmentDialog({ open, isPending, error, onOpenChange, onSubmit, onReturnFocus }: { open: boolean; isPending: boolean; error?: string; onOpenChange: (open: boolean) => void; onSubmit: (values: ShipmentValues) => void; onReturnFocus: () => void }) { const form = useForm<ShipmentValues>({ resolver: zodResolver(shipmentSchema), defaultValues: { carrier: '', trackingNumber: '', shippedAt: localDateTime() } }); useEffect(() => { if (open) form.reset({ carrier: '', trackingNumber: '', shippedAt: localDateTime() }) }, [form, open]); return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent onCloseAutoFocus={event => { event.preventDefault(); onReturnFocus() }}><DialogHeader><DialogTitle>Record return shipment</DialogTitle><DialogDescription>Enter the carrier facts from your receipt. Phaeno does not purchase or track postage through this screen.</DialogDescription></DialogHeader>{error ? <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}<form id="record-shipment" className="grid gap-4" noValidate onSubmit={form.handleSubmit(onSubmit)}><Field id="shipment-carrier" label="Carrier" error={form.formState.errors.carrier?.message}><Input id="shipment-carrier" {...form.register('carrier')} /></Field><Field id="shipment-tracking" label="Tracking number" error={form.formState.errors.trackingNumber?.message}><Input id="shipment-tracking" {...form.register('trackingNumber')} /></Field><Field id="shipment-time" label="Shipped at" error={form.formState.errors.shippedAt?.message}><Input id="shipment-time" type="datetime-local" {...form.register('shippedAt')} /></Field></form><RequiredDialogFooter><Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button><Button type="submit" form="record-shipment" disabled={isPending}>{isPending ? 'Saving…' : 'Record shipment'}</Button></RequiredDialogFooter></DialogContent></Dialog> }
+function RecordShipmentDialog({ open, isPending, error, onOpenChange, onSubmit, onReturnFocus }: { open: boolean; isPending: boolean; error?: string; onOpenChange: (open: boolean) => void; onSubmit: (values: ShipmentValues) => void; onReturnFocus: () => void }) {
+  const form = useForm<ShipmentValues>({ resolver: zodResolver(shipmentSchema), defaultValues: { carrier: '', trackingNumber: '', shippedAt: localDateTime() } })
+  useEffect(() => { if (open) form.reset({ carrier: '', trackingNumber: '', shippedAt: localDateTime() }) }, [form, open])
+  const dirty = form.formState.isDirty
+  const close = (nextOpen: boolean) => {
+    if (nextOpen || !isPending && (!dirty || window.confirm('Discard the unsaved shipment details?'))) onOpenChange(nextOpen)
+  }
+  useBlocker({ shouldBlockFn: () => open && (isPending || dirty && !window.confirm('Discard the unsaved shipment details?')), enableBeforeUnload: () => open && (isPending || dirty), disabled: !open })
+  const errors = form.formState.errors
+  return <Dialog open={open} onOpenChange={close}>
+    <DialogContent onCloseAutoFocus={event => { event.preventDefault(); onReturnFocus() }}>
+      <DialogHeader><DialogTitle>Record return shipment</DialogTitle><DialogDescription>Enter the carrier facts from your receipt. Phaeno does not purchase or track postage through this screen.</DialogDescription></DialogHeader>
+      {error ? <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}
+      <form id="record-shipment" className="grid gap-4" noValidate onSubmit={form.handleSubmit(onSubmit)}>
+        <Field id="shipment-carrier" label="Carrier" error={errors.carrier?.message}><Input id="shipment-carrier" disabled={isPending} aria-required="true" aria-invalid={Boolean(errors.carrier)} aria-describedby={errors.carrier ? 'shipment-carrier-error' : undefined} {...form.register('carrier')} /></Field>
+        <Field id="shipment-tracking" label="Tracking number" error={errors.trackingNumber?.message}><Input id="shipment-tracking" disabled={isPending} aria-required="true" aria-invalid={Boolean(errors.trackingNumber)} aria-describedby={errors.trackingNumber ? 'shipment-tracking-error' : undefined} {...form.register('trackingNumber')} /></Field>
+        <Field id="shipment-time" label="Shipped at" error={errors.shippedAt?.message}><Input id="shipment-time" type="datetime-local" disabled={isPending} aria-required="true" aria-invalid={Boolean(errors.shippedAt)} aria-describedby={errors.shippedAt ? 'shipment-time-error' : undefined} {...form.register('shippedAt')} /></Field>
+      </form>
+      <RequiredDialogFooter><Button type="button" variant="outline" disabled={isPending} onClick={() => close(false)}>Cancel</Button><Button type="submit" form="record-shipment" disabled={isPending}>{isPending ? 'Saving…' : 'Record shipment'}</Button></RequiredDialogFooter>
+    </DialogContent>
+  </Dialog>
+}
 
-function Field({ id, label, error, children }: { id: string; label: string; error?: string; children: React.ReactNode }) { return <div className="grid gap-1.5"><Label htmlFor={id}><RequiredFieldName>{label}</RequiredFieldName></Label>{children}{error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}</div> }
+function Field({ id, label, error, children }: { id: string; label: string; error?: string; children: React.ReactNode }) { return <div className="grid gap-1.5"><Label htmlFor={id}><RequiredFieldName>{label}</RequiredFieldName></Label>{children}{error ? <p id={`${id}-error`} role="alert" className="text-sm text-destructive">{error}</p> : null}</div> }
 function Info({ label, value }: { label: string; value: string }) { return <div><p className="text-xs font-medium text-muted-foreground">{label}</p><p className="mt-1">{value}</p></div> }
 function humanize(value: string) { return value.replace(/([a-z])([A-Z])/g, '$1 $2') }
 function localDateTime() { const date = new Date(); date.setMinutes(date.getMinutes() - date.getTimezoneOffset()); return date.toISOString().slice(0, 16) }

@@ -1,5 +1,9 @@
 # Frontend Test Plan
 
+## September 23, 2026 — Review follow-up
+
+`SampleShippingDetailPage.test.tsx` adds required-error association and unsaved dispatch discard coverage. `SequencingTubesDialog.test.tsx` checks that a precise decimal is compared with the exact source balance and submitted as text without JavaScript number conversion. `biological-material-fields.test.ts` and `PreparationBatchPage.access.test.tsx` cover precise source-to-library transfer entry, exact source comparison, representable balance and same-command retry. Dashboard component cases cover a shared counts/list response, Department changes, pagination, unavailable data, and retry. The six focused frontend files passed 55/55 tests; TypeScript, full ESLint, documentation consistency, and the production Vite build pass. The full frontend unit suite was not rerun for this follow-up.
+
 ## September 23, 2026 — Material amounts, transfers and expiration
 
 The owner subsequently authorized the release checks. The full unit suite passed **1,208 tests in 188 files**; the final durable-recovery changes passed **15 focused tests in two files**. Full ESLint, TypeScript, all 56 generated guides and the production build pass. Preparation saves retain their report and original command across reload; sequencing saves retain the same original command. Real browser storage and exact replay are exercised by the [E2E checkpoint](E2E-TEST-PLAN.md#september-23-2026--material-amounts-transfers-and-expiration). These results supersede the initial unexecuted checkpoint below; physical bench acceptance remains separate. See the [release record](../operations/material-tracking-release-20260923.md).

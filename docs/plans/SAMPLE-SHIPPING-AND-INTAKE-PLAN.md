@@ -1,5 +1,9 @@
 # Sample Shipping and Intake Plan
 
+## Record shipment form follow-up — September 23, 2026
+
+The dispatch form prompts before discarding entered carrier, tracking or time details, and stays open with controls locked while saving. Required-field errors are associated with their controls for assistive technology; invalid shipment times are rejected in the form. The saved shipment contract and dispatch rules remain unchanged. Local regression source was added; automated execution and signed-in UI acceptance are pending.
+
 ## Customer-declared tube material amount — 2026-09-23
 
 Owner-approved requirement: capture the actual biological material amount and unit being sent from the customer during shipment preparation. Capture belongs to each physical registered tube, not the sample's submission quantity, tube count, or tube capacity. Amounts do not imply a laboratory measurement.

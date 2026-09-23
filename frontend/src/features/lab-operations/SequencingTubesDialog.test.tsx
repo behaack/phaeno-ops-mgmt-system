@@ -57,7 +57,27 @@ describe('sequencing tube material tracking', () => {
     expect(screen.queryByRole('option', { name: /Another staff member/ })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Record transfer' }))
     await waitFor(() => expect(api.apply).toHaveBeenCalledOnce())
-    expect(api.apply.mock.calls[0][2]).toMatchObject({ action: 'transfer', confirmedSourceBarcode: source.barcode, confirmedDestinationBarcode: destination.barcode, sourceVersion: 4, destinationVersion: 1, quantity: 20, quantityUnit: 'µL', materialExhausted: true, performance: { mode: 'now', personallyPerformed: true } })
+    expect(api.apply.mock.calls[0][2]).toMatchObject({ action: 'transfer', confirmedSourceBarcode: source.barcode, confirmedDestinationBarcode: destination.barcode, sourceVersion: 4, destinationVersion: 1, quantityText: '20', quantityUnit: 'µL', materialExhausted: true, performance: { mode: 'now', personallyPerformed: true } })
+  })
+
+  it('preserves a precise decimal and compares it with the exact source balance', async () => {
+    const preciseSource = { ...source, quantity: 0.12345678901234568, quantityText: '0.123456789012345678901' }
+    api.get.mockResolvedValue({ ...workspace(true), members: [{ ...workspace(true).members[0], source: preciseSource }] })
+    api.apply.mockResolvedValue(workspace(true))
+    renderDialog()
+    fireEvent.click(await screen.findByRole('button', { name: 'Record transfer' }))
+    fireEvent.change(screen.getByLabelText(/Scan source library barcode/), { target: { value: source.barcode } })
+    fireEvent.change(screen.getByLabelText(/Scan sequencing tube barcode/), { target: { value: destination.barcode } })
+    fireEvent.change(screen.getByLabelText(/Actual amount transferred/), { target: { value: '0.123456789012345678902' } })
+    fireEvent.click(screen.getByRole('checkbox', { name: /I personally performed/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Record transfer' }))
+    expect(await screen.findByText('The amount exceeds the known library material remaining.')).toBeTruthy()
+    expect(api.apply).not.toHaveBeenCalled()
+    fireEvent.change(screen.getByLabelText(/Actual amount transferred/), { target: { value: '0.123456789012345678901' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Record transfer' }))
+    await waitFor(() => expect(api.apply).toHaveBeenCalledOnce())
+    expect(api.apply.mock.calls[0][2].quantityText).toBe('0.123456789012345678901')
+    expect(api.apply.mock.calls[0][2].quantity).toBeUndefined()
   })
 
   it('keeps completed or frozen sendouts available for read-only inspection', async () => {

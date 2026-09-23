@@ -1,5 +1,9 @@
 # Order Management Plan
 
+## Customer result projection follow-up — September 23, 2026
+
+The existing Department-scoped New results definition remains unchanged. The retention and download projections group loaded artifacts and attempts by package or file once. The dashboard query filters fully downloaded packages in the database before loading package, artifact, and retention evidence; packages with missing, pending, or duplicate governed commit evidence stay in the authoritative projection so failures are not hidden. The Portal now reads counts and the selected, paged Job list from one Department-authorized `GET /api/lab-service-orders/dashboard` response, so each refresh evaluates New results once. Existing summary and list routes remain available for their existing consumers. Both retry controls reload the shared response, and failed refreshes hide stale counts and Jobs. This additive API/UI change was verified with PostgreSQL reference cases and desktop/mobile browser fixtures in disposable local environments. Historical database rows still participate in the indexed eligibility query; a durable current-state projection would need a separate data-model and migration decision if measured production load remains high. No schema change, production deployment, or production load measurement is included.
+
 ## Customer dashboard card removal — September 22, 2026
 
 Remove the Data Library summary card from the Customer dashboard and skip its

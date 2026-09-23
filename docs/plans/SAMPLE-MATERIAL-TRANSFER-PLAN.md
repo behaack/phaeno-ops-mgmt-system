@@ -1,5 +1,9 @@
 # Sample material transfers and tube identity
 
+## Precision follow-up — September 23, 2026
+
+Both source-to-library and library-to-sequencing transfers now send the entered amount as invariant decimal text, compare it with exact source balances, and display exact decimal remainders where available. The API accepts `quantityText` for both commands while retaining numeric `quantity` for older clients; sending both is rejected. Input is limited to representable positive decimals with at most 28 fractional places. The API also rejects transfers whose source or destination balance would require rounding. The existing decimal domain model, transaction, and persisted schema remain unchanged. Focused API, PostgreSQL, frontend and desktop/mobile browser regressions pass locally. This follow-up has not been deployed or physically accepted; API activation must precede the updated Portal UI because older APIs do not understand the new text field.
+
 Status: implemented, software-verified and deployed to production September 23, 2026. Customer-declared shipment amounts, biological transfers, reagent-lot exhaustion and product-dependent expiration capture are connected across the API and UI. Both feature migrations are applied locally and in production; all six pending production migrations were explicitly approved and applied before activating matching API and Portal source `b056528aa59cbec9f2ebc83d407b08211a7c08da`. See the [release record](../operations/material-tracking-release-20260923.md) for tests, recovery checks and production verification. Physical bench, scientific, provider and signed-in hosted workflow acceptance remain separate.
 
 ## Product outcome

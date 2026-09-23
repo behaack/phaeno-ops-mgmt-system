@@ -301,12 +301,14 @@ public partial class SampleShippingPostgresTests
                     Assert.NotEqual(source.Barcode, destination.Barcode);
                     Assert.Equal(generated ? LabContainerBarcodeSource.PhaenoGenerated : LabContainerBarcodeSource.Manufacturer, destination.BarcodeSource);
                     entries.Add(new("biological", MemberId: memberId, ResourceId: source.Id, ResourceVersion: source.Version,
-                        Quantity: 5, QuantityUnit: "uL", SourceBarcode: source.Barcode, Barcode: destination.Barcode, MaterialExhausted: generated));
+                        Quantity: generated ? 5 : null, QuantityText: generated ? null : "5", QuantityUnit: "uL", SourceBarcode: source.Barcode, Barcode: destination.Barcode, MaterialExhausted: generated));
                 }
                 step = step with { ResourceEntries = entries };
                 foreach (var rejectedStep in new[] {
                     step with { OperatorConfirmed = false },
                     step with { ResourceEntries = [entries[0], entries[1] with { Barcode = entries[0].Barcode }] },
+                    step with { ResourceEntries = [entries[0] with { Quantity = 5 }, entries[1]] },
+                    step with { ResourceEntries = [entries[0] with { QuantityText = "0.12345678901234567890123456789" }, entries[1]] },
                     step with { ResourceEntries = [entries[0], entries[1] with { Quantity = 21 }] },
                     step with { ResourceEntries = [entries[0], entries[1] with { ResourceVersion = -1 }] }
                 })

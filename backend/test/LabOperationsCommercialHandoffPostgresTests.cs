@@ -1141,19 +1141,26 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             Assert.Equal(allocatedSequencingTube.Id, Assert.Single(allocateReplay.Members).SequencingTube!.Id);
             sequencingMember = Assert.Single(sequencing.Members);
             var transferMaterial = new LabSequencingTubeCommand(Guid.NewGuid(), sequencing.BatchVersion, "transfer",
-                Quantity: 5, QuantityUnit: "uL", SourceVersion: sequencingMember.Source.Version,
+                QuantityText: "19.000000000000000000000000001", QuantityUnit: "uL", SourceVersion: sequencingMember.Source.Version,
                 DestinationVersion: allocatedSequencingTube.Version, ConfirmedSourceBarcode: sequencingMember.Source.Barcode,
                 ConfirmedDestinationBarcode: allocatedSequencingTube.Barcode, Performance: new("now", true));
+            var ambiguousQuantity = await Assert.ThrowsAsync<OrderManagementException>(() => lab.ApplySequencingTubeCommand(batch.Id,
+                sequencingMember.Id, transferMaterial with { RequestId = Guid.NewGuid(), Quantity = 5 }, CancellationToken.None));
+            Assert.Equal("transfer_quantity_ambiguous", ambiguousQuantity.ErrorCode);
+            var roundedQuantity = await Assert.ThrowsAsync<OrderManagementException>(() => lab.ApplySequencingTubeCommand(batch.Id,
+                sequencingMember.Id, transferMaterial with { RequestId = Guid.NewGuid(), QuantityText = "0.12345678901234567890123456789" }, CancellationToken.None));
+            Assert.Equal("transfer_quantity_invalid", roundedQuantity.ErrorCode);
             sequencing = await lab.ApplySequencingTubeCommand(batch.Id, sequencingMember.Id, transferMaterial, CancellationToken.None);
             var transferred = Assert.Single(sequencing.Members);
-            Assert.Equal(15m, transferred.Source.Quantity);
-            Assert.Equal(5m, transferred.SequencingTube!.Quantity);
+            Assert.Equal(0.999999999999999999999999999m, transferred.Source.Quantity);
+            Assert.Equal(19.000000000000000000000000001m, transferred.SequencingTube!.Quantity);
+            Assert.Equal("19.000000000000000000000000001", transferred.Transfer!.QuantityText);
             var transferReplay = await lab.ApplySequencingTubeCommand(batch.Id, sequencingMember.Id, transferMaterial, CancellationToken.None);
             Assert.Equal(transferred.Transfer!.Id, Assert.Single(transferReplay.Members).Transfer!.Id);
-            Assert.Equal(15m, Assert.Single(transferReplay.Members).Source.Quantity);
+            Assert.Equal(0.999999999999999999999999999m, Assert.Single(transferReplay.Members).Source.Quantity);
             Assert.Equal(1, await scope.DbContext.LabBiologicalMaterialTransfers.CountAsync(t => t.RequestId == transferMaterial.RequestId));
             var alteredReplay = await Assert.ThrowsAsync<OrderManagementException>(() => lab.ApplySequencingTubeCommand(batch.Id,
-                sequencingMember.Id, transferMaterial with { Quantity = 6 }, CancellationToken.None));
+                sequencingMember.Id, transferMaterial with { QuantityText = "6" }, CancellationToken.None));
             Assert.Equal("transfer_request_reused", alteredReplay.ErrorCode);
             currentLibraryVersion = await scope.DbContext.LabLibraries.AsNoTracking().Where(l => l.Id == library.Id).Select(l => l.Version).SingleAsync();
             library = await lab.RecordLibraryQc(library.Id, new(false, "{\"scope\":\"SIMULATED failed after transfer\"}", currentLibraryVersion), default);

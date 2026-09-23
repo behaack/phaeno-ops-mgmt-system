@@ -20,9 +20,9 @@ test('an interrupted physical transfer survives reload and retries without anoth
       debits++
       source.quantity = 0; source.status = 'Consumed'; source.version++
       data.batchVersion++
-      data.members[0].sequencingTube!.quantity = command.quantity!
+      data.members[0].sequencingTube!.quantity = Number(command.quantityText ?? command.quantity)
       data.members[0].transfer = { id: 'transfer', sourceContainerId: source.id, sourceBarcode: source.barcode,
-        destinationContainerId: 'destination', destinationBarcode: 'SEQUENCING-123', quantity: command.quantity!, quantityUnit: command.quantityUnit!,
+        destinationContainerId: 'destination', destinationBarcode: 'SEQUENCING-123', quantity: Number(command.quantityText ?? command.quantity), quantityText: command.quantityText, quantityUnit: command.quantityUnit!,
         sourceQuantityBefore: 100, sourceQuantityAfter: 0, sourceQuantityBasis: 'LaboratoryMeasured', exhaustedOverride: true, balanceAdjustmentQuantity: 80,
         performedByUserId: 'operator', performedAtUtc: '2026-09-23T10:00:00Z', recordedByUserId: 'operator', recordedAtUtc: '2026-09-23T10:00:00Z' }
       return route.abort('failed')
@@ -49,7 +49,7 @@ test('an interrupted physical transfer survives reload and retries without anoth
   await expect(page.getByText('Tube assigned. Physical transfer has not been recorded.')).toHaveCount(0)
   expect(submitted).toHaveLength(2)
   expect(debits).toBe(1)
-  expect(submitted[1]).toMatchObject({ sourceVersion: 4, batchVersion: 3, quantity: 20, materialExhausted: true })
+  expect(submitted[1]).toMatchObject({ sourceVersion: 4, batchVersion: 3, quantityText: '20', materialExhausted: true })
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   await page.screenshot({ path: info.outputPath('recovered-material-transfer.png'), fullPage: true })
 })

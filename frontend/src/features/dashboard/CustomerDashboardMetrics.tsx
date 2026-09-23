@@ -1,26 +1,15 @@
-import { useQuery } from '@tanstack/react-query'
-import { getCustomerLabDashboardSummary, type CustomerLabDashboardView } from '#/api/order-management'
+import { type CustomerLabDashboardView } from '#/api/order-management'
 import { Button } from '#/components/ui/button'
-import { usePhaenoSession } from '#/features/auth/session-context'
 import { cn } from '#/lib/utils'
+import type { CustomerDashboardQuery } from './customer-dashboard-query'
 
-export function CustomerDashboardMetrics({ view, onSelect }: {
+export function CustomerDashboardMetrics({ view, onSelect, query, enabled }: {
   view: CustomerLabDashboardView
   onSelect: (view: CustomerLabDashboardView) => void
+  query: CustomerDashboardQuery
+  enabled: boolean
 }) {
-  const { authProvider, session, selectedOrganizationId, selectedDepartmentId } = usePhaenoSession()
-  const enabled = authProvider !== 'mock' && session?.capabilities.canViewLabServiceOrders === true
-    && Boolean(selectedOrganizationId && selectedDepartmentId)
-  const summary = useQuery({
-    queryKey: ['lab-service-orders', 'dashboard-summary', selectedOrganizationId, selectedDepartmentId],
-    queryFn: getCustomerLabDashboardSummary,
-    enabled,
-    staleTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: 'always',
-    refetchInterval: 30_000,
-  })
-  const data = enabled && !summary.isError ? summary.data : undefined
+  const data = enabled && !query.isError ? query.data?.summary : undefined
   const metrics = [
     { view: 'attention' as const, count: data?.attentionCount, label: data?.attentionCount === 1 ? 'Item requiring attention' : 'Items requiring attention',
       description: 'Requests to review, complete or prepare for shipping.' },
@@ -40,10 +29,10 @@ export function CustomerDashboardMetrics({ view, onSelect }: {
           <span className="mt-1 block text-xs text-muted-foreground">{metric.description}</span></span>
       </button>)}
     </div>
-    {enabled && summary.isPending ? <p role="status" className="text-xs text-muted-foreground">Loading dashboard totals…</p> : null}
-    {enabled && summary.isError ? <div role="status" className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+    {enabled && query.isPending ? <p role="status" className="text-xs text-muted-foreground">Loading dashboard totals…</p> : null}
+    {enabled && query.isError ? <div role="status" className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
       Dashboard totals are temporarily unavailable.
-      <Button type="button" size="sm" variant="ghost" disabled={summary.isFetching} onClick={() => { void summary.refetch() }}>Refresh totals</Button>
+      <Button type="button" size="sm" variant="ghost" disabled={query.isFetching} onClick={() => { void query.refetch() }}>Refresh totals</Button>
     </div> : null}
   </section>
 }

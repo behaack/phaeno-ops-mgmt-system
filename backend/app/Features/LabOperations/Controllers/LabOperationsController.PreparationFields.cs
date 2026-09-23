@@ -85,6 +85,8 @@ public sealed partial class LabOperationsController
         foreach (var entry in entries)
         {
             var field = fields.Single(f => f.Key == entry.FieldKey);
+            if (field.Type != "biologicalMaterial" && entry.QuantityText is not null)
+                throw new ArgumentException("Decimal text amounts are only available for biological material transfers.");
             if (field.Type != "biologicalMaterial" && (entry.ExhaustionReason is not null || entry.Barcode is not null || entry.SourceBarcode is not null))
                 throw new ArgumentException("A biological material field is required to confirm a tube transfer or exhausted source.");
             if (entry.MaterialExhausted && field.Type != "biologicalMaterial" && !(field.Type == "material" && field.IncludeTracking))

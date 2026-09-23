@@ -92,6 +92,12 @@ public sealed partial class LabServiceOrdersController(
         if (createdFrom.HasValue) query = query.Where(order => order.CreatedAt >= createdFrom.Value);
         if (createdTo.HasValue) query = query.Where(order => order.CreatedAt < createdTo.Value);
         if (submitterId.HasValue) query = query.Where(order => order.CreatedByUserId == submitterId.Value);
+        return await ListOrdersAsync(query, tenant.Organization.Id, page, pageSize, dashboard, cancellationToken);
+    }
+
+    private async Task<PagedResult<OrderListItemDto>> ListOrdersAsync(IQueryable<LabServiceOrder> query,
+        Guid organizationId, int page, int pageSize, bool dashboard, CancellationToken cancellationToken)
+    {
         var total = await query.CountAsync(cancellationToken);
         var ordered = dashboard
             ? query.OrderBy(order => order.Status == LabServiceOrderStatus.QuoteIssued ? 0
@@ -107,7 +113,7 @@ public sealed partial class LabServiceOrdersController(
                 order.CustomerReference, order.OrganizationId, order.CreatedAt, order.UpdatedAt,
                 order.Version, order.TenantSafeReason))
             .ToListAsync(cancellationToken);
-        var progress = await new LabCustomerProgressService(dbContext).ReadAsync(tenant.Organization.Id,
+        var progress = await new LabCustomerProgressService(dbContext).ReadAsync(organizationId,
             items.Select(item => item.Id).ToArray(), cancellationToken);
         return new PagedResult<OrderListItemDto>(items.Select(item => item with
             { LaboratoryProgress = progress.TryGetValue(item.Id, out var value) ? value with { Samples = [] } : null }).ToArray(), page, pageSize, total);

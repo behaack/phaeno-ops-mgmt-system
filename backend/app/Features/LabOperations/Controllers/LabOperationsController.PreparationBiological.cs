@@ -60,7 +60,21 @@ public sealed partial class LabOperationsController
             return $"Recorded transfer {recorded.Id} · {recorded.Quantity} {recorded.QuantityUnit} · Library tube {recorded.DestinationContainerId}";
         }
         attempt.RequireOpen();
-        RequireFieldQuantity(entry, field.Label);
+        if (entry.QuantityText is not null && entry.Quantity.HasValue)
+            throw new ArgumentException($"{field.Label}: enter the transfer amount once.");
+        decimal quantity;
+        if (entry.QuantityText is not null)
+        {
+            if (!ExactDecimalQuantity.TryParse(entry.QuantityText, out quantity))
+                throw new ArgumentException($"{field.Label}: enter a positive decimal amount with at most 28 fractional places.");
+        }
+        else
+        {
+            RequireFieldQuantity(entry, field.Label);
+            quantity = entry.Quantity!.Value;
+        }
+        if (string.IsNullOrWhiteSpace(entry.QuantityUnit) || entry.QuantityUnit.Length > 50)
+            throw new ArgumentException($"{field.Label}: enter the quantity unit.");
         if (entry.ProductId.HasValue || entry.Name is not null || entry.Vendor is not null || entry.RunReference is not null || entry.Location is not null)
             throw new ArgumentException("Biological material uses the selected specimen source and allocated library tube.");
         if (!string.IsNullOrWhiteSpace(field.Unit) && field.Unit.Trim() != entry.QuantityUnit?.Trim())
@@ -73,13 +87,16 @@ public sealed partial class LabOperationsController
             throw new ArgumentException("Scan the selected source tube barcode to confirm the physical material withdrawn.");
         EnsureVersion(source.Version, entry.ResourceVersion ?? -1);
         var destination = await dbContext.LabContainers.SingleAsync(c => c.Id == member.LibraryTubeContainerId, ct);
+        if (source.Quantity.HasValue && !ExactDecimalQuantity.CanSubtract(source.Quantity.Value, quantity)
+            || destination.Quantity.HasValue && !ExactDecimalQuantity.CanAdd(destination.Quantity.Value, quantity))
+            throw new ArgumentException($"{field.Label}: use an amount whose source and destination balances can be recorded exactly.");
         var scanned = entry.Barcode?.Trim();
         if (!SupplierTubeBarcode.TryNormalize(scanned, out var normalized) || normalized != destination.Barcode)
             throw new ArgumentException("Scan the allocated library tube barcode to confirm the physical destination.");
         var now = LabEvidenceTime.UtcNow;
         var performance = LabStepPerformance.Capture(input.Performance ?? throw new ArgumentException("Record who performed the physical transfer and when."), actorId, now);
         var transfer = LabBiologicalMaterialTransfer.Record(request.RequestId, PreparationHash(new { request, member.Id, field.Key }), source, destination, attempt,
-            entry.Quantity!.Value, entry.QuantityUnit!.Trim(), entry.MaterialExhausted, actorId, now, preparationMemberId: member.Id,
+            quantity, entry.QuantityUnit!.Trim(), entry.MaterialExhausted, actorId, now, preparationMemberId: member.Id,
             performedByUserId: performance.PerformedByUserId, performedAtUtc: performance.PerformedAtUtc, exhaustionReason: entry.ExhaustionReason);
         dbContext.LabBiologicalMaterialTransfers.Add(transfer);
         member.RecordMaterialTransfer(transfer.Id);
