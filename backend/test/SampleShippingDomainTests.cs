@@ -166,6 +166,35 @@ public class SampleShippingDomainTests
     }
 
     [Fact]
+    public void CustomerDeclaredTubeMaterialStartsUnknownAndRetainsItsProvenance()
+    {
+        var tube = new RegisteredSampleTube(Guid.NewGuid(), "DECLARED-TUBE-1");
+        var actor = Guid.NewGuid();
+        Assert.Null(tube.CustomerDeclaredQuantity);
+        Assert.Null(tube.CustomerDeclaredQuantityUnit);
+        tube.DeclareMaterial(12.5m, " µL ", actor, Now);
+        Assert.Equal(12.5m, tube.CustomerDeclaredQuantity);
+        Assert.Equal("µL", tube.CustomerDeclaredQuantityUnit);
+        Assert.Equal(actor, tube.CustomerDeclaredByUserId);
+        Assert.Equal(Now, tube.CustomerDeclaredAt);
+        tube.MarkAssigned(Now);
+        tube.MarkAccessioned(Now.AddMinutes(1));
+        Assert.Throws<InvalidOperationException>(() => tube.DeclareMaterial(10m, "µL", actor, Now.AddMinutes(2)));
+        Assert.Equal(12.5m, tube.CustomerDeclaredQuantity);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(0.0000001)]
+    public void CustomerDeclaredTubeMaterialRejectsNonpositiveOrUnrepresentableAmounts(decimal amount)
+    {
+        var tube = new RegisteredSampleTube(Guid.NewGuid(), "DECLARED-TUBE-2");
+        Assert.Throws<ArgumentOutOfRangeException>(() => tube.DeclareMaterial(amount, "µL", Guid.NewGuid(), Now));
+        Assert.Null(tube.CustomerDeclaredQuantity);
+    }
+
+    [Fact]
     public void TubeAssignmentAndSupplierBarcodeAdoptionPreserveOnePhysicalIdentity()
     {
         var shipmentId = Guid.NewGuid();

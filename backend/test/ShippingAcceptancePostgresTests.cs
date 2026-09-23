@@ -101,7 +101,7 @@ public partial class SampleShippingPostgresTests
         var packed = Assert.Single(await scope.PackingController().Confirm(fixture.Shipment.Id,
             new(fixture.Shipment.Version, [new(size.Id, 1)], DeliveryLocationId: location.Id, StockKits: [new(kit.Id, kit.Version)]), default));
         var row = packed.Crosswalk.First();
-        await scope.CreateCustomerWorkflowController().AssignTube(packed.Id, row.ShipmentItemId, new(codes[0], null, row.Version, row.TubeSlotId), default);
+        await scope.CreateCustomerWorkflowController().AssignTube(packed.Id, row.ShipmentItemId, new(codes[0], null, row.Version, row.TubeSlotId, CustomerDeclaredQuantity: 20m, CustomerDeclaredQuantityUnit: "µL"), default);
         scope.ClearTrackedState();
         await Assert.ThrowsAsync<OrderManagementException>(() => stock.Register(other.Id, new([codes[0]], other.Version), default));
         Assert.Empty((await stock.Read(other.Id, default)).Tubes);
@@ -152,7 +152,7 @@ public partial class SampleShippingPostgresTests
             var codes = kit.Tubes.Take(9).Select(item => item.SupplierBarcode).ToArray();
             for (var n = 0; n < rows.Length; n++)
             {
-                current = await customer.AssignTube(current.Id, rows[n].ShipmentItemId, new(codes[n], null, rows[n].Version, rows[n].TubeSlotId), default);
+                current = await customer.AssignTube(current.Id, rows[n].ShipmentItemId, new(codes[n], null, rows[n].Version, rows[n].TubeSlotId, CustomerDeclaredQuantity: 20m, CustomerDeclaredQuantityUnit: "µL"), default);
                 scope.ClearTrackedState();
             }
             var firstPacketRequest = new IssueSampleShippingPacketRequest(current.Version, null);
@@ -171,9 +171,9 @@ public partial class SampleShippingPostgresTests
             {
                 var row = current.Crosswalk.Single(item => item.TubeSlotId == rows[0].TubeSlotId);
                 var spare = kit.Tubes[9].SupplierBarcode;
-                await Assert.ThrowsAsync<OrderManagementException>(() => customer.AssignTube(current.Id, row.ShipmentItemId, new(spare, null, row.Version, row.TubeSlotId), default));
+                await Assert.ThrowsAsync<OrderManagementException>(() => customer.AssignTube(current.Id, row.ShipmentItemId, new(spare, null, row.Version, row.TubeSlotId, CustomerDeclaredQuantity: 20m, CustomerDeclaredQuantityUnit: "µL"), default));
                 scope.ClearTrackedState();
-                current = await customer.AssignTube(current.Id, row.ShipmentItemId, new(spare, "SIMULATED pre-dispatch correction", row.Version, row.TubeSlotId), default);
+                current = await customer.AssignTube(current.Id, row.ShipmentItemId, new(spare, "SIMULATED pre-dispatch correction", row.Version, row.TubeSlotId, CustomerDeclaredQuantity: 20m, CustomerDeclaredQuantityUnit: "µL"), default);
                 Assert.NotEqual(firstPacket.Id, current.CurrentPacket!.Id);
                 Assert.Equal(2, current.CurrentPacket.Revision);
                 var voided = await scope.DbContext.SampleShippingPacketRevisions.AsNoTracking().SingleAsync(item => item.Id == firstPacket.Id);

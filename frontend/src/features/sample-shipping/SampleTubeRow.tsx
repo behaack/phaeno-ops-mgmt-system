@@ -19,6 +19,7 @@ export function SampleTubeRow({ item, containerLabel, source, active = false, ac
           <SampleName className="wrap-anywhere text-sm font-semibold">{item.customerSampleId || 'Unmapped sample · Review required'}</SampleName>
           <p className="text-xs text-muted-foreground">Tube {item.tubeOrdinal ?? 1} of {item.totalSampleTubeCount ?? item.tubeCount ?? 1}{active ? ' · Matching now' : ''}</p>
         </div>
+        {item.supplierTubeBarcode ? <p className="text-xs text-muted-foreground">Customer-declared material: {item.customerDeclaredQuantity == null ? 'Unknown' : `${item.customerDeclaredQuantity} ${item.customerDeclaredQuantityUnit ?? ''}`}</p> : null}
         {source ? <p className="text-sm text-muted-foreground">{source}</p> : null}
         {containerLabel ? <p className="wrap-anywhere text-xs text-muted-foreground">{containerLabel}</p> : null}
         {!item.supplierTubeBarcode && !scanForm ? <p className="text-sm text-muted-foreground">Not matched</p> : null}

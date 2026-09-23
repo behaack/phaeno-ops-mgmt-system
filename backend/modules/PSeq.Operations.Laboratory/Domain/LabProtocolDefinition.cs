@@ -72,6 +72,7 @@ public sealed record LabProtocolDefinition
                 throw new ArgumentException($"{step.Name}: at most 30 typed captures are allowed.");
             var captureKeys = new HashSet<string>(StringComparer.Ordinal);
             if (step.Captures.Count(c => c?.Type == "output") > 1) throw new ArgumentException("A step can define one library output field per sample.");
+            if (step.Captures.Count(c => c?.Type == "biologicalMaterial") > 1) throw new ArgumentException("A step can define one biological material transfer per sample.");
             foreach (var capture in step.Captures)
             {
                 if (capture is null) throw new ArgumentException("Every capture must contain a definition.");
@@ -81,9 +82,9 @@ public sealed record LabProtocolDefinition
                     throw new ArgumentException($"{capture.Label}: explicitly choose Batch, Tube or Shared with exceptions scope.");
                 if (PreparationBatchEnabled && capture.Type == "barcode" && capture.Scope != "tube")
                     throw new ArgumentException("Barcode identity must be confirmed separately for each tube.");
-                if (capture.Type is not ("number" or "text" or "date" or "choice" or "fileReference" or "barcode" or "material" or "equipment" or "output"))
+                if (capture.Type is not ("number" or "text" or "date" or "choice" or "fileReference" or "barcode" or "material" or "equipment" or "output" or "biologicalMaterial"))
                     throw new ArgumentException($"{capture.Label}: the capture type is not supported.");
-                if (capture.IsResource && (!PreparationBatchEnabled || (capture.Scope is not ("batch" or "tube") && !(capture.Type == "material" && capture.Scope == "shared" && capture.QuantityBasis != "total")) || capture.Type == "output" && capture.Scope != "tube"))
+                if (capture.IsResource && (!PreparationBatchEnabled || (capture.Scope is not ("batch" or "tube") && !(capture.Type == "material" && capture.Scope == "shared" && capture.QuantityBasis != "total")) || capture.Type is "output" or "biologicalMaterial" && capture.Scope != "tube"))
                     throw new ArgumentException("Linked resource fields require batch preparation; outputs are recorded for each sample.");
                 if (capture.QuantityBasis is not null && (capture.Type != "material" || capture.QuantityBasis is not ("perSample" or "total")))
                     throw new ArgumentException("Only material fields can specify per-sample or total quantity.");
@@ -102,7 +103,7 @@ public sealed record LabProtocolDefinition
                 if (capture.Unit is not null)
                 {
                     RequiredText(capture.Unit, 50, "Capture unit");
-                    if (capture.Type is not ("number" or "material")) throw new ArgumentException("Only number and material captures can specify a unit.");
+                    if (capture.Type is not ("number" or "material" or "biologicalMaterial")) throw new ArgumentException("Only number and material captures can specify a unit.");
                 }
                 if (capture.Type == "choice")
                 {
@@ -202,7 +203,7 @@ public sealed record LabProtocolStepDefinition
 public sealed record LabProtocolCaptureDefinition
 {
     [JsonIgnore]
-    public bool IsResource => Type is "material" or "equipment" or "output";
+    public bool IsResource => Type is "material" or "equipment" or "output" or "biologicalMaterial";
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public LabConfiguredMaterial? Material { get; init; }
     public string? QuantityBasis { get; init; }

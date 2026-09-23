@@ -52,6 +52,8 @@ import {
 import { usePhaenoSession } from '#/features/auth/session-context'
 
 import { LabBatchBarcodeScanner } from './LabBarcodeScanner'
+import { SequencingTubesDialog } from './SequencingTubesDialog'
+import { PreparationActions } from './preparation-ui'
 import { EquipmentCreateDialog } from './EquipmentCreateDialog'
 import { EquipmentRetirementDialog } from './EquipmentRetirementDialog'
 import { MaterialLotCreateDialog } from './MaterialLotCreateDialog'
@@ -907,6 +909,7 @@ function EquipmentList({ items, canManage, onCreate }: { items: Awaited<ReturnTy
 }
 
 function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['batches']; canManage: boolean; onCreate: () => void; refresh: () => Promise<unknown> }) {
+  const [tubeBatch, setTubeBatch] = useState<LabBatch | null>(null)
   const [dialog, setDialog] = useState<{ batch: LabBatch; kind: 'sendout' | 'custody' } | null>(null)
   const [transitionDialog, setTransitionDialog] = useState<{ batch: LabBatch; action: 'start' | 'complete' } | null>(null)
   const [form, setForm] = useState<Record<string, string>>({})
@@ -984,11 +987,14 @@ function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<Ret
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <Status value={item.status} />
-                        {canManage && item.status === 'Draft' ? <Button type="button" size="sm" disabled={transition.isPending} onClick={() => openTransition(item, 'start')}>Start</Button> : null}
-                        {canManage && item.status === 'InProgress' && !item.sendoutId && item.memberCount > 0 ? <Button type="button" size="sm" onClick={() => openBatchAction(item, 'sendout')}>Create sendout</Button> : null}
-                        {canManage && item.sendoutId ? <Button type="button" size="sm" variant="outline" onClick={() => openBatchAction(item, 'custody')}>Custody event</Button> : null}
-                        {canManage && item.sendoutId && next ? <Button type="button" size="sm" disabled={sendoutTransition.isPending} onClick={() => sendoutTransition.mutate({ item, status: next })}>Mark {humanize(next)}</Button> : null}
-                        {canManage && item.status === 'InProgress' && (!item.sendoutId || item.sendoutStatus === 'Complete') ? <Button type="button" size="sm" disabled={transition.isPending} onClick={() => openTransition(item, 'complete')}>Complete batch</Button> : null}
+                        <PreparationActions items={[
+                          { label: 'Sequencing tubes', onClick: () => setTubeBatch(item) },
+                          ...(canManage && item.status === 'Draft' ? [{ label: 'Start', disabled: transition.isPending, onClick: () => openTransition(item, 'start') }] : []),
+                          ...(canManage && item.status === 'InProgress' && !item.sendoutId && item.memberCount > 0 ? [{ label: 'Create sendout', onClick: () => openBatchAction(item, 'sendout') }] : []),
+                          ...(canManage && item.sendoutId ? [{ label: 'Custody event', onClick: () => openBatchAction(item, 'custody') }] : []),
+                          ...(canManage && item.sendoutId && next ? [{ label: `Mark ${humanize(next)}`, disabled: sendoutTransition.isPending, onClick: () => sendoutTransition.mutate({ item, status: next }) }] : []),
+                          ...(canManage && item.status === 'InProgress' && (!item.sendoutId || item.sendoutStatus === 'Complete') ? [{ label: 'Complete batch', disabled: transition.isPending, onClick: () => openTransition(item, 'complete') }] : []),
+                        ]} />
                       </div>
                     </div>
                   )
@@ -998,6 +1004,7 @@ function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<Ret
           </CardContent>
         </Card>
       </div>
+      {tubeBatch ? <SequencingTubesDialog batchId={tubeBatch.id} batchName={tubeBatch.name} canManage={canManage} onClose={() => setTubeBatch(null)} onChanged={refresh} /> : null}
       <Dialog open={transitionDialog !== null} onOpenChange={(open) => !open && setTransitionDialog(null)}>
         <DialogContent>
           <DialogHeader>
@@ -1029,7 +1036,7 @@ function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<Ret
                 <Field label="Provider name" value={form.providerName} onChange={set('providerName')} required />
                 <Field label="Provider reference" value={form.providerReference} onChange={set('providerReference')} />
                 <Field label="Expected completion" type="datetime-local" value={form.expectedCompletionAtUtc} onChange={set('expectedCompletionAtUtc')} />
-                <p className="text-sm text-muted-foreground">POMS freezes the current {dialog.batch.memberCount} libraries and their container barcodes in the sendout manifest for {dialog.batch.batchNumber}. Confirm the physical contents against the batch before saving.</p>
+                <p className="text-sm text-muted-foreground">POMS freezes the {dialog.batch.memberCount} sequencing tube barcodes and their source library links in the sendout manifest for {dialog.batch.batchNumber}. Record each physical transfer in Sequencing tubes and confirm the actual tubes being sent before saving.</p>
                 <TextField label="Additional manifest notes (optional)" value={form.manifestNotes} onChange={set('manifestNotes')} />
               </>
             ) : (

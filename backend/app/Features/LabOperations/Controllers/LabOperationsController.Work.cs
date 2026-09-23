@@ -160,6 +160,9 @@ public sealed partial class LabOperationsController
         Guid? externalBarcodeReferenceId = null;
         RegisteredSampleTube? registeredTube = null;
         Guid? accessionShipmentId = null;
+        decimal? customerDeclaredQuantity = null;
+        string? customerDeclaredQuantityUnit = null;
+        JsonElement? customerDeclaration = null;
         if (hasPacketBarcode)
         {
             if (!SupplierTubeBarcode.TryNormalize(request.SupplierTubeBarcode, out var supplierBarcode))
@@ -216,6 +219,25 @@ public sealed partial class LabOperationsController
             barcode = supplierBarcode;
             barcodeSource = LabContainerBarcodeSource.RegisteredSupplier;
             externalBarcodeReferenceId = registeredTube.Id;
+            using (var manifest = JsonDocument.Parse(packet.ManifestSnapshotJson))
+            {
+                if (manifest.RootElement.TryGetProperty("samples", out var samples) && samples.ValueKind == JsonValueKind.Array)
+                {
+                    var matched = samples.EnumerateArray().Where(row => row.TryGetProperty("registeredSampleTubeId", out var id)
+                        && id.TryGetGuid(out var tubeId) && tubeId == registeredTube.Id).ToList();
+                    if (matched.Count > 1) throw Conflict("tube_declaration_ambiguous", "The frozen shipment contains more than one declaration for this tube.");
+                    if (matched.Count == 1 && matched[0].TryGetProperty("customerDeclaredQuantity", out var amount) && amount.ValueKind != JsonValueKind.Null)
+                    {
+                        if (!amount.TryGetDecimal(out var declared) || declared <= 0
+                            || !matched[0].TryGetProperty("customerDeclaredQuantityUnit", out var unit) || unit.ValueKind != JsonValueKind.String
+                            || string.IsNullOrWhiteSpace(unit.GetString()))
+                            throw Conflict("tube_declaration_invalid", "Review the customer's material amount in the frozen shipment before accessioning.");
+                        customerDeclaredQuantity = declared;
+                        customerDeclaredQuantityUnit = unit.GetString();
+                        customerDeclaration = matched[0].Clone();
+                    }
+                }
+            }
             // Container arrival is acknowledged separately. A validated physical
             // tube can now record its individual intake during accession.
             if (specimen.ReceivedAtUtc is null && (shipment.DeliveredAt ?? shipment.ReceivedAt) is DateTime arrivedAt)
@@ -234,10 +256,11 @@ public sealed partial class LabOperationsController
         var container = new LabContainer(work.Id, specimen.Id, null,
             LabContainerKind.SubmittedSpecimen, barcode, request.Label,
             request.Location,
-            intake == LabSpecimenIntakeDisposition.Rejected && string.IsNullOrWhiteSpace(request.Location) ? null : request.Quantity,
-            intake == LabSpecimenIntakeDisposition.Rejected && string.IsNullOrWhiteSpace(request.Location) ? null : request.QuantityUnit,
+            intake == LabSpecimenIntakeDisposition.Rejected && string.IsNullOrWhiteSpace(request.Location) ? null : registeredTube is not null ? customerDeclaredQuantity : request.Quantity,
+            intake == LabSpecimenIntakeDisposition.Rejected && string.IsNullOrWhiteSpace(request.Location) ? null : registeredTube is not null ? customerDeclaredQuantityUnit : request.QuantityUnit,
             request.RetainUntilUtc,
-            barcodeSource, externalBarcodeReferenceId, rejectedAtIntake: intake == LabSpecimenIntakeDisposition.Rejected);
+            barcodeSource, externalBarcodeReferenceId, rejectedAtIntake: intake == LabSpecimenIntakeDisposition.Rejected,
+            quantityBasis: registeredTube is not null && customerDeclaredQuantity.HasValue ? "CustomerDeclared" : null);
         if (registeredTube is not null)
         {
             Execute(() => registeredTube.RecordReceipt(DateTime.UtcNow));
@@ -253,7 +276,8 @@ public sealed partial class LabOperationsController
                 freezerBoxBarcode = automaticAccession ? request.Location : null,
                 barcode,
                 barcodeSource,
-                registeredSampleTubeId = externalBarcodeReferenceId
+                registeredSampleTubeId = externalBarcodeReferenceId,
+                customerDeclaration
             }, JsonOptions)));
         await dbContext.SaveChangesAsync(cancellationToken);
         if (accessionShipmentId.HasValue)
@@ -308,7 +332,7 @@ public sealed partial class LabOperationsController
             LabRole.ScientificReviewer, LabRole.OperationsAdministrator);
         if (!LabBarcodeService.TryNormalize(barcode, out var normalized)
             && !SupplierTubeBarcode.TryNormalize(barcode, out normalized))
-            throw Invalid("barcode_invalid", "Scan or enter a complete Phaeno or registered supplier barcode.");
+            throw Invalid("barcode_invalid", "Scan or enter a complete POMS or manufacturer tube barcode.");
         var container = await dbContext.LabContainers.AsNoTracking()
             .SingleOrDefaultAsync(item => item.Barcode == normalized, cancellationToken)
             ?? throw new OrderManagementException(
@@ -350,10 +374,10 @@ public sealed partial class LabOperationsController
             LabRole.Operator, LabRole.Supervisor);
         var container = await dbContext.LabContainers.SingleOrDefaultAsync(item => item.Id == containerId, cancellationToken)
             ?? throw Missing();
-        if (container.BarcodeSource == LabContainerBarcodeSource.RegisteredSupplier)
+        if (container.BarcodeSource != LabContainerBarcodeSource.PhaenoGenerated)
             throw Conflict(
                 "registered_supplier_label_not_allowed",
-                "This submitted tube keeps its qualified permanent supplier barcode and must not receive a second POMS label.");
+                "This tube keeps its manufacturer barcode and must not receive a second POMS label.");
         var reason = request.Reason?.Trim();
         if (string.IsNullOrWhiteSpace(reason) || reason.Length > 500)
             throw Invalid("label_print_reason_required", "Enter a label-print reason of 500 characters or fewer.");

@@ -179,7 +179,7 @@ public partial class SampleShippingPostgresTests
         var slot = await scope.DbContext.SampleShipmentTubeSlots.AsNoTracking().Where(item => item.SampleShipmentItemId == fixture.Item.Id).OrderBy(item => item.Ordinal).FirstAsync();
         scope.ClearTrackedState();
         var blocked = await Assert.ThrowsAsync<OrderManagementException>(() => scope.CreateCustomerWorkflowController().AssignTube(shipment.Id,
-            fixture.Item.Id, new(barcode, null, slot.Version, TubeSlotId: slot.Id), default));
+            fixture.Item.Id, new(barcode, null, slot.Version, TubeSlotId: slot.Id, CustomerDeclaredQuantity: 20m, CustomerDeclaredQuantityUnit: "µL"), default));
         Assert.Equal("transportation_kit_unavailable", blocked.ErrorCode);
         Assert.False(await scope.DbContext.SampleReturnKits.AnyAsync(item => item.SampleShipmentId == shipment.Id));
         scope.ClearTrackedState();
@@ -190,7 +190,7 @@ public partial class SampleShippingPostgresTests
             DeliveryLocationId: location.Id, StockKits: [new(kit.Id, kit.Version)]), default));
         var row = prepared.Crosswalk.First();
         await scope.CreateCustomerWorkflowController().AssignTube(prepared.Id, row.ShipmentItemId,
-            new(barcode, null, row.Version, TubeSlotId: row.TubeSlotId), default);
+            new(barcode, null, row.Version, TubeSlotId: row.TubeSlotId, CustomerDeclaredQuantity: 20m, CustomerDeclaredQuantityUnit: "µL"), default);
         scope.ClearTrackedState();
         var supply = await scope.KitCustomer().Supply(prepared.Id, location.Id, default);
         Assert.True(supply.CanPrepareSamples);

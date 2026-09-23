@@ -16,13 +16,27 @@ function show(initial = shippingFixture, canManage = true, context: Pick<Compone
   function Harness() {
     const [shipment, setShipment] = useState(initial)
     refresh = setShipment
-    return <SampleTubeScanner shipment={shipment} canManage={canManage} {...context} onScanActivityChange={mocks.activity} onCorrect={mocks.correct} onAssign={async (item, barcode) => { const saved = await mocks.assign(item, barcode) as SampleShipmentWorkflow; setShipment(saved); return saved }} />
+    return <SampleTubeScanner shipment={shipment} canManage={canManage} {...context} onScanActivityChange={mocks.activity} onCorrect={mocks.correct} onAssign={async (item, barcode, amount, unit) => { const saved = await mocks.assign(item, barcode, amount, unit) as SampleShipmentWorkflow; setShipment(saved); return saved }} />
   }
   const rendered = render(<QueryClientProvider client={new QueryClient({ defaultOptions: { mutations: { retry: false } } })}><Harness /></QueryClientProvider>)
   return { refresh: (shipment: SampleShipmentWorkflow) => act(() => refresh(shipment)), unmount: rendered.unmount }
 }
 
+function enterAmount() {
+  fireEvent.change(screen.getByLabelText(/Material amount in this tube/), { target: { value: '20' } })
+  fireEvent.change(screen.getByLabelText(/Material unit/), { target: { value: 'µL' } })
+}
+
 describe('guided tube scanning', () => {
+  it('requires the actual tube material amount and unit before saving a barcode', async () => {
+    show()
+    fireEvent.change(screen.getByLabelText(/Scan tube barcode/), { target: { value: 'TUBE-MATERIAL-1' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save scan' }))
+    expect(await screen.findByText('Enter the material amount in this tube.')).toBeTruthy()
+    expect(screen.getByText('Enter the material unit.')).toBeTruthy()
+    expect(mocks.assign).not.toHaveBeenCalled()
+    expect(screen.getByLabelText(/Scan tube barcode/)).toHaveProperty('value', 'TUBE-MATERIAL-1')
+  })
   it('requires an assigned physical container for Customer preparation and keeps Members history visible', () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     const view = (assigned = false, canManage = true) => <QueryClientProvider client={client}><SampleTubeScanner shipment={{ ...shippingFixture, assignedContainer: assigned ? locationKit(20, { status: 'Assigned' }) : null }} requiresAssignedContainer canManage={canManage} onAssign={mocks.assign} onCorrect={mocks.correct} /></QueryClientProvider>
@@ -43,10 +57,12 @@ describe('guided tube scanning', () => {
     rendered.rerender(view(true))
     expect(screen.getByLabelText(/Scan tube barcode/)).toHaveProperty('value', 'OTHER-CONTAINER-TUBE')
     expect(screen.getByRole('button', { name: 'Save scan' })).toHaveProperty('disabled', true)
+    enterAmount()
     fireEvent.submit(screen.getByLabelText(/Scan tube barcode/).closest('form')!)
     await waitFor(() => expect(mocks.assign).not.toHaveBeenCalled())
     mocks.assign.mockRejectedValue(new Error('This tube belongs to another container.'))
     rendered.rerender(view(false))
+    enterAmount()
     fireEvent.click(screen.getByRole('button', { name: 'Save scan' }))
     expect(await screen.findByText(/This tube belongs to another container/)).toBeTruthy()
     expect(screen.getByLabelText(/Scan tube barcode/)).toHaveProperty('value', 'OTHER-CONTAINER-TUBE')
@@ -62,6 +78,7 @@ describe('guided tube scanning', () => {
     await waitFor(() => expect(document.activeElement).toBe(input))
     fireEvent.change(input, { target: { value: 'TUBE_0001' } })
     expect(mocks.activity).toHaveBeenLastCalledWith(true)
+    enterAmount()
     fireEvent.submit(input.closest('form')!)
     await waitFor(() => expect(input).toHaveProperty('disabled', true))
     expect(mocks.activity).toHaveBeenLastCalledWith(true)
@@ -95,6 +112,7 @@ describe('guided tube scanning', () => {
     mocks.assign.mockRejectedValueOnce(new Error('This tube is already assigned to another shipment.'))
     show()
     fireEvent.change(screen.getByLabelText(/Scan tube barcode/), { target: { value: 'DUPLICATE-0001' } })
+    enterAmount()
     fireEvent.click(screen.getByRole('button', { name: 'Save scan' }))
     expect(await screen.findByText(/already assigned to another shipment/)).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'RNA-1' })).toBeTruthy()
@@ -130,8 +148,9 @@ describe('guided tube scanning', () => {
     const resumedInput = screen.getByLabelText(/Scan tube barcode/)
     await waitFor(() => expect(document.activeElement).toBe(resumedInput))
     expect(resumedInput).toHaveProperty('value', 'TUBE-8')
+    enterAmount()
     fireEvent.submit(resumedInput.closest('form')!)
-    await waitFor(() => expect(mocks.assign).toHaveBeenCalledWith(initial.crosswalk[7], 'TUBE-8'))
+    await waitFor(() => expect(mocks.assign).toHaveBeenCalledWith(initial.crosswalk[7], 'TUBE-8', 20, 'µL'))
     expect(screen.getByRole('button', { name: 'Next tubes' })).toHaveProperty('disabled', true)
     expect(screen.getByRole('button', { name: 'Previous tubes' })).toHaveProperty('disabled', true)
     expect(screen.getByText('Tubes 1–8 of 18 in this container')).toBeTruthy()
@@ -155,6 +174,7 @@ describe('guided tube scanning', () => {
     show({ ...shippingFixture, crosswalk: Array.from({ length: 10 }, (_, index) => shippingTube(index + 1)) }, true, { specimenSources: {} })
     const input = screen.getByLabelText(/Scan tube barcode/)
     fireEvent.change(input, { target: { value: 'WRONG-TUBE' } })
+    enterAmount()
     fireEvent.submit(input.closest('form')!)
     expect(await within(input.closest('li')!).findByText(/This tube belongs to another container/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Next tubes' }))

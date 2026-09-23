@@ -32,7 +32,13 @@ Successful execution does not approve or publish results. Record the completed a
 
 ## Prepare a library
 
-For tray-based preparation, open **Library prep** and the preparation batch. From a tube's actions choose **Create library output**, record the actual quantity, unit and storage location, then label the output and **Confirm output identity** by scanning its barcode. The job, specimen, source and preparation attempt are carried forward. Completing the final preparation stage creates the library and reuses its recorded QC evidence; do not enter the same measurements or disposition again. Complete the preparation batch before adding its eligible libraries to a sequencing batch.
+For tray-based preparation, open **Library prep** and the preparation batch. From a tube's actions, assign its distinct library tray tube using an existing manufacturer barcode or a POMS-generated label. The accessioned source tube, library tube and reusable tray each retain their own identity. Print a generated label and attach it to the physical tube before recording the transfer.
+
+When the approved step includes **Biological material**, scan both the accessioned source and destination library tube and enter the actual amount pipetted in the configured unit. POMS subtracts that amount from the source and records it in the destination. Select **Material exhausted** only when no usable source material remains; it preserves the actual transferred amount and separately records any adjustment to the source balance. Exhausting the source does not prevent continuing preparation with the transferred material.
+
+Choose **Create library output** to record the prepared quantity, unit and storage location, then **Confirm output identity** by scanning its barcode. When a library tray tube has been assigned and its transfer recorded, output uses that same tube. Prepared yield is a separate measurement and does not consume the source again. Earlier approved workflows without a Biological material field retain their existing output workflow; adopt a newly approved configuration to capture input transfers.
+
+The job, specimen, source and preparation attempt are carried forward. Completing the final preparation stage creates the library and reuses its recorded QC evidence; do not enter the same measurements or disposition again. Complete the preparation batch before adding its eligible libraries to a sequencing batch. Open a source or destination tube to inspect its remaining amount and transfer history; an unrecorded historical balance remains unknown.
 
 For historical individual work outside preparation batches, the existing library form still links source and library containers to the specimen and completed preparation execution, followed by its separate library QC entry. POMS uses the library container's barcode as the immutable library key in both paths.
 
@@ -40,7 +46,7 @@ Only a library with passed QC can enter a sequencing batch. If QC fails, preserv
 
 ## Build a batch
 
-A **preparation batch** is a tray of source tubes that stays together through library preparation. A **sequencing batch** groups completed, eligible libraries for sequencing. These are separate records. The preparation workspace shows each library's current sequencing membership and offers **Add to sequencing batch** for eligible, unassigned libraries after the preparation batch is complete. Duplicate membership within a batch is rejected. A library may supply another sequencing batch when its previous batches and sendouts are complete and purchased runs remain outstanding.
+A **preparation batch** tracks the selected source tubes and the library tubes occupying its tray positions through library preparation. A **sequencing batch** groups completed, eligible libraries for sequencing. These are separate records. The preparation workspace shows each library's current sequencing membership and offers **Add to sequencing batch** for eligible, unassigned libraries after the preparation batch is complete. Duplicate membership within a batch is rejected. A library may supply another sequencing batch when its previous batches and sendouts are complete and purchased runs remain outstanding.
 
 A batch may contain libraries from different organizations and Commercial orders. Give it a human-friendly name and optional notes. POMS assigns the current **External sequencing** type and a date-stamped, scanner-safe batch number when the batch is created. The name helps operators recognize the run; the batch number remains the immutable identifier. Add only the required library identifiers and operational facts. Do not copy Customer names, prices, order notes, or other confidential Commercial details into the batch manifest.
 
@@ -52,7 +58,11 @@ When an authorized operator uses **Start** or **Complete batch**, POMS opens a c
 
 ## Create an outsourced sendout
 
-For outsourced NGS, enter the provider name, optional provider reference, expected completion, and any additional manifest notes. POMS freezes the current batch membership, library identifiers, and library-container barcodes in the sendout manifest. Confirm the physical contents against the batch before saving. Advance it through **Shipped**, **Received by provider**, **Sequencing**, and **Complete** only when the corresponding operational fact is known.
+If allocation or transfer confirmation is interrupted, use the offered retry before recording another action. Reopening this batch with the same account and browser restores the original command, even after a reload or browser restart. Retrying confirms the earlier result without allocating a second tube or deducting material twice. Do not repeat the physical pipetting because confirmation was interrupted.
+
+From a batch's **Actions**, open **Sequencing tubes**. Assign a separate tube for each library using a manufacturer barcode or a POMS-generated label. Record the physical transfer by scanning the source library and destination sequencing tube, entering the actual amount and matching unit, and recording when you performed it. The optional **Material exhausted** override applies to the source library. The transferred aliquot belongs to the sequencing tube; the remaining library stays in its original tube.
+
+Every member needs its recorded transfer before a new sendout can be created. For outsourced NGS, enter the provider name, optional provider reference, expected completion, and any additional manifest notes. POMS freezes the batch membership, library identity, actual sequencing-tube barcode, transfer and aliquot amount in the sendout manifest. Confirm the physical contents against the batch before saving. Earlier sendouts retain their original library-barcode manifests. Advance through **Shipped**, **Received by provider**, **Sequencing**, and **Complete** only when the corresponding operational fact is known.
 
 Add custody events whenever responsibility or location changes. Record the event code, location or responsible party, and carrier or tracking reference when used by the approved procedure. An optional custody note captures additional operational facts.
 

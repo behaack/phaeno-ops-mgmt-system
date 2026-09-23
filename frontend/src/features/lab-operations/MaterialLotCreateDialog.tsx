@@ -59,6 +59,7 @@ export const materialLotFormSchema = z.object({
     componentMaterialLotId: requiredText('Select a component lot.'),
     quantity: positiveQuantity,
     quantityUnit: requiredText('Enter the component unit.'),
+    materialExhausted: z.boolean().optional(),
   })),
 }).superRefine((values, context) => {
   if (values.materialSelection === newReferenceValue && !values.newMaterialName.trim()) {
@@ -143,6 +144,9 @@ export function MaterialLotCreateDialog({
   const productCatalog = useLotProducts(open && kind === 'SupplierLot')
   const materialSelection = form.watch('materialSelection')
   const supplierSelection = form.watch('supplierSelection')
+  const selectedProductId = form.watch('supplierProductId')
+  const selectedProduct = productCatalog.data?.find(supplier => supplier.id === supplierSelection)?.products.find(product => product.id === selectedProductId)
+  const expirationRequired = kind === 'SupplierLot' && selectedProduct?.canExpire === true
   const storageSelection = form.watch('storageSelection')
   const newMaterialName = form.watch('newMaterialName')
   const newStorageLocationName = form.watch('newStorageLocationName')
@@ -211,6 +215,10 @@ export function MaterialLotCreateDialog({
   }
   const submit = form.handleSubmit(async (values) => {
     form.clearErrors('root')
+    if (expirationRequired && !values.expirationOrRetestDate) {
+      form.setError('expirationOrRetestDate', { message: 'Enter the expiration date for this product.' }, { shouldFocus: true })
+      return
+    }
     try {
       await createLabMaterialLot({
         kind: values.kind,
@@ -242,6 +250,8 @@ export function MaterialLotCreateDialog({
             componentMaterialLotId: component.componentMaterialLotId,
             quantity: Number(component.quantity),
             quantityUnit: component.quantityUnit.trim(),
+            materialExhausted: component.materialExhausted ?? false,
+            lotVersion: materialLots.find(lot => lot.id === component.componentMaterialLotId)?.version,
           }))
           : [],
       })
@@ -267,7 +277,7 @@ export function MaterialLotCreateDialog({
             if (expirationInput instanceof HTMLInputElement) {
               if (!expirationInput.validity.valid) {
                 event.preventDefault()
-                form.setError('expirationOrRetestDate', { message: 'Enter a valid expiration or retest date that is not in the past.' })
+                form.setError('expirationOrRetestDate', { message: expirationInput.validity.valueMissing ? 'Enter the expiration date for this product.' : 'Enter a valid expiration or retest date that is not in the past.' })
                 expirationInput.focus()
                 return
               }
@@ -398,14 +408,15 @@ export function MaterialLotCreateDialog({
 
               <FormField id="material-quantity" label="Available quantity" required error={form.formState.errors.availableQuantity?.message}>
                 <Input id="material-quantity" type="number" min="0" step="any" aria-invalid={Boolean(form.formState.errors.availableQuantity)} {...form.register('availableQuantity')} />
+                <p className="text-xs text-muted-foreground">Record the actual amount in this lot. Recorded use decreases its remaining quantity.</p>
               </FormField>
               <FormField id="material-unit" label="Unit" required error={form.formState.errors.quantityUnit?.message}>
                 <Input id="material-unit" aria-invalid={Boolean(form.formState.errors.quantityUnit)} {...form.register('quantityUnit')} />
               </FormField>
 
               <div className="sm:col-span-2">
-                <FormField id="material-expiration" label="Expiration or retest date" error={form.formState.errors.expirationOrRetestDate?.message}>
-                  <Input id="material-expiration" type="date" min={today()} {...form.register('expirationOrRetestDate')} />
+                <FormField id="material-expiration" label={expirationRequired ? "Expiration date" : "Expiration or retest date"} required={expirationRequired} error={form.formState.errors.expirationOrRetestDate?.message}>
+                  <Input id="material-expiration" type="date" required={expirationRequired} aria-invalid={Boolean(form.formState.errors.expirationOrRetestDate)} min={today()} {...form.register('expirationOrRetestDate')} />
                 </FormField>
                 <p className="mt-1.5 text-xs text-muted-foreground">The lot remains valid through the end of this date.</p>
               </div>
@@ -451,6 +462,7 @@ export function MaterialLotCreateDialog({
                       <Button type="button" size="icon" variant="ghost" className="self-end" aria-label={`Remove component ${index + 1}`} onClick={() => components.remove(index)}>
                         <Trash2 aria-hidden="true" />
                       </Button>
+                      <div className="space-y-1 sm:col-span-4"><label className="flex cursor-pointer items-start gap-2 text-sm"><input type="checkbox" className="mt-0.5 size-4 shrink-0 cursor-pointer" aria-describedby={`component-${component.id}-exhausted-help`} {...form.register(`components.${index}.materialExhausted`)} />Material exhausted (optional override)</label><p id={`component-${component.id}-exhausted-help`} className="text-xs text-muted-foreground">Confirm no usable component material remains. Its actual quantity used is retained, with a separate adjustment for any remaining balance.</p></div>
                     </div>
                   ))}
                   <FieldError message={form.formState.errors.components?.root?.message ?? form.formState.errors.components?.message} />

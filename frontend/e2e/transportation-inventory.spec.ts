@@ -125,6 +125,8 @@ test('a wrong-container tube scan retains the barcode for correction', async ({ 
   const state = await fixture(page, { assigned: true })
   const barcode = page.getByLabel('Scan tube barcode', { exact: false })
   await barcode.fill('TUBE-FROM-ANOTHER-CONTAINER')
+  await page.getByLabel('Material amount in this tube', { exact: false }).fill('20')
+  await page.getByLabel('Material unit', { exact: false }).fill('µL')
   await barcode.press('Enter')
   await expect(page.getByText('This tube does not belong to the assigned container.')).toBeVisible()
   await expect(barcode).toHaveValue('TUBE-FROM-ANOTHER-CONTAINER')

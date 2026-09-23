@@ -1,5 +1,13 @@
 # Frontend Test Plan
 
+## September 23, 2026 — Material amounts, transfers and expiration
+
+The owner subsequently authorized the release checks. The full unit suite passed **1,208 tests in 188 files**; the final durable-recovery changes passed **15 focused tests in two files**. Full ESLint, TypeScript, all 56 generated guides and the production build pass. Preparation saves retain their report and original command across reload; sequencing saves retain the same original command. Real browser storage and exact replay are exercised by the [E2E checkpoint](E2E-TEST-PLAN.md#september-23-2026--material-amounts-transfers-and-expiration). These results supersede the initial unexecuted checkpoint below; physical bench acceptance remains separate. See the [release record](../operations/material-tracking-release-20260923.md).
+
+Authored/updated regression sources cover per-tube shipment amount entry and packet display; Biological material configuration/fictional preview; distinct library tube allocation, source/destination scans, amount/unit validation and optional exhaustion; deliberately repeated transfers and measured yield; sequencing allocation/transfer, immutable uncertain retries and read-only frozen batches; lot amount/exhaustion and product-dependent expiration entry. Run TypeScript and focused lint at the integration checkpoint. Automated suites are not requested; see [implementation status](SAMPLE-MATERIAL-TRANSFER-PLAN.md).
+
+Manual acceptance remains required for focus/scanner behavior, dirty/uncertain-request protection, error recovery, the contextual Actions rule, 320px/desktop light/dark views, real labels and physical amounts. Preview must not allocate containers, consume material or save configuration.
+
 ## September 22, 2026 — Authorized release regression checkpoint
 
 The owner requested the full release checks. All **1,185 unit tests in 185 files passed** with four workers. Shipping-container assertions now follow the Kit contents editor; catalog menu tests use the established keyboard opening interaction. The changed sources pass ESLint and TypeScript, and all 56 generated help guides pass consistency checks. Temporary ignored preview files are excluded from ESLint alongside other generated output. Shipping Supplier, Product name and Quantity controls now announce their required state to assistive technology. See the [release record](../operations/shipping-dashboard-release-20260922.md) for build/deployment status and separate hosted acceptance boundaries. This checkpoint supersedes the earlier unexecuted-suite notes below for current source.

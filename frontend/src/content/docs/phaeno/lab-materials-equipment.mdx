@@ -15,7 +15,7 @@ Choose the lot kind first:
 
 Select existing controlled records when available. If a material or storage location is new, choose the corresponding **Create a new…** option and enter its name in the focused modal. The entered name returns as the selected option in the lot form. The new reference is created with the lot, and POMS assigns an immutable key to a new material. Retired reference records are retained for history but are not available for new lots.
 
-Record the available quantity and unit. Use **Expiration or retest date** when applicable; this is a date-only field and the lot remains valid through the end of that date. Exact time-sensitive use-by control is not represented by this field.
+Record the available quantity and unit. If the selected catalog product has **Can expire** enabled, **Expiration date** is required for a new purchased lot. Otherwise, use **Expiration or retest date** when applicable. This is a date-only field and the lot remains valid through the end of that date; a new material lot cannot be recorded with a date already in the past. Exact time-sensitive use-by control is not represented by this field. Changing a product's Can expire setting preserves dates already recorded on existing lots. Older lots without a date remain undated; assigning their catalog product does not invent an expiration date.
 
 New lots show **QC: Pending**. A laboratory supervisor uses **Record QC**, confirms the QC date, and selects **Pass QC** or **Fail QC** in the modal. A failed outcome requires a reason. Passing QC makes the lot eligible for controlled work when its expiration or retest date, availability, and other rules are also satisfied. Failing QC keeps the lot blocked. POMS also retains the operator and server-recorded audit time.
 
@@ -27,11 +27,13 @@ Only lots with **Passed** or **Approved exception** QC may be consumed in contro
 
 An approved exception must retain the decision, reason, approver, and applicable scope. Expired, failed, quarantined, or otherwise unavailable lots remain blocked.
 
-When a prepared reagent is created, select each exact source lot and quantity. Every source lot must be QC-approved, unexpired, and available in the entered unit. POMS records the lineage and subtracts the component quantities atomically.
+When a prepared reagent is created, select each exact source lot and quantity. Every source lot must be QC-approved, unexpired, and available in the entered unit. POMS records the lineage and subtracts the component quantities atomically. Each component offers **Material exhausted** when that preparation uses the last usable source material.
 
 ## Record consumption
 
-Start the assigned execution before recording consumption. Select the exact lot, quantity, and compatible unit required by the protocol. The portal blocks unit mismatches and consumption above the available quantity.
+Record the lot's starting amount when receiving it in **Materials**. Start the assigned execution before recording consumption. Select the exact lot, actual quantity used, and compatible unit required by the protocol. Saving subtracts that quantity from the lot's available balance. The portal blocks unit mismatches and consumption above the available quantity.
+
+Select the optional **Material exhausted** checkbox when no usable stock remains, even if the calculated balance would be positive. Keep the actual amount used in the quantity field. POMS records that consumption and any remaining-balance adjustment separately in **Quantity history**, then sets available stock to zero. This option is initially unchecked and cannot clear an unknown-quantity hold; reconcile that lot first.
 
 Consumption is a durable scientific fact. Do not reduce or delete it to make inventory appear correct. Use an approved correction, adjustment, or exception that preserves the original entry and reason.
 

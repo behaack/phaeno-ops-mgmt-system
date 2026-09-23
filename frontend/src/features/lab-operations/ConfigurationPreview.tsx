@@ -19,6 +19,8 @@ export function createPreviewBatch(stage: PreparationStage): PreparationDetail {
       customerSampleId: `Example sample ${i}`, biologicalSource: i === 1 ? 'Human liver (fictional)' : 'Human kidney (fictional)',
       state: 'InProgress', blocker: null, attemptId: `example-${i}`, sequence: 1, failureEvidence: null,
       stageSkips: [], output: null, library: null,
+      sourceMaterial: { id: `example-source-${i}`, barcode: `EXAMPLE-TUBE-${i}`, quantity: 100, quantityUnit: stage.definition.steps.flatMap(s => s.captures).find(c => c.type === 'biologicalMaterial')?.unit?.trim() || 'µL', version: 1, status: 'Available' },
+      libraryTube: { id: `example-library-${i}`, barcode: `EXAMPLE-LIBRARY-${i}`, barcodeSource: 'PhaenoGenerated', quantity: null, quantityUnit: null, version: 1, confirmed: false, transferId: null },
       executions: [{ id: `example-${i}`, stageId: stage.id, status: 'InProgress', blockers: [], evidence: { records: [] } }],
     })),
   }

@@ -105,7 +105,7 @@ export function ProtocolStepEditor({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h3 id={`step-${index}-captures-heading`} className="font-medium">Fields to record</h3>
-              <p className="mt-1 text-sm text-muted-foreground">Add measurements, text, dates, choices, barcodes, materials, equipment, or outputs.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Add measurements, text, dates, choices, barcodes, biological material, reagents, equipment, or outputs.</p>
             </div>
             <Button type="button" size="sm" variant="outline" onClick={() => captures.append(createEmptyProtocolCapture())}>
               <Plus data-icon="inline-start" /> Add field
@@ -138,10 +138,10 @@ export function ProtocolStepEditor({
                   <Field label="Type" id={`step-${index}-capture-${captureIndex}-type`} required error={captureErrors?.type?.message}>
                     <select id={`step-${index}-capture-${captureIndex}-type`} className={selectClass} {...form.register(`steps.${index}.captures.${captureIndex}.type`, { onChange: event => {
                       if (event.target.value !== 'material') form.setValue(`steps.${index}.captures.${captureIndex}.material`, undefined, { shouldDirty: true })
-                      if (['material', 'equipment', 'output'].includes(event.target.value)) { form.setValue('preparationBatchEnabled', true, { shouldDirty: true }); form.setValue(`steps.${index}.captures.${captureIndex}.scope`, event.target.value === 'output' ? 'tube' : 'batch', { shouldDirty: true }) }
+                      if (['material', 'biologicalMaterial', 'equipment', 'output'].includes(event.target.value)) { form.setValue('preparationBatchEnabled', true, { shouldDirty: true }); form.setValue(`steps.${index}.captures.${captureIndex}.scope`, ['output', 'biologicalMaterial'].includes(event.target.value) ? 'tube' : 'batch', { shouldDirty: true }) }
                       if (event.target.value === 'barcode') form.setValue(`steps.${index}.captures.${captureIndex}.scope`, 'tube', { shouldDirty: true })
                     } })}>
-                      {protocolCaptureTypes.map((value) => <option key={value} value={value}>{value === 'material' ? 'Material used' : value === 'equipment' ? 'Equipment used' : value === 'output' ? 'Output created' : sentenceCase(value)}</option>)}
+                      {protocolCaptureTypes.map((value) => <option key={value} value={value}>{value === 'biologicalMaterial' ? 'Biological material' : value === 'material' ? 'Material used' : value === 'equipment' ? 'Equipment used' : value === 'output' ? 'Output created' : sentenceCase(value)}</option>)}
                     </select>
                   </Field>
                 </div>
@@ -151,7 +151,7 @@ export function ProtocolStepEditor({
                     if (captureType === 'material' && event.target.value === 'shared') form.setValue(`steps.${index}.captures.${captureIndex}.quantityBasis`, 'perSample', { shouldDirty: true })
                   } })}>
                     <option value="">Choose what this entry applies to…</option><option value="tube">Sample — record individually</option>
-                    {!['barcode', 'output'].includes(captureType) ? <><option value="batch">Batch only — same entry for all samples</option>{captureType !== 'equipment' ? <option value="shared">Same entry with sample exceptions</option> : null}</> : null}
+                    {!['barcode', 'output', 'biologicalMaterial'].includes(captureType) ? <><option value="batch">Batch only — same entry for all samples</option>{captureType !== 'equipment' ? <option value="shared">Same entry with sample exceptions</option> : null}</> : null}
                   </select>
                 </Field> : null}
                 {captureType === 'material' ? <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" {...form.register(`steps.${index}.captures.${captureIndex}.includeTracking`)} />Include lot number</label> : null}
@@ -161,7 +161,8 @@ export function ProtocolStepEditor({
                   <ScientificTextField id={`step-${index}-capture-${captureIndex}-unit`} control={form.control} name={`steps.${index}.captures.${captureIndex}.unit`} label="Quantity unit" unit placeholder="µL" />
                 </Field> : null}
                 {captureType === 'material' ? <MaterialConfigurationField form={form} index={index} captureIndex={captureIndex} /> : null}
-                {captureType === 'output' ? <p className="text-sm text-muted-foreground">Creates a separate library output for each sample. Common quantity, unit and storage values can be entered once.</p> : null}
+                {captureType === 'biologicalMaterial' ? <><p className="text-sm text-muted-foreground">Records the actual amount transferred from each sample’s selected source into its barcoded library tube. Operators can mark the source material exhausted. Saved transfers remain linked to the sample and attempt.</p><Field label="Quantity unit (optional)" id={`step-${index}-capture-${captureIndex}-unit`} error={captureErrors?.unit?.message}><ScientificTextField id={`step-${index}-capture-${captureIndex}-unit`} control={form.control} name={`steps.${index}.captures.${captureIndex}.unit`} label="Quantity unit" unit placeholder="Use the source material unit" /></Field></> : null}
+                {captureType === 'output' ? <p className="text-sm text-muted-foreground">Records the prepared library yield in its existing library tube. Common quantity, unit and storage values can be entered once. This does not withdraw source material again.</p> : null}
                 {captureType === 'number' ? (
                   <Field label="Unit" id={`step-${index}-capture-${captureIndex}-unit`} error={captureErrors?.unit?.message}>
                     <ScientificTextField id={`step-${index}-capture-${captureIndex}-unit`} control={form.control} name={`steps.${index}.captures.${captureIndex}.unit`} label="Unit" unit placeholder="ng/µL" />

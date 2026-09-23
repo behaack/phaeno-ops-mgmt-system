@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.LabOperations.DTOs;
+using PhaenoPortal.App.Features.OrderManagement.Services;
 
 public sealed partial class LabOperationsController
 {
@@ -15,23 +16,46 @@ public sealed partial class LabOperationsController
     {
         await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.Operator, LabRole.Supervisor);
+        await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext, $"lab-sequencing-batch:{batchId}", cancellationToken);
         var batch = await dbContext.LabOperationalBatches.SingleOrDefaultAsync(item => item.Id == batchId, cancellationToken)
             ?? throw Missing();
         if (batch.Status != LabBatchStatus.InProgress)
             throw Conflict("batch_not_active", "The sequencing batch must be active before sendout.");
+        if (await dbContext.LabNgsSendouts.AnyAsync(s => s.LabOperationalBatchId == batchId, cancellationToken))
+            throw Conflict("sendout_already_exists", "This batch already has a saved sendout. Open its existing record.");
+        var affectedJobs = await dbContext.LabBatchMembers.AsNoTracking().Where(m => m.LabOperationalBatchId == batchId)
+            .Select(m => m.LabWorkOrderId).Distinct().OrderBy(id => id).ToListAsync(cancellationToken);
+        foreach (var workId in affectedJobs)
+            await SampleShippingPackingData.LockAsync(dbContext, $"lab-tube-receipt:{workId}", cancellationToken);
+        var tubeWorkspace = await ReadSequencingTubesAsync(batchId, cancellationToken);
+        if (tubeWorkspace.Members.Any(m => m.SequencingTube is null || m.Transfer is null || m.SequencingTube.Status != "Available"))
+            throw Conflict("sequencing_transfers_required", "Record the transfer into a confirmed sequencing tube for every library before creating the sendout.");
+        var tubeIds = tubeWorkspace.Members.Where(m => m.SequencingTube is not null).Select(m => m.SequencingTube!.Id).ToList();
+        var physicalTubes = await dbContext.LabContainers.Where(c => tubeIds.Contains(c.Id)).ToListAsync(cancellationToken);
+        foreach (var tube in physicalTubes)
+        {
+            if (tube.Status != LabContainerStatus.Available) throw Conflict("sequencing_tube_unavailable", "A submitted sequencing tube is no longer available.");
+            dbContext.Entry(tube).Property(c => c.UpdatedAt).IsModified = true;
+        }
         var members = await (from member in dbContext.LabBatchMembers.AsNoTracking()
             join library in dbContext.LabLibraries.AsNoTracking() on member.LabLibraryId equals library.Id
             join container in dbContext.LabContainers.AsNoTracking() on library.LibraryContainerId equals container.Id
+            join tube in dbContext.LabContainers.AsNoTracking() on member.SequencingContainerId equals tube.Id
+            join transfer in dbContext.LabBiologicalMaterialTransfers.AsNoTracking() on member.MaterialTransferId equals transfer.Id
             where member.LabOperationalBatchId == batch.Id
             orderby library.LibraryKey
-            select new { libraryId = library.Id, libraryKey = library.LibraryKey, containerBarcode = container.Barcode })
+            select new { memberId = member.Id, libraryId = library.Id, libraryKey = library.LibraryKey,
+                libraryContainerId = container.Id, libraryContainerBarcode = container.Barcode,
+                sequencingContainerId = tube.Id, containerBarcode = tube.Barcode, materialTransferId = transfer.Id,
+                quantity = transfer.Quantity, quantityUnit = transfer.QuantityUnit })
             .ToListAsync(cancellationToken);
         if (members.Count == 0)
             throw Conflict("batch_members_required", "Add at least one library before creating a sendout.");
-        await RequireBatchAttemptReadinessAsync(batch.Id, cancellationToken);
+        await RequireBatchAttemptReadinessAsync(batch.Id, cancellationToken, requireSequencingQc: true);
         using var supplementalDetails = JsonDocument.Parse(NormalizeJson(request.ManifestJson, "sendout_manifest_invalid"));
         var manifest = JsonSerializer.Serialize(new
         {
+            schemaVersion = 2,
             batchNumber = batch.BatchNumber,
             members,
             supplementalDetails = supplementalDetails.RootElement
@@ -39,7 +63,9 @@ public sealed partial class LabOperationsController
         var sendout = new LabNgsSendout(batch.Id, request.ProviderName, request.ProviderReference,
             manifest, request.ExpectedCompletionAtUtc);
         dbContext.LabNgsSendouts.Add(sendout);
+        dbContext.Entry(batch).Property(b => b.UpdatedAt).IsModified = true;
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         return (await ReadBatchesAsync(cancellationToken)).Single(item => item.Id == batch.Id);
     }
 
@@ -91,6 +117,16 @@ public sealed partial class LabOperationsController
             .SingleOrDefaultAsync(item => item.Id == sendoutId, cancellationToken) ?? throw Missing();
         if (request.LabContainerId.HasValue)
         {
+            using var manifest = JsonDocument.Parse(sendout.ManifestJson);
+            if (manifest.RootElement.TryGetProperty("schemaVersion", out var schemaVersion))
+            {
+                if (schemaVersion.ValueKind != JsonValueKind.Number || !schemaVersion.TryGetInt32(out var schema) || schema is not (1 or 2))
+                    throw Invalid("custody_container_invalid", "The saved sendout has an unsupported manifest version.");
+                if (schema == 2 && (!manifest.RootElement.TryGetProperty("members", out var submittedMembers) || submittedMembers.ValueKind != JsonValueKind.Array
+                    || !submittedMembers.EnumerateArray().Any(m => m.TryGetProperty("sequencingContainerId", out var id)
+                        && id.TryGetGuid(out var submittedId) && submittedId == request.LabContainerId.Value)))
+                    throw Invalid("custody_container_invalid", "Choose a sequencing tube recorded in this sendout's frozen manifest.");
+            }
             var container = await dbContext.LabContainers.AsNoTracking()
                 .SingleOrDefaultAsync(item => item.Id == request.LabContainerId, cancellationToken) ?? throw Missing();
             if (!await dbContext.LabBatchMembers.AsNoTracking().AnyAsync(item =>

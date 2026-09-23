@@ -1,5 +1,9 @@
 # Library preparation batches and connected workflow
 
+## Sample material transfers — September 23, 2026
+
+The owner clarified that accessioned material is pipetted partly or entirely into a distinct barcoded library tray tube, and only a portion of prepared library is transferred into a separate barcoded sequencing tube. Support manufacturer barcodes and POMS-generated labels. Capture customer-declared amounts during shipment, record actual biological-material consumption and offer an optional Material exhausted override. Add Biological material to preparation field types. The [sample material transfer plan](SAMPLE-MATERIAL-TRANSFER-PLAN.md) owns the connected implementation and acceptance status.
+
 ## Reusable Lab steps and configuration preview - September 17, 2026
 
 Implemented locally: reusable scoped step versions, independent approval/retirement, exact-version protocol occurrences with explicit adoption and preserved legacy snapshots, plus disposable previews using Library prep capture/resource/output forms. See [implementation and acceptance status](LAB-STEPS-AND-CONFIGURATION-PREVIEW-PLAN.md#local-implementation-checkpoint). The additive local migration is applied. Production rollout remains separate.

@@ -8,6 +8,7 @@ export const protocolCaptureTypes = [
   'fileReference',
   'barcode',
   'material',
+  'biologicalMaterial',
   'equipment',
   'output',
 ] as const
@@ -101,12 +102,14 @@ export const protocolDefinitionFormSchema = z.object({
     if (step.attachmentRequired && (!value.preparationBatchEnabled || !['qc', 'preparation'].includes(step.attachmentKind ?? ''))) context.addIssue({ code: 'custom', message: 'Choose a report type and enable preparation batches to require a report.', path: ['steps', i, 'attachmentKind'] })
   })
   if (!value.preparationBatchEnabled) {
-    value.steps.forEach((step, i) => { if (step.captures.some(c => ['material', 'equipment', 'output'].includes(c.type))) context.addIssue({ code: 'custom', message: 'Linked fields require preparation batches.', path: ['steps', i, 'captures'] }) })
+    value.steps.forEach((step, i) => { if (step.captures.some(c => ['material', 'biologicalMaterial', 'equipment', 'output'].includes(c.type))) context.addIssue({ code: 'custom', message: 'Linked fields require preparation batches.', path: ['steps', i, 'captures'] }) })
     return
   }
   value.steps.forEach((step, i) => {
     if (step.captures.filter(c => c.type === 'output').length > 1) context.addIssue({ code: 'custom', message: 'Use one output field per step.', path: ['steps', i, 'captures'] })
+    if (step.captures.filter(c => c.type === 'biologicalMaterial').length > 1) context.addIssue({ code: 'custom', message: 'Use one biological material field per step.', path: ['steps', i, 'captures'] })
     step.captures.forEach((capture, j) => {
+      if (capture.type === 'biologicalMaterial' && capture.scope !== 'tube') context.addIssue({ code: 'custom', message: 'Biological material must be recorded individually for each sample.', path: ['steps', i, 'captures', j, 'scope'] })
       if (['material', 'equipment', 'output'].includes(capture.type) && (!(['batch', 'tube'].includes(capture.scope ?? '') || capture.type === 'material' && capture.scope === 'shared' && capture.quantityBasis !== 'total') || capture.type === 'output' && capture.scope !== 'tube')) context.addIssue({ code: 'custom', message: 'Material exceptions require per-sample amounts; equipment uses batch or sample scope and outputs are individual.', path: ['steps', i, 'captures', j, 'scope'] })
       if (!capture.scope || capture.type === 'barcode' && capture.scope !== 'tube') context.addIssue({ code: 'custom', message: capture.type === 'barcode' ? 'Barcodes require Tube scope.' : 'Choose the evidence scope.', path: ['steps', i, 'captures', j, 'scope'] })
     })
@@ -354,7 +357,7 @@ export function serializeProtocolDefinition(values: ProtocolDefinitionFormValues
           ...(capture.type === 'material' && capture.material ? { material: capture.material } : {}),
           ...(capture.type === 'equipment' || capture.type === 'material' && capture.includeTracking ? { includeTracking: true } : {}),
           ...(capture.type === 'material' ? { quantityBasis: capture.quantityBasis ?? 'perSample' } : {}),
-          ...(['number', 'material'].includes(capture.type) && capture.unit.trim()
+          ...(['number', 'material', 'biologicalMaterial'].includes(capture.type) && capture.unit.trim()
             ? { unit: capture.unit.trim() }
             : {}),
           ...(capture.type === 'choice'

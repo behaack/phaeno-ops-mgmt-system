@@ -32,7 +32,7 @@ describe('supplier catalog', () => {
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Deactivate' }))
     fireEvent.click(screen.getByRole('button', { name: 'Deactivate' }))
     expect(await screen.findByText('Status could not be confirmed')).toBeTruthy()
-    expect(mocks.product).toHaveBeenCalledWith(supplierCatalogFixture[0].id, { productNumber: 'T-001', description: 'Sterile transport tube', productTypeId: productTypesFixture[0].id, isActive: false, version: 1 }, supplierCatalogFixture[0].products[0].id)
+    expect(mocks.product).toHaveBeenCalledWith(supplierCatalogFixture[0].id, { productNumber: 'T-001', description: 'Sterile transport tube', productTypeId: productTypesFixture[0].id, canExpire: false, isActive: false, version: 1 }, supplierCatalogFixture[0].products[0].id)
   })
   it('offers Activate for an inactive product', async () => {
     mocks.catalog.mockReturnValue({ data: supplierCatalogFixture.map(s => ({ ...s, products: s.products.map(p => ({ ...p, isActive: false })) })), isPending: false, isError: false })
@@ -41,6 +41,17 @@ describe('supplier catalog', () => {
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Activate' }))
     fireEvent.click(screen.getByRole('button', { name: 'Activate' }))
     await waitFor(() => expect(mocks.product).toHaveBeenCalledWith(supplierCatalogFixture[0].id, expect.objectContaining({ isActive: true, version: 1 }), supplierCatalogFixture[0].products[0].id))
+  })
+
+  it('retains and saves the product expiration requirement', async () => {
+    mocks.catalog.mockReturnValue({ data: supplierCatalogFixture.map(s => ({ ...s, products: s.products.map(p => ({ ...p, canExpire: true })) })), isPending: false, isError: false })
+    mount(supplierCatalogFixture[0].id)
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions for T-001' }), { button: 0, ctrlKey: false })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Edit' }))
+    expect(screen.getByLabelText('Can expire')).toHaveProperty('checked', true)
+    fireEvent.click(screen.getByLabelText('Can expire'))
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(mocks.product).toHaveBeenCalledWith(supplierCatalogFixture[0].id, expect.objectContaining({ canExpire: false, version: 1 }), supplierCatalogFixture[0].products[0].id))
   })
 
   it('opens suppliers as view-first records and searches product descriptions', () => {

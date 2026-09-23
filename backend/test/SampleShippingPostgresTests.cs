@@ -106,13 +106,13 @@ public partial class SampleShippingPostgresTests
 
         await platformWorkflow.CreateReturnKit(
             fixture.Shipment.Id,
-            new CreateSampleReturnKitRequest(
+            await scope.CatalogReturnKitRequestAsync(new CreateSampleReturnKitRequest(
                 1,
                 "Corning",
                 "8676",
                 "REFERENCE-LOT",
                 "Therapak",
-                "37806"),
+                "37806")),
             CancellationToken.None);
         scope.ClearTrackedState();
         var kit = await scope.DbContext.SampleReturnKits.AsNoTracking()
@@ -137,7 +137,7 @@ public partial class SampleShippingPostgresTests
         var duplicateShipment = await scope.CreateEmptyShipmentAsync(fixture);
         await platformWorkflow.CreateReturnKit(
             duplicateShipment.Id,
-            new CreateSampleReturnKitRequest(1, "Corning", "8676", null, "Therapak", "37806"),
+            await scope.CatalogReturnKitRequestAsync(new CreateSampleReturnKitRequest(1, "Corning", "8676", null, "Therapak", "37806")),
             CancellationToken.None);
         scope.ClearTrackedState();
         var duplicateKit = await scope.DbContext.SampleReturnKits.AsNoTracking()
@@ -151,10 +151,15 @@ public partial class SampleShippingPostgresTests
         scope.ClearTrackedState();
 
         var expectedTube = fulfilled.Crosswalk.Single();
+        var missingAmount = await Assert.ThrowsAsync<OrderManagementException>(() => customerWorkflow.AssignTube(
+            fixture.Shipment.Id, fixture.Item.Id,
+            new AssignSampleTubeRequest(firstTubeBarcode, null, expectedTube.Version, expectedTube.TubeSlotId), CancellationToken.None));
+        Assert.Equal("sample_tube_material_required", missingAmount.ErrorCode);
+        scope.ClearTrackedState();
         var assigned = await customerWorkflow.AssignTube(
             fixture.Shipment.Id,
             fixture.Item.Id,
-            new AssignSampleTubeRequest(firstTubeBarcode, null, expectedTube.Version, expectedTube.TubeSlotId),
+            new AssignSampleTubeRequest(firstTubeBarcode, null, expectedTube.Version, expectedTube.TubeSlotId, CustomerDeclaredQuantity: 20m, CustomerDeclaredQuantityUnit: "µL"),
             CancellationToken.None);
         scope.ClearTrackedState();
         var currentSample = await configuration.CreateSampleType(scope.SampleTypeRequest(
@@ -185,6 +190,14 @@ public partial class SampleShippingPostgresTests
                 instructionSnapshot.RootElement.GetProperty("samples")[0]
                     .GetProperty("instructionRule").GetProperty("packingInstructions").GetString());
         Assert.Equal(firstTubeBarcode, ManifestTubeBarcode(packetV1.ManifestSnapshotJson));
+        using (var declaration = JsonDocument.Parse(packetV1.ManifestSnapshotJson))
+        {
+            var row = declaration.RootElement.GetProperty("samples")[0];
+            Assert.Equal(20m, row.GetProperty("customerDeclaredQuantity").GetDecimal());
+            Assert.Equal("µL", row.GetProperty("customerDeclaredQuantityUnit").GetString());
+            Assert.NotEqual(Guid.Empty, row.GetProperty("customerDeclaredByUserId").GetGuid());
+            Assert.NotEqual(default, row.GetProperty("customerDeclaredAt").GetDateTime());
+        }
 
         var otherTenant = scope.CreateOtherCustomerWorkflowController();
         var hidden = await Assert.ThrowsAsync<OrderManagementException>(() =>
@@ -341,7 +354,7 @@ public partial class SampleShippingPostgresTests
 
         await platformWorkflow.CreateReturnKit(
             fixture.Shipment.Id,
-            new CreateSampleReturnKitRequest(1, "Corning", "8676", null, "Therapak", "37806"),
+            await scope.CatalogReturnKitRequestAsync(new CreateSampleReturnKitRequest(1, "Corning", "8676", null, "Therapak", "37806")),
             CancellationToken.None);
         scope.ClearTrackedState();
         var kit = await scope.DbContext.SampleReturnKits.AsNoTracking()
@@ -361,7 +374,7 @@ public partial class SampleShippingPostgresTests
         var assigned = await customerWorkflow.AssignTube(
             fixture.Shipment.Id,
             fixture.Item.Id,
-            new AssignSampleTubeRequest(tubeBarcode, null, expectedTube.Version, expectedTube.TubeSlotId),
+            new AssignSampleTubeRequest(tubeBarcode, null, expectedTube.Version, expectedTube.TubeSlotId, CustomerDeclaredQuantity: 20m, CustomerDeclaredQuantityUnit: "µL"),
             CancellationToken.None);
         scope.ClearTrackedState();
 
@@ -464,6 +477,19 @@ public partial class SampleShippingPostgresTests
         public User PlatformUser { get; }
 
         public void ClearTrackedState() => DbContext.ChangeTracker.Clear();
+
+        public async Task<CreateSampleReturnKitRequest> CatalogReturnKitRequestAsync(CreateSampleReturnKitRequest request, bool canExpire = false)
+        {
+            var suffix = Guid.NewGuid().ToString("N")[..8];
+            var tubeSupplier = new LabSupplier($"{request.TubeSupplierName} {suffix}");
+            var shipperSupplier = string.Equals(request.TubeSupplierName.Trim(), request.ShipperSupplierName.Trim(), StringComparison.OrdinalIgnoreCase)
+                ? tubeSupplier : new LabSupplier($"{request.ShipperSupplierName} {suffix}");
+            var tube = new LabSupplierProduct(tubeSupplier.Id, request.TubeProductNumber, "Reference tube", LabProductType.TubeId, canExpire);
+            var shipper = new LabSupplierProduct(shipperSupplier.Id, request.ShipperProductNumber, "Reference shipper", LabProductType.ShippingContainerId);
+            DbContext.AddRange(tubeSupplier, shipperSupplier, tube, shipper);
+            await DbContext.SaveChangesAsync();
+            return request with { TubeSupplierProductId = tube.Id, ShipperSupplierProductId = shipper.Id };
+        }
 
         public static async Task<ShippingTestScope> CreateAsync(string? isolatedConnection = null)
         {

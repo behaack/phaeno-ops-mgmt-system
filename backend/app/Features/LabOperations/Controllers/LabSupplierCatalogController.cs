@@ -8,10 +8,10 @@ using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
-public sealed record SupplierCatalogProductDto(Guid Id, Guid SupplierId, string ProductNumber, string Description, string Kind, bool IsActive, long Version, Guid ProductTypeId, string ProductTypeName, bool ProductTypeIsActive);
+public sealed record SupplierCatalogProductDto(Guid Id, Guid SupplierId, string ProductNumber, string Description, string Kind, bool IsActive, long Version, Guid ProductTypeId, string ProductTypeName, bool ProductTypeIsActive, bool CanExpire = false);
 public sealed record SupplierCatalogEntryDto(Guid Id, string Name, bool IsActive, long Version, IReadOnlyList<SupplierCatalogProductDto> Products);
 public sealed record SaveSupplierRequest(string Name, bool IsActive = true, long Version = 0);
-public sealed record SaveSupplierProductRequest(string ProductNumber, string Description, Guid ProductTypeId, bool IsActive = true, long Version = 0);
+public sealed record SaveSupplierProductRequest(string ProductNumber, string Description, Guid ProductTypeId, bool IsActive = true, long Version = 0, bool? CanExpire = null);
 
 [ApiController]
 [Authorize]
@@ -64,7 +64,7 @@ public sealed class LabSupplierCatalogController(PSeqOperationsDbContext db, Ord
         await using var transaction = await SampleShippingPackingData.BeginAsync(db, $"product-type:{request.ProductTypeId}", ct);
         var type = await ProductType(request.ProductTypeId, null, ct);
         LabSupplierProduct product;
-        try { product = new(supplierId, request.ProductNumber, request.Description, type.Id); product.Update(request.ProductNumber, request.Description, type.Id, request.IsActive); }
+        try { product = new(supplierId, request.ProductNumber, request.Description, type.Id, request.CanExpire ?? false); product.Update(request.ProductNumber, request.Description, type.Id, request.IsActive, request.CanExpire); }
         catch (ArgumentException e) { throw Invalid(e.Message); }
         db.LabSupplierProducts.Add(product);
         await Save(ct);
@@ -80,7 +80,7 @@ public sealed class LabSupplierCatalogController(PSeqOperationsDbContext db, Ord
         await using var transaction = await SampleShippingPackingData.BeginAsync(db, $"product-type:{request.ProductTypeId}", ct);
         Version(product.Version, request.Version);
         var type = await ProductType(request.ProductTypeId, product.ProductTypeId, ct);
-        try { product.Update(request.ProductNumber, request.Description, type.Id, request.IsActive); }
+        try { product.Update(request.ProductNumber, request.Description, type.Id, request.IsActive, request.CanExpire); }
         catch (ArgumentException e) { throw Invalid(e.Message); }
         await Save(ct);
         if (transaction is not null) await transaction.CommitAsync(ct);
@@ -93,7 +93,7 @@ public sealed class LabSupplierCatalogController(PSeqOperationsDbContext db, Ord
         catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
         { throw new OrderManagementException("supplier_catalog_duplicate", "That supplier name or product number already exists. Edit the existing record, including inactive records.", 409); }
     }
-    private static SupplierCatalogProductDto Product(LabSupplierProduct p, LabProductType t) => new(p.Id, p.SupplierId, p.ProductNumber, p.Description, t.KitUse.ToString(), p.IsActive, p.Version, t.Id, t.Name, t.IsActive);
+    private static SupplierCatalogProductDto Product(LabSupplierProduct p, LabProductType t) => new(p.Id, p.SupplierId, p.ProductNumber, p.Description, t.KitUse.ToString(), p.IsActive, p.Version, t.Id, t.Name, t.IsActive, p.CanExpire);
     private async Task<LabProductType> ProductType(Guid id, Guid? currentId, CancellationToken ct)
     {
         var type = await db.LabProductTypes.SingleOrDefaultAsync(t => t.Id == id, ct) ?? throw Invalid("Choose a saved product type.");

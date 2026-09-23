@@ -224,6 +224,7 @@ public sealed partial class PSeqOperationsDbContext(
     public DbSet<LabRoleAssignment> LabRoleAssignments { get; set; }
     public DbSet<LabRoleInvitationIntent> LabRoleInvitationIntents { get; set; }
     public DbSet<LabContainer> LabContainers { get; set; }
+    public DbSet<LabBiologicalMaterialTransfer> LabBiologicalMaterialTransfers { get; set; }
     public DbSet<LabStep> LabSteps { get; set; }
     public DbSet<LabStepVersion> LabStepVersions { get; set; }
     public DbSet<LabProtocol> LabProtocols { get; set; }

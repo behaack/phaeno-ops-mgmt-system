@@ -1,12 +1,54 @@
 namespace PhaenoPortal.Test;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
 using PhaenoPortal.App.Features.OrderManagement.DTOs;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PSeq.Operations.Laboratory.Domain;
 
 public partial class SampleShippingPostgresTests
 {
+    [PostgreSqlReferenceFact]
+    public async Task StockEntryRequiresExpirationForAdditionalProductsAndFreezesPastDates()
+    {
+        await using var scope = await ShippingTestScope.CreateAsync();
+        var shipment = await scope.CreateShipmentAsync();
+        var initial = await scope.KitContentsAsync(10);
+        var supplier = await scope.SupplierCatalog().Create(new($"TEST-CATALOG-{scope.Suffix}-expiry"), default);
+        var extra = await scope.SupplierCatalog().CreateProduct(supplier.Id,
+            new("EXPIRES", "TEST additional expiring supply", LabProductType.ReagentId, CanExpire: true), default);
+        Assert.True(extra.CanExpire);
+        var definition = await scope.ContainerCatalog().CreateAsync(new($"PACK-{scope.Suffix}-EXPIRY", "Expiry contents", 10,
+            DateTime.UtcNow.AddDays(-1), await scope.ContainerContextsAsync(shipment), IsActive: true,
+            KitContents: initial.Concat([new ShippingKitContentRequest(extra.Id, 3)]).ToArray()), default);
+        var request = await scope.CatalogKitRequestAsync(definition.Id);
+        var stock = scope.StockController();
+        await Assert.ThrowsAsync<OrderManagementException>(() => stock.Create(request, default));
+        Assert.False(await scope.DbContext.SampleShippingStockKits.AnyAsync(kit => kit.ContainerDefinitionId == definition.Id));
+        var pastDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(-1);
+        await Assert.ThrowsAsync<OrderManagementException>(() => stock.Create(request with
+            { ProductExpirations = [new(extra.Id, pastDate), new(extra.Id, pastDate)] }, default));
+        await Assert.ThrowsAsync<OrderManagementException>(() => stock.Create(request with
+            { ProductExpirations = [new(Guid.NewGuid(), pastDate)] }, default));
+        await Assert.ThrowsAsync<OrderManagementException>(() => stock.Create(request with
+            { ProductExpirations = [new(extra.Id, DateOnly.MinValue)] }, default));
+        var result = await stock.Create(request with { ProductExpirations = [new(extra.Id, pastDate)] }, default);
+        var created = Assert.IsType<StockKitDto>(Assert.IsType<CreatedResult>(result.Result).Value);
+        var saved = Assert.Single(created.ProductExpirations!, item => item.SupplierProductId == extra.Id);
+        Assert.True(saved.CanExpire);
+        Assert.Equal(pastDate, saved.ExpirationDate);
+        Assert.Equal(initial.Count + 3, created.ProductExpirations!.Count); // Configured products plus actual tube and shipper.
+        scope.ClearTrackedState();
+        extra = (await scope.SupplierCatalog().List(default)).Single(s => s.Id == supplier.Id).Products.Single();
+        await scope.SupplierCatalog().UpdateProduct(supplier.Id, extra.Id,
+            new("RENAMED", extra.Description, extra.ProductTypeId, true, extra.Version, false), default);
+        scope.ClearTrackedState();
+        var history = Assert.Single((await stock.Read(created.Id, default)).ProductExpirations!, item => item.SupplierProductId == extra.Id);
+        Assert.Equal("EXPIRES", history.ProductNumber);
+        Assert.True(history.CanExpire);
+        Assert.Equal(pastDate, history.ExpirationDate);
+    }
+
     [PostgreSqlReferenceFact]
     public async Task KitContentsAllowAnyCatalogTypeAndQuantityAndPreserveRevisionSnapshots()
     {

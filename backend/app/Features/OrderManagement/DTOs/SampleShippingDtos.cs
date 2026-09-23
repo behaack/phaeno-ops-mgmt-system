@@ -239,7 +239,11 @@ public sealed record SampleShippingCrosswalkItemDto(
     IReadOnlyList<SampleOtherShipmentDto>? OtherShipments = null,
     int ReceivedTubeCount = 0,
     int UnallocatedTubeCount = 0,
-    bool IsReceived = false);
+    bool IsReceived = false,
+    decimal? CustomerDeclaredQuantity = null,
+    string? CustomerDeclaredQuantityUnit = null,
+    DateTime? CustomerDeclaredAt = null,
+    Guid? CustomerDeclaredByUserId = null);
 
 public sealed record RegisteredSampleTubeDto(
     Guid Id,
@@ -267,7 +271,8 @@ public sealed record SampleReturnKitDto(
     string? OutboundTrackingNumber,
     DateTime? FulfilledAt,
     long Version,
-    IReadOnlyList<RegisteredSampleTubeDto> Tubes);
+    IReadOnlyList<RegisteredSampleTubeDto> Tubes,
+    IReadOnlyList<StockKitProductExpiryDto>? ProductExpirations = null);
 
 public sealed record SampleShipmentWorkflowDto(
     Guid Id,
@@ -318,7 +323,10 @@ public sealed record CreateSampleReturnKitRequest(
     string TubeProductNumber,
     string? TubeLotNumber,
     string ShipperSupplierName,
-    string ShipperProductNumber);
+    string ShipperProductNumber,
+    Guid? TubeSupplierProductId = null,
+    Guid? ShipperSupplierProductId = null,
+    IReadOnlyList<StockKitProductExpiryRequest>? ProductExpirations = null);
 
 public sealed record RegisterSampleTubesRequest(
     IReadOnlyList<string> SupplierBarcodes,
@@ -334,7 +342,9 @@ public sealed record AssignSampleTubeRequest(
     string SupplierBarcode,
     string? Reason,
     long Version,
-    Guid? TubeSlotId = null);
+    Guid? TubeSlotId = null,
+    decimal? CustomerDeclaredQuantity = null,
+    string? CustomerDeclaredQuantityUnit = null);
 
 public sealed record IssueSampleShippingPacketRequest(
     long Version,

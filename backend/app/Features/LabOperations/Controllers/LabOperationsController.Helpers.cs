@@ -351,7 +351,8 @@ public sealed partial class LabOperationsController
             item.Label, item.LabelPrintCount, item.Location, item.Quantity, item.QuantityUnit,
             item.Status.ToString(), item.RetainUntilUtc, item.Version,
             item.IntakeDisposition?.ToString(), item.IntakeReasonCode, item.IntakeNotes,
-            item.IntakeReviewedAtUtc, item.IntakeReviewedByUserId);
+            item.IntakeReviewedAtUtc, item.IntakeReviewedByUserId,
+            item.InitialQuantity, item.InitialQuantityUnit, item.QuantityBasis, item.QuantityHistoryJson);
 
     private static LabExecutionDto MapExecution(LabProtocolExecution item) =>
         new(item.Id, item.LabSpecimenId, item.LabProtocolVersionId, item.AssignedToUserId,

@@ -2,7 +2,6 @@ import { parseLabSection } from './lab-sections'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useBlocker } from '@tanstack/react-router'
-import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -12,13 +11,14 @@ import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
-import { ActionMenu as DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { IntakeReviewFields } from './IntakeReviewFields'
 import { LabLabelDialog } from './LabLabelDialog'
+import { BiologicalMaterialHistory } from './BiologicalMaterialHistory'
+import { PreparationActions } from './preparation-ui'
 
 const human = (value: string) => value.replace(/([a-z])([A-Z])/g, '$1 $2').replaceAll('_', ' ')
 export function LabTubePage({ workOrderId, containerId }: { workOrderId: string; containerId: string }) {
@@ -41,9 +41,10 @@ export function LabTubePage({ workOrderId, containerId }: { workOrderId: string;
   const tubeLink = (t: LabContainer) => <Link to="/lab-operations/$workOrderId/containers/$containerId" params={{ workOrderId, containerId: t.id }} className="font-mono text-primary underline underline-offset-4 break-all">{t.barcode}</Link>
   return <main className="page-wrap space-y-5 px-4 py-8">
     <Link to="/lab-operations/$workOrderId" params={{ workOrderId }} search={previous => ({ ...previous, section: parseLabSection(previous.section) ?? 'jobs', tab: 'lineage' })} className="text-sm text-primary underline underline-offset-4">Back to tubes</Link>
-    <header className="flex flex-wrap items-start justify-between gap-4"><div><h1 className="break-all font-mono text-2xl font-semibold">{tube.barcode}</h1><p className="mt-1 text-sm text-muted-foreground">{tube.label} · {human(tube.kind)}</p><div className="mt-2 flex flex-wrap gap-2"><Badge variant="outline">{human(tube.status)}</Badge>{tube.kind === 'SubmittedSpecimen' ? <Badge variant="secondary">Intake: {human(tube.intakeDisposition ?? 'Not recorded')}</Badge> : null}</div></div>{canCorrect || canPrint ? <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline">Actions <ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">{canCorrect ? <DropdownMenuItem onSelect={() => setAction('correct')}>Correct intake decision</DropdownMenuItem> : null}{canPrint ? <DropdownMenuItem onSelect={() => setAction('label')}>{tube.labelPrintCount ? 'Reprint label' : 'Print label'}</DropdownMenuItem> : null}</DropdownMenuContent></DropdownMenu> : null}</header>
+    <header className="flex flex-wrap items-start justify-between gap-4"><div><h1 className="break-all font-mono text-2xl font-semibold">{tube.barcode}</h1><p className="mt-1 text-sm text-muted-foreground">{tube.label} · {human(tube.kind)}</p><div className="mt-2 flex flex-wrap gap-2"><Badge variant="outline">{human(tube.status)}</Badge>{tube.kind === 'SubmittedSpecimen' ? <Badge variant="secondary">Intake: {human(tube.intakeDisposition ?? 'Not recorded')}</Badge> : null}</div></div><PreparationActions items={[...(canCorrect ? [{ label: 'Correct intake decision', onClick: () => setAction('correct') }] : []), ...(canPrint ? [{ label: tube.labelPrintCount ? 'Reprint label' : 'Print label', onClick: () => setAction('label') }] : [])]} /></header>
     <Card className="gap-0 py-0"><CardHeader className="border-b bg-muted/50 p-4"><CardTitle>Receipt and storage</CardTitle></CardHeader><CardContent className="space-y-3 p-4"><dl className="grid gap-4 sm:grid-cols-2"><div><dt className="text-sm text-muted-foreground">Storage location</dt><dd className="break-all">{tube.location ?? 'Not stored'}</dd></div><div><dt className="text-sm text-muted-foreground">Barcode source</dt><dd>{human(tube.barcodeSource)}</dd></div>{tube.intakeReviewedAtUtc ? <div><dt className="text-sm text-muted-foreground">Intake recorded</dt><dd>{new Date(tube.intakeReviewedAtUtc).toLocaleString()}</dd></div> : null}{tube.intakeReasonCode ? <div><dt className="text-sm text-muted-foreground">Intake reason</dt><dd>{human(tube.intakeReasonCode)}</dd></div> : null}{tube.retainUntilUtc ? <div><dt className="text-sm text-muted-foreground">Retain until</dt><dd>{new Date(tube.retainUntilUtc).toLocaleString()}</dd></div> : null}</dl>{tube.intakeNotes ? <p className="whitespace-pre-wrap text-sm">{tube.intakeNotes}</p> : null}{tube.intakeDisposition === 'Rejected' ? <p className="text-sm">This rejected receipt is retained against its expected tube. It is unavailable for processing.</p> : null}{tube.kind === 'SubmittedSpecimen' && !tube.intakeDisposition ? <p className="text-sm">Intake has not been recorded. Complete it during accessioning with the shipping insert and the identified tube. A supervisor can document a correction to this earlier record.</p> : null}</CardContent></Card>
     <Card className="gap-0 py-0"><CardHeader className="border-b bg-muted/50 p-4"><CardTitle>Lineage</CardTitle></CardHeader><CardContent className="space-y-3 p-4">{specimen ? <p className="text-sm">Specimen: <Link className="text-primary underline underline-offset-4" to="/lab-operations/$workOrderId/specimens/$specimenId" params={{ workOrderId, specimenId: specimen.id }} search={previous => ({ ...previous, section: parseLabSection(previous.section) ?? 'jobs' })}>{specimen.name}</Link></p> : null}<p className="text-sm">Parent: {parent ? tubeLink(parent) : 'No parent container'}</p>{children.length ? <ul className="space-y-2">{children.map(t => <li className="rounded-lg border bg-muted/30 p-3" key={t.id}>{tubeLink(t)}<p className="mt-1 text-xs text-muted-foreground">{human(t.kind)} · {human(t.status)}</p></li>)}</ul> : <p className="text-sm text-muted-foreground">No derived containers recorded.</p>}{used ? <p className="text-sm">This tube has processing history. Record later problems through the specimen attempt hold or failure actions; the intake decision is retained.</p> : null}</CardContent></Card>
+    {['SubmittedSpecimen', 'Library', 'Sequencing'].includes(tube.kind) ? <BiologicalMaterialHistory workOrderId={workOrderId} tube={tube} /> : null}
     {action === 'correct' ? <IntakeCorrectionDialog tube={tube} workOrderId={workOrderId} onClose={() => setAction(null)} onSaved={async () => { setAction(null); await refresh() }} /> : null}
     {action === 'label' ? <LabLabelDialog container={tube} onClose={() => setAction(null)} onRecorded={refresh} /> : null}
   </main>

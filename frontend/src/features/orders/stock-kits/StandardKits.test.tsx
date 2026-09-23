@@ -21,6 +21,36 @@ function fill(label: RegExp | string, value: string, group?: string) { fireEvent
 beforeEach(() => { vi.clearAllMocks(); mocks.catalog.mockReturnValue({ data: supplierCatalogFixture, isPending: false, isError: false, error: null }); mocks.allowed = true; mocks.search = {}; mocks.create.mockResolvedValue(kit); mocks.register.mockResolvedValue(kit); mocks.dispatch.mockResolvedValue({ ...kit, status: 'Fulfilled' }); mocks.list.mockResolvedValue([kit]); mocks.get.mockResolvedValue(kit); mocks.definitions.mockResolvedValue([definition]); mocks.shipments.mockResolvedValue([]) })
 const callbacks = { onClose: vi.fn(), onSaved: vi.fn() }
 describe('standard kit preparation and dispatch', () => {
+  it('requires expiration for additional configured products and submits the displayed past date', async () => {
+    const extra = { ...supplierCatalogFixture[0].products[0], id: '83000000-0000-4000-8000-000000000099', productNumber: 'EXTRA-99', kind: 'Other' as const, canExpire: true }
+    const catalog = supplierCatalogFixture.map((supplier, index) => ({ ...supplier, products: index === 0 ? [...supplier.products, extra] : supplier.products }))
+    mocks.catalog.mockReturnValue({ data: catalog, isPending: false, isError: false })
+    const kitContents = catalog.flatMap(supplier => supplier.products.map(product => ({ supplierProductId: product.id, supplierId: supplier.id, supplierName: supplier.name, productNumber: product.productNumber, productDescription: product.description, productTypeName: product.productTypeName, kind: product.kind, quantity: 1 })))
+    mount(<PrepareStandardKitDialog definitions={[{ ...definition, kitContents }]} {...callbacks} />)
+    fill(/Container size/, definition.id)
+    fireEvent.click(screen.getByRole('button', { name: 'Prepare standard kit' }))
+    expect(await screen.findByText('Enter the expiration date for this product.')).toBeTruthy()
+    expect(mocks.create).not.toHaveBeenCalled()
+    const input = screen.getByLabelText(/Tube maker · EXTRA-99/) as HTMLInputElement
+    expect(input.required).toBe(true)
+    input.value = '2000-01-01' // Capture the visible date even when the browser has not sent a change event.
+    fireEvent.click(screen.getByRole('button', { name: 'Prepare standard kit' }))
+    await waitFor(() => expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ productExpirations: [{ supplierProductId: extra.id, expirationDate: '2000-01-01' }] })))
+  })
+
+  it('shows saved expiry evidence without introducing a stock status change', async () => {
+    mocks.get.mockResolvedValue({ ...kit, productExpirations: [{ supplierProductId: tubeProductId, supplierName: 'Tube maker', productNumber: 'T-001', canExpire: true, expirationDate: '2000-01-01' }] })
+    mount(<StandardKitDetailPage kitId={kit.id} />)
+    expect(await screen.findByText('2000-01-01 · Expired')).toBeTruthy()
+    expect(screen.queryByText('Expiration requirements and dates were not recorded for this historical kit.')).toBeNull()
+  })
+
+  it('keeps historical stock expiration evidence unknown', async () => {
+    mount(<StandardKitDetailPage kitId={kit.id} />)
+    expect(await screen.findByText('Expiration requirements and dates were not recorded for this historical kit.')).toBeTruthy()
+    expect(screen.queryByText('Expiration not required when recorded')).toBeNull()
+  })
+
   it('shows configured contents and prefills exact tube and container product identities', () => {
     const kitContents = supplierCatalogFixture.flatMap(supplier => supplier.products.filter(product => product.id === tubeProductId || product.id === shipperProductId).map(product => ({
       supplierProductId: product.id, supplierId: supplier.id, supplierName: supplier.name, productNumber: product.productNumber,

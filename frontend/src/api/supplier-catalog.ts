@@ -2,10 +2,10 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from './client'
 
 export type SupplierProductKind = 'Tube' | 'ShippingContainer' | 'Other'
-export type SupplierProduct = { id: string; supplierId: string; productNumber: string; description: string; kind: SupplierProductKind; productTypeId: string; productTypeName: string; productTypeIsActive: boolean; isActive: boolean; version: number }
+export type SupplierProduct = { id: string; supplierId: string; productNumber: string; description: string; kind: SupplierProductKind; productTypeId: string; productTypeName: string; productTypeIsActive: boolean; canExpire?: boolean; isActive: boolean; version: number }
 export type CatalogSupplier = { id: string; name: string; isActive: boolean; version: number; products: SupplierProduct[] }
 export type SupplierWrite = { name: string; isActive: boolean; version?: number }
-export type ProductWrite = { productNumber: string; description: string; productTypeId: string; isActive: boolean; version?: number }
+export type ProductWrite = { productNumber: string; description: string; productTypeId: string; canExpire?: boolean; isActive: boolean; version?: number }
 type Envelope<T> = { data: T }
 const path = '/platform/lab-operations/suppliers'
 export const supplierCatalogKey = ['supplier-catalog'] as const

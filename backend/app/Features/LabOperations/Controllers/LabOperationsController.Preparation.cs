@@ -128,10 +128,13 @@ public sealed partial class LabOperationsController
         var recorders = await dbContext.Users.AsNoTracking().Where(u => peopleIds.Contains(u.Id))
             .Select(u => new LabExecutionRecorderDto(u.Id, u.FirstName + " " + u.LastName)).ToListAsync(ct);
         var outputs = await dbContext.LabContainers.AsNoTracking().Where(c => members.Select(m => m.OutputContainerId).Contains(c.Id)).ToListAsync(ct);
+        var sourceIds = attempts.Select(a => a.SourceContainerId).ToList();
+        var libraryTubeIds = members.Where(m => m.LibraryTubeContainerId.HasValue).Select(m => m.LibraryTubeContainerId!.Value).ToList();
+        var materialTubes = await dbContext.LabContainers.AsNoTracking().Where(c => sourceIds.Contains(c.Id) || libraryTubeIds.Contains(c.Id)).ToDictionaryAsync(c => c.Id, ct);
         var libraries = await dbContext.LabLibraries.AsNoTracking().Where(l => members.Select(m => m.LabLibraryId).Contains(l.Id)).ToListAsync(ct);
         var availableOutputs = await dbContext.LabContainers.AsNoTracking().Where(c => c.LabSpecimenAttemptId.HasValue && ids.Contains(c.LabSpecimenAttemptId.Value)
             && c.Kind == LabContainerKind.Library && c.Status == LabContainerStatus.Available && c.Quantity > 0 && c.QuantityUnit != null
-            && !dbContext.LabLibraries.Any(l => l.LibraryContainerId == c.Id)).ToListAsync(ct);
+            && !libraryTubeIds.Contains(c.Id) && !dbContext.LabLibraries.Any(l => l.LibraryContainerId == c.Id)).ToListAsync(ct);
         var sequencing = await (from m in dbContext.LabBatchMembers.AsNoTracking() join b in dbContext.LabOperationalBatches.AsNoTracking() on m.LabOperationalBatchId equals b.Id
             where libraries.Select(l => l.Id).Contains(m.LabLibraryId) orderby m.AddedAtUtc descending, m.Id descending select new { m.LabLibraryId, b.Id, b.BatchNumber, b.Name }).ToListAsync(ct);
         var creation = records.FirstOrDefault(r => r.Action == "create");
@@ -145,10 +148,14 @@ public sealed partial class LabOperationsController
             members = members.Select(m => { var a = attempts.Single(a => a.Id == m.LabSpecimenAttemptId); var w = jobs[a.LabWorkOrderId];
                 var specimen = specimens[a.LabSpecimenId];
                 var declaration = declarations.GetValueOrDefault(w.Id)?.GetValueOrDefault(specimen.SubmittedSpecimenId);
+                var source = materialTubes[a.SourceContainerId];
+                var libraryTube = materialTubes.GetValueOrDefault(m.LibraryTubeContainerId ?? Guid.Empty);
                 return new { m.Id, m.Position, barcode = m.ConfirmedBarcode, attemptId = a.Id, a.Sequence, workOrderId = w.Id, jobName = w.OpaqueSubmitterReference,
                     specimenId = a.LabSpecimenId, specimenName = specimens[a.LabSpecimenId].AccessionNumber, state = a.State.ToString(), a.FailureEvidence,
                     customerSampleId = declaration?.CustomerSampleId, biologicalSource = declaration?.BiologicalSource, safetyInformation = declaration?.SafetyInformation,
                     operationalHold = a.HoldReason is not null,
+                    sourceMaterial = new { source.Id, source.Barcode, source.Quantity, source.QuantityUnit, source.Version, status = source.Status.ToString(), source.InitialQuantity, source.InitialQuantityUnit, source.QuantityBasis },
+                    libraryTube = libraryTube is null ? null : new { libraryTube.Id, libraryTube.Barcode, barcodeSource = libraryTube.BarcodeSource.ToString(), libraryTube.Quantity, libraryTube.QuantityUnit, libraryTube.Version, confirmed = m.MaterialTransferId.HasValue, transferId = m.MaterialTransferId },
                     blocker = w.Status is LabWorkOrderStatus.OnHold or LabWorkOrderStatus.Cancelled or LabWorkOrderStatus.ReadyForRelease ? "The job is held or closed." : a.HoldReason,
                     output = outputs.Where(o => o.Id == m.OutputContainerId).Select(o => new { o.Id, o.Barcode, o.Quantity, o.QuantityUnit, confirmed = m.OutputConfirmed }).SingleOrDefault(),
                     availableOutputs = availableOutputs.Where(o => o.LabSpecimenAttemptId == a.Id && !members.Any(other => other.OutputContainerId == o.Id))

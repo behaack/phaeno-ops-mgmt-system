@@ -99,3 +99,21 @@ describe('shared material amount exceptions', () => {
     expect(eligibleResources({ ...emptyResourceCatalog, materialLots: [{ ...lot, quantityHoldReason: 'Uncertain amount' }] }).materialLots).toEqual([])
   })
 })
+
+describe('tracked lot exhaustion override', () => {
+  const lot: LabMaterialLot = { id: 'lot', kind: 'PreparedReagent', materialDefinitionId: 'definition', materialKey: 'buffer', name: 'Buffer', lotNumber: 'LOT', supplierId: null, supplier: null, storageLocationId: 'storage', storageLocation: 'Shelf', availableQuantity: 100, quantityUnit: 'uL', expirationOrRetestDate: null, qcDisposition: 'Passed', qcPerformedOn: null, qcFailureReason: null, components: [], version: 7 }
+  const field: ResourceField = { key: 'buffer', label: 'Buffer', type: 'material', required: true, scope: 'shared', includeTracking: true, quantityBasis: 'perSample', material: { name: 'Buffer', materialDefinitionId: 'definition' } }
+  const catalog = { ...emptyResourceCatalog, materialLots: [lot] }
+  it('sends actual amounts unchanged and the lot override separately', () => {
+    const result = resourceEntries([field], members, { shared_buffer_resource: 'lot', shared_buffer_quantity: '10', shared_buffer_exhausted: 'yes', 'example-2_buffer_exception': 'yes', 'example-2_buffer_quantity': '15', 'example-2_buffer_reason': 'Actual amount differs', 'example-2_buffer_disposition': 'continue' }, catalog)
+    expect(result.errors).toEqual({})
+    expect(result.entries[0]).toMatchObject({ quantity: 10, materialExhausted: true, resourceVersion: 7 })
+    expect(result.entries[1]).toMatchObject({ quantity: 15, memberId: 'example-2' })
+    expect(result.entries[1].materialExhausted).toBeUndefined()
+  })
+  it('keeps unknown-use reconciliation separate from exhaustion', () => {
+    const result = resourceEntries([field], members, { shared_buffer_resource: 'lot', shared_buffer_quantity: '10', shared_buffer_exhausted: 'yes', 'example-2_buffer_exception': 'yes', 'example-2_buffer_unknown': 'yes', 'example-2_buffer_reason': 'Amount uncertain', 'example-2_buffer_disposition': 'hold' }, catalog)
+    expect(result.errors.shared_buffer_exhausted).toBeTruthy()
+    expect(result.entries[1].quantity).toBeUndefined()
+  })
+})

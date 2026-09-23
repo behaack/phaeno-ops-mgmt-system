@@ -3,12 +3,15 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PreparationBatchPage } from './PreparationBatchPage'
+import { createPreviewBatch } from './ConfigurationPreview'
+import type { PreparationStage } from '#/api/lab-preparation'
 
 const state = vi.hoisted(() => ({ canAccess: false, sessionAvailable: true, batch: vi.fn(), apply: vi.fn(), resources: vi.fn(), tubes: vi.fn() }))
+vi.mock('./lab-command-recovery', async original => ({ ...await original<typeof import('./lab-command-recovery')>(), useLabCommandRecovery: () => ({ data: null, isFetched: true, retain: async () => undefined, clear: async () => undefined, refetch: async () => undefined }) }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({
   session: state.sessionAvailable ? { capabilities: { canManageLabOperations: state.canAccess } } : null, authProvider: 'clerk',
 }) }))
-vi.mock('@tanstack/react-router', () => ({ Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a> }))
+vi.mock('@tanstack/react-router', () => ({ useBlocker: vi.fn(), Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a> }))
 vi.mock('#/api/lab-preparation', async original => ({ ...await original<typeof import('#/api/lab-preparation')>(), getPreparation: state.batch, applyPreparation: state.apply, findPreparationTubes: state.tubes }))
 vi.mock('#/api/lab-operations', async original => ({ ...await original<typeof import('#/api/lab-operations')>(), getLabOperationsDashboard: state.resources }))
 vi.mock('./PreparationTray', () => ({ PreparationTray: ({ eligibleTubes, children }: { eligibleTubes?: ReactNode; children?: (id: string) => ReactNode }) => <div>Tray workspace{eligibleTubes}{children?.('member')}</div> }))
@@ -20,6 +23,34 @@ function show(client = new QueryClient({ defaultOptions: { queries: { retry: fal
 beforeEach(() => { vi.clearAllMocks(); state.canAccess = false; state.sessionAvailable = true })
 
 describe('preparation access feedback', () => {
+  it('retries a biological transfer with its original source version after an uncertain response refreshes the balance', async () => {
+    state.canAccess = true
+    const stage: PreparationStage = { id: 'stage', name: 'Transfer', sequence: 1, requirement: 'Required', definition: { schemaVersion: 1, preparationBatchEnabled: true, steps: [{ key: 'transfer', name: 'Transfer sample', instructions: 'Transfer actual sample material.', required: true, repeatable: true, operatorConfirmation: true, captures: [{ key: 'sample', label: 'Sample material', type: 'biologicalMaterial', scope: 'tube', required: true }], inputMaterials: [], preparedOutputs: [], equipmentTypes: [] }] } }
+    const example = createPreviewBatch(stage)
+    const batch = { ...example, id: 'saved-preparation', canOperate: true, roles: ['Operator'], members: example.members.slice(0, 1) }
+    state.batch.mockResolvedValue(batch)
+    state.resources.mockResolvedValue({ materialLots: [], equipment: [], batches: [] })
+    state.apply.mockRejectedValueOnce(new Error('Response interrupted'))
+    show()
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Record step' }))[0])
+    fireEvent.click(screen.getByRole('button', { name: 'A1 · EXAMPLE-TUBE-1' }))
+    fireEvent.change(screen.getByLabelText(/Scan accessioned source tube barcode/), { target: { value: 'EXAMPLE-TUBE-1' } })
+    fireEvent.change(screen.getByLabelText(/Scan library tube barcode/), { target: { value: 'EXAMPLE-LIBRARY-1' } })
+    fireEvent.change(screen.getByLabelText(/Actual amount transferred/), { target: { value: '20' } })
+    fireEvent.click(screen.getByRole('checkbox', { name: /I performed this step/ }))
+    const refreshed = { ...batch, version: 2, members: [{ ...batch.members[0], sourceMaterial: { ...batch.members[0].sourceMaterial!, version: 2, quantity: 80 }, libraryTube: { ...batch.members[0].libraryTube!, transferId: 'saved-transfer' } }] }
+    state.batch.mockResolvedValue(refreshed)
+    fireEvent.click(screen.getByRole('button', { name: 'Save step record' }))
+    const retry = await screen.findByRole('button', { name: 'Retry same command' })
+    expect(screen.queryByLabelText(/Actual amount transferred/)).toBeNull()
+    const submitted = state.apply.mock.calls[0][1]
+    expect(submitted.step.resourceEntries[0]).toMatchObject({ quantity: 20, resourceVersion: 1 })
+    state.apply.mockResolvedValueOnce(refreshed)
+    fireEvent.click(retry)
+    await waitFor(() => expect(state.apply).toHaveBeenCalledTimes(2))
+    expect(state.apply.mock.calls[1][1]).toEqual(submitted)
+  })
+
   it('automatically reconciles eligible conditions once and preserves the receipt for an uncertain retry', async () => {
     state.canAccess = true
     const ready = { id: 'saved-preparation', name: 'Batch', version: 5, status: 'InProgress', canOperate: true, automaticSkipAvailable: true, members: [], stages: [], records: [], roles: ['Supervisor'], layout: { name: 'Tray', rows: 1, columns: 2, labels: 'grid', unavailable: [] } }

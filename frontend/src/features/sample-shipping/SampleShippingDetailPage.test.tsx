@@ -248,8 +248,8 @@ describe('SampleShippingDetailPage', () => {
     expect(screen.getByText('TUBE-0001')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Correct tube' }))
-    const dialog = screen.getByRole('dialog', { name: 'Change tube assignment' })
-    expect(dialog.textContent).toContain('voids the current shipping insert and issues a corrected version')
+    const dialog = screen.getByRole('dialog', { name: 'Edit tube and material amount' })
+    expect(dialog.textContent).toContain('replaces the current shipping insert with a corrected revision')
     fireEvent.change(within(dialog).getByLabelText(/Supplier tube barcode/), {
       target: { value: 'TUBE-0002' },
     })
@@ -263,6 +263,8 @@ describe('SampleShippingDetailPage', () => {
       shipment.crosswalk[0].shipmentItemId,
       {
         supplierBarcode: 'TUBE-0002',
+        customerDeclaredQuantity: 20,
+        customerDeclaredQuantityUnit: 'µL',
         tubeSlotId: null,
         reason: 'Customer moved the sample to the unused registered tube.',
         version: shipment.crosswalk[0].version,
@@ -476,6 +478,7 @@ const shipment: SampleShipmentWorkflow = {
     quantityUnit: 'uL',
     registeredSampleTubeId: '77777777-7777-4777-8777-777777777771',
     supplierTubeBarcode: 'TUBE-0001',
+    customerDeclaredQuantity: 20, customerDeclaredQuantityUnit: 'µL',
     tubeStatus: 'Assigned',
     version: 2,
   }],

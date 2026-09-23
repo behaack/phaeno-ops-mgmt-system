@@ -20,23 +20,25 @@ import { containerEffectiveState, localContainerDateTime } from '../configuratio
 import { ShippingKitContents } from '../configuration/ShippingKitContents'
 
 const selectClass = 'h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none'
-const prepareSchema = z.object({ containerDefinitionId: z.string().uuid('Choose an active container size.'), tubeSupplierId: z.string().uuid('Choose a tube supplier.'), tubeSupplierProductId: z.string().uuid('Choose a tube product.'), tubeLotNumber: z.string().trim().max(100), shipperSupplierId: z.string().uuid('Choose a shipping container supplier.'), shipperSupplierProductId: z.string().uuid('Choose a shipping container product.') })
+const prepareSchema = z.object({ containerDefinitionId: z.string().uuid('Choose an active container size.'), tubeSupplierId: z.string().uuid('Choose a tube supplier.'), tubeSupplierProductId: z.string().uuid('Choose a tube product.'), tubeLotNumber: z.string().trim().max(100), shipperSupplierId: z.string().uuid('Choose a shipping container supplier.'), shipperSupplierProductId: z.string().uuid('Choose a shipping container product.'), productExpirations: z.record(z.string(), z.string()) })
 type PrepareValues = z.infer<typeof prepareSchema>
 type EditorProps = { onClose: () => void; onSaved: (kit: ShippingStockKit) => void | Promise<void> }
 
 export function PrepareStandardKitDialog({ definitions, onClose, onSaved }: EditorProps & { definitions: ShippingContainerDefinition[] }) {
   const catalog = useSupplierCatalog()
   const suppliers = (catalog.data ?? []).filter(supplier => supplier.isActive)
-  const form = useForm<PrepareValues>({ resolver: zodResolver(prepareSchema), defaultValues: { containerDefinitionId: '', tubeSupplierId: '', tubeSupplierProductId: '', tubeLotNumber: '', shipperSupplierId: '', shipperSupplierProductId: '' } })
+  const form = useForm<PrepareValues>({ resolver: zodResolver(prepareSchema), defaultValues: { containerDefinitionId: '', tubeSupplierId: '', tubeSupplierProductId: '', tubeLotNumber: '', shipperSupplierId: '', shipperSupplierProductId: '', productExpirations: {} } })
   const candidates = definitions.filter(value => containerEffectiveState(value) === 'Active now')
   const selected = candidates.find(value => value.id === form.watch('containerDefinitionId'))
-  const mutation = useMutation({ mutationFn: (values: PrepareValues) => createShippingStockKit({ containerDefinitionId: values.containerDefinitionId, tubeSupplierProductId: values.tubeSupplierProductId, shipperSupplierProductId: values.shipperSupplierProductId, tubeLotNumber: values.tubeLotNumber || null }), onSuccess: async kit => { form.reset(form.getValues()); allowSavedNavigation(); await onSaved(kit) } })
+  const mutation = useMutation({ mutationFn: (values: PrepareValues) => createShippingStockKit({ containerDefinitionId: values.containerDefinitionId, tubeSupplierProductId: values.tubeSupplierProductId, shipperSupplierProductId: values.shipperSupplierProductId, tubeLotNumber: values.tubeLotNumber || null, productExpirations: inventoryProducts.filter(product => values.productExpirations[product.id]).map(product => ({ supplierProductId: product.id, expirationDate: values.productExpirations[product.id] })) }), onSuccess: async kit => { form.reset(form.getValues()); allowSavedNavigation(); await onSaved(kit) } })
   const dirty = form.formState.isDirty
   const allowSavedNavigation = useOrderDraftGuard(dirty, mutation.isPending)
   function close() { if (!mutation.isPending && (!dirty || window.confirm('Discard the unsaved standard-kit details?'))) onClose() }
   const errors = form.formState.errors
   const unavailable = mutation.isPending || catalog.isPending || catalog.isError
   const values = form.watch()
+  const inventoryProductIds = new Set([...(selected?.kitContents ?? []).map(item => item.supplierProductId), values.tubeSupplierProductId, values.shipperSupplierProductId])
+  const inventoryProducts = (catalog.data ?? []).flatMap(supplier => supplier.products.filter(product => inventoryProductIds.has(product.id)).map(product => ({ ...product, supplierName: supplier.name })))
   function productFields(prefix: 'tube' | 'shipper', kind: SupplierProductKind) {
     const supplierField = `${prefix}SupplierId` as const
     const productField = `${prefix}SupplierProductId` as const
@@ -54,10 +56,27 @@ export function PrepareStandardKitDialog({ definitions, onClose, onSaved }: Edit
         form.setError(`${prefix}SupplierProductId`, { message: 'Choose an active product from this supplier.' }); return
       }
     }
+    for (const product of inventoryProducts) {
+      const date = values.productExpirations[product.id]
+      if (product.canExpire && !date) { form.setError(`productExpirations.${product.id}`, { message: 'Enter the expiration date for this product.' }, { shouldFocus: true }); return }
+      if (date && (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date.startsWith('0000') || !Number.isFinite(Date.parse(`${date}T00:00:00Z`)) || new Date(`${date}T00:00:00Z`).toISOString().slice(0, 10) !== date)) { form.setError(`productExpirations.${product.id}`, { message: 'Enter a valid expiration date.' }, { shouldFocus: true }); return }
+    }
     if (!unavailable) mutation.mutate(values)
   }
   return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Prepare standard kit</DialogTitle><DialogDescription>Choose a configured size and the actual supplier products, then register its permanent tube barcodes. Prepared stock remains at Phaeno until dispatch.</DialogDescription></DialogHeader><StockKitSaveError error={mutation.error || catalog.error} />
-    <form id="prepare-standard-kit" className="space-y-4" noValidate onSubmit={form.handleSubmit(submit)}>
+    <form id="prepare-standard-kit" className="space-y-4" noValidate onSubmit={event => {
+      event.preventDefault()
+      for (const product of inventoryProducts.filter(item => item.canExpire)) {
+        const input = event.currentTarget.elements.namedItem(`productExpirations.${product.id}`)
+        if (!(input instanceof HTMLInputElement)) continue
+        if (!input.validity.valid) {
+          form.setError(`productExpirations.${product.id}`, { message: input.validity.valueMissing ? 'Enter the expiration date for this product.' : 'Enter a valid expiration date.' }, { shouldFocus: true })
+          return
+        }
+        form.setValue(`productExpirations.${product.id}`, input.value, { shouldDirty: true })
+      }
+      void form.handleSubmit(submit)(event)
+    }}>
       {catalog.isPending ? <p role="status">Loading suppliers and products…</p> : null}
       {catalog.isError ? <Button type="button" variant="outline" onClick={() => void catalog.refetch()}>Retry catalog</Button> : null}
       <StockKitField id="stock-container" label="Container size" required error={errors.containerDefinitionId?.message}><select id="stock-container" className={selectClass} {...form.register('containerDefinitionId')} disabled={unavailable} aria-invalid={Boolean(errors.containerDefinitionId)} aria-describedby={errors.containerDefinitionId ? 'stock-container-error' : undefined} onChange={event => {
@@ -79,6 +98,7 @@ export function PrepareStandardKitDialog({ definitions, onClose, onSaved }: Edit
       {selected?.kitContents?.length ? <section aria-labelledby="prepare-kit-contents" className="rounded-md border p-3"><h3 id="prepare-kit-contents" className="text-sm font-medium">Contents per kit</h3><ShippingKitContents contents={selected.kitContents} /><p className="text-xs text-muted-foreground">Assemble these products and quantities. Record the actual tube and shipping-container products below.</p></section> : null}
       <fieldset className="min-w-0"><legend className="mb-3 text-sm font-medium">Tubes</legend><div className="grid gap-4">{productFields('tube', 'Tube')}<StockKitField id="stock-tubeLotNumber" label="Lot" error={errors.tubeLotNumber?.message}><Input id="stock-tubeLotNumber" disabled={mutation.isPending} aria-invalid={Boolean(errors.tubeLotNumber)} aria-describedby={errors.tubeLotNumber ? 'stock-tubeLotNumber-error' : undefined} {...form.register('tubeLotNumber')} /></StockKitField></div></fieldset>
       <fieldset className="min-w-0"><legend className="mb-3 text-sm font-medium">Shipping Container</legend><div className="grid gap-4">{productFields('shipper', 'ShippingContainer')}</div></fieldset>
+      {inventoryProducts.some(product => product.canExpire) ? <fieldset className="space-y-3"><legend className="text-sm font-medium">Product expiration dates</legend><p className="text-xs text-muted-foreground">Record the labeled expiration date for every product that can expire in this kit, including additional configured contents. Dates are saved with this stock record.</p>{inventoryProducts.filter(product => product.canExpire).map(product => <StockKitField key={product.id} id={`stock-expiry-${product.id}`} label={`${product.supplierName} · ${product.productNumber}`} required error={errors.productExpirations?.[product.id]?.message}><Input id={`stock-expiry-${product.id}`} type="date" required disabled={unavailable} aria-invalid={Boolean(errors.productExpirations?.[product.id])} aria-describedby={errors.productExpirations?.[product.id] ? `stock-expiry-${product.id}-error` : undefined} {...form.register(`productExpirations.${product.id}`)} /></StockKitField>)}</fieldset> : null}
       <p className="text-sm text-muted-foreground">Missing a supplier or product? Add it in <Link className="text-primary underline" to="/lab-operations" search={{ section: 'suppliers' }}>Suppliers &amp; Products</Link>, then return to prepare the kit.</p>
     </form><RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="prepare-standard-kit" disabled={unavailable || !candidates.length || !suppliers.length}>{mutation.isPending ? 'Preparing…' : 'Prepare standard kit'}</Button></RequiredDialogFooter>
   </DialogContent></Dialog>

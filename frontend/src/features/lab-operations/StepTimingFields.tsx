@@ -9,15 +9,15 @@ import { localTimeOccurrences, type StepTimingValues } from './step-performance'
 import { PerformerPicker } from './PerformerPicker'
 
 const selectClass = 'h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-2 focus-visible:outline-ring'
-export function StepTimingFields({ value, onChange, onBlur, inputRef, errors, shared = false, preview = false }: {
+export function StepTimingFields({ value, onChange, onBlur, inputRef, errors, shared = false, preview = false, allowOnBehalf = true }: {
   value: StepTimingValues; onChange: (value: StepTimingValues) => void; onBlur: () => void
-  inputRef: (element: HTMLSelectElement | null) => void; errors?: FieldErrors<StepTimingValues>; shared?: boolean; preview?: boolean
+  inputRef: (element: HTMLSelectElement | null) => void; errors?: FieldErrors<StepTimingValues>; shared?: boolean; preview?: boolean; allowOnBehalf?: boolean
 }) {
   const id = useId()
   const choices = value.mode === 'earlier' ? localTimeOccurrences(value.localTime) : []
   return <fieldset className="space-y-3 rounded-lg border p-3">
     <legend className="px-1 text-sm font-medium">When the work happened</legend>
-    <div className="space-y-1.5"><Label htmlFor={`${id}-who`}>Performed by</Label><select id={`${id}-who`} className={selectClass} value={value.otherPerformer ? 'other' : 'self'} onChange={e => onChange({ ...value, otherPerformer: e.target.value === 'other', performerId: '' })}><option value="self">Me — personally performed</option><option value="other">Another staff member — requires supervisor review</option></select></div>
+    <div className="space-y-1.5"><Label htmlFor={`${id}-who`}>Performed by</Label><select id={`${id}-who`} className={selectClass} value={value.otherPerformer ? 'other' : 'self'} onChange={e => onChange({ ...value, otherPerformer: e.target.value === 'other', performerId: '' })}><option value="self">Me — personally performed</option>{allowOnBehalf ? <option value="other">Another staff member — requires supervisor review</option> : null}</select></div>
     {value.otherPerformer ? <>{preview ? <div className="space-y-1.5"><Label htmlFor={`${id}-performer`}><RequiredFieldName>Actual performer</RequiredFieldName></Label><select id={`${id}-performer`} className={selectClass} value={value.performerId ?? ''} onChange={event => onChange({ ...value, performerId: event.target.value })}><option value="">Choose a fictional performer</option><option value="preview-performer">Example operator (preview only)</option></select><FieldError>{errors?.performerId?.message}</FieldError></div> : <PerformerPicker id={`${id}-performer`} value={value.performerId ?? ''} onChange={performerId => onChange({ ...value, performerId })} error={errors?.performerId?.message} />}<p className="text-xs text-muted-foreground">The named performer and time remain unverified until a different supervisor approves this entry.</p></> : null}
     <div className="space-y-1.5">
       <Label htmlFor={`${id}-mode`}><RequiredFieldName>Performed time</RequiredFieldName></Label>

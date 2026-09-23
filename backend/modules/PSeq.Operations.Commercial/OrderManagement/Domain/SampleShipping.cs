@@ -40,7 +40,8 @@ public enum SampleTubeAssignmentAction
 {
     Assigned,
     Reassigned,
-    Cleared
+    Cleared,
+    MaterialDeclarationUpdated
 }
 
 public sealed class SampleShippingDestination : IAudit, IConcurrency
@@ -457,6 +458,7 @@ public static class SampleShippingCompatibilityResolver
 
 public sealed partial class SampleReturnKit : IAudit, IConcurrency
 {
+    public string? ProductExpirySnapshotJson { get; private set; }
     public Guid Id { get; private set; } = Guid.NewGuid();
     public string KitNumber { get; private set; } = null!;
     public Guid SampleShipmentId { get; private set; }
@@ -493,7 +495,8 @@ public sealed partial class SampleReturnKit : IAudit, IConcurrency
         string? tubeLotNumber,
         string shipperSupplierName,
         string shipperProductNumber,
-        int requiredTubeCount)
+        int requiredTubeCount,
+        string? productExpirySnapshotJson = null)
     {
         if (sampleShipmentId == Guid.Empty || organizationId == Guid.Empty || authorizationSourceId == Guid.Empty)
             throw new ArgumentException("Shipment, organization, and authorization identifiers are required.");
@@ -511,6 +514,7 @@ public sealed partial class SampleReturnKit : IAudit, IConcurrency
         ShipperSupplierName = OrderText.Required(shipperSupplierName, nameof(shipperSupplierName), 255);
         ShipperProductNumber = SampleShippingText.ProductNumber(shipperProductNumber, nameof(shipperProductNumber));
         RequiredTubeCount = requiredTubeCount;
+        ProductExpirySnapshotJson = productExpirySnapshotJson;
     }
 
     public void Fulfill(string outboundCarrier, string outboundTrackingNumber, DateTime fulfilledAt)
@@ -628,6 +632,8 @@ public sealed class SampleTubeAssignmentEvent
     public string? Reason { get; private set; }
     public Guid ActorUserId { get; private set; }
     public DateTime OccurredAt { get; private set; }
+    public decimal? CustomerDeclaredQuantity { get; private set; }
+    public string? CustomerDeclaredQuantityUnit { get; private set; }
 
     private SampleTubeAssignmentEvent() { }
 
@@ -654,7 +660,9 @@ public sealed class SampleTubeAssignmentEvent
         SampleTubeAssignmentAction action,
         string? reason,
         Guid actorUserId,
-        DateTime occurredAt)
+        DateTime occurredAt,
+        decimal? customerDeclaredQuantity = null,
+        string? customerDeclaredQuantityUnit = null)
     {
         if (sampleShipmentId == Guid.Empty || sampleShipmentItemId == Guid.Empty
             || registeredSampleTubeId == Guid.Empty || actorUserId == Guid.Empty)
@@ -669,6 +677,8 @@ public sealed class SampleTubeAssignmentEvent
         Reason = OrderText.Optional(reason, 1000);
         ActorUserId = actorUserId;
         OccurredAt = occurredAt;
+        CustomerDeclaredQuantity = customerDeclaredQuantity;
+        CustomerDeclaredQuantityUnit = customerDeclaredQuantityUnit;
     }
 }
 

@@ -29,6 +29,8 @@ public sealed class LabInvestigationService(PSeqOperationsDbContext db)
         if (scientificFiles.Count > limit) { limited.Add("scientificFiles"); scientificFiles.RemoveAt(limit); }
         evidence["scientificFiles"] = scientificFiles.Select(LabScientificFiles.Public).ToArray();
         var containers = await Read("containers", db.LabContainers.AsNoTracking().Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId).OrderBy(x => x.Id));
+        var biologicalTransfers = await Read("biologicalMaterialTransfers", db.LabBiologicalMaterialTransfers.AsNoTracking()
+            .Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId).OrderBy(x => x.RecordedAtUtc).ThenBy(x => x.Id));
         var attempts = await Read("attempts", db.LabSpecimenAttempts.AsNoTracking().Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId).OrderBy(x => x.Sequence));
         var executions = await Read("executions", db.LabProtocolExecutions.AsNoTracking().Where(x => x.LabWorkOrderId == workId && x.LabSpecimenId == specimenId).OrderBy(x => x.Id));
         // Subqueries use the entire scoped source, rather than the bounded display page.
@@ -74,7 +76,8 @@ public sealed class LabInvestigationService(PSeqOperationsDbContext db)
         var actorIds = steps.SelectMany(x => new[] { x.RecordedByUserId, x.Performance?.PerformedByUserId ?? x.RecordedByUserId })
             .Concat(performanceProposals.Select(x => x.RequestedByUserId)).Concat(performanceDecisions.Select(x => x.ReviewedByUserId))
             .Concat(performanceProposals.Select(x => System.Text.Json.JsonSerializer.Deserialize<LabStepPerformance>(x.PerformanceJson, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web))!.PerformedByUserId))
-            .Concat(materials.Select(x => x.RecordedByUserId)).Concat(equipment.Select(x => x.UsedByUserId)).Concat(deliveryActors).Distinct().ToArray();
+            .Concat(materials.Select(x => x.RecordedByUserId)).Concat(equipment.Select(x => x.UsedByUserId))
+            .Concat(biologicalTransfers.SelectMany(x => new[] { x.PerformedByUserId, x.RecordedByUserId })).Concat(deliveryActors).Distinct().ToArray();
         evidence["people"] = await db.Users.AsNoTracking().Where(x => actorIds.Contains(x.Id))
             .Select(x => new { x.Id, name = x.FirstName + " " + x.LastName }).ToListAsync(ct);
         var preparationRecordIds = steps.Where(x => x.PreparationRecordId.HasValue).Select(x => x.PreparationRecordId!.Value).Distinct().ToArray();

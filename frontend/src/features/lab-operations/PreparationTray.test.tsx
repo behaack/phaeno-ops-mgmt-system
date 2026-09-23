@@ -41,14 +41,18 @@ describe('inline tray scanning', () => {
   it('uses the saved identity and blocks assembly confirmation while tube entries are unsaved', async () => {
     const onConfirm = vi.fn()
     render(<TestTray batch={batch()} pending={false} onScan={vi.fn()} onConfirmTray={onConfirm} />)
-    const confirmButton = screen.getByRole('button', { name: 'Confirm tray' })
     fireEvent.change(screen.getByLabelText(/Tube barcode for A1/), { target: { value: 'UNSAVED' } })
-    expect(confirmButton).toHaveProperty('disabled', true)
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Actions' }), { key: 'ArrowDown' })
+    const disabledConfirm = await screen.findByRole('menuitem', { name: 'Confirm tray' })
+    expect(disabledConfirm.getAttribute('aria-disabled')).toBe('true')
+    fireEvent.keyDown(disabledConfirm, { key: 'Escape' })
+    await waitFor(() => expect(screen.queryByRole('menuitem')).toBeNull())
     fireEvent.change(screen.getByLabelText(/Tube barcode for A1/), { target: { value: '' } })
-    fireEvent.click(confirmButton)
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Actions' }), { key: 'ArrowDown' })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Confirm tray' }))
     expect(onConfirm).toHaveBeenCalledTimes(1)
   })
-  it('restores a saved tray on remount without rescanning or writing another assignment', () => {
+  it('restores a saved tray on remount without rescanning or writing another assignment', async () => {
     const save = vi.fn()
     const props = { batch: batch(), pending: false, onScan: vi.fn(), onTrayScan: save, onConfirmTray: vi.fn() }
     const { unmount } = render(<TestTray {...props} />)
@@ -60,7 +64,8 @@ describe('inline tray scanning', () => {
     unmount()
     render(<TestTray {...props} />)
     expect(screen.getByLabelText(/Tube barcode for A1/)).toHaveProperty('disabled', false)
-    expect(screen.getByRole('button', { name: 'Confirm tray' })).toHaveProperty('disabled', false)
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Actions' }), { key: 'ArrowDown' })
+    expect((await screen.findByRole('menuitem', { name: 'Confirm tray' })).getAttribute('aria-disabled')).not.toBe('true')
     expect(save).not.toHaveBeenCalled()
   })
   it('waits for acknowledged saving, rejects duplicate submissions and skips filled/unavailable cells', async () => {

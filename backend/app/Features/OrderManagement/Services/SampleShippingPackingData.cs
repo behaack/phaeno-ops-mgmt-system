@@ -126,12 +126,14 @@ public static class SampleShippingPackingData
             throw new OrderManagementException("stock_kit_capacity_exceeded", "The selected kit cannot hold all tubes in this shipment.", 409);
         var barcodes = stock.Tubes.Select(item => item.SupplierBarcode).ToArray();
         foreach (var barcode in barcodes.Order(StringComparer.Ordinal)) await LockAsync(db, $"supplier-tube:{barcode}", ct);
-        if (await db.RegisteredSampleTubes.AnyAsync(item => barcodes.Contains(item.SupplierBarcode), ct))
-            throw new OrderManagementException("supplier_tube_already_registered", "This kit contains a tube already used by another return shipment.", 409);
+        if (await db.RegisteredSampleTubes.AnyAsync(item => barcodes.Contains(item.SupplierBarcode), ct)
+            || await db.LabContainers.AnyAsync(item => barcodes.Contains(item.Barcode.ToUpper()), ct)
+            || await db.LabPreparationBatches.AnyAsync(item => (item.TrayBarcode != null && barcodes.Contains(item.TrayBarcode.ToUpper())) || barcodes.Contains(item.Name.ToUpper()), ct))
+            throw new OrderManagementException("supplier_tube_already_registered", "This kit contains a barcode already registered to another shipment, laboratory tube or tray.", 409);
 
         var kit = new SampleReturnKit(stock.KitNumber, shipment.Id, shipment.OrganizationId, shipment.AuthorizationSource,
             shipment.AuthorizationSourceId, stock.TubeSupplierName, stock.TubeProductNumber, stock.TubeLotNumber,
-            stock.ShipperSupplierName, stock.ShipperProductNumber, stock.TubeCapacity);
+            stock.ShipperSupplierName, stock.ShipperProductNumber, stock.TubeCapacity, stock.ProductExpirySnapshotJson);
         foreach (var barcode in barcodes) kit.Tubes.Add(new RegisteredSampleTube(kit.Id, barcode));
         // Use the complete original kit and its recorded outbound facts. No fulfillment invariant is bypassed.
         kit.Fulfill(stock.OutboundCarrier!, stock.OutboundTrackingNumber!, stock.FulfilledAt.Value);

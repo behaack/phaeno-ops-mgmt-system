@@ -101,6 +101,8 @@ public sealed class LabPreparationMember
     public string Position { get; private set; } = null!;
     public string ConfirmedBarcode { get; private set; } = null!;
     public bool Removed { get; private set; }
+    public Guid? LibraryTubeContainerId { get; private set; }
+    public Guid? MaterialTransferId { get; private set; }
     public Guid? OutputContainerId { get; private set; }
     public bool OutputConfirmed { get; private set; }
     public Guid? LabLibraryId { get; private set; }
@@ -110,6 +112,18 @@ public sealed class LabPreparationMember
     public void Move(LabPreparationBatch batch, string position, IEnumerable<LabPreparationMember> members)
     { batch.CheckPosition(position, members, Id); Position = position; }
     public void Remove(LabPreparationBatch batch) { batch.RequireDraft(); Removed = true; }
+    public void AssignLibraryTube(Guid id)
+    {
+        if (id == Guid.Empty || LibraryTubeContainerId.HasValue || OutputContainerId.HasValue)
+            throw new InvalidOperationException("This preparation member already has a library tube or output.");
+        LibraryTubeContainerId = id;
+    }
+    public void RecordMaterialTransfer(Guid id)
+    {
+        if (!LibraryTubeContainerId.HasValue || id == Guid.Empty)
+            throw new InvalidOperationException("Allocate the library tube before recording its physical input transfer.");
+        MaterialTransferId ??= id;
+    }
     public void SetOutput(Guid id)
     {
         if (OutputContainerId.HasValue) throw new InvalidOperationException("This tube already has a prepared output. Open its existing output.");
@@ -150,7 +164,8 @@ public sealed record LabPreparationStepInput(Guid StageId, string StepKey, strin
 public sealed record LabPreparationResourceFieldInput(string FieldKey, Guid? MemberId = null,
     Guid? ResourceId = null, long? ResourceVersion = null, decimal? Quantity = null,
     string? QuantityUnit = null, string? Location = null, string? RunReference = null, string? Name = null,
-    Guid? ProductId = null, string? Vendor = null, bool AmountUnknown = false, string? ExceptionReason = null, string? Disposition = null);
+    Guid? ProductId = null, string? Vendor = null, bool AmountUnknown = false, string? ExceptionReason = null, string? Disposition = null,
+    string? Barcode = null, bool MaterialExhausted = false, string? ExhaustionReason = null, string? SourceBarcode = null);
 
 public static class LabPreparationEvidence
 {

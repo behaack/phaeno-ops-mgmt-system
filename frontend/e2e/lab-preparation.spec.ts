@@ -10,14 +10,17 @@ async function setup(page: Page, failedSecond = false, options: { resourceAvaila
   if (failedSecond) data.stages[0].definition.steps[0].preparedOutputs = ['Library output']
   options.configure?.(data)
   const bodies: PreparationCommand[] = []
+  const reports: string[] = []
   const applied = new Set<string>()
   const html = await readFile(new URL('./fixtures/lab-preparation.html', import.meta.url), 'utf8')
   await page.route('**/e2e/fixtures/lab-preparation.html', route => route.fulfill({ contentType: 'text/html', body: html }))
   await page.route('**/api/platform/lab-operations**', async route => {
     const url = new URL(route.request().url())
     const envelope = (value: unknown) => ({ success: true, data: value, error: null })
-    if (url.pathname.endsWith('/commands')) {
-      const body = route.request().postDataJSON() as PreparationCommand; bodies.push(body)
+    if (url.pathname.endsWith('/commands') || url.pathname.endsWith('/commands/with-report')) {
+      const multipart = url.pathname.endsWith('/with-report') ? route.request().postData()! : null
+      if (multipart) reports.push(multipart)
+      const body = (multipart ? JSON.parse(multipart.split('name="payload"\r\n\r\n')[1].split('\r\n--')[0]) : route.request().postDataJSON()) as PreparationCommand; bodies.push(body)
       if (options.rejectFirstAsStale && bodies.length === 1) {
         data.version++
         return route.fulfill({ status: 409, json: { success: false, data: null, error: { code: 'version_conflict', message: 'This batch changed. Review the latest version.' } } })
@@ -36,8 +39,42 @@ async function setup(page: Page, failedSecond = false, options: { resourceAvaila
   await page.goto('/e2e/fixtures/lab-preparation.html')
   await expect(page.getByRole('heading', { name: data.name })).toBeVisible()
   await page.getByRole('button', { name: /^Tray/ }).click()
-  return { data, bodies }
+  return { data, bodies, reports }
 }
+
+test('biological material and its report survive a reload after an interrupted save', async ({ page }) => {
+  page.on('dialog', dialog => dialog.accept())
+  const { bodies, reports } = await setup(page, true, { loseFirst: true, configure: data => {
+    data.optionalPreparationReports = true
+    data.inlineResourceFields = true
+    const step = data.stages[0].definition.steps[0]
+    step.captures = [{ key: 'sample', label: 'Sample material', type: 'biologicalMaterial', scope: 'tube', required: true, unit: 'µL' }]
+    delete step.qcGate
+    step.preparedOutputs = []
+    step.attachmentKind = 'preparation'; step.attachmentRequired = true
+    const member = data.members[0]
+    member.sourceMaterial = { id: 'source', barcode: member.barcode, quantity: 100, quantityUnit: 'µL', version: 7, status: 'Available' }
+    member.libraryTube = { id: 'library', barcode: 'TEST-LIBRARY', barcodeSource: 'Manufacturer', quantity: null, quantityUnit: null, version: 1, confirmed: false, transferId: null }
+  } })
+  await page.getByRole('region', { name: 'Preparation progress' }).getByRole('button', { name: 'Record step', exact: true }).click()
+  await page.getByRole('button', { name: /^A1 · TEST-TUBE-1/ }).click()
+  await page.getByLabel('Scan accessioned source tube barcode', { exact: false }).fill('*test-tube-1*')
+  await page.getByLabel('Scan library tube barcode', { exact: false }).fill('*test-library*')
+  await page.getByLabel('Actual amount transferred', { exact: false }).fill('25')
+  await page.getByLabel('Preparation report or worksheet', { exact: false }).setInputFiles({ name: 'transfer.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\nTEST transfer report\n%%EOF') })
+  await page.getByLabel('I performed this step', { exact: false }).check()
+  await page.getByRole('button', { name: 'Save step record' }).click()
+  await expect(page.getByRole('button', { name: 'Retry same command' })).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'Retry same command' })).toBeVisible()
+  await page.getByRole('button', { name: 'Retry same command' }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  expect(bodies).toHaveLength(2)
+  expect(bodies[1]).toEqual(bodies[0])
+  expect(bodies[1].step?.resourceEntries?.[0]).toMatchObject({ quantity: 25, resourceVersion: 7 })
+  expect(reports).toHaveLength(2)
+  for (const report of reports) { expect(report).toContain('filename="transfer.pdf"'); expect(report).toContain('%PDF-1.4\nTEST transfer report\n%%EOF') }
+})
 
 test('shared capture and a tube exception retain explicit coverage and accessible fields', async ({ page }, info) => {
   if (info.project.name === 'mobile-chrome') await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })

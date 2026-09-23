@@ -131,12 +131,22 @@ public sealed partial class LabOperationsController
         }
     }
 
-    private async Task<LabContainer> PreparationOutputAsync(LabPreparationMember member, LabSpecimenAttempt attempt, LabPreparationCommand request, CancellationToken ct)
+    private async Task<LabContainer> PreparationOutputAsync(LabPreparationMember member, LabSpecimenAttempt attempt, LabPreparationCommand request, Guid actorId, CancellationToken ct)
     {
         attempt.RequireOpen(false);
         if (request.Quantity is null or <= 0 || string.IsNullOrWhiteSpace(request.QuantityUnit)) throw new ArgumentException("Record the actual output quantity and unit.");
         LabContainer output;
-        if (request.OutputContainerId.HasValue)
+        if (member.LibraryTubeContainerId.HasValue)
+        {
+            if (!member.MaterialTransferId.HasValue) throw new InvalidOperationException("Record the physical input transfer before measuring prepared-library yield.");
+            if (request.OutputContainerId.HasValue && request.OutputContainerId != member.LibraryTubeContainerId)
+                throw new ArgumentException("Prepared yield belongs to the library tube already occupying this tray position.");
+            output = await dbContext.LabContainers.SingleAsync(c => c.Id == member.LibraryTubeContainerId && c.LabSpecimenAttemptId == attempt.Id, ct);
+            output.RecordPreparedQuantity(request.Quantity.Value, request.QuantityUnit, request.RequestId, actorId, LabEvidenceTime.UtcNow);
+            output.Move(request.Location ?? "");
+            member.SetOutput(output.Id);
+        }
+        else if (request.OutputContainerId.HasValue)
         {
             output = await dbContext.LabContainers.SingleOrDefaultAsync(c => c.Id == request.OutputContainerId && c.LabSpecimenAttemptId == attempt.Id
                 && c.Kind == LabContainerKind.Library && c.Status == LabContainerStatus.Available, ct) ?? throw Missing();
@@ -159,7 +169,7 @@ public sealed partial class LabOperationsController
     private sealed record PreparationOutputResult(Guid MemberId, Guid OutputContainerId, string Barcode);
 
     private async Task<IReadOnlyList<PreparationOutputResult>> PreparationOutputsAsync(List<LabPreparationMember> members,
-        List<LabSpecimenAttempt> attempts, LabPreparationCommand request, CancellationToken ct)
+        List<LabSpecimenAttempt> attempts, LabPreparationCommand request, Guid actorId, CancellationToken ct)
     {
         var inputs = request.Outputs;
         if (inputs is null || inputs.Count == 0 || inputs.Count > members.Count || inputs.Any(o => o is null)
@@ -189,7 +199,7 @@ public sealed partial class LabOperationsController
         {
             var member = members.Single(m => m.Id == input.MemberId);
             var output = await PreparationOutputAsync(member, attempts.Single(a => a.Id == member.LabSpecimenAttemptId),
-                request with { Quantity = input.Quantity, QuantityUnit = input.QuantityUnit.Trim(), Location = input.Location.Trim(), OutputContainerId = null }, ct);
+                request with { Quantity = input.Quantity, QuantityUnit = input.QuantityUnit.Trim(), Location = input.Location.Trim(), OutputContainerId = null }, actorId, ct);
             results.Add(new(member.Id, output.Id, output.Barcode));
         }
         return results;
@@ -231,7 +241,7 @@ public sealed partial class LabOperationsController
             if (lot.QcDisposition is not (LabQcDisposition.Passed or LabQcDisposition.ApprovedException) || lot.ExpirationOrRetestDate < DateOnly.FromDateTime(DateTime.UtcNow))
                 throw new InvalidOperationException("The material lot must be within date and released for use.");
             if (request.QuantityUnit != lot.QuantityUnit || request.Quantity is null or <= 0) throw new ArgumentException("Enter a positive quantity in the lot's tracked unit.");
-            lot.Consume(request.Quantity.Value);
+            lot.Consume(request.Quantity.Value, request.MaterialExhausted, request.RequestId, actorId, DateTime.UtcNow);
             dbContext.LabMaterialConsumptions.Add(new(executions[0].Id, lot.Id, null, request.Quantity.Value, lot.QuantityUnit, actorId, DateTime.UtcNow,
                 request.RequestId, await Services.LabResourceSnapshot.MaterialAsync(dbContext, lot, ct)));
         }

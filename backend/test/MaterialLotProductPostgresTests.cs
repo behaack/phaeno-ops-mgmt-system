@@ -8,6 +8,40 @@ using PhaenoPortal.App.Features.OrderManagement.Services;
 public partial class SampleShippingPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task ExpiringProductRequiresANewLotDateAndFlagChangesPreserveExistingLots()
+    {
+        await using var scope = await ShippingTestScope.CreateAsync();
+        await using var transaction = await scope.DbContext.Database.BeginTransactionAsync();
+        try
+        {
+            var db = scope.DbContext;
+            var supplier = new LabSupplier($"TEST expiry vendor {scope.Suffix}");
+            var product = new LabSupplierProduct(supplier.Id, "EXPIRING", "TEST reagent", LabProductType.ReagentId, true);
+            var definition = new LabMaterialDefinition($"expiry-{scope.Suffix}", "TEST expiry material", LabMaterialLotKind.SupplierLot);
+            var location = new LabStorageLocation($"TEST expiry storage {scope.Suffix}");
+            var legacy = new LabMaterialLot(LabMaterialLotKind.SupplierLot, definition.Id, "LEGACY-UNKNOWN", supplier.Id, null, location.Id, 25, "mL");
+            db.AddRange(supplier, product, definition, location, legacy);
+            await db.SaveChangesAsync();
+            var request = new CreateMaterialLotRequest("SupplierLot", definition.Id, null, "DATED", supplier.Id, null, location.Id, null, null, 50, "mL", null, product.Id);
+            var controller = scope.CreateLabController();
+            var missing = await Assert.ThrowsAsync<OrderManagementException>(() => controller.CreateMaterialLot(request, default));
+            Assert.Equal("material_expiration_required", missing.ErrorCode);
+            var expiry = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(30);
+            var dated = await controller.CreateMaterialLot(request with { ExpirationOrRetestDate = expiry }, default);
+            Assert.Equal(expiry, dated.ExpirationOrRetestDate);
+            var assigned = await controller.AssignLotProduct(legacy.Id, new(product.Id, legacy.Version), default);
+            Assert.Null(assigned.ExpirationOrRetestDate);
+            product.Update(product.ProductNumber, product.Description, product.ProductTypeId, true, false);
+            await db.SaveChangesAsync();
+            var undated = await controller.CreateMaterialLot(request with { LotNumber = "OPTIONAL" }, default);
+            Assert.Null(undated.ExpirationOrRetestDate);
+            Assert.Equal(expiry, (await db.LabMaterialLots.AsNoTracking().SingleAsync(lot => lot.Id == dated.Id)).ExpirationOrRetestDate);
+            Assert.Null((await db.LabMaterialLots.AsNoTracking().SingleAsync(lot => lot.Id == legacy.Id)).ExpirationOrRetestDate);
+        }
+        finally { await transaction.RollbackAsync(); scope.ClearTrackedState(); }
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task MaterialLotProductAssignmentValidatesCatalogAndPreservesStock()
     {
         await using var scope = await ShippingTestScope.CreateAsync();

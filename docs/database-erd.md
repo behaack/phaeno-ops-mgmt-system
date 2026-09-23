@@ -6,6 +6,8 @@ Generated from [PSeqOperationsDbContextModelSnapshot.cs](../backend/app/Migratio
 
 The additive [step performance JSON contract](plans/LAB-STEP-PERFORMANCE-CONTRACT.md#persistence-and-reads) describes performer/time/offset/precision and correction-record references inside existing laboratory execution and preparation evidence columns. These are logical JSON references, not additional tables, columns or database foreign keys.
 
+The [material tracking contract](plans/LAB-OPERATIONS-CONTRACT.md#material-transfers-and-expiration--september-23-2026) describes per-tube declarations, quantity history and immutable transfer evidence. `sample_shipping_stock_kits.product_expiry_snapshot_json` and `sample_return_kits.product_expiry_snapshot_json` retain arrays of `{supplierProductId, supplierName, productNumber, canExpire, expirationDate}` objects; dates are date-only strings or null. A null historical snapshot means unknown, and later product edits do not rewrite it.
+
 ## Legend and totals
 
 - `PK` = primary key; `FK` = database-enforced foreign key; `UK` = a column participating in a unique key/index. Filtered uniqueness remains subject to its model predicate.
@@ -15,10 +17,10 @@ The additive [step performance JSON contract](plans/LAB-STEP-PERFORMANCE-CONTRAC
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 139 | 2235 | 357 |
-| `lab_ops` | 60 | 704 | 109 |
+| `commercial_ops` | 139 | 2243 | 358 |
+| `lab_ops` | 61 | 735 | 120 |
 | `website` | 5 | 51 | 4 |
-| **Total** | **205** | **2992** | **470** |
+| **Total** | **206** | **3031** | **482** |
 
 ## `public` schema
 
@@ -1900,6 +1902,7 @@ erDiagram
         uuid organization_id FK "nullable"
         character_varying_255 outbound_carrier "nullable"
         character_varying_255 outbound_tracking_number "nullable"
+        jsonb product_expiry_snapshot_json "nullable"
         timestamp_with_time_zone reserved_at "nullable"
         uuid reserved_by_user_id FK "nullable"
         uuid reserved_sample_shipment_id FK,UK "nullable"
@@ -2549,6 +2552,10 @@ erDiagram
         timestamp_with_time_zone assigned_at "nullable"
         timestamp_with_time_zone created_at "not null"
         uuid created_by_user_id "nullable"
+        timestamp_with_time_zone customer_declared_at "nullable"
+        uuid customer_declared_by_user_id FK "nullable"
+        numeric_18_6 customer_declared_quantity "nullable"
+        character_varying_50 customer_declared_quantity_unit "nullable"
         timestamp_with_time_zone received_at "nullable"
         uuid sample_return_kit_id FK "not null"
         character_varying_100 status "not null"
@@ -2568,6 +2575,7 @@ erDiagram
         uuid organization_id FK "not null"
         character_varying_255 outbound_carrier "nullable"
         character_varying_255 outbound_tracking_number "nullable"
+        jsonb product_expiry_snapshot_json "nullable"
         integer required_tube_count "not null"
         uuid sample_shipment_id FK,UK "not null"
         character_varying_100 shipper_product_number "not null"
@@ -2719,6 +2727,8 @@ erDiagram
         uuid id PK "not null"
         character_varying_100 action "not null"
         uuid actor_user_id "not null"
+        numeric_18_6 customer_declared_quantity "nullable"
+        character_varying_50 customer_declared_quantity_unit "nullable"
         character_varying_100 customer_sample_id "not null"
         timestamp_with_time_zone occurred_at "not null"
         character_varying_1000 reason "nullable"
@@ -2758,6 +2768,7 @@ erDiagram
         uuid updated_by_user_id "nullable"
         bigint version "not null"
     }
+    users o|--o{ registered_sample_tubes : "customer_declared_by_user_id"
     sample_return_kits ||--o{ registered_sample_tubes : "sample_return_kit_id"
     organizations ||--o{ sample_return_kits : "organization_id"
     sample_shipments ||--o| sample_return_kits : "sample_shipment_id"
@@ -3061,6 +3072,30 @@ erDiagram
         timestamp_with_time_zone stopped_at_utc "nullable"
         bigint version "not null"
     }
+    lab_biological_material_transfers {
+        uuid id PK "not null"
+        numeric balance_adjustment_quantity "nullable"
+        uuid destination_container_id FK,UK "not null"
+        boolean exhausted_override "not null"
+        character_varying_2000 exhaustion_reason "nullable"
+        uuid lab_specimen_attempt_id FK "not null"
+        uuid lab_specimen_id FK "not null"
+        uuid lab_work_order_id FK "not null"
+        timestamp_with_time_zone performed_at_utc "not null"
+        uuid performed_by_user_id "not null"
+        uuid preparation_member_id FK "nullable"
+        numeric quantity "not null"
+        character_varying_50 quantity_unit "not null"
+        timestamp_with_time_zone recorded_at_utc "not null"
+        uuid recorded_by_user_id "not null"
+        character_varying_64 request_hash "not null"
+        uuid request_id UK "not null"
+        uuid sequencing_batch_member_id FK "nullable"
+        uuid source_container_id FK,UK "not null"
+        numeric source_quantity_after "nullable"
+        character_varying_50 source_quantity_basis "nullable"
+        numeric source_quantity_before "nullable"
+    }
     lab_customer_holds {
         uuid id PK "not null"
         uuid lab_specimen_id FK,UK "not null"
@@ -3114,6 +3149,13 @@ erDiagram
     lab_specimens ||--o{ lab_assembly_jobs : "lab_specimen_id"
     lab_work_orders ||--o{ lab_assembly_jobs : "lab_work_order_id"
     lab_assembly_jobs o|--o{ lab_assembly_jobs : "previous_job_id"
+    lab_containers ||--o{ lab_biological_material_transfers : "destination_container_id"
+    lab_specimen_attempts ||--o{ lab_biological_material_transfers : "lab_specimen_attempt_id"
+    lab_specimens ||--o{ lab_biological_material_transfers : "lab_specimen_id"
+    lab_work_orders ||--o{ lab_biological_material_transfers : "lab_work_order_id"
+    lab_preparation_members o|--o{ lab_biological_material_transfers : "preparation_member_id"
+    lab_batch_members o|--o{ lab_biological_material_transfers : "sequencing_batch_member_id"
+    lab_containers ||--o{ lab_biological_material_transfers : "source_container_id"
     lab_specimens ||--o{ lab_customer_holds : "lab_specimen_id"
     lab_work_orders ||--o{ lab_customer_holds : "lab_work_order_id"
     lab_performance_proposals ||--o| lab_performance_decisions : "id"
@@ -3279,6 +3321,8 @@ erDiagram
         uuid lab_library_id FK "nullable"
         uuid lab_preparation_batch_id FK,UK "not null"
         uuid lab_specimen_attempt_id FK,UK "not null"
+        uuid library_tube_container_id FK "nullable"
+        uuid material_transfer_id FK "nullable"
         boolean output_confirmed "not null"
         uuid output_container_id FK "nullable"
         character_varying_10 position UK "not null"
@@ -3393,6 +3437,7 @@ erDiagram
     }
     lab_supplier_products {
         uuid id PK "not null"
+        boolean can_expire "not null"
         timestamp_with_time_zone created_at "not null"
         uuid created_by_user_id "nullable"
         character_varying_1000 description "not null"
@@ -3418,6 +3463,8 @@ erDiagram
     lab_libraries o|--o{ lab_preparation_members : "lab_library_id"
     lab_preparation_batches ||--o{ lab_preparation_members : "lab_preparation_batch_id"
     lab_specimen_attempts ||--o{ lab_preparation_members : "lab_specimen_attempt_id"
+    lab_containers o|--o{ lab_preparation_members : "library_tube_container_id"
+    lab_biological_material_transfers o|--o{ lab_preparation_members : "material_transfer_id"
     lab_containers o|--o{ lab_preparation_members : "output_container_id"
     lab_preparation_batches ||--o{ lab_preparation_records : "lab_preparation_batch_id"
     lab_sequencing_outputs o|--o{ lab_sequencing_outputs : "corrects_output_id"
@@ -3638,6 +3685,8 @@ erDiagram
         uuid lab_library_id FK,UK "not null"
         uuid lab_operational_batch_id FK,UK "not null"
         uuid lab_work_order_id FK "not null"
+        uuid material_transfer_id FK "nullable"
+        uuid sequencing_container_id FK "nullable"
     }
     lab_libraries {
         uuid id PK "not null"
@@ -3777,6 +3826,8 @@ erDiagram
     lab_libraries ||--o{ lab_batch_members : "lab_library_id"
     lab_operational_batches ||--o{ lab_batch_members : "lab_operational_batch_id"
     lab_work_orders ||--o{ lab_batch_members : "lab_work_order_id"
+    lab_biological_material_transfers o|--o{ lab_batch_members : "material_transfer_id"
+    lab_containers o|--o{ lab_batch_members : "sequencing_container_id"
     lab_specimens ||--o{ lab_libraries : "lab_specimen_id"
     lab_work_orders ||--o{ lab_libraries : "lab_work_order_id"
     lab_containers ||--o{ lab_libraries : "library_container_id"
@@ -3806,6 +3857,8 @@ erDiagram
         uuid created_by_user_id "nullable"
         character_varying_1000 disposition_reason "nullable"
         uuid external_barcode_reference_id UK "nullable"
+        numeric initial_quantity "nullable"
+        character_varying_50 initial_quantity_unit "nullable"
         character_varying_50 intake_disposition "nullable"
         character_varying_2000 intake_notes "nullable"
         character_varying_100 intake_reason_code "nullable"
@@ -3822,6 +3875,8 @@ erDiagram
         character_varying_255 location "nullable"
         uuid parent_container_id FK "nullable"
         numeric quantity "nullable"
+        character_varying_50 quantity_basis "nullable"
+        jsonb quantity_history_json "not null"
         character_varying_50 quantity_unit "nullable"
         timestamp_with_time_zone retain_until_utc "nullable"
         character_varying_50 status "not null"

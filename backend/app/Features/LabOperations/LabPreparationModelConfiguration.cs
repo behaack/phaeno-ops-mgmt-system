@@ -33,6 +33,8 @@ public static class LabPreparationModelConfiguration
             e.HasOne<LabPreparationBatch>().WithMany().HasForeignKey(x => x.LabPreparationBatchId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<LabSpecimenAttempt>().WithMany().HasForeignKey(x => x.LabSpecimenAttemptId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<LabContainer>().WithMany().HasForeignKey(x => x.OutputContainerId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<LabContainer>().WithMany().HasForeignKey(x => x.LibraryTubeContainerId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<LabBiologicalMaterialTransfer>().WithMany().HasForeignKey(x => x.MaterialTransferId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<LabLibrary>().WithMany().HasForeignKey(x => x.LabLibraryId).OnDelete(DeleteBehavior.Restrict);
         });
         modelBuilder.Entity<LabPreparationRecord>(e =>

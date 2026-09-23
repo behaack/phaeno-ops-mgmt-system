@@ -168,7 +168,9 @@ public sealed class SampleShippingWorkflowReader(PSeqOperationsDbContext dbConte
                             hasLegacyTube ? legacyTube!.Status.ToString() : "Unassigned", item.Version,
                             null, 1, 1, SampleShippingIdentity.Sample(item.SubmittedSpecimenId), Total(item.SubmittedSpecimenId),
                             Others(item.SubmittedSpecimenId), SampleReceived(item.SubmittedSpecimenId), Pending(item.SubmittedSpecimenId),
-                            item.RegisteredSampleTubeId.HasValue && Received(item.RegisteredSampleTubeId.Value)) };
+                            item.RegisteredSampleTubeId.HasValue && Received(item.RegisteredSampleTubeId.Value),
+                            legacyTube?.CustomerDeclaredQuantity, legacyTube?.CustomerDeclaredQuantityUnit,
+                            legacyTube?.CustomerDeclaredAt, legacyTube?.CustomerDeclaredByUserId) };
                     }
 
                     return slots.Select(slot =>
@@ -184,7 +186,9 @@ public sealed class SampleShippingWorkflowReader(PSeqOperationsDbContext dbConte
                             hasTube ? tube!.Status.ToString() : "Unassigned", slot.Version,
                             slot.Id, slot.Ordinal, slots.Count, SampleShippingIdentity.Sample(item.SubmittedSpecimenId),
                             Total(item.SubmittedSpecimenId), Others(item.SubmittedSpecimenId), SampleReceived(item.SubmittedSpecimenId), Pending(item.SubmittedSpecimenId),
-                            slot.RegisteredSampleTubeId.HasValue && Received(slot.RegisteredSampleTubeId.Value));
+                            slot.RegisteredSampleTubeId.HasValue && Received(slot.RegisteredSampleTubeId.Value),
+                            tube?.CustomerDeclaredQuantity, tube?.CustomerDeclaredQuantityUnit,
+                            tube?.CustomerDeclaredAt, tube?.CustomerDeclaredByUserId);
                     });
                 }).ToList();
             var currentPacket = shipment.PacketRevisions
@@ -218,7 +222,9 @@ public sealed class SampleShippingWorkflowReader(PSeqOperationsDbContext dbConte
                         item.Status.ToString(),
                         item.AssignedAt,
                         item.AccessionedAt,
-                        item.Version)).ToList());
+                        item.Version)).ToList(), shipment.ReturnKit.ProductExpirySnapshotJson is null ? null
+                    : System.Text.Json.JsonSerializer.Deserialize<StockKitProductExpiryDto[]>(shipment.ReturnKit.ProductExpirySnapshotJson,
+                        new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web)));
             return new SampleShipmentWorkflowDto(
                 shipment.Id,
                 shipment.ShipmentNumber,

@@ -37,6 +37,7 @@ public partial class SampleShippingPostgresTests
         Assert.Equal("Original tube description", kit.TubeProductDescription);
         Assert.Equal("Original container description", kit.ShipperProductDescription);
         scope.ClearTrackedState();
+        tube = (await catalog.List(default)).Single(s => s.Id == supplier.Id).Products.Single(p => p.Id == tube.Id);
         var changed = await catalog.UpdateProduct(supplier.Id, tube.Id, new("T-NEW", "Changed description", LabProductType.TubeId, false, tube.Version), default);
         scope.ClearTrackedState();
         await Assert.ThrowsAsync<OrderManagementException>(() => catalog.UpdateProduct(supplier.Id, tube.Id, new("T-OLD", "Stale edit", LabProductType.TubeId, true, tube.Version), default));

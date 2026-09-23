@@ -195,7 +195,7 @@ public partial class SampleShippingPostgresTests
         var row = Assert.Single(partial.Items);
         var slot = row.TubeSlots.OrderBy(item => item.Ordinal).First();
         scope.ClearTrackedState();
-        await scope.CreateCustomerWorkflowController().AssignTube(partial.Id, row.Id, new(codes[0], null, slot.Version, TubeSlotId: slot.Id), default);
+        await scope.CreateCustomerWorkflowController().AssignTube(partial.Id, row.Id, new(codes[0], null, slot.Version, TubeSlotId: slot.Id, CustomerDeclaredQuantity: 20m, CustomerDeclaredQuantityUnit: "µL"), default);
         scope.ClearTrackedState();
         var bound = await stock.Read(created.Id, default);
         Assert.Equal("InUse", bound.Status); Assert.Equal(partial.Id, bound.BoundSampleShipmentId);
@@ -205,13 +205,13 @@ public partial class SampleShippingPostgresTests
         Assert.Equal(1, legacyKit.Tubes.Count(item => item.Status == RegisteredSampleTubeStatus.Assigned));
         var otherRow = Assert.Single(other.Items); var otherSlot = otherRow.TubeSlots.First();
         await Assert.ThrowsAsync<OrderManagementException>(() => scope.CreateCustomerWorkflowController().AssignTube(other.Id, otherRow.Id,
-            new(codes[1], null, otherSlot.Version, TubeSlotId: otherSlot.Id), default));
+            new(codes[1], null, otherSlot.Version, TubeSlotId: otherSlot.Id, CustomerDeclaredQuantity: 20m, CustomerDeclaredQuantityUnit: "µL"), default));
         scope.ClearTrackedState();
         var orderedSlots = row.TubeSlots.OrderBy(item => item.Ordinal).ToArray();
         for (var index = 1; index < orderedSlots.Length; index++)
         {
             await scope.CreateCustomerWorkflowController().AssignTube(partial.Id, row.Id,
-                new(codes[index], null, orderedSlots[index].Version, orderedSlots[index].Id), default);
+                new(codes[index], null, orderedSlots[index].Version, orderedSlots[index].Id, CustomerDeclaredQuantity: 20m, CustomerDeclaredQuantityUnit: "µL"), default);
             scope.ClearTrackedState();
         }
         var beforePacket = await scope.CreateCustomerWorkflowController().Shipment(partial.Id, default);
@@ -352,7 +352,7 @@ public partial class SampleShippingPostgresTests
         async Task<Exception?> Scan(PSeqOperationsDbContext db, SampleShipment shipment, string code)
         {
             var row = Assert.Single(shipment.Items); var slot = row.TubeSlots.First();
-            return await CaptureAsync(() => scope.CustomerWorkflowFor(db).AssignTube(shipment.Id, row.Id, new(code, null, slot.Version, slot.Id), default));
+            return await CaptureAsync(() => scope.CustomerWorkflowFor(db).AssignTube(shipment.Id, row.Id, new(code, null, slot.Version, slot.Id, CustomerDeclaredQuantity: 20m, CustomerDeclaredQuantityUnit: "µL"), default));
         }
     }
 

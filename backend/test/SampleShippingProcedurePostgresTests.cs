@@ -44,7 +44,7 @@ public partial class SampleShippingPostgresTests
         scope.ClearTrackedState();
         var staff = scope.CreatePlatformWorkflowController();
         var customer = scope.CreateCustomerWorkflowController();
-        await staff.CreateReturnKit(fixture.Shipment.Id, new(1, "Synthetic", "TUBE", null, "Synthetic", "SHIPPER"), default);
+        await staff.CreateReturnKit(fixture.Shipment.Id, await scope.CatalogReturnKitRequestAsync(new(1, "Synthetic", "TUBE", null, "Synthetic", "SHIPPER")), default);
         scope.ClearTrackedState();
         var kit = await scope.DbContext.SampleReturnKits.AsNoTracking().SingleAsync(value => value.SampleShipmentId == fixture.Shipment.Id);
         var barcode = $"REF-{scope.Suffix}-PACK";
@@ -53,7 +53,7 @@ public partial class SampleShippingPostgresTests
         var fulfilled = await staff.FulfillReturnKit(kit.Id, new("Synthetic", "TRACK", DateTime.UtcNow, registered.ReturnKit!.Version), default);
         scope.ClearTrackedState();
         var tube = Assert.Single(fulfilled.Crosswalk);
-        var assigned = await customer.AssignTube(fixture.Shipment.Id, fixture.Item.Id, new(barcode, null, tube.Version, tube.TubeSlotId), default);
+        var assigned = await customer.AssignTube(fixture.Shipment.Id, fixture.Item.Id, new(barcode, null, tube.Version, tube.TubeSlotId, CustomerDeclaredQuantity: 20m, CustomerDeclaredQuantityUnit: "µL"), default);
         scope.ClearTrackedState();
         var issued = await customer.IssuePacket(fixture.Shipment.Id, new(assigned.Version, null), default);
         scope.ClearTrackedState();

@@ -24,11 +24,21 @@ public sealed partial class LabOperationsController
         return attempt;
     }
 
-    private async Task<LabContainer> RequireAttemptSourceAsync(LabSpecimenAttempt attempt, CancellationToken ct)
+    private async Task<LabContainer> RequireAttemptSourceAsync(LabSpecimenAttempt attempt, CancellationToken ct, bool allowTransferredMaterial = false)
     {
         var specimen = await RequireSpecimenAsync(attempt.LabWorkOrderId, attempt.LabSpecimenId, ct);
         var tube = await dbContext.LabContainers.SingleAsync(t => t.Id == attempt.SourceContainerId, ct);
         var reason = TubeUnavailableReason(specimen, tube, null);
+        if (allowTransferredMaterial && tube.Status == LabContainerStatus.Consumed && tube.Kind == LabContainerKind.SubmittedSpecimen
+            && tube.IntakeDisposition == LabSpecimenIntakeDisposition.Accepted && specimen.IntakeDisposition != LabSpecimenIntakeDisposition.Cancelled
+            && specimen.ReceivedAtUtc.HasValue && specimen.AccessionNumber is not null
+            && await (from member in dbContext.LabPreparationMembers
+                join transfer in dbContext.LabBiologicalMaterialTransfers on member.MaterialTransferId equals transfer.Id
+                join destination in dbContext.LabContainers on member.LibraryTubeContainerId equals destination.Id
+                where !member.Removed && member.LabSpecimenAttemptId == attempt.Id && transfer.LabSpecimenAttemptId == attempt.Id
+                    && transfer.SourceContainerId == tube.Id && transfer.DestinationContainerId == destination.Id
+                    && destination.LabSpecimenAttemptId == attempt.Id && destination.Status == LabContainerStatus.Available && destination.Quantity > 0
+                select member.Id).AnyAsync(ct)) reason = null;
         if (tube.LabWorkOrderId != attempt.LabWorkOrderId || tube.LabSpecimenId != specimen.Id || reason is not null)
             throw Conflict("attempt_source_unavailable", reason ?? "The selected source does not belong to this specimen.");
         dbContext.Entry(tube).Property(t => t.UpdatedAt).IsModified = true;
@@ -89,11 +99,23 @@ public sealed partial class LabOperationsController
         await RequireAttemptLineageAsync(library.LibraryContainerId, attempt, ct);
     }
 
-    private async Task RequireBatchAttemptReadinessAsync(Guid batchId, CancellationToken ct)
+    private void RequireSequencingLibraryQc(LabLibrary library)
+    {
+        if (library.Status is not (LabLibraryStatus.QcPassed or LabLibraryStatus.Batched or LabLibraryStatus.SentForSequencing or LabLibraryStatus.Complete))
+            throw Conflict("library_qc_required", "The library must still have passing QC before transfer or sendout.");
+        // A concurrent QC change must invalidate this sequencing action.
+        dbContext.Entry(library).Property(l => l.UpdatedAt).IsModified = true;
+    }
+
+    private async Task RequireBatchAttemptReadinessAsync(Guid batchId, CancellationToken ct, bool requireSequencingQc = false)
     {
         var libraries = await (from member in dbContext.LabBatchMembers join library in dbContext.LabLibraries on member.LabLibraryId equals library.Id
             where member.LabOperationalBatchId == batchId select library).ToListAsync(ct);
-        foreach (var library in libraries) await RequireLibraryAttemptAsync(library, ct);
+        foreach (var library in libraries)
+        {
+            await RequireLibraryAttemptAsync(library, ct);
+            if (requireSequencingQc) RequireSequencingLibraryQc(library);
+        }
     }
 
     private async Task RequireOutsidePreparationAsync(Guid attemptId, CancellationToken ct)

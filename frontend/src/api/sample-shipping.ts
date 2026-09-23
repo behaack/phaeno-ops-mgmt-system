@@ -198,6 +198,10 @@ export type SampleShippingCrosswalkItem = {
   otherShipments?: Array<{ shipmentId: string; shipmentNumber: string; tubeCount: number }>
   unallocatedTubeCount?: number
   receivedTubeCount?: number
+  customerDeclaredQuantity?: number | null
+  customerDeclaredQuantityUnit?: string | null
+  customerDeclaredAt?: string | null
+  customerDeclaredByUserId?: string | null
 }
 
 export type RegisteredSampleTube = {
@@ -228,6 +232,7 @@ export type SampleReturnKit = {
   fulfilledAt: string | null
   version: number
   tubes: RegisteredSampleTube[]
+  productExpirations?: Array<{ supplierProductId: string; supplierName: string; productNumber: string; canExpire: boolean; expirationDate: string | null }> | null
 }
 
 export type SampleShipmentWorkflow = {
@@ -441,6 +446,8 @@ export async function getSampleShipment(id: string) {
 
 export async function assignSampleTube(shipmentId: string, shipmentItemId: string, input: {
   supplierBarcode: string
+  customerDeclaredQuantity: number
+  customerDeclaredQuantityUnit: string
   reason?: string | null
   version: number
   tubeSlotId?: string | null
@@ -489,6 +496,9 @@ export async function getPlatformSampleShipments() {
 }
 
 export async function createSampleReturnKit(shipmentId: string, input: {
+  tubeSupplierProductId: string
+  shipperSupplierProductId: string
+  productExpirations?: Array<{ supplierProductId: string; expirationDate: string }>
   requiredTubeCount: number
   tubeSupplierName: string
   tubeProductNumber: string

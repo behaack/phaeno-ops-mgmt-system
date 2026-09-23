@@ -15,6 +15,21 @@ const definition: ProtocolDefinition = { schemaVersion: 1, preparationBatchEnabl
   condition: 'Only when applicable', repeatable: false, operatorConfirmation: false, captures: [], inputMaterials: [], equipmentTypes: [], preparedOutputs: [] }] }
 
 describe('configuration authoring preview isolation', () => {
+  it('validates fictional biological material transfers and optional exhaustion without operational writes', async () => {
+    const biological: ProtocolDefinition = { ...definition, steps: [{ ...definition.steps[0], captures: [{ key: 'input', label: 'Biological material', type: 'biologicalMaterial', scope: 'tube', required: true }] }] }
+    render(<ConfigurationPreview definition={biological} name="Example draft" onClose={vi.fn()} />)
+    fireEvent.click(screen.getByRole('button', { name: 'A1 · EXAMPLE-TUBE-1' }))
+    fireEvent.click(screen.getByRole('button', { name: 'A2 · EXAMPLE-TUBE-2' }))
+    screen.getAllByLabelText(/Scan accessioned source tube barcode/).forEach((input, index) => fireEvent.change(input, { target: { value: `EXAMPLE-TUBE-${index + 1}` } }))
+    screen.getAllByLabelText(/Scan library tube barcode/).forEach((input, index) => fireEvent.change(input, { target: { value: `EXAMPLE-LIBRARY-${index + 1}` } }))
+    screen.getAllByLabelText(/Actual amount transferred/).forEach(input => fireEvent.change(input, { target: { value: '20' } }))
+    fireEvent.click(screen.getAllByRole('checkbox', { name: /Material exhausted/ })[0])
+    fireEvent.click(screen.getByRole('checkbox', { name: /I performed this step/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Validate entry' }))
+    await screen.findByText('Example entry is valid. Nothing was saved.')
+    expect(operational).not.toHaveBeenCalled()
+  })
+
   it('previews another performer without loading the real staff directory', () => {
     render(<ConfigurationPreview definition={definition} name="Example draft" onClose={vi.fn()} />)
     fireEvent.change(screen.getByLabelText('Performed by'), { target: { value: 'other' } })

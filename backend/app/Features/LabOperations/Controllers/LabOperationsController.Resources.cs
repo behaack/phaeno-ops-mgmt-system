@@ -12,7 +12,7 @@ public sealed partial class LabOperationsController
     public async Task<LabMaterialLotDto> CreateMaterialLot([FromBody] CreateMaterialLotRequest request,
         CancellationToken cancellationToken)
     {
-        await requestContext.RequireAsync(HttpContext, cancellationToken,
+        var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
         if (!Enum.TryParse<LabMaterialLotKind>(request.Kind, true, out var kind))
             throw Invalid("material_lot_kind_invalid", "The material lot kind is invalid.");
@@ -44,6 +44,9 @@ public sealed partial class LabOperationsController
             throw Invalid("material_product_not_allowed", "Prepared reagents use a material definition, not a supplier product.");
         var product = kind == LabMaterialLotKind.SupplierLot
             ? await RequireLotProductAsync(request.SupplierProductId, supplier!.Id, cancellationToken) : null;
+        if (product?.CanExpire == true && request.ExpirationOrRetestDate is null)
+            throw Invalid("material_expiration_required", "This product can expire. Enter its expiration date when recording the inventory lot.");
+        if (product is not null) dbContext.Entry(product).Property(p => p.UpdatedAt).IsModified = true;
         var storageLocation = await ResolveStorageLocationAsync(
             request.StorageLocationId, request.NewStorageLocationName, cancellationToken);
 
@@ -55,10 +58,18 @@ public sealed partial class LabOperationsController
         if (sourceLots.Count != componentRequests.Count)
             throw Invalid("material_component_invalid", "One or more component lots could not be found.");
 
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var lot = new LabMaterialLot(kind, definition.Id, request.LotNumber, supplier?.Id,
+            request.ExpirationOrRetestDate, storageLocation.Id,
+            request.AvailableQuantity, request.QuantityUnit);
+        if (product is not null) lot.AssignProduct(product.Id, product.SupplierId);
+        var now = DateTime.UtcNow;
+        var today = DateOnly.FromDateTime(now);
         foreach (var componentRequest in componentRequests)
         {
             var sourceLot = sourceLots.Single(item => item.Id == componentRequest.ComponentMaterialLotId);
+            if (componentRequest.MaterialExhausted && componentRequest.LotVersion is null)
+                throw Invalid("component_version_required", "Refresh the source lot before confirming material exhausted.");
+            if (componentRequest.LotVersion.HasValue) EnsureVersion(sourceLot.Version, componentRequest.LotVersion.Value);
             if (sourceLot.QcDisposition is not (LabQcDisposition.Passed or LabQcDisposition.ApprovedException))
                 throw Conflict("material_component_qc_required", "Every component lot must pass QC before preparation.");
             if (sourceLot.ExpirationOrRetestDate < today)
@@ -67,7 +78,7 @@ public sealed partial class LabOperationsController
                 throw Invalid("material_component_unit_mismatch", "Each component must use its source lot's tracked unit.");
             try
             {
-                sourceLot.Consume(componentRequest.Quantity);
+                sourceLot.Consume(componentRequest.Quantity, componentRequest.MaterialExhausted, lot.Id, actor.User.Id, now);
             }
             catch (InvalidOperationException exception)
             {
@@ -75,10 +86,6 @@ public sealed partial class LabOperationsController
             }
         }
 
-        var lot = new LabMaterialLot(kind, definition.Id, request.LotNumber, supplier?.Id,
-            request.ExpirationOrRetestDate, storageLocation.Id,
-            request.AvailableQuantity, request.QuantityUnit);
-        if (product is not null) lot.AssignProduct(product.Id, product.SupplierId);
         dbContext.LabMaterialLots.Add(lot);
         foreach (var componentRequest in componentRequests)
         {
@@ -190,17 +197,20 @@ public sealed partial class LabOperationsController
             throw Invalid("output_container_invalid", "The output container must belong to this work order.");
         if (attempt is not null && request.OutputContainerId.HasValue)
             await RequireAttemptLineageAsync(request.OutputContainerId.Value, attempt, cancellationToken);
+        if (request.Quantity <= 0) throw Conflict("material_quantity_unavailable", "Enter a positive actual amount used.");
+        var consumedAt = DateTime.UtcNow;
+        var consumption = new LabMaterialConsumption(execution.Id, lot.Id,
+            request.OutputContainerId, request.Quantity, request.QuantityUnit, actor.User.Id, consumedAt,
+            resourceSnapshotJson: await Services.LabResourceSnapshot.MaterialAsync(dbContext, lot, cancellationToken));
         try
         {
-            lot.Consume(request.Quantity);
+            lot.Consume(request.Quantity, request.MaterialExhausted, consumption.Id, actor.User.Id, consumedAt);
         }
         catch (InvalidOperationException exception)
         {
             throw Conflict("material_quantity_unavailable", exception.Message);
         }
-        dbContext.LabMaterialConsumptions.Add(new LabMaterialConsumption(execution.Id, lot.Id,
-            request.OutputContainerId, request.Quantity, request.QuantityUnit, actor.User.Id, DateTime.UtcNow,
-            resourceSnapshotJson: await Services.LabResourceSnapshot.MaterialAsync(dbContext, lot, cancellationToken)));
+        dbContext.LabMaterialConsumptions.Add(consumption);
         dbContext.Entry(execution).Property(item => item.UpdatedAt).IsModified = true;
         await dbContext.SaveChangesAsync(cancellationToken);
         return MapExecution(execution);
@@ -341,6 +351,7 @@ public sealed partial class LabOperationsController
     {
         await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
+        await using var transaction = await PhaenoPortal.App.Features.OrderManagement.Services.SampleShippingPackingData.BeginAsync(dbContext, $"lab-sequencing-batch:{batchId}", cancellationToken);
         var batch = await dbContext.LabOperationalBatches.SingleOrDefaultAsync(item => item.Id == batchId, cancellationToken)
             ?? throw Missing();
         if (batch.Status != LabBatchStatus.Draft) throw Conflict("batch_locked", "Only a draft batch can accept libraries.");
@@ -372,7 +383,9 @@ public sealed partial class LabOperationsController
         }
         dbContext.LabBatchMembers.Add(new LabBatchMember(batch.Id, request.LabWorkOrderId, library.Id, DateTime.UtcNow));
         library.SetStatus(LabLibraryStatus.Batched);
+        dbContext.Entry(batch).Property(b => b.UpdatedAt).IsModified = true;
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         return (await ReadBatchesAsync(cancellationToken)).Single(item => item.Id == batch.Id);
     }
 
@@ -382,6 +395,7 @@ public sealed partial class LabOperationsController
     {
         await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
+        await using var transaction = await PhaenoPortal.App.Features.OrderManagement.Services.SampleShippingPackingData.BeginAsync(dbContext, $"lab-sequencing-batch:{batchId}", cancellationToken);
         var batch = await dbContext.LabOperationalBatches.SingleOrDefaultAsync(item => item.Id == batchId, cancellationToken)
             ?? throw Missing();
         EnsureVersion(batch.Version, request.Version);
@@ -394,6 +408,7 @@ public sealed partial class LabOperationsController
             default: throw Invalid("batch_transition_invalid", "The batch transition is invalid.");
         }
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         return (await ReadBatchesAsync(cancellationToken)).Single(item => item.Id == batch.Id);
     }
 }

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createLabMaterialLot } from '#/api/lab-operations'
 import { MaterialLotCreateDialog } from './MaterialLotCreateDialog'
@@ -9,9 +9,22 @@ vi.mock('#/api/lab-operations', () => ({
   getLabOperationsError: () => 'Save failed',
 }))
 
-vi.mock('#/api/lab-materials', () => ({ useLotProducts: () => ({ data: [{ id: 'supplier', products: [{ id: 'product', productNumber: 'TEST reagent', description: 'TEST ONLY' }] }], isPending: false, isError: false }) }))
+const catalog = vi.hoisted(() => ({ canExpire: false }))
+vi.mock('#/api/lab-materials', () => ({ useLotProducts: () => ({ data: [{ id: 'supplier', products: [{ id: 'product', productNumber: 'TEST reagent', description: 'TEST ONLY', canExpire: catalog.canExpire }] }], isPending: false, isError: false }) }))
+beforeEach(() => { vi.clearAllMocks(); catalog.canExpire = false })
 
 describe('material lot native date submission', () => {
+  it('requires an expiration date for a product marked can expire', async () => {
+    catalog.canExpire = true
+    render(<MaterialLotCreateDialog open definitions={[]} suppliers={[{ id: 'supplier', name: 'TEST supplier', isActive: true }]} storageLocations={[]} materialLots={[]} onOpenChange={vi.fn()} onSaved={vi.fn().mockResolvedValue(undefined)} />)
+    fireEvent.change(screen.getByRole('combobox', { name: 'Supplier' }), { target: { value: 'supplier' } })
+    fireEvent.change(screen.getByRole('combobox', { name: 'Product name' }), { target: { value: 'product' } })
+    expect(screen.getByLabelText(/Expiration date/)).toHaveProperty('required', true)
+    fireEvent.click(screen.getByRole('button', { name: 'Create material lot' }))
+    expect(await screen.findByText('Enter the expiration date for this product.')).toBeTruthy()
+    expect(createLabMaterialLot).not.toHaveBeenCalled()
+  })
+
   it('submits the displayed date even before a change event reaches form state', async () => {
     render(<MaterialLotCreateDialog open definitions={[]} suppliers={[{ id: 'supplier', name: 'TEST supplier', isActive: true }]} storageLocations={[]} materialLots={[]} onOpenChange={vi.fn()} onSaved={vi.fn().mockResolvedValue(undefined)} />)
 

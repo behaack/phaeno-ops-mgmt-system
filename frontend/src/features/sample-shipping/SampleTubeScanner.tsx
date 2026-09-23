@@ -16,8 +16,10 @@ import { Label } from '#/components/ui/label'
 import { RequiredFieldName } from '#/components/ui/required-field'
 import { orderedSampleTubes } from './sample-tube-order'
 import { SampleTubeRow } from './SampleTubeRow'
+import { TubeMaterialAmountFields, tubeMaterialAmountShape } from './TubeMaterialAmountFields'
 
-const scanSchema = z.object({ barcode: z.string().trim().min(4, 'Scan or enter the complete tube barcode.').max(100) })
+const scanSchema = z.object({ barcode: z.string().trim().min(4, 'Scan or enter the complete tube barcode.').max(100), ...tubeMaterialAmountShape })
+const emptyScan = { barcode: '', customerDeclaredQuantity: '', customerDeclaredQuantityUnit: '' }
 type ScanValues = z.infer<typeof scanSchema>
 const pageSize = 8
 
@@ -42,13 +44,13 @@ export function SampleTubeScanner({ renderSamples, scanActionsTarget, scanning =
   specimenSources?: Record<string, string>
   sampleOrder?: string[]
   jobTubeProgress?: { matched: number; total: number }
-  onAssign: (item: SampleShippingCrosswalkItem, barcode: string) => Promise<SampleShipmentWorkflow>
+  onAssign: (item: SampleShippingCrosswalkItem, barcode: string, amount: number, unit: string) => Promise<SampleShipmentWorkflow>
   onCorrect: (item: SampleShippingCrosswalkItem) => void
   onScanActivityChange?: (active: boolean) => void
   onPendingChange?: (pending: boolean) => void
 }) {
   const orderedTubes = orderedSampleTubes(shipment.crosswalk, sampleOrder)
-  const form = useForm<ScanValues>({ resolver: zodResolver(scanSchema), defaultValues: { barcode: '' } })
+  const form = useForm<ScanValues>({ resolver: zodResolver(scanSchema), defaultValues: emptyScan })
   const [page, setPage] = useState(() => Math.floor(Math.max(0, orderedTubes.findIndex(item => !item.supplierTubeBarcode)) / pageSize))
   const [lastSaved, setLastSaved] = useState<{ sample: string; barcode: string } | null>(null)
   const [activeKey, setActiveKey] = useState(() => slotKey(orderedTubes.find(item => !item.supplierTubeBarcode)))
@@ -72,11 +74,11 @@ export function SampleTubeScanner({ renderSamples, scanActionsTarget, scanning =
   const canMatch = canManage && shipment.status === 'Preparing' && canUseTubes && !shipment.isPackingPool
   const canScan = canMatch && scanning
   const mutation = useMutation({
-    mutationFn: ({ item, barcode }: { item: SampleShippingCrosswalkItem; barcode: string }) => onAssign(item, barcode),
+    mutationFn: ({ item, barcode, amount, unit }: { item: SampleShippingCrosswalkItem; barcode: string; amount: number; unit: string }) => onAssign(item, barcode, amount, unit),
     onSuccess: (saved, { item, barcode }) => {
       const updated = saved.crosswalk.find(row => (row.tubeSlotId ?? row.shipmentItemId) === (item.tubeSlotId ?? item.shipmentItemId))
       setLastSaved({ sample: item.customerSampleId, barcode: updated?.supplierTubeBarcode ?? barcode })
-      form.reset({ barcode: '' })
+      form.reset(emptyScan)
       const savedTubes = orderedSampleTubes(saved.crosswalk, sampleOrder)
       const next = savedTubes.findIndex(row => !row.supplierTubeBarcode)
       setActiveKey(slotKey(savedTubes[next]))
@@ -90,7 +92,7 @@ export function SampleTubeScanner({ renderSamples, scanActionsTarget, scanning =
   }, [isDirty, mutation.isPending, onScanActivityChange])
   useEffect(() => { onPendingChange?.(mutation.isPending) }, [mutation.isPending, onPendingChange])
   useEffect(() => () => { onPendingChange?.(false) }, [onPendingChange])
-  useBlocker({ shouldBlockFn: () => mutation.isPending || form.getValues('barcode').trim().length > 0 && !window.confirm('Discard the unsaved tube scan?'), enableBeforeUnload: () => mutation.isPending || isDirty, disabled: !mutation.isPending && !isDirty })
+  useBlocker({ shouldBlockFn: () => mutation.isPending || isDirty && !window.confirm('Discard the unsaved tube scan and material amount?'), enableBeforeUnload: () => mutation.isPending || isDirty, disabled: !mutation.isPending && !isDirty })
   useEffect(() => {
     if (!canScan) lastFocusedSlot.current = null
     if (canScan && currentKey && !mutation.isPending && (lastFocusedSlot.current !== currentKey || mutation.error)) {
@@ -107,10 +109,11 @@ export function SampleTubeScanner({ renderSamples, scanActionsTarget, scanning =
   const activeIndex = orderedTubes.findIndex(item => slotKey(item) === currentKey)
   const activePage = activeIndex < 0 ? null : Math.floor(activeIndex / pageSize)
 
-  const scanForm = canScan && current && !current.supplierTubeBarcode ? <form noValidate aria-label={`Scan tube ${current.tubeOrdinal ?? 1} for sample ${current.customerSampleId}`} className="space-y-3" onSubmit={form.handleSubmit(values => { if (!mutation.isPending && !writesBlocked) mutation.mutate({ item: current, barcode: values.barcode }) })}>
+  const scanForm = canScan && current && !current.supplierTubeBarcode ? <form noValidate aria-label={`Scan tube ${current.tubeOrdinal ?? 1} for sample ${current.customerSampleId}`} className="space-y-3" onSubmit={form.handleSubmit(values => { if (!mutation.isPending && !writesBlocked) mutation.mutate({ item: current, barcode: values.barcode, amount: Number(values.customerDeclaredQuantity), unit: values.customerDeclaredQuantityUnit }) })}>
 
         <div className="space-y-1.5"><Label htmlFor="active-tube-barcode"><RequiredFieldName>Scan tube barcode</RequiredFieldName></Label><div className="flex flex-wrap items-start gap-2"><Input id="active-tube-barcode" className="min-w-40 flex-1 font-mono" autoComplete="off" disabled={mutation.isPending} aria-invalid={Boolean(form.formState.errors.barcode)} aria-describedby={form.formState.errors.barcode ? 'tube-scan-error' : undefined} {...barcodeField} ref={element => { barcodeField.ref(element); barcodeInput.current = element; if (element && lastMountedInput.current !== element) { lastMountedInput.current = element; window.requestAnimationFrame(focusScanner) } }} /><Button type="submit" disabled={mutation.isPending || writesBlocked}><ScanBarcode data-icon="inline-start" />{mutation.isPending ? 'Saving scan…' : 'Save scan'}</Button></div>{form.formState.errors.barcode ? <p id="tube-scan-error" role="alert" className="text-sm text-destructive">{form.formState.errors.barcode.message}</p> : null}</div>
-        <p className="text-xs text-muted-foreground"><span aria-hidden="true" className="text-destructive">*</span> Required · Enter saves the scan. You can leave and resume from the next unmatched tube.</p>
+        <TubeMaterialAmountFields idPrefix="active-tube" quantityField={form.register('customerDeclaredQuantity')} unitField={form.register('customerDeclaredQuantityUnit')} quantityError={form.formState.errors.customerDeclaredQuantity?.message} unitError={form.formState.errors.customerDeclaredQuantityUnit?.message} disabled={mutation.isPending} />
+        <p className="text-xs text-muted-foreground"><span aria-hidden="true" className="text-destructive">*</span> Required · Save the barcode and actual material amount together. The declared amount is retained for laboratory intake.</p>
         {mutation.error ? <Alert variant="destructive"><AlertTitle>Tube was not matched</AlertTitle><AlertDescription>{apiErrorMessage(mutation.error)} Review the barcode and try again.</AlertDescription></Alert> : null}
       </form> : null
 
@@ -119,12 +122,12 @@ export function SampleTubeScanner({ renderSamples, scanActionsTarget, scanning =
     containerLabel={renderSamples ? [shipment.assignedContainer?.kitNumber, shipment.shipmentNumber, shipment.status === 'Cancelled' ? 'Retired' : null].filter(Boolean).join(' · ') : undefined}
     source={specimenSources ? specimenSources[item.submittedSpecimenId] || 'Biological source not available \u00b7 Review sample context.' : undefined} active={canScan && slotKey(item) === currentKey}
     action={canManage && item.supplierTubeBarcode && (shipment.status === 'Preparing' || shipment.status === 'ReadyToShip') && canUseTubes
-      ? <Button size="sm" variant="outline" disabled={mutation.isPending || writesBlocked} onClick={() => onCorrect(item)}>{shipment.currentPacket ? 'Correct tube' : 'Change tube'}</Button> : null} />
+      ? <Button size="sm" variant="outline" disabled={mutation.isPending || writesBlocked} onClick={() => onCorrect(item)}>{item.customerDeclaredQuantity == null ? 'Record material amount' : shipment.currentPacket ? 'Correct tube' : 'Edit tube'}</Button> : null} />
   const scanAction = renderSamples && canMatch && (scanning ? allMatched : Boolean(nextUnmatched)) ? <Button ref={scanning ? doneButton : undefined} variant="outline" disabled={mutation.isPending || writesBlocked} onClick={() => {
     if (scanning) {
       if (!isDirty || window.confirm('Discard the unsaved tube scan?')) {
         const card = scanActionsTarget?.closest<HTMLElement>('[data-slot="card"]')
-        form.reset({ barcode: '' }); mutation.reset(); onStopScanning?.()
+        form.reset(emptyScan); mutation.reset(); onStopScanning?.()
         if (card) window.requestAnimationFrame(() => card.focus())
       }
     } else onStartScanning?.()
@@ -142,7 +145,7 @@ export function SampleTubeScanner({ renderSamples, scanActionsTarget, scanning =
       <p role="status" className="text-sm font-medium">{matched} of {shipment.crosswalk.length} tubes matched in this container</p>
       {jobTubeProgress ? <p className="text-xs text-muted-foreground">Across this Job: {jobTubeProgress.matched} of {jobTubeProgress.total} tubes matched.</p> : null}
       <div role="progressbar" aria-label="Tubes matched in this shipment" aria-valuenow={matched} aria-valuemin={0} aria-valuemax={Math.max(1, shipment.crosswalk.length)} className="h-2 overflow-hidden rounded-full bg-muted"><div className="h-full bg-primary" style={{ width: `${matched / Math.max(1, shipment.crosswalk.length) * 100}%` }} /></div>
-      {canScan && nextUnmatched && (!current || current.supplierTubeBarcode) ? <Alert><AlertTitle>Review the updated tube list</AlertTitle><AlertDescription>The active tube row changed. The saved assignments remain below; review them before continuing. <Button variant="outline" disabled={mutation.isPending} onClick={() => { if (!isDirty || window.confirm('Discard the unsaved tube scan and continue to the next unmatched tube?')) { form.reset({ barcode: '' }); mutation.reset(); setActiveKey(slotKey(nextUnmatched)); setPage(Math.floor(orderedTubes.indexOf(nextUnmatched) / pageSize)) } }}>Continue scanning</Button></AlertDescription></Alert> : null}
+      {canScan && nextUnmatched && (!current || current.supplierTubeBarcode) ? <Alert><AlertTitle>Review the updated tube list</AlertTitle><AlertDescription>The active tube row changed. The saved assignments remain below; review them before continuing. <Button variant="outline" disabled={mutation.isPending} onClick={() => { if (!isDirty || window.confirm('Discard the unsaved tube scan and continue to the next unmatched tube?')) { form.reset(emptyScan); mutation.reset(); setActiveKey(slotKey(nextUnmatched)); setPage(Math.floor(orderedTubes.indexOf(nextUnmatched) / pageSize)) } }}>Continue scanning</Button></AlertDescription></Alert> : null}
       {writesBlocked ? <p role="status" className="text-sm text-muted-foreground">Saving is unavailable until current container information is verified. Your scan is retained.</p> : null}
       {shipment.assignedContainer ? <p className="text-sm wrap-anywhere">Container <strong>{shipment.assignedContainer.kitNumber}</strong> · Scan only its registered tubes.</p> : null}
       {canScan && current && !current.supplierTubeBarcode ? null : canScan && !nextUnmatched ? <p role="status" className="flex items-center gap-2 text-sm"><CheckCircle2 aria-hidden="true" className="size-4 text-primary" />Every declared tube is matched. Review the contents and confirm the shipping insert.</p> : <p className="text-sm text-muted-foreground">{shipment.isPackingPool ? 'Choose containers before scanning tubes.' : !canUseTubes ? requiresAssignedContainer ? 'Confirm a received container before scanning its tubes.' : 'Scanning becomes available after Phaeno registers and fulfills the return kit.' : 'The saved tube assignments are shown below.'}</p>}

@@ -51,7 +51,7 @@ public partial class SampleShippingPostgresTests
         var next = Assert.Single(await scope.PackingController().Confirm(subsequent.Shipment.Id,
             new(subsequent.Shipment.Version, [new(size.Id, 1)], DeliveryLocationId: location.Id, StockKits: [new(kit.Id, kit.Version)]), default));
         var row = Assert.Single(next.Crosswalk);
-        await scope.CreateCustomerWorkflowController().AssignTube(next.Id, row.ShipmentItemId, new(kit.Tubes[0].SupplierBarcode, null, row.Version, row.TubeSlotId), default);
+        await scope.CreateCustomerWorkflowController().AssignTube(next.Id, row.ShipmentItemId, new(kit.Tubes[0].SupplierBarcode, null, row.Version, row.TubeSlotId, CustomerDeclaredQuantity: 20m, CustomerDeclaredQuantityUnit: "µL"), default);
         scope.ClearTrackedState();
         pending = await scope.StartInventoryCancellationAsync(subsequent.Shipment.AuthorizationSourceId);
         await scope.InventoryCancellationStaff().DecideCancellation(subsequent.Shipment.AuthorizationSourceId, pending.Id,
@@ -152,11 +152,11 @@ public partial class SampleShippingPostgresTests
             new(pool.Version, [new(size.Id, 1)], DeliveryLocationId: location.Id, StockKits: [new(kit.Id, kit.Version)]), default));
         var row = Assert.Single(replacement.Crosswalk);
         await Assert.ThrowsAsync<OrderManagementException>(() => scope.CreateCustomerWorkflowController().AssignTube(replacement.Id, row.ShipmentItemId,
-            new(wrongKit.Tubes[0].SupplierBarcode, null, row.Version, row.TubeSlotId), default));
+            new(wrongKit.Tubes[0].SupplierBarcode, null, row.Version, row.TubeSlotId, CustomerDeclaredQuantity: 20m, CustomerDeclaredQuantityUnit: "µL"), default));
         scope.ClearTrackedState();
         Assert.Null((await scope.DbContext.SampleShippingStockKits.AsNoTracking().SingleAsync(value => value.Id == kit.Id)).BoundSampleShipmentId);
         var scanned = await scope.CreateCustomerWorkflowController().AssignTube(replacement.Id, row.ShipmentItemId,
-            new(kit.Tubes[0].SupplierBarcode, null, row.Version, row.TubeSlotId), default);
+            new(kit.Tubes[0].SupplierBarcode, null, row.Version, row.TubeSlotId, CustomerDeclaredQuantity: 20m, CustomerDeclaredQuantityUnit: "µL"), default);
         Assert.Equal("InUse", scanned.AssignedContainer!.Status);
         var blocked = await scope.PackingController().ReadReset(replacement.Id, default);
         Assert.False(blocked.CanReset);

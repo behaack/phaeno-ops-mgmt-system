@@ -3,6 +3,7 @@ namespace PhaenoPortal.App.Features.OrderManagement.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.DTOs;
 using PhaenoPortal.App.Features.OrderManagement.Services;
@@ -35,12 +36,14 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
     public async Task<ActionResult<StockKitDto>> Create([FromBody] CreateStockKitRequest request, CancellationToken ct)
     {
         await context.RequirePlatformAdminAsync(HttpContext, ct);
+        await using var transaction = db.Database.CurrentTransaction is null ? await db.Database.BeginTransactionAsync(ct) : null;
         var definition = await catalog.ReadAsync(request.ContainerDefinitionId, ct);
         var now = DateTime.UtcNow;
         if (!definition.IsActive || definition.EffectiveFrom > now || definition.EffectiveTo <= now)
             throw Invalid("Select an active, effective container type before preparing physical stock.");
         var tube = await SelectedProduct(request.TubeSupplierProductId, PSeq.Operations.Laboratory.Domain.LabSupplierProductKind.Tube, ct);
         var shipper = await SelectedProduct(request.ShipperSupplierProductId, PSeq.Operations.Laboratory.Domain.LabSupplierProductKind.ShippingContainer, ct);
+        var expirations = await CaptureProductExpirationsAsync(definition, request, ct);
         SampleShippingStockKit kit;
         try
         {
@@ -48,11 +51,13 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
                 SampleShippingContainerCatalogService.Snapshot(definition), definition.TubeCapacity,
                 tube.SupplierName, tube.ProductNumber, request.TubeLotNumber,
                 shipper.SupplierName, shipper.ProductNumber,
-                request.TubeSupplierProductId, request.ShipperSupplierProductId, tube.Description, shipper.Description);
+                request.TubeSupplierProductId, request.ShipperSupplierProductId, tube.Description, shipper.Description,
+                JsonSerializer.Serialize(expirations, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
         }
         catch (ArgumentException exception) { throw Invalid(exception.Message); }
         db.SampleShippingStockKits.Add(kit);
         await db.SaveChangesAsync(ct);
+        if (transaction is not null) await transaction.CommitAsync(ct);
         return Created($"/api/platform/sample-shipping/stock-kits/{kit.Id}", await ReadAsync(kit.Id, ct));
     }
 
@@ -74,7 +79,9 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
         if (kit.Tubes.Count + codes.Count > kit.TubeCapacity) throw Conflict($"This standard kit holds {kit.TubeCapacity} tubes.");
         foreach (var code in codes.Order(StringComparer.Ordinal)) await SampleShippingPackingData.LockAsync(db, $"supplier-tube:{code}", ct);
         if (await db.SampleShippingStockTubes.AnyAsync(item => codes.Contains(item.SupplierBarcode), ct)
-            || await db.RegisteredSampleTubes.AnyAsync(item => codes.Contains(item.SupplierBarcode), ct))
+            || await db.RegisteredSampleTubes.AnyAsync(item => codes.Contains(item.SupplierBarcode), ct)
+            || await db.LabContainers.AnyAsync(item => codes.Contains(item.Barcode.ToUpper()), ct)
+            || await db.LabPreparationBatches.AnyAsync(item => (item.TrayBarcode != null && codes.Contains(item.TrayBarcode.ToUpper())) || codes.Contains(item.Name.ToUpper()), ct))
             throw Conflict("A scanned tube barcode is already registered. No tubes were added.");
         foreach (var code in codes)
         {
@@ -157,7 +164,38 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
             kit.CustomerReceivedAt, kit.ReservedSampleShipmentId, inventory[kit.Id].AssignedJobId, inventory[kit.Id].AssignedJobNumber,
             kit.OrganizationId.HasValue ? organizations.GetValueOrDefault(kit.OrganizationId.Value) : null,
             kit.DepartmentId.HasValue ? departments.GetValueOrDefault(kit.DepartmentId.Value) : null,
-            inventory[kit.Id].Status == "NeedsReview" ? "Record the verified Customer delivery location before this container can become available." : null, kit.TubeProductDescription, kit.ShipperProductDescription)).ToArray();
+            inventory[kit.Id].Status == "NeedsReview" ? "Record the verified Customer delivery location before this container can become available." : null, kit.TubeProductDescription, kit.ShipperProductDescription,
+            kit.ProductExpirySnapshotJson is null ? null : JsonSerializer.Deserialize<StockKitProductExpiryDto[]>(kit.ProductExpirySnapshotJson, new JsonSerializerOptions(JsonSerializerDefaults.Web)))).ToArray();
+    }
+
+    private async Task<IReadOnlyList<StockKitProductExpiryDto>> CaptureProductExpirationsAsync(
+        SampleShippingContainerDefinitionDto definition, CreateStockKitRequest request, CancellationToken ct)
+    {
+        var productIds = (definition.KitContents ?? []).Select(item => item.SupplierProductId)
+            .Concat([request.TubeSupplierProductId, request.ShipperSupplierProductId]).Distinct().ToArray();
+        var requested = request.ProductExpirations ?? [];
+        if (requested.Select(item => item.SupplierProductId).Distinct().Count() != requested.Count
+            || requested.Any(item => !productIds.Contains(item.SupplierProductId)))
+            throw Invalid("Provide at most one expiration date for each product used in this kit.");
+        var products = await db.LabSupplierProducts.Where(p => productIds.Contains(p.Id)).ToListAsync(ct);
+        var supplierIds = products.Select(p => p.SupplierId).Distinct().ToArray();
+        var suppliers = await db.LabSuppliers.Where(s => supplierIds.Contains(s.Id)).ToDictionaryAsync(s => s.Id, ct);
+        var typeIds = products.Select(p => p.ProductTypeId).Distinct().ToArray();
+        var types = await db.LabProductTypes.Where(t => typeIds.Contains(t.Id)).ToDictionaryAsync(t => t.Id, ct);
+        if (products.Count != productIds.Length || products.Any(p => !p.IsActive || !suppliers[p.SupplierId].IsActive || !types[p.ProductTypeId].IsActive))
+            throw Invalid("Every kit product must still have an active supplier and product type.");
+        var result = new List<StockKitProductExpiryDto>();
+        foreach (var product in products)
+        {
+            var date = requested.SingleOrDefault(item => item.SupplierProductId == product.Id)?.ExpirationDate;
+            if (product.CanExpire && date is null)
+                throw Invalid($"Enter the expiration date for {product.ProductNumber}; this product can expire.");
+            if (date == DateOnly.MinValue) throw Invalid($"Enter a valid expiration date for {product.ProductNumber}.");
+            result.Add(new(product.Id, suppliers[product.SupplierId].Name, product.ProductNumber, product.CanExpire, date));
+            // A catalog change during inventory entry must invalidate the saved requirement snapshot.
+            db.Entry(product).Property(p => p.UpdatedAt).IsModified = true;
+        }
+        return result;
     }
 
     private sealed record SelectedCatalogProduct(string SupplierName, string ProductNumber, string Description);

@@ -64,9 +64,36 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
             throw Invalid("This sendout has no recorded library membership. Do not infer membership from the current batch.");
         var matching = members.EnumerateArray().Where(m => m.TryGetProperty("libraryId", out var id)
             && id.TryGetGuid(out var parsed) && parsed == library.Id).ToArray();
-        if (matching.Length != 1 || !matching[0].TryGetProperty("containerBarcode", out var barcode)
-            || barcode.GetString() != libraryChain[0].Barcode
-            || !matching[0].TryGetProperty("libraryKey", out var libraryKey) || libraryKey.GetString() != library.LibraryKey)
+        if (matching.Length != 1 || !matching[0].TryGetProperty("libraryKey", out var libraryKey) || libraryKey.GetString() != library.LibraryKey)
+            throw Invalid("The library identity and barcode must match exactly one member of the saved sendout manifest.");
+        List<ContainerFact>? sequencingChain = null;
+        var manifestSchema = 1;
+        if (manifest.RootElement.TryGetProperty("schemaVersion", out var manifestVersion)
+            && (manifestVersion.ValueKind != JsonValueKind.Number || !manifestVersion.TryGetInt32(out manifestSchema) || manifestSchema is not (1 or 2)))
+            throw Invalid("The saved sequencing submission has an unsupported manifest version.");
+        if (manifestSchema == 2)
+        {
+            var submitted = matching[0];
+            if (!submitted.TryGetProperty("sequencingContainerId", out var sequencingId) || !sequencingId.TryGetGuid(out var tubeId)
+                || !submitted.TryGetProperty("materialTransferId", out var transferId) || !transferId.TryGetGuid(out var materialTransferId)
+                || !submitted.TryGetProperty("libraryContainerBarcode", out var libraryBarcode) || libraryBarcode.GetString() != libraryChain[0].Barcode)
+                throw Invalid("The saved submission must identify its sequencing tube and source library transfer.");
+            var transfer = await db.LabBiologicalMaterialTransfers.AsNoTracking().SingleOrDefaultAsync(t => t.Id == materialTransferId
+                && t.SourceContainerId == library.LibraryContainerId && t.DestinationContainerId == tubeId
+                && t.LabSpecimenAttemptId == attempt.Id && t.LabSpecimenId == specimen.Id && t.SequencingBatchMemberId.HasValue, ct);
+            if (transfer is null || !await db.LabBatchMembers.AnyAsync(m => m.Id == transfer.SequencingBatchMemberId
+                    && m.LabOperationalBatchId == sendout.LabOperationalBatchId && m.LabLibraryId == library.Id
+                    && m.SequencingContainerId == tubeId && m.MaterialTransferId == transfer.Id, ct)
+                || !await db.LabContainers.AnyAsync(c => c.Id == tubeId && c.Kind == LabContainerKind.Sequencing, ct)
+                || !submitted.TryGetProperty("quantity", out var quantity) || !quantity.TryGetDecimal(out var amount) || amount != transfer.Quantity
+                || !submitted.TryGetProperty("quantityUnit", out var unit) || unit.GetString() != transfer.QuantityUnit)
+                throw Invalid("The sequencing submission must match the exact recorded physical transfer.");
+            sequencingChain = await ReadContainerChainAsync(tubeId, attempt, ct);
+            if (sequencingChain.Count < 3 || sequencingChain[1].Id != library.LibraryContainerId
+                || !submitted.TryGetProperty("containerBarcode", out var submittedBarcode) || submittedBarcode.GetString() != sequencingChain[0].Barcode)
+                throw Invalid("The saved sequencing-tube barcode must resolve through this library to its source tube.");
+        }
+        else if (!matching[0].TryGetProperty("containerBarcode", out var barcode) || barcode.GetString() != libraryChain[0].Barcode)
             throw Invalid("The library identity and barcode must match exactly one member of the saved sendout manifest.");
         if (request.CorrectsOutputId.HasValue && !await db.LabSequencingOutputs.AnyAsync(x => x.Id == request.CorrectsOutputId
             && x.LabWorkOrderId == specimen.LabWorkOrderId && x.LabSpecimenId == specimen.Id, ct))
@@ -77,10 +104,10 @@ public sealed class LabResultLineageService(PSeqOperationsDbContext db)
             throw Invalid("A different checksum is already recorded for this output. Reference that output explicitly as a correction.");
         var snapshot = JsonSerializer.Serialize(new
         {
-            schemaVersion = 1, specimen.Id, specimen.SubmittedSpecimenId, specimen.AccessionNumber,
+            schemaVersion = sequencingChain is null ? 1 : 2, specimen.Id, specimen.SubmittedSpecimenId, specimen.AccessionNumber,
             attemptId = attempt.Id, attempt.Sequence, attempt.SourceContainerId,
             sourceBarcode = sourceChain[^1].Barcode, libraryId = library.Id, library.LibraryKey,
-            library.PreparationExecutionId, sourceChain, libraryChain,
+            library.PreparationExecutionId, sourceChain, libraryChain, sequencingChain,
             sendoutId = sendout.Id, sendout.ProviderName, sendout.ProviderReference,
             sendout.LabOperationalBatchId, submittedMember = matching[0]
         }, JsonOptions);

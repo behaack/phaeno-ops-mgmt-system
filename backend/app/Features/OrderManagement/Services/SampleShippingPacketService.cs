@@ -78,6 +78,11 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
                 "A Phaeno-supplied tube can be assigned to only one expected sample.",
                 StatusCodes.Status409Conflict);
         var tubesById = returnKit.Tubes.ToDictionary(item => item.Id);
+        if (currentPacket is null && assignedTubeIds.Any(id => tubesById.TryGetValue(id, out var declaredTube)
+            && (declaredTube.CustomerDeclaredQuantity is not > 0 || string.IsNullOrWhiteSpace(declaredTube.CustomerDeclaredQuantityUnit))))
+            throw new OrderManagementException("sample_tube_material_required",
+                "Record the actual biological material amount and unit in every physical tube before confirming the shipping insert.",
+                StatusCodes.Status409Conflict);
         if (assignedTubeIds.Any(id => !tubesById.TryGetValue(id, out var tube)
             || tube.Status != RegisteredSampleTubeStatus.Assigned))
             throw new OrderManagementException(
@@ -323,25 +328,33 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
             IEnumerable<(Guid? Id, int Ordinal, Guid? TubeId)> slots = item.TubeSlots.Count > 0
                 ? item.TubeSlots.OrderBy(slot => slot.Ordinal).Select(slot => ((Guid?)slot.Id, slot.Ordinal, slot.RegisteredSampleTubeId))
                 : [(null, 1, item.RegisteredSampleTubeId)];
-            foreach (var slot in slots) rows.Add(new
+            foreach (var slot in slots)
             {
-                item.SubmittedSpecimenId,
-                sampleTypeDefinitionId = sampleTypesById[item.SampleTypeDefinitionId].Id,
-                sampleBarcode = SampleShippingIdentity.Sample(item.SubmittedSpecimenId),
-                sampleTypeName = sampleTypesById[item.SampleTypeDefinitionId].Name,
-                item.CustomerSampleId,
-                item.SampleName,
-                item.Quantity,
-                item.QuantityUnit,
-                tubeSlotId = slot.Id,
-                tubeOrdinal = slot.Ordinal,
-                tubeCount = SampleShippingPackingData.TubeCount(item),
-                totalSampleTubeCount = total,
-                otherShipments,
-                unallocatedTubeCount = pending,
-                registeredSampleTubeId = slot.TubeId,
-                supplierTubeBarcode = slot.TubeId.HasValue ? tubesById[slot.TubeId.Value].SupplierBarcode : null
-            });
+                var declaredTube = slot.TubeId.HasValue ? tubesById[slot.TubeId.Value] : null;
+                rows.Add(new
+                {
+                    item.SubmittedSpecimenId,
+                    sampleTypeDefinitionId = sampleTypesById[item.SampleTypeDefinitionId].Id,
+                    sampleBarcode = SampleShippingIdentity.Sample(item.SubmittedSpecimenId),
+                    sampleTypeName = sampleTypesById[item.SampleTypeDefinitionId].Name,
+                    item.CustomerSampleId,
+                    item.SampleName,
+                    item.Quantity,
+                    item.QuantityUnit,
+                    tubeSlotId = slot.Id,
+                    tubeOrdinal = slot.Ordinal,
+                    tubeCount = SampleShippingPackingData.TubeCount(item),
+                    totalSampleTubeCount = total,
+                    otherShipments,
+                    unallocatedTubeCount = pending,
+                    registeredSampleTubeId = slot.TubeId,
+                    supplierTubeBarcode = declaredTube?.SupplierBarcode,
+                    customerDeclaredQuantity = declaredTube?.CustomerDeclaredQuantity,
+                    customerDeclaredQuantityUnit = declaredTube?.CustomerDeclaredQuantityUnit,
+                    customerDeclaredAt = declaredTube?.CustomerDeclaredAt,
+                    customerDeclaredByUserId = declaredTube?.CustomerDeclaredByUserId
+                });
+            }
         }
         return JsonSerializer.Serialize(new
         {

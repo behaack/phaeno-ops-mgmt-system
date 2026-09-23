@@ -8,6 +8,7 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
     public string KitNumber { get; private set; } = null!;
     public Guid ContainerDefinitionId { get; private set; }
     public string ContainerSnapshotJson { get; private set; } = null!;
+    public string? ProductExpirySnapshotJson { get; private set; }
     public int TubeCapacity { get; private set; }
     public string TubeSupplierName { get; private set; } = null!;
     public string TubeProductNumber { get; private set; } = null!;
@@ -46,13 +47,15 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
         string tubeSupplierName, string tubeProductNumber, string? tubeLotNumber,
         string shipperSupplierName, string shipperProductNumber,
         Guid? tubeSupplierProductId = null, Guid? shipperSupplierProductId = null,
-        string? tubeProductDescription = null, string? shipperProductDescription = null)
+        string? tubeProductDescription = null, string? shipperProductDescription = null,
+        string? productExpirySnapshotJson = null)
     {
         if (definitionId == Guid.Empty) throw new ArgumentException("Select a container type.");
         if (tubeCapacity is < 1 or > 10_000) throw new ArgumentOutOfRangeException(nameof(tubeCapacity));
         KitNumber = SampleShippingText.Reference(kitNumber, nameof(kitNumber));
         ContainerDefinitionId = definitionId;
         ContainerSnapshotJson = OrderText.Json(snapshotJson);
+        ProductExpirySnapshotJson = productExpirySnapshotJson is null ? null : OrderText.Json(productExpirySnapshotJson);
         TubeCapacity = tubeCapacity;
         TubeSupplierProductId = tubeSupplierProductId;
         ShipperSupplierProductId = shipperSupplierProductId;

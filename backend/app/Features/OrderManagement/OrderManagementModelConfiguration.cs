@@ -163,6 +163,7 @@ public static class OrderManagementModelConfiguration
 
         modelBuilder.Entity<SampleReturnKit>(entity =>
         {
+            entity.Property(e => e.ProductExpirySnapshotJson).HasColumnType("jsonb");
             entity.HasKey(e => e.Id);
             Text(entity.Property(e => e.KitNumber), 100);
             EnumText(entity.Property(e => e.AuthorizationSource));
@@ -192,6 +193,9 @@ public static class OrderManagementModelConfiguration
         modelBuilder.Entity<RegisteredSampleTube>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.CustomerDeclaredQuantity).HasPrecision(18, 6);
+            Text(entity.Property(e => e.CustomerDeclaredQuantityUnit), 50, false);
+            entity.HasOne<User>().WithMany().HasForeignKey(e => e.CustomerDeclaredByUserId).OnDelete(DeleteBehavior.Restrict);
             Text(entity.Property(e => e.SupplierBarcode), 100);
             EnumText(entity.Property(e => e.Status));
             entity.HasIndex(e => e.SupplierBarcode).IsUnique();
@@ -248,6 +252,8 @@ public static class OrderManagementModelConfiguration
         modelBuilder.Entity<SampleTubeAssignmentEvent>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.CustomerDeclaredQuantity).HasPrecision(18, 6);
+            Text(entity.Property(e => e.CustomerDeclaredQuantityUnit), 50, false);
             Text(entity.Property(e => e.CustomerSampleId), 100);
             Text(entity.Property(e => e.SupplierBarcode), 100);
             EnumText(entity.Property(e => e.Action));

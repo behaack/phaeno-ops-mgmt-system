@@ -1,5 +1,15 @@
 # Sample Shipping and Intake Plan
 
+## Customer-declared tube material amount — 2026-09-23
+
+Owner-approved requirement: capture the actual biological material amount and unit being sent from the customer during shipment preparation. Capture belongs to each physical registered tube, not the sample's submission quantity, tube count, or tube capacity. Amounts do not imply a laboratory measurement.
+
+Local implementation records a positive amount (up to six decimal places), explicit unit, declaring user and UTC time with the tube match. Each tube starts with blank amount fields. Crosswalk rows show the declaration or Unknown, and packet manifest snapshots and CSV retain it. Before dispatch, matching/correction uses the existing version-checked, tenant-scoped workflow; changes retain assignment-event amount snapshots, require a correction reason for changed declarations or frozen packets, and issue a new packet revision where applicable. Initial packet confirmation and dispatch require all tube amounts. Previously issued packets can be corrected one tube at a time before dispatch; already shipped historical snapshots remain unchanged. Historical nulls are never inferred from sample quantities or backfilled.
+
+[Sample material transfers](SAMPLE-MATERIAL-TRANSFER-PLAN.md) owns the declared opening-balance handoff to accession, biological material consumption, remaining amount and exhaustion overrides. The shipment manifest `samples` entries retain `customerDeclaredQuantity`, `customerDeclaredQuantityUnit`, `customerDeclaredAt` and `customerDeclaredByUserId` alongside the supplier barcode and registered tube identity. These fields distinguish declared provenance from any later laboratory measurement.
+
+Regression sources cover required quantity/unit before matching, positive precision-bounded values, retained declarer/time, blocked alteration after accession, frozen per-tube manifests, and honest unknowns in historical packet rendering. Existing shipping/kit controller fixtures now supply explicit amounts. Automated tests and physical acceptance have not been run for this increment; shared-database migration and deployment remain separate gates.
+
 ## Kit contents by supplier product — September 22, 2026
 
 Owner request: replace the single optional supplier reference with a flexible

@@ -13,5 +13,5 @@ public sealed record LabPreparationCommand(Guid RequestId, long Version, string 
     decimal? Quantity = null, string? QuantityUnit = null, string? Location = null,
     IReadOnlyList<Guid>? CoveredMemberIds = null, Guid? OutputContainerId = null,
     [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
-    IReadOnlyList<LabPreparationOutputInput>? Outputs = null);
+    IReadOnlyList<LabPreparationOutputInput>? Outputs = null, string? BarcodeSource = null, bool MaterialExhausted = false);
 public sealed record LabPreparationOutputInput(Guid MemberId, decimal Quantity, string QuantityUnit, string Location);

@@ -97,7 +97,8 @@ public enum LabContainerKind
     Aliquot,
     PreparedReagent,
     Library,
-    Other
+    Other,
+    Sequencing
 }
 
 public enum LabContainerStatus
@@ -112,7 +113,8 @@ public enum LabContainerStatus
 public enum LabContainerBarcodeSource
 {
     PhaenoGenerated,
-    RegisteredSupplier
+    RegisteredSupplier,
+    Manufacturer
 }
 
 public sealed class LabContainer : LabAuditedEntity
@@ -140,6 +142,10 @@ public sealed class LabContainer : LabAuditedEntity
     public string? Location { get; private set; }
     public decimal? Quantity { get; private set; }
     public string? QuantityUnit { get; private set; }
+    public decimal? InitialQuantity { get; private set; }
+    public string? InitialQuantityUnit { get; private set; }
+    public string? QuantityBasis { get; private set; }
+    public string QuantityHistoryJson { get; private set; } = "[]";
     public LabContainerStatus Status { get; private set; } = LabContainerStatus.Available;
     public string? DispositionReason { get; private set; }
     public DateTime? RetainUntilUtc { get; private set; }
@@ -176,7 +182,7 @@ public sealed class LabContainer : LabAuditedEntity
         LabContainerKind kind, string barcode, string label, string? location,
         decimal? quantity, string? quantityUnit, DateTime? retainUntilUtc,
         LabContainerBarcodeSource barcodeSource = LabContainerBarcodeSource.PhaenoGenerated,
-        Guid? externalBarcodeReferenceId = null, bool rejectedAtIntake = false)
+        Guid? externalBarcodeReferenceId = null, bool rejectedAtIntake = false, string? quantityBasis = null)
     {
         LabWorkOrderId = labWorkOrderId != Guid.Empty
             ? labWorkOrderId
@@ -185,11 +191,14 @@ public sealed class LabContainer : LabAuditedEntity
         ParentContainerId = parentContainerId;
         Kind = kind;
         Barcode = Required(barcode, nameof(barcode), 100);
+        if (Barcode.Any(char.IsControl)) throw new ArgumentException("Scan a valid tube barcode.");
         if (barcodeSource == LabContainerBarcodeSource.RegisteredSupplier
             && (kind != LabContainerKind.SubmittedSpecimen || !externalBarcodeReferenceId.HasValue))
             throw new ArgumentException("A registered supplier barcode may be adopted only for a submitted specimen with its external tube reference.");
         if (barcodeSource == LabContainerBarcodeSource.PhaenoGenerated && externalBarcodeReferenceId.HasValue)
             throw new ArgumentException("A Phaeno-generated barcode cannot carry an external tube reference.", nameof(externalBarcodeReferenceId));
+        if (barcodeSource == LabContainerBarcodeSource.Manufacturer && (kind is not (LabContainerKind.Library or LabContainerKind.Sequencing) || externalBarcodeReferenceId.HasValue))
+            throw new ArgumentException("Manufacturer barcodes identify a library or sequencing tube without adopting a submitted tube reference.");
         BarcodeSource = barcodeSource;
         ExternalBarcodeReferenceId = externalBarcodeReferenceId;
         Label = Required(label, nameof(label), 255);
@@ -200,7 +209,60 @@ public sealed class LabContainer : LabAuditedEntity
         if (quantity is <= 0) throw new ArgumentOutOfRangeException(nameof(quantity));
         Quantity = quantity;
         QuantityUnit = quantity.HasValue ? Required(quantityUnit!, nameof(quantityUnit), 50) : Optional(quantityUnit, 50);
+        InitialQuantity = quantity;
+        InitialQuantityUnit = QuantityUnit;
+        if (quantityBasis is not (null or "CustomerDeclared" or "Measured")) throw new ArgumentException("Choose a supported opening quantity basis.");
+        QuantityBasis = quantity.HasValue ? quantityBasis : null;
         RetainUntilUtc = retainUntilUtc;
+    }
+
+    public void ConsumeBiologicalMaterial(decimal quantity, string unit, bool exhausted, Guid transferId, Guid actorId, DateTime now, string? exhaustionReason = null)
+    {
+        if (Status != LabContainerStatus.Available) throw new InvalidOperationException("This tube has no available material for another transfer.");
+        unit = Required(unit, nameof(unit), 50);
+        if (quantity <= 0 || Quantity.HasValue && quantity > Quantity.Value) throw new ArgumentException("Enter a positive transfer amount no greater than the recorded remaining amount.");
+        if (QuantityUnit is not null && !string.Equals(QuantityUnit, unit, StringComparison.Ordinal)) throw new ArgumentException("Use the source tube's recorded unit; unit conversion is not implicit.");
+        var before = Quantity;
+        var calculated = before.HasValue ? before.Value - quantity : (decimal?)null;
+        Quantity = exhausted ? 0 : calculated;
+        QuantityUnit ??= unit;
+        if (Quantity == 0)
+        {
+            Status = LabContainerStatus.Consumed;
+            DispositionReason = exhausted ? "Operator confirmed material exhausted." : "Recorded material transferred in full.";
+        }
+        RecordBiologicalQuantityHistory("transfer-out", before, Quantity, unit, quantity, exhausted, exhausted && calculated.HasValue ? calculated : null,
+            transferId, actorId, now, Optional(exhaustionReason, 2000));
+    }
+
+    internal void ReceiveBiologicalMaterial(decimal quantity, string unit, Guid transferId, Guid actorId, DateTime now)
+    {
+        if (Status != LabContainerStatus.Available || Quantity.HasValue && (QuantityBasis != "Transferred" || QuantityUnit != unit))
+            throw new InvalidOperationException("Additional material can only enter the same pre-yield tube in its recorded unit.");
+        var before = Quantity;
+        Quantity = checked((Quantity ?? 0) + quantity);
+        InitialQuantity ??= quantity;
+        QuantityUnit = Required(unit, nameof(unit), 50);
+        InitialQuantityUnit ??= QuantityUnit;
+        QuantityBasis = "Transferred";
+        RecordBiologicalQuantityHistory("transfer-in", before, Quantity, unit, quantity, false, null, transferId, actorId, now, null);
+    }
+
+    public void RecordPreparedQuantity(decimal quantity, string unit, Guid recordId, Guid actorId, DateTime now)
+    {
+        if (Kind != LabContainerKind.Library || Status != LabContainerStatus.Available || quantity <= 0)
+            throw new InvalidOperationException("Record a positive prepared-library amount in its available library tube.");
+        unit = Required(unit, nameof(unit), 50);
+        RecordBiologicalQuantityHistory("prepared-yield", Quantity, quantity, unit, null, false, null, recordId, actorId, now, "Prepared-library measurement; independent of sample input.");
+        Quantity = quantity; QuantityUnit = unit; QuantityBasis = "Measured";
+    }
+
+    private void RecordBiologicalQuantityHistory(string action, decimal? before, decimal? after, string unit, decimal? transferred,
+        bool exhaustedOverride, decimal? balanceAdjustment, Guid recordId, Guid actorId, DateTime now, string? reason)
+    {
+        var history = System.Text.Json.Nodes.JsonNode.Parse(QuantityHistoryJson)!.AsArray();
+        history.Add(System.Text.Json.JsonSerializer.SerializeToNode(new { action, before, after, unit, transferred, exhaustedOverride, balanceAdjustment, recordId, actorId, recordedAtUtc = now, reason }));
+        QuantityHistoryJson = history.ToJsonString();
     }
 
     public void RecordLabelPrint(Guid actorUserId, DateTime printedAtUtc)
@@ -578,10 +640,11 @@ public sealed class LabMaterialLot : LabAuditedEntity
         QuantityHoldReason = null;
     }
 
-    private void RecordQuantityHistory(string action, decimal before, decimal after, string reason, Guid? recordId, Guid actorId, DateTime utcNow)
+    private void RecordQuantityHistory(string action, decimal before, decimal after, string reason, Guid? recordId, Guid actorId, DateTime utcNow,
+        decimal? consumedQuantity = null, decimal? balanceAdjustmentQuantity = null)
     {
         var history = System.Text.Json.Nodes.JsonNode.Parse(QuantityHistoryJson)!.AsArray();
-        history.Add(System.Text.Json.JsonSerializer.SerializeToNode(new { action, before, after, reason, recordId, actorId, utcNow }));
+        history.Add(System.Text.Json.JsonSerializer.SerializeToNode(new { action, before, after, reason, recordId, actorId, utcNow, consumedQuantity, balanceAdjustmentQuantity }));
         QuantityHistoryJson = history.ToJsonString();
     }
 
@@ -647,11 +710,26 @@ public sealed class LabMaterialLot : LabAuditedEntity
         QcApprovedAtUtc = utcNow;
     }
 
-    public void Consume(decimal quantity)
+    public void Consume(decimal quantity, bool materialExhausted = false, Guid? recordId = null, Guid? actorId = null, DateTime? utcNow = null)
     {
         if (QuantityHoldReason is not null) throw new InvalidOperationException("Reconcile this lot’s quantity before further use.");
         if (quantity <= 0 || quantity > AvailableQuantity) throw new InvalidOperationException("The requested quantity is not available.");
+        if (materialExhausted && (!recordId.HasValue || recordId == Guid.Empty || !actorId.HasValue || actorId == Guid.Empty || !utcNow.HasValue))
+            throw new ArgumentException("The material exhaustion override requires its consumption record and recorder.");
+        var before = AvailableQuantity;
         AvailableQuantity -= quantity;
+        if (actorId.HasValue && utcNow.HasValue)
+            RecordQuantityHistory("consumed", before, AvailableQuantity, "Actual material used.", recordId, actorId.Value, utcNow.Value, consumedQuantity: quantity);
+        if (materialExhausted) ConfirmExhausted(recordId!.Value, actorId!.Value, utcNow!.Value);
+    }
+
+    public void ConfirmExhausted(Guid recordId, Guid actorId, DateTime utcNow)
+    {
+        if (QuantityHoldReason is not null) throw new InvalidOperationException("Reconcile this lot’s uncertain quantity before confirming exhaustion.");
+        if (recordId == Guid.Empty || actorId == Guid.Empty) throw new ArgumentException("Record the consumption and operator confirming exhaustion.");
+        RecordQuantityHistory("exhausted", AvailableQuantity, 0, "Operator confirmed no usable material remains.", recordId, actorId, utcNow,
+            balanceAdjustmentQuantity: AvailableQuantity);
+        AvailableQuantity = 0;
     }
 }
 
@@ -899,6 +977,21 @@ public sealed class LabBatchMember
     public Guid LabWorkOrderId { get; private set; }
     public Guid LabLibraryId { get; private set; }
     public DateTime AddedAtUtc { get; private set; }
+    public Guid? SequencingContainerId { get; private set; }
+    public Guid? MaterialTransferId { get; private set; }
+
+    public void AssignSequencingTube(Guid containerId)
+    {
+        if (containerId == Guid.Empty || SequencingContainerId.HasValue) throw new InvalidOperationException("This batch member already has a sequencing tube.");
+        SequencingContainerId = containerId;
+    }
+
+    public void AttachSequencingTube(Guid containerId, Guid transferId)
+    {
+        if (containerId == Guid.Empty || transferId == Guid.Empty || SequencingContainerId.HasValue && SequencingContainerId != containerId || MaterialTransferId.HasValue)
+            throw new InvalidOperationException("This batch member already has a sequencing tube or the transfer identity is invalid.");
+        SequencingContainerId = containerId; MaterialTransferId = transferId;
+    }
 
     private LabBatchMember() { }
 

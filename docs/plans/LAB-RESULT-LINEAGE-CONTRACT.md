@@ -4,6 +4,8 @@ Implemented locally September 18, 2026 under the [sample traceability plan](SAMP
 
 ## Capture endpoints
 
+September 23 material-transfer extension: new sendouts freeze `schemaVersion: 2`. Their member retains `memberId`, `libraryId`, `libraryKey`, `libraryContainerId`, `libraryContainerBarcode`, `sequencingContainerId`, actual sequencing `containerBarcode`, `materialTransferId`, `quantity` and `quantityUnit`. Capture verifies the exact member's transfer from the producing library into that sequencing tube, including specimen/attempt ancestry and aliquot amount/unit. The frozen lineage includes the sequencing tube and transfer before following the library back to its source. A manifest with no schema version or version 1 retains the earlier library-container barcode semantics; unknown versions fail explicitly. New per-tube custody entries reference the actual submitted sequencing tube. See [material tracking](SAMPLE-MATERIAL-TRANSFER-PLAN.md) for implementation and validation status.
+
 Both routes use the same validation service and append-only records:
 
 - `POST /api/platform/lab-operations/pseq-results/sequencing-outputs` and `analysis-runs`: existing active Lab Operator/Supervisor authorization.

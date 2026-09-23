@@ -77,6 +77,8 @@ public sealed class SampleShippingWorkflowController(
         EnsureVersion(slot?.Version ?? item.Version, request.Version);
         if (!SupplierTubeBarcode.TryNormalize(request.SupplierBarcode, out var normalized))
             throw Invalid("supplier_tube_barcode_invalid", "Scan or enter the complete barcode from a Phaeno-supplied tube.");
+        if (request.CustomerDeclaredQuantity is not > 0 || string.IsNullOrWhiteSpace(request.CustomerDeclaredQuantityUnit))
+            throw Invalid("sample_tube_material_required", "Enter the amount of biological material in this physical tube and its unit.");
         await TransportationKitSupplyGuard.EnsurePreparationAsync(dbContext, shipment, cancellationToken);
         SampleReturnKit kit;
         if (shipment.ReturnKit is { Status: SampleReturnKitStatus.Fulfilled } existingKit) kit = existingKit;
@@ -87,12 +89,15 @@ public sealed class SampleShippingWorkflowController(
         var tube = kit.Tubes.SingleOrDefault(value => value.SupplierBarcode == normalized)
             ?? throw Missing("supplier_tube_not_in_kit", "That tube is not part of this Phaeno return kit.");
         var assignedElsewhere = shipment.Items.Any(value =>
-            value.RegisteredSampleTubeId == tube.Id
+            value.Id != item.Id && value.RegisteredSampleTubeId == tube.Id
             || value.TubeSlots.Any(valueSlot => valueSlot.RegisteredSampleTubeId == tube.Id
                 && (slot is null || valueSlot.Id != slot.Id)));
         if (assignedElsewhere)
             throw Conflict("supplier_tube_already_assigned", "That tube is already matched to another tube slot in this shipment.");
-        if ((slot?.RegisteredSampleTubeId ?? item.RegisteredSampleTubeId) == tube.Id)
+        var sameTube = (slot?.RegisteredSampleTubeId ?? item.RegisteredSampleTubeId) == tube.Id;
+        var sameDeclaration = tube.CustomerDeclaredQuantity == request.CustomerDeclaredQuantity
+            && tube.CustomerDeclaredQuantityUnit == request.CustomerDeclaredQuantityUnit.Trim();
+        if (sameTube && sameDeclaration)
         {
             if (transaction is not null) await transaction.CommitAsync(cancellationToken);
             return await reader.ReadAsync(shipment.Id, tenant.Organization.Id, tenant.Department.Id, cancellationToken);
@@ -102,11 +107,12 @@ public sealed class SampleShippingWorkflowController(
 
         var now = DateTime.UtcNow;
         var previousTubeId = slot?.RegisteredSampleTubeId ?? item.RegisteredSampleTubeId;
-        if (currentPacket is not null && string.IsNullOrWhiteSpace(request.Reason))
+        if ((currentPacket is not null || sameTube && tube.CustomerDeclaredQuantity.HasValue)
+            && string.IsNullOrWhiteSpace(request.Reason))
             throw Invalid(
                 "sample_tube_correction_reason_required",
-                "Enter a reason for changing the frozen tube assignment and replacing the shipping packet.");
-        if (previousTubeId.HasValue)
+                "Enter a reason for correcting the tube or its declared material amount.");
+        if (previousTubeId.HasValue && !sameTube)
         {
             if (string.IsNullOrWhiteSpace(request.Reason))
                 throw Invalid("sample_tube_correction_reason_required", "Enter a reason for changing the tube assignment.");
@@ -118,16 +124,21 @@ public sealed class SampleShippingWorkflowController(
             dbContext.SampleTubeAssignmentEvents.Add(new SampleTubeAssignmentEvent(
                 shipment.Id, item.Id, slot?.Id, previousTube.Id, item.CustomerSampleId,
                 previousTube.SupplierBarcode, SampleTubeAssignmentAction.Cleared,
-                request.Reason, tenant.Actor.Id, now));
+                request.Reason, tenant.Actor.Id, now,
+                previousTube.CustomerDeclaredQuantity, previousTube.CustomerDeclaredQuantityUnit));
         }
 
         tube.MarkAssigned(now);
+        Execute(() => tube.DeclareMaterial(request.CustomerDeclaredQuantity.Value,
+            request.CustomerDeclaredQuantityUnit, tenant.Actor.Id, now));
         if (slot is null) item.AssignTube(tube.Id, now); else slot.AssignTube(tube.Id, now);
         dbContext.SampleTubeAssignmentEvents.Add(new SampleTubeAssignmentEvent(
             shipment.Id, item.Id, slot?.Id, tube.Id, item.CustomerSampleId,
             tube.SupplierBarcode,
-            previousTubeId.HasValue ? SampleTubeAssignmentAction.Reassigned : SampleTubeAssignmentAction.Assigned,
-            request.Reason, tenant.Actor.Id, now));
+            sameTube ? SampleTubeAssignmentAction.MaterialDeclarationUpdated
+                : previousTubeId.HasValue ? SampleTubeAssignmentAction.Reassigned : SampleTubeAssignmentAction.Assigned,
+            request.Reason, tenant.Actor.Id, now,
+            tube.CustomerDeclaredQuantity, tube.CustomerDeclaredQuantityUnit));
         dbContext.Entry(shipment).Property(value => value.Version).IsModified = true;
         if (currentPacket is not null)
         {
@@ -193,6 +204,11 @@ public sealed class SampleShippingWorkflowController(
         EnsureVersion(shipment.Version, request.Version);
         var shippedAt = RequireUtc(request.ShippedAt, "Shipment time");
         await TransportationKitSupplyGuard.EnsureBoundReceiptAsync(dbContext, shipment.Id, cancellationToken);
+        var shippingPacket = await dbContext.SampleShippingPacketRevisions.AsNoTracking()
+            .Where(item => item.SampleShipmentId == shipment.Id && item.VoidedAt == null)
+            .OrderByDescending(item => item.Revision).FirstOrDefaultAsync(cancellationToken);
+        if (shippingPacket is null || !HasDeclaredTubeAmounts(shippingPacket.ManifestSnapshotJson))
+            throw Invalid("sample_tube_material_required", "Record the material amount and unit for every tube, then review the updated shipping insert before dispatch.");
         Execute(() => shipment.RecordShipment(request.Carrier, request.TrackingNumber, shippedAt));
         if (shipment.AuthorizationSource == SampleShipmentAuthorizationSource.CustomerLabServiceOrder)
         {
@@ -234,7 +250,7 @@ public sealed class SampleShippingWorkflowController(
             || samples.ValueKind != JsonValueKind.Array)
             throw Conflict("sample_shipping_crosswalk_unavailable", "The frozen packet crosswalk could not be read.");
         var builder = new StringBuilder();
-        builder.AppendLine("Shipment number,Packet number,Customer sample ID,Tube ordinal,Tube count,Sample name,Sample type,Supplier tube barcode,Total sample tubes,Other shipments,Unallocated tubes");
+        builder.AppendLine("Shipment number,Packet number,Customer sample ID,Tube ordinal,Tube count,Sample name,Sample type,Supplier tube barcode,Total sample tubes,Other shipments,Unallocated tubes,Customer declared material amount,Material unit,Declared at UTC");
         foreach (var item in samples.EnumerateArray())
         {
             builder.Append(Csv(shipment.ShipmentNumber)).Append(',')
@@ -249,13 +265,26 @@ public sealed class SampleShippingWorkflowController(
                 .Append(Csv(item.TryGetProperty("otherShipments", out var related) && related.ValueKind == JsonValueKind.Array
                     ? string.Join("; ", related.EnumerateArray().Select(value => $"{SnapshotText(value, "shipmentNumber")}: {SnapshotNumber(value, "tubeCount", 0)} tubes"))
                     : string.Empty)).Append(',')
-                .Append(SnapshotNumber(item, "unallocatedTubeCount", 0)).AppendLine();
+                .Append(SnapshotNumber(item, "unallocatedTubeCount", 0)).Append(',')
+                .Append(Csv(item.TryGetProperty("customerDeclaredQuantity", out var amount) && amount.ValueKind == JsonValueKind.Number ? amount.GetRawText() : string.Empty)).Append(',')
+                .Append(Csv(SnapshotText(item, "customerDeclaredQuantityUnit"))).Append(',')
+                .Append(Csv(SnapshotText(item, "customerDeclaredAt"))).AppendLine();
         }
         return File(Encoding.UTF8.GetBytes(builder.ToString()), "text/csv; charset=utf-8",
             $"{shipment.ShipmentNumber}-tube-crosswalk.csv");
     }
 
     private static string Csv(string value) => $"\"{value.Replace("\"", "\"\"")}\"";
+
+    private static bool HasDeclaredTubeAmounts(string manifestJson)
+    {
+        using var manifest = JsonDocument.Parse(manifestJson);
+        return manifest.RootElement.TryGetProperty("samples", out var rows)
+            && rows.ValueKind == JsonValueKind.Array && rows.GetArrayLength() > 0
+            && rows.EnumerateArray().All(row => row.TryGetProperty("customerDeclaredQuantity", out var amount)
+                && amount.ValueKind == JsonValueKind.Number && amount.TryGetDecimal(out var quantity) && quantity > 0
+                && !string.IsNullOrWhiteSpace(SnapshotText(row, "customerDeclaredQuantityUnit")));
+    }
 
     private static string SnapshotText(JsonElement item, string propertyName) =>
         item.TryGetProperty(propertyName, out var value) && value.ValueKind == JsonValueKind.String

@@ -29,6 +29,18 @@ describe('SampleShippingPacketPage', () => {
   beforeEach(() => { api.getPacket.mockReset(); vi.spyOn(window, 'print').mockImplementation(() => undefined) })
   afterEach(() => { vi.restoreAllMocks() })
 
+  it('uses frozen per-tube declarations and leaves historical amounts unknown', async () => {
+    api.getPacket.mockResolvedValue({ ...packet, manifestSnapshotJson: JSON.stringify({ samples: [
+      { submittedSpecimenId: 'material-sample', customerSampleId: 'MATERIAL-1', tubeOrdinal: 1, supplierTubeBarcode: 'MATERIAL-TUBE-1', quantity: 99, quantityUnit: 'tubes', customerDeclaredQuantity: 12.5, customerDeclaredQuantityUnit: 'µL' },
+      { submittedSpecimenId: 'material-sample', customerSampleId: 'MATERIAL-1', tubeOrdinal: 2, supplierTubeBarcode: 'MATERIAL-TUBE-2', quantity: 99, quantityUnit: 'tubes' },
+    ] }) })
+    show()
+    await screen.findByRole('button', { name: 'Print shipping insert' })
+    expect(screen.getByText(/Customer-declared material: 12.5 µL/)).toBeTruthy()
+    expect(screen.getByText(/Customer-declared material: unknown/)).toBeTruthy()
+    expect(screen.queryByText(/99 tubes/)).toBeNull()
+  })
+
   it.each(['Regular ice: approved amount for this container.', 'No cooling required.'])('uses frozen container instructions and deduplicates a shared procedure: %s', async control => {
     const instructionRule = { shippingProcedureId: 'procedure-1', packingInstructions: 'Shared sealed containment steps.', destinationInstructions: 'Use the receiving entrance.' }
     api.getPacket.mockResolvedValue({ ...packet, instructionSnapshotJson: JSON.stringify({

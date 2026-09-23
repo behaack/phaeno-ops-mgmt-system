@@ -32,7 +32,7 @@ public sealed partial class LabOperationsController
             join t in dbContext.LabProductTypes.AsNoTracking() on p.ProductTypeId equals t.Id
             where p.IsActive && t.IsActive
             orderby p.ProductNumber
-            select new SupplierCatalogProductDto(p.Id, p.SupplierId, p.ProductNumber, p.Description, t.KitUse.ToString(), p.IsActive, p.Version, t.Id, t.Name, t.IsActive)).ToListAsync(ct);
+            select new SupplierCatalogProductDto(p.Id, p.SupplierId, p.ProductNumber, p.Description, t.KitUse.ToString(), p.IsActive, p.Version, t.Id, t.Name, t.IsActive, p.CanExpire)).ToListAsync(ct);
         return suppliers.Select(s => new SupplierCatalogEntryDto(s.Id, s.Name, s.IsActive, s.Version, products.Where(p => p.SupplierId == s.Id).ToArray())).ToArray();
     }
 
@@ -81,9 +81,14 @@ public sealed partial class LabOperationsController
             return result;
         }
         var uncertainLots = new Dictionary<Guid, (LabMaterialLot Lot, string Reason)>();
+        var exhaustedLots = new Dictionary<Guid, LabMaterialLot>();
         foreach (var entry in entries)
         {
             var field = fields.Single(f => f.Key == entry.FieldKey);
+            if (field.Type != "biologicalMaterial" && (entry.ExhaustionReason is not null || entry.Barcode is not null || entry.SourceBarcode is not null))
+                throw new ArgumentException("A biological material field is required to confirm a tube transfer or exhausted source.");
+            if (entry.MaterialExhausted && field.Type != "biologicalMaterial" && !(field.Type == "material" && field.IncludeTracking))
+                throw new ArgumentException("Material exhausted requires a tracked material lot or a biological source tube.");
             var isException = field.Type == "material" && field.Scope == "shared" && entry.MemberId.HasValue;
             if (!isException && (entry.AmountUnknown || entry.ExceptionReason is not null || entry.Disposition is not null))
                 throw new ArgumentException("Material exceptions require shared material recording and an included tube.");
@@ -96,7 +101,8 @@ public sealed partial class LabOperationsController
             if (entry.ResourceId != common.ResourceId || entry.ResourceVersion != common.ResourceVersion || entry.QuantityUnit != common.QuantityUnit)
                 throw new ArgumentException("Sample amount exceptions must retain the common lot and unit.");
         }
-        foreach (var field in fields)
+        // Input transfers precede yield measurement even when authors reorder the displayed fields.
+        foreach (var field in fields.OrderBy(f => f.Type == "output" ? 1 : 0))
         {
             var targets = field.Scope == "batch" ? new Guid?[] { null } : field.Scope == "shared" ? new Guid?[] { null }.Concat(entries.Where(e => e.FieldKey == field.Key && e.MemberId.HasValue).Select(e => e.MemberId)).ToArray() : input.CoveredMemberIds.Select(id => (Guid?)id).ToArray();
             foreach (var target in targets)
@@ -104,7 +110,12 @@ public sealed partial class LabOperationsController
                 var covered = target.HasValue ? new[] { target.Value } : input.CoveredMemberIds.Where(id => field.Scope != "shared" || !entries.Any(e => e.FieldKey == field.Key && e.MemberId == id)).ToArray();
                 var entry = entries.SingleOrDefault(e => e.FieldKey == field.Key && e.MemberId == target);
                 string? display = null;
-                if (field.Type == "output")
+                if (field.Type == "biologicalMaterial")
+                {
+                    var member = members.Single(m => m.Id == target);
+                    display = await RecordPreparationBiologicalMaterialAsync(field, entry, member, attempts.Single(a => a.Id == member.LabSpecimenAttemptId), input, request, actorId, ct);
+                }
+                else if (field.Type == "output")
                 {
                     var member = members.Single(m => m.Id == target);
                     LabContainer? output = null;
@@ -121,7 +132,7 @@ public sealed partial class LabOperationsController
                         output = await PreparationOutputAsync(member, attempts.Single(a => a.Id == member.LabSpecimenAttemptId), request with
                         {
                             Quantity = entry.Quantity, QuantityUnit = entry.QuantityUnit!.Trim(), Location = entry.Location.Trim(), OutputContainerId = null
-                        }, ct);
+                        }, actorId, ct);
                     }
                     if (output is not null) display = $"{output.Barcode} · {output.Quantity} {output.QuantityUnit} · {output.Location} · Container {output.Id}";
                 }
@@ -157,13 +168,15 @@ public sealed partial class LabOperationsController
                             if (lot.QcDisposition is not (LabQcDisposition.Passed or LabQcDisposition.ApprovedException) || lot.ExpirationOrRetestDate < DateOnly.FromDateTime(DateTime.UtcNow))
                                 throw new InvalidOperationException("The material lot must be released and within date.");
                             if (entry.AmountUnknown) uncertainLots[lot.Id] = (lot, entry.ExceptionReason!);
+                            if (entry.MaterialExhausted) exhaustedLots[lot.Id] = lot;
                             if (total > 0 && covered.Length > 0) await PreparationResourceAsync(members, attempts, request with { Action = "material", StageId = input.StageId, Confirmed = true,
-                                CoveredMemberIds = covered, ResourceId = lot.Id, ResourceVersion = entry.ResourceVersion, Quantity = total, QuantityUnit = entry.QuantityUnit }, actorId, ct);
+                                CoveredMemberIds = covered, ResourceId = lot.Id, ResourceVersion = entry.ResourceVersion, Quantity = total, QuantityUnit = entry.QuantityUnit, MaterialExhausted = false }, actorId, ct);
                             var materialName = await dbContext.LabMaterialDefinitions.Where(m => m.Id == lot.MaterialDefinitionId).Select(m => m.Name).SingleAsync(ct);
                             name = $"{(string.IsNullOrWhiteSpace(name) ? materialName : name)} · Lot {lot.LotNumber} · {lot.Id}";
                         }
                         display = entry.AmountUnknown ? $"{name} · Amount unknown ({entry.QuantityUnit})" : $"{name} · {entry.Quantity} {entry.QuantityUnit}{(!target.HasValue && field.Scope is "batch" or "shared" && field.QuantityBasis != "total" ? $" per sample · {total} {entry.QuantityUnit} total" : " total")}";
                         if (isException) display += $" · Exception: {entry.ExceptionReason} · Disposition: {entry.Disposition}";
+                        if (entry.MaterialExhausted) display += " · Lot exhausted (operator override after all recorded use)";
                     }
                     else
                     {
@@ -181,6 +194,8 @@ public sealed partial class LabOperationsController
                     foreach (var id in covered) result[id][field.Key] = JsonSerializer.SerializeToElement(display);
             }
         }
+        if (exhaustedLots.Keys.Any(uncertainLots.ContainsKey)) throw new ArgumentException("Resolve unknown material amounts before confirming a lot exhausted. Unknown sample usage still requires quantity reconciliation.");
+        foreach (var lot in exhaustedLots.Values) lot.ConfirmExhausted(request.RequestId, actorId, DateTime.UtcNow);
         foreach (var item in uncertainLots.Values) item.Lot.HoldQuantity(item.Reason, request.RequestId, actorId, DateTime.UtcNow);
         return result;
     }

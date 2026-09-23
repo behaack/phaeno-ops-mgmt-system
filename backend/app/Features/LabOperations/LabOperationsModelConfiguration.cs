@@ -218,6 +218,9 @@ public static class LabOperationsModelConfiguration
             entity.Property(e => e.Label).HasMaxLength(255).IsRequired();
             entity.Property(e => e.Location).HasMaxLength(255);
             entity.Property(e => e.QuantityUnit).HasMaxLength(50);
+            entity.Property(e => e.InitialQuantityUnit).HasMaxLength(50);
+            entity.Property(e => e.QuantityBasis).HasMaxLength(50);
+            entity.Property(e => e.QuantityHistoryJson).HasColumnType("jsonb").HasDefaultValue("[]");
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.Property(e => e.DispositionReason).HasMaxLength(1000);
             entity.HasIndex(e => e.Barcode).IsUnique();
@@ -370,6 +373,7 @@ public static class LabOperationsModelConfiguration
             ConfigureAudited(entity);
             entity.Property(e => e.ProductNumber).HasMaxLength(100).IsRequired();
             entity.Property(e => e.NormalizedProductNumber).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.CanExpire).HasDefaultValue(false).IsRequired();
             entity.Property(e => e.Description).HasMaxLength(1000).IsRequired();
             entity.HasOne<LabProductType>().WithMany().HasForeignKey(e => e.ProductTypeId).OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => new { e.SupplierId, e.NormalizedProductNumber }).IsUnique();
@@ -502,6 +506,27 @@ public static class LabOperationsModelConfiguration
             entity.HasOne<LabOperationalBatch>().WithMany().HasForeignKey(e => e.LabOperationalBatchId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<LabWorkOrder>().WithMany().HasForeignKey(e => e.LabWorkOrderId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<LabLibrary>().WithMany().HasForeignKey(e => e.LabLibraryId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabContainer>().WithMany().HasForeignKey(e => e.SequencingContainerId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabBiologicalMaterialTransfer>().WithMany().HasForeignKey(e => e.MaterialTransferId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<LabBiologicalMaterialTransfer>(entity =>
+        {
+            entity.ToTable("lab_biological_material_transfers", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.RequestHash).HasMaxLength(64).IsRequired();
+            entity.Property(e => e.QuantityUnit).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.SourceQuantityBasis).HasMaxLength(50);
+            entity.Property(e => e.ExhaustionReason).HasMaxLength(2000);
+            entity.HasIndex(e => new { e.RequestId, e.SourceContainerId, e.DestinationContainerId }).IsUnique();
+            entity.HasIndex(e => new { e.LabSpecimenId, e.RecordedAtUtc });
+            entity.HasOne<LabWorkOrder>().WithMany().HasForeignKey(e => e.LabWorkOrderId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabSpecimen>().WithMany().HasForeignKey(e => e.LabSpecimenId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabSpecimenAttempt>().WithMany().HasForeignKey(e => e.LabSpecimenAttemptId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabContainer>().WithMany().HasForeignKey(e => e.SourceContainerId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabContainer>().WithMany().HasForeignKey(e => e.DestinationContainerId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabPreparationMember>().WithMany().HasForeignKey(e => e.PreparationMemberId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabBatchMember>().WithMany().HasForeignKey(e => e.SequencingBatchMemberId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<LabNgsSendout>(entity =>

@@ -18,8 +18,8 @@ public partial class SampleShippingPostgresTests
         var customer = scope.CreateCustomerWorkflowController();
         var lab = scope.CreateLabController();
         var codes = Enumerable.Range(1, 3).Select(i => $"BATCH-{scope.Suffix}-{i}").ToArray();
-        await admin.CreateReturnKit(fixture.Shipment.Id, new CreateSampleReturnKitRequest(3,
-            "Test supplier", "Test tube", null, "Test shipper", "Test product"), default);
+        await admin.CreateReturnKit(fixture.Shipment.Id, await scope.CatalogReturnKitRequestAsync(new CreateSampleReturnKitRequest(3,
+            "Test supplier", "Test tube", null, "Test shipper", "Test product")), default);
         scope.ClearTrackedState();
         var kit = await scope.DbContext.SampleReturnKits.AsNoTracking().SingleAsync(k => k.SampleShipmentId == fixture.Shipment.Id);
         var registered = await admin.RegisterTubes(kit.Id, new RegisterSampleTubesRequest(codes, kit.Version), default);
@@ -31,7 +31,7 @@ public partial class SampleShippingPostgresTests
         {
             var row = shipment.Crosswalk.OrderBy(r => r.TubeOrdinal).ElementAt(i);
             shipment = await customer.AssignTube(fixture.Shipment.Id, fixture.Item.Id,
-                new AssignSampleTubeRequest(codes[i], null, row.Version, row.TubeSlotId), default);
+                new AssignSampleTubeRequest(codes[i], null, row.Version, row.TubeSlotId, CustomerDeclaredQuantity: 20m, CustomerDeclaredQuantityUnit: "µL"), default);
             scope.ClearTrackedState();
         }
         shipment = await customer.IssuePacket(fixture.Shipment.Id, new(shipment.Version, null), default);

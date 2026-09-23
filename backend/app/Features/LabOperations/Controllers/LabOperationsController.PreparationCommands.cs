@@ -62,7 +62,11 @@ public sealed partial class LabOperationsController
             throw Conflict("preparation_tray_confirmed", "The assembled tray is confirmed and locked. Choose Edit tray before changing its contents.");
         try
         {
-            if (request.Action == "confirm-tray")
+            if (request.Action == "allocate-library-tube")
+            {
+                await AllocatePreparationLibraryTubeAsync(batch, Member(), Attempt(Member()), request, ct);
+            }
+            else if (request.Action == "confirm-tray")
             {
                 batch.RequireDraft();
                 batch.RequireTray();
@@ -77,14 +81,17 @@ public sealed partial class LabOperationsController
             }
             else if (request.Action == "assign-tray")
             {
-                var barcode = request.Barcode?.Trim() ?? "";
+                var barcode = request.Barcode?.Trim().ToUpperInvariant() ?? "";
                 batch.AssignTray(barcode, members.Count > 0);
                 await SampleShippingPackingData.LockAsync(dbContext, $"lab-physical-tray:{barcode}", ct);
-                if (await dbContext.LabPreparationBatches.AnyAsync(b => b.Id != batch.Id && b.TrayBarcode == barcode
+                await SampleShippingPackingData.LockAsync(dbContext, $"supplier-tube:{barcode.ToUpperInvariant()}", ct);
+                if (await dbContext.LabPreparationBatches.AnyAsync(b => b.Id != batch.Id && b.TrayBarcode != null && b.TrayBarcode.ToUpper() == barcode
                     && (b.Status == LabBatchStatus.Draft || b.Status == LabBatchStatus.InProgress), ct))
                     throw Conflict("preparation_tray_in_use", "This physical tray is already assigned to another active batch. Complete or cancel that batch before reusing the tray.");
-                if (await dbContext.LabPreparationBatches.AnyAsync(b => b.Name == barcode, ct)
-                    || await dbContext.LabContainers.AnyAsync(t => t.Barcode == barcode, ct))
+                if (await dbContext.LabPreparationBatches.AnyAsync(b => b.Name.ToUpper() == barcode, ct)
+                    || await dbContext.LabContainers.AnyAsync(t => t.Barcode == barcode.ToUpperInvariant(), ct)
+                    || await dbContext.RegisteredSampleTubes.AnyAsync(t => t.SupplierBarcode == barcode.ToUpperInvariant(), ct)
+                    || await dbContext.SampleShippingStockTubes.AnyAsync(t => t.SupplierBarcode == barcode.ToUpperInvariant(), ct))
                     throw Conflict("preparation_tray_identity", "Scan the physical tray label, not a batch or tube barcode.");
             }
             else if (request.Action == "add")
@@ -119,12 +126,21 @@ public sealed partial class LabOperationsController
             else if (request.Action is "move" or "remove" or "cancel")
             {
                 batch.RequireDraft();
-                if (request.Action == "move") Member().Move(batch, request.Position ?? "", members);
+                if (request.Action == "move")
+                {
+                    var member = Member(); member.Move(batch, request.Position ?? "", members);
+                    if (member.LibraryTubeContainerId.HasValue)
+                    {
+                        var tube = await dbContext.LabContainers.SingleAsync(c => c.Id == member.LibraryTubeContainerId, ct);
+                        tube.Move($"Tray {batch.TrayBarcode} · {member.Position}");
+                    }
+                }
                 else
                 {
                     if (string.IsNullOrWhiteSpace(request.Reason)) throw new ArgumentException("Record why the tube or draft batch is being removed.");
                     foreach (var member in request.Action == "cancel" ? members : new List<LabPreparationMember> { Member() })
                     {
+                        if (member.MaterialTransferId.HasValue) throw new InvalidOperationException("A physical transfer has already occurred. Retain this preparation and its material history; cancellation cannot return material to its source.");
                         var attempt = Attempt(member); attempt.Cancel(request.Reason, actor.User.Id, now);
                         await CloseAttemptExecutionsAsync(attempt, request.Reason, ct);
                         member.Remove(batch);
@@ -144,7 +160,7 @@ public sealed partial class LabOperationsController
                     await RequireExecutionWorkflowAsync(jobs[attempt.LabWorkOrderId], attempt.LabServiceWorkflowVersionId, ct);
                     if (attempt.LabServiceWorkflowVersionId != batch.LabServiceWorkflowVersionId)
                         throw Conflict("preparation_workflow_mismatch", "Every attempt must use this batch’s workflow version.");
-                    var source = await RequireAttemptSourceAsync(attempt, ct);
+                    var source = await RequireAttemptSourceAsync(attempt, ct, allowTransferredMaterial: true);
                     if (attempt.State != LabSpecimenAttemptState.Planned || (await NextAttemptStageAsync(attempt, ct))?.Id != stages[0].Id)
                         throw Conflict("preparation_attempt_started", "Every tube must enter at the workflow's first stage with unstarted work.");
                     attempt.Start(source.Barcode, member.ConfirmedBarcode, now);
@@ -180,13 +196,13 @@ public sealed partial class LabOperationsController
                     case "resume":
                         if (!actor.HasAny(LabRole.Supervisor)) throw new InvalidOperationException("A Supervisor must review and resolve the tube hold.");
                         var resumed = Attempt(Member());
-                        await RequireAttemptSourceAsync(resumed, ct);
+                        await RequireAttemptSourceAsync(resumed, ct, allowTransferredMaterial: true);
                         await RequireMaterialExceptionReviewAsync(resumed, actor.HasAny(LabRole.Supervisor), ct);
                         resumed.Resume(request.Reason ?? "");
                         await RefreshAttemptOutcomeAsync(jobs[resumed.LabWorkOrderId], await RequireSpecimenAsync(resumed.LabWorkOrderId, resumed.LabSpecimenId, ct), resumed, actor.User.Id, ct);
                         break;
-                    case "output": await PreparationOutputAsync(Member(), Attempt(Member()), request, ct); break;
-                    case "outputs": outputResults = await PreparationOutputsAsync(members, attempts, request, ct); break;
+                    case "output": await PreparationOutputAsync(Member(), Attempt(Member()), request, actor.User.Id, ct); break;
+                    case "outputs": outputResults = await PreparationOutputsAsync(members, attempts, request, actor.User.Id, ct); break;
                     case "confirm-output":
                         Attempt(Member()).RequireOpen(false);
                         var outputId = Member().OutputContainerId;

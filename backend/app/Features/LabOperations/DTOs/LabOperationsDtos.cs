@@ -103,7 +103,9 @@ public sealed record LabContainerDto(
     string Label, int LabelPrintCount, string? Location, decimal? Quantity,
     string? QuantityUnit, string Status, DateTime? RetainUntilUtc, long Version,
     string? IntakeDisposition = null, string? IntakeReasonCode = null, string? IntakeNotes = null,
-    DateTime? IntakeReviewedAtUtc = null, Guid? IntakeReviewedByUserId = null);
+    DateTime? IntakeReviewedAtUtc = null, Guid? IntakeReviewedByUserId = null,
+    decimal? InitialQuantity = null, string? InitialQuantityUnit = null,
+    string? QuantityBasis = null, string QuantityHistoryJson = "[]");
 
 public sealed record LabContainerScanDto(
     Guid LabWorkOrderId, string? CommercialOrderNumber, string? AccessionNumber,
@@ -211,7 +213,7 @@ public sealed record CreateExecutionRequest(Guid? LabSpecimenId, Guid LabProtoco
     Guid? AssignedToUserId, Guid? LabServiceWorkflowStageId = null);
 public sealed record ExecutionTransitionRequest(string Action, string? CapturedResultsJson, string? DeviationNote, long Version, string? ConfirmedSourceBarcode = null);
 public sealed record CreatePreparedReagentComponentRequest(
-    Guid ComponentMaterialLotId, decimal Quantity, string QuantityUnit);
+    Guid ComponentMaterialLotId, decimal Quantity, string QuantityUnit, bool MaterialExhausted = false, long? LotVersion = null);
 public sealed record CreateMaterialLotRequest(
     string Kind, Guid? MaterialDefinitionId, string? NewMaterialName, string LotNumber,
     Guid? SupplierId, string? NewSupplierName,
@@ -223,7 +225,7 @@ public sealed record MaterialQcRequest(
     string Disposition, DateOnly PerformedOn, string? FailureReason,
     string ResultsJson, long Version);
 public sealed record ConsumeMaterialRequest(Guid LabMaterialLotId, Guid? OutputContainerId,
-    decimal Quantity, string QuantityUnit, long LotVersion);
+    decimal Quantity, string QuantityUnit, long LotVersion, bool MaterialExhausted = false);
 public sealed record CreateEquipmentRequest(string Name, string EquipmentType,
     string Location, DateOnly? LastCalibrationOn, DateOnly? CalibrationDueOn);
 public sealed record RecordEquipmentUsageRequest(Guid LabEquipmentId, DateTime UsedAtUtc, string? RunReference);

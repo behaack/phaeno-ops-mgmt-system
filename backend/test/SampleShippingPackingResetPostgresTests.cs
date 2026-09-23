@@ -236,7 +236,7 @@ public partial class SampleShippingPostgresTests
         var before = await scope.ResetFamilySlotsAsync(fixture);
         await using var resetDb = scope.CreateAdditionalContext(); await using var scanDb = scope.CreateAdditionalContext();
         var results = await Task.WhenAll(CaptureAsync(() => scope.PackingController(dbOverride: resetDb).Reset(packed.Id, new(review.Shipments), default)),
-            CaptureAsync(() => scope.CustomerWorkflowFor(scanDb).AssignTube(source.Id, row.Id, new(ready.Tubes[0].SupplierBarcode, null, slot.Version, slot.Id), default)));
+            CaptureAsync(() => scope.CustomerWorkflowFor(scanDb).AssignTube(source.Id, row.Id, new(ready.Tubes[0].SupplierBarcode, null, slot.Version, slot.Id, CustomerDeclaredQuantity: 20m, CustomerDeclaredQuantityUnit: "µL"), default)));
         Assert.Single(results, item => item is null); Assert.Single(results, item => item is OrderManagementException { StatusCode: 409 });
         Assert.Equal(before, await scope.ResetFamilySlotsAsync(fixture));
         var active = await scope.DbContext.SampleShipments.AsNoTracking().SingleAsync(item => item.AuthorizationSourceId == fixture.Shipment.AuthorizationSourceId && item.Status != SampleShipmentStatus.Cancelled);
@@ -255,9 +255,10 @@ public partial class SampleShippingPostgresTests
         scope.ClearTrackedState();
         var review = await scope.PackingController().ReadReset(physical.Id, default);
         await using var resetDb = scope.CreateAdditionalContext(); await using var kitDb = scope.CreateAdditionalContext();
+        var kitRequest = await scope.CatalogReturnKitRequestAsync(new(18, "Supplier", "Tube", null, "Shipper", "Box"));
         var results = await Task.WhenAll(CaptureAsync(() => scope.PackingController(dbOverride: resetDb).Reset(physical.Id, new(review.Shipments), default)),
             CaptureAsync(() => scope.ResetPlatformWorkflowFor(kitDb).CreateReturnKit(physical.Id,
-                new(18, "Supplier", "Tube", null, "Shipper", "Box"), default)));
+                kitRequest, default)));
         Assert.Single(results, item => item is null); Assert.Single(results, item => item is OrderManagementException { StatusCode: 409 });
         var retired = await scope.DbContext.SampleShipments.AsNoTracking().SingleAsync(item => item.Id == physical.Id);
         Assert.Equal(retired.Status == SampleShipmentStatus.Preparing, await scope.DbContext.SampleReturnKits.AnyAsync(item => item.SampleShipmentId == physical.Id));

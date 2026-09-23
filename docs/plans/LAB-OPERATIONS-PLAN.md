@@ -1,5 +1,9 @@
 # Lab Operations Plan
 
+## Sample material transfers — September 23, 2026
+
+The [sample material transfer plan](SAMPLE-MATERIAL-TRANSFER-PLAN.md) records the locally implemented accessioned-source → barcoded library tube → barcoded sequencing tube workflow, retained material and manufacturer or POMS-generated barcodes. Accounting captures customer-declared amounts during shipment, actual biological consumption and an optional Material exhausted override. Biological material is a preparation field type. Reagent lots support the same exhaustion override, and products can require expiration dates at inventory entry. The local migration, build and static checks are complete; the linked plan records pending automated and operational acceptance and deployment.
+
 ## Sequencing data assembly runner — endpoint-independent implementation, September 22, 2026
 
 The [sequencing data assembly plan](SEQUENCING-DATA-ASSEMBLY-PLAN.md) records the authorized endpoint-independent implementation: durable attempts and lifecycle evidence, a background runner/provider boundary, transient progress, actual start/stop timestamps, final disposition, POMS queue/detail/sample history and exact-analysis linking. Shared capture/release guards enforce a separate result for each purchased run. The external SignalR adapter, live credentials, real S3 verification and automatic output import remain pending the provider contract. The runtime provider is explicitly unavailable, with dispatch default off; simulation exists only in regression sources. The additive migration is local only, and this is not a production activation claim.

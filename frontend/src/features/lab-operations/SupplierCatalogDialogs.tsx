@@ -15,7 +15,7 @@ import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/require
 import { useOrderDraftGuard } from '#/features/orders/use-order-draft-guard'
 
 const supplierSchema = z.object({ name: z.string().trim().min(1, 'Enter a supplier name.').max(255), isActive: z.boolean() })
-const productSchema = z.object({ productNumber: z.string().trim().min(1, 'Enter a product name.').max(100), description: z.string().trim().min(1, 'Enter a product description.').max(1000), productTypeId: z.string().uuid('Choose a product type.'), isActive: z.boolean() })
+const productSchema = z.object({ productNumber: z.string().trim().min(1, 'Enter a product name.').max(100), description: z.string().trim().min(1, 'Enter a product description.').max(1000), productTypeId: z.string().uuid('Choose a product type.'), canExpire: z.boolean(), isActive: z.boolean() })
 type SupplierValues = z.infer<typeof supplierSchema>
 type ProductValues = z.infer<typeof productSchema>
 const selectClass = 'h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50'
@@ -54,8 +54,8 @@ export function SupplierProductDialog({ supplier, product, onClose }: { supplier
   const cache = useQueryClient()
   const types = useProductTypes()
   const availableTypes = (types.data ?? []).filter(t => t.isActive || t.id === product?.productTypeId)
-  const form = useForm<ProductValues>({ resolver: zodResolver(productSchema), defaultValues: { productNumber: product?.productNumber ?? '', description: product?.description ?? '', productTypeId: product?.productTypeId ?? '', isActive: product?.isActive ?? true } })
-  const mutation = useMutation({ mutationFn: (values: ProductValues) => saveSupplierProduct(supplier.id, { ...values, version: product?.version }, product?.id), onSuccess: async () => { form.reset(form.getValues()); await Promise.all([cache.invalidateQueries({ queryKey: supplierCatalogKey }), cache.invalidateQueries({ queryKey: productTypesKey })]); onClose() } })
+  const form = useForm<ProductValues>({ resolver: zodResolver(productSchema), defaultValues: { productNumber: product?.productNumber ?? '', description: product?.description ?? '', productTypeId: product?.productTypeId ?? '', canExpire: product?.canExpire ?? false, isActive: product?.isActive ?? true } })
+  const mutation = useMutation({ mutationFn: (values: ProductValues) => saveSupplierProduct(supplier.id, { ...values, version: product?.version }, product?.id), onSuccess: async () => { form.reset(form.getValues()); await Promise.all([cache.invalidateQueries({ queryKey: supplierCatalogKey }), cache.invalidateQueries({ queryKey: productTypesKey }), cache.invalidateQueries({ queryKey: ['lab-lot-products'] })]); onClose() } })
   const errors = form.formState.errors
   return <CatalogEditor title={product ? 'Edit product' : 'New product'} description={`${supplier.name}. Changes apply to future selections; existing kit records retain their original details.`} formId={id} dirty={form.formState.isDirty} busy={mutation.isPending} saveDisabled={types.isPending || types.isError || !availableTypes.length} error={mutation.error || types.error} onClose={onClose}>
     <form id={id} noValidate className="space-y-4" onSubmit={form.handleSubmit(values => { if (!mutation.isPending && !types.isPending && !types.isError) mutation.mutate(values) })}>
@@ -65,6 +65,7 @@ export function SupplierProductDialog({ supplier, product, onClose }: { supplier
       {types.isPending ? <p role="status">Loading product types…</p> : null}
       {types.isError ? <Button type="button" variant="outline" onClick={() => void types.refetch()}>Retry product types</Button> : null}
       {!types.isPending && !types.isError && !availableTypes.length ? <p className="text-sm">Add or reactivate a product type under Lab operations → Suppliers & products → Product types first.</p> : null}
+      <div className="space-y-1.5"><label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" disabled={mutation.isPending} aria-describedby={`${id}-expiry-help`} {...form.register('canExpire')} />Can expire</label><p id={`${id}-expiry-help`} className="text-xs text-muted-foreground">Require an expiration date when recording new inventory for this product. Saved inventory dates remain unchanged.</p></div>
       {product ? <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" disabled={mutation.isPending} {...form.register('isActive')} />Active product</label> : null}
     </form>
   </CatalogEditor>

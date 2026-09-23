@@ -34,7 +34,10 @@ public partial class SampleShippingPostgresTests
     [PostgreSqlReferenceFact]
     public Task PreparationUnknownMaterialHoldsStockUntilReconciled() => VerifyPreparationJourneyAsync(false, inlineFields: true, materialException: "unknown");
 
-    private async Task VerifyPreparationJourneyAsync(bool skipFinal, bool automaticReview = false, bool bulkOutputs = false, bool inlineFields = false, string? materialException = null)
+    [PostgreSqlReferenceFact]
+    public Task PreparationBiologicalTransfersAreAtomicReplayableAndRetainExhaustedSourceContinuation() => VerifyPreparationJourneyAsync(false, biologicalFields: true);
+
+    private async Task VerifyPreparationJourneyAsync(bool skipFinal, bool automaticReview = false, bool bulkOutputs = false, bool inlineFields = false, string? materialException = null, bool biologicalFields = false)
     {
         await using var scope = await ShippingTestScope.CreateAsync();
         var db = scope.DbContext; var lab = scope.CreateLabController(); var now = DateTime.UtcNow;
@@ -55,6 +58,9 @@ public partial class SampleShippingPostgresTests
         var material = new LabMaterialDefinition($"prep-{scope.Suffix}", "TEST ONLY reagent", LabMaterialLotKind.PreparedReagent);
         if (inlineFields) preparationDefinition = preparationDefinition with { Steps = preparationDefinition.Steps.Select(s => s.Key == "qc" ? s with {
             Captures = [.. s.Captures, new() { Key = "reagent", Label = "Reagent used", Type = "material", Unit = "mL", Scope = materialException is null ? "batch" : "shared", Required = true, IncludeTracking = true, QuantityBasis = "perSample", Material = new("Configured TEST ONLY reagent", MaterialDefinitionId: material.Id) }]
+        } : s).ToArray() };
+        if (biologicalFields) preparationDefinition = preparationDefinition with { Steps = preparationDefinition.Steps.Select(s => s.Key == "qc" ? s with {
+            Captures = [.. s.Captures, new() { Key = "biological", Label = "Biological material", Type = "biologicalMaterial", Unit = "uL", Scope = "tube", Required = true }]
         } : s).ToArray() };
         var pv = new LabProtocolVersion(protocol.Id, 1, preparationDefinition.ToJson(), scope.PlatformUser.Id, now);
         pv.Approve(scope.CustomerUser.Id, now);
@@ -105,10 +111,13 @@ public partial class SampleShippingPostgresTests
             Assert.NotEqual("TEST ONLY reserve tray", other.GetProperty("name").GetString());
             batch = Json(await lab.ApplyPreparation(id, new(Guid.NewGuid(), batch.GetProperty("version").GetInt64(), "assign-tray", Barcode: $"TRAY-{scope.Suffix}-1"), default));
             other = Json(await lab.ApplyPreparation(otherId, new(Guid.NewGuid(), other.GetProperty("version").GetInt64(), "assign-tray", Barcode: $"TRAY-{scope.Suffix}-2"), default));
-            async Task<JsonElement> Command(string action, Func<long, LabPreparationCommand>? make = null)
+            async Task<JsonElement> Command(string action, Func<long, LabPreparationCommand>? make = null, bool withReport = false)
             {
                 scope.ClearTrackedState(); var version = await db.LabPreparationBatches.Where(b => b.Id == id).Select(b => b.Version).SingleAsync();
-                return Json(await lab.ApplyPreparation(id, make?.Invoke(version) ?? new(Guid.NewGuid(), version, action), default));
+                var command = make?.Invoke(version) ?? new(Guid.NewGuid(), version, action);
+                if (!withReport) return Json(await lab.ApplyPreparation(id, command, default));
+                var files = new PreparationReportTestFiles();
+                return Json(await lab.ApplyPreparationWithQcReport(id, JsonSerializer.Serialize(command, new JsonSerializerOptions(JsonSerializerDefaults.Web)), files.Upload(), files, files, default));
             }
             await using (var leftDb = scope.CreateAdditionalContext())
             await using (var rightDb = scope.CreateAdditionalContext())
@@ -276,6 +285,38 @@ public partial class SampleShippingPostgresTests
             var step = new LabPreparationStepInput(stage.Id, "qc", "record", "recorded", [first, second], new Dictionary<string, JsonElement> { ["value"] = JsonSerializer.SerializeToElement(20) },
                 [new(second, new Dictionary<string, JsonElement> { ["value"] = JsonSerializer.SerializeToElement(2) }, "hold", "TEST ONLY hold")], "pass", null, true, true, false,
                 Performance: new("now", true));
+            if (biologicalFields)
+            {
+                var entries = new List<LabPreparationResourceFieldInput>();
+                foreach (var memberId in new[] { first, second })
+                {
+                    var generated = memberId == second;
+                    batch = await Command("allocate-library-tube", v => new(Guid.NewGuid(), v, "allocate-library-tube", MemberId: memberId,
+                        BarcodeSource: generated ? "PhaenoGenerated" : "Manufacturer", Barcode: generated ? null : $"TEST-LIB-{scope.Suffix}"));
+                    scope.ClearTrackedState();
+                    var member = await db.LabPreparationMembers.AsNoTracking().SingleAsync(m => m.Id == memberId);
+                    var attempt = await db.LabSpecimenAttempts.AsNoTracking().SingleAsync(a => a.Id == member.LabSpecimenAttemptId);
+                    var source = await db.LabContainers.AsNoTracking().SingleAsync(c => c.Id == attempt.SourceContainerId);
+                    var destination = await db.LabContainers.AsNoTracking().SingleAsync(c => c.Id == member.LibraryTubeContainerId);
+                    Assert.NotEqual(source.Barcode, destination.Barcode);
+                    Assert.Equal(generated ? LabContainerBarcodeSource.PhaenoGenerated : LabContainerBarcodeSource.Manufacturer, destination.BarcodeSource);
+                    entries.Add(new("biological", MemberId: memberId, ResourceId: source.Id, ResourceVersion: source.Version,
+                        Quantity: 5, QuantityUnit: "uL", SourceBarcode: source.Barcode, Barcode: destination.Barcode, MaterialExhausted: generated));
+                }
+                step = step with { ResourceEntries = entries };
+                foreach (var rejectedStep in new[] {
+                    step with { OperatorConfirmed = false },
+                    step with { ResourceEntries = [entries[0], entries[1] with { Barcode = entries[0].Barcode }] },
+                    step with { ResourceEntries = [entries[0], entries[1] with { Quantity = 21 }] },
+                    step with { ResourceEntries = [entries[0], entries[1] with { ResourceVersion = -1 }] }
+                })
+                {
+                    await Assert.ThrowsAsync<OrderManagementException>(() => Command("step", v => new(Guid.NewGuid(), v, "step", Step: rejectedStep), withReport: true));
+                    scope.ClearTrackedState();
+                    Assert.False(await db.LabBiologicalMaterialTransfers.AnyAsync(t => workIds.Contains(t.LabWorkOrderId)));
+                    Assert.All(await db.LabContainers.AsNoTracking().Where(c => entries.Select(e => e.ResourceId).Contains(c.Id)).ToArrayAsync(), c => Assert.Equal(20m, c.Quantity));
+                }
+            }
             if (inlineFields)
             {
                 step = step with { ResourceEntries = [new("reagent", ResourceId: lot.Id, ResourceVersion: (await db.LabMaterialLots.SingleAsync(l => l.Id == lot.Id)).Version, Quantity: 2, QuantityUnit: "mL")] };
@@ -444,6 +485,36 @@ public partial class SampleShippingPostgresTests
                 }
             }
             Assert.Contains(batch.GetProperty("members").EnumerateArray(), m => m.GetProperty("state").GetString() == "OnHold");
+            if (biologicalFields)
+            {
+                scope.ClearTrackedState();
+                var transfers = await db.LabBiologicalMaterialTransfers.AsNoTracking().Where(t => workIds.Contains(t.LabWorkOrderId)).ToArrayAsync();
+                Assert.Equal(2, transfers.Length);
+                Assert.All(transfers, t => Assert.Equal(5m, t.Quantity));
+                var exhausted = Assert.Single(transfers, t => t.ExhaustedOverride);
+                var partialSourceId = Assert.Single(transfers, t => !t.ExhaustedOverride).SourceContainerId;
+                Assert.Equal(15m, exhausted.BalanceAdjustmentQuantity);
+                var exhaustedSource = await db.LabContainers.AsNoTracking().SingleAsync(c => c.Id == exhausted.SourceContainerId);
+                Assert.Equal(LabContainerStatus.Consumed, exhaustedSource.Status);
+                Assert.Equal(0m, exhaustedSource.Quantity);
+                Assert.Equal(15m, await db.LabContainers.Where(c => c.Id == partialSourceId).Select(c => c.Quantity).SingleAsync());
+                // Arrange a distinct operational hold; a QC hold must be resolved through QC evidence.
+                var heldAttempt = await db.LabSpecimenAttempts.SingleAsync(a => a.Id == exhausted.LabSpecimenAttemptId);
+                heldAttempt.Hold("TEST operational review", "TEST review transferred material", scope.PlatformUser.Id);
+                await db.SaveChangesAsync();
+                batch = await Command("resume", v => new(Guid.NewGuid(), v, "resume", MemberId: second, Reason: "TEST review confirms transferred material remains usable"));
+                scope.ClearTrackedState();
+                Assert.Null((await db.LabSpecimenAttempts.AsNoTracking().SingleAsync(a => a.Id == exhausted.LabSpecimenAttemptId)).HoldReason);
+                var refreshedEntries = new List<LabPreparationResourceFieldInput>();
+                foreach (var entry in step.ResourceEntries!) refreshedEntries.Add(entry with {
+                    ResourceVersion = await db.LabContainers.Where(c => c.Id == entry.ResourceId).Select(c => c.Version).SingleAsync() });
+                var repeated = step with { Action = "repeat", Reason = "TEST exhausted withdrawal rejected", Tubes = [], ResourceEntries = refreshedEntries };
+                var exhaustedRetry = await Assert.ThrowsAsync<OrderManagementException>(() => Command("step", v => new(Guid.NewGuid(), v, "step", Step: repeated), withReport: true));
+                Assert.Equal("attempt_source_unavailable", exhaustedRetry.ErrorCode);
+                scope.ClearTrackedState();
+                Assert.Equal(2, await db.LabBiologicalMaterialTransfers.CountAsync(t => workIds.Contains(t.LabWorkOrderId)));
+                Assert.Equal(15m, await db.LabContainers.Where(c => c.Id == partialSourceId).Select(c => c.Quantity).SingleAsync());
+            }
             if (automaticReview) Assert.DoesNotContain(batch.GetProperty("records").EnumerateArray(), r => r.GetProperty("details").TryGetProperty("automatic", out _));
             await Assert.ThrowsAsync<OrderManagementException>(() => Command("advance", v => new(Guid.NewGuid(), v, "advance", StageId: stage.Id)));
             batch = await Command("fail", v => new(Guid.NewGuid(), v, "fail", MemberId: second, ReasonCode: "analysis_failed", Reason: "TEST ONLY unrecoverable failure"));
@@ -517,6 +588,12 @@ public partial class SampleShippingPostgresTests
                     Assert.Equal(specimen.AccessionNumber, record.Captures["specimen-reference"].GetString());
             }
             Assert.Equal(LabLibraryStatus.QcPassed, library.Status); Assert.Contains("preparation", library.QcResultsJson);
+            if (biologicalFields)
+            {
+                var member = await db.LabPreparationMembers.AsNoTracking().SingleAsync(m => m.Id == first);
+                Assert.Equal(member.LibraryTubeContainerId, library.LibraryContainerId);
+                Assert.Equal(15m, await db.LabContainers.Where(c => c.Id == library.SourceContainerId).Select(c => c.Quantity).SingleAsync());
+            }
             await Assert.ThrowsAsync<OrderManagementException>(() => lab.RecordLibraryQc(library.Id, new(true, "{}", library.Version), default));
             scope.ClearTrackedState();
             var sequencing = await lab.CreateBatch(new("TEST ONLY sequencing", "Synthetic test only"), default); sequencingId = sequencing.Id;
@@ -535,6 +612,8 @@ public partial class SampleShippingPostgresTests
             var executionIds = await db.LabProtocolExecutions.Where(e => workIds.Contains(e.LabWorkOrderId)).Select(e => e.Id).ToArrayAsync();
             await db.LabBatchMembers.Where(m => workIds.Contains(m.LabWorkOrderId)).ExecuteDeleteAsync();
             await db.LabOperationalBatches.Where(b => b.Id == sequencingId).ExecuteDeleteAsync();
+            await db.LabPreparationMembers.Where(m => prepIds.Contains(m.LabPreparationBatchId)).ExecuteUpdateAsync(s => s.SetProperty(m => m.MaterialTransferId, (Guid?)null));
+            await db.LabBiologicalMaterialTransfers.Where(t => workIds.Contains(t.LabWorkOrderId)).ExecuteDeleteAsync();
             await db.LabPreparationMembers.Where(m => prepIds.Contains(m.LabPreparationBatchId)).ExecuteDeleteAsync();
             await db.LabLibraries.Where(l => workIds.Contains(l.LabWorkOrderId)).ExecuteDeleteAsync();
             await db.LabMaterialConsumptions.Where(c => executionIds.Contains(c.LabProtocolExecutionId)).ExecuteDeleteAsync();

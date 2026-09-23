@@ -5,6 +5,18 @@ using PSeq.Operations.Laboratory.Domain;
 public class MaterialLotProductTests
 {
     [Fact]
+    public void ProductExpirationDefaultsFalseAndOmittedEditsPreserveTheRule()
+    {
+        var product = new LabSupplierProduct(Guid.NewGuid(), "TEST", "TEST reagent", LabProductType.ReagentId);
+        Assert.False(product.CanExpire);
+        product.Update(product.ProductNumber, product.Description, product.ProductTypeId, true, true);
+        product.Update(product.ProductNumber, "Corrected description", product.ProductTypeId, false);
+        Assert.True(product.CanExpire);
+        product.Update(product.ProductNumber, product.Description, product.ProductTypeId, true, false);
+        Assert.False(product.CanExpire);
+    }
+
+    [Fact]
     public void UnknownConsumptionBlocksAllUseUntilAuditedReconciliation()
     {
         var lot = new LabMaterialLot(LabMaterialLotKind.PreparedReagent, Guid.NewGuid(), "TEST", null, null, Guid.NewGuid(), 100, "µL");
