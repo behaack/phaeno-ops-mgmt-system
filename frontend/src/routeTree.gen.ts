@@ -70,6 +70,7 @@ import { Route as LabServicesOrderIdEditRouteImport } from './routes/lab-service
 import { Route as LabOperationsSuppliersSupplierIdRouteImport } from './routes/lab-operations.suppliers.$supplierId'
 import { Route as LabOperationsStockKitsKitIdRouteImport } from './routes/lab-operations.stock-kits.$kitId'
 import { Route as LabOperationsStepsStepIdRouteImport } from './routes/lab-operations.steps.$stepId'
+import { Route as LabOperationsReagentRunsRunIdRouteImport } from './routes/lab-operations.reagent-runs.$runId'
 import { Route as LabOperationsPseqKitOrdersOrderIdRouteImport } from './routes/lab-operations.pseq-kit-orders.$orderId'
 import { Route as LabOperationsProductTypesProductTypeIdRouteImport } from './routes/lab-operations.product-types.$productTypeId'
 import { Route as LabOperationsPreparationPreparationBatchIdRouteImport } from './routes/lab-operations.preparation.$preparationBatchId'
@@ -417,6 +418,12 @@ const LabOperationsStepsStepIdRoute =
     path: '/steps/$stepId',
     getParentRoute: () => LabOperationsRoute,
   } as any)
+const LabOperationsReagentRunsRunIdRoute =
+  LabOperationsReagentRunsRunIdRouteImport.update({
+    id: '/reagent-runs/$runId',
+    path: '/reagent-runs/$runId',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
 const LabOperationsPseqKitOrdersOrderIdRoute =
   LabOperationsPseqKitOrdersOrderIdRouteImport.update({
     id: '/pseq-kit-orders/$orderId',
@@ -624,6 +631,7 @@ export interface FileRoutesByFullPath {
   '/lab-operations/preparation/$preparationBatchId': typeof LabOperationsPreparationPreparationBatchIdRoute
   '/lab-operations/product-types/$productTypeId': typeof LabOperationsProductTypesProductTypeIdRoute
   '/lab-operations/pseq-kit-orders/$orderId': typeof LabOperationsPseqKitOrdersOrderIdRoute
+  '/lab-operations/reagent-runs/$runId': typeof LabOperationsReagentRunsRunIdRoute
   '/lab-operations/steps/$stepId': typeof LabOperationsStepsStepIdRouteWithChildren
   '/lab-operations/stock-kits/$kitId': typeof LabOperationsStockKitsKitIdRoute
   '/lab-operations/suppliers/$supplierId': typeof LabOperationsSuppliersSupplierIdRoute
@@ -711,6 +719,7 @@ export interface FileRoutesByTo {
   '/lab-operations/preparation/$preparationBatchId': typeof LabOperationsPreparationPreparationBatchIdRoute
   '/lab-operations/product-types/$productTypeId': typeof LabOperationsProductTypesProductTypeIdRoute
   '/lab-operations/pseq-kit-orders/$orderId': typeof LabOperationsPseqKitOrdersOrderIdRoute
+  '/lab-operations/reagent-runs/$runId': typeof LabOperationsReagentRunsRunIdRoute
   '/lab-operations/steps/$stepId': typeof LabOperationsStepsStepIdRouteWithChildren
   '/lab-operations/stock-kits/$kitId': typeof LabOperationsStockKitsKitIdRoute
   '/lab-operations/suppliers/$supplierId': typeof LabOperationsSuppliersSupplierIdRoute
@@ -799,6 +808,7 @@ export interface FileRoutesById {
   '/lab-operations/preparation/$preparationBatchId': typeof LabOperationsPreparationPreparationBatchIdRoute
   '/lab-operations/product-types/$productTypeId': typeof LabOperationsProductTypesProductTypeIdRoute
   '/lab-operations/pseq-kit-orders/$orderId': typeof LabOperationsPseqKitOrdersOrderIdRoute
+  '/lab-operations/reagent-runs/$runId': typeof LabOperationsReagentRunsRunIdRoute
   '/lab-operations/steps/$stepId': typeof LabOperationsStepsStepIdRouteWithChildren
   '/lab-operations/stock-kits/$kitId': typeof LabOperationsStockKitsKitIdRoute
   '/lab-operations/suppliers/$supplierId': typeof LabOperationsSuppliersSupplierIdRoute
@@ -888,6 +898,7 @@ export interface FileRouteTypes {
     | '/lab-operations/preparation/$preparationBatchId'
     | '/lab-operations/product-types/$productTypeId'
     | '/lab-operations/pseq-kit-orders/$orderId'
+    | '/lab-operations/reagent-runs/$runId'
     | '/lab-operations/steps/$stepId'
     | '/lab-operations/stock-kits/$kitId'
     | '/lab-operations/suppliers/$supplierId'
@@ -975,6 +986,7 @@ export interface FileRouteTypes {
     | '/lab-operations/preparation/$preparationBatchId'
     | '/lab-operations/product-types/$productTypeId'
     | '/lab-operations/pseq-kit-orders/$orderId'
+    | '/lab-operations/reagent-runs/$runId'
     | '/lab-operations/steps/$stepId'
     | '/lab-operations/stock-kits/$kitId'
     | '/lab-operations/suppliers/$supplierId'
@@ -1062,6 +1074,7 @@ export interface FileRouteTypes {
     | '/lab-operations/preparation/$preparationBatchId'
     | '/lab-operations/product-types/$productTypeId'
     | '/lab-operations/pseq-kit-orders/$orderId'
+    | '/lab-operations/reagent-runs/$runId'
     | '/lab-operations/steps/$stepId'
     | '/lab-operations/stock-kits/$kitId'
     | '/lab-operations/suppliers/$supplierId'
@@ -1543,6 +1556,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LabOperationsStepsStepIdRouteImport
       parentRoute: typeof LabOperationsRoute
     }
+    '/lab-operations/reagent-runs/$runId': {
+      id: '/lab-operations/reagent-runs/$runId'
+      path: '/reagent-runs/$runId'
+      fullPath: '/lab-operations/reagent-runs/$runId'
+      preLoaderRoute: typeof LabOperationsReagentRunsRunIdRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
     '/lab-operations/pseq-kit-orders/$orderId': {
       id: '/lab-operations/pseq-kit-orders/$orderId'
       path: '/pseq-kit-orders/$orderId'
@@ -1856,6 +1876,7 @@ interface LabOperationsRouteChildren {
   LabOperationsPreparationPreparationBatchIdRoute: typeof LabOperationsPreparationPreparationBatchIdRoute
   LabOperationsProductTypesProductTypeIdRoute: typeof LabOperationsProductTypesProductTypeIdRoute
   LabOperationsPseqKitOrdersOrderIdRoute: typeof LabOperationsPseqKitOrdersOrderIdRoute
+  LabOperationsReagentRunsRunIdRoute: typeof LabOperationsReagentRunsRunIdRoute
   LabOperationsStepsStepIdRoute: typeof LabOperationsStepsStepIdRouteWithChildren
   LabOperationsStockKitsKitIdRoute: typeof LabOperationsStockKitsKitIdRoute
   LabOperationsSuppliersSupplierIdRoute: typeof LabOperationsSuppliersSupplierIdRoute
@@ -1884,6 +1905,7 @@ const LabOperationsRouteChildren: LabOperationsRouteChildren = {
     LabOperationsProductTypesProductTypeIdRoute,
   LabOperationsPseqKitOrdersOrderIdRoute:
     LabOperationsPseqKitOrdersOrderIdRoute,
+  LabOperationsReagentRunsRunIdRoute: LabOperationsReagentRunsRunIdRoute,
   LabOperationsStepsStepIdRoute: LabOperationsStepsStepIdRouteWithChildren,
   LabOperationsStockKitsKitIdRoute: LabOperationsStockKitsKitIdRoute,
   LabOperationsSuppliersSupplierIdRoute: LabOperationsSuppliersSupplierIdRoute,

@@ -32,7 +32,7 @@ public sealed partial class LabOperationsController
             join t in dbContext.LabProductTypes.AsNoTracking() on p.ProductTypeId equals t.Id
             where p.IsActive && t.IsActive
             orderby p.ProductNumber
-            select new SupplierCatalogProductDto(p.Id, p.SupplierId, p.ProductNumber, p.Description, t.KitUse.ToString(), p.IsActive, p.Version, t.Id, t.Name, t.IsActive, p.CanExpire)).ToListAsync(ct);
+            select new SupplierCatalogProductDto(p.Id, p.SupplierId, p.ProductNumber, p.Description, t.KitUse.ToString(), p.IsActive, p.Version, t.Id, t.Name, t.IsActive, p.CanExpire, p.DefaultQuantityUnit)).ToListAsync(ct);
         return suppliers.Select(s => new SupplierCatalogEntryDto(s.Id, s.Name, s.IsActive, s.Version, products.Where(p => p.SupplierId == s.Id).ToArray())).ToArray();
     }
 

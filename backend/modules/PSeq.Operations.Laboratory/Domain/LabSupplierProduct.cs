@@ -12,6 +12,7 @@ public sealed class LabSupplierProduct : LabAuditedEntity
     public Guid ProductTypeId { get; private set; }
     public bool IsActive { get; private set; } = true;
     public bool CanExpire { get; private set; }
+    public string? DefaultQuantityUnit { get; private set; }
 
     private LabSupplierProduct() { }
     public LabSupplierProduct(Guid supplierId, string productNumber, string description, Guid productTypeId, bool canExpire = false)
@@ -29,5 +30,11 @@ public sealed class LabSupplierProduct : LabAuditedEntity
         ProductTypeId = productTypeId;
         IsActive = isActive;
         if (canExpire.HasValue) CanExpire = canExpire.Value;
+    }
+
+    public void SetDefaultQuantityUnit(string? unit)
+    {
+        DefaultQuantityUnit = string.IsNullOrWhiteSpace(unit)
+            ? null : Required(unit, nameof(unit), 50);
     }
 }

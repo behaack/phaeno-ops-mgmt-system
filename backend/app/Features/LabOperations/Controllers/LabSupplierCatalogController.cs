@@ -8,10 +8,10 @@ using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
-public sealed record SupplierCatalogProductDto(Guid Id, Guid SupplierId, string ProductNumber, string Description, string Kind, bool IsActive, long Version, Guid ProductTypeId, string ProductTypeName, bool ProductTypeIsActive, bool CanExpire = false);
-public sealed record SupplierCatalogEntryDto(Guid Id, string Name, bool IsActive, long Version, IReadOnlyList<SupplierCatalogProductDto> Products);
+public sealed record SupplierCatalogProductDto(Guid Id, Guid SupplierId, string ProductNumber, string Description, string Kind, bool IsActive, long Version, Guid ProductTypeId, string ProductTypeName, bool ProductTypeIsActive, bool CanExpire = false, string? DefaultQuantityUnit = null);
+public sealed record SupplierCatalogEntryDto(Guid Id, string Name, bool IsActive, long Version, IReadOnlyList<SupplierCatalogProductDto> Products, bool IsInternalProducer = false);
 public sealed record SaveSupplierRequest(string Name, bool IsActive = true, long Version = 0);
-public sealed record SaveSupplierProductRequest(string ProductNumber, string Description, Guid ProductTypeId, bool IsActive = true, long Version = 0, bool? CanExpire = null);
+public sealed record SaveSupplierProductRequest(string ProductNumber, string Description, Guid ProductTypeId, bool IsActive = true, long Version = 0, bool? CanExpire = null, string? DefaultQuantityUnit = null);
 
 [ApiController]
 [Authorize]
@@ -26,7 +26,7 @@ public sealed class LabSupplierCatalogController(PSeqOperationsDbContext db, Ord
         var products = await db.LabSupplierProducts.AsNoTracking().OrderBy(p => p.ProductNumber).ToListAsync(ct);
         var types = await db.LabProductTypes.AsNoTracking().ToDictionaryAsync(t => t.Id, ct);
         return suppliers.Select(s => new SupplierCatalogEntryDto(s.Id, s.Name, s.IsActive, s.Version,
-            products.Where(p => p.SupplierId == s.Id).Select(p => Product(p, types[p.ProductTypeId])).ToArray())).ToArray();
+            products.Where(p => p.SupplierId == s.Id).Select(p => Product(p, types[p.ProductTypeId])).ToArray(), s.IsInternalProducer)).ToArray();
     }
 
     [HttpPost]
@@ -47,12 +47,15 @@ public sealed class LabSupplierCatalogController(PSeqOperationsDbContext db, Ord
         await context.RequirePlatformAdminAsync(HttpContext, ct);
         var supplier = await db.LabSuppliers.SingleOrDefaultAsync(s => s.Id == id, ct) ?? throw Missing();
         Version(supplier.Version, request.Version);
+        if (supplier.IsInternalProducer)
+            throw new OrderManagementException("internal_producer_protected",
+                "The seeded Phaeno producer cannot be renamed or deactivated.", 409);
         try { supplier.Rename(request.Name); supplier.SetActive(request.IsActive); }
         catch (ArgumentException e) { throw Invalid(e.Message); }
         await Save(ct);
         var products = await db.LabSupplierProducts.AsNoTracking().Where(p => p.SupplierId == id).OrderBy(p => p.ProductNumber).ToListAsync(ct);
         var types = await db.LabProductTypes.AsNoTracking().ToDictionaryAsync(t => t.Id, ct);
-        return new(supplier.Id, supplier.Name, supplier.IsActive, supplier.Version, products.Select(p => Product(p, types[p.ProductTypeId])).ToArray());
+        return new(supplier.Id, supplier.Name, supplier.IsActive, supplier.Version, products.Select(p => Product(p, types[p.ProductTypeId])).ToArray(), supplier.IsInternalProducer);
     }
 
     [HttpPost("{supplierId:guid}/products")]
@@ -60,11 +63,16 @@ public sealed class LabSupplierCatalogController(PSeqOperationsDbContext db, Ord
     {
         await context.RequirePlatformAdminAsync(HttpContext, ct);
         var supplier = await db.LabSuppliers.SingleOrDefaultAsync(s => s.Id == supplierId, ct) ?? throw Missing();
+        if (supplier.IsInternalProducer)
+            throw new OrderManagementException("internal_producer_product_not_allowed",
+                "Start a reagent manufacturing run to create Phaeno-made material.", 409);
         if (!supplier.IsActive) throw Invalid("Reactivate the supplier before adding products.");
+        if (string.IsNullOrWhiteSpace(request.DefaultQuantityUnit))
+            throw Invalid("Set the product's inventory unit before saving it.");
         await using var transaction = await SampleShippingPackingData.BeginAsync(db, $"product-type:{request.ProductTypeId}", ct);
         var type = await ProductType(request.ProductTypeId, null, ct);
         LabSupplierProduct product;
-        try { product = new(supplierId, request.ProductNumber, request.Description, type.Id, request.CanExpire ?? false); product.Update(request.ProductNumber, request.Description, type.Id, request.IsActive, request.CanExpire); }
+        try { product = new(supplierId, request.ProductNumber, request.Description, type.Id, request.CanExpire ?? false); product.Update(request.ProductNumber, request.Description, type.Id, request.IsActive, request.CanExpire); product.SetDefaultQuantityUnit(request.DefaultQuantityUnit); }
         catch (ArgumentException e) { throw Invalid(e.Message); }
         db.LabSupplierProducts.Add(product);
         await Save(ct);
@@ -76,11 +84,24 @@ public sealed class LabSupplierCatalogController(PSeqOperationsDbContext db, Ord
     public async Task<SupplierCatalogProductDto> UpdateProduct(Guid supplierId, Guid productId, [FromBody] SaveSupplierProductRequest request, CancellationToken ct)
     {
         await context.RequirePlatformAdminAsync(HttpContext, ct);
-        var product = await db.LabSupplierProducts.SingleOrDefaultAsync(p => p.Id == productId && p.SupplierId == supplierId, ct) ?? throw Missing();
         await using var transaction = await SampleShippingPackingData.BeginAsync(db, $"product-type:{request.ProductTypeId}", ct);
+        await SampleShippingPackingData.LockAsync(db, $"supplier-product:{productId}", ct);
+        var product = await db.LabSupplierProducts.SingleOrDefaultAsync(p => p.Id == productId && p.SupplierId == supplierId, ct) ?? throw Missing();
         Version(product.Version, request.Version);
         var type = await ProductType(request.ProductTypeId, product.ProductTypeId, ct);
-        try { product.Update(request.ProductNumber, request.Description, type.Id, request.IsActive, request.CanExpire); }
+        if (request.DefaultQuantityUnit is not null && string.IsNullOrWhiteSpace(request.DefaultQuantityUnit)
+            && await db.LabMaterialLots.AsNoTracking().AnyAsync(lot => lot.SupplierProductId == product.Id, ct))
+            throw new OrderManagementException("product_unit_conflicts_with_lots",
+                "The product has inventory lots; its unit cannot be cleared.", 409);
+        if (product.DefaultQuantityUnit is not null
+            && !string.IsNullOrWhiteSpace(request.DefaultQuantityUnit)
+            && !string.Equals(product.DefaultQuantityUnit, request.DefaultQuantityUnit.Trim(), StringComparison.OrdinalIgnoreCase)
+            && await db.LabMaterialLots.AsNoTracking().AnyAsync(lot =>
+                lot.SupplierProductId == product.Id
+                && lot.QuantityUnit.ToUpper() != request.DefaultQuantityUnit.Trim().ToUpper(), ct))
+            throw new OrderManagementException("product_unit_conflicts_with_lots",
+                "Existing lots use another inventory unit. Verify them before changing this product.", 409);
+        try { product.Update(request.ProductNumber, request.Description, type.Id, request.IsActive, request.CanExpire); if (request.DefaultQuantityUnit is not null) product.SetDefaultQuantityUnit(request.DefaultQuantityUnit); }
         catch (ArgumentException e) { throw Invalid(e.Message); }
         await Save(ct);
         if (transaction is not null) await transaction.CommitAsync(ct);
@@ -93,7 +114,7 @@ public sealed class LabSupplierCatalogController(PSeqOperationsDbContext db, Ord
         catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
         { throw new OrderManagementException("supplier_catalog_duplicate", "That supplier name or product number already exists. Edit the existing record, including inactive records.", 409); }
     }
-    private static SupplierCatalogProductDto Product(LabSupplierProduct p, LabProductType t) => new(p.Id, p.SupplierId, p.ProductNumber, p.Description, t.KitUse.ToString(), p.IsActive, p.Version, t.Id, t.Name, t.IsActive, p.CanExpire);
+    private static SupplierCatalogProductDto Product(LabSupplierProduct p, LabProductType t) => new(p.Id, p.SupplierId, p.ProductNumber, p.Description, t.KitUse.ToString(), p.IsActive, p.Version, t.Id, t.Name, t.IsActive, p.CanExpire, p.DefaultQuantityUnit);
     private async Task<LabProductType> ProductType(Guid id, Guid? currentId, CancellationToken ct)
     {
         var type = await db.LabProductTypes.SingleOrDefaultAsync(t => t.Id == id, ct) ?? throw Invalid("Choose a saved product type.");

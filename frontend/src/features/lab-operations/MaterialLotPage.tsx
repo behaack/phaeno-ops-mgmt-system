@@ -36,7 +36,7 @@ export function MaterialLotPage({ materialLotId }: { materialLotId: string }) {
             <LotFact label="Material key">{lot.materialKey}</LotFact>
             <LotFact label="Lot number">{lot.lotNumber}</LotFact>
             {lot.kind === 'SupplierLot' ? <LotFact label="Product name">{lot.productName ?? 'Not assigned — assign a product before use in a product-specific step.'}</LotFact> : null}
-            <LotFact label="Supplier">{lot.supplier ?? (lot.kind === 'PreparedReagent' ? 'Prepared internally' : 'Not recorded')}</LotFact>
+            <LotFact label={lot.kind === 'PreparedReagent' ? 'Produced by' : 'Supplier'}>{lot.kind === 'PreparedReagent' ? 'Phaeno' : lot.supplier ?? 'Not recorded'}</LotFact>
             <LotFact label={lot.quantityHoldReason ? "Last recorded balance (unavailable)" : "Available quantity"}>{lot.availableQuantity} {lot.quantityUnit}</LotFact>
             <LotFact label="Storage location">{lot.storageLocation}</LotFact>
             <LotFact label="Expiration or retest date">{dateOnly(lot.expirationOrRetestDate)}</LotFact>

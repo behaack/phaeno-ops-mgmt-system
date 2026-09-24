@@ -563,6 +563,7 @@ public sealed class LabMaterialDefinition : LabAuditedEntity
     public string Name { get; private set; } = null!;
     public LabMaterialLotKind Kind { get; private set; }
     public bool IsActive { get; private set; } = true;
+    public string? DefaultQuantityUnit { get; private set; }
 
     private LabMaterialDefinition() { }
 
@@ -574,6 +575,17 @@ public sealed class LabMaterialDefinition : LabAuditedEntity
     }
 
     public void SetActive(bool isActive) => IsActive = isActive;
+
+    public void SetPreparedReagentUnit(string unit)
+    {
+        if (Kind != LabMaterialLotKind.PreparedReagent)
+            throw new InvalidOperationException("Only a prepared reagent can have a manufacturing output unit.");
+        var normalized = Required(unit, nameof(unit), 50);
+        if (DefaultQuantityUnit is not null
+            && !string.Equals(DefaultQuantityUnit, normalized, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("This reagent already has a different output unit.");
+        DefaultQuantityUnit ??= normalized;
+    }
 }
 
 public sealed class LabSupplier : LabAuditedEntity
@@ -582,6 +594,7 @@ public sealed class LabSupplier : LabAuditedEntity
     public string Name { get; private set; } = null!;
     public string NormalizedName { get; private set; } = null!;
     public bool IsActive { get; private set; } = true;
+    public bool IsInternalProducer { get; private set; }
 
     private LabSupplier() { }
 
@@ -593,11 +606,16 @@ public sealed class LabSupplier : LabAuditedEntity
 
     public void Rename(string name)
     {
+        if (IsInternalProducer) throw new InvalidOperationException("The internal Phaeno producer cannot be renamed.");
         Name = Required(name, nameof(name), 255);
         NormalizedName = Name.ToUpperInvariant();
     }
 
-    public void SetActive(bool isActive) => IsActive = isActive;
+    public void SetActive(bool isActive)
+    {
+        if (IsInternalProducer && !isActive) throw new InvalidOperationException("The internal Phaeno producer cannot be deactivated.");
+        IsActive = isActive;
+    }
 }
 
 public sealed class LabStorageLocation : LabAuditedEntity
@@ -610,6 +628,12 @@ public sealed class LabStorageLocation : LabAuditedEntity
     private LabStorageLocation() { }
 
     public LabStorageLocation(string name)
+    {
+        Name = Required(name, nameof(name), 255);
+        NormalizedName = Name.ToUpperInvariant();
+    }
+
+    public void Rename(string name)
     {
         Name = Required(name, nameof(name), 255);
         NormalizedName = Name.ToUpperInvariant();
@@ -698,6 +722,22 @@ public sealed class LabMaterialLot : LabAuditedEntity
         if (SupplierProductId.HasValue && SupplierProductId != supplierProductId)
             throw new InvalidOperationException("The lot's assigned product cannot be replaced.");
         SupplierProductId = supplierProductId;
+    }
+
+    public void AssignInternalProducer(Guid supplierId)
+    {
+        if (Kind != LabMaterialLotKind.PreparedReagent || supplierId == Guid.Empty || SupplierId.HasValue)
+            throw new InvalidOperationException("Only a new prepared reagent can receive its internal producer.");
+        SupplierId = supplierId;
+    }
+
+    public void CompleteInternalProduction(decimal quantity, DateOnly? expirationOrRetestDate)
+    {
+        if (Kind != LabMaterialLotKind.PreparedReagent || !SupplierId.HasValue
+            || AvailableQuantity != 0 || quantity <= 0 || QcDisposition != LabQcDisposition.Pending)
+            throw new InvalidOperationException("Only an unfinished Phaeno reagent lot can receive its produced amount.");
+        AvailableQuantity = quantity;
+        ExpirationOrRetestDate = expirationOrRetestDate;
     }
 
     public bool MatchesConfiguredMaterial(LabConfiguredMaterial? material) =>

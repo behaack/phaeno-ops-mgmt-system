@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.LabOperations.DTOs;
 using PhaenoPortal.App.Features.LabOperations.Services;
+using PhaenoPortal.App.Features.OrderManagement.Services;
 
 public sealed partial class LabOperationsController
 {
@@ -16,6 +17,9 @@ public sealed partial class LabOperationsController
             LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
         if (!Enum.TryParse<LabMaterialLotKind>(request.Kind, true, out var kind))
             throw Invalid("material_lot_kind_invalid", "The material lot kind is invalid.");
+        if (kind == LabMaterialLotKind.PreparedReagent)
+            throw Invalid("reagent_manufacturing_run_required",
+                "Start a reagent manufacturing run to create a Phaeno reagent lot.");
         if (request.AvailableQuantity < 0)
             throw Invalid("material_quantity_invalid", "Available quantity cannot be negative.");
         if (request.ExpirationOrRetestDate < DateOnly.FromDateTime(DateTime.UtcNow))
@@ -32,11 +36,12 @@ public sealed partial class LabOperationsController
         await using var transaction = dbContext.Database.CurrentTransaction is null
             ? await dbContext.Database.BeginTransactionAsync(cancellationToken)
             : null;
-        var definition = await ResolveMaterialDefinitionAsync(
-            kind, request.MaterialDefinitionId, request.NewMaterialName, cancellationToken);
         var supplier = kind == LabMaterialLotKind.SupplierLot
             ? await ResolveSupplierAsync(request.SupplierId, request.NewSupplierName, cancellationToken)
             : null;
+        if (request.SupplierProductId is Guid productId)
+            await SampleShippingPackingData.LockAsync(dbContext,
+                $"supplier-product:{productId}", cancellationToken);
         if (kind == LabMaterialLotKind.PreparedReagent
             && (request.SupplierId.HasValue || !string.IsNullOrWhiteSpace(request.NewSupplierName)))
             throw Invalid("material_supplier_not_allowed", "A prepared reagent cannot have a supplier.");
@@ -44,6 +49,22 @@ public sealed partial class LabOperationsController
             throw Invalid("material_product_not_allowed", "Prepared reagents use a material definition, not a supplier product.");
         var product = kind == LabMaterialLotKind.SupplierLot
             ? await RequireLotProductAsync(request.SupplierProductId, supplier!.Id, cancellationToken) : null;
+        if (product is not null && string.IsNullOrWhiteSpace(product.DefaultQuantityUnit))
+            throw Conflict("material_product_unit_unconfigured",
+                "Set this product's inventory unit in Suppliers & products before receiving a lot.");
+        if (product?.DefaultQuantityUnit is string productUnit
+            && !string.Equals(productUnit, request.QuantityUnit?.Trim(), StringComparison.OrdinalIgnoreCase))
+            throw Invalid("material_product_unit_mismatch",
+                $"This product is tracked in {productUnit}. Enter the lot quantity in that unit.");
+        var internalProducer = kind == LabMaterialLotKind.PreparedReagent
+            ? await RequirePhaenoProducerAsync(cancellationToken) : null;
+        // A purchased product supplies the inventory identity. Staff do not need to
+        // classify the same purchased lot against a second, unrelated material.
+        var definition = product is not null && !request.MaterialDefinitionId.HasValue
+            && string.IsNullOrWhiteSpace(request.NewMaterialName)
+            ? await ResolveProductMaterialDefinitionAsync(product, cancellationToken)
+            : await ResolveMaterialDefinitionAsync(kind, request.MaterialDefinitionId,
+                request.NewMaterialName, cancellationToken);
         if (product?.CanExpire == true && request.ExpirationOrRetestDate is null)
             throw Invalid("material_expiration_required", "This product can expire. Enter its expiration date when recording the inventory lot.");
         if (product is not null) dbContext.Entry(product).Property(p => p.UpdatedAt).IsModified = true;
@@ -60,8 +81,10 @@ public sealed partial class LabOperationsController
 
         var lot = new LabMaterialLot(kind, definition.Id, request.LotNumber, supplier?.Id,
             request.ExpirationOrRetestDate, storageLocation.Id,
-            request.AvailableQuantity, request.QuantityUnit);
+            request.AvailableQuantity, product?.DefaultQuantityUnit ?? request.QuantityUnit
+                ?? throw Invalid("material_unit_invalid", "Enter a material inventory unit."));
         if (product is not null) lot.AssignProduct(product.Id, product.SupplierId);
+        if (internalProducer is not null) lot.AssignInternalProducer(internalProducer.Id);
         var now = DateTime.UtcNow;
         var today = DateOnly.FromDateTime(now);
         foreach (var componentRequest in componentRequests)
@@ -110,6 +133,10 @@ public sealed partial class LabOperationsController
     public async Task<LabMaterialLotDto> AssignLotProduct(Guid lotId, [FromBody] AssignMaterialLotProductRequest request, CancellationToken ct)
     {
         await requestContext.RequireAsync(HttpContext, ct, LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
+        await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext,
+            $"material-lot:{lotId}", ct);
+        await SampleShippingPackingData.LockAsync(dbContext,
+            $"supplier-product:{request.SupplierProductId}", ct);
         var lot = await dbContext.LabMaterialLots.SingleOrDefaultAsync(l => l.Id == lotId, ct) ?? throw Missing();
         EnsureVersion(lot.Version, request.Version);
         if (lot.Kind != LabMaterialLotKind.SupplierLot || lot.SupplierId is not Guid supplierId)
@@ -117,8 +144,13 @@ public sealed partial class LabOperationsController
         if (lot.SupplierProductId.HasValue)
             throw Conflict("material_product_already_assigned", "The lot already has a product assignment. Refresh its details.");
         var product = await RequireLotProductAsync(request.SupplierProductId, supplierId, ct);
+        if (product.DefaultQuantityUnit is string productUnit
+            && !string.Equals(productUnit, lot.QuantityUnit, StringComparison.OrdinalIgnoreCase))
+            throw Invalid("material_product_unit_mismatch",
+                $"This product is tracked in {productUnit}. The historical lot uses {lot.QuantityUnit}.");
         lot.AssignProduct(product.Id, product.SupplierId);
         await dbContext.SaveChangesAsync(ct);
+        if (transaction is not null) await transaction.CommitAsync(ct);
         return (await ReadMaterialLotsAsync(ct)).Single(l => l.Id == lot.Id);
     }
 
@@ -131,6 +163,27 @@ public sealed partial class LabOperationsController
             throw Invalid("material_product_unavailable", "Select a product with an active supplier and product type.");
         return product;
     }
+
+    private async Task<LabMaterialDefinition> ResolveProductMaterialDefinitionAsync(
+        LabSupplierProduct product, CancellationToken ct)
+    {
+        // The product UUID is stable even when its display name is corrected. Serialize
+        // the first creation so concurrent receipts reuse the same definition.
+        await SampleShippingPackingData.LockAsync(dbContext, $"material-product:{product.Id}", ct);
+        var key = $"product-{product.Id:N}";
+        var definition = await dbContext.LabMaterialDefinitions.SingleOrDefaultAsync(
+            item => item.Key == key, ct);
+        if (definition is not null) return definition;
+        definition = new LabMaterialDefinition(key, product.ProductNumber, LabMaterialLotKind.SupplierLot);
+        dbContext.LabMaterialDefinitions.Add(definition);
+        return definition;
+    }
+
+    private async Task<LabSupplier> RequirePhaenoProducerAsync(CancellationToken ct) =>
+        await dbContext.LabSuppliers.SingleOrDefaultAsync(
+            supplier => supplier.IsInternalProducer && supplier.IsActive, ct)
+        ?? throw Conflict("phaeno_producer_unavailable",
+            "The internal Phaeno producer is unavailable. Apply the supplier seed migration before preparing a reagent.");
 
     [HttpPost("material-lots/{lotId:guid}/reconcile-quantity")]
     public async Task<LabMaterialLotDto> ReconcileMaterialQuantity(Guid lotId, [FromBody] ReconcileMaterialQuantityRequest request, CancellationToken ct)
@@ -156,6 +209,11 @@ public sealed partial class LabOperationsController
         var lot = await dbContext.LabMaterialLots.SingleOrDefaultAsync(item => item.Id == lotId, cancellationToken)
             ?? throw Missing();
         EnsureVersion(lot.Version, request.Version);
+        if (await dbContext.LabReagentManufacturingRuns.AnyAsync(item =>
+            item.MaterialLotId == lotId && item.Status != LabReagentRunStatus.Completed,
+            cancellationToken))
+            throw Conflict("reagent_run_not_complete",
+                "Complete the reagent manufacturing run before recording its lot QC.");
         try
         {
             lot.RecordQc(disposition, request.PerformedOn, request.FailureReason,

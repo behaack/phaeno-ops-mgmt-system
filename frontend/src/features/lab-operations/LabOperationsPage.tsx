@@ -68,6 +68,9 @@ import { PreparationBatchList } from './PreparationBatchList'
 import { SupplierCatalogWorkspace } from './SupplierCatalogWorkspace'
 import type { SupplierCatalogTab } from './supplier-catalog-tabs'
 import { TrayFormatList } from './TrayFormatList'
+import { StorageLocations } from './StorageLocations'
+import { ReagentWorkflowSettings } from './ReagentWorkflowSettings'
+import { ReagentManufacturingWorkspace } from './ReagentManufacturingWorkspace'
 import { labConfigurationTabs, parseLabConfigurationTab, type LabConfigurationTab } from './lab-configuration-tabs'
 
 type CreateKind = 'protocol' | 'material' | 'equipment' | 'batch' | null
@@ -84,6 +87,7 @@ const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
   { value: 'results', label: 'Results & review', description: 'Result evidence, scientific review, and release readiness', icon: ClipboardList },
   { value: 'kits', label: 'PSeq kits', separatorBefore: true, description: 'Preparation, shipping, and fulfillment', icon: PackageCheck },
   { value: 'assembly', label: 'Data assembly', description: 'Input validation, processing, and release', icon: Workflow },
+  { value: 'reagent-runs', label: 'Reagent manufacturing', separatorBefore: true, description: 'Make and document Phaeno reagent lots', icon: FlaskConical },
   { value: 'suppliers', label: 'Suppliers & products', separatorBefore: true, description: 'Vendors, reagents, and shipping supplies', icon: Building2 },
   { value: 'materials', label: 'Materials', description: 'Lots, prepared reagents, and QC', icon: FlaskConical },
   { value: 'equipment', label: 'Equipment', description: 'Assets, availability, and calibration', icon: Microscope },
@@ -97,15 +101,18 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
   const queryClient = useQueryClient()
   const [createKind, setCreateKind] = useState<CreateKind>(null)
   const [localConfigurationTab, setLocalConfigurationTab] = useState<LabConfigurationTab>('steps')
+  const [workflowKind, setWorkflowKind] = useState<'library' | 'reagent'>('library')
   const configuring = section === 'protocols'
   const activeConfiguration = configurationTab ?? localConfigurationTab
-  const needsDashboard = section !== 'receipt' && section !== 'suppliers' && section !== 'jobs' && section !== 'assembly'
+  const needsDashboard = configuring
+    ? activeConfiguration === 'protocols' || activeConfiguration === 'workflows'
+    : section !== 'receipt' && section !== 'suppliers' && section !== 'jobs' && section !== 'assembly' && section !== 'reagent-runs'
   const dashboard = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: apiEnabled && needsDashboard })
   const refresh = () => Promise.all((section === 'suppliers'
     ? ['supplier-product-types', 'supplier-catalog']
     : section === 'receipt'
     ? ['platform-transportation-kit-requests', 'shipping-stock-kits', 'sample-shipping-workflow', 'lab-shipment-queue']
-    : ['lab-operations', 'lab-preparation', 'lab-jobs', 'assembly-jobs', 'assembly-job', 'lab-job-deadline', 'lab-forecast-configuration', 'lab-completion-forecast']).map(key => queryClient.invalidateQueries({ queryKey: [key] })))
+    : ['lab-operations', 'lab-storage-locations', 'lab-preparation', 'lab-jobs', 'assembly-jobs', 'assembly-job', 'lab-job-deadline', 'lab-forecast-configuration', 'lab-completion-forecast']).map(key => queryClient.invalidateQueries({ queryKey: [key] })))
 
   if (!canView) return <AccessDenied />
 
@@ -127,7 +134,7 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
             <div className="max-w-3xl">
               <h1 className="text-3xl font-semibold">{configuring ? "Lab Settings" : "Lab operations"}</h1>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                {configuring ? "Maintain laboratory steps, protocols, workflows, duration estimates, holidays, and library tray formats." : <>Internal kit fulfillment, receipt and accession, protocol execution, data assembly,
+                {configuring ? "Maintain laboratory steps, protocols, workflows, duration estimates, holidays, tray formats, and storage locations." : <>Internal kit fulfillment, receipt and accession, protocol execution, data assembly,
                 materials, equipment, cross-order batching, exceptions, and release readiness.</>}
               </p>
             </div>
@@ -145,12 +152,14 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
           {dashboard.data && section === 'results' ? <ResultsWorkQueue items={dashboard.data.workOrders.filter((item) => item.status !== 'AwaitingSpecimens')} /> : null}
           {section === 'kits' ? <LabManufacturingQueue workflow="reagent" apiEnabled={apiEnabled} /> : null}
           {section === 'assembly' ? <DataAssemblyWorkspace apiEnabled={apiEnabled} /> : null}
+          {section === 'reagent-runs' ? <ReagentManufacturingWorkspace enabled={apiEnabled} canOperate={Boolean(session?.capabilities.canOperateLabWork)} /> : null}
           {configuring && activeConfiguration === 'steps' ? <LabStepList /> : null}
           {dashboard.data && configuring && activeConfiguration === 'protocols' ? <ProtocolList actorId={session?.user?.id} canOverride={Boolean(session?.isPlatformAdmin)} protocols={dashboard.data.protocols} canManage={Boolean(session?.capabilities.canManageLabProtocols)} onCreate={() => setCreateKind('protocol')} refresh={refresh} /> : null}
-          {dashboard.data && configuring && activeConfiguration === 'workflows' ? <ServiceWorkflowList actorId={session?.user?.id} canOverride={Boolean(session?.isPlatformAdmin)} workflows={dashboard.data.serviceWorkflows} marketedServices={dashboard.data.marketedServices} canManage={Boolean(session?.capabilities.canManageLabProtocols)} refresh={refresh} /> : null}
+          {dashboard.data && configuring && activeConfiguration === 'workflows' ? <div className="space-y-5"><div className="flex flex-wrap gap-2" role="group" aria-label="Workflow type"><Button type="button" variant={workflowKind === 'library' ? 'default' : 'outline'} onClick={() => setWorkflowKind('library')}>Library preparation</Button><Button type="button" variant={workflowKind === 'reagent' ? 'default' : 'outline'} onClick={() => setWorkflowKind('reagent')}>Reagent manufacturing</Button></div>{workflowKind === 'library' ? <ServiceWorkflowList actorId={session?.user?.id} canOverride={Boolean(session?.isPlatformAdmin)} workflows={dashboard.data.serviceWorkflows} marketedServices={dashboard.data.marketedServices} canManage={Boolean(session?.capabilities.canManageLabProtocols)} refresh={refresh} /> : <ReagentWorkflowSettings actorId={session?.user?.id} isPlatformAdmin={Boolean(session?.isPlatformAdmin)} definitions={dashboard.data.materialDefinitions} canManage={Boolean(session?.capabilities.canManageLabProtocols)} />}</div> : null}
           {configuring && activeConfiguration === 'stage-durations' ? <StageDurations /> : null}
           {configuring && activeConfiguration === 'holiday-calendar' ? <HolidayCalendar /> : null}
           {configuring && activeConfiguration === 'tray-formats' ? <TrayFormatList /> : null}
+          {configuring && activeConfiguration === 'storage-locations' ? <StorageLocations enabled={apiEnabled} canCreate={Boolean(session?.capabilities.canOperateLabWork)} canEdit={Boolean(session?.capabilities.canSuperviseLabWork)} /> : null}
           {dashboard.data && section === 'materials' ? <MaterialList items={dashboard.data.materialLots} canManage={Boolean(session?.capabilities.canOperateLabWork)} canApprove={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('material')} refresh={refresh} /> : null}
           {dashboard.data && section === 'equipment' ? <EquipmentList items={dashboard.data.equipment} canManage={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('equipment')} /> : null}
           {dashboard.data && section === 'batches' ? <BatchList items={dashboard.data.batches} suppliers={dashboard.data.suppliers} canManage={Boolean(session?.capabilities.canOperateLabWork)} onCreate={() => setCreateKind('batch')} refresh={refresh} /> : null}

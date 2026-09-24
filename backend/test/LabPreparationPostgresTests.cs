@@ -269,6 +269,12 @@ public partial class SampleShippingPostgresTests
                 }
                 await Assert.ThrowsAsync<OrderManagementException>(() => Command("outputs", v => bulkCommand with { RequestId = Guid.NewGuid(), Version = v }));
                 scope.ClearTrackedState();
+                foreach (var output in await db.LabContainers.AsNoTracking().Where(c => workIds.Contains(c.LabWorkOrderId) && c.Kind == LabContainerKind.Library).ToListAsync())
+                {
+                    var printed = await lab.PrintContainerLabel(output.Id,
+                        new("SIMULATED initial library label", "Succeeded", null, output.Barcode), default);
+                    Assert.Equal(LabContainerStatus.Available.ToString(), printed.Container.Status);
+                }
             }
             var materialRequest = new LabPreparationCommand(Guid.NewGuid(), (await db.LabPreparationBatches.SingleAsync(b => b.Id == id)).Version, "material", StageId: stage.Id,
                 Confirmed: true, ResourceId: lot.Id, ResourceVersion: (await db.LabMaterialLots.SingleAsync(l => l.Id == lot.Id)).Version, Quantity: 2, QuantityUnit: "mL", CoveredMemberIds: [first, second]);
@@ -584,7 +590,20 @@ public partial class SampleShippingPostgresTests
             else
             {
                 batch = bulkOutputs ? Json(await lab.ReadPreparation(id, default)) : await Command("output", v => new(Guid.NewGuid(), v, "output", MemberId: first, Quantity: 10, QuantityUnit: "uL", Location: "TEST-BOX"));
-                var outputBarcode = batch.GetProperty("members").EnumerateArray().Single(m => m.GetProperty("id").GetGuid() == first).GetProperty("output").GetProperty("barcode").GetString();
+                var outputDetails = batch.GetProperty("members").EnumerateArray().Single(m => m.GetProperty("id").GetGuid() == first).GetProperty("output");
+                var outputBarcode = outputDetails.GetProperty("barcode").GetString();
+                var outputId = outputDetails.GetProperty("id").GetGuid();
+                if (!bulkOutputs)
+                {
+                    var createdOutput = await db.LabContainers.AsNoTracking().SingleAsync(c => c.Id == outputId);
+                    if (createdOutput.Status == LabContainerStatus.LabelPending)
+                    {
+                        var printedOutput = await lab.PrintContainerLabel(outputId,
+                            new("SIMULATED initial library label", "Succeeded", null, outputBarcode), default);
+                        Assert.Equal(LabContainerStatus.Available.ToString(), printedOutput.Container.Status);
+                    }
+                    else Assert.Equal(LabContainerStatus.Available, createdOutput.Status);
+                }
                 await Assert.ThrowsAsync<OrderManagementException>(() => Command("advance", v => new(Guid.NewGuid(), v, "advance", StageId: stage.Id)));
                 await Command("confirm-output", v => new(Guid.NewGuid(), v, "confirm-output", MemberId: first, Barcode: outputBarcode));
                 await Command("advance", v => new(Guid.NewGuid(), v, "advance", StageId: stage.Id));

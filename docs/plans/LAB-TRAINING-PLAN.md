@@ -38,7 +38,7 @@ No new software, training accounts or records are needed for a document-only ses
 
 ### Steps
 
-1. The facilitator checks the manual against the version being shown and identifies any unavailable sections. In particular, preparation-batch production release remains pending in the current owning plan.
+1. The facilitator checks the manual against the version being shown and identifies any unavailable sections. In particular, preparation-batch and reagent-manufacturing production acceptance remain pending in their owning plan.
 2. Management reads the overview and journey. The facilitator follows the manual's 60-minute agenda.
 3. Record confusing terms, missing handoffs and differences from actual laboratory practice in the session record.
 4. The proposed trainer teaches the journey back using the same manual and explains the damaged/missing-tube example.
@@ -85,6 +85,10 @@ Keep procedural detail in the existing audience guides. The management manual ex
 - The general Lab overview describes actor separation broadly, whereas the scientific approval guide describes stricter reviewer independence. The manual directs management to the detailed approval guide and the configured policy rather than promising that one person can perform every step. Confirm the demonstrated environment's enforcement before a future hands-on approval exercise.
 - The retired September 2026 manual acceptance pack is no longer a current source of training scenarios. Prepare future exercises from current workflows and the audience guides; historical case results are not evidence of completed training.
 
-## Verification of this documentation change
+## Initial documentation verification (September 11, 2026)
 
 Scope is the new plan and manual only. Check local links, whitespace and consistency with the current guides and relevant navigation source. No application behavior, help registry, generated documentation corpus, tests, database, deployment or Git staging/commit is part of this change. Application tests are not needed for these standalone documents.
+
+## September 24, 2026 revision
+
+The management manual now distinguishes a purchased supplier product and its saved inventory unit from a Phaeno reagent, its versioned workflow and each manufacturing run. It points trainers to Reagent manufacturing, Suppliers & products, Materials and Lab settings → Storage locations. The detailed Phaeno guides remain the operating instructions for these tasks. Management review and teach-back have not yet occurred; the revised manual is still a draft for that session.

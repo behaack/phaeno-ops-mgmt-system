@@ -73,8 +73,9 @@ public partial class SampleShippingPostgresTests
         var request = await scope.KitCustomer().Create(fixture.Shipment.Id,
             new(fixture.Shipment.Version, location.Id, location.Version, [new(size.Id, 1)]), default);
         var stock = scope.StockController();
+        var catalog = await scope.CatalogKitRequestAsync(size.Id, "TEST lot");
         var kit = Assert.IsType<StockKitDto>(Assert.IsType<CreatedResult>((await stock.Create(
-            await scope.CatalogKitRequestAsync(size.Id, "TEST lot"), default)).Result).Value);
+            catalog, default)).Result).Value);
         var codes = Enumerable.Range(1, 20).Select(i => $"SIM-{scope.Suffix}-{i:00}").ToArray();
         kit = await stock.Register(kit.Id, new(codes.Take(19).ToArray(), kit.Version), default);
         Assert.Equal(19, kit.Tubes.Count);
@@ -93,7 +94,7 @@ public partial class SampleShippingPostgresTests
         Assert.Null(kit.BoundSampleShipmentId);
         Assert.Equal("Pending", (await scope.KitStaff().Read(request.Id, default)).Request.Status);
         var other = Assert.IsType<StockKitDto>(Assert.IsType<CreatedResult>((await stock.Create(
-            await scope.CatalogKitRequestAsync(size.Id, "TEST lot"), default)).Result).Value);
+            catalog, default)).Result).Value);
         await Assert.ThrowsAsync<OrderManagementException>(() => stock.Register(other.Id, new([codes[0]], other.Version), default));
         var sent = await scope.KitStaff().Dispatch(request.Id, new(request.Version, [kit.Id], "SIMULATED carrier", "SIM-OUTBOUND", DateTime.UtcNow), default);
         await scope.KitCustomer().Receive(request.Id, new(sent.Request.Version, [kit.Id]), default);

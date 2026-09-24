@@ -12,6 +12,7 @@ internal static class LabIdentifierService
     private const string SafeAlphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
     private const int BatchTokenLength = 8;
     private const int EquipmentTokenLength = 8;
+    private const int ReagentTokenLength = 8;
 
     public static string CreateProtocolKey(string name, IEnumerable<string> existingKeys)
     {
@@ -57,6 +58,27 @@ internal static class LabIdentifierService
 
         var date = utcNow.ToUniversalTime().ToString("yyyyMMdd", CultureInfo.InvariantCulture);
         return $"PH-BAT-{date}-{token}";
+    }
+
+    public static string CreateReagentLotNumber(DateTime utcNow)
+    {
+        Span<char> token = stackalloc char[ReagentTokenLength];
+        for (var index = 0; index < token.Length; index++)
+            token[index] = SafeAlphabet[RandomNumberGenerator.GetInt32(SafeAlphabet.Length)];
+        return $"PH-REAG-{utcNow.ToUniversalTime():yyyyMMdd}-{new string(token)}";
+    }
+
+    public static async Task<string> AllocateReagentLotNumberAsync(
+        PSeqOperationsDbContext dbContext, DateTime utcNow, CancellationToken cancellationToken)
+    {
+        for (var attempt = 0; attempt < 8; attempt++)
+        {
+            var lotNumber = CreateReagentLotNumber(utcNow);
+            if (!await dbContext.LabMaterialLots.AsNoTracking()
+                .AnyAsync(item => item.LotNumber == lotNumber, cancellationToken))
+                return lotNumber;
+        }
+        throw new InvalidOperationException("A unique reagent lot number could not be allocated.");
     }
 
     public static async Task<string> AllocateBatchNumberAsync(

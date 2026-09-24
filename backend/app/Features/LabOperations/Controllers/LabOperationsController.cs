@@ -63,11 +63,11 @@ public sealed partial class LabOperationsController(
         var materialDefinitions = await dbContext.LabMaterialDefinitions.AsNoTracking()
             .Where(item => item.IsActive).OrderBy(item => item.Name)
             .Select(item => new LabMaterialDefinitionDto(
-                item.Id, item.Key, item.Name, item.Kind.ToString(), item.IsActive))
+                item.Id, item.Key, item.Name, item.Kind.ToString(), item.IsActive, item.DefaultQuantityUnit))
             .ToListAsync(cancellationToken);
         var suppliers = await dbContext.LabSuppliers.AsNoTracking()
             .Where(item => item.IsActive).OrderBy(item => item.Name)
-            .Select(item => new LabSupplierDto(item.Id, item.Name, item.IsActive))
+            .Select(item => new LabSupplierDto(item.Id, item.Name, item.IsActive, item.IsInternalProducer))
             .ToListAsync(cancellationToken);
         var storageLocations = await dbContext.LabStorageLocations.AsNoTracking()
             .Where(item => item.IsActive).OrderBy(item => item.Name)

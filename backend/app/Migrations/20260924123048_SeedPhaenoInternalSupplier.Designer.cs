@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PhaenoPortal.App.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 namespace PSeq.Operations.Api.Migrations
 {
     [DbContext(typeof(PSeqOperationsDbContext))]
-    partial class PSeqOperationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260924123048_SeedPhaenoInternalSupplier")]
+    partial class SeedPhaenoInternalSupplier
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -12726,11 +12729,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
 
-                    b.Property<string>("DefaultQuantityUnit")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("default_quantity_unit");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
@@ -13799,274 +13797,6 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasIndex("AuthorizationId", "AcknowledgedAtUtc");
 
                     b.ToTable("lab_provider_command_receipts", "lab_ops");
-                });
-
-            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabReagentManufacturingRun", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("AbandonmentReason")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)")
-                        .HasColumnName("abandonment_reason");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid?>("CreatedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("created_by_user_id");
-
-                    b.Property<DateTime?>("FinishedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("finished_at_utc");
-
-                    b.Property<Guid?>("FinishedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("finished_by_user_id");
-
-                    b.Property<Guid>("MaterialLotId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("material_lot_id");
-
-                    b.Property<int>("MaterialUseCount")
-                        .HasColumnType("integer")
-                        .HasColumnName("material_use_count");
-
-                    b.Property<int>("RecordedStepCount")
-                        .HasColumnType("integer")
-                        .HasColumnName("recorded_step_count");
-
-                    b.Property<DateTime>("StartedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("started_at_utc");
-
-                    b.Property<Guid>("StartedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("started_by_user_id");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)")
-                        .HasColumnName("status");
-
-                    b.Property<string>("StepsJson")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("steps_json");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.Property<Guid?>("UpdatedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("updated_by_user_id");
-
-                    b.Property<long>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("bigint")
-                        .HasColumnName("version");
-
-                    b.Property<Guid>("WorkflowId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("workflow_id");
-
-                    b.Property<string>("WorkflowName")
-                        .IsRequired()
-                        .HasMaxLength(160)
-                        .HasColumnType("character varying(160)")
-                        .HasColumnName("workflow_name");
-
-                    b.Property<int>("WorkflowRevision")
-                        .HasColumnType("integer")
-                        .HasColumnName("workflow_revision");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MaterialLotId")
-                        .IsUnique();
-
-                    b.HasIndex("WorkflowId");
-
-                    b.HasIndex("Status", "StartedAtUtc");
-
-                    b.ToTable("lab_reagent_manufacturing_runs", "lab_ops");
-                });
-
-            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabReagentMaterialUse", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<bool>("MaterialExhausted")
-                        .HasColumnType("boolean")
-                        .HasColumnName("material_exhausted");
-
-                    b.Property<decimal>("Quantity")
-                        .HasColumnType("numeric")
-                        .HasColumnName("quantity");
-
-                    b.Property<string>("QuantityUnit")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("quantity_unit");
-
-                    b.Property<DateTime>("RecordedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("recorded_at_utc");
-
-                    b.Property<Guid>("RecordedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("recorded_by_user_id");
-
-                    b.Property<Guid>("RunId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("run_id");
-
-                    b.Property<Guid>("SourceMaterialLotId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("source_material_lot_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SourceMaterialLotId");
-
-                    b.HasIndex("RunId", "RecordedAtUtc");
-
-                    b.ToTable("lab_reagent_material_uses", "lab_ops");
-                });
-
-            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabReagentRunStep", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Notes")
-                        .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)")
-                        .HasColumnName("notes");
-
-                    b.Property<DateTime>("PerformedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("performed_at_utc");
-
-                    b.Property<Guid>("PerformedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("performed_by_user_id");
-
-                    b.Property<Guid>("RunId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("run_id");
-
-                    b.Property<int>("Sequence")
-                        .HasColumnType("integer")
-                        .HasColumnName("sequence");
-
-                    b.Property<string>("StepKey")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("step_key");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RunId", "Sequence")
-                        .IsUnique();
-
-                    b.ToTable("lab_reagent_run_steps", "lab_ops");
-                });
-
-            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabReagentWorkflow", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("ApprovalOverrideReason")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)")
-                        .HasColumnName("approval_override_reason");
-
-                    b.Property<DateTime?>("ApprovedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("approved_at_utc");
-
-                    b.Property<Guid?>("ApprovedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("approved_by_user_id");
-
-                    b.Property<Guid>("AuthoredByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("authored_by_user_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid?>("CreatedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("created_by_user_id");
-
-                    b.Property<Guid>("MaterialDefinitionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("material_definition_id");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(160)
-                        .HasColumnType("character varying(160)")
-                        .HasColumnName("name");
-
-                    b.Property<int>("Revision")
-                        .HasColumnType("integer")
-                        .HasColumnName("revision");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)")
-                        .HasColumnName("status");
-
-                    b.Property<string>("StepsJson")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("steps_json");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.Property<Guid?>("UpdatedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("updated_by_user_id");
-
-                    b.Property<long>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("bigint")
-                        .HasColumnName("version");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MaterialDefinitionId")
-                        .IsUnique();
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.ToTable("lab_reagent_workflows", "lab_ops");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabRoleAssignment", b =>
@@ -15230,11 +14960,6 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid?>("CreatedByUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
-
-                    b.Property<string>("DefaultQuantityUnit")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("default_quantity_unit");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -20361,54 +20086,6 @@ namespace PSeq.Operations.Api.Migrations
                         .WithMany()
                         .HasForeignKey("LabWorkOrderId")
                         .OnDelete(DeleteBehavior.Restrict);
-                });
-
-            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabReagentManufacturingRun", b =>
-                {
-                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabMaterialLot", null)
-                        .WithMany()
-                        .HasForeignKey("MaterialLotId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabReagentWorkflow", null)
-                        .WithMany()
-                        .HasForeignKey("WorkflowId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabReagentMaterialUse", b =>
-                {
-                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabReagentManufacturingRun", null)
-                        .WithMany()
-                        .HasForeignKey("RunId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabMaterialLot", null)
-                        .WithMany()
-                        .HasForeignKey("SourceMaterialLotId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabReagentRunStep", b =>
-                {
-                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabReagentManufacturingRun", null)
-                        .WithMany()
-                        .HasForeignKey("RunId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabReagentWorkflow", b =>
-                {
-                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabMaterialDefinition", null)
-                        .WithMany()
-                        .HasForeignKey("MaterialDefinitionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabScientificApproval", b =>

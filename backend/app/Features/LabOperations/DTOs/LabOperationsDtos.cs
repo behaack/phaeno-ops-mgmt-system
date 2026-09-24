@@ -49,9 +49,9 @@ public sealed record LabServiceWorkflowDto(
     IReadOnlyList<LabServiceWorkflowVersionDto> Versions, long Version);
 
 public sealed record LabMaterialDefinitionDto(
-    Guid Id, string Key, string Name, string Kind, bool IsActive);
+    Guid Id, string Key, string Name, string Kind, bool IsActive, string? DefaultQuantityUnit = null);
 
-public sealed record LabSupplierDto(Guid Id, string Name, bool IsActive);
+public sealed record LabSupplierDto(Guid Id, string Name, bool IsActive, bool IsInternalProducer = false);
 
 public sealed record LabStorageLocationDto(Guid Id, string Name, bool IsActive);
 

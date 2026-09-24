@@ -21,12 +21,16 @@ public partial class SampleShippingPostgresTests
         scope.ClearTrackedState();
         await Assert.ThrowsAsync<OrderManagementException>(() => catalog.Create(new(supplier.Name.ToLowerInvariant()), default));
         scope.ClearTrackedState();
-        var tube = await catalog.CreateProduct(supplier.Id, new("T-1", "Original tube description", LabProductType.TubeId), default);
-        var shipper = await catalog.CreateProduct(supplier.Id, new("B-1", "Original container description", LabProductType.ShippingContainerId), default);
+        var missingUnit = await Assert.ThrowsAsync<OrderManagementException>(() =>
+            catalog.CreateProduct(supplier.Id, new("NO-UNIT", "Missing inventory unit", LabProductType.TubeId), default));
+        Assert.Equal("supplier_catalog_invalid", missingUnit.ErrorCode);
+        var tube = await catalog.CreateProduct(supplier.Id, new("T-1", "Original tube description", LabProductType.TubeId, DefaultQuantityUnit: "each"), default);
+        Assert.Equal("each", tube.DefaultQuantityUnit);
+        var shipper = await catalog.CreateProduct(supplier.Id, new("B-1", "Original container description", LabProductType.ShippingContainerId, DefaultQuantityUnit: "each"), default);
         scope.ClearTrackedState();
-        await Assert.ThrowsAsync<OrderManagementException>(() => catalog.CreateProduct(supplier.Id, new("t-1", "Duplicate", LabProductType.TubeId), default));
+        await Assert.ThrowsAsync<OrderManagementException>(() => catalog.CreateProduct(supplier.Id, new("t-1", "Duplicate", LabProductType.TubeId, DefaultQuantityUnit: "each"), default));
         scope.ClearTrackedState();
-        await Assert.ThrowsAsync<OrderManagementException>(() => catalog.CreateProduct(supplier.Id, new("T-2", " ", LabProductType.TubeId), default));
+        await Assert.ThrowsAsync<OrderManagementException>(() => catalog.CreateProduct(supplier.Id, new("T-2", " ", LabProductType.TubeId, DefaultQuantityUnit: "each"), default));
         var fixture = await scope.CreateShipmentAsync(1);
         var size = await scope.CreateContainerAsync(fixture, 20);
         var stock = scope.StockController();
@@ -68,7 +72,7 @@ public partial class SampleShippingPostgresTests
             scope.ClearTrackedState();
             await Assert.ThrowsAsync<OrderManagementException>(() => types.Create(new(created.Name.ToLowerInvariant(), "Duplicate", "Other"), default));
             scope.ClearTrackedState();
-            var product = await scope.SupplierCatalog().CreateProduct(supplier.Id, new("R-1", "TEST ONLY reagent", created.Id), default);
+            var product = await scope.SupplierCatalog().CreateProduct(supplier.Id, new("R-1", "TEST ONLY reagent", created.Id, DefaultQuantityUnit: "mL"), default);
             Assert.Equal("Other", product.Kind);
             Assert.Equal(created.Name, product.ProductTypeName);
             scope.ClearTrackedState();
@@ -76,7 +80,7 @@ public partial class SampleShippingPostgresTests
             scope.ClearTrackedState();
             var inactive = await types.Update(created.Id, new(created.Name, "Updated description", "Other", false, created.Version), default);
             scope.ClearTrackedState();
-            await Assert.ThrowsAsync<OrderManagementException>(() => scope.SupplierCatalog().CreateProduct(supplier.Id, new("R-2", "New reagent", created.Id), default));
+            await Assert.ThrowsAsync<OrderManagementException>(() => scope.SupplierCatalog().CreateProduct(supplier.Id, new("R-2", "New reagent", created.Id, DefaultQuantityUnit: "mL"), default));
             scope.ClearTrackedState();
             var existing = await scope.SupplierCatalog().UpdateProduct(supplier.Id, product.Id, new("R-1", "Corrected reagent", created.Id, true, product.Version), default);
             Assert.False(existing.ProductTypeIsActive);

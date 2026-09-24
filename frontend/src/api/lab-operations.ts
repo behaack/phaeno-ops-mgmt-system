@@ -18,9 +18,10 @@ export type LabMarketedService = { serviceKey: string; name: string }
 export type LabServiceWorkflowStage = { id: string; sequence: number; name: string; labProtocolVersionId: string; labProtocolId: string; protocolKey: string; protocolName: string; protocolVersion: number; requirement: 'Required' | 'Optional' | 'Conditional'; condition: string | null; handoffCriteria: string | null }
 export type LabServiceWorkflowVersion = { id: string; workflowVersion: number; status: 'Draft' | 'Approved' | 'Production' | 'Retired' | 'Discarded' | 'Invalid' | 'Invalidated'; invalidatedAtUtc?: string | null; invalidationReason?: string | null; authoredByUserId: string; authoredAtUtc: string; approvedByUserId: string | null; approvedAtUtc: string | null; approvalOverrideReason?: string | null; productionByUserId: string | null; productionAtUtc: string | null; stages: LabServiceWorkflowStage[]; version: number }
 export type LabServiceWorkflow = { id: string; serviceKey: string; name: string; description: string | null; latestVersion: number; versions: LabServiceWorkflowVersion[]; version: number }
-export type LabMaterialDefinition = { id: string; key: string; name: string; kind: string; isActive: boolean }
-export type LabSupplier = { id: string; name: string; isActive: boolean }
+export type LabMaterialDefinition = { id: string; key: string; name: string; kind: string; isActive: boolean; defaultQuantityUnit?: string | null }
+export type LabSupplier = { id: string; name: string; isActive: boolean; isInternalProducer?: boolean }
 export type LabStorageLocation = { id: string; name: string; isActive: boolean }
+export type ManagedLabStorageLocation = LabStorageLocation & { version: number; materialLotCount: number }
 export type LabPreparedReagentComponent = { id: string; componentMaterialLotId: string; materialKey: string; materialName: string; lotNumber: string; quantity: number; quantityUnit: string }
 export type LabMaterialLot = { supplierProductId?: string | null; productName?: string | null; quantityHoldReason?: string | null; quantityHistoryJson?: string; id: string; kind: string; materialDefinitionId: string; materialKey: string; name: string; lotNumber: string; supplierId: string | null; supplier: string | null; expirationOrRetestDate: string | null; storageLocationId: string; storageLocation: string; availableQuantity: number; quantityUnit: string; qcDisposition: string; qcPerformedOn: string | null; qcFailureReason: string | null; components: LabPreparedReagentComponent[]; version: number }
 export type LabEquipment = { id: string; assetCode: string; name: string; equipmentType: string; location: string; status: string; lastCalibrationOn: string | null; calibrationDueOn: string | null; version: number; retirementReason?: string | null; retiredAtUtc?: string | null; retiredByUserId?: string | null }
@@ -94,6 +95,10 @@ export type LabReviewPackage = { id: string; sampleName: string; packageVersion:
 export type LabPSeqKitOffering = { id: string; partnerOrganizationId: string; itemName: string }
 
 export const getLabOperationsDashboard = () => get<LabOperationsDashboard>('/platform/lab-operations')
+export const listLabStorageLocations = () => get<ManagedLabStorageLocation[]>('/platform/lab-operations/storage-locations')
+export const createLabStorageLocation = (name: string) => post<ManagedLabStorageLocation>('/platform/lab-operations/storage-locations', { name })
+export const updateLabStorageLocation = (location: ManagedLabStorageLocation, name: string, isActive: boolean) =>
+  put<ManagedLabStorageLocation>(`/platform/lab-operations/storage-locations/${location.id}`, { name, isActive, version: location.version })
 export const getLabWorkOrder = (id: string) => get<LabWorkOrderDetail>(`/platform/lab-operations/work-orders/${id}`)
 export const getLabExecution = (id: string) => get<LabExecutionDetail>(`/platform/lab-operations/executions/${id}`)
 export const recordLabExecutionStep = (id: string, input: LabExecutionStepInput) =>

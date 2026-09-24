@@ -793,6 +793,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             var materialSupplier = new LabSupplier($"Reference supplier {Guid.NewGuid():N}");
             var materialProductType = new LabProductType($"Reference material {Guid.NewGuid():N}", "TEST ONLY", LabSupplierProductKind.Other);
             var materialProduct = new LabSupplierProduct(materialSupplier.Id, "REFERENCE-REAGENT", "Reference reagent", materialProductType.Id);
+            materialProduct.SetDefaultQuantityUnit("uL");
             scope.DbContext.AddRange(materialSupplier, materialProductType, materialProduct);
             await scope.DbContext.SaveChangesAsync();
             var material = await lab.CreateMaterialLot(
@@ -979,6 +980,11 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                     "uL",
                     DateTime.UtcNow.AddYears(1)),
                 CancellationToken.None);
+            var libraryPrint = await lab.PrintContainerLabel(
+                libraryContainer.Id,
+                new RecordLabelPrintRequest("Initial library label", "Succeeded", null, libraryContainer.Barcode),
+                CancellationToken.None);
+            Assert.Equal(LabContainerStatus.Available.ToString(), libraryPrint.Container.Status);
 
             var customerProgress = new LabCustomerProgressService(scope.DbContext);
             var preparationProgress = await customerProgress.ReadAsync(scope.CustomerOrganization.Id, [fixture.OrderId], CancellationToken.None);
@@ -1143,7 +1149,13 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             Assert.Null(allocatedSequencingTube.Quantity);
             var allocateReplay = await lab.ApplySequencingTubeCommand(batch.Id, sequencingMember.Id, allocateTube, CancellationToken.None);
             Assert.Equal(allocatedSequencingTube.Id, Assert.Single(allocateReplay.Members).SequencingTube!.Id);
+            var sequencingPrint = await lab.PrintContainerLabel(allocatedSequencingTube.Id,
+                new RecordLabelPrintRequest("Initial sequencing tube label", "Succeeded", null, allocatedSequencingTube.Barcode),
+                CancellationToken.None);
+            Assert.Equal(LabContainerStatus.Available.ToString(), sequencingPrint.Container.Status);
+            sequencing = await lab.SequencingTubes(batch.Id, CancellationToken.None);
             sequencingMember = Assert.Single(sequencing.Members);
+            allocatedSequencingTube = sequencingMember.SequencingTube!;
             var transferMaterial = new LabSequencingTubeCommand(Guid.NewGuid(), sequencing.BatchVersion, "transfer",
                 QuantityText: "19.000000000000000000000000001", QuantityUnit: "uL", SourceVersion: sequencingMember.Source.Version,
                 DestinationVersion: allocatedSequencingTube.Version, ConfirmedSourceBarcode: sequencingMember.Source.Barcode,

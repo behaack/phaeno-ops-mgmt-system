@@ -44,7 +44,7 @@ const positiveQuantity = z.string().refine(
 
 export const materialLotFormSchema = z.object({
   kind: z.enum(['SupplierLot', 'PreparedReagent']),
-  materialSelection: requiredText('Select a material.'),
+  materialSelection: z.string(),
   newMaterialName: z.string(),
   lotNumber: requiredText('Enter a lot number.'),
   supplierSelection: z.string(),
@@ -53,7 +53,7 @@ export const materialLotFormSchema = z.object({
   storageSelection: requiredText('Select a storage location.'),
   newStorageLocationName: z.string(),
   availableQuantity: nonnegativeQuantity,
-  quantityUnit: requiredText('Enter a unit.'),
+  quantityUnit: z.string(),
   expirationOrRetestDate: z.string(),
   components: z.array(z.object({
     componentMaterialLotId: requiredText('Select a component lot.'),
@@ -62,14 +62,18 @@ export const materialLotFormSchema = z.object({
     materialExhausted: z.boolean().optional(),
   })),
 }).superRefine((values, context) => {
-  if (values.materialSelection === newReferenceValue && !values.newMaterialName.trim()) {
-    context.addIssue({ code: 'custom', path: ['newMaterialName'], message: 'Enter the new material name.' })
+  if (values.kind === 'PreparedReagent') {
+    if (!values.materialSelection) context.addIssue({ code: 'custom', path: ['materialSelection'], message: 'Select a prepared reagent.' })
+    if (values.materialSelection === newReferenceValue && !values.newMaterialName.trim()) {
+      context.addIssue({ code: 'custom', path: ['newMaterialName'], message: 'Enter the new prepared reagent name.' })
+    }
   }
   if (values.storageSelection === newReferenceValue && !values.newStorageLocationName.trim()) {
     context.addIssue({ code: 'custom', path: ['newStorageLocationName'], message: 'Enter the new storage location.' })
   }
   if (values.kind === 'SupplierLot') {
     if (!values.supplierProductId) context.addIssue({ code: 'custom', path: ['supplierProductId'], message: 'Select the purchased product.' })
+    if (!values.quantityUnit.trim()) context.addIssue({ code: 'custom', path: ['quantityUnit'], message: 'This product needs an inventory unit in Suppliers & products before receiving a lot.' })
     if (!values.supplierSelection) {
       context.addIssue({ code: 'custom', path: ['supplierSelection'], message: 'Select a supplier.' })
     }
@@ -79,6 +83,9 @@ export const materialLotFormSchema = z.object({
   }
   if (values.kind === 'PreparedReagent' && values.components.length === 0) {
     context.addIssue({ code: 'custom', path: ['components'], message: 'Add at least one component lot.' })
+  }
+  if (values.kind === 'PreparedReagent' && !values.quantityUnit.trim()) {
+    context.addIssue({ code: 'custom', path: ['quantityUnit'], message: 'Enter a unit.' })
   }
   const componentIds = values.components.map((component) => component.componentMaterialLotId)
     .filter(Boolean)
@@ -223,10 +230,10 @@ export function MaterialLotCreateDialog({
       await createLabMaterialLot({
         kind: values.kind,
         supplierProductId: values.kind === 'SupplierLot' ? values.supplierProductId : null,
-        materialDefinitionId: values.materialSelection === newReferenceValue
+        materialDefinitionId: values.kind === 'SupplierLot' || values.materialSelection === newReferenceValue
           ? null
           : values.materialSelection,
-        newMaterialName: values.materialSelection === newReferenceValue
+        newMaterialName: values.kind === 'PreparedReagent' && values.materialSelection === newReferenceValue
           ? values.newMaterialName.trim()
           : null,
         lotNumber: values.lotNumber.trim(),
@@ -288,7 +295,7 @@ export function MaterialLotCreateDialog({
             <DialogHeader>
               <DialogTitle>Create material lot</DialogTitle>
               <DialogDescription>
-                Select controlled material, supplier, and storage records. POMS assigns new material keys.
+                Choose the supplier and catalog product for stock received from outside Phaeno. Start Phaeno-made reagent lots in Reagent manufacturing.
               </DialogDescription>
             </DialogHeader>
 
@@ -309,7 +316,6 @@ export function MaterialLotCreateDialog({
                   })}
                 >
                   <option value="SupplierLot">Supplier lot</option>
-                  <option value="PreparedReagent">Prepared reagent</option>
                 </select>
               </FormField>
 
@@ -317,8 +323,8 @@ export function MaterialLotCreateDialog({
                 <Input id="material-lot-number" aria-invalid={Boolean(form.formState.errors.lotNumber)} {...form.register('lotNumber')} />
               </FormField>
 
-              <div className="sm:col-span-2">
-                <FormField id="material-definition" label="Material" required error={form.formState.errors.materialSelection?.message}>
+              {kind === 'PreparedReagent' ? <div className="sm:col-span-2">
+                <FormField id="material-definition" label="Prepared reagent" required error={form.formState.errors.materialSelection?.message}>
                   <select
                     id="material-definition"
                     className={selectClass}
@@ -333,18 +339,18 @@ export function MaterialLotCreateDialog({
                       },
                     })}
                   >
-                    <option value="">Select material…</option>
+                    <option value="">Select prepared reagent…</option>
                     {definitions.filter((definition) => definition.kind === kind).map((definition) => (
                       <option key={definition.id} value={definition.id}>{definition.name} · {definition.key}</option>
                     ))}
-                    <option value={newReferenceValue} hidden={!newMaterialName}>{newMaterialName || 'New material'}</option>
-                    <option value={createReferenceValue}>Create a new material…</option>
+                    <option value={newReferenceValue} hidden={!newMaterialName}>{newMaterialName || 'New prepared reagent'}</option>
+                    <option value={createReferenceValue}>Create a new prepared reagent…</option>
                   </select>
                 </FormField>
                 {materialSelection === newReferenceValue ? (
                   <p className="mt-1.5 text-xs text-muted-foreground">The immutable material key is generated when the lot is created.</p>
                 ) : null}
-              </div>
+              </div> : null}
 
               {kind === 'SupplierLot' ? (
                 <>
@@ -357,6 +363,7 @@ export function MaterialLotCreateDialog({
                         {...form.register('supplierSelection', {
                           onChange: (event) => {
                             form.setValue('supplierProductId', '')
+                            form.setValue('quantityUnit', '')
                             if (event.target.value === createReferenceValue) {
                               openReferenceDialog('supplier', supplierSelection)
                             } else if (event.target.value !== newReferenceValue) {
@@ -366,13 +373,13 @@ export function MaterialLotCreateDialog({
                         })}
                       >
                         <option value="">Select supplier…</option>
-                        {suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}
+                        {suppliers.filter((supplier) => !supplier.isInternalProducer).map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}
                       </select>
                     </FormField>
                   </div>
                   <div className="sm:col-span-2">
                     <FormField id="material-product" label="Product name" required error={form.formState.errors.supplierProductId?.message}>
-                      <select id="material-product" className={selectClass} disabled={!supplierSelection || productCatalog.isPending || productCatalog.isError} aria-invalid={Boolean(form.formState.errors.supplierProductId)} {...form.register('supplierProductId')}>
+                      <select id="material-product" className={selectClass} disabled={!supplierSelection || productCatalog.isPending || productCatalog.isError} aria-invalid={Boolean(form.formState.errors.supplierProductId)} {...form.register('supplierProductId', { onChange: event => form.setValue('quantityUnit', productCatalog.data?.find(supplier => supplier.id === supplierSelection)?.products.find(product => product.id === event.target.value)?.defaultQuantityUnit ?? '') })}>
                         <option value="">Select product…</option>
                         {(productCatalog.data?.find(s => s.id === supplierSelection)?.products ?? []).map(p => <option key={p.id} value={p.id}>{p.productNumber} — {p.description}</option>)}
                       </select>
@@ -411,7 +418,8 @@ export function MaterialLotCreateDialog({
                 <p className="text-xs text-muted-foreground">Record the actual amount in this lot. Recorded use decreases its remaining quantity.</p>
               </FormField>
               <FormField id="material-unit" label="Unit" required error={form.formState.errors.quantityUnit?.message}>
-                <Input id="material-unit" aria-invalid={Boolean(form.formState.errors.quantityUnit)} {...form.register('quantityUnit')} />
+                <Input id="material-unit" aria-invalid={Boolean(form.formState.errors.quantityUnit)} readOnly={kind === 'SupplierLot'} {...form.register('quantityUnit')} />
+                {selectedProduct?.defaultQuantityUnit ? <p className="text-xs text-muted-foreground">This is the supplier product’s inventory unit. Enter the amount received in this unit.</p> : <p className="text-xs text-muted-foreground">A catalog administrator must set this product’s inventory unit before a lot can be received.</p>}
               </FormField>
 
               <div className="sm:col-span-2">

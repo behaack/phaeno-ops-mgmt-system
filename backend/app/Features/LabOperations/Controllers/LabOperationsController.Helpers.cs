@@ -67,7 +67,7 @@ public sealed partial class LabOperationsController
         if (existingId.HasValue)
         {
             return await dbContext.LabSuppliers.SingleOrDefaultAsync(
-                item => item.Id == existingId.Value && item.IsActive, cancellationToken)
+                item => item.Id == existingId.Value && item.IsActive && !item.IsInternalProducer, cancellationToken)
                 ?? throw Invalid("material_supplier_invalid", "The selected supplier is not active.");
         }
 
@@ -76,6 +76,8 @@ public sealed partial class LabOperationsController
             item => item.NormalizedName == candidate.NormalizedName, cancellationToken);
         if (existing is not null)
         {
+            if (existing.IsInternalProducer)
+                throw Invalid("material_supplier_invalid", "Phaeno-produced reagents use the prepared-reagent workflow.");
             if (!existing.IsActive)
                 throw Conflict("material_supplier_inactive",
                     "This supplier is retired and must be reactivated before use.");

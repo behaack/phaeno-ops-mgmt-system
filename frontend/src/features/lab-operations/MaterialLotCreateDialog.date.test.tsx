@@ -10,7 +10,7 @@ vi.mock('#/api/lab-operations', () => ({
 }))
 
 const catalog = vi.hoisted(() => ({ canExpire: false }))
-vi.mock('#/api/lab-materials', () => ({ useLotProducts: () => ({ data: [{ id: 'supplier', products: [{ id: 'product', productNumber: 'TEST reagent', description: 'TEST ONLY', canExpire: catalog.canExpire }] }], isPending: false, isError: false }) }))
+vi.mock('#/api/lab-materials', () => ({ useLotProducts: () => ({ data: [{ id: 'supplier', products: [{ id: 'product', productNumber: 'TEST reagent', description: 'TEST ONLY', canExpire: catalog.canExpire, defaultQuantityUnit: 'mL' }] }], isPending: false, isError: false }) }))
 beforeEach(() => { vi.clearAllMocks(); catalog.canExpire = false })
 
 describe('material lot native date submission', () => {
@@ -28,19 +28,14 @@ describe('material lot native date submission', () => {
   it('submits the displayed date even before a change event reaches form state', async () => {
     render(<MaterialLotCreateDialog open definitions={[]} suppliers={[{ id: 'supplier', name: 'TEST supplier', isActive: true }]} storageLocations={[]} materialLots={[]} onOpenChange={vi.fn()} onSaved={vi.fn().mockResolvedValue(undefined)} />)
 
-    for (const [selection, field, value, action] of [
-      ['Material', 'Material name', 'TEST ONLY reagent', 'Use material'],
-      ['Storage location', 'Storage location name', 'TEST ONLY storage', 'Use storage location'],
-    ]) {
-      fireEvent.change(screen.getByRole('combobox', { name: selection }), { target: { value: '__create__' } })
-      fireEvent.change(screen.getByRole('textbox', { name: field }), { target: { value } })
-      fireEvent.click(screen.getByRole('button', { name: action }))
-    }
+    fireEvent.change(screen.getByRole('combobox', { name: 'Storage location' }), { target: { value: '__create__' } })
+    fireEvent.change(screen.getByRole('textbox', { name: 'Storage location name' }), { target: { value: 'TEST ONLY storage' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Use storage location' }))
     fireEvent.change(screen.getByRole('combobox', { name: 'Supplier' }), { target: { value: 'supplier' } })
     fireEvent.change(screen.getByRole('combobox', { name: 'Product name' }), { target: { value: 'product' } })
     fireEvent.change(screen.getByRole('textbox', { name: 'Lot number' }), { target: { value: 'TEST-DATE-001' } })
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Available quantity' }), { target: { value: '100' } })
-    fireEvent.change(screen.getByRole('textbox', { name: 'Unit' }), { target: { value: 'mL' } })
+    expect(screen.getByRole('textbox', { name: 'Unit' })).toHaveProperty('value', 'mL')
     const date = screen.getByLabelText('Expiration or retest date') as HTMLInputElement
     // Deliberately omit the change event to reproduce stale form-library state.
     date.value = '2099-12-31'

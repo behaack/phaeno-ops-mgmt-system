@@ -247,6 +247,10 @@ public sealed partial class PSeqOperationsDbContext(
     public DbSet<LabStorageLocation> LabStorageLocations { get; set; }
     public DbSet<LabMaterialLot> LabMaterialLots { get; set; }
     public DbSet<LabPreparedReagentComponent> LabPreparedReagentComponents { get; set; }
+    public DbSet<LabReagentWorkflow> LabReagentWorkflows { get; set; }
+    public DbSet<LabReagentManufacturingRun> LabReagentManufacturingRuns { get; set; }
+    public DbSet<LabReagentRunStep> LabReagentRunSteps { get; set; }
+    public DbSet<LabReagentMaterialUse> LabReagentMaterialUses { get; set; }
     public DbSet<LabMaterialConsumption> LabMaterialConsumptions { get; set; }
     public DbSet<LabEquipment> LabEquipment { get; set; }
     public DbSet<LabEquipmentUsage> LabEquipmentUsages { get; set; }

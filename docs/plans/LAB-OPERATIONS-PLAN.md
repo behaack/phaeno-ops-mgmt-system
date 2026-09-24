@@ -1,5 +1,28 @@
 # Lab Operations Plan
 
+## Internal reagent production workflow — product direction, September 24, 2026
+
+The owner identified a distinct internal manufacturing workflow for Phaeno-prepared reagents. Seed one Phaeno supplier record in the Lab supplier table, flagged **Internal producer** so it is distinguishable from external vendors; prevent deactivation or rename. Automatically associate every new Phaeno-manufactured lot with this record and backfill existing prepared-reagent lots that have no supplier. The former prepared-reagent lot form captured source lots, quantities, storage and QC, but asked staff to type a lot number and did not execute a versioned preparation procedure. The existing PSeq kits reagent queue is commercial kit fulfillment, and Lab service workflows are tied to customer jobs and library preparation. Neither is an internal reagent-production record.
+
+The Lab settings workflow views are **Reagent manufacturing** and **Library preparation**. A reagent-manufacturing workflow uses its own versioned procedure and executes against a reagent run and its source material lots. Its step records must not require a customer order, sample, or tube. Starting the run records output storage, allocates one unique Phaeno lot number and inherits the reagent's inventory unit; completion records the actual produced quantity, performer/time and exact procedure version. Source-lot quantities are deducted when each use is recorded, including when a run later stops. The finished lot remains unavailable until required QC and approval are recorded. A library-preparation workflow retains its sample/tube lineage and output rules. No implicit sample or tube record is fabricated for reagent work.
+
+Implementation scope: add a flagged and seeded Phaeno supplier, a revisioned reagent-workflow definition with immutable snapshots on started runs, a reagent run with generated lot number, separate step and material-use evidence, a start/run workspace, completion and abandonment paths, and a QC gate on incomplete runs. Keep existing manual prepared-reagent lots and their recorded numbers readable. Migrations must preserve supplier/product and historical lot identities, be reviewed before application to a shared database, and update the complete ERD. Add focused authorization, quantity, concurrency and no-sample/tube tests. A stale-version rejection prevents blind command replay; full client-request idempotency remains an open hardening item. Do not execute full test suites unless requested.
+
+Code checkpoint: Lab settings now has distinct library and reagent workflow views; the latter creates, revises, approves and retires ordered reagent procedures tied to a reagent name. Lab operations has a reagent-run list, start form and dedicated run record. Starting creates a zero-stock QC-pending lot with a generated Phaeno number, the seeded internal producer and the reagent's saved unit. Source use deducts stock immediately and records the exact lot, amount, performer and time. Completion aggregates component lineage into the output lot and records actual yield; abandonment retains uses and keeps output stock unavailable. The generic material-lot endpoint now directs new prepared reagents to this workflow while historical lots remain readable. All three migrations were explicitly approved and applied to the configured local development database. Seven focused connected regressions and five reagent domain tests passed; broader authorization, concurrency, retry, inventory, browser and physical acceptance remain pending.
+
+Product clarification: staff select the **reagent name**, not a workflow, to start a run. Each reagent identity has at most one workflow identity, with revisions; changing a workflow's reagent is forbidden. The reagent carries its standard inventory unit. Starting a run copies that unit to the zero-stock output lot; staff enter the actual amount only after completing the procedure. Purchased supplier products likewise carry a standard inventory unit. New purchased lots reuse and must match it; existing catalog products with no verified unit are blocked from new lot receipt until a catalog administrator sets one. Historical lot quantities and units are never rewritten when a legacy product's future unit is configured. The third migration adds these units and the unique reagent-to-workflow index; it was separately approved and applied to the configured local development database. Seven focused connected regressions passed after application, including a legacy mixed-unit product, purchase receipt, catalog and reagent run journey.
+
+## Named storage locations in Lab settings — September 24, 2026
+
+Phaeno laboratory staff need to find and maintain the named locations used when receiving material lots. The existing lot form can create a location only as part of receiving a lot, leaving no place to see inactive names or correct an unused entry. The owner also confirmed that choosing both Material and Supplier / Product name for a purchased lot adds a confusing duplicate decision.
+
+- Add **Storage locations** to the Lab settings sidebar. The list shows active and inactive names, material-lot use, search, and bounded create/edit and status actions. Operators may create locations, matching the existing inline lot workflow; Supervisors and Operations Administrators may correct unused names or deactivate/reactivate them. Keep referenced locations and lots, never delete them.
+- Names remain unique without regard to case, including inactive locations. An inactive location is unavailable to new material lots. A location already referenced by a material lot cannot be renamed because that would change the displayed historical lot location; create a new location and retire the old one instead. Require the current version for changes and preserve centralized audit stamping.
+- Material lot creation continues to select only active locations and can still create a new name inline. Hide Material for supplier lots: supplier and catalog product identify the purchased item, and lot number identifies its physical batch. Derive the required internal material definition from the selected product using a stable product-specific key, without remapping historical lots or adding a persisted column. Reagent manufacturing runs select the reagent identity and record source component uses without a supplier catalog product. Existing purchased-lot API clients that explicitly send a valid material definition remain compatible.
+- Scope is named material-lot locations only. Physical tube/freezer-box scans and movement records remain in their existing workflows. Equipment currently stores a location string and may offer these names as suggestions; this change does not convert historical equipment or tube locations into catalog references.
+
+Acceptance: authorized staff can list, search, create, correct an unused name, deactivate, and reactivate a location; duplicates and stale writes fail clearly; inactive names cannot be selected for new lots; referenced names cannot be changed; existing lots retain their location reference and history. New purchased lots require supplier/product, lot number, storage and quantity; their unit comes from the supplier product. Prepared reagents use a named reagent identity and source lots in the separate manufacturing flow. The storage-location slice required no migration; the later unit refinement's third reagent migration was separately approved and applied locally. Phaeno help and the living test plans were updated, and build, typecheck, lint, documentation and whitespace checks passed.
+
 ## DataMatrix tube labels and scan-result presentation — September 23, 2026
 
 POMS-generated laboratory tube labels now render the existing exact, checksummed container identifier as DataMatrix with readable text on the 50 × 25 mm label. The Lab container's UUID remains its internal identity; the existing unique barcode and source fields continue to identify the physical tube independently of its specimen and accession. A newly allocated POMS container has `LabelPending` status and cannot serve as available material until its printed physical label is scanned back. The API independently checks the POMS identifier and records the successful print and activation only for a matching scan; failed print attempts retain their reason without increasing the print count or activating the tube. Existing saved containers retain their current state. This supersedes the September 10 QR choice for laboratory tube labels only. Supplier-applied tube labels, saved barcode values, shipping inserts, kit labels and physical tray label printing retain their established identities and symbols.
@@ -905,14 +928,18 @@ prepared reagents:
 A prepared reagent cannot be available for use until its required QC and
 approval are complete.
 
-POMS owns a reusable material definition with a system-assigned immutable key;
-operators select that identity when receiving or preparing a lot rather than
-typing a key per lot. Supplier and storage location are controlled, auditable
-reference records. Supplier is required only for a supplier lot. Retired
-references remain available to historical records but cannot be selected for
-new work. A missing material, supplier, or storage reference can be named in a
-focused related-record modal without abandoning the lot form; the draft name
-returns as the selected option and the reference is created with the lot.
+POMS owns reusable material definitions with system-assigned immutable keys.
+For a purchased lot, the selected external supplier product supplies the
+material identity and saved inventory unit; staff enter the printed lot number
+and actual amount received. A Phaeno-made reagent has its own named material
+identity and saved unit, configured with its one versioned manufacturing
+workflow. Its run allocates the lot number and associates the lot with the
+seeded Phaeno internal producer. Supplier and storage location remain
+controlled, auditable reference records. Retired references remain available
+to historical records but cannot be selected for new work. Named material and
+equipment locations are maintained under Lab settings; a new storage name can
+also be entered while receiving a purchased lot. The supplier product must
+already exist in the catalog before its lot is received.
 
 Expiration or retest is stored as a date and remains valid through the end of
 that laboratory day. A future exact time-sensitive prepared-reagent use-by
@@ -920,8 +947,11 @@ control, if required by bench validation, will be a separate timestamp rather
 than changing every lot to time-of-day expiration.
 
 Prepared-reagent composition is structured lot lineage rather than free-form
-JSON. Creation requires one or more QC-approved, unexpired source lots, records
-the exact quantities and units, and atomically reduces source availability.
+JSON. Operators record each exact use of a QC-approved, in-date source lot
+during the manufacturing run; saving that use immediately reduces available
+source stock, even if the run is later abandoned. Completion requires the
+ordered steps and at least one source use, then records actual yield in the
+reagent's saved unit. The output remains unavailable until QC approval.
 
 Lab Operations is not a purchasing, accounts-payable, or warehouse-management
 system. QuickBooks remains authoritative for vendors, purchase orders, bills,
@@ -1194,9 +1224,13 @@ remove competing internal write paths. The durable strategy is recorded in
   promotion, exact work-order and execution pinning, and prior-required-stage
   gating through `AddControlledLabServiceWorkflows`.
 - Complete: controlled material definitions with POMS-assigned keys,
-  supplier/storage references, supplier and prepared-reagent lots, structured
-  component lineage, date-only expiration/retest, consumption, equipment,
-  calibration, and QC records.
+  external supplier products with saved inventory units, a seeded Phaeno
+  internal producer, named storage locations under Lab settings, and purchased
+  lots with automatically derived product identity. Reagent names own one
+  versioned manufacturing workflow and a saved unit; runs retain source use,
+  step evidence, actual yield and component lineage independently of samples
+  and tubes. Date-only expiration/retest, consumption, equipment, calibration,
+  and QC records remain governed.
 - Production gate: validate minimum fields, labels, scanners, and degraded-mode
   procedures with representative PSeq bench work before activation. The
   software preflight is complete; the physical scenarios and exposed gaps are

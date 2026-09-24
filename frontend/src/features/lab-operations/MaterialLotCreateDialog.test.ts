@@ -4,7 +4,7 @@ import { materialLotFormSchema } from './MaterialLotCreateDialog'
 
 const supplierLot = {
   kind: 'SupplierLot' as const,
-  materialSelection: 'material-id',
+  materialSelection: '',
   newMaterialName: '',
   lotNumber: 'LOT-42',
   supplierSelection: 'supplier-id',
@@ -24,7 +24,7 @@ describe('material lot form validation', () => {
     expect(result.success).toBe(false)
     if (!result.success) expect(result.error.issues).toContainEqual(expect.objectContaining({ path: ['supplierProductId'] }))
   })
-  it('accepts a controlled supplier lot without a time-of-day expiration', () => {
+  it('accepts a supplier lot without a separate material selection', () => {
     expect(materialLotFormSchema.safeParse(supplierLot).success).toBe(true)
   })
 
@@ -38,6 +38,7 @@ describe('material lot form validation', () => {
     expect(result.success).toBe(false)
     if (!result.success) {
       expect(result.error.issues).toEqual(expect.arrayContaining([
+        expect.objectContaining({ path: ['materialSelection'] }),
         expect.objectContaining({ path: ['components'] }),
       ]))
     }
@@ -46,7 +47,6 @@ describe('material lot form validation', () => {
   it('requires names when a user creates reference data through the related-record modals', () => {
     const result = materialLotFormSchema.safeParse({
       ...supplierLot,
-      materialSelection: '__new__',
       supplierSelection: '__new__',
       storageSelection: '__new__',
     })
@@ -54,7 +54,7 @@ describe('material lot form validation', () => {
     expect(result.success).toBe(false)
     if (!result.success) {
       expect(result.error.issues.map((issue) => issue.path[0])).toEqual(
-        expect.arrayContaining(['newMaterialName', 'newSupplierName', 'newStorageLocationName']),
+        expect.arrayContaining(['newSupplierName', 'newStorageLocationName']),
       )
     }
   })

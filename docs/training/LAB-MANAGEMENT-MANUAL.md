@@ -1,6 +1,6 @@
 # POMS laboratory management and trainer manual
 
-First edition — September 11, 2026. Draft for management walkthrough and review.
+Revised September 24, 2026. Draft for management walkthrough and review.
 
 Audience: lab managers, supervisors and the first person who will train laboratory staff.
 
@@ -8,7 +8,7 @@ Audience: lab managers, supervisors and the first person who will train laborato
 
 Read this with a colleague who knows POMS, then use the presentation agenda to explain the same journey to someone else. Allow about one hour for the initial discussion. Detailed operating instructions are linked at the end; you do not need to read every guide before the meeting.
 
-This edition describes the current repository's laboratory workflow. Confirm which features are available in the environment being shown. Preparation batches are implemented locally, but their owning plan still records pending production release and physical acceptance. A document-only walkthrough is sufficient to begin training the trainer.
+This edition describes the current repository's laboratory workflow. Confirm which features are available in the environment being shown. Reagent manufacturing and preparation batches are implemented locally; their owning plan still records pending browser, physical and production acceptance. A document-only walkthrough is sufficient to begin training the trainer.
 
 This manual explains the application. Your laboratory procedures determine how the physical work is performed and which scientific criteria apply.
 
@@ -41,6 +41,9 @@ Materials, equipment, controlled procedures and exception handling support that 
 | Source tube | The accepted, available tube selected for a processing attempt. Other eligible tubes may remain reserves. |
 | Attempt | One processing journey using a selected source. A replacement source starts a new linked attempt. |
 | Preparation batch | A tray of source tubes processed through a compatible approved preparation workflow. |
+| Supplier product | The named purchased item and its standard inventory unit. The physical lot retains the supplier's printed lot number and actual received amount. |
+| Phaeno reagent | A named material made by Phaeno from source lots. It has one versioned manufacturing workflow and a saved inventory unit; each run receives a generated lot number. |
+| Reagent run | A sample-independent record of ordered manufacturing steps, source-lot use and actual finished amount. Recorded source use reduces inventory immediately, even if the run stops. |
 | Library | An identified prepared output linked to its source and preparation evidence. |
 | Sequencing batch | A group of eligible libraries assembled for sequencing; it is separate from the preparation tray. |
 | Lineage | The retained relationship from submitted sample to source tube, derived material and output. |
@@ -50,9 +53,9 @@ Materials, equipment, controlled procedures and exception handling support that 
 
 | Responsibility | Typical role |
 | --- | --- |
-| Record receipt, accession, bench work, resources, libraries and custody | Lab Operator |
+| Record receipt, accession, bench work, reagent runs, resources, libraries and custody | Lab Operator |
 | Review material QC, handle exceptions and permitted corrections | Lab Supervisor |
-| Maintain controlled protocols and service workflows | Protocol Administrator |
+| Maintain controlled protocols, service workflows and reagent manufacturing workflows | Protocol Administrator |
 | Review scientific evidence and approve eligible result packages | Scientific Reviewer |
 | Publish approved results to the customer | Result Release Manager, through Order operations |
 | Administer laboratory access and configuration | Lab Operations Administrator and authorized administrators |
@@ -69,10 +72,14 @@ Open **Lab operations**. Its main working sections are:
 - **Library prep** — preparation batches and job/specimen history lookup.
 - **Sequencing batches** — eligible libraries, batch membership and external sequencing handoffs.
 - **Results & review** — jobs and their scientific review evidence.
-- **Materials** and **Equipment** — resources used during work.
-- **Lab configurations** — Protocols, Workflows and Tray formats.
+- **Reagent manufacturing** — Phaeno-made reagent runs, between Data assembly and Suppliers & products.
+- **Suppliers & products** — external purchased items and their inventory units; the seeded Phaeno record is marked internal.
+- **Materials** and **Equipment** — purchased stock, finished reagent lots, QC and other resources used during work.
+- **Lab settings** under Administration — Lab steps, Protocols, Workflows, Library tray formats and Storage locations.
 
 **PSeq kits** and **Data assembly** support additional workflows. Leave their detailed training for a later session unless they are the first trainer's immediate responsibility.
+
+For purchased stock, a catalog administrator sets the inventory unit on the supplier product. Staff select that product in **Materials**, enter the printed lot number and actual amount received, and use the product's saved unit. For Phaeno reagents, an administrator defines the reagent name, unit and one versioned procedure in **Lab settings → Workflows → Reagent manufacturing**. Staff start a run by reagent name, record each source-lot use as it happens, and enter the actual yield at completion. The finished lot still needs QC. **Lab settings → Storage locations** maintains named material and equipment locations; it does not manage scanned tube or freezer-box positions.
 
 Open recognizable record identifiers to inspect details. Actions depend on the record's current state and the user's permissions. A missing or disabled action may indicate a prerequisite, a role requirement or an unavailable feature; establish the reason before changing anything.
 

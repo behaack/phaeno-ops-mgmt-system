@@ -76,6 +76,7 @@ describe('supplier catalog', () => {
     expect(await screen.findByText('Enter a product description.')).toBeTruthy()
     expect(mocks.product).not.toHaveBeenCalled()
     fireEvent.change(screen.getByLabelText(/Product description/), { target: { value: 'New tube' } })
+    fireEvent.change(screen.getByLabelText(/Inventory unit/), { target: { value: 'each' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     expect(await screen.findByText('Changes were not saved')).toBeTruthy()
     expect(screen.getByLabelText(/Product name/)).toHaveProperty('value', 'T-NEW')

@@ -16,7 +16,7 @@ public partial class SampleShippingPostgresTests
         var initial = await scope.KitContentsAsync(10);
         var supplier = await scope.SupplierCatalog().Create(new($"TEST-CATALOG-{scope.Suffix}-expiry"), default);
         var extra = await scope.SupplierCatalog().CreateProduct(supplier.Id,
-            new("EXPIRES", "TEST additional expiring supply", LabProductType.ReagentId, CanExpire: true), default);
+            new("EXPIRES", "TEST additional expiring supply", LabProductType.ReagentId, CanExpire: true, DefaultQuantityUnit: "each"), default);
         Assert.True(extra.CanExpire);
         var definition = await scope.ContainerCatalog().CreateAsync(new($"PACK-{scope.Suffix}-EXPIRY", "Expiry contents", 10,
             DateTime.UtcNow.AddDays(-1), await scope.ContainerContextsAsync(shipment), IsActive: true,

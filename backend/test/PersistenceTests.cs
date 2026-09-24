@@ -213,7 +213,7 @@ public class PersistenceTests
             .Where(entityType => entityType.ClrType.Assembly == laboratoryAssembly)
             .ToList();
 
-        Assert.Equal(61, laboratoryEntities.Count);
+        Assert.Equal(65, laboratoryEntities.Count);
         Assert.Equal("lab_container_barcodes", dbContext.Model.FindEntityType(typeof(LabContainerBarcode))?.GetTableName());
         Assert.Equal("lab_biological_material_transfers", dbContext.Model.FindEntityType(typeof(LabBiologicalMaterialTransfer))?.GetTableName());
         Assert.Equal("lab_assembly_jobs", dbContext.Model.FindEntityType(typeof(LabAssemblyJob))?.GetTableName());
@@ -226,6 +226,11 @@ public class PersistenceTests
         Assert.Equal("lab_analysis_inputs", dbContext.Model.FindEntityType(typeof(LabAnalysisInput))?.GetTableName());
         Assert.Equal("lab_product_types", dbContext.Model.FindEntityType(typeof(LabProductType))?.GetTableName());
         Assert.Equal("lab_supplier_products", dbContext.Model.FindEntityType(typeof(LabSupplierProduct))?.GetTableName());
+        Assert.Equal("lab_reagent_workflows", dbContext.Model.FindEntityType(typeof(LabReagentWorkflow))?.GetTableName());
+        Assert.Equal("lab_reagent_manufacturing_runs", dbContext.Model.FindEntityType(typeof(LabReagentManufacturingRun))?.GetTableName());
+        Assert.Equal("lab_reagent_run_steps", dbContext.Model.FindEntityType(typeof(LabReagentRunStep))?.GetTableName());
+        Assert.Equal("lab_reagent_material_uses", dbContext.Model.FindEntityType(typeof(LabReagentMaterialUse))?.GetTableName());
+        AssertUniqueIndex<LabReagentWorkflow>(dbContext, nameof(LabReagentWorkflow.MaterialDefinitionId));
         Assert.Equal("lab_steps", dbContext.Model.FindEntityType(typeof(LabStep))?.GetTableName());
         Assert.Equal("lab_step_versions", dbContext.Model.FindEntityType(typeof(LabStepVersion))?.GetTableName());
         Assert.Equal("lab_job_deadline_changes", dbContext.Model.FindEntityType(typeof(LabJobDeadlineChange))?.GetTableName());
@@ -576,7 +581,7 @@ public class PersistenceTests
     {
         using var dbContext = CreateDbContext();
         var migrations = dbContext.Database.GetMigrations().ToArray();
-        Assert.Equal(14, migrations.Length);
+        Assert.Equal(17, migrations.Length);
         Assert.EndsWith("_InitialPSeqOperationsRebased", migrations[0]);
         Assert.EndsWith("_AddSampleSequencingRuns", migrations[1]);
         Assert.EndsWith("_AddSequencingRunLineage", migrations[2]);
@@ -591,6 +596,9 @@ public class PersistenceTests
         Assert.EndsWith("_AddSampleMaterialTransfersAndProductExpiry", migrations[11]);
         Assert.EndsWith("_AddReturnKitProductExpiration", migrations[12]);
         Assert.EndsWith("_AddContainerBarcodeNamespaces", migrations[13]);
+        Assert.EndsWith("_SeedPhaenoInternalSupplier", migrations[14]);
+        Assert.EndsWith("_AddReagentManufacturing", migrations[15]);
+        Assert.EndsWith("_ReagentIdentityAndInventoryUnits", migrations[16]);
     }
 
     private static void AssertUniqueIndex<TEntity>(
