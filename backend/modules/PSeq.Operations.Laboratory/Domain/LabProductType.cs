@@ -5,6 +5,7 @@ public sealed class LabProductType : LabAuditedEntity
     public static readonly Guid TubeId = Guid.Parse("90000000-0000-4000-8000-000000000001");
     public static readonly Guid ShippingContainerId = Guid.Parse("90000000-0000-4000-8000-000000000002");
     public static readonly Guid ReagentId = Guid.Parse("90000000-0000-4000-8000-000000000003");
+    public static readonly Guid TransportationKitId = Guid.Parse("90000000-0000-4000-8000-000000000004");
     public Guid Id { get; private set; } = Guid.NewGuid();
     public string Name { get; private set; } = null!;
     public string NormalizedName { get; private set; } = null!;

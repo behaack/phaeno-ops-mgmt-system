@@ -911,6 +911,24 @@ history are permanent controlled records.
 
 ## Reagent and Material Management
 
+### Named Phaeno reagent products
+
+Users: platform administrators define products, Protocol Administrators own
+their procedures, and laboratory operators manufacture lots. The catalog must
+distinguish each reagent Phaeno makes instead of presenting one generic
+Phaeno reagent. A platform administrator can create multiple named products
+under Phaeno; each has fixed Reagent type, a description, saved unit, and
+active state. A Protocol Administrator can attach at most one versioned
+workflow to each product. Operators select the reagent by name, and each new
+run and resulting lot retain its exact product and procedure revision.
+Deactivating the product prevents new runs while preserving historical lots.
+Existing prepared identities, workflows, and lots remain traceable after
+backfill. Acceptance is a catalog that shows each named reagent separately,
+blocks non-Reagent Phaeno products and duplicate workflow identities, and
+shows the correct product on every manufactured lot.
+
+September 24 review follow-up: prior reagent workflow revisions, including ordered steps, author, approval and override, are retained when a new revision replaces the current procedure. The workflow list exposes those snapshots even when no manufacturing run used the earlier revision. Started runs continue to pin their own exact procedure snapshot. The owner separately approved the additive `revision_history_json` migration, and it was applied to the shared development database. EF reports all 20 migrations applied and no pending model changes.
+
 Lab Operations tracks the laboratory facts needed for materials and internally
 prepared reagents:
 
@@ -931,10 +949,15 @@ approval are complete.
 POMS owns reusable material definitions with system-assigned immutable keys.
 For a purchased lot, the selected external supplier product supplies the
 material identity and saved inventory unit; staff enter the printed lot number
-and actual amount received. A Phaeno-made reagent has its own named material
-identity and saved unit, configured with its one versioned manufacturing
-workflow. Its run allocates the lot number and associates the lot with the
-seeded Phaeno internal producer. Supplier and storage location remain
+and actual amount received. A Phaeno-made reagent starts as a named product
+under the seeded Phaeno internal producer. Its product type is fixed to
+Reagent, and the product supplies its name, description, and saved inventory
+unit. Each product is linked one-to-one to a prepared material identity, which
+may have at most one versioned manufacturing workflow. The workflow records
+the procedure, while the run allocates a lot number and records both the
+exact Phaeno product and approved workflow revision. Existing prepared
+identities and lots are linked to Phaeno products by migration without
+changing their lineage. Supplier and storage location remain
 controlled, auditable reference records. Retired references remain available
 to historical records but cannot be selected for new work. Named material and
 equipment locations are maintained under Lab settings; a new storage name can
@@ -1226,11 +1249,15 @@ remove competing internal write paths. The durable strategy is recorded in
 - Complete: controlled material definitions with POMS-assigned keys,
   external supplier products with saved inventory units, a seeded Phaeno
   internal producer, named storage locations under Lab settings, and purchased
-  lots with automatically derived product identity. Reagent names own one
-  versioned manufacturing workflow and a saved unit; runs retain source use,
-  step evidence, actual yield and component lineage independently of samples
-  and tubes. Date-only expiration/retest, consumption, equipment, calibration,
-  and QC records remain governed.
+  lots with automatically derived product identity. Reagent runs retain source
+  use, step evidence, actual yield and component lineage independently of
+  samples and tubes. Date-only expiration/retest, consumption, equipment,
+  calibration, and QC records remain governed.
+- Local implementation pending migration and release: each named Phaeno
+  reagent product has fixed Reagent type, saved unit, and one prepared material
+  identity; its one versioned workflow is configured separately, and each
+  manufactured lot records the exact product. The migration backfills existing
+  prepared identities and lots without changing their lineage.
 - Production gate: validate minimum fields, labels, scanners, and degraded-mode
   procedures with representative PSeq bench work before activation. The
   software preflight is complete; the physical scenarios and exposed gaps are

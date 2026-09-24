@@ -7,6 +7,9 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
     public Guid Id { get; private set; } = Guid.NewGuid();
     public string KitNumber { get; private set; } = null!;
     public Guid ContainerDefinitionId { get; private set; }
+    public Guid? FinishedKitProductId { get; private set; }
+    public Guid? AssemblyWorkflowRevisionId { get; private set; }
+    public DateTime? AssemblyCompletedAt { get; private set; }
     public string ContainerSnapshotJson { get; private set; } = null!;
     public string? ProductExpirySnapshotJson { get; private set; }
     public int TubeCapacity { get; private set; }
@@ -35,6 +38,8 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
     public string? OutboundCarrier { get; private set; }
     public string? OutboundTrackingNumber { get; private set; }
     public DateTime? FulfilledAt { get; private set; }
+    public DateTime? TubesVerifiedAt { get; private set; }
+    public Guid? TubesVerifiedByUserId { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
@@ -49,12 +54,15 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
         string shipperSupplierName, string shipperProductNumber,
         Guid? tubeSupplierProductId = null, Guid? shipperSupplierProductId = null,
         string? tubeProductDescription = null, string? shipperProductDescription = null,
-        string? productExpirySnapshotJson = null, string? tubeBarcodeNamespace = null)
+        string? productExpirySnapshotJson = null, string? tubeBarcodeNamespace = null,
+        Guid? finishedKitProductId = null, Guid? assemblyWorkflowRevisionId = null)
     {
         if (definitionId == Guid.Empty) throw new ArgumentException("Select a container type.");
         if (tubeCapacity is < 1 or > 10_000) throw new ArgumentOutOfRangeException(nameof(tubeCapacity));
         KitNumber = SampleShippingText.Reference(kitNumber, nameof(kitNumber));
         ContainerDefinitionId = definitionId;
+        FinishedKitProductId = finishedKitProductId;
+        AssemblyWorkflowRevisionId = assemblyWorkflowRevisionId;
         ContainerSnapshotJson = OrderText.Json(snapshotJson);
         ProductExpirySnapshotJson = productExpirySnapshotJson is null ? null : OrderText.Json(productExpirySnapshotJson);
         TubeCapacity = tubeCapacity;
@@ -75,8 +83,7 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
     {
         if (FulfilledAt.HasValue || OrganizationId.HasValue)
             throw new InvalidOperationException("This kit has already been dispatched.");
-        if (Tubes.Count != TubeCapacity || Tubes.Select(tube => tube.SupplierBarcode).Distinct().Count() != TubeCapacity)
-            throw new InvalidOperationException($"Register exactly {TubeCapacity} unique tubes before dispatch.");
+        EnsureVerifiedTubes();
         if (jobContext.Status == SampleShipmentStatus.Cancelled)
             throw new InvalidOperationException("Choose an active authorized job.");
         if (fulfilledAt.Kind != DateTimeKind.Utc || fulfilledAt > DateTime.UtcNow.AddMinutes(5)
@@ -127,8 +134,7 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
     {
         if (FulfilledAt.HasValue || OrganizationId.HasValue || !location.IsActive)
             throw new InvalidOperationException("Choose an active delivery location for an undispatched container.");
-        if (Tubes.Count != TubeCapacity || Tubes.Select(tube => tube.SupplierBarcode).Distinct().Count() != TubeCapacity)
-            throw new InvalidOperationException($"Register exactly {TubeCapacity} unique tubes before dispatch.");
+        EnsureVerifiedTubes();
         if (fulfilledAt.Kind != DateTimeKind.Utc || fulfilledAt > DateTime.UtcNow.AddMinutes(5) || fulfilledAt < CreatedAt.AddMinutes(-1))
             throw new ArgumentException("Enter a valid dispatch time after the kit was prepared.");
         OrganizationId = location.OrganizationId; DepartmentId = location.DepartmentId; CustomerDeliveryLocationId = location.Id;
@@ -159,6 +165,51 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
     }
 
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
+    public void VerifyTubeRoster(Guid actorUserId, IReadOnlyCollection<string> scanned, DateTime utcNow)
+    {
+        if (FulfilledAt.HasValue || actorUserId == Guid.Empty || utcNow.Kind != DateTimeKind.Utc)
+            throw new InvalidOperationException("Only an undispatched kit can have its physical tube roster verified.");
+        if (Tubes.Count != TubeCapacity || !TubeSupplierProductId.HasValue)
+            throw new InvalidOperationException($"Register exactly {TubeCapacity} physical tubes with a saved tube product first.");
+        var saved = Tubes.Select(tube => tube.SupplierBarcode).ToHashSet(StringComparer.Ordinal);
+        if (saved.Count != TubeCapacity || Tubes.Any(tube => tube.TubeSupplierProductId != TubeSupplierProductId
+                || tube.BarcodeNamespace != TubeBarcodeNamespace)
+            || scanned.Count != TubeCapacity || !saved.SetEquals(scanned))
+            throw new InvalidOperationException("Rescan every physical tube in this kit. The verified roster must exactly match its registered tube IDs and product.");
+        TubesVerifiedAt = utcNow;
+        TubesVerifiedByUserId = actorUserId;
+    }
+
+    public void InvalidateTubeVerification()
+    {
+        if (FulfilledAt.HasValue) throw new InvalidOperationException("A dispatched tube roster is frozen.");
+        TubesVerifiedAt = null;
+        TubesVerifiedByUserId = null;
+    }
+
+    private void EnsureVerifiedTubes()
+    {
+        if (FinishedKitProductId.HasValue && (!AssemblyWorkflowRevisionId.HasValue || !AssemblyCompletedAt.HasValue))
+            throw new InvalidOperationException("Complete the approved kit assembly workflow before dispatch.");
+        if (!TubesVerifiedAt.HasValue || !TubesVerifiedByUserId.HasValue || Tubes.Count != TubeCapacity
+            || Tubes.Select(tube => tube.SupplierBarcode).Distinct(StringComparer.Ordinal).Count() != TubeCapacity
+            || Tubes.Any(tube => tube.TubeSupplierProductId != TubeSupplierProductId || tube.BarcodeNamespace != TubeBarcodeNamespace))
+            throw new InvalidOperationException("Verify the full physical tube roster before dispatch.");
+    }
+    public void CompleteAssembly(DateTime utcNow)
+    {
+        if (!FinishedKitProductId.HasValue || !AssemblyWorkflowRevisionId.HasValue || FulfilledAt.HasValue
+            || AssemblyCompletedAt.HasValue || utcNow.Kind != DateTimeKind.Utc)
+            throw new InvalidOperationException("Only an active Phaeno kit assembly can be completed.");
+        AssemblyCompletedAt = utcNow;
+    }
+    public void ConfirmTubeLotNumber(string lotNumber)
+    {
+        var normalized = OrderText.Required(lotNumber, nameof(lotNumber), 100);
+        if (TubeLotNumber is not null && !string.Equals(TubeLotNumber, normalized, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("The tube inventory lot does not match this kit's recorded tube lot number.");
+        TubeLotNumber = normalized;
+    }
     public void MarkUpdated(DateTime utcNow, Guid? actorUserId) { UpdatedAt = utcNow; UpdatedByUserId = actorUserId; }
     public void IncrementVersion() => Version++;
 }
@@ -169,8 +220,9 @@ public sealed class SampleShippingStockTube
     public Guid SampleShippingStockKitId { get; private set; }
     public string SupplierBarcode { get; private set; } = null!;
     public string BarcodeNamespace { get; private set; } = SupplierTubeBarcode.LegacyNamespace;
+    public Guid? TubeSupplierProductId { get; private set; }
     private SampleShippingStockTube() { }
-    public SampleShippingStockTube(Guid kitId, string supplierBarcode, string? barcodeNamespace = null)
+    public SampleShippingStockTube(Guid kitId, string supplierBarcode, string? barcodeNamespace = null, Guid? tubeSupplierProductId = null)
     {
         if (kitId == Guid.Empty) throw new ArgumentException("Choose a stock kit.");
         if (!SupplierTubeBarcode.TryNormalize(supplierBarcode, out var normalized))
@@ -179,5 +231,32 @@ public sealed class SampleShippingStockTube
         SupplierBarcode = normalized;
         BarcodeNamespace = string.IsNullOrWhiteSpace(barcodeNamespace)
             ? SupplierTubeBarcode.LegacyNamespace : OrderText.Required(barcodeNamespace, nameof(barcodeNamespace), 50);
+        TubeSupplierProductId = tubeSupplierProductId;
+    }
+}
+
+public sealed class SampleShippingStockTubeCorrection
+{
+    public Guid Id { get; private set; } = Guid.NewGuid();
+    public Guid SampleShippingStockKitId { get; private set; }
+    public string PreviousBarcode { get; private set; } = null!;
+    public string ReplacementBarcode { get; private set; } = null!;
+    public string BarcodeNamespace { get; private set; } = null!;
+    public string Reason { get; private set; } = null!;
+    public Guid CorrectedByUserId { get; private set; }
+    public DateTime CorrectedAt { get; private set; }
+    private SampleShippingStockTubeCorrection() { }
+    public SampleShippingStockTubeCorrection(Guid kitId, string previous, string replacement, string barcodeNamespace,
+        string reason, Guid actorId, DateTime utcNow)
+    {
+        if (kitId == Guid.Empty || actorId == Guid.Empty || utcNow.Kind != DateTimeKind.Utc)
+            throw new ArgumentException("Record a valid kit, operator, and correction time.");
+        SampleShippingStockKitId = kitId;
+        PreviousBarcode = previous;
+        ReplacementBarcode = replacement;
+        BarcodeNamespace = barcodeNamespace;
+        Reason = OrderText.Required(reason, nameof(reason), 1000);
+        CorrectedByUserId = actorId;
+        CorrectedAt = utcNow;
     }
 }

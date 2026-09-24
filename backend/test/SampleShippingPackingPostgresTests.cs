@@ -183,7 +183,9 @@ public partial class SampleShippingPostgresTests
         var codes = Enumerable.Range(1, 20).Select(index => $"STK-{scope.Suffix}-{index:00}").ToArray();
         var registered = await stock.Register(created.Id, new(codes, created.Version), default);
         scope.ClearTrackedState();
-        var dispatched = await stock.Dispatch(created.Id, new(fixture.Shipment.Id, registered.Version, "Reference carrier", "TEST-OUTBOUND", DateTime.UtcNow), default);
+        var verified = await stock.VerifyTubes(created.Id, new(registered.Version, codes), default);
+        scope.ClearTrackedState();
+        var dispatched = await stock.Dispatch(created.Id, new(fixture.Shipment.Id, verified.Version, "Reference carrier", "TEST-OUTBOUND", DateTime.UtcNow), default);
         Assert.Equal("NeedsReview", dispatched.Status);
         scope.ClearTrackedState();
         var packed = await scope.PackingController().Confirm(fixture.Shipment.Id, new(fixture.Shipment.Version, [new(definition.Id, 2)]), default);
@@ -334,17 +336,24 @@ public partial class SampleShippingPostgresTests
             target.AuthorizationName, target.LabWorkOrderId, target.DestinationId);
         previous.SelectContainer(definition.Id, "{}");
         var barcode = $"SHARED-{scope.Suffix}";
-        SampleShippingStockKit Kit(string number, string barcodeNamespace)
+        async Task<SampleShippingStockKit> Kit(string number)
         {
+            var catalog = await scope.CatalogKitRequestAsync(definition.Id);
+            var supplierId = (await db.LabSupplierProducts.AsNoTracking()
+                .SingleAsync(item => item.Id == catalog.TubeSupplierProductId)).SupplierId;
+            var barcodeNamespace = SupplierTubeBarcode.NamespaceForSupplier(supplierId);
             var kit = new SampleShippingStockKit(number, definition.Id, "{}", 1,
                 "Tube maker", "TUBE", null, "Shipper maker", "SHIPPER",
+                tubeSupplierProductId: catalog.TubeSupplierProductId,
+                shipperSupplierProductId: catalog.ShipperSupplierProductId,
                 tubeBarcodeNamespace: barcodeNamespace);
-            kit.Tubes.Add(new SampleShippingStockTube(kit.Id, barcode, barcodeNamespace));
+            kit.Tubes.Add(new SampleShippingStockTube(kit.Id, barcode, barcodeNamespace, catalog.TubeSupplierProductId));
+            kit.VerifyTubeRoster(scope.PlatformUser.Id, [barcode], DateTime.UtcNow);
             kit.Dispatch(target, "TEST carrier", "TEST tracking", DateTime.UtcNow);
             return kit;
         }
-        var used = Kit($"USED-{scope.Suffix}", SupplierTubeBarcode.NamespaceForSupplier(Guid.NewGuid()));
-        var available = Kit($"READY-{scope.Suffix}", SupplierTubeBarcode.NamespaceForSupplier(Guid.NewGuid()));
+        var used = await Kit($"USED-{scope.Suffix}");
+        var available = await Kit($"READY-{scope.Suffix}");
         used.Bind(previous);
         db.AddRange(previous, used, available);
         await db.SaveChangesAsync();
@@ -368,6 +377,8 @@ public partial class SampleShippingPostgresTests
         var codes = Enumerable.Range(1, 20).Select(index => $"RACE-{scope.Suffix}-{index:00}").ToArray();
         kit = await stock.Register(kit.Id, new(codes, kit.Version), default);
         scope.ClearTrackedState();
+        kit = await stock.VerifyTubes(kit.Id, new(kit.Version, codes), default);
+        scope.ClearTrackedState();
         await stock.Dispatch(kit.Id, new(fixture.Shipment.Id, kit.Version, "Reference carrier", "TEST-OUTBOUND", DateTime.UtcNow), default);
         scope.ClearTrackedState();
         var packed = await scope.PackingController().Confirm(fixture.Shipment.Id, new(fixture.Shipment.Version, [new(definition.Id, 2)]), default);
@@ -390,6 +401,35 @@ public partial class SampleShippingPostgresTests
             var row = Assert.Single(shipment.Items); var slot = row.TubeSlots.First();
             return await CaptureAsync(() => scope.CustomerWorkflowFor(db).AssignTube(shipment.Id, row.Id, new(code, null, slot.Version, slot.Id, CustomerDeclaredQuantity: 20m, CustomerDeclaredQuantityUnit: "µL"), default));
         }
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task PreparedKitRequiresExactPhysicalRescanAndRetainsCorrectionHistory()
+    {
+        await using var scope = await ShippingTestScope.CreateAsync();
+        var fixture = await scope.CreateShipmentAsync(2);
+        var definition = await scope.CreateContainerAsync(fixture, 2);
+        var stock = scope.StockController();
+        var result = await stock.Create(await scope.CatalogKitRequestAsync(definition.Id), default);
+        var kit = Assert.IsType<StockKitDto>(Assert.IsType<CreatedResult>(result.Result).Value);
+        scope.ClearTrackedState();
+        var first = $"VERIFY-{scope.Suffix}-1";
+        var second = $"VERIFY-{scope.Suffix}-2";
+        var replacement = $"VERIFY-{scope.Suffix}-3";
+        kit = await stock.Register(kit.Id, new([first, second], kit.Version), default);
+        scope.ClearTrackedState();
+        await Assert.ThrowsAsync<OrderManagementException>(() =>
+            stock.VerifyTubes(kit.Id, new(kit.Version, [first, replacement]), default));
+        kit = await stock.VerifyTubes(kit.Id, new(kit.Version, [second, first]), default);
+        Assert.NotNull(kit.TubesVerifiedAt);
+        scope.ClearTrackedState();
+        kit = await stock.CorrectTube(kit.Id, new(kit.Version, second, replacement, "Wrong physical tube scanned"), default);
+        Assert.Null(kit.TubesVerifiedAt);
+        Assert.Equal(replacement, Assert.Single(kit.TubeCorrections!).ReplacementBarcode);
+        scope.ClearTrackedState();
+        kit = await stock.VerifyTubes(kit.Id, new(kit.Version, [first, replacement]), default);
+        Assert.NotNull(kit.TubesVerifiedAt);
+        Assert.Equal(2, await scope.DbContext.SampleShippingStockTubes.CountAsync(tube => tube.SampleShippingStockKitId == kit.Id));
     }
 
     [PostgreSqlReferenceFact]
@@ -499,6 +539,7 @@ public partial class SampleShippingPostgresTests
             var typeIds = await DbContext.SampleShippingContainerTypes.Where(item => item.Sku.StartsWith($"PACK-{Suffix}-")).Select(item => item.Id).ToArrayAsync();
             var definitionIds = await DbContext.SampleShippingContainerDefinitions.Where(item => typeIds.Contains(item.ContainerTypeId)).Select(item => item.Id).ToArrayAsync();
             var stockIds = await DbContext.SampleShippingStockKits.Where(item => definitionIds.Contains(item.ContainerDefinitionId)).Select(item => item.Id).ToArrayAsync();
+            await DbContext.SampleShippingStockTubeCorrections.Where(item => stockIds.Contains(item.SampleShippingStockKitId)).ExecuteDeleteAsync();
             await DbContext.SampleShippingStockTubes.Where(item => stockIds.Contains(item.SampleShippingStockKitId)).ExecuteDeleteAsync();
             await DbContext.SampleShippingStockKits.Where(item => stockIds.Contains(item.Id)).ExecuteDeleteAsync();
             await DbContext.Set<ShippingKitContent>().Where(item => definitionIds.Contains(item.ContainerDefinitionId)).ExecuteDeleteAsync();

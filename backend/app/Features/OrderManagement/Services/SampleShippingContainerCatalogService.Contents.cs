@@ -7,7 +7,7 @@ using PhaenoPortal.App.Features.OrderManagement.DTOs;
 public sealed partial class SampleShippingContainerCatalogService
 {
     private async Task AddContentsAsync(SampleShippingContainerDefinition definition,
-        IReadOnlyList<ShippingKitContentRequest>? requested, CancellationToken ct)
+        IReadOnlyList<ShippingKitContentRequest>? requested, CancellationToken ct, bool finishedProduct = false)
     {
         requested ??= [];
         var ids = requested.Select(item => item.SupplierProductId).Distinct().ToArray();
@@ -29,6 +29,13 @@ public sealed partial class SampleShippingContainerCatalogService
                     product.SupplierName, product.ProductNumber, product.Description, product.TypeName, position);
             }).ToArray();
             ShippingKitContent.ValidateRecipe(contents, definition.IsActive);
+            if (finishedProduct && definition.IsActive)
+            {
+                var tubeLines = contents.Where(item => item.Kind == ShippingKitContentKind.Tube).ToArray();
+                var shippers = contents.Where(item => item.Kind == ShippingKitContentKind.ShippingContainer).ToArray();
+                if (tubeLines.Length != 1 || tubeLines[0].Quantity != definition.TubeCapacity || shippers.Length != 1 || shippers[0].Quantity != 1)
+                    throw new ArgumentException("An active kit product needs exactly one tube product with the approved tube count and one outer shipper product with quantity one.");
+            }
             foreach (var item in contents) definition.KitContents.Add(item);
         }
         catch (ArgumentException exception) { throw Invalid(exception.Message); }

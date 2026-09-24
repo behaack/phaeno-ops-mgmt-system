@@ -63,7 +63,9 @@ public sealed partial class LabOperationsController(
         var materialDefinitions = await dbContext.LabMaterialDefinitions.AsNoTracking()
             .Where(item => item.IsActive).OrderBy(item => item.Name)
             .Select(item => new LabMaterialDefinitionDto(
-                item.Id, item.Key, item.Name, item.Kind.ToString(), item.IsActive, item.DefaultQuantityUnit))
+                item.Id, item.Key, item.Name, item.Kind.ToString(), item.IsActive, item.DefaultQuantityUnit,
+                dbContext.LabSupplierProducts.Where(product => product.MaterialDefinitionId == item.Id)
+                    .Select(product => (Guid?)product.Id).FirstOrDefault()))
             .ToListAsync(cancellationToken);
         var suppliers = await dbContext.LabSuppliers.AsNoTracking()
             .Where(item => item.IsActive).OrderBy(item => item.Name)

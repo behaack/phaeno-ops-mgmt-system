@@ -104,15 +104,16 @@ public partial class SampleShippingPostgresTests
         var configuration = scope.CreateConfigurationController();
         var firstTubeBarcode = $"CRN-{scope.Suffix}-01";
 
-        await platformWorkflow.CreateReturnKit(
-            fixture.Shipment.Id,
-            await scope.CatalogReturnKitRequestAsync(new CreateSampleReturnKitRequest(
+        var firstCatalog = await scope.CatalogReturnKitRequestAsync(new CreateSampleReturnKitRequest(
                 1,
                 "Corning",
                 "8676",
                 "REFERENCE-LOT",
                 "Therapak",
-                "37806")),
+                "37806"));
+        await platformWorkflow.CreateReturnKit(
+            fixture.Shipment.Id,
+            firstCatalog,
             CancellationToken.None);
         scope.ClearTrackedState();
         var kit = await scope.DbContext.SampleReturnKits.AsNoTracking()
@@ -137,7 +138,7 @@ public partial class SampleShippingPostgresTests
         var duplicateShipment = await scope.CreateEmptyShipmentAsync(fixture);
         await platformWorkflow.CreateReturnKit(
             duplicateShipment.Id,
-            await scope.CatalogReturnKitRequestAsync(new CreateSampleReturnKitRequest(1, "Corning", "8676", null, "Therapak", "37806")),
+            firstCatalog with { TubeLotNumber = null },
             CancellationToken.None);
         scope.ClearTrackedState();
         var duplicateKit = await scope.DbContext.SampleReturnKits.AsNoTracking()
@@ -800,9 +801,6 @@ public partial class SampleShippingPostgresTests
                     .Select(item => item.Id)
                     .ToArrayAsync();
 
-                await CleanupContainerStockAsync();
-                await CleanupTransportationRequestsAsync(organizationIds);
-
                 await DbContext.LabWorkEvents.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabOperationsOutboxEvents.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabContainerBarcodes.Where(item => DbContext.LabContainers.Any(container =>
@@ -820,6 +818,8 @@ public partial class SampleShippingPostgresTests
                 await DbContext.SampleShipmentTubeSlots.Where(item => shipmentItemIds.Contains(item.SampleShipmentItemId)).ExecuteDeleteAsync();
                 await DbContext.SampleShipmentItems.Where(item => shipmentIds.Contains(item.SampleShipmentId)).ExecuteDeleteAsync();
                 await DbContext.RegisteredSampleTubes.Where(item => kitIds.Contains(item.SampleReturnKitId)).ExecuteDeleteAsync();
+                await CleanupContainerStockAsync();
+                await CleanupTransportationRequestsAsync(organizationIds);
                 await DbContext.SampleReturnKits.Where(item => kitIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await DbContext.SampleShipments.Where(item => shipmentIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await DbContext.CustomerDeliveryLocations.Where(item => organizationIds.Contains(item.OrganizationId)).ExecuteDeleteAsync();

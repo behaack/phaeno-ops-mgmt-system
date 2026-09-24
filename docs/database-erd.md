@@ -1806,6 +1806,7 @@ erDiagram
     }
     sample_shipping_container_definitions {
         uuid id PK "not null"
+        uuid assembly_workflow_revision_id FK "nullable; pinned approved kit assembly workflow"
         character_varying_255 common_name "not null"
         uuid container_type_id FK,UK "not null"
         timestamp_with_time_zone created_at "not null"
@@ -1827,6 +1828,7 @@ erDiagram
     }
     sample_shipping_container_types {
         uuid id PK "not null"
+        uuid finished_kit_product_id FK,UK "nullable; historical definitions may be unlinked"
         timestamp_with_time_zone created_at "not null"
         uuid created_by_user_id FK "nullable"
         character_varying_100 normalized_sku UK "not null"
@@ -1873,6 +1875,8 @@ erDiagram
     sample_shipping_instruction_rules ||--o{ sample_shipping_container_compatibilities : "instruction_rule_id"
     sample_type_definitions ||--o{ sample_shipping_container_compatibilities : "sample_type_definition_id"
     sample_shipping_container_types ||--o{ sample_shipping_container_definitions : "container_type_id"
+    lab_kit_assembly_workflow_revisions o|--o{ sample_shipping_container_definitions : "assembly_workflow_revision_id"
+    lab_supplier_products o|--o| sample_shipping_container_types : "finished_kit_product_id"
     users o|--o{ sample_shipping_container_definitions : "created_by_user_id"
     sample_shipping_container_definitions o|--o{ sample_shipping_container_definitions : "supersedes_definition_id"
     users o|--o{ sample_shipping_container_definitions : "updated_by_user_id"
@@ -1886,6 +1890,11 @@ erDiagram
 erDiagram
     sample_shipping_stock_kits {
         uuid id PK "not null"
+        timestamp_with_time_zone assembly_completed_at "nullable"
+        uuid assembly_workflow_revision_id FK "nullable"
+        uuid finished_kit_product_id FK "nullable"
+        timestamp_with_time_zone tubes_verified_at "nullable; never inferred for historical kits"
+        uuid tubes_verified_by_user_id FK "nullable"
         character_varying_50 tube_barcode_namespace "not null"
         character_varying_50 authorization_source "nullable"
         uuid authorization_source_id "nullable"
@@ -1927,9 +1936,23 @@ erDiagram
         character_varying_50 barcode_namespace "not null"
         uuid sample_shipping_stock_kit_id FK "not null"
         character_varying_100 supplier_barcode "not null; unique with barcode_namespace"
+        uuid tube_supplier_product_id FK "nullable for legacy tubes"
+    }
+    sample_shipping_stock_tube_corrections {
+        uuid id PK "not null"
+        uuid sample_shipping_stock_kit_id FK "not null"
+        character_varying_100 previous_barcode "not null"
+        character_varying_100 replacement_barcode "not null"
+        character_varying_50 barcode_namespace "not null"
+        character_varying_1000 reason "not null"
+        uuid corrected_by_user_id FK "not null"
+        timestamp_with_time_zone corrected_at "not null"
     }
     sample_shipments o|--o{ sample_shipping_stock_kits : "bound_sample_shipment_id"
     sample_shipping_container_definitions ||--o{ sample_shipping_stock_kits : "container_definition_id"
+    lab_kit_assembly_workflow_revisions o|--o{ sample_shipping_stock_kits : "assembly_workflow_revision_id"
+    lab_supplier_products o|--o{ sample_shipping_stock_kits : "finished_kit_product_id"
+    users o|--o{ sample_shipping_stock_kits : "tubes_verified_by_user_id"
     users o|--o{ sample_shipping_stock_kits : "created_by_user_id"
     customer_delivery_locations o|--o{ sample_shipping_stock_kits : "customer_delivery_location_id"
     users o|--o{ sample_shipping_stock_kits : "customer_received_by_user_id"
@@ -1942,6 +1965,9 @@ erDiagram
     lab_supplier_products o|--o{ sample_shipping_stock_kits : "tube_supplier_product_id"
     users o|--o{ sample_shipping_stock_kits : "updated_by_user_id"
     sample_shipping_stock_kits ||--o{ sample_shipping_stock_tubes : "sample_shipping_stock_kit_id"
+    sample_shipping_stock_kits ||--o{ sample_shipping_stock_tube_corrections : "sample_shipping_stock_kit_id"
+    lab_supplier_products o|--o{ sample_shipping_stock_tubes : "tube_supplier_product_id"
+    users ||--o{ sample_shipping_stock_tube_corrections : "corrected_by_user_id"
 ```
 
 ### PSeq accounts receivable and operational attention
@@ -2550,6 +2576,7 @@ erDiagram
 erDiagram
     registered_sample_tubes {
         uuid id PK "not null"
+        uuid source_stock_tube_id FK,UK "nullable; unambiguous historical links backfilled"
         character_varying_50 barcode_namespace "not null"
         timestamp_with_time_zone accessioned_at "nullable"
         timestamp_with_time_zone assigned_at "nullable"
@@ -2774,6 +2801,7 @@ erDiagram
     }
     users o|--o{ registered_sample_tubes : "customer_declared_by_user_id"
     sample_return_kits ||--o{ registered_sample_tubes : "sample_return_kit_id"
+    sample_shipping_stock_tubes o|--o| registered_sample_tubes : "source_stock_tube_id"
     organizations ||--o{ sample_return_kits : "organization_id"
     sample_shipments ||--o| sample_return_kits : "sample_shipment_id"
     registered_sample_tubes o|--o{ sample_shipment_items : "registered_sample_tube_id"
@@ -3445,8 +3473,9 @@ erDiagram
         timestamp_with_time_zone created_at "not null"
         uuid created_by_user_id "nullable"
         character_varying_1000 description "not null"
-        character_varying_50 default_quantity_unit "nullable; required for new lot receipt"
+        character_varying_50 default_quantity_unit "nullable legacy; required for new purchased or Phaeno product"
         boolean is_active "not null"
+        uuid material_definition_id FK,UK "nullable; Phaeno reagent identity"
         character_varying_100 normalized_product_number UK "not null"
         character_varying_100 product_number "not null"
         uuid product_type_id FK "not null"
@@ -3672,6 +3701,8 @@ erDiagram
         character_varying_160 name UK "not null"
         uuid material_definition_id FK,UK "not null; one workflow identity per reagent"
         jsonb steps_json "not null"
+        jsonb revision_history_json "not null; ordered snapshots of prior procedure revisions"
+        jsonb revision_history_json "not null; ordered snapshots of prior procedure revisions"
         integer revision "not null"
         character_varying_30 status "not null"
         uuid authored_by_user_id "not null"
@@ -3732,6 +3763,7 @@ erDiagram
     lab_protocol_executions ||--o{ lab_material_consumptions : "lab_protocol_execution_id"
     lab_containers o|--o{ lab_material_consumptions : "output_container_id"
     lab_material_definitions ||--o{ lab_material_lots : "material_definition_id"
+    lab_material_definitions o|--o| lab_supplier_products : "material_definition_id"
     lab_storage_locations ||--o{ lab_material_lots : "storage_location_id"
     lab_suppliers o|--o{ lab_material_lots : "supplier_id"
     lab_supplier_products o|--o{ lab_material_lots : "supplier_product_id"
@@ -3743,6 +3775,100 @@ erDiagram
     lab_reagent_manufacturing_runs ||--o{ lab_reagent_run_steps : "run_id"
     lab_reagent_manufacturing_runs ||--o{ lab_reagent_material_uses : "run_id"
     lab_material_lots ||--o{ lab_reagent_material_uses : "source_material_lot_id"
+```
+
+### Transportation kit assembly
+
+```mermaid
+erDiagram
+    lab_kit_assembly_workflows {
+        uuid id PK "not null"
+        uuid finished_kit_product_id FK,UK "not null; one workflow per product"
+        integer latest_revision "not null"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id FK "nullable"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id FK "nullable"
+        bigint version "not null"
+    }
+    lab_kit_assembly_workflow_revisions {
+        uuid id PK "not null"
+        uuid workflow_id FK,UK "not null; unique with revision"
+        integer revision UK "not null"
+        jsonb steps_json "not null; approved Lab step snapshots"
+        character_varying_30 status "not null"
+        uuid authored_by_user_id FK "not null"
+        timestamp_with_time_zone authored_at_utc "not null"
+        uuid approved_by_user_id FK "nullable"
+        timestamp_with_time_zone approved_at_utc "nullable"
+        character_varying_2000 approval_override_reason "nullable"
+    }
+    lab_kit_assembly_components {
+        uuid id PK "not null"
+        uuid workflow_revision_id FK,UK "not null; unique with product and position"
+        uuid supplier_product_id FK,UK "not null"
+        integer quantity "not null"
+        character_varying_30 kind "not null"
+        integer position UK "not null"
+    }
+    lab_kit_assembly_runs {
+        uuid id PK "not null"
+        uuid stock_kit_id FK,UK "not null"
+        uuid workflow_revision_id FK "not null"
+        jsonb steps_json "not null"
+        character_varying_30 status "not null"
+        integer recorded_step_count "not null"
+        uuid started_by_user_id FK "not null"
+        timestamp_with_time_zone started_at_utc "not null"
+        uuid finished_by_user_id FK "nullable"
+        timestamp_with_time_zone finished_at_utc "nullable"
+        character_varying_2000 abandonment_reason "nullable"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id FK "nullable"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id FK "nullable"
+        bigint version "not null"
+    }
+    lab_kit_assembly_step_records {
+        uuid id PK "not null"
+        uuid run_id FK,UK "not null; unique with sequence"
+        integer sequence UK "not null"
+        uuid lab_step_version_id FK "not null"
+        character_varying_4000 notes "not null"
+        uuid performed_by_user_id FK "not null"
+        timestamp_with_time_zone performed_at_utc "not null"
+    }
+    lab_kit_assembly_uses {
+        uuid id PK "not null"
+        uuid run_id FK "not null"
+        uuid supplier_product_id FK "not null"
+        uuid source_material_lot_id FK "nullable"
+        numeric_18_6 quantity "not null"
+        character_varying_50 quantity_unit "not null"
+        uuid recorded_by_user_id FK "not null"
+        timestamp_with_time_zone recorded_at_utc "not null"
+    }
+    lab_supplier_products ||--o| lab_kit_assembly_workflows : "finished_kit_product_id"
+    lab_kit_assembly_workflows ||--o{ lab_kit_assembly_workflow_revisions : "workflow_id"
+    lab_kit_assembly_workflow_revisions ||--o{ lab_kit_assembly_components : "workflow_revision_id"
+    lab_supplier_products ||--o{ lab_kit_assembly_components : "supplier_product_id"
+    sample_shipping_stock_kits ||--o| lab_kit_assembly_runs : "stock_kit_id"
+    lab_kit_assembly_workflow_revisions ||--o{ lab_kit_assembly_runs : "workflow_revision_id"
+    lab_kit_assembly_runs ||--o{ lab_kit_assembly_step_records : "run_id"
+    lab_step_versions ||--o{ lab_kit_assembly_step_records : "lab_step_version_id"
+    lab_kit_assembly_runs ||--o{ lab_kit_assembly_uses : "run_id"
+    lab_supplier_products ||--o{ lab_kit_assembly_uses : "supplier_product_id"
+    lab_material_lots o|--o{ lab_kit_assembly_uses : "source_material_lot_id"
+    users o|--o{ lab_kit_assembly_workflows : "created_by_user_id"
+    users o|--o{ lab_kit_assembly_workflows : "updated_by_user_id"
+    users ||--o{ lab_kit_assembly_workflow_revisions : "authored_by_user_id"
+    users o|--o{ lab_kit_assembly_workflow_revisions : "approved_by_user_id"
+    users ||--o{ lab_kit_assembly_runs : "started_by_user_id"
+    users o|--o{ lab_kit_assembly_runs : "finished_by_user_id"
+    users o|--o{ lab_kit_assembly_runs : "created_by_user_id"
+    users o|--o{ lab_kit_assembly_runs : "updated_by_user_id"
+    users ||--o{ lab_kit_assembly_step_records : "performed_by_user_id"
+    users ||--o{ lab_kit_assembly_uses : "recorded_by_user_id"
 ```
 
 ### Protocols, libraries, and batches

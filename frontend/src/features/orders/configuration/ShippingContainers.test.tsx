@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import type { CatalogSupplier, SupplierProduct } from '#/api/supplier-catalog'
+import { transportationKitProductTypeId, type CatalogSupplier, type SupplierProduct } from '#/api/supplier-catalog'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { containerConfiguration as configuration, containerDefinition as baseDefinition } from '#/test-helpers/shipping-containers'
 import { ContainerSizesPanel } from './ContainerSizesPanel'
@@ -10,8 +10,9 @@ import { ShippingContainerEditor } from './ShippingContainerEditor'
 import { ShippingContainerDetailPage } from './ShippingContainerDetailPage'
 import { containerEffectiveState, latestContainerRevisions } from './shipping-container-utils'
 
-const mocks = vi.hoisted(() => ({ create: vi.fn(), revise: vi.fn(), preview: vi.fn(), list: vi.fn(), get: vi.fn(), history: vi.fn(), deactivate: vi.fn(), navigate: vi.fn(), configuration: vi.fn(), catalog: vi.fn(), allowed: true }))
-vi.mock('#/api/supplier-catalog', () => ({ useSupplierCatalog: mocks.catalog }))
+const mocks = vi.hoisted(() => ({ create: vi.fn(), revise: vi.fn(), preview: vi.fn(), list: vi.fn(), get: vi.fn(), history: vi.fn(), deactivate: vi.fn(), navigate: vi.fn(), configuration: vi.fn(), catalog: vi.fn(), workflows: vi.fn(), allowed: true }))
+vi.mock('#/api/supplier-catalog', async importOriginal => ({ ...await importOriginal<typeof import('#/api/supplier-catalog')>(), useSupplierCatalog: mocks.catalog }))
+vi.mock('#/api/lab-kit-assembly', async importOriginal => ({ ...await importOriginal<typeof import('#/api/lab-kit-assembly')>(), getKitAssemblyWorkflows: mocks.workflows }))
 vi.mock('#/api/shipping-containers', () => ({ createShippingContainerDefinition: mocks.create, reviseShippingContainerDefinition: mocks.revise, previewContainerRecommendation: mocks.preview, getShippingContainerDefinitions: mocks.list, getShippingContainerDefinition: mocks.get, getShippingContainerRevisions: mocks.history, deactivateShippingContainerDefinition: mocks.deactivate }))
 vi.mock('#/api/sample-shipping', () => ({ getSampleShippingConfiguration: mocks.configuration }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider: 'clerk', session: { capabilities: { canManageOrderConfiguration: mocks.allowed } } }) }))
@@ -20,6 +21,7 @@ vi.mock('@tanstack/react-router', () => ({ useNavigate: () => mocks.navigate, us
 function mount(node: ReactNode) { return render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>{node}</QueryClientProvider>) }
 function fill(label: RegExp | string, value: string) { fireEvent.change(screen.getByLabelText(label), { target: { value } }) }
 const product: SupplierProduct = { id: '77777777-7777-4777-8777-777777777771', supplierId: '88888888-8888-4888-8888-888888888881', productNumber: 'PRODUCT-20', description: 'Insulated shipper', kind: 'ShippingContainer', productTypeId: 'shipper-type', productTypeName: 'Shipping Container', productTypeIsActive: true, isActive: true, version: 1 }
+const finishedKitProduct: SupplierProduct = { ...product, id: '77777777-7777-4777-8777-777777777775', supplierId: '88888888-8888-4888-8888-888888888885', productNumber: '000-20', description: 'Approved 20-tube kit', kind: 'Other', productTypeId: transportationKitProductTypeId, productTypeName: 'Transportation kit', productTypeIsActive: true }
 const suppliers: CatalogSupplier[] = [
   { id: '88888888-8888-4888-8888-888888888881', name: 'Synthetic supplier', isActive: true, version: 1, products: [product,
     { ...product, id: '77777777-7777-4777-8777-777777777772', productNumber: 'TUBE', kind: 'Tube' },
@@ -28,21 +30,22 @@ const suppliers: CatalogSupplier[] = [
     { ...product, id: 'inactive-type', productNumber: 'INACTIVE-TYPE', productTypeIsActive: false }] },
   { id: '88888888-8888-4888-8888-888888888882', name: 'Other supplier', isActive: true, version: 1, products: [{ ...product, id: '77777777-7777-4777-8777-777777777773', supplierId: '88888888-8888-4888-8888-888888888882', productNumber: 'OTHER-10' }] },
   { id: 'inactive', name: 'Inactive supplier', isActive: false, version: 1, products: [product] },
+  { id: finishedKitProduct.supplierId, name: 'Phaeno', isInternalProducer: true, isActive: true, version: 1, products: [finishedKitProduct] },
 ]
 const definition = { ...baseDefinition, kitContents: [{ supplierProductId: product.id, supplierId: product.supplierId, supplierName: 'Synthetic supplier', productNumber: product.productNumber, productDescription: product.description, productTypeName: product.productTypeName, kind: product.kind, quantity: 1 }] }
 const catalogState = () => ({ data: suppliers, isPending: false, isError: false, isFetching: false, error: null, refetch: vi.fn() })
-beforeEach(() => { vi.clearAllMocks(); mocks.catalog.mockReturnValue(catalogState()); mocks.allowed = true; mocks.list.mockResolvedValue([definition]); mocks.get.mockResolvedValue(definition); mocks.history.mockResolvedValue([definition]); mocks.configuration.mockResolvedValue(configuration); mocks.create.mockResolvedValue(definition); mocks.revise.mockResolvedValue({ ...definition, revision: 2 }); mocks.deactivate.mockResolvedValue({ ...definition, isActive: false, deactivatedAt: new Date().toISOString() }) })
+beforeEach(() => { vi.clearAllMocks(); mocks.catalog.mockReturnValue(catalogState()); mocks.workflows.mockResolvedValue([]); mocks.allowed = true; mocks.list.mockResolvedValue([definition]); mocks.get.mockResolvedValue(definition); mocks.history.mockResolvedValue([definition]); mocks.configuration.mockResolvedValue(configuration); mocks.create.mockResolvedValue(definition); mocks.revise.mockResolvedValue({ ...definition, revision: 2 }); mocks.deactivate.mockResolvedValue({ ...definition, isActive: false, deactivatedAt: new Date().toISOString() }) })
 
 describe('controlled shipping container configuration', () => {
-  it('keeps discovery form-free and opens a dedicated record', async () => { mount(<ContainerSizesPanel apiEnabled configuration={configuration} />); const link = await screen.findByRole('link', { name: definition.commonName }); expect(link.getAttribute('href')).toBe(`/order-configuration/shipping-containers/${definition.id}`); expect(screen.queryByLabelText(/SKU number/)).toBeNull(); fireEvent.click(screen.getByRole('button', { name: 'Add container size' })); expect(screen.getByRole('dialog')).toBeTruthy() })
-  it('creates a draft preserving leading-zero SKU and exact compatibility pairs', async () => {
+  it('keeps discovery form-free and opens a dedicated record', async () => { mount(<ContainerSizesPanel apiEnabled configuration={configuration} />); const link = await screen.findByRole('link', { name: definition.commonName }); expect(link.getAttribute('href')).toBe(`/order-configuration/shipping-containers/${definition.id}`); expect(screen.queryByLabelText(/SKU number/)).toBeNull(); fireEvent.click(screen.getByRole('button', { name: 'Add kit specification' })); expect(screen.getByRole('dialog')).toBeTruthy() })
+  it('creates a draft from the named Phaeno kit product with its leading-zero SKU and exact compatibility pairs', async () => {
     mount(<ShippingContainerEditor source={null} configuration={configuration} onClose={vi.fn()} onSaved={vi.fn()} />)
-    fill(/SKU number/, '000-20'); fill(/Common name/, 'Approved size'); fill(/Usable tube capacity/, '20')
+    fill(/Phaeno transportation kit product/, finishedKitProduct.id); fill(/Usable tube capacity/, '20')
     fireEvent.click(screen.getByRole('checkbox', { name: /Extracted RNA/ }))
     expect((screen.getByRole('checkbox', { name: /Activate this revision/ }) as HTMLInputElement).checked).toBe(false)
-    fireEvent.click(screen.getByRole('button', { name: 'Save container size' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save shipping specification' }))
     await waitFor(() => expect(mocks.create).toHaveBeenCalledOnce())
-    expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ sku: '000-20', tubeCapacity: 20, isActive: false, compatibilities: definition.compatibilities.map(pair => ({ ...pair, temperatureControlInstructions: null, packingInstructions: null })) }))
+    expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ finishedKitProductId: finishedKitProduct.id, sku: '000-20', commonName: finishedKitProduct.description, tubeCapacity: 20, isActive: false, compatibilities: definition.compatibilities.map(pair => ({ ...pair, temperatureControlInstructions: null, packingInstructions: null })) }))
   })
   it.each(['Regular ice: approved container amount.', 'No cooling required.'])('saves flexible control with its exact sample/container combination: %s', async control => {
     const sharedConfiguration = { ...configuration, instructionRules: configuration.instructionRules.map(rule => ({ ...rule, shippingProcedureId: '44444444-4444-4444-8444-444444444444' })) }
@@ -55,8 +58,8 @@ describe('controlled shipping container configuration', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save revision' }))
     await waitFor(() => expect(mocks.revise).toHaveBeenCalledWith(definition.id, expect.objectContaining({ compatibilities: [expect.objectContaining({ temperatureControlInstructions: control, packingInstructions: 'Approved sample insert steps.' })] })))
   })
-  it('rejects invalid capacity and missing compatibility before saving', async () => { mount(<ShippingContainerEditor source={null} configuration={configuration} onClose={vi.fn()} onSaved={vi.fn()} />); fill(/SKU number/, '002'); fill(/Common name/, 'Size'); fill(/Usable tube capacity/, '0'); fireEvent.click(screen.getByRole('button', { name: 'Save container size' })); expect(await screen.findByText('Enter a usable capacity greater than zero.')).toBeTruthy(); expect(screen.getByText('Select at least one sample and destination assignment.')).toBeTruthy(); expect(mocks.create).not.toHaveBeenCalled() })
-  it('revises with the source version, immutable SKU, and retains an unsuccessful draft', async () => { mocks.revise.mockRejectedValue(new Error('Revision changed.')); const close = vi.fn(); vi.spyOn(window, 'confirm').mockReturnValue(false); mount(<ShippingContainerEditor source={definition} configuration={configuration} onClose={close} onSaved={vi.fn()} />); expect((screen.getByLabelText(/SKU number/) as HTMLInputElement).disabled).toBe(true); expect(screen.getByRole('region', { name: 'Kit contents' })).toBeTruthy(); fill(/Common name/, 'Updated common name'); fireEvent.click(screen.getByRole('button', { name: 'Save revision' })); expect(await screen.findByText('Container size was not saved')).toBeTruthy(); expect(mocks.revise).toHaveBeenCalledWith(definition.id, expect.objectContaining({ version: definition.version, commonName: 'Updated common name' })); expect(mocks.revise.mock.calls[0][1]).not.toHaveProperty('sku'); fireEvent.click(screen.getByRole('button', { name: 'Cancel' })); expect(close).not.toHaveBeenCalled(); expect((screen.getByLabelText(/Common name/) as HTMLInputElement).value).toBe('Updated common name') })
+  it('rejects invalid capacity and missing compatibility before saving', async () => { mount(<ShippingContainerEditor source={null} configuration={configuration} onClose={vi.fn()} onSaved={vi.fn()} />); fill(/Phaeno transportation kit product/, finishedKitProduct.id); fill(/Usable tube capacity/, '0'); fireEvent.click(screen.getByRole('button', { name: 'Save shipping specification' })); expect(await screen.findByText('Enter a usable capacity greater than zero.')).toBeTruthy(); expect(screen.getByText('Select at least one sample and destination assignment.')).toBeTruthy(); expect(mocks.create).not.toHaveBeenCalled() })
+  it('revises with the source version, immutable SKU, and retains an unsuccessful draft', async () => { mocks.revise.mockRejectedValue(new Error('Revision changed.')); const close = vi.fn(); vi.spyOn(window, 'confirm').mockReturnValue(false); mount(<ShippingContainerEditor source={definition} configuration={configuration} onClose={close} onSaved={vi.fn()} />); expect((screen.getByLabelText(/SKU number/) as HTMLInputElement).disabled).toBe(true); expect(screen.getByRole('region', { name: 'Kit contents' })).toBeTruthy(); fill(/Common name/, 'Updated common name'); fireEvent.click(screen.getByRole('button', { name: 'Save revision' })); expect(await screen.findByText('Kit specification was not saved')).toBeTruthy(); expect(mocks.revise).toHaveBeenCalledWith(definition.id, expect.objectContaining({ version: definition.version, commonName: 'Updated common name' })); expect(mocks.revise.mock.calls[0][1]).not.toHaveProperty('sku'); fireEvent.click(screen.getByRole('button', { name: 'Cancel' })); expect(close).not.toHaveBeenCalled(); expect((screen.getByLabelText(/Common name/) as HTMLInputElement).value).toBe('Updated common name') })
   it('keeps invalid earlier notes visible and retains the draft', async () => {
     mount(<ShippingContainerEditor source={definition} configuration={configuration} onClose={vi.fn()} onSaved={vi.fn()} />)
     fill('Earlier container notes', 'N'.repeat(4001))

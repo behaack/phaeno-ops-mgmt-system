@@ -2975,3 +2975,17 @@ Pending browser and broader connected acceptance: verify Phaeno appears as an in
 Inventory-unit addition: verify a catalog administrator can set a purchased product's unit; receiving a lot shows that unit without entry, rejects a conflicting API unit, and blocks legacy products until configured. Verify a reagent run starts by reagent name, inherits its saved unit, and asks for actual yield at completion. Existing lots must keep their recorded amounts and units. All three reagent migrations are applied locally and seven focused connected regressions passed; browser acceptance remains open.
 
 September 24 release verification: the full synthetic desktop/mobile browser suite passed 190 cases with two intentional mobile print skips. The first full run exposed two stale text assertions in the library-output guidance; both passed in a focused rerun and the subsequent complete run passed. This verifies the existing browser cases against the current UI. The storage-location and reagent-manufacturing browser acceptance scenarios above remain open, as do physical label/scanner and signed-in hosted checks.
+### September 24 Phaeno reagent product follow-up
+
+Hosted acceptance remains open for the Phaeno product → workflow approval →
+manufacturing run → product-linked lot → QC path, including multiple distinct
+reagents, an inactive product, and required expiry on a product marked Can
+expire. No browser suite was requested or run in this follow-up.
+
+### Transportation kit product and physical-roster acceptance (2026-09-24)
+
+Run a signed-in Phaeno administrator and operator journey that creates a named Transportation kit product, approves its ordered Lab steps and exact component BOM, pairs an active shipping specification, records actual component use and every permanent tube ID, verifies the packed roster by rescan, completes assembly, dispatches the individual KIT barcode, and follows the same tube identities through Customer assignment and Lab accession. Attempt a missing, duplicate, wrong-manufacturer and corrected tube, a stopped run, an inactive component, unavailable source lot, mismatched specification, and stale retry. Check old unlinked kit history and bookmarks. Physical label/scanner and packing qualification remain separate evidence; this browser journey has not run.
+
+### September 24 review-remediation additions
+
+In the full kit journey, try two source tube lots for one kit, a fractional tube or shipper use, a deactivated finished product, a withdrawn step between draft and approval, an old approved workflow revision for a new specification, and a new specification without a named finished product. Confirm a revised reagent workflow still displays the prior approved procedure. These browser cases remain unrun.

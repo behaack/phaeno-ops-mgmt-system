@@ -477,7 +477,7 @@ function SampleTypeDialog({ item, onClose, onSaved }: { item: SampleTypeDefiniti
   return (
     <Dialog open={item !== undefined} onOpenChange={(open) => { if (!open) close() }}>
       <DialogContent className="sm:max-w-3xl" showCloseButton={!mutation.isPending} aria-busy={mutation.isPending} aria-describedby={undefined}>
-        <DialogHeader><DialogTitle>{item ? `Create ${item.name} revision ${item.revision + 1}` : 'Add sample type'}</DialogTitle><DialogDescription>Describe the submitted material and its preservation needs. Set coolant methods, amounts and outer-container packing in Container sizes.</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>{item ? `Create ${item.name} revision ${item.revision + 1}` : 'Add sample type'}</DialogTitle><DialogDescription>Describe the submitted material and its preservation needs. Set coolant methods, amounts and outer-container packing in Kit specifications.</DialogDescription></DialogHeader>
         <form id="sample-type-form" noValidate onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
           <fieldset disabled={mutation.isPending} className="grid gap-5 px-1 sm:grid-cols-2">
           <Field label="Name" id="sample-type-name" required error={form.formState.errors.name?.message} full><Input id="sample-type-name" {...form.register('name')} /></Field>

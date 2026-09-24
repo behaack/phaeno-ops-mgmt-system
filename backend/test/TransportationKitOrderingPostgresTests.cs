@@ -336,7 +336,10 @@ public partial class SampleShippingPostgresTests
             var created = Assert.IsType<StockKitDto>(Assert.IsType<CreatedResult>((await stock.Create(await CatalogKitRequestAsync(size.Id), default)).Result).Value);
             ClearTrackedState();
             var codes = Enumerable.Range(1, size.TubeCapacity).Select(index => $"TK-{created.Id:N}-{index:00}").ToArray();
-            var ready = await stock.Register(created.Id, new(codes, created.Version), default); ClearTrackedState(); return ready;
+            var registered = await stock.Register(created.Id, new(codes, created.Version), default); ClearTrackedState();
+            var ready = await stock.VerifyTubes(created.Id, new(registered.Version, codes), default);
+            ClearTrackedState();
+            return ready;
         }
         public TransportationKitRequestsController KitCustomer(bool otherTenant = false, PSeqOperationsDbContext? dbOverride = null,
             string? fulfillmentName = null)

@@ -2217,3 +2217,24 @@ September 24 reagent manufacturing follow-up: `ReagentManufacturingDomainTests` 
 September 24 unit and reagent identity follow-up: all three reagent migrations were explicitly approved and applied to the configured local development database. Five focused reagent domain tests pass, including stable reagent identity/unit. Seven focused connected PostgreSQL tests pass after the third migration: immediate reagent source use and abandonment, automatic purchased-product identity and unit matching, supplier catalog and product types, storage settings, expiration policy, and setting a future unit on a legacy product without rewriting its older lots. The connected cases use rollback transactions or fixture cleanup. Release solution build has zero warnings, and EF reports no model changes beyond the generated migration.
 
 September 24 release verification: the complete Release suite without a reference database passed 755 cases, with 344 database or platform cases skipped. A full connected run against an isolated database migrated from empty passed 1,090 cases, failed seven older laboratory/shipping fixture assertions, and skipped two environment-specific cases. The seven failures reflected the first-print requirement for newly generated library/sequencing tubes and the now-valid reuse of a printed barcode across different manufacturers. After correcting those fixtures, all 11 affected connected journeys passed in a focused rerun. This is combined full-run and focused follow-up evidence, not a clean connected full run. The scratch database was dropped. EF reports no pending model changes. The new reagent and storage connected cases passed on the configured local development database in the preceding focused run; full hosted, physical-label and bench acceptance remain separate.
+### September 24 Phaeno reagent product follow-up
+
+The Phaeno catalog now creates a distinct Reagent product and prepared-material
+identity per named reagent. New workflows require that product; manufacturing
+runs pin its product onto the output lot. The new migration links existing
+prepared identities and lots. The connected catalog scenario covers multiple
+products, fixed type, immutable saved unit, renamed identity, and status sync;
+the manufacturing scenario covers workflow creation, inactive-product denial,
+required expiration, and output lot product lineage. The migration-discovery
+assertion now expects 18 revisions. These
+tests were added but not run because this follow-up did not request tests.
+
+### Transportation kit product and assembly (2026-09-24)
+
+The local kit-product migration was explicitly approved and applied to the configured development database. New domain tests cover independent approval, pinned step snapshots, ordered completion, an exact physical tube rescan, and verification invalidation. A connected PostgreSQL test covers registering a full stock roster, rejecting a mismatched rescan, retaining a reasoned correction, and verifying the corrected roster; its synthetic records are cleaned up. Both domain tests passed. The connected `SampleShippingPostgresTests` group passed 96 cases with one existing skip; the backend solution build passed with zero warnings and errors. Further connected acceptance must exercise a named Phaeno kit product through workflow/BOM approval, paired shipping specification, lot consumption, assembly completion, Customer dispatch and stock-to-return-to-Lab tube lineage; include concurrent retries and historical definitions without invented verification.
+
+### September 24 review-remediation coverage
+
+Kit domain regressions now check that a same-author override needs platform-administrator authorization and a reason, plus immutable recorded tube-lot matching. A reagent domain regression checks that an approved prior procedure remains inspectable after revision without a run. Connected acceptance remains required for withdrawn steps/components at approval, inactive finished products at preparation/recommendation, one source tube lot per kit with multiple material lots available, discrete `each` consumption, current approved workflow selection, and rejection of an unlinked new shipping specification. These additions have not been run in this remediation turn under repository verification policy.
+
+The current migration-discovery assertion expects 20 migrations after the kit-product and reagent-history additions.

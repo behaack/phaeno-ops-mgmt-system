@@ -27,7 +27,7 @@ public sealed partial class LabOperationsController
     // Operational choices use the existing preparation authorization; supplier administration remains separate.
     private async Task<IReadOnlyList<SupplierCatalogEntryDto>> PreparationMaterialCatalogAsync(CancellationToken ct)
     {
-        var suppliers = await dbContext.LabSuppliers.AsNoTracking().Where(s => s.IsActive).OrderBy(s => s.Name).ToListAsync(ct);
+        var suppliers = await dbContext.LabSuppliers.AsNoTracking().Where(s => s.IsActive && !s.IsInternalProducer).OrderBy(s => s.Name).ToListAsync(ct);
         var products = await (from p in dbContext.LabSupplierProducts.AsNoTracking()
             join t in dbContext.LabProductTypes.AsNoTracking() on p.ProductTypeId equals t.Id
             where p.IsActive && t.IsActive

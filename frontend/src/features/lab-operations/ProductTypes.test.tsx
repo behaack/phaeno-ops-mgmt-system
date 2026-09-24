@@ -13,9 +13,9 @@ function mount(id?: string) { render(<QueryClientProvider client={new QueryClien
 beforeEach(() => { vi.clearAllMocks(); mocks.types.mockReturnValue({ data: productTypesFixture, isPending: false, isError: false }); mocks.save.mockResolvedValue(productTypesFixture[2]) })
 describe('product type management', () => {
   it('edits a product type directly from its row menu', async () => {
-    mount(); fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions for Reagent' }), { button: 0, ctrlKey: false })
+    mount(); fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions for Tube' }), { button: 0, ctrlKey: false })
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Edit' }))
-    expect(screen.getByLabelText(/Type name/)).toHaveProperty('value', 'Reagent')
+    expect(screen.getByLabelText(/Type name/)).toHaveProperty('value', 'Tube')
   })
   it('confirms deactivation and preserves the type details and version', async () => {
     mocks.save.mockResolvedValue({ ...productTypesFixture[0], isActive: false })
@@ -29,10 +29,16 @@ describe('product type management', () => {
   it('offers activation for an inactive type', async () => {
     mocks.types.mockReturnValue({ data: productTypesFixture.map(t => ({ ...t, isActive: false })), isPending: false, isError: false })
     mount(); fireEvent.click(screen.getByLabelText('Show inactive'))
-    fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions for Reagent' }), { button: 0, ctrlKey: false })
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions for Shipping Container' }), { button: 0, ctrlKey: false })
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Activate' }))
     fireEvent.click(screen.getByRole('button', { name: 'Activate' }))
-    await waitFor(() => expect(mocks.save).toHaveBeenCalledWith(expect.objectContaining({ isActive: true, version: 1 }), productTypesFixture[2].id))
+    await waitFor(() => expect(mocks.save).toHaveBeenCalledWith(expect.objectContaining({ isActive: true, version: 1 }), productTypesFixture[1].id))
+  })
+
+  it('shows the seeded Reagent type without edit or deactivate actions', () => {
+    mount(productTypesFixture[2].id)
+    expect(screen.getByText(/Built-in Phaeno product type/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Actions for Reagent' })).toBeNull()
   })
 
   it('lists reagent and shipping types with dedicated detail links', () => {

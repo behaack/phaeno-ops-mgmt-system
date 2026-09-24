@@ -40,6 +40,8 @@ public sealed partial class LabOperationsController
             {
                 var product = await dbContext.LabSupplierProducts.AsNoTracking().SingleOrDefaultAsync(p => p.Id == productId && p.IsActive, ct) ?? throw Invalid("material_product_unavailable", "Select an active supplier product.");
                 var supplier = await dbContext.LabSuppliers.AsNoTracking().SingleOrDefaultAsync(s => s.Id == product.SupplierId && s.IsActive, ct) ?? throw Invalid("material_vendor_unavailable", "Select a product from an active vendor.");
+                if (supplier.IsInternalProducer)
+                    throw Invalid("material_identity_invalid", "Choose this Phaeno product as an internally prepared reagent.");
                 if (!await dbContext.LabProductTypes.AnyAsync(t => t.Id == product.ProductTypeId && t.IsActive, ct)) throw Invalid("material_product_unavailable", "Select a product with an active type.");
                 material = new(product.Description, supplier.Name, product.Id, supplier.Id, product.ProductNumber);
             }

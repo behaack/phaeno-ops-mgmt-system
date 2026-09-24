@@ -11,21 +11,16 @@ import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Input } from '#/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
-import { labReceiptTabs, resolveLabReceiptTab, type LabReceiptTab } from './lab-receipt-tabs'
+import { resolveLabReceiptTab, type LabReceiptTab } from './lab-receipt-tabs'
 import { Label } from '#/components/ui/label'
 import { LabShipmentReceiptPanel } from './LabShipmentReceiptPanel'
 import { LabShipmentQueue } from './LabShipmentQueue'
 import { ContainerAccessionDialog } from './ContainerAccessionDialog'
-import { ReturnKitFulfillmentPanel } from '#/features/orders/ReturnKitFulfillmentPanel'
-import { StandardKitInventoryPanel } from '#/features/orders/stock-kits/StandardKitInventoryPanel'
-import { KitRequestsPanel } from '#/features/orders/kit-requests/KitRequestsPanel'
 
 export function LabReceiptAccessionPanel({
   apiEnabled,
-  shipmentId,
   tab,
   onTabChange,
-  canManageKitSupply = false,
   canReceiveShipments = false,
 }: {
   apiEnabled: boolean
@@ -37,8 +32,8 @@ export function LabReceiptAccessionPanel({
   workOrders: LabWorkOrderSummary[]
 }) {
   const [localTab, setLocalTab] = useState<LabReceiptTab>()
-  const selectedTab = resolveLabReceiptTab(onTabChange ? tab : localTab ?? tab, shipmentId, canManageKitSupply)
-  const visibleTabs = labReceiptTabs.filter(item => !item.requiresKitManagement || canManageKitSupply)
+  const selectedTab = resolveLabReceiptTab(onTabChange ? tab : localTab ?? tab)
+  const visibleTabs = [{ value: 'receiving', label: 'Receive shipments' }, { value: 'accession', label: 'Accession samples' }] as const
   const packetBarcodeInput = useRef<HTMLInputElement>(null)
   const [packetBarcode, setPacketBarcode] = useState('')
   const [containerOpen, setContainerOpen] = useState(false)
@@ -66,7 +61,7 @@ export function LabReceiptAccessionPanel({
     <div className="space-y-5">
       <div className="space-y-1">
         <h2 className="text-lg font-semibold">Receipt and accession</h2>
-        <p className="text-sm text-muted-foreground">Manage outbound kits and receive incoming samples. Choose a tab to focus on one task.</p>
+        <p className="text-sm text-muted-foreground">Receive incoming shipments and accession their physical tubes.</p>
       </div>
       <Tabs value={selectedTab} onValueChange={value => changeTab(value as LabReceiptTab)} className="gap-4">
         <div className="min-w-0 overflow-x-auto pb-1">
@@ -74,9 +69,6 @@ export function LabReceiptAccessionPanel({
             {visibleTabs.map(item => <TabsTrigger key={item.value} value={item.value}>{item.label}</TabsTrigger>)}
           </TabsList>
         </div>
-        {canManageKitSupply ? <TabsContent value="kit-requests"><KitRequestsPanel apiEnabled={apiEnabled} /></TabsContent> : null}
-        {canManageKitSupply ? <TabsContent value="standard-kits"><StandardKitInventoryPanel apiEnabled={apiEnabled} shipmentId={shipmentId} /></TabsContent> : null}
-        <TabsContent value="return-kits"><ReturnKitFulfillmentPanel apiEnabled={apiEnabled} shipmentId={shipmentId} showEmpty /></TabsContent>
         <TabsContent value="receiving"><LabShipmentReceiptPanel apiEnabled={apiEnabled} canReceive={canReceiveShipments} onAccession={openAccession} /></TabsContent>
         <TabsContent value="accession" className="space-y-5">
       <LabShipmentQueue apiEnabled={apiEnabled} received onOpen={barcode => packetScan.mutate(barcode)} />

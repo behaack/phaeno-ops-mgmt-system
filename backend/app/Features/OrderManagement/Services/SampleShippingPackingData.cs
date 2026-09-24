@@ -147,7 +147,7 @@ public static class SampleShippingPackingData
             shipment.AuthorizationSourceId, stock.TubeSupplierName, stock.TubeProductNumber, stock.TubeLotNumber,
             stock.ShipperSupplierName, stock.ShipperProductNumber, stock.TubeCapacity, stock.ProductExpirySnapshotJson,
             stock.TubeBarcodeNamespace);
-        foreach (var barcode in barcodes) kit.Tubes.Add(new RegisteredSampleTube(kit.Id, barcode, stock.TubeBarcodeNamespace));
+        foreach (var tube in stock.Tubes) kit.Tubes.Add(new RegisteredSampleTube(kit.Id, tube.SupplierBarcode, tube.BarcodeNamespace, tube.Id));
         // Use the complete original kit and its recorded outbound facts. No fulfillment invariant is bypassed.
         kit.Fulfill(stock.OutboundCarrier!, stock.OutboundTrackingNumber!, stock.FulfilledAt.Value);
         stock.Bind(shipment);

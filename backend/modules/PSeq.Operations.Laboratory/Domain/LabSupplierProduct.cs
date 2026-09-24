@@ -10,6 +10,7 @@ public sealed class LabSupplierProduct : LabAuditedEntity
     public string NormalizedProductNumber { get; private set; } = null!;
     public string Description { get; private set; } = null!;
     public Guid ProductTypeId { get; private set; }
+    public Guid? MaterialDefinitionId { get; private set; }
     public bool IsActive { get; private set; } = true;
     public bool CanExpire { get; private set; }
     public string? DefaultQuantityUnit { get; private set; }
@@ -36,5 +37,13 @@ public sealed class LabSupplierProduct : LabAuditedEntity
     {
         DefaultQuantityUnit = string.IsNullOrWhiteSpace(unit)
             ? null : Required(unit, nameof(unit), 50);
+    }
+
+    public void LinkPreparedReagent(Guid materialDefinitionId)
+    {
+        if (ProductTypeId != LabProductType.ReagentId || materialDefinitionId == Guid.Empty
+            || MaterialDefinitionId.HasValue)
+            throw new InvalidOperationException("Only a new Phaeno reagent product can be linked to a reagent identity.");
+        MaterialDefinitionId = materialDefinitionId;
     }
 }

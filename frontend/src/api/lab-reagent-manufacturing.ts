@@ -7,11 +7,12 @@ const post = async <T>(path: string, input: unknown) => (await api.post<Envelope
 const put = async <T>(path: string, input: unknown) => (await api.put<Envelope<T>>(`${base}${path}`, input)).data.data
 
 export type ReagentWorkflowStep = { key: string; name: string; instructions: string }
+export type ReagentWorkflowRevision = { revision: number; name: string; steps: ReagentWorkflowStep[]; status: 'Draft' | 'Approved' | 'Retired'; authoredByUserId: string; approvedByUserId: string | null; approvedAtUtc: string | null; approvalOverrideReason: string | null }
 export type ReagentWorkflow = {
   id: string; name: string; materialDefinitionId: string; materialName: string; outputUnit: string | null
   steps: ReagentWorkflowStep[]; revision: number; status: 'Draft' | 'Approved' | 'Retired'
   authoredByUserId: string; approvedByUserId: string | null; approvedAtUtc: string | null
-  approvalOverrideReason: string | null; version: number
+  approvalOverrideReason: string | null; version: number; revisions: ReagentWorkflowRevision[]
 }
 export type ReagentRunStep = { sequence: number; stepKey: string; name: string; instructions: string; notes: string; performedByUserId: string; performedAtUtc: string }
 export type ReagentMaterialUse = { id: string; sourceMaterialLotId: string; sourceName: string; sourceLotNumber: string; quantity: number; quantityUnit: string; materialExhausted: boolean; recordedByUserId: string; recordedAtUtc: string }
@@ -22,7 +23,7 @@ export type ReagentRun = {
   availableQuantity: number; qcDisposition: string; status: 'InProgress' | 'Completed' | 'Abandoned'
   steps: ReagentWorkflowStep[]; recordedSteps: ReagentRunStep[]; materialUses: ReagentMaterialUse[]
   startedByUserId: string; startedAtUtc: string; finishedByUserId: string | null
-  finishedAtUtc: string | null; abandonmentReason: string | null; version: number
+  finishedAtUtc: string | null; abandonmentReason: string | null; version: number; requiresExpiration: boolean
 }
 export type SaveReagentWorkflow = {
   name: string; materialDefinitionId: string | null; newMaterialName: string | null

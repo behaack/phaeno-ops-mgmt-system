@@ -17,7 +17,7 @@ export function PrepareRequestedKitsDialog({ neededSizeIds, onClose, onSaved }: 
     onClose={onClose} onSaved={onSaved}
   />
   return <Dialog open onOpenChange={open => { if (!open) onClose() }}><DialogContent>
-    <DialogHeader><DialogTitle>Prepare kits</DialogTitle><DialogDescription>Load the container sizes still needed for this request.</DialogDescription></DialogHeader>
+    <DialogHeader><DialogTitle>Prepare kits</DialogTitle><DialogDescription>Load the kit specifications still needed for this request.</DialogDescription></DialogHeader>
     {definitions.error ? <Alert variant="destructive"><AlertTitle>Kit sizes could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(definitions.error, 'Try again.')} <Button variant="outline" onClick={() => void definitions.refetch()}>Retry</Button></AlertDescription></Alert> : <p role="status">Loading kit sizes…</p>}
   </DialogContent></Dialog>
 }

@@ -11,6 +11,51 @@ using PhaenoPortal.App.Features.OrderManagement.Services;
 public partial class SampleShippingPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task PhaenoCatalogKeepsDistinctReagentProductsAndFixedType()
+    {
+        await using var scope = await ShippingTestScope.CreateAsync();
+        await using var transaction = await scope.DbContext.Database.BeginTransactionAsync();
+        try
+        {
+            var catalog = scope.SupplierCatalog();
+            var producer = (await catalog.List(default)).Single(item => item.IsInternalProducer);
+            var first = await catalog.CreateProduct(producer.Id,
+                new($"TEST buffer {scope.Suffix}", "Buffer for testing", LabProductType.ReagentId,
+                    DefaultQuantityUnit: "mL"), default);
+            var second = await catalog.CreateProduct(producer.Id,
+                new($"TEST enzyme {scope.Suffix}", "Enzyme for testing", LabProductType.ReagentId,
+                    DefaultQuantityUnit: "µL"), default);
+            Assert.NotEqual(first.Id, second.Id);
+            Assert.NotEqual(first.MaterialDefinitionId, second.MaterialDefinitionId);
+            Assert.Equal("Reagent", first.ProductTypeName);
+            Assert.Equal("mL", (await scope.DbContext.LabMaterialDefinitions.SingleAsync(
+                item => item.Id == first.MaterialDefinitionId)).DefaultQuantityUnit);
+
+            var wrongType = await Assert.ThrowsAsync<OrderManagementException>(() =>
+                catalog.CreateProduct(producer.Id, new("TEST wrong type", "Invalid", LabProductType.TubeId,
+                    DefaultQuantityUnit: "each"), default));
+            Assert.Equal("supplier_catalog_invalid", wrongType.ErrorCode);
+            var changedUnit = await Assert.ThrowsAsync<OrderManagementException>(() =>
+                catalog.UpdateProduct(producer.Id, first.Id,
+                    new(first.ProductNumber, first.Description, LabProductType.ReagentId,
+                        Version: first.Version, DefaultQuantityUnit: "µL"), default));
+            Assert.Equal("reagent_unit_conflict", changedUnit.ErrorCode);
+
+            var renamed = await catalog.UpdateProduct(producer.Id, first.Id,
+                new($"TEST revised buffer {scope.Suffix}", first.Description, LabProductType.ReagentId,
+                    Version: first.Version), default);
+            Assert.Equal(renamed.ProductNumber, (await scope.DbContext.LabMaterialDefinitions.SingleAsync(
+                item => item.Id == first.MaterialDefinitionId)).Name);
+            var inactive = await catalog.UpdateProduct(producer.Id, first.Id,
+                new(renamed.ProductNumber, renamed.Description, LabProductType.ReagentId,
+                    IsActive: false, Version: renamed.Version), default);
+            Assert.False((await scope.DbContext.LabMaterialDefinitions.SingleAsync(
+                item => item.Id == inactive.MaterialDefinitionId)).IsActive);
+        }
+        finally { await transaction.RollbackAsync(); scope.ClearTrackedState(); }
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task SupplierCatalogEnforcesAccessUniquenessSelectionAndFrozenKitHistory()
     {
         await using var scope = await ShippingTestScope.CreateAsync();
@@ -64,6 +109,11 @@ public partial class SampleShippingPostgresTests
     {
         await using var scope = await ShippingTestScope.CreateAsync();
         var types = scope.ProductTypes();
+        var seededReagent = (await types.List(default)).Single(type => type.Id == LabProductType.ReagentId);
+        var protectedType = await Assert.ThrowsAsync<OrderManagementException>(() =>
+            types.Update(seededReagent.Id, new("Other", seededReagent.Description, "Other", true,
+                seededReagent.Version), default));
+        Assert.Equal("reagent_type_protected", protectedType.ErrorCode);
         await Assert.ThrowsAsync<OrderManagementException>(() => scope.ProductTypes(customer: true).Create(new("Forbidden", "Test", "Other"), default));
         var created = await types.Create(new($"TEST-TYPE-{scope.Suffix}", "TEST ONLY reagent category", "Other"), default);
         var supplier = await scope.SupplierCatalog().Create(new($"TEST-CATALOG-{scope.Suffix}-reagent"), default);

@@ -202,6 +202,8 @@ public static class OrderManagementModelConfiguration
             EnumText(entity.Property(e => e.Status));
             entity.HasIndex(e => e.SupplierBarcode);
             entity.HasIndex(e => new { e.BarcodeNamespace, e.SupplierBarcode }).IsUnique();
+            entity.HasIndex(e => e.SourceStockTubeId).IsUnique();
+            entity.HasOne<SampleShippingStockTube>().WithMany().HasForeignKey(e => e.SourceStockTubeId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_registered_tube_source_stock_tube");
             entity.HasIndex(e => new { e.SampleReturnKitId, e.Status });
             entity.HasOne<SampleReturnKit>()
                 .WithMany(e => e.Tubes)

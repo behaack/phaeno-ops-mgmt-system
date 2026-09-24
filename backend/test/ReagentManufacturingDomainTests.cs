@@ -27,6 +27,13 @@ public sealed class ReagentManufacturingDomainTests
         workflow.Approve(Guid.NewGuid(), DateTime.UtcNow);
         var run = new LabReagentManufacturingRun(workflow, Guid.NewGuid(), Guid.NewGuid(), DateTime.UtcNow);
         workflow.Revise("Buffer preparation v2", MaterialId, [new("heat", "Heat", "Warm mixture")], author);
+        var revisions = workflow.Revisions();
+        Assert.Equal(2, revisions.Count);
+        Assert.Equal("Draft", revisions[0].Status);
+        Assert.Equal("Approved", revisions[1].Status);
+        Assert.Equal("Buffer preparation", revisions[1].Name);
+        Assert.Equal(Steps, revisions[1].Steps);
+        Assert.NotNull(revisions[1].ApprovedAtUtc);
         Assert.Equal(1, run.WorkflowRevision);
         Assert.Equal("Buffer preparation", run.WorkflowName);
         Assert.Equal(Steps, run.Steps());

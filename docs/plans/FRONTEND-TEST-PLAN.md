@@ -2775,3 +2775,20 @@ September 24 reagent manufacturing follow-up: the purchased-stock form presents 
 September 24 inventory-unit follow-up: the supplier-product editor requires an inventory unit; purchased lot entry displays that unit read-only after product selection. The focused MaterialLotCreateDialog and SupplierCatalog runs pass 15 tests across three files, including automatic unit population and required catalog entry. Frontend typecheck and lint pass. Browser and full-suite verification remain open.
 
 September 24 release verification: the complete unit/component suite passed 1,214 tests across 189 files with bounded workers. Full lint, TypeScript, documentation consistency for 56 guides, and the production build passed. The browser result is recorded in the E2E plan. Dedicated component coverage for the new reagent workspace interactions remains a follow-up; connected API tests cover its source-use and lot rules.
+### September 24 Phaeno reagent product follow-up
+
+The supplier catalog component now covers two Phaeno reagent products and
+creation with a fixed Reagent type. Product-type coverage now treats the
+seeded Reagent type as a built-in read-only category. The workflow editor now selects a saved
+Phaeno product and displays its inventory unit; creation of a reagent identity
+inside the workflow editor was removed. The focused component test was added
+but not run because this follow-up did not request tests. Static TypeScript
+checking passed.
+
+### Transportation kit workspace and assembly (2026-09-24)
+
+Focused tab-resolution coverage now expects Kit requests, Inventory and Kits sent under Transportation kits while Receipt & accession contains only arrival and accession work. Supplier catalog and built-in product-type tests cover the Phaeno product-type selector and fixed categories. The shipping settings, shipping specification, and standard-kit group passed 70 tests after updating create and dispatch cases for named products and physical tube verification. The separate Lab tabs/catalog/product-type group passed 22 tests; lint and typecheck passed. Browser coverage remains needed for product → approved workflow/BOM → paired shipping specification → physical assembly and source-lot use → complete tube rescan → corrected roster → dispatch, including keyboard, narrow screen and stale-version feedback.
+
+### September 24 review-remediation scope
+
+Cover same-author approval denial for a non-platform Protocol Administrator, current-only workflow selection in shipping setup, whole-item tube/shipper use, a fixed source tube lot after first use, and visible reagent procedure revision history. Focused UI tests have not been added or run in this turn; typechecking and lint are the local static checks for the touched components.

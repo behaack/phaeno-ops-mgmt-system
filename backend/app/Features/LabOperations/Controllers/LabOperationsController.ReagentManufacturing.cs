@@ -9,7 +9,8 @@ using PhaenoPortal.App.Features.OrderManagement.Services;
 public sealed record LabReagentWorkflowDto(Guid Id, string Name, Guid MaterialDefinitionId,
     string MaterialName, string? OutputUnit, IReadOnlyList<LabReagentStep> Steps, int Revision, string Status,
     Guid AuthoredByUserId, Guid? ApprovedByUserId, DateTime? ApprovedAtUtc,
-    string? ApprovalOverrideReason, long Version);
+    string? ApprovalOverrideReason, long Version,
+    IReadOnlyList<LabReagentWorkflowRevisionSnapshot> Revisions);
 public sealed record SaveLabReagentWorkflowRequest(string Name, Guid? MaterialDefinitionId,
     string? NewMaterialName, IReadOnlyList<LabReagentStep> Steps, long Version = 0,
     string? OutputUnit = null);
@@ -33,7 +34,7 @@ public sealed record LabReagentRunDto(Guid Id, Guid WorkflowId, int WorkflowRevi
     IReadOnlyList<LabReagentStep> Steps, IReadOnlyList<LabReagentRunStepDto> RecordedSteps,
     IReadOnlyList<LabReagentUseDto> MaterialUses, Guid StartedByUserId,
     DateTime StartedAtUtc, Guid? FinishedByUserId, DateTime? FinishedAtUtc,
-    string? AbandonmentReason, long Version);
+    string? AbandonmentReason, long Version, bool RequiresExpiration = false);
 
 public sealed partial class LabOperationsController
 {
@@ -56,18 +57,21 @@ public sealed partial class LabOperationsController
             LabRole.ProtocolAdministrator, LabRole.OperationsAdministrator);
         await using var transaction = dbContext.Database.CurrentTransaction is null
             ? await dbContext.Database.BeginTransactionAsync(ct) : null;
-        if (!string.IsNullOrWhiteSpace(request.NewMaterialName))
-            await SampleShippingPackingData.LockAsync(dbContext,
-                $"reagent-material-name:{request.NewMaterialName.Trim().ToUpperInvariant()}", ct);
+        if (!string.IsNullOrWhiteSpace(request.NewMaterialName) || !request.MaterialDefinitionId.HasValue)
+            throw Invalid("reagent_product_required", "Define the reagent as a Phaeno product before creating its workflow.");
         var definition = await ResolveMaterialDefinitionAsync(LabMaterialLotKind.PreparedReagent,
-            request.MaterialDefinitionId, request.NewMaterialName, ct);
+            request.MaterialDefinitionId, null, ct);
         await SampleShippingPackingData.LockAsync(dbContext,
             $"reagent-material:{definition.Id}", ct);
+        var product = await RequireActiveReagentProductAsync(definition.Id, ct);
         if (await dbContext.LabReagentWorkflows.AnyAsync(item =>
             item.MaterialDefinitionId == definition.Id, ct))
             throw Conflict("reagent_already_has_workflow",
                 "This reagent already has a workflow. Revise its existing workflow instead.");
-        try { definition.SetPreparedReagentUnit(request.OutputUnit!); }
+        if (!string.IsNullOrWhiteSpace(request.OutputUnit)
+            && !string.Equals(request.OutputUnit.Trim(), product.DefaultQuantityUnit, StringComparison.OrdinalIgnoreCase))
+            throw Invalid("reagent_unit_mismatch", "Use the Phaeno product's inventory unit.");
+        try { definition.SetPreparedReagentUnit(product.DefaultQuantityUnit!); }
         catch (ArgumentException error) { throw Invalid("reagent_unit_invalid", error.Message); }
         catch (InvalidOperationException error) { throw Conflict("reagent_unit_conflict", error.Message); }
         LabReagentWorkflow workflow;
@@ -93,17 +97,19 @@ public sealed partial class LabOperationsController
         await SampleShippingPackingData.LockAsync(dbContext,
             $"reagent-material:{workflow.MaterialDefinitionId}", ct);
         EnsureVersion(workflow.Version, request.Version);
+        if (!string.IsNullOrWhiteSpace(request.NewMaterialName) || !request.MaterialDefinitionId.HasValue)
+            throw Invalid("reagent_product_required", "Choose this workflow's Phaeno reagent product.");
         var definition = await ResolveMaterialDefinitionAsync(LabMaterialLotKind.PreparedReagent,
-            request.MaterialDefinitionId, request.NewMaterialName, ct);
+            request.MaterialDefinitionId, null, ct);
         if (definition.Id != workflow.MaterialDefinitionId)
             throw Invalid("reagent_workflow_reassignment_forbidden",
                 "A workflow stays with its reagent. Revise the existing procedure without changing the reagent.");
-        if (!string.IsNullOrWhiteSpace(request.OutputUnit))
-        {
-            try { definition.SetPreparedReagentUnit(request.OutputUnit); }
-            catch (InvalidOperationException error) { throw Conflict("reagent_unit_conflict", error.Message); }
-            catch (ArgumentException error) { throw Invalid("reagent_unit_invalid", error.Message); }
-        }
+        var product = await RequireActiveReagentProductAsync(definition.Id, ct);
+        if (!string.IsNullOrWhiteSpace(request.OutputUnit)
+            && !string.Equals(request.OutputUnit.Trim(), product.DefaultQuantityUnit, StringComparison.OrdinalIgnoreCase))
+            throw Invalid("reagent_unit_mismatch", "Use the Phaeno product's inventory unit.");
+        try { definition.SetPreparedReagentUnit(product.DefaultQuantityUnit!); }
+        catch (InvalidOperationException error) { throw Conflict("reagent_unit_conflict", error.Message); }
         await RequireUniqueReagentWorkflowNameAsync(request.Name, workflow.Id, ct);
         Execute(() => workflow.Revise(request.Name, definition.Id, request.Steps, actor.User.Id));
         await dbContext.SaveChangesAsync(ct);
@@ -195,6 +201,7 @@ public sealed partial class LabOperationsController
             item.Id == request.MaterialDefinitionId && item.IsActive
             && item.Kind == LabMaterialLotKind.PreparedReagent, ct)
             ?? throw Invalid("reagent_material_unavailable", "The selected reagent is unavailable.");
+        var product = await RequireActiveReagentProductAsync(definition.Id, ct);
         if (string.IsNullOrWhiteSpace(definition.DefaultQuantityUnit))
             throw Conflict("reagent_unit_unconfigured", "Set this reagent's inventory unit in Lab settings before starting a run.");
         var storage = await dbContext.LabStorageLocations.SingleOrDefaultAsync(item =>
@@ -207,7 +214,7 @@ public sealed partial class LabOperationsController
         try { lot = new(LabMaterialLotKind.PreparedReagent, workflow.MaterialDefinitionId,
             lotNumber, null, null, storage.Id, 0, definition.DefaultQuantityUnit); }
         catch (ArgumentException error) { throw Invalid("reagent_run_invalid", error.Message); }
-        lot.AssignInternalProducer(producer.Id);
+        lot.AssignInternalProduct(producer.Id, product.Id);
         var run = new LabReagentManufacturingRun(workflow, lot.Id, actor.User.Id, now);
         dbContext.LabMaterialLots.Add(lot);
         dbContext.LabReagentManufacturingRuns.Add(run);
@@ -293,6 +300,14 @@ public sealed partial class LabOperationsController
             throw Invalid("reagent_expiration_invalid", "Expiration or retest date cannot be in the past.");
         if (request.ProducedQuantity <= 0)
             throw Invalid("reagent_quantity_invalid", "Enter the positive amount produced.");
+        var outputProduct = await dbContext.LabSupplierProducts.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Id == lot.SupplierProductId, ct);
+        if (outputProduct is not null)
+            await SampleShippingPackingData.LockAsync(dbContext, $"supplier-product:{outputProduct.Id}", ct);
+        outputProduct = await dbContext.LabSupplierProducts.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Id == lot.SupplierProductId, ct);
+        if (outputProduct?.CanExpire == true && request.ExpirationOrRetestDate is null)
+            throw Invalid("reagent_expiration_required", "This reagent can expire. Enter its expiration date before completing the lot.");
         Execute(() => run.Complete(actor.User.Id, DateTime.UtcNow));
         Execute(() => lot.CompleteInternalProduction(request.ProducedQuantity,
             request.ExpirationOrRetestDate));
@@ -330,6 +345,24 @@ public sealed partial class LabOperationsController
         return run;
     }
 
+    private async Task<LabSupplierProduct> RequireActiveReagentProductAsync(Guid definitionId, CancellationToken ct)
+    {
+        var producer = await RequirePhaenoProducerAsync(ct);
+        var productId = await dbContext.LabSupplierProducts.AsNoTracking().Where(item =>
+            item.MaterialDefinitionId == definitionId && item.SupplierId == producer.Id
+            && item.ProductTypeId == LabProductType.ReagentId)
+            .Select(item => (Guid?)item.Id).SingleOrDefaultAsync(ct);
+        if (productId is Guid id)
+            await SampleShippingPackingData.LockAsync(dbContext, $"supplier-product:{id}", ct);
+        var product = await dbContext.LabSupplierProducts.SingleOrDefaultAsync(item =>
+            item.Id == productId && item.IsActive, ct);
+        if (product is null || string.IsNullOrWhiteSpace(product.DefaultQuantityUnit)
+            || !await dbContext.LabProductTypes.AnyAsync(item =>
+                item.Id == LabProductType.ReagentId && item.IsActive, ct))
+            throw Invalid("reagent_product_unavailable", "Activate and configure this reagent under Phaeno products before starting work.");
+        return product;
+    }
+
     private async Task RequireUniqueReagentWorkflowNameAsync(string name, Guid? exceptId,
         CancellationToken ct)
     {
@@ -351,7 +384,7 @@ public sealed partial class LabOperationsController
             workflow.Steps(),
             workflow.Revision, workflow.Status.ToString(), workflow.AuthoredByUserId,
             workflow.ApprovedByUserId, workflow.ApprovedAtUtc,
-            workflow.ApprovalOverrideReason, workflow.Version);
+            workflow.ApprovalOverrideReason, workflow.Version, workflow.Revisions());
 
     private async Task<IReadOnlyList<LabReagentRunDto>> ReadReagentRunsAsync(
         IReadOnlyList<LabReagentManufacturingRun> runs, CancellationToken ct)
@@ -367,6 +400,10 @@ public sealed partial class LabOperationsController
         var lots = await dbContext.LabMaterialLots.AsNoTracking()
             .Where(item => lotIds.Contains(item.Id) || sourceIds.Contains(item.Id))
             .ToDictionaryAsync(item => item.Id, ct);
+        var outputProductIds = lots.Values.Where(item => lotIds.Contains(item.Id) && item.SupplierProductId.HasValue)
+            .Select(item => item.SupplierProductId!.Value).Distinct().ToArray();
+        var outputProducts = await dbContext.LabSupplierProducts.AsNoTracking()
+            .Where(item => outputProductIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, ct);
         var definitionIds = lots.Values.Select(item => item.MaterialDefinitionId).Distinct().ToArray();
         var definitions = await dbContext.LabMaterialDefinitions.AsNoTracking()
             .Where(item => definitionIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, ct);
@@ -395,7 +432,8 @@ public sealed partial class LabOperationsController
                         item.Quantity, item.QuantityUnit, item.MaterialExhausted,
                         item.RecordedByUserId, item.RecordedAtUtc);
                 }).ToList(), run.StartedByUserId, run.StartedAtUtc,
-                run.FinishedByUserId, run.FinishedAtUtc, run.AbandonmentReason, run.Version);
+                run.FinishedByUserId, run.FinishedAtUtc, run.AbandonmentReason, run.Version,
+                lot.SupplierProductId is Guid productId && outputProducts.GetValueOrDefault(productId)?.CanExpire == true);
         }).ToList();
     }
 }

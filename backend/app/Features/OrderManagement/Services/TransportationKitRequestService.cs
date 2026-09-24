@@ -154,7 +154,9 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
         var definitionIds = request.Lines.Select(item => item.ContainerDefinitionId).ToArray();
         var ready = block is null ? await db.SampleShippingStockKits.AsNoTracking().Where(item => !item.FulfilledAt.HasValue
             && !item.OrganizationId.HasValue && !item.TransportationKitRequestLineId.HasValue && !item.BoundSampleShipmentId.HasValue
-            && definitionIds.Contains(item.ContainerDefinitionId) && item.Tubes.Count == item.TubeCapacity).OrderBy(item => item.CreatedAt).ToListAsync(ct) : [];
+            && definitionIds.Contains(item.ContainerDefinitionId) && item.TubesVerifiedAt.HasValue
+            && (!item.FinishedKitProductId.HasValue || item.AssemblyCompletedAt.HasValue)
+            && item.Tubes.Count == item.TubeCapacity).OrderBy(item => item.CreatedAt).ToListAsync(ct) : [];
         return new(await MapAsync(request, false, true, ct), ready.Select(kit =>
         {
             var definition = JsonSerializer.Deserialize<SampleShippingContainerDefinitionDto>(kit.ContainerSnapshotJson, Json)!;

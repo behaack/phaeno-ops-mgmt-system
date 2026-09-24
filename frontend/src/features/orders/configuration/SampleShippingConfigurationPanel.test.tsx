@@ -7,7 +7,7 @@ import { SampleShippingConfigurationPanel } from './SampleShippingConfigurationP
 
 vi.mock('#/api/shipping-containers', () => ({ getShippingContainerDefinitions: async () => [] }))
 
-vi.mock('./ContainerSizesPanel', () => ({ ContainerSizesPanel: () => <div>Container sizes</div> }))
+vi.mock('./ContainerSizesPanel', () => ({ ContainerSizesPanel: () => <div>Kit specifications</div> }))
 
 const apiMocks = vi.hoisted(() => ({
   createDestination: vi.fn(),

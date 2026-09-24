@@ -11,17 +11,19 @@ public sealed record SampleShippingContainerDefinitionDto(Guid Id, Guid Definiti
     string CommonName, int TubeCapacity, int Revision, Guid? SupersedesDefinitionId, string? SupplierName,
     string? SupplierProductNumber, string? PackingInstructions, DateTime EffectiveFrom, DateTime? EffectiveTo,
     bool IsActive, int DisplayOrder, long Version, IReadOnlyList<ContainerCompatibilityRequest> Compatibilities,
-    DateTime? DeactivatedAt = null, IReadOnlyList<ShippingKitContentDto>? KitContents = null);
+    DateTime? DeactivatedAt = null, IReadOnlyList<ShippingKitContentDto>? KitContents = null,
+    Guid? FinishedKitProductId = null, Guid? AssemblyWorkflowRevisionId = null);
 public sealed record CreateSampleShippingContainerRequest(string Sku, string CommonName, int TubeCapacity,
     DateTime EffectiveFrom, IReadOnlyList<ContainerCompatibilityRequest> Compatibilities,
     string? SupplierName = null, string? SupplierProductNumber = null, string? PackingInstructions = null,
     DateTime? EffectiveTo = null, bool IsActive = false, int DisplayOrder = 0,
-    IReadOnlyList<ShippingKitContentRequest>? KitContents = null);
+    IReadOnlyList<ShippingKitContentRequest>? KitContents = null, Guid? FinishedKitProductId = null,
+    Guid? AssemblyWorkflowRevisionId = null);
 public sealed record ReviseSampleShippingContainerRequest(long Version, string CommonName, int TubeCapacity,
     DateTime EffectiveFrom, IReadOnlyList<ContainerCompatibilityRequest> Compatibilities,
     string? SupplierName = null, string? SupplierProductNumber = null, string? PackingInstructions = null,
     DateTime? EffectiveTo = null, bool IsActive = false, int DisplayOrder = 0,
-    IReadOnlyList<ShippingKitContentRequest>? KitContents = null);
+    IReadOnlyList<ShippingKitContentRequest>? KitContents = null, Guid? AssemblyWorkflowRevisionId = null);
 public sealed record ContainerPackingPreviewRequest(int TubeCount, IReadOnlyList<ContainerCompatibilityRequest> Contexts,
     IReadOnlyList<ContainerQuantityRequest>? Availability = null, IReadOnlyList<ContainerQuantityRequest>? Selection = null,
     Guid? IncludeDraftDefinitionId = null);

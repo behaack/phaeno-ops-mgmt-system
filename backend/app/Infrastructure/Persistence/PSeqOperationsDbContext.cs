@@ -132,6 +132,7 @@ public sealed partial class PSeqOperationsDbContext(
     public DbSet<SampleShippingContainerCompatibility> SampleShippingContainerCompatibilities { get; set; }
     public DbSet<SampleShippingStockKit> SampleShippingStockKits { get; set; }
     public DbSet<SampleShippingStockTube> SampleShippingStockTubes { get; set; }
+    public DbSet<SampleShippingStockTubeCorrection> SampleShippingStockTubeCorrections { get; set; }
     public DbSet<CustomerDeliveryLocation> CustomerDeliveryLocations { get; set; }
     public DbSet<TransportationKitRequest> TransportationKitRequests { get; set; }
     public DbSet<TransportationKitRequestLine> TransportationKitRequestLines { get; set; }
@@ -251,6 +252,12 @@ public sealed partial class PSeqOperationsDbContext(
     public DbSet<LabReagentManufacturingRun> LabReagentManufacturingRuns { get; set; }
     public DbSet<LabReagentRunStep> LabReagentRunSteps { get; set; }
     public DbSet<LabReagentMaterialUse> LabReagentMaterialUses { get; set; }
+    public DbSet<LabKitAssemblyWorkflow> LabKitAssemblyWorkflows { get; set; }
+    public DbSet<LabKitAssemblyWorkflowRevision> LabKitAssemblyWorkflowRevisions { get; set; }
+    public DbSet<LabKitAssemblyComponent> LabKitAssemblyComponents { get; set; }
+    public DbSet<LabKitAssemblyRun> LabKitAssemblyRuns { get; set; }
+    public DbSet<LabKitAssemblyStepRecord> LabKitAssemblyStepRecords { get; set; }
+    public DbSet<LabKitAssemblyUse> LabKitAssemblyUses { get; set; }
     public DbSet<LabMaterialConsumption> LabMaterialConsumptions { get; set; }
     public DbSet<LabEquipment> LabEquipment { get; set; }
     public DbSet<LabEquipmentUsage> LabEquipmentUsages { get; set; }
@@ -571,6 +578,7 @@ public sealed partial class PSeqOperationsDbContext(
         TrialModelConfiguration.Configure(modelBuilder);
         RelationshipManagementModelConfiguration.Configure(modelBuilder);
         LabOperationsModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
+        LabKitAssemblyModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
         LabAssemblyModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
         LabPreparationModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
         WebsiteModelConfiguration.Configure(modelBuilder, this.persistenceOptions.WebsiteSchema);

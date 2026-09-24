@@ -1,5 +1,9 @@
 # Sample Shipping and Intake Plan
 
+## Transportation kit product direction — September 24, 2026
+
+The [transportation kit product and BOM plan](TRANSPORTATION-KIT-PRODUCT-AND-BOM-PLAN.md) records the newly agreed direction: Phaeno assembles finished, named transportation kit products from purchased components, using an approved shipping specification and a Lab Steps/Protocols/Workflow assembly procedure with a structured, versioned bill of materials. Purchased complete kits are a future extension. The planned Transportation kits workspace moves kit preparation and inventory out of Receipt & accession. This refines the earlier **Container sizes** and **Kit contents** sections below; their descriptions remain accurate for the current implementation until the new plan is executed. No product, stock, shipment, or database record changes with this planning note.
+
 ## Saved scan presentation — September 23, 2026
 
 After Customer, Partner or Prospect tube matching, show the saved manufacturer tube identifier as readable text in the row rather than reproducing a QR code that would send a scanner back to the same saved record. Keep scannable QR symbols on printable shipment packets and kit labels, where a physical recipient needs them. This updates presentation only; supplier barcode assignment, immutable crosswalks, packet values and intake rules are unchanged. POMS-generated laboratory tube labels separately use DataMatrix and require physical scan-back before print success is recorded, as described in the Lab Operations plan.

@@ -43,9 +43,16 @@ public sealed class LabProductTypesController(PSeqOperationsDbContext db, OrderR
         var type = await db.LabProductTypes.SingleOrDefaultAsync(t => t.Id == id, ct)
             ?? throw new OrderManagementException("product_type_not_found", "The product type was not found.", 404);
         if (type.Version != request.Version) throw new OrderManagementException("product_type_changed", "This type changed. Close the editor and refresh before trying again.", 409);
+        var requestedName = request.Name ?? string.Empty;
+        if (type.Id == LabProductType.ReagentId && (!string.Equals(requestedName.Trim(), "Reagent", StringComparison.Ordinal)
+            || !request.IsActive || Use(request.KitUse) != LabSupplierProductKind.Other))
+            throw new OrderManagementException("reagent_type_protected", "The Reagent product type is fixed for Phaeno-made products.", 409);
+        if (type.Id == LabProductType.TransportationKitId && (!string.Equals(requestedName.Trim(), "Transportation kit", StringComparison.Ordinal)
+            || !request.IsActive || Use(request.KitUse) != LabSupplierProductKind.Other))
+            throw new OrderManagementException("transportation_kit_type_protected", "The Transportation kit product type is fixed for Phaeno-made kits.", 409);
         var count = await db.LabSupplierProducts.CountAsync(p => p.ProductTypeId == id, ct);
         if (count > 0 && Use(request.KitUse) != type.KitUse) throw new OrderManagementException("product_type_in_use", "Kit use cannot change while products reference this type. Create a different type instead.", 409);
-        try { type.Update(request.Name, request.Description, Use(request.KitUse), request.IsActive); }
+        try { type.Update(requestedName, request.Description, Use(request.KitUse), request.IsActive); }
         catch (ArgumentException e) { throw Invalid(e.Message); }
         await Save(ct);
         if (transaction is not null) await transaction.CommitAsync(ct);

@@ -2,7 +2,9 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from './client'
 
 export type SupplierProductKind = 'Tube' | 'ShippingContainer' | 'Other'
-export type SupplierProduct = { id: string; supplierId: string; productNumber: string; description: string; kind: SupplierProductKind; productTypeId: string; productTypeName: string; productTypeIsActive: boolean; canExpire?: boolean; defaultQuantityUnit?: string | null; isActive: boolean; version: number }
+export const reagentProductTypeId = '90000000-0000-4000-8000-000000000003'
+export const transportationKitProductTypeId = '90000000-0000-4000-8000-000000000004'
+export type SupplierProduct = { id: string; supplierId: string; productNumber: string; description: string; kind: SupplierProductKind; productTypeId: string; productTypeName: string; productTypeIsActive: boolean; canExpire?: boolean; defaultQuantityUnit?: string | null; materialDefinitionId?: string | null; isActive: boolean; version: number }
 export type CatalogSupplier = { id: string; name: string; isActive: boolean; version: number; products: SupplierProduct[]; isInternalProducer?: boolean }
 export type SupplierWrite = { name: string; isActive: boolean; version?: number }
 export type ProductWrite = { productNumber: string; description: string; productTypeId: string; canExpire?: boolean; defaultQuantityUnit?: string | null; isActive: boolean; version?: number }

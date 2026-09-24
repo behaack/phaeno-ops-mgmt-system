@@ -19,8 +19,6 @@ public partial class SampleShippingPostgresTests
             var controller = scope.CreateLabController();
             var sourceDefinition = new LabMaterialDefinition($"source-{scope.Suffix}",
                 "TEST source buffer", LabMaterialLotKind.SupplierLot);
-            var outputDefinition = new LabMaterialDefinition($"output-{scope.Suffix}",
-                "TEST prepared buffer", LabMaterialLotKind.PreparedReagent);
             var supplier = new LabSupplier($"TEST source supplier {scope.Suffix}");
             var location = new LabStorageLocation($"TEST reagent shelf {scope.Suffix}");
             var source = new LabMaterialLot(LabMaterialLotKind.SupplierLot,
@@ -28,29 +26,45 @@ public partial class SampleShippingPostgresTests
                 DateOnly.FromDateTime(DateTime.UtcNow).AddDays(60), location.Id, 10, "mL");
             source.RecordQc(LabQcDisposition.Passed, DateOnly.FromDateTime(DateTime.UtcNow),
                 null, "{}", scope.PlatformUser.Id, DateTime.UtcNow);
-            db.AddRange(sourceDefinition, outputDefinition, supplier, location, source);
+            db.AddRange(sourceDefinition, supplier, location, source);
             await db.SaveChangesAsync();
 
+            var producerId = await db.LabSuppliers.Where(item => item.IsInternalProducer)
+                .Select(item => item.Id).SingleAsync();
+            var product = await scope.SupplierCatalog().CreateProduct(producerId,
+                new($"TEST prepared buffer {scope.Suffix}", "TEST prepared buffer",
+                    LabProductType.ReagentId, CanExpire: true, DefaultQuantityUnit: "mL"), default);
+            var outputDefinitionId = product.MaterialDefinitionId!.Value;
+
             var workflow = await controller.CreateReagentWorkflow(new(
-                $"TEST reagent production {scope.Suffix}", outputDefinition.Id, null,
+                $"TEST reagent production {scope.Suffix}", outputDefinitionId, null,
                 [new LabReagentStep("mix", "Mix", "Combine source lots")],
                 OutputUnit: "mL"), default);
             var duplicate = await Assert.ThrowsAsync<OrderManagementException>(() =>
                 controller.CreateReagentWorkflow(new(
-                    $"TEST duplicate workflow {scope.Suffix}", outputDefinition.Id, null,
+                    $"TEST duplicate workflow {scope.Suffix}", outputDefinitionId, null,
                     [new LabReagentStep("mix", "Mix", "Combine source lots")],
                     OutputUnit: "mL"), default));
             Assert.Equal("reagent_already_has_workflow", duplicate.ErrorCode);
             workflow = await controller.ApproveReagentWorkflow(workflow.Id,
                 new(workflow.Version, "Reference test uses one platform administrator"), default);
             Assert.Equal("Approved", workflow.Status);
-            var run = await controller.StartReagentRun(new(outputDefinition.Id, location.Id), default);
+            var inactiveProduct = await scope.SupplierCatalog().UpdateProduct(producerId, product.Id,
+                new(product.ProductNumber, product.Description, LabProductType.ReagentId,
+                    IsActive: false, Version: product.Version), default);
+            var blockedRun = await Assert.ThrowsAsync<OrderManagementException>(() =>
+                controller.StartReagentRun(new(outputDefinitionId, location.Id), default));
+            Assert.Equal("reagent_material_unavailable", blockedRun.ErrorCode);
+            await scope.SupplierCatalog().UpdateProduct(producerId, product.Id,
+                new(inactiveProduct.ProductNumber, inactiveProduct.Description, LabProductType.ReagentId,
+                    IsActive: true, Version: inactiveProduct.Version), default);
+            var run = await controller.StartReagentRun(new(outputDefinitionId, location.Id), default);
             Assert.StartsWith("PH-REAG-", run.LotNumber);
             Assert.Equal("Pending", run.QcDisposition);
             Assert.Equal(0, run.AvailableQuantity);
-            Assert.Equal(await db.LabSuppliers.Where(item => item.IsInternalProducer)
-                .Select(item => item.Id).SingleAsync(),
-                (await db.LabMaterialLots.SingleAsync(item => item.Id == run.MaterialLotId)).SupplierId);
+            var outputLot = await db.LabMaterialLots.SingleAsync(item => item.Id == run.MaterialLotId);
+            Assert.Equal(producerId, outputLot.SupplierId);
+            Assert.Equal(product.Id, outputLot.SupplierProductId);
 
             var beforeUseVersion = run.Version;
             run = await controller.RecordReagentMaterialUse(run.Id,
@@ -77,11 +91,15 @@ public partial class SampleShippingPostgresTests
                         null, "{}", abandonedLotVersion), default));
             Assert.Equal("reagent_run_not_complete", blockedQc.ErrorCode);
 
-            var completed = await controller.StartReagentRun(new(outputDefinition.Id, location.Id), default);
+            var completed = await controller.StartReagentRun(new(outputDefinitionId, location.Id), default);
             completed = await controller.RecordReagentMaterialUse(completed.Id,
                 new(source.Id, 2, "mL", false, completed.Version), default);
             completed = await controller.RecordReagentStep(completed.Id,
                 new(0, "Mixed according to the procedure", completed.Version), default);
+            var missingExpiry = await Assert.ThrowsAsync<OrderManagementException>(() =>
+                controller.CompleteReagentRun(completed.Id,
+                    new(5, null, completed.Version), default));
+            Assert.Equal("reagent_expiration_required", missingExpiry.ErrorCode);
             completed = await controller.CompleteReagentRun(completed.Id,
                 new(5, DateOnly.FromDateTime(DateTime.UtcNow).AddDays(30), completed.Version), default);
             Assert.Equal("Completed", completed.Status);

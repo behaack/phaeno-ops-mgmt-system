@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { supplierCatalogFixture, productTypesFixture } from '#/test-helpers/supplier-catalog'
+import { reagentProductTypeId, transportationKitProductTypeId } from '#/api/supplier-catalog'
 import { SupplierCatalogPage } from './SupplierCatalogPage'
 const mocks = vi.hoisted(() => ({ catalog: vi.fn(), types: vi.fn(), supplier: vi.fn(), product: vi.fn(), allowed: true }))
 vi.mock('#/api/supplier-catalog', async importOriginal => ({ ...await importOriginal<typeof import('#/api/supplier-catalog')>(), useSupplierCatalog: () => mocks.catalog(), useProductTypes: () => mocks.types(), saveSupplier: mocks.supplier, saveSupplierProduct: mocks.product }))
@@ -12,6 +13,44 @@ vi.mock('@tanstack/react-router', () => ({ useSearch: () => ({}), Link: ({ child
 function mount(supplierId?: string) { render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}><SupplierCatalogPage supplierId={supplierId} /></QueryClientProvider>) }
 beforeEach(() => { vi.clearAllMocks(); mocks.types.mockReturnValue({ data: productTypesFixture, isPending: false, isError: false }); mocks.allowed = true; mocks.catalog.mockReturnValue({ data: supplierCatalogFixture, isPending: false, isError: false }); mocks.supplier.mockResolvedValue(supplierCatalogFixture[0]); mocks.product.mockResolvedValue(supplierCatalogFixture[0].products[0]) })
 describe('supplier catalog', () => {
+  it('defines each Phaeno reagent as a distinct product with fixed Reagent type', async () => {
+    const phaeno = { id: '81000000-0000-4000-8000-000000000099', name: 'Phaeno', isActive: true,
+      isInternalProducer: true, version: 1, products: [
+        { id: '82000000-0000-4000-8000-000000000091', supplierId: '81000000-0000-4000-8000-000000000099', productNumber: 'Buffer A', description: 'Buffer', kind: 'Other' as const, productTypeId: reagentProductTypeId, productTypeName: 'Reagent', productTypeIsActive: true, defaultQuantityUnit: 'mL', isActive: true, version: 1 },
+        { id: '82000000-0000-4000-8000-000000000092', supplierId: '81000000-0000-4000-8000-000000000099', productNumber: 'Enzyme B', description: 'Enzyme', kind: 'Other' as const, productTypeId: reagentProductTypeId, productTypeName: 'Reagent', productTypeIsActive: true, defaultQuantityUnit: 'µL', isActive: true, version: 1 },
+      ] }
+    mocks.catalog.mockReturnValue({ data: [...supplierCatalogFixture, phaeno], isPending: false, isError: false })
+    mount(phaeno.id)
+    expect(screen.getByText('Buffer A')).toBeTruthy()
+    expect(screen.getByText('Enzyme B')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'New product' }))
+    expect(screen.getByText('Reagent', { exact: true })).toBeTruthy()
+    expect(screen.getByLabelText(/Product type/)).toHaveProperty('value', reagentProductTypeId)
+    fireEvent.change(screen.getByLabelText(/Product name/), { target: { value: 'Reagent C' } })
+    fireEvent.change(screen.getByLabelText(/Product description/), { target: { value: 'Manufactured reagent' } })
+    fireEvent.change(screen.getByLabelText(/Inventory unit/), { target: { value: 'mL' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(mocks.product).toHaveBeenCalledWith(phaeno.id,
+      expect.objectContaining({ productNumber: 'Reagent C', productTypeId: reagentProductTypeId,
+        defaultQuantityUnit: 'mL' }), undefined))
+  })
+
+  it('names a Phaeno transportation kit separately from its stable SKU', async () => {
+    const phaeno = { id: '81000000-0000-4000-8000-000000000099', name: 'Phaeno', isActive: true,
+      isInternalProducer: true, version: 1, products: [] }
+    mocks.catalog.mockReturnValue({ data: [...supplierCatalogFixture, phaeno], isPending: false, isError: false })
+    mount(phaeno.id)
+    fireEvent.click(screen.getByRole('button', { name: 'New product' }))
+    fireEvent.change(screen.getByLabelText(/Product type/), { target: { value: transportationKitProductTypeId } })
+    fireEvent.change(screen.getByLabelText('SKU *'), { target: { value: 'TRANS-20' } })
+    fireEvent.change(screen.getByLabelText(/Finished kit name/), { target: { value: '20-tube RNA transportation kit' } })
+    expect(screen.getByLabelText(/Inventory unit/)).toHaveProperty('value', 'each')
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(mocks.product).toHaveBeenCalledWith(phaeno.id,
+      expect.objectContaining({ productNumber: 'TRANS-20', description: '20-tube RNA transportation kit',
+        productTypeId: transportationKitProductTypeId, defaultQuantityUnit: 'each' }), undefined))
+  })
+
   it('edits the selected supplier directly from its row', async () => {
     mount(); fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions for Tube maker' }), { button: 0, ctrlKey: false })
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Edit' }))

@@ -25,7 +25,7 @@ export const procedureFields = [
   ['exceptionInstructions', 'Delays, damage and other exceptions'],
 ] as const
 const procedureHints: Record<typeof procedureFields[number][0], string> = {
-  packingInstructions: 'Steps shared by every sample using this procedure. Keep container-specific steps and coolant amounts with Container sizes.',
+  packingInstructions: 'Steps shared by every sample using this procedure. Keep container-specific steps and coolant amounts with Kit specifications.',
   temperatureInstructions: 'Common handling during transit. Sample preservation limits belong to the sample type; the cooling method and amount belong to the sample/container combination.',
   carrierInstructions: 'Approved carrier services and tracking requirements. Receiving-site restrictions belong to the destination.',
   dispatchInstructions: 'When to dispatch and how to arrange arrival. Maintain receiving hours once on the destination.',

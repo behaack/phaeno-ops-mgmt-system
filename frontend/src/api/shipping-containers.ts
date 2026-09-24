@@ -33,10 +33,12 @@ export type ShippingContainerDefinition = {
   version: number
   compatibilities: ContainerCompatibility[]
   kitContents?: ShippingKitContent[] | null
+  finishedKitProductId?: string | null
+  assemblyWorkflowRevisionId?: string | null
 }
 export type ShippingContainerWrite = Pick<ShippingContainerDefinition,
   'commonName' | 'tubeCapacity' | 'supplierName' | 'supplierProductNumber' | 'packingInstructions' |
-  'effectiveFrom' | 'effectiveTo' | 'isActive' | 'displayOrder' | 'compatibilities'> & { kitContents?: Array<{ supplierProductId: string; quantity: number }> }
+  'effectiveFrom' | 'effectiveTo' | 'isActive' | 'displayOrder' | 'compatibilities'> & { kitContents?: Array<{ supplierProductId: string; quantity: number }>; finishedKitProductId?: string | null; assemblyWorkflowRevisionId?: string | null }
 export type ContainerQuantity = { containerDefinitionId: string; quantity: number }
 export type ContainerRecommendationRequest = {
   tubeCount: number
@@ -94,6 +96,9 @@ export async function previewContainerRecommendation(input: ContainerRecommendat
 export type ShippingStockKit = {
   id: string
   kitNumber: string
+  finishedKitProductId?: string | null
+  assemblyWorkflowRevisionId?: string | null
+  assemblyCompletedAt?: string | null
   container: { definitionId: string; sku: string; commonName: string; capacity: number }
   tubeSupplierName: string
   tubeProductNumber: string
@@ -125,6 +130,9 @@ export type ShippingStockKit = {
   inventoryBlockedReason?: string | null
   version: number
   tubes: Array<{ id: string; supplierBarcode: string }>
+  tubesVerifiedAt?: string | null
+  tubesVerifiedByUserId?: string | null
+  tubeCorrections?: Array<{ previousBarcode: string; replacementBarcode: string; reason: string; correctedByUserId: string; correctedAt: string }> | null
   productExpirations?: Array<{ supplierProductId: string; supplierName: string; productNumber: string; canExpire: boolean; expirationDate: string | null }> | null
 }
 export type ShippingStockKitWrite = { containerDefinitionId: string; tubeSupplierProductId: string; shipperSupplierProductId: string; tubeLotNumber: string | null; productExpirations?: Array<{ supplierProductId: string; expirationDate: string }> }
@@ -134,6 +142,8 @@ export async function getShippingStockKits() { return read((await api.get<Envelo
 export async function getShippingStockKit(id: string) { return read((await api.get<Envelope<ShippingStockKit>>(`${stockPath}/${id}`)).data) }
 export async function createShippingStockKit(input: ShippingStockKitWrite) { return read((await api.post<Envelope<ShippingStockKit>>(stockPath, input)).data) }
 export async function registerShippingStockKitTubes(id: string, input: { supplierBarcodes: string[]; version: number }) { return read((await api.post<Envelope<ShippingStockKit>>(`${stockPath}/${id}/tubes`, input)).data) }
+export async function verifyShippingStockKitTubes(id: string, input: { supplierBarcodes: string[]; version: number }) { return read((await api.post<Envelope<ShippingStockKit>>(`${stockPath}/${id}/verify-tubes`, input)).data) }
+export async function correctShippingStockKitTube(id: string, input: { previousBarcode: string; replacementBarcode: string; reason: string; version: number }) { return read((await api.post<Envelope<ShippingStockKit>>(`${stockPath}/${id}/correct-tube`, input)).data) }
 export async function dispatchShippingStockKit(id: string, input: ShippingStockKitDispatch) { return read((await api.post<Envelope<ShippingStockKit>>(`${stockPath}/${id}/dispatch`, input)).data) }
 
 export type ShippingIdentityLookup = { kind: 'Order' | 'Sample' | 'Shipment'; id: string; reference: string; shipments: SampleShipmentWorkflow[] }

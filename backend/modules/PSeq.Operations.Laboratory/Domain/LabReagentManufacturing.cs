@@ -4,6 +4,9 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 
 public sealed record LabReagentStep(string Key, string Name, string Instructions);
+public sealed record LabReagentWorkflowRevisionSnapshot(int Revision, string Name,
+    IReadOnlyList<LabReagentStep> Steps, string Status, Guid AuthoredByUserId,
+    Guid? ApprovedByUserId, DateTime? ApprovedAtUtc, string? ApprovalOverrideReason);
 
 public enum LabReagentWorkflowStatus { Draft, Approved, Retired }
 
@@ -13,6 +16,7 @@ public sealed class LabReagentWorkflow : LabAuditedEntity
     public string Name { get; private set; } = null!;
     public Guid MaterialDefinitionId { get; private set; }
     public string StepsJson { get; private set; } = null!;
+    public string RevisionHistoryJson { get; private set; } = "[]";
     public int Revision { get; private set; } = 1;
     public LabReagentWorkflowStatus Status { get; private set; } = LabReagentWorkflowStatus.Draft;
     public Guid AuthoredByUserId { get; private set; }
@@ -36,6 +40,17 @@ public sealed class LabReagentWorkflow : LabAuditedEntity
     public IReadOnlyList<LabReagentStep> Steps() =>
         JsonSerializer.Deserialize<List<LabReagentStep>>(StepsJson) ?? [];
 
+    public IReadOnlyList<LabReagentWorkflowRevisionSnapshot> Revisions()
+    {
+        var history = JsonSerializer.Deserialize<List<LabReagentWorkflowRevisionSnapshot>>(RevisionHistoryJson) ?? [];
+        history.Add(CurrentSnapshot());
+        return history.OrderByDescending(item => item.Revision).ToArray();
+    }
+
+    private LabReagentWorkflowRevisionSnapshot CurrentSnapshot() =>
+        new(Revision, Name, Steps(), Status.ToString(), AuthoredByUserId,
+            ApprovedByUserId, ApprovedAtUtc, ApprovalOverrideReason);
+
     public void Revise(string name, Guid materialDefinitionId,
         IReadOnlyList<LabReagentStep> steps, Guid authorId)
     {
@@ -45,6 +60,9 @@ public sealed class LabReagentWorkflow : LabAuditedEntity
             throw new ArgumentException("A prepared reagent and author are required.");
         if (materialDefinitionId != MaterialDefinitionId)
             throw new InvalidOperationException("A reagent workflow cannot be reassigned to a different reagent. Create its own workflow instead.");
+        var history = JsonSerializer.Deserialize<List<LabReagentWorkflowRevisionSnapshot>>(RevisionHistoryJson) ?? [];
+        history.Add(CurrentSnapshot());
+        RevisionHistoryJson = JsonSerializer.Serialize(history);
         Name = LabAuditedEntity.Required(name, nameof(name), 160);
         StepsJson = SerializeSteps(steps);
         Revision++;

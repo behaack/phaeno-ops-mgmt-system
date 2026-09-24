@@ -8,7 +8,7 @@ export const shippingSettingsSections: ReadonlyArray<WorkspaceSidebarItem<Shippi
   { value: 'destinations', label: 'Ship-to destinations', description: 'Receiving addresses, hours, and restrictions', icon: MapPin },
   { value: 'procedures', label: 'Shipping procedures', description: 'Reusable common shipping steps', icon: BookOpen },
   { value: 'instructions', label: 'Shipping assignments', description: 'Approved procedures for samples and destinations', icon: FileText },
-  { value: 'containers', label: 'Container sizes', description: 'Capacity, temperature control and packing', icon: Boxes },
+  { value: 'containers', label: 'Kit specifications', description: 'Capacity, temperature control and packing', icon: Boxes },
   { value: 'submission', label: 'Order submission guidance', description: 'Introductory guidance for new lab orders', icon: ClipboardList },
 ]
 

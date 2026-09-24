@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { getOrderErrorMessage } from '#/api/order-management'
 import type { SampleShipmentWorkflow } from '#/api/sample-shipping'
-import { createShippingStockKit, dispatchShippingStockKit, registerShippingStockKitTubes, type ShippingContainerDefinition, type ShippingStockKit } from '#/api/shipping-containers'
+import { correctShippingStockKitTube, createShippingStockKit, dispatchShippingStockKit, registerShippingStockKitTubes, verifyShippingStockKitTubes, type ShippingContainerDefinition, type ShippingStockKit } from '#/api/shipping-containers'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
@@ -63,7 +63,7 @@ export function PrepareStandardKitDialog({ definitions, onClose, onSaved }: Edit
     }
     if (!unavailable) mutation.mutate(values)
   }
-  return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Prepare standard kit</DialogTitle><DialogDescription>Choose a configured size and the actual supplier products, then register its permanent tube barcodes. Prepared stock remains at Phaeno until dispatch.</DialogDescription></DialogHeader><StockKitSaveError error={mutation.error || catalog.error} />
+  return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Prepare standard kit</DialogTitle><DialogDescription>Choose an approved kit configuration and confirm its component products, then register the permanent IDs on its actual tubes. Prepared stock remains at Phaeno until dispatch.</DialogDescription></DialogHeader><StockKitSaveError error={mutation.error || catalog.error} />
     <form id="prepare-standard-kit" className="space-y-4" noValidate onSubmit={event => {
       event.preventDefault()
       for (const product of inventoryProducts.filter(item => item.canExpire)) {
@@ -79,7 +79,7 @@ export function PrepareStandardKitDialog({ definitions, onClose, onSaved }: Edit
     }}>
       {catalog.isPending ? <p role="status">Loading suppliers and products…</p> : null}
       {catalog.isError ? <Button type="button" variant="outline" onClick={() => void catalog.refetch()}>Retry catalog</Button> : null}
-      <StockKitField id="stock-container" label="Container size" required error={errors.containerDefinitionId?.message}><select id="stock-container" className={selectClass} {...form.register('containerDefinitionId')} disabled={unavailable} aria-invalid={Boolean(errors.containerDefinitionId)} aria-describedby={errors.containerDefinitionId ? 'stock-container-error' : undefined} onChange={event => {
+      <StockKitField id="stock-container" label="Kit configuration" required error={errors.containerDefinitionId?.message}><select id="stock-container" className={selectClass} {...form.register('containerDefinitionId')} disabled={unavailable} aria-invalid={Boolean(errors.containerDefinitionId)} aria-describedby={errors.containerDefinitionId ? 'stock-container-error' : undefined} onChange={event => {
         const definition = candidates.find(value => value.id === event.target.value)
         form.setValue('containerDefinitionId', event.target.value, { shouldDirty: true, shouldValidate: true })
         for (const [prefix, kind] of [['tube', 'Tube'], ['shipper', 'ShippingContainer']] as const) {
@@ -92,7 +92,7 @@ export function PrepareStandardKitDialog({ definitions, onClose, onSaved }: Edit
           form.setValue(`${prefix}SupplierId`, supplier?.id ?? '', { shouldDirty: true, shouldValidate: true })
           form.setValue(`${prefix}SupplierProductId`, product?.id ?? '', { shouldDirty: true, shouldValidate: true })
         }
-      }}><option value="">Select a configured size</option>{candidates.map(value => <option key={value.id} value={value.id}>{value.commonName} · SKU {value.sku} · {value.tubeCapacity} tubes</option>)}</select></StockKitField>
+      }}><option value="">Select a kit configuration</option>{candidates.map(value => <option key={value.id} value={value.id}>{value.commonName} · SKU {value.sku} · {value.tubeCapacity} tubes</option>)}</select></StockKitField>
       {!candidates.length ? <p className="text-sm text-muted-foreground">Activate an approved container size in Order Settings → Sample shipping before preparing stock.</p> : null}
       {selected ? <p className="rounded-md border bg-muted/40 p-3 text-sm">This kit holds {selected.tubeCapacity} tubes. Register all {selected.tubeCapacity} before recording outbound dispatch.</p> : null}
       {selected?.kitContents?.length ? <section aria-labelledby="prepare-kit-contents" className="rounded-md border p-3"><h3 id="prepare-kit-contents" className="text-sm font-medium">Contents per kit</h3><ShippingKitContents contents={selected.kitContents} /><p className="text-xs text-muted-foreground">Assemble these products and quantities. Record the actual tube and shipping-container products below.</p></section> : null}
@@ -124,6 +124,31 @@ export function RegisterStockKitTubesDialog({ kit, onClose, onSaved }: EditorPro
   </DialogContent></Dialog>
 }
 
+export function VerifyStockKitTubesDialog({ kit, onClose, onSaved }: EditorProps & { kit: ShippingStockKit }) {
+  const schema = z.object({ barcodes: z.string().trim().min(1, 'Rescan every physical tube in the kit.') })
+  const form = useForm<{ barcodes: string }>({ resolver: zodResolver(schema), defaultValues: { barcodes: '' } })
+  const mutation = useMutation({ mutationFn: (values: { barcodes: string }) => verifyShippingStockKitTubes(kit.id, { version: kit.version, supplierBarcodes: barcodeLines(values.barcodes) }), onSuccess: onSaved })
+  const codes = barcodeLines(form.watch('barcodes'))
+  return <Dialog open onOpenChange={open => { if (!open && !mutation.isPending) onClose() }}><DialogContent><DialogHeader><DialogTitle>Verify physical tube roster</DialogTitle><DialogDescription>Rescan each tube physically packed in {kit.kitNumber} before sealing. Compare all {kit.container.capacity} IDs with the saved roster; a count alone cannot release the kit.</DialogDescription></DialogHeader><StockKitSaveError error={mutation.error} />
+    <form id="verify-stock-kit-tubes" className="space-y-3" noValidate onSubmit={form.handleSubmit(values => { if (!mutation.isPending) mutation.mutate(values) })}><StockKitField id="verify-tube-barcodes" label="Physical tube IDs" required error={form.formState.errors.barcodes?.message}><Textarea id="verify-tube-barcodes" rows={7} className="font-mono" autoComplete="off" spellCheck={false} disabled={mutation.isPending} {...form.register('barcodes')} /></StockKitField><p className="text-xs text-muted-foreground">{codes.length} of {kit.container.capacity} scanned. The saved IDs appear on the kit detail for comparison. Verification records your identity and time.</p></form>
+    <RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={onClose}>Cancel</Button><Button type="submit" form="verify-stock-kit-tubes" disabled={mutation.isPending || codes.length !== kit.container.capacity}>{mutation.isPending ? 'Verifying…' : 'Verify roster'}</Button></RequiredDialogFooter>
+  </DialogContent></Dialog>
+}
+
+export function CorrectStockKitTubeDialog({ kit, onClose, onSaved }: EditorProps & { kit: ShippingStockKit }) {
+  const schema = z.object({ previousBarcode: z.string().trim().min(1, 'Choose the registered ID.'), replacementBarcode: z.string().trim().min(1, 'Scan the replacement tube.'), reason: z.string().trim().min(1, 'Explain the correction.').max(1000) })
+  const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { previousBarcode: '', replacementBarcode: '', reason: '' } })
+  const mutation = useMutation({ mutationFn: (values: z.infer<typeof schema>) => correctShippingStockKitTube(kit.id, { ...values, version: kit.version }), onSuccess: onSaved })
+  const errors = form.formState.errors
+  return <Dialog open onOpenChange={open => { if (!open && !mutation.isPending) onClose() }}><DialogContent><DialogHeader><DialogTitle>Correct a tube ID</DialogTitle><DialogDescription>Replace a mistaken scan before dispatch. This clears roster verification and records the old ID, new ID, reason, operator, and time.</DialogDescription></DialogHeader><StockKitSaveError error={mutation.error} />
+    <form id="correct-stock-kit-tube" className="space-y-4" noValidate onSubmit={form.handleSubmit(values => { if (!mutation.isPending) mutation.mutate(values) })}>
+      <StockKitField id="correct-previous-barcode" label="Registered tube ID" required error={errors.previousBarcode?.message}><select id="correct-previous-barcode" className={selectClass} {...form.register('previousBarcode')}><option value="">Select registered ID</option>{kit.tubes.map(tube => <option key={tube.id} value={tube.supplierBarcode}>{tube.supplierBarcode}</option>)}</select></StockKitField>
+      <StockKitField id="correct-replacement-barcode" label="Replacement physical tube ID" required error={errors.replacementBarcode?.message}><Input id="correct-replacement-barcode" className="font-mono" autoComplete="off" spellCheck={false} {...form.register('replacementBarcode')} /></StockKitField>
+      <StockKitField id="correct-reason" label="Reason" required error={errors.reason?.message}><Textarea id="correct-reason" rows={3} {...form.register('reason')} /></StockKitField>
+    </form><RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={onClose}>Cancel</Button><Button type="submit" form="correct-stock-kit-tube" disabled={mutation.isPending}>{mutation.isPending ? 'Correcting…' : 'Save correction'}</Button></RequiredDialogFooter>
+  </DialogContent></Dialog>
+}
+
 const dispatchSchema = z.object({ shipmentId: z.string().uuid('Select the Trial or Partner shipment receiving this kit.'), outboundCarrier: z.string().trim().min(1, 'Enter the carrier.').max(255), outboundTrackingNumber: z.string().trim().min(1, 'Enter the tracking number.').max(255), fulfilledAt: z.string().min(1, 'Enter the dispatch time.').refine(value => Number.isFinite(new Date(value).getTime()), 'Enter a valid dispatch time.') })
 type DispatchValues = z.infer<typeof dispatchSchema>
 export function DispatchStandardKitDialog({ kit, shipments, initialShipmentId, onClose, onSaved }: EditorProps & { kit: ShippingStockKit; shipments: SampleShipmentWorkflow[]; initialShipmentId?: string }) {
@@ -140,7 +165,7 @@ export function DispatchStandardKitDialog({ kit, shipments, initialShipmentId, o
       <StockKitField id="stock-dispatch-job" label="Trial or Partner shipment" required error={errors.shipmentId?.message}><select id="stock-dispatch-job" className={selectClass} disabled={mutation.isPending} aria-invalid={Boolean(errors.shipmentId)} aria-describedby={errors.shipmentId ? 'stock-dispatch-job-error' : undefined} {...form.register('shipmentId')}><option value="">Select a shipment</option>{[...jobs.values()].map(value => <option key={value.id} value={value.id}>{value.organizationName} · {value.authorizationReference}</option>)}</select></StockKitField>
       {!jobs.size ? <p className="text-sm text-muted-foreground">No active Trial or Partner shipments are available for dispatch.</p> : null}<p className="text-sm">{kit.tubes.length} registered tubes · {kit.container.capacity} tube capacity</p>
       {(['outboundCarrier', 'outboundTrackingNumber', 'fulfilledAt'] as const).map((name, index) => <StockKitField key={name} id={`stock-dispatch-${name}`} label={['Carrier', 'Tracking number', 'Dispatched at'][index]} required error={errors[name]?.message}><Input id={`stock-dispatch-${name}`} type={name === 'fulfilledAt' ? 'datetime-local' : 'text'} disabled={mutation.isPending} aria-invalid={Boolean(errors[name])} aria-describedby={errors[name] ? `stock-dispatch-${name}-error` : undefined} {...form.register(name)} /></StockKitField>)}
-    </form><RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="dispatch-standard-kit" disabled={mutation.isPending || !jobs.size || kit.tubes.length !== kit.container.capacity}>{mutation.isPending ? 'Recording…' : 'Record dispatch'}</Button></RequiredDialogFooter>
+    </form><RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="dispatch-standard-kit" disabled={mutation.isPending || !jobs.size || !kit.tubesVerifiedAt || kit.tubes.length !== kit.container.capacity}>{mutation.isPending ? 'Recording…' : 'Record dispatch'}</Button></RequiredDialogFooter>
   </DialogContent></Dialog>
 }
 function barcodeLines(value: string) { return value.split(/\r?\n/).map(line => line.trim()).filter(Boolean) }

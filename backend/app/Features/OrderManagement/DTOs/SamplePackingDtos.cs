@@ -27,7 +27,15 @@ public sealed record StockKitDto(Guid Id, string KitNumber, ShipmentContainerDto
     DateTime? CustomerReceivedAt = null, Guid? ReservedSampleShipmentId = null, Guid? AssignedJobId = null,
     string? AssignedJobNumber = null, string? OrganizationName = null, string? DepartmentName = null,
     string? InventoryBlockedReason = null, string? TubeProductDescription = null, string? ShipperProductDescription = null,
-    IReadOnlyList<StockKitProductExpiryDto>? ProductExpirations = null);
+      IReadOnlyList<StockKitProductExpiryDto>? ProductExpirations = null,
+      DateTime? TubesVerifiedAt = null, Guid? TubesVerifiedByUserId = null,
+      IReadOnlyList<StockKitTubeCorrectionDto>? TubeCorrections = null, Guid? FinishedKitProductId = null,
+      Guid? AssemblyWorkflowRevisionId = null, DateTime? AssemblyCompletedAt = null);
+  public sealed record StockKitTubeCorrectionDto(string PreviousBarcode, string ReplacementBarcode,
+      string Reason, Guid CorrectedByUserId, DateTime CorrectedAt);
+  public sealed record VerifyStockKitTubesRequest(long Version, IReadOnlyList<string> SupplierBarcodes);
+  public sealed record CorrectStockKitTubeRequest(long Version, string PreviousBarcode,
+      string ReplacementBarcode, string Reason);
 public sealed record StockKitProductExpiryRequest(Guid SupplierProductId, DateOnly ExpirationDate);
 public sealed record StockKitProductExpiryDto(Guid SupplierProductId, string SupplierName, string ProductNumber,
     bool CanExpire, DateOnly? ExpirationDate);

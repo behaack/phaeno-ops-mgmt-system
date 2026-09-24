@@ -72,7 +72,7 @@ export function SubmissionInstructionsEditor({ configuration }: { configuration:
       </CardHeader>
       <CardContent className="space-y-4 p-4">
         <p className="whitespace-pre-wrap text-sm">{system.sampleSubmissionInstructions || 'Not yet configured.'}</p>
-        <p className="text-sm text-muted-foreground">These instructions are required for order readiness. Existing orders keep their saved instructions. Keep common shipping steps in <Link className="underline" to="/sample-shipping-settings" search={{ shippingSection: 'procedures' }}>Shipping procedures</Link> and coolant amounts and sample-specific packing in <Link className="underline" to="/sample-shipping-settings" search={{ shippingSection: 'containers' }}>Container sizes</Link>.</p>
+        <p className="text-sm text-muted-foreground">These instructions are required for order readiness. Existing orders keep their saved instructions. Keep common shipping steps in <Link className="underline" to="/sample-shipping-settings" search={{ shippingSection: 'procedures' }}>Shipping procedures</Link> and coolant amounts and sample-specific packing in <Link className="underline" to="/sample-shipping-settings" search={{ shippingSection: 'containers' }}>Kit specifications</Link>.</p>
       </CardContent>
     </Card>
     <Dialog open={open} onOpenChange={value => { if (!value) requestClose() }}>

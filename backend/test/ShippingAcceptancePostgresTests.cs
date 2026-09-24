@@ -96,6 +96,8 @@ public partial class SampleShippingPostgresTests
         var other = Assert.IsType<StockKitDto>(Assert.IsType<CreatedResult>((await stock.Create(
             catalog, default)).Result).Value);
         await Assert.ThrowsAsync<OrderManagementException>(() => stock.Register(other.Id, new([codes[0]], other.Version), default));
+        kit = await stock.VerifyTubes(kit.Id, new(kit.Version, codes), default);
+        scope.ClearTrackedState();
         var sent = await scope.KitStaff().Dispatch(request.Id, new(request.Version, [kit.Id], "SIMULATED carrier", "SIM-OUTBOUND", DateTime.UtcNow), default);
         await scope.KitCustomer().Receive(request.Id, new(sent.Request.Version, [kit.Id]), default);
         kit = await stock.Read(kit.Id, default);

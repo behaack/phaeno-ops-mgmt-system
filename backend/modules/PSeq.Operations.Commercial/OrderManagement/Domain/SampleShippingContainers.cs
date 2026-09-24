@@ -7,6 +7,7 @@ public sealed class SampleShippingContainerType : IAudit, IConcurrency
     public Guid Id { get; private set; } = Guid.NewGuid();
     public string Sku { get; private set; } = null!;
     public string NormalizedSku { get; private set; } = null!;
+    public Guid? FinishedKitProductId { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
@@ -14,10 +15,12 @@ public sealed class SampleShippingContainerType : IAudit, IConcurrency
     public long Version { get; private set; } = 1;
     public ICollection<SampleShippingContainerDefinition> Definitions { get; private set; } = [];
     private SampleShippingContainerType() { }
-    public SampleShippingContainerType(string sku)
+    public SampleShippingContainerType(string sku, Guid? finishedKitProductId = null)
     {
         Sku = OrderText.Required(sku, "SKU", 100);
         NormalizedSku = Sku.ToUpperInvariant();
+        if (finishedKitProductId == Guid.Empty) throw new ArgumentException("Choose a valid Phaeno kit product.");
+        FinishedKitProductId = finishedKitProductId;
     }
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
     public void MarkUpdated(DateTime utcNow, Guid? actorUserId) { UpdatedAt = utcNow; UpdatedByUserId = actorUserId; }
@@ -28,6 +31,7 @@ public sealed class SampleShippingContainerDefinition : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid ContainerTypeId { get; private set; }
+    public Guid? AssemblyWorkflowRevisionId { get; private set; }
     public SampleShippingContainerType ContainerType { get; private set; } = null!;
     public int Revision { get; private set; }
     public Guid? SupersedesDefinitionId { get; private set; }
@@ -52,7 +56,8 @@ public sealed class SampleShippingContainerDefinition : IAudit, IConcurrency
 
     public SampleShippingContainerDefinition(Guid containerTypeId, int revision, Guid? supersedesDefinitionId,
         string commonName, int tubeCapacity, string? supplierName, string? supplierProductNumber,
-        string? packingInstructions, DateTime effectiveFrom, DateTime? effectiveTo, bool isActive, int displayOrder)
+        string? packingInstructions, DateTime effectiveFrom, DateTime? effectiveTo, bool isActive, int displayOrder,
+        Guid? assemblyWorkflowRevisionId = null)
     {
         if (containerTypeId == Guid.Empty || revision < 1) throw new ArgumentException("A container type and revision are required.");
         if (tubeCapacity is < 1 or > 10000) throw new ArgumentException("Usable tube capacity must be between 1 and 10,000.");
@@ -60,6 +65,7 @@ public sealed class SampleShippingContainerDefinition : IAudit, IConcurrency
             throw new ArgumentException("Use valid UTC effective dates, with the end after the start.");
         if (displayOrder < 0) throw new ArgumentException("Display order cannot be negative.");
         ContainerTypeId = containerTypeId; Revision = revision; SupersedesDefinitionId = supersedesDefinitionId;
+        AssemblyWorkflowRevisionId = assemblyWorkflowRevisionId;
         CommonName = OrderText.Required(commonName, "Common name", 255); TubeCapacity = tubeCapacity;
         SupplierName = OrderText.Optional(supplierName, 255); SupplierProductNumber = OrderText.Optional(supplierProductNumber, 100);
         PackingInstructions = OrderText.Optional(packingInstructions, 8000);

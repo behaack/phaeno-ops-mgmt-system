@@ -17,6 +17,8 @@ public static class SampleShippingContainerModelConfiguration
             entity.Property(item => item.Sku).HasMaxLength(100).IsRequired();
             entity.Property(item => item.NormalizedSku).HasMaxLength(100).IsRequired();
             entity.HasIndex(item => item.NormalizedSku).IsUnique();
+            entity.HasIndex(item => item.FinishedKitProductId).IsUnique();
+            entity.HasOne<PSeq.Operations.Laboratory.Domain.LabSupplierProduct>().WithMany().HasForeignKey(item => item.FinishedKitProductId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_shipping_spec_finished_kit_product");
             Audit(entity);
         });
         builder.Entity<SampleShippingContainerDefinition>(entity =>
@@ -26,6 +28,7 @@ public static class SampleShippingContainerModelConfiguration
             entity.HasIndex(item => new { item.ContainerTypeId, item.Revision }).IsUnique();
             entity.HasIndex(item => item.SupersedesDefinitionId).IsUnique();
             entity.HasIndex(item => new { item.IsActive, item.EffectiveFrom, item.EffectiveTo });
+            entity.HasOne<PSeq.Operations.Laboratory.Domain.LabKitAssemblyWorkflowRevision>().WithMany().HasForeignKey(item => item.AssemblyWorkflowRevisionId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_shipping_spec_assembly_workflow_revision");
             entity.Property(item => item.CommonName).HasMaxLength(255).IsRequired();
             entity.Property(item => item.SupplierName).HasMaxLength(255);
             entity.Property(item => item.SupplierProductNumber).HasMaxLength(100);
@@ -89,10 +92,13 @@ public static class SampleShippingContainerModelConfiguration
             entity.Property(item => item.ShipperProductDescription).HasMaxLength(1000);
             entity.HasOne<PSeq.Operations.Laboratory.Domain.LabSupplierProduct>().WithMany().HasForeignKey(item => item.TubeSupplierProductId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<PSeq.Operations.Laboratory.Domain.LabSupplierProduct>().WithMany().HasForeignKey(item => item.ShipperSupplierProductId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<PSeq.Operations.Laboratory.Domain.LabSupplierProduct>().WithMany().HasForeignKey(item => item.FinishedKitProductId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_shipping_stock_kit_finished_product");
+            entity.HasOne<PSeq.Operations.Laboratory.Domain.LabKitAssemblyWorkflowRevision>().WithMany().HasForeignKey(item => item.AssemblyWorkflowRevisionId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_shipping_stock_kit_assembly_workflow_revision");
             entity.Property(item => item.ShipperSupplierName).HasMaxLength(255).IsRequired();
             entity.Property(item => item.ShipperProductNumber).HasMaxLength(100).IsRequired();
             entity.Property(item => item.OutboundCarrier).HasMaxLength(255);
             entity.Property(item => item.OutboundTrackingNumber).HasMaxLength(255);
+            entity.HasOne<User>().WithMany().HasForeignKey(item => item.TubesVerifiedByUserId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_shipping_stock_kit_tubes_verified_by");
             entity.Property(item => item.AuthorizationSource).HasConversion<string>().HasMaxLength(50);
             entity.HasIndex(item => item.KitNumber).IsUnique();
             entity.HasIndex(item => item.BoundSampleShipmentId).IsUnique();
@@ -116,6 +122,19 @@ public static class SampleShippingContainerModelConfiguration
             entity.HasIndex(item => item.SupplierBarcode);
             entity.HasIndex(item => new { item.BarcodeNamespace, item.SupplierBarcode }).IsUnique();
             entity.HasOne<SampleShippingStockKit>().WithMany(item => item.Tubes).HasForeignKey(item => item.SampleShippingStockKitId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_shipping_stock_tube_kit");
+            entity.HasOne<PSeq.Operations.Laboratory.Domain.LabSupplierProduct>().WithMany().HasForeignKey(item => item.TubeSupplierProductId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_shipping_stock_tube_product");
+        });
+        builder.Entity<SampleShippingStockTubeCorrection>(entity =>
+        {
+            entity.ToTable("sample_shipping_stock_tube_corrections", commercialSchema);
+            entity.HasKey(item => item.Id);
+            entity.Property(item => item.PreviousBarcode).HasMaxLength(100).IsRequired();
+            entity.Property(item => item.ReplacementBarcode).HasMaxLength(100).IsRequired();
+            entity.Property(item => item.BarcodeNamespace).HasMaxLength(50).IsRequired();
+            entity.Property(item => item.Reason).HasMaxLength(1000).IsRequired();
+            entity.HasIndex(item => new { item.SampleShippingStockKitId, item.CorrectedAt });
+            entity.HasOne<SampleShippingStockKit>().WithMany().HasForeignKey(item => item.SampleShippingStockKitId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<User>().WithMany().HasForeignKey(item => item.CorrectedByUserId).OnDelete(DeleteBehavior.Restrict);
         });
     }
 

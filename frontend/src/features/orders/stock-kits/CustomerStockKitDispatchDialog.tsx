@@ -61,7 +61,7 @@ export function CustomerStockKitDispatchDialog({ kit, onClose, onSaved }: { kit:
       <div className="grid gap-4 sm:grid-cols-2">{input('outboundCarrier', 'Carrier')}{input('outboundTrackingNumber', 'Tracking number')}</div>{input('fulfilledAt', 'Dispatched at', 'datetime-local')}
       <p className="text-xs text-muted-foreground">This updates the request and places the kit On the way. Availability begins after Customer receipt.</p>
     </form>
-    <RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="customer-stock-kit-dispatch" disabled={mutation.isPending || kit.status !== 'Preparing' || kit.tubes.length !== kit.container.capacity || Boolean(requests.error || detail.error) || Boolean(requestId && (detail.isFetching || blocked))}>{mutation.isPending ? 'Recording…' : 'Record dispatch'}</Button></RequiredDialogFooter>
+    <RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="customer-stock-kit-dispatch" disabled={mutation.isPending || kit.status !== 'Preparing' || !kit.tubesVerifiedAt || kit.finishedKitProductId && !kit.assemblyCompletedAt || kit.tubes.length !== kit.container.capacity || Boolean(requests.error || detail.error) || Boolean(requestId && (detail.isFetching || blocked))}>{mutation.isPending ? 'Recording…' : 'Record dispatch'}</Button></RequiredDialogFooter>
   </DialogContent></Dialog>
 }
 

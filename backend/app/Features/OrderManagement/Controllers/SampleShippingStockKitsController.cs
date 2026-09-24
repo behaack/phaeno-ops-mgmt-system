@@ -35,15 +35,41 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
     [HttpPost]
     public async Task<ActionResult<StockKitDto>> Create([FromBody] CreateStockKitRequest request, CancellationToken ct)
     {
-        await context.RequirePlatformAdminAsync(HttpContext, ct);
+        var actor = await context.RequirePlatformAdminAsync(HttpContext, ct);
         await using var transaction = db.Database.CurrentTransaction is null ? await db.Database.BeginTransactionAsync(ct) : null;
         var definition = await catalog.ReadAsync(request.ContainerDefinitionId, ct);
         var now = DateTime.UtcNow;
         if (!definition.IsActive || definition.EffectiveFrom > now || definition.EffectiveTo <= now)
             throw Invalid("Select an active, effective container type before preparing physical stock.");
+        if (definition.FinishedKitProductId.HasValue)
+        {
+            await SampleShippingPackingData.LockAsync(db, $"supplier-product:{definition.FinishedKitProductId.Value}", ct);
+            var productActive = await (from product in db.LabSupplierProducts.AsNoTracking()
+                join supplier in db.LabSuppliers.AsNoTracking() on product.SupplierId equals supplier.Id
+                where product.Id == definition.FinishedKitProductId && product.IsActive && supplier.IsActive
+                    && supplier.IsInternalProducer
+                    && product.ProductTypeId == PSeq.Operations.Laboratory.Domain.LabProductType.TransportationKitId
+                select product.Id).AnyAsync(ct);
+            if (!productActive)
+                throw Invalid("Reactivate the Phaeno transportation kit product before preparing another kit.");
+        }
         var tube = await SelectedProduct(request.TubeSupplierProductId, PSeq.Operations.Laboratory.Domain.LabSupplierProductKind.Tube, ct);
         var shipper = await SelectedProduct(request.ShipperSupplierProductId, PSeq.Operations.Laboratory.Domain.LabSupplierProductKind.ShippingContainer, ct);
+        if (definition.FinishedKitProductId.HasValue)
+        {
+            var contents = definition.KitContents ?? [];
+            if (contents.Count(item => item.Kind == "Tube" && item.SupplierProductId == request.TubeSupplierProductId && item.Quantity == definition.TubeCapacity) != 1
+                || contents.Count(item => item.Kind == "ShippingContainer" && item.SupplierProductId == request.ShipperSupplierProductId && item.Quantity == 1) != 1)
+                throw Conflict("The actual tube and outer shipper products must match the approved kit bill of materials.");
+        }
         var expirations = await CaptureProductExpirationsAsync(definition, request, ct);
+        PSeq.Operations.Laboratory.Domain.LabKitAssemblyWorkflowRevision? workflowRevision = null;
+        if (definition.FinishedKitProductId.HasValue)
+        {
+            workflowRevision = await db.LabKitAssemblyWorkflowRevisions.AsNoTracking().Include(item => item.Components)
+                .SingleOrDefaultAsync(item => item.Id == definition.AssemblyWorkflowRevisionId && item.Status == PSeq.Operations.Laboratory.Domain.LabKitAssemblyRevisionStatus.Approved, ct)
+                ?? throw Conflict("This kit product has no approved, pinned assembly workflow revision.");
+        }
         SampleShippingStockKit kit;
         try
         {
@@ -53,10 +79,11 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
                 shipper.SupplierName, shipper.ProductNumber,
                 request.TubeSupplierProductId, request.ShipperSupplierProductId, tube.Description, shipper.Description,
                 JsonSerializer.Serialize(expirations, new JsonSerializerOptions(JsonSerializerDefaults.Web)),
-                SupplierTubeBarcode.NamespaceForSupplier(tube.SupplierId));
+                SupplierTubeBarcode.NamespaceForSupplier(tube.SupplierId), definition.FinishedKitProductId, definition.AssemblyWorkflowRevisionId);
         }
         catch (ArgumentException exception) { throw Invalid(exception.Message); }
         db.SampleShippingStockKits.Add(kit);
+        if (workflowRevision is not null) db.LabKitAssemblyRuns.Add(new(kit.Id, workflowRevision, actor.Id, now));
         await db.SaveChangesAsync(ct);
         if (transaction is not null) await transaction.CommitAsync(ct);
         return Created($"/api/platform/sample-shipping/stock-kits/{kit.Id}", await ReadAsync(kit.Id, ct));
@@ -69,7 +96,7 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
         await using var transaction = await SampleShippingPackingData.BeginAsync(db, $"stock-kit:{id}", ct);
         var kit = await db.SampleShippingStockKits.Include(item => item.Tubes).SingleOrDefaultAsync(item => item.Id == id, ct) ?? throw Missing();
         Version(kit.Version, request.Version);
-        if (kit.FulfilledAt.HasValue) throw Conflict("Dispatched kit contents cannot be changed.");
+        if (kit.FulfilledAt.HasValue || kit.TubesVerifiedAt.HasValue) throw Conflict("A verified or dispatched tube roster cannot be extended. Correct a mistaken scan before verification.");
         var codes = new HashSet<string>(StringComparer.Ordinal);
         foreach (var value in request.SupplierBarcodes ?? [])
         {
@@ -93,10 +120,75 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
             throw Conflict("A scanned tube barcode is already registered. No tubes were added.");
         foreach (var code in codes)
         {
-            var tube = new SampleShippingStockTube(kit.Id, code, kit.TubeBarcodeNamespace);
+            var tube = new SampleShippingStockTube(kit.Id, code, kit.TubeBarcodeNamespace, kit.TubeSupplierProductId);
             kit.Tubes.Add(tube);
             db.SampleShippingStockTubes.Add(tube);
         }
+        db.Entry(kit).Property(item => item.Version).IsModified = true;
+        await db.SaveChangesAsync(ct);
+        if (transaction is not null) await transaction.CommitAsync(ct);
+        return await ReadAsync(id, ct);
+    }
+
+    [HttpPost("{id:guid}/verify-tubes")]
+    public async Task<StockKitDto> VerifyTubes(Guid id, [FromBody] VerifyStockKitTubesRequest request, CancellationToken ct)
+    {
+        var actor = await context.RequirePlatformAdminAsync(HttpContext, ct);
+        await using var transaction = await SampleShippingPackingData.BeginAsync(db, $"stock-kit:{id}", ct);
+        var kit = await db.SampleShippingStockKits.Include(item => item.Tubes).SingleOrDefaultAsync(item => item.Id == id, ct) ?? throw Missing();
+        Version(kit.Version, request.Version);
+        var codes = new List<string>();
+        foreach (var value in request.SupplierBarcodes ?? [])
+        {
+            if (!SupplierTubeBarcode.TryNormalize(value, out var code)) throw Invalid("Scan a complete permanent barcode on every tube in the kit.");
+            codes.Add(code);
+        }
+        if (codes.Count != codes.Distinct(StringComparer.Ordinal).Count()) throw Conflict("A tube was scanned twice. Verify every physical tube once.");
+        try { kit.VerifyTubeRoster(actor.Id, codes, DateTime.UtcNow); }
+        catch (InvalidOperationException exception) { throw Conflict(exception.Message); }
+        db.Entry(kit).Property(item => item.Version).IsModified = true;
+        await db.SaveChangesAsync(ct);
+        if (transaction is not null) await transaction.CommitAsync(ct);
+        return await ReadAsync(id, ct);
+    }
+
+    [HttpPost("{id:guid}/correct-tube")]
+    public async Task<StockKitDto> CorrectTube(Guid id, [FromBody] CorrectStockKitTubeRequest request, CancellationToken ct)
+    {
+        var actor = await context.RequirePlatformAdminAsync(HttpContext, ct);
+        await using var transaction = await SampleShippingPackingData.BeginAsync(db, $"stock-kit:{id}", ct);
+        var kit = await db.SampleShippingStockKits.Include(item => item.Tubes).SingleOrDefaultAsync(item => item.Id == id, ct) ?? throw Missing();
+        Version(kit.Version, request.Version);
+        if (kit.FulfilledAt.HasValue) throw Conflict("Dispatched kit contents are frozen. Use the discrepancy recovery process.");
+        if (!SupplierTubeBarcode.TryNormalize(request.PreviousBarcode, out var previous)
+            || !SupplierTubeBarcode.TryNormalize(request.ReplacementBarcode, out var replacement)
+            || previous == replacement) throw Invalid("Scan the registered tube and its distinct replacement.");
+        var current = kit.Tubes.SingleOrDefault(item => item.SupplierBarcode == previous)
+            ?? throw Conflict("The tube to correct is no longer registered to this kit.");
+        if (string.IsNullOrWhiteSpace(request.Reason)) throw Invalid("Explain why the physical tube was replaced.");
+        await SampleShippingPackingData.LockAsync(db, $"supplier-tube:{replacement}", ct);
+        if (kit.Tubes.Any(item => item.SupplierBarcode == replacement)
+            || await db.SampleShippingStockTubes.AnyAsync(item => item.SupplierBarcode == replacement
+                && (item.BarcodeNamespace == kit.TubeBarcodeNamespace || item.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace
+                    || kit.TubeBarcodeNamespace == SupplierTubeBarcode.LegacyNamespace), ct)
+            || await db.RegisteredSampleTubes.AnyAsync(item => item.SupplierBarcode == replacement
+                && (item.BarcodeNamespace == kit.TubeBarcodeNamespace || item.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace
+                    || kit.TubeBarcodeNamespace == SupplierTubeBarcode.LegacyNamespace), ct)
+            || await db.LabContainers.AnyAsync(item => item.Barcode.ToUpper() == replacement
+                && (item.BarcodeNamespace == kit.TubeBarcodeNamespace || item.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace
+                    || kit.TubeBarcodeNamespace == SupplierTubeBarcode.LegacyNamespace), ct)
+            || await db.LabPreparationBatches.AnyAsync(item => (item.TrayBarcode != null && item.TrayBarcode.ToUpper() == replacement)
+                || item.Name.ToUpper() == replacement, ct))
+            throw Conflict("The replacement tube ID is already registered.");
+        kit.InvalidateTubeVerification();
+        kit.Tubes.Remove(current);
+        db.SampleShippingStockTubes.Remove(current);
+        var newTube = new SampleShippingStockTube(kit.Id, replacement, kit.TubeBarcodeNamespace, kit.TubeSupplierProductId);
+        kit.Tubes.Add(newTube);
+        db.SampleShippingStockTubes.Add(newTube);
+        try { db.SampleShippingStockTubeCorrections.Add(new SampleShippingStockTubeCorrection(
+            kit.Id, previous, replacement, kit.TubeBarcodeNamespace, request.Reason, actor.Id, DateTime.UtcNow)); }
+        catch (ArgumentException exception) { throw Invalid(exception.Message); }
         db.Entry(kit).Property(item => item.Version).IsModified = true;
         await db.SaveChangesAsync(ct);
         if (transaction is not null) await transaction.CommitAsync(ct);
@@ -151,6 +243,9 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
 
     private async Task<IReadOnlyList<StockKitDto>> MapAsync(IReadOnlyList<SampleShippingStockKit> kits, CancellationToken ct)
     {
+        var kitIds = kits.Select(item => item.Id).ToArray();
+        var corrections = await db.SampleShippingStockTubeCorrections.AsNoTracking()
+            .Where(item => kitIds.Contains(item.SampleShippingStockKitId)).OrderBy(item => item.CorrectedAt).ToListAsync(ct);
         var inventory = (await TransportationKitInventory.MapAsync(db, kits, ct)).ToDictionary(item => item.StockKitId);
         var organizationIds = kits.Where(item => item.OrganizationId.HasValue).Select(item => item.OrganizationId!.Value).Distinct().ToArray();
         var departmentIds = kits.Where(item => item.DepartmentId.HasValue).Select(item => item.DepartmentId!.Value).Distinct().ToArray();
@@ -173,7 +268,11 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
             kit.OrganizationId.HasValue ? organizations.GetValueOrDefault(kit.OrganizationId.Value) : null,
             kit.DepartmentId.HasValue ? departments.GetValueOrDefault(kit.DepartmentId.Value) : null,
             inventory[kit.Id].Status == "NeedsReview" ? "Record the verified Customer delivery location before this container can become available." : null, kit.TubeProductDescription, kit.ShipperProductDescription,
-            kit.ProductExpirySnapshotJson is null ? null : JsonSerializer.Deserialize<StockKitProductExpiryDto[]>(kit.ProductExpirySnapshotJson, new JsonSerializerOptions(JsonSerializerDefaults.Web)))).ToArray();
+            kit.ProductExpirySnapshotJson is null ? null : JsonSerializer.Deserialize<StockKitProductExpiryDto[]>(kit.ProductExpirySnapshotJson, new JsonSerializerOptions(JsonSerializerDefaults.Web)),
+            kit.TubesVerifiedAt, kit.TubesVerifiedByUserId, corrections.Where(item => item.SampleShippingStockKitId == kit.Id)
+                .Select(item => new StockKitTubeCorrectionDto(item.PreviousBarcode, item.ReplacementBarcode,
+                    item.Reason, item.CorrectedByUserId, item.CorrectedAt)).ToArray(), kit.FinishedKitProductId,
+            kit.AssemblyWorkflowRevisionId, kit.AssemblyCompletedAt)).ToArray();
     }
 
     private async Task<IReadOnlyList<StockKitProductExpiryDto>> CaptureProductExpirationsAsync(

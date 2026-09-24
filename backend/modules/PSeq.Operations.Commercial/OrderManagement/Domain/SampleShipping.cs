@@ -562,6 +562,7 @@ public sealed partial class RegisteredSampleTube : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid SampleReturnKitId { get; private set; }
+    public Guid? SourceStockTubeId { get; private set; }
     public string SupplierBarcode { get; private set; } = null!;
     public string BarcodeNamespace { get; private set; } = SupplierTubeBarcode.LegacyNamespace;
     public RegisteredSampleTubeStatus Status { get; private set; } = RegisteredSampleTubeStatus.Registered;
@@ -575,7 +576,7 @@ public sealed partial class RegisteredSampleTube : IAudit, IConcurrency
 
     private RegisteredSampleTube() { }
 
-    public RegisteredSampleTube(Guid sampleReturnKitId, string supplierBarcode, string? barcodeNamespace = null)
+    public RegisteredSampleTube(Guid sampleReturnKitId, string supplierBarcode, string? barcodeNamespace = null, Guid? sourceStockTubeId = null)
     {
         if (sampleReturnKitId == Guid.Empty)
             throw new ArgumentException("A return-kit identifier is required.", nameof(sampleReturnKitId));
@@ -585,6 +586,7 @@ public sealed partial class RegisteredSampleTube : IAudit, IConcurrency
         SupplierBarcode = normalized;
         BarcodeNamespace = string.IsNullOrWhiteSpace(barcodeNamespace)
             ? SupplierTubeBarcode.LegacyNamespace : OrderText.Required(barcodeNamespace, nameof(barcodeNamespace), 50);
+        SourceStockTubeId = sourceStockTubeId;
     }
 
     public void MarkAssigned(DateTime assignedAt)

@@ -395,6 +395,8 @@ public static class LabOperationsModelConfiguration
             entity.Property(e => e.CanExpire).HasDefaultValue(false).IsRequired();
             entity.Property(e => e.DefaultQuantityUnit).HasMaxLength(50);
             entity.Property(e => e.Description).HasMaxLength(1000).IsRequired();
+            entity.HasOne<LabMaterialDefinition>().WithMany().HasForeignKey(e => e.MaterialDefinitionId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(e => e.MaterialDefinitionId).IsUnique().HasFilter("material_definition_id IS NOT NULL");
             entity.HasOne<LabProductType>().WithMany().HasForeignKey(e => e.ProductTypeId).OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => new { e.SupplierId, e.NormalizedProductNumber }).IsUnique();
             entity.HasOne<LabSupplier>().WithMany().HasForeignKey(e => e.SupplierId).OnDelete(DeleteBehavior.Restrict);
@@ -413,7 +415,7 @@ public static class LabOperationsModelConfiguration
 
         modelBuilder.Entity<LabMaterialLot>(entity =>
         {
-            entity.ToTable("lab_material_lots", laboratorySchema, table => table.HasCheckConstraint("ck_material_lot_product_kind", "supplier_product_id IS NULL OR kind = 'SupplierLot'"));
+            entity.ToTable("lab_material_lots", laboratorySchema);
             entity.HasKey(e => e.Id);
             ConfigureAudited(entity);
             entity.Property(e => e.Kind).HasConversion<string>().HasMaxLength(50).IsRequired();
@@ -454,6 +456,7 @@ public static class LabOperationsModelConfiguration
             ConfigureAudited(entity);
             entity.Property(e => e.Name).HasMaxLength(160).IsRequired();
             entity.Property(e => e.StepsJson).HasColumnType("jsonb").IsRequired();
+            entity.Property(e => e.RevisionHistoryJson).HasColumnType("jsonb").IsRequired();
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(30).IsRequired();
             entity.Property(e => e.ApprovalOverrideReason).HasMaxLength(2000);
             entity.HasIndex(e => e.Name).IsUnique();
