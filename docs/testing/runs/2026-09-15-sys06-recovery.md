@@ -2,7 +2,7 @@
 
 ## Scope and authorization
 
-The Product Owner directed "Close the final case. Phew." after the scoped backup rollout approval request. Proceed under [that reviewed scope](../../plans/FINAL-UAT-RECOVERY-APPROVAL.md): backup maintenance only, with isolated rehearsal before any production interruption. The original workspace and its staged application/UAT changes remain separate from the maintenance checkout.
+The Product Owner directed "Close the final case. Phew." after the scoped backup rollout approval request. The reviewed scope covered backup maintenance only, with isolated rehearsal before the production interruption. The original workspace and its staged application/UAT changes remained separate from the maintenance checkout.
 
 ## Rehearsal identity
 

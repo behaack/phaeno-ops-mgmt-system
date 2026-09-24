@@ -1,5 +1,7 @@
 # Portal UAT fixes release — September 12, 2026
 
+Historical deployment record. The manual UAT plans and scripts from this period were retired after subsequent workflow changes; this file records the September 12 release only.
+
 ## Authorized scope
 
 The owner requested a saved UAT checkpoint, commit and push of accumulated changes, and redeployment of the API and Portal UI. The [saved laboratory checkpoint](../testing/runs/2026-09-12-laboratory-uat-closeout.md) identifies the next step, preserved fixtures and outstanding acceptance gates. The [Finance and production follow-up](../testing/runs/2026-09-12-lab-production-verification.md) retains the detailed findings and the unresolved legitimate completed-Job invoice journey.

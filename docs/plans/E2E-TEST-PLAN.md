@@ -1,5 +1,7 @@
 # Playwright E2E Test Plan
 
+The September 2026 manual UAT pack and its case scripts were retired after substantial workflow changes. Historical case IDs and results below describe their dated checkpoints; derive any new acceptance exercise from the current product and code. Playwright coverage remains tracked here.
+
 ## September 23, 2026 — Barcode print and scan presentation
 
 Manual browser acceptance should inspect a 50 × 25 mm POMS tube label with a readable DataMatrix and exact text, confirm a new generated tube is `LabelPending` and unavailable for transfer, reject a wrong/missing scan after printing, then accept the matching physical scan before recording print success and `Available` status. Verify keyboard focus/Enter, failure details, reprint history, mobile layout, dark theme and print isolation. After tube/tray/customer matching scans, verify results show readable identifiers without duplicate QR images; packet, tray and kit print dialogs must still render codes. These cases and physical scanner/printer checks remain pending; no E2E run was requested.
@@ -690,12 +692,12 @@ Verify **Library prep** uses the existing work route and opens preparation batch
 
 ### Accession before storage and bulk acceptance (2026-09-11)
 
-See LAB-13 in `docs/testing/06-laboratory.md`: mixed accepted/held/rejected/missing shipment, unscannable broken expected tube with no fake location, atomic acceptance of the identified remainder, retries and concurrent changes, stored tube details and supervised correction. Customer-requested holds remain Blocked. No persisted acceptance or physical inspection is claimed from builds or read-only UI checks. Automated suites remain Not run.
+The retired LAB-13 script covered mixed accepted/held/rejected/missing shipments, an unscannable broken expected tube with no fake location, atomic acceptance of the identified remainder, retries and concurrent changes, stored tube details and supervised correction. Customer-requested holds remain Blocked. No persisted acceptance or physical inspection is claimed from builds or read-only UI checks. Automated suites remained Not run at this checkpoint.
 
 
 ## Specimen attempt acceptance — September 11, 2026
 
-Use the detailed [LAB-09 operator script](../testing/06-laboratory.md#lab-09---specimen-tube-attempts-and-reserve-fallback) and plan acceptance matrix. Cover order authorization, source selection/start, permitted QC repeat, multi-stage failure and reserve restart, successful lineage, terminal exhaustion, pending material, concurrency, stale retries and original Planned execution adoption. Do not mark implementation/build proof as a passed journey. Automated suites not run; connected read-only specimen/navigation evidence is narrower.
+The retired LAB-09 script covered order authorization, source selection/start, permitted QC repeat, multi-stage failure and reserve restart, successful lineage, terminal exhaustion, pending material, concurrency, stale retries and original Planned execution adoption. Implementation/build proof did not establish a passed journey. Automated suites were not run at this checkpoint; connected read-only specimen/navigation evidence was narrower.
 
 ## Tube review before execution - September 11, 2026
 
@@ -723,7 +725,7 @@ Working-list acceptance now requires no Show discarded drafts control and no sta
 
 ## Revised retirement lifecycle journeys — September 11, 2026
 
-The manual [LAB-07](../testing/06-laboratory.md#lab-07--protocol-retirement-workflow-invalidation-and-revalidation) journey covers no workflow, active samples, queued-only samples with cancel/Proceed anyway, multi-workflow invalidation, immutable history, removal in recovery revisions, revalidation without edits and with edits, empty workflow rejection, independent approval/promotion, flagged queued jobs and blocked starts, stale confirmation and concurrency. Use separate synthetic fixtures; preserve the original library-preparation walkthrough. Prior successful retirement tests used the old dependency-blocking rule; new journey outcomes remain Not run until separately evidenced. No automatic repinning or database repair is part of acceptance.
+The manual LAB-07 journey covers no workflow, active samples, queued-only samples with cancel/Proceed anyway, multi-workflow invalidation, immutable history, removal in recovery revisions, revalidation without edits and with edits, empty workflow rejection, independent approval/promotion, flagged queued jobs and blocked starts, stale confirmation and concurrency. Use separate synthetic fixtures; preserve the original library-preparation walkthrough. Prior successful retirement tests used the old dependency-blocking rule; new journey outcomes remain Not run until separately evidenced. No automatic repinning or database repair is part of acceptance.
 
 ## Protocol retirement local acceptance — September 11, 2026
 
@@ -749,7 +751,7 @@ Focused connected Edge verification passed for the tab-layout correction at 375/
 
 **No automated Playwright run is claimed for this change.** The [local stage record](../testing/runs/2026-09-10-customer-laboratory-stages.md) establishes a narrower signed-in Customer check: both list rows show Received; HS5Y7DB7's header, all six stages, nine Received samples and expanded sample disclosure were inspected on desktop. The 69SJN4PA detail, keyboard/mobile/theme variants and Partner session remain **Not run**. Backend fixtures establish mixed-stage rules but are not full-browser acceptance.
 
-Run [ORD-07](../testing/04-lab-orders.md#ord-07--customer-laboratory-stages-and-mixed-sample-progress) alongside [LAB-02](../testing/06-laboratory.md#lab-02--receipt-multi-tube-accession-and-physical-lineage). Preserve separate evidence for UI, persisted facts, provider activity and physical handling. A test environment without a prerequisite is **Blocked**, with an owner and next action; it is not a pass. Hosted acceptance is blocked pending an authorized matching API/UI deployment and test accounts. No deployment is authorized by this plan update.
+Run ORD-07 alongside LAB-02. Preserve separate evidence for UI, persisted facts, provider activity and physical handling. A test environment without a prerequisite is **Blocked**, with an owner and next action; it is not a pass. Hosted acceptance is blocked pending an authorized matching API/UI deployment and test accounts. No deployment is authorized by this plan update.
 
 ## Intake progress synchronization — September 10, 2026
 
@@ -1083,7 +1085,7 @@ delivery and its scanning gates. The later required-Job-order rule adds ordering
 recovery for unbound container links without usable supply; the earlier six
 synthetic cases do not verify that new variant.
 
-The [SHP-09 reset variant](../testing/11-transportation-kits.md) owns the connected
+The SHP-09 reset variant owns the connected
 before/after evidence for the whole family, preserved sample/tube identities,
 cancelled shipment history and destination/handling separation. Verify a scan
 starting after confirmation opens, and historical scans whose current fields
@@ -1101,7 +1103,7 @@ keyboard focus and the 3/18/30-tube size-selection edges. The Summary grid had
 0px pending-to-resolved reflow. An immediate actionable shortfall message adds
 52px or 72px depending on viewport; this is not an asynchronous preview jump.
 No real Customer write was performed. **Containers to use** retains one editable
-row per physical container. In [SHP-09](../testing/11-transportation-kits.md),
+row per physical container. In SHP-09,
 review desktop/phone and light/dark layouts, size selectors with SKU/capacity,
 compact tube inputs, row-specific Remove names, and keyboard focus after Add
 or Remove. Long lists must remain navigable; validation must reveal and focus
@@ -1130,43 +1132,6 @@ populated modal; Cancel closes it without saving. No address or kit-order write
 was performed. This desktop check does not complete the Customer/phone variants
 of SHP-02; those remain in the guided walkthrough. Customer-specific helper
 copy and unchanged permissions are reflected in the frontend implementation.
-
-## Active transportation-kit acceptance sequence — September 8, 2026
-
-The executable human steps now live in
-[11 — Transportation kits and sample shipping](../testing/11-transportation-kits.md)
-as **SHP-01–14**, with prerequisites, role handoffs, expected results, negative
-variants and cleanup. All new manual cases are **Not run**. This documentation
-update runs no application tests or business workflow. Dated checkpoints below
-retain historical evidence; their older "next step" and draft-configuration
-notes do not supersede the module's current resume instructions.
-
-| Stage | Manual cases | Required connected evidence |
-| --- | --- | --- |
-| Configuration and destination | SHP-01/02 | Effective 20/10/5-tube definitions; Customer/Department delivery location; save-to-shipment return without ordering. |
-| Order and fulfillment handoff | SHP-03–06 | Reviewed included-cost request, one logical order/notice, staff queue, full-capacity registered physical stock. Queue, provider and inbox receipt are distinct. |
-| Kit dispatch and Customer receipt | SHP-07/08 | Per-SKU partial dispatch, tracking and provisional On the way counts; only acknowledged kits become available. |
-| Packing and identity | SHP-09–11 | Permitted alternatives such as 20+10 or six 5s from this Job's ordered, fulfilled and received kits; residual capacity; exact saved tube scans; branded split-sample manifests. |
-| Sample return and Lab intake | SHP-12/13 → LAB-02 | Separate shipment facts per container; current packet comparison; per-tube receipt with correct sample/Job totals and no duplicate accession. |
-| Access and recovery | SHP-04/14 | Department/member boundaries, stale/failed retries, duplicate protection, long lists, keyboard/phone/theme behavior. |
-
-Resume HS5Y7DB7 from the latest
-[local run entry](../testing/runs/2026-09-08-hs5y7db7-local-walkthrough.md), using
-its recorded nine finalized samples and 18 tubes. Kit dispatch is already
-reconciled; the one-kit simulated receipt is reported successful and visible
-in the Customer screenshot, with backend confirmation pending. Resume container
-configuration after the stale footer correction; do not repeat the order,
-dispatch or receipt. Use separate 30-tube/split/failure fixtures from
-[TEST-DATA.md](../testing/TEST-DATA.md); preserve the accepted quote and finalized
-roster. Record observations and stock/request/shipment identities in
-[RUN-RECORD.md](../testing/RUN-RECORD.md), rather than promoting prior screenshots
-or a synthetic browser result to a live journey pass.
-
-The [backend KIT-B matrix](BACKEND-TEST-PLAN.md#reusable-transportation-kit-scenarios)
-and [frontend KIT-F matrix](FRONTEND-TEST-PLAN.md#reusable-transportation-kit-frontend-scenarios)
-identify exact current tests and remaining regression gaps. General cross-Job
-balances, warehouse reservations, loss/damage corrections and automatic
-replenishment are planned scope; they are not implemented acceptance claims.
 
 ## Customer transportation-kit ordering and fulfillment — September 8, 2026
 
@@ -1515,16 +1480,6 @@ restored with outreach Not established without saving the business record or
 sending an invitation. Automated form and transactional database checks are recorded in
 the frontend/backend plans. External outreach delivery is not implemented;
 physical receipt and enforcement at future enqueue/dispatch remain unverified.
-
-## Manual major-workflow companion — September 8, 2026
-
-The [major-workflow acceptance pack](../testing/README.md) now provides 74 human-run
-scripts (the original 60 plus SHP-01–14), reusable role/data prerequisites, connected journey sequences, expected
-results, cleanup/handoffs and a [run record](../testing/RUN-RECORD.md).
-The [owning plan](MAJOR-WORKFLOW-ACCEPTANCE-PLAN.md) distinguishes connected
-application, intercepted browser, provider, destination receipt, physical bench
-and restore evidence. All new manual cases start Not run. No Playwright tests or
-business workflows were executed, and existing automated results remain unchanged.
 
 ## Configured Lab and Partner Kit journeys — 2026-09-08
 
@@ -2748,7 +2703,7 @@ Manual verification: Results & review → HS5Y7DB7 opens Review, retains Process
 
 frontend/e2e/lab-preparation.spec.ts: 10 passing checks (five journeys × desktop/mobile Chromium). Covers exact shared/exception payloads and accessibility, exclusion of failed tubes, contextual output identity, retry after lost response retaining the original command/version, selected resource coverage with unfinished step retention, and selecting an existing output without retyping relationships/quantities. Route fixtures are deterministic; they do not claim a signed-in persisted bench journey. Separate PostgreSQL tests cover two persisted journeys. Signed-in local inspection covered the batch landing page and tray-format preview/cancel.
 
-The owning [Library prep plan](LAB-WORK-JOURNEY-PLAN.md#verification-checkpoint) and [LAB-14 manual journey](../testing/06-laboratory.md#lab-14--preparation-trays-shared-evidence-and-sequencing-handoff) retain remaining acceptance coverage: held/closed Trial races, all staff-role combinations, physical trays/scanners/labels, owner sign-off and production/provider gates. Historical TEST-008 work was not retrofitted or replayed. Customer-requested hold implementation remains blocked.
+The owning [Library prep plan](LAB-WORK-JOURNEY-PLAN.md#verification-checkpoint) and LAB-14 manual journey retain remaining acceptance coverage: held/closed Trial races, all staff-role combinations, physical trays/scanners/labels, owner sign-off and production/provider gates. Historical TEST-008 work was not retrofitted or replayed. Customer-requested hold implementation remains blocked.
 
 
 ## Receipt and accession list contrast — September 11, 2026
@@ -2757,7 +2712,7 @@ Visual-only update across Kit requests, Prepare kits, Kits sent, Receive shipmen
 
 ## Lab configurations and shared tab acceptance — September 11, 2026
 
-The [LAB-14 journey](../testing/06-laboratory.md#lab-14--preparation-trays-shared-evidence-and-sequencing-handoff) now starts format configuration in Lab configurations → Tray formats, then returns to Library prep to assemble a batch. Verify default Protocols, Workflows, Tray formats, direct-link/refresh and builder return behavior, the last sidebar position/divider/cog icon, read-only versus configuration roles, and active-only format selection. Library prep must not offer format create/edit controls.
+The LAB-14 journey now starts format configuration in Lab configurations → Tray formats, then returns to Library prep to assemble a batch. Verify default Protocols, Workflows, Tray formats, direct-link/refresh and builder return behavior, the last sidebar position/divider/cog icon, read-only versus configuration roles, and active-only format selection. Library prep must not offer format create/edit controls.
 
 Signed-in local inspection covered the three tabs, initial direct-link loading, preview/cancel, the single preparation-batch creation action and keyboard activation of the missing-format setup link, without saved writes. Receipt and configuration tabs both measured 42 px strips/36 px triggers. A read-only browser render check used the existing Web Operations fixture at 1440, 390 and 320 px, including dark/reduced motion: no overflow/runtime errors, matching tab dimensions within each row, and working arrow-key selection with visible focus. Responsive content may increase a row's height. These checks do not claim every account/CRM role journey or persisted tray creation/editing. No E2E suite was added or run for this navigation/style follow-up; existing suites and broader LAB-14 gates remain unchanged.
 

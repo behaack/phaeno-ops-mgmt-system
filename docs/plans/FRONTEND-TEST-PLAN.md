@@ -1,5 +1,7 @@
 # Frontend Test Plan
 
+The September 2026 manual UAT pack and its case scripts were retired after substantial workflow changes. Historical case IDs and results below describe their dated checkpoints; derive any new acceptance exercise from the current product and code. Automated regression coverage remains tracked here.
+
 ## September 23, 2026 — DataMatrix labels and readable scan results
 
 The container-label component regression now requires a matching scanned value before **Label printed** and preserves failed-print reporting. New POMS tubes display **Label pending** until verification, and sequencing transfer actions remain unavailable while the destination is pending. Sample tube matching and the preparation tray regressions expect readable saved identifiers without an on-screen QR image. The dedicated tray/kit/packet print surfaces retain their scannable codes. TypeScript, scoped lint and the client/SSR production build passed before the pending-status follow-up; focused component tests were updated but not run because no test execution was requested. Physical DataMatrix decode/print quality still needs bench acceptance.
@@ -714,7 +716,7 @@ Updated existing protocol-list.test.ts expectations: discarded-only records rema
 
 ## Revised retirement and invalidation UI coverage — September 11, 2026
 
-[LAB-07](../testing/06-laboratory.md#lab-07--protocol-retirement-workflow-invalidation-and-revalidation) adds retirement impact loading/error/retry, named active-job blockers, affected-workflow warning, queued-job Proceed anyway warning, cancellation, stale-impact refresh, retained reason, default retired hiding, Invalid and historical Invalidated workflow display, removed retired-stage verification, Review workflow and Revalidate and approve, unchanged and edited recovery, empty recovery error, and queued-job invalid-workflow banner. Include keyboard/focus, narrow view and themes. New cases are Not run until evidence is recorded; previous retirement UI checks do not prove the revised workflow behavior.
+LAB-07 adds retirement impact loading/error/retry, named active-job blockers, affected-workflow warning, queued-job Proceed anyway warning, cancellation, stale-impact refresh, retained reason, default retired hiding, Invalid and historical Invalidated workflow display, removed retired-stage verification, Review workflow and Revalidate and approve, unchanged and edited recovery, empty recovery error, and queued-job invalid-workflow banner. Include keyboard/focus, narrow view and themes. New cases are Not run until evidence is recorded; previous retirement UI checks do not prove the revised workflow behavior.
 
 ## Protocol retirement controls — September 11, 2026
 
@@ -750,7 +752,7 @@ The local Work page corrects a horizontal fixed-height variant that made a secon
 
 Frontend typecheck and scoped lint passed. The final numeric sample sorting and focus-ring changes received static checks after the focused component run; no new component-test run is claimed for those final presentation edits. Signed-in desktop inspection confirmed both Customer list rows as Received, HS5Y7DB7's Received header, six stages, nine Received samples and the expanded individual sample list.
 
-**Remaining acceptance: Not run.** Keyboard Enter/Space and visible focus on sample/QC disclosures; 320/375 px reflow, zoom, touch and dark theme; numeric sample sorting in the connected browser; the 7-sample detail of 69SJN4PA; entitled Partner and Department/member views; real partial/mixed stages; and missing/failed progress responses on full pages. Responsive classes and `aria-current` are implementation evidence, not completed browser acceptance. Follow [ORD-07](../testing/04-lab-orders.md#ord-07--customer-laboratory-stages-and-mixed-sample-progress).
+**Remaining acceptance: Not run.** Keyboard Enter/Space and visible focus on sample/QC disclosures; 320/375 px reflow, zoom, touch and dark theme; numeric sample sorting in the connected browser; the 7-sample detail of 69SJN4PA; entitled Partner and Department/member views; real partial/mixed stages; and missing/failed progress responses on full pages. Responsive classes and `aria-current` are implementation evidence, not completed browser acceptance. Follow ORD-07.
 
 ## Intake progress synchronization — September 10, 2026
 
@@ -1007,7 +1009,7 @@ Customer, Partner Lab and Trial entry points remain. The blocking explanation ap
 any sibling has current or historical scans, kit binding, a packet, dispatch or
 receipt; clearing a scan must not reopen the action. Stale confirmation and a
 scan beginning in another session also have server-backed reset coverage. The
-[SHP-09 reset variant](../testing/11-transportation-kits.md) remains Not run;
+SHP-09 reset variant remains Not run;
 the documentation task ran no tests itself. Six final synthetic detail browser
 cases are recorded in the E2E plan; they are not signed-in Customer acceptance.
 
@@ -1408,16 +1410,6 @@ decision drafts and reviewed version after background refresh/save failure.
 The Contact form uses React Hook Form/Zod and existing modal/draft protections.
 The staff guide and generated documentation corpus describe the three outreach
 states, immutable history, and the external sending boundary.
-
-## Manual major-workflow companion — September 8, 2026
-
-The [major-workflow acceptance pack](../testing/README.md) adds 60 human-run
-cases covering audience-specific forms, list/detail return paths, approval and
-release controls, failure/draft recovery, and keyboard/responsive checks.
-See the [owning plan](MAJOR-WORKFLOW-ACCEPTANCE-PLAN.md) and
-[run record](../testing/RUN-RECORD.md). These are authored manual scripts, all
-initially Not run; no frontend tests were added or executed for this documentation
-task, and existing automated coverage/results remain unchanged.
 
 ## Configured Lab Service and included PSeq Kit bundles - 2026-09-07
 
@@ -2565,7 +2557,7 @@ Manual verification: Results & review → HS5Y7DB7 opens Review, retains Process
 
 Protocol-definition tests: 5 passing cases including explicit scope validation and legacy/scoped round-trip. Type checking and scoped lint passed. Five browser journeys run in desktop and mobile cover shared/exception entry, full-width QC, failed-tube exclusion, contextual output creation/selection, uncertain-response command reuse and nested resource entry with retained step values. Shared-entry accessibility scans passed, including dark/reduced-motion mobile. Existing single-action-button behavior is reused.
 
-The owning [Library prep plan](LAB-WORK-JOURNEY-PLAN.md#verification-checkpoint) and [LAB-14 manual journey](../testing/06-laboratory.md#lab-14--preparation-trays-shared-evidence-and-sequencing-handoff) retain remaining acceptance coverage: held/closed Trial races, all staff-role combinations, physical trays/scanners/labels, owner sign-off and production/provider gates. Historical TEST-008 work was not retrofitted or replayed. Customer-requested hold implementation remains blocked.
+The owning [Library prep plan](LAB-WORK-JOURNEY-PLAN.md#verification-checkpoint) and LAB-14 manual journey retain remaining acceptance coverage: held/closed Trial races, all staff-role combinations, physical trays/scanners/labels, owner sign-off and production/provider gates. Historical TEST-008 work was not retrofitted or replayed. Customer-requested hold implementation remains blocked.
 
 
 ## Receipt and accession list contrast — September 11, 2026

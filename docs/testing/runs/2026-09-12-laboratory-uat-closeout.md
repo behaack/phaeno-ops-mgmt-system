@@ -9,7 +9,7 @@ Status: **Not closed — acceptance prerequisites and unperformed variants remai
 
 ## September 14 closure reconciliation — stop broad regression batches
 
-The [81-case closure reconciliation](2026-09-14-uat-closure-reconciliation.md) is now the controlling next-work checklist. No whole case has complete release-scoped evidence for Pass: 37 have primarily remote remaining work and 44 have named prerequisite gates. These scheduling groups are not failures or completion percentages. FIN-02/04/05, LAB-14 and WEB-06 are closest to bounded closure; FIN-03 still lacks original issued-PDF preservation evidence. All prior partial results remain valid within their recorded scope. Next work must close named script steps or identify a concrete defect/blocker, not accumulate another broad automated count. No tests or operational writes were run for this reconciliation.
+The 81-case closure reconciliation is now the controlling next-work checklist. No whole case has complete release-scoped evidence for Pass: 37 have primarily remote remaining work and 44 have named prerequisite gates. These scheduling groups are not failures or completion percentages. FIN-02/04/05, LAB-14 and WEB-06 are closest to bounded closure; FIN-03 still lacks original issued-PDF preservation evidence. All prior partial results remain valid within their recorded scope. Next work must close named script steps or identify a concrete defect/blocker, not accumulate another broad automated count. No tests or operational writes were run for this reconciliation.
 
 ## September 14 file safeguards, shared controls and quote recovery slice
 
@@ -267,7 +267,7 @@ LAB-14 step 20 now has stronger controller/database coverage. Its signed-in writ
 
 ## Saved pause — owner requested commit, push and API/UI redeployment
 
-The owner paused acceptance here and authorized committing/pushing the accumulated application fixes and evidence, followed by production API and Portal UI redeployment. This release authorization does not close UAT or activate disabled workflows. Deployment evidence is recorded separately in [the UAT fixes release](../../plans/PORTAL-UAT-FIXES-RELEASE-2026-09-12.md).
+The owner paused acceptance here and authorized committing/pushing the accumulated application fixes and evidence, followed by production API and Portal UI redeployment. This release authorization did not close UAT or activate disabled workflows. Deployment evidence is recorded separately in [the historical UAT fixes release](../../operations/portal-uat-fixes-release-2026-09-12.md).
 
 The release is complete on application source `26839b4c7739ca1e5f3934335c9f5a758cd6a55c`: API workflow `34736875788` succeeded and Portal production `dpl_3AgHRLYfVrm1NogVQYFv6abvY6gs` is Ready. Health, database ping, assets and bounded signed-in production checks passed. This supersedes prior local-only deployment statements for the included fixes, while all acceptance limitations below remain in effect.
 

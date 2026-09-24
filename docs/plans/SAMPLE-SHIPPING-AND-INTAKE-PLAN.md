@@ -869,21 +869,6 @@ delivery location, return to the shipment and review the included-cost kit
 order before confirming it. Mailbox and physical delivery/receipt acceptance
 remain outstanding; no production deployment occurred.
 
-### Test-plan coverage and walkthrough handoff
-
-The [transportation-kit manual module](../testing/11-transportation-kits.md)
-defines SHP-01–14 for this full sequence. The current local walkthrough resumes
-at SHP-02 (Department delivery location) then SHP-03 (included-cost confirmation)
-without changing HS5Y7DB7's finalized roster. Separate prepared fixtures cover
-30 tubes, alternate sizes, partial supply, split samples, replay/conflict and
-unauthorized operations. The [E2E plan](E2E-TEST-PLAN.md) links those role handoffs;
-the [backend](BACKEND-TEST-PLAN.md) and [frontend](FRONTEND-TEST-PLAN.md) matrices
-map current assertions and explicit gaps. All newly authored manual cases are
-Not run; implementation checkpoint totals are not their acceptance results.
-The [run template](../testing/RUN-RECORD.md) retains request, location, physical
-kit, quantity, shipment and manifest evidence at each handoff. This documentation
-update changes no implementation, test result, database or runtime.
-
 ## 2026-09-08 additional planning scope: transportation-kit inventory and fulfillment
 
 Status after the Job-order correction: deferred inventory expansion. The

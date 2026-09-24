@@ -56,4 +56,4 @@ This confirms an unresolved scheduled off-server activation gate; no manual run 
 
 Evidence: `tmp/final-three-acceptance/github-repository.json` and `github-workflows.json`. The prior ACC-06 evidence used the local governance build; ORD-03 subsequently refreshed the local API as recorded above. Portal is local port 3016, database is the isolated loopback acceptance database on 5436. Source HEAD remains `7df0ccbef62252732ceae877abb4fe7bb9a721dc` plus existing workspace changes; this report does not assert a matching production release.
 
-The remaining approval and operational steps are recorded in the [reviewable recovery rollout](../../plans/FINAL-UAT-RECOVERY-APPROVAL.md). SYS-06 remains Blocked until its actual coordinated recovery, independent scheduled artifact and release/owner acceptance evidence exist.
+The remaining approval and operational steps are recorded in the reviewable recovery rollout. SYS-06 remains Blocked until its actual coordinated recovery, independent scheduled artifact and release/owner acceptance evidence exist.

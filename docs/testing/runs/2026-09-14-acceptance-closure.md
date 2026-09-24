@@ -76,7 +76,7 @@ Evidence: tmp/uat-closure/fin06-attention-journal.json, fin06-attention-disabled
 
 The three full-case passes remain FIN-02/04/05. The supported Lab-to-Commercial completion handoff is still absent; an open Product Owner question asks whether final material-exhaustion processing failure can close/invoice or needs a commercial decision. Processing failure must not become intake rejection or fabricated success. Existing successful preparation alone is not completed scientific output.
 
-Reusable signed-in credentials are currently available for four Finance identities; the preserved in-app session is the independent Scientific Reviewer. Remaining remote work needs the role/audience sessions in the [bounded identity plan](2026-09-14-uat-identity-plan.md). No credentials of existing real people will be reset, no prior temporary reviewer Operator grant repeated, and no mock session will stand in for connected acceptance. Physical/device facts, controlled scientific/provider lineage, authorized destination delivery and isolated retention/restore prerequisites remain the distinct packages in the controlling reconciliation. None is waived by this run.
+Reusable signed-in credentials were available for four Finance identities; the preserved in-app session was the independent Scientific Reviewer. Remaining remote work needed the role/audience sessions in the [identity setup record](2026-09-14-uat-identity-execution.md). No credentials of existing real people were reset, no prior temporary reviewer Operator grant was repeated, and no mock session stood in for connected acceptance. Physical/device facts, controlled scientific/provider lineage, authorized destination delivery and isolated retention/restore prerequisites remained distinct packages in the historical reconciliation. None was waived by this run.
 
 ## FIN-06 — Pass for isolated software acceptance
 
@@ -105,7 +105,7 @@ Retained new integration message: b470e3cd-d371-478e-ad86-f52df188c59f. Do not q
 
 Reviewed/updated the four getting-started guides to describe the tab below toolbar and organization details. Generated corpus now has 56 guides and hash `50f599990a05` (full hash in generated manifest and current readback). The same owned API binary reloaded the new corpus; no deployment, migration, auth-policy change or existing business write. Source artifact generation used the same generator with output redirected to ignored temporary files, then copied the two exact outputs back; normal `--check` passed. Final audience search readback is in `cohort-current-readback.json`; detailed pre-copy navigation observations remain valid because only the explanatory guide sentence/review date changed.
 
-Evidence: ignored `tmp/uat-closure/web06-results.json`, `web06-pending-session.json`, four `web06-*-narrow.png` files, `web06-pending-session.png`, and `docs-regression`. Dedicated test setup and scope are documented in the bounded identity plan. Remaining Lab checks use these authorized sessions; original historical/physical/provider gates remain unchanged.
+Evidence: ignored `tmp/uat-closure/web06-results.json`, `web06-pending-session.json`, four `web06-*-narrow.png` files, `web06-pending-session.png`, and `docs-regression`. Dedicated test setup and scope are documented in the [identity setup record](2026-09-14-uat-identity-execution.md). Remaining Lab checks used these authorized sessions; original historical/physical/provider gates remained unchanged.
 
 
 ## LAB-14 — Populated recovery and Customer isolation

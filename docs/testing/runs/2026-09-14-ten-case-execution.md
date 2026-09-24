@@ -20,7 +20,7 @@ The owner explicitly replied **“You have all required approvals”** after rev
 - Trial fixture: allowance two originals, extracted RNA, the existing test workflow/destination and named deliverables above, an open thirty-day test submission window, run one tube per specimen with reserve only after failure. Require existing distinct Commercial and Scientific Operations test delegates and Prospect administrator acceptance. Material terms: retain for review; no disposal or physical custody is fabricated. Separate dated/held/closed/replacement variants test software gates only.
 - Retain newly accepted snapshots and histories. Retire new offerings and restore any temporary defaults after dependent checks; no deletion of original records. No production deployment, shared migration, external message, provider delivery or actual scientific/physical signoff.
 
-The scientific-fixture review is required by [TEST-DATA](../TEST-DATA.md), which assigns approved operating definitions to the Lab owner and requires properly reviewed eligible configuration for positive purchases. Engineering will make all implementation choices and prepare/run the tests after this product-level decision.
+The scientific-fixture review is required by TEST-DATA, which assigns approved operating definitions to the Lab owner and requires properly reviewed eligible configuration for positive purchases. Engineering will make all implementation choices and prepare/run the tests after this product-level decision.
 
 ## Execution status
 

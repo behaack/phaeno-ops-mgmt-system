@@ -83,7 +83,7 @@ Keep procedural detail in the existing audience guides. The management manual ex
 - The [connected preparation plan](LAB-WORK-JOURNEY-PLAN.md) records locally implemented preparation batches and pending physical acceptance/production release. Confirm availability before showing these in a hosted session.
 - Current `LabOperationsPage.tsx` labels the work section **Library prep**. Older references to **Lab work** in receipt prose and acceptance cases describe earlier navigation. The manual uses the current section label and job history lookup; do not treat older prose as an alternate training route without checking the demonstrated version.
 - The general Lab overview describes actor separation broadly, whereas the scientific approval guide describes stricter reviewer independence. The manual directs management to the detailed approval guide and the configured policy rather than promising that one person can perform every step. Confirm the demonstrated environment's enforcement before a future hands-on approval exercise.
-- The [manual acceptance pack](../testing/06-laboratory.md) supplies future scenario ideas. It is an engineering acceptance artifact and must be simplified before learner use; its cases are not evidence of completed training.
+- The retired September 2026 manual acceptance pack is no longer a current source of training scenarios. Prepare future exercises from current workflows and the audience guides; historical case results are not evidence of completed training.
 
 ## Verification of this documentation change
 

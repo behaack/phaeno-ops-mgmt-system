@@ -1,5 +1,7 @@
 # Backend Test Plan
 
+The September 2026 manual UAT pack and its case scripts were retired after substantial workflow changes. Historical case IDs and results below describe their dated checkpoints; derive any new acceptance exercise from the current product and code. Automated regression coverage remains tracked here.
+
 ## September 23, 2026 — Tube-label scan-back
 
 The label-print PostgreSQL cases now send the exact physical scan for successful POMS label prints and reject a wrong scan without recording success. New generated tubes are expected to remain `LabelPending` through failed prints and become `Available` only after a matching scan-back; existing saved status values are unaffected. Failed attempts still require a reason and preserve the print count. The solution build passes; these modified database cases were not run at this checkpoint. Physical DataMatrix decoding and label adhesion remain bench acceptance, not API evidence.
@@ -423,7 +425,7 @@ Manual/concurrent gates: wrong role/tenant, voided or unreceived shipment, dupli
 
 ## Implemented specimen-attempt guards — September 11, 2026
 
-Added LabSpecimenAttemptTests covering barcode mismatch without mutation, same-attempt QC repeat versus explicit operational hold, failure immutability, required/foreign stage skip rejection and processing failure preserving intake acceptance. Domain and controller implementation also add versioned authorization, transactional command receipts, filtered uniqueness, lineage and downstream gates. Tests are authored/compiled, not run. PostgreSQL concurrency, rollback/replay, source/start races, legacy adoption and full lifecycle acceptance are still required by [LAB-09](../testing/06-laboratory.md#lab-09---specimen-tube-attempts-and-reserve-fallback). Earlier proposed-status notes are superseded by this implementation checkpoint.
+Added LabSpecimenAttemptTests covering barcode mismatch without mutation, same-attempt QC repeat versus explicit operational hold, failure immutability, required/foreign stage skip rejection and processing failure preserving intake acceptance. Domain and controller implementation also add versioned authorization, transactional command receipts, filtered uniqueness, lineage and downstream gates. Tests are authored/compiled, not run. PostgreSQL concurrency, rollback/replay, source/start races, legacy adoption and full lifecycle acceptance are still required by LAB-09. Earlier proposed-status notes are superseded by this implementation checkpoint.
 
 ## Execution tube prerequisite - September 11, 2026
 
@@ -443,7 +445,7 @@ Added LabWorkflowPromotionTests and revised protocol activation regressions: aut
 
 ## Revised retirement and invalidation coverage — September 11, 2026
 
-New required coverage is specified in [LAB-07](../testing/06-laboratory.md#lab-07--protocol-retirement-workflow-invalidation-and-revalidation). It supersedes the prior rule blocking all workflow/unfinished-job references: active processing blocks, queued work requires explicit current-impact confirmation, and authorized retirement atomically invalidates affected workflows and creates clean Invalid recovery revisions. Cover immutable historical versions, remaining-stage preservation, empty-stage rejection, revalidation with/without edits, independent approval, production gating, queued-pin retention, role checks, stale impact tokens, duplicate retries, concurrent execution starts/assignments/workflow transitions/job authorization, and audit atomicity. Add domain regressions for Invalid candidate approval and invalidated historical immutability. These new scenarios are not yet marked passed; earlier dependency-blocking evidence is historical only. Automated suite execution has not been requested.
+New required coverage is specified in LAB-07. It supersedes the prior rule blocking all workflow/unfinished-job references: active processing blocks, queued work requires explicit current-impact confirmation, and authorized retirement atomically invalidates affected workflows and creates clean Invalid recovery revisions. Cover immutable historical versions, remaining-stage preservation, empty-stage rejection, revalidation with/without edits, independent approval, production gating, queued-pin retention, role checks, stale impact tokens, duplicate retries, concurrent execution starts/assignments/workflow transitions/job authorization, and audit atomicity. Add domain regressions for Invalid candidate approval and invalidated historical immutability. These new scenarios are not yet marked passed; earlier dependency-blocking evidence is historical only. Automated suite execution has not been requested.
 
 ## Protocol retirement — September 11, 2026
 
@@ -621,7 +623,7 @@ Dialog cancellation/no-write behavior is covered in frontend checks. No migratio
 was planned; model consistency remains part of implementation verification.
 The 61-case checkpoint is distinct from older passing totals, and this
 documentation update runs no tests itself.
-Connected acceptance is the [SHP-09 reset variant](../testing/11-transportation-kits.md),
+Connected acceptance is the SHP-09 reset variant,
 currently Not run.
 
 ## Customer transportation-kit ordering and receipt — September 8, 2026
@@ -887,16 +889,6 @@ zero failed/skipped (includes `CrmCompanyDomainTests`); PostgreSQL fixture rolle
 back. Migration `20260908161948_AddCrmOutreachEvidence` applied only to verified
 local `localhost/phaeno_ops`. ERD regenerated. No outreach sender exists; queue,
 dispatch, and provider receipt enforcement remain a future integration gate.
-
-## Manual major-workflow companion — September 8, 2026
-
-The [major-workflow acceptance pack](../testing/README.md) adds 60 human-run
-cases with role/tenant boundaries, duplicate and stale-command checks, persisted
-handoff expectations, scientific/financial separation, and provider/restore gates.
-See the [owning plan](MAJOR-WORKFLOW-ACCEPTANCE-PLAN.md) and
-[run record](../testing/RUN-RECORD.md). These are authored manual scripts, all
-initially Not run; no backend tests were added or executed for this documentation
-task, and existing automated coverage/results remain unchanged.
 
 ## Final isolated retention checkpoint — September 8, 2026
 
@@ -2074,7 +2066,7 @@ LabTubeIntakeTests, LabSpecimenAttemptTests, LabWorkflowPromotionTests, LabWorkf
 
 LabPreparationBatchTests: 10 passing cases; LabSpecimenAttemptTests: 5 passing cases. LabPreparationPostgresTests: 2 passing persisted journeys covering competing reservations, stale versions, unauthorized Customer access, start locking, command replay, one material consumption, shared evidence/tube Hold, explicit failure, output creation and existing-output selection, optional final-stage skip, QC references, sequencing membership and reserve fallback. The optional-stage fixture lookup was corrected and rerun. The local migration was applied to localhost/phaeno_ops; the ERD includes all new tables and provenance links.
 
-The owning [Library prep plan](LAB-WORK-JOURNEY-PLAN.md#verification-checkpoint) and [LAB-14 manual journey](../testing/06-laboratory.md#lab-14--preparation-trays-shared-evidence-and-sequencing-handoff) retain remaining acceptance coverage: held/closed Trial races, all staff-role combinations, physical trays/scanners/labels, owner sign-off and production/provider gates. Historical TEST-008 work was not retrofitted or replayed. Customer-requested hold implementation remains blocked.
+The owning [Library prep plan](LAB-WORK-JOURNEY-PLAN.md#verification-checkpoint) and LAB-14 manual journey retain remaining acceptance coverage: held/closed Trial races, all staff-role combinations, physical trays/scanners/labels, owner sign-off and production/provider gates. Historical TEST-008 work was not retrofitted or replayed. Customer-requested hold implementation remains blocked.
 
 ## September 12 — Preparation batch identifiers
 

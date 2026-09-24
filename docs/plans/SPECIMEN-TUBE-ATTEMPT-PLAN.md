@@ -224,7 +224,6 @@ Run-all/run-subset policies, parallel replicates, pooling, automatic reserve sel
 - [Order Management](ORDER-MANAGEMENT-PLAN.md)
 - [Sample Shipping and Intake](SAMPLE-SHIPPING-AND-INTAKE-PLAN.md)
 - [Backend test plan](BACKEND-TEST-PLAN.md), [Frontend test plan](FRONTEND-TEST-PLAN.md), [E2E test plan](E2E-TEST-PLAN.md)
-- [Laboratory manual acceptance](../testing/06-laboratory.md)
 - [Current local walkthrough](../testing/runs/2026-09-11-protocol-preparation.md)
 
 ## Global action-button rule — September 11, 2026

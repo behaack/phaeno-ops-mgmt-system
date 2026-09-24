@@ -1,7 +1,7 @@
 # HS5Y7DB7 local shipping walkthrough — September 8, 2026
 
-Paused, partial run of [transportation kits and sample shipping](../11-transportation-kits.md).
-The [run-record template](../RUN-RECORD.md) remains unchanged. User reports,
+Paused, partial run of transportation kits and sample shipping.
+The run-record template remains unchanged. User reports,
 read-only database evidence and unexecuted variants are recorded separately;
 no full manual case is marked Pass from these partial steps.
 
