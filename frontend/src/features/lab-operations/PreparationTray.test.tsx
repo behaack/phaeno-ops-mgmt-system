@@ -139,6 +139,8 @@ describe('inline tray scanning', () => {
     render(<TestTray batch={batch({ members: [tube('A1', 'ONE'), tube('A3', 'THREE')] })} pending={false} onScan={vi.fn()}>{id => <p>Details for {id}</p>}</TestTray>)
     expect(screen.queryByText('Planned')).toBeNull()
     expect(screen.queryByText('Details for A1')).toBeNull()
+    expect(screen.getByText('ONE')).toBeTruthy()
+    expect(screen.queryByRole('img', { name: /Tray barcode|tube barcode/i })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'View A1, tube ONE' }))
     expect(screen.getByText('Details for A1')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'View A3, tube THREE' }))

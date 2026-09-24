@@ -45,21 +45,22 @@ test('receiving sheet keeps large scan targets apart and prints without the full
 })
 
 
-test('laboratory QR label fits existing 50 by 25 mm stock', async ({ page }, info) => {
+test('laboratory DataMatrix label remains visible through the dialog portal and fits 50 by 25 mm stock', async ({ page }, info) => {
   test.skip(info.project.name !== 'chromium', 'Physical label layout uses desktop print media.')
   const html = await readFile(new URL('./fixtures/shipping-insert.html', import.meta.url), 'utf8')
   await page.route('**/e2e/fixtures/shipping-insert.html?labLabel', route => route.fulfill({ contentType: 'text/html', body: html }))
   await page.goto('/e2e/fixtures/shipping-insert.html?labLabel')
-  await expect(page.getByRole('img', { name: 'Container QR code PH-S-23456789AB-C' })).toBeVisible()
+  await expect(page.getByRole('img', { name: 'Container DataMatrix PH-S-23456789AB-C' })).toBeVisible()
   await page.emulateMedia({ media: 'print' })
   expect(await page.evaluate(() => getComputedStyle(document.body).minWidth)).toBe('0px')
   const surface = page.locator('.lab-label-print-surface')
+  await expect(surface).toBeVisible()
   const label = (await surface.boundingBox())!
-  const qr = (await surface.locator('svg').boundingBox())!
+  const matrix = (await surface.locator('img').boundingBox())!
   const caption = (await surface.locator('figcaption').boundingBox())!
-  expect(Math.abs(qr.width - qr.height)).toBeLessThan(1)
-  expect(qr.width).toBeGreaterThanOrEqual(67)
-  expect(qr.x + qr.width).toBeLessThanOrEqual(label.x + label.width)
+  expect(Math.abs(matrix.width - matrix.height)).toBeLessThan(1)
+  expect(matrix.width).toBeGreaterThanOrEqual(67)
+  expect(matrix.x + matrix.width).toBeLessThanOrEqual(label.x + label.width)
   expect(caption.y + caption.height).toBeLessThanOrEqual(label.y + label.height)
   await page.pdf({ path: info.outputPath('laboratory-label.pdf'), preferCSSPageSize: true, printBackground: true })
   await surface.screenshot({ path: info.outputPath('laboratory-label.png') })

@@ -84,21 +84,32 @@ public sealed partial class LabOperationsController
                 EnsureVersion(source.Version, request.SourceVersion.Value);
                 if (request.BarcodeSource is not ("PhaenoGenerated" or "Manufacturer")) throw Invalid("barcode_source_invalid", "Choose a manufacturer barcode or a POMS label.");
                 string barcode;
+                var barcodeNamespace = "PHAENO";
                 if (request.BarcodeSource == "Manufacturer")
                 {
                     if (!SupplierTubeBarcode.TryNormalize(request.Barcode, out barcode) || barcode.StartsWith("PH-", StringComparison.Ordinal))
                         throw Invalid("manufacturer_barcode_invalid", "Scan the complete manufacturer barcode; POMS identifiers cannot be registered as manufacturer labels.");
+                    if (!request.ManufacturerSupplierId.HasValue || !await dbContext.LabSuppliers.AnyAsync(s => s.Id == request.ManufacturerSupplierId.Value && s.IsActive, ct))
+                        throw Invalid("manufacturer_required", "Select the active manufacturer of the physical sequencing tube.");
+                    barcodeNamespace = SupplierTubeBarcode.NamespaceForSupplier(request.ManufacturerSupplierId.Value);
                     await SampleShippingPackingData.LockAsync(dbContext, $"supplier-tube:{barcode}", ct);
-                    if (await dbContext.LabContainers.AnyAsync(c => c.Barcode == barcode, ct)
-                        || await dbContext.RegisteredSampleTubes.AnyAsync(t => t.SupplierBarcode == barcode, ct)
-                        || await dbContext.SampleShippingStockTubes.AnyAsync(t => t.SupplierBarcode == barcode, ct)
+                    if (await dbContext.LabContainers.AnyAsync(c => c.Barcode == barcode && (c.BarcodeNamespace == barcodeNamespace || c.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace), ct)
+                        || await dbContext.RegisteredSampleTubes.AnyAsync(t => t.SupplierBarcode == barcode && (t.BarcodeNamespace == barcodeNamespace || t.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace), ct)
+                        || await dbContext.SampleShippingStockTubes.AnyAsync(t => t.SupplierBarcode == barcode && (t.BarcodeNamespace == barcodeNamespace || t.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace), ct)
                         || await dbContext.LabPreparationBatches.AnyAsync(b => (b.TrayBarcode != null && b.TrayBarcode.ToUpper() == barcode) || b.Name.ToUpper() == barcode, ct))
                         throw Conflict("barcode_already_registered", "This barcode already identifies another physical tube.");
                 }
-                else barcode = await LabBarcodeService.AllocateAsync(dbContext, LabContainerKind.Sequencing, ct);
+                else
+                {
+                    if (request.ManufacturerSupplierId.HasValue) throw Invalid("manufacturer_not_applicable", "Select a manufacturer only for a manufacturer-barcoded tube.");
+                    barcode = await LabBarcodeService.AllocateAsync(dbContext, LabContainerKind.Sequencing, ct);
+                }
+                if (string.Equals(barcode, source.Barcode, StringComparison.OrdinalIgnoreCase))
+                    throw Conflict("transfer_barcode_not_distinguishable", "Choose a sequencing tube with a different printed barcode from the library source so both physical scans are distinguishable.");
                 var tube = new LabContainer(source.LabWorkOrderId, source.LabSpecimenId, source.Id, LabContainerKind.Sequencing,
                     barcode, $"Sequencing aliquot of {library.LibraryKey}", request.Location, null, null, null,
-                    request.BarcodeSource == "Manufacturer" ? LabContainerBarcodeSource.Manufacturer : LabContainerBarcodeSource.PhaenoGenerated);
+                    request.BarcodeSource == "Manufacturer" ? LabContainerBarcodeSource.Manufacturer : LabContainerBarcodeSource.PhaenoGenerated,
+                    labelVerificationRequired: request.BarcodeSource == "PhaenoGenerated", barcodeNamespace: barcodeNamespace);
                 tube.AttachAttempt(attempt);
                 member.AssignSequencingTube(tube.Id);
                 dbContext.LabContainers.Add(tube);

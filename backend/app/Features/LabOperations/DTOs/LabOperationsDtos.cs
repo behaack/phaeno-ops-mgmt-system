@@ -105,7 +105,7 @@ public sealed record LabContainerDto(
     string? IntakeDisposition = null, string? IntakeReasonCode = null, string? IntakeNotes = null,
     DateTime? IntakeReviewedAtUtc = null, Guid? IntakeReviewedByUserId = null,
     decimal? InitialQuantity = null, string? InitialQuantityUnit = null,
-    string? QuantityBasis = null, string QuantityHistoryJson = "[]")
+    string? QuantityBasis = null, string QuantityHistoryJson = "[]", string BarcodeNamespace = "LEGACY")
 {
     public string? QuantityText => Quantity?.ToString(System.Globalization.CultureInfo.InvariantCulture);
     public string? InitialQuantityText => InitialQuantity?.ToString(System.Globalization.CultureInfo.InvariantCulture);
@@ -115,6 +115,11 @@ public sealed record LabContainerScanDto(
     Guid LabWorkOrderId, string? CommercialOrderNumber, string? AccessionNumber,
     string? ParentBarcode, Guid? LabLibraryId, string? LibraryStatus,
     LabContainerDto Container);
+
+public sealed record MoveLabContainerRequest(long Version, string? ScannedContainerBarcode,
+    string? ScannedDestinationBarcode, bool Confirmed);
+public sealed record LabContainerMoveDto(Guid Id, string? PreviousLocation, string DestinationBarcode,
+    Guid? ActorUserId, DateTime OccurredAtUtc);
 
 public sealed record LabLabelPrintEventDto(
     Guid Id, Guid LabContainerId, string Outcome, string Reason,
@@ -212,7 +217,8 @@ public sealed record AcceptRemainingTube(string SupplierTubeBarcode, string Free
 public sealed record SpecimenDispositionRequest(string Disposition, string? ReasonCode, long Version);
 public sealed record CreateContainerRequest(Guid? LabSpecimenId, Guid? ParentContainerId, string Kind,
     string Label, string Location, decimal? Quantity, string? QuantityUnit, DateTime? RetainUntilUtc);
-public sealed record RecordLabelPrintRequest(string Reason, string Outcome, string? FailureDetails);
+public sealed record RecordLabelPrintRequest(string Reason, string Outcome, string? FailureDetails,
+    string? ScannedBarcode = null);
 public sealed record CreateExecutionRequest(Guid? LabSpecimenId, Guid LabProtocolVersionId,
     Guid? AssignedToUserId, Guid? LabServiceWorkflowStageId = null);
 public sealed record ExecutionTransitionRequest(string Action, string? CapturedResultsJson, string? DeviationNote, long Version, string? ConfirmedSourceBarcode = null);

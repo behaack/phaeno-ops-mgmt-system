@@ -1,10 +1,94 @@
 namespace PhaenoPortal.Test;
 
 using PSeq.Operations.Laboratory.Domain;
+using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.LabOperations.Services;
 
 public class LabOperationsDomainTests
 {
+    [Fact]
+    public void ManufacturerTubesKeepSamePrintedValueInDistinctSupplierNamespaces()
+    {
+        var firstSupplier = Guid.NewGuid();
+        var secondSupplier = Guid.NewGuid();
+        var first = new LabContainer(Guid.NewGuid(), Guid.NewGuid(), null, LabContainerKind.Library,
+            "001234", "First tube", "Box A", null, null, null,
+            LabContainerBarcodeSource.Manufacturer,
+            barcodeNamespace: SupplierTubeBarcode.NamespaceForSupplier(firstSupplier));
+        var second = new LabContainer(Guid.NewGuid(), Guid.NewGuid(), null, LabContainerKind.Library,
+            "001234", "Second tube", "Box B", null, null, null,
+            LabContainerBarcodeSource.Manufacturer,
+            barcodeNamespace: SupplierTubeBarcode.NamespaceForSupplier(secondSupplier));
+
+        Assert.Equal(first.Barcode, second.Barcode);
+        Assert.NotEqual(first.BarcodeNamespace, second.BarcodeNamespace);
+        Assert.All(new[] { first, second }, tube => Assert.Equal(tube.Barcode, Assert.Single(tube.Barcodes).Value));
+        Assert.All(new[] { first, second }, tube => Assert.True(Assert.Single(tube.Barcodes).IsPrimary));
+    }
+
+    [Fact]
+    public void NewlyAllocatedPomsTubeBecomesAvailableOnlyAfterVerifiedPrintIsRecorded()
+    {
+        var workId = Guid.NewGuid();
+        var specimenId = Guid.NewGuid();
+        var tube = new LabContainer(workId, specimenId, null, LabContainerKind.SubmittedSpecimen,
+            "PH-S-EXAMPLE", "Test tube", "Freezer A", null, null, null,
+            labelVerificationRequired: true);
+
+        Assert.Equal(LabContainerStatus.LabelPending, tube.Status);
+        tube.ReviewIntake(LabSpecimenIntakeDisposition.Accepted, null, null, Guid.NewGuid(), DateTime.UtcNow);
+        Assert.Equal(LabContainerStatus.LabelPending, tube.Status);
+        tube.RecordLabelPrint(Guid.NewGuid(), DateTime.UtcNow);
+        Assert.Equal(LabContainerStatus.Available, tube.Status);
+        Assert.Equal(1, tube.LabelPrintCount);
+    }
+
+    [Fact]
+    public void IntakeCorrectionKeepsHistoricalAvailablePomsTubeAvailable()
+    {
+        var tube = new LabContainer(Guid.NewGuid(), Guid.NewGuid(), null, LabContainerKind.SubmittedSpecimen,
+            "PH-S-EXISTING", "Existing tube", "Freezer A", null, null, null);
+        var actor = Guid.NewGuid();
+        tube.ReviewIntake(LabSpecimenIntakeDisposition.Accepted, null, null, actor, DateTime.UtcNow);
+        tube.ReviewIntake(LabSpecimenIntakeDisposition.OnHold, "identity_mismatch", "Review identity", actor, DateTime.UtcNow);
+
+        Assert.Equal(0, tube.LabelPrintCount);
+        Assert.Equal(LabContainerStatus.Available, tube.Status);
+    }
+
+    [Fact]
+    public void RejectedNewPomsTubeStillNeedsFirstVerifiedPrintAfterIntakeCorrection()
+    {
+        var tube = new LabContainer(Guid.NewGuid(), Guid.NewGuid(), null, LabContainerKind.SubmittedSpecimen,
+            "PH-S-NEW", "New tube", null, null, null, null,
+            rejectedAtIntake: true, labelVerificationRequired: true);
+        var actor = Guid.NewGuid();
+        tube.ReviewIntake(LabSpecimenIntakeDisposition.Rejected, "identity_mismatch", "Check tube", actor, DateTime.UtcNow,
+            firstLabelVerificationRequired: true);
+        tube.Move("Freezer A");
+        tube.ReviewIntake(LabSpecimenIntakeDisposition.Accepted, null, "Correction", actor, DateTime.UtcNow,
+            firstLabelVerificationRequired: true);
+
+        Assert.Equal(LabContainerStatus.LabelPending, tube.Status);
+        tube.RecordLabelPrint(actor, DateTime.UtcNow);
+        Assert.Equal(LabContainerStatus.Available, tube.Status);
+    }
+
+    [Fact]
+    public void ManufacturerLibraryGetsUniqueInternalKeySeparateFromPhysicalBarcode()
+    {
+        var first = new LabContainer(Guid.NewGuid(), Guid.NewGuid(), null, LabContainerKind.Library,
+            "001234", "First tube", "Box A", null, null, null, LabContainerBarcodeSource.Manufacturer,
+            barcodeNamespace: SupplierTubeBarcode.NamespaceForSupplier(Guid.NewGuid()));
+        var second = new LabContainer(Guid.NewGuid(), Guid.NewGuid(), null, LabContainerKind.Library,
+            "001234", "Second tube", "Box B", null, null, null, LabContainerBarcodeSource.Manufacturer,
+            barcodeNamespace: SupplierTubeBarcode.NamespaceForSupplier(Guid.NewGuid()));
+
+        Assert.NotEqual(first.Barcode, LabLibrary.KeyForContainer(first));
+        Assert.NotEqual(LabLibrary.KeyForContainer(first), LabLibrary.KeyForContainer(second));
+        Assert.StartsWith("LIB-", LabLibrary.KeyForContainer(first));
+    }
+
     [Fact]
     public void WorkOrderAcceptsOnlyNewerAuthorizationVersions()
     {

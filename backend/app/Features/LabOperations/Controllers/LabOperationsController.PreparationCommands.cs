@@ -36,7 +36,15 @@ public sealed partial class LabOperationsController
         var members = await dbContext.LabPreparationMembers.Where(m => m.LabPreparationBatchId == batch.Id && !m.Removed).ToListAsync(ct);
         var attemptIds = members.Select(m => m.LabSpecimenAttemptId).ToList();
         var attempts = await dbContext.LabSpecimenAttempts.Where(a => attemptIds.Contains(a.Id)).ToListAsync(ct);
-        LabContainer? candidate = request.Action == "add" ? await dbContext.LabContainers.AsNoTracking().SingleOrDefaultAsync(t => t.Barcode == request.Barcode, ct) ?? throw Missing() : null;
+        LabContainer? candidate = null;
+        if (request.Action == "add")
+        {
+            var matches = await dbContext.LabContainers.AsNoTracking()
+                .Where(t => t.Barcode == request.Barcode && (!request.ContainerId.HasValue || t.Id == request.ContainerId.Value))
+                .Take(2).ToListAsync(ct);
+            if (matches.Count > 1) throw Conflict("barcode_ambiguous", "This printed barcode identifies tubes from more than one manufacturer. Select the intended tube from its job before adding it to the tray.");
+            candidate = matches.SingleOrDefault() ?? throw Missing();
+        }
         var workIds = attempts.Select(a => a.LabWorkOrderId).Concat(candidate is null ? [] : new[] { candidate.LabWorkOrderId }).Distinct().Order().ToList();
         await LockPreparationTrialsAsync(workIds, ct);
         foreach (var workId in workIds) await SampleShippingPackingData.LockAsync(dbContext, $"lab-tube-receipt:{workId}", ct);

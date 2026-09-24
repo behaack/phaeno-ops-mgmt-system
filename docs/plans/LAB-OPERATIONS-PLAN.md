@@ -1,5 +1,13 @@
 # Lab Operations Plan
 
+## DataMatrix tube labels and scan-result presentation — September 23, 2026
+
+POMS-generated laboratory tube labels now render the existing exact, checksummed container identifier as DataMatrix with readable text on the 50 × 25 mm label. The Lab container's UUID remains its internal identity; the existing unique barcode and source fields continue to identify the physical tube independently of its specimen and accession. A newly allocated POMS container has `LabelPending` status and cannot serve as available material until its printed physical label is scanned back. The API independently checks the POMS identifier and records the successful print and activation only for a matching scan; failed print attempts retain their reason without increasing the print count or activating the tube. Existing saved containers retain their current state. This supersedes the September 10 QR choice for laboratory tube labels only. Supplier-applied tube labels, saved barcode values, shipping inserts, kit labels and physical tray label printing retain their established identities and symbols.
+
+After a tube or tray has been scanned, the preparation tray and saved sample-matching rows show readable identifiers without recreating on-screen QR codes. The stock-kit detail likewise shows its identifier as text; the dedicated print dialog retains the scannable label. The tray's print dialog retains its QR label for attachment to the physical tray. Existing USB keyboard-mode scanning and Enter submission remain the input path. A physical 2D scanner must support DataMatrix as well as QR for work across these areas. Printer/label stock, scanner, readability and bench acceptance remain separate operational gates.
+
+The owner confirmed that the tube manufacturer is selected when the physical container is assembled. The selected supplier product identifies that manufacturer in stock-kit assembly. The barcode registry, manufacturer-scoped duplicate values and scoped scan resolution are implemented locally as described in the physical container barcode identity section below. Existing manufacturer tubes retain their sole applied barcode and do not receive a second POMS label in current intake. Shared-environment migration and deployment remain separate release steps.
+
 ## Sample material transfers — September 23, 2026
 
 The [sample material transfer plan](SAMPLE-MATERIAL-TRANSFER-PLAN.md) records the locally implemented accessioned-source → barcoded library tube → barcoded sequencing tube workflow, retained material and manufacturer or POMS-generated barcodes. Accounting captures customer-declared amounts during shipment, actual biological consumption and an optional Material exhausted override. Biological material is a preparation field type. Reagent lots support the same exhaustion override, and products can require expiration dates at inventory entry. The local migration, build and static checks are complete; the linked plan records pending automated and operational acceptance and deployment.
@@ -1199,7 +1207,7 @@ remove competing internal write paths. The durable strategy is recorded in
 - Complete: library lineage and preparation execution.
 - Complete: internal batching across authorized work orders, including
   scan-first QC-passed-library entry and duplicate/wrong-context rejection.
-  POMS uses the library container barcode as the library key and allocates
+  POMS uses the container barcode as the library key for POMS-barcoded tubes and a distinct internal key for manufacturer-barcoded tubes, and allocates
   date-stamped, scanner-safe batch numbers.
 - Complete: provider-neutral NGS send-out manifests, custody, provider identifiers, timing, and
   exception handling.
@@ -1375,6 +1383,8 @@ Keep this proposed behavior out of current user guides until implemented.
 
 ### QR rendering update - September 10, 2026
 
+Superseded for POMS-generated laboratory tube labels by the September 23 DataMatrix implementation below. Shipping inserts, stock kits and trays retain their printable QR symbols; post-scan result displays use readable text.
+
 The owner requested all Portal-generated barcode graphics use QR codes and
 spacing be adjusted accordingly. This supersedes older Code 39/128 rendering
 and linear-size assertions. Shipping inserts use 32 mm squares with four-module
@@ -1425,3 +1435,11 @@ Follow-up: Jobs & specimens hides `ReadyForRelease` work orders by default, matc
 ## Proposed Jobs deadline workspace — September 18, 2026
 
 Planning only: [Jobs workspace and deadline tracking](LAB-JOB-DEADLINE-TRACKING-PLAN.md) proposes renaming the open-work page to Jobs, exposing due dates and reasoned risk, and preserving a path to multiple independently dated phases under one contract. The owner confirmed that the deadline means data for all samples under the job is made available to the customer through the Portal, calculated initially from a configurable standard TAT and adjustable by an authorized Phaeno employee. Retain the original baseline and adjustment history; laboratory completion alone will not close the job in this proposed workspace. This proposal does not mark these capabilities implemented or authorize execution.
+
+## Physical container barcode identity — September 23, 2026
+
+The physical container keeps its UUID identity. Each lab container now has a primary barcode row with value, namespace, symbology and source; historical symbol types are recorded as unknown because the database did not retain their physical print type. POMS-generated codes use the `PHAENO` namespace and DataMatrix labels. Manufacturer tubes use the namespace of the active supplier selected at kit assembly, library-tube assignment or sequencing-tube assignment. The database enforces namespace-plus-value uniqueness while permitting the same printed value from different suppliers. Manufacturer-barcoded libraries receive an internal `LIB-` key derived from their UUID, leaving the manufacturer's printed value as the physical scan identity; existing POMS-barcoded library keys remain unchanged. Existing records are backfilled from the selected supplier product or a uniquely matching historical supplier name; unresolved records remain in the conservative `LEGACY` namespace. Existing legacy barcode collisions continue to be rejected.
+
+Shipment and packet scans resolve supplier tube identity within that shipment. An unscoped lookup reports ambiguity when two laboratory containers share printed text; it does not choose a physical tube arbitrarily. Library preparation lets the operator select an eligible tube from its job before scanning it into a tray. A source and destination in one biological transfer must have different printed values even if their manufacturer namespaces differ, because two identical scans cannot prove which tube was used. POMS-generated tubes remain unusable until the printed DataMatrix is scanned back after printing. A newly rejected POMS tube still requires that first scan-back if its intake is corrected; migrated historical tubes retain their available state. A failed label print is recorded before retrying. Saved scan results show readable identifiers without repeating the QR image. The print CSS keeps the label's dialog portal visible and clips the output to the 50 × 25 mm stock. Thermal printer stock, DataMatrix scanner decoding, adhesion and scan-back are physical acceptance gates.
+
+The tube detail page adds an operator or supervisor action to scan the container, scan a destination freezer box or location barcode and confirm a move. The container's stored location and immutable job event record the previous location, destination, actor and time. The detail page reads those move events as location history. The destination is a scanned text identifier under the existing free-text location model; a registered freezer-box inventory and box-position model remain governed by the deferred location plan above.

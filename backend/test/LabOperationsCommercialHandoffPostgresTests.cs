@@ -889,6 +889,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             var submittedContainer = Assert.Single(work.Containers);
             Assert.StartsWith("PH-S-", submittedContainer.Barcode);
             Assert.Equal(0, submittedContainer.LabelPrintCount);
+            Assert.Equal(LabContainerStatus.LabelPending.ToString(), submittedContainer.Status);
             var initialLabel = await lab.ContainerLabel(
                 submittedContainer.Id,
                 CancellationToken.None);
@@ -898,17 +899,20 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 new RecordLabelPrintRequest(
                     "Initial accession label",
                     "Succeeded",
-                    null),
+                    null,
+                    submittedContainer.Barcode),
                 CancellationToken.None);
             submittedContainer = initialPrint.Container;
             Assert.Equal(1, submittedContainer.LabelPrintCount);
+            Assert.Equal(LabContainerStatus.Available.ToString(), submittedContainer.Status);
             Assert.Single(initialPrint.PrintHistory);
             var reprint = await lab.PrintContainerLabel(
                 submittedContainer.Id,
                 new RecordLabelPrintRequest(
                     "Original label damaged during handling",
                     "Succeeded",
-                    null),
+                    null,
+                    submittedContainer.Barcode),
                 CancellationToken.None);
             submittedContainer = reprint.Container;
             Assert.Equal(2, submittedContainer.LabelPrintCount);

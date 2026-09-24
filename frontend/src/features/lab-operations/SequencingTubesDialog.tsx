@@ -7,6 +7,7 @@ import axios from 'axios'
 import { z } from 'zod'
 import { applySequencingTubeCommand, getSequencingTubes, type SequencingTubeCommand, type SequencingTubeMember } from '#/api/lab-material-transfers'
 import { getLabOperationsError, type LabContainer } from '#/api/lab-operations'
+import type { LabSupplier } from '#/api/lab-operations'
 import { Button } from '#/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
@@ -20,15 +21,15 @@ import { StepTimingFields } from './StepTimingFields'
 import { emptyStepTiming, performanceInput, stepTimingSchema, timingIssues } from './step-performance'
 import { exceedsDecimalQuantity, isPositiveDecimalQuantity, remainingDecimalQuantity } from './decimal-quantity'
 
-const baseSchema = z.object({ barcodeSource: z.enum(['PhaenoGenerated', 'Manufacturer']), barcode: z.string().trim().max(100, 'Use 100 characters or fewer.'), location: z.string().trim().max(255), sourceScan: z.string().trim().max(102), destinationScan: z.string().trim().max(102), quantity: z.string().trim(), unit: z.string().trim().max(50), exhausted: z.boolean(), confirmed: z.boolean(), timing: stepTimingSchema })
+const baseSchema = z.object({ barcodeSource: z.enum(['PhaenoGenerated', 'Manufacturer']), barcode: z.string().trim().max(100, 'Use 100 characters or fewer.'), manufacturerSupplierId: z.string(), location: z.string().trim().max(255), sourceScan: z.string().trim().max(102), destinationScan: z.string().trim().max(102), quantity: z.string().trim(), unit: z.string().trim().max(50), exhausted: z.boolean(), confirmed: z.boolean(), timing: stepTimingSchema })
 type Values = z.infer<typeof baseSchema>
 type Target = { memberId: string; action: 'allocate' | 'transfer' }
 type PendingCommand = { memberId: string; input: SequencingTubeCommand }
-const emptyValues = (): Values => ({ barcodeSource: 'PhaenoGenerated', barcode: '', location: '', sourceScan: '', destinationScan: '', quantity: '', unit: '', exhausted: false, confirmed: false, timing: { ...emptyStepTiming } })
+const emptyValues = (): Values => ({ barcodeSource: 'PhaenoGenerated', barcode: '', manufacturerSupplierId: '', location: '', sourceScan: '', destinationScan: '', quantity: '', unit: '', exhausted: false, confirmed: false, timing: { ...emptyStepTiming } })
 const amount = (container: LabContainer) => container.status === 'Consumed' ? 'Exhausted' : container.quantity === null ? 'Unknown amount remaining' : `${container.quantityText ?? container.quantity} ${container.quantityUnit ?? ''} remaining`
 
-export function SequencingTubesDialog({ batchId, batchName, canManage, onClose, onChanged }: {
-  batchId: string; batchName: string; canManage: boolean; onClose: () => void; onChanged: () => Promise<unknown>
+export function SequencingTubesDialog({ batchId, batchName, suppliers, canManage, onClose, onChanged }: {
+  batchId: string; batchName: string; suppliers: LabSupplier[]; canManage: boolean; onClose: () => void; onChanged: () => Promise<unknown>
 }) {
   const client = useQueryClient()
   const { session } = usePhaenoSession()
@@ -47,6 +48,7 @@ export function SequencingTubesDialog({ batchId, batchName, canManage, onClose, 
     if (target?.action === 'allocate') {
       if (!values.location) issue('location', 'Enter the sequencing tube storage location.')
       if (values.barcodeSource === 'Manufacturer' && (!values.barcode || /\s/u.test(values.barcode) || [...values.barcode].some(c => c.charCodeAt(0) < 32 || c.charCodeAt(0) >= 127 && c.charCodeAt(0) <= 159))) issue('barcode', 'Scan the complete manufacturer barcode without whitespace or control characters.')
+      if (values.barcodeSource === 'Manufacturer' && !values.manufacturerSupplierId) issue('manufacturerSupplierId', 'Select the manufacturer of this physical tube.')
       return
     }
     if (normalizeMaterialTubeScan(values.sourceScan) !== member?.source.barcode) issue('sourceScan', 'Scan the selected library tube barcode.')
@@ -66,7 +68,7 @@ export function SequencingTubesDialog({ batchId, batchName, canManage, onClose, 
     const pending = recovery.data
     setUncertain(pending)
     setTarget({ memberId: pending.memberId, action: pending.input.action })
-    form.reset({ ...emptyValues(), barcodeSource: pending.input.barcodeSource ?? 'PhaenoGenerated', barcode: pending.input.barcode ?? '', location: pending.input.location ?? '', sourceScan: pending.input.confirmedSourceBarcode ?? '', destinationScan: pending.input.confirmedDestinationBarcode ?? '', quantity: pending.input.quantityText ?? pending.input.quantity?.toString() ?? '', unit: pending.input.quantityUnit ?? '', exhausted: pending.input.materialExhausted ?? false, confirmed: pending.input.performance?.personallyPerformed ?? false })
+    form.reset({ ...emptyValues(), barcodeSource: pending.input.barcodeSource ?? 'PhaenoGenerated', barcode: pending.input.barcode ?? '', manufacturerSupplierId: pending.input.manufacturerSupplierId ?? '', location: pending.input.location ?? '', sourceScan: pending.input.confirmedSourceBarcode ?? '', destinationScan: pending.input.confirmedDestinationBarcode ?? '', quantity: pending.input.quantityText ?? pending.input.quantity?.toString() ?? '', unit: pending.input.quantityUnit ?? '', exhausted: pending.input.materialExhausted ?? false, confirmed: pending.input.performance?.personallyPerformed ?? false })
   }, [recovery.data, form])
   const save = useMutation({ mutationFn: async (command: PendingCommand) => {
     await recovery.retain(command, command.input.requestId)
@@ -106,7 +108,7 @@ export function SequencingTubesDialog({ batchId, batchName, canManage, onClose, 
   const submit = (values: Values) => {
     if (locked || !canEdit || !member || !target || !query.data) return
     const input: SequencingTubeCommand = { requestId: crypto.randomUUID(), batchVersion: query.data.batchVersion, action: target.action, sourceVersion: member.source.version }
-    if (target.action === 'allocate') Object.assign(input, { barcodeSource: values.barcodeSource, ...(values.barcodeSource === 'Manufacturer' ? { barcode: values.barcode } : {}), location: values.location })
+    if (target.action === 'allocate') Object.assign(input, { barcodeSource: values.barcodeSource, ...(values.barcodeSource === 'Manufacturer' ? { barcode: values.barcode, manufacturerSupplierId: values.manufacturerSupplierId } : {}), location: values.location })
     else Object.assign(input, { destinationVersion: member.sequencingTube?.version, confirmedSourceBarcode: values.sourceScan, confirmedDestinationBarcode: values.destinationScan, quantityText: values.quantity, quantityUnit: values.unit, materialExhausted: values.exhausted, performance: performanceInput(values.timing, values.confirmed) })
     execute({ memberId: member.id, input })
   }
@@ -119,7 +121,7 @@ export function SequencingTubesDialog({ batchId, batchName, canManage, onClose, 
       {!canEdit ? <p role="status">The batch is now locked. Review the saved sequencing tubes.</p> : null}
       {target.action === 'allocate' ? <>
         <PreparationField id="sequencing-barcode-source" label="Sequencing tube barcode" required error={form.formState.errors.barcodeSource?.message}><select id="sequencing-barcode-source" className={`${prepSelectClass} cursor-pointer`} {...form.register('barcodeSource')}><option value="PhaenoGenerated">Generate POMS label</option><option value="Manufacturer">Use manufacturer barcode</option></select></PreparationField>
-        {form.watch('barcodeSource') === 'Manufacturer' ? <PreparationField id="sequencing-manufacturer-barcode" label="Scan manufacturer barcode" required error={form.formState.errors.barcode?.message}><Input id="sequencing-manufacturer-barcode" autoComplete="off" spellCheck={false} maxLength={100} {...form.register('barcode')} /></PreparationField> : <p className="text-sm text-muted-foreground">Print the assigned POMS label before recording the physical transfer.</p>}
+        {form.watch('barcodeSource') === 'Manufacturer' ? <><PreparationField id="sequencing-manufacturer" label="Tube manufacturer" required error={form.formState.errors.manufacturerSupplierId?.message}><select id="sequencing-manufacturer" className={`${prepSelectClass} cursor-pointer`} {...form.register('manufacturerSupplierId')}><option value="">Select manufacturer</option>{suppliers.filter(supplier => supplier.isActive).map(supplier => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></PreparationField>{suppliers.length === 0 ? <p role="alert" className="text-sm text-destructive">No active manufacturer is available. Refresh the laboratory workspace or ask an administrator to add the supplier.</p> : null}<PreparationField id="sequencing-manufacturer-barcode" label="Scan manufacturer barcode" required error={form.formState.errors.barcode?.message}><Input id="sequencing-manufacturer-barcode" autoComplete="off" spellCheck={false} maxLength={100} {...form.register('barcode')} /></PreparationField></> : <p className="text-sm text-muted-foreground">Print the assigned POMS label before recording the physical transfer.</p>}
         <PreparationField id="sequencing-location" label="Sequencing tube storage location" required error={form.formState.errors.location?.message}><Input id="sequencing-location" maxLength={255} {...form.register('location')} /></PreparationField>
         <p className="text-sm text-muted-foreground">Assigning the tube does not record a transfer or reduce the library material.</p>
       </> : <>
@@ -136,11 +138,11 @@ export function SequencingTubesDialog({ batchId, batchName, canManage, onClose, 
       {!query.data?.members.length ? <p>No libraries are assigned to this batch.</p> : query.data.members.map(item => <section key={item.id} className="space-y-3 rounded-lg border p-4" aria-label={`Sequencing tube for ${item.libraryKey}`}>
         <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><h3 className="break-all font-medium">{item.libraryKey}</h3><p className="break-all text-sm">Library source: <Link className="underline" to="/lab-operations/$workOrderId/containers/$containerId" params={{ workOrderId: item.labWorkOrderId, containerId: item.source.id }} search={{ section: 'work' }}>{item.source.barcode}</Link></p><p className="text-sm text-muted-foreground">{amount(item.source)}{item.source.location ? ` · ${item.source.location}` : ''}</p></div><PreparationActions items={[
           ...(canEdit && !item.sequencingTube ? [{ label: 'Assign sequencing tube', disabled: save.isPending || item.source.status !== 'Available', onClick: () => open(item, 'allocate') }] : []),
-          ...(canEdit && item.sequencingTube && !item.transfer ? [{ label: 'Record transfer', disabled: save.isPending || item.source.status !== 'Available', onClick: () => open(item, 'transfer') }] : []),
+          ...(canEdit && item.sequencingTube && !item.transfer ? [{ label: 'Record transfer', disabled: save.isPending || item.source.status !== 'Available' || item.sequencingTube.status !== 'Available', onClick: () => open(item, 'transfer') }] : []),
           ...(canEdit && item.sequencingTube?.barcodeSource === 'PhaenoGenerated' && item.sequencingTube.status !== 'Rejected' ? [{ label: item.sequencingTube.labelPrintCount ? 'Reprint label' : 'Print label', onClick: () => setPrinting(item.sequencingTube) }] : []),
         ]} /></div>
         <p className="break-all text-sm">Sequencing tube: {item.sequencingTube ? <Link className="underline" to="/lab-operations/$workOrderId/containers/$containerId" params={{ workOrderId: item.labWorkOrderId, containerId: item.sequencingTube.id }} search={{ section: 'work' }}>{item.sequencingTube.barcode}</Link> : 'Not assigned'}</p>
-        {item.transfer ? <div className="space-y-1 text-sm"><p>Transferred {item.transfer.quantityText ?? item.transfer.quantity} {item.transfer.quantityUnit} · Performed {new Date(item.transfer.performedAtUtc).toLocaleString()}</p><p className="text-muted-foreground">Source after transfer: {item.transfer.exhaustedOverride ? 'Exhausted by operator override' : item.transfer.sourceQuantityAfter === null ? 'Unknown amount remaining' : `${item.transfer.sourceQuantityAfterText ?? item.transfer.sourceQuantityAfter} ${item.transfer.quantityUnit}`}. Recorded {new Date(item.transfer.recordedAtUtc).toLocaleString()}.</p></div> : <p className="text-sm text-muted-foreground">{item.sequencingTube ? 'Tube assigned. Physical transfer has not been recorded.' : query.data.hasSendout ? 'Historical sendout: no separate sequencing tube was recorded.' : 'Assign and scan the sequencing tube before recording the amount transferred.'}</p>}
+        {item.transfer ? <div className="space-y-1 text-sm"><p>Transferred {item.transfer.quantityText ?? item.transfer.quantity} {item.transfer.quantityUnit} · Performed {new Date(item.transfer.performedAtUtc).toLocaleString()}</p><p className="text-muted-foreground">Source after transfer: {item.transfer.exhaustedOverride ? 'Exhausted by operator override' : item.transfer.sourceQuantityAfter === null ? 'Unknown amount remaining' : `${item.transfer.sourceQuantityAfterText ?? item.transfer.sourceQuantityAfter} ${item.transfer.quantityUnit}`}. Recorded {new Date(item.transfer.recordedAtUtc).toLocaleString()}.</p></div> : <p className="text-sm text-muted-foreground">{item.sequencingTube?.status === 'LabelPending' ? 'Tube assigned. Print its POMS label and scan the physical label back before recording the transfer.' : item.sequencingTube ? 'Tube assigned. Physical transfer has not been recorded.' : query.data.hasSendout ? 'Historical sendout: no separate sequencing tube was recorded.' : 'Assign and scan the sequencing tube before recording the amount transferred.'}</p>}
       </section>)}
     </div>}
     <RequiredDialogFooter showLegend={Boolean(target && member)}>{target ? <><Button type="button" variant="outline" disabled={locked} onClick={leaveForm}>Back to tubes</Button>{uncertain ? <Button type="button" disabled={save.isPending} onClick={() => execute(uncertain)}>{save.isPending ? 'Confirming…' : 'Retry same command'}</Button> : <Button type="submit" disabled={save.isPending || !member || !canEdit}>{save.isPending ? 'Saving…' : target.action === 'allocate' ? 'Assign sequencing tube' : 'Record transfer'}</Button>}</> : <Button type="button" variant="outline" onClick={close}>Close</Button>}</RequiredDialogFooter>

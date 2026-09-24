@@ -466,6 +466,7 @@ public sealed partial class SampleReturnKit : IAudit, IConcurrency
     public SampleShipmentAuthorizationSource AuthorizationSource { get; private set; }
     public Guid AuthorizationSourceId { get; private set; }
     public string TubeSupplierName { get; private set; } = null!;
+    public string TubeBarcodeNamespace { get; private set; } = SupplierTubeBarcode.LegacyNamespace;
     public string TubeProductNumber { get; private set; } = null!;
     public string? TubeLotNumber { get; private set; }
     public string ShipperSupplierName { get; private set; } = null!;
@@ -496,7 +497,7 @@ public sealed partial class SampleReturnKit : IAudit, IConcurrency
         string shipperSupplierName,
         string shipperProductNumber,
         int requiredTubeCount,
-        string? productExpirySnapshotJson = null)
+        string? productExpirySnapshotJson = null, string? tubeBarcodeNamespace = null)
     {
         if (sampleShipmentId == Guid.Empty || organizationId == Guid.Empty || authorizationSourceId == Guid.Empty)
             throw new ArgumentException("Shipment, organization, and authorization identifiers are required.");
@@ -509,6 +510,8 @@ public sealed partial class SampleReturnKit : IAudit, IConcurrency
         AuthorizationSource = authorizationSource;
         AuthorizationSourceId = authorizationSourceId;
         TubeSupplierName = OrderText.Required(tubeSupplierName, nameof(tubeSupplierName), 255);
+        TubeBarcodeNamespace = string.IsNullOrWhiteSpace(tubeBarcodeNamespace)
+            ? SupplierTubeBarcode.LegacyNamespace : OrderText.Required(tubeBarcodeNamespace, nameof(tubeBarcodeNamespace), 50);
         TubeProductNumber = SampleShippingText.ProductNumber(tubeProductNumber, nameof(tubeProductNumber));
         TubeLotNumber = OrderText.Optional(tubeLotNumber, 100);
         ShipperSupplierName = OrderText.Required(shipperSupplierName, nameof(shipperSupplierName), 255);
@@ -560,6 +563,7 @@ public sealed partial class RegisteredSampleTube : IAudit, IConcurrency
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid SampleReturnKitId { get; private set; }
     public string SupplierBarcode { get; private set; } = null!;
+    public string BarcodeNamespace { get; private set; } = SupplierTubeBarcode.LegacyNamespace;
     public RegisteredSampleTubeStatus Status { get; private set; } = RegisteredSampleTubeStatus.Registered;
     public DateTime? AssignedAt { get; private set; }
     public DateTime? AccessionedAt { get; private set; }
@@ -571,7 +575,7 @@ public sealed partial class RegisteredSampleTube : IAudit, IConcurrency
 
     private RegisteredSampleTube() { }
 
-    public RegisteredSampleTube(Guid sampleReturnKitId, string supplierBarcode)
+    public RegisteredSampleTube(Guid sampleReturnKitId, string supplierBarcode, string? barcodeNamespace = null)
     {
         if (sampleReturnKitId == Guid.Empty)
             throw new ArgumentException("A return-kit identifier is required.", nameof(sampleReturnKitId));
@@ -579,6 +583,8 @@ public sealed partial class RegisteredSampleTube : IAudit, IConcurrency
             throw new ArgumentException("Scan or enter a complete supplier tube barcode.", nameof(supplierBarcode));
         SampleReturnKitId = sampleReturnKitId;
         SupplierBarcode = normalized;
+        BarcodeNamespace = string.IsNullOrWhiteSpace(barcodeNamespace)
+            ? SupplierTubeBarcode.LegacyNamespace : OrderText.Required(barcodeNamespace, nameof(barcodeNamespace), 50);
     }
 
     public void MarkAssigned(DateTime assignedAt)
@@ -1006,6 +1012,12 @@ public static class SampleShippingBarcode
 
 public static class SupplierTubeBarcode
 {
+    public const string LegacyNamespace = "LEGACY";
+
+    public static string NamespaceForSupplier(Guid supplierId) => supplierId == Guid.Empty
+        ? throw new ArgumentException("Select the tube manufacturer before registering its barcode.", nameof(supplierId))
+        : $"MFR-{supplierId:N}".ToUpperInvariant();
+
     public static bool TryNormalize(string? value, out string barcode)
     {
         barcode = string.Empty;

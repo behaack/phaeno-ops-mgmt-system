@@ -1,5 +1,9 @@
 # Frontend Test Plan
 
+## September 23, 2026 — DataMatrix labels and readable scan results
+
+The container-label component regression now requires a matching scanned value before **Label printed** and preserves failed-print reporting. New POMS tubes display **Label pending** until verification, and sequencing transfer actions remain unavailable while the destination is pending. Sample tube matching and the preparation tray regressions expect readable saved identifiers without an on-screen QR image. The dedicated tray/kit/packet print surfaces retain their scannable codes. TypeScript, scoped lint and the client/SSR production build passed before the pending-status follow-up; focused component tests were updated but not run because no test execution was requested. Physical DataMatrix decode/print quality still needs bench acceptance.
+
 ## September 23, 2026 — Review follow-up
 
 `SampleShippingDetailPage.test.tsx` adds required-error association and unsaved dispatch discard coverage. `SequencingTubesDialog.test.tsx` checks that a precise decimal is compared with the exact source balance and submitted as text without JavaScript number conversion. `biological-material-fields.test.ts` and `PreparationBatchPage.access.test.tsx` cover precise source-to-library transfer entry, exact source comparison, representable balance and same-command retry. Dashboard component cases cover a shared counts/list response, Department changes, pagination, unavailable data, and retry. The six focused frontend files passed 55/55 tests; TypeScript, full ESLint, documentation consistency, and the production Vite build pass. The full frontend unit suite was not rerun for this follow-up.
@@ -2769,3 +2773,5 @@ references are dropdowns. These follow-up cases have not been run; the full-suit
 results above cover the preceding release.
 
 Navigation expectations now use Samples & shipping settings for Phaeno administration; the Prospect operational workspace retains Samples & shipping. Page and sidebar headings, CRM handoff guidance and Phaeno help use the settings label. TypeScript and scoped lint pass; no new test suite was requested.
+
+September 23 barcode follow-up: library and sequencing tube assignment tests require and submit the selected active manufacturer with a manufacturer scan; generated codes omit it. Tray selection binds the scanned value to the selected eligible source tube. Tube movement requires both scans and confirmation, and saved scan results show readable text without a duplicate QR. The label-dialog tests cover scan-back success, failed-attempt recording before retry, and blocked closure during an unresolved print. Tube-detail coverage verifies that a supervisor can correct intake while a POMS label is pending. The full frontend suite passed 1,214 tests across 189 files with bounded worker concurrency; focused label-dialog tests passed again after the final closure change. Lint and TypeScript checks passed.

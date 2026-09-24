@@ -1,5 +1,9 @@
 # Playwright E2E Test Plan
 
+## September 23, 2026 — Barcode print and scan presentation
+
+Manual browser acceptance should inspect a 50 × 25 mm POMS tube label with a readable DataMatrix and exact text, confirm a new generated tube is `LabelPending` and unavailable for transfer, reject a wrong/missing scan after printing, then accept the matching physical scan before recording print success and `Available` status. Verify keyboard focus/Enter, failure details, reprint history, mobile layout, dark theme and print isolation. After tube/tray/customer matching scans, verify results show readable identifiers without duplicate QR images; packet, tray and kit print dialogs must still render codes. These cases and physical scanner/printer checks remain pending; no E2E run was requested.
+
 ## September 23, 2026 — Precision follow-up
 
 `material-transfers.spec.ts` and `lab-preparation.spec.ts` expect transfer commands to retain their decimal text across interrupted-command replay. Six focused desktop/mobile cases passed with a separate E2E Vite port. The new `customer-dashboard.spec.ts` verifies the combined scoped response supplies both metrics and the selected Job list with one request per view, no legacy dashboard request, accessible desktop/mobile presentation, and no horizontal overflow; both browser cases passed. These use synthetic sessions and responses, not a signed-in hosted journey.
@@ -3005,3 +3009,5 @@ No browser suite was requested or run for this local follow-up; prior release
 results above do not verify these dropdown changes.
 
 Release acceptance also checks Samples & shipping settings in the user menu, sidebar and page heading. Inspect existing data read-only: the reported assignment references ended destination revision 1 while revision 2 is active. Activation must explain this exact-reference mismatch and must not silently move an assignment or rewrite issued packets.
+
+September 23 barcode follow-up: exercise two manufacturers with the same printed value through kit assembly, registration, packet-scoped receiving and accession; verify an unscoped scan explains ambiguity. Scan a POMS DataMatrix after printing before material use, select and scan a source tube into a preparation tray, and scan object then destination then confirm its recorded move. The focused Chromium print-media regression passes and verifies that the laboratory DataMatrix label stays visible through its dialog portal on 50 × 25 mm stock. Real 2D scanner, printer, label stock and freezer-box handling remain physical acceptance evidence. The remaining browser suite has not yet been run for this local change.

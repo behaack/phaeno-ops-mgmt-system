@@ -153,7 +153,7 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
           {configuring && activeConfiguration === 'tray-formats' ? <TrayFormatList /> : null}
           {dashboard.data && section === 'materials' ? <MaterialList items={dashboard.data.materialLots} canManage={Boolean(session?.capabilities.canOperateLabWork)} canApprove={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('material')} refresh={refresh} /> : null}
           {dashboard.data && section === 'equipment' ? <EquipmentList items={dashboard.data.equipment} canManage={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('equipment')} /> : null}
-          {dashboard.data && section === 'batches' ? <BatchList items={dashboard.data.batches} canManage={Boolean(session?.capabilities.canOperateLabWork)} onCreate={() => setCreateKind('batch')} refresh={refresh} /> : null}
+          {dashboard.data && section === 'batches' ? <BatchList items={dashboard.data.batches} suppliers={dashboard.data.suppliers} canManage={Boolean(session?.capabilities.canOperateLabWork)} onCreate={() => setCreateKind('batch')} refresh={refresh} /> : null}
           {dashboard.data ? (
             <MaterialLotCreateDialog
               open={createKind === 'material'}
@@ -908,7 +908,7 @@ function EquipmentList({ items, canManage, onCreate }: { items: Awaited<ReturnTy
   )
 }
 
-function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['batches']; canManage: boolean; onCreate: () => void; refresh: () => Promise<unknown> }) {
+function BatchList({ items, suppliers, canManage, onCreate, refresh }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['batches']; suppliers: Awaited<ReturnType<typeof getLabOperationsDashboard>>['suppliers']; canManage: boolean; onCreate: () => void; refresh: () => Promise<unknown> }) {
   const [tubeBatch, setTubeBatch] = useState<LabBatch | null>(null)
   const [dialog, setDialog] = useState<{ batch: LabBatch; kind: 'sendout' | 'custody' } | null>(null)
   const [transitionDialog, setTransitionDialog] = useState<{ batch: LabBatch; action: 'start' | 'complete' } | null>(null)
@@ -964,7 +964,7 @@ function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<Ret
             </div>
             {canManage ? <details className="group/scan mt-3 border-t pt-3">
               <summary className="flex cursor-pointer list-none items-center gap-2 rounded-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden"><ChevronRight aria-hidden="true" className="size-4 shrink-0 group-open/scan:rotate-90" />Scan libraries</summary>
-              <div className="mt-3"><LabBatchBarcodeScanner batches={items} onAdded={refresh} /></div>
+              <div className="mt-3"><LabBatchBarcodeScanner batches={items} suppliers={suppliers} onAdded={refresh} /></div>
             </details> : null}
           </CardHeader>
           <CardContent className="p-4">
@@ -1004,7 +1004,7 @@ function BatchList({ items, canManage, onCreate, refresh }: { items: Awaited<Ret
           </CardContent>
         </Card>
       </div>
-      {tubeBatch ? <SequencingTubesDialog batchId={tubeBatch.id} batchName={tubeBatch.name} canManage={canManage} onClose={() => setTubeBatch(null)} onChanged={refresh} /> : null}
+      {tubeBatch ? <SequencingTubesDialog batchId={tubeBatch.id} batchName={tubeBatch.name} suppliers={suppliers} canManage={canManage} onClose={() => setTubeBatch(null)} onChanged={refresh} /> : null}
       <Dialog open={transitionDialog !== null} onOpenChange={(open) => !open && setTransitionDialog(null)}>
         <DialogContent>
           <DialogHeader>

@@ -52,7 +52,8 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
                 tube.SupplierName, tube.ProductNumber, request.TubeLotNumber,
                 shipper.SupplierName, shipper.ProductNumber,
                 request.TubeSupplierProductId, request.ShipperSupplierProductId, tube.Description, shipper.Description,
-                JsonSerializer.Serialize(expirations, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
+                JsonSerializer.Serialize(expirations, new JsonSerializerOptions(JsonSerializerDefaults.Web)),
+                SupplierTubeBarcode.NamespaceForSupplier(tube.SupplierId));
         }
         catch (ArgumentException exception) { throw Invalid(exception.Message); }
         db.SampleShippingStockKits.Add(kit);
@@ -78,14 +79,21 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
         if (codes.Count == 0) throw Invalid("Scan at least one tube.");
         if (kit.Tubes.Count + codes.Count > kit.TubeCapacity) throw Conflict($"This standard kit holds {kit.TubeCapacity} tubes.");
         foreach (var code in codes.Order(StringComparer.Ordinal)) await SampleShippingPackingData.LockAsync(db, $"supplier-tube:{code}", ct);
-        if (await db.SampleShippingStockTubes.AnyAsync(item => codes.Contains(item.SupplierBarcode), ct)
-            || await db.RegisteredSampleTubes.AnyAsync(item => codes.Contains(item.SupplierBarcode), ct)
-            || await db.LabContainers.AnyAsync(item => codes.Contains(item.Barcode.ToUpper()), ct)
+        var barcodeNamespace = kit.TubeBarcodeNamespace;
+        if (await db.SampleShippingStockTubes.AnyAsync(item => codes.Contains(item.SupplierBarcode)
+                && (item.BarcodeNamespace == barcodeNamespace || item.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace
+                    || barcodeNamespace == SupplierTubeBarcode.LegacyNamespace), ct)
+            || await db.RegisteredSampleTubes.AnyAsync(item => codes.Contains(item.SupplierBarcode)
+                && (item.BarcodeNamespace == barcodeNamespace || item.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace
+                    || barcodeNamespace == SupplierTubeBarcode.LegacyNamespace), ct)
+            || await db.LabContainers.AnyAsync(item => codes.Contains(item.Barcode.ToUpper())
+                && (item.BarcodeNamespace == barcodeNamespace || item.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace
+                    || barcodeNamespace == SupplierTubeBarcode.LegacyNamespace), ct)
             || await db.LabPreparationBatches.AnyAsync(item => (item.TrayBarcode != null && codes.Contains(item.TrayBarcode.ToUpper())) || codes.Contains(item.Name.ToUpper()), ct))
             throw Conflict("A scanned tube barcode is already registered. No tubes were added.");
         foreach (var code in codes)
         {
-            var tube = new SampleShippingStockTube(kit.Id, code);
+            var tube = new SampleShippingStockTube(kit.Id, code, kit.TubeBarcodeNamespace);
             kit.Tubes.Add(tube);
             db.SampleShippingStockTubes.Add(tube);
         }
@@ -198,13 +206,13 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
         return result;
     }
 
-    private sealed record SelectedCatalogProduct(string SupplierName, string ProductNumber, string Description);
+    private sealed record SelectedCatalogProduct(Guid SupplierId, string SupplierName, string ProductNumber, string Description);
     private async Task<SelectedCatalogProduct> SelectedProduct(Guid id, PSeq.Operations.Laboratory.Domain.LabSupplierProductKind kind, CancellationToken ct)
         => await (from product in db.LabSupplierProducts.AsNoTracking()
                   join supplier in db.LabSuppliers.AsNoTracking() on product.SupplierId equals supplier.Id
                   join type in db.LabProductTypes.AsNoTracking() on product.ProductTypeId equals type.Id
                   where product.Id == id && type.KitUse == kind && type.IsActive && product.IsActive && supplier.IsActive
-                  select new SelectedCatalogProduct(supplier.Name, product.ProductNumber, product.Description))
+                  select new SelectedCatalogProduct(supplier.Id, supplier.Name, product.ProductNumber, product.Description))
             .SingleOrDefaultAsync(ct) ?? throw Invalid($"Choose an active { (kind == PSeq.Operations.Laboratory.Domain.LabSupplierProductKind.Tube ? "tube" : "shipping container") } product from an active supplier.");
 
     private static void Version(long actual, long expected) { if (actual != expected) throw Conflict("This kit changed. Refresh before continuing."); }

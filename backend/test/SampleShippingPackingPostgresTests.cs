@@ -320,6 +320,42 @@ public partial class SampleShippingPostgresTests
     }
 
     [PostgreSqlReferenceFact]
+    public async Task BoundKitWithSharedPrintedValueDoesNotBlockAvailableManufacturerKit()
+    {
+        await using var scope = await ShippingTestScope.CreateAsync();
+        var fixture = await scope.CreateShipmentAsync(1);
+        var definition = await scope.CreateContainerAsync(fixture, 20);
+        var db = scope.DbContext;
+        var target = await db.SampleShipments.Include(item => item.Items).ThenInclude(item => item.TubeSlots)
+            .SingleAsync(item => item.Id == fixture.Shipment.Id);
+        target.SelectContainer(definition.Id, "{}");
+        var previous = new SampleShipment($"PREVIOUS-{scope.Suffix}", target.OrganizationId, target.DepartmentId,
+            target.AuthorizationSource, target.AuthorizationSourceId, target.AuthorizationReference,
+            target.AuthorizationName, target.LabWorkOrderId, target.DestinationId);
+        previous.SelectContainer(definition.Id, "{}");
+        var barcode = $"SHARED-{scope.Suffix}";
+        SampleShippingStockKit Kit(string number, string barcodeNamespace)
+        {
+            var kit = new SampleShippingStockKit(number, definition.Id, "{}", 1,
+                "Tube maker", "TUBE", null, "Shipper maker", "SHIPPER",
+                tubeBarcodeNamespace: barcodeNamespace);
+            kit.Tubes.Add(new SampleShippingStockTube(kit.Id, barcode, barcodeNamespace));
+            kit.Dispatch(target, "TEST carrier", "TEST tracking", DateTime.UtcNow);
+            return kit;
+        }
+        var used = Kit($"USED-{scope.Suffix}", SupplierTubeBarcode.NamespaceForSupplier(Guid.NewGuid()));
+        var available = Kit($"READY-{scope.Suffix}", SupplierTubeBarcode.NamespaceForSupplier(Guid.NewGuid()));
+        used.Bind(previous);
+        db.AddRange(previous, used, available);
+        await db.SaveChangesAsync();
+
+        var bound = await SampleShippingPackingData.BindStockAsync(db, target, barcode, default);
+
+        Assert.Equal(available.KitNumber, bound.KitNumber);
+        Assert.Equal(available.TubeBarcodeNamespace, bound.TubeBarcodeNamespace);
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task ContainerStockConcurrentScansBindOnePhysicalKitToOnlyOneShipment()
     {
         await using var scope = await ShippingTestScope.CreateAsync();

@@ -107,7 +107,8 @@ public enum LabContainerStatus
     Rejected,
     Consumed,
     Failed,
-    Disposed
+    Disposed,
+    LabelPending
 }
 
 public enum LabContainerBarcodeSource
@@ -133,6 +134,8 @@ public sealed class LabContainer : LabAuditedEntity
     public Guid? ParentContainerId { get; private set; }
     public LabContainerKind Kind { get; private set; }
     public string Barcode { get; private set; } = null!;
+    public string BarcodeNamespace { get; private set; } = null!;
+    public ICollection<LabContainerBarcode> Barcodes { get; private set; } = [];
     public LabContainerBarcodeSource BarcodeSource { get; private set; } = LabContainerBarcodeSource.PhaenoGenerated;
     public Guid? ExternalBarcodeReferenceId { get; private set; }
     public string Label { get; private set; } = null!;
@@ -157,18 +160,22 @@ public sealed class LabContainer : LabAuditedEntity
     public Guid? IntakeReviewedByUserId { get; private set; }
 
     public void ReviewIntake(LabSpecimenIntakeDisposition disposition, string? reasonCode,
-        string? notes, Guid actorId, DateTime utcNow)
+        string? notes, Guid actorId, DateTime utcNow, bool firstLabelVerificationRequired = false)
     {
         if (Kind != LabContainerKind.SubmittedSpecimen || !LabSpecimenId.HasValue)
             throw new InvalidOperationException("Only a submitted specimen tube can receive an intake review.");
-        if (Status is not (LabContainerStatus.Available or LabContainerStatus.Rejected))
+        if (Status is not (LabContainerStatus.Available or LabContainerStatus.Rejected or LabContainerStatus.LabelPending))
             throw new InvalidOperationException("Consumed, failed or disposed material cannot receive an intake correction.");
         if (disposition != LabSpecimenIntakeDisposition.Rejected && string.IsNullOrWhiteSpace(Location))
             throw new InvalidOperationException("Record a real storage location before accepting or holding retained material.");
         if (actorId == Guid.Empty) throw new ArgumentException("An intake reviewer is required.");
         LabIntakeReasons.Validate(disposition, reasonCode, notes,
             IntakeDisposition is LabSpecimenIntakeDisposition.OnHold or LabSpecimenIntakeDisposition.Rejected);
-        Status = disposition == LabSpecimenIntakeDisposition.Rejected ? LabContainerStatus.Rejected : LabContainerStatus.Available;
+        // A pending tube still needs its first verified label. Historical tubes that
+        // were already available must not become pending during an intake correction.
+        Status = disposition == LabSpecimenIntakeDisposition.Rejected ? LabContainerStatus.Rejected
+            : Status == LabContainerStatus.LabelPending || firstLabelVerificationRequired && LabelPrintCount == 0
+                ? LabContainerStatus.LabelPending : LabContainerStatus.Available;
         IntakeDisposition = disposition;
         IntakeReasonCode = reasonCode;
         IntakeNotes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
@@ -182,7 +189,8 @@ public sealed class LabContainer : LabAuditedEntity
         LabContainerKind kind, string barcode, string label, string? location,
         decimal? quantity, string? quantityUnit, DateTime? retainUntilUtc,
         LabContainerBarcodeSource barcodeSource = LabContainerBarcodeSource.PhaenoGenerated,
-        Guid? externalBarcodeReferenceId = null, bool rejectedAtIntake = false, string? quantityBasis = null)
+        Guid? externalBarcodeReferenceId = null, bool rejectedAtIntake = false, string? quantityBasis = null,
+        bool labelVerificationRequired = false, string? barcodeNamespace = null)
     {
         LabWorkOrderId = labWorkOrderId != Guid.Empty
             ? labWorkOrderId
@@ -192,6 +200,9 @@ public sealed class LabContainer : LabAuditedEntity
         Kind = kind;
         Barcode = Required(barcode, nameof(barcode), 100);
         if (Barcode.Any(char.IsControl)) throw new ArgumentException("Scan a valid tube barcode.");
+        BarcodeNamespace = Required(barcodeNamespace ?? (barcodeSource == LabContainerBarcodeSource.PhaenoGenerated ? "PHAENO" : "LEGACY"), nameof(barcodeNamespace), 50);
+        Barcodes.Add(new LabContainerBarcode(Id, BarcodeNamespace, Barcode,
+            barcodeSource == LabContainerBarcodeSource.PhaenoGenerated ? "DataMatrix" : "Unknown", barcodeSource, true));
         if (barcodeSource == LabContainerBarcodeSource.RegisteredSupplier
             && (kind != LabContainerKind.SubmittedSpecimen || !externalBarcodeReferenceId.HasValue))
             throw new ArgumentException("A registered supplier barcode may be adopted only for a submitted specimen with its external tube reference.");
@@ -200,6 +211,10 @@ public sealed class LabContainer : LabAuditedEntity
         if (barcodeSource == LabContainerBarcodeSource.Manufacturer && (kind is not (LabContainerKind.Library or LabContainerKind.Sequencing) || externalBarcodeReferenceId.HasValue))
             throw new ArgumentException("Manufacturer barcodes identify a library or sequencing tube without adopting a submitted tube reference.");
         BarcodeSource = barcodeSource;
+        if (labelVerificationRequired && barcodeSource != LabContainerBarcodeSource.PhaenoGenerated)
+            throw new ArgumentException("Only a POMS-generated tube can require POMS label verification.");
+        if (labelVerificationRequired)
+            Status = LabContainerStatus.LabelPending;
         ExternalBarcodeReferenceId = externalBarcodeReferenceId;
         Label = Required(label, nameof(label), 255);
         if (rejectedAtIntake && (kind != LabContainerKind.SubmittedSpecimen || !labSpecimenId.HasValue))
@@ -270,6 +285,8 @@ public sealed class LabContainer : LabAuditedEntity
         LabelPrintCount++;
         LastLabelPrintedAtUtc = printedAtUtc;
         LastLabelPrintedByUserId = actorUserId;
+        if (Status == LabContainerStatus.LabelPending)
+            Status = LabContainerStatus.Available;
     }
 
     public void Move(string location) => Location = Required(location, nameof(location), 255);
@@ -901,6 +918,11 @@ public sealed class LabLibrary : LabAuditedEntity
     public string? QcResultsJson { get; private set; }
 
     private LabLibrary() { }
+
+    public static string KeyForContainer(LabContainer container) =>
+        container.BarcodeSource == LabContainerBarcodeSource.Manufacturer
+            ? $"LIB-{container.Id:N}".ToUpperInvariant()
+            : container.Barcode;
 
     public LabLibrary(Guid workOrderId, Guid specimenId, Guid sourceContainerId,
         Guid libraryContainerId, Guid preparationExecutionId, string libraryKey)

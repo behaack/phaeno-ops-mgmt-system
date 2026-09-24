@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, Printer, XCircle } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import {
   getLabContainerLabel,
@@ -15,7 +15,7 @@ import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredFieldName, RequiredLegend } from '#/components/ui/required-field'
 
-import { IdentifierQrCode } from '#/components/identifier-qr-code'
+import { createDataMatrixSource, IdentifierDataMatrix } from '#/components/identifier-data-matrix'
 
 export function LabLabelDialog({
   container,
@@ -32,17 +32,24 @@ export function LabLabelDialog({
   )
   const [printDialogClosed, setPrintDialogClosed] = useState(false)
   const [failureDetails, setFailureDetails] = useState('')
+  const [scannedBarcode, setScannedBarcode] = useState('')
+  const scanInput = useRef<HTMLInputElement>(null)
   const label = useQuery({
     queryKey: ['lab-container-label', container?.id],
     queryFn: () => getLabContainerLabel(container!.id),
     enabled: Boolean(container),
   })
+  const labelSymbol = useMemo(
+    () => label.data ? createDataMatrixSource(label.data.container.barcode) : null,
+    [label.data],
+  )
   const record = useMutation({
     mutationFn: (outcome: 'Succeeded' | 'Failed') =>
       recordLabContainerLabelPrint(container!.id, {
         reason,
         outcome,
         failureDetails: outcome === 'Failed' ? failureDetails : null,
+        scannedBarcode: outcome === 'Succeeded' ? scannedBarcode : null,
       }),
     onSuccess: async (_, outcome) => {
       await client.invalidateQueries({ queryKey: ['lab-container-label', container?.id] })
@@ -53,24 +60,32 @@ export function LabLabelDialog({
       }
       setPrintDialogClosed(false)
       setFailureDetails('')
+      setScannedBarcode('')
     },
   })
 
   const openPrintDialog = () => {
     setPrintDialogClosed(false)
+    setScannedBarcode('')
     window.print()
     setPrintDialogClosed(true)
   }
 
+  useEffect(() => {
+    if (printDialogClosed) scanInput.current?.focus()
+  }, [printDialogClosed])
+
+  const normalizedScan = scannedBarcode.trim().toUpperCase().replace(/^\*(.*)\*$/, '$1')
+  const scanMatches = normalizedScan === label.data?.container.barcode
+
   return (
-    <Dialog open={container !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="lab-label-print-dialog max-w-2xl">
+    <Dialog open={container !== null} onOpenChange={(open) => !open && !printDialogClosed && !record.isPending && onClose()}>
+      <DialogContent className="lab-label-print-dialog max-w-2xl" showCloseButton={!printDialogClosed}>
         <DialogHeader>
           <DialogTitle>{container?.labelPrintCount ? 'Reprint container label' : 'Print container label'}</DialogTitle>
           <DialogDescription>
-            POMS renders a QR code label through the browser and your installed
-            printer driver. Confirm the physical outcome after the system print
-            dialog closes.
+            POMS renders a DataMatrix tube label through the browser and your installed
+            printer driver. Scan the printed label to verify its identity.
           </DialogDescription>
         </DialogHeader>
 
@@ -92,7 +107,7 @@ export function LabLabelDialog({
                 <span>{label.data.container.kind}</span>
               </div>
               <p className="mt-1 truncate text-sm font-semibold">{label.data.container.label}</p>
-              <IdentifierQrCode value={label.data.container.barcode} label="Container QR code" size="label" />
+              <IdentifierDataMatrix value={label.data.container.barcode} label="Container DataMatrix" source={labelSymbol} />
               <div className="mt-1 grid grid-cols-2 gap-x-3 text-[10px] leading-4">
                 <span>Accession: {label.data.accessionNumber ?? 'Not assigned'}</span>
                 <span>Order: {label.data.commercialOrderNumber ?? 'Internal'}</span>
@@ -127,9 +142,36 @@ export function LabLabelDialog({
               <div className="rounded-lg border bg-muted/40 p-4">
                 <p className="font-medium">Did the physical label print correctly?</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  POMS cannot infer the printer’s physical outcome from the browser dialog.
-                  Confirm success only after inspecting the label.
+                  Inspect the label, then scan the physical tube. POMS records a successful
+                  print only when the scanned identifier matches this container. If printing
+                  failed or was canceled, record the failed attempt before trying again.
                 </p>
+                <Label className="mt-4 block" htmlFor="lab-label-scan-back">
+                  <RequiredFieldName>Scan printed tube barcode</RequiredFieldName>
+                </Label>
+                <Input
+                  autoComplete="off"
+                  aria-describedby={scannedBarcode && !scanMatches ? 'lab-label-scan-back-error' : undefined}
+                  aria-invalid={Boolean(scannedBarcode && !scanMatches)}
+                  className="mt-2"
+                  id="lab-label-scan-back"
+                  maxLength={100}
+                  onChange={(event) => setScannedBarcode(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && labelSymbol && scanMatches && reason.trim() && !record.isPending) {
+                      event.preventDefault()
+                      record.mutate('Succeeded')
+                    }
+                  }}
+                  ref={scanInput}
+                  spellCheck={false}
+                  value={scannedBarcode}
+                />
+                {scannedBarcode && !scanMatches ? (
+                  <p className="mt-1 text-sm text-destructive" id="lab-label-scan-back-error" role="alert">
+                    This scan does not match the container label. Check the tube and print again if needed.
+                  </p>
+                ) : null}
                 <Label className="mt-4 block" htmlFor="lab-label-print-failure">
                   Failure details
                 </Label>
@@ -178,18 +220,10 @@ export function LabLabelDialog({
           {label.data ? <RequiredLegend /> : null}
           <div className="flex flex-col-reverse gap-2 sm:flex-row">
             <DialogClose asChild>
-              <Button type="button" variant="outline">Close</Button>
+              <Button type="button" variant="outline" disabled={printDialogClosed || record.isPending}>Close</Button>
             </DialogClose>
             {printDialogClosed ? (
               <>
-              <Button
-                disabled={!reason.trim() || record.isPending}
-                onClick={openPrintDialog}
-                type="button"
-                variant="outline"
-              >
-                <Printer data-icon="inline-start" /> Print again
-              </Button>
               <Button
                 disabled={!reason.trim() || !failureDetails.trim() || record.isPending}
                 onClick={() => record.mutate('Failed')}
@@ -199,7 +233,7 @@ export function LabLabelDialog({
                 <XCircle data-icon="inline-start" /> Record failed attempt
               </Button>
               <Button
-                disabled={!reason.trim() || record.isPending}
+                disabled={!reason.trim() || !labelSymbol || !scanMatches || record.isPending}
                 onClick={() => record.mutate('Succeeded')}
                 type="button"
               >
@@ -208,7 +242,7 @@ export function LabLabelDialog({
               </>
             ) : (
               <Button
-                disabled={!label.data || !reason.trim()}
+                disabled={!labelSymbol || !reason.trim()}
                 onClick={openPrintDialog}
                 type="button"
               >

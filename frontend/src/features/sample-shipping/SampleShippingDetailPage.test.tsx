@@ -245,7 +245,7 @@ describe('SampleShippingDetailPage', () => {
     expect(await screen.findByRole('heading', { name: shipment.shipmentNumber })).toBeTruthy()
     expect(screen.getByText('Corning 8676 / Fisher 07-200-963')).toBeTruthy()
     expect(screen.getByText('Therapak 37806 / Fisher 22-130-029')).toBeTruthy()
-    expect(screen.getByText('TUBE-0001')).toBeTruthy()
+    expect(screen.getByText('Tube barcode: TUBE-0001')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Correct tube' }))
     const dialog = screen.getByRole('dialog', { name: 'Edit tube and material amount' })

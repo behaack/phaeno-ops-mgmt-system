@@ -29,6 +29,8 @@ export type PreparationResourceInput = { fieldKey: string; memberId?: string; re
 export type PreparationOutputInput = { memberId: string; quantity: number; quantityUnit: string; location: string }
 export type PreparationCommand = { requestId: string; version: number; action: string; memberId?: string; position?: string; barcode?: string; confirmed?: boolean; stageId?: string;
   barcodeSource?: 'PhaenoGenerated' | 'Manufacturer';
+  manufacturerSupplierId?: string;
+  containerId?: string;
   reason?: string; reasonCode?: string; step?: PreparationStepInput; resourceId?: string; resourceVersion?: number; quantity?: number; quantityUnit?: string; materialExhausted?: boolean; location?: string; coveredMemberIds?: string[]; outputContainerId?: string; outputs?: PreparationOutputInput[] }
 const base = '/platform/lab-operations/preparation'
 export const getPreparationIndex = async () => (await api.get<Envelope<PreparationIndex>>(base)).data.data

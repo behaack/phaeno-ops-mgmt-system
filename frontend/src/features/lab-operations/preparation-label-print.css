@@ -1,6 +1,6 @@
 @media print {
   body:has(.preparation-label-dialog) { background: white !important; height: auto !important; margin: 0 !important; overflow: visible !important; }
-  body:has(.preparation-label-dialog) > :not(.preparation-label-dialog) { display: none !important; }
+  body:has(.preparation-label-dialog) > :not(:has(.preparation-label-dialog)):not(.preparation-label-dialog) { display: none !important; }
   .preparation-label-dialog {
     position: static !important;
     inset: auto !important;

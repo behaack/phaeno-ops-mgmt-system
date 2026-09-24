@@ -109,12 +109,19 @@ public static class SampleShippingPackingData
 
     public static async Task<SampleReturnKit> BindStockAsync(PSeqOperationsDbContext db, SampleShipment shipment, string scannedBarcode, CancellationToken ct)
     {
-        var stock = await db.SampleShippingStockKits.Include(item => item.Tubes)
-            .SingleOrDefaultAsync(item => item.Tubes.Any(tube => tube.SupplierBarcode == scannedBarcode)
+        var candidates = await db.SampleShippingStockKits.Include(item => item.Tubes)
+            .Where(item => !item.BoundSampleShipmentId.HasValue
+                && item.Tubes.Any(tube => tube.SupplierBarcode == scannedBarcode)
                 && item.OrganizationId == shipment.OrganizationId && item.DepartmentId == shipment.DepartmentId
                 && (item.ReservedSampleShipmentId == shipment.Id || (!item.ReservedSampleShipmentId.HasValue
-                    && item.AuthorizationSource == shipment.AuthorizationSource && item.AuthorizationSourceId == shipment.AuthorizationSourceId)), ct)
-            ?? throw new OrderManagementException("supplier_tube_not_dispatched", "This tube is not in a registered kit dispatched for this job.", 409);
+                    && item.AuthorizationSource == shipment.AuthorizationSource && item.AuthorizationSourceId == shipment.AuthorizationSourceId)))
+            .OrderByDescending(item => item.ReservedSampleShipmentId == shipment.Id)
+            .Take(3).ToListAsync(ct);
+        var reserved = candidates.Where(item => item.ReservedSampleShipmentId == shipment.Id).ToList();
+        if (reserved.Count > 1 || reserved.Count == 0 && candidates.Count > 1)
+            throw new OrderManagementException("supplier_tube_ambiguous", "This printed tube value appears in more than one available manufacturer kit. Scan and reserve the physical container before matching its tubes.", 409);
+        var stock = reserved.SingleOrDefault() ?? candidates.SingleOrDefault()
+            ?? throw new OrderManagementException("supplier_tube_not_dispatched", "This tube is not in an available registered kit dispatched for this job.", 409);
         await LockAsync(db, $"stock-kit:{stock.Id}", ct);
         await db.Entry(stock).ReloadAsync(ct);
         if (stock.TransportationKitRequestLineId.HasValue && !stock.CustomerReceivedAt.HasValue)
@@ -126,15 +133,21 @@ public static class SampleShippingPackingData
             throw new OrderManagementException("stock_kit_capacity_exceeded", "The selected kit cannot hold all tubes in this shipment.", 409);
         var barcodes = stock.Tubes.Select(item => item.SupplierBarcode).ToArray();
         foreach (var barcode in barcodes.Order(StringComparer.Ordinal)) await LockAsync(db, $"supplier-tube:{barcode}", ct);
-        if (await db.RegisteredSampleTubes.AnyAsync(item => barcodes.Contains(item.SupplierBarcode), ct)
-            || await db.LabContainers.AnyAsync(item => barcodes.Contains(item.Barcode.ToUpper()), ct)
+        var barcodeNamespace = stock.TubeBarcodeNamespace;
+        if (await db.RegisteredSampleTubes.AnyAsync(item => barcodes.Contains(item.SupplierBarcode)
+                && (item.BarcodeNamespace == barcodeNamespace || item.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace
+                    || barcodeNamespace == SupplierTubeBarcode.LegacyNamespace), ct)
+            || await db.LabContainers.AnyAsync(item => barcodes.Contains(item.Barcode.ToUpper())
+                && (item.BarcodeNamespace == barcodeNamespace || item.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace
+                    || barcodeNamespace == SupplierTubeBarcode.LegacyNamespace), ct)
             || await db.LabPreparationBatches.AnyAsync(item => (item.TrayBarcode != null && barcodes.Contains(item.TrayBarcode.ToUpper())) || barcodes.Contains(item.Name.ToUpper()), ct))
             throw new OrderManagementException("supplier_tube_already_registered", "This kit contains a barcode already registered to another shipment, laboratory tube or tray.", 409);
 
         var kit = new SampleReturnKit(stock.KitNumber, shipment.Id, shipment.OrganizationId, shipment.AuthorizationSource,
             shipment.AuthorizationSourceId, stock.TubeSupplierName, stock.TubeProductNumber, stock.TubeLotNumber,
-            stock.ShipperSupplierName, stock.ShipperProductNumber, stock.TubeCapacity, stock.ProductExpirySnapshotJson);
-        foreach (var barcode in barcodes) kit.Tubes.Add(new RegisteredSampleTube(kit.Id, barcode));
+            stock.ShipperSupplierName, stock.ShipperProductNumber, stock.TubeCapacity, stock.ProductExpirySnapshotJson,
+            stock.TubeBarcodeNamespace);
+        foreach (var barcode in barcodes) kit.Tubes.Add(new RegisteredSampleTube(kit.Id, barcode, stock.TubeBarcodeNamespace));
         // Use the complete original kit and its recorded outbound facts. No fulfillment invariant is bypassed.
         kit.Fulfill(stock.OutboundCarrier!, stock.OutboundTrackingNumber!, stock.FulfilledAt.Value);
         stock.Bind(shipment);

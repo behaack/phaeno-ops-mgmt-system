@@ -8,6 +8,7 @@ import { SequencingTubesDialog } from './SequencingTubesDialog'
 const api = vi.hoisted(() => ({ get: vi.fn(), apply: vi.fn(), blocker: vi.fn() }))
 vi.mock('./lab-command-recovery', async original => ({ ...await original<typeof import('./lab-command-recovery')>(), useLabCommandRecovery: () => ({ data: null, isFetched: true, retain: async () => undefined, clear: async () => undefined, refetch: async () => undefined }) }))
 vi.mock('#/api/lab-material-transfers', () => ({ getSequencingTubes: api.get, applySequencingTubeCommand: api.apply }))
+const suppliers = [{ id: 'supplier-1', name: 'Tube maker', isActive: true }]
 vi.mock('@tanstack/react-router', () => ({ useBlocker: api.blocker, Link: ({ children }: { children: React.ReactNode }) => <span>{children}</span> }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ session: { user: { id: 'operator' } } }) }))
 vi.mock('./LabLabelDialog', () => ({ LabLabelDialog: () => <div>Label dialog</div> }))
@@ -15,11 +16,22 @@ vi.mock('./LabLabelDialog', () => ({ LabLabelDialog: () => <div>Label dialog</di
 const source: LabContainer = { id: 'source', labSpecimenId: 'sample', parentContainerId: 'original', kind: 'Library', barcode: 'LIBRARY-123', barcodeSource: 'PhaenoGenerated', externalBarcodeReferenceId: null, label: 'Library', labelPrintCount: 1, location: 'Freezer A', quantity: 100, quantityUnit: 'µL', status: 'Available', retainUntilUtc: null, version: 4 }
 const destination: LabContainer = { ...source, id: 'destination', parentContainerId: 'source', kind: 'Sequencing', barcode: 'SEQUENCING-123', barcodeSource: 'Manufacturer', label: 'Sequencing tube', labelPrintCount: 0, quantity: null, quantityUnit: null, version: 1 }
 const workspace = (hasTube = false): SequencingTubeWorkspace => ({ batchId: 'batch', batchVersion: 3, batchStatus: 'Draft', hasSendout: false, members: [{ id: 'member', labWorkOrderId: 'work', labLibraryId: 'library', libraryKey: 'LIBRARY-123', source, sequencingTube: hasTube ? destination : null, transfer: null }] })
-const renderDialog = () => render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><SequencingTubesDialog batchId="batch" batchName="Example batch" canManage onClose={vi.fn()} onChanged={vi.fn().mockResolvedValue(undefined)} /></QueryClientProvider>)
+const renderDialog = () => render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><SequencingTubesDialog batchId="batch" batchName="Example batch" suppliers={suppliers} canManage onClose={vi.fn()} onChanged={vi.fn().mockResolvedValue(undefined)} /></QueryClientProvider>)
 
 beforeEach(() => { vi.clearAllMocks(); api.get.mockResolvedValue(workspace()) })
 
 describe('sequencing tube material tracking', () => {
+  it('keeps transfer unavailable until a generated tube label is scanned back', async () => {
+    const pending = { ...destination, barcodeSource: 'PhaenoGenerated' as const, status: 'LabelPending' }
+    const assigned = workspace(true)
+    api.get.mockResolvedValue({ ...assigned, members: [{ ...assigned.members[0], sequencingTube: pending }] })
+    renderDialog()
+    expect(await screen.findByText(/scan the physical label back before recording the transfer/)).toBeTruthy()
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions' }), { button: 0, ctrlKey: false })
+    expect((await screen.findByRole('menuitem', { name: 'Record transfer' })).getAttribute('aria-disabled')).toBe('true')
+    expect(screen.getByRole('menuitem', { name: 'Print label' })).toBeTruthy()
+  })
+
   it('locks an uncertain allocation and retries the exact command and versions', async () => {
     api.apply.mockRejectedValueOnce(new Error('Interrupted response')).mockResolvedValueOnce(workspace(true))
     renderDialog()

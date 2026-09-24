@@ -42,6 +42,8 @@ public sealed class LabBiologicalMaterialTransfer
             || preparationMemberId.HasValue && (source.Id != attempt.SourceContainerId || destination.Kind != LabContainerKind.Library)
             || sequencingBatchMemberId.HasValue && (source.LabSpecimenAttemptId != attempt.Id || source.Kind != LabContainerKind.Library || destination.Kind != LabContainerKind.Sequencing))
             throw new ArgumentException("The transfer must retain its selected source, specimen, attempt and destination tube lineage.");
+        if (string.Equals(source.Barcode, destination.Barcode, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("The source and destination have the same printed barcode. Select a destination tube with a different scannable value.");
         if (sequencingBatchMemberId.HasValue && (attempt.State != LabSpecimenAttemptState.Succeeded || !attempt.StartedAtUtc.HasValue))
             throw new InvalidOperationException("Only material from a successful preparation attempt can be transferred for sequencing.");
         if (recordedAtUtc.Kind != DateTimeKind.Utc || performedAtUtc.HasValue && (performedAtUtc.Value.Kind != DateTimeKind.Utc || performedAtUtc > recordedAtUtc)

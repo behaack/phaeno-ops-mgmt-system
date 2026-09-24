@@ -17,7 +17,7 @@ public sealed partial class LabOperationsController
         if (attempt.State is not (LabSpecimenAttemptState.Planned or LabSpecimenAttemptState.InProgress) || attempt.HoldReason is not null)
             throw new InvalidOperationException("Resolve this attempt's hold before identifying its library tube.");
         batch.RequireTray();
-        await RequireAttemptSourceAsync(attempt, ct);
+        var source = await RequireAttemptSourceAsync(attempt, ct);
         if (member.LibraryTubeContainerId.HasValue || member.OutputContainerId.HasValue) throw new InvalidOperationException("This member already has its library tube. Open that tube rather than allocating another.");
         var barcodeSource = request.BarcodeSource switch
         {
@@ -26,24 +26,33 @@ public sealed partial class LabOperationsController
             _ => throw new ArgumentException("Choose a manufacturer barcode or a POMS-generated label.")
         };
         string barcode;
+        var barcodeNamespace = "PHAENO";
         if (barcodeSource == LabContainerBarcodeSource.PhaenoGenerated)
         {
             if (!string.IsNullOrWhiteSpace(request.Barcode)) throw new ArgumentException("POMS allocates the generated tube barcode.");
+            if (request.ManufacturerSupplierId.HasValue) throw new ArgumentException("Select a manufacturer only for a manufacturer-barcoded tube.");
             barcode = await LabBarcodeService.AllocateAsync(dbContext, LabContainerKind.Library, ct);
         }
         else
         {
             if (!SupplierTubeBarcode.TryNormalize(request.Barcode, out barcode)) throw new ArgumentException("Scan the full manufacturer tube barcode.");
             if (barcode.StartsWith("PH-", StringComparison.Ordinal)) throw new ArgumentException("A POMS barcode must be allocated by POMS.");
+            if (!request.ManufacturerSupplierId.HasValue || !await dbContext.LabSuppliers.AnyAsync(s => s.Id == request.ManufacturerSupplierId.Value && s.IsActive, ct))
+                throw new ArgumentException("Select the active manufacturer of the physical library tube.");
+            barcodeNamespace = SupplierTubeBarcode.NamespaceForSupplier(request.ManufacturerSupplierId.Value);
         }
+        if (string.Equals(barcode, source.Barcode, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Choose a library tube with a different printed barcode from the source tube so both physical scans are distinguishable.");
         await SampleShippingPackingData.LockAsync(dbContext, $"supplier-tube:{barcode}", ct);
-        if (await dbContext.LabContainers.AnyAsync(c => c.Barcode == barcode, ct)
-            || await dbContext.RegisteredSampleTubes.AnyAsync(t => t.SupplierBarcode == barcode, ct)
-            || await dbContext.SampleShippingStockTubes.AnyAsync(t => t.SupplierBarcode == barcode, ct)
+        if (await dbContext.LabContainers.AnyAsync(c => c.Barcode == barcode && (c.BarcodeNamespace == barcodeNamespace || c.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace || barcodeNamespace == "PHAENO"), ct)
+            || await dbContext.RegisteredSampleTubes.AnyAsync(t => t.SupplierBarcode == barcode && (t.BarcodeNamespace == barcodeNamespace || t.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace || barcodeNamespace == "PHAENO"), ct)
+            || await dbContext.SampleShippingStockTubes.AnyAsync(t => t.SupplierBarcode == barcode && (t.BarcodeNamespace == barcodeNamespace || t.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace || barcodeNamespace == "PHAENO"), ct)
             || await dbContext.LabPreparationBatches.AnyAsync(b => (b.TrayBarcode != null && b.TrayBarcode.ToUpper() == barcode) || b.Name.ToUpper() == barcode, ct))
             throw new InvalidOperationException("This barcode is already assigned to another tube, inventory record or tray.");
         var tube = new LabContainer(attempt.LabWorkOrderId, attempt.LabSpecimenId, attempt.SourceContainerId,
-            LabContainerKind.Library, barcode, $"Library tube · {member.Position}", $"Tray {batch.TrayBarcode} · {member.Position}", null, null, null, barcodeSource);
+            LabContainerKind.Library, barcode, $"Library tube · {member.Position}", $"Tray {batch.TrayBarcode} · {member.Position}", null, null, null, barcodeSource,
+            labelVerificationRequired: barcodeSource == LabContainerBarcodeSource.PhaenoGenerated,
+            barcodeNamespace: barcodeNamespace);
         tube.AttachAttempt(attempt);
         dbContext.LabContainers.Add(tube);
         member.AssignLibraryTube(tube.Id);

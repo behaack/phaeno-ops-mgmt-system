@@ -12,6 +12,11 @@ using PhaenoPortal.App.Features.OrderManagement.Services;
 
 public sealed partial class LabOperationsController
 {
+    private Task<RegisteredSampleTube?> FindRegisteredTubeInShipmentAsync(Guid shipmentId, string barcode, CancellationToken ct) =>
+        dbContext.RegisteredSampleTubes.SingleOrDefaultAsync(tube => tube.SupplierBarcode == barcode
+            && dbContext.SampleReturnKits.Any(kit => kit.Id == tube.SampleReturnKitId
+                && kit.SampleShipmentId == shipmentId), ct);
+
     [HttpPost("work-orders/{workOrderId:guid}/milestone")]
     public async Task<LabWorkOrderDetailDto> SetMilestone(Guid workOrderId,
         [FromBody] WorkMilestoneRequest request, CancellationToken cancellationToken)
@@ -63,7 +68,7 @@ public sealed partial class LabOperationsController
                 throw Conflict("sample_shipping_state_invalid", "This shipment is not ready for receipt.");
             if (!SupplierTubeBarcode.TryNormalize(request.SupplierTubeBarcode, out var normalizedTube))
                 throw Invalid("supplier_tube_barcode_invalid", "Scan the complete physical tube barcode.");
-            receivedTube = await dbContext.RegisteredSampleTubes.SingleOrDefaultAsync(item => item.SupplierBarcode == normalizedTube, cancellationToken)
+            receivedTube = await FindRegisteredTubeInShipmentAsync(receivedShipment.Id, normalizedTube, cancellationToken)
                 ?? throw Conflict("supplier_tube_not_registered", "This tube is not registered.");
             var matchingItem = receivedShipment.Items.SingleOrDefault(item => item.SubmittedSpecimenId == specimen.SubmittedSpecimenId);
             if (matchingItem is null || !SampleShippingPackingData.TubeIds(matchingItem).Contains(receivedTube.Id))
@@ -115,7 +120,7 @@ public sealed partial class LabOperationsController
             ?? throw Conflict("sample_shipping_work_mismatch", "The container does not belong to this laboratory work.");
         if (!SupplierTubeBarcode.TryNormalize(request.SupplierTubeBarcode, out var tubeBarcode))
             throw Invalid("supplier_tube_barcode_invalid", "Scan the complete tube barcode.");
-        var tube = await dbContext.RegisteredSampleTubes.AsNoTracking().SingleOrDefaultAsync(item => item.SupplierBarcode == tubeBarcode, cancellationToken)
+        var tube = await FindRegisteredTubeInShipmentAsync(shipmentId, tubeBarcode, cancellationToken)
             ?? throw Conflict("supplier_tube_not_registered", "This tube is not registered.");
         var item = shipment.Items.SingleOrDefault(item => SampleShippingPackingData.TubeIds(item).Contains(tube.Id))
             ?? throw Conflict("supplier_tube_sample_mismatch", "This tube is not expected in this container.");
@@ -183,8 +188,7 @@ public sealed partial class LabOperationsController
                 .SingleOrDefaultAsync(item => item.SampleShipmentId == shipment.Id
                     && item.SubmittedSpecimenId == specimen.SubmittedSpecimenId, cancellationToken)
                 ?? throw Conflict("sample_shipping_specimen_mismatch", "The submitted specimen is not listed on this shipment packet.");
-            registeredTube = await dbContext.RegisteredSampleTubes
-                .SingleOrDefaultAsync(item => item.SupplierBarcode == supplierBarcode, cancellationToken)
+            registeredTube = await FindRegisteredTubeInShipmentAsync(shipment.Id, supplierBarcode, cancellationToken)
                 ?? throw Conflict("supplier_tube_not_registered", "The supplier tube barcode is not registered in POMS.");
             var slotMatches = await dbContext.SampleShipmentTubeSlots.AsNoTracking()
                 .AnyAsync(slot => slot.SampleShipmentItemId == shipmentItem.Id
@@ -192,7 +196,7 @@ public sealed partial class LabOperationsController
             if (shipmentItem.RegisteredSampleTubeId != registeredTube.Id && !slotMatches)
                 throw Conflict("supplier_tube_sample_mismatch", "The scanned tube is not matched to this Customer sample on the frozen crosswalk.");
             var existingContainer = await dbContext.LabContainers
-                .SingleOrDefaultAsync(item => item.Barcode == supplierBarcode, cancellationToken);
+                .SingleOrDefaultAsync(item => item.ExternalBarcodeReferenceId == registeredTube.Id, cancellationToken);
             if (automaticAccession && existingContainer is not null)
             {
                 if (existingContainer.LabWorkOrderId != work.Id || existingContainer.LabSpecimenId != specimen.Id
@@ -214,7 +218,8 @@ public sealed partial class LabOperationsController
             }
             if (registeredTube.Status != RegisteredSampleTubeStatus.Assigned)
                 throw Conflict("supplier_tube_state_invalid", "The registered supplier tube is not available for accession.");
-            if (await dbContext.LabContainers.AsNoTracking().AnyAsync(item => item.Barcode == supplierBarcode, cancellationToken))
+            if (await dbContext.LabContainers.AsNoTracking().AnyAsync(item => item.Barcode == supplierBarcode
+                    && item.BarcodeNamespace == registeredTube.BarcodeNamespace, cancellationToken))
                 throw Conflict("supplier_tube_already_accessioned", "A laboratory container already uses this supplier tube barcode.");
             barcode = supplierBarcode;
             barcodeSource = LabContainerBarcodeSource.RegisteredSupplier;
@@ -260,13 +265,16 @@ public sealed partial class LabOperationsController
             intake == LabSpecimenIntakeDisposition.Rejected && string.IsNullOrWhiteSpace(request.Location) ? null : registeredTube is not null ? customerDeclaredQuantityUnit : request.QuantityUnit,
             request.RetainUntilUtc,
             barcodeSource, externalBarcodeReferenceId, rejectedAtIntake: intake == LabSpecimenIntakeDisposition.Rejected,
-            quantityBasis: registeredTube is not null && customerDeclaredQuantity.HasValue ? "CustomerDeclared" : null);
+            quantityBasis: registeredTube is not null && customerDeclaredQuantity.HasValue ? "CustomerDeclared" : null,
+            labelVerificationRequired: barcodeSource == LabContainerBarcodeSource.PhaenoGenerated,
+            barcodeNamespace: registeredTube?.BarcodeNamespace);
         if (registeredTube is not null)
         {
             Execute(() => registeredTube.RecordReceipt(DateTime.UtcNow));
             registeredTube.MarkAccessioned(DateTime.UtcNow);
         }
-        Execute(() => container.ReviewIntake(intake, request.IntakeReasonCode, request.IntakeNotes, actor.User.Id, DateTime.UtcNow));
+        Execute(() => container.ReviewIntake(intake, request.IntakeReasonCode, request.IntakeNotes, actor.User.Id, DateTime.UtcNow,
+            firstLabelVerificationRequired: barcodeSource == LabContainerBarcodeSource.PhaenoGenerated));
         dbContext.LabContainers.Add(container);
         await RefreshSpecimenTubeIntakeAsync(work, specimen, container, actor.User.Id, cancellationToken);
         dbContext.LabWorkEvents.Add(new LabWorkEvent(work.Id, specimen.Id, "SpecimenAccessioned",
@@ -315,7 +323,8 @@ public sealed partial class LabOperationsController
         var barcode = await LabBarcodeService.AllocateAsync(dbContext, kind, cancellationToken);
         var container = new LabContainer(workOrderId, request.LabSpecimenId,
             request.ParentContainerId, kind, barcode, request.Label,
-            request.Location, request.Quantity, request.QuantityUnit, request.RetainUntilUtc);
+            request.Location, request.Quantity, request.QuantityUnit, request.RetainUntilUtc,
+            labelVerificationRequired: true);
         await AttachDerivedContainerAsync(container, cancellationToken);
         dbContext.LabContainers.Add(container);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -325,7 +334,9 @@ public sealed partial class LabOperationsController
     [HttpGet("containers/scan")]
     public async Task<LabContainerScanDto> ScanContainer(
         [FromQuery] string barcode,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [FromQuery] string? barcodeNamespace = null,
+        [FromQuery] Guid? manufacturerSupplierId = null)
     {
         await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.Operator, LabRole.Supervisor, LabRole.ProtocolAdministrator,
@@ -333,8 +344,20 @@ public sealed partial class LabOperationsController
         if (!LabBarcodeService.TryNormalize(barcode, out var normalized)
             && !SupplierTubeBarcode.TryNormalize(barcode, out normalized))
             throw Invalid("barcode_invalid", "Scan or enter a complete POMS or manufacturer tube barcode.");
-        var container = await dbContext.LabContainers.AsNoTracking()
-            .SingleOrDefaultAsync(item => item.Barcode == normalized, cancellationToken)
+        if (manufacturerSupplierId.HasValue && barcodeNamespace is not null)
+            throw Invalid("barcode_namespace_invalid", "Choose one manufacturer context for this scan.");
+        var normalizedNamespace = manufacturerSupplierId.HasValue
+            ? SupplierTubeBarcode.NamespaceForSupplier(manufacturerSupplierId.Value)
+            : barcodeNamespace?.Trim().ToUpperInvariant();
+        if (normalizedNamespace?.Length > 50)
+            throw Invalid("barcode_namespace_invalid", "Choose a valid manufacturer namespace.");
+        var containers = await (from alias in dbContext.LabContainerBarcodes.AsNoTracking()
+            join item in dbContext.LabContainers.AsNoTracking() on alias.LabContainerId equals item.Id
+            where alias.Value == normalized && (normalizedNamespace == null || alias.Namespace == normalizedNamespace)
+            select item).Distinct().Take(2).ToListAsync(cancellationToken);
+        if (containers.Count > 1)
+            throw Conflict("barcode_ambiguous", "More than one manufacturer's tube has this printed value. Scan within its shipment or Job context.");
+        var container = containers.SingleOrDefault()
             ?? throw new OrderManagementException(
                 "barcode_not_found",
                 "No laboratory container matches this barcode.",
@@ -348,6 +371,62 @@ public sealed partial class LabOperationsController
             context.Library?.Id,
             context.Library?.Status.ToString(),
             MapContainer(container));
+    }
+
+    [HttpGet("containers/{containerId:guid}/moves")]
+    public async Task<IReadOnlyList<LabContainerMoveDto>> ContainerMoves(Guid containerId, CancellationToken cancellationToken)
+    {
+        await requestContext.RequireAsync(HttpContext, cancellationToken,
+            LabRole.Operator, LabRole.Supervisor, LabRole.ProtocolAdministrator,
+            LabRole.ScientificReviewer, LabRole.OperationsAdministrator);
+        var container = await dbContext.LabContainers.AsNoTracking().SingleOrDefaultAsync(item => item.Id == containerId, cancellationToken)
+            ?? throw Missing();
+        var events = await dbContext.LabWorkEvents.AsNoTracking()
+            .Where(item => item.LabWorkOrderId == container.LabWorkOrderId && item.EventCode == "ContainerMoved")
+            .OrderByDescending(item => item.OccurredAtUtc).ToListAsync(cancellationToken);
+        var moves = new List<LabContainerMoveDto>();
+        foreach (var item in events)
+        {
+            using var details = JsonDocument.Parse(item.DetailsJson);
+            if (!details.RootElement.TryGetProperty("containerId", out var id) || id.GetGuid() != containerId) continue;
+            var previousLocation = details.RootElement.TryGetProperty("previousLocation", out var previous)
+                && previous.ValueKind == JsonValueKind.String ? previous.GetString() : null;
+            moves.Add(new LabContainerMoveDto(item.Id, previousLocation,
+                details.RootElement.GetProperty("destinationBarcode").GetString()!, item.ActorUserId, item.OccurredAtUtc));
+        }
+        return moves;
+    }
+
+    [HttpPost("containers/{containerId:guid}/move")]
+    public async Task<LabContainerDto> MoveContainer(Guid containerId,
+        [FromBody] MoveLabContainerRequest request, CancellationToken cancellationToken)
+    {
+        var actor = await requestContext.RequireAsync(HttpContext, cancellationToken, LabRole.Operator, LabRole.Supervisor);
+        var container = await dbContext.LabContainers.SingleOrDefaultAsync(item => item.Id == containerId, cancellationToken)
+            ?? throw Missing();
+        await RequireWorkOrderAsync(container.LabWorkOrderId, cancellationToken);
+        EnsureVersion(container.Version, request.Version);
+        if (container.Status == LabContainerStatus.Rejected && container.Location is null)
+            throw Conflict("container_not_retained", "This rejected tube has no retained physical material to move.");
+        if (!SupplierTubeBarcode.TryNormalize(request.ScannedContainerBarcode, out var scanned)
+            || !await dbContext.LabContainerBarcodes.AnyAsync(alias => alias.LabContainerId == containerId && alias.Value == scanned, cancellationToken))
+            throw Invalid("container_scan_mismatch", "Scan the selected physical container before recording its move.");
+        var destination = request.ScannedDestinationBarcode?.Trim();
+        if (string.IsNullOrWhiteSpace(destination) || destination.Length > 255 || destination.Any(char.IsControl))
+            throw Invalid("destination_scan_required", "Scan the physical destination barcode (up to 255 characters).");
+        if (string.Equals(destination, scanned, StringComparison.OrdinalIgnoreCase))
+            throw Invalid("destination_scan_mismatch", "Scan the destination location, not the container again.");
+        if (!request.Confirmed)
+            throw Invalid("move_confirmation_required", "Confirm the scanned container and destination before saving the move.");
+        if (destination == container.Location)
+            throw Conflict("container_already_at_destination", "This container is already recorded at that destination.");
+        var previousLocation = container.Location;
+        container.Move(destination);
+        dbContext.LabWorkEvents.Add(new LabWorkEvent(container.LabWorkOrderId, container.LabSpecimenId,
+            "ContainerMoved", DateTime.UtcNow, actor.User.Id,
+            JsonSerializer.Serialize(new { containerId, scannedBarcode = scanned, previousLocation, destinationBarcode = destination }, JsonOptions)));
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return MapContainer(container);
     }
 
     [HttpGet("containers/{containerId:guid}/label")]
@@ -394,6 +473,9 @@ public sealed partial class LabOperationsController
             throw Invalid("label_print_failure_details_required", "Describe why the label did not print.");
         if (failureDetails?.Length > 1000)
             throw Invalid("label_print_failure_details_invalid", "Print-failure details cannot exceed 1000 characters.");
+        if (outcome == "Succeeded" && (!LabBarcodeService.TryNormalize(request.ScannedBarcode, out var scannedBarcode)
+            || scannedBarcode != container.Barcode))
+            throw Invalid("label_scan_verification_required", "Scan the printed tube label and confirm it matches this container before recording success.");
 
         var occurredAtUtc = DateTime.UtcNow;
         if (outcome == "Succeeded")
@@ -414,6 +496,7 @@ public sealed partial class LabOperationsController
                 outcome,
                 reason,
                 failureDetails,
+                scanBackVerified = outcome == "Succeeded",
                 printNumber = outcome == "Succeeded" ? container.LabelPrintCount : (int?)null
             }, JsonOptions)));
         await dbContext.SaveChangesAsync(cancellationToken);

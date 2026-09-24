@@ -805,6 +805,8 @@ public partial class SampleShippingPostgresTests
 
                 await DbContext.LabWorkEvents.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabOperationsOutboxEvents.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
+                await DbContext.LabContainerBarcodes.Where(item => DbContext.LabContainers.Any(container =>
+                    container.Id == item.LabContainerId && workOrderIds.Contains(container.LabWorkOrderId))).ExecuteDeleteAsync();
                 await DbContext.LabContainers.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
                 await DbContext.SampleTubeAssignmentEvents.Where(item => shipmentIds.Contains(item.SampleShipmentId)).ExecuteDeleteAsync();
                 await DbContext.SampleShippingPacketRevisions

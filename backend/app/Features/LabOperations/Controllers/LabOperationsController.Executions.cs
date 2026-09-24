@@ -54,8 +54,14 @@ public sealed partial class LabOperationsController
                 var barcode = value.GetString()?.Trim();
                 if (capture.SourceTube && barcode != sourceBarcode)
                     throw Invalid("attempt_capture_mismatch", $"{capture.Label}: scan the selected source tube {sourceBarcode}.");
-                var container = await dbContext.LabContainers.AsNoTracking().SingleOrDefaultAsync(t => t.Barcode == barcode, cancellationToken);
+                var matches = await dbContext.LabContainers.AsNoTracking()
+                    .Where(t => t.Barcode == barcode && t.LabWorkOrderId == attempt.LabWorkOrderId && t.LabSpecimenId == attempt.LabSpecimenId)
+                    .Take(2).ToListAsync(cancellationToken);
+                if (matches.Count > 1) throw Conflict("barcode_ambiguous", $"{capture.Label}: more than one tube in this specimen has this printed value.");
+                var container = matches.SingleOrDefault();
                 if (container is not null) await RequireAttemptLineageAsync(container.Id, attempt, cancellationToken);
+                else if (await dbContext.LabContainers.AnyAsync(t => t.Barcode == barcode, cancellationToken))
+                    throw Conflict("attempt_capture_mismatch", $"{capture.Label}: this barcode belongs to a different specimen or job.");
             }
         }
         Execute(() => execution.RecordStep(protocol,

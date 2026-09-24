@@ -246,13 +246,20 @@ public partial class SampleShippingPostgresTests
         Assert.NotEqual(sourceContainerId, child.Id);
         Assert.Equal(sourceContainerId, child.ParentContainerId);
         Assert.Equal(0, child.LabelPrintCount);
+        Assert.Equal("LabelPending", child.Status);
         await Assert.ThrowsAsync<OrderManagementException>(() => lab.PrintContainerLabel(child.Id, new("SIMULATED failed", "Failed", null), default));
         var failedPrint = await lab.PrintContainerLabel(child.Id, new("SIMULATED failed", "Failed", "SIMULATED offline printer"), default);
         Assert.Equal(0, failedPrint.Container.LabelPrintCount);
-        var printed = await lab.PrintContainerLabel(child.Id, new("SIMULATED initial confirmation", "Succeeded", null), default);
+        Assert.Equal("LabelPending", failedPrint.Container.Status);
+        await Assert.ThrowsAsync<OrderManagementException>(() => lab.PrintContainerLabel(child.Id,
+            new("SIMULATED missing scan", "Succeeded", null), default));
+        await Assert.ThrowsAsync<OrderManagementException>(() => lab.PrintContainerLabel(child.Id,
+            new("SIMULATED wrong physical label", "Succeeded", null, "PH-A-WRONG"), default));
+        var printed = await lab.PrintContainerLabel(child.Id, new("SIMULATED initial confirmation", "Succeeded", null, child.Barcode), default);
         Assert.Equal(1, printed.Container.LabelPrintCount);
+        Assert.Equal("Available", printed.Container.Status);
         await Assert.ThrowsAsync<OrderManagementException>(() => lab.PrintContainerLabel(child.Id, new("", "Succeeded", null), default));
-        var reprinted = await lab.PrintContainerLabel(child.Id, new("SIMULATED damaged label replacement", "Succeeded", null), default);
+        var reprinted = await lab.PrintContainerLabel(child.Id, new("SIMULATED damaged label replacement", "Succeeded", null, child.Barcode), default);
         Assert.Equal(2, reprinted.Container.LabelPrintCount);
         Assert.Equal(3, reprinted.PrintHistory.Count);
         var scanned = await lab.ScanContainer(child.Barcode, default);

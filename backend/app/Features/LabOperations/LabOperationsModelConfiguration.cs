@@ -214,6 +214,7 @@ public static class LabOperationsModelConfiguration
             ConfigureAudited(entity);
             entity.Property(e => e.Kind).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.Property(e => e.Barcode).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.BarcodeNamespace).HasMaxLength(50).IsRequired();
             entity.Property(e => e.BarcodeSource).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.Property(e => e.Label).HasMaxLength(255).IsRequired();
             entity.Property(e => e.Location).HasMaxLength(255);
@@ -223,12 +224,27 @@ public static class LabOperationsModelConfiguration
             entity.Property(e => e.QuantityHistoryJson).HasColumnType("jsonb").HasDefaultValue("[]");
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.Property(e => e.DispositionReason).HasMaxLength(1000);
-            entity.HasIndex(e => e.Barcode).IsUnique();
+            entity.HasIndex(e => e.Barcode);
+            entity.HasIndex(e => new { e.BarcodeNamespace, e.Barcode }).IsUnique();
             entity.HasIndex(e => e.ExternalBarcodeReferenceId).IsUnique();
             entity.HasIndex(e => new { e.LabWorkOrderId, e.LabSpecimenId });
             entity.HasOne<LabWorkOrder>().WithMany().HasForeignKey(e => e.LabWorkOrderId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<LabSpecimen>().WithMany().HasForeignKey(e => e.LabSpecimenId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<LabContainer>().WithMany().HasForeignKey(e => e.ParentContainerId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<LabContainerBarcode>(entity =>
+        {
+            entity.ToTable("lab_container_barcodes", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Namespace).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Value).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Symbology).HasMaxLength(25).IsRequired();
+            entity.Property(e => e.Source).HasConversion<string>().HasMaxLength(50).IsRequired();
+            entity.HasIndex(e => new { e.Namespace, e.Value }).IsUnique();
+            entity.HasIndex(e => e.LabContainerId).IsUnique().HasFilter("is_primary");
+            entity.HasOne<LabContainer>().WithMany(e => e.Barcodes)
+                .HasForeignKey(e => e.LabContainerId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<LabStep>(entity =>

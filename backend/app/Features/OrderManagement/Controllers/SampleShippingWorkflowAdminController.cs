@@ -89,7 +89,8 @@ public sealed class SampleShippingWorkflowAdminController(
             request.TubeLotNumber,
             shipperProduct.SupplierName,
             shipperProduct.ProductNumber,
-            requiredTubeCount, System.Text.Json.JsonSerializer.Serialize(expiry, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web))));
+            requiredTubeCount, System.Text.Json.JsonSerializer.Serialize(expiry, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web)),
+            SupplierTubeBarcode.NamespaceForSupplier(tubeProduct.SupplierId)));
         dbContext.SampleReturnKits.Add(kit);
         dbContext.Entry(shipment).Property(item => item.Version).IsModified = true;
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -98,7 +99,7 @@ public sealed class SampleShippingWorkflowAdminController(
             await reader.ReadAsync(shipment.Id, null, cancellationToken));
     }
 
-    private sealed record ReturnKitProduct(Guid Id, string SupplierName, string ProductNumber, bool CanExpire);
+    private sealed record ReturnKitProduct(Guid Id, Guid SupplierId, string SupplierName, string ProductNumber, bool CanExpire);
     private async Task<ReturnKitProduct> ReturnKitProductAsync(Guid id, PSeq.Operations.Laboratory.Domain.LabSupplierProductKind kind, CancellationToken ct)
     {
         var product = await dbContext.LabSupplierProducts.SingleOrDefaultAsync(p => p.Id == id, ct)
@@ -108,7 +109,7 @@ public sealed class SampleShippingWorkflowAdminController(
         if (!product.IsActive || !supplier.IsActive || !type.IsActive || type.KitUse != kind)
             throw Invalid("sample_return_kit_product_invalid", "Select an active product of the correct tube or shipping-container type.");
         dbContext.Entry(product).Property(p => p.UpdatedAt).IsModified = true;
-        return new(product.Id, supplier.Name, product.ProductNumber, product.CanExpire);
+        return new(product.Id, supplier.Id, supplier.Name, product.ProductNumber, product.CanExpire);
     }
 
     [HttpPost("return-kits/{kitId:guid}/tubes")]
@@ -142,18 +143,25 @@ public sealed class SampleShippingWorkflowAdminController(
             await SampleShippingPackingData.LockAsync(dbContext, $"supplier-tube:{barcode}", cancellationToken);
         if (kit.Tubes.Count + normalized.Count > kit.RequiredTubeCount)
             throw Conflict("sample_return_kit_tube_count_exceeded", $"This kit requires exactly {kit.RequiredTubeCount} tubes.");
+        var barcodeNamespace = kit.TubeBarcodeNamespace;
         if (kit.Tubes.Any(item => normalized.Contains(item.SupplierBarcode))
             || await dbContext.SampleShippingStockTubes.AsNoTracking()
-                .AnyAsync(item => normalized.Contains(item.SupplierBarcode), cancellationToken)
+                .AnyAsync(item => normalized.Contains(item.SupplierBarcode)
+                    && (item.BarcodeNamespace == barcodeNamespace || item.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace
+                        || barcodeNamespace == SupplierTubeBarcode.LegacyNamespace), cancellationToken)
             || await dbContext.RegisteredSampleTubes.AsNoTracking()
-                .AnyAsync(item => normalized.Contains(item.SupplierBarcode), cancellationToken)
+                .AnyAsync(item => normalized.Contains(item.SupplierBarcode)
+                    && (item.BarcodeNamespace == barcodeNamespace || item.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace
+                        || barcodeNamespace == SupplierTubeBarcode.LegacyNamespace), cancellationToken)
             || await dbContext.LabContainers.AsNoTracking()
-                .AnyAsync(item => normalized.Contains(item.Barcode.ToUpper()), cancellationToken)
+                .AnyAsync(item => normalized.Contains(item.Barcode.ToUpper())
+                    && (item.BarcodeNamespace == barcodeNamespace || item.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace
+                        || barcodeNamespace == SupplierTubeBarcode.LegacyNamespace), cancellationToken)
             || await dbContext.LabPreparationBatches.AsNoTracking()
                 .AnyAsync(item => (item.TrayBarcode != null && normalized.Contains(item.TrayBarcode.ToUpper())) || normalized.Contains(item.Name.ToUpper()), cancellationToken))
             throw Conflict("supplier_tube_barcode_duplicate", "A scanned tube barcode is already registered.");
         foreach (var barcode in normalized)
-            dbContext.RegisteredSampleTubes.Add(new RegisteredSampleTube(kit.Id, barcode));
+            dbContext.RegisteredSampleTubes.Add(new RegisteredSampleTube(kit.Id, barcode, kit.TubeBarcodeNamespace));
         dbContext.Entry(kit).Property(item => item.Version).IsModified = true;
         await dbContext.SaveChangesAsync(cancellationToken);
         if (transaction is not null) await transaction.CommitAsync(cancellationToken);
@@ -191,7 +199,9 @@ public sealed class SampleShippingWorkflowAdminController(
         if (packet.IsVoided)
             return new RegisteredSampleTubeScanDto(normalizedPacket, normalizedTube, false, null, null, null, null, null, false, "PacketVoided");
         var tube = await dbContext.RegisteredSampleTubes.AsNoTracking()
-            .SingleOrDefaultAsync(item => item.SupplierBarcode == normalizedTube, cancellationToken);
+            .SingleOrDefaultAsync(item => item.SupplierBarcode == normalizedTube
+                && dbContext.SampleReturnKits.Any(kit => kit.Id == item.SampleReturnKitId
+                    && kit.SampleShipmentId == packet.SampleShipmentId), cancellationToken);
         if (tube is null)
             return new RegisteredSampleTubeScanDto(normalizedPacket, normalizedTube, false, null, null, null, null, null, false, "TubeNotRegistered");
         var slotItemId = await dbContext.SampleShipmentTubeSlots.AsNoTracking()

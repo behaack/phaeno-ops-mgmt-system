@@ -24,4 +24,5 @@ public sealed record LabSequencingTubeCommand(Guid RequestId, long BatchVersion,
     decimal? Quantity = null, string? QuantityUnit = null, bool MaterialExhausted = false,
     long? SourceVersion = null, long? DestinationVersion = null,
     string? ConfirmedSourceBarcode = null, string? ConfirmedDestinationBarcode = null,
-    LabStepPerformanceInput? Performance = null, string? QuantityText = null);
+    LabStepPerformanceInput? Performance = null, string? QuantityText = null,
+    Guid? ManufacturerSupplierId = null);

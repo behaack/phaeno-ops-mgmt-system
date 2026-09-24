@@ -41,6 +41,29 @@ public sealed class LabBiologicalMaterialTransferTests
     }
 
     [Fact]
+    public void EqualPrintedValuesFromDifferentManufacturersCannotVerifyBothEndsOfTransfer()
+    {
+        var material = Material();
+        var source = new LabContainer(material.Source.LabWorkOrderId, material.Source.LabSpecimenId,
+            null, LabContainerKind.SubmittedSpecimen, "SAME-001", "Source", "Freezer", 100, "uL", null,
+            LabContainerBarcodeSource.RegisteredSupplier, Guid.NewGuid(),
+            barcodeNamespace: "MFR-ONE");
+        var attempt = new LabSpecimenAttempt(source.LabWorkOrderId, source.LabSpecimenId!.Value,
+            source.Id, Guid.NewGuid(), 1, null);
+        var destination = new LabContainer(source.LabWorkOrderId, source.LabSpecimenId, source.Id,
+            LabContainerKind.Library, "SAME-001", "Destination", "Tray", null, null, null,
+            LabContainerBarcodeSource.Manufacturer, barcodeNamespace: "MFR-TWO");
+        destination.AttachAttempt(attempt);
+
+        var error = Assert.Throws<InvalidOperationException>(() => LabBiologicalMaterialTransfer.Record(
+            Guid.NewGuid(), new string('a', 64), source, destination, attempt, 10, "uL", false,
+            Actor, Now, preparationMemberId: Guid.NewGuid()));
+        Assert.Contains("same printed barcode", error.Message);
+        Assert.Equal(100m, source.Quantity);
+        Assert.Null(destination.Quantity);
+    }
+
+    [Fact]
     public void Exhaustion_override_retains_true_aliquot_and_separate_balance_adjustment()
     {
         var material = Material();

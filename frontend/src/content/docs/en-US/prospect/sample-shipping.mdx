@@ -26,7 +26,7 @@ The action is locked once any container in that plan has a scan, linked physical
 
 Your organization must retain the connection between each coded sample ID and its own sample record. Do not enter patient names, medical-record numbers, dates of birth or other direct identifiers. Phaeno retains the permanent-tube-to-sample crosswalk used for shipping and intake.
 
-Select **Open shipment** for a prepared container and use **Scan tubes into this shipment**. Use the barcode field inside the active tube row. Scan the physical tube for that sample and tube number, enter its material amount and unit, then press Enter or **Save scan**. A successful match shows the saved number and barcode graphic, updates progress and advances to the next tube. The next active row scrolls into view and receives focus. Failed scans remain in their row for correction. Saved matches survive leaving the page. Paging away retains an unfinished barcode; **Return to active tube** restores its inline field. **Previous tubes** and **Next tubes** review long lists without expanding the whole page.
+Select **Open shipment** for a prepared container and use **Scan tubes into this shipment**. Use the barcode field inside the active tube row. Scan the physical tube for that sample and tube number, enter its material amount and unit, then press Enter or **Save scan**. A successful match shows the saved number and readable barcode, updates progress and advances to the next tube. The next active row scrolls into view and receives focus. Failed scans remain in their row for correction. Saved matches survive leaving the page. Paging away retains an unfinished barcode; **Return to active tube** restores its inline field. **Previous tubes** and **Next tubes** review long lists without expanding the whole page.
 
 Use tubes registered in a fulfilled kit for this Trial. The first successful scan associates the physical kit with this container; subsequent tubes must come from that kit. Unknown, ineligible, duplicate and already-used barcodes cannot advance scanning. A failed scan retains the barcode and current sample for correction and retry. Do not cover, alter or remove a permanent manufacturer barcode.
 
@@ -57,12 +57,7 @@ After handing each package to the carrier, record its carrier, tracking number a
 Use **Back to Trial** for approved scope and current progress or **Shipping container** to move between its containers. Contact Phaeno with the Trial and shipment references if no compatible container exists, a tube cannot be matched confidently, or existing assignments need repacking. Do not guess a tube identity or change approved scope through shipping.
 
 
-Portal-generated identifiers now render as QR codes, with the exact identifier
-printed underneath. Shipping inserts, container labels, kit records and displayed
-sample/tube identifiers use the same format. Use a QR-capable 2D scanner. Existing
-manufacturer labels and older printed barcodes remain valid; do not relabel a
-tube or change its saved identity merely to match the new display. A scan still
-requires the correct workflow and does not by itself confirm receipt or accession.
+Shipping inserts, printable kit labels and retained packet copies show QR codes with readable identifiers. Phaeno-printed laboratory tube labels use DataMatrix and readable identifiers. Saved scan results show the identifier as text. Use a 2D scanner that supports both QR and DataMatrix where both workflows are performed. Existing manufacturer labels and older printed barcodes remain valid; do not relabel a tube or change its saved identity merely to match a display. A scan still requires the correct workflow and does not by itself confirm receipt or accession.
 
 With one container, the tube count is assigned automatically up to its capacity and shown in a read-only text box. Any remaining tubes stay unallocated. With multiple containers, edit the tube counts to split the allocation. Returning to one container restores its automatic allocation.
 

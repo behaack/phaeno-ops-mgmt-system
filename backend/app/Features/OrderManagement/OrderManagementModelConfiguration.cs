@@ -168,6 +168,7 @@ public static class OrderManagementModelConfiguration
             Text(entity.Property(e => e.KitNumber), 100);
             EnumText(entity.Property(e => e.AuthorizationSource));
             Text(entity.Property(e => e.TubeSupplierName), 255);
+            Text(entity.Property(e => e.TubeBarcodeNamespace), 50);
             Text(entity.Property(e => e.TubeProductNumber), 100);
             Text(entity.Property(e => e.TubeLotNumber), 100, false);
             Text(entity.Property(e => e.ShipperSupplierName), 255);
@@ -197,8 +198,10 @@ public static class OrderManagementModelConfiguration
             Text(entity.Property(e => e.CustomerDeclaredQuantityUnit), 50, false);
             entity.HasOne<User>().WithMany().HasForeignKey(e => e.CustomerDeclaredByUserId).OnDelete(DeleteBehavior.Restrict);
             Text(entity.Property(e => e.SupplierBarcode), 100);
+            Text(entity.Property(e => e.BarcodeNamespace), 50);
             EnumText(entity.Property(e => e.Status));
-            entity.HasIndex(e => e.SupplierBarcode).IsUnique();
+            entity.HasIndex(e => e.SupplierBarcode);
+            entity.HasIndex(e => new { e.BarcodeNamespace, e.SupplierBarcode }).IsUnique();
             entity.HasIndex(e => new { e.SampleReturnKitId, e.Status });
             entity.HasOne<SampleReturnKit>()
                 .WithMany(e => e.Tubes)

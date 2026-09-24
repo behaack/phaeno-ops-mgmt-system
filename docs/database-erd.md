@@ -1886,6 +1886,7 @@ erDiagram
 erDiagram
     sample_shipping_stock_kits {
         uuid id PK "not null"
+        character_varying_50 tube_barcode_namespace "not null"
         character_varying_50 authorization_source "nullable"
         uuid authorization_source_id "nullable"
         uuid bound_sample_shipment_id FK,UK "nullable"
@@ -1923,8 +1924,9 @@ erDiagram
     }
     sample_shipping_stock_tubes {
         uuid id PK "not null"
+        character_varying_50 barcode_namespace "not null"
         uuid sample_shipping_stock_kit_id FK "not null"
-        character_varying_100 supplier_barcode UK "not null"
+        character_varying_100 supplier_barcode "not null; unique with barcode_namespace"
     }
     sample_shipments o|--o{ sample_shipping_stock_kits : "bound_sample_shipment_id"
     sample_shipping_container_definitions ||--o{ sample_shipping_stock_kits : "container_definition_id"
@@ -2548,6 +2550,7 @@ erDiagram
 erDiagram
     registered_sample_tubes {
         uuid id PK "not null"
+        character_varying_50 barcode_namespace "not null"
         timestamp_with_time_zone accessioned_at "nullable"
         timestamp_with_time_zone assigned_at "nullable"
         timestamp_with_time_zone created_at "not null"
@@ -2559,13 +2562,14 @@ erDiagram
         timestamp_with_time_zone received_at "nullable"
         uuid sample_return_kit_id FK "not null"
         character_varying_100 status "not null"
-        character_varying_100 supplier_barcode UK "not null"
+        character_varying_100 supplier_barcode "not null; unique with barcode_namespace"
         timestamp_with_time_zone updated_at "not null"
         uuid updated_by_user_id "nullable"
         bigint version "not null"
     }
     sample_return_kits {
         uuid id PK "not null"
+        character_varying_50 tube_barcode_namespace "not null"
         character_varying_100 authorization_source "not null"
         uuid authorization_source_id "not null"
         timestamp_with_time_zone created_at "not null"
@@ -3851,7 +3855,8 @@ erDiagram
 erDiagram
     lab_containers {
         uuid id PK "not null"
-        character_varying_100 barcode UK "not null"
+        character_varying_100 barcode "not null; unique with barcode_namespace"
+        character_varying_50 barcode_namespace "not null"
         character_varying_50 barcode_source "not null"
         timestamp_with_time_zone created_at "not null"
         uuid created_by_user_id "nullable"
@@ -3883,6 +3888,15 @@ erDiagram
         timestamp_with_time_zone updated_at "not null"
         uuid updated_by_user_id "nullable"
         bigint version "not null"
+    }
+    lab_container_barcodes {
+        uuid id PK "not null"
+        uuid lab_container_id FK "not null; one primary per container"
+        character_varying_50 namespace "not null; unique with value"
+        character_varying_100 value "not null; unique with namespace"
+        character_varying_25 symbology "not null"
+        character_varying_50 source "not null"
+        boolean is_primary "not null"
     }
     lab_custody_events {
         uuid id PK "not null"
@@ -4014,6 +4028,7 @@ erDiagram
     lab_work_orders ||--o{ lab_containers : "lab_work_order_id"
     lab_containers o|--o{ lab_containers : "parent_container_id"
     lab_containers o|--o{ lab_custody_events : "lab_container_id"
+    lab_containers ||--o{ lab_container_barcodes : "lab_container_id"
     lab_ngs_sendouts ||--o{ lab_custody_events : "lab_ngs_sendout_id"
     lab_protocol_executions o|--o{ lab_exceptions : "lab_protocol_execution_id"
     lab_specimens o|--o{ lab_exceptions : "lab_specimen_id"

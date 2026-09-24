@@ -72,9 +72,10 @@ public partial class SampleShippingPostgresTests
         var format = new LabTrayFormat(new("TEST ONLY 2 × 3", 2, 3, "grid", ["B3"]));
         var workIds = new List<Guid>(); var tubeIds = new List<Guid>();
         var storage = new LabStorageLocation($"TEST-PREP-{scope.Suffix}");
+        var tubeManufacturer = new LabSupplier($"TEST-CATALOG-{scope.Suffix}-PREP-MFR");
         var lot = new LabMaterialLot(LabMaterialLotKind.PreparedReagent, material.Id, $"TEST-PREP-{scope.Suffix}", null, null, storage.Id, 100, "mL");
         lot.RecordQc(LabQcDisposition.Passed, DateOnly.FromDateTime(now), null, "{}", scope.PlatformUser.Id, now);
-        db.AddRange(workflow, protocol, pv, wv, stage, format, material, storage, lot);
+        db.AddRange(workflow, protocol, pv, wv, stage, format, material, storage, lot, tubeManufacturer);
         for (var i = 0; i < 2; i++)
         {
             var work = new LabWorkOrder(Guid.NewGuid(), 1, LabAuthorizationSource.CommercialOrder, Guid.NewGuid(), scope.CustomerOrganization.Id,
@@ -292,7 +293,8 @@ public partial class SampleShippingPostgresTests
                 {
                     var generated = memberId == second;
                     batch = await Command("allocate-library-tube", v => new(Guid.NewGuid(), v, "allocate-library-tube", MemberId: memberId,
-                        BarcodeSource: generated ? "PhaenoGenerated" : "Manufacturer", Barcode: generated ? null : $"TEST-LIB-{scope.Suffix}"));
+                        BarcodeSource: generated ? "PhaenoGenerated" : "Manufacturer", Barcode: generated ? null : $"TEST-LIB-{scope.Suffix}",
+                        ManufacturerSupplierId: generated ? null : tubeManufacturer.Id));
                     scope.ClearTrackedState();
                     var member = await db.LabPreparationMembers.AsNoTracking().SingleAsync(m => m.Id == memberId);
                     var attempt = await db.LabSpecimenAttempts.AsNoTracking().SingleAsync(a => a.Id == member.LabSpecimenAttemptId);
@@ -300,6 +302,13 @@ public partial class SampleShippingPostgresTests
                     var destination = await db.LabContainers.AsNoTracking().SingleAsync(c => c.Id == member.LibraryTubeContainerId);
                     Assert.NotEqual(source.Barcode, destination.Barcode);
                     Assert.Equal(generated ? LabContainerBarcodeSource.PhaenoGenerated : LabContainerBarcodeSource.Manufacturer, destination.BarcodeSource);
+                    if (generated)
+                    {
+                        Assert.Equal(LabContainerStatus.LabelPending, destination.Status);
+                        await lab.PrintContainerLabel(destination.Id, new("SIMULATED preparation label", "Succeeded", null, destination.Barcode), default);
+                        scope.ClearTrackedState();
+                        Assert.Equal(LabContainerStatus.Available, (await db.LabContainers.AsNoTracking().SingleAsync(c => c.Id == destination.Id)).Status);
+                    }
                     entries.Add(new("biological", MemberId: memberId, ResourceId: source.Id, ResourceVersion: source.Version,
                         Quantity: generated ? 5 : null, QuantityText: generated ? null : "5", QuantityUnit: "uL", SourceBarcode: source.Barcode, Barcode: destination.Barcode, MaterialExhausted: generated));
                 }
@@ -626,6 +635,8 @@ public partial class SampleShippingPostgresTests
             await db.LabExceptions.Where(e => workIds.Contains(e.LabWorkOrderId)).ExecuteDeleteAsync();
             await db.LabSpecimenAttempts.Where(a => attemptIds.Contains(a.Id)).ExecuteUpdateAsync(s => s.SetProperty(a => a.FailedExecutionId, (Guid?)null).SetProperty(a => a.PreviousAttemptId, (Guid?)null));
             await db.LabProtocolExecutions.Where(e => executionIds.Contains(e.Id)).ExecuteDeleteAsync();
+            await db.LabContainerBarcodes.Where(b => db.LabContainers.Any(c => c.Id == b.LabContainerId
+                && workIds.Contains(c.LabWorkOrderId) && c.LabSpecimenAttemptId != null)).ExecuteDeleteAsync();
             await db.LabContainers.Where(c => workIds.Contains(c.LabWorkOrderId) && c.LabSpecimenAttemptId != null).ExecuteDeleteAsync();
             await db.LabSpecimenAttempts.Where(a => attemptIds.Contains(a.Id)).ExecuteDeleteAsync();
             await db.LabTrayFormats.Where(f => f.Id == format.Id).ExecuteDeleteAsync();

@@ -13,7 +13,7 @@ export type MaterialTransfer = {
 export type SequencingTubeMember = { id: string; labWorkOrderId: string; labLibraryId: string; libraryKey: string; source: LabContainer; sequencingTube: LabContainer | null; transfer: MaterialTransfer | null }
 export type SequencingTubeWorkspace = { batchId: string; batchVersion: number; batchStatus: string; hasSendout: boolean; members: SequencingTubeMember[] }
 export type SequencingTubeCommand = {
-  requestId: string; batchVersion: number; action: 'allocate' | 'transfer'; barcodeSource?: 'Manufacturer' | 'PhaenoGenerated'; barcode?: string;
+  requestId: string; batchVersion: number; action: 'allocate' | 'transfer'; barcodeSource?: 'Manufacturer' | 'PhaenoGenerated'; barcode?: string; manufacturerSupplierId?: string;
   location?: string; quantity?: number; quantityText?: string; quantityUnit?: string; materialExhausted?: boolean; sourceVersion?: number; destinationVersion?: number;
   confirmedSourceBarcode?: string; confirmedDestinationBarcode?: string; performance?: LabStepPerformanceInput;
 }

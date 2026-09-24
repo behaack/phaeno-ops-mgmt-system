@@ -1,5 +1,9 @@
 # Sample Shipping and Intake Plan
 
+## Saved scan presentation — September 23, 2026
+
+After Customer, Partner or Prospect tube matching, show the saved manufacturer tube identifier as readable text in the row rather than reproducing a QR code that would send a scanner back to the same saved record. Keep scannable QR symbols on printable shipment packets and kit labels, where a physical recipient needs them. This updates presentation only; supplier barcode assignment, immutable crosswalks, packet values and intake rules are unchanged. POMS-generated laboratory tube labels separately use DataMatrix and require physical scan-back before print success is recorded, as described in the Lab Operations plan.
+
 ## Record shipment form follow-up — September 23, 2026
 
 The dispatch form prompts before discarding entered carrier, tracking or time details, and stays open with controls locked while saving. Required-field errors are associated with their controls for assistive technology; invalid shipment times are rejected in the form. The saved shipment contract and dispatch rules remain unchanged. Local regression source was added; automated execution and signed-in UI acceptance are pending.
@@ -2430,3 +2434,7 @@ SHP-09 now passes isolated software acceptance across its ten primary steps and 
 ## September 18, 2026 — Default submission guidance
 
 Default submission instructions is a separate sidebar page with a shaded header and bounded edit dialog. It relocates the existing fallback instruction value from Order Settings without deleting it or replacing destination/sample shipping rules. Loading and saving use existing administrator configuration APIs and shared query invalidation. Saving preserves quote/shipping settings and omits optional sample/result workflow fields; version conflicts retain entered values. Required validation, unsaved-change protection and return focus are preserved.
+
+## September 23, 2026 — Manufacturer barcode namespace
+
+The selected tube supplier product at stock-kit assembly establishes the manufacturer namespace for every registered tube in that physical kit. Binding copies that namespace to the return kit and its registered tubes; legacy return-kit assembly resolves it from its selected product. A printed manufacturer value is unique within its manufacturer namespace, with unresolved historical records kept under `LEGACY`. Kit binding considers only unbound dispatched stock, so a previously bound kit with the same printed tube value does not hide an available kit from another manufacturer. Receiving, packet comparisons and accession resolve the tube inside the selected packet or shipment. A bare scan with more than one possible physical container reports ambiguity. The customer crosswalk and per-tube identity remain unchanged.

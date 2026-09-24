@@ -11,6 +11,7 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
     public string? ProductExpirySnapshotJson { get; private set; }
     public int TubeCapacity { get; private set; }
     public string TubeSupplierName { get; private set; } = null!;
+    public string TubeBarcodeNamespace { get; private set; } = SupplierTubeBarcode.LegacyNamespace;
     public string TubeProductNumber { get; private set; } = null!;
     public string? TubeLotNumber { get; private set; }
     public string ShipperSupplierName { get; private set; } = null!;
@@ -48,7 +49,7 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
         string shipperSupplierName, string shipperProductNumber,
         Guid? tubeSupplierProductId = null, Guid? shipperSupplierProductId = null,
         string? tubeProductDescription = null, string? shipperProductDescription = null,
-        string? productExpirySnapshotJson = null)
+        string? productExpirySnapshotJson = null, string? tubeBarcodeNamespace = null)
     {
         if (definitionId == Guid.Empty) throw new ArgumentException("Select a container type.");
         if (tubeCapacity is < 1 or > 10_000) throw new ArgumentOutOfRangeException(nameof(tubeCapacity));
@@ -62,6 +63,8 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
         TubeProductDescription = OrderText.Optional(tubeProductDescription, 1000);
         ShipperProductDescription = OrderText.Optional(shipperProductDescription, 1000);
         TubeSupplierName = OrderText.Required(tubeSupplierName, nameof(tubeSupplierName), 255);
+        TubeBarcodeNamespace = string.IsNullOrWhiteSpace(tubeBarcodeNamespace)
+            ? SupplierTubeBarcode.LegacyNamespace : OrderText.Required(tubeBarcodeNamespace, nameof(tubeBarcodeNamespace), 50);
         TubeProductNumber = SampleShippingText.ProductNumber(tubeProductNumber, nameof(tubeProductNumber));
         TubeLotNumber = OrderText.Optional(tubeLotNumber, 100);
         ShipperSupplierName = OrderText.Required(shipperSupplierName, nameof(shipperSupplierName), 255);
@@ -165,13 +168,16 @@ public sealed class SampleShippingStockTube
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid SampleShippingStockKitId { get; private set; }
     public string SupplierBarcode { get; private set; } = null!;
+    public string BarcodeNamespace { get; private set; } = SupplierTubeBarcode.LegacyNamespace;
     private SampleShippingStockTube() { }
-    public SampleShippingStockTube(Guid kitId, string supplierBarcode)
+    public SampleShippingStockTube(Guid kitId, string supplierBarcode, string? barcodeNamespace = null)
     {
         if (kitId == Guid.Empty) throw new ArgumentException("Choose a stock kit.");
         if (!SupplierTubeBarcode.TryNormalize(supplierBarcode, out var normalized))
             throw new ArgumentException("Scan a complete tube barcode.");
         SampleShippingStockKitId = kitId;
         SupplierBarcode = normalized;
+        BarcodeNamespace = string.IsNullOrWhiteSpace(barcodeNamespace)
+            ? SupplierTubeBarcode.LegacyNamespace : OrderText.Required(barcodeNamespace, nameof(barcodeNamespace), 50);
     }
 }

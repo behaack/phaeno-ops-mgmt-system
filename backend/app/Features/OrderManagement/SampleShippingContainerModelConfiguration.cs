@@ -81,6 +81,7 @@ public static class SampleShippingContainerModelConfiguration
             entity.Property(item => item.KitNumber).HasMaxLength(100).IsRequired();
             entity.Property(item => item.ContainerSnapshotJson).HasColumnType("jsonb").IsRequired();
             entity.Property(item => item.TubeSupplierName).HasMaxLength(255).IsRequired();
+            entity.Property(item => item.TubeBarcodeNamespace).HasMaxLength(50).IsRequired();
             entity.Property(item => item.TubeProductNumber).HasMaxLength(100).IsRequired();
             entity.Property(item => item.TubeLotNumber).HasMaxLength(100);
             entity.Property(item => item.ProductExpirySnapshotJson).HasColumnType("jsonb");
@@ -111,7 +112,9 @@ public static class SampleShippingContainerModelConfiguration
             entity.ToTable("sample_shipping_stock_tubes", commercialSchema);
             entity.HasKey(item => item.Id);
             entity.Property(item => item.SupplierBarcode).HasMaxLength(100).IsRequired();
-            entity.HasIndex(item => item.SupplierBarcode).IsUnique();
+            entity.Property(item => item.BarcodeNamespace).HasMaxLength(50).IsRequired();
+            entity.HasIndex(item => item.SupplierBarcode);
+            entity.HasIndex(item => new { item.BarcodeNamespace, item.SupplierBarcode }).IsUnique();
             entity.HasOne<SampleShippingStockKit>().WithMany(item => item.Tubes).HasForeignKey(item => item.SampleShippingStockKitId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_shipping_stock_tube_kit");
         });
     }

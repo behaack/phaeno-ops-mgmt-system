@@ -57,10 +57,10 @@ public sealed partial class LabOperationsController
         {
             if (!SupplierTubeBarcode.TryNormalize(input.SupplierTubeBarcode, out var barcode))
                 throw Invalid("supplier_tube_barcode_invalid", "Use the complete registered barcode for every tube.");
-            var registered = await dbContext.RegisteredSampleTubes.AsNoTracking().SingleOrDefaultAsync(t => t.SupplierBarcode == barcode, cancellationToken);
+            var registered = await FindRegisteredTubeInShipmentAsync(shipmentId, barcode, cancellationToken);
             if (registered is null || !expected.Contains(registered.Id))
                 throw Conflict("tube_batch_not_expected", "Every selected tube must match this shipment's frozen crosswalk.");
-            var tube = await dbContext.LabContainers.SingleOrDefaultAsync(t => t.Barcode == barcode, cancellationToken);
+            var tube = await dbContext.LabContainers.SingleOrDefaultAsync(t => t.ExternalBarcodeReferenceId == registered.Id, cancellationToken);
             if (tube is not null)
             {
                 if (tube.LabWorkOrderId != work.Id || tube.Kind != LabContainerKind.SubmittedSpecimen || tube.IntakeDisposition is not null || tube.Status != LabContainerStatus.Available)
@@ -78,7 +78,9 @@ public sealed partial class LabOperationsController
         foreach (var input in request.Tubes)
         {
             SupplierTubeBarcode.TryNormalize(input.SupplierTubeBarcode, out var barcode);
-            var tube = await dbContext.LabContainers.SingleOrDefaultAsync(t => t.Barcode == barcode, cancellationToken);
+            var registered = await FindRegisteredTubeInShipmentAsync(shipmentId, barcode, cancellationToken)
+                ?? throw Conflict("tube_batch_not_expected", "This tube is no longer in the shipment's frozen crosswalk.");
+            var tube = await dbContext.LabContainers.SingleOrDefaultAsync(t => t.ExternalBarcodeReferenceId == registered.Id, cancellationToken);
             if (tube is null)
                 await AccessionShipmentTube(work.Id, shipmentId, new(packetBarcode, barcode, input.FreezerBoxBarcode), cancellationToken);
             else

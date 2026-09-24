@@ -43,7 +43,13 @@ public sealed partial class LabOperationsController
         }
         if (!Enum.TryParse<LabSpecimenIntakeDisposition>(request.Disposition, true, out var disposition))
             throw Invalid("tube_intake_invalid", "Choose Accepted, On hold or Rejected.");
-        Execute(() => tube.ReviewIntake(disposition, request.ReasonCode, request.Notes, actor.User.Id, DateTime.UtcNow));
+        // New POMS tubes use DataMatrix aliases; migrated historical labels are Unknown.
+        // Keep an unprinted new tube pending even if its first intake decision was Rejected.
+        var firstLabelVerificationRequired = tube.BarcodeSource == LabContainerBarcodeSource.PhaenoGenerated
+            && await dbContext.LabContainerBarcodes.AnyAsync(item => item.LabContainerId == tube.Id
+                && item.IsPrimary && item.Symbology == "DataMatrix", cancellationToken);
+        Execute(() => tube.ReviewIntake(disposition, request.ReasonCode, request.Notes, actor.User.Id, DateTime.UtcNow,
+            firstLabelVerificationRequired));
         dbContext.LabWorkEvents.Add(new LabWorkEvent(work.Id, specimen.Id, "TubeIntakeCorrected", DateTime.UtcNow,
             actor.User.Id, JsonSerializer.Serialize(new { containerId = tube.Id, tube.Barcode, previous = previousIntake,
                 current = new { tube.IntakeDisposition, tube.IntakeReasonCode, tube.IntakeNotes, tube.Location } }, JsonOptions)));

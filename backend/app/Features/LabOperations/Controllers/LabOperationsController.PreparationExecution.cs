@@ -51,8 +51,14 @@ public sealed partial class LabOperationsController
                 if (!effective.Captures.TryGetValue(capture.Key, out var value) || value.ValueKind != JsonValueKind.String) continue;
                 var barcode = value.GetString()?.Trim();
                 if (capture.SourceTube && barcode != member.ConfirmedBarcode) throw new ArgumentException($"{member.Position}: scan the selected source {member.ConfirmedBarcode}.");
-                var container = await dbContext.LabContainers.AsNoTracking().SingleOrDefaultAsync(t => t.Barcode == barcode, ct);
+                var matches = await dbContext.LabContainers.AsNoTracking()
+                    .Where(t => t.Barcode == barcode && t.LabWorkOrderId == attempt.LabWorkOrderId && t.LabSpecimenId == attempt.LabSpecimenId)
+                    .Take(2).ToListAsync(ct);
+                if (matches.Count > 1) throw Conflict("barcode_ambiguous", $"{capture.Label}: more than one tube in this specimen has this printed value.");
+                var container = matches.SingleOrDefault();
                 if (container is not null) await RequireAttemptLineageAsync(container.Id, attempt, ct);
+                else if (await dbContext.LabContainers.AnyAsync(t => t.Barcode == barcode, ct))
+                    throw Conflict("attempt_capture_mismatch", $"{capture.Label}: this barcode belongs to a different specimen or job.");
             }
             execution.RecordStep(protocol, effective, actor.User.Id, EffectiveExecutionRoles(actor), recordedAtUtc);
             new LabPerformanceReviewService(dbContext).CaptureOnBehalf(execution, actor.User.Id, recordedAtUtc);
@@ -160,7 +166,8 @@ public sealed partial class LabOperationsController
         {
             var barcode = await LabBarcodeService.AllocateAsync(dbContext, LabContainerKind.Library, ct);
             output = new(attempt.LabWorkOrderId, attempt.LabSpecimenId, attempt.SourceContainerId, LabContainerKind.Library, barcode,
-                $"Prepared library · {member.Position}", request.Location, request.Quantity, request.QuantityUnit, null);
+                $"Prepared library · {member.Position}", request.Location, request.Quantity, request.QuantityUnit, null,
+                labelVerificationRequired: true);
             output.AttachAttempt(attempt); dbContext.LabContainers.Add(output); member.SetOutput(output.Id);
         }
         return output;
@@ -214,7 +221,8 @@ public sealed partial class LabOperationsController
         var qc = executions.SelectMany(e => LabProtocolEvidence.Read(e.CapturedResultsJson).Records.GroupBy(r => r.StepKey).Select(g => g.Last())
             .Where(r => r.QcOutcome is not null).Select(r => new { executionId = e.Id, record = r })).ToList();
         if (qc.Count == 0 || qc.Any(q => q.record.QcOutcome != "pass")) throw new InvalidOperationException($"{member.Position}: preparation needs recorded passing QC evidence. A skipped QC gate cannot grant eligibility.");
-        var library = new LabLibrary(attempt.LabWorkOrderId, attempt.LabSpecimenId, attempt.SourceContainerId, output.Id, finalExecution.Id, output.Barcode);
+        var library = new LabLibrary(attempt.LabWorkOrderId, attempt.LabSpecimenId, attempt.SourceContainerId, output.Id, finalExecution.Id,
+            LabLibrary.KeyForContainer(output));
         library.RecordQc(true, JsonSerializer.Serialize(new { source = "preparation", preparationRecordId = recordId, memberId = member.Id,
             evidence = qc.Select(q => new { q.executionId, stepRecordId = q.record.Id, q.record.PreparationRecordId }) }, JsonOptions));
         dbContext.LabLibraries.Add(library); member.SetLibrary(library.Id);

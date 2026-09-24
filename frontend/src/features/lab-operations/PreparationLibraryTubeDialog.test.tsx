@@ -3,24 +3,27 @@ import { describe, expect, it, vi } from 'vitest'
 import { createPreviewBatch } from './ConfigurationPreview'
 import { PreparationLibraryTubeDialog } from './PreparationLibraryTubeDialog'
 
+const suppliers = [{ id: 'supplier-1', name: 'Tube maker', isActive: true }]
+
 const member = createPreviewBatch({ id: 'stage', name: 'Example', sequence: 1, requirement: 'Required', definition: { schemaVersion: 1, steps: [] } }).members[0]
 
 describe('library tube assignment', () => {
   it('requires a complete manufacturer scan and submits that identity', async () => {
     const submit = vi.fn()
-    render(<PreparationLibraryTubeDialog member={member} pending={false} onClose={vi.fn()} onSubmit={submit} />)
+    render(<PreparationLibraryTubeDialog member={member} suppliers={suppliers} pending={false} onClose={vi.fn()} onSubmit={submit} />)
     fireEvent.change(screen.getByLabelText(/^Library tube barcode/), { target: { value: 'Manufacturer' } })
     fireEvent.click(screen.getByRole('button', { name: 'Assign library tube' }))
     await screen.findByText('Scan the full manufacturer barcode.')
     expect(submit).not.toHaveBeenCalled()
     fireEvent.change(screen.getByLabelText(/Scan manufacturer barcode/), { target: { value: 'MANUFACTURER-123' } })
+    fireEvent.change(screen.getByLabelText(/Tube manufacturer/), { target: { value: 'supplier-1' } })
     fireEvent.click(screen.getByRole('button', { name: 'Assign library tube' }))
-    await vi.waitFor(() => expect(submit).toHaveBeenCalledWith({ barcodeSource: 'Manufacturer', barcode: 'MANUFACTURER-123' }))
+    await vi.waitFor(() => expect(submit).toHaveBeenCalledWith({ barcodeSource: 'Manufacturer', barcode: 'MANUFACTURER-123', manufacturerSupplierId: 'supplier-1' }))
   })
 
   it('allocates a generated identity without recording any amount or transfer', async () => {
     const submit = vi.fn()
-    render(<PreparationLibraryTubeDialog member={member} pending={false} onClose={vi.fn()} onSubmit={submit} />)
+    render(<PreparationLibraryTubeDialog member={member} suppliers={suppliers} pending={false} onClose={vi.fn()} onSubmit={submit} />)
     fireEvent.click(screen.getByRole('button', { name: 'Assign library tube' }))
     await vi.waitFor(() => expect(submit).toHaveBeenCalledWith({ barcodeSource: 'PhaenoGenerated' }))
   })

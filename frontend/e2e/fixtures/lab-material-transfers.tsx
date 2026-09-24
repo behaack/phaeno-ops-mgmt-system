@@ -17,6 +17,6 @@ const session: PhaenoSessionContextValue = {
     isPlatformAdmin: false, selectedOrganization: { organizationId: 'training-phaeno', membershipId: 'training', isAvailable: true }, capabilities: { ...noSessionCapabilities, canManageLabOperations: true, canOperateLabWork: true } },
 }
 const root = createRootRoute({ component: Outlet })
-root.addChildren([createRoute({ getParentRoute: () => root, path: '/e2e/fixtures/lab-material-transfers.html', component: () => <SequencingTubesDialog batchId="test-batch" batchName="TEST material transfer" canManage onClose={() => undefined} onChanged={async () => undefined} /> })])
+root.addChildren([createRoute({ getParentRoute: () => root, path: '/e2e/fixtures/lab-material-transfers.html', component: () => <SequencingTubesDialog batchId="test-batch" batchName="TEST material transfer" suppliers={[{ id: '11111111-1111-1111-1111-111111111111', name: 'Training tube maker', isActive: true }]} canManage onClose={() => undefined} onChanged={async () => undefined} /> })])
 const router = createRouter({ routeTree: root })
 createRoot(document.getElementById('root')!).render(<PhaenoSessionContext.Provider value={session}><QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}><RouterProvider router={router} /></QueryClientProvider></PhaenoSessionContext.Provider>)
