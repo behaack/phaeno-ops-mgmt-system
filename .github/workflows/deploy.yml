@@ -21,6 +21,14 @@ on:
           - Preserve
           - ClamAv
           - Disabled
+      bootstrap_runtime_configuration:
+        description: Preserve the existing bootstrap setting, or explicitly reinstall the configured bootstrap administrator
+        required: true
+        default: Preserve
+        type: choice
+        options:
+          - Preserve
+          - Install
       apply_migrations:
         description: Apply pending Portal migrations after creating an encrypted database backup
         required: true
@@ -80,6 +88,7 @@ jobs:
       - name: Validate deployment secrets
         env:
           APPLY_MIGRATIONS: ${{ inputs.apply_migrations }}
+          BOOTSTRAP_CONFIGURATION: ${{ inputs.bootstrap_runtime_configuration }}
           CUTOVER_CLERK_IDENTITY: ${{ inputs.cutover_clerk_identity }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
@@ -105,10 +114,6 @@ jobs:
             DEPLOY_KNOWN_HOSTS \
             DEPLOY_SSH_KEY \
             DEPLOY_USER \
-            PORTAL_BOOTSTRAP_ADMIN_EMAIL \
-            PORTAL_BOOTSTRAP_ADMIN_FIRST_NAME \
-            PORTAL_BOOTSTRAP_ADMIN_LAST_NAME \
-            PORTAL_BOOTSTRAP_ORGANIZATION_NAME \
             PORTAL_CLERK_AUTHORITY \
             PORTAL_CLERK_SECRET_KEY \
             PORTAL_MAILGUN_WEBHOOK_SIGNING_KEY; do
@@ -118,7 +123,17 @@ jobs:
             fi
           done
 
-          if [ -n "$PORTAL_BOOTSTRAP_ADMIN_EMAIL" ]; then
+          if [ "$BOOTSTRAP_CONFIGURATION" = "Install" ]; then
+            for name in \
+              PORTAL_BOOTSTRAP_ADMIN_EMAIL \
+              PORTAL_BOOTSTRAP_ADMIN_FIRST_NAME \
+              PORTAL_BOOTSTRAP_ADMIN_LAST_NAME \
+              PORTAL_BOOTSTRAP_ORGANIZATION_NAME; do
+              if [ -z "${!name}" ]; then
+                echo "::error::Missing bootstrap configuration ${name}."
+                missing=1
+              fi
+            done
             case "$PORTAL_BOOTSTRAP_ADMIN_EMAIL" in
               *@*.*) ;;
               *)
@@ -126,6 +141,12 @@ jobs:
                 missing=1
                 ;;
             esac
+          fi
+
+          if [ "$CUTOVER_CLERK_IDENTITY" = "true" ] \
+            && [ "$BOOTSTRAP_CONFIGURATION" != "Install" ]; then
+            echo "::error::Clerk identity cutover requires explicit bootstrap configuration installation."
+            missing=1
           fi
 
           if [ -n "$PORTAL_CLERK_SECRET_KEY" ]; then
@@ -357,6 +378,7 @@ jobs:
                 "$RELEASE_PATH/deployment/hetzner/green/install-clerk-runtime-secret.sh '$DEPLOY_ROOT'"
 
       - name: Install Portal bootstrap runtime configuration
+        if: inputs.bootstrap_runtime_configuration == 'Install'
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}

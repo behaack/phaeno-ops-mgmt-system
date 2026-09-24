@@ -1,8 +1,12 @@
 # Operations and production-readiness boundary
 
+## Barcode identity and DataMatrix — deployed September 23, 2026
+
+The [release record](operations/barcode-datamatrix-release-20260923.md) documents the separately approved barcode migration, restorable encrypted backup, matching API and Portal application source `b6bab473e0d4c63add8d54eca35e32b76b57c784`, live health checks and the correction that restored the intentionally blank bootstrap administrator setting. The workflow now preserves that setting unless bootstrap installation is explicitly selected. The environment named production is used as staging; physical label/scanner and authenticated operator acceptance remain separate.
+
 ## Shipping contents and Customer dashboard — September 22, 2026
 
-The [release record](operations/shipping-dashboard-release-20260922.md) covers the pending shipping-kit contents, Department dashboard, sample-entry and CRM guidance release and its verification checkpoint. Production still runs `85fadf139b8953f6293ddb6e59de1ca541b9ac91`; four reviewed database migrations require separate approval before activating the newer API and Portal. The record includes the exact changes, live target, recovery procedure and acceptance boundaries.
+The [release record](operations/shipping-dashboard-release-20260922.md) covers the then-pending shipping-kit contents, Department dashboard, sample-entry and CRM guidance release and its verification checkpoint. At that checkpoint, production ran `85fadf139b8953f6293ddb6e59de1ca541b9ac91` and four reviewed database migrations required separate approval. The later [material-tracking release](operations/material-tracking-release-20260923.md) records their authorization and activation.
 
 ## Company workflows and repeated sequencing — deployed September 19, 2026
 
