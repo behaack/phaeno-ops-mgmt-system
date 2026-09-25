@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({ list: vi.fn(), detail: vi.fn(), dispatch: vi.f
 vi.mock('#/api/transportation-kit-requests', () => ({ getPlatformTransportationKitRequests: mocks.list, getPlatformTransportationKitRequest: mocks.detail }))
 vi.mock('#/api/shipping-containers', () => ({ dispatchShippingStockKit: mocks.dispatch }))
 vi.mock('../use-order-draft-guard', () => ({ useOrderDraftGuard: () => vi.fn() }))
-const kit = { ...standardKit, container: { ...standardKit.container, capacity: 1 }, tubes: [{ id: 'tube-1', supplierBarcode: 'TUBE-001' }] }
+const kit = { ...standardKit, container: { ...standardKit.container, capacity: 1 }, tubes: [{ id: 'tube-1', supplierBarcode: 'TUBE-001' }], tubesVerifiedAt: '2026-09-24T12:00:00Z' }
 const request = { ...kitRequestFixture, lines: kitRequestFixture.lines.map(line => ({ ...line, containerDefinitionId: kit.container.definitionId, requestedQuantity: 1 })) }
 const detail = { request, canDispatch: true, dispatchBlockedReason: null, availableStockKits: [{ id: kit.id, kitNumber: kit.kitNumber, containerDefinitionId: kit.container.definitionId, commonName: kit.container.commonName, sku: kit.container.sku, tubeCapacity: 1, version: kit.version }] }
 function mount(node: ReactNode, client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })) { return render(<QueryClientProvider client={client}>{node}</QueryClientProvider>) }

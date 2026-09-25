@@ -89,17 +89,12 @@ describe('LabReceiptAccessionPanel navigation', () => {
     expect(api.accession).not.toHaveBeenCalled()
   })
 
-  it('shows one task at a time and preserves a receiving scan draft across tabs', async () => {
-    render(<QueryClientProvider client={new QueryClient()}><LabReceiptAccessionPanel apiEnabled canManageKitSupply workOrders={[]} /></QueryClientProvider>)
-    expect(screen.getByRole('tab', { name: 'Kit requests' }).getAttribute('aria-selected')).toBe('true')
-    expect(screen.getByText('Kit-request queue')).toBeTruthy()
-    expect(screen.queryByText('Standard-kit queue')).toBeNull()
-    expect(screen.queryByLabelText('Shipping insert barcode')).toBeNull()
-    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Accession samples' }), { button: 0, ctrlKey: false })
+  it('shows one task at a time and preserves an accession scan draft across tabs', async () => {
+    render(<QueryClientProvider client={new QueryClient()}><LabReceiptAccessionPanel apiEnabled tab="accession" workOrders={[]} /></QueryClientProvider>)
+    expect(screen.getByRole('tab', { name: 'Accession samples' }).getAttribute('aria-selected')).toBe('true')
     fireEvent.change(screen.getByLabelText('Shipping insert barcode'), { target: { value: 'UNFINISHED-SCAN' } })
-    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Prepare kits' }), { button: 0, ctrlKey: false })
-    expect(screen.getByText('Standard-kit queue')).toBeTruthy()
-    expect(screen.queryByText('Kit-request queue')).toBeNull()
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Receive shipments' }), { button: 0, ctrlKey: false })
+    expect(screen.getByRole('tab', { name: 'Receive shipments' }).getAttribute('aria-selected')).toBe('true')
     expect(screen.queryByLabelText('Shipping insert barcode')).toBeNull()
     fireEvent.mouseDown(screen.getByRole('tab', { name: 'Accession samples' }), { button: 0, ctrlKey: false })
     expect(screen.getByLabelText('Shipping insert barcode')).toHaveProperty('value', 'UNFINISHED-SCAN')
@@ -112,18 +107,16 @@ describe('LabReceiptAccessionPanel navigation', () => {
     render(<QueryClientProvider client={new QueryClient()}><LabReceiptAccessionPanel apiEnabled tab="accession" workOrders={[]} /></QueryClientProvider>)
     expect(screen.queryByRole('tab', { name: 'Kit requests' })).toBeNull()
     expect(screen.queryByRole('tab', { name: 'Prepare kits' })).toBeNull()
-    const receiving = screen.getByRole('tab', { name: 'Receive shipments' })
-    act(() => receiving.focus())
-    fireEvent.keyDown(receiving, { key: 'ArrowLeft' })
-    await waitFor(() => expect(screen.getByRole('tab', { name: 'Kits sent' }).getAttribute('aria-selected')).toBe('true'))
-    expect(screen.getByText('Return-kit queue')).toBeTruthy()
+    const accession = screen.getByRole('tab', { name: 'Accession samples' })
+    act(() => accession.focus())
+    fireEvent.keyDown(accession, { key: 'ArrowLeft' })
+    await waitFor(() => expect(screen.getByRole('tab', { name: 'Receive shipments' }).getAttribute('aria-selected')).toBe('true'))
     expect(screen.queryByLabelText('Shipping insert barcode')).toBeNull()
   })
 
-  it('opens shipment-specific legacy links in Kits sent', () => {
+  it('opens shipment-specific receipt in Receive shipments', () => {
     render(<QueryClientProvider client={new QueryClient()}><LabReceiptAccessionPanel apiEnabled shipmentId="shipment-1" workOrders={[]} /></QueryClientProvider>)
-    expect(screen.getByRole('tab', { name: 'Kits sent' }).getAttribute('aria-selected')).toBe('true')
-    expect(screen.getByText('Return-kit queue')).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Receive shipments' }).getAttribute('aria-selected')).toBe('true')
   })
 
   it('records a broken expected tube without storage, then accepts only identified undecided tubes', async () => {

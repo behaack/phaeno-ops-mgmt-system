@@ -10,7 +10,7 @@ vi.mock('@tanstack/react-router', () => ({ Link: ({ children, to, params }: { ch
 describe('staff location inventory and physical identity', () => {
   it('distinguishes complete Phaeno stock from unfinished preparation', () => {
     expect(stockKitState(standardKit)).toBe('Preparing')
-    expect(stockKitStatus(stockKitState({ ...standardKit, container: { ...standardKit.container, capacity: 1 }, tubes: [{ id: 'one', supplierBarcode: 'TUBE-001' }] }))).toBe('Ready at Phaeno')
+    expect(stockKitStatus(stockKitState({ ...standardKit, container: { ...standardKit.container, capacity: 1 }, tubes: [{ id: 'one', supplierBarcode: 'TUBE-001' }], tubesVerifiedAt: '2026-09-24T12:00:00Z' }))).toBe('Ready at Phaeno')
   })
   it.each([['OnTheWay', 'On the way'], ['Available', 'Available'], ['Assigned', 'Assigned'], ['InUse', 'In use'], ['NeedsReview', 'Needs review']] as const)('preserves the authoritative %s state', (status, label) => {
     expect(stockKitStatus(stockKitState({ ...standardKit, status }))).toBe(label)

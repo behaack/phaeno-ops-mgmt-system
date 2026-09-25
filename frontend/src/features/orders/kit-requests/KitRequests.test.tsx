@@ -43,7 +43,7 @@ describe('transportation-kit fulfillment', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Prepare kits' }))
     const dialog = await screen.findByRole('dialog', { name: 'Prepare standard kit' })
     expect(within(dialog).queryByRole('option', { name: /Unrequested size/ })).toBeNull()
-    fireEvent.change(within(dialog).getByLabelText(/Container size/), { target: { value: request.lines[0].containerDefinitionId } })
+    fireEvent.change(within(dialog).getByLabelText(/Kit configuration/), { target: { value: request.lines[0].containerDefinitionId } })
     fill('Supplier', tubeSupplierId, 'Tubes'); fill('Product name', tubeProductId, 'Tubes')
     fill('Supplier', shipperSupplierId, 'Shipping Container'); fill('Product name', shipperProductId, 'Shipping Container')
     fireEvent.click(within(dialog).getByRole('button', { name: 'Prepare standard kit' }))
