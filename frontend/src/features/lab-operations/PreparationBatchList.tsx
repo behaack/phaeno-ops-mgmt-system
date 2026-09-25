@@ -17,7 +17,8 @@ export function PreparationBatchList() {
     const hash = JSON.stringify(v)
     if (request.current.hash !== hash) request.current = { hash, id: crypto.randomUUID() }
     return createPreparation({ requestId: request.current.id, notes: v.notes?.trim() || undefined, trayFormatId: v.format, workflowVersionId: v.workflow })
-  }, onSuccess: async batch => { await client.invalidateQueries({ queryKey: ['lab-preparation'] }); await navigate({ to: '/lab-operations/preparation/$preparationBatchId', params: { preparationBatchId: batch.id }, search: { section: 'work' } }) } })
+  }, onSuccess: async batch => { await client.invalidateQueries({ queryKey: ['lab-preparation'] }); await navigate({ to: '/lab-operations/preparation/$preparationBatchId', params: { preparationBatchId: batch.id }, search: { section: 'work' } }) },
+  onError: async () => { await client.invalidateQueries({ queryKey: ['lab-preparation'] }) } })
   if (query.isPending) return <p role="status">Loading preparation batches…</p>
   if (query.isError) return <div className="space-y-3"><p role="alert">{getLabOperationsError(query.error, 'Preparation batches could not be loaded.')}</p><Button variant="outline" onClick={() => void query.refetch()}>Reload preparation batches</Button></div>
   const data = query.data
@@ -35,7 +36,7 @@ export function PreparationBatchList() {
       { key: 'notes', label: 'Notes (optional)', type: 'textarea' },
     ]} pending={create.isPending} error={create.isError ? getLabOperationsError(create.error, 'Batch could not be created.') : undefined} onClose={() => setDialog(null)} onSubmit={v => create.mutate(v)} submitLabel="Create batch">
       {!activeFormats.length ? <p className="text-sm">No active library tray formats are available. {data.canConfigure ? <>Create one in <Link className="underline" to="/lab-configuration" search={{ configurationTab: 'tray-formats' }}>Lab Settings → Library tray formats</Link>.</> : 'Ask a Supervisor or Protocol Administrator to configure a library tray format.'}</p> : null}
-      {!workflows.length ? <p className="text-sm">No approved workflow has explicit preparation scopes yet. Configure new protocol versions in <Link className="underline" to="/lab-configuration" search={{ configurationTab: 'protocols' }}>Lab Settings → Protocols</Link>, then assemble the approved versions in <Link className="underline" to="/lab-configuration" search={{ configurationTab: 'workflows' }}>Workflows</Link>.</p> : null}
+      {!workflows.length ? <p className="text-sm">No approved workflow is available for a new tray. A workflow using a retired master-mix recipe is excluded. Configure eligible protocol versions in <Link className="underline" to="/lab-configuration" search={{ configurationTab: 'protocols' }}>Lab Settings → Protocols</Link>, then assemble the approved versions in <Link className="underline" to="/lab-configuration" search={{ configurationTab: 'workflows' }}>Workflows</Link>.</p> : null}
     </PreparationFormDialog> : null}
   </div>
 }

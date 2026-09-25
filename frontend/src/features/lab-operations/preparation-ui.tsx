@@ -25,12 +25,13 @@ export function PreparationField({ label, id, required, children, error }: { lab
   const control = isValidElement<{ 'aria-required'?: boolean; 'aria-invalid'?: boolean; 'aria-describedby'?: string }>(children) ? cloneElement(children, { 'aria-required': required || undefined, 'aria-invalid': Boolean(error), 'aria-describedby': [children.props['aria-describedby'], error ? `${id}-error` : undefined].filter(Boolean).join(' ') || undefined }) : children
   return <div className="space-y-1.5"><Label htmlFor={id}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label>{control}{error ? <p id={`${id}-error`} role="alert" className="text-sm text-destructive">{error}</p> : null}</div>
 }
-export type PreparationFormField = { key: string; label: string; required?: boolean; type?: 'text' | 'number' | 'textarea' | 'checkbox'; defaultValue?: string; options?: { value: string; label: string }[] }
+export type PreparationFormField = { key: string; label: string; required?: boolean; type?: 'text' | 'number' | 'textarea' | 'checkbox'; defaultValue?: string; maxLength?: number; options?: { value: string; label: string }[] }
 export function PreparationFormDialog({ title, description, fields, onClose, onSubmit, pending, error, children, submitLabel = 'Save' }: {
   title: string; description: string; fields: PreparationFormField[]; onClose: () => void; onSubmit: (values: Record<string, string>) => void; pending: boolean; error?: string; children?: ReactNode; submitLabel?: string
 }) {
   const schema = z.record(z.string(), z.string()).superRefine((values, ctx) => fields.forEach(field => {
     if (field.required && (field.type === 'checkbox' ? values[field.key] !== 'yes' : !(values[field.key] ?? '').trim())) ctx.addIssue({ code: 'custom', path: [field.key], message: field.type === 'checkbox' ? 'Check this box to confirm.' : `${field.label} is required.` })
+    if (field.maxLength && (values[field.key] ?? '').trim().length > field.maxLength) ctx.addIssue({ code: 'custom', path: [field.key], message: `${field.label} must be ${field.maxLength} characters or fewer.` })
     if (field.type === 'number' && values[field.key] && (!Number.isFinite(Number(values[field.key])) || Number(values[field.key]) <= 0)) ctx.addIssue({ code: 'custom', path: [field.key], message: 'Enter a positive number.' })
     if (field.options && values[field.key] && !field.options.some(o => o.value === values[field.key])) ctx.addIssue({ code: 'custom', path: [field.key], message: 'Choose an available option.' })
   }))
@@ -48,8 +49,8 @@ export function PreparationFormDialog({ title, description, fields, onClose, onS
         {form.formState.errors[field.key] ? <p id={`prep-${field.key}-error`} role="alert" className="text-sm text-destructive">{form.formState.errors[field.key]?.message}</p> : null}
       </div> : <PreparationField key={field.key} id={`prep-${field.key}`} label={field.label} required={field.required} error={form.formState.errors[field.key]?.message}>
         {field.options ? <select id={`prep-${field.key}`} className={prepSelectClass} {...form.register(field.key)}><option value="">Choose…</option>{field.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select>
-          : field.type === 'textarea' ? <textarea id={`prep-${field.key}`} className={`${prepSelectClass} min-h-24 py-2`} {...form.register(field.key)} />
-          : <Input id={`prep-${field.key}`} type={field.type ?? 'text'} step={field.type === 'number' ? 'any' : undefined} {...form.register(field.key)} />}
+          : field.type === 'textarea' ? <textarea id={`prep-${field.key}`} className={`${prepSelectClass} min-h-24 py-2`} maxLength={field.maxLength} {...form.register(field.key)} />
+          : <Input id={`prep-${field.key}`} type={field.type ?? 'text'} step={field.type === 'number' ? 'any' : undefined} maxLength={field.maxLength} {...form.register(field.key)} />}
       </PreparationField>)}
     </div>
     <RequiredDialogFooter showLegend={fields.some(field => field.required)}><Button type="button" variant="outline" disabled={pending} onClick={onClose}>Cancel</Button><Button disabled={pending} type="submit">{pending ? 'Saving…' : submitLabel}</Button></RequiredDialogFooter>

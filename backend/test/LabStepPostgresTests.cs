@@ -7,6 +7,42 @@ using PhaenoPortal.App.Features.OrderManagement.Services;
 public partial class SampleShippingPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task LabStepNameIsUniqueEditableAndCreatedWithAnUnconfiguredDraft()
+    {
+        await using var scope = await ShippingTestScope.CreateAsync();
+        await using var transaction = await scope.DbContext.Database.BeginTransactionAsync();
+        try
+        {
+            var controller = scope.CreateLabController();
+            var originalName = $"TEST catalog step {scope.Suffix}";
+            var step = await controller.CreateLabStep(new(originalName, null), default);
+            Assert.Equal(1, step.LatestVersion);
+            Assert.Equal("Draft", Assert.Single(step.Versions).Status);
+            Assert.Equal(LabStepVersion.UnconfiguredDefinitionJson, step.Versions[0].DefinitionJson);
+            await Assert.ThrowsAsync<OrderManagementException>(() => controller.CreateLabStep(new(originalName.ToLowerInvariant(), null), default));
+            await Assert.ThrowsAsync<OrderManagementException>(() => controller.TransitionLabStep(step.Id,
+                new("approve", step.Version, step.Versions[0].Id, ApprovalOverrideReason: "TEST ONLY"), default));
+
+            step = await controller.SaveLabStepVersion(step.Id, new(LabStepTests.Definition().ToJson(), step.Version, step.Versions[0].Id), default);
+            Assert.Equal(originalName, LabProtocolDefinition.Parse(step.Versions[0].DefinitionJson).Steps[0].Name);
+            var revisedName = $"TEST renamed step {scope.Suffix}";
+            step = await controller.UpdateLabStep(step.Id, new(revisedName, "TEST ONLY description", step.Version), default);
+            Assert.Equal(revisedName, step.Name);
+            Assert.Equal(revisedName, LabProtocolDefinition.Parse(step.Versions[0].DefinitionJson).Steps[0].Name);
+            await Assert.ThrowsAsync<OrderManagementException>(() => controller.CreateLabStep(new(revisedName.ToLowerInvariant(), null), default));
+            var other = await controller.CreateLabStep(new($"TEST other step {scope.Suffix}", null), default);
+            await Assert.ThrowsAsync<OrderManagementException>(() => controller.UpdateLabStep(other.Id,
+                new(revisedName.ToLowerInvariant(), null, other.Version), default));
+
+            step = await controller.TransitionLabStep(step.Id, new("approve", step.Version, step.Versions[0].Id,
+                ApprovalOverrideReason: "TEST ONLY explicit administrator override"), default);
+            step = await controller.UpdateLabStep(step.Id, new($"TEST later name {scope.Suffix}", step.Description, step.Version), default);
+            Assert.Equal(revisedName, LabProtocolDefinition.Parse(step.Versions[0].DefinitionJson).Steps[0].Name);
+        }
+        finally { await transaction.RollbackAsync(); scope.ClearTrackedState(); }
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task LabStepMaterialConfigurationResolvesProductSnapshotOnSave()
     {
         await using var scope = await ShippingTestScope.CreateAsync();
@@ -51,7 +87,8 @@ public partial class SampleShippingPostgresTests
             var versionId = step.Versions.Single().Id;
             await Assert.ThrowsAsync<OrderManagementException>(() => controller.TransitionLabStep(step.Id, new("approve", step.Version, versionId), ct));
             step = await controller.TransitionLabStep(step.Id, new("approve", step.Version, versionId, ApprovalOverrideReason: "TEST ONLY explicit administrator override"), ct);
-            var pinned = definition with { Steps = [definition.Steps[0] with { Key = "first", LabStepVersionId = versionId }, definition.Steps[0] with { Key = "second", LabStepVersionId = versionId }] };
+            var savedDefinition = LabProtocolDefinition.Parse(step.Versions.Single().DefinitionJson);
+            var pinned = savedDefinition with { Steps = [savedDefinition.Steps[0] with { Key = "first", LabStepVersionId = versionId }, savedDefinition.Steps[0] with { Key = "second", LabStepVersionId = versionId }] };
             var protocol = await controller.CreateProtocol(new($"TEST ONLY composed {scope.Suffix}", null), ct);
             protocol = await controller.CreateProtocolVersion(protocol.Id, new(pinned.ToJson(), protocol.Version), ct);
             var draft = protocol.Versions.Single();

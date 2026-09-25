@@ -97,6 +97,11 @@ public sealed record LabProtocolDefinition
                     if (capture.Material.Vendor?.Length > 255 || capture.Material.ProductNumber?.Length > 100) throw new ArgumentException("The configured material details are too long.");
                     if (capture.Material.MaterialDefinitionId == Guid.Empty || capture.Material.MaterialDefinitionId.HasValue && (capture.Material.ProductId.HasValue || capture.Material.SupplierId.HasValue)) throw new ArgumentException("Prepared materials require a definition and cannot also select a supplier product.");
                     if (capture.Material.ProductId == Guid.Empty || capture.Material.SupplierId == Guid.Empty || capture.Material.ProductId.HasValue != capture.Material.SupplierId.HasValue) throw new ArgumentException("Catalog materials require valid product and supplier identities.");
+                    if (capture.Material.MasterMixWorkflowId == Guid.Empty || capture.Material.MasterMixWorkflowId.HasValue &&
+                        (capture.Material.ProductId.HasValue || capture.Material.SupplierId.HasValue || capture.Material.MaterialDefinitionId.HasValue || capture.IncludeTracking || capture.Material.MasterMixWorkflowRevision is null or <= 0))
+                        throw new ArgumentException("A master mix requires its approved workflow revision and cannot also use lot tracking or another material identity.");
+                    if (!capture.Material.MasterMixWorkflowId.HasValue && capture.Material.MasterMixWorkflowRevision.HasValue)
+                        throw new ArgumentException("A master-mix revision requires its workflow identity.");
                 }
                 if (capture.SourceTube && capture.Type != "barcode")
                     throw new ArgumentException("Only barcode captures can verify the selected source tube.");
@@ -232,4 +237,6 @@ public sealed record LabConfiguredMaterial(string Name,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] Guid? ProductId = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] Guid? SupplierId = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? ProductNumber = null,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] Guid? MaterialDefinitionId = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] Guid? MaterialDefinitionId = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] Guid? MasterMixWorkflowId = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? MasterMixWorkflowRevision = null);

@@ -75,6 +75,7 @@ import { Route as LabOperationsPseqKitOrdersOrderIdRouteImport } from './routes/
 import { Route as LabOperationsProductTypesProductTypeIdRouteImport } from './routes/lab-operations.product-types.$productTypeId'
 import { Route as LabOperationsPreparationPreparationBatchIdRouteImport } from './routes/lab-operations.preparation.$preparationBatchId'
 import { Route as LabOperationsMaterialsMaterialLotIdRouteImport } from './routes/lab-operations.materials.$materialLotId'
+import { Route as LabOperationsMasterMixesMixIdRouteImport } from './routes/lab-operations.master-mixes.$mixId'
 import { Route as LabOperationsKitRequestsRequestIdRouteImport } from './routes/lab-operations.kit-requests.$requestId'
 import { Route as LabOperationsExecutionsExecutionIdRouteImport } from './routes/lab-operations.executions.$executionId'
 import { Route as LabOperationsDataAssemblyOrderIdRouteImport } from './routes/lab-operations.data-assembly.$orderId'
@@ -448,6 +449,12 @@ const LabOperationsMaterialsMaterialLotIdRoute =
     path: '/materials/$materialLotId',
     getParentRoute: () => LabOperationsRoute,
   } as any)
+const LabOperationsMasterMixesMixIdRoute =
+  LabOperationsMasterMixesMixIdRouteImport.update({
+    id: '/master-mixes/$mixId',
+    path: '/master-mixes/$mixId',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
 const LabOperationsKitRequestsRequestIdRoute =
   LabOperationsKitRequestsRequestIdRouteImport.update({
     id: '/kit-requests/$requestId',
@@ -627,6 +634,7 @@ export interface FileRoutesByFullPath {
   '/lab-operations/data-assembly/$orderId': typeof LabOperationsDataAssemblyOrderIdRoute
   '/lab-operations/executions/$executionId': typeof LabOperationsExecutionsExecutionIdRoute
   '/lab-operations/kit-requests/$requestId': typeof LabOperationsKitRequestsRequestIdRoute
+  '/lab-operations/master-mixes/$mixId': typeof LabOperationsMasterMixesMixIdRoute
   '/lab-operations/materials/$materialLotId': typeof LabOperationsMaterialsMaterialLotIdRoute
   '/lab-operations/preparation/$preparationBatchId': typeof LabOperationsPreparationPreparationBatchIdRoute
   '/lab-operations/product-types/$productTypeId': typeof LabOperationsProductTypesProductTypeIdRoute
@@ -715,6 +723,7 @@ export interface FileRoutesByTo {
   '/lab-operations/data-assembly/$orderId': typeof LabOperationsDataAssemblyOrderIdRoute
   '/lab-operations/executions/$executionId': typeof LabOperationsExecutionsExecutionIdRoute
   '/lab-operations/kit-requests/$requestId': typeof LabOperationsKitRequestsRequestIdRoute
+  '/lab-operations/master-mixes/$mixId': typeof LabOperationsMasterMixesMixIdRoute
   '/lab-operations/materials/$materialLotId': typeof LabOperationsMaterialsMaterialLotIdRoute
   '/lab-operations/preparation/$preparationBatchId': typeof LabOperationsPreparationPreparationBatchIdRoute
   '/lab-operations/product-types/$productTypeId': typeof LabOperationsProductTypesProductTypeIdRoute
@@ -804,6 +813,7 @@ export interface FileRoutesById {
   '/lab-operations/data-assembly/$orderId': typeof LabOperationsDataAssemblyOrderIdRoute
   '/lab-operations/executions/$executionId': typeof LabOperationsExecutionsExecutionIdRoute
   '/lab-operations/kit-requests/$requestId': typeof LabOperationsKitRequestsRequestIdRoute
+  '/lab-operations/master-mixes/$mixId': typeof LabOperationsMasterMixesMixIdRoute
   '/lab-operations/materials/$materialLotId': typeof LabOperationsMaterialsMaterialLotIdRoute
   '/lab-operations/preparation/$preparationBatchId': typeof LabOperationsPreparationPreparationBatchIdRoute
   '/lab-operations/product-types/$productTypeId': typeof LabOperationsProductTypesProductTypeIdRoute
@@ -894,6 +904,7 @@ export interface FileRouteTypes {
     | '/lab-operations/data-assembly/$orderId'
     | '/lab-operations/executions/$executionId'
     | '/lab-operations/kit-requests/$requestId'
+    | '/lab-operations/master-mixes/$mixId'
     | '/lab-operations/materials/$materialLotId'
     | '/lab-operations/preparation/$preparationBatchId'
     | '/lab-operations/product-types/$productTypeId'
@@ -982,6 +993,7 @@ export interface FileRouteTypes {
     | '/lab-operations/data-assembly/$orderId'
     | '/lab-operations/executions/$executionId'
     | '/lab-operations/kit-requests/$requestId'
+    | '/lab-operations/master-mixes/$mixId'
     | '/lab-operations/materials/$materialLotId'
     | '/lab-operations/preparation/$preparationBatchId'
     | '/lab-operations/product-types/$productTypeId'
@@ -1070,6 +1082,7 @@ export interface FileRouteTypes {
     | '/lab-operations/data-assembly/$orderId'
     | '/lab-operations/executions/$executionId'
     | '/lab-operations/kit-requests/$requestId'
+    | '/lab-operations/master-mixes/$mixId'
     | '/lab-operations/materials/$materialLotId'
     | '/lab-operations/preparation/$preparationBatchId'
     | '/lab-operations/product-types/$productTypeId'
@@ -1591,6 +1604,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LabOperationsMaterialsMaterialLotIdRouteImport
       parentRoute: typeof LabOperationsRoute
     }
+    '/lab-operations/master-mixes/$mixId': {
+      id: '/lab-operations/master-mixes/$mixId'
+      path: '/master-mixes/$mixId'
+      fullPath: '/lab-operations/master-mixes/$mixId'
+      preLoaderRoute: typeof LabOperationsMasterMixesMixIdRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
     '/lab-operations/kit-requests/$requestId': {
       id: '/lab-operations/kit-requests/$requestId'
       path: '/kit-requests/$requestId'
@@ -1872,6 +1892,7 @@ interface LabOperationsRouteChildren {
   LabOperationsDataAssemblyOrderIdRoute: typeof LabOperationsDataAssemblyOrderIdRoute
   LabOperationsExecutionsExecutionIdRoute: typeof LabOperationsExecutionsExecutionIdRoute
   LabOperationsKitRequestsRequestIdRoute: typeof LabOperationsKitRequestsRequestIdRoute
+  LabOperationsMasterMixesMixIdRoute: typeof LabOperationsMasterMixesMixIdRoute
   LabOperationsMaterialsMaterialLotIdRoute: typeof LabOperationsMaterialsMaterialLotIdRoute
   LabOperationsPreparationPreparationBatchIdRoute: typeof LabOperationsPreparationPreparationBatchIdRoute
   LabOperationsProductTypesProductTypeIdRoute: typeof LabOperationsProductTypesProductTypeIdRoute
@@ -1897,6 +1918,7 @@ const LabOperationsRouteChildren: LabOperationsRouteChildren = {
     LabOperationsExecutionsExecutionIdRoute,
   LabOperationsKitRequestsRequestIdRoute:
     LabOperationsKitRequestsRequestIdRoute,
+  LabOperationsMasterMixesMixIdRoute: LabOperationsMasterMixesMixIdRoute,
   LabOperationsMaterialsMaterialLotIdRoute:
     LabOperationsMaterialsMaterialLotIdRoute,
   LabOperationsPreparationPreparationBatchIdRoute:

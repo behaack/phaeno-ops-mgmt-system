@@ -71,6 +71,8 @@ import { TrayFormatList } from './TrayFormatList'
 import { StorageLocations } from './StorageLocations'
 import { ReagentWorkflowSettings } from './ReagentWorkflowSettings'
 import { ReagentManufacturingWorkspace } from './ReagentManufacturingWorkspace'
+import { MasterMixWorkspace } from './MasterMixListV2'
+import { MasterMixWorkflowSettings } from './MasterMixWorkflowSettingsV2'
 import { TransportationKitWorkspace } from './TransportationKitWorkspace'
 import { KitAssemblyWorkflowSettings } from './KitAssemblyWorkflowSettings'
 import { labConfigurationTabs, parseLabConfigurationTab, type LabConfigurationTab } from './lab-configuration-tabs'
@@ -90,6 +92,7 @@ const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
   { value: 'kits', label: 'PSeq kits', separatorBefore: true, description: 'Preparation, shipping, and fulfillment', icon: PackageCheck },
   { value: 'assembly', label: 'Data assembly', description: 'Input validation, processing, and release', icon: Workflow },
   { value: 'reagent-runs', label: 'Reagent manufacturing', separatorBefore: true, description: 'Make and document Phaeno reagent lots', icon: FlaskConical },
+  { value: 'master-mixes', label: 'Master mixes', description: 'Prepare one mix for several library trays', icon: FlaskConical },
   { value: 'transportation-kits', label: 'Transportation kits', description: 'Assembly, inventory, requests, and kits sent', icon: PackageCheck },
   { value: 'suppliers', label: 'Suppliers & products', separatorBefore: true, description: 'Vendors, reagents, and shipping supplies', icon: Building2 },
   { value: 'materials', label: 'Materials', description: 'Lots, prepared reagents, and QC', icon: FlaskConical },
@@ -104,12 +107,12 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
   const queryClient = useQueryClient()
   const [createKind, setCreateKind] = useState<CreateKind>(null)
   const [localConfigurationTab, setLocalConfigurationTab] = useState<LabConfigurationTab>('steps')
-  const [workflowKind, setWorkflowKind] = useState<'library' | 'reagent' | 'transportation-kit'>('library')
+  const [workflowKind, setWorkflowKind] = useState<'library' | 'reagent' | 'master-mix' | 'transportation-kit'>('library')
   const configuring = section === 'protocols'
   const activeConfiguration = configurationTab ?? localConfigurationTab
   const needsDashboard = configuring
     ? activeConfiguration === 'protocols' || activeConfiguration === 'workflows'
-    : section !== 'receipt' && section !== 'transportation-kits' && section !== 'suppliers' && section !== 'jobs' && section !== 'assembly' && section !== 'reagent-runs'
+    : section !== 'receipt' && section !== 'transportation-kits' && section !== 'suppliers' && section !== 'jobs' && section !== 'assembly' && section !== 'reagent-runs' && section !== 'master-mixes'
   const dashboard = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: apiEnabled && needsDashboard })
   const refresh = () => Promise.all((section === 'suppliers'
     ? ['supplier-product-types', 'supplier-catalog']
@@ -157,9 +160,10 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
           {section === 'kits' ? <LabManufacturingQueue workflow="reagent" apiEnabled={apiEnabled} /> : null}
           {section === 'assembly' ? <DataAssemblyWorkspace apiEnabled={apiEnabled} /> : null}
           {section === 'reagent-runs' ? <ReagentManufacturingWorkspace enabled={apiEnabled} canOperate={Boolean(session?.capabilities.canOperateLabWork)} /> : null}
+          {section === 'master-mixes' ? <MasterMixWorkspace enabled={apiEnabled} canOperate={Boolean(session?.capabilities.canOperateLabWork)} /> : null}
           {configuring && activeConfiguration === 'steps' ? <LabStepList /> : null}
           {dashboard.data && configuring && activeConfiguration === 'protocols' ? <ProtocolList actorId={session?.user?.id} canOverride={Boolean(session?.isPlatformAdmin)} protocols={dashboard.data.protocols} canManage={Boolean(session?.capabilities.canManageLabProtocols)} onCreate={() => setCreateKind('protocol')} refresh={refresh} /> : null}
-          {dashboard.data && configuring && activeConfiguration === 'workflows' ? <div className="space-y-5"><div className="flex flex-wrap gap-2" role="group" aria-label="Workflow type"><Button type="button" variant={workflowKind === 'library' ? 'default' : 'outline'} onClick={() => setWorkflowKind('library')}>Library preparation</Button><Button type="button" variant={workflowKind === 'reagent' ? 'default' : 'outline'} onClick={() => setWorkflowKind('reagent')}>Reagent manufacturing</Button><Button type="button" variant={workflowKind === 'transportation-kit' ? 'default' : 'outline'} onClick={() => setWorkflowKind('transportation-kit')}>Transportation kit assembly</Button></div>{workflowKind === 'library' ? <ServiceWorkflowList actorId={session?.user?.id} canOverride={Boolean(session?.isPlatformAdmin)} workflows={dashboard.data.serviceWorkflows} marketedServices={dashboard.data.marketedServices} canManage={Boolean(session?.capabilities.canManageLabProtocols)} refresh={refresh} /> : workflowKind === 'reagent' ? <ReagentWorkflowSettings actorId={session?.user?.id} isPlatformAdmin={Boolean(session?.isPlatformAdmin)} definitions={dashboard.data.materialDefinitions} canManage={Boolean(session?.capabilities.canManageLabProtocols)} /> : <KitAssemblyWorkflowSettings actorId={session?.user?.id} isPlatformAdmin={Boolean(session?.isPlatformAdmin)} canManage={Boolean(session?.capabilities.canManageLabProtocols)} />}</div> : null}
+          {dashboard.data && configuring && activeConfiguration === 'workflows' ? <div className="space-y-5"><div className="flex flex-wrap gap-2" role="group" aria-label="Workflow type"><Button type="button" variant={workflowKind === 'library' ? 'default' : 'outline'} onClick={() => setWorkflowKind('library')}>Library preparation</Button><Button type="button" variant={workflowKind === 'reagent' ? 'default' : 'outline'} onClick={() => setWorkflowKind('reagent')}>Reagent manufacturing</Button><Button type="button" variant={workflowKind === 'master-mix' ? 'default' : 'outline'} onClick={() => setWorkflowKind('master-mix')}>Master mix</Button><Button type="button" variant={workflowKind === 'transportation-kit' ? 'default' : 'outline'} onClick={() => setWorkflowKind('transportation-kit')}>Transportation kit assembly</Button></div>{workflowKind === 'library' ? <ServiceWorkflowList actorId={session?.user?.id} canOverride={Boolean(session?.isPlatformAdmin)} workflows={dashboard.data.serviceWorkflows} marketedServices={dashboard.data.marketedServices} canManage={Boolean(session?.capabilities.canManageLabProtocols)} refresh={refresh} /> : workflowKind === 'reagent' ? <ReagentWorkflowSettings actorId={session?.user?.id} isPlatformAdmin={Boolean(session?.isPlatformAdmin)} definitions={dashboard.data.materialDefinitions} canManage={Boolean(session?.capabilities.canManageLabProtocols)} /> : workflowKind === 'master-mix' ? <MasterMixWorkflowSettings actorId={session?.user?.id} isPlatformAdmin={Boolean(session?.isPlatformAdmin)} canManage={Boolean(session?.capabilities.canManageLabProtocols)} /> : <KitAssemblyWorkflowSettings actorId={session?.user?.id} isPlatformAdmin={Boolean(session?.isPlatformAdmin)} canManage={Boolean(session?.capabilities.canManageLabProtocols)} />}</div> : null}
           {configuring && activeConfiguration === 'stage-durations' ? <StageDurations /> : null}
           {configuring && activeConfiguration === 'holiday-calendar' ? <HolidayCalendar /> : null}
           {configuring && activeConfiguration === 'tray-formats' ? <TrayFormatList /> : null}

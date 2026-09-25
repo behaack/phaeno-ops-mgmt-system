@@ -30,6 +30,8 @@ Current protocols embed step definitions. Current workflows reference protocol v
 7. Review and approve the assembled protocol independently of the approval status of its individual steps. Retiring a catalog item prevents new selection but preserves historical references.
 8. Preserve exact resolved definitions and provenance in approved protocol snapshots. Existing protocols, batches, records, repeats, corrections, conditional decisions and output lineage must remain readable and executable against their original definitions.
 
+September 24 clarification: the unique, case-insensitive Lab step name is entered at creation and is the editable catalog identity shown in lists and detail. The scoped version editor does not expose a second name; saves use the catalog name. Creating the identity also creates version 1 as an unconfigured Draft. Its instructions and fields must be saved before preview or approval. Renaming a step updates its open draft but does not rewrite approved versions or pinned protocol snapshots. The generated key remains internal and is not used as fallback display text.
+
 ## Configuration preview requirements
 
 Provide **Configuration preview** from both the Lab step editor and Protocol editor, including drafts before approval. Integrate it with the existing contextual Actions convention where multiple actions exist.

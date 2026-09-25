@@ -16,7 +16,10 @@ export function resolveCatalogStep(catalog: LabStep[], versionId: string, key = 
 
 export function LabStepPicker({ catalog, onAdd }: { catalog: LabStep[]; onAdd: (step: ProtocolStepFormValues) => void }) {
   const [id, setId] = useState('')
-  const choices = catalog.filter(s => !s.retiredAtUtc).flatMap(s => s.versions.filter(v => v.status === 'Approved').map(v => ({ id: v.id, label: `${s.name} · v${v.stepVersion}` })))
+  const choices = catalog.filter(s => !s.retiredAtUtc).flatMap(s => s.versions.filter(v => v.status === 'Approved').map(v => {
+    const savedName = deserializeProtocolDefinition(v.definitionJson)?.steps[0]?.name
+    return { id: v.id, label: `${s.name} · v${v.stepVersion}${savedName && savedName !== s.name ? ` (saved as ${savedName})` : ''}` }
+  }))
   return <div className="flex flex-wrap items-end gap-2 rounded-lg border p-3"><div className="min-w-48 flex-1"><PreparationField label="Approved Lab step version" id="catalog-step"><select id="catalog-step" className={prepSelectClass} value={id} onChange={e => setId(e.target.value)}><option value="">Choose an exact version…</option>{choices.map(v => <option key={v.id} value={v.id}>{v.label}</option>)}</select></PreparationField></div><Button type="button" variant="outline" disabled={!id} onClick={() => { onAdd(resolveCatalogStep(catalog, id)); setId('') }}>Add Lab step</Button>{!choices.length ? <p className="w-full text-sm text-muted-foreground">Approve a Lab step version in Lab configuration before selecting it here.</p> : null}</div>
 }
 

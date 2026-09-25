@@ -37,7 +37,7 @@ public sealed partial class LabOperationsController
             throw Conflict("preparation_step_coverage_changed", "This step must include every eligible tube. Refresh the batch and review its coverage before saving.");
         var reportProperty = step.PreparationReportProperty;
         step.ValidatePreparationReport(hasReport, input.Outcome);
-        var resourceValues = await RecordPreparationFieldsAsync(step, input, members, attempts, stageExecutions, request, actor.User.Id, ct);
+        var resourceValues = await RecordPreparationFieldsAsync(batch, step, input, members, attempts, stageExecutions, request, actor.User.Id, ct);
         foreach (var member in members.Where(m => input.CoveredMemberIds.Contains(m.Id)))
         {
             var attempt = attempts.Single(a => a.Id == member.LabSpecimenAttemptId); attempt.RequireOpen();

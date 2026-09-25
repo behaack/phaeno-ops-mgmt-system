@@ -240,6 +240,12 @@ public sealed partial class PSeqOperationsDbContext(
     public DbSet<LabPreparationBatch> LabPreparationBatches { get; set; }
     public DbSet<LabPreparationMember> LabPreparationMembers { get; set; }
     public DbSet<LabPreparationRecord> LabPreparationRecords { get; set; }
+    public DbSet<LabMasterMixWorkflow> LabMasterMixWorkflows { get; set; }
+    public DbSet<LabMasterMixPreparation> LabMasterMixPreparations { get; set; }
+    public DbSet<LabMasterMixStepRecord> LabMasterMixStepRecords { get; set; }
+    public DbSet<LabMasterMixIngredientUse> LabMasterMixIngredientUses { get; set; }
+    public DbSet<LabMasterMixTrayUse> LabMasterMixTrayUses { get; set; }
+    public DbSet<LabMasterMixCorrection> LabMasterMixCorrections { get; set; }
     public DbSet<LabAttemptCommandReceipt> LabAttemptCommandReceipts { get; set; }
     public DbSet<LabMaterialDefinition> LabMaterialDefinitions { get; set; }
     public DbSet<LabProductType> LabProductTypes { get; set; }
@@ -581,6 +587,7 @@ public sealed partial class PSeqOperationsDbContext(
         LabKitAssemblyModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
         LabAssemblyModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
         LabPreparationModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
+        LabMasterMixModelConfiguration.Configure(modelBuilder, this.persistenceOptions.LaboratorySchema);
         WebsiteModelConfiguration.Configure(modelBuilder, this.persistenceOptions.WebsiteSchema);
 
         ApplySchemaOwnership(modelBuilder);

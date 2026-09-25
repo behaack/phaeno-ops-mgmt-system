@@ -2635,6 +2635,8 @@ September 16 sample row alignment: updated matching-status expectations for comb
 
 ## Reusable Lab steps and configuration preview - September 17, 2026
 
+September 24 follow-up: manually verify a unique creation name appears in the list and detail, version 1 Draft appears immediately, the initial empty draft cannot be previewed or approved, the version editor has no duplicate name input, and Edit Lab step name and description updates the list without changing an approved pinned protocol. Verify duplicate-name feedback, stale-version feedback, and keyboard access to the edit action and modal. No frontend suite was requested or run.
+
 Added ConfigurationPreview.test.tsx for production-form validation, reset/disposal, direct conditional-step inspection, output-allocation isolation and action buttons that do not submit the enclosing editor. Updated protocol-definition roundtrips to retain occurrence/capture keys; added rename/reorder/provenance coverage. Tests are authored, not executed. Verify catalog search/paging, draft authoring, exact version adoption, independent approval/override, retirement/usage, and keyboard/focus/theme/reflow manually.
 
 September 17 clarification: new preparation definitions/captures/QC default to batch; barcode fields remain tube-scoped. Existing missing-scope validation coverage explicitly clears scopes before asserting rejection. Tests remain authored, not executed.
@@ -2785,6 +2787,12 @@ inside the workflow editor was removed. The focused component test was added
 but not run because this follow-up did not request tests. Static TypeScript
 checking passed.
 
+The Phaeno transportation-kit product case uses the **Kit name** label for the single-line name field. Its updated selector has not been rerun in this UI follow-up.
+
+The product form now offers a common inventory-unit picker alongside free-text entry. The Phaeno reagent case selects a unit from the picker; the kit case checks an editable SKU at creation, and a new edit case checks that a saved kit SKU is read-only while its name remains editable. These new assertions have not been run under the request-only test rule.
+
+The Lab step Operator instructions error now shares the row with the Insert symbol action. The shared symbol menu has expanded, grouped choices and a bounded scrolling height. These presentation changes have not been browser checked; no additional automated tests were requested.
+
 ### Transportation kit workspace and assembly (2026-09-24)
 
 Focused tab-resolution coverage now expects Kit requests, Inventory and Kits sent under Transportation kits while Receipt & accession contains only arrival and accession work. Supplier catalog and built-in product-type tests cover the Phaeno product-type selector and fixed categories. The shipping settings, shipping specification, and standard-kit group passed 70 tests after updating create and dispatch cases for named products and physical tube verification. The separate Lab tabs/catalog/product-type group passed 22 tests; lint and typecheck passed. Browser coverage remains needed for product → approved workflow/BOM → paired shipping specification → physical assembly and source-lot use → complete tube rescan → corrected roster → dispatch, including keyboard, narrow screen and stale-version feedback.
@@ -2792,3 +2800,13 @@ Focused tab-resolution coverage now expects Kit requests, Inventory and Kits sen
 ### September 24 review-remediation scope
 
 Cover same-author approval denial for a non-platform Protocol Administrator, current-only workflow selection in shipping setup, whole-item tube/shipper use, a fixed source tube lot after first use, and visible reagent procedure revision history. Focused UI tests have not been added or run in this turn; typechecking and lint are the local static checks for the touched components.
+
+### Transportation kit inventory default filter (2026-09-24)
+
+Focused stock-kit tests now cover the At Phaeno default, every dispatched status under Shipped kits, direct status links, and the list control that selects the shipped view. The new assertions have not been run under the repository's request-only test rule.
+
+### Single-use master mix (2026-09-24)
+
+Component coverage remains to verify approved workflow selection and explicit adoption of a newer revision in the Lab step editor, ready-mix filtering, amount/remaining validation for batch and per-sample entries, tray-to-mix links, and the create, ingredient, step, complete and discard dialogs. The September 24 full frontend unit suite passed 1,220 tests across 189 files, and lint, typecheck, documentation consistency, and production build passed. Those tests are general regression evidence; dedicated master-mix component cases remain to be added.
+
+Gap-closure component coverage should verify recipe ingredient editing and approval review, full container barcode scan, search/status/overdue paging with list-state restoration, actor and correction history, expired-mix blocking, supervisor deviation and verified-void/discrepancy dialogs, persisted uncertain ingredient recovery across reload, and refreshed ready-mix availability after a stale tray save. Verify the retirement dialog explains that open trays may use Ready mixes until cutoff, the new-tray workflow picker excludes a workflow pinned to a retired recipe, and a stale picker refreshes after a rejected create. Include exact text transport for recipe, ingredient, yield and measured discard amounts, decimal case `0.1 × 3 = 0.3`, and multiple fields using the same mix. These component checks remain unrun under the repository's request-only test rule.

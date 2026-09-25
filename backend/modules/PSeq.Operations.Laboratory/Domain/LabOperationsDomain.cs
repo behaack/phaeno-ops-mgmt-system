@@ -682,7 +682,8 @@ public sealed class LabMaterialLot : LabAuditedEntity
     public void ReconcileQuantity(decimal counted, string reason, Guid actorId, DateTime utcNow)
     {
         if (QuantityHoldReason is null) throw new InvalidOperationException("This lot does not need quantity reconciliation.");
-        if (counted < 0 || counted > AvailableQuantity) throw new ArgumentException("Counted remaining quantity must be between zero and the last recorded balance.");
+        if (counted < 0 || counted > AvailableQuantity && !QuantityHoldReason.StartsWith("Master-mix", StringComparison.Ordinal))
+            throw new ArgumentException("Counted remaining quantity must be between zero and the last recorded balance unless a master-mix correction requires a physical recount.");
         reason = Required(reason, nameof(reason), 2000);
         RecordQuantityHistory("reconciled", AvailableQuantity, counted, reason, null, actorId, utcNow);
         AvailableQuantity = counted;
@@ -794,6 +795,16 @@ public sealed class LabMaterialLot : LabAuditedEntity
         if (actorId.HasValue && utcNow.HasValue)
             RecordQuantityHistory("consumed", before, AvailableQuantity, "Actual material used.", recordId, actorId.Value, utcNow.Value, consumedQuantity: quantity);
         if (materialExhausted) ConfirmExhausted(recordId!.Value, actorId!.Value, utcNow!.Value);
+    }
+
+    public void RestoreUndispensedMasterMixAmount(decimal quantity, Guid recordId, Guid actorId, DateTime utcNow)
+    {
+        if (QuantityHoldReason is not null || quantity <= 0 || recordId == Guid.Empty || actorId == Guid.Empty)
+            throw new InvalidOperationException("Reconcile the source lot before restoring an undispensed amount.");
+        var before = AvailableQuantity;
+        AvailableQuantity += quantity;
+        RecordQuantityHistory("master_mix_verified_void", before, AvailableQuantity,
+            "Supervisor verified no source material was physically dispensed.", recordId, actorId, utcNow);
     }
 
     public void ConfirmExhausted(Guid recordId, Guid actorId, DateTime utcNow)

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PhaenoPortal.App.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 namespace PSeq.Operations.Api.Migrations
 {
     [DbContext(typeof(PSeqOperationsDbContext))]
-    partial class PSeqOperationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260924204325_AddSingleUseMasterMix")]
+    partial class AddSingleUseMasterMix
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -13088,57 +13091,6 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("lab_libraries", "lab_ops");
                 });
 
-            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabMasterMixCorrection", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)")
-                        .HasColumnName("action");
-
-                    b.Property<Guid>("PreparationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("preparation_id");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)")
-                        .HasColumnName("reason");
-
-                    b.Property<DateTime>("RecordedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("recorded_at_utc");
-
-                    b.Property<Guid>("RecordedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("recorded_by_user_id");
-
-                    b.Property<Guid>("TargetEntryId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("target_entry_id");
-
-                    b.Property<string>("TargetKind")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)")
-                        .HasColumnName("target_kind");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PreparationId", "RecordedAtUtc");
-
-                    b.HasIndex("PreparationId", "TargetEntryId")
-                        .IsUnique();
-
-                    b.ToTable("lab_master_mix_corrections", "lab_ops");
-                });
-
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabMasterMixIngredientUse", b =>
                 {
                     b.Property<Guid>("Id")
@@ -13176,14 +13128,6 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid>("SourceMaterialLotId")
                         .HasColumnType("uuid")
                         .HasColumnName("source_material_lot_id");
-
-                    b.Property<DateTime?>("VoidedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("voided_at_utc");
-
-                    b.Property<Guid?>("VoidedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("voided_by_user_id");
 
                     b.HasKey("Id");
 
@@ -13226,11 +13170,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("ingredient_use_count");
 
-                    b.Property<string>("IngredientsJson")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("ingredients_json");
-
                     b.Property<decimal?>("MeasuredDiscardQuantity")
                         .HasPrecision(28, 12)
                         .HasColumnType("numeric(28,12)")
@@ -13254,23 +13193,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("quantity_unit");
-
-                    b.Property<DateTime?>("RecipeDeviationApprovedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("recipe_deviation_approved_at_utc");
-
-                    b.Property<Guid?>("RecipeDeviationApprovedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("recipe_deviation_approved_by_user_id");
-
-                    b.Property<int?>("RecipeDeviationApprovedIngredientCount")
-                        .HasColumnType("integer")
-                        .HasColumnName("recipe_deviation_approved_ingredient_count");
-
-                    b.Property<string>("RecipeDeviationReason")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)")
-                        .HasColumnName("recipe_deviation_reason");
 
                     b.Property<int>("RecordedStepCount")
                         .HasColumnType("integer")
@@ -13302,10 +13224,6 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid?>("UpdatedByUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("updated_by_user_id");
-
-                    b.Property<DateTime>("UseByUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("use_by_utc");
 
                     b.Property<decimal>("UsedQuantity")
                         .HasPrecision(28, 12)
@@ -13421,14 +13339,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("recorded_by_user_id");
 
-                    b.Property<DateTime?>("VoidedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("voided_at_utc");
-
-                    b.Property<Guid?>("VoidedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("voided_by_user_id");
-
                     b.HasKey("Id");
 
                     b.HasIndex("LabPreparationBatchId");
@@ -13472,11 +13382,6 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid?>("CreatedByUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
-
-                    b.Property<string>("IngredientsJson")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("ingredients_json");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -21217,15 +21122,6 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabContainer", null)
                         .WithMany()
                         .HasForeignKey("SourceContainerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabMasterMixCorrection", b =>
-                {
-                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabMasterMixPreparation", null)
-                        .WithMany()
-                        .HasForeignKey("PreparationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

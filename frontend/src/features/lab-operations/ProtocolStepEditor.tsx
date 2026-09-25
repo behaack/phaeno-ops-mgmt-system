@@ -39,11 +39,12 @@ export function ProtocolStepEditor({
   const qcEnabled = form.watch(`steps.${index}.qcEnabled`)
   const stepName = form.watch(`steps.${index}.name`)
   const stepErrors = form.formState.errors.steps?.[index]
+  const instructionError = stepErrors?.instructions?.message
 
   return (
     <Card size="sm" className="overflow-visible">
       <CardHeader className="border-b">
-        <CardTitle>Step {index + 1}{stepName ? ` · ${stepName}` : ''}</CardTitle>
+        <CardTitle>{catalog ? stepName || 'Lab step' : `Step ${index + 1}${stepName ? ` · ${stepName}` : ''}`}</CardTitle>
         <CardDescription>Instructions, required entries, resources, and quality controls.</CardDescription>
         <CardAction>
           <PreparationActions items={[
@@ -59,9 +60,9 @@ export function ProtocolStepEditor({
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="grid gap-4 lg:grid-cols-2">
-          <Field label="Step name" id={`step-${index}-name`} required error={stepErrors?.name?.message}>
+          {!catalog ? <Field label="Step name" id={`step-${index}-name`} required error={stepErrors?.name?.message}>
             <ScientificTextField id={`step-${index}-name`} control={form.control} name={`steps.${index}.name`} label="Step name" />
-          </Field>
+          </Field> : null}
           {!catalog ? <Field label="Requirement" id={`step-${index}-requirement`} required error={stepErrors?.requirement?.message}>
             <select id={`step-${index}-requirement`} className={selectClass} {...form.register(`steps.${index}.requirement`)}>
               {protocolRequirementTypes.map((value) => <option key={value} value={value}>{sentenceCase(value)}</option>)}
@@ -69,8 +70,8 @@ export function ProtocolStepEditor({
           </Field> : null}
         </div>
 
-        <Field label="Operator instructions" id={`step-${index}-instructions`} required error={stepErrors?.instructions?.message}>
-          <ScientificTextField id={`step-${index}-instructions`} control={form.control} name={`steps.${index}.instructions`} label="Operator instructions" multiline />
+        <Field label="Operator instructions" id={`step-${index}-instructions`} required>
+          <ScientificTextField id={`step-${index}-instructions`} control={form.control} name={`steps.${index}.instructions`} label="Operator instructions" multiline describedBy={instructionError ? `step-${index}-instructions-error` : undefined} supportingText={instructionError ? <p id={`step-${index}-instructions-error`} role="alert" className="text-sm text-destructive">{instructionError}</p> : undefined} />
         </Field>
 
         {requirement === 'conditional' ? (
@@ -154,7 +155,7 @@ export function ProtocolStepEditor({
                     {!['barcode', 'output', 'biologicalMaterial'].includes(captureType) ? <><option value="batch">Batch only — same entry for all samples</option>{captureType !== 'equipment' ? <option value="shared">Same entry with sample exceptions</option> : null}</> : null}
                   </select>
                 </Field> : null}
-                {captureType === 'material' ? <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" {...form.register(`steps.${index}.captures.${captureIndex}.includeTracking`)} />Include lot number</label> : null}
+                {captureType === 'material' && !form.watch(`steps.${index}.captures.${captureIndex}.material.masterMixWorkflowId`) ? <label className="flex cursor-pointer items-center gap-2 text-sm"><input type="checkbox" {...form.register(`steps.${index}.captures.${captureIndex}.includeTracking`)} />Include lot number</label> : null}
                 {captureType === 'equipment' ? <p className="text-sm text-muted-foreground">Select the equipment used from eligible registered equipment when recording this step.</p> : null}
                 {captureType === 'material' && ['batch', 'shared'].includes(form.watch(`steps.${index}.captures.${captureIndex}.scope`) ?? '') ? <Field label="Quantity recorded" id={`basis-${index}-${captureIndex}`}><select id={`basis-${index}-${captureIndex}`} className={selectClass} {...form.register(`steps.${index}.captures.${captureIndex}.quantityBasis`)}><option value="perSample">Amount per sample</option>{form.watch(`steps.${index}.captures.${captureIndex}.scope`) !== 'shared' ? <option value="total">Total amount for the batch</option> : null}</select></Field> : null}
                 {captureType === 'material' ? <Field label="Quantity unit" id={`step-${index}-capture-${captureIndex}-unit`} required error={captureErrors?.unit?.message}>

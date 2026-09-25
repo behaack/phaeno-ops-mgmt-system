@@ -14,6 +14,13 @@ export function isPositiveDecimalQuantity(value: string) {
   return parts !== null && parts.coefficient > 0n
 }
 
+export function isMasterMixDecimalQuantity(value: string, allowZero = false) {
+  const parts = decimalParts(value)
+  return parts !== null && parts.scale <= 12
+    && parts.coefficient < 10n ** BigInt(16 + parts.scale)
+    && (allowZero || parts.coefficient > 0n)
+}
+
 export function exceedsDecimalQuantity(value: string, limit: string) {
   const entered = decimalParts(value)
   const available = decimalParts(limit)
@@ -42,6 +49,12 @@ export function combinedDecimalQuantity(existingText: string, addedText: string)
   const combined = existing.coefficient * 10n ** BigInt(scale - existing.scale)
     + added.coefficient * 10n ** BigInt(scale - added.scale)
   return formatRepresentable(combined, scale)
+}
+
+export function multipliedDecimalQuantity(value: string, count: number) {
+  const entered = decimalParts(value)
+  if (!entered || !Number.isSafeInteger(count) || count < 0) return null
+  return formatRepresentable(entered.coefficient * BigInt(count), entered.scale)
 }
 
 function formatRepresentable(coefficient: bigint, scale: number) {

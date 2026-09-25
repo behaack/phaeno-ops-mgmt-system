@@ -24,7 +24,7 @@ export const protocolRoleTypes = [
   'OperationsAdministrator',
 ] as const
 
-const materialSchema = z.object({ materialDefinitionId: z.string().uuid().optional(), productId: z.string().uuid().optional(), supplierId: z.string().uuid().optional(), name: z.string().trim().min(1, 'Enter the material name.').max(1000), vendor: z.string().trim().max(255).optional(), productNumber: z.string().trim().max(100).optional() })
+const materialSchema = z.object({ materialDefinitionId: z.string().uuid().optional(), productId: z.string().uuid().optional(), supplierId: z.string().uuid().optional(), masterMixWorkflowId: z.string().uuid().optional(), masterMixWorkflowRevision: z.number().int().positive().optional(), name: z.string().trim().min(1, 'Enter the material name.').max(1000), vendor: z.string().trim().max(255).optional(), productNumber: z.string().trim().max(100).optional() })
 export type ConfiguredMaterial = z.infer<typeof materialSchema>
 
 const captureSchema = z.object({
@@ -42,7 +42,8 @@ const captureSchema = z.object({
 }).superRefine((capture, context) => {
   if (capture.type === 'material' && !capture.unit) context.addIssue({ code: 'custom', message: 'Enter the quantity unit.', path: ['unit'] })
   if (capture.type === 'material' && capture.includeTracking && capture.material && !capture.material.productId && !capture.material.materialDefinitionId) context.addIssue({ code: 'custom', message: 'Lot tracking requires a catalog product or prepared reagent.', path: ['material'] })
-  if (capture.material?.productId && capture.material.materialDefinitionId) context.addIssue({ code: 'custom', message: 'Choose one material identity.', path: ['material'] })
+  if (capture.material && [capture.material.productId, capture.material.materialDefinitionId, capture.material.masterMixWorkflowId].filter(Boolean).length > 1) context.addIssue({ code: 'custom', message: 'Choose one material identity.', path: ['material'] })
+  if (capture.material?.masterMixWorkflowId && capture.includeTracking) context.addIssue({ code: 'custom', message: 'Master mix uses a preparation record, not an inventory lot.', path: ['includeTracking'] })
   if (capture.type === 'material' && !capture.material) context.addIssue({ code: 'custom', message: 'Choose a vendor/product or define the material manually.', path: ['material'] })
   if (capture.type === 'choice' && new Set(splitList(capture.choices)).size !== splitList(capture.choices).length) {
     context.addIssue({ code: 'custom', message: 'Choices cannot repeat.', path: ['choices'] })

@@ -198,7 +198,7 @@ public partial class SampleShippingPostgresTests
             var material = LabProtocolDefinition.Parse(saved.Versions.Single().DefinitionJson).Steps[0].Captures[0].Material!;
             Assert.Equal(definition.Name, material.Name); Assert.Equal(definition.Id, material.MaterialDefinitionId); Assert.Null(material.ProductId);
             var manual = configured with { Steps = [source.Steps[0] with { Captures = [capture with { Material = new("Manual") }] }] };
-            await Assert.ThrowsAsync<OrderManagementException>(() => controller.SaveLabStepVersion(step.Id, new(manual.ToJson(), saved.Version), default));
+            await Assert.ThrowsAsync<OrderManagementException>(() => controller.SaveLabStepVersion(step.Id, new(manual.ToJson(), saved.Version, saved.Versions.Single().Id), default));
         }
         finally { await transaction.RollbackAsync(); scope.ClearTrackedState(); }
     }

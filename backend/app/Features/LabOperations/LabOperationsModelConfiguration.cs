@@ -254,9 +254,11 @@ public static class LabOperationsModelConfiguration
             ConfigureAudited(entity);
             entity.Property(e => e.Key).HasMaxLength(100).IsRequired();
             entity.Property(e => e.Name).HasMaxLength(255).IsRequired();
+            entity.Property(e => e.NormalizedName).HasMaxLength(255).IsRequired();
             entity.Property(e => e.Description).HasMaxLength(2000);
             entity.Property(e => e.RetirementReason).HasMaxLength(1000);
             entity.HasIndex(e => e.Key).IsUnique();
+            entity.HasIndex(e => e.NormalizedName).IsUnique();
         });
 
         modelBuilder.Entity<LabStepVersion>(entity =>

@@ -205,7 +205,7 @@ public class PersistenceTests
     }
 
     [Fact]
-    public void PSeqOperationsDbContextMapsCompleteLaboratoryModelWithoutCommercialForeignKeys()
+    public void PSeqOperationsDbContextMapsCompleteLaboratoryModelWithOnlyApprovedCrossSchemaForeignKeys()
     {
         using var dbContext = CreateDbContext();
         var laboratoryAssembly = typeof(LaboratoryAssembly).Assembly;
@@ -213,7 +213,7 @@ public class PersistenceTests
             .Where(entityType => entityType.ClrType.Assembly == laboratoryAssembly)
             .ToList();
 
-        Assert.Equal(65, laboratoryEntities.Count);
+        Assert.Equal(77, laboratoryEntities.Count);
         Assert.Equal("lab_container_barcodes", dbContext.Model.FindEntityType(typeof(LabContainerBarcode))?.GetTableName());
         Assert.Equal("lab_biological_material_transfers", dbContext.Model.FindEntityType(typeof(LabBiologicalMaterialTransfer))?.GetTableName());
         Assert.Equal("lab_assembly_jobs", dbContext.Model.FindEntityType(typeof(LabAssemblyJob))?.GetTableName());
@@ -230,6 +230,12 @@ public class PersistenceTests
         Assert.Equal("lab_reagent_manufacturing_runs", dbContext.Model.FindEntityType(typeof(LabReagentManufacturingRun))?.GetTableName());
         Assert.Equal("lab_reagent_run_steps", dbContext.Model.FindEntityType(typeof(LabReagentRunStep))?.GetTableName());
         Assert.Equal("lab_reagent_material_uses", dbContext.Model.FindEntityType(typeof(LabReagentMaterialUse))?.GetTableName());
+        Assert.Equal("lab_master_mix_workflows", dbContext.Model.FindEntityType(typeof(LabMasterMixWorkflow))?.GetTableName());
+        Assert.Equal("lab_master_mix_preparations", dbContext.Model.FindEntityType(typeof(LabMasterMixPreparation))?.GetTableName());
+        Assert.Equal("lab_master_mix_steps", dbContext.Model.FindEntityType(typeof(LabMasterMixStepRecord))?.GetTableName());
+        Assert.Equal("lab_master_mix_ingredients", dbContext.Model.FindEntityType(typeof(LabMasterMixIngredientUse))?.GetTableName());
+        Assert.Equal("lab_master_mix_tray_uses", dbContext.Model.FindEntityType(typeof(LabMasterMixTrayUse))?.GetTableName());
+        Assert.Equal("lab_master_mix_corrections", dbContext.Model.FindEntityType(typeof(LabMasterMixCorrection))?.GetTableName());
         AssertUniqueIndex<LabReagentWorkflow>(dbContext, nameof(LabReagentWorkflow.MaterialDefinitionId));
         Assert.Equal("lab_steps", dbContext.Model.FindEntityType(typeof(LabStep))?.GetTableName());
         Assert.Equal("lab_step_versions", dbContext.Model.FindEntityType(typeof(LabStepVersion))?.GetTableName());
@@ -293,9 +299,22 @@ public class PersistenceTests
         Assert.Equal("lab_exceptions", dbContext.Model.FindEntityType(typeof(LabException))?.GetTableName());
         Assert.Equal("lab_operations_outbox_events", dbContext.Model.FindEntityType(typeof(LabOperationsOutboxEvent))?.GetTableName());
         Assert.All(laboratoryEntities, entityType => Assert.Equal("lab_ops", entityType.GetSchema()));
-        Assert.DoesNotContain(
-            laboratoryEntities.SelectMany(entityType => entityType.GetForeignKeys()),
-            foreignKey => foreignKey.PrincipalEntityType.ClrType.Assembly != laboratoryAssembly);
+        var crossSchemaForeignKeys = laboratoryEntities
+            .SelectMany(entityType => entityType.GetForeignKeys())
+            .Where(foreignKey => foreignKey.PrincipalEntityType.ClrType.Assembly != laboratoryAssembly);
+        Assert.All(crossSchemaForeignKeys, foreignKey =>
+        {
+            Assert.Contains(foreignKey.DeclaringEntityType.ClrType, new[]
+            {
+                typeof(LabKitAssemblyWorkflow),
+                typeof(LabKitAssemblyWorkflowRevision),
+                typeof(LabKitAssemblyRun),
+                typeof(LabKitAssemblyStepRecord),
+                typeof(LabKitAssemblyUse)
+            });
+            Assert.Contains(foreignKey.PrincipalEntityType.ClrType,
+                new[] { typeof(User), typeof(SampleShippingStockKit) });
+        });
     }
 
     [Fact]
@@ -581,7 +600,7 @@ public class PersistenceTests
     {
         using var dbContext = CreateDbContext();
         var migrations = dbContext.Database.GetMigrations().ToArray();
-        Assert.Equal(20, migrations.Length);
+        Assert.Equal(23, migrations.Length);
         Assert.EndsWith("_InitialPSeqOperationsRebased", migrations[0]);
         Assert.EndsWith("_AddSampleSequencingRuns", migrations[1]);
         Assert.EndsWith("_AddSequencingRunLineage", migrations[2]);
@@ -600,6 +619,9 @@ public class PersistenceTests
         Assert.EndsWith("_AddReagentManufacturing", migrations[15]);
         Assert.EndsWith("_ReagentIdentityAndInventoryUnits", migrations[16]);
         Assert.EndsWith("_LinkPhaenoReagentProducts", migrations[17]);
+        Assert.EndsWith("_EnforceUniqueLabStepNames", migrations[^3]);
+        Assert.EndsWith("_AddSingleUseMasterMix", migrations[^2]);
+        Assert.EndsWith("_CloseMasterMixGaps", migrations[^1]);
     }
 
     private static void AssertUniqueIndex<TEntity>(

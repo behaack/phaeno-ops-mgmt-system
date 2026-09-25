@@ -1638,7 +1638,7 @@
       "slug": "lab-protocol-execution",
       "parentSlug": "lab-operations",
       "title": "Service workflows, protocol control, and execution",
-      "summary": "Configure service and reagent workflows, controlled Lab steps, material use, and actual performer and time.",
+      "summary": "Configure service, reagent, and master-mix workflows; record controlled Lab steps and material use.",
       "order": 54,
       "reviewedAt": "2026-09-24",
       "navigationGroup": "laboratory-operations",
@@ -1651,7 +1651,9 @@
       ],
       "taskKeywords": [
         "Service workflows, protocol control, and execution",
-        "lab protocol execution"
+        "lab protocol execution",
+        "master mix preparation",
+        "shared library tray mix"
       ],
       "aliases": [
         "QC",

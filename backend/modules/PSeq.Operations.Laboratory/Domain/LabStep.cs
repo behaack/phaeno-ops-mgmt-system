@@ -5,6 +5,7 @@ public sealed class LabStep : LabAuditedEntity
     public Guid Id { get; private set; } = Guid.NewGuid();
     public string Key { get; private set; } = null!;
     public string Name { get; private set; } = null!;
+    public string NormalizedName { get; private set; } = null!;
     public string? Description { get; private set; }
     public int LatestVersion { get; private set; }
     public DateTime? RetiredAtUtc { get; private set; }
@@ -37,7 +38,8 @@ public sealed class LabStep : LabAuditedEntity
     public void UpdateDetails(string name, string? description)
     {
         RequireCurrent();
-        Name = Required(name, nameof(name), 255);
+        Name = Required(name, nameof(name), 160);
+        NormalizedName = Name.ToUpperInvariant();
         Description = Optional(description, 2000);
     }
 
@@ -51,6 +53,7 @@ public sealed class LabStep : LabAuditedEntity
 
 public sealed class LabStepVersion
 {
+    public const string UnconfiguredDefinitionJson = "{}";
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid LabStepId { get; private set; }
     public int StepVersion { get; private set; }
@@ -63,6 +66,22 @@ public sealed class LabStepVersion
     public string? ApprovalOverrideReason { get; private set; }
 
     private LabStepVersion() { }
+
+    public bool IsUnconfiguredDraft => Status == LabProtocolStatus.Draft && DefinitionJson == UnconfiguredDefinitionJson;
+
+    public static LabStepVersion CreateInitialDraft(Guid labStepId, Guid authoredByUserId, DateTime authoredAtUtc)
+    {
+        if (labStepId == Guid.Empty) throw new ArgumentException("A Lab step is required.", nameof(labStepId));
+        if (authoredByUserId == Guid.Empty) throw new ArgumentException("An author is required.", nameof(authoredByUserId));
+        return new LabStepVersion
+        {
+            LabStepId = labStepId,
+            StepVersion = 1,
+            DefinitionJson = UnconfiguredDefinitionJson,
+            AuthoredByUserId = authoredByUserId,
+            AuthoredAtUtc = authoredAtUtc
+        };
+    }
 
     public LabStepVersion(Guid labStepId, int stepVersion, string definitionJson,
         Guid authoredByUserId, DateTime authoredAtUtc)
@@ -77,6 +96,7 @@ public sealed class LabStepVersion
     public void Approve(Guid actorUserId, DateTime utcNow, bool enforceActorSeparation = true)
     {
         if (Status != LabProtocolStatus.Draft) throw new InvalidOperationException("Only a draft Lab step can be approved.");
+        if (IsUnconfiguredDraft) throw new InvalidOperationException("Add instructions and save the Lab step draft before approval.");
         if (actorUserId == Guid.Empty) throw new ArgumentException("An approval actor is required.");
         if (enforceActorSeparation && actorUserId == AuthoredByUserId)
             throw new InvalidOperationException("A Lab step author cannot approve the same Lab step version.");

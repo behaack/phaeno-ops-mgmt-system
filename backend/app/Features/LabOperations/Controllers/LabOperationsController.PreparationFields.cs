@@ -51,7 +51,7 @@ public sealed partial class LabOperationsController
     }
 
     private async Task<Dictionary<Guid, Dictionary<string, JsonElement>>> RecordPreparationFieldsAsync(
-        LabProtocolStepDefinition step, LabPreparationStepInput input, List<LabPreparationMember> members,
+        LabPreparationBatch batch, LabProtocolStepDefinition step, LabPreparationStepInput input, List<LabPreparationMember> members,
         List<LabSpecimenAttempt> attempts, List<LabProtocolExecution> executions, LabPreparationCommand request, Guid actorId, CancellationToken ct)
     {
         var fields = PreparationResourceFields(step);
@@ -82,6 +82,12 @@ public sealed partial class LabOperationsController
         }
         var uncertainLots = new Dictionary<Guid, (LabMaterialLot Lot, string Reason)>();
         var exhaustedLots = new Dictionary<Guid, LabMaterialLot>();
+        var mixFields = fields.Where(field => field.Type == "material" && field.Material?.MasterMixWorkflowId.HasValue == true).ToDictionary(field => field.Key);
+        var mixIds = entries.Where(entry => mixFields.ContainsKey(entry.FieldKey) && entry.ResourceId.HasValue)
+            .Select(entry => entry.ResourceId!.Value).Distinct().Order().ToArray();
+        foreach (var mixId in mixIds) await PhaenoPortal.App.Features.OrderManagement.Services.SampleShippingPackingData.LockAsync(dbContext, $"master-mix:{mixId}", ct);
+        var mixes = await dbContext.LabMasterMixPreparations.Where(item => mixIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, ct);
+        var mixTotals = new Dictionary<string, (LabMasterMixPreparation Mix, decimal Quantity)>();
         foreach (var entry in entries)
         {
             var field = fields.Single(f => f.Key == entry.FieldKey);
@@ -89,6 +95,8 @@ public sealed partial class LabOperationsController
                 throw new ArgumentException("Decimal text amounts are only available for biological material transfers.");
             if (field.Type != "biologicalMaterial" && (entry.ExhaustionReason is not null || entry.Barcode is not null || entry.SourceBarcode is not null))
                 throw new ArgumentException("A biological material field is required to confirm a tube transfer or exhausted source.");
+            if (field.Material?.MasterMixWorkflowId is null && entry.MixBarcode is not null)
+                throw new ArgumentException("A master-mix barcode applies only to a configured master-mix field.");
             if (entry.MaterialExhausted && field.Type != "biologicalMaterial" && !(field.Type == "material" && field.IncludeTracking))
                 throw new ArgumentException("Material exhausted requires a tracked material lot or a biological source tube.");
             var isException = field.Type == "material" && field.Scope == "shared" && entry.MemberId.HasValue;
@@ -101,7 +109,7 @@ public sealed partial class LabOperationsController
             var common = entries.SingleOrDefault(e => e.FieldKey == entry.FieldKey && e.MemberId is null)
                 ?? throw new ArgumentException("Record the common material amount and lot before sample exceptions.");
             if (entry.ResourceId != common.ResourceId || entry.ResourceVersion != common.ResourceVersion || entry.QuantityUnit != common.QuantityUnit)
-                throw new ArgumentException("Sample amount exceptions must retain the common lot and unit.");
+                throw new ArgumentException("Sample amount exceptions must retain the common material source and unit.");
         }
         // Input transfers precede yield measurement even when authors reorder the displayed fields.
         foreach (var field in fields.OrderBy(f => f.Type == "output" ? 1 : 0))
@@ -144,7 +152,8 @@ public sealed partial class LabOperationsController
                     if (field.Type == "material" && (entry.ProductId.HasValue || entry.Name is not null || entry.Vendor is not null))
                         throw new ArgumentException("Material identity is fixed by the step configuration. Record only quantity and the requested lot.");
                     if (field.Type != "material" && (entry.ProductId.HasValue || entry.Vendor is not null)) throw new ArgumentException("Product and vendor are configured only for materials.");
-                    if (field.Type == "material" && !field.IncludeTracking && entry.ResourceId.HasValue) throw new ArgumentException("This field does not include lot tracking.");
+                    var isMasterMix = field.Type == "material" && field.Material?.MasterMixWorkflowId.HasValue == true;
+                    if (field.Type == "material" && !field.IncludeTracking && !isMasterMix && entry.ResourceId.HasValue) throw new ArgumentException("This field does not include lot tracking.");
                     if (field.Material?.Vendor is { Length: > 0 } vendor) name += $" · Vendor {vendor}";
                     if (field.Material?.ProductId is Guid productId) name += $" · Product {field.Material.ProductNumber} · {productId}";
                     if (field.Type == "material")
@@ -159,7 +168,29 @@ public sealed partial class LabOperationsController
                             throw new ArgumentException($"{field.Label}: use the quantity unit defined by this step ({field.Unit}).");
                         if (entry.Quantity > decimal.MaxValue / Math.Max(1, covered.Length)) throw new ArgumentException("The total quantity is too large.");
                         var total = entry.AmountUnknown ? 0 : !target.HasValue && field.Scope is "batch" or "shared" && field.QuantityBasis != "total" ? entry.Quantity!.Value * covered.Length : entry.Quantity!.Value;
-                        if (field.IncludeTracking)
+                        if (isMasterMix)
+                        {
+                            if (entry.AmountUnknown) throw new ArgumentException("Measure master-mix use before saving this step; an unknown amount cannot be reconciled across trays.");
+                            if (!entry.ResourceId.HasValue || !mixes.TryGetValue(entry.ResourceId.Value, out var mix))
+                                throw new ArgumentException("Choose a ready master-mix preparation.");
+                            if (mix.Status != LabMasterMixStatus.Ready
+                                || mix.WorkflowId != field.Material!.MasterMixWorkflowId
+                                || mix.WorkflowRevision != field.Material.MasterMixWorkflowRevision
+                                || !string.Equals(mix.QuantityUnit, entry.QuantityUnit, StringComparison.Ordinal))
+                                throw new ArgumentException("Choose a ready mix of the exact configured workflow revision and unit.");
+                            if (!string.Equals(mix.Barcode, entry.MixBarcode?.Trim(), StringComparison.OrdinalIgnoreCase))
+                                throw new ArgumentException("Scan the barcode on the selected physical master-mix container.");
+                            EnsureVersion(mix.Version, entry.ResourceVersion ?? -1);
+                            if (total > 0)
+                            {
+                                var accumulated = mixTotals.GetValueOrDefault(field.Key);
+                                if (accumulated.Mix is not null && accumulated.Mix.Id != mix.Id)
+                                    throw new ArgumentException("Use one master-mix preparation for a material field on this tray.");
+                                mixTotals[field.Key] = (mix, accumulated.Quantity + total);
+                            }
+                            name = $"{name} · Mix {mix.Id}";
+                        }
+                        else if (field.IncludeTracking)
                         {
                             var lot = await dbContext.LabMaterialLots.SingleOrDefaultAsync(l => l.Id == entry.ResourceId, ct) ?? throw Missing();
                             if (!string.IsNullOrWhiteSpace(field.Unit) && !string.Equals(field.Unit.Trim(), lot.QuantityUnit.Trim(), StringComparison.Ordinal))
@@ -195,6 +226,12 @@ public sealed partial class LabOperationsController
                 if (display is not null && step.Captures.Any(c => c.Key == field.Key))
                     foreach (var id in covered) result[id][field.Key] = JsonSerializer.SerializeToElement(display);
             }
+        }
+        foreach (var (fieldKey, use) in mixTotals)
+        {
+            use.Mix.Use(use.Quantity, DateTime.UtcNow);
+            dbContext.LabMasterMixTrayUses.Add(new(use.Mix.Id, batch.Id, request.RequestId,
+                fieldKey, use.Quantity, use.Mix.QuantityUnit, actorId, DateTime.UtcNow));
         }
         if (exhaustedLots.Keys.Any(uncertainLots.ContainsKey)) throw new ArgumentException("Resolve unknown material amounts before confirming a lot exhausted. Unknown sample usage still requires quantity reconciliation.");
         foreach (var lot in exhaustedLots.Values) lot.ConfirmExhausted(request.RequestId, actorId, DateTime.UtcNow);

@@ -21,10 +21,19 @@ public sealed partial class LabOperationsController
         var workflows = await ReadServiceWorkflowsAsync(ct);
         var versions = await dbContext.LabProtocolVersions.AsNoTracking().ToListAsync(ct);
         var stages = await dbContext.LabServiceWorkflowStages.AsNoTracking().OrderBy(s => s.Sequence).ToListAsync(ct);
+        var availableMixWorkflowIds = await dbContext.LabMasterMixWorkflows.AsNoTracking()
+            .Where(item => item.Status != LabMasterMixWorkflowStatus.Retired)
+            .Select(item => item.Id).ToHashSetAsync(ct);
         var compatible = stages.GroupBy(s => s.LabServiceWorkflowVersionId).Where(g => g.All(s =>
         {
             var p = versions.Single(v => v.Id == s.LabProtocolVersionId);
-            try { return p.Status is LabProtocolStatus.Approved or LabProtocolStatus.Active && LabProtocolDefinition.Parse(p.DefinitionJson).PreparationBatchEnabled; }
+            try
+            {
+                var definition = LabProtocolDefinition.Parse(p.DefinitionJson);
+                return p.Status is LabProtocolStatus.Approved or LabProtocolStatus.Active
+                    && definition.PreparationBatchEnabled
+                    && ReferencedMasterMixWorkflowIds(definition).All(availableMixWorkflowIds.Contains);
+            }
             catch (ArgumentException) { return false; }
         }) && g.Any(s => LabProtocolDefinition.Parse(versions.Single(v => v.Id == s.LabProtocolVersionId).DefinitionJson).Steps.Any(step => step.QcGate is not null))).Select(g => g.Key).ToHashSet();
         return new { formats = formats.Select(f => new { f.Id, f.Version, f.IsActive, layout = LabTrayLayout.Read(f.LayoutJson) }),
@@ -76,7 +85,8 @@ public sealed partial class LabOperationsController
         // Serialize name allocation before reading mutable configuration so concurrent creates
         // receive distinct identifiers without making one another's tray snapshots stale.
         await SampleShippingPackingData.LockAsync(dbContext, "lab-preparation-name", ct);
-        await RequirePreparationWorkflowAsync(request.WorkflowVersionId, ct);
+        var stages = await RequirePreparationWorkflowAsync(request.WorkflowVersionId, ct);
+        await RequireAvailableMasterMixWorkflowsForNewTrayAsync(stages, ct);
         var format = await dbContext.LabTrayFormats.SingleOrDefaultAsync(f => f.Id == request.TrayFormatId, ct) ?? throw Missing();
         if (!format.IsActive) throw Conflict("tray_retired", "Choose an active tray format.");
         dbContext.Entry(format).Property(f => f.UpdatedAt).IsModified = true;
@@ -121,6 +131,15 @@ public sealed partial class LabOperationsController
         var protocolIds = stages.Select(s => s.LabProtocolVersionId).ToList();
         var protocols = await dbContext.LabProtocolVersions.AsNoTracking().Where(p => protocolIds.Contains(p.Id)).ToDictionaryAsync(p => p.Id, ct);
         var records = await dbContext.LabPreparationRecords.AsNoTracking().Where(r => r.LabPreparationBatchId == batch.Id).OrderBy(r => r.RecordedAtUtc).ToListAsync(ct);
+        var masterMixUses = await dbContext.LabMasterMixTrayUses.AsNoTracking().Where(use => use.LabPreparationBatchId == batch.Id)
+            .OrderBy(use => use.RecordedAtUtc).ToListAsync(ct);
+        var masterMixUseIds = masterMixUses.Select(use => use.Id).ToArray();
+        var masterMixCorrections = await dbContext.LabMasterMixCorrections.AsNoTracking()
+            .Where(correction => correction.TargetKind == "TrayUse" && masterMixUseIds.Contains(correction.TargetEntryId))
+            .ToDictionaryAsync(correction => correction.TargetEntryId, ct);
+        var mixIds = masterMixUses.Select(use => use.PreparationId).Distinct().ToArray();
+        var masterMixes = await dbContext.LabMasterMixPreparations.AsNoTracking().Where(mix => mixIds.Contains(mix.Id))
+            .ToDictionaryAsync(mix => mix.Id, ct);
         var evidenceByExecution = executions.ToDictionary(e => e.Id, e => LabProtocolEvidence.Read(e.CapturedResultsJson));
         var peopleIds = evidenceByExecution.Values.SelectMany(e => e.Records)
             .SelectMany(r => new[] { r.RecordedByUserId, r.Performance?.PerformedByUserId ?? r.RecordedByUserId })
@@ -164,6 +183,13 @@ public sealed partial class LabOperationsController
                     stageSkips = a.ReadStageSkips(), executions = executions.Where(e => e.LabSpecimenAttemptId == a.Id).Select(e => new { e.Id, stageId = e.LabServiceWorkflowStageId, status = e.Status.ToString(),
                         evidence = evidenceByExecution[e.Id], blockers = evidenceByExecution[e.Id].CompletionBlockers(LabProtocolDefinition.Parse(protocols[e.LabProtocolVersionId].DefinitionJson)),
                         stepPrerequisites = PreparationStepPrerequisites(e, protocols[e.LabProtocolVersionId]) }) }; }),
+            masterMixUses = masterMixUses.Select(use => new { use.PreparationId, use.LabPreparationRecordId, use.FieldKey,
+                use.Quantity, quantityText = use.Quantity.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                use.QuantityUnit, use.RecordedAtUtc, use.VoidedAtUtc, use.VoidedByUserId,
+                correctionAction = masterMixCorrections.GetValueOrDefault(use.Id)?.Action,
+                correctionReason = masterMixCorrections.GetValueOrDefault(use.Id)?.Reason,
+                masterMixes[use.PreparationId].WorkflowName,
+                masterMixes[use.PreparationId].WorkflowRevision }),
             recorders, records = records.Select(r => new { r.Id, r.Action, r.RecordedAtUtc, r.ActorUserId, details = PublicPreparationDetails(r.DetailsJson) }) };
     }
 
@@ -270,5 +296,24 @@ public sealed partial class LabOperationsController
         }
         if (!hasQc) throw Conflict("preparation_qc_required", "A preparation workflow needs a defined QC gate to establish library eligibility.");
         return stages;
+    }
+
+    private async Task RequireAvailableMasterMixWorkflowsForNewTrayAsync(
+        IReadOnlyList<LabServiceWorkflowStage> stages, CancellationToken ct)
+    {
+        var protocolIds = stages.Select(stage => stage.LabProtocolVersionId).Distinct().ToArray();
+        var protocols = await dbContext.LabProtocolVersions.AsNoTracking()
+            .Where(item => protocolIds.Contains(item.Id)).Select(item => item.DefinitionJson).ToArrayAsync(ct);
+        var mixWorkflowIds = protocols.SelectMany(json =>
+                ReferencedMasterMixWorkflowIds(LabProtocolDefinition.Parse(json)))
+            .Distinct().OrderBy(id => id).ToArray();
+        foreach (var workflowId in mixWorkflowIds)
+            await SampleShippingPackingData.LockAsync(dbContext, $"master-mix-workflow:{workflowId}", ct);
+        if (mixWorkflowIds.Length == 0) return;
+        var available = await dbContext.LabMasterMixWorkflows.AsNoTracking()
+            .Where(item => mixWorkflowIds.Contains(item.Id) && item.Status != LabMasterMixWorkflowStatus.Retired)
+            .Select(item => item.Id).ToArrayAsync(ct);
+        if (available.Length != mixWorkflowIds.Length)
+            throw Conflict("master_mix_workflow_retired", "This preparation workflow uses a retired master-mix recipe. Choose an approved workflow without that recipe for a new tray.");
     }
 }
