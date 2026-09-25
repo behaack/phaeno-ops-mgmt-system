@@ -48,3 +48,5 @@ Thumbs.db
 
 # Local Portal documentation search generations
 **/__DOCUMENTATION_INDEX/
+
+.env*
