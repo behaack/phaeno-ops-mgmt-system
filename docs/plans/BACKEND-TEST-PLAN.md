@@ -2235,7 +2235,7 @@ tests were added but not run because this follow-up did not request tests.
 
 The local kit-product migration was explicitly approved and applied to the configured development database. New domain tests cover independent approval, pinned step snapshots, ordered completion, an exact physical tube rescan, and verification invalidation. A connected PostgreSQL test covers registering a full stock roster, rejecting a mismatched rescan, retaining a reasoned correction, and verifying the corrected roster; its synthetic records are cleaned up. Both domain tests passed. The connected `SampleShippingPostgresTests` group passed 96 cases with one existing skip; the backend solution build passed with zero warnings and errors. Further connected acceptance must exercise a named Phaeno kit product through workflow/BOM approval, paired shipping specification, lot consumption, assembly completion, Customer dispatch and stock-to-return-to-Lab tube lineage; include concurrent retries and historical definitions without invented verification.
 
-The Phaeno kit catalog regression now creates a kit product, corrects its name before specification, and rejects a direct API attempt to change its SKU afterward. This new case has not been run under the request-only test rule.
+The Phaeno kit catalog regression now creates a kit product, corrects its name before specification, and rejects a direct API attempt to change its SKU afterward. The focused case passed against the configured local PostgreSQL database with its changes rolled back (1 passed, 0 skipped); the Release solution build passed.
 
 ### September 24 review-remediation coverage
 

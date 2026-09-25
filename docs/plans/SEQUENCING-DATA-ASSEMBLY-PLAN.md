@@ -2,6 +2,8 @@
 
 Status: implementation authorized September 22, 2026, through the endpoint-independent boundary. The owner confirmed that a sample sequenced multiple times must have a **separate result for each sequencing run**. The owner subsequently requested recording and executing this plan as far as possible without the external endpoint contract, URL or credentials, then explicitly authorized commit, push and deployment. Shared/production migration approval remains separate; see the [release record](../operations/sequencing-assembly-release-20260922.md).
 
+September 24 messaging direction: the focused [POMS–DPS MQTT messaging plan](POMS-DPS-MQTT-MESSAGING-PLAN.md) supersedes this plan's proposed SignalR transport between POMS and the external processing service, including its acknowledgment and final-disposition retry details. SignalR is reserved for POMS-to-UI messaging. The MQTT plan is planning only; the endpoint-independent implementation checkpoint and all scientific, traceability, QC, release, and activation gates here remain unchanged.
+
 ## Authorized endpoint-independent implementation
 
 Implement durable job records, actual start/stop timestamps and final disposition, a server-side background runner with a provider interface, ephemeral progress, scoped APIs, a view-first POMS workspace and focused verification fixtures. The production provider remains unavailable until its real contract and input/output verification requirements are supplied. Simulated processing is restricted to automated verification; it must never create scientific evidence or customer results in normal operation. Keep actual SignalR method names, credentials and payload translation out of the implementation until agreed with the external developer.

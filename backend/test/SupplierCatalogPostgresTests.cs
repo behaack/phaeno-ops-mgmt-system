@@ -56,6 +56,34 @@ public partial class SampleShippingPostgresTests
     }
 
     [PostgreSqlReferenceFact]
+    public async Task PhaenoKitSkuIsFixedFromCreationWhileUnlinkedNameCanBeCorrected()
+    {
+        await using var scope = await ShippingTestScope.CreateAsync();
+        await using var transaction = await scope.DbContext.Database.BeginTransactionAsync();
+        try
+        {
+            var catalog = scope.SupplierCatalog();
+            var producer = (await catalog.List(default)).Single(item => item.IsInternalProducer);
+            var created = await catalog.CreateProduct(producer.Id,
+                new($"TEST-KIT-{scope.Suffix}", "Original kit name", LabProductType.TransportationKitId,
+                    DefaultQuantityUnit: "each"), default);
+            var renamed = await catalog.UpdateProduct(producer.Id, created.Id,
+                new(created.ProductNumber, "Corrected kit name", LabProductType.TransportationKitId,
+                    Version: created.Version), default);
+            Assert.Equal("Corrected kit name", renamed.Description);
+
+            var changedSku = await Assert.ThrowsAsync<OrderManagementException>(() =>
+                catalog.UpdateProduct(producer.Id, created.Id,
+                    new($"TEST-CHANGED-{scope.Suffix}", renamed.Description, LabProductType.TransportationKitId,
+                        Version: renamed.Version), default));
+            Assert.Equal("kit_sku_frozen", changedSku.ErrorCode);
+            Assert.Equal(created.ProductNumber, (await scope.DbContext.LabSupplierProducts.SingleAsync(
+                item => item.Id == created.Id)).ProductNumber);
+        }
+        finally { await transaction.RollbackAsync(); scope.ClearTrackedState(); }
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task SupplierCatalogEnforcesAccessUniquenessSelectionAndFrozenKitHistory()
     {
         await using var scope = await ShippingTestScope.CreateAsync();

@@ -2787,9 +2787,9 @@ inside the workflow editor was removed. The focused component test was added
 but not run because this follow-up did not request tests. Static TypeScript
 checking passed.
 
-The Phaeno transportation-kit product case uses the **Kit name** label for the single-line name field. Its updated selector has not been rerun in this UI follow-up.
+The Phaeno transportation-kit product case uses the **Kit name** label for the single-line name field. Its updated selector passed in the focused supplier-catalog run.
 
-The product form now offers a common inventory-unit picker alongside free-text entry. The Phaeno reagent case selects a unit from the picker; the kit case checks an editable SKU at creation, and a new edit case checks that a saved kit SKU is read-only while its name remains editable. These new assertions have not been run under the request-only test rule.
+The product form now offers a common inventory-unit picker alongside free-text entry. The Phaeno reagent case selects a unit from the picker; the kit case checks an editable SKU at creation, and a new edit case checks that a saved kit SKU is read-only while its name remains editable. The focused supplier-catalog and stock-kit files passed 43 tests across three files; typecheck and lint passed.
 
 The Lab step Operator instructions error now shares the row with the Insert symbol action. The shared symbol menu has expanded, grouped choices and a bounded scrolling height. These presentation changes have not been browser checked; no additional automated tests were requested.
 
@@ -2803,7 +2803,7 @@ Cover same-author approval denial for a non-platform Protocol Administrator, cur
 
 ### Transportation kit inventory default filter (2026-09-24)
 
-Focused stock-kit tests now cover the At Phaeno default, every dispatched status under Shipped kits, direct status links, and the list control that selects the shipped view. The new assertions have not been run under the repository's request-only test rule.
+Focused stock-kit tests now cover the At Phaeno default, every dispatched status under Shipped kits, direct status links, and the list control that selects the shipped view. The focused supplier-catalog and stock-kit run passed 43 tests across three files; browser acceptance remains open.
 
 ### Single-use master mix (2026-09-24)
 

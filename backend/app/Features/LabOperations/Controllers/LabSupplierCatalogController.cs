@@ -65,7 +65,7 @@ public sealed class LabSupplierCatalogController(PSeqOperationsDbContext db, Ord
         var supplier = await db.LabSuppliers.SingleOrDefaultAsync(s => s.Id == supplierId, ct) ?? throw Missing();
         if (!supplier.IsActive) throw Invalid("Reactivate the supplier before adding products.");
         if (string.IsNullOrWhiteSpace(request.ProductNumber) || string.IsNullOrWhiteSpace(request.Description))
-            throw Invalid("Enter a product name or SKU and its description or finished kit name.");
+            throw Invalid("Enter a product name or SKU and its description or kit name.");
         if (string.IsNullOrWhiteSpace(request.DefaultQuantityUnit))
             throw Invalid("Set the product's inventory unit before saving it.");
         if (supplier.IsInternalProducer && request.ProductTypeId != LabProductType.ReagentId
@@ -111,7 +111,7 @@ public sealed class LabSupplierCatalogController(PSeqOperationsDbContext db, Ord
         var supplier = await db.LabSuppliers.AsNoTracking().SingleOrDefaultAsync(s => s.Id == supplierId, ct) ?? throw Missing();
         Version(product.Version, request.Version);
         if (string.IsNullOrWhiteSpace(request.ProductNumber) || string.IsNullOrWhiteSpace(request.Description))
-            throw Invalid("Enter a product name or SKU and its description or finished kit name.");
+            throw Invalid("Enter a product name or SKU and its description or kit name.");
         if (supplier.IsInternalProducer && request.ProductTypeId != product.ProductTypeId)
             throw Invalid("A Phaeno product cannot change between Reagent and Transportation kit. Create a separate product.");
         if (supplier.IsInternalProducer && request.ProductTypeId == LabProductType.TransportationKitId
@@ -124,12 +124,15 @@ public sealed class LabSupplierCatalogController(PSeqOperationsDbContext db, Ord
         if (supplier.IsInternalProducer && string.IsNullOrWhiteSpace(request.ProductNumber))
             throw Invalid("Enter the product name or SKU.");
         if (supplier.IsInternalProducer && product.ProductTypeId == LabProductType.TransportationKitId
-            && (!string.Equals(product.ProductNumber, request.ProductNumber.Trim(), StringComparison.Ordinal)
-                || !string.Equals(product.Description, request.Description.Trim(), StringComparison.Ordinal))
+            && !string.Equals(product.ProductNumber, request.ProductNumber.Trim(), StringComparison.Ordinal))
+            throw new OrderManagementException("kit_sku_frozen",
+                "A transportation kit SKU cannot change after the product is created. Create a new product for a different SKU.", 409);
+        if (supplier.IsInternalProducer && product.ProductTypeId == LabProductType.TransportationKitId
+            && !string.Equals(product.Description, request.Description.Trim(), StringComparison.Ordinal)
             && await db.SampleShippingContainerTypes.AsNoTracking()
                 .AnyAsync(item => item.FinishedKitProductId == product.Id, ct))
             throw new OrderManagementException("kit_identity_frozen",
-                "A kit with a shipping specification keeps its SKU and name. Create a new product for a different identity.", 409);
+                "A kit with a shipping specification keeps its name. Create a new product for a different name.", 409);
         var type = await ProductType(request.ProductTypeId, product.ProductTypeId, ct);
         if (supplier.IsInternalProducer && product.ProductTypeId == LabProductType.ReagentId)
         {

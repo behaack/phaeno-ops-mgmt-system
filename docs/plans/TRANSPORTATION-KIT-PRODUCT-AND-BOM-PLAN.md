@@ -27,6 +27,8 @@ This plan continues the [sample shipping and intake plan](SAMPLE-SHIPPING-AND-IN
 
 The product SKU identifies the kind of finished kit; the `KIT-` barcode identifies one physical instance. Do not add a separate finished-kit lot number. Retain supplier lot and expiration facts for components when applicable; those identify purchased batches, not the finished kit. Do not substitute a product SKU, a supplier product number, or a tube barcode for the physical kit identity.
 
+The administrator enters the SKU when creating the Phaeno transportation-kit product. It is read-only thereafter, and the API rejects a changed SKU even before a shipping specification exists. The **Kit name** can be corrected until a shipping specification is linked; then the name is fixed as well. Product inventory units offer a common-unit picker while retaining free-text entry for valid units outside the list. A finished kit's unit remains `each` and read-only.
+
 ## First-release workflow
 
 1. In **Suppliers & products**, an authorized administrator creates a Phaeno **Transportation kit** product with a stable name and SKU. The built-in Phaeno supplier remains visibly flagged as an internal producer. The existing **Shipping Container** type remains available for purchased outer shippers; Reagent remains its own product type.
@@ -58,6 +60,8 @@ The current Lab protocol resource captures are scoped to preparation batches and
 Place **Transportation kits** directly after **Reagent manufacturing** in the Lab operations sidebar, before the divider leading to **Suppliers & products**. The workspace owns **Inventory** (default), **Kit requests**, and the existing shipment-specific **Kits sent** work. **Prepare kit** is an action from Inventory, not the name of the inventory itself. **Receipt & accession** then contains only **Receive shipments** and **Accession samples**.
 
 Inventory shows searchable individual kit records and counts by finished product/SKU, status, and location. Distinguish ready at Phaeno, on the way, Customer-confirmed available, assigned, in use, and needs-review states. Unknown or unconfirmed stock must not be shown as verified available. Opening a kit shows its versioned product/BOM and physical history. Preserve current permissions and Customer/Department/location isolation. Update navigation from requests and delivery locations, return links, filters, URL-backed tabs, help, and older bookmarked `receiptTab` links without changing the underlying dispatch or receipt transaction.
+
+The Inventory list defaults to **At Phaeno** (preparing and ready physical kits). Its **Shipped kits** filter includes every dispatched state, including in use and needs review, while individual statuses and **All statuses** remain available for investigation. Search, pagination, record links, and clear filters preserve or restore the selected list view through URL state. A shipped kit without a recorded delivery location remains outside the default Phaeno stock view even though it needs review.
 
 Product configuration stays with its catalog identity. **Lab settings → Workflows** links the kit assembly procedure to that product. Samples & shipping settings may link to, preview, and approve its shipping specification; it must not create a second independently named “container size” product. Retain sample types, destinations, shared shipping procedures, and assignments as their existing controlled records.
 

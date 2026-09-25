@@ -28,7 +28,11 @@ describe('supplier catalog', () => {
     expect(screen.getByLabelText(/Product type/)).toHaveProperty('value', reagentProductTypeId)
     fireEvent.change(screen.getByLabelText(/Product name/), { target: { value: 'Reagent C' } })
     fireEvent.change(screen.getByLabelText(/Product description/), { target: { value: 'Manufactured reagent' } })
-    fireEvent.change(screen.getByLabelText(/Inventory unit/), { target: { value: 'mL' } })
+    const unit = screen.getByRole('textbox', { name: 'Inventory unit' }) as HTMLInputElement
+    fireEvent.change(unit, { target: { value: 'custom' } })
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Units for Inventory unit' }), { key: 'ArrowDown' })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'mL' }))
+    expect(unit.value).toBe('mL')
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     await waitFor(() => expect(mocks.product).toHaveBeenCalledWith(phaeno.id,
       expect.objectContaining({ productNumber: 'Reagent C', productTypeId: reagentProductTypeId,
@@ -42,13 +46,27 @@ describe('supplier catalog', () => {
     mount(phaeno.id)
     fireEvent.click(screen.getByRole('button', { name: 'New product' }))
     fireEvent.change(screen.getByLabelText(/Product type/), { target: { value: transportationKitProductTypeId } })
+    expect(screen.getByLabelText('SKU *')).toHaveProperty('readOnly', false)
     fireEvent.change(screen.getByLabelText('SKU *'), { target: { value: 'TRANS-20' } })
-    fireEvent.change(screen.getByLabelText(/Finished kit name/), { target: { value: '20-tube RNA transportation kit' } })
-    expect(screen.getByLabelText(/Inventory unit/)).toHaveProperty('value', 'each')
+    fireEvent.change(screen.getByLabelText(/Kit name/), { target: { value: '20-tube RNA transportation kit' } })
+    expect(screen.getByRole('textbox', { name: 'Inventory unit' })).toHaveProperty('value', 'each')
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     await waitFor(() => expect(mocks.product).toHaveBeenCalledWith(phaeno.id,
       expect.objectContaining({ productNumber: 'TRANS-20', description: '20-tube RNA transportation kit',
         productTypeId: transportationKitProductTypeId, defaultQuantityUnit: 'each' }), undefined))
+  })
+
+  it('keeps a saved Phaeno kit SKU read-only while its unlinked name remains editable', async () => {
+    const kitProduct = { id: '82000000-0000-4000-8000-000000000093', supplierId: '81000000-0000-4000-8000-000000000099', productNumber: 'TRANS-20', description: '20-tube kit', kind: 'Other' as const, productTypeId: transportationKitProductTypeId, productTypeName: 'Transportation kit', productTypeIsActive: true, defaultQuantityUnit: 'each', isActive: true, version: 1 }
+    const phaeno = { id: kitProduct.supplierId, name: 'Phaeno', isActive: true, isInternalProducer: true, version: 1, products: [kitProduct] }
+    mocks.catalog.mockReturnValue({ data: [...supplierCatalogFixture, phaeno], isPending: false, isError: false })
+    mount(phaeno.id)
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions for 20-tube kit' }), { button: 0, ctrlKey: false })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Edit' }))
+    expect(screen.getByLabelText('SKU *')).toHaveProperty('value', 'TRANS-20')
+    expect(screen.getByLabelText('SKU *')).toHaveProperty('readOnly', true)
+    expect(screen.getByLabelText('Kit name *')).toHaveProperty('readOnly', false)
+    expect(screen.getByText('The SKU is fixed after creation. Create a new kit product for a different SKU.')).toBeTruthy()
   })
 
   it('edits the selected supplier directly from its row', async () => {
@@ -115,7 +133,7 @@ describe('supplier catalog', () => {
     expect(await screen.findByText('Enter a product description.')).toBeTruthy()
     expect(mocks.product).not.toHaveBeenCalled()
     fireEvent.change(screen.getByLabelText(/Product description/), { target: { value: 'New tube' } })
-    fireEvent.change(screen.getByLabelText(/Inventory unit/), { target: { value: 'each' } })
+    fireEvent.change(screen.getByRole('textbox', { name: 'Inventory unit' }), { target: { value: 'each' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     expect(await screen.findByText('Changes were not saved')).toBeTruthy()
     expect(screen.getByLabelText(/Product name/)).toHaveProperty('value', 'T-NEW')

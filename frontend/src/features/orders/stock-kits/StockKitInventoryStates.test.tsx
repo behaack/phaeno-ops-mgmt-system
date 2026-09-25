@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { standardKit } from '#/test-helpers/shipping-containers'
 import { StockKitFacts } from './StockKitFacts'
 import { StockKitBarcodeDialog } from './StockKitBarcodeDialog'
-import { parseStockKitListSearch, stockKitState, stockKitStatus } from './stock-kit-utils'
+import { parseStockKitListSearch, stockKitMatchesStatusFilter, stockKitState, stockKitStatus } from './stock-kit-utils'
 
 vi.mock('@tanstack/react-router', () => ({ Link: ({ children, to, params }: { children: ReactNode; to: string; params?: Record<string, string> }) => <a href={Object.entries(params ?? {}).reduce((path, [key, value]) => path.replace(`$${key}`, value), to)}>{children}</a> }))
 describe('staff location inventory and physical identity', () => {
@@ -15,6 +15,21 @@ describe('staff location inventory and physical identity', () => {
   it.each([['OnTheWay', 'On the way'], ['Available', 'Available'], ['Assigned', 'Assigned'], ['InUse', 'In use'], ['NeedsReview', 'Needs review']] as const)('preserves the authoritative %s state', (status, label) => {
     expect(stockKitStatus(stockKitState({ ...standardKit, status }))).toBe(label)
     expect(parseStockKitListSearch({ kitStatus: status }).kitStatus).toBe(status)
+  })
+  it('shows only Phaeno stock by default and finds every dispatched state under Shipped kits', () => {
+    expect(parseStockKitListSearch({}).kitStatus).toBe('inventory')
+    expect(parseStockKitListSearch({ kitStatus: 'unknown' }).kitStatus).toBe('inventory')
+    expect(parseStockKitListSearch({ kitStatus: 'shipped' }).kitStatus).toBe('shipped')
+    const ready = { ...standardKit, container: { ...standardKit.container, capacity: 1 }, tubes: [{ id: 'one', supplierBarcode: 'TUBE-001' }], tubesVerifiedAt: '2026-09-24T12:00:00Z' }
+    expect(stockKitMatchesStatusFilter(ready)).toBe(true)
+    expect(stockKitMatchesStatusFilter(ready, 'shipped')).toBe(false)
+    for (const status of ['Preparing', 'OnTheWay', 'Available', 'Assigned', 'InUse', 'NeedsReview'] as const) {
+      const prepared = { ...standardKit, status, container: { ...standardKit.container, capacity: 1 }, tubes: [{ id: 'one', supplierBarcode: 'TUBE-001' }] }
+      const atPhaeno = status === 'Preparing'
+      expect(stockKitMatchesStatusFilter(prepared)).toBe(atPhaeno)
+      expect(stockKitMatchesStatusFilter(prepared, 'shipped')).toBe(!atPhaeno)
+      expect(stockKitMatchesStatusFilter(prepared, 'all')).toBe(true)
+    }
   })
   it('keeps origin provenance distinct from the assigned Job and receipt', () => {
     render(<StockKitFacts kit={{ ...standardKit, status: 'Assigned', deliveryLocationId: 'location-a', deliveryLocationLabel: 'Main laboratory', originatingJobNumber: 'JOB-A', transportationKitRequestId: 'request-a', customerReceivedAt: '2026-09-09T12:00:00Z', assignedJobId: 'job-b', assignedJobNumber: 'JOB-B', reservedSampleShipmentId: 'shipment-b', organizationName: 'Example Customer', departmentName: 'Research' }} />)
