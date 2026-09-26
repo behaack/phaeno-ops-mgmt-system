@@ -32,6 +32,63 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 public partial class LabOperationsCommercialHandoffPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task RetiredAssemblyOrInactiveKitComponentBlocksNewOrderingAndQuoteAcceptance()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        var quoted = await scope.CreateQuotedOrderAsync();
+        var sampleTypeId = await scope.DbContext.LabServiceOrders.AsNoTracking()
+            .Where(item => item.Id == quoted.OrderId).Select(item => item.SampleTypeDefinitionId).SingleAsync();
+        Assert.NotNull(sampleTypeId);
+        var anchorId = await scope.DbContext.SampleTypeDefinitions.AsNoTracking()
+            .Where(item => item.Id == sampleTypeId).Select(item => item.DefinitionKey).Join(
+                scope.DbContext.SampleTypeDefinitions.AsNoTracking().Where(item => item.Revision == 1),
+                key => key, item => item.DefinitionKey, (_, item) => item.Id).SingleAsync();
+        var definition = await scope.DbContext.SampleShippingContainerDefinitions.AsNoTracking()
+            .Where(item => item.ContainerType.SampleTypeAnchorId == anchorId && item.IsActive)
+            .SingleAsync();
+        var context = new[] { new ContainerSampleTypeContext(sampleTypeId.Value) };
+        async Task AssertReady(bool expected)
+        {
+            scope.DbContext.ChangeTracker.Clear();
+            var choices = await LabOrderSampleTypeChoices.ReadAsync(scope.DbContext, default);
+            Assert.Equal(expected, choices.Any(item => item.Id == sampleTypeId));
+            var kits = await new SampleShippingContainerCatalogService(scope.DbContext)
+                .ReadCompatibleAsync(context, default);
+            Assert.Equal(expected, kits.Any(item => item.Id == definition.Id));
+            var listed = await new SampleShippingContainerCatalogService(scope.DbContext)
+                .ReadAsync(definition.Id, default);
+            Assert.Equal(expected, listed.NewWorkReady);
+        }
+
+        await AssertReady(true);
+        var componentId = await scope.DbContext.Set<ShippingKitContent>().AsNoTracking()
+            .Where(item => item.ContainerDefinitionId == definition.Id).Select(item => item.SupplierProductId).FirstAsync();
+        var component = await scope.DbContext.LabSupplierProducts.SingleAsync(item => item.Id == componentId);
+        component.Update(component.ProductNumber, component.Description, component.ProductTypeId, false);
+        await scope.DbContext.SaveChangesAsync();
+        await AssertReady(false);
+        component = await scope.DbContext.LabSupplierProducts.SingleAsync(item => item.Id == componentId);
+        component.Update(component.ProductNumber, component.Description, component.ProductTypeId, true);
+        await scope.DbContext.SaveChangesAsync();
+        await AssertReady(true);
+        var draft = await scope.CreateDraftOrderAsync();
+
+        var workflow = await scope.DbContext.LabKitAssemblyWorkflowRevisions
+            .SingleAsync(item => item.Id == definition.AssemblyWorkflowRevisionId);
+        workflow.Retire();
+        await scope.DbContext.SaveChangesAsync();
+        await AssertReady(false);
+        var error = await Assert.ThrowsAsync<OrderManagementException>(() => scope.AcceptQuoteAsync(quoted));
+        Assert.Equal("sample_type_unavailable", error.ErrorCode);
+        var submitError = await Assert.ThrowsAsync<OrderManagementException>(() => scope.SubmitDraftOrderAsync(draft.Id, draft.Version));
+        Assert.Equal("sample_type_unavailable", submitError.ErrorCode);
+        Assert.Equal(LabServiceOrderStatus.QuoteIssued, await scope.DbContext.LabServiceOrders.AsNoTracking()
+            .Where(item => item.Id == quoted.OrderId).Select(item => item.Status).SingleAsync());
+        Assert.Equal(LabServiceOrderStatus.DraftRequest, await scope.DbContext.LabServiceOrders.AsNoTracking()
+            .Where(item => item.Id == draft.Id).Select(item => item.Status).SingleAsync());
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task AuthorizedPhaenoUserInitiatesCustomerOrderBeforeCustomerAdministratorActivation()
     {
         await using var scope = await HandoffTestScope.CreateAsync();
@@ -1505,6 +1562,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                     await dbContext.Database.MigrateAsync();
                 }
                 Assert.Empty(await dbContext.Database.GetPendingMigrationsAsync());
+                await using var setupTransaction = await dbContext.Database.BeginTransactionAsync();
                 var suffix = Guid.NewGuid().ToString("N");
                 var customerOrganization = new Organization(
                     $"Lab handoff customer {suffix}",
@@ -1533,10 +1591,11 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                     platformMembership);
                 await dbContext.SaveChangesAsync();
                 var catalogItem = await dbContext.QboCatalogItems
-                    .FirstOrDefaultAsync(item => item.IsActive
-                        && item.ExternalItemId == OrderServiceKeys.PSeqLabService
-                        && item.ServiceFamily == CatalogServiceFamily.PSeqLabService
-                        && item.SalesUnit == OrderSalesUnits.Specimen);
+                    .FirstOrDefaultAsync(item => item.ExternalItemId == OrderServiceKeys.PSeqLabService);
+                if (catalogItem is not null && (!catalogItem.IsActive
+                    || catalogItem.ServiceFamily != CatalogServiceFamily.PSeqLabService
+                    || catalogItem.SalesUnit != OrderSalesUnits.Specimen))
+                    throw new InvalidOperationException("The reference database has an incompatible PSeq Lab Service catalog item.");
                 var createdCatalogItem = false;
                 if (catalogItem is null)
                 {
@@ -1566,7 +1625,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 await dbContext.SaveChangesAsync();
                 var shippingConfiguration = await EnsureShippingConfigurationAsync(
                     dbContext,
-                    suffix);
+                    suffix,
+                    platformUser.Id);
                 var scope = new HandoffTestScope(
                     dbContext,
                     customerOrganization,
@@ -1581,6 +1641,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 {
                     scope.catalogItemIds.Add(catalogItem.Id);
                 }
+                await setupTransaction.CommitAsync();
                 return scope;
             }
             catch
@@ -1592,122 +1653,151 @@ public partial class LabOperationsCommercialHandoffPostgresTests
 
         private static async Task<ShippingConfigurationFixture> EnsureShippingConfigurationAsync(
             PSeqOperationsDbContext dbContext,
-            string suffix)
+            string suffix,
+            Guid platformUserId)
         {
             var now = DateTime.UtcNow;
             var sampleTypes = await dbContext.SampleTypeDefinitions
-                .Where(item => item.IsActive
-                    && item.MaterialClass == "extracted_rna"
-                    && item.QuantityUnit == "tube"
-                    && item.EffectiveFrom <= now
+                .Where(item => item.IsActive && item.MaterialClass == "extracted_rna"
+                    && item.QuantityUnit == "tube" && item.EffectiveFrom <= now
                     && (!item.EffectiveTo.HasValue || item.EffectiveTo > now))
                 .ToListAsync();
             if (sampleTypes.Count > 1)
-                throw new InvalidOperationException("The reference database has more than one active extracted-RNA tube sample type.");
+                throw new InvalidOperationException("The reference database has more than one active extracted-RNA tube Sample type.");
 
             SampleTypeDefinition sampleType;
             Guid? createdSampleTypeId = null;
+            Guid? createdProcedureId = null;
+            Guid? createdProcedureLinkId = null;
             if (sampleTypes.Count == 0)
             {
+                var procedure = new SampleShippingProcedure(Guid.NewGuid(), 1, null,
+                    $"Reference shipping {suffix}", "Pack in a sealed secondary container.",
+                    "Maintain frozen temperature.", "Use an approved tracked carrier.",
+                    "Record dispatch before shipment.", "Include the POMS packing list.",
+                    "Contact Phaeno if delayed.", null, true);
                 sampleType = new SampleTypeDefinition(
-                    Guid.NewGuid(),
-                    1,
-                    null,
-                    $"rna-{suffix[..8]}",
-                    "Reference extracted RNA",
+                    Guid.NewGuid(), 1, null, $"rna-{suffix[..8]}", "Reference extracted RNA",
                     "Reference configuration for the Commercial-to-Lab handoff journey.",
-                    "extracted_rna",
-                    1,
-                    100,
-                    "tube",
-                    "Leak-proof labeled tube.",
-                    "Ship frozen.",
-                    null,
-                    "Use a secondary sealed container.",
-                    "Use the Customer sample ID only.",
-                    "Do not include patient identifiers.",
-                    "Follow the declared safety requirements.",
-                    null,
-                    48,
-                    now.AddMinutes(-5),
-                    true);
-                dbContext.SampleTypeDefinitions.Add(sampleType);
+                    "extracted_rna", 1, 100, "tube", "Leak-proof labeled tube.",
+                    "Ship frozen.", null, "Use a secondary sealed container.",
+                    "Use the Customer sample ID only.", "Do not include patient identifiers.",
+                    "Follow the declared safety requirements.", null, 48, now.AddMinutes(-5),
+                    true, procedure.Id);
+                var link = new SampleTypeProcedureLink(sampleType.Id, procedure.Id, platformUserId, now);
+                dbContext.AddRange(procedure, sampleType, link);
                 createdSampleTypeId = sampleType.Id;
+                createdProcedureId = procedure.Id;
+                createdProcedureLinkId = link.Id;
             }
             else
             {
                 sampleType = sampleTypes[0];
+                if (!sampleType.ShippingProcedureId.HasValue)
+                    throw new InvalidOperationException("The reference Sample type has no Shipping procedure.");
             }
 
-            var destinationIds = await dbContext.SampleShippingDestinations
-                .Where(item => item.IsActive
-                    && item.EffectiveFrom <= now
+            var destination = await dbContext.SampleShippingDestinations
+                .Where(item => item.IsActive && item.EffectiveFrom <= now
                     && (!item.EffectiveTo.HasValue || item.EffectiveTo > now))
-                .Select(item => item.Id)
-                .ToListAsync();
-            var activeRules = await dbContext.SampleShippingInstructionRules
-                .Where(item => item.IsActive
-                    && item.SampleTypeDefinitionId == sampleType.Id
-                    && destinationIds.Contains(item.DestinationId)
-                    && item.EffectiveFrom <= now
-                    && (!item.EffectiveTo.HasValue || item.EffectiveTo > now))
-                .ToListAsync();
-            if (activeRules.Count > 1)
-                throw new InvalidOperationException("The reference database has more than one active shipping rule for extracted-RNA tubes.");
-            if (activeRules.Count == 1)
+                .OrderBy(item => item.Name).FirstOrDefaultAsync();
+            Guid? createdDestinationId = null;
+            if (destination is null)
             {
-                await dbContext.SaveChangesAsync();
-                return new ShippingConfigurationFixture(createdSampleTypeId, null, null);
+                destination = new SampleShippingDestination(
+                    Guid.NewGuid(), 1, null, $"ref-{suffix[..8]}", "Reference receiving",
+                    "Phaeno receiving", "Phaeno", "1 Reference Way", null, "Seattle",
+                    "WA", "98101", "US", null, $"receiving-{suffix[..8]}@example.com",
+                    "Monday through Friday", "America/Los_Angeles", null,
+                    "Deliver to receiving.", null, false, now.AddMinutes(-5), true);
+                dbContext.SampleShippingDestinations.Add(destination);
+                createdDestinationId = destination.Id;
             }
-
-            var destination = new SampleShippingDestination(
-                Guid.NewGuid(),
-                1,
-                null,
-                $"ref-{suffix[..8]}",
-                "Reference receiving",
-                "Phaeno receiving",
-                "Phaeno",
-                "1 Reference Way",
-                null,
-                "Seattle",
-                "WA",
-                "98101",
-                "US",
-                null,
-                $"receiving-{suffix[..8]}@example.com",
-                "Monday through Friday",
-                "America/Los_Angeles",
-                null,
-                "Deliver to receiving.",
-                null,
-                false,
-                now.AddMinutes(-5),
-                true);
-            var rule = new SampleShippingInstructionRule(
-                Guid.NewGuid(),
-                1,
-                null,
-                destination.Id,
-                sampleType.Id,
-                $"ref-{suffix[..8]}",
-                "Pack in a sealed secondary container.",
-                "Maintain frozen temperature.",
-                "Use an approved tracked carrier.",
-                "Record dispatch before shipment.",
-                "Deliver during receiving hours.",
-                "Include the POMS packing list.",
-                "Contact Phaeno if the shipment is delayed.",
-                null,
-                false,
-                now.AddMinutes(-5),
-                true);
-            dbContext.AddRange(destination, rule);
             await dbContext.SaveChangesAsync();
-            return new ShippingConfigurationFixture(
-                createdSampleTypeId,
-                destination.Id,
-                rule.Id);
+            var (defaultSystemId, previousDefaultDestinationKey, createdDefaultSystem) =
+                await SetDefaultDestinationAsync(dbContext, destination.Id);
+
+            var anchorId = await dbContext.SampleTypeDefinitions
+                .Where(item => item.DefinitionKey == sampleType.DefinitionKey && item.Revision == 1)
+                .Select(item => item.Id).SingleAsync();
+            var hasKit = await dbContext.SampleShippingContainerDefinitions.AnyAsync(item =>
+                item.ContainerType.SampleTypeAnchorId == anchorId && item.IsActive
+                && item.EffectiveFrom <= now && (!item.EffectiveTo.HasValue || item.EffectiveTo > now)
+                && item.AssemblyWorkflowRevisionId.HasValue && item.KitContents.Any());
+            Guid? createdKitTypeId = null;
+            Guid? createdKitDefinitionId = null;
+            Guid? createdWorkflowId = null;
+            Guid? createdWorkflowRevisionId = null;
+            Guid? createdFinishedProductId = null;
+            Guid? createdComponentSupplierId = null;
+            Guid[] createdComponentProductIds = [];
+            if (!hasKit)
+            {
+                var phaeno = await dbContext.LabSuppliers.SingleAsync(item => item.IsInternalProducer);
+                var componentSupplier = new LabSupplier($"TEST-HANDOFF-{suffix}");
+                var sku = $"TRANS-{suffix}";
+                var finished = new LabSupplierProduct(phaeno.Id, sku, "Reference Transportation kit",
+                    LabProductType.TransportationKitId);
+                var tube = new LabSupplierProduct(componentSupplier.Id, $"TUBE-{suffix}",
+                    "Reference tube", LabProductType.TubeId);
+                var shipper = new LabSupplierProduct(componentSupplier.Id, $"SHIPPER-{suffix}",
+                    "Reference outer shipper", LabProductType.ShippingContainerId);
+                var workflow = new LabKitAssemblyWorkflow(finished.Id);
+                var workflowRevision = new LabKitAssemblyWorkflowRevision(workflow.Id, 1,
+                    [new(Guid.NewGuid(), "Pack kit", "Pack the approved contents.")], platformUserId, now);
+                workflowRevision.Components.Add(new(workflowRevision.Id, tube.Id, 100, "Tube", 0));
+                workflowRevision.Components.Add(new(workflowRevision.Id, shipper.Id, 1, "ShippingContainer", 1));
+                workflowRevision.Approve(platformUserId, now, "Reference fixture", true);
+                var kitType = new SampleShippingContainerType(sku, finished.Id);
+                kitType.LinkSampleType(anchorId, platformUserId, now);
+                var specification = new SampleShippingContainerDefinition(kitType.Id, 1, null,
+                    finished.Description, 100, null, null, "Use the sealed outer shipper.",
+                    now.AddMinutes(-5), null, true, 10, workflowRevision.Id,
+                    temperatureControlInstructions: "Keep the completed kit frozen in transit.");
+                specification.KitContents.Add(new(specification.Id, tube.Id, componentSupplier.Id,
+                    ShippingKitContentKind.Tube, 100, componentSupplier.Name,
+                    tube.ProductNumber, tube.Description, "Tube", 0));
+                specification.KitContents.Add(new(specification.Id, shipper.Id, componentSupplier.Id,
+                    ShippingKitContentKind.ShippingContainer, 1, componentSupplier.Name,
+                    shipper.ProductNumber, shipper.Description, "Shipping container", 1));
+                kitType.Definitions.Add(specification);
+                dbContext.AddRange(componentSupplier, finished, tube, shipper,
+                    workflow, workflowRevision, kitType);
+                await dbContext.SaveChangesAsync();
+                createdKitTypeId = kitType.Id;
+                createdKitDefinitionId = specification.Id;
+                createdWorkflowId = workflow.Id;
+                createdWorkflowRevisionId = workflowRevision.Id;
+                createdFinishedProductId = finished.Id;
+                createdComponentSupplierId = componentSupplier.Id;
+                createdComponentProductIds = [tube.Id, shipper.Id];
+            }
+            return new ShippingConfigurationFixture(sampleType.Id, destination.Id,
+                createdSampleTypeId, createdDestinationId,
+                createdProcedureId, createdProcedureLinkId, createdKitTypeId,
+                createdKitDefinitionId, createdWorkflowId, createdWorkflowRevisionId,
+                createdFinishedProductId, createdComponentSupplierId, createdComponentProductIds,
+                defaultSystemId, previousDefaultDestinationKey, createdDefaultSystem);
+        }
+        private static async Task<(Guid SystemId, Guid? PreviousKey, bool Created)> SetDefaultDestinationAsync(
+            PSeqOperationsDbContext dbContext, Guid destinationId)
+        {
+            var definitionKey = await dbContext.SampleShippingDestinations
+                .Where(item => item.Id == destinationId)
+                .Select(item => item.DefinitionKey)
+                .SingleAsync();
+            var system = await dbContext.OrderSystemConfigurations.OrderBy(item => item.CreatedAt)
+                .FirstOrDefaultAsync();
+            var created = system is null;
+            if (system is null)
+            {
+                system = new OrderSystemConfiguration(30, string.Empty, "{}");
+                dbContext.OrderSystemConfigurations.Add(system);
+            }
+            var previousKey = system.DefaultShippingDestinationDefinitionKey;
+            system.SetDefaultShippingDestination(definitionKey);
+            await dbContext.SaveChangesAsync();
+            return (system.Id, previousKey, created);
         }
 
         public async Task<QuotedOrderFixture> CreateQuotedOrderAsync(string jobName = "reference-handoff", int specimenCount = 1)
@@ -1730,6 +1820,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 "frozen",
                 "No special hazards declared.",
                 "Ship frozen");
+            order.SelectSampleType(shippingConfiguration.ActiveSampleTypeId, "extracted_rna");
             order.SourceGroups.Add(new LabServiceSourceGroup(
                 order.Id,
                 "synthetic_reference",
@@ -1754,6 +1845,26 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             return new QuotedOrderFixture(order.Id, quote.Id, order.Version);
         }
 
+        public async Task<(Guid Id, long Version)> CreateDraftOrderAsync()
+        {
+            var order = new LabServiceOrder(CustomerOrganization.Id,
+                CustomerOrganization.Departments.Single(department => department.IsDefault).Id,
+                OrderNumberGenerator.Lab(), "reference-stale-shipping", null, 1, false,
+                "synthetic_reference", "frozen", "No special hazards declared.", "Ship frozen");
+            order.SelectSampleType(shippingConfiguration.ActiveSampleTypeId, "extracted_rna");
+            order.SourceGroups.Add(new LabServiceSourceGroup(order.Id, "synthetic_reference", 1));
+            DbContext.LabServiceOrders.Add(order);
+            await DbContext.SaveChangesAsync();
+            return (order.Id, order.Version);
+        }
+
+        public async Task<LabServiceOrderDto> SubmitDraftOrderAsync(Guid orderId, long version)
+        {
+            DbContext.ChangeTracker.Clear();
+            var controller = CreateCustomerController(new InternalLabOperationsProvider(DbContext), Guid.NewGuid().ToString("N"));
+            return await controller.Submit(orderId, new VersionRequest(version), CancellationToken.None);
+        }
+
         public async Task<LabServiceOrderDto> InitiateCustomerOrderAsync(
             bool prohibitedDataConfirmed = true,
             string? idempotencyKey = null,
@@ -1776,7 +1887,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                         new LabServiceSourceGroupWriteRequest("Human PBMC", 2),
                         new LabServiceSourceGroupWriteRequest("Mouse liver", 1)
                     ],
-                    sourceRequestId),
+                    sourceRequestId,
+                    SampleTypeDefinitionId: shippingConfiguration.ActiveSampleTypeId),
                 CancellationToken.None);
         }
 
@@ -2213,17 +2325,60 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 await DbContext.CrmCompanies.Where(item => createdCrmCompanyIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await DbContext.OrganizationServiceEntitlements.Where(item => organizationIds.Contains(item.OrganizationId)).ExecuteDeleteAsync();
                 await DbContext.QboCatalogItems.Where(item => catalogItemIds.Contains(item.Id)).ExecuteDeleteAsync();
+                if (shippingConfiguration.KitDefinitionId.HasValue)
+                {
+                    await DbContext.Set<ShippingKitContent>()
+                        .Where(item => item.ContainerDefinitionId == shippingConfiguration.KitDefinitionId.Value).ExecuteDeleteAsync();
+                    await DbContext.SampleShippingContainerDefinitions
+                        .Where(item => item.Id == shippingConfiguration.KitDefinitionId.Value).ExecuteDeleteAsync();
+                }
+                if (shippingConfiguration.KitTypeId.HasValue)
+                    await DbContext.SampleShippingContainerTypes
+                        .Where(item => item.Id == shippingConfiguration.KitTypeId.Value).ExecuteDeleteAsync();
+                if (shippingConfiguration.WorkflowRevisionId.HasValue)
+                {
+                    await DbContext.LabKitAssemblyComponents
+                        .Where(item => item.WorkflowRevisionId == shippingConfiguration.WorkflowRevisionId.Value).ExecuteDeleteAsync();
+                    await DbContext.LabKitAssemblyWorkflowRevisions
+                        .Where(item => item.Id == shippingConfiguration.WorkflowRevisionId.Value).ExecuteDeleteAsync();
+                }
+                if (shippingConfiguration.WorkflowId.HasValue)
+                    await DbContext.LabKitAssemblyWorkflows
+                        .Where(item => item.Id == shippingConfiguration.WorkflowId.Value).ExecuteDeleteAsync();
+                if (shippingConfiguration.FinishedProductId.HasValue)
+                    await DbContext.LabSupplierProducts
+                        .Where(item => item.Id == shippingConfiguration.FinishedProductId.Value).ExecuteDeleteAsync();
+                await DbContext.LabSupplierProducts
+                    .Where(item => shippingConfiguration.ComponentProductIds.Contains(item.Id)).ExecuteDeleteAsync();
+                if (shippingConfiguration.ComponentSupplierId.HasValue)
+                    await DbContext.LabSuppliers
+                        .Where(item => item.Id == shippingConfiguration.ComponentSupplierId.Value).ExecuteDeleteAsync();
+                if (shippingConfiguration.ProcedureLinkId.HasValue)
+                    await DbContext.SampleTypeProcedureLinks
+                        .Where(item => item.Id == shippingConfiguration.ProcedureLinkId.Value).ExecuteDeleteAsync();
+                if (shippingConfiguration.SampleTypeId.HasValue)
+                    await DbContext.SampleTypeDefinitions
+                        .Where(item => item.Id == shippingConfiguration.SampleTypeId.Value).ExecuteDeleteAsync();
+                if (shippingConfiguration.ProcedureId.HasValue)
+                    await DbContext.SampleShippingProcedures
+                        .Where(item => item.Id == shippingConfiguration.ProcedureId.Value).ExecuteDeleteAsync();
+                if (shippingConfiguration.CreatedDefaultSystem)
+                    await DbContext.OrderSystemConfigurations
+                        .Where(item => item.Id == shippingConfiguration.DefaultSystemId).ExecuteDeleteAsync();
+                else
+                    await DbContext.OrderSystemConfigurations
+                        .Where(item => item.Id == shippingConfiguration.DefaultSystemId)
+                        .ExecuteUpdateAsync(update => update.SetProperty(
+                            item => item.DefaultShippingDestinationDefinitionKey,
+                            shippingConfiguration.PreviousDefaultDestinationKey));
+                if (shippingConfiguration.DestinationId.HasValue)
+                    await DbContext.SampleShippingDestinations
+                        .Where(item => item.Id == shippingConfiguration.DestinationId.Value).ExecuteDeleteAsync();
                 await DbContext.OrganizationDepartmentMemberships.Where(item => organizationIds.Contains(item.Department.OrganizationId)).ExecuteDeleteAsync();
                 await DbContext.OrganizationDepartments.Where(item => organizationIds.Contains(item.OrganizationId)).ExecuteDeleteAsync();
                 await DbContext.OrganizationMemberships.Where(item => organizationIds.Contains(item.OrganizationId)).ExecuteDeleteAsync();
                 await DbContext.Users.Where(item => item.Id == CustomerUser.Id || item.Id == PlatformUser.Id).ExecuteDeleteAsync();
                 await DbContext.Organizations.Where(item => organizationIds.Contains(item.Id)).ExecuteDeleteAsync();
-                if (shippingConfiguration.RuleId.HasValue)
-                    await DbContext.SampleShippingInstructionRules.Where(item => item.Id == shippingConfiguration.RuleId.Value).ExecuteDeleteAsync();
-                if (shippingConfiguration.DestinationId.HasValue)
-                    await DbContext.SampleShippingDestinations.Where(item => item.Id == shippingConfiguration.DestinationId.Value).ExecuteDeleteAsync();
-                if (shippingConfiguration.SampleTypeId.HasValue)
-                    await DbContext.SampleTypeDefinitions.Where(item => item.Id == shippingConfiguration.SampleTypeId.Value).ExecuteDeleteAsync();
             }
             finally
             {
@@ -2250,9 +2405,22 @@ public partial class LabOperationsCommercialHandoffPostgresTests
     private sealed record CancellationFixture(Guid Id, long OrderVersion);
     private sealed record LabStaffFixture(User User, ExternalIdentity Identity);
     private sealed record ShippingConfigurationFixture(
+        Guid ActiveSampleTypeId,
+        Guid ActiveDestinationId,
         Guid? SampleTypeId,
         Guid? DestinationId,
-        Guid? RuleId);
+        Guid? ProcedureId,
+        Guid? ProcedureLinkId,
+        Guid? KitTypeId,
+        Guid? KitDefinitionId,
+        Guid? WorkflowId,
+        Guid? WorkflowRevisionId,
+        Guid? FinishedProductId,
+        Guid? ComponentSupplierId,
+        Guid[] ComponentProductIds,
+        Guid DefaultSystemId,
+        Guid? PreviousDefaultDestinationKey,
+        bool CreatedDefaultSystem);
     private sealed record IdempotencyProbeResponse(Guid Id);
 
     private sealed class FixedIdentityContext(ExternalIdentity identity)

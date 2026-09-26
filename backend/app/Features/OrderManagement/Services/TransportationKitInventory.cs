@@ -7,12 +7,17 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 
 public static class TransportationKitInventory
 {
+    public static bool IsPhysicallyUsable(SampleShippingStockKit kit, DateTime at)
+    {
+        try { kit.EnsurePhysicallyUsable(at); return true; }
+        catch (InvalidOperationException) { return false; }
+    }
     public static IQueryable<SampleShippingStockKit> AtLocation(PSeqOperationsDbContext db, Guid organizationId, Guid departmentId, Guid? locationId)
         => db.SampleShippingStockKits.AsNoTracking().Where(kit => locationId.HasValue && kit.OrganizationId == organizationId
             && kit.DepartmentId == departmentId && kit.CustomerDeliveryLocationId == locationId && kit.FulfilledAt.HasValue);
     public static IQueryable<SampleShippingStockKit> Available(PSeqOperationsDbContext db, SampleShipment shipment, Guid? locationId)
         => AtLocation(db, shipment.OrganizationId, shipment.DepartmentId, locationId).Where(kit => kit.CustomerReceivedAt.HasValue
-            && !kit.ReservedSampleShipmentId.HasValue && !kit.BoundSampleShipmentId.HasValue);
+            && !kit.ReservedSampleShipmentId.HasValue && !kit.BoundSampleShipmentId.HasValue && !kit.WithdrawnAt.HasValue);
     public static async Task<IReadOnlyList<CustomerDeliveryLocationDto>> LocationsAsync(PSeqOperationsDbContext db, SampleShipment shipment, CancellationToken ct)
         => (await db.CustomerDeliveryLocations.AsNoTracking().Where(item => item.OrganizationId == shipment.OrganizationId
                 && item.DepartmentId == shipment.DepartmentId && item.IsActive)
@@ -30,7 +35,9 @@ public static class TransportationKitInventory
         SampleShipment shipment, Guid? locationId, CancellationToken ct)
     {
         if (shipment.Items.Count == 0) return [];
-        var ids = await Available(db, shipment, locationId).Select(item => item.ContainerDefinitionId).Distinct().ToArrayAsync(ct);
+        var stock = await Available(db, shipment, locationId).ToArrayAsync(ct);
+        var ids = stock.Where(kit => IsPhysicallyUsable(kit, DateTime.UtcNow))
+            .Select(item => item.ContainerDefinitionId).Distinct().ToArray();
         return await new SampleShippingContainerCatalogService(db).ReadStockCompatibleAsync(
             await SampleShippingPackingData.ContextsAsync(db, shipment, ct), ids, ct);
     }
@@ -56,7 +63,8 @@ public static class TransportationKitInventory
                 kit.FulfilledAt, kit.CustomerReceivedAt);
         }).ToArray();
     }
-    public static string Status(SampleShippingStockKit kit) => kit.BoundSampleShipmentId.HasValue ? "InUse"
+    public static string Status(SampleShippingStockKit kit) => kit.WithdrawnAt.HasValue ? "NeedsReview"
+        : kit.BoundSampleShipmentId.HasValue ? "InUse"
         : kit.ReservedSampleShipmentId.HasValue ? "Assigned" : !kit.FulfilledAt.HasValue ? "Preparing"
         : !kit.CustomerDeliveryLocationId.HasValue ? "NeedsReview" : kit.CustomerReceivedAt.HasValue ? "Available" : "OnTheWay";
 

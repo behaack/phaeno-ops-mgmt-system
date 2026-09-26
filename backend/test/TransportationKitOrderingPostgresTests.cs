@@ -19,6 +19,152 @@ using PSeq.Operations.Laboratory.Domain;
 public partial class SampleShippingPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task WithdrawnPhysicalKitIsNotOfferedForDispatch()
+    {
+        await using var scope = await ShippingTestScope.CreateAsync();
+        var fixture = await scope.CreateTransportationShipmentAsync(18);
+        var size = await scope.CreateContainerAsync(fixture, 20);
+        var location = await scope.CreateTransportationLocationAsync();
+        var request = await scope.KitCustomer().Create(fixture.Shipment.Id,
+            new(fixture.Shipment.Version, location.Id, location.Version, [new(size.Id, 1)]), default);
+        var kit = await scope.ReadyTransportationKitAsync(size);
+        Assert.Contains((await scope.KitStaff().Read(request.Id, default)).AvailableStockKits,
+            item => item.Id == kit.Id);
+
+        await scope.StockController().Withdraw(kit.Id, new(kit.Version, "Damaged insulation"), default);
+        scope.ClearTrackedState();
+        var detail = await scope.KitStaff().Read(request.Id, default);
+        Assert.DoesNotContain(detail.AvailableStockKits, item => item.Id == kit.Id);
+        var error = await Assert.ThrowsAsync<OrderManagementException>(() => scope.KitStaff().Dispatch(request.Id,
+            new(detail.Request.Version, [kit.Id], "Carrier", "WITHDRAWN", DateTime.UtcNow), default));
+        Assert.Equal("transportation_kit_conflict", error.ErrorCode);
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task LaterKitRequestCannotRedirectAJobAfterItsFirstKitDispatch()
+    {
+        await using var scope = await ShippingTestScope.CreateAsync();
+        var fixture = await scope.CreateTransportationShipmentAsync(18);
+        var now = DateTime.UtcNow.AddDays(-1);
+        var controller = scope.CreateConfigurationController();
+        var alternate = await controller.CreateDestination(scope.DestinationRequest(now, name: "Alternate receiving")
+            with { Code = $"REF_{scope.Suffix}_ALT" }, default);
+        scope.ClearTrackedState();
+        var size = await scope.CreateContainerAsync(fixture, 20);
+        scope.ClearTrackedState();
+        var location = await scope.CreateTransportationLocationAsync();
+        var first = await scope.KitCustomer().Create(fixture.Shipment.Id,
+            new(fixture.Shipment.Version, location.Id, location.Version, [new(size.Id, 1)]), default);
+        var beforeDispatch = await scope.KitStaff().Read(first.Id, default);
+        Assert.Equal(2, beforeDispatch.PhaenoDestinations?.Count);
+        var kit = await scope.ReadyTransportationKitAsync(size);
+        var dispatched = await scope.KitStaff().Dispatch(first.Id,
+            new(first.Version, [kit.Id], "Reference carrier", "FIRST-ROUTE", DateTime.UtcNow), default);
+        await scope.KitCustomer().Receive(first.Id, new(dispatched.Request.Version, [kit.Id]), default);
+
+        var later = new TransportationKitRequest(first.JobId, first.OrganizationId, first.DepartmentId,
+            location.Id, System.Text.Json.JsonSerializer.Serialize(location.ToDto(),
+                new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web)),
+            scope.CustomerUser.Id, DateTime.UtcNow);
+        later.Lines.Add(new(later.Id, size.Id, SampleShippingContainerCatalogService.Snapshot(size), 1));
+        scope.DbContext.TransportationKitRequests.Add(later);
+        await scope.DbContext.SaveChangesAsync();
+        scope.ClearTrackedState();
+        var detail = await scope.KitStaff().Read(later.Id, default);
+        Assert.Equal(fixture.Destination.Id, detail.SelectedPhaenoDestinationId);
+        Assert.Equal(fixture.Destination.Id, Assert.Single(detail.PhaenoDestinations!).Id);
+        var rejected = await Assert.ThrowsAsync<OrderManagementException>(() => scope.KitStaff().Dispatch(later.Id,
+            new(detail.Request.Version, [], "Reference carrier", "SECOND-ROUTE", DateTime.UtcNow, alternate.Id), default));
+        Assert.Equal("transportation_kit_conflict", rejected.ErrorCode);
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task PartialDispatchKeepsItsSavedDestinationAfterDeactivationAndRequiresReceivingConfirmation()
+    {
+        await using var scope = await ShippingTestScope.CreateAsync();
+        var fixture = await scope.CreateTransportationShipmentAsync(30);
+        var controller = scope.CreateConfigurationController();
+        var alternate = await controller.CreateDestination(scope.DestinationRequest(DateTime.UtcNow.AddDays(-1),
+            name: "Alternate receiving") with { Code = $"REF_{scope.Suffix}_ALT" }, default);
+        scope.ClearTrackedState();
+        var size = await scope.CreateContainerAsync(fixture, 20);
+        var location = await scope.CreateTransportationLocationAsync();
+        var request = await scope.KitCustomer().Create(fixture.Shipment.Id,
+            new(fixture.Shipment.Version, location.Id, location.Version, [new(size.Id, 2)]), default);
+        var firstKit = await scope.ReadyTransportationKitAsync(size);
+        var first = await scope.KitStaff().Dispatch(request.Id,
+            new(request.Version, [firstKit.Id], "Reference carrier", "FIRST-BATCH", DateTime.UtcNow), default);
+        Assert.Equal("PartiallyDispatched", first.Request.Status);
+        scope.ClearTrackedState();
+
+        var configuration = await controller.GetConfiguration(default);
+        await controller.SetDefaultDestination(new(alternate.DefinitionKey, configuration.DefaultDestinationVersion), default);
+        scope.ClearTrackedState();
+        await controller.SetDestinationStatus(fixture.Destination.Id,
+            new(false, fixture.Destination.Version), default);
+        scope.ClearTrackedState();
+
+        var secondKit = await scope.ReadyTransportationKitAsync(size);
+        var detail = await scope.KitStaff().Read(request.Id, default);
+        Assert.True(detail.CanDispatch);
+        Assert.Equal(fixture.Destination.Id, detail.SelectedPhaenoDestinationId);
+        var savedDestination = Assert.Single(detail.PhaenoDestinations!);
+        Assert.Equal(fixture.Destination.Id, savedDestination.Id);
+        Assert.False(savedDestination.IsCurrentForNewWork);
+
+        var unconfirmed = await Assert.ThrowsAsync<OrderManagementException>(() => scope.KitStaff().Dispatch(request.Id,
+            new(detail.Request.Version, [secondKit.Id], "Reference carrier", "SECOND-BATCH", DateTime.UtcNow,
+                fixture.Destination.Id), default));
+        Assert.Equal("transportation_kit_conflict", unconfirmed.ErrorCode);
+        var redirect = await Assert.ThrowsAsync<OrderManagementException>(() => scope.KitStaff().Dispatch(request.Id,
+            new(detail.Request.Version, [secondKit.Id], "Reference carrier", "SECOND-BATCH", DateTime.UtcNow,
+                alternate.Id, true), default));
+        Assert.Equal("transportation_kit_conflict", redirect.ErrorCode);
+
+        var completed = await scope.KitStaff().Dispatch(request.Id,
+            new(detail.Request.Version, [secondKit.Id], "Reference carrier", "SECOND-BATCH", DateTime.UtcNow,
+                fixture.Destination.Id, true), default);
+        Assert.Equal("Dispatched", completed.Request.Status);
+        Assert.Equal(fixture.Destination.Id, (await scope.DbContext.LabServiceOrders.AsNoTracking()
+            .SingleAsync(item => item.Id == request.JobId)).ShippingDestinationId);
+        var reasons = await scope.DbContext.OrderStatusEvents.AsNoTracking()
+            .Where(item => item.WorkflowId == request.Id).Select(item => item.TenantSafeReason).ToArrayAsync();
+        Assert.True(reasons.Any(details => details?.Contains("Receiving acceptance of the unavailable saved destination was confirmed by staff.") == true),
+            string.Join(" | ", reasons));
+
+        var newWorkDestinations = await SampleShippingDestinationChoices.ReadAsync(scope.DbContext,
+            fixture.SampleType.Id, DateTime.UtcNow, default);
+        Assert.DoesNotContain(newWorkDestinations, item => item.Destination.Id == fixture.Destination.Id);
+        Assert.Contains(newWorkDestinations, item => item.Destination.Id == alternate.Id);
+
+        await scope.KitCustomer().Receive(request.Id,
+            new(completed.Request.Version, [firstKit.Id, secondKit.Id]), default);
+        scope.ClearTrackedState();
+        var later = new TransportationKitRequest(request.JobId, request.OrganizationId, request.DepartmentId,
+            location.Id, System.Text.Json.JsonSerializer.Serialize(location.ToDto(),
+                new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web)),
+            scope.CustomerUser.Id, DateTime.UtcNow);
+        later.Lines.Add(new(later.Id, size.Id, SampleShippingContainerCatalogService.Snapshot(size), 1));
+        scope.DbContext.TransportationKitRequests.Add(later);
+        await scope.DbContext.SaveChangesAsync();
+        scope.ClearTrackedState();
+        var thirdKit = await scope.ReadyTransportationKitAsync(size);
+        var laterDetail = await scope.KitStaff().Read(later.Id, default);
+        Assert.True(laterDetail.CanDispatch);
+        Assert.Equal(fixture.Destination.Id, Assert.Single(laterDetail.PhaenoDestinations!).Id);
+        Assert.False(Assert.Single(laterDetail.PhaenoDestinations!).IsCurrentForNewWork);
+        var directUnconfirmed = await Assert.ThrowsAsync<OrderManagementException>(() => scope.StockController().Dispatch(thirdKit.Id,
+            new(null, thirdKit.Version, "Reference carrier", "LATER-REQUEST", DateTime.UtcNow,
+                location.Id, later.Id), default));
+        Assert.Equal("transportation_kit_conflict", directUnconfirmed.ErrorCode);
+        scope.ClearTrackedState();
+        await scope.StockController().Dispatch(thirdKit.Id,
+            new(null, thirdKit.Version, "Reference carrier", "LATER-REQUEST", DateTime.UtcNow,
+                location.Id, later.Id, true), default);
+        Assert.Equal("Dispatched", (await scope.KitStaff().Read(later.Id, default)).Request.Status);
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task TransportationKitConcurrentRequestsFreezeFactsAndNotifyPhaenoOnlyOnce()
     {
         await using var unrelated = await ShippingTestScope.CreateAsync();
@@ -310,6 +456,7 @@ public partial class SampleShippingPostgresTests
             var departmentId = CustomerOrganization.Departments.Single(item => item.IsDefault).Id;
             var job = new LabServiceOrder(CustomerOrganization.Id, departmentId, OrderNumberGenerator.Lab(), $"KIT-SUPPLY-{jobSuffix}", null,
                 1, false, "Synthetic", "Frozen", "No hazards", "Ship cold");
+            job.SelectSampleType(configured.SampleType.Id, configured.SampleType.MaterialClass);
             job.SourceGroups.Add(new(job.Id, "Synthetic", 1)); job.Submit(CustomerUser.Id, now); job.BeginQuotePreparation();
             var quote = new LabServiceQuote(job.Id, 1, QuotePurpose.Initial, "[]", 100, 0, "USD", now, now.AddDays(30));
             quote.MarkIssued(); job.Quotes.Add(quote); job.MarkQuoteIssued(quote.Id); quote.Accept(CustomerUser.Id, now); job.AcceptQuote(quote.Id, now);
@@ -339,7 +486,8 @@ public partial class SampleShippingPostgresTests
             var registered = await stock.Register(created.Id, new(codes, created.Version), default); ClearTrackedState();
             var ready = await stock.VerifyTubes(created.Id, new(registered.Version, codes), default);
             ClearTrackedState();
-            return ready;
+            await CompleteKitAssemblyAsync(created.Id);
+            return await stock.Read(created.Id, default);
         }
         public TransportationKitRequestsController KitCustomer(bool otherTenant = false, PSeqOperationsDbContext? dbOverride = null,
             string? fulfillmentName = null)

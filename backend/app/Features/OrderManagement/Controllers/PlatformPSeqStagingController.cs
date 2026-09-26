@@ -20,7 +20,7 @@ public sealed record StageEligibleCustomerDto(
 public sealed record CreateStagedPSeqOrderRequest(
     Guid OrganizationId, string? CustomerReference,
     IReadOnlyList<LabSampleWriteRequest> Samples,
-    Guid? DepartmentId = null);
+    Guid? DepartmentId = null, Guid? SampleTypeDefinitionId = null);
 
 [ApiController]
 [Authorize]
@@ -62,6 +62,10 @@ public sealed class PlatformPSeqStagingController(
                 StatusCodes.Status409Conflict, readiness.Evaluation.Blockers);
         if (request.Samples.Count == 0)
             throw new OrderManagementException("samples_required", "A staged order requires at least one sample.");
+        var sampleType = await LabOrderSampleTypeChoices.RequireAsync(dbContext, request.SampleTypeDefinitionId, cancellationToken);
+        if (request.Samples.Select(item => item.MaterialType?.Trim() ?? string.Empty)
+            .Distinct(StringComparer.OrdinalIgnoreCase).Count() > 1)
+            throw new OrderManagementException("mixed_sample_types", "A PSeq order can include only one sample type. Create a separate order for each type.");
         if (request.Samples.Select(item => item.CustomerSampleId.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase).Count() != request.Samples.Count)
             throw new OrderManagementException("duplicate_customer_sample_id", "Sample identifiers must be unique within the staged order.");
@@ -99,6 +103,7 @@ public sealed class PlatformPSeqStagingController(
             submissionInstructionsSnapshot: department.ResolveConfiguration(department.Organization).ShippingInstructions
                 ?? config?.SampleSubmissionInstructions
                 ?? string.Empty);
+        order.SelectSampleType(sampleType.Id, sampleType.MaterialClass);
         foreach (var sourceGroup in sourceGroups)
             order.SourceGroups.Add(new LabServiceSourceGroup(order.Id, sourceGroup.BiologicalSource, sourceGroup.Count));
         order.Submit(actor.Id, DateTime.UtcNow);
@@ -144,7 +149,8 @@ public sealed class PlatformPSeqStagingController(
             Timeline: [],
             RequestedSpecimenCount: order.RequestedSpecimenCount,
             SourceGroups: order.SourceGroups.Select(group => new LabServiceSourceGroupDto(
-                group.Id, group.BiologicalSource, group.SpecimenCount, group.Version)).ToList());
+                group.Id, group.BiologicalSource, group.SpecimenCount, group.Version)).ToList(),
+            SampleTypeDefinitionId: sampleType.Id, SampleTypeName: sampleType.Name);
     }
 
     private Task<User> RequireOperatorAsync(CancellationToken cancellationToken) =>

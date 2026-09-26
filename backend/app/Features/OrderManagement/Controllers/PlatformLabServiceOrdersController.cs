@@ -38,6 +38,13 @@ public sealed class PlatformLabServiceOrdersController(
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
+    [HttpGet("sample-types")]
+    public async Task<IReadOnlyList<LabOrderSampleTypeChoiceDto>> SampleTypes(CancellationToken cancellationToken)
+    {
+        await RequireCommercialAsync(true, cancellationToken);
+        return await LabOrderSampleTypeChoices.ReadAsync(dbContext, cancellationToken);
+    }
+
     [HttpGet("customer-options")]
     public async Task<IReadOnlyList<CustomerOrderOptionDto>> ListCustomerOptions(CancellationToken cancellationToken)
     {
@@ -272,6 +279,7 @@ public sealed class PlatformLabServiceOrdersController(
                 var normalizedJobName = NormalizeJobName(request.CustomerReference);
                 await EnsureUniqueJobNameAsync(customer.Id, department.Id, normalizedJobName, operationCancellationToken);
                 var sourceGroups = ValidatePricingProfile(request.RequestedSpecimenCount, request.SourceGroups);
+                var sampleType = await LabOrderSampleTypeChoices.RequireAsync(dbContext, request.SampleTypeDefinitionId, operationCancellationToken);
                 var configuration = await dbContext.OrderSystemConfigurations.AsNoTracking()
                     .OrderBy(item => item.CreatedAt)
                     .FirstOrDefaultAsync(operationCancellationToken);
@@ -290,6 +298,7 @@ public sealed class PlatformLabServiceOrdersController(
                         ?? configuration?.SampleSubmissionInstructions
                         ?? string.Empty,
                     request.SourceRequestId);
+                order.SelectSampleType(sampleType.Id, sampleType.MaterialClass);
                 foreach (var group in sourceGroups)
                 {
                     order.SourceGroups.Add(new LabServiceSourceGroup(
@@ -1197,7 +1206,11 @@ public sealed class PlatformLabServiceOrdersController(
             StandardCommercialSnapshot: LabServiceTimingService.CommercialSnapshot(order.ReadConfiguredSnapshot()),
             Timing: timing,
             CanManageQuotes: await CanManageQuotesAsync(cancellationToken),
-            CanProposeChange: orderToCashOptions.Value.NativePSeqAccountsReceivable && order.CanProposeChange);
+            CanProposeChange: orderToCashOptions.Value.NativePSeqAccountsReceivable && order.CanProposeChange,
+            SampleTypeDefinitionId: order.SampleTypeDefinitionId,
+            SampleTypeName: order.SampleTypeDefinitionId.HasValue
+                ? await dbContext.SampleTypeDefinitions.AsNoTracking().Where(value => value.Id == order.SampleTypeDefinitionId.Value)
+                    .Select(value => value.Name).SingleOrDefaultAsync(cancellationToken) : null);
     }
 
     private Task<User> RequireCommercialAsync(bool readOnly, CancellationToken cancellationToken)

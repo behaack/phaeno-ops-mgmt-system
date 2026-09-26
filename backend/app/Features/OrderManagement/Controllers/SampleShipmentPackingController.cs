@@ -26,7 +26,8 @@ public sealed partial class SampleShipmentPackingController(PSeqOperationsDbCont
             : "An organization or department administrator can prepare containers for this job.";
         var options = shipment.Items.Count == 0 ? [] : await OptionsAsync(shipment, ct, locationId);
         var ids = options.Select(item => item.Id).ToArray();
-        var kits = await TransportationKitInventory.Available(db, shipment, locationId).Where(item => ids.Contains(item.ContainerDefinitionId)).OrderBy(item => item.KitNumber).ToArrayAsync(ct);
+        var kits = (await TransportationKitInventory.Available(db, shipment, locationId).Where(item => ids.Contains(item.ContainerDefinitionId)).OrderBy(item => item.KitNumber).ToArrayAsync(ct))
+            .Where(item => TransportationKitInventory.IsPhysicallyUsable(item, DateTime.UtcNow)).ToArray();
         return new(shipment.Id, shipment.Version, SampleShippingPackingData.TubeCount(shipment), options, reason is null, reason,
             locationId, await TransportationKitInventory.LocationsAsync(db, shipment, ct), await TransportationKitInventory.MapAsync(db, kits, ct));
     }
@@ -118,6 +119,12 @@ public sealed partial class SampleShipmentPackingController(PSeqOperationsDbCont
         }
         if (requiresInventory)
             await ReserveContainersAsync(source, created, request.StockKits, locationId!.Value, tenant.Actor.Id, ct);
+        if (requiresInventory)
+        {
+            var job = await db.LabServiceOrders.SingleAsync(item => item.Id == source.AuthorizationSourceId, ct);
+            try { job.AssignShippingDestination(source.DestinationId, DateTime.UtcNow); }
+            catch (InvalidOperationException error) { throw Conflict(error.Message); }
+        }
         foreach (var item in source.Items.ToArray())
         {
             if (item.TubeSlots.Count == 0) { source.Items.Remove(item); db.SampleShipmentItems.Remove(item); }

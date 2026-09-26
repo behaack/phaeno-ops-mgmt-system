@@ -6,9 +6,9 @@ New consumption and equipment-use records retain a dated copy of the resource de
 
 ## Receive and qualify material lots
 
-In **Materials**, select a lot's name and lot number to open its details. The page shows material identity, supplier, available quantity and unit, storage, expiration or retest date, and the recorded QC status, date and failure reason. Prepared reagents also show their recorded source lots and quantities; select a source lot to inspect its details. Use **Back to Materials** to return to the list.
+In **Purchased Materials**, select a lot's name and lot number to open its details. The page shows material identity, supplier, available quantity and unit, storage, expiration or retest date, and the recorded QC status, date and failure reason. The list also retains prepared reagent lots for QC and traceability. Prepared reagents show their recorded source lots and quantities; select a source lot to inspect its details. Use **Back to Purchased Materials** to return to the list.
 
-Create purchased stock in **Materials → Create material lot**:
+Create purchased stock in **Purchased Materials → New lot**:
 
 - Choose the external supplier, its exact catalog product, the printed supplier lot number, and a storage location. Changing the supplier clears the product selection. POMS links the product to its internal inventory identity automatically; there is no separate Material choice. A catalog administrator sets the product's inventory unit in **Suppliers & products**. The lot form fills that unit automatically and new lots cannot use a different unit. Existing products without a verified unit must be configured before another lot can be received. Setting a unit for future receipts does not change amounts or units already recorded on older lots.
 - Start a Phaeno-made reagent lot in **Reagent manufacturing**. POMS assigns the lot number, associates it with the exact reagent product under the seeded **Phaeno** internal producer, and records the approved workflow revision. Phaeno is distinguished from external suppliers in **Suppliers & products** and cannot be selected when receiving purchased stock.
@@ -35,7 +35,7 @@ First, a Phaeno platform administrator opens **Suppliers & products → Phaeno �
 
 ## Record consumption
 
-Record the lot's starting amount when receiving it in **Materials**. Start the assigned execution before recording consumption. Select the exact lot, actual quantity used, and compatible unit required by the protocol. Saving subtracts that quantity from the lot's available balance. The portal blocks unit mismatches and consumption above the available quantity.
+Record the lot's starting amount when receiving it in **Purchased Materials**. Start the assigned execution before recording consumption. Select the exact lot, actual quantity used, and compatible unit required by the protocol. Saving subtracts that quantity from the lot's available balance. The portal blocks unit mismatches and consumption above the available quantity.
 
 Select the optional **Material exhausted** checkbox when no usable stock remains, even if the calculated balance would be positive. Keep the actual amount used in the quantity field. POMS records that consumption and any remaining-balance adjustment separately in **Quantity history**, then sets available stock to zero. This option is initially unchecked and cannot clear an unknown-quantity hold; reconcile that lot first.
 

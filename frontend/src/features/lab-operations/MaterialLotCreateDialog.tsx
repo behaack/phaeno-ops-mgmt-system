@@ -228,7 +228,7 @@ export function MaterialLotCreateDialog({
     }
     try {
       await createLabMaterialLot({
-        kind: values.kind,
+        kind: 'SupplierLot',
         supplierProductId: values.kind === 'SupplierLot' ? values.supplierProductId : null,
         materialDefinitionId: values.kind === 'SupplierLot' || values.materialSelection === newReferenceValue
           ? null
@@ -299,30 +299,7 @@ export function MaterialLotCreateDialog({
               </DialogDescription>
             </DialogHeader>
 
-            <div className="my-5 grid gap-4 sm:grid-cols-2">
-              <FormField id="material-lot-kind" label="Lot kind" required error={form.formState.errors.kind?.message}>
-                <select
-                  id="material-lot-kind"
-                  className={selectClass}
-                  {...form.register('kind', {
-                    onChange: () => {
-                      form.setValue('materialSelection', '')
-                      form.setValue('newMaterialName', '')
-                      form.setValue('supplierSelection', '')
-                      form.setValue('supplierProductId', '')
-                      form.setValue('newSupplierName', '')
-                      components.replace([])
-                    },
-                  })}
-                >
-                  <option value="SupplierLot">Supplier lot</option>
-                </select>
-              </FormField>
-
-              <FormField id="material-lot-number" label="Lot number" required error={form.formState.errors.lotNumber?.message}>
-                <Input id="material-lot-number" aria-invalid={Boolean(form.formState.errors.lotNumber)} {...form.register('lotNumber')} />
-              </FormField>
-
+            <div className="grid gap-4 sm:grid-cols-2">
               {kind === 'PreparedReagent' ? <div className="sm:col-span-2">
                 <FormField id="material-definition" label="Prepared reagent" required error={form.formState.errors.materialSelection?.message}>
                   <select
@@ -388,6 +365,12 @@ export function MaterialLotCreateDialog({
                   </div>
                 </>
               ) : null}
+
+              <div className="sm:col-span-2">
+                <FormField id="material-lot-number" label="Lot number" required error={form.formState.errors.lotNumber?.message}>
+                  <Input id="material-lot-number" aria-invalid={Boolean(form.formState.errors.lotNumber)} {...form.register('lotNumber')} />
+                </FormField>
+              </div>
 
               <div className="sm:col-span-2">
                 <FormField id="material-storage" label="Storage location" required error={form.formState.errors.storageSelection?.message}>

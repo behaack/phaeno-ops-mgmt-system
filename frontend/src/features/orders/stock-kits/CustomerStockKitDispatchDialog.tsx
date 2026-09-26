@@ -17,16 +17,18 @@ import { localContainerDateTime } from '../configuration/shipping-container-util
 import { kitRequestReference } from '../kit-requests/kit-request-navigation'
 import { useOrderDraftGuard } from '../use-order-draft-guard'
 
-const schema = z.object({ requestId: z.string().uuid('Choose the Customer kit request.'), outboundCarrier: z.string().trim().min(1, 'Enter the carrier.').max(255), outboundTrackingNumber: z.string().trim().min(1, 'Enter the tracking number.').max(255), fulfilledAt: z.string().min(1, 'Enter the dispatch time.').refine(value => Number.isFinite(new Date(value).getTime()), 'Enter a valid dispatch time.') })
+const schema = z.object({ requestId: z.string().uuid('Choose the Customer kit request.'), confirmUnavailableFixedDestination: z.boolean(), outboundCarrier: z.string().trim().min(1, 'Enter the carrier.').max(255), outboundTrackingNumber: z.string().trim().min(1, 'Enter the tracking number.').max(255), fulfilledAt: z.string().min(1, 'Enter the dispatch time.').refine(value => Number.isFinite(new Date(value).getTime()), 'Enter a valid dispatch time.') })
 type Values = z.infer<typeof schema>
 
 export function CustomerStockKitDispatchDialog({ kit, onClose, onSaved }: { kit: ShippingStockKit; onClose: () => void; onSaved: (kit: ShippingStockKit) => void | Promise<void> }) {
   const requests = useQuery({ queryKey: ['platform-transportation-kit-requests'], queryFn: () => getPlatformTransportationKitRequests() })
-  const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { requestId: '', outboundCarrier: '', outboundTrackingNumber: '', fulfilledAt: localContainerDateTime() } })
+  const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { requestId: '', confirmUnavailableFixedDestination: false, outboundCarrier: '', outboundTrackingNumber: '', fulfilledAt: localContainerDateTime() } })
   const requestId = form.watch('requestId')
   const detail = useQuery({ queryKey: ['platform-transportation-kit-request', requestId], queryFn: () => getPlatformTransportationKitRequest(requestId), enabled: Boolean(requestId) })
   const candidates = (requests.data ?? []).filter(request => matchingRequest(request, kit))
   const selected = detail.data?.request
+  const savedDestination = detail.data?.phaenoDestinations?.find(destination =>
+    destination.id === detail.data?.selectedPhaenoDestinationId && destination.isCurrentForNewWork === false)
   const selectedLine = selected?.lines.find(line => line.containerDefinitionId === kit.container.definitionId)
   const remaining = selectedLine ? selectedLine.requestedQuantity - selectedLine.dispatchedQuantity : 0
   const selectedStillOpen = candidates.some(request => request.id === requestId)
@@ -36,12 +38,19 @@ export function CustomerStockKitDispatchDialog({ kit, onClose, onSaved }: { kit:
   const submitting = useRef(false)
   const mutation = useMutation({ mutationFn: (values: Values) => {
     if (!selected || selected.id !== values.requestId || requests.error || detail.error || detail.isFetching || blocked) throw new Error(blocked ?? 'Refresh the request before recording dispatch.')
-    return dispatchShippingStockKit(kit.id, { requestId: selected.id, deliveryLocationId: selected.deliveryLocationId, version: kit.version, outboundCarrier: values.outboundCarrier, outboundTrackingNumber: values.outboundTrackingNumber, fulfilledAt: new Date(values.fulfilledAt).toISOString() })
+    return dispatchShippingStockKit(kit.id, { requestId: selected.id, deliveryLocationId: selected.deliveryLocationId, version: kit.version, outboundCarrier: values.outboundCarrier, outboundTrackingNumber: values.outboundTrackingNumber, fulfilledAt: new Date(values.fulfilledAt).toISOString(),
+      ...(savedDestination ? { confirmUnavailableFixedDestination: values.confirmUnavailableFixedDestination } : {}) })
   }, onSuccess: async result => { form.reset(form.getValues()); allowNavigation(); await onSaved(result) }, onSettled: () => { submitting.current = false } })
   const dirty = form.formState.isDirty, errors = form.formState.errors
   const allowNavigation = useOrderDraftGuard(dirty, mutation.isPending)
   function close() { if (!submitting.current && (!dirty || window.confirm('Discard the unsaved kit-dispatch details?'))) onClose() }
-  function submit(values: Values) { if (!submitting.current) { submitting.current = true; mutation.mutate(values) } }
+  function submit(values: Values) {
+    if (savedDestination && !values.confirmUnavailableFixedDestination) {
+      form.setError('confirmUnavailableFixedDestination', { type: 'required', message: 'Confirm that receiving can accept the remaining kits at this saved destination.' })
+      return
+    }
+    if (!submitting.current) { submitting.current = true; mutation.mutate(values) }
+  }
   function input(name: 'outboundCarrier' | 'outboundTrackingNumber' | 'fulfilledAt', label: string, type = 'text') {
     return <div className="min-w-0 space-y-2"><Label htmlFor={`customer-dispatch-${name}`}><RequiredFieldName>{label}</RequiredFieldName></Label><Input id={`customer-dispatch-${name}`} type={type} disabled={mutation.isPending} aria-invalid={Boolean(errors[name])} aria-describedby={errors[name] ? `customer-dispatch-${name}-error` : undefined} {...form.register(name)} />{errors[name] ? <p id={`customer-dispatch-${name}-error`} role="alert" className="text-xs text-destructive">{errors[name].message}</p> : null}</div>
   }
@@ -50,13 +59,14 @@ export function CustomerStockKitDispatchDialog({ kit, onClose, onSaved }: { kit:
     {mutation.error ? <Alert variant="destructive"><AlertTitle>Dispatch was not recorded</AlertTitle><AlertDescription>{getOrderErrorMessage(mutation.error, 'Your entries are retained. Review the request and try again.')}</AlertDescription></Alert> : null}
     {requests.error || detail.error ? <Alert variant="destructive"><AlertTitle>Kit request could not be checked</AlertTitle><AlertDescription>{getOrderErrorMessage(requests.error ?? detail.error, 'Your entries are retained. Refresh before dispatch.')} <Button variant="outline" size="sm" disabled={mutation.isPending} onClick={() => { void requests.refetch(); if (requestId) void detail.refetch() }}>Retry request check</Button></AlertDescription></Alert> : null}
     <form id="customer-stock-kit-dispatch" className="space-y-4" noValidate onSubmit={form.handleSubmit(submit)}>
-      <div className="space-y-2"><Label htmlFor="customer-dispatch-request"><RequiredFieldName>Kit request</RequiredFieldName></Label><select id="customer-dispatch-request" className="h-10 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" disabled={mutation.isPending || requests.isPending} aria-invalid={Boolean(errors.requestId)} aria-describedby={errors.requestId ? 'customer-dispatch-request-error' : undefined} {...form.register('requestId')}>
+      <div className="space-y-2"><Label htmlFor="customer-dispatch-request"><RequiredFieldName>Kit request</RequiredFieldName></Label><select id="customer-dispatch-request" className="h-10 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" disabled={mutation.isPending || requests.isPending} aria-invalid={Boolean(errors.requestId)} aria-describedby={errors.requestId ? 'customer-dispatch-request-error' : undefined} {...form.register('requestId', { onChange: () => { form.setValue('confirmUnavailableFixedDestination', false); form.clearErrors('confirmUnavailableFixedDestination') } })}>
         <option value="">Select a kit request</option>{candidates.map(request => <option key={request.id} value={request.id}>{kitRequestReference(request)} · {request.organizationName} · {request.deliveryAddress.label}</option>)}
         {requestId && !selectedStillOpen ? <option value={requestId} disabled>Previously selected request — unavailable</option> : null}
       </select>{errors.requestId ? <p id="customer-dispatch-request-error" role="alert" className="text-xs text-destructive">{errors.requestId.message}</p> : null}</div>
       {requests.isPending ? <p role="status" className="text-sm">Loading kit requests…</p> : !candidates.length && !requests.error ? <p className="text-sm text-muted-foreground">No open Customer request needs this container size. Review Kit requests before recording dispatch.</p> : null}
       {requestId && detail.isPending ? <p role="status" className="text-sm">Checking the requested kits and delivery address…</p> : null}
       {selected ? <div className="space-y-3 rounded-md border bg-muted/30 p-3 text-sm"><div><p className="font-semibold">Deliver to {selected.deliveryAddress.label}</p><p className="mt-1 wrap-anywhere">{selected.organizationName} · {selected.departmentName}</p></div><DeliveryLocationAddress location={selected.deliveryAddress} /><p className="wrap-anywhere text-xs text-muted-foreground">Originating Job {selected.jobNumber}. Received unused stock is available at this location for eligible Jobs.</p>{selectedLine ? <p>{remaining} {remaining === 1 ? 'kit' : 'kits'} still needed in this size; this dispatch sends 1.</p> : null}</div> : null}
+      {savedDestination ? <div className="space-y-2"><Alert><AlertTitle>Saved destination no longer active</AlertTitle><AlertDescription>The first kit fixed this Job to {savedDestination.name} · revision {savedDestination.revision}. Confirm that receiving can accept the remaining kits here. A new Default does not redirect this Job.</AlertDescription></Alert><label className="flex cursor-pointer items-start gap-2 text-sm"><input type="checkbox" className="mt-1 accent-primary" disabled={mutation.isPending} aria-invalid={Boolean(errors.confirmUnavailableFixedDestination)} aria-describedby={errors.confirmUnavailableFixedDestination ? 'stock-confirm-destination-error' : undefined} {...form.register('confirmUnavailableFixedDestination')} /><RequiredFieldName>Receiving can accept the remaining kits at this saved destination</RequiredFieldName></label>{errors.confirmUnavailableFixedDestination ? <p id="stock-confirm-destination-error" role="alert" className="text-xs text-destructive">{errors.confirmUnavailableFixedDestination.message}</p> : null}</div> : null}
       {requestId && blocked && !detail.isPending ? <p role="alert" className="text-sm text-destructive">{blocked}</p> : null}
       <div className="grid gap-4 sm:grid-cols-2">{input('outboundCarrier', 'Carrier')}{input('outboundTrackingNumber', 'Tracking number')}</div>{input('fulfilledAt', 'Dispatched at', 'datetime-local')}
       <p className="text-xs text-muted-foreground">This updates the request and places the kit On the way. Availability begins after Customer receipt.</p>

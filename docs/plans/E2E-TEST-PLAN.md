@@ -1,5 +1,99 @@
 # Playwright E2E Test Plan
 
+## September 25, 2026 — Follow-up browser acceptance
+
+At desktop and narrow widths, verify the Dry ice amount and Dry ice unit inputs align in a kit revision dialog, including after validation messages. From both the all-kits list and kit detail Actions, link an unassigned named kit to one Sample type and confirm the irreversible-link explanation and retained focus. Verify historical containers explain why they cannot serve new Orders. Retire an approved assembly workflow or deactivate one bill-of-materials product, then confirm the kit list/detail and Sample type settings show warnings and the Order flow blocks new work while an already issued usable physical kit remains distinguishable. Authenticated browser acceptance has not yet run.
+
+## September 25, 2026 — Samples and shipping restart acceptance
+
+Manual browser acceptance remains pending for the replacement configuration and Order flow. Create a procedure, a Sample type selecting it, an unassigned kit draft, then link the kit once to that Sample type; verify revisions keep the link and that an unavailable dependency shows a persistent warning. Confirm Revision history is the final section of each Sample type, destination, procedure, and Transportation kit detail view. Set a Default Phaeno destination and verify its switch, missing-default order block, and destination fixed at first kit dispatch. Create an Order with one Sample type, request multiple matching kit designs, assemble and dispatch physical stock with partial fulfillment, and verify issued instructions and old usable kits keep their exact history. Check keyboard, focus, narrow layout, and the single Actions menu rule on all touched pages. Assignment and compatibility scenarios below are historical and superseded by this restart; no browser E2E execution is claimed here.
+
+## September 25, 2026 — Procedure description and Sample type links
+
+Manual browser acceptance pending: add a procedure description, verify it beneath the name in the list and in detail, and revise it. Configure two Sample types to that procedure, activate a newer procedure revision, and confirm both current Active Sample types still appear between details and Revision history with working links. Deactivate one Sample type and confirm it leaves the current-usage list; verify the empty state when none remain. No E2E run was requested.
+
+## September 25, 2026 — Shipping dependency hardening
+
+Manual browser acceptance: withdraw a selected procedure and verify an older assignment cannot be activated; revise the Sample type and verify an Active replacement is required. Withdraw an assignment and verify a new Active kit specification cannot use it, while a historical specification displays Needs attention. Select two assignment revisions for one destination and verify the kit form rejects the duplicate. Confirm Customer roster finalization reports unavailable shipping setup without authorizing work, and already issued packets retain their saved instructions. Browser acceptance remains pending; no E2E run was requested.
+
+## September 25, 2026 — One procedure per Sample type
+
+Manual browser acceptance: select one Active procedure on a Sample type, pair that type with two destinations, and verify both assignments show the inherited procedure with collapsible labeled instructions and no procedure picker. Activate a newer procedure revision and verify new previews and packets use it while issued packets retain saved text. Check that a Sample type without a selected Active procedure cannot add an assignment. Verify a kit's combination-level packing and temperature requirements. Browser acceptance remains pending; no E2E run was requested.
+
+## September 25, 2026 — Find containers and configure one type per kit
+
+Manual browser acceptance pending: verify **Kit specifications** remains in the settings sidebar as an all-kits view, and opening a Sample type shows only that type's assignments and kits. Create a kit specification by choosing one Sample type, then a destination assignment, and confirm another type's assignments are absent. Confirm a revision keeps the same type, the bill is labeled **Bill of materials**, and the kit detail returns to its Sample type. Review a historical multi-type kit: it must remain readable, warn loudly, and be excluded from new recommendations. The destination page and sidebar must read **Phaeno ship-to destinations** at wide and narrow widths. No E2E run was requested.
+
+## September 25, 2026 — One Sample type per PSeq order
+
+Manual acceptance pending: create a Customer Job and a Phaeno-initiated Job with one selected Sample type; confirm the selection in each Job and that the form blocks creation without it. Submit different biological sources under the same type, then confirm a second type requires another order. Verify the Shipping assignment form has no compatibility-group or separate-shipment control, mixed-type packet preview is rejected, and packing reset does not merge types from historical shared-group assignments. Inspect one narrow viewport and keyboard selection. Historical orders and issued packet snapshots must remain readable. No E2E run was requested.
+
+Also confirm the transportation-kit order recommendation and Assign shipping containers show the order's Sample type, list only kit specifications approved for that type and destination, and block a shipment whose saved items belong to another family. Existing issued records must remain readable. This browser acceptance remains pending.
+
+At a location with stock for two different Sample types, verify that only the order-compatible kits appear in the Job chooser, while the location inventory still lists all owned kits. If an approval is withdrawn while Adjust kit sizes is open, refresh the supply and confirm the withdrawn size disappears and cannot be submitted. Browser acceptance remains pending.
+
+## September 25, 2026 — Required shared procedure and readable inherited steps
+
+Manual browser acceptance: with no Active procedure selected on the Sample type, confirm Add assignment is unavailable and explains how to revise the type. Select an Active procedure on the Sample type, then open Add and Create revision; confirm neither has a procedure selector or Instruction source choice. Expand Review inherited instructions and confirm labeled multiline text, including destination delivery instructions, without textareas. Activate a new revision of the selected procedure and confirm the review follows it. Save, and verify historical standalone records and issued packet snapshots remain intact. Check keyboard use, focus, narrow dialog scrolling and screen-reader labels. Browser acceptance remains pending; no E2E run was requested.
+
+## September 25, 2026 — Shared procedure follows its Active revision
+
+Manual browser acceptance: choose a named shared procedure on the Sample type, issue a packet from one of its assignments, then activate a newer procedure revision. Confirm the unchanged assignment previews the newer steps, a newly issued packet saves them, and the earlier issued packet keeps its original snapshot. Confirm an Inactive draft does not change new work; withdrawing the only Active revision warns and blocks new instructions. Verify Status is the last assignment form row before Save at narrow and wide widths. Browser acceptance remains pending; no E2E run was requested.
+
+## September 25, 2026 — Shipping assignment revision workflow
+
+Manual browser acceptance: add an assignment and verify deactivated destinations and Sample types are absent, Destination is the field label, pair-specific additions and Status appear before Save, and Active is selected by default. Confirm the shared procedure is inherited from the selected Sample type and shown as read-only labeled steps; Add and Create revision contain no standalone instruction mode. Create an Active revision in one save and confirm its predecessor ends at the selected effective time. With a deactivated saved destination, open Create revision: verify a prominent warning, change Destination and Sample type, save Active, and inspect the preserved historical revision and linked kit-specification warning. Create an Inactive revision and confirm the earlier Active revision remains available. Check keyboard behavior, focus, responsive modal scrolling and backend validation messages. Browser acceptance remains pending; no E2E run was requested.
+
+## September 25, 2026 — Downstream dependency loss
+
+Manual browser acceptance: in isolated configuration, create an Active destination, sample type, procedure, assignment and kit specification. Deactivate each upstream dependency in turn and confirm the named impact warning before saving, an accessible persistent warning on the affected Active assignment and kit list/detail afterward, and retained historical shipment facts. Verify a withdrawn procedure is described as saved steps requiring review, while unavailable destinations and sample types prevent new use. Check an earlier Active revision behind an Inactive draft, repair and warning clearance, keyboard focus, and narrow layout. Browser acceptance remains pending; no E2E run was requested.
+
+## September 25, 2026 — Ship-to destination revision behavior
+
+Manual browser acceptance: create an Active destination and an Active successor, verifying the earlier revision ends at the successor's effective time. Create an Inactive successor from isolated data and verify its latest row stays visible with Show inactive off, names the earlier Active revision, and retains search by the earlier name or generated code. Open the latest and an exact historical revision, then return with filters intact. Confirm only the latest offers Actions, the list omits the long DEST code, and prior revisions expand. In Kit specifications, verify Preview recommendation is the first row action and deactivated destinations do not appear as new sample/assignment choices; saved historical choices remain reviewable. Check keyboard focus and narrow layout. Browser acceptance remains pending; no E2E run was requested.
+
+## September 25, 2026 — Procedure lifecycle and list presentation
+
+Manual browser acceptance: create an Active procedure revision and confirm its predecessor is retired; create an Inactive revision and confirm the earlier Active revision remains available until activation. Inspect the latest row and detail Actions menus: each offers exactly one Activate or Deactivate action, and historical detail offers none. Verify existing two-Active data displays the older revision as Superseded and prevents new assignments to it. Compare Sample types and Shipping procedures link styling, row spacing and collapsed prior-revision history; the Sample types row omits its generated code while detail and search retain it. Check keyboard focus and narrow layout. Browser acceptance remains pending; no E2E run was requested.
+
+## September 25, 2026 — Sample-type revision status and list visibility
+
+Manual browser acceptance: create a sample-type revision with the default Active status and confirm it becomes active at Effective from while the earlier active revision ends at that time. Create an Inactive revision from isolated data and confirm the earlier active revision remains available; with Show inactive off, the latest Inactive revision stays in the list with an explicit active-predecessor note. Search by an earlier name after renaming in a draft, open the latest revision, and return with list filters intact. Check Status choice, timing explanation, keyboard use and narrow layout. Browser acceptance remains pending; no E2E run was requested.
+
+## September 24, 2026 — Shipping procedure Actions
+
+Manual browser acceptance: open an approved Shipping procedures row and its detail; verify one Actions menu contains Create revision and Deactivate. Confirm the exact procedure and revision are named, cancel without a write, then deactivate isolated data and verify Inactive status plus keyboard focus recovery. A newer draft should retain an action to deactivate an earlier approved revision. Verify withdrawn procedures disappear from new assignment choices, pending assignments using them cannot activate, and existing active assignments and issued packets keep their saved instructions. Check narrow layout and stale-version recovery. Browser acceptance remains pending; no E2E run was requested.
+
+## September 24, 2026 — New sample-type status
+
+Manual browser acceptance: open Add sample type and verify Status defaults to Active; choose Inactive and verify the submitted type is saved Inactive. In isolated data, leave Active selected and verify the saved type appears Active, subject to its effective time, while shipping still requires its approved assignment and destination. Revision status and predecessor behavior are covered by the September 25 case above. Check keyboard selection, required-field presentation and narrow layout. Browser acceptance remains pending; no E2E run was requested.
+
+## September 24, 2026 — Kit header and row deactivation
+
+Manual browser acceptance: at desktop width, Preview recommendation and Add kit specification align to the right of the Kit specifications title, with description and filters below. The search and availability controls align without visible labels; search says **Search by common name or SKU**, while both controls retain accessible names. On a narrow viewport, both buttons stay usable. Verify inactive latest revisions are hidden by default, Show inactive reveals them and resets paging, and Availability still filters usable-now definitions independently. Open row Actions for an active specification, confirm **Deactivate** identifies the exact kit and saved revision, cancel once, then confirm with isolated data; verify the row is hidden by default and focus returns. Reveal a newer draft and verify **Deactivate active specification (rev N)** is offered for an earlier active revision. Browser acceptance remains pending; no E2E run was requested.
+
+## September 24, 2026 — Shared shipping activation badges
+
+Manual browser acceptance: compare Sample types, Ship-to destinations, Shipping assignments and Kit specifications at wide and narrow widths. Each row should show the same filled **Active** or outline **Inactive** pill beside the reference and revision, with separate Scheduled or Ended timing where applicable. Verify a kit draft with an earlier active revision, and confirm its Availability filter still selects usable-now definitions. Browser acceptance remains pending; no E2E run was requested.
+
+## September 24, 2026 — Kit specification row Actions
+
+Manual acceptance: every Kit specifications row shows the outlined **Actions** button and chevron, opens Create revision and Preview recommendation with keyboard or pointer, and keeps its menu within a narrow viewport. Browser acceptance remains pending; no E2E run was requested.
+
+## September 24, 2026 — Ship-to destination list discovery
+
+Manual browser acceptance: verify Active/Inactive pills, Scheduled or Ended timing where applicable, default hiding of inactive latest revisions, Show inactive, search by name/code/receiving location, 12-item paging, filter retention across section navigation and refresh, revision history, and focus recovery after deactivation hides a row. Check narrow layout and keyboard operation. Browser acceptance remains pending; no E2E run was requested.
+
+## September 24, 2026 — Sample type list discovery
+
+Manual browser acceptance: verify Active/Inactive pills, a Scheduled or Ended timing pill when applicable, default hiding of inactive latest revisions, Show inactive, search by name/code/material, 12-item paging, filter/page restoration after opening and returning from a detail, and focus recovery when deactivation hides a row. Check narrow layout and keyboard operation. Browser acceptance remains pending; no E2E run was requested.
+
+## September 24, 2026 — Purchased Materials navigation
+
+Manual acceptance: confirm the Lab operations sidebar shows **Purchased Materials** immediately before **Reagent manufacturing**, opens the existing material-lot list, and returns from a lot detail to that section. Confirm prepared reagent lots remain visible for QC and traceability. Browser acceptance is pending; no E2E run was requested.
+
+In **Purchased Materials → New lot**, confirm there is no **Lot kind** selector, **Supplier**, **Product name**, and **Lot number** appear in that order, the space above the first field and below the last field matches the dialog's normal inset, and a supplier lot can still be received. New prepared reagents continue through **Reagent manufacturing**. Browser acceptance remains pending.
+
 The September 2026 manual UAT pack and its case scripts were retired after substantial workflow changes. Historical case IDs and results below describe their dated checkpoints; derive any new acceptance exercise from the current product and code. Playwright coverage remains tracked here.
 
 ## September 23, 2026 — Barcode print and scan presentation
@@ -3005,3 +3099,9 @@ Connected acceptance should create a uniquely named Lab step, confirm version 1 
 With a signed-in Phaeno Protocol Administrator and Operator, create and independently approve a master-mix workflow; configure and approve a library-preparation step that uses its exact revision; prepare one mix from released source lots; record ordered steps and actual yield; use that mix on two library trays; inspect both tray links, ingredient lots and remaining quantity; then discard the remainder and confirm further use is blocked. Try an expired/held source lot, mismatched unit, stale version, uncertain save replay, competing final-quantity use, unknown per-sample amount, retired or revised workflow, keyboard navigation, narrow viewport, and light/dark themes. The September 24 general browser suite passed 190 cases with two skips, but this master-mix journey has not run; physical bench qualification remains separate.
 
 The gap-closure journey must also review an exact structured recipe at approval, scan the printed full `PH-MX` container label on both trays, cross the Los Angeles local-day cutoff and find the overdue mix, recover an uncertain source-lot save after browser reload without a second deduction, approve a variance as a different Supervisor, and inspect actors and reasons for both a verified never-dispensed void and a retained discrepancy. Search by name and barcode, page through records, return from detail with filters intact, and retry a stale mix conflict after catalog refresh. Retirement must refuse an active approved Lab step, permit an already open tray to consume an existing Ready mix until its frozen cutoff, remove retired-recipe workflows from new-tray choices, and reject direct new-tray requests using those workflows without creating a batch. Race new-tray creation against retirement and verify the committed order decides the result. No connected browser or physical label/scanner qualification has run.
+
+# Global Phaeno ship-to default — September 25, 2026
+
+Acceptance path: configure a global default, finalize a single-type order, confirm the route and kit recommendation, reuse a compatible received kit without a Phaeno queue, and verify packet address. For a newly requested kit, change to another compatible Active destination before first dispatch and verify later batches and issued packets keep it. Cover missing/incompatible default and attempted change after packing or dispatch. Browser acceptance remains request-only.
+
+Add a signed-in partial-dispatch path: send one of two requested kits, choose another Default, deactivate the saved destination revision, then reopen the request. The saved route must remain visible; dispatch without receiving confirmation and an attempted redirect must fail. Confirm receiving and send the second kit; inspect the retained Job route and dispatch history. Repeat the confirmation through the physical-kit detail dispatch action for a later request on that Job. A new Job must offer only the current Active destination. This browser path remains pending.

@@ -188,7 +188,7 @@ export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAuto
 
 function FrozenPackingInstructions({ destination, instructions }: { destination: JsonObject; instructions: JsonObject }) {
   const containerPacking = asObject(instructions.containerPacking)
-  const sharedProcedures = [...new Map(asObjects(instructions.samples).map(entry => asObject(entry.instructionRule)).filter(rule => rule.shippingProcedureId).map(rule => [text(rule.shippingProcedureId), rule])).values()]
+  const sharedProcedures = [...new Map(asObjects(instructions.samples).map(entry => asObject(entry.procedure)).filter(rule => rule.shippingProcedureId).map(rule => [text(rule.shippingProcedureId), rule])).values()]
   return <div className="space-y-8">
         <section className="packet-destination break-inside-avoid">
           <h2 className="text-xl font-semibold">Ship to</h2>
@@ -213,11 +213,11 @@ function FrozenPackingInstructions({ destination, instructions }: { destination:
         <section className="packet-instructions">
           <h2 className="text-xl font-semibold">Preparation, packing, and delivery instructions</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Follow every instruction for each sample type in this shipping insert. Contact Phaeno before shipping if any requirement cannot be met.
+            Follow the instructions for this Order's Sample type and Transportation kit. Contact Phaeno before shipping if any requirement cannot be met.
           </p>
           <div className="mt-5 space-y-6">
-            {sharedProcedures.map((rule, index) => <article key={text(rule.shippingProcedureId)} className="rounded-lg border p-4"><h3 className="font-semibold">Common shipping steps{sharedProcedures.length > 1 ? ` ${index + 1}` : ''}</h3><p className="mt-1 text-sm text-muted-foreground">Applies to: {[...new Set(asObjects(instructions.samples).filter(entry => asObject(entry.instructionRule).shippingProcedureId === rule.shippingProcedureId).map(entry => text(asObject(entry.sampleType).name)).filter(Boolean))].join(', ')}</p><ShippingSteps rule={rule} /></article>)}
-            {containerPacking.temperatureControlInstructions ? <article className="rounded-lg border p-4"><h3 className="font-semibold">Temperature control for this container</h3><p className="mt-1 text-sm">{text(containerPacking.commonName)} · revision {text(containerPacking.revision)}</p><Instruction label="Approved method and amount" value={containerPacking.temperatureControlInstructions} /><Instruction label="Container notes" value={containerPacking.packingInstructions} /></article> : null}
+            {sharedProcedures.map((rule, index) => <article key={text(rule.shippingProcedureId)} className="rounded-lg border p-4"><h3 className="font-semibold">Common shipping steps{sharedProcedures.length > 1 ? ` ${index + 1}` : ''}</h3><p className="mt-1 text-sm text-muted-foreground">Applies to: {[...new Set(asObjects(instructions.samples).filter(entry => asObject(entry.procedure).shippingProcedureId === rule.shippingProcedureId).map(entry => text(asObject(entry.sampleType).name)).filter(Boolean))].join(', ')}</p><ShippingSteps rule={rule} /></article>)}
+            {containerPacking.temperatureControlInstructions ? <article className="rounded-lg border p-4"><h3 className="font-semibold">Temperature control for this container</h3><p className="mt-1 text-sm">{text(containerPacking.commonName)} · revision {text(containerPacking.revision)}</p><Instruction label="Approved method" value={containerPacking.temperatureControlInstructions} /><Instruction label="Dry ice per kit" value={containerPacking.dryIceQuantity ? `${text(containerPacking.dryIceQuantity)} ${text(containerPacking.dryIceUnit)}` : 'None'} /><Instruction label="Container notes" value={containerPacking.packingInstructions} /></article> : null}
             {asObjects(instructions.samples).map((entry, index) => (
               <SampleInstructions entry={entry} index={index} key={index} packing={asObjects(containerPacking.samples).find(pair => pair.sampleTypeId === asObject(entry.sampleType).id)} />
             ))}
@@ -233,7 +233,7 @@ function receivingInstructions(instructions: JsonObject): string[] {
   if (control) notes.add(control)
   for (const entry of asObjects(instructions.samples)) {
     const sampleType = asObject(entry.sampleType)
-    const rule = asObject(entry.instructionRule)
+    const rule = asObject(entry.procedure)
     for (const value of [sampleType.temperatureRequirements, rule.temperatureInstructions, sampleType.safetyRequirements]) {
       const note = text(value).trim()
       if (note) notes.add(note)
@@ -244,7 +244,7 @@ function receivingInstructions(instructions: JsonObject): string[] {
 
 function SampleInstructions({ entry, index, packing }: { entry: JsonObject; index: number; packing?: JsonObject }) {
   const sampleType = asObject(entry.sampleType)
-  const rule = asObject(entry.instructionRule)
+  const rule = asObject(entry.procedure)
   return (
     <article className="border-t pt-4">
       <h3 className="font-semibold">{text(sampleType.name) || `Sample type ${index + 1}`}</h3>

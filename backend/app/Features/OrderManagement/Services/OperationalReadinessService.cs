@@ -49,13 +49,7 @@ public sealed class OperationalReadinessService(PSeqOperationsDbContext dbContex
             .SingleOrDefaultAsync(item => item.OrganizationId == organization.Id, cancellationToken);
         var hasSampleTypes = await dbContext.SampleTypeDefinitions.AsNoTracking().AnyAsync(item => item.IsActive
             && item.EffectiveFrom <= now && (!item.EffectiveTo.HasValue || item.EffectiveTo > now), cancellationToken);
-        var hasShipping = await dbContext.SampleShippingInstructionRules.AsNoTracking().AnyAsync(rule => rule.IsActive
-            && rule.EffectiveFrom <= now && (!rule.EffectiveTo.HasValue || rule.EffectiveTo > now)
-            && dbContext.SampleShippingDestinations.Any(destination => destination.Id == rule.DestinationId && destination.IsActive
-                && destination.EffectiveFrom <= now && (!destination.EffectiveTo.HasValue || destination.EffectiveTo > now))
-            && dbContext.SampleTypeDefinitions.Any(sample => sample.IsActive
-                && dbContext.SampleTypeDefinitions.Any(anchor => anchor.Id == rule.SampleTypeDefinitionId && anchor.DefinitionKey == sample.DefinitionKey)
-                && sample.EffectiveFrom <= now && (!sample.EffectiveTo.HasValue || sample.EffectiveTo > now)), cancellationToken);
+        var hasShipping = (await LabOrderSampleTypeChoices.ReadAsync(dbContext, cancellationToken)).Count > 0;
         var evaluation = OperationalReadinessPolicy.Evaluate(new OperationalReadinessInput(
             organization is { IsActive: true, Kind: OrganizationKind.Customer or OrganizationKind.Partner },
             organization.IsOperationalReadinessBlocked,

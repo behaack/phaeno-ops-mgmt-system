@@ -54,6 +54,24 @@ describe('transportation-kit fulfillment', () => {
     expect(mocks.dispatch).not.toHaveBeenCalled()
   })
   it('validates the required physical-kit selection and keeps the dispatch unsent', async () => { mount(<KitRequestDispatchDialog detail={detail} onClose={vi.fn()} onSaved={vi.fn()} />); fill('Carrier', 'Carrier'); fill('Tracking number', 'TRACK-1'); fireEvent.click(screen.getByRole('button', { name: 'Record kit shipment' })); expect(await screen.findByText('Select at least one physical kit to dispatch.')).toBeTruthy(); expect(mocks.dispatch).not.toHaveBeenCalled() })
+  it('requires receiving confirmation before continuing on an inactive saved destination', async () => {
+    const destinationId = '40000000-0000-4000-8000-000000000009'
+    const inactiveDetail = { ...detail, selectedPhaenoDestinationId: destinationId,
+      phaenoDestinations: [{ id: destinationId, name: 'Original receiving', revision: 2, isCurrentForNewWork: false }],
+      request: { ...request, status: 'PartiallyDispatched' as const } }
+    mount(<KitRequestDispatchDialog detail={inactiveDetail} onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.getByText('Saved destination no longer active')).toBeTruthy()
+    fireEvent.click(screen.getByLabelText(/KIT-001/))
+    fill('Carrier', 'Carrier')
+    fill('Tracking number', 'TRACK-1')
+    fireEvent.click(screen.getByRole('button', { name: 'Record kit shipment' }))
+    expect(await screen.findByText('Confirm that receiving can accept the remaining kits at this saved destination.')).toBeTruthy()
+    expect(mocks.dispatch).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('checkbox', { name: /Receiving can accept the remaining kits/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Record kit shipment' }))
+    await waitFor(() => expect(mocks.dispatch).toHaveBeenCalledWith(request.id,
+      expect.objectContaining({ phaenoDestinationId: destinationId, confirmUnavailableFixedDestination: true }), expect.any(String)))
+  })
   it('limits physical-kit selections to the remaining requested quantity', () => { mount(<KitRequestDispatchDialog detail={detail} onClose={vi.fn()} onSaved={vi.fn()} />); fireEvent.click(screen.getByLabelText(/KIT-001/)); fireEvent.click(screen.getByLabelText(/KIT-002/)); expect((screen.getByLabelText(/KIT-003/) as HTMLInputElement).disabled).toBe(true); fireEvent.click(screen.getByLabelText(/KIT-001/)); expect((screen.getByLabelText(/KIT-003/) as HTMLInputElement).disabled).toBe(false) })
   it('records a partial dispatch with request version and reuses the same key on a failed retry', async () => { mocks.dispatch.mockRejectedValue(new Error('Temporary dispatch failure.')); mount(<KitRequestDispatchDialog detail={detail} onClose={vi.fn()} onSaved={vi.fn()} />); fireEvent.click(screen.getByLabelText(/KIT-001/)); fill('Carrier', 'Carrier'); fill('Tracking number', 'TRACK-1'); fireEvent.click(screen.getByRole('button', { name: 'Record kit shipment' })); expect(await screen.findByText('Dispatch was not recorded')).toBeTruthy(); fireEvent.click(screen.getByRole('button', { name: 'Record kit shipment' })); await waitFor(() => expect(mocks.dispatch).toHaveBeenCalledTimes(2)); expect(mocks.dispatch.mock.calls[0]).toEqual([request.id, expect.objectContaining({ version: 3, stockKitIds: [detail.availableStockKits[0].id], outboundTrackingNumber: 'TRACK-1', fulfilledAt: expect.stringMatching(/Z$/) }), expect.any(String)]); expect(mocks.dispatch.mock.calls[0][2]).toBe(mocks.dispatch.mock.calls[1][2]); expect((screen.getByLabelText(/Tracking number/) as HTMLInputElement).value).toBe('TRACK-1') })
   it('keeps dirty dispatch entries when discard is declined and prevents closing during save', async () => { const close = vi.fn(); vi.spyOn(window, 'confirm').mockReturnValue(false); mocks.dispatch.mockImplementation(() => new Promise(() => {})); mount(<KitRequestDispatchDialog detail={detail} onClose={close} onSaved={vi.fn()} />); fill('Carrier', 'Carrier'); fireEvent.click(screen.getByRole('button', { name: 'Cancel' })); expect(close).not.toHaveBeenCalled(); fireEvent.click(screen.getByLabelText(/KIT-001/)); fill('Tracking number', 'TRACK-1'); fireEvent.click(screen.getByRole('button', { name: 'Record kit shipment' })); await waitFor(() => expect((screen.getByRole('button', { name: 'Cancel' }) as HTMLButtonElement).disabled).toBe(true)); expect((screen.getByLabelText(/Carrier/) as HTMLInputElement).disabled).toBe(true) })

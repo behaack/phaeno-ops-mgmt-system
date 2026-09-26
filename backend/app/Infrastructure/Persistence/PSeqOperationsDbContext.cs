@@ -129,7 +129,6 @@ public sealed partial class PSeqOperationsDbContext(
     public DbSet<SampleShippingDestination> SampleShippingDestinations { get; set; }
     public DbSet<SampleShippingContainerType> SampleShippingContainerTypes { get; set; }
     public DbSet<SampleShippingContainerDefinition> SampleShippingContainerDefinitions { get; set; }
-    public DbSet<SampleShippingContainerCompatibility> SampleShippingContainerCompatibilities { get; set; }
     public DbSet<SampleShippingStockKit> SampleShippingStockKits { get; set; }
     public DbSet<SampleShippingStockTube> SampleShippingStockTubes { get; set; }
     public DbSet<SampleShippingStockTubeCorrection> SampleShippingStockTubeCorrections { get; set; }
@@ -137,7 +136,7 @@ public sealed partial class PSeqOperationsDbContext(
     public DbSet<TransportationKitRequest> TransportationKitRequests { get; set; }
     public DbSet<TransportationKitRequestLine> TransportationKitRequestLines { get; set; }
     public DbSet<SampleTypeDefinition> SampleTypeDefinitions { get; set; }
-    public DbSet<SampleShippingInstructionRule> SampleShippingInstructionRules { get; set; }
+    public DbSet<SampleTypeProcedureLink> SampleTypeProcedureLinks { get; set; }
     public DbSet<SampleShippingProcedure> SampleShippingProcedures { get; set; }
     public DbSet<SampleShipment> SampleShipments { get; set; }
     public DbSet<SampleShipmentItem> SampleShipmentItems { get; set; }

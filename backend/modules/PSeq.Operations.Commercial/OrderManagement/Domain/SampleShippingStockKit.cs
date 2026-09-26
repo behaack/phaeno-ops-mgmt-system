@@ -1,6 +1,7 @@
 namespace PSeq.Operations.Commercial.OrderManagement.Domain;
 
 using PSeq.Operations.Commercial.Common.Persistence;
+using System.Text.Json;
 
 public sealed class SampleShippingStockKit : IAudit, IConcurrency
 {
@@ -12,6 +13,9 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
     public DateTime? AssemblyCompletedAt { get; private set; }
     public string ContainerSnapshotJson { get; private set; } = null!;
     public string? ProductExpirySnapshotJson { get; private set; }
+    public DateTime? WithdrawnAt { get; private set; }
+    public Guid? WithdrawnByUserId { get; private set; }
+    public string? WithdrawalReason { get; private set; }
     public int TubeCapacity { get; private set; }
     public string TubeSupplierName { get; private set; } = null!;
     public string TubeBarcodeNamespace { get; private set; } = SupplierTubeBarcode.LegacyNamespace;
@@ -81,6 +85,7 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
 
     public void Dispatch(SampleShipment jobContext, string carrier, string trackingNumber, DateTime fulfilledAt)
     {
+        EnsurePhysicallyUsable(DateTime.UtcNow);
         if (FulfilledAt.HasValue || OrganizationId.HasValue)
             throw new InvalidOperationException("This kit has already been dispatched.");
         EnsureVerifiedTubes();
@@ -100,6 +105,7 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
 
     public void Bind(SampleShipment shipment)
     {
+        EnsurePhysicallyUsable(DateTime.UtcNow);
         if (!FulfilledAt.HasValue || BoundSampleShipmentId.HasValue)
             throw new InvalidOperationException("The kit must be dispatched and unused.");
         if (TransportationKitRequestLineId.HasValue && !CustomerReceivedAt.HasValue)
@@ -114,6 +120,7 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
 
     public void Reserve(SampleShipment shipment, Guid actorId, DateTime utcNow)
     {
+        EnsurePhysicallyUsable(utcNow);
         if (!CustomerReceivedAt.HasValue || BoundSampleShipmentId.HasValue || ReservedSampleShipmentId.HasValue
             || actorId == Guid.Empty || utcNow.Kind != DateTimeKind.Utc
             || shipment.Status != SampleShipmentStatus.Preparing
@@ -132,6 +139,7 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
 
     public void DispatchToLocation(CustomerDeliveryLocation location, string carrier, string trackingNumber, DateTime fulfilledAt)
     {
+        EnsurePhysicallyUsable(DateTime.UtcNow);
         if (FulfilledAt.HasValue || OrganizationId.HasValue || !location.IsActive)
             throw new InvalidOperationException("Choose an active delivery location for an undispatched container.");
         EnsureVerifiedTubes();
@@ -145,6 +153,7 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
 
     public void LinkTransportationRequest(TransportationKitRequest request, TransportationKitRequestLine line)
     {
+        EnsurePhysicallyUsable(DateTime.UtcNow);
         if (TransportationKitRequestLineId.HasValue || !FulfilledAt.HasValue || BoundSampleShipmentId.HasValue
             || line.TransportationKitRequestId != request.Id || line.ContainerDefinitionId != ContainerDefinitionId
             || request.OrganizationId != OrganizationId || request.DepartmentId != DepartmentId
@@ -162,6 +171,37 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
             throw new InvalidOperationException("Only a dispatched transportation kit can be acknowledged as received.");
         if (CustomerReceivedAt.HasValue) return;
         CustomerReceivedAt = utcNow; CustomerReceivedByUserId = actorUserId;
+    }
+
+    public void Withdraw(Guid actorUserId, DateTime utcNow, string reason)
+    {
+        if (actorUserId == Guid.Empty || utcNow.Kind != DateTimeKind.Utc)
+            throw new ArgumentException("Record the actor and UTC withdrawal time.");
+        if (WithdrawnAt.HasValue) throw new InvalidOperationException("This physical kit is already withdrawn.");
+        WithdrawalReason = OrderText.Required(reason, "Withdrawal reason", 1000);
+        WithdrawnAt = utcNow;
+        WithdrawnByUserId = actorUserId;
+    }
+
+    public void EnsurePhysicallyUsable(DateTime utcNow)
+    {
+        if (utcNow.Kind != DateTimeKind.Utc) throw new ArgumentException("Use a UTC validation time.");
+        if (WithdrawnAt.HasValue)
+            throw new InvalidOperationException("This physical Transportation kit was withdrawn and cannot be sent or used.");
+        if (ProductExpirySnapshotJson is null)
+            throw new InvalidOperationException("This kit has no product-expiration record. Review its physical inventory before use.");
+        using var document = JsonDocument.Parse(ProductExpirySnapshotJson);
+        if (document.RootElement.ValueKind != JsonValueKind.Array)
+            throw new InvalidOperationException("The kit's product-expiration record is invalid.");
+        foreach (var product in document.RootElement.EnumerateArray())
+        {
+            if (!product.TryGetProperty("canExpire", out var canExpire) || canExpire.ValueKind != JsonValueKind.True)
+                continue;
+            if (!product.TryGetProperty("expirationDate", out var value) || value.ValueKind != JsonValueKind.String
+                || !DateOnly.TryParse(value.GetString(), out var expirationDate)
+                || expirationDate < DateOnly.FromDateTime(utcNow))
+                throw new InvalidOperationException("A kit component has expired or has no verified expiration date.");
+        }
     }
 
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }

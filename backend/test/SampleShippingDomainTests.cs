@@ -21,49 +21,36 @@ public class SampleShippingDomainTests
     }
 
     [Fact]
-    public void CompatibleSampleTypesResolveToOneDestinationPacket()
+    public void DifferentSampleTypesCannotSharePacketEvenWithTheSameProcedure()
     {
         var destination = Destination();
         var first = SampleType("RNA", "Extracted RNA");
         var second = SampleType("CDNA", "cDNA");
-        var rules = new[]
+        var procedure = Procedure();
+        var procedures = new Dictionary<Guid, SampleShippingProcedure>
         {
-            Rule(destination, first, "FROZEN", requiresSeparateShipment: false),
-            Rule(destination, second, "FROZEN", requiresSeparateShipment: false)
+            [first.Id] = procedure,
+            [second.Id] = procedure
         };
 
-        var resolution = SampleShippingCompatibilityResolver.Resolve(
+        var error = Assert.Throws<InvalidOperationException>(() => SampleShippingCompatibilityResolver.Resolve(
             destination,
             new[] { first, second },
-            rules,
-            Now);
+            procedures,
+            Now));
 
-        Assert.Equal("FROZEN", resolution.CompatibilityGroup);
-        Assert.Equal(2, resolution.Rules.Count);
-        Assert.False(resolution.RequiresSeparateShipment);
+        Assert.Contains("only one sample type", error.Message);
     }
 
     [Fact]
-    public void IncompatibleOrIncompleteSelectionCannotResolveACombinedPacket()
+    public void MissingProcedureCannotResolveAPacket()
     {
         var destination = Destination();
         var first = SampleType("RNA", "Extracted RNA");
-        var second = SampleType("TISSUE", "Frozen tissue");
-        var incompatibleRules = new[]
-        {
-            Rule(destination, first, "FROZEN_RNA", requiresSeparateShipment: false),
-            Rule(destination, second, "FROZEN_TISSUE", requiresSeparateShipment: true)
-        };
-
-        Assert.Throws<InvalidOperationException>(() => SampleShippingCompatibilityResolver.Resolve(
-            destination,
-            new[] { first, second },
-            incompatibleRules,
-            Now));
         Assert.Throws<InvalidOperationException>(() => SampleShippingCompatibilityResolver.Resolve(
             destination,
             new[] { first },
-            Array.Empty<SampleShippingInstructionRule>(),
+            new Dictionary<Guid, SampleShippingProcedure>(),
             Now));
     }
 
@@ -280,26 +267,13 @@ public class SampleShippingDomainTests
         Now.AddDays(-1),
         true);
 
-    private static SampleShippingInstructionRule Rule(
-        SampleShippingDestination destination,
-        SampleTypeDefinition sampleType,
-        string compatibilityGroup,
-        bool requiresSeparateShipment) => new(
-            Guid.NewGuid(),
-            1,
-            null,
-            destination.Id,
-            sampleType.Id,
-            compatibilityGroup,
+    private static SampleShippingProcedure Procedure() => new(
+            Guid.NewGuid(), 1, null, "Shared procedure",
             "Pack with approved absorbent and secondary containment.",
             "Maintain the approved temperature range.",
             "Use an approved traceable carrier service.",
             "Dispatch only for an open receiving window.",
-            "Deliver to Sample Receiving.",
             "Include the current shipment packet.",
             "Contact Phaeno if delayed or damaged.",
-            null,
-            requiresSeparateShipment,
-            Now.AddDays(-1),
-            true);
+            null, true);
 }

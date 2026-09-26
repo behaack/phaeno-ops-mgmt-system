@@ -81,19 +81,34 @@ public static class SampleShippingPackingData
         throw new OrderManagementException("sample_shipping_barcode_invalid", "Scan the shipment barcode or its confirmed packet barcode.");
     }
 
-    public static async Task<IReadOnlyList<ContainerCompatibilityRequest>> ContextsAsync(PSeqOperationsDbContext db, SampleShipment shipment, CancellationToken ct)
+    public static async Task<IReadOnlyList<ContainerSampleTypeContext>> ContextsAsync(PSeqOperationsDbContext db, SampleShipment shipment, CancellationToken ct)
     {
-        var destination = await db.SampleShippingDestinations.AsNoTracking().SingleAsync(item => item.Id == shipment.DestinationId, ct);
         var typeIds = shipment.Items.Select(item => item.SampleTypeDefinitionId).Distinct().ToArray();
-        var effectiveAt = DateTime.UtcNow;
-        var selected = await SampleShippingRevisionData.ReadAsync(db, shipment.DestinationId, typeIds, effectiveAt, ct);
-        try
+        if (shipment.AuthorizationSource == SampleShipmentAuthorizationSource.CustomerLabServiceOrder)
         {
-            return selected.Resolve(destination, effectiveAt).Rules
-                .Select(item => new ContainerCompatibilityRequest(item.SampleType.Id, item.Rule.Id)).ToArray();
+            var selectedId = await db.LabServiceOrders.AsNoTracking()
+                .Where(item => item.Id == shipment.AuthorizationSourceId)
+                .Select(item => item.SampleTypeDefinitionId).SingleOrDefaultAsync(ct);
+            if (selectedId.HasValue)
+            {
+                var families = await db.SampleTypeDefinitions.AsNoTracking()
+                    .Where(item => item.Id == selectedId.Value || typeIds.Contains(item.Id))
+                    .Select(item => new { item.Id, item.DefinitionKey }).ToArrayAsync(ct);
+                var selectedFamily = families.SingleOrDefault(item => item.Id == selectedId.Value);
+                if (selectedFamily is null || typeIds.Any(id => !families.Any(item => item.Id == id && item.DefinitionKey == selectedFamily.DefinitionKey)))
+                    throw new OrderManagementException("shipment_sample_type_mismatch",
+                        "This shipment does not match the Job's selected sample type. Review its sample authorization before choosing a container.", 409);
+                typeIds = [selectedId.Value];
+            }
         }
-        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
-        { throw new OrderManagementException("sample_shipping_incompatible", exception.Message, 409); }
+        if (typeIds.Length == 0)
+            throw new OrderManagementException("shipment_sample_type_required", "Select the Order's Sample type before choosing a Transportation kit.", 409);
+        var familiesForShipment = await db.SampleTypeDefinitions.AsNoTracking()
+            .Where(item => typeIds.Contains(item.Id))
+            .Select(item => new { item.Id, item.DefinitionKey }).ToArrayAsync(ct);
+        if (familiesForShipment.Length != typeIds.Length || familiesForShipment.Select(item => item.DefinitionKey).Distinct().Count() != 1)
+            throw new OrderManagementException("shipment_sample_type_mismatch", "A shipment may use only the Order's one Sample type.", 409);
+        return [new ContainerSampleTypeContext(typeIds[0])];
     }
 
     public static string? PackingBlock(SampleShipment shipment)
@@ -124,6 +139,9 @@ public static class SampleShippingPackingData
             ?? throw new OrderManagementException("supplier_tube_not_dispatched", "This tube is not in an available registered kit dispatched for this job.", 409);
         await LockAsync(db, $"stock-kit:{stock.Id}", ct);
         await db.Entry(stock).ReloadAsync(ct);
+        try { stock.EnsurePhysicallyUsable(DateTime.UtcNow); }
+        catch (InvalidOperationException error)
+        { throw new OrderManagementException("physical_kit_unavailable", error.Message, 409); }
         if (stock.TransportationKitRequestLineId.HasValue && !stock.CustomerReceivedAt.HasValue)
             throw new OrderManagementException("transportation_kit_receipt_required", "Confirm receipt of the transportation kit before scanning its tubes for a sample shipment.", 409);
         await TransportationKitSupplyGuard.EnsureOrderedStockAsync(db, shipment, stock, ct);

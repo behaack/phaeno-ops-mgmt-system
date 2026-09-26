@@ -3,7 +3,7 @@ import type { SampleShipmentWorkflow } from './sample-shipping'
 
 type Envelope<T> = { success: boolean; data: T; error: { code: string; message: string } | null }
 
-export type ContainerCompatibility = { sampleTypeDefinitionId: string; instructionRuleId: string; temperatureControlInstructions?: string | null; packingInstructions?: string | null }
+export type ContainerSampleTypeContext = { sampleTypeDefinitionId: string }
 export type ShippingKitContent = {
   supplierProductId: string
   supplierId: string
@@ -31,18 +31,22 @@ export type ShippingContainerDefinition = {
   deactivatedAt: string | null
   displayOrder: number
   version: number
-  compatibilities: ContainerCompatibility[]
   kitContents?: ShippingKitContent[] | null
   finishedKitProductId?: string | null
+  newWorkReady?: boolean | null
   assemblyWorkflowRevisionId?: string | null
+  sampleTypeAnchorId?: string | null
+  dryIceQuantity?: number | null
+  dryIceUnit?: string | null
+  temperatureControlInstructions?: string | null
 }
 export type ShippingContainerWrite = Pick<ShippingContainerDefinition,
   'commonName' | 'tubeCapacity' | 'supplierName' | 'supplierProductNumber' | 'packingInstructions' |
-  'effectiveFrom' | 'effectiveTo' | 'isActive' | 'displayOrder' | 'compatibilities'> & { kitContents?: Array<{ supplierProductId: string; quantity: number }>; finishedKitProductId?: string | null; assemblyWorkflowRevisionId?: string | null }
+  'effectiveFrom' | 'effectiveTo' | 'isActive' | 'displayOrder'> & { kitContents?: Array<{ supplierProductId: string; quantity: number }>; finishedKitProductId?: string | null; assemblyWorkflowRevisionId?: string | null; dryIceQuantity?: number | null; dryIceUnit?: string | null; temperatureControlInstructions?: string | null }
 export type ContainerQuantity = { containerDefinitionId: string; quantity: number }
 export type ContainerRecommendationRequest = {
   tubeCount: number
-  contexts: ContainerCompatibility[]
+  contexts: ContainerSampleTypeContext[]
   availability?: ContainerQuantity[]
   selection?: ContainerQuantity[]
   includeDraftDefinitionId?: string
@@ -89,6 +93,9 @@ export async function reviseShippingContainerDefinition(id: string, input: Shipp
 export async function deactivateShippingContainerDefinition(id: string, version: number) {
   return read((await api.post<Envelope<ShippingContainerDefinition>>(`${catalogPath}/${id}/deactivate`, { version })).data)
 }
+export async function linkTransportationKitSampleType(id: string, sampleTypeDefinitionId: string, version: number) {
+  return read((await api.post<Envelope<ShippingContainerDefinition>>(`${catalogPath}/${id}/sample-type`, { sampleTypeDefinitionId, version })).data)
+}
 export async function previewContainerRecommendation(input: ContainerRecommendationRequest) {
   return read((await api.post<Envelope<ContainerRecommendation>>(`${catalogPath}/recommendation`, input)).data)
 }
@@ -99,6 +106,8 @@ export type ShippingStockKit = {
   finishedKitProductId?: string | null
   assemblyWorkflowRevisionId?: string | null
   assemblyCompletedAt?: string | null
+  withdrawnAt?: string | null
+  withdrawalReason?: string | null
   container: { definitionId: string; sku: string; commonName: string; capacity: number }
   tubeSupplierName: string
   tubeProductNumber: string
@@ -136,7 +145,7 @@ export type ShippingStockKit = {
   productExpirations?: Array<{ supplierProductId: string; supplierName: string; productNumber: string; canExpire: boolean; expirationDate: string | null }> | null
 }
 export type ShippingStockKitWrite = { containerDefinitionId: string; tubeSupplierProductId: string; shipperSupplierProductId: string; tubeLotNumber: string | null; productExpirations?: Array<{ supplierProductId: string; expirationDate: string }> }
-export type ShippingStockKitDispatch = { shipmentId?: string; requestId?: string; deliveryLocationId?: string; version: number; outboundCarrier: string; outboundTrackingNumber: string; fulfilledAt: string }
+export type ShippingStockKitDispatch = { shipmentId?: string; requestId?: string; deliveryLocationId?: string; version: number; outboundCarrier: string; outboundTrackingNumber: string; fulfilledAt: string; confirmUnavailableFixedDestination?: boolean }
 const stockPath = '/platform/sample-shipping/stock-kits'
 export async function getShippingStockKits() { return read((await api.get<Envelope<ShippingStockKit[]>>(stockPath)).data) }
 export async function getShippingStockKit(id: string) { return read((await api.get<Envelope<ShippingStockKit>>(`${stockPath}/${id}`)).data) }
@@ -145,6 +154,7 @@ export async function registerShippingStockKitTubes(id: string, input: { supplie
 export async function verifyShippingStockKitTubes(id: string, input: { supplierBarcodes: string[]; version: number }) { return read((await api.post<Envelope<ShippingStockKit>>(`${stockPath}/${id}/verify-tubes`, input)).data) }
 export async function correctShippingStockKitTube(id: string, input: { previousBarcode: string; replacementBarcode: string; reason: string; version: number }) { return read((await api.post<Envelope<ShippingStockKit>>(`${stockPath}/${id}/correct-tube`, input)).data) }
 export async function dispatchShippingStockKit(id: string, input: ShippingStockKitDispatch) { return read((await api.post<Envelope<ShippingStockKit>>(`${stockPath}/${id}/dispatch`, input)).data) }
+export async function withdrawShippingStockKit(id: string, version: number, reason: string) { return read((await api.post<Envelope<ShippingStockKit>>(`${stockPath}/${id}/withdraw`, { version, reason })).data) }
 
 export type ShippingIdentityLookup = { kind: 'Order' | 'Sample' | 'Shipment'; id: string; reference: string; shipments: SampleShipmentWorkflow[] }
 export async function scanShippingIdentity(barcode: string) { return read((await api.get<Envelope<ShippingIdentityLookup>>('/platform/sample-shipping/identities/scan', { params: { barcode } })).data) }

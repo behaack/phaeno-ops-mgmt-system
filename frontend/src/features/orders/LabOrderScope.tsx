@@ -4,6 +4,7 @@ export function LabOrderScope({ order }: { order: LabServiceOrder }) {
   return <section aria-label="Samples in this order" className="mb-4 space-y-3 border-b pb-4 text-sm">
     <p><strong>Tube use:</strong> {(order.requestedSequencingRunCount ?? order.requestedSpecimenCount) > order.requestedSpecimenCount ? "Complete each sample’s allocated runs. Reusing available material requires laboratory confirmation." : order.tubeUsePolicyKey === "run_one_with_failure_fallback" ? "Run one tube per specimen; use a reserve only if the attempt fails." : "Policy not recorded for this order."}</p>
     {order.description ? <p className="whitespace-pre-wrap wrap-anywhere">{order.description}</p> : null}
+    <p><strong>Sample type:</strong> {order.sampleTypeName ?? 'Not recorded for this earlier order'}</p>
     <h3 className="font-semibold">{order.requestedSpecimenCount} {order.requestedSpecimenCount === 1 ? 'sample' : 'samples'} · {order.requestedSequencingRunCount ?? order.requestedSpecimenCount} sample-sequencing runs in this order</h3>
     {order.sourceGroups.length ? <table className="w-full text-left">
       <thead><tr className="border-b text-xs text-muted-foreground"><th scope="col" className="pb-2 font-medium">Biological source</th><th scope="col" className="pb-2 text-right font-medium">Samples</th></tr></thead>

@@ -24,7 +24,7 @@ export function ShippingKitContentFields({ form, suppliers, source, disabled }: 
   const errors = form.formState.errors.kitContents
   return <section aria-labelledby="kit-contents-heading" className="space-y-3 rounded-md border p-3">
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <h3 id="kit-contents-heading" className="text-sm font-medium">Kit contents</h3>
+      <h3 id="kit-contents-heading" className="text-sm font-medium">Bill of materials</h3>
       <Button ref={addButton} type="button" variant="outline" size="sm" disabled={disabled} onClick={() => append({ supplierId: '', supplierProductId: '', quantity: 1 })}><Plus aria-hidden="true" />Add product</Button>
     </div>
     <p className="text-xs text-muted-foreground">List the products included in one complete kit, with a quantity for each. Products can come from different suppliers. Usable tube capacity is set separately.</p>

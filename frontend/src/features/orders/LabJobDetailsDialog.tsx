@@ -9,6 +9,7 @@ import {
   createLabOrder,
   getLabOrder,
   getCustomerOrderReadiness,
+  listLabOrderSampleTypes,
   getOrderErrorMessage,
   initiateCustomerLabOrder,
   isOrderConcurrencyError,
@@ -55,6 +56,7 @@ const jobDetailsSchema = z
       .trim()
       .min(1, "Job name is required.")
       .max(255, "Job name must be 255 characters or fewer."),
+    sampleTypeDefinitionId: z.string().uuid("Select one sample type for this Job."),
     sourceGroups: z
       .array(
         z.object({
@@ -181,11 +183,17 @@ export function LabJobDetailsDialog({
     queryFn: () => getCustomerOrderReadiness(organizationId, selectedDepartment!.id),
     enabled: open && platformMode && !order && apiEnabled && Boolean(selectedDepartment) && !departments.isError,
   });
+  const sampleTypes = useQuery({
+    queryKey: ["lab-order-sample-types", platformMode],
+    queryFn: () => listLabOrderSampleTypes(platformMode),
+    enabled: open && apiEnabled,
+  });
   const form = useForm<JobDetailsFormInput, unknown, JobDetailsValues>({
     resolver: zodResolver(jobDetailsSchema),
     mode: "onBlur",
     defaultValues: {
       customerReference: "",
+      sampleTypeDefinitionId: "",
       sourceGroups: [{ biologicalSource: "", specimenCount: 1 }],
       sequencingRunCount: "",
       proposePrice: false,
@@ -208,6 +216,7 @@ export function LabJobDetailsDialog({
   const mutation = useMutation({
     mutationFn: async (values: JobDetailsValues) => {
       const customerReference = values.customerReference;
+      const sampleTypeDefinitionId = values.sampleTypeDefinitionId;
       const description = values.jobNotes || undefined;
       const requestedSpecimenCount = values.sourceGroups.reduce(
         (sum, group) => sum + group.specimenCount,
@@ -234,6 +243,7 @@ export function LabJobDetailsDialog({
           if (!readiness.data?.canStartPricing || readiness.isError)
             throw new Error("Resolve Customer readiness before starting pricing.");
           return initiateCustomerLabOrder({
+            sampleTypeDefinitionId,
             organizationId,
             departmentId: selectedDepartment.id,
             customerReference,
@@ -250,6 +260,7 @@ export function LabJobDetailsDialog({
           });
         }
         return createLabOrder({
+          sampleTypeDefinitionId,
           submitForPricing: true,
           customerReference,
           description,
@@ -270,6 +281,7 @@ export function LabJobDetailsDialog({
       const saveVersion = saveVersionRef.current ?? baseOrder.version;
       const update = (version: number) =>
         updateLabOrder(baseOrder.id, {
+          sampleTypeDefinitionId,
           submitForPricing: !platformMode,
           customerReference,
           description,
@@ -352,6 +364,7 @@ export function LabJobDetailsDialog({
   const editing = Boolean(order);
   const canSave =
     apiEnabled &&
+    !sampleTypes.isPending && !sampleTypes.isError &&
     (!editing || Boolean(order?.canEdit)) &&
     (!platformMode || (Boolean(organizationId && selectedDepartment) && !departments.isError)) &&
     (!platformMode || editing || (readiness.data?.canStartPricing === true && !readiness.isError && !readiness.isFetching)) &&
@@ -559,6 +572,25 @@ export function LabJobDetailsDialog({
             <FieldError id={`${formId}-reference-error`}>
               {form.formState.errors.customerReference?.message}
             </FieldError>
+
+            <div className="mt-4">
+              <Label htmlFor={`${formId}-sample-type`}><RequiredFieldName>Sample type</RequiredFieldName></Label>
+              <FieldDescription id={`${formId}-sample-type-help`}>Choose one type for this Job. Different types require separate orders, containers, packets, and tracking labels.</FieldDescription>
+              <select id={`${formId}-sample-type`} className="mt-2 h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                required
+                disabled={sampleTypes.isPending || sampleTypes.isError || mutation.isPending}
+                aria-invalid={Boolean(form.formState.errors.sampleTypeDefinitionId)}
+                aria-describedby={`${formId}-sample-type-help${form.formState.errors.sampleTypeDefinitionId ? ` ${formId}-sample-type-error` : ""}`}
+                {...form.register("sampleTypeDefinitionId")}>
+                <option value="">Select sample type</option>
+                {order?.sampleTypeDefinitionId && !sampleTypes.data?.some(type => type.id === order.sampleTypeDefinitionId)
+                  ? <option value={order.sampleTypeDefinitionId}>{order.sampleTypeName ?? "Previously selected type"} · saved choice</option> : null}
+                {(sampleTypes.data ?? []).map(type => <option key={type.id} value={type.id}>{type.name}</option>)}
+              </select>
+              <FieldError id={`${formId}-sample-type-error`}>{form.formState.errors.sampleTypeDefinitionId?.message}</FieldError>
+              {sampleTypes.isError ? <FieldError>Sample types could not be loaded. Reopen the form to retry.</FieldError> : null}
+              {!sampleTypes.isPending && !sampleTypes.isError && !sampleTypes.data?.length ? <FieldError>No active PSeq sample type is available. Ask Phaeno to complete setup.</FieldError> : null}
+            </div>
 
             <fieldset className="mt-4">
               <legend className="text-sm font-medium">
@@ -930,6 +962,7 @@ function jobDetailsFormValues(
 ): JobDetailsFormInput {
   return {
     customerReference: order?.customerReference ?? "",
+    sampleTypeDefinitionId: order?.sampleTypeDefinitionId ?? "",
     sourceGroups: order?.sourceGroups?.length
       ? order.sourceGroups.map((group) => ({
           biologicalSource: group.biologicalSource,
@@ -962,6 +995,7 @@ function editableJobDetails(order: LabServiceOrder) {
   return {
     status: order.status,
     customerReference: order.customerReference,
+    sampleTypeDefinitionId: order.sampleTypeDefinitionId ?? null,
     description: order.description ?? "",
     requestedSpecimenCount: order.requestedSpecimenCount,
     requestedSequencingRunCount: order.requestedSequencingRunCount ?? order.requestedSpecimenCount,

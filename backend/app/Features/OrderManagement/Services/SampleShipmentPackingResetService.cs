@@ -60,7 +60,7 @@ public sealed class SampleShipmentPackingResetService(PSeqOperationsDbContext db
         var targets = new Dictionary<PoolKey, SampleShipment>();
         foreach (var group in groups)
         {
-            // Never merge different destinations, Lab work, separate-shipment rules or incompatible handling groups.
+            // Never merge different destinations, Lab work, or sample-type families.
             var pool = active.Where(item => !item.ContainerDefinitionId.HasValue && item.Items.Count > 0
                     && item.Items.All(row => keys[row.Id] == group.Key))
                 .OrderByDescending(item => item.IsPackingPool).ThenBy(item => item.CreatedAt).ThenBy(item => item.Id).FirstOrDefault();
@@ -145,24 +145,16 @@ public sealed class SampleShipmentPackingResetService(PSeqOperationsDbContext db
 
     private async Task<Dictionary<Guid, PoolKey>> ReadPoolKeysAsync(IReadOnlyList<SampleShipment> shipments, CancellationToken ct)
     {
-        var destinationIds = shipments.Select(item => item.DestinationId).Distinct().ToArray();
         var typeIds = shipments.SelectMany(item => item.Items.Select(row => row.SampleTypeDefinitionId)).Distinct().ToArray();
         var familyKeys = await db.SampleTypeDefinitions.AsNoTracking().Where(item => typeIds.Contains(item.Id))
             .Select(item => item.DefinitionKey).Distinct().ToArrayAsync(ct);
         var keys = await db.SampleTypeDefinitions.AsNoTracking().Where(item => familyKeys.Contains(item.DefinitionKey))
             .ToDictionaryAsync(item => item.Id, item => item.DefinitionKey, ct);
-        var revisionIds = keys.Keys.ToArray();
-        var rules = await db.SampleShippingInstructionRules.AsNoTracking().Where(item => destinationIds.Contains(item.DestinationId)
-            && revisionIds.Contains(item.SampleTypeDefinitionId)).ToArrayAsync(ct);
-        var now = DateTime.UtcNow;
         return shipments.SelectMany(shipment => shipment.Items.Select(item =>
         {
-            var matches = rules.Where(rule => rule.DestinationId == shipment.DestinationId
-                && keys.TryGetValue(rule.SampleTypeDefinitionId, out var ruleKey)
-                && keys.TryGetValue(item.SampleTypeDefinitionId, out var sampleKey) && ruleKey == sampleKey && rule.IsEffectiveAt(now)).ToArray();
-            // Missing/changed configuration must not mix unknown handling requirements during an otherwise safe reset.
-            var handling = matches.Length == 1 && !matches[0].RequiresSeparateShipment
-                ? $"group:{matches[0].CompatibilityGroup.ToUpperInvariant()}" : $"type:{item.SampleTypeDefinitionId:N}";
+            // A missing definition remains isolated by exact revision; saved group labels cannot combine types.
+            var handling = keys.TryGetValue(item.SampleTypeDefinitionId, out var sampleKey)
+                ? $"type:{sampleKey:N}" : $"revision:{item.SampleTypeDefinitionId:N}";
             return (item.Id, Key: new PoolKey(shipment.DestinationId, shipment.LabWorkOrderId, handling));
         })).ToDictionary(item => item.Id, item => item.Key);
     }

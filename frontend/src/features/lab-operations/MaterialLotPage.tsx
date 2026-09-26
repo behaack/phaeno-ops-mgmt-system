@@ -18,7 +18,7 @@ export function MaterialLotPage({ materialLotId }: { materialLotId: string }) {
   const query = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: allowed && authProvider !== 'mock' })
   const lot = query.data?.materialLots.find(item => item.id === materialLotId)
   return <main className="page-wrap space-y-5 px-4 py-8">
-    <Link to="/lab-operations" search={{ section: 'materials' }} className="text-sm text-primary underline underline-offset-4">Back to Materials</Link>
+    <Link to="/lab-operations" search={{ section: 'materials' }} className="text-sm text-primary underline underline-offset-4">Back to Purchased Materials</Link>
     {!allowed ? <p>You do not have access to laboratory materials.</p> : authProvider === 'mock' ? <p>Use a connected Phaeno session to view material lots.</p> : <>
       {query.isError ? <Alert variant="destructive"><AlertTitle>Material lot could not be refreshed</AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Try again to load the latest lot details.')}<Button variant="outline" onClick={() => void query.refetch()}>Try again</Button></AlertDescription></Alert> : null}
       {query.isPending ? <p role="status">Loading material lot…</p> : lot ? <>

@@ -16,7 +16,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         {
             var input = new LabOrderWriteRequest("Direct submitted request", "Original scope", false,
                 "synthetic_reference", "Frozen", "No known hazards", [], RequestedSpecimenCount: 2,
-                SourceGroups: [new("synthetic_reference", 2)], SubmitForPricing: true);
+                SourceGroups: [new("synthetic_reference", 2)], SubmitForPricing: true,
+                SampleTypeDefinitionId: shippingConfiguration.ActiveSampleTypeId);
             var controller = CreateChangeCustomerController();
             var submitted = await controller.Create(input, default);
             var replay = await controller.Create(input, default);

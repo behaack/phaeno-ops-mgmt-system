@@ -542,7 +542,7 @@
       "title": "Request laboratory services",
       "summary": "Complete ordering and shipping on the Job, then follow receipt, laboratory progress and results.",
       "order": 30,
-      "reviewedAt": "2026-09-22",
+      "reviewedAt": "2026-09-25",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -575,7 +575,7 @@
       "title": "Prepare and ship samples",
       "summary": "Prepare containers, match tubes with their declared material amounts, print shipping inserts and record dispatch.",
       "order": 35,
-      "reviewedAt": "2026-09-24",
+      "reviewedAt": "2026-09-25",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -1373,7 +1373,7 @@
       "title": "Customer lab authorization",
       "summary": "Start a Customer Job for its Department, resolve readiness by stage, issue pricing, and authorize Lab work after sample finalization.",
       "order": 41,
-      "reviewedAt": "2026-09-22",
+      "reviewedAt": "2026-09-25",
       "navigationGroup": "order-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1809,9 +1809,9 @@
       "locale": null,
       "slug": "configuration-and-recovery",
       "title": "Configuration and file retention",
-      "summary": "Maintain reusable defaults, services, analyses, Partner rules, shipping container sizes, kit contents and compatibility, and released-file retention.",
+      "summary": "Maintain reusable defaults, services, analyses, Partner rules, Sample types, Shipping procedures, Phaeno ship-to destinations, Transportation kits, and released-file retention.",
       "order": 60,
-      "reviewedAt": "2026-09-23",
+      "reviewedAt": "2026-09-25",
       "navigationGroup": "platform-operations",
       "contentType": "troubleshooting",
       "topicIds": [

@@ -30,7 +30,9 @@ public sealed record StockKitDto(Guid Id, string KitNumber, ShipmentContainerDto
       IReadOnlyList<StockKitProductExpiryDto>? ProductExpirations = null,
       DateTime? TubesVerifiedAt = null, Guid? TubesVerifiedByUserId = null,
       IReadOnlyList<StockKitTubeCorrectionDto>? TubeCorrections = null, Guid? FinishedKitProductId = null,
-      Guid? AssemblyWorkflowRevisionId = null, DateTime? AssemblyCompletedAt = null);
+      Guid? AssemblyWorkflowRevisionId = null, DateTime? AssemblyCompletedAt = null,
+      DateTime? WithdrawnAt = null, string? WithdrawalReason = null);
+  public sealed record WithdrawStockKitRequest(long Version, string Reason);
   public sealed record StockKitTubeCorrectionDto(string PreviousBarcode, string ReplacementBarcode,
       string Reason, Guid CorrectedByUserId, DateTime CorrectedAt);
   public sealed record VerifyStockKitTubesRequest(long Version, IReadOnlyList<string> SupplierBarcodes);
@@ -43,4 +45,5 @@ public sealed record CreateStockKitRequest(Guid ContainerDefinitionId, Guid Tube
     Guid ShipperSupplierProductId, string? TubeLotNumber,
     IReadOnlyList<StockKitProductExpiryRequest>? ProductExpirations = null);
 public sealed record DispatchStockKitRequest(Guid? ShipmentId, long Version, string OutboundCarrier,
-    string OutboundTrackingNumber, DateTime FulfilledAt, Guid? DeliveryLocationId = null, Guid? RequestId = null);
+    string OutboundTrackingNumber, DateTime FulfilledAt, Guid? DeliveryLocationId = null, Guid? RequestId = null,
+    bool ConfirmUnavailableFixedDestination = false);

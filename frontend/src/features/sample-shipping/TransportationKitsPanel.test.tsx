@@ -13,7 +13,7 @@ vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ s
 vi.mock('@tanstack/react-router', () => ({ useBlocker: vi.fn(), Link: ({ children, search }: { children: ReactNode; search?: Record<string, unknown> }) => <a href="#locations" data-search={JSON.stringify(search)}>{children}</a> }))
 const location: CustomerDeliveryLocation = { id: 'location-1', organizationId: 'org-1', departmentId: 'department-1', label: 'Receiving laboratory', recipient: 'Lab receiving', line1: '100 Example Road', line2: null, city: 'Example', region: 'CA', postalCode: '90000', countryCode: 'US', phone: null, deliveryInstructions: 'Room 10', isDefault: true, isActive: true, version: 2 }
 const request: TransportationKitRequest = { id: 'request-1', jobId: 'order-1', jobNumber: 'JOB-1', organizationId: 'org-1', organizationName: 'Customer', departmentId: 'department-1', departmentName: 'General', deliveryLocationId: location.id, deliveryAddress: location, status: 'Pending', requestedAt: '2026-09-08T12:00:00Z', version: 1, includedInLabOrder: true, lines: packingRecommendation.containers.map(item => ({ id: item.containerDefinitionId, containerDefinitionId: item.containerDefinitionId, sku: item.sku, commonName: item.commonName, tubeCapacity: item.capacity, requestedQuantity: item.quantity, dispatchedQuantity: 0, receivedQuantity: 0 })), kits: [], canConfirmReceipt: false, canCancel: true, cancellationReason: null }
-const supply: ShipmentKitSupply = { shipmentId: shippingFixture.id, shipmentVersion: 3, jobId: 'order-1', jobNumber: 'JOB-1', tubeCount: 30, deliveryLocationId: location.id, locations: [location], recommendation: packingRecommendation, recordedStock: [], inventoryStatus: 'Unknown', request: null, canRequestKits: true, requestBlockedReason: null, canPrepareSamples: false, preparationBlockedReason: 'Order transportation kits for this Job, then confirm their arrival before configuring containers or scanning tubes.' }
+const supply: ShipmentKitSupply = { shipmentId: shippingFixture.id, shipmentVersion: 3, jobId: 'order-1', jobNumber: 'JOB-1', sampleTypeName: 'PSeq Total RNA', tubeCount: 30, deliveryLocationId: location.id, locations: [location], recommendation: packingRecommendation, recordedStock: [], inventoryStatus: 'Unknown', request: null, canRequestKits: true, requestBlockedReason: null, canPrepareSamples: false, preparationBlockedReason: 'Order transportation kits for this Job, then confirm their arrival before configuring containers or scanning tubes.' }
 const dispatched: TransportationKitRequest = { ...request, status: 'Dispatched', version: 2, canConfirmReceipt: true, canCancel: false, kits: [1, 2].map(index => ({ stockKitId: `stock-${index}`, kitNumber: `KIT-${index}`, requestLineId: request.lines[index - 1].id, containerDefinitionId: request.lines[index - 1].containerDefinitionId, outboundCarrier: 'Example carrier', outboundTrackingNumber: `TRACK-${index}`, dispatchedAt: '2026-09-09T12:00:00Z', receivedAt: null })) }
 beforeEach(() => { vi.clearAllMocks(); mocks.supply.mockResolvedValue(supply); mocks.order.mockResolvedValue(request) })
 afterEach(() => vi.restoreAllMocks())
@@ -49,6 +49,7 @@ describe('customer transportation kits', () => {
     dialog(customSupply)
     await waitFor(() => expect(screen.getByRole('button', { name: 'Confirm kit order' })).toHaveProperty('disabled', false))
     expect(screen.getByText('Recommended kit configuration for this shipment')).toBeTruthy()
+    expect(screen.getByText(/PSeq Total RNA/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Adjust kit sizes' }))
     expect(screen.queryByText('Recommended kit configuration for this shipment')).toBeNull()
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Quantity of 20-tube container' }), { target: { value: '0' } })
@@ -63,6 +64,20 @@ describe('customer transportation kits', () => {
     expect(mocks.confirm.mock.calls[1][0].containers).toEqual([{ containerDefinitionId: 'container-20', quantity: 1 }, { containerDefinitionId: 'container-10', quantity: 1 }])
     fireEvent.click(screen.getByRole('button', { name: 'Adjust kit sizes' }))
     expect(screen.getByRole('spinbutton', { name: 'Quantity of 5-tube container' })).toHaveProperty('value', '-1')
+  })
+  it('removes kit sizes that are no longer compatible with the Job sample type', async () => {
+    const initial = { ...supply, containerTypes: shippingContainers }
+    mocks.supply.mockResolvedValue({ ...initial, containerTypes: [shippingContainers[2]] })
+    dialog(initial)
+    await waitFor(() => expect(mocks.supply).toHaveBeenCalled())
+    fireEvent.click(screen.getByRole('button', { name: 'Adjust kit sizes' }))
+    await waitFor(() => expect(screen.queryByRole('spinbutton', { name: 'Quantity of 20-tube container' })).toBeNull())
+    expect(screen.queryByRole('spinbutton', { name: 'Quantity of 10-tube container' })).toBeNull()
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Quantity of 5-tube container' }), { target: { value: '6' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm kit order' }))
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({
+      containers: [{ containerDefinitionId: 'container-5', quantity: 6 }],
+    })))
   })
   it('keeps cancelled ordering separate from received stock and exposes the direct-link order path', async () => {
     mocks.supply.mockResolvedValue({ ...supply, request: { ...request, status: 'Cancelled' }, canPrepareSamples: true })

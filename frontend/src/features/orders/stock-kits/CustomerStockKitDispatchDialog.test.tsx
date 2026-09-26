@@ -33,6 +33,22 @@ describe('Customer stock dispatch to the requested location', () => {
     await waitFor(() => expect(mocks.dispatch).toHaveBeenCalledWith(kit.id, { requestId: request.id, deliveryLocationId: request.deliveryLocationId, version: kit.version, outboundCarrier: 'Saved carrier', outboundTrackingNumber: 'TRACK-001', fulfilledAt: expect.stringMatching(/Z$/) }))
     expect(mocks.dispatch.mock.calls[0][1]).not.toHaveProperty('shipmentId'); await waitFor(() => expect(saved).toHaveBeenCalledTimes(1))
   })
+  it('requires receiving confirmation for an inactive saved Job route', async () => {
+    const destinationId = '40000000-0000-4000-8000-000000000009'
+    mocks.detail.mockResolvedValue({ ...detail, selectedPhaenoDestinationId: destinationId,
+      phaenoDestinations: [{ id: destinationId, name: 'Original receiving', revision: 2, isCurrentForNewWork: false }] })
+    mount(<CustomerStockKitDispatchDialog kit={kit} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await selectRequest()
+    expect(screen.getByText('Saved destination no longer active')).toBeTruthy()
+    fillDispatch()
+    fireEvent.click(screen.getByRole('button', { name: 'Record dispatch' }))
+    expect(await screen.findByText('Confirm that receiving can accept the remaining kits at this saved destination.')).toBeTruthy()
+    expect(mocks.dispatch).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('checkbox', { name: /Receiving can accept the remaining kits/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Record dispatch' }))
+    await waitFor(() => expect(mocks.dispatch).toHaveBeenCalledWith(kit.id,
+      expect.objectContaining({ requestId: request.id, confirmUnavailableFixedDestination: true })))
+  })
   it('excludes cancelled, complete and unrelated-size requests', async () => {
     mocks.list.mockResolvedValue([{ ...request, status: 'Cancelled' }, { ...request, id: 'closed', status: 'Received' }, { ...request, id: 'other', lines: request.lines.map(line => ({ ...line, containerDefinitionId: 'other-size' })) }])
     mount(<CustomerStockKitDispatchDialog kit={kit} onClose={vi.fn()} onSaved={vi.fn()} />)

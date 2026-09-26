@@ -4,7 +4,8 @@ import type { ContainerRecommendation, ShippingContainerDefinition } from '#/api
 export const shippingContainers: ShippingContainerDefinition[] = [20, 10, 5].map(capacity => ({
   id: `container-${capacity}`, definitionKey: `definition-${capacity}`, sku: `000-${capacity}`, commonName: `${capacity}-tube container`, tubeCapacity: capacity,
   revision: 1, supersedesDefinitionId: null, supplierName: null, supplierProductNumber: null, packingInstructions: null,
-  effectiveFrom: '2026-01-01T00:00:00Z', effectiveTo: null, deactivatedAt: null, isActive: true, displayOrder: 0, version: 1, compatibilities: [],
+  effectiveFrom: '2026-01-01T00:00:00Z', effectiveTo: null, deactivatedAt: null, isActive: true, displayOrder: 0, version: 1,
+  sampleTypeAnchorId: 'sample-type-1', temperatureControlInstructions: 'Keep frozen.',
 }))
 export const packingFixture: SampleShipmentPacking = { shipmentId: 'shipment-1', version: 3, tubeCount: 30, containerTypes: shippingContainers, canPack: true, blockedReason: null }
 export const packingRecommendation: ContainerRecommendation = { tubeCount: 30, containerCount: 2, totalCapacity: 30, unusedCapacity: 0, unallocatedTubes: 0, isComplete: true, containers: [20, 10].map(capacity => ({ containerDefinitionId: `container-${capacity}`, sku: `000-${capacity}`, commonName: `${capacity}-tube container`, capacity, quantity: 1, assignedTubes: capacity, unusedCapacity: 0 })), explanation: 'Two containers hold all 30 tubes without spare capacity.' }

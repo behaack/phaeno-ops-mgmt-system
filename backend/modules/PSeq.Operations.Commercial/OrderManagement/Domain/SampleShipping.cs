@@ -182,6 +182,7 @@ public sealed class SampleTypeDefinition : IAudit, IConcurrency
     public string SafetyRequirements { get; private set; } = null!;
     public string? CarrierRestrictions { get; private set; }
     public int? MaximumTransitHours { get; private set; }
+    public Guid? ShippingProcedureId { get; private set; }
     public DateTime EffectiveFrom { get; private set; }
     public DateTime? EffectiveTo { get; private set; }
     public bool IsActive { get; private set; }
@@ -214,7 +215,8 @@ public sealed class SampleTypeDefinition : IAudit, IConcurrency
         string? carrierRestrictions,
         int? maximumTransitHours,
         DateTime effectiveFrom,
-        bool isActive)
+        bool isActive,
+        Guid? shippingProcedureId = null)
     {
         if (definitionKey == Guid.Empty) throw new ArgumentException("A sample-type definition key is required.", nameof(definitionKey));
         if (revision < 1) throw new ArgumentOutOfRangeException(nameof(revision));
@@ -247,6 +249,8 @@ public sealed class SampleTypeDefinition : IAudit, IConcurrency
         SafetyRequirements = OrderText.Required(safetyRequirements, nameof(safetyRequirements), 2000);
         CarrierRestrictions = OrderText.Optional(carrierRestrictions, 2000);
         MaximumTransitHours = maximumTransitHours;
+        if (shippingProcedureId == Guid.Empty) throw new ArgumentException("Choose a valid shared shipping procedure.", nameof(shippingProcedureId));
+        ShippingProcedureId = shippingProcedureId;
         EffectiveFrom = effectiveFrom;
         IsActive = isActive;
     }
@@ -270,122 +274,11 @@ public sealed class SampleTypeDefinition : IAudit, IConcurrency
         EffectiveTo = effectiveTo;
     }
 
-    public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
-    public void MarkUpdated(DateTime utcNow, Guid? actorUserId) { UpdatedAt = utcNow; UpdatedByUserId = actorUserId; }
-    public void IncrementVersion() => Version++;
-}
-
-public sealed class SampleShippingInstructionRule : IAudit, IConcurrency
-{
-    public Guid Id { get; private set; } = Guid.NewGuid();
-    public Guid DefinitionKey { get; private set; }
-    public int Revision { get; private set; }
-    public Guid? SupersedesInstructionRuleId { get; private set; }
-    public Guid? ShippingProcedureId { get; private set; }
-    public string? DestinationInstructions { get; private set; }
-    public Guid DestinationId { get; private set; }
-    public Guid SampleTypeDefinitionId { get; private set; }
-    public string CompatibilityGroup { get; private set; } = null!;
-    public string PackingInstructions { get; private set; } = null!;
-    public string TemperatureInstructions { get; private set; } = null!;
-    public string CarrierInstructions { get; private set; } = null!;
-    public string DispatchInstructions { get; private set; } = null!;
-    public string DeliveryInstructions { get; private set; } = null!;
-    public string RequiredDocuments { get; private set; } = null!;
-    public string ExceptionInstructions { get; private set; } = null!;
-    public string? InternationalCustomsInstructions { get; private set; }
-    public bool RequiresSeparateShipment { get; private set; }
-    public DateTime EffectiveFrom { get; private set; }
-    public DateTime? EffectiveTo { get; private set; }
-    public bool IsActive { get; private set; }
-    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
-    public Guid? CreatedByUserId { get; private set; }
-    public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
-    public Guid? UpdatedByUserId { get; private set; }
-    public long Version { get; private set; } = 1;
-
-    private SampleShippingInstructionRule() { }
-
-    public SampleShippingInstructionRule(
-        Guid definitionKey,
-        int revision,
-        Guid? supersedesInstructionRuleId,
-        Guid destinationId,
-        Guid sampleTypeDefinitionId,
-        string compatibilityGroup,
-        string packingInstructions,
-        string temperatureInstructions,
-        string carrierInstructions,
-        string dispatchInstructions,
-        string deliveryInstructions,
-        string requiredDocuments,
-        string exceptionInstructions,
-        string? internationalCustomsInstructions,
-        bool requiresSeparateShipment,
-        DateTime effectiveFrom,
-        bool isActive,
-        SampleShippingProcedure? procedure = null,
-        string? destinationInstructions = null)
+    public void ChangeShippingProcedure(Guid procedureId)
     {
-        if (definitionKey == Guid.Empty || destinationId == Guid.Empty || sampleTypeDefinitionId == Guid.Empty)
-            throw new ArgumentException("Instruction-rule, destination, and sample-type identifiers are required.");
-        if (revision < 1) throw new ArgumentOutOfRangeException(nameof(revision));
-        if (revision == 1 && supersedesInstructionRuleId.HasValue)
-            throw new ArgumentException("The first instruction-rule revision cannot supersede another revision.", nameof(supersedesInstructionRuleId));
-        if (revision > 1 && !supersedesInstructionRuleId.HasValue)
-            throw new ArgumentException("A later instruction-rule revision must identify the revision it supersedes.", nameof(supersedesInstructionRuleId));
-
-        DefinitionKey = definitionKey;
-        Revision = revision;
-        SupersedesInstructionRuleId = supersedesInstructionRuleId;
-        DestinationId = destinationId;
-        SampleTypeDefinitionId = sampleTypeDefinitionId;
-        if (procedure is { IsActive: false }) throw new ArgumentException("Select an approved shipping procedure.");
-        ShippingProcedureId = procedure?.Id;
-        DestinationInstructions = OrderText.Optional(destinationInstructions, 4000);
-        if (procedure is not null)
-        {
-            packingInstructions = procedure.PackingInstructions;
-            temperatureInstructions = procedure.TemperatureInstructions;
-            carrierInstructions = procedure.CarrierInstructions;
-            dispatchInstructions = procedure.DispatchInstructions;
-            requiredDocuments = procedure.RequiredDocuments;
-            exceptionInstructions = procedure.ExceptionInstructions;
-            internationalCustomsInstructions = procedure.InternationalCustomsInstructions;
-        }
-        CompatibilityGroup = SampleShippingText.Code(compatibilityGroup, nameof(compatibilityGroup));
-        PackingInstructions = OrderText.Required(packingInstructions, nameof(packingInstructions), 4000);
-        TemperatureInstructions = OrderText.Required(temperatureInstructions, nameof(temperatureInstructions), 4000);
-        CarrierInstructions = OrderText.Required(carrierInstructions, nameof(carrierInstructions), 4000);
-        DispatchInstructions = OrderText.Required(dispatchInstructions, nameof(dispatchInstructions), 4000);
-        DeliveryInstructions = procedure is null
-            ? OrderText.Required(deliveryInstructions, nameof(deliveryInstructions), 4000)
-            : string.Empty;
-        RequiredDocuments = OrderText.Required(requiredDocuments, nameof(requiredDocuments), 4000);
-        ExceptionInstructions = OrderText.Required(exceptionInstructions, nameof(exceptionInstructions), 4000);
-        InternationalCustomsInstructions = OrderText.Optional(internationalCustomsInstructions, 4000);
-        RequiresSeparateShipment = requiresSeparateShipment;
-        EffectiveFrom = effectiveFrom;
-        IsActive = isActive;
-    }
-
-    public bool IsEffectiveAt(DateTime utcNow) =>
-        IsActive && EffectiveFrom <= utcNow && (!EffectiveTo.HasValue || EffectiveTo > utcNow);
-
-    public void EndAt(DateTime effectiveTo)
-    {
-        if (effectiveTo <= EffectiveFrom)
-            throw new ArgumentException("An instruction-rule revision must end after it begins.", nameof(effectiveTo));
-        if (EffectiveTo.HasValue && effectiveTo > EffectiveTo.Value)
-            throw new InvalidOperationException("An instruction-rule revision cannot be extended after it has been bounded.");
-        EffectiveTo = effectiveTo;
-    }
-
-    public void SetActive(bool isActive, DateTime utcNow)
-    {
-        if (EffectiveTo.HasValue && EffectiveTo <= utcNow)
-            throw new InvalidOperationException("An ended shipping-assignment revision cannot change availability.");
-        IsActive = isActive;
+        if (procedureId == Guid.Empty)
+            throw new ArgumentException("Choose a valid shared shipping procedure.", nameof(procedureId));
+        ShippingProcedureId = procedureId;
     }
 
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
@@ -395,22 +288,31 @@ public sealed class SampleShippingInstructionRule : IAudit, IConcurrency
 
 public sealed record ResolvedSampleShippingRule(
     SampleTypeDefinition SampleType,
-    SampleShippingInstructionRule Rule);
+    SampleShippingProcedure Procedure,
+    SampleShippingDestination Destination)
+{
+    public Guid ShippingProcedureId => Procedure.Id;
+    public string PackingInstructions => Procedure.PackingInstructions;
+    public string TemperatureInstructions => Procedure.TemperatureInstructions;
+    public string CarrierInstructions => Procedure.CarrierInstructions;
+    public string DispatchInstructions => Procedure.DispatchInstructions;
+    public string DeliveryInstructions => Destination.DeliveryInstructions;
+    public string RequiredDocuments => Procedure.RequiredDocuments;
+    public string ExceptionInstructions => Procedure.ExceptionInstructions;
+    public string? InternationalCustomsInstructions => Procedure.InternationalCustomsInstructions;
+}
 
 public sealed record SampleShippingResolution(
     SampleShippingDestination Destination,
-    IReadOnlyList<ResolvedSampleShippingRule> Rules,
-    string CompatibilityGroup,
-    bool RequiresSeparateShipment);
+    IReadOnlyList<ResolvedSampleShippingRule> Rules);
 
 public static class SampleShippingCompatibilityResolver
 {
     public static SampleShippingResolution Resolve(
         SampleShippingDestination destination,
         IReadOnlyCollection<SampleTypeDefinition> sampleTypes,
-        IReadOnlyCollection<SampleShippingInstructionRule> instructionRules,
-        DateTime effectiveAt,
-        IReadOnlyDictionary<Guid, Guid>? sampleTypeDefinitionKeys = null)
+        IReadOnlyDictionary<Guid, SampleShippingProcedure> proceduresBySampleTypeId,
+        DateTime effectiveAt)
     {
         if (!destination.IsEffectiveAt(effectiveAt))
             throw new InvalidOperationException("The selected shipping destination is not effective at the requested time.");
@@ -418,6 +320,8 @@ public static class SampleShippingCompatibilityResolver
             throw new ArgumentException("Select at least one sample type.", nameof(sampleTypes));
         if (sampleTypes.Select(item => item.Id).Distinct().Count() != sampleTypes.Count)
             throw new ArgumentException("A sample type cannot be selected more than once.", nameof(sampleTypes));
+        if (sampleTypes.Count > 1)
+            throw new InvalidOperationException("A shipment container may contain only one sample type. Prepare separate containers, packets, and tracking labels.");
 
         var resolved = new List<ResolvedSampleShippingRule>(sampleTypes.Count);
         foreach (var sampleType in sampleTypes)
@@ -425,34 +329,12 @@ public static class SampleShippingCompatibilityResolver
             if (!sampleType.IsEffectiveAt(effectiveAt))
                 throw new InvalidOperationException($"Sample type '{sampleType.Name}' is not effective at the requested time.");
 
-            var matches = instructionRules
-                .Where(rule => rule.DestinationId == destination.Id
-                    && (rule.SampleTypeDefinitionId == sampleType.Id
-                        || (sampleTypeDefinitionKeys != null
-                            && sampleTypeDefinitionKeys.TryGetValue(rule.SampleTypeDefinitionId, out var key)
-                            && key == sampleType.DefinitionKey))
-                    && rule.IsEffectiveAt(effectiveAt))
-                .ToList();
-            if (matches.Count == 0)
-                throw new InvalidOperationException($"No effective shipping instruction rule exists for '{sampleType.Name}' and '{destination.Name}'.");
-            if (matches.Count > 1)
-                throw new InvalidOperationException($"More than one effective shipping instruction rule exists for '{sampleType.Name}' and '{destination.Name}'.");
-            resolved.Add(new ResolvedSampleShippingRule(sampleType, matches[0]));
+            if (!proceduresBySampleTypeId.TryGetValue(sampleType.Id, out var procedure) || !procedure.IsActive)
+                throw new InvalidOperationException($"Sample type '{sampleType.Name}' has no Active shipping procedure.");
+            resolved.Add(new ResolvedSampleShippingRule(sampleType, procedure, destination));
         }
 
-        var compatibilityGroups = resolved
-            .Select(item => item.Rule.CompatibilityGroup)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-        var requiresSeparateShipment = resolved.Any(item => item.Rule.RequiresSeparateShipment);
-        if (resolved.Count > 1 && (requiresSeparateShipment || compatibilityGroups.Count > 1))
-            throw new InvalidOperationException("The selected sample types require separate shipment packets.");
-
-        return new SampleShippingResolution(
-            destination,
-            resolved,
-            compatibilityGroups.Single(),
-            requiresSeparateShipment);
+        return new SampleShippingResolution(destination, resolved);
     }
 }
 
@@ -741,6 +623,17 @@ public sealed partial class SampleShipment : IAudit, IConcurrency
         AuthorizationReference = SampleShippingText.Reference(authorizationReference, nameof(authorizationReference));
         AuthorizationName = OrderText.Required(authorizationName, nameof(authorizationName), 255);
         LabWorkOrderId = labWorkOrderId;
+        DestinationId = destinationId;
+    }
+
+    public void SelectDestination(Guid destinationId)
+    {
+        if (destinationId == Guid.Empty) throw new ArgumentException("Select a Phaeno ship-to destination.", nameof(destinationId));
+        if (DestinationId == destinationId) return;
+        if (Status != SampleShipmentStatus.Preparing || IsPackingPool || ContainerDefinitionId.HasValue
+            || PacketRevisions.Count > 0 || ReturnKit is not null
+            || Items.Any(item => item.RegisteredSampleTubeId.HasValue || item.TubeSlots.Any(slot => slot.RegisteredSampleTubeId.HasValue)))
+            throw new InvalidOperationException("The selected ship-to destination cannot change after kit fulfillment or shipment preparation.");
         DestinationId = destinationId;
     }
 

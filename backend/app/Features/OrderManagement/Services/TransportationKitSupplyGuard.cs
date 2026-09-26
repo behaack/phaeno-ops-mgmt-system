@@ -58,7 +58,9 @@ public static class TransportationKitSupplyGuard
         if (await PreparationBlockAsync(db, shipment, ct, locationId) is { } reason)
             throw new OrderManagementException("transportation_kit_unavailable", reason, 409);
         locationId = await TransportationKitInventory.LocationAsync(db, shipment, locationId, ct);
-        var available = await TransportationKitInventory.Available(db, shipment, locationId).Select(item => item.ContainerDefinitionId).ToArrayAsync(ct);
+        var available = (await TransportationKitInventory.Available(db, shipment, locationId).ToArrayAsync(ct))
+            .Where(item => TransportationKitInventory.IsPhysicallyUsable(item, DateTime.UtcNow))
+            .Select(item => item.ContainerDefinitionId).ToArray();
         foreach (var item in selection.Where(item => item.Quantity > 0))
             if (item.Quantity > available.Count(id => id == item.ContainerDefinitionId))
                 throw new OrderManagementException("container_unavailable", "A selected container is no longer available at this location. Refresh and review the containers.", 409);
@@ -72,7 +74,9 @@ public static class TransportationKitSupplyGuard
             || supplied.Any(item => item.Quantity < 0 || !definitions.Any(definition => definition.Id == item.ContainerDefinitionId))))
             throw new OrderManagementException("container_packing_invalid", "Enter each compatible container size once with a nonnegative available quantity.");
         locationId = await TransportationKitInventory.LocationAsync(db, shipment, locationId, ct);
-        var available = await TransportationKitInventory.Available(db, shipment, locationId).Select(item => item.ContainerDefinitionId).ToArrayAsync(ct);
+        var available = (await TransportationKitInventory.Available(db, shipment, locationId).ToArrayAsync(ct))
+            .Where(item => TransportationKitInventory.IsPhysicallyUsable(item, DateTime.UtcNow))
+            .Select(item => item.ContainerDefinitionId).ToArray();
         return definitions.Select(item => new ContainerQuantityRequest(item.Id, Math.Min(available.Count(id => id == item.Id),
             supplied?.FirstOrDefault(value => value.ContainerDefinitionId == item.Id)?.Quantity ?? int.MaxValue))).ToArray();
     }

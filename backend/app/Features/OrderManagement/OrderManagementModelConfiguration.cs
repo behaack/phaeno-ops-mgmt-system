@@ -30,6 +30,7 @@ public static class OrderManagementModelConfiguration
         {
             entity.HasKey(e => e.Id);
             Text(entity.Property(e => e.Name), 255);
+            Text(entity.Property(e => e.Description), 4000);
             Text(entity.Property(e => e.PackingInstructions), 4000);
             Text(entity.Property(e => e.TemperatureInstructions), 4000);
             Text(entity.Property(e => e.CarrierInstructions), 4000);
@@ -75,6 +76,7 @@ public static class OrderManagementModelConfiguration
         modelBuilder.Entity<SampleTypeDefinition>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.HasOne<SampleShippingProcedure>().WithMany().HasForeignKey(e => e.ShippingProcedureId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_sample_type_shipping_procedure");
             Text(entity.Property(e => e.Code), 50);
             Text(entity.Property(e => e.Name), 255);
             Text(entity.Property(e => e.Description), 2000);
@@ -100,35 +102,17 @@ public static class OrderManagementModelConfiguration
             Audit(entity);
         });
 
-        modelBuilder.Entity<SampleShippingInstructionRule>(entity =>
+        modelBuilder.Entity<SampleTypeProcedureLink>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.HasOne<SampleShippingProcedure>().WithMany().HasForeignKey(e => e.ShippingProcedureId).OnDelete(DeleteBehavior.Restrict);
-            Text(entity.Property(e => e.DestinationInstructions), 4000, false);
-            Text(entity.Property(e => e.CompatibilityGroup), 50);
-            Text(entity.Property(e => e.PackingInstructions), 4000);
-            Text(entity.Property(e => e.TemperatureInstructions), 4000);
-            Text(entity.Property(e => e.CarrierInstructions), 4000);
-            Text(entity.Property(e => e.DispatchInstructions), 4000);
-            Text(entity.Property(e => e.DeliveryInstructions), 4000);
-            Text(entity.Property(e => e.RequiredDocuments), 4000);
-            Text(entity.Property(e => e.ExceptionInstructions), 4000);
-            Text(entity.Property(e => e.InternationalCustomsInstructions), 4000, false);
-            entity.HasIndex(e => new { e.DefinitionKey, e.Revision }).IsUnique();
-            entity.HasIndex(e => new { e.DestinationId, e.SampleTypeDefinitionId, e.EffectiveFrom });
-            entity.HasIndex(e => new { e.IsActive, e.EffectiveFrom, e.EffectiveTo });
-            entity.HasOne<SampleShippingDestination>()
-                .WithMany()
-                .HasForeignKey(e => e.DestinationId)
-                .OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne<SampleTypeDefinition>()
-                .WithMany()
-                .HasForeignKey(e => e.SampleTypeDefinitionId)
-                .OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne<SampleShippingInstructionRule>()
-                .WithMany()
-                .HasForeignKey(e => e.SupersedesInstructionRuleId)
-                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(e => e.SampleTypeAnchorId).IsUnique();
+            entity.HasOne<SampleTypeDefinition>().WithMany().HasForeignKey(e => e.SampleTypeAnchorId)
+                .OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_sample_type_procedure_link_sample_anchor");
+            entity.HasOne<SampleShippingProcedure>().WithMany().HasForeignKey(e => e.ProcedureAnchorId)
+                .OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_sample_type_procedure_link_procedure_anchor");
+            entity.HasOne<PSeq.Operations.Commercial.Accounts.Domain.User>().WithMany()
+                .HasForeignKey(e => e.ChangedByUserId).OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_sample_type_procedure_link_actor");
             Audit(entity);
         });
 
@@ -774,6 +758,10 @@ public static class OrderManagementModelConfiguration
             Text(entity.Property(e => e.NormalizedJobName), 255);
             Text(entity.Property(e => e.Description), 2000, false);
             Text(entity.Property(e => e.SharedBiologicalSource), 500, false);
+            entity.HasOne<SampleTypeDefinition>().WithMany().HasForeignKey(e => e.SampleTypeDefinitionId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<SampleShippingDestination>().WithMany().HasForeignKey(e => e.ShippingDestinationId)
+                .OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_lab_service_order_ship_to_revision");
+            Text(entity.Property(e => e.SampleTypeMaterialClassSnapshot), 100, false);
             entity.Property(e => e.TubeUsePolicyKey).HasMaxLength(100);
             Text(entity.Property(e => e.StorageRequirements), 2000);
             Text(entity.Property(e => e.SafetyDeclaration), 2000);

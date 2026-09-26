@@ -1,5 +1,11 @@
 # Lab Operations Plan
 
+## Purchased Materials navigation — September 24, 2026
+
+Move the material-lot sidebar entry directly before **Reagent manufacturing** and label it **Purchased Materials**. Keep the existing material-lot route, purchased-lot receipt, prepared-reagent visibility, QC, and lot history unchanged. The sidebar description and Phaeno help explain that prepared reagent lots remain in this shared inventory list for QC and traceability. Update the material-lot return link to use the new label. This is a navigation and wording change; no new automated tests are planned for it.
+
+The purchased-lot form no longer displays **Lot kind**. It offered only **Supplier lot** after new prepared-reagent creation moved to Reagent manufacturing. Keep that kind fixed in the form's data and submitted command; historical prepared-reagent records and the separate manufacturing path remain available. Order the visible identity fields **Supplier**, **Product name**, then **Lot number**. The form grid uses the shared dialog body inset without extra top or bottom margins. No new automated case is planned for these presentation changes.
+
 ## Internal reagent production workflow — product direction, September 24, 2026
 
 The owner identified a distinct internal manufacturing workflow for Phaeno-prepared reagents. Seed one Phaeno supplier record in the Lab supplier table, flagged **Internal producer** so it is distinguishable from external vendors; prevent deactivation or rename. Automatically associate every new Phaeno-manufactured lot with this record and backfill existing prepared-reagent lots that have no supplier. The former prepared-reagent lot form captured source lots, quantities, storage and QC, but asked staff to type a lot number and did not execute a versioned preparation procedure. The existing PSeq kits reagent queue is commercial kit fulfillment, and Lab service workflows are tied to customer jobs and library preparation. Neither is an internal reagent-production record.

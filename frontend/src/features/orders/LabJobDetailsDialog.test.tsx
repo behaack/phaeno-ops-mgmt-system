@@ -9,6 +9,7 @@ const api = vi.hoisted(() => ({
   initiateCustomerLabOrder: vi.fn(),
   listCustomerOrderDepartments: vi.fn(),
   getCustomerOrderReadiness: vi.fn(),
+  listLabOrderSampleTypes: vi.fn(),
 }));
 
 vi.mock("#/api/order-management", async (importOriginal) => {
@@ -17,6 +18,7 @@ vi.mock("#/api/order-management", async (importOriginal) => {
     ...original,
     listCustomerOrderDepartments: api.listCustomerOrderDepartments,
     getCustomerOrderReadiness: api.getCustomerOrderReadiness,
+    listLabOrderSampleTypes: api.listLabOrderSampleTypes,
     createLabOrder: api.createLabOrder,
     initiateCustomerLabOrder: api.initiateCustomerLabOrder,
   };
@@ -39,6 +41,7 @@ describe("LabJobDetailsDialog request submission", () => {
     vi.clearAllMocks();
     api.getCustomerOrderReadiness.mockResolvedValue({ canStartPricing: true, startPricingBlockers: [], quoteBlockers: [], invoiceBlockers: [] });
     api.createLabOrder.mockResolvedValue({ id: "order-1" });
+    api.listLabOrderSampleTypes.mockResolvedValue([{ id: '22222222-2222-4222-8222-222222222221', name: 'PSeq Total RNA', revision: 4 }]);
   });
 
   it("sends the explicitly selected Customer department when staff start pricing", async () => {
@@ -56,13 +59,15 @@ describe("LabJobDetailsDialog request submission", () => {
     await waitFor(() => expect(department).toHaveProperty('value', 'general'));
     fireEvent.change(department, { target: { value: 'research' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Job name' }), { target: { value: 'Research job' } });
+    await screen.findByRole('option', { name: 'PSeq Total RNA' });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Sample type' }), { target: { value: '22222222-2222-4222-8222-222222222221' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Biological source for source group 1' }), { target: { value: 'RNA' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Storage requirements' }), { target: { value: 'Frozen' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Safety declaration' }), { target: { value: 'No hazard' } });
     fireEvent.click(screen.getByRole('checkbox', { name: /I confirm/ }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'Start pricing' })).toHaveProperty('disabled', false));
     fireEvent.click(screen.getByRole('button', { name: 'Start pricing' }));
-    await waitFor(() => expect(api.initiateCustomerLabOrder).toHaveBeenCalledWith(expect.objectContaining({ organizationId: 'customer', departmentId: 'research' })));
+    await waitFor(() => expect(api.initiateCustomerLabOrder).toHaveBeenCalledWith(expect.objectContaining({ organizationId: 'customer', departmentId: 'research', sampleTypeDefinitionId: '22222222-2222-4222-8222-222222222221' })));
   });
 
   it("keeps a complete draft blocked until Customer readiness can be checked", async () => {
@@ -78,6 +83,8 @@ describe("LabJobDetailsDialog request submission", () => {
       sourceHandoff={{ requestId: 'request', requestNumber: 'REQ-1', organizationId: 'customer', organizationName: 'Atlas Research' }}
     /></QueryClientProvider>);
     fireEvent.change(screen.getByRole('textbox', { name: 'Job name' }), { target: { value: 'Retained job' } });
+    await screen.findByRole('option', { name: 'PSeq Total RNA' });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Sample type' }), { target: { value: '22222222-2222-4222-8222-222222222221' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Biological source for source group 1' }), { target: { value: 'Human cells' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Storage requirements' }), { target: { value: 'Frozen' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Safety declaration' }), { target: { value: 'No hazard' } });
@@ -111,6 +118,8 @@ describe("LabJobDetailsDialog request submission", () => {
     );
 
     fireEvent.change(screen.getByRole("textbox", { name: "Job name" }), { target: { value: "Hopkins pilot" } });
+    await screen.findByRole('option', { name: 'PSeq Total RNA' });
+    fireEvent.change(screen.getByRole("combobox", { name: "Sample type" }), { target: { value: "22222222-2222-4222-8222-222222222221" } });
     fireEvent.change(screen.getByRole("textbox", { name: "Biological source for source group 1" }), { target: { value: "Human PBMCs" } });
     expect(screen.queryByRole("checkbox", { name: /Propose a price/ })).toBeNull();
     expect(screen.getByRole("dialog", { name: "Submit lab service request" })).toBeTruthy();
@@ -123,6 +132,7 @@ describe("LabJobDetailsDialog request submission", () => {
     await waitFor(() => expect(api.createLabOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         customerReference: "Hopkins pilot",
+        sampleTypeDefinitionId: "22222222-2222-4222-8222-222222222221",
         submitForPricing: true,
         proposedUnitPrice: undefined,
         priceProposalNote: undefined,

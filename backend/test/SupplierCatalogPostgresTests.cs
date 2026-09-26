@@ -106,30 +106,34 @@ public partial class SampleShippingPostgresTests
         await Assert.ThrowsAsync<OrderManagementException>(() => catalog.CreateProduct(supplier.Id, new("T-2", " ", LabProductType.TubeId, DefaultQuantityUnit: "each"), default));
         var fixture = await scope.CreateShipmentAsync(1);
         var size = await scope.CreateContainerAsync(fixture, 20);
+        var approvedTubePart = Assert.Single(size.KitContents!, part => part.Kind == "Tube");
+        var approvedShipperPart = Assert.Single(size.KitContents!, part => part.Kind == "ShippingContainer");
+        var approvedSupplier = (await catalog.List(default)).Single(item => item.Id == approvedTubePart.SupplierId);
+        var approvedTube = approvedSupplier.Products.Single(item => item.Id == approvedTubePart.SupplierProductId);
         var stock = scope.StockController();
         await Assert.ThrowsAsync<OrderManagementException>(() => stock.Create(new(size.Id, shipper.Id, tube.Id, null), default));
-        await Assert.ThrowsAsync<OrderManagementException>(() => stock.Create(new(size.Id, Guid.NewGuid(), shipper.Id, null), default));
-        var result = await stock.Create(new(size.Id, tube.Id, shipper.Id, "LOT-A"), default);
+        await Assert.ThrowsAsync<OrderManagementException>(() => stock.Create(new(size.Id, Guid.NewGuid(), approvedShipperPart.SupplierProductId, null), default));
+        var result = await stock.Create(new(size.Id, approvedTubePart.SupplierProductId, approvedShipperPart.SupplierProductId, "LOT-A"), default);
         var kit = Assert.IsType<StockKitDto>(Assert.IsType<CreatedResult>(result.Result).Value);
-        Assert.Equal("Original tube description", kit.TubeProductDescription);
-        Assert.Equal("Original container description", kit.ShipperProductDescription);
+        Assert.Equal(approvedTubePart.ProductDescription, kit.TubeProductDescription);
+        Assert.Equal(approvedShipperPart.ProductDescription, kit.ShipperProductDescription);
         scope.ClearTrackedState();
-        tube = (await catalog.List(default)).Single(s => s.Id == supplier.Id).Products.Single(p => p.Id == tube.Id);
-        var changed = await catalog.UpdateProduct(supplier.Id, tube.Id, new("T-NEW", "Changed description", LabProductType.TubeId, false, tube.Version), default);
+        approvedTube = (await catalog.List(default)).Single(s => s.Id == approvedSupplier.Id).Products.Single(p => p.Id == approvedTube.Id);
+        var changed = await catalog.UpdateProduct(approvedSupplier.Id, approvedTube.Id, new("T-NEW", "Changed description", LabProductType.TubeId, false, approvedTube.Version), default);
         scope.ClearTrackedState();
-        await Assert.ThrowsAsync<OrderManagementException>(() => catalog.UpdateProduct(supplier.Id, tube.Id, new("T-OLD", "Stale edit", LabProductType.TubeId, true, tube.Version), default));
+        await Assert.ThrowsAsync<OrderManagementException>(() => catalog.UpdateProduct(approvedSupplier.Id, approvedTube.Id, new("T-OLD", "Stale edit", LabProductType.TubeId, true, approvedTube.Version), default));
         scope.ClearTrackedState();
-        await Assert.ThrowsAsync<OrderManagementException>(() => stock.Create(new(size.Id, tube.Id, shipper.Id, null), default));
-        await catalog.UpdateProduct(supplier.Id, tube.Id, new(changed.ProductNumber, changed.Description, LabProductType.TubeId, true, changed.Version), default);
+        await Assert.ThrowsAsync<OrderManagementException>(() => stock.Create(new(size.Id, approvedTube.Id, approvedShipperPart.SupplierProductId, null), default));
+        await catalog.UpdateProduct(approvedSupplier.Id, approvedTube.Id, new(changed.ProductNumber, changed.Description, LabProductType.TubeId, true, changed.Version), default);
         scope.ClearTrackedState();
-        await catalog.Update(supplier.Id, new(supplier.Name, false, supplier.Version), default);
+        await catalog.Update(approvedSupplier.Id, new(approvedSupplier.Name, false, approvedSupplier.Version), default);
         scope.ClearTrackedState();
-        await Assert.ThrowsAsync<OrderManagementException>(() => stock.Create(new(size.Id, tube.Id, shipper.Id, null), default));
+        await Assert.ThrowsAsync<OrderManagementException>(() => stock.Create(new(size.Id, approvedTube.Id, approvedShipperPart.SupplierProductId, null), default));
         var history = await stock.Read(kit.Id, default);
-        Assert.Equal("T-1", history.TubeProductNumber);
-        Assert.Equal("Original tube description", history.TubeProductDescription);
+        Assert.Equal(approvedTubePart.ProductNumber, history.TubeProductNumber);
+        Assert.Equal(approvedTubePart.ProductDescription, history.TubeProductDescription);
         Assert.Equal("LOT-A", history.TubeLotNumber);
-        Assert.False((await catalog.List(default)).Single(s => s.Id == supplier.Id).IsActive);
+        Assert.False((await catalog.List(default)).Single(s => s.Id == approvedSupplier.Id).IsActive);
     }
 
     [PostgreSqlReferenceFact]

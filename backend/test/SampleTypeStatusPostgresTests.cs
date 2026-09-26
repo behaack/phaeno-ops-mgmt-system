@@ -21,8 +21,6 @@ public partial class SampleShippingPostgresTests
         scope.ClearTrackedState();
         var first = await controller.CreateSampleType(scope.SampleTypeRequest(now.AddDays(-2)), default);
         scope.ClearTrackedState();
-        await controller.CreateInstructionRule(scope.RuleRequest(destination.Id, first.Id, now.AddDays(-2)), default);
-        scope.ClearTrackedState();
         var denied = await Assert.ThrowsAsync<OrderManagementException>(() => scope.CustomerSampleTypeController()
             .SetSampleTypeStatus(first.Id, new(false, first.Version), default));
         Assert.Equal(403, denied.StatusCode);
@@ -64,9 +62,7 @@ public partial class SampleShippingPostgresTests
         scope.ClearTrackedState();
         var first = await controller.CreateSampleType(scope.SampleTypeRequest(now.AddDays(-3)), default);
         scope.ClearTrackedState();
-        await controller.CreateInstructionRule(scope.RuleRequest(destination.Id, first.Id, now.AddDays(-3)), default);
-        scope.ClearTrackedState();
-        var draft = await controller.CreateSampleType(scope.SampleTypeRequest(now.AddDays(-2), first.Id, first.Version) with { IsActive = false }, default);
+        var draft = await controller.CreateSampleType(scope.SampleTypeRequest(now.AddDays(-2), first.Id, first.Version) with { IsActive = false, ShippingProcedureId = null }, default);
         scope.ClearTrackedState();
         var beforeActivation = DateTime.UtcNow;
         var active = await controller.SetSampleTypeStatus(draft.Id, new(true, draft.Version), default);
@@ -88,7 +84,7 @@ public partial class SampleShippingPostgresTests
         Assert.Equal(2, await scope.DbContext.SampleTypeDefinitions.CountAsync(value => value.DefinitionKey == first.DefinitionKey));
 
         var current = await scope.DbContext.SampleTypeDefinitions.AsNoTracking().SingleAsync(value => value.Id == active.Id);
-        var future = await controller.CreateSampleType(scope.SampleTypeRequest(now.AddDays(2), active.Id, current.Version) with { IsActive = false }, default);
+        var future = await controller.CreateSampleType(scope.SampleTypeRequest(now.AddDays(2), active.Id, current.Version) with { IsActive = false, ShippingProcedureId = null }, default);
         scope.ClearTrackedState();
         await controller.SetSampleTypeStatus(future.Id, new(true, future.Version), default);
         scope.ClearTrackedState();

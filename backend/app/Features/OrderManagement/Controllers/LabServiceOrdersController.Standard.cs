@@ -95,7 +95,7 @@ public sealed partial class LabServiceOrdersController
                     sourceGroups = order.SourceGroups.Select(value => new { value.BiologicalSource, value.SpecimenCount }),
                     order.TubeUsePolicyKey, order.TubeUsePolicyVersion,
                     order.StorageRequirements, order.SafetyDeclaration, serviceKey = OrderServiceKeys.PSeqLabService,
-                    materialType = StandardMaterialType, quantityUnit = StandardQuantityUnit, quoteId = quote.Id,
+                    materialType = order.SampleTypeMaterialClassSnapshot ?? StandardMaterialType, quantityUnit = StandardQuantityUnit, quoteId = quote.Id,
                     quote.Revision, quote.LinesJson, quote.Total, quote.Currency, acceptedAt = now,
                     configuredOffering = snapshot, prohibitedDataConfirmed = true
                 }, JsonSerializerOptions);
@@ -124,6 +124,23 @@ public sealed partial class LabServiceOrdersController
         if (order.SourceRequestId.HasValue || order.ProposedUnitPrice.HasValue)
             blockers.Add("This Job uses sales-assisted or custom pricing. Continue its pricing request.");
         if (order.Samples.Count != 0) blockers.Add("Resolve legacy draft samples before placing this Job.");
+        if (!order.SampleTypeDefinitionId.HasValue)
+            blockers.Add("Select one sample type for this Job before placing it.");
+        else
+        {
+            var orderableTypes = await LabOrderSampleTypeChoices.ReadAsync(dbContext, token);
+            if (!orderableTypes.Any(value => value.Id == order.SampleTypeDefinitionId.Value))
+                blockers.Add("The selected Sample type is no longer ready for ordering. Choose a current Sample type with an Active procedure and usable Transportation kit.");
+            var selectedKey = await dbContext.SampleTypeDefinitions.AsNoTracking()
+                .Where(value => value.Id == order.SampleTypeDefinitionId.Value)
+                .Select(value => (Guid?)value.DefinitionKey).SingleOrDefaultAsync(token);
+            var supportedTypeIds = offering.SupportedSampleTypes?.Select(type => type.Id).ToArray() ?? [];
+            var supportedKeys = await dbContext.SampleTypeDefinitions.AsNoTracking()
+                .Where(value => supportedTypeIds.Contains(value.Id))
+                .Select(value => value.DefinitionKey).ToArrayAsync(token);
+            if (!selectedKey.HasValue || !supportedKeys.Contains(selectedKey.Value))
+                blockers.Add("This offering does not support the Job's selected sample type. Choose a supporting offering or create a separate order.");
+        }
         if (!offering.IsAvailable) blockers.Add("This offering is no longer available. Choose a current offering.");
         if (order.RequestedSpecimenCount is < 1 or > 100 || order.SourceGroups.Count == 0
             || order.SourceGroups.Sum(value => value.SpecimenCount) != order.RequestedSpecimenCount)

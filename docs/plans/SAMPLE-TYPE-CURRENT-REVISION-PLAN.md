@@ -9,15 +9,32 @@ Compatibility group is a shared handling label, not a unique reference. Matching
 
 ## Implementation
 
+### September 25: choose availability when creating a sample revision
+
+The owner reported that an inactive-by-default revision could not be made Active
+on save and disappeared from the default list even while its predecessor remained
+active. The revision form now uses the same Status choice as initial creation,
+defaulting to Active. Saving Active retires any earlier active interval at the
+selected effective time; saving Inactive retains that earlier active interval.
+The default list keeps a sample-type identity visible while any revision remains
+active and not ended. Its row shows the latest revision's status and explicitly
+identifies an earlier revision that is currently active. Search includes names
+and material text from the family, so a renamed draft does not hide its earlier
+name. The API already supports both save states and their interval transitions;
+no schema, contract or authorization change is needed. The previous
+inactive-first revision-form rule below is superseded for sample types only.
+
 ### September 21: availability without content revisions
+
+September 24 refinement: initial sample-type creation now presents a Status choice defaulting to Active, with Inactive available before save. This changes the initial record default only. Creating a revision of an existing type still saves Inactive and retains its earlier active revision until a separate activation. The existing API already accepts the selected initial status; the current-revision resolver, shipping readiness gates, and issued packet snapshots are unchanged.
 
 Owner authorized separating Activate/Deactivate from Create revision. Phaeno
 configuration administrators change a saved revision's availability in place;
 its ID, reference, content and revision number stay fixed. Existing audit events
 record actor, time and old/new status; optimistic concurrency rejects stale actions.
 Expose one Actions menu on the list and detail, with a confirmation describing
-the selected revision and effect on new shipping work. New UI-created content
-revisions start inactive; creation no longer includes an activation checkbox.
+the selected revision and effect on new shipping work. New revisions of existing
+records start inactive; revision creation does not include an activation checkbox.
 The existing create API remains compatible with established callers.
 
 Activation is available on the latest non-ended revision and respects a future

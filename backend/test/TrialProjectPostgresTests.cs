@@ -509,9 +509,10 @@ public sealed partial class TrialProjectPostgresTests
             fixture.WorkflowVersion = new(workflow.Id, versions.Count == 0 ? 1 : versions.Max(value => value.WorkflowVersion) + 1, commercial.Id, now);
             fixture.WorkflowVersion.Approve(scientific.Id, now); fixture.WorkflowVersion.PromoteToProduction(scientific.Id, now); db.Add(fixture.WorkflowVersion);
             fixture.destination = new(Guid.NewGuid(), 1, null, $"TRIAL_{Guid.NewGuid():N}"[..20], "Trial lab", "Receiving", "Phaeno", "123 Example St", null, "San Diego", "CA", "92101", "US", null, null, "Weekdays", "America/Los_Angeles", null, "Receiving dock", null, false, now.AddDays(-1), true);
-            fixture.sampleType = new(Guid.NewGuid(), 1, null, $"RNA_{Guid.NewGuid():N}"[..20], "Extracted RNA", "Fixture", materialClass, 1, 1000, "ng", "Sealed tubes", "Frozen", null, "Containment", "Coded reference", "No PHI", "Nonhazardous", null, 48, now.AddDays(-1), true);
-            var rule = new SampleShippingInstructionRule(Guid.NewGuid(), 1, null, fixture.destination.Id, fixture.sampleType.Id, "RNA", "Containment", "Frozen", "Traceable", "Weekday", "Receiving", "Packet", "Contact Phaeno", null, false, now.AddDays(-1), true);
-            db.AddRange(fixture.destination, fixture.sampleType, rule); await db.SaveChangesAsync(); return fixture;
+            var procedure = new SampleShippingProcedure(Guid.NewGuid(), 1, null, "Trial shared shipping", "Containment", "Frozen", "Traceable", "Weekday", "Packet", "Contact Phaeno", null, true);
+            fixture.sampleType = new(Guid.NewGuid(), 1, null, $"RNA_{Guid.NewGuid():N}"[..20], "Extracted RNA", "Fixture", materialClass, 1, 1000, "ng", "Sealed tubes", "Frozen", null, "Containment", "Coded reference", "No PHI", "Nonhazardous", null, 48, now.AddDays(-1), true, procedure.Id);
+            var link = new SampleTypeProcedureLink(fixture.sampleType.Id, procedure.Id, commercial.Id, now);
+            db.AddRange(fixture.destination, procedure, fixture.sampleType, link); await db.SaveChangesAsync(); return fixture;
         }
         public async Task<TrialProject> CreateApprovedTrial()
         {

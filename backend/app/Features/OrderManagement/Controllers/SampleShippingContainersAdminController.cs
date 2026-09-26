@@ -58,4 +58,12 @@ public sealed class SampleShippingContainersAdminController(OrderRequestContext 
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         return await catalog.DeactivateAsync(id, request.Version, cancellationToken);
     }
+
+    [HttpPost("{id:guid}/sample-type")]
+    public async Task<SampleShippingContainerDefinitionDto> LinkSampleType(Guid id,
+        [FromBody] LinkTransportationKitSampleTypeRequest request, CancellationToken cancellationToken)
+    {
+        var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        return await catalog.LinkSampleTypeAsync(id, request.SampleTypeDefinitionId, request.Version, actor.Id, cancellationToken);
+    }
 }

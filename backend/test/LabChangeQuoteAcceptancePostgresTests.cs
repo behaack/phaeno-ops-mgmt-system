@@ -154,7 +154,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             await DbContext.SaveChangesAsync();
             var input = new LabOrderWriteRequest("Manual quote acceptance", "Original profile", false,
                 "synthetic_reference", "frozen", "No hazards", [], RequestedSpecimenCount: 2,
-                SourceGroups: [new("synthetic_reference", 2)]);
+                SourceGroups: [new("synthetic_reference", 2)],
+                SampleTypeDefinitionId: shippingConfiguration.ActiveSampleTypeId);
             var draft = await CreateChangeCustomerController().Create(input, default);
             var submitted = await CreateChangeCustomerController().Submit(draft.Id, new(draft.Version), default);
             var revision1 = await DbContext.LabServiceRequestRevisions.AsNoTracking().SingleAsync(r => r.LabServiceOrderId == draft.Id);

@@ -122,14 +122,15 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
                 "Every shipment sample must belong to the referenced authorized Lab work.",
                 StatusCodes.Status409Conflict);
 
+        var destinationId = shipment.DestinationId;
         var destination = await dbContext.SampleShippingDestinations.AsNoTracking()
-            .FirstOrDefaultAsync(item => item.Id == shipment.DestinationId, cancellationToken)
+            .FirstOrDefaultAsync(item => item.Id == destinationId, cancellationToken)
             ?? throw new OrderManagementException(
                 "shipping_destination_not_found",
                 "The shipment destination revision was not found.",
                 StatusCodes.Status409Conflict);
         var sampleTypeIds = shipment.Items.Select(item => item.SampleTypeDefinitionId).Distinct().ToList();
-        var selected = await SampleShippingRevisionData.ReadAsync(dbContext, shipment.DestinationId, sampleTypeIds, issuedAt, cancellationToken);
+        var selected = await SampleShippingRevisionData.ReadAsync(dbContext, destinationId, sampleTypeIds, issuedAt, cancellationToken);
         var sampleTypesById = selected.CurrentByRequestedId;
         foreach (var shipmentItem in shipment.Items)
         {
@@ -233,19 +234,24 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
     private async Task<object?> ResolveContainerPackingAsync(SampleShipment shipment, SampleShippingResolution resolution, CancellationToken ct)
     {
         var container = shipment.ContainerDefinitionId.HasValue
-            ? await dbContext.SampleShippingContainerDefinitions.AsNoTracking().Include(item => item.Compatibilities)
+            ? await dbContext.SampleShippingContainerDefinitions.AsNoTracking().Include(item => item.ContainerType).Include(item => item.KitContents)
                 .SingleOrDefaultAsync(item => item.Id == shipment.ContainerDefinitionId, ct) : null;
-        var ids = container?.Compatibilities.Select(item => item.SampleTypeDefinitionId).ToArray() ?? [];
-        var keys = await dbContext.SampleTypeDefinitions.AsNoTracking().Where(item => ids.Contains(item.Id))
-            .ToDictionaryAsync(item => item.Id, item => item.DefinitionKey, ct);
-        IReadOnlyList<ResolvedContainerPacking> combinations;
-        try { combinations = SampleShippingPackingInstructions.Resolve(resolution, container?.Compatibilities.ToArray() ?? [], keys); }
-        catch (InvalidOperationException error) { throw new OrderManagementException("sample_container_packing_unavailable", error.Message, 409); }
-        return combinations.Count == 0 ? null : new
+        if (container is null) return null;
+        var selected = resolution.Rules.Single().SampleType;
+        var anchorId = await dbContext.SampleTypeDefinitions.AsNoTracking()
+            .Where(item => item.DefinitionKey == selected.DefinitionKey && item.Revision == 1)
+            .Select(item => item.Id).SingleAsync(ct);
+        if (container.ContainerType.SampleTypeAnchorId != anchorId)
+            throw new OrderManagementException("sample_container_packing_unavailable",
+                "The physical kit is not linked to this Order's Sample type.", 409);
+        return new
         {
-            containerDefinitionId = container!.Id, container.CommonName, container.Revision, container.PackingInstructions,
-            temperatureControlInstructions = combinations[0].TemperatureControlInstructions,
-            samples = combinations
+            containerDefinitionId = container.Id, container.CommonName, container.Revision, container.PackingInstructions,
+            container.TemperatureControlInstructions, container.DryIceQuantity, container.DryIceUnit,
+            samples = resolution.Rules.Select(item => new { sampleTypeId = item.SampleType.Id,
+                container.PackingInstructions, container.TemperatureControlInstructions }).ToArray(),
+            billOfMaterials = container.KitContents.OrderBy(item => item.Position).Select(item => new
+            { item.SupplierProductId, item.ProductNumber, item.ProductDescription, item.Quantity }).ToArray()
         };
     }
 
@@ -253,8 +259,6 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
         JsonSerializer.Serialize(new
         {
             containerPacking,
-            resolution.CompatibilityGroup,
-            resolution.RequiresSeparateShipment,
             destination = new
             {
                 resolution.Destination.ReceivingHours,
@@ -287,23 +291,18 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
                     item.SampleType.CarrierRestrictions,
                     item.SampleType.MaximumTransitHours
                 },
-                instructionRule = new
+                procedure = new
                 {
-                    item.Rule.ShippingProcedureId,
-                    item.Rule.DestinationInstructions,
-                    item.Rule.Id,
-                    item.Rule.DefinitionKey,
-                    item.Rule.Revision,
-                    item.Rule.CompatibilityGroup,
-                    item.Rule.PackingInstructions,
-                    item.Rule.TemperatureInstructions,
-                    item.Rule.CarrierInstructions,
-                    item.Rule.DispatchInstructions,
-                    item.Rule.DeliveryInstructions,
-                    item.Rule.RequiredDocuments,
-                    item.Rule.ExceptionInstructions,
-                    item.Rule.InternationalCustomsInstructions,
-                    item.Rule.RequiresSeparateShipment
+                    item.ShippingProcedureId,
+                    destinationInstructions = resolution.Destination.DeliveryInstructions,
+                    item.PackingInstructions,
+                    item.TemperatureInstructions,
+                    item.CarrierInstructions,
+                    item.DispatchInstructions,
+                    item.DeliveryInstructions,
+                    item.RequiredDocuments,
+                    item.ExceptionInstructions,
+                    item.InternationalCustomsInstructions
                 }
             })
         }, SnapshotOptions);

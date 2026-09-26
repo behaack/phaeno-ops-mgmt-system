@@ -18,6 +18,10 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
     public string? Description { get; private set; }
     public bool HasMixedBiologicalSources { get; private set; }
     public string? SharedBiologicalSource { get; private set; }
+    public Guid? SampleTypeDefinitionId { get; private set; }
+    public string? SampleTypeMaterialClassSnapshot { get; private set; }
+    public Guid? ShippingDestinationId { get; private set; }
+    public DateTime? ShippingDestinationAssignedAt { get; private set; }
     public int RequestedSpecimenCount { get; private set; }
     public int? SequencingRunCount { get; private set; }
     [System.ComponentModel.DataAnnotations.Schema.NotMapped]
@@ -113,6 +117,24 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
 
     public static string NormalizeJobName(string? jobName)
         => OrderText.Required(jobName, "Job name", 255).ToUpperInvariant();
+
+    public void SelectSampleType(Guid sampleTypeDefinitionId, string materialClass)
+    {
+        if (sampleTypeDefinitionId == Guid.Empty)
+            throw new ArgumentException("Select one sample type for this Job.", nameof(sampleTypeDefinitionId));
+        SampleTypeDefinitionId = sampleTypeDefinitionId;
+        SampleTypeMaterialClassSnapshot = OrderText.Required(materialClass, nameof(materialClass), 100);
+    }
+
+    public void AssignShippingDestination(Guid destinationId, DateTime assignedAt)
+    {
+        if (destinationId == Guid.Empty || assignedAt.Kind != DateTimeKind.Utc)
+            throw new ArgumentException("Choose a destination revision and a UTC assignment time.");
+        if (ShippingDestinationId.HasValue && ShippingDestinationId != destinationId)
+            throw new InvalidOperationException("This Order's ship-to destination is already fixed.");
+        ShippingDestinationId ??= destinationId;
+        ShippingDestinationAssignedAt ??= assignedAt;
+    }
 
     public void UpdateDraft(
         string? customerReference,

@@ -107,6 +107,7 @@ This is the application-wide default for new work and for touched existing workf
 Use tables by default for structured scientific and business records that users compare across common attributes.
 
 - Make the primary identifier a clear link to the detail workspace; avoid ambiguous whole-row clicking.
+- Style primary record links consistently across Portal lists and summaries: medium-weight primary-color text, an underline on hover or keyboard focus, and a visible focus outline. Use the shared record-link style rather than a permanent underline on one list and hover-only underline on another.
 - Put search, filters, sorting, and the primary create action in a predictable toolbar.
 - Place secondary row actions in a consistent overflow menu.
 - Keep active filters visible and provide a clear `Clear all` action.

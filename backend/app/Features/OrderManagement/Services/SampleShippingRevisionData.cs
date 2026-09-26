@@ -7,13 +7,12 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 /// <summary>Stored revision IDs anchor a stable sample identity; issued packets retain their own snapshots.</summary>
 public sealed record SampleShippingRevisionData(
     IReadOnlyDictionary<Guid, SampleTypeDefinition> CurrentByRequestedId,
-    IReadOnlyDictionary<Guid, Guid> DefinitionKeysById,
-    IReadOnlyList<SampleShippingInstructionRule> Rules)
+    IReadOnlyDictionary<Guid, SampleShippingProcedure> CurrentProcedureBySampleTypeId)
 {
     public IReadOnlyList<SampleTypeDefinition> CurrentTypes => CurrentByRequestedId.Values.DistinctBy(item => item.Id).ToArray();
 
     public SampleShippingResolution Resolve(SampleShippingDestination destination, DateTime effectiveAt)
-        => SampleShippingCompatibilityResolver.Resolve(destination, CurrentTypes, Rules, effectiveAt, DefinitionKeysById);
+        => SampleShippingCompatibilityResolver.Resolve(destination, CurrentTypes, CurrentProcedureBySampleTypeId, effectiveAt);
 
     public static async Task<SampleShippingRevisionData> ReadAsync(PSeqOperationsDbContext db,
         Guid destinationId, IEnumerable<Guid> requestedIds, DateTime effectiveAt, CancellationToken ct)
@@ -34,9 +33,26 @@ public sealed record SampleShippingRevisionData(
                     $"Sample type '{anchor.Name}' has no active revision effective at the requested time. Activate an approved revision before issuing shipping instructions.", 409);
             current.Add(anchor.Id, revision);
         }
-        var revisionIds = revisions.Select(item => item.Id).ToArray();
-        var rules = await db.SampleShippingInstructionRules.AsNoTracking()
-            .Where(item => item.DestinationId == destinationId && revisionIds.Contains(item.SampleTypeDefinitionId)).ToListAsync(ct);
-        return new(current, revisions.ToDictionary(item => item.Id, item => item.DefinitionKey), rules);
+        var selectedProcedureIds = current.Values.Where(item => item.ShippingProcedureId.HasValue)
+            .Select(item => item.ShippingProcedureId!.Value).Distinct().ToArray();
+        var selectedProcedures = await db.SampleShippingProcedures.AsNoTracking()
+            .Where(item => selectedProcedureIds.Contains(item.Id)).ToListAsync(ct);
+        var procedureKeys = selectedProcedures.Select(item => item.DefinitionKey).Distinct().ToArray();
+        var activeProcedures = await db.SampleShippingProcedures.AsNoTracking()
+            .Where(item => procedureKeys.Contains(item.DefinitionKey) && item.IsActive).ToListAsync(ct);
+        var currentProcedures = activeProcedures.GroupBy(item => item.DefinitionKey)
+            .ToDictionary(group => group.Key, group => group.OrderByDescending(item => item.Revision).First());
+        var procedureKeyById = selectedProcedures.ToDictionary(item => item.Id, item => item.DefinitionKey);
+        var bySampleTypeId = new Dictionary<Guid, SampleShippingProcedure>();
+        foreach (var sampleType in current.Values.DistinctBy(item => item.Id))
+        {
+            if (!sampleType.ShippingProcedureId.HasValue
+                || !procedureKeyById.TryGetValue(sampleType.ShippingProcedureId.Value, out var procedureKey)
+                || !currentProcedures.TryGetValue(procedureKey, out var procedure))
+                throw new OrderManagementException("shipping_procedure_unavailable",
+                    $"The shipping procedure for '{sampleType.Name}' has no Active revision. Activate or change its procedure before issuing new instructions.", 409);
+            bySampleTypeId.Add(sampleType.Id, procedure);
+        }
+        return new(current, bySampleTypeId);
     }
 }

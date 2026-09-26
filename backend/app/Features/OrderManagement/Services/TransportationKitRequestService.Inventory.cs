@@ -27,7 +27,8 @@ public sealed partial class TransportationKitRequestService
                 return;
             }
             Version(kit.Version, body.Version);
-            await DispatchAsync(request.Id, actorId, new(request.Version, [kitId], body.OutboundCarrier, body.OutboundTrackingNumber, body.FulfilledAt), ct);
+            await DispatchAsync(request.Id, actorId, new(request.Version, [kitId], body.OutboundCarrier, body.OutboundTrackingNumber,
+                body.FulfilledAt, ConfirmUnavailableFixedDestination: body.ConfirmUnavailableFixedDestination), ct);
             return;
         }
         await SampleShippingPackingData.LockAsync(db, $"stock-kit:{kitId}", ct);

@@ -69,42 +69,6 @@ public partial class SampleShippingPostgresTests
     }
 
     [PostgreSqlReferenceFact]
-    public async Task ContainerResetSeparatesDestinationContextsWithoutLosingSplitSampleOrdinals()
-    {
-        await using var scope = await ShippingTestScope.CreateAsync();
-        var fixture = await scope.CreateShipmentAsync(18);
-        var definition = await scope.CreateContainerAsync(fixture, 20);
-        var first = Assert.Single(await scope.PackingController().Confirm(fixture.Shipment.Id, new(fixture.Shipment.Version, [new(definition.Id, 1)]), default));
-        scope.ClearTrackedState();
-        var destination = await scope.CreateConfigurationController().CreateDestination(scope.DestinationRequest(DateTime.UtcNow.AddDays(-1))
-            with { Code = $"REF_{scope.Suffix}_DEST_RESET", Name = "Other reference destination" }, default);
-        scope.ClearTrackedState();
-        var rule = await scope.CreateConfigurationController().CreateInstructionRule(scope.RuleRequest(destination.Id, fixture.SampleType.Id, DateTime.UtcNow.AddDays(-1)), default);
-        scope.ClearTrackedState();
-        var secondDefinition = await scope.ContainerCatalog().CreateAsync(new($"PACK-{scope.Suffix}-OTHER", "Other destination container", 20,
-            DateTime.UtcNow.AddDays(-1), [new(fixture.SampleType.Id, rule.Id)], IsActive: true, KitContents: await scope.KitContentsAsync(10)), default);
-        var second = new SampleShipment($"RESET-{scope.Suffix}", fixture.Shipment.OrganizationId, fixture.Shipment.DepartmentId,
-            fixture.Shipment.AuthorizationSource, fixture.Shipment.AuthorizationSourceId, fixture.Shipment.AuthorizationReference,
-            fixture.Shipment.AuthorizationName, fixture.WorkOrder.Id, destination.Id);
-        second.SelectContainer(secondDefinition.Id, SampleShippingContainerCatalogService.Snapshot(secondDefinition));
-        var row = new SampleShipmentItem(second.Id, fixture.Item.SubmittedSpecimenId, fixture.SampleType.Id,
-            fixture.Item.CustomerSampleId, fixture.Item.SampleName, fixture.Item.Quantity, fixture.Item.QuantityUnit);
-        foreach (var ordinal in Enumerable.Range(19, 12)) row.TubeSlots.Add(new SampleShipmentTubeSlot(row.Id, ordinal));
-        second.Items.Add(row); scope.DbContext.SampleShipments.Add(second); await scope.DbContext.SaveChangesAsync(); scope.ClearTrackedState();
-        var before = await scope.ResetFamilySlotsAsync(fixture);
-        var review = await scope.PackingController().ReadReset(first.Id, default);
-        var result = await scope.PackingController().Reset(first.Id, new(review.Shipments), default);
-        scope.ClearTrackedState();
-        var pools = await scope.DbContext.SampleShipments.AsNoTracking().Include(item => item.Items).ThenInclude(item => item.TubeSlots)
-            .Where(item => item.AuthorizationSourceId == fixture.Shipment.AuthorizationSourceId && item.Status != SampleShipmentStatus.Cancelled).ToArrayAsync();
-        Assert.Equal(2, pools.Length); Assert.All(pools, item => Assert.True(item.IsPackingPool));
-        Assert.Equal(fixture.Destination.Id, pools.Single(item => item.Id == result.Id).DestinationId);
-        Assert.Equal(18, SampleShippingPackingData.TubeCount(pools.Single(item => item.DestinationId == fixture.Destination.Id)));
-        Assert.Equal(12, SampleShippingPackingData.TubeCount(pools.Single(item => item.DestinationId == destination.Id)));
-        Assert.Equal(before, await scope.ResetFamilySlotsAsync(fixture));
-    }
-
-    [PostgreSqlReferenceFact]
     public async Task ContainerResetRetainsTenantAndAdministratorBoundariesAndRejectsStaleFamily()
     {
         await using var scope = await ShippingTestScope.CreateAsync();

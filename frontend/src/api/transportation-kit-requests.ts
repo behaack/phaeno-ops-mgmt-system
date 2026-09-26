@@ -24,6 +24,7 @@ export type TransportationKitRequest = {
 }
 export type ShipmentKitSupply = {
   shipmentId: string; shipmentVersion: number; jobId: string; jobNumber: string; tubeCount: number
+  sampleTypeName?: string | null
   deliveryLocationId: string | null; locations: CustomerDeliveryLocation[]; recommendation: ContainerRecommendation
   recordedStock: Array<{ containerDefinitionId: string; availableQuantity: number; inTransitQuantity: number }>
   inventoryStatus: 'Unknown' | 'RecordedForThisJob' | 'RecordedForLocation'; request: TransportationKitRequest | null
@@ -56,9 +57,9 @@ export async function cancelTransportationKitRequest(id: string, input: { versio
 }
 
 export type AvailableTransportationStockKit = { id: string; kitNumber: string; containerDefinitionId: string; sku: string; commonName: string; tubeCapacity: number; version: number }
-export type TransportationKitRequestDetail = { request: TransportationKitRequest; availableStockKits: AvailableTransportationStockKit[]; canDispatch: boolean; dispatchBlockedReason: string | null }
+export type TransportationKitRequestDetail = { request: TransportationKitRequest; availableStockKits: AvailableTransportationStockKit[]; canDispatch: boolean; dispatchBlockedReason: string | null; selectedPhaenoDestinationId?: string | null; phaenoDestinations?: Array<{ id: string; name: string; revision: number; isCurrentForNewWork?: boolean }> }
 const platformPath = '/platform/sample-shipping/kit-requests'
 export async function getPlatformTransportationKitRequests(status?: string) { return read((await api.get<Envelope<TransportationKitRequest[]>>(platformPath, { params: { status } })).data) }
 export async function getPlatformTransportationKitRequest(id: string) { return read((await api.get<Envelope<TransportationKitRequestDetail>>(`${platformPath}/${id}`)).data) }
-export async function dispatchTransportationKitRequest(id: string, input: { version: number; stockKitIds: string[]; outboundCarrier: string; outboundTrackingNumber: string; fulfilledAt: string }, idempotencyKey: string) { return read((await api.post<Envelope<TransportationKitRequestDetail>>(`${platformPath}/${id}/dispatch`, input, { headers: { 'Idempotency-Key': idempotencyKey } })).data) }
+export async function dispatchTransportationKitRequest(id: string, input: { version: number; stockKitIds: string[]; outboundCarrier: string; outboundTrackingNumber: string; fulfilledAt: string; phaenoDestinationId?: string; confirmUnavailableFixedDestination?: boolean }, idempotencyKey: string) { return read((await api.post<Envelope<TransportationKitRequestDetail>>(`${platformPath}/${id}/dispatch`, input, { headers: { 'Idempotency-Key': idempotencyKey } })).data) }
 export async function cancelPlatformTransportationKitRequest(id: string, input: { version: number; reason?: string }, idempotencyKey: string) { return read((await api.post<Envelope<TransportationKitRequest>>(`${platformPath}/${id}/cancel`, input, { headers: { 'Idempotency-Key': idempotencyKey } })).data) }

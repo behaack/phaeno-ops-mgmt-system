@@ -427,6 +427,7 @@ public sealed class OrderSystemConfiguration : IAudit, IConcurrency
     public string ShippingConfigurationJson { get; private set; } = "{}";
     public string SampleConfigurationJson { get; private set; } = "{}";
     public string ResultDestinationConfigurationJson { get; private set; } = "{}";
+    public Guid? DefaultShippingDestinationDefinitionKey { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
@@ -458,6 +459,12 @@ public sealed class OrderSystemConfiguration : IAudit, IConcurrency
             throw new ArgumentException("Select governed Portal delivery for results.", nameof(resultDestinationConfigurationJson));
         SampleConfigurationJson = sample;
         ResultDestinationConfigurationJson = destination;
+    }
+
+    public void SetDefaultShippingDestination(Guid definitionKey)
+    {
+        if (definitionKey == Guid.Empty) throw new ArgumentException("Choose a Phaeno ship-to destination.", nameof(definitionKey));
+        DefaultShippingDestinationDefinitionKey = definitionKey;
     }
 
     public static bool HasSupportedSampleConfiguration(string? value) => HasSetting(value, "mode", "ExactSampleRoster");

@@ -39,6 +39,7 @@ export type SampleShippingDestination = {
 }
 
 export type SampleTypeDefinition = {
+  shippingProcedureId?: string | null
   id: string
   definitionKey: string
   revision: number
@@ -65,38 +66,12 @@ export type SampleTypeDefinition = {
   version: number
 }
 
-export type SampleShippingInstructionRule = {
-  shippingProcedureId?: string | null
-  destinationInstructions?: string | null
-  id: string
-  definitionKey: string
-  revision: number
-  supersedesInstructionRuleId: string | null
-  destinationId: string
-  destinationName: string
-  sampleTypeDefinitionId: string
-  sampleTypeName: string
-  compatibilityGroup: string
-  packingInstructions: string
-  temperatureInstructions: string
-  carrierInstructions: string
-  dispatchInstructions: string
-  deliveryInstructions: string
-  requiredDocuments: string
-  exceptionInstructions: string
-  internationalCustomsInstructions: string | null
-  requiresSeparateShipment: boolean
-  effectiveFrom: string
-  effectiveTo: string | null
-  isActive: boolean
-  version: number
-}
-
 export type SampleShippingConfiguration = {
+  defaultDestinationDefinitionKey?: string | null
+  defaultDestinationVersion?: number
   procedures?: SampleShippingProcedure[]
   destinations: SampleShippingDestination[]
   sampleTypes: SampleTypeDefinition[]
-  instructionRules: SampleShippingInstructionRule[]
 }
 
 export type SampleShippingDestinationWrite = Omit<
@@ -115,19 +90,9 @@ export type SampleTypeDefinitionWrite = Omit<
   supersededVersion: number | null
 }
 
-export type SampleShippingInstructionRuleWrite = Omit<
-  SampleShippingInstructionRule,
-  'id' | 'definitionKey' | 'revision' | 'supersedesInstructionRuleId' | 'destinationName' | 'sampleTypeName' | 'effectiveTo' | 'version'
-> & {
-  supersedesInstructionRuleId: string | null
-  supersededVersion: number | null
-}
-
 export type SampleShippingPreview = {
   effectiveAt: string
   destination: SampleShippingDestination
-  compatibilityGroup: string
-  requiresSeparateShipment: boolean
   sampleRules: Array<{
     shippingProcedureId?: string | null
     destinationInstructions?: string | null
@@ -140,7 +105,6 @@ export type SampleShippingPreview = {
     requiredDocuments: string
     exceptionInstructions: string
     internationalCustomsInstructions: string | null
-    requiresSeparateShipment: boolean
   }>
 }
 
@@ -246,7 +210,7 @@ export type SampleShipmentWorkflow = {
   authorizationReference: string
   authorizationName: string
   labWorkOrderId: string
-  destinationId: string
+  destinationId: string | null
   destinationName: string
   status: string
   carrier: string | null
@@ -279,6 +243,7 @@ export type SampleShippingProcedure = {
   revision: number
   supersedesProcedureId: string | null
   name: string
+  description: string
   packingInstructions: string
   temperatureInstructions: string
   carrierInstructions: string
@@ -296,7 +261,17 @@ export async function createSampleShippingProcedure(input: SampleShippingProcedu
   return response.data
 }
 
+export async function deactivateSampleShippingProcedure(id: string, version: number) {
+  const response = (await api.post<ApiEnvelope<SampleShippingProcedure>>(`/platform/sample-shipping/procedures/${id}/deactivate`, { version })).data
+  if (!response.success) throw new Error(response.error?.message ?? 'The shipping procedure could not be deactivated.')
+  return response.data
+}
 
+export async function setSampleShippingProcedureStatus(id: string, input: { isActive: boolean; version: number }) {
+  const response = (await api.post<ApiEnvelope<SampleShippingProcedure>>(`/platform/sample-shipping/procedures/${id}/status`, input)).data
+  if (!response.success) throw new Error(response.error?.message ?? 'The shipping procedure status could not be changed.')
+  return response.data
+}
 
 export type SampleShipmentPacking = {
   shipmentId: string
@@ -382,6 +357,11 @@ export async function getSampleShippingConfiguration() {
   return unwrap(response.data)
 }
 
+export async function setDefaultShippingDestination(definitionKey: string, version: number) {
+  const response = await api.put<ApiEnvelope<SampleShippingConfiguration>>('/platform/sample-shipping/destinations/default', { definitionKey, version })
+  return unwrap(response.data)
+}
+
 export async function createSampleShippingDestination(input: SampleShippingDestinationWrite) {
   const response = await api.post<ApiEnvelope<SampleShippingDestination>>('/platform/sample-shipping/destinations', input)
   return unwrap(response.data)
@@ -392,23 +372,18 @@ export async function setSampleTypeStatus(id: string, input: { isActive: boolean
   return unwrap(response.data)
 }
 
+export async function changeSampleTypeProcedure(id: string, procedureId: string, version: number) {
+  const response = await api.post<ApiEnvelope<SampleTypeDefinition>>(`/platform/sample-shipping/sample-types/${id}/procedure`, { procedureId, version })
+  return unwrap(response.data)
+}
+
 export async function setShippingDestinationStatus(id: string, input: { isActive: boolean; version: number }) {
   const response = await api.post<ApiEnvelope<SampleShippingDestination>>(`/platform/sample-shipping/destinations/${id}/status`, input)
   return unwrap(response.data)
 }
 
-export async function setShippingAssignmentStatus(id: string, input: { isActive: boolean; version: number }) {
-  const response = await api.post<ApiEnvelope<SampleShippingInstructionRule>>(`/platform/sample-shipping/instruction-rules/${id}/status`, input)
-  return unwrap(response.data)
-}
-
 export async function createSampleTypeDefinition(input: SampleTypeDefinitionWrite) {
   const response = await api.post<ApiEnvelope<SampleTypeDefinition>>('/platform/sample-shipping/sample-types', input)
-  return unwrap(response.data)
-}
-
-export async function createSampleShippingInstructionRule(input: SampleShippingInstructionRuleWrite) {
-  const response = await api.post<ApiEnvelope<SampleShippingInstructionRule>>('/platform/sample-shipping/instruction-rules', input)
   return unwrap(response.data)
 }
 

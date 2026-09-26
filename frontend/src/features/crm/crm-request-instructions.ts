@@ -23,11 +23,11 @@ const instructions: Record<string, string[]> = {
     'This requirement clears when at least one sample type is active and currently effective. An inactive or future-dated definition does not clear it; each later shipment still checks its own samples.',
   ],
   'readiness-ShippingConfigurationIncomplete': [
-    shippingSettings + ' Select Ship-to destinations. Review an existing destination or use Add destination. Use Create revision for changes.',
-    'Complete the approved receiving address, hours, time zone, and delivery instructions. Set the approved Effective from date, select Active for packet resolution after review, and save the destination.',
-    'Select Shipping assignments. Use Add assignment, or Actions then Create revision on an existing assignment. Choose the exact Destination revision and the named Sample type. The sample type automatically follows its latest active, effective revision; the form shows the revision currently in use.',
-    'Select an approved shared Shipping procedure, enter the compatibility group and add only destination-specific exceptions. Maintain each sample/container combination\'s packing and temperature-control instructions under Container sizes. Set the approved Effective from date, select Active for packet resolution after review, then save.',
-    'This requirement clears when the rule and destination revision are active and currently effective, and the selected sample type has an active, currently effective revision. New sample-type revisions are followed automatically. A replacement destination still needs a rule linked to that destination revision.',
+    shippingSettings + ' Select Phaeno ship-to destinations. Review an existing destination or use Add destination. Use Create revision for address or receiving changes.',
+    'Complete the approved receiving address, hours, time zone, and delivery instructions. Make an available destination the Default from its Actions menu. Ordering is blocked without one.',
+    'Select Shipping procedures and approve the common steps. On the Sample type, select that procedure when adding the type; use Actions → Change procedure later without creating a content revision.',
+    'Link at least one usable Transportation kit to that Sample type. Its specification contains capacity, packing, temperature control, dry-ice amount when needed, and a bill of materials. A kit can be linked to only one Sample type and cannot be reassigned.',
+    'New Orders require one active Sample type, its active procedure, a usable linked kit, and an available Default destination. The destination is fixed for the Order when its first kit is dispatched, or the Default is captured when the customer uses an existing kit.',
   ],
   'readiness-ResultDestinationIncomplete': [
     orderSettings + ' Select Quote & workflow → Edit settings.',
@@ -36,7 +36,7 @@ const instructions: Record<string, string[]> = {
   ],
   'readiness-SubmissionInstructionsIncomplete': [
     shippingSettings + ' Select Order submission guidance → Edit instructions.',
-    'Enter the approved general guidance a customer should follow before submitting samples, including preparation and the next shipping step. Use instructions agreed with the laboratory; detailed destination-specific packing rules belong in Shipping assignments.',
+    'Enter approved general guidance a customer should follow before submitting samples, including preparation and the next shipping step. Receiving directions belong on the Phaeno destination; kit packing and coolant amounts belong on the Transportation kit.',
     'Select Save changes. This requirement clears when non-empty default instructions are saved. New orders use this guidance when no customer-specific instructions are configured; existing orders keep their saved instructions.',
   ],
   'readiness-BillingContactIncomplete': [

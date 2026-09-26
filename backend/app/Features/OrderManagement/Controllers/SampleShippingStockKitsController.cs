@@ -41,13 +41,16 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
         var now = DateTime.UtcNow;
         if (!definition.IsActive || definition.EffectiveFrom > now || definition.EffectiveTo <= now)
             throw Invalid("Select an active, effective container type before preparing physical stock.");
+        if (!definition.SampleTypeAnchorId.HasValue || !definition.FinishedKitProductId.HasValue)
+            throw Invalid("Prepare new physical stock only from a Transportation kit linked to one Sample type and a named Phaeno kit product.");
         if (definition.FinishedKitProductId.HasValue)
         {
             await SampleShippingPackingData.LockAsync(db, $"supplier-product:{definition.FinishedKitProductId.Value}", ct);
             var productActive = await (from product in db.LabSupplierProducts.AsNoTracking()
                 join supplier in db.LabSuppliers.AsNoTracking() on product.SupplierId equals supplier.Id
+                join type in db.LabProductTypes.AsNoTracking() on product.ProductTypeId equals type.Id
                 where product.Id == definition.FinishedKitProductId && product.IsActive && supplier.IsActive
-                    && supplier.IsInternalProducer
+                    && supplier.IsInternalProducer && type.IsActive
                     && product.ProductTypeId == PSeq.Operations.Laboratory.Domain.LabProductType.TransportationKitId
                 select product.Id).AnyAsync(ct);
             if (!productActive)
@@ -235,6 +238,21 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
         return await ReadAsync(id, ct);
     }
 
+    [HttpPost("{id:guid}/withdraw")]
+    public async Task<StockKitDto> Withdraw(Guid id, [FromBody] WithdrawStockKitRequest request, CancellationToken ct)
+    {
+        var actor = await context.RequirePlatformAdminAsync(HttpContext, ct);
+        await using var transaction = await SampleShippingPackingData.BeginAsync(db, $"stock-kit:{id}", ct);
+        var kit = await db.SampleShippingStockKits.SingleOrDefaultAsync(item => item.Id == id, ct) ?? throw Missing();
+        Version(kit.Version, request.Version);
+        try { kit.Withdraw(actor.Id, DateTime.UtcNow, request.Reason); }
+        catch (ArgumentException error) { throw Invalid(error.Message); }
+        catch (InvalidOperationException error) { throw Conflict(error.Message); }
+        await db.SaveChangesAsync(ct);
+        if (transaction is not null) await transaction.CommitAsync(ct);
+        return await ReadAsync(id, ct);
+    }
+
     private async Task<StockKitDto> ReadAsync(Guid id, CancellationToken ct)
     {
         var kit = await db.SampleShippingStockKits.AsNoTracking().Include(item => item.Tubes).SingleOrDefaultAsync(item => item.Id == id, ct) ?? throw Missing();
@@ -272,7 +290,7 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
             kit.TubesVerifiedAt, kit.TubesVerifiedByUserId, corrections.Where(item => item.SampleShippingStockKitId == kit.Id)
                 .Select(item => new StockKitTubeCorrectionDto(item.PreviousBarcode, item.ReplacementBarcode,
                     item.Reason, item.CorrectedByUserId, item.CorrectedAt)).ToArray(), kit.FinishedKitProductId,
-            kit.AssemblyWorkflowRevisionId, kit.AssemblyCompletedAt)).ToArray();
+            kit.AssemblyWorkflowRevisionId, kit.AssemblyCompletedAt, kit.WithdrawnAt, kit.WithdrawalReason)).ToArray();
     }
 
     private async Task<IReadOnlyList<StockKitProductExpiryDto>> CaptureProductExpirationsAsync(

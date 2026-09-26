@@ -24,77 +24,6 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 public partial class SampleShippingPostgresTests
 {
     [PostgreSqlReferenceFact]
-    public async Task ConfigurationRevisionsClosePredecessorsAndRejectOverlappingRules()
-    {
-        await using var scope = await ShippingTestScope.CreateAsync();
-        var controller = scope.CreateConfigurationController();
-        var effectiveFrom = DateTime.UtcNow.AddDays(-2);
-
-        var destinationV1 = await controller.CreateDestination(
-            scope.DestinationRequest(effectiveFrom), CancellationToken.None);
-        scope.ClearTrackedState();
-        var sampleTypeV1 = await controller.CreateSampleType(
-            scope.SampleTypeRequest(effectiveFrom), CancellationToken.None);
-        scope.ClearTrackedState();
-        var ruleV1 = await controller.CreateInstructionRule(
-            scope.RuleRequest(destinationV1.Id, sampleTypeV1.Id, effectiveFrom),
-            CancellationToken.None);
-        scope.ClearTrackedState();
-
-        var overlap = await Assert.ThrowsAsync<OrderManagementException>(() =>
-            controller.CreateInstructionRule(
-                scope.RuleRequest(destinationV1.Id, sampleTypeV1.Id, effectiveFrom.AddHours(6)),
-                CancellationToken.None));
-        Assert.Equal("shipping_instruction_period_overlap", overlap.ErrorCode);
-        scope.ClearTrackedState();
-
-        var ruleV2EffectiveFrom = effectiveFrom.AddDays(1);
-        var ruleV2 = await controller.CreateInstructionRule(
-            scope.RuleRequest(
-                destinationV1.Id,
-                sampleTypeV1.Id,
-                ruleV2EffectiveFrom,
-                ruleV1.Id,
-                ruleV1.Version),
-            CancellationToken.None);
-        scope.ClearTrackedState();
-        var configurationV2EffectiveFrom = DateTime.UtcNow.AddHours(1);
-        var destinationV2 = await controller.CreateDestination(
-            scope.DestinationRequest(
-                configurationV2EffectiveFrom,
-                destinationV1.Id,
-                destinationV1.Version,
-                name: "Reference receiving revision 2"),
-            CancellationToken.None);
-        scope.ClearTrackedState();
-        var sampleTypeV2 = await controller.CreateSampleType(
-            scope.SampleTypeRequest(
-                configurationV2EffectiveFrom,
-                sampleTypeV1.Id,
-                sampleTypeV1.Version,
-                name: "Reference RNA revision 2"),
-            CancellationToken.None);
-        scope.ClearTrackedState();
-
-        var persistedDestinationV1 = await scope.DbContext.SampleShippingDestinations
-            .AsNoTracking().SingleAsync(item => item.Id == destinationV1.Id);
-        var persistedSampleTypeV1 = await scope.DbContext.SampleTypeDefinitions
-            .AsNoTracking().SingleAsync(item => item.Id == sampleTypeV1.Id);
-        var persistedRuleV1 = await scope.DbContext.SampleShippingInstructionRules
-            .AsNoTracking().SingleAsync(item => item.Id == ruleV1.Id);
-
-        Assert.Equal(2, destinationV2.Revision);
-        Assert.Equal(destinationV1.DefinitionKey, destinationV2.DefinitionKey);
-        AssertUtcWithinDatabasePrecision(configurationV2EffectiveFrom, persistedDestinationV1.EffectiveTo);
-        Assert.Equal(2, sampleTypeV2.Revision);
-        Assert.Equal(sampleTypeV1.DefinitionKey, sampleTypeV2.DefinitionKey);
-        AssertUtcWithinDatabasePrecision(configurationV2EffectiveFrom, persistedSampleTypeV1.EffectiveTo);
-        Assert.Equal(2, ruleV2.Revision);
-        Assert.Equal(ruleV1.DefinitionKey, ruleV2.DefinitionKey);
-        AssertUtcWithinDatabasePrecision(ruleV2EffectiveFrom, persistedRuleV1.EffectiveTo);
-    }
-
-    [PostgreSqlReferenceFact]
     public async Task RegisteredTubeJourneyFreezesCrosswalkEnforcesTenantAndAdoptsBarcodeAtAccession()
     {
         await using var scope = await ShippingTestScope.CreateAsync();
@@ -189,7 +118,7 @@ public partial class SampleShippingPostgresTests
             Assert.Contains(
                 "approved absorbent",
                 instructionSnapshot.RootElement.GetProperty("samples")[0]
-                    .GetProperty("instructionRule").GetProperty("packingInstructions").GetString());
+                    .GetProperty("procedure").GetProperty("packingInstructions").GetString());
         Assert.Equal(firstTubeBarcode, ManifestTubeBarcode(packetV1.ManifestSnapshotJson));
         using (var declaration = JsonDocument.Parse(packetV1.ManifestSnapshotJson))
         {
@@ -469,6 +398,7 @@ public partial class SampleShippingPostgresTests
         }
 
         public PSeqOperationsDbContext DbContext { get; }
+        public Guid DefaultProcedureId { get; private set; }
         public string Suffix { get; }
         public Organization CustomerOrganization { get; }
         public Organization OtherCustomerOrganization { get; }
@@ -539,7 +469,18 @@ public partial class SampleShippingPostgresTests
                     new OrganizationMembership(platformUser.Id, platformOrganization.Id, true));
                 await dbContext.SaveChangesAsync();
 
-                return new ShippingTestScope(
+                var procedure = new SampleShippingProcedure(Guid.NewGuid(), 1, null,
+                    $"REF_{suffix}_PROCEDURE",
+                    "Pack with approved absorbent and secondary containment.",
+                    "Keep frozen using the approved method.",
+                    "Use an approved traceable carrier service.",
+                    "Dispatch only for an open receiving window.",
+                    "Include the current shipment packet.",
+                    "Contact Phaeno if delayed or damaged.", null, true);
+                dbContext.SampleShippingProcedures.Add(procedure);
+                await dbContext.SaveChangesAsync();
+
+                var scope = new ShippingTestScope(
                     connectionString,
                     persistenceOptions,
                     dbContext,
@@ -554,6 +495,8 @@ public partial class SampleShippingPostgresTests
                     customerIdentity,
                     otherCustomerIdentity,
                     platformIdentity);
+                scope.DefaultProcedureId = procedure.Id;
+                return scope;
             }
             catch
             {
@@ -614,30 +557,8 @@ public partial class SampleShippingPostgresTests
                 null,
                 48,
                 effectiveFrom,
-                true);
-
-        public SampleShippingInstructionRuleWriteRequest RuleRequest(
-            Guid destinationId,
-            Guid sampleTypeId,
-            DateTime effectiveFrom,
-            Guid? supersedesId = null,
-            long? supersededVersion = null) => new(
-                supersedesId,
-                supersededVersion,
-                destinationId,
-                sampleTypeId,
-                $"REF_{Suffix}_FROZEN",
-                "Pack with approved absorbent and secondary containment.",
-                "Keep frozen using the approved method.",
-                "Use an approved traceable carrier service.",
-                "Dispatch only for an open receiving window.",
-                "Deliver to Sample Receiving.",
-                "Include the current shipment packet.",
-                "Contact Phaeno if delayed or damaged.",
-                null,
-                false,
-                effectiveFrom,
-                true);
+                true,
+                supersedesId.HasValue ? null : DefaultProcedureId);
 
         public async Task<ShippingFixture> CreateShipmentAsync(int tubeCount = 1)
         {
@@ -649,10 +570,6 @@ public partial class SampleShippingPostgresTests
             var sampleType = await controller.CreateSampleType(
                 SampleTypeRequest(effectiveFrom), CancellationToken.None);
             ClearTrackedState();
-            await controller.CreateInstructionRule(
-                RuleRequest(destination.Id, sampleType.Id, effectiveFrom), CancellationToken.None);
-            ClearTrackedState();
-
             var authorizationSourceId = Guid.NewGuid();
             var workOrder = new LabWorkOrder(
                 Guid.NewGuid(),
@@ -793,11 +710,12 @@ public partial class SampleShippingPostgresTests
                     .Select(item => item.Id)
                     .ToArrayAsync();
                 var destinationIds = await DbContext.SampleShippingDestinations
-                    .Where(item => item.Code == $"REF_{Suffix}_DEST" || item.Code == $"REF_{Suffix}_DEST_RESET")
+                    .Where(item => item.Code == $"REF_{Suffix}_DEST" || item.Code == $"REF_{Suffix}_DEST_RESET"
+                        || item.Code == $"REF_{Suffix}_ALT")
                     .Select(item => item.Id)
                     .ToArrayAsync();
                 var sampleTypeIds = await DbContext.SampleTypeDefinitions
-                    .Where(item => item.Code == $"REF_{Suffix}_RNA")
+                    .Where(item => item.Code == $"REF_{Suffix}_RNA" || item.Code == $"REF_{Suffix}_OTHER")
                     .Select(item => item.Id)
                     .ToArrayAsync();
 
@@ -827,20 +745,14 @@ public partial class SampleShippingPostgresTests
                 await DbContext.LabWorkOrders.Where(item => workOrderIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await CleanupContainerDefinitionsAsync();
 
-                var rules = await DbContext.SampleShippingInstructionRules
-                    .Where(item => destinationIds.Contains(item.DestinationId)
-                        || sampleTypeIds.Contains(item.SampleTypeDefinitionId))
-                    .OrderByDescending(item => item.Revision)
-                    .ToListAsync();
-                DbContext.SampleShippingInstructionRules.RemoveRange(rules);
-                await DbContext.SaveChangesAsync();
-                await CleanupShippingProceduresAsync();
+                await DbContext.SampleTypeProcedureLinks.Where(item => sampleTypeIds.Contains(item.SampleTypeAnchorId)).ExecuteDeleteAsync();
                 var sampleTypes = await DbContext.SampleTypeDefinitions
                     .Where(item => sampleTypeIds.Contains(item.Id))
                     .OrderByDescending(item => item.Revision)
                     .ToListAsync();
                 DbContext.SampleTypeDefinitions.RemoveRange(sampleTypes);
                 await DbContext.SaveChangesAsync();
+                await CleanupShippingProceduresAsync();
                 var destinations = await DbContext.SampleShippingDestinations
                     .Where(item => destinationIds.Contains(item.Id))
                     .OrderByDescending(item => item.Revision)

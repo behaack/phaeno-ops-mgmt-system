@@ -320,6 +320,8 @@ export type LabServiceOrder = {
   labPermittedQcProjectionJson?: string | null;
   labReadyForRelease?: boolean;
   requestedSpecimenCount: number;
+  sampleTypeDefinitionId?: string | null;
+  sampleTypeName?: string | null;
   sourceGroups: LabServiceSourceGroup[];
   sampleRosterFinalizedAt: string | null;
   canEditSamples: boolean;
@@ -705,7 +707,12 @@ export async function downloadLabQuotePdf(
 export async function listAnalysisDefinitions() {
   return get<AnalysisDefinition[]>("/order-catalog/analyses");
 }
+export type LabOrderSampleTypeChoice = { id: string; name: string; revision: number };
+export async function listLabOrderSampleTypes(platform = false) {
+  return get<LabOrderSampleTypeChoice[]>(platform ? "/platform/lab-service-orders/sample-types" : "/lab-service-orders/sample-types");
+}
 export type LabPricingProfileWrite = {
+  sampleTypeDefinitionId?: string;
   sequencingRunCount?: number;
   submitForPricing?: boolean;
   requestedSpecimenCount: number;

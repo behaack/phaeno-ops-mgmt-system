@@ -1,5 +1,63 @@
 # Backend Test Plan
 
+## September 25, 2026 — Kit readiness regressions
+
+`LabOperationsCommercialHandoffPostgresTests.RetiredAssemblyOrInactiveKitComponentBlocksNewOrderingAndQuoteAcceptance` verifies that deactivating a kit component or retiring its approved assembly workflow removes the kit and Sample type from new-work choices, marks its administration detail unready, and blocks quote acceptance and draft submission without changing their statuses. Focused connected execution passed on a verified isolated PostgreSQL 18 database. `ShippingKitContentsPostgresTests.HistoricalContainerWithoutFinishedProductCannotBeActivatedForNewOrders` and `TransportationKitOrderingPostgresTests.WithdrawnPhysicalKitIsNotOfferedForDispatch` passed in earlier isolated focused runs. These cases complement, but do not replace, a full post-hardening connected suite or authenticated end-to-end acceptance.
+
+The Commercial-to-Lab fixture now wraps initial configuration in one transaction and reads the unique PSeq catalog external ID before inserting. An incompatible pre-existing item produces a clear setup error with no partial synthetic organizations, users, or departments. Always verify the disposable target database name before connected execution; a case-sensitive connection-string substitution previously pointed two failed runs at local development instead.
+
+## September 25, 2026 — Samples and shipping restart checkpoint
+
+The replacement model removes Shipping assignments and kit compatibility records. New configuration uses one procedure per Sample type, at most one permanent Sample type link per Transportation kit, and one global Default Phaeno ship-to destination. The connected `SampleShippingPostgresTests` suite exercises Order, kit request, physical stock, shipment, packet, location inventory, and laboratory handoff behavior against an isolated PostgreSQL 18 database migrated through `20260925220000_RestartSampleShippingConfiguration`: 98 passed, 1 pre-existing backup/attachment scenario skipped. The common fixture creates an approved Lab step and kit assembly workflow, records exact bill-of-material use, and completes assembly before dispatch. The adjacent `LabOperationsCommercialHandoffPostgresTests` class passed 54/54 after its fixtures selected the required Sample type and configured a Default destination. Backend solution Release and Debug builds passed with no warnings or errors. This checkpoint supersedes the assignment-based fixture expectations and request-only test notes below; those sections remain historical records of earlier iterations.
+
+## September 25, 2026 — Default destination audit
+
+The isolated commercial-to-lab journey now configures the global Phaeno ship-to default in its disposable database and verifies sample-list finalization through laboratory authorization. Transportation-kit fixtures select the Job's Sample type and supply required kit packing details at an eligible effective time. The PostgreSQL fixture removes Sample types before their referenced procedures. `LaterKitRequestCannotRedirectAJobAfterItsFirstKitDispatch` covers a received first kit followed by another request with two otherwise compatible destinations; the second request stays on the Job's saved destination and rejects a redirect. The isolated journey passed, two connected kit flows passed, and the new route regression passed in a separate disposable local database; those generated databases were removed after each run.
+
+## September 25, 2026 — Shipping procedure description
+
+`SampleShippingProcedurePostgresTests.cs` carries an optional description through procedure create, revision and persisted read. The migration adds a 4,000-character non-null description with an empty default for earlier rows and was applied to the configured local development database. Release build is the static checkpoint; connected test execution remains request-only.
+
+## September 25, 2026 — Shipping dependency hardening
+
+`SampleShippingProcedurePostgresTests.cs` adds a new Sample type with no selected procedure and verifies that a new assignment is rejected. `ShippingKitContentsPostgresTests.cs` adds cases for a duplicate destination on one kit and an Active kit save after its chosen assignment is withdrawn. Active kit saves now resolve exact assignment and procedure availability at their effective time. Customer roster finalization rechecks that resolved configuration, and operational readiness includes current procedure availability. Release solution build is the static checkpoint; connected test execution remains request-only.
+
+## September 25, 2026 — Procedure choice belongs to Sample type
+
+The Sample type fixture selects its shared procedure. Assignment create and revision ignore a client-supplied procedure choice and inherit the type's current choice; `SampleShippingProcedurePostgresTests.cs` covers a null submitted assignment choice and a new Sample type revision choosing another procedure. Active kit combinations still require packing and temperature details when the current type chooses a procedure but a historical assignment lacks one. The nullable migration backfills only unambiguous families and was applied to the configured local development database. Release solution build and EF model check are static checkpoints; connected tests remain request-only. This supersedes assignment-level procedure expectations below.
+
+## September 25, 2026 — One Sample type per named kit product
+
+The kit catalog rejects new specifications that combine Sample type families and rejects revisions that change the product's family. New recommendation and stock choice reads exclude historical multi-type specifications while leaving their saved records readable. `ShippingKitContentsPostgresTests.cs` now covers many kits for one type, mixed-family create/revise rejection, and exclusion of a simulated historical mixed-type kit. A same-family revision across Sample type versions remains for a requested test checkpoint. The backend Release build is the static checkpoint; automated suites remain request-only.
+
+## September 25, 2026 — One Sample type per PSeq order
+
+The order API requires one currently Active PSeq Sample type for new Customer and Phaeno Jobs and stores the selected revision identity and material class. Existing orders without that selection remain readable. Pricing request snapshots include the selection; new shipping work resolves only its active family revision. Standard placement also checks offering support. Shipping rejects a mixed-type packet even when historical rules share a compatibility label, and packing reset pools only within one type family. `SampleShippingDomainTests` includes the mixed-type rejection. Backend solution Release build and EF pending-model check passed; automated test suites remain request-only.
+
+Container compatibility resolution now anchors Customer Job shipments to the order's selected Sample type family and blocks mismatched shipment items. Transportation-kit supply reports the selected type name alongside its recommendation. Historical Jobs without a selection retain item-based lookup. Static build is the checkpoint; connected recommendation and mismatch cases remain for requested test execution.
+
+The Job supply response filters its inventory-kit choices to the same compatible container-definition set used for recommendations and received-stock options. General location inventory remains complete. The order-creation and container-order save endpoints continue to enforce the current compatible set on the server.
+
+## September 25, 2026 — Shared procedure required for new assignments
+
+`SampleShippingProcedurePostgresTests.cs` asserts the API rejects a new assignment when the current Sample type has no shared procedure, regardless of a client-supplied assignment choice. The common PostgreSQL fixture selects an Active procedure on its Sample type, preserving coverage of other rules. An assignment revision inherits the type's procedure even when the submitted procedure ID is null; activation of a standalone draft also requires a procedure on the current Sample type. Historical standalone records and issued packets remain unchanged. Backend build is the static checkpoint; automated execution remains request-only.
+
+## September 25, 2026 — Current shared shipping procedure
+
+`SampleShippingProcedurePostgresTests.cs` now asserts that an assignment anchored to an earlier procedure revision resolves the newer Active revision in a fresh preview while its already issued packet snapshot remains unchanged. Packet issuance uses the same resolved instruction fields; missing Active procedure revisions block new resolution. Regression source is updated; automated execution remains request-only. The backend solution build is the static checkpoint.
+
+## September 25, 2026 — Assignment revisions may change scope
+
+`SampleShippingPostgresTests.cs` adds a PostgreSQL regression source for an Active assignment revision that changes destination and sample-type family while retaining the definition key, ending the predecessor and preserving its exact historical references. Creation and status changes lock all old and new scopes in stable order and keep overlap/version validation. The backend solution build is the static checkpoint; automated execution remains request-only.
+
+## September 25, 2026 — Shipping procedure revision status
+
+`SampleShippingProcedurePostgresTests.cs` covers an Inactive successor retaining the earlier Active revision, activation retiring it, an Active successor retiring its predecessor at creation, stale-version and administrator checks, and rejection of historical activation. Assignment creation and pending-assignment activation reject a superseded procedure even if legacy data still flags it Active. Regression source is updated; automated execution remains request-only. The Release solution build is the static checkpoint.
+
+## September 24, 2026 — Shipping procedure deactivation
+
+`SampleShippingProcedurePostgresTests.cs` covers platform-administrator authorization, stale-version rejection, exact-revision deactivation without a content revision, version increment, and duplicate-deactivation conflict. Assignment creation and activation acquire the same procedure lock as deactivation before checking approval. The regression source is added; automated execution remains request-only. The backend solution build is the static checkpoint.
+
 The September 2026 manual UAT pack and its case scripts were retired after substantial workflow changes. Historical case IDs and results below describe their dated checkpoints; derive any new acceptance exercise from the current product and code. Automated regression coverage remains tracked here.
 
 ## September 23, 2026 — Tube-label scan-back
@@ -2248,3 +2306,10 @@ The migration-discovery assertion expects 23 migrations after the master-mix gap
 `MasterMixDomainTests` covers independent workflow approval, exact procedure revision snapshots, ordered completion with ingredient evidence, allocation across more than one tray, overdraw rejection, and terminal discard with a separately measured amount. The September 24 disconnected backend suite passed 760 cases, including these domain tests, and skipped 348 database-dependent cases. The connected backend suite passed 1,106 cases with two skips against a newly migrated disposable PostgreSQL database, then dropped. Feature-specific connected PostgreSQL acceptance remains to cover source-lot QC, expiry, unit and stock enforcement; exact approved revision pinning without silent adoption; atomic tray-step save and replay; concurrent trays competing for the final amount; operator role gates; and retained ingredient/tray lineage after discard. With explicit owner approval, the Lab step naming and master-mix migrations were applied in order to local development database `phaeno_ops_clean_20260919` on `localhost:5432`; EF lists both as applied and reports no pending model changes.
 
 Gap-closure acceptance must additionally exercise exact recipe totals across multiple lots, extra/missing/wrong-unit ingredients, independent Supervisor deviation approval and invalidation after another ingredient, Pacific local midnight and daylight-saving boundaries, concurrent workflow retirement versus mix preparation and new-tray creation, blocked retirement for active approved Lab steps, permitted use of an existing Ready mix on an open tray after retirement, rejection of new trays pinned to a retired recipe, full barcode scan matching, and correction races. Include the retired-recipe check for a protocol pinned through an older Lab step version, and verify that a failed new-tray request creates no batch. For corrections, verify a never-dispensed ingredient restores stock exactly once, an exhaustion override instead holds the lot for count, a never-dispensed tray use restores mix allocation once, and an uncertain or physically dispensed use stays recorded while the mix closes and the source lot is held. Confirm duplicate request IDs and same-target corrections cannot apply twice. The `CloseMasterMixGaps` migration was applied to configured local database `phaeno_ops_clean_20260919`; EF lists it as applied with no pending model changes. Connected acceptance has not run under the request-only test rule.
+
+# Global Phaeno ship-to default — September 25, 2026
+
+Regression scope: one configured destination family follows its latest current Active revision; a new finalized Job selects that destination only when its Sample type has a current Active assignment and procedure; an absent or incompatible default fails finalization with a configuration error; an amended Job retains a compatible selected route. Fulfillment offers only Active destinations compatible with every requested kit, permits a change before the first dispatch and before packing or packet issuance, and rejects route changes afterward. Migration backfills the default only when exactly one Active destination family exists. The initial checkpoint used a Release build and EF model checks; the focused connected regression added afterward is recorded below.
+
+The partial-dispatch regression `PartialDispatchKeepsItsSavedDestinationAfterDeactivationAndRequiresReceivingConfirmation` covers a changed Default and deactivated exact saved revision. Detail still offers that revision to the committed Job, while the command rejects dispatch without receiving confirmation and rejects a redirect even with confirmation. It records the confirmed continuation and retains the Job's saved destination.
+It also covers a later kit request on the same Job, the physical-kit detail dispatch API, and confirms that new work excludes the inactive destination. This case and the two adjacent route-lock/partial-dispatch cases passed against the verified disposable PostgreSQL reference database.

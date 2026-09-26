@@ -8,7 +8,7 @@ public class SampleShippingContainerTests
 {
     private static SampleShippingContainerDefinitionDto Size(int capacity, string? sku = null, int displayOrder = 0)
         => new(Guid.NewGuid(), Guid.NewGuid(), sku ?? $"C-{capacity}", $"Container {capacity}", capacity, 1, null, null, null, null,
-            DateTime.UtcNow.AddDays(-1), null, true, displayOrder, 1, []);
+            DateTime.UtcNow.AddDays(-1), null, true, displayOrder, 1, KitContents: []);
 
     [Fact]
     public void DefaultThirtyTubesUsesTwentyAndTen()

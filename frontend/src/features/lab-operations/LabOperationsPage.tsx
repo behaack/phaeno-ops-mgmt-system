@@ -92,10 +92,10 @@ const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
   { value: 'results', label: 'Results & review', description: 'Result evidence, scientific review, and release readiness', icon: ClipboardList },
   { value: 'kits', label: 'PSeq kits', separatorBefore: true, description: 'Preparation, shipping, and fulfillment', icon: PackageCheck },
   { value: 'assembly', label: 'Data assembly', description: 'Input validation, processing, and release', icon: Workflow },
-  { value: 'reagent-runs', label: 'Reagent manufacturing', separatorBefore: true, description: 'Make and document Phaeno reagent lots', icon: FlaskConical },
+  { value: 'materials', label: 'Purchased Materials', separatorBefore: true, description: 'Purchased lots, prepared reagents, and QC', icon: FlaskConical },
+  { value: 'reagent-runs', label: 'Reagent manufacturing', description: 'Make and document Phaeno reagent lots', icon: FlaskConical },
   { value: 'transportation-kits', label: 'Transportation kits', description: 'Assembly, inventory, requests, and kits sent', icon: PackageCheck },
   { value: 'suppliers', label: 'Suppliers & products', separatorBefore: true, description: 'Vendors, reagents, and shipping supplies', icon: Building2 },
-  { value: 'materials', label: 'Materials', description: 'Lots, prepared reagents, and QC', icon: FlaskConical },
   { value: 'equipment', label: 'Equipment', description: 'Assets, availability, and calibration', icon: Microscope },
 ]
 

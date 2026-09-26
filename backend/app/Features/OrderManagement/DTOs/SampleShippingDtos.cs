@@ -3,8 +3,12 @@ namespace PhaenoPortal.App.Features.OrderManagement.DTOs;
 public sealed record SampleShippingConfigurationDto(
     IReadOnlyList<SampleShippingDestinationDto> Destinations,
     IReadOnlyList<SampleTypeDefinitionDto> SampleTypes,
-    IReadOnlyList<SampleShippingInstructionRuleDto> InstructionRules,
-    IReadOnlyList<SampleShippingProcedureDto>? Procedures = null);
+
+    IReadOnlyList<SampleShippingProcedureDto>? Procedures = null,
+    Guid? DefaultDestinationDefinitionKey = null,
+    long DefaultDestinationVersion = 0);
+
+public sealed record SetDefaultShippingDestinationRequest(Guid DefinitionKey, long Version);
 
 public sealed record SampleShippingDestinationDto(
     Guid Id,
@@ -82,9 +86,11 @@ public sealed record SampleTypeDefinitionDto(
     DateTime EffectiveFrom,
     DateTime? EffectiveTo,
     bool IsActive,
-    long Version);
+    long Version,
+    Guid? ShippingProcedureId = null);
 
 public sealed record SampleShippingStatusRequest(bool IsActive, long Version);
+public sealed record ChangeSampleTypeProcedureRequest(Guid ProcedureId, long Version);
 
 public sealed record SampleTypeDefinitionWriteRequest(
     Guid? SupersedesSampleTypeId,
@@ -106,53 +112,8 @@ public sealed record SampleTypeDefinitionWriteRequest(
     string? CarrierRestrictions,
     int? MaximumTransitHours,
     DateTime EffectiveFrom,
-    bool IsActive);
-
-public sealed record SampleShippingInstructionRuleDto(
-    Guid Id,
-    Guid DefinitionKey,
-    int Revision,
-    Guid? SupersedesInstructionRuleId,
-    Guid DestinationId,
-    string DestinationName,
-    Guid SampleTypeDefinitionId,
-    string SampleTypeName,
-    string CompatibilityGroup,
-    string PackingInstructions,
-    string TemperatureInstructions,
-    string CarrierInstructions,
-    string DispatchInstructions,
-    string DeliveryInstructions,
-    string RequiredDocuments,
-    string ExceptionInstructions,
-    string? InternationalCustomsInstructions,
-    bool RequiresSeparateShipment,
-    DateTime EffectiveFrom,
-    DateTime? EffectiveTo,
     bool IsActive,
-    long Version,
-    Guid? ShippingProcedureId = null,
-    string? DestinationInstructions = null);
-
-public sealed record SampleShippingInstructionRuleWriteRequest(
-    Guid? SupersedesInstructionRuleId,
-    long? SupersededVersion,
-    Guid DestinationId,
-    Guid SampleTypeDefinitionId,
-    string CompatibilityGroup,
-    string PackingInstructions,
-    string TemperatureInstructions,
-    string CarrierInstructions,
-    string DispatchInstructions,
-    string DeliveryInstructions,
-    string RequiredDocuments,
-    string ExceptionInstructions,
-    string? InternationalCustomsInstructions,
-    bool RequiresSeparateShipment,
-    DateTime EffectiveFrom,
-    bool IsActive,
-    Guid? ShippingProcedureId = null,
-    string? DestinationInstructions = null);
+    Guid? ShippingProcedureId = null);
 
 public sealed record SampleShippingPreviewRequest(
     Guid DestinationId,
@@ -162,8 +123,6 @@ public sealed record SampleShippingPreviewRequest(
 public sealed record SampleShippingPreviewDto(
     DateTime EffectiveAt,
     SampleShippingDestinationDto Destination,
-    string CompatibilityGroup,
-    bool RequiresSeparateShipment,
     IReadOnlyList<SampleShippingPreviewRuleDto> SampleRules);
 
 public sealed record SampleShippingPreviewRuleDto(
@@ -176,7 +135,6 @@ public sealed record SampleShippingPreviewRuleDto(
     string RequiredDocuments,
     string ExceptionInstructions,
     string? InternationalCustomsInstructions,
-    bool RequiresSeparateShipment,
     Guid? ShippingProcedureId = null,
     string? DestinationInstructions = null);
 

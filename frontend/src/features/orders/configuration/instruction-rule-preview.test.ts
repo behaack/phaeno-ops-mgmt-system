@@ -1,23 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { instructionPreviewTime, instructionPreviewUnavailable } from './instruction-rule-preview'
+import type { SampleShippingProcedure } from '#/api/sample-shipping'
+import { currentShippingProcedure } from './current-shipping-procedure'
 import { parseShippingSettingsSection } from './shipping-settings-navigation'
 
-describe('instruction rule preview context', () => {
-  const now = new Date('2026-09-18T20:15:00.000Z')
-  it('uses now for an already effective rule', () => {
-    expect(instructionPreviewTime({ effectiveFrom: '2026-09-01T00:00:00Z' }, now)).toBe(now.toISOString())
+describe('shared shipping procedure selection', () => {
+  const procedure = (id: string, revision: number, isActive: boolean): SampleShippingProcedure => ({
+    id, definitionKey: 'procedure-family', revision, supersedesProcedureId: revision > 1 ? 'first' : null,
+    name: 'Shared procedure', description: '', packingInstructions: 'Pack safely', temperatureInstructions: 'Keep frozen',
+    carrierInstructions: 'Traceable carrier', dispatchInstructions: 'Dispatch on weekdays',
+    requiredDocuments: 'Packet', exceptionInstructions: 'Contact Phaeno', internationalCustomsInstructions: null,
+    isActive, version: 1,
   })
-  it('uses the exact future start, including seconds, without rounding before the valid window', () => {
-    expect(instructionPreviewTime({ effectiveFrom: '2026-09-19T10:30:45.123-07:00' }, now)).toBe('2026-09-19T17:30:45.123Z')
+  it('uses the newest active revision of the selected procedure family', () => {
+    expect(currentShippingProcedure([procedure('first', 1, false), procedure('second', 2, true)], 'first')?.id).toBe('second')
   })
-  it('does not resolve a different active rule when the selected rule is inactive', () => {
-    expect(instructionPreviewUnavailable({ isActive: false, effectiveTo: null }, now.toISOString())).toContain('inactive')
+  it('does not substitute an unavailable procedure', () => {
+    expect(currentShippingProcedure([procedure('first', 1, false)], 'first')).toBeUndefined()
   })
-  it('treats the end of an effective window as exclusive', () => {
-    expect(instructionPreviewUnavailable({ isActive: true, effectiveTo: now.toISOString() }, now.toISOString())).toContain('ended')
-    expect(instructionPreviewUnavailable({ isActive: true, effectiveTo: '2026-09-19T00:00:00Z' }, now.toISOString())).toBeNull()
-  })
-  it('takes old standalone preview links to the instruction rules', () => {
-    expect(parseShippingSettingsSection('preview')).toBe('instructions')
+  it('takes obsolete assignment links to Sample types', () => {
+    expect(parseShippingSettingsSection('instructions')).toBe('sample-types')
   })
 })

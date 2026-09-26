@@ -1,5 +1,105 @@
 # Frontend Test Plan
 
+## September 25, 2026 — Kit list actions, readiness, and revision form
+
+`ShippingContainers.test.tsx` checks that list Actions can link an unassigned kit to one Sample type, that list and detail Actions can deactivate an earlier active specification behind a latest draft, distinguishes unlinked named kits from historical containers without a finished product, keeps historical revisions inactive, and shows a persistent list warning when the server marks an otherwise complete kit unavailable for new work. The Dry ice amount and Dry ice unit fields now share aligned label/input rows with amount help below its input. Focused component execution, lint, and typecheck are the verification checkpoint; a browser viewport check is still pending.
+
+## September 25, 2026 — Samples and shipping restart checkpoint
+
+The current configuration UI covers the four replacement workspaces: Sample types, Phaeno ship-to destinations, Transportation kits, and Shipping procedures. `SampleShippingConfigurationPanel.test.tsx` and `ShippingContainers.test.tsx` were reconciled to the required procedure selection, one-time kit link, Default destination, and Actions menus. Revision history now follows all other detail content on each of the four records. Their focused suites passed 51/51 after that layout change; the adjacent instruction preview, Transportation kits, and Job detail suites passed 40/40 earlier. Frontend lint and typecheck passed. Assignment and compatibility expectations below are historical and superseded by the restart contract; browser acceptance of the complete flow remains pending.
+
+## September 25, 2026 — Shipping settings audit
+
+The procedure and destination detail sections expose semantic revision-history headings. `SampleShippingConfigurationPanel.test.tsx` follows the current Actions behavior for historical and ended Sample types, checks that the removed Compatibility group stays absent, and warns when the default lacks usable shipping setup for an Active Sample type. The shipping settings and kit-request component suites passed together at this checkpoint: 58 tests. Frontend typecheck and lint also passed.
+
+The destination list and detail now select the default through Actions instead of a header select. New component cases check the versioned default mutation and badge, name a missing Active assignment, and distinguish a missing shared procedure even when an assignment exists. The signed-in browser reached the Enriched RNA assignment form with Santa Barbara Lab selected, shared procedure inherited, optional additions blank, and Active status; after handoff, the page showed its saved Active assignment. Codex did not submit the form. Automated cases added in this follow-up remain unrun unless requested.
+
+## September 25, 2026 — Shipping procedure description and usage
+
+`SampleShippingConfigurationPanel.test.tsx` checks the description in the procedure list, its carry-forward in Create revision, and the current Sample type link on procedure detail. The detail section groups by current Active Sample type and procedure family. Typecheck and lint are static checkpoints; automated test execution remains request-only.
+
+## September 25, 2026 — Shipping dependency hardening
+
+`SampleShippingConfigurationPanel.test.tsx` adds an activation check for an older assignment whose current Sample type lacks a procedure or whose selected procedure is withdrawn. The Sample type revision form requires an Active replacement if its earlier choice is unavailable. The kit editor labels assignments unavailable at its planned effective time, identifies withdrawn dependencies, and rejects duplicate destinations before submission. Typecheck and lint are static checkpoints; automated test execution remains request-only.
+
+## September 25, 2026 — Procedure choice belongs to Sample type
+
+`SampleShippingConfigurationPanel.test.tsx` uses a Sample type fixture with a selected procedure and checks that assignment Add and Create revision display its current Active procedure as inherited text, without an assignment-level procedure picker. Sample type revisions expose the procedure selector; destination assignments keep only optional pair-specific additions. Kit specification validation also recognizes the current Sample type procedure when an older assignment lacks a saved procedure ID. Typecheck and lint are static checkpoints; automated suites remain request-only. This section supersedes the earlier assignment-level picker expectations below.
+
+## September 25, 2026 — Sample type kit grouping and destination label
+
+`ShippingContainers.test.tsx` now selects a Sample type before choosing destination assignments and checks the renamed Bill of materials region. The settings sidebar keeps an all-kits **Kit specifications** entry, while each Sample type detail embeds filtered assignments and kit specifications. The destination page heading, sidebar, and activation link read **Phaeno ship-to destinations**. Regression source covers the renamed destination label. Frontend typecheck and scoped lint are static checkpoints; automated suites remain request-only.
+
+## September 25, 2026 — One Sample type per PSeq order
+
+The Customer and Phaeno Job form requires one currently available Sample type, explains that another type needs another order, and shows the chosen type in the Job scope. The Shipping assignment form omits Compatibility group and the separate-shipment choice. Preview permits one type. Existing revision data remains readable. `LabJobDetailsDialog.test.tsx` supplies current choices in its existing form cases; `SampleShippingConfigurationPanel.test.tsx` checks that the removed controls are absent. TypeScript is the static checkpoint; automated suites remain request-only.
+
+The transportation-kit order dialog and container assignment card identify the Job's selected Sample type beside the recommendation. `TransportationKitsPanel.test.tsx` checks that the recommendation shows the supplied type name. TypeScript and scoped lint are the static checkpoint; the suite remains request-only.
+
+`TransportationKitsPanel.test.tsx` also covers a current supply response that withdraws two initially listed container sizes: Adjust kit sizes hides them and submits only the remaining compatible size. Automated execution remains request-only.
+
+## September 25, 2026 — Inherited instruction review
+
+`SampleShippingConfigurationPanel.test.tsx` checks that Add is unavailable when its Sample type has no Active shared procedure, that Add and Create revision have no direct-entry choice, and that the collapsed inherited-instruction section appears after a Sample type with a selected procedure is chosen. Expanded content is labeled text, with no read-only instruction textareas. Status stays after pairing-specific additions. TypeScript and scoped lint are the static checkpoint; automated suites remain request-only.
+
+## September 25, 2026 — Current procedure selection and form order
+
+`SampleShippingConfigurationPanel.test.tsx` asserts that Create revision shows the current Active procedure by name without its revision number, displays its current read-only steps, and places Status after pairing-specific additions. Dependency warnings now check for any Active revision in the selected procedure family. TypeScript and scoped lint are the static checkpoint; automated suites remain request-only.
+
+## September 25, 2026 — Shipping assignment form in one save
+
+`SampleShippingConfigurationPanel.test.tsx` covers the Destination label, filtering inactive destinations on Add, an unavailable saved destination warning on Create revision, changing destination and Sample type on a revision, and Active as the default submitted status. Add and Create revision use the procedure selected on the current Sample type and display inherited steps as labeled text. Standalone history remains readable, while new assignments require a type-level procedure. Inactive remains available for deliberate review. TypeScript and scoped lint are the static checkpoint; automated suites remain request-only.
+
+## September 25, 2026 — Active shipping dependency warnings
+
+Manual regression source: deactivate an exact destination revision or the only current sample-type revision used by an Active assignment. Confirm the dialog names affected assignments, then check the assignment warning and the linked kit specification list/detail warnings after refresh. Withdraw an approved procedure and verify the warning says existing assignment steps remain saved but need review. Deactivate an assignment used by an Active kit and check its persistent warning, including when a newer Inactive kit revision hides the earlier Active one. Restore or revise each dependency and verify the warning clears. Automated suites remain request-only; static typecheck and scoped lint are the checkpoint.
+
+## September 25, 2026 — Destination revisions and kit choices
+
+`SampleShippingConfigurationPanel.test.tsx` covers Active as the default Status for new Ship-to destinations and revisions, an explicit Inactive choice, preservation of the generated code, latest Inactive visibility behind an Active predecessor, prior-revision expansion, search by earlier name, and exact historical detail navigation. `ShippingContainers.test.tsx` covers Preview recommendation as the first row action and exclusion of deactivated destinations from new kit combination choices while a saved historical choice remains visible. Regression sources are updated; automated suites remain request-only. TypeScript, scoped lint and whitespace checks are the static checkpoint.
+
+## September 25, 2026 — Procedure revision status and list consistency
+
+`SampleShippingConfigurationPanel.test.tsx` covers Active as the procedure editor default, an explicit Inactive choice, a visible earlier Active revision behind an Inactive draft, one latest-revision status action, read-only historical detail, and a legacy two-Active case displayed as superseded history. The Sample types row keeps revision and status while omitting the generated code badge. Shared primary record-link styling and procedure list spacing follow the Sample types pattern. Regression source is updated; automated suites remain request-only. TypeScript, scoped lint and whitespace checks are the static checkpoint.
+
+## September 25, 2026 — Sample-type revision status and list visibility
+
+`SampleShippingConfigurationPanel.test.tsx` now expects Active as the default revision Status, verifies an explicit Inactive revision request, and keeps a latest Inactive revision visible in the default list when an earlier revision is still active. The latest status and active-predecessor note appear together. Regression source is updated; automated suites remain request-only. TypeScript, scoped lint and whitespace checks are the static checkpoint.
+
+## September 24, 2026 — Shipping procedure Actions
+
+`SampleShippingConfigurationPanel.test.tsx` covers row Actions with Create revision and Deactivate, cancellation without a write, exact revision/version submission, and refreshed Inactive status. The API contract has a versioned deactivation request; PostgreSQL regression source covers authorization, stale versions, duplicate deactivation, version increment and retained revision identity. Regression sources are updated but automated suites were not run; frontend typecheck, scoped lint and backend build are the static checkpoint.
+
+## September 24, 2026 — New sample-type status
+
+`SampleShippingConfigurationPanel.test.tsx` covers Active as the default Status for Add sample type and an explicit Inactive selection in the submitted request. The later content-revision expectation from this checkpoint was updated by the September 25 case above. Regression source is updated but automated tests were not run; scoped lint and TypeScript are the static checkpoint.
+
+## September 24, 2026 — Kit header and row deactivation
+
+`ShippingContainers.test.tsx` now covers default hiding of inactive latest kit specifications, Show inactive navigation and page reset, a revealed draft with its active predecessor, the **Deactivate** row and detail actions, confirmation of the exact saved revision and concurrency version, and row removal after deactivation. The title-row button alignment and label-free filter presentation are visual acceptance checks; the controls retain screen-reader labels. Regression source is updated but automated tests were not run; scoped lint and TypeScript are the static checkpoint.
+
+## September 24, 2026 — Shared shipping activation badges
+
+Updated `SampleShippingConfigurationPanel.test.tsx` and `ShippingContainers.test.tsx` expectations follow one Active/Inactive badge presentation across sample types, destinations, assignments and kit specifications. The kit case checks placement beside SKU and revision; timing and usable-now filtering retain their separate meaning. Regression sources are updated but automated tests were not run; typecheck and scoped lint are the static checkpoint.
+
+## September 24, 2026 — Kit specification row Actions
+
+The Kit specifications row menu uses the same labeled outline **Actions** trigger as other configuration lists. Existing Create revision and Preview recommendation behavior is unchanged. No new automated case or test run was requested for this presentation change; scoped lint and TypeScript are the static checkpoint.
+
+## September 24, 2026 — Ship-to destination list discovery
+
+`SampleShippingConfigurationPanel.test.tsx` now covers default hiding of inactive destination revisions, Show inactive, receiving-location search, 12-item pagination, and focus recovery when deactivation removes a row. Existing destination activation cases were updated to reveal inactive rows before acting. Regression source is added but automated tests were not run; typecheck and scoped lint are the static checkpoint.
+
+## September 24, 2026 — Sample type list discovery
+
+`SampleShippingConfigurationPanel.test.tsx` now covers default hiding of an inactive latest revision, 12-item pagination, Show inactive, search, and restoration of list controls after a detail visit. The existing detail and activation tests remain. Regression source is added but automated tests were not run; typecheck and scoped lint are the static checkpoint.
+
+## September 24, 2026 — Purchased Materials navigation
+
+The Lab operations sidebar now places **Purchased Materials** before **Reagent manufacturing**. The material-lot detail return link uses the same label; the existing `materials` route and lot list remain unchanged. No new automated case or test run was requested for this navigation and wording change. Manual sidebar and return-navigation acceptance remains pending.
+
+The purchased-lot creation form no longer shows a single-option **Lot kind** control. It still submits `SupplierLot`. The focused acceptance check is to open **New lot**, confirm the field order is **Supplier**, **Product name**, **Lot number** with normal dialog spacing, and verify a purchased lot can still be saved; no new automated test or test run was requested.
+
 The September 2026 manual UAT pack and its case scripts were retired after substantial workflow changes. Historical case IDs and results below describe their dated checkpoints; derive any new acceptance exercise from the current product and code. Automated regression coverage remains tracked here.
 
 ## September 23, 2026 — DataMatrix labels and readable scan results
@@ -2810,3 +2910,10 @@ Focused stock-kit tests now cover the At Phaeno default, every dispatched status
 Component coverage remains to verify approved workflow selection and explicit adoption of a newer revision in the Lab step editor, ready-mix filtering, amount/remaining validation for batch and per-sample entries, tray-to-mix links, and the create, ingredient, step, complete and discard dialogs. The September 24 full shared-checkout frontend unit suite passed 1,220 tests across 189 files. The exact release tree passed 1,217 tests across 189 files; lint, typecheck, documentation consistency, and production build passed. Those tests are general regression evidence; dedicated master-mix component cases remain to be added.
 
 Gap-closure component coverage should verify recipe ingredient editing and approval review, full container barcode scan, search/status/overdue paging with list-state restoration, actor and correction history, expired-mix blocking, supervisor deviation and verified-void/discrepancy dialogs, persisted uncertain ingredient recovery across reload, and refreshed ready-mix availability after a stale tray save. Verify the retirement dialog explains that open trays may use Ready mixes until cutoff, the new-tray workflow picker excludes a workflow pinned to a retired recipe, and a stale picker refreshes after a rejected create. Include exact text transport for recipe, ingredient, yield and measured discard amounts, decimal case `0.1 × 3 = 0.3`, and multiple fields using the same mix. These component checks remain unrun under the repository's request-only test rule.
+
+# Global Phaeno ship-to default — September 25, 2026
+
+Regression scope: the destination settings list shows and saves one global default family, retains the choice across revisions, and warns when the saved family becomes unavailable. Kit dispatch distinguishes Customer delivery from Phaeno return destination, preselects the Job's route, lists only compatible Active alternatives, and locks the route after partial dispatch. The initial static checkpoint used typecheck and lint; the focused component test added afterward is recorded below. Browser acceptance remains pending.
+
+`KitRequests.test.tsx` and `CustomerStockKitDispatchDialog.test.tsx` cover an inactive saved destination from the request and physical-kit detail dialogs: show the route warning, require a separate receiving confirmation, prevent an unconfirmed submit, and send the confirmation after it is checked.
+The two focused files passed 21 tests; frontend typecheck and scoped lint passed.

@@ -248,6 +248,10 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             offering.AssignSampleTypes([sampleType.Id]);
             var system = new OrderSystemConfiguration(30, "Follow shipping instructions", "{}");
             system.UpdatePSeqReadinessConfiguration("{\"mode\":\"ExactSampleRoster\"}", "{\"destination\":\"GovernedPortal\"}");
+            var destinationKey = await DbContext.SampleShippingDestinations
+                .Where(item => item.Id == shippingConfiguration.ActiveDestinationId)
+                .Select(item => item.DefinitionKey).SingleAsync();
+            system.SetDefaultShippingDestination(destinationKey);
             configuredSystemIds.Add(system.Id);
             var profile = new OrganizationCommercialProfile(CustomerOrganization.Id);
             profile.UpdateBillingConfiguration("Billing", "billing@example.com", "{\"line1\":\"Reference address\"}", 30, EffectiveTaxDecision.Taxable, 0.1m, null);
@@ -255,6 +259,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             var department = await DbContext.OrganizationDepartments.SingleAsync(value => value.OrganizationId == CustomerOrganization.Id && value.IsDefault);
             var order = new LabServiceOrder(CustomerOrganization.Id, department.Id, $"STD-{Guid.NewGuid():N}", $"Study {Guid.NewGuid():N}",
                 null, 1, false, "Human PBMC", "Frozen", "No hazards", "Follow shipping instructions");
+            order.SelectSampleType(sampleType.Id, sampleType.MaterialClass);
             order.SourceGroups.Add(new LabServiceSourceGroup(order.Id, "Human PBMC", 1));
             DbContext.AddRange(analysis, offering, system, profile, order); await DbContext.SaveChangesAsync();
             await DbContext.OrderSystemConfigurations.Where(value => value.Id == system.Id).ExecuteUpdateAsync(update => update.SetProperty(value => value.CreatedAt, DateTime.UnixEpoch));

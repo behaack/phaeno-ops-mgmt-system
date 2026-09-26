@@ -291,7 +291,10 @@ public sealed record LabServiceOrderDto(
     bool CanManageQuotes = false,
     string? QuoteAcceptanceBlockedReason = null,
     LabCustomerProgress? LaboratoryProgress = null, string? TubeUsePolicyKey = null, int? TubeUsePolicyVersion = null,
-    IReadOnlyList<Guid>? AuthorizedSampleIds = null, bool CanProposeChange = false, int RequestedSequencingRunCount = 0);
+    IReadOnlyList<Guid>? AuthorizedSampleIds = null, bool CanProposeChange = false, int RequestedSequencingRunCount = 0,
+    Guid? SampleTypeDefinitionId = null, string? SampleTypeName = null);
+
+public sealed record LabOrderSampleTypeChoiceDto(Guid Id, string Name, int Revision);
 
 public sealed record ReagentOrderLineDto(
     Guid Id,
@@ -611,7 +614,8 @@ public sealed record LabOrderWriteRequest(
     IReadOnlyList<LabServiceSourceGroupWriteRequest>? SourceGroups = null,
     decimal? ProposedUnitPrice = null,
     string? PriceProposalNote = null,
-    bool SubmitForPricing = false, int? SequencingRunCount = null);
+    bool SubmitForPricing = false, int? SequencingRunCount = null,
+    Guid? SampleTypeDefinitionId = null);
 public sealed record InitiateCustomerLabOrderRequest(
     Guid OrganizationId,
     string? CustomerReference,
@@ -624,7 +628,8 @@ public sealed record InitiateCustomerLabOrderRequest(
     Guid? SourceRequestId = null,
     decimal? ProposedUnitPrice = null,
     string? PriceProposalNote = null,
-    Guid? DepartmentId = null, int? SequencingRunCount = null);
+    Guid? DepartmentId = null, int? SequencingRunCount = null,
+    Guid? SampleTypeDefinitionId = null);
 public sealed record LabServiceSourceGroupWriteRequest(string BiologicalSource, int SpecimenCount);
 public sealed record LabSampleRosterWriteRequest(
     string CustomerSampleId,

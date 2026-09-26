@@ -136,9 +136,11 @@ public sealed class TrialWorkflowService(PSeqOperationsDbContext db, ILabOperati
             && value.EffectiveFrom <= now && (value.EffectiveTo == null || value.EffectiveTo > now), token) ?? throw Error("trial_sample_type_unavailable", "Choose an active extracted-RNA sample type.");
         if (!string.Equals(sampleType.MaterialClass.Replace(" ", "").Replace("-", "").Replace("_", ""), "extractedrna", StringComparison.OrdinalIgnoreCase))
             throw Error("trial_material_invalid", "Initial Trials accept extracted RNA only.");
-        if (!await db.SampleShippingInstructionRules.AnyAsync(value => db.SampleTypeDefinitions.Any(anchor => anchor.Id == value.SampleTypeDefinitionId && anchor.DefinitionKey == sampleType.DefinitionKey) && value.DestinationId == destination.Id
-            && value.IsActive && value.EffectiveFrom <= now && (value.EffectiveTo == null || value.EffectiveTo > now), token))
-            throw Error("trial_shipping_instructions_unavailable", "Phaeno must configure approved instructions for this sample type and destination.");
+        if (sampleType.ShippingProcedureId is not Guid procedureId ||
+            !await db.SampleShippingProcedures.AnyAsync(value =>
+                db.SampleShippingProcedures.Any(anchor => anchor.Id == procedureId && anchor.DefinitionKey == value.DefinitionKey) &&
+                value.IsActive, token))
+            throw Error("trial_shipping_instructions_unavailable", "Phaeno must select an active shipping procedure for this sample type.");
         var values = trial.CurrentScope().Read(); var samples = new List<TrialSample>();
         foreach (var input in request.Samples)
         {

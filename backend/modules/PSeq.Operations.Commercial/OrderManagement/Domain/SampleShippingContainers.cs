@@ -8,6 +8,9 @@ public sealed class SampleShippingContainerType : IAudit, IConcurrency
     public string Sku { get; private set; } = null!;
     public string NormalizedSku { get; private set; } = null!;
     public Guid? FinishedKitProductId { get; private set; }
+    public Guid? SampleTypeAnchorId { get; private set; }
+    public DateTime? SampleTypeLinkedAt { get; private set; }
+    public Guid? SampleTypeLinkedByUserId { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
@@ -22,11 +25,20 @@ public sealed class SampleShippingContainerType : IAudit, IConcurrency
         if (finishedKitProductId == Guid.Empty) throw new ArgumentException("Choose a valid Phaeno kit product.");
         FinishedKitProductId = finishedKitProductId;
     }
+    public void LinkSampleType(Guid sampleTypeAnchorId, Guid actorUserId, DateTime utcNow)
+    {
+        if (sampleTypeAnchorId == Guid.Empty || actorUserId == Guid.Empty || utcNow.Kind != DateTimeKind.Utc)
+            throw new ArgumentException("Choose a Sample type and record the actor and UTC time.");
+        if (SampleTypeAnchorId.HasValue)
+            throw new InvalidOperationException("A Transportation kit's Sample type cannot change after it is linked.");
+        SampleTypeAnchorId = sampleTypeAnchorId;
+        SampleTypeLinkedAt = utcNow;
+        SampleTypeLinkedByUserId = actorUserId;
+    }
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
     public void MarkUpdated(DateTime utcNow, Guid? actorUserId) { UpdatedAt = utcNow; UpdatedByUserId = actorUserId; }
     public void IncrementVersion() => Version++;
 }
-
 public sealed class SampleShippingContainerDefinition : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
@@ -40,6 +52,9 @@ public sealed class SampleShippingContainerDefinition : IAudit, IConcurrency
     public string? SupplierName { get; private set; }
     public string? SupplierProductNumber { get; private set; }
     public string? PackingInstructions { get; private set; }
+    public decimal? DryIceQuantity { get; private set; }
+    public string? DryIceUnit { get; private set; }
+    public string? TemperatureControlInstructions { get; private set; }
     public DateTime EffectiveFrom { get; private set; }
     public DateTime? EffectiveTo { get; private set; }
     public bool IsActive { get; private set; }
@@ -50,25 +65,31 @@ public sealed class SampleShippingContainerDefinition : IAudit, IConcurrency
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? UpdatedByUserId { get; private set; }
     public long Version { get; private set; } = 1;
-    public ICollection<SampleShippingContainerCompatibility> Compatibilities { get; private set; } = [];
     public ICollection<ShippingKitContent> KitContents { get; private set; } = [];
     private SampleShippingContainerDefinition() { }
 
     public SampleShippingContainerDefinition(Guid containerTypeId, int revision, Guid? supersedesDefinitionId,
         string commonName, int tubeCapacity, string? supplierName, string? supplierProductNumber,
         string? packingInstructions, DateTime effectiveFrom, DateTime? effectiveTo, bool isActive, int displayOrder,
-        Guid? assemblyWorkflowRevisionId = null)
+        Guid? assemblyWorkflowRevisionId = null, decimal? dryIceQuantity = null,
+        string? dryIceUnit = null, string? temperatureControlInstructions = null)
     {
         if (containerTypeId == Guid.Empty || revision < 1) throw new ArgumentException("A container type and revision are required.");
         if (tubeCapacity is < 1 or > 10000) throw new ArgumentException("Usable tube capacity must be between 1 and 10,000.");
         if (effectiveFrom.Kind != DateTimeKind.Utc || (effectiveTo.HasValue && (effectiveTo.Value.Kind != DateTimeKind.Utc || effectiveTo <= effectiveFrom)))
             throw new ArgumentException("Use valid UTC effective dates, with the end after the start.");
         if (displayOrder < 0) throw new ArgumentException("Display order cannot be negative.");
+        if (dryIceQuantity is <= 0) throw new ArgumentException("Dry-ice quantity must be greater than zero.");
+        if (dryIceQuantity.HasValue != !string.IsNullOrWhiteSpace(dryIceUnit))
+            throw new ArgumentException("Enter both a dry-ice quantity and unit, or leave both empty.");
         ContainerTypeId = containerTypeId; Revision = revision; SupersedesDefinitionId = supersedesDefinitionId;
         AssemblyWorkflowRevisionId = assemblyWorkflowRevisionId;
         CommonName = OrderText.Required(commonName, "Common name", 255); TubeCapacity = tubeCapacity;
         SupplierName = OrderText.Optional(supplierName, 255); SupplierProductNumber = OrderText.Optional(supplierProductNumber, 100);
         PackingInstructions = OrderText.Optional(packingInstructions, 8000);
+        DryIceQuantity = dryIceQuantity;
+        DryIceUnit = OrderText.Optional(dryIceUnit, 30);
+        TemperatureControlInstructions = OrderText.Optional(temperatureControlInstructions, 2000);
         EffectiveFrom = effectiveFrom; EffectiveTo = effectiveTo; IsActive = isActive; DisplayOrder = displayOrder;
     }
 
@@ -88,24 +109,4 @@ public sealed class SampleShippingContainerDefinition : IAudit, IConcurrency
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
     public void MarkUpdated(DateTime utcNow, Guid? actorUserId) { UpdatedAt = utcNow; UpdatedByUserId = actorUserId; }
     public void IncrementVersion() => Version++;
-}
-
-public sealed class SampleShippingContainerCompatibility
-{
-    public Guid Id { get; private set; } = Guid.NewGuid();
-    public Guid ContainerDefinitionId { get; private set; }
-    public Guid SampleTypeDefinitionId { get; private set; }
-    public Guid InstructionRuleId { get; private set; }
-    public string? TemperatureControlInstructions { get; private set; }
-    public string? PackingInstructions { get; private set; }
-    private SampleShippingContainerCompatibility() { }
-    public SampleShippingContainerCompatibility(Guid containerDefinitionId, Guid sampleTypeDefinitionId, Guid instructionRuleId,
-        string? temperatureControlInstructions = null, string? packingInstructions = null)
-    {
-        if (containerDefinitionId == Guid.Empty || sampleTypeDefinitionId == Guid.Empty || instructionRuleId == Guid.Empty)
-            throw new ArgumentException("A container, sample type, and handling rule are required.");
-        ContainerDefinitionId = containerDefinitionId; SampleTypeDefinitionId = sampleTypeDefinitionId; InstructionRuleId = instructionRuleId;
-        TemperatureControlInstructions = OrderText.Optional(temperatureControlInstructions, 2000);
-        PackingInstructions = OrderText.Optional(packingInstructions, 4000);
-    }
 }

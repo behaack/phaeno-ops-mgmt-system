@@ -18,12 +18,20 @@ public static class SampleShippingContainerModelConfiguration
             entity.Property(item => item.NormalizedSku).HasMaxLength(100).IsRequired();
             entity.HasIndex(item => item.NormalizedSku).IsUnique();
             entity.HasIndex(item => item.FinishedKitProductId).IsUnique();
+            entity.HasIndex(item => item.SampleTypeAnchorId);
+            entity.HasOne<SampleTypeDefinition>().WithMany().HasForeignKey(item => item.SampleTypeAnchorId)
+                .OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_transportation_kit_sample_type_anchor");
+            entity.HasOne<PSeq.Operations.Commercial.Accounts.Domain.User>().WithMany()
+                .HasForeignKey(item => item.SampleTypeLinkedByUserId).OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_transportation_kit_link_actor");
             entity.HasOne<PSeq.Operations.Laboratory.Domain.LabSupplierProduct>().WithMany().HasForeignKey(item => item.FinishedKitProductId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_shipping_spec_finished_kit_product");
             Audit(entity);
         });
         builder.Entity<SampleShippingContainerDefinition>(entity =>
         {
-            entity.ToTable("sample_shipping_container_definitions", commercialSchema);
+            entity.ToTable("sample_shipping_container_definitions", commercialSchema, table =>
+                table.HasCheckConstraint("ck_transportation_kit_dry_ice_pair",
+                    "(dry_ice_quantity IS NULL AND dry_ice_unit IS NULL) OR (dry_ice_quantity > 0 AND dry_ice_unit IS NOT NULL AND length(btrim(dry_ice_unit)) > 0)"));
             entity.HasKey(item => item.Id);
             entity.HasIndex(item => new { item.ContainerTypeId, item.Revision }).IsUnique();
             entity.HasIndex(item => item.SupersedesDefinitionId).IsUnique();
@@ -33,6 +41,9 @@ public static class SampleShippingContainerModelConfiguration
             entity.Property(item => item.SupplierName).HasMaxLength(255);
             entity.Property(item => item.SupplierProductNumber).HasMaxLength(100);
             entity.Property(item => item.PackingInstructions).HasMaxLength(8000);
+            entity.Property(item => item.DryIceQuantity).HasPrecision(18, 3);
+            entity.Property(item => item.DryIceUnit).HasMaxLength(30);
+            entity.Property(item => item.TemperatureControlInstructions).HasMaxLength(2000);
             Audit(entity);
             entity.HasOne(item => item.ContainerType).WithMany(item => item.Definitions)
                 .HasForeignKey(item => item.ContainerTypeId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_shipping_container_revision_type");
@@ -58,18 +69,6 @@ public static class SampleShippingContainerModelConfiguration
             entity.HasOne<PSeq.Operations.Laboratory.Domain.LabSupplier>().WithMany()
                 .HasForeignKey(item => item.SupplierId).OnDelete(DeleteBehavior.Restrict);
         });
-        builder.Entity<SampleShippingContainerCompatibility>(entity =>
-        {
-            entity.ToTable("sample_shipping_container_compatibilities", commercialSchema);
-            entity.HasKey(item => item.Id);
-            entity.Property(item => item.TemperatureControlInstructions).HasMaxLength(2000);
-            entity.Property(item => item.PackingInstructions).HasMaxLength(4000);
-            entity.HasIndex(item => new { item.ContainerDefinitionId, item.SampleTypeDefinitionId, item.InstructionRuleId }).IsUnique();
-            entity.HasOne<SampleShippingContainerDefinition>().WithMany(item => item.Compatibilities)
-                .HasForeignKey(item => item.ContainerDefinitionId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_shipping_container_compat_revision");
-            entity.HasOne<SampleTypeDefinition>().WithMany().HasForeignKey(item => item.SampleTypeDefinitionId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_shipping_container_compat_sample_type");
-            entity.HasOne<SampleShippingInstructionRule>().WithMany().HasForeignKey(item => item.InstructionRuleId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_shipping_container_compat_rule");
-        });
         builder.Entity<SampleShipment>(entity =>
         {
             entity.Property(item => item.ContainerSnapshotJson).HasColumnType("jsonb");
@@ -88,6 +87,10 @@ public static class SampleShippingContainerModelConfiguration
             entity.Property(item => item.TubeProductNumber).HasMaxLength(100).IsRequired();
             entity.Property(item => item.TubeLotNumber).HasMaxLength(100);
             entity.Property(item => item.ProductExpirySnapshotJson).HasColumnType("jsonb");
+            entity.Property(item => item.WithdrawalReason).HasMaxLength(1000);
+            entity.HasOne<PSeq.Operations.Commercial.Accounts.Domain.User>().WithMany()
+                .HasForeignKey(item => item.WithdrawnByUserId).OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_stock_kit_withdraw_actor");
             entity.Property(item => item.TubeProductDescription).HasMaxLength(1000);
             entity.Property(item => item.ShipperProductDescription).HasMaxLength(1000);
             entity.HasOne<PSeq.Operations.Laboratory.Domain.LabSupplierProduct>().WithMany().HasForeignKey(item => item.TubeSupplierProductId).OnDelete(DeleteBehavior.Restrict);
