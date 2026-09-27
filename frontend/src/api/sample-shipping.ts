@@ -36,6 +36,7 @@ export type SampleShippingDestination = {
   effectiveTo: string | null
   isActive: boolean
   version: number
+  lifecycle: 'Draft' | 'Released' | 'Superseded' | 'Deactivated' | 'Discarded' | 'LegacyInactive'
 }
 
 export type SampleTypeDefinition = {
@@ -64,6 +65,7 @@ export type SampleTypeDefinition = {
   effectiveTo: string | null
   isActive: boolean
   version: number
+  lifecycle: 'Draft' | 'Released' | 'Superseded' | 'Deactivated' | 'Discarded' | 'LegacyInactive'
 }
 
 export type SampleShippingConfiguration = {
@@ -76,7 +78,7 @@ export type SampleShippingConfiguration = {
 
 export type SampleShippingDestinationWrite = Omit<
   SampleShippingDestination,
-  'id' | 'definitionKey' | 'revision' | 'supersedesDestinationId' | 'effectiveTo' | 'version'
+  'id' | 'definitionKey' | 'revision' | 'supersedesDestinationId' | 'effectiveTo' | 'version' | 'lifecycle'
 > & {
   supersedesDestinationId: string | null
   supersededVersion: number | null
@@ -84,7 +86,7 @@ export type SampleShippingDestinationWrite = Omit<
 
 export type SampleTypeDefinitionWrite = Omit<
   SampleTypeDefinition,
-  'id' | 'definitionKey' | 'revision' | 'supersedesSampleTypeId' | 'effectiveTo' | 'version'
+  'id' | 'definitionKey' | 'revision' | 'supersedesSampleTypeId' | 'effectiveTo' | 'version' | 'lifecycle'
 > & {
   supersedesSampleTypeId: string | null
   supersededVersion: number | null
@@ -253,8 +255,9 @@ export type SampleShippingProcedure = {
   internationalCustomsInstructions: string | null
   isActive: boolean
   version: number
+  lifecycle: 'Draft' | 'Released' | 'Superseded' | 'Deactivated' | 'Discarded' | 'LegacyInactive'
 }
-export type SampleShippingProcedureWrite = Omit<SampleShippingProcedure, 'id' | 'definitionKey' | 'revision' | 'version'> & { supersededVersion: number | null }
+export type SampleShippingProcedureWrite = Omit<SampleShippingProcedure, 'id' | 'definitionKey' | 'revision' | 'version' | 'lifecycle'> & { supersededVersion: number | null }
 export async function createSampleShippingProcedure(input: SampleShippingProcedureWrite) {
   const response = (await api.post<ApiEnvelope<SampleShippingProcedure>>('/platform/sample-shipping/procedures', input)).data
   if (!response.success) throw new Error(response.error?.message ?? 'The shipping procedure could not be saved.')
@@ -271,6 +274,15 @@ export async function setSampleShippingProcedureStatus(id: string, input: { isAc
   const response = (await api.post<ApiEnvelope<SampleShippingProcedure>>(`/platform/sample-shipping/procedures/${id}/status`, input)).data
   if (!response.success) throw new Error(response.error?.message ?? 'The shipping procedure status could not be changed.')
   return response.data
+}
+
+export async function updateSampleShippingProcedureDraft(id: string, version: number, draft: SampleShippingProcedureWrite) {
+  const response = (await api.put<ApiEnvelope<SampleShippingProcedure>>(`/platform/sample-shipping/procedures/${id}/draft`, { version, ...draft })).data
+  return unwrap(response)
+}
+export async function discardSampleShippingProcedureDraft(id: string, version: number) {
+  const response = (await api.post<ApiEnvelope<SampleShippingProcedure>>(`/platform/sample-shipping/procedures/${id}/discard`, { version })).data
+  return unwrap(response)
 }
 
 export type SampleShipmentPacking = {
@@ -366,6 +378,14 @@ export async function createSampleShippingDestination(input: SampleShippingDesti
   const response = await api.post<ApiEnvelope<SampleShippingDestination>>('/platform/sample-shipping/destinations', input)
   return unwrap(response.data)
 }
+export async function updateSampleShippingDestinationDraft(id: string, version: number, draft: SampleShippingDestinationWrite) {
+  const response = await api.put<ApiEnvelope<SampleShippingDestination>>(`/platform/sample-shipping/destinations/${id}/draft`, { version, draft })
+  return unwrap(response.data)
+}
+export async function discardSampleShippingDestinationDraft(id: string, version: number) {
+  const response = await api.post<ApiEnvelope<SampleShippingDestination>>(`/platform/sample-shipping/destinations/${id}/discard`, { version })
+  return unwrap(response.data)
+}
 
 export async function setSampleTypeStatus(id: string, input: { isActive: boolean; version: number }) {
   const response = await api.post<ApiEnvelope<SampleTypeDefinition>>(`/platform/sample-shipping/sample-types/${id}/status`, input)
@@ -384,6 +404,25 @@ export async function setShippingDestinationStatus(id: string, input: { isActive
 
 export async function createSampleTypeDefinition(input: SampleTypeDefinitionWrite) {
   const response = await api.post<ApiEnvelope<SampleTypeDefinition>>('/platform/sample-shipping/sample-types', input)
+  return unwrap(response.data)
+}
+export async function updateSampleTypeDraft(id: string, version: number, draft: SampleTypeDefinitionWrite) {
+  const response = await api.put<ApiEnvelope<SampleTypeDefinition>>(`/platform/sample-shipping/sample-types/${id}/draft`, { version, draft })
+  return unwrap(response.data)
+}
+export async function discardSampleTypeDraft(id: string, version: number) {
+  const response = await api.post<ApiEnvelope<SampleTypeDefinition>>(`/platform/sample-shipping/sample-types/${id}/discard`, { version })
+  return unwrap(response.data)
+}
+
+export type ShippingJobSafetyHold = { jobId: string; isOnHold: boolean; reason: string | null; heldAt: string | null; resolvedAt: string | null; version: number }
+export async function getShippingJobSafetyHold(jobId: string) {
+  const response = await api.get<ApiEnvelope<ShippingJobSafetyHold>>(`/platform/lab-service-orders/${jobId}/shipping-safety-hold`)
+  return unwrap(response.data)
+}
+export async function changeShippingJobSafetyHold(jobId: string, isOnHold: boolean, version: number, reason: string) {
+  const suffix = isOnHold ? '' : '/resolve'
+  const response = await api.post<ApiEnvelope<ShippingJobSafetyHold>>(`/platform/lab-service-orders/${jobId}/shipping-safety-hold${suffix}`, { version, reason })
   return unwrap(response.data)
 }
 

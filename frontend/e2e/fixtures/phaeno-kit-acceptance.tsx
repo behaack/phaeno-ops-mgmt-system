@@ -6,6 +6,7 @@ import { configureApiAuth } from '../../src/api/client'
 import { applyThemeMode } from '../../src/components/theme-mode'
 import { PhaenoSessionContext, type PhaenoSessionContextValue } from '../../src/features/auth/session-context'
 import { SupplierCatalogPage } from '../../src/features/lab-operations/SupplierCatalogPage'
+import { PurchasingWorkspace } from '../../src/features/lab-operations/PurchasingWorkspace'
 import { StandardKitDetailPage } from '../../src/features/orders/stock-kits/StandardKitDetailPage'
 import { StandardKitInventoryPanel } from '../../src/features/orders/stock-kits/StandardKitInventoryPanel'
 import { noSessionCapabilities } from '../../src/test-helpers/session'
@@ -30,7 +31,7 @@ const context: PhaenoSessionContextValue = {
 }
 const root = createRootRoute({ component: () => <><header className="border-b px-4 py-2 text-center text-xs">Synthetic kit acceptance · No physical fulfillment</header><Outlet /></> })
 const inventory = createRoute({ getParentRoute: () => root, path: '/lab-operations', component: () => <main className="page-wrap px-4 py-8"><h1 className="mb-5 text-2xl font-semibold">Transportation kits</h1><StandardKitInventoryPanel apiEnabled /></main> })
-const supplier = createRoute({ getParentRoute: () => root, path: '/lab-operations/suppliers/$supplierId', component: () => <main><SupplierCatalogPage supplierId={supplier.useParams().supplierId} /></main> })
+const supplier = createRoute({ getParentRoute: () => root, path: '/purchasing/suppliers/$supplierId', component: () => <PurchasingWorkspace section="suppliers" onSectionChange={() => undefined}><SupplierCatalogPage supplierId={supplier.useParams().supplierId} /></PurchasingWorkspace> })
 const detail = createRoute({ getParentRoute: () => root, path: '/lab-operations/stock-kits/$kitId', component: () => <StandardKitDetailPage kitId={detail.useParams().kitId} /> })
-const router = createRouter({ routeTree: root.addChildren([inventory, supplier, detail]), history: createMemoryHistory({ initialEntries: [params.get('start') === 'catalog' ? '/lab-operations/suppliers/phaeno' : '/lab-operations'] }) })
+const router = createRouter({ routeTree: root.addChildren([inventory, supplier, detail]), history: createMemoryHistory({ initialEntries: [params.get('start') === 'catalog' ? '/purchasing/suppliers/phaeno' : '/lab-operations'] }) })
 createRoot(document.getElementById('root')!).render(<QueryClientProvider client={client}><PhaenoSessionContext.Provider value={context}><RouterProvider router={router} /></PhaenoSessionContext.Provider></QueryClientProvider>)

@@ -42,10 +42,10 @@ describe('SampleShippingPacketPage', () => {
   })
 
   it.each(['Regular ice: approved amount for this container.', 'No cooling required.'])('uses frozen container instructions and deduplicates a shared procedure: %s', async control => {
-    const instructionRule = { shippingProcedureId: 'procedure-1', packingInstructions: 'Shared sealed containment steps.', destinationInstructions: 'Use the receiving entrance.' }
+    const procedure = { shippingProcedureId: 'procedure-1', packingInstructions: 'Shared sealed containment steps.', destinationInstructions: 'Use the receiving entrance.' }
     api.getPacket.mockResolvedValue({ ...packet, instructionSnapshotJson: JSON.stringify({
       containerPacking: { commonName: 'Small shipper', revision: 2, temperatureControlInstructions: control, samples: [{ sampleTypeId: 'type-1', packingInstructions: 'Approved insert for sample one.' }, { sampleTypeId: 'type-2', packingInstructions: 'Approved insert for sample two.' }] },
-      samples: [{ sampleType: { id: 'type-1', name: 'Sample one', packagingInstructions: 'Superseded sample packing.' }, instructionRule }, { sampleType: { id: 'type-2', name: 'Sample two' }, instructionRule }],
+      samples: [{ sampleType: { id: 'type-1', name: 'Sample one', packagingInstructions: 'Superseded sample packing.' }, procedure }, { sampleType: { id: 'type-2', name: 'Sample two' }, procedure }],
     }) })
     show()
     await screen.findByRole('button', { name: 'Print shipping insert' })
@@ -72,7 +72,7 @@ describe('SampleShippingPacketPage', () => {
   })
 
   it('retains standalone packing in historical packets', async () => {
-    api.getPacket.mockResolvedValue({ ...packet, instructionSnapshotJson: JSON.stringify({ samples: [{ sampleType: { packagingInstructions: 'Historical sample preparation.' }, instructionRule: { packingInstructions: 'Historical packing.' } }] }) })
+    api.getPacket.mockResolvedValue({ ...packet, instructionSnapshotJson: JSON.stringify({ samples: [{ sampleType: { packagingInstructions: 'Historical sample preparation.' }, procedure: { packingInstructions: 'Historical packing.' } }] }) })
     show()
     await screen.findByRole('button', { name: 'Print shipping insert' })
     expect(screen.getByText('Historical sample preparation.')).toBeTruthy()

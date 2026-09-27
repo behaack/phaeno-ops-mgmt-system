@@ -14,6 +14,7 @@ public sealed class LabSupplierProduct : LabAuditedEntity
     public bool IsActive { get; private set; } = true;
     public bool CanExpire { get; private set; }
     public string? DefaultQuantityUnit { get; private set; }
+    public int? TubeCapacity { get; private set; }
 
     private LabSupplierProduct() { }
     public LabSupplierProduct(Guid supplierId, string productNumber, string description, Guid productTypeId, bool canExpire = false)
@@ -37,6 +38,12 @@ public sealed class LabSupplierProduct : LabAuditedEntity
     {
         DefaultQuantityUnit = string.IsNullOrWhiteSpace(unit)
             ? null : Required(unit, nameof(unit), 50);
+    }
+
+    public void SetTubeCapacity(int? capacity)
+    {
+        if (capacity is <= 0) throw new ArgumentException("Enter a positive whole-number tube capacity.");
+        TubeCapacity = capacity;
     }
 
     public void LinkPreparedReagent(Guid materialDefinitionId)

@@ -8,7 +8,7 @@ import { ServiceWorkflowVersionBuilderPage } from './ServiceWorkflowVersionBuild
 const api = vi.hoisted(() => ({ dashboard: vi.fn(), update: vi.fn(), navigate: vi.fn() }))
 vi.mock('#/api/lab-operations', () => ({ getLabOperationsDashboard: api.dashboard, updateLabServiceWorkflowVersion: api.update, createLabServiceWorkflowVersion: vi.fn(), getLabOperationsError: (_: unknown, fallback: string) => fallback }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider: 'clerk', session: { capabilities: { canManageLabProtocols: true } } }) }))
-vi.mock('@tanstack/react-router', () => ({ useNavigate: () => api.navigate, Link: ({ children }: { children: ReactNode }) => <a href="#workflows">{children}</a> }))
+vi.mock('@tanstack/react-router', () => ({ useNavigate: () => api.navigate, useBlocker: vi.fn(), Link: ({ children }: { children: ReactNode }) => <a href="#workflows">{children}</a> }))
 
 describe('empty Invalid workflow recovery', () => {
   beforeEach(() => vi.clearAllMocks())

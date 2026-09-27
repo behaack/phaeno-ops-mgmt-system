@@ -63,12 +63,12 @@ export function ScientificTextField<T extends FieldValues>({ control, name, id, 
       'aria-invalid': fieldState.invalid || undefined,
       'aria-describedby': describedBy,
     }
-    return <div className={showSymbols && !insertUnits ? "min-w-0 space-y-1.5" : "min-w-0 space-y-0"}>
+    return <div className={showSymbols && !insertUnits ? "min-w-0 space-y-[3px]" : "min-w-0 space-y-0"}>
       {multiline ? <textarea {...props} rows={rows} className="block min-h-24 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring" /> : <Input {...props} />}
-      <div className={supportingText ? 'mt-1.5 flex items-start gap-2' : 'flex flex-wrap items-center justify-between gap-2'}>
+      <div className={supportingText ? (showSymbols && !insertUnits ? 'flex items-start gap-2' : 'mt-1.5 flex items-start gap-2') : 'flex flex-wrap items-center justify-between gap-2'}>
         {supportingText ? <div className="min-w-0 flex-1">{supportingText}</div> : unit && showSymbols && !insertUnits ? <span className="text-xs text-muted-foreground">Choose a common unit or type your own.</span> : null}
         <DropdownMenu>
-          <DropdownMenuTrigger asChild><Button type="button" disabled={disabled} variant="ghost" size="sm" className={showSymbols && !insertUnits ? "ml-auto" : "ml-auto h-6 px-1 text-xs underline underline-offset-2"} aria-label={`${unit ? (showSymbols ? 'Units and symbols for' : 'Units for') : 'Insert symbol in'} ${label}`}>{unit ? (showSymbols ? 'Units and symbols' : 'Units') : 'Insert symbol'}</Button></DropdownMenuTrigger>
+          <DropdownMenuTrigger asChild><Button type="button" disabled={disabled} variant="ghost" size="sm" className="ml-auto h-6 px-1 text-xs underline underline-offset-2" aria-label={`${unit ? (showSymbols ? 'Units and symbols for' : 'Units for') : 'Insert symbol in'} ${label}`}>{unit ? (showSymbols ? 'Units and symbols' : 'Units') : 'Insert symbol'}</Button></DropdownMenuTrigger>
           <DropdownMenuContent align="end" className={showSymbols ? "max-h-80 w-64" : "w-40"} onCloseAutoFocus={event => {
             if (insertedAt.current === null) return
             event.preventDefault()

@@ -14,17 +14,18 @@ export function containerDependencyWarnings(container: ShippingContainerDefiniti
   const anchor = configuration.sampleTypes.find(item => item.id === container.sampleTypeAnchorId)
   if (!anchor) warnings.push({ message: container.sampleTypeAnchorId ? 'The linked Sample type is unavailable.' : 'Link this kit to a Sample type before use.', blocksNewWork: true })
   const current = anchor && configuration.sampleTypes.filter(item => item.definitionKey === anchor.definitionKey && availableAt(item, at)).sort((a, b) => b.revision - a.revision)[0]
-  if (anchor && !current) warnings.push({ message: `${anchor.name} has no Active revision.`, blocksNewWork: true })
+  if (anchor && !current) warnings.push({ message: 'Selected sample type is not active.', blocksNewWork: true })
   if (current && !currentShippingProcedure(configuration.procedures, current.shippingProcedureId))
     warnings.push({ message: `${current.name}'s shipping procedure has no Active revision.`, blocksNewWork: true })
-  if (!container.kitContents?.length) warnings.push({ message: 'The kit has no bill of materials.', blocksNewWork: true })
-  if (!container.finishedKitProductId) warnings.push({ message: 'Select a Phaeno finished Transportation kit product.', blocksNewWork: true })
-  if (!container.assemblyWorkflowRevisionId) warnings.push({ message: 'Select an approved kit assembly workflow revision.', blocksNewWork: true })
+  if (!container.finishedKitProductId) {
+    warnings.push({ message: 'This older kit is not linked to a catalog Transportation kit product, so it cannot be used for new Orders. Create a product under Suppliers & products, then add a replacement kit specification.', blocksNewWork: true })
+    return warnings
+  }
   if (!container.temperatureControlInstructions) warnings.push({ message: 'Record the kit temperature-control instructions.', blocksNewWork: true })
   if (Boolean(container.dryIceQuantity) !== Boolean(container.dryIceUnit))
     warnings.push({ message: 'Record both the dry-ice amount and unit.', blocksNewWork: true })
   if (container.newWorkReady === false && availableAt(container, Date.now()) && !warnings.length)
-    warnings.push({ message: 'A kit product, bill-of-materials product, or approved assembly workflow is unavailable. Review the kit preparation before new work.', blocksNewWork: true })
+    warnings.push({ message: 'The kit product is unavailable or incompatible with this specification. Review the supplier product.', blocksNewWork: true })
   return warnings
 }
 

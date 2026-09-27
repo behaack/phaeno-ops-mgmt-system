@@ -396,6 +396,7 @@ public static class LabOperationsModelConfiguration
             entity.Property(e => e.NormalizedProductNumber).HasMaxLength(100).IsRequired();
             entity.Property(e => e.CanExpire).HasDefaultValue(false).IsRequired();
             entity.Property(e => e.DefaultQuantityUnit).HasMaxLength(50);
+            entity.Property(e => e.TubeCapacity);
             entity.Property(e => e.Description).HasMaxLength(1000).IsRequired();
             entity.HasOne<LabMaterialDefinition>().WithMany().HasForeignKey(e => e.MaterialDefinitionId).OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => e.MaterialDefinitionId).IsUnique().HasFilter("material_definition_id IS NOT NULL");

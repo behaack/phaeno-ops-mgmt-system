@@ -475,6 +475,7 @@ public sealed partial class LabServiceOrdersController(
                 }
                 else
                 {
+                    await ShippingJobPinning.PinAtPlacementAsync(dbContext, order, operationCancellationToken);
                     Execute(() => quote.Accept(tenant.Actor.Id, acceptedAt));
                     Execute(() => order.AcceptQuote(quoteId, acceptedAt, placementSnapshot));
                 }
@@ -1041,31 +1042,32 @@ public sealed partial class LabServiceOrdersController(
     private async Task<ResolvedShippingConfiguration> ResolveShippingConfigurationAsync(LabServiceOrder order, CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
-        // Commitments retain their sample identity; new shipping resolves its current active revision.
-        var supportedIds = order.ReadConfiguredSnapshot()?.SupportedSampleTypeIds;
-        var sampleTypeQuery = dbContext.SampleTypeDefinitions.AsNoTracking()
-            .Where(item => item.IsActive && item.MaterialClass == (order.SampleTypeMaterialClassSnapshot ?? StandardMaterialType)
-                && item.EffectiveFrom <= now
-                && (!item.EffectiveTo.HasValue || item.EffectiveTo > now));
-        if (order.SampleTypeDefinitionId.HasValue)
-            sampleTypeQuery = sampleTypeQuery.Where(item => dbContext.SampleTypeDefinitions.Any(anchor =>
-                anchor.Id == order.SampleTypeDefinitionId.Value && anchor.DefinitionKey == item.DefinitionKey));
-        if (supportedIds is not null) sampleTypeQuery = sampleTypeQuery.Where(item => dbContext.SampleTypeDefinitions.Any(anchor =>
-            supportedIds.Contains(anchor.Id) && anchor.DefinitionKey == item.DefinitionKey));
-        var sampleTypes = (await sampleTypeQuery.ToListAsync(cancellationToken))
-            .GroupBy(item => item.DefinitionKey)
-            .Select(group => group.OrderByDescending(item => item.Revision).First())
-            .Where(item => SampleSubmissionUnits.IsTubeCount(item.QuantityUnit)).ToList();
-        if (sampleTypes.Count != 1)
-            throw Conflict("sample_shipping_configuration_required",
-                supportedIds is null
-                    ? "Your sample IDs are saved. Phaeno needs to resolve the selected sample-type setup before you can finalize this list. Contact Phaeno for help."
-                    : "Phaeno must review this service's supported sample-type revision and shipping configuration before this sample list can be finalized.");
-        var sampleType = sampleTypes[0];
-        var candidates = await SampleShippingDestinationChoices.ReadAsync(dbContext, sampleType.Id, now, cancellationToken);
+        if (!order.SampleTypeDefinitionId.HasValue || !order.ShippingProcedureRevisionId.HasValue)
+            throw Conflict("shipping_job_pin_review_required",
+                "Phaeno must review this placed Job's original Sample type and Shipping procedure before more shipping work can be finalized.");
+        if (order.HasActiveShippingSafetyHold)
+            throw Conflict("shipping_safety_hold", "Phaeno has paused shipping for this Job. Resolve its safety hold before continuing.");
+        var sampleType = await dbContext.SampleTypeDefinitions.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Id == order.SampleTypeDefinitionId.Value, cancellationToken)
+            ?? throw Conflict("shipping_job_pin_review_required", "The Job's saved Sample type revision is unavailable for review.");
+        if (!SampleSubmissionUnits.IsTubeCount(sampleType.QuantityUnit))
+            throw Conflict("sample_shipping_configuration_required", "The Job's saved Sample type has an unsupported tube quantity unit.");
+        var activeDestinations = await dbContext.SampleShippingDestinations.AsNoTracking()
+            .Where(item => item.IsActive && item.EffectiveFrom <= now
+                && (!item.EffectiveTo.HasValue || item.EffectiveTo > now))
+            .ToArrayAsync(cancellationToken);
+        var candidates = activeDestinations.GroupBy(item => item.DefinitionKey)
+            .Select(group => new SampleShippingDestinationChoice(group.OrderByDescending(item => item.Revision).First(), sampleType))
+            .ToList();
+        if (order.ShippingDestinationId.HasValue && candidates.All(item => item.Destination.Id != order.ShippingDestinationId.Value))
+        {
+            var saved = await dbContext.SampleShippingDestinations.AsNoTracking()
+                .SingleOrDefaultAsync(item => item.Id == order.ShippingDestinationId.Value, cancellationToken);
+            if (saved is not null) candidates.Add(new(saved, sampleType));
+        }
         if (candidates.Count == 0)
             throw Conflict("sample_shipping_configuration_required",
-                "Phaeno must configure a usable Default ship-to destination, shared procedure, and linked Transportation kit for the selected Sample type before this sample list can be finalized.");
+                "Phaeno must configure a usable ship-to destination before this sample list can be finalized.");
         return new(sampleType, candidates);
     }
 

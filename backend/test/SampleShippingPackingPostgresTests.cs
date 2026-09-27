@@ -29,7 +29,7 @@ public partial class SampleShippingPostgresTests
 
         var other = await scope.CreateConfigurationController().CreateSampleType(
             scope.SampleTypeRequest(DateTime.UtcNow.AddDays(-1), name: "Other RNA")
-                with { Code = $"REF_{scope.Suffix}_OTHER" }, default);
+                with { Code = $"REF_{scope.Suffix}_OTHER", IsActive = false }, default);
         scope.ClearTrackedState();
         var unrelated = await scope.ContainerCatalog().ReadCompatibleAsync(
             [new ContainerSampleTypeContext(other.Id)], default);
@@ -66,12 +66,7 @@ public partial class SampleShippingPostgresTests
         Assert.Empty(await catalog.ReadCompatibleAsync(contexts, default));
         Assert.Equal(draft.Id, Assert.Single(await catalog.ReadCompatibleAsync(contexts, default, draft.Id)).Id);
 
-        var contents = draft.KitContents!.Select(part => new ShippingKitContentRequest(part.SupplierProductId, part.Quantity)).ToArray();
-        var live = await catalog.ReviseAsync(draft.Id, new(draft.Version, draft.CommonName, 20,
-            DateTime.UtcNow, IsActive: true, KitContents: contents,
-            AssemblyWorkflowRevisionId: draft.AssemblyWorkflowRevisionId,
-            PackingInstructions: draft.PackingInstructions,
-            TemperatureControlInstructions: draft.TemperatureControlInstructions), default);
+        var live = await catalog.ActivateAsync(draft.Id, draft.Version, default);
         scope.ClearTrackedState();
         Assert.Equal(live.Id, Assert.Single(await catalog.ReadCompatibleAsync(contexts, default)).Id);
 
@@ -472,10 +467,7 @@ public partial class SampleShippingPostgresTests
                 $"Reference {capacity} tubes", PSeq.Operations.Laboratory.Domain.LabProductType.TransportationKitId);
             DbContext.LabSupplierProducts.Add(product);
             var contents = await KitContentsAsync(capacity);
-            var componentProductIds = contents.Select(part => part.SupplierProductId).ToArray();
-            var componentProducts = await DbContext.LabSupplierProducts.AsNoTracking()
-                .Where(item => componentProductIds.Contains(item.Id)).ToArrayAsync();
-            var workflow = new PSeq.Operations.Laboratory.Domain.LabKitAssemblyWorkflow(product.Id);
+            var workflow = new PSeq.Operations.Laboratory.Domain.LabKitAssemblyWorkflow(product.Id, "Sample kit assembly");
             var now = DateTime.UtcNow;
             var step = new PSeq.Operations.Laboratory.Domain.LabStep($"PACK-{Suffix}-{Guid.NewGuid():N}",
                 $"Reference kit assembly {sku}", null);
@@ -485,32 +477,22 @@ public partial class SampleShippingPostgresTests
             stepVersion.ApproveWithOverride(PlatformUser.Id, now, "Reference fixture");
             stepVersion.Activate(PlatformUser.Id);
             var revision = new PSeq.Operations.Laboratory.Domain.LabKitAssemblyWorkflowRevision(workflow.Id, 1,
-                [new(stepVersion.Id, "Pack reference kit", "Use the approved bill of materials.")], PlatformUser.Id, now);
-            for (var position = 0; position < contents.Count; position++)
-            {
-                var part = contents[position];
-                var componentProduct = componentProducts.Single(item => item.Id == part.SupplierProductId);
-                var kind = componentProduct.ProductTypeId == PSeq.Operations.Laboratory.Domain.LabProductType.TubeId
-                    ? "Tube" : "ShippingContainer";
-                revision.Components.Add(new(revision.Id, part.SupplierProductId, part.Quantity, kind, position));
-            }
+                [new(stepVersion.Id, "Pack reference kit", "Pack the specification's required contents.")], PlatformUser.Id, now);
             revision.Approve(PlatformUser.Id, now, "Reference fixture", true);
             DbContext.AddRange(step, stepVersion, workflow, revision);
             await DbContext.SaveChangesAsync();
             ClearTrackedState();
             var draft = await ContainerCatalog().CreateAsync(new(sku, product.Description, capacity,
-                now.AddDays(-1), IsActive: false, KitContents: contents, FinishedKitProductId: product.Id,
+                now.AddDays(-1), IsActive: false, FinishedKitProductId: product.Id,
                 AssemblyWorkflowRevisionId: revision.Id, PackingInstructions: "Pack the approved tubes in sealed secondary containment.",
-                TemperatureControlInstructions: "Keep this container frozen in transit."), default);
+                TemperatureControlInstructions: "Keep this container frozen in transit.",
+                KitContents: contents), default);
             ClearTrackedState();
             var linked = await ContainerCatalog().LinkSampleTypeAsync(draft.Id, fixture.SampleType.Id,
                 draft.Version, PlatformUser.Id, default);
             ClearTrackedState();
             var result = active
-                ? await ContainerCatalog().ReviseAsync(draft.Id, new(linked.Version, product.Description, capacity,
-                    now, IsActive: true, KitContents: contents, AssemblyWorkflowRevisionId: revision.Id,
-                    PackingInstructions: "Pack the approved tubes in sealed secondary containment.",
-                    TemperatureControlInstructions: "Keep this container frozen in transit."), default)
+                ? await ContainerCatalog().ActivateAsync(linked.Id, linked.Version, default)
                 : linked;
             ClearTrackedState();
             return result;
@@ -550,11 +532,11 @@ public partial class SampleShippingPostgresTests
 
         public async Task<IReadOnlyList<ShippingKitContentRequest>> KitContentsAsync(int capacity)
         {
-            var products = await CatalogKitRequestAsync(Guid.NewGuid());
+            var products = await CatalogKitRequestAsync(Guid.NewGuid(), shipperCapacity: capacity);
             return [new(products.ShipperSupplierProductId, 1), new(products.TubeSupplierProductId, capacity)];
         }
 
-        public async Task<CreateStockKitRequest> CatalogKitRequestAsync(Guid definitionId, string? lot = null)
+        public async Task<CreateStockKitRequest> CatalogKitRequestAsync(Guid definitionId, string? lot = null, int shipperCapacity = 20)
         {
             var approvedParts = await DbContext.Set<ShippingKitContent>().AsNoTracking()
                 .Where(item => item.ContainerDefinitionId == definitionId).ToArrayAsync();
@@ -569,6 +551,7 @@ public partial class SampleShippingPostgresTests
             var shipper = new PSeq.Operations.Laboratory.Domain.LabSupplierProduct(supplier.Id, "B-1", "TEST ONLY shipper", PSeq.Operations.Laboratory.Domain.LabProductType.ShippingContainerId);
             tube.SetDefaultQuantityUnit("each");
             shipper.SetDefaultQuantityUnit("each");
+            shipper.SetTubeCapacity(shipperCapacity);
             DbContext.AddRange(supplier, tube, shipper);
             await DbContext.SaveChangesAsync();
             return new(definitionId, tube.Id, shipper.Id, lot);

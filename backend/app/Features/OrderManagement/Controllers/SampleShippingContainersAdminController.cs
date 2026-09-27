@@ -36,7 +36,7 @@ public sealed class SampleShippingContainersAdminController(OrderRequestContext 
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         if (!request.FinishedKitProductId.HasValue)
             throw new OrderManagementException("kit_product_required",
-                "Choose a named Phaeno transportation kit product before creating its shipping specification.", 400);
+                "Choose a Transportation kit product before creating its shipping specification.", 400);
         return await catalog.CreateAsync(request, cancellationToken);
     }
     [HttpPost("{id:guid}/revisions")]
@@ -44,6 +44,20 @@ public sealed class SampleShippingContainersAdminController(OrderRequestContext 
     {
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         return await catalog.ReviseAsync(id, request, cancellationToken);
+    }
+    [HttpPut("{id:guid}/draft")]
+    public async Task<SampleShippingContainerDefinitionDto> EditDraft(Guid id,
+        [FromBody] EditSampleShippingContainerDraftRequest request, CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        return await catalog.EditDraftAsync(id, request, cancellationToken);
+    }
+    [HttpPost("{id:guid}/discard")]
+    public async Task<SampleShippingContainerDefinitionDto> DiscardDraft(Guid id,
+        [FromBody] DiscardSampleShippingContainerDraftRequest request, CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        return await catalog.DiscardDraftAsync(id, request.Version, cancellationToken);
     }
     [HttpPost("recommendation")]
     public async Task<ContainerPackingPreviewDto> Preview([FromBody] ContainerPackingPreviewRequest request, CancellationToken cancellationToken)
@@ -57,6 +71,12 @@ public sealed class SampleShippingContainersAdminController(OrderRequestContext 
     {
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         return await catalog.DeactivateAsync(id, request.Version, cancellationToken);
+    }
+    [HttpPost("{id:guid}/activate")]
+    public async Task<SampleShippingContainerDefinitionDto> Activate(Guid id, [FromBody] ActivateSampleShippingContainerRequest request, CancellationToken cancellationToken)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        return await catalog.ActivateAsync(id, request.Version, cancellationToken);
     }
 
     [HttpPost("{id:guid}/sample-type")]

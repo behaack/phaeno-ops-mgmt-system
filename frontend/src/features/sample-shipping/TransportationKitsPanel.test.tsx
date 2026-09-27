@@ -65,6 +65,18 @@ describe('customer transportation kits', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Adjust kit sizes' }))
     expect(screen.getByRole('spinbutton', { name: 'Quantity of 5-tube container' })).toHaveProperty('value', '-1')
   })
+  it('warns when the selected Phaeno kit awaits a workflow while allowing the order', async () => {
+    const awaitingWorkflow = { ...supply, containerTypes: shippingContainers.map(item =>
+      item.id === 'container-20' ? { ...item, assemblyWorkflowReady: false } : item) }
+    mocks.supply.mockResolvedValue(awaitingWorkflow)
+    dialog(awaitingWorkflow)
+    expect(await screen.findByText('Kit preparation is pending')).toBeTruthy()
+    expect(screen.getByText(/cannot prepare new physical kits until a workflow is approved/)).toBeTruthy()
+    const submit = screen.getByRole('button', { name: 'Confirm kit order' })
+    expect(submit).toHaveProperty('disabled', false)
+    fireEvent.click(submit)
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalled())
+  })
   it('removes kit sizes that are no longer compatible with the Job sample type', async () => {
     const initial = { ...supply, containerTypes: shippingContainers }
     mocks.supply.mockResolvedValue({ ...initial, containerTypes: [shippingContainers[2]] })

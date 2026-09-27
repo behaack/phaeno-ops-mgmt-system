@@ -182,6 +182,24 @@ export const mainMenuItems: readonly MainMenuItem[] = [
       Boolean(session.capabilities.canAccessCrm && session.capabilities.canAdministerCrm),
   },
   {
+    label: 'Equipment',
+    to: '/equipment',
+    icon: Microscope,
+    group: 'administration',
+    visibleWhen: (session, context) =>
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session?.capabilities.canManageLabOperations),
+  },
+  {
+    label: 'Purchasing',
+    to: '/purchasing',
+    icon: PackageCheck,
+    group: 'administration',
+    visibleWhen: (session, context) =>
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session?.capabilities.canManageOrderConfiguration || session?.capabilities.canManageLabOperations),
+  },
+  {
     label: 'Samples & shipping settings',
     to: '/sample-shipping-settings',
     icon: Truck,

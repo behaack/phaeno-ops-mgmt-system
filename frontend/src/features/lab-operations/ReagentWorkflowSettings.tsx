@@ -19,7 +19,8 @@ import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger 
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
-import { PreparationField, PreparationPanel, prepRowClass, prepSelectClass } from './preparation-ui'
+import { PreparationField, PreparationPanel, prepSelectClass } from './preparation-ui'
+import { WorkflowListFilters } from './WorkflowListFilters'
 
 const schema = z.object({
   name: z.string().trim().min(1, 'Enter a workflow name.').max(160),
@@ -39,26 +40,33 @@ export function ReagentWorkflowSettings({ definitions, canManage, actorId, isPla
   const [editor, setEditor] = useState<'new' | ReagentWorkflow | null>(null)
   const [decision, setDecision] = useState<{ workflow: ReagentWorkflow; action: 'approve' | 'retire' } | null>(null)
   const [overrideReason, setOverrideReason] = useState('')
+  const [search, setSearch] = useState('')
+  const [showInactive, setShowInactive] = useState(false)
   const change = useMutation({
     mutationFn: async () => decision?.action === 'approve'
       ? approveReagentWorkflow(decision.workflow, overrideReason || undefined)
       : retireReagentWorkflow(decision!.workflow),
     onSuccess: async () => { await client.invalidateQueries({ queryKey: reagentWorkflowsKey }); setDecision(null); setOverrideReason('') },
   })
-  if (query.isPending) return <p role="status">Loading reagent workflows…</p>
-  if (query.isError) return <div className="space-y-3"><p role="alert">{getLabOperationsError(query.error, 'Reagent workflows could not be loaded.')}</p><Button variant="outline" onClick={() => void query.refetch()}>Reload reagent workflows</Button></div>
+  const workflows = query.data ?? []
+  const needle = search.trim().toLocaleLowerCase()
+  const visibleWorkflows = workflows.filter(workflow => (showInactive || workflow.status !== 'Retired')
+    && (!needle || `${workflow.materialName} ${workflow.name}`.toLocaleLowerCase().includes(needle)))
 
   return <>
     <PreparationPanel title="Reagent manufacturing workflows" description="Each reagent has one workflow identity, with revisions of its ordered steps. Runs use the reagent name and capture the approved revision without a customer sample or tube. A second administrator approves each revision."
-      actions={canManage ? <Button type="button" onClick={() => setEditor('new')}><Plus data-icon="inline-start" /> New reagent workflow</Button> : undefined}>
-      {query.data.length ? <ul className="space-y-3" aria-label="Reagent workflows">{query.data.map(workflow => {
+      actions={canManage ? <Button type="button" onClick={() => setEditor('new')}><Plus data-icon="inline-start" /> New reagent workflow</Button> : undefined}
+      headerContent={<WorkflowListFilters id="reagent-workflow" search={search} onSearchChange={setSearch} showInactive={showInactive} onShowInactiveChange={setShowInactive} />}>
+      {query.isPending ? <p role="status">Loading reagent workflows…</p> : null}
+      {query.isError ? <div className="space-y-3"><p role="alert">{getLabOperationsError(query.error, 'Reagent workflows could not be loaded.')}</p><Button variant="outline" onClick={() => void query.refetch()}>Reload reagent workflows</Button></div> : null}
+      {visibleWorkflows.length ? <ul className="divide-y" aria-label="Reagent workflows">{visibleWorkflows.map(workflow => {
         const actions = canManage ? [
           ...(workflow.status !== 'Retired' ? [{ label: 'Revise workflow', run: () => setEditor(workflow) }] : []),
           ...(workflow.status === 'Draft' ? [{ label: 'Approve workflow', run: () => setDecision({ workflow, action: 'approve' }) }] : []),
           ...(workflow.status === 'Approved' ? [{ label: 'Retire workflow', run: () => setDecision({ workflow, action: 'retire' }) }] : []),
         ] : []
-        return <li key={workflow.id} className={`${prepRowClass} flex flex-wrap items-center justify-between gap-3`}><div className="min-w-0 flex-1 basis-48"><p className="font-medium">{workflow.materialName}</p><p className="mt-1 text-sm text-muted-foreground">Procedure: {workflow.name} · Unit: {workflow.outputUnit ?? 'not configured'} · Revision {workflow.revision} · {workflow.steps.length} steps</p><details className="mt-2 text-sm"><summary className="cursor-pointer">Procedure revision history</summary><ol className="mt-2 space-y-2">{workflow.revisions.map(revision => <li key={revision.revision} className="rounded-md border p-2"><p className="font-medium">Revision {revision.revision} · {revision.status}{revision.revision < workflow.revision ? ' (historical)' : ''} · {revision.name}</p><ol className="mt-1 list-decimal pl-5">{revision.steps.map(step => <li key={step.key}>{step.name}: {step.instructions}</li>)}</ol></li>)}</ol></details></div><div className="flex items-center gap-2"><Badge variant="secondary">{workflow.status}</Badge>{actions.length === 1 ? <Button type="button" variant="outline" onClick={actions[0].run}>{actions[0].label}</Button> : actions.length > 1 ? <ActionMenu><DropdownMenuTrigger asChild><Button type="button" variant="outline" aria-label={`Actions for ${workflow.materialName}`}>Actions <ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">{actions.map(action => <DropdownMenuItem key={action.label} onSelect={action.run}>{action.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu> : null}</div></li>
-      })}</ul> : <p className="text-sm text-muted-foreground">No reagent workflows yet. Create and approve one before starting reagent manufacturing.</p>}
+        return <li key={workflow.id} className="flex flex-wrap items-start justify-between gap-3 py-4"><div className="min-w-0 flex-1 basis-48"><div className="flex flex-wrap items-center gap-2"><p className="font-medium">{workflow.materialName}</p><Badge variant="outline">Rev {workflow.revision}</Badge><Badge variant={workflow.status === 'Approved' ? 'secondary' : 'outline'}>{workflow.status}</Badge></div><p className="mt-1 text-sm text-muted-foreground">Procedure: {workflow.name} · Unit: {workflow.outputUnit ?? 'not configured'} · {workflow.steps.length} steps</p><details className="mt-2 text-sm"><summary className="cursor-pointer">Procedure revision history</summary><ol className="mt-2 space-y-2">{workflow.revisions.map(revision => <li key={revision.revision} className="rounded-md border p-2"><p className="font-medium">Revision {revision.revision} · {revision.status}{revision.revision < workflow.revision ? ' (historical)' : ''} · {revision.name}</p><ol className="mt-1 list-decimal pl-5">{revision.steps.map(step => <li key={step.key}>{step.name}: {step.instructions}</li>)}</ol></li>)}</ol></details></div><div className="flex items-center gap-2">{actions.length === 1 ? <Button type="button" variant="outline" onClick={actions[0].run}>{actions[0].label}</Button> : actions.length > 1 ? <ActionMenu><DropdownMenuTrigger asChild><Button type="button" variant="outline" aria-label={`Actions for ${workflow.materialName}`}>Actions <ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">{actions.map(action => <DropdownMenuItem key={action.label} onSelect={action.run}>{action.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu> : null}</div></li>
+      })}</ul> : !query.isPending && !query.isError ? <p className="py-8 text-center text-sm text-muted-foreground">{!workflows.length ? 'No reagent workflows yet. Create and approve one before starting reagent manufacturing.' : !showInactive && workflows.every(workflow => workflow.status === 'Retired') && !needle ? 'All reagent workflows are inactive. Select Show inactive to review them.' : 'No reagent workflows match these filters.'}</p> : null}
     </PreparationPanel>
     {editor ? <WorkflowEditor key={editor === 'new' ? 'new' : editor.id} workflow={editor === 'new' ? undefined : editor} definitions={definitions} onClose={() => setEditor(null)} /> : null}
     {decision ? <Dialog open onOpenChange={open => { if (!open && !change.isPending) { setDecision(null); setOverrideReason('') } }}><DialogContent>
@@ -100,7 +108,7 @@ function WorkflowEditor({ workflow, definitions, onClose }: { workflow?: Reagent
     <DialogHeader><DialogTitle>{workflow ? `Revise ${workflow.materialName}` : 'Configure reagent manufacturing'}</DialogTitle><DialogDescription>Choose a Phaeno reagent product and define its ordered, sample-independent procedure. Its product supplies the inventory unit. Each reagent keeps one workflow identity with revisions.</DialogDescription></DialogHeader>
     <div className="max-h-[62vh] space-y-4 overflow-y-auto p-1">
       <PreparationField id="reagent-workflow-material" label="Reagent product" required error={form.formState.errors.materialDefinitionId?.message}><select id="reagent-workflow-material" className={prepSelectClass} {...form.register('materialDefinitionId', { onChange: event => form.setValue('outputUnit', definitions.find(item => item.id === event.target.value)?.defaultQuantityUnit ?? '') })}><option value="">Select reagent…</option>{availableDefinitions.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></PreparationField>
-      {!availableDefinitions.length ? <p className="text-sm text-muted-foreground">No available Phaeno reagent products. <Link className="text-primary underline" to="/lab-operations" search={{ section: 'suppliers', supplierTab: 'suppliers' }}>Define one in Suppliers &amp; products</Link> before creating its workflow.</p> : null}
+      {!availableDefinitions.length ? <p className="text-sm text-muted-foreground">No available Phaeno reagent products. <Link className="text-primary underline" to="/purchasing" search={{ section: 'products' }}>Define one in Purchasing → Products</Link> before creating its workflow.</p> : null}
       <PreparationField id="reagent-workflow-unit" label="Reagent inventory unit" required error={form.formState.errors.outputUnit?.message}><Input id="reagent-workflow-unit" maxLength={50} placeholder="Select a reagent product" readOnly {...form.register('outputUnit')} /></PreparationField>
       <p className="text-xs text-muted-foreground">{chosenDefinition ? `This product is tracked in ${chosenDefinition.defaultQuantityUnit}. Enter the actual amount produced when the run is complete.` : 'The selected Phaeno product sets the unit for every manufactured lot.'}</p>
       <PreparationField id="reagent-workflow-name" label="Procedure name" required error={form.formState.errors.name?.message}><Input id="reagent-workflow-name" maxLength={160} {...form.register('name')} /></PreparationField>

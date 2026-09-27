@@ -130,7 +130,24 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
                 "The shipment destination revision was not found.",
                 StatusCodes.Status409Conflict);
         var sampleTypeIds = shipment.Items.Select(item => item.SampleTypeDefinitionId).Distinct().ToList();
-        var selected = await SampleShippingRevisionData.ReadAsync(dbContext, destinationId, sampleTypeIds, issuedAt, cancellationToken);
+        SampleShippingRevisionData selected;
+        if (shipment.AuthorizationSource == SampleShipmentAuthorizationSource.CustomerLabServiceOrder)
+        {
+            var job = await dbContext.LabServiceOrders.AsNoTracking()
+                .SingleOrDefaultAsync(item => item.Id == shipment.AuthorizationSourceId, cancellationToken)
+                ?? throw new OrderManagementException("shipping_job_pin_review_required", "The placed Job is unavailable for shipping review.", 409);
+            if (job.HasActiveShippingSafetyHold)
+                throw new OrderManagementException("shipping_safety_hold",
+                    "Phaeno has paused shipping for this Job. Resolve its safety hold before issuing another packet.", 409);
+            if (!job.SampleTypeDefinitionId.HasValue || !job.ShippingProcedureRevisionId.HasValue
+                || sampleTypeIds.Any(id => id != job.SampleTypeDefinitionId.Value))
+                throw new OrderManagementException("shipping_job_pin_review_required",
+                    "Phaeno must review this placed Job's exact Sample type and Shipping procedure before another packet can be issued.", 409);
+            selected = await SampleShippingRevisionData.ReadPinnedAsync(dbContext, sampleTypeIds,
+                job.ShippingProcedureRevisionId.Value, cancellationToken);
+        }
+        else
+            selected = await SampleShippingRevisionData.ReadAsync(dbContext, destinationId, sampleTypeIds, issuedAt, cancellationToken);
         var sampleTypesById = selected.CurrentByRequestedId;
         foreach (var shipmentItem in shipment.Items)
         {
@@ -241,7 +258,7 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
         var anchorId = await dbContext.SampleTypeDefinitions.AsNoTracking()
             .Where(item => item.DefinitionKey == selected.DefinitionKey && item.Revision == 1)
             .Select(item => item.Id).SingleAsync(ct);
-        if (container.ContainerType.SampleTypeAnchorId != anchorId)
+        if (container.SampleTypeAnchorId != anchorId)
             throw new OrderManagementException("sample_container_packing_unavailable",
                 "The physical kit is not linked to this Order's Sample type.", 409);
         return new

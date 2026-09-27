@@ -138,6 +138,8 @@ The owner confirmed that all steps are performed in batch by default. New protoc
 
 Use Step record as the umbrella for actions, additions and measurements. Library prep and configuration preview use Batch entries and Sample entries and exceptions; authoring uses Fields to record and Recorded for. Preserve evidence terminology for supporting failure/QC evidence and preserve all stored property names and protocol-authored field labels. The shared step/protocol editor offers common units with custom text and a keyboard-accessible symbol menu for µ, Δ, °, ±, ×, ≤, ≥. Symbol insertion replaces the current text selection and returns focus/caret to the field; choosing a unit replaces only that field. No unit conversion or saved-definition rewrite.
 
+September 26 presentation refinement: show **Insert symbol** and **Units and symbols** as compact, underlined buttons 3px beneath their text fields in the Lab step and protocol editor. Keep the existing menu, insertion, and keyboard behavior.
+
 Local manual verification: keyboard selection of µ replaced selected text in operator instructions and returned focus; a common µL unit replaced custom unit text; unsaved preview showed the Unicode instruction and Volume added (µL), Batch entries and Sample entries and exceptions. Verification edits were discarded. Frontend typecheck/scoped lint passed; existing test label expectations updated without executing tests.
 
 ### Configurable batch reports

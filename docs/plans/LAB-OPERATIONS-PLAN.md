@@ -1,5 +1,21 @@
 # Lab Operations Plan
 
+## Purchasing and Equipment navigation — September 26, 2026
+
+Phaeno staff need a clear place for catalog, purchased stock, and laboratory assets outside the operational Lab operations sidebar. The Administration menu has one **Equipment** destination with no sidebar and one **Purchasing** destination with **Suppliers**, **Products**, and **Purchased materials** in its sidebar. Products includes the existing Product types management tab. The moved lists and their view-first details retain the established create, edit, status, QC, and retirement actions and existing capability checks. Canonical detail routes now live under `/purchasing`; old Lab operations URLs redirect to the corresponding destination. Existing backend catalog and inventory APIs remain unchanged.
+
+Acceptance: each destination appears once for an authorized Phaeno user; all three Purchasing sidebar entries and Equipment open their lists; list identifiers open details within the Purchasing layout; return links and links from workflows, material components, and kit setup use the new routes; inactive catalog items remain hidden by default and can be shown; unauthorized users do not gain new access. Frontend typecheck and scoped lint are the static checkpoint. Automated and signed-in browser acceptance remain deferred under the test plans.
+
+## Named Transportation kit workflows — September 26, 2026
+
+Protocol Administrators enter a required **Workflow name** as the first field when creating a Transportation kit assembly workflow, followed by the finished Phaeno kit product and ordered Lab steps. The workflow name is its staff-facing list identity and is searchable alongside the product name and SKU. The product link and SKU remain fixed after creation and continue to determine which kit assemblies use the workflow. **Edit title** is a separate Actions command that changes only the stable workflow name with optimistic concurrency, without adding or editing a revision. Existing workflows start with their product description as the saved name.
+
+Every kit workflow row has one Actions menu. A latest Draft offers **Edit draft**, **Edit title**, **Approve draft**, and **Discard draft**; an approved, retired, or discarded latest revision offers **New version** and **Edit title**, matching the Lab steps action wording. Approved revisions are read-only. Discarding only the latest Draft preserves it in history, does not reuse its number, and leaves an earlier Approved revision available. A workflow with only discarded history is hidden by default and remains findable with **Show inactive**. The row places revision, status, and a correctly pluralized step-count pill beside the workflow name; product name and SKU appear below. **Add step** sits at the end of the Ordered Lab steps label row while step selection stays beneath it. This change does not add a second workflow for one product or make the workflow name a catalog product name.
+
+## Workflow list consistency — September 26, 2026
+
+The four Lab Settings → Workflows tabs use the same list surface: title and creation action in the first header row, a description that wraps beside the action, a search field identified by its placeholder, and **Show inactive**. Library, reagent, master-mix, and Transportation kit workflow records use separated rows with status by the name, details below, and contextual actions at the trailing edge. Search matches workflow names and relevant service or product identities. Retired workflows are hidden by default; Library preparation also treats a workflow with only retired, discarded, or invalidated versions as inactive. Draft and approved work remains visible. The filter is local to each tab and does not change workflow status, version history, or backend selection. Purchased-kit receipt behavior is outside this presentation change.
+
 ## Purchased Materials navigation — September 24, 2026
 
 Move the material-lot sidebar entry directly before **Reagent manufacturing** and label it **Purchased Materials**. Keep the existing material-lot route, purchased-lot receipt, prepared-reagent visibility, QC, and lot history unchanged. The sidebar description and Phaeno help explain that prepared reagent lots remain in this shared inventory list for QC and traceability. Update the material-lot return link to use the new label. This is a navigation and wording change; no new automated tests are planned for it.
@@ -56,6 +72,16 @@ The owner confirmed Lab ops → Closed jobs → Job → Sample as the investigat
 ## Standalone Lab Settings — September 18, 2026
 
 Lab Settings moves from the Lab operations sidebar to Administration in the user dropdown, directly after Order Settings and before File retention policies. Its own /lab-configuration page uses the shared workspace sidebar for Lab steps, Protocols, Workflows, Stage durations, Holiday calendar and Library tray formats, replacing the horizontal tabs. Existing Lab access and action capabilities are preserved. Legacy configuration links redirect with their selected section and Lab step filters; builder returns target the standalone page. No laboratory data, approvals or configuration rules change.
+
+Lab step details and the Protocol and Workflow version builders now retain the same Lab Settings page header and pinned or collapsible section sidebar as the index. A single arrowed return link sits above each detail, targeting its owning section; Lab step returns preserve search, retired visibility, and page. Switching sections while a draft has unsaved edits requires a discard confirmation. This is a navigation and presentation change only.
+
+Each Lab step list row also has an Actions dropdown. It shares the detail page's permitted name/description edit, draft or new-version entry, and retirement confirmation; View details remains available for read-only and retired rows. The Lab step name still opens its detail page.
+
+Lab step rows follow the Samples & shipping record-list pattern: linked name with revision and status badges, description and protocol-use context below, and Actions at the right. Search, retired visibility, and pagination remain in the list header and footer.
+
+Lab step details and the Protocol and Workflow version builders now retain the same Lab Settings page header and pinned or collapsible section sidebar as the index. A single arrowed return link sits above each detail, targeting its owning section; Lab step returns preserve search, retired visibility, and page. Switching sections while a draft has unsaved edits requires a discard confirmation. This is a navigation and presentation change only.
+
+Within Workflows, use the shared Portal tab control for Library preparation, Reagent manufacturing, Master mix, and Transportation kit assembly. Keep the section sidebar and workflow selection behavior. Place **New workflow** at the right end of the transportation kit assembly header with a leading plus icon. This is a presentation change; workflow data and approval rules are unchanged.
 
 ## Product-linked material lots — September 17, 2026
 

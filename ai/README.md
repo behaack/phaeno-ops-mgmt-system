@@ -9,6 +9,7 @@ Use the smallest context set that covers the task.
 | Backend endpoint or persistence change | `README.md`, matching `backend/app/Features` code, API infrastructure, and backend test plan |
 | Frontend route or workflow | matching route and feature code, frontend test plan, and `ai/prompts/cross-stack-change.md` |
 | UI/UX, list, record detail, form, modal, feedback, responsive, i18n, privacy, or accessibility behavior | `docs/ui-ux-principles.md`, matching frontend code, and the relevant frontend/E2E plan |
+| Any numbered content-revision workflow | `docs/revision-strategy.md`, the owning plan, exact-revision API/domain code, and the affected list/detail/form tests |
 | Public company Website page, content, navigation, metadata, SEO, sitemap/RSS, responsive behavior, or visual design | `website/AGENTS.md`, `website/README.md`, `website/src/styles/design-system.css`, and the matching `website/src` code |
 | Public Website localization, locale routing, language detection/selection, translated content, localized metadata, RTL, or locale-aware Website search | `docs/plans/WEBSITE-I18N-PLAN.md`, `docs/ui-ux-principles.md`, `website/AGENTS.md`, `website/README.md`, matching `website/src` code, and `backend/app/Features/Website` for search |
 | First-party Website white papers, PDF-backed publication metadata, internal PDF-assisted search, or external publication indexing | `docs/plans/PUBLICATION-SEARCH-INDEXING-PLAN.md`, `docs/plans/WEBSITE-API-CONSOLIDATION-PLAN.md`, `website/AGENTS.md`, the matching `website/src` code, and `backend/app/Features/Website` |

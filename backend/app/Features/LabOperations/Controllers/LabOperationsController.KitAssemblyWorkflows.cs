@@ -6,15 +6,17 @@ using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 
 public sealed record KitAssemblyComponentRequest(Guid SupplierProductId, int Quantity);
-public sealed record SaveKitAssemblyWorkflowRequest(Guid FinishedKitProductId, IReadOnlyList<Guid> StepVersionIds,
-    IReadOnlyList<KitAssemblyComponentRequest> Components, long? WorkflowVersion = null);
+public sealed record SaveKitAssemblyWorkflowRequest(string Name, Guid FinishedKitProductId, IReadOnlyList<Guid> StepVersionIds,
+    IReadOnlyList<KitAssemblyComponentRequest>? Components = null, long? WorkflowVersion = null);
 public sealed record ApproveKitAssemblyWorkflowRequest(long WorkflowVersion, string? OverrideReason = null);
+public sealed record RenameKitAssemblyWorkflowRequest(string Name, long WorkflowVersion);
+public sealed record DiscardKitAssemblyWorkflowRevisionRequest(long WorkflowVersion);
 public sealed record KitAssemblyComponentDto(Guid SupplierProductId, int Quantity, string Kind,
     string SupplierName, string ProductNumber, string ProductDescription);
 public sealed record KitAssemblyRevisionDto(Guid Id, int Revision, string Status,
     IReadOnlyList<LabKitAssemblyStep> Steps, IReadOnlyList<KitAssemblyComponentDto> Components,
     Guid AuthoredByUserId, DateTime AuthoredAtUtc, Guid? ApprovedByUserId, DateTime? ApprovedAtUtc);
-public sealed record KitAssemblyWorkflowDto(Guid Id, Guid FinishedKitProductId, string ProductSku,
+public sealed record KitAssemblyWorkflowDto(Guid Id, string Name, Guid FinishedKitProductId, string ProductSku,
     string ProductName, long Version, IReadOnlyList<KitAssemblyRevisionDto> Revisions);
 
 public sealed partial class LabOperationsController
@@ -32,6 +34,9 @@ public sealed partial class LabOperationsController
         [FromBody] SaveKitAssemblyWorkflowRequest request, CancellationToken ct)
     {
         var actor = await requestContext.RequireAsync(HttpContext, ct, LabRole.ProtocolAdministrator);
+        var name = request.Name?.Trim();
+        if (string.IsNullOrWhiteSpace(name) || name.Length > 160)
+            throw Invalid("kit_workflow_name_invalid", "Enter a workflow name of 1 to 160 characters.");
         await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext,
             $"kit-assembly-workflow:{request.FinishedKitProductId}", ct);
         var product = await (from p in dbContext.LabSupplierProducts.AsNoTracking()
@@ -43,10 +48,12 @@ public sealed partial class LabOperationsController
         if (request.StepVersionIds is null || request.StepVersionIds.Count is < 1 or > 100
             || request.StepVersionIds.Distinct().Count() != request.StepVersionIds.Count)
             throw Invalid("kit_steps_invalid", "Choose 1 to 100 distinct approved Lab step versions.");
-        var versions = await dbContext.LabStepVersions.AsNoTracking()
-            .Where(item => request.StepVersionIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, ct);
-        if (versions.Count != request.StepVersionIds.Count || versions.Values.Any(item => item.Status != LabProtocolStatus.Active))
-            throw Invalid("kit_steps_unavailable", "Each assembly step must be an active, approved Lab step version.");
+        var versions = await (from version in dbContext.LabStepVersions.AsNoTracking()
+            join step in dbContext.LabSteps.AsNoTracking() on version.LabStepId equals step.Id
+            where request.StepVersionIds.Contains(version.Id) && step.RetiredAtUtc == null
+            select version).ToDictionaryAsync(item => item.Id, ct);
+        if (versions.Count != request.StepVersionIds.Count || versions.Values.Any(item => item.Status is not (LabProtocolStatus.Approved or LabProtocolStatus.Active)))
+            throw Invalid("kit_steps_unavailable", "Each assembly step must be a current, approved Lab step version.");
         var steps = new List<LabKitAssemblyStep>();
         foreach (var id in request.StepVersionIds)
         {
@@ -57,30 +64,14 @@ public sealed partial class LabOperationsController
                 throw Invalid("kit_step_scope_invalid", "Select instruction-only Lab steps for physical kit assembly. Sample, batch, and tube captures cannot run in this context.");
             steps.Add(new(id, step.Name, step.Instructions));
         }
-        if (request.Components is null || request.Components.Count is < 2 or > 100
-            || request.Components.Any(item => item.Quantity < 1)
-            || request.Components.Select(item => item.SupplierProductId).Distinct().Count() != request.Components.Count)
-            throw Invalid("kit_bom_invalid", "List each required component product once with a positive whole-number quantity.");
-        var componentIds = request.Components.Select(item => item.SupplierProductId).ToArray();
-        var components = await (from p in dbContext.LabSupplierProducts.AsNoTracking()
-            join s in dbContext.LabSuppliers.AsNoTracking() on p.SupplierId equals s.Id
-            join t in dbContext.LabProductTypes.AsNoTracking() on p.ProductTypeId equals t.Id
-            where componentIds.Contains(p.Id) && p.IsActive && s.IsActive && !s.IsInternalProducer && t.IsActive
-            select new { p.Id, p.DefaultQuantityUnit, t.KitUse }).ToDictionaryAsync(item => item.Id, ct);
-        if (components.Count != componentIds.Length)
-            throw Invalid("kit_bom_product_unavailable", "Every component must be an active purchased product.");
-        if (request.Components.Count(item => components[item.SupplierProductId].KitUse == LabSupplierProductKind.Tube) != 1
-            || request.Components.Count(item => components[item.SupplierProductId].KitUse == LabSupplierProductKind.ShippingContainer && item.Quantity == 1) != 1)
-            throw Invalid("kit_bom_structure_invalid", "Choose exactly one tube product and one outer shipper product with quantity one.");
-        if (request.Components.Any(item => components[item.SupplierProductId].KitUse is LabSupplierProductKind.Tube or LabSupplierProductKind.ShippingContainer
-            && !string.Equals(components[item.SupplierProductId].DefaultQuantityUnit, "each", StringComparison.OrdinalIgnoreCase)))
-            throw Invalid("kit_bom_unit_invalid", "Tube and outer shipper products must use the inventory unit each.");
+        if (request.Components is { Count: > 0 })
+            throw Invalid("kit_components_on_specification", "Configure required products and quantities on each Kit specification Draft.");
         var workflow = await dbContext.LabKitAssemblyWorkflows.SingleOrDefaultAsync(item => item.FinishedKitProductId == product.Id, ct);
         LabKitAssemblyWorkflowRevision revision;
         var now = DateTime.UtcNow;
         if (workflow is null)
         {
-            workflow = new(product.Id);
+            workflow = new(product.Id, name);
             revision = new(workflow.Id, 1, steps, actor.User.Id, now);
             dbContext.LabKitAssemblyWorkflows.Add(workflow);
             dbContext.LabKitAssemblyWorkflowRevisions.Add(revision);
@@ -88,6 +79,8 @@ public sealed partial class LabOperationsController
         else
         {
             if (request.WorkflowVersion != workflow.Version) throw Conflict("kit_workflow_changed", "This kit workflow changed. Refresh before editing it.");
+            if (workflow.Name != name)
+                throw Invalid("kit_workflow_name_separate", "Use Edit title to change the workflow name without creating a revision.");
             revision = await dbContext.LabKitAssemblyWorkflowRevisions.Include(item => item.Components)
                 .Where(item => item.WorkflowId == workflow.Id).OrderByDescending(item => item.Revision).FirstAsync(ct);
             if (revision.Status == LabKitAssemblyRevisionStatus.Draft)
@@ -103,12 +96,49 @@ public sealed partial class LabOperationsController
             }
             dbContext.Entry(workflow).Property(item => item.Version).IsModified = true;
         }
-        foreach (var (line, position) in request.Components.Select((item, index) => (item, index)))
-            revision.Components.Add(new(revision.Id, line.SupplierProductId, line.Quantity,
-                components[line.SupplierProductId].KitUse.ToString(), position));
         await dbContext.SaveChangesAsync(ct);
         if (transaction is not null) await transaction.CommitAsync(ct);
         return (await MapKitAssemblyWorkflowsAsync(ct)).Single(item => item.FinishedKitProductId == product.Id);
+    }
+
+    [HttpPut("kit-assembly/workflows/{id:guid}/title")]
+    public async Task<KitAssemblyWorkflowDto> RenameKitAssemblyWorkflow(Guid id,
+        [FromBody] RenameKitAssemblyWorkflowRequest request, CancellationToken ct)
+    {
+        await requestContext.RequireAsync(HttpContext, ct, LabRole.ProtocolAdministrator);
+        await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext,
+            $"kit-assembly-workflow-id:{id}", ct);
+        var workflow = await dbContext.LabKitAssemblyWorkflows.SingleOrDefaultAsync(item => item.Id == id, ct)
+            ?? throw Missing();
+        if (workflow.Version != request.WorkflowVersion)
+            throw Conflict("kit_workflow_changed", "This kit workflow changed. Refresh before editing its title.");
+        try { workflow.SetName(request.Name); }
+        catch (ArgumentException error) { throw Invalid("kit_workflow_name_invalid", error.Message); }
+        await dbContext.SaveChangesAsync(ct);
+        if (transaction is not null) await transaction.CommitAsync(ct);
+        return (await MapKitAssemblyWorkflowsAsync(ct)).Single(item => item.Id == id);
+    }
+
+    [HttpPost("kit-assembly/workflows/{id:guid}/revisions/{revisionId:guid}/discard")]
+    public async Task<KitAssemblyWorkflowDto> DiscardKitAssemblyWorkflowRevision(Guid id, Guid revisionId,
+        [FromBody] DiscardKitAssemblyWorkflowRevisionRequest request, CancellationToken ct)
+    {
+        await requestContext.RequireAsync(HttpContext, ct, LabRole.ProtocolAdministrator);
+        await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext,
+            $"kit-assembly-workflow-id:{id}", ct);
+        var workflow = await dbContext.LabKitAssemblyWorkflows.SingleOrDefaultAsync(item => item.Id == id, ct)
+            ?? throw Missing();
+        if (workflow.Version != request.WorkflowVersion)
+            throw Conflict("kit_workflow_changed", "This kit workflow changed. Refresh before discarding the draft.");
+        var revision = await dbContext.LabKitAssemblyWorkflowRevisions
+            .SingleOrDefaultAsync(item => item.Id == revisionId && item.WorkflowId == id, ct) ?? throw Missing();
+        if (revision.Revision != workflow.LatestRevision || revision.Status != LabKitAssemblyRevisionStatus.Draft)
+            throw Conflict("kit_workflow_draft_unavailable", "Only the latest Draft revision can be discarded.");
+        revision.Discard();
+        dbContext.Entry(workflow).Property(item => item.Version).IsModified = true;
+        await dbContext.SaveChangesAsync(ct);
+        if (transaction is not null) await transaction.CommitAsync(ct);
+        return (await MapKitAssemblyWorkflowsAsync(ct)).Single(item => item.Id == id);
     }
 
     [HttpPost("kit-assembly/workflows/{id:guid}/revisions/{revisionId:guid}/approve")]
@@ -133,22 +163,13 @@ public sealed partial class LabOperationsController
         if (product == Guid.Empty)
             throw Conflict("kit_product_unavailable", "Reactivate the Phaeno kit product before approving its workflow.");
         var stepIds = revision.Steps().Select(item => item.LabStepVersionId).ToArray();
-        var activeSteps = await dbContext.LabStepVersions.AsNoTracking()
-            .CountAsync(item => stepIds.Contains(item.Id) && item.Status == LabProtocolStatus.Active, ct);
-        if (activeSteps != stepIds.Length)
-            throw Conflict("kit_steps_unavailable", "Every assembly step must still be active and approved.");
-        var componentIds = revision.Components.Select(item => item.SupplierProductId).ToArray();
-        var activeComponents = await (from p in dbContext.LabSupplierProducts.AsNoTracking()
-            join s in dbContext.LabSuppliers.AsNoTracking() on p.SupplierId equals s.Id
-            join t in dbContext.LabProductTypes.AsNoTracking() on p.ProductTypeId equals t.Id
-            where componentIds.Contains(p.Id) && p.IsActive && s.IsActive && !s.IsInternalProducer && t.IsActive
-            select new { p.Id, p.DefaultQuantityUnit, t.KitUse }).ToDictionaryAsync(item => item.Id, ct);
-        if (activeComponents.Count != componentIds.Length || revision.Components.Any(item =>
-            !activeComponents.TryGetValue(item.SupplierProductId, out var component)
-            || component.KitUse.ToString() != item.Kind
-            || component.KitUse is LabSupplierProductKind.Tube or LabSupplierProductKind.ShippingContainer
-                && !string.Equals(component.DefaultQuantityUnit, "each", StringComparison.OrdinalIgnoreCase)))
-            throw Conflict("kit_components_unavailable", "Every approved component must still be active, keep its kit role, and use a valid inventory unit.");
+        var approvedSteps = await (from version in dbContext.LabStepVersions.AsNoTracking()
+            join step in dbContext.LabSteps.AsNoTracking() on version.LabStepId equals step.Id
+            where stepIds.Contains(version.Id) && step.RetiredAtUtc == null
+                && (version.Status == LabProtocolStatus.Approved || version.Status == LabProtocolStatus.Active)
+            select version.Id).CountAsync(ct);
+        if (approvedSteps != stepIds.Length)
+            throw Conflict("kit_steps_unavailable", "Every assembly step must still be current and approved.");
         try { revision.Approve(actor.User.Id, DateTime.UtcNow, request.OverrideReason, actor.IsPlatformAdmin); }
         catch (InvalidOperationException error) { throw Conflict("kit_workflow_approval_blocked", error.Message); }
         catch (ArgumentException error) { throw Invalid("kit_workflow_approval_invalid", error.Message); }
@@ -171,7 +192,7 @@ public sealed partial class LabOperationsController
             where productIds.Contains(p.Id)
             select new { p.Id, p.ProductNumber, p.Description, SupplierName = s.Name })
             .ToDictionaryAsync(item => item.Id, ct);
-        return workflows.Select(workflow => new KitAssemblyWorkflowDto(workflow.Id, workflow.FinishedKitProductId,
+        return workflows.Select(workflow => new KitAssemblyWorkflowDto(workflow.Id, workflow.Name, workflow.FinishedKitProductId,
             products[workflow.FinishedKitProductId].ProductNumber, products[workflow.FinishedKitProductId].Description,
             workflow.Version, revisions.Where(item => item.WorkflowId == workflow.Id).Select(revision =>
                 new KitAssemblyRevisionDto(revision.Id, revision.Revision, revision.Status.ToString(),

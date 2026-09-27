@@ -15,8 +15,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
 import { RequiredDialogFooter } from '#/components/ui/required-field'
-import { PreparationField, PreparationPanel, prepRowClass, prepSelectClass } from './preparation-ui'
+import { PreparationField, PreparationPanel, prepSelectClass } from './preparation-ui'
 import { isMasterMixDecimalQuantity } from './decimal-quantity'
+import { WorkflowListFilters } from './WorkflowListFilters'
 
 const schema = z.object({
   name: z.string().trim().min(1, 'Enter the master-mix name.').max(160),
@@ -50,6 +51,8 @@ export function MasterMixWorkflowSettings({ canManage, actorId, isPlatformAdmin 
   const [editor, setEditor] = useState<'new' | MasterMixWorkflow | null>(null)
   const [decision, setDecision] = useState<{ workflow: MasterMixWorkflow; action: 'approve' | 'retire' } | null>(null)
   const [overrideReason, setOverrideReason] = useState('')
+  const [search, setSearch] = useState('')
+  const [showInactive, setShowInactive] = useState(false)
   const change = useMutation({
     mutationFn: () => decision!.action === 'approve'
       ? approveMasterMixWorkflow(decision!.workflow, overrideReason || undefined)
@@ -62,23 +65,27 @@ export function MasterMixWorkflowSettings({ canManage, actorId, isPlatformAdmin 
       setDecision(null); setOverrideReason('')
     },
   })
-  if (query.isPending) return <p role="status">Loading master-mix workflows…</p>
-  if (query.isError) return <p role="alert">{getLabOperationsError(query.error, 'Master-mix workflows could not be loaded.')}</p>
+  const workflows = query.data ?? []
+  const needle = search.trim().toLocaleLowerCase()
+  const visibleWorkflows = workflows.filter(workflow => (showInactive || workflow.status !== 'Retired')
+    && (!needle || workflow.name.toLocaleLowerCase().includes(needle)))
   return <>
-    <PreparationPanel title="Master-mix workflows" description="Approve a recipe and ordered procedure before staff prepare a single-use mix." actions={canManage ? <Button type="button" onClick={() => setEditor('new')}><Plus data-icon="inline-start" /> New master-mix workflow</Button> : undefined}>
-      {query.data.length ? <ul className="space-y-3">{query.data.map(workflow => {
+    <PreparationPanel title="Master-mix workflows" description="Approve a recipe and ordered procedure before staff prepare a single-use mix." actions={canManage ? <Button type="button" onClick={() => setEditor('new')}><Plus data-icon="inline-start" /> New master-mix workflow</Button> : undefined} headerContent={<WorkflowListFilters id="master-mix-workflow" search={search} onSearchChange={setSearch} showInactive={showInactive} onShowInactiveChange={setShowInactive} />}>
+      {query.isPending ? <p role="status">Loading master-mix workflows…</p> : null}
+      {query.isError ? <div className="space-y-3"><p role="alert">{getLabOperationsError(query.error, 'Master-mix workflows could not be loaded.')}</p><Button type="button" variant="outline" onClick={() => void query.refetch()}>Retry</Button></div> : null}
+      {visibleWorkflows.length ? <ul className="divide-y" aria-label="Master-mix workflows">{visibleWorkflows.map(workflow => {
         const actions = canManage ? [
           ...(workflow.status !== 'Retired' ? [{ label: 'Revise workflow', run: () => setEditor(workflow) }] : []),
           ...(workflow.status === 'Draft' ? [{ label: 'Approve workflow', run: () => setDecision({ workflow, action: 'approve' as const }) }] : []),
           ...(workflow.status !== 'Retired' && workflow.revisions.some(revision => revision.status === 'Approved') ? [{ label: 'Retire workflow', run: () => setDecision({ workflow, action: 'retire' as const }) }] : []),
         ] : []
-        return <li key={workflow.id} className={`${prepRowClass} flex flex-wrap items-center justify-between gap-3`}>
-          <div className="min-w-0 flex-1 basis-48"><p className="font-medium">{workflow.name}</p><p className="mt-1 text-sm text-muted-foreground">Revision {workflow.revision} · {workflow.quantityUnit} · {workflow.ingredients.length} ingredients · {workflow.steps.length} steps</p>
+        return <li key={workflow.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
+          <div className="min-w-0 flex-1 basis-48"><div className="flex flex-wrap items-center gap-2"><p className="font-medium">{workflow.name}</p><Badge variant="outline">Rev {workflow.revision}</Badge><Badge variant={workflow.status === 'Approved' ? 'secondary' : 'outline'}>{workflow.status}</Badge></div><p className="mt-1 text-sm text-muted-foreground">{workflow.quantityUnit} · {workflow.ingredients.length} ingredients · {workflow.steps.length} steps</p>
             <details className="mt-2 text-sm"><summary className="cursor-pointer">Procedure revision history</summary><div className="mt-2 space-y-2">{workflow.revisions.map(revision => <ProcedureReview key={revision.revision} revision={revision} />)}</div></details>
           </div>
-          <div className="flex items-center gap-2"><Badge variant="secondary">{workflow.status}</Badge>{actions.length === 1 ? <Button type="button" variant="outline" onClick={actions[0].run}>{actions[0].label}</Button> : actions.length > 1 ? <ActionMenu><DropdownMenuTrigger asChild><Button type="button" variant="outline" aria-label={`Actions for ${workflow.name}`}>Actions <ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">{actions.map(action => <DropdownMenuItem key={action.label} onSelect={action.run}>{action.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu> : null}</div>
+          <div className="flex items-center gap-2">{actions.length === 1 ? <Button type="button" variant="outline" onClick={actions[0].run}>{actions[0].label}</Button> : actions.length > 1 ? <ActionMenu><DropdownMenuTrigger asChild><Button type="button" variant="outline" aria-label={`Actions for ${workflow.name}`}>Actions <ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">{actions.map(action => <DropdownMenuItem key={action.label} onSelect={action.run}>{action.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu> : null}</div>
         </li>
-      })}</ul> : <p className="text-sm text-muted-foreground">No master-mix workflows yet.</p>}
+      })}</ul> : !query.isPending && !query.isError ? <p className="py-8 text-center text-sm text-muted-foreground">{!workflows.length ? 'No master-mix workflows yet.' : !showInactive && workflows.every(workflow => workflow.status === 'Retired') && !needle ? 'All master-mix workflows are inactive. Select Show inactive to review them.' : 'No master-mix workflows match these filters.'}</p> : null}
     </PreparationPanel>
     {editor ? <WorkflowEditor key={editor === 'new' ? 'new' : editor.id} workflow={editor === 'new' ? undefined : editor} onClose={() => setEditor(null)} /> : null}
     {decision ? <Dialog open onOpenChange={open => { if (!open && !change.isPending) setDecision(null) }}><DialogContent className="max-w-2xl">

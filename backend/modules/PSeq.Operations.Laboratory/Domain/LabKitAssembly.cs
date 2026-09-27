@@ -3,19 +3,28 @@ namespace PSeq.Operations.Laboratory.Domain;
 using System.Text.Json;
 
 public sealed record LabKitAssemblyStep(Guid LabStepVersionId, string Name, string Instructions);
-public enum LabKitAssemblyRevisionStatus { Draft, Approved, Retired }
+public enum LabKitAssemblyRevisionStatus { Draft, Approved, Retired, Discarded }
 public enum LabKitAssemblyRunStatus { InProgress, Completed, Abandoned }
 
 public sealed class LabKitAssemblyWorkflow : LabAuditedEntity
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid FinishedKitProductId { get; private set; }
+    public string Name { get; private set; } = null!;
     public int LatestRevision { get; private set; } = 1;
     private LabKitAssemblyWorkflow() { }
-    public LabKitAssemblyWorkflow(Guid productId)
+    public LabKitAssemblyWorkflow(Guid productId, string name)
     {
         if (productId == Guid.Empty) throw new ArgumentException("Choose a finished transportation kit product.");
         FinishedKitProductId = productId;
+        SetName(name);
+    }
+    public void SetName(string name)
+    {
+        var trimmed = name?.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed) || trimmed.Length > 160)
+            throw new ArgumentException("Enter a workflow name of 1 to 160 characters.");
+        Name = trimmed;
     }
     public int NextRevision() => ++LatestRevision;
 }
@@ -70,7 +79,6 @@ public sealed class LabKitAssemblyWorkflowRevision
             throw new InvalidOperationException("A different administrator must approve this revision, or a platform administrator must record an override reason.");
         if (overrideReason?.Trim().Length > 2000)
             throw new ArgumentException("An approval reason cannot exceed 2,000 characters.");
-        if (Components.Count == 0) throw new InvalidOperationException("Add the kit bill of materials before approval.");
         Status = LabKitAssemblyRevisionStatus.Approved;
         ApprovedByUserId = actorId;
         ApprovedAtUtc = utcNow;
@@ -80,6 +88,11 @@ public sealed class LabKitAssemblyWorkflowRevision
     {
         if (Status != LabKitAssemblyRevisionStatus.Approved) throw new InvalidOperationException("Only an approved revision can be retired.");
         Status = LabKitAssemblyRevisionStatus.Retired;
+    }
+    public void Discard()
+    {
+        if (Status != LabKitAssemblyRevisionStatus.Draft) throw new InvalidOperationException("Only a draft revision can be discarded.");
+        Status = LabKitAssemblyRevisionStatus.Discarded;
     }
 }
 

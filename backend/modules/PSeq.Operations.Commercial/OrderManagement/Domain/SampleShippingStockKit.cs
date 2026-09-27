@@ -11,6 +11,10 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
     public Guid? FinishedKitProductId { get; private set; }
     public Guid? AssemblyWorkflowRevisionId { get; private set; }
     public DateTime? AssemblyCompletedAt { get; private set; }
+    public DateTime? PurchasedKitReceivedAt { get; private set; }
+    public Guid? PurchasedKitReceivedByUserId { get; private set; }
+    public string? PurchasedKitReceiptReference { get; private set; }
+    public string? SupplierKitLotNumber { get; private set; }
     public string ContainerSnapshotJson { get; private set; } = null!;
     public string? ProductExpirySnapshotJson { get; private set; }
     public DateTime? WithdrawnAt { get; private set; }
@@ -205,6 +209,16 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
     }
 
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
+    public void RecordPurchasedReceipt(Guid actorUserId, DateTime utcNow, string receiptReference, string? supplierKitLotNumber)
+    {
+        if (!FinishedKitProductId.HasValue || AssemblyWorkflowRevisionId.HasValue || PurchasedKitReceivedAt.HasValue
+            || actorUserId == Guid.Empty || utcNow.Kind != DateTimeKind.Utc)
+            throw new InvalidOperationException("Only a purchased complete kit can have a supplier receipt.");
+        PurchasedKitReceiptReference = OrderText.Required(receiptReference, "Supplier receipt reference", 100);
+        SupplierKitLotNumber = OrderText.Optional(supplierKitLotNumber, 100);
+        PurchasedKitReceivedByUserId = actorUserId;
+        PurchasedKitReceivedAt = utcNow;
+    }
     public void VerifyTubeRoster(Guid actorUserId, IReadOnlyCollection<string> scanned, DateTime utcNow)
     {
         if (FulfilledAt.HasValue || actorUserId == Guid.Empty || utcNow.Kind != DateTimeKind.Utc)
@@ -229,8 +243,12 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
 
     private void EnsureVerifiedTubes()
     {
-        if (FinishedKitProductId.HasValue && (!AssemblyWorkflowRevisionId.HasValue || !AssemblyCompletedAt.HasValue))
+        if (FinishedKitProductId.HasValue && !PurchasedKitReceivedAt.HasValue
+            && (!AssemblyWorkflowRevisionId.HasValue || !AssemblyCompletedAt.HasValue))
             throw new InvalidOperationException("Complete the approved kit assembly workflow before dispatch.");
+        if (PurchasedKitReceivedAt.HasValue && (!PurchasedKitReceivedByUserId.HasValue
+            || string.IsNullOrWhiteSpace(PurchasedKitReceiptReference) || AssemblyWorkflowRevisionId.HasValue))
+            throw new InvalidOperationException("Complete the purchased kit receipt before dispatch.");
         if (!TubesVerifiedAt.HasValue || !TubesVerifiedByUserId.HasValue || Tubes.Count != TubeCapacity
             || Tubes.Select(tube => tube.SupplierBarcode).Distinct(StringComparer.Ordinal).Count() != TubeCapacity
             || Tubes.Any(tube => tube.TubeSupplierProductId != TubeSupplierProductId || tube.BarcodeNamespace != TubeBarcodeNamespace))

@@ -1,15 +1,21 @@
-import { supplierCatalogFixture, tubeSupplierId, tubeProductId, shipperSupplierId, shipperProductId } from '#/test-helpers/supplier-catalog'
+import { supplierCatalogFixture as baseCatalog, tubeSupplierId, tubeProductId, shipperSupplierId, shipperProductId } from '#/test-helpers/supplier-catalog'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { kitRequestDetailFixture as detail, kitRequestFixture as request } from '#/test-helpers/transportation-kit-requests'
-import { containerDefinition, standardKit } from '#/test-helpers/shipping-containers'
+import { containerDefinition as baseDefinition, standardKit } from '#/test-helpers/shipping-containers'
 import { KitRequestsPanel } from './KitRequestsPanel'
 import { KitRequestDetailPage } from './KitRequestDetailPage'
 import { KitRequestDispatchDialog } from './KitRequestDispatchDialog'
 
 const mocks = vi.hoisted(() => ({ catalog: vi.fn(), list: vi.fn(), get: vi.fn(), dispatch: vi.fn(), cancel: vi.fn(), definitions: vi.fn(), create: vi.fn(), navigate: vi.fn(), allowed: true }))
+const kitProductId = '83000000-0000-4000-8000-000000000010'
+const supplierCatalogFixture = [...baseCatalog, { id: '83000000-0000-4000-8000-000000000011', name: 'Phaeno', isInternalProducer: true, isActive: true, version: 1, products: [{ id: kitProductId, supplierId: '83000000-0000-4000-8000-000000000011', productNumber: baseDefinition.sku, description: baseDefinition.commonName, kind: 'Other' as const, productTypeId: '83000000-0000-4000-8000-000000000012', productTypeName: 'Transportation kit', productTypeIsActive: true, isActive: true, version: 1 }] }]
+const containerDefinition = { ...baseDefinition, finishedKitProductId: kitProductId, kitContents: [
+  { supplierProductId: tubeProductId, supplierId: tubeSupplierId, supplierName: baseCatalog[0].name, productNumber: baseCatalog[0].products[0].productNumber, productDescription: baseCatalog[0].products[0].description, productTypeName: 'Tube', kind: 'Tube' as const, quantity: 20 },
+  { supplierProductId: shipperProductId, supplierId: shipperSupplierId, supplierName: baseCatalog[1].name, productNumber: baseCatalog[1].products[0].productNumber, productDescription: baseCatalog[1].products[0].description, productTypeName: 'Shipping Container', kind: 'ShippingContainer' as const, quantity: 1 },
+] }
 vi.mock('#/api/transportation-kit-requests', () => ({ getPlatformTransportationKitRequests: mocks.list, getPlatformTransportationKitRequest: mocks.get, dispatchTransportationKitRequest: mocks.dispatch, cancelPlatformTransportationKitRequest: mocks.cancel }))
 vi.mock('#/api/supplier-catalog', async importOriginal => ({ ...await importOriginal<typeof import('#/api/supplier-catalog')>(), useSupplierCatalog: () => mocks.catalog() }))
 vi.mock('#/api/shipping-containers', () => ({ getShippingContainerDefinitions: mocks.definitions, createShippingStockKit: mocks.create }))
@@ -43,9 +49,8 @@ describe('transportation-kit fulfillment', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Prepare kits' }))
     const dialog = await screen.findByRole('dialog', { name: 'Prepare standard kit' })
     expect(within(dialog).queryByRole('option', { name: /Unrequested size/ })).toBeNull()
-    fireEvent.change(within(dialog).getByLabelText(/Kit configuration/), { target: { value: request.lines[0].containerDefinitionId } })
-    fill('Supplier', tubeSupplierId, 'Tubes'); fill('Product name', tubeProductId, 'Tubes')
-    fill('Supplier', shipperSupplierId, 'Shipping Container'); fill('Product name', shipperProductId, 'Shipping Container')
+    fireEvent.change(within(dialog).getByLabelText(/Kit specification/), { target: { value: request.lines[0].containerDefinitionId } })
+    expect(within(dialog).getByText(/Tube maker · T-001/)).toBeTruthy()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Prepare standard kit' }))
     await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith(expect.objectContaining({
       to: '/lab-operations/stock-kits/$kitId', params: { kitId: standardKit.id },

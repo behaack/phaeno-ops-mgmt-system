@@ -1,8 +1,11 @@
 namespace PhaenoPortal.App.Features.LabOperations.Controllers;
 
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Laboratory.Domain;
+using PhaenoPortal.App.Features.OrderManagement.DTOs;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 
 public sealed record KitAssemblyStepRequest(long Version, int Sequence, string Notes);
@@ -62,20 +65,28 @@ public sealed partial class LabOperationsController
         var run = await RequireKitAssemblyRunAsync(kitId, request.Version, ct);
         if (run.Status != LabKitAssemblyRunStatus.InProgress)
             throw Conflict("kit_assembly_finished", "This assembly is no longer active.");
-        var bom = await dbContext.LabKitAssemblyComponents.AsNoTracking()
-            .SingleOrDefaultAsync(item => item.WorkflowRevisionId == run.WorkflowRevisionId
-                && item.SupplierProductId == request.SupplierProductId, ct)
-            ?? throw Invalid("kit_component_unapproved", "Choose a component from the approved bill of materials.");
+        var kit = await dbContext.SampleShippingStockKits.SingleAsync(item => item.Id == kitId, ct);
+        var bom = RequiredKitContents(kit).SingleOrDefault(item => item.SupplierProductId == request.SupplierProductId)
+            ?? throw Invalid("kit_component_unapproved", "Choose a component from this physical kit's approved specification.");
         var used = await dbContext.LabKitAssemblyUses.AsNoTracking()
             .Where(item => item.RunId == run.Id && item.SupplierProductId == request.SupplierProductId)
             .SumAsync(item => item.Quantity, ct);
         if (request.Quantity <= 0 || used + request.Quantity > bom.Quantity)
             throw Invalid("kit_component_quantity_invalid", "Record a positive use no greater than the remaining approved component quantity.");
+        if (bom.Kind == "Tube")
+        {
+            var scanned = await dbContext.SampleShippingStockTubes.AsNoTracking()
+                .CountAsync(item => item.SampleShippingStockKitId == kitId, ct);
+            if (used + request.Quantity > scanned)
+                throw Invalid("kit_tube_use_unscanned", "Scan each physical tube into this kit before recording its use.");
+        }
         var product = await dbContext.LabSupplierProducts.AsNoTracking().SingleAsync(item => item.Id == request.SupplierProductId, ct);
         if (string.IsNullOrWhiteSpace(product.DefaultQuantityUnit))
             throw Conflict("kit_component_unit_missing", "Set the component product's inventory unit before recording use.");
-        try { bom.ValidateActualUse(request.Quantity, product.DefaultQuantityUnit); }
-        catch (InvalidOperationException error) { throw Invalid("kit_component_quantity_invalid", error.Message); }
+        if (bom.Kind is "Tube" or "ShippingContainer"
+            && (request.Quantity != decimal.Truncate(request.Quantity)
+                || !string.Equals(product.DefaultQuantityUnit, "each", StringComparison.OrdinalIgnoreCase)))
+            throw Invalid("kit_component_quantity_invalid", "Count whole tubes and outer shippers in each.");
         var hasLots = await dbContext.LabMaterialLots.AsNoTracking().AnyAsync(item => item.SupplierProductId == product.Id, ct);
         if (hasLots && !request.SourceMaterialLotId.HasValue)
             throw Invalid("kit_component_lot_required", "Select the source lot for this inventory-tracked component.");
@@ -98,7 +109,6 @@ public sealed partial class LabOperationsController
                 .Select(item => item.SourceMaterialLotId).Distinct().ToArrayAsync(ct);
             try { run.EnsureSingleTubeSourceLot(source.Id, priorLotIds); }
             catch (InvalidOperationException error) { throw Conflict("kit_tube_lot_mismatch", error.Message); }
-            var kit = await dbContext.SampleShippingStockKits.SingleAsync(item => item.Id == kitId, ct);
             try { kit.ConfirmTubeLotNumber(source.LotNumber); }
             catch (InvalidOperationException error) { throw Conflict("kit_tube_lot_mismatch", error.Message); }
         }
@@ -123,8 +133,7 @@ public sealed partial class LabOperationsController
         var run = await RequireKitAssemblyRunAsync(kitId, request.Version, ct);
         var kit = await dbContext.SampleShippingStockKits.Include(item => item.Tubes)
             .SingleAsync(item => item.Id == kitId, ct);
-        var bom = await dbContext.LabKitAssemblyComponents.AsNoTracking()
-            .Where(item => item.WorkflowRevisionId == run.WorkflowRevisionId).ToListAsync(ct);
+        var bom = RequiredKitContents(kit);
         var uses = await dbContext.LabKitAssemblyUses.AsNoTracking()
             .Where(item => item.RunId == run.Id).ToListAsync(ct);
         if (bom.Any(item => uses.Where(use => use.SupplierProductId == item.SupplierProductId)
@@ -168,25 +177,27 @@ public sealed partial class LabOperationsController
         var run = await dbContext.LabKitAssemblyRuns.AsNoTracking().SingleOrDefaultAsync(item => item.StockKitId == kitId, ct)
             ?? throw Missing();
         var kit = await dbContext.SampleShippingStockKits.AsNoTracking().SingleAsync(item => item.Id == kitId, ct);
-        var bom = await dbContext.LabKitAssemblyComponents.AsNoTracking()
-            .Where(item => item.WorkflowRevisionId == run.WorkflowRevisionId).OrderBy(item => item.Position).ToListAsync(ct);
-        var productIds = bom.Select(item => item.SupplierProductId).ToArray();
-        var products = await (from p in dbContext.LabSupplierProducts.AsNoTracking()
-            join s in dbContext.LabSuppliers.AsNoTracking() on p.SupplierId equals s.Id
-            where productIds.Contains(p.Id)
-            select new { p.Id, p.ProductNumber, p.Description, SupplierName = s.Name }).ToDictionaryAsync(item => item.Id, ct);
+        var bom = RequiredKitContents(kit);
         var uses = await dbContext.LabKitAssemblyUses.AsNoTracking().Where(item => item.RunId == run.Id)
             .OrderBy(item => item.RecordedAtUtc).ToListAsync(ct);
         var steps = await dbContext.LabKitAssemblyStepRecords.AsNoTracking().Where(item => item.RunId == run.Id)
             .OrderBy(item => item.Sequence).ToListAsync(ct);
         return new(run.Id, kitId, kit.KitNumber, run.Status.ToString(), run.Version, run.WorkflowRevisionId,
             run.Steps(), bom.Select(item => new KitAssemblyComponentDto(item.SupplierProductId, item.Quantity,
-                item.Kind, products[item.SupplierProductId].SupplierName, products[item.SupplierProductId].ProductNumber,
-                products[item.SupplierProductId].Description)).ToArray(),
+                item.Kind, item.SupplierName, item.ProductNumber, item.ProductDescription)).ToArray(),
             uses.Select(item => new KitAssemblyUseDto(item.Id, item.SupplierProductId, item.SourceMaterialLotId,
                 item.Quantity, item.QuantityUnit, item.RecordedByUserId, item.RecordedAtUtc)).ToArray(),
             steps.Select(item => new KitAssemblyStepRecordDto(item.Sequence, item.LabStepVersionId,
                 item.Notes, item.PerformedByUserId, item.PerformedAtUtc)).ToArray(),
             run.StartedAtUtc, run.FinishedAtUtc, run.AbandonmentReason);
+    }
+
+    private IReadOnlyList<ShippingKitContentDto> RequiredKitContents(SampleShippingStockKit kit)
+    {
+        var snapshot = JsonSerializer.Deserialize<SampleShippingContainerDefinitionDto>(kit.ContainerSnapshotJson,
+            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        if (snapshot?.KitContents is not { Count: > 0 } contents)
+            throw Conflict("kit_contents_missing", "This physical kit has no pinned specification contents. Review its configuration before assembly.");
+        return contents;
     }
 }

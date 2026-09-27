@@ -1,4 +1,3 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { ProductTypesPage } from '#/features/lab-operations/ProductTypesPage'
+import { Navigate, createFileRoute } from '@tanstack/react-router'
 export const Route = createFileRoute('/lab-operations/product-types/$productTypeId')({ component: ProductTypeRoute })
-function ProductTypeRoute() { const { productTypeId } = Route.useParams(); return <ProductTypesPage key={productTypeId} productTypeId={productTypeId} /> }
+function ProductTypeRoute() { const { productTypeId } = Route.useParams(); return <Navigate to="/purchasing/product-types/$productTypeId" params={{ productTypeId }} replace /> }

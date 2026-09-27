@@ -7,12 +7,39 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 /// <summary>Stored revision IDs anchor a stable sample identity; issued packets retain their own snapshots.</summary>
 public sealed record SampleShippingRevisionData(
     IReadOnlyDictionary<Guid, SampleTypeDefinition> CurrentByRequestedId,
-    IReadOnlyDictionary<Guid, SampleShippingProcedure> CurrentProcedureBySampleTypeId)
+    IReadOnlyDictionary<Guid, SampleShippingProcedure> CurrentProcedureBySampleTypeId,
+    bool PinnedHistory = false)
 {
     public IReadOnlyList<SampleTypeDefinition> CurrentTypes => CurrentByRequestedId.Values.DistinctBy(item => item.Id).ToArray();
 
     public SampleShippingResolution Resolve(SampleShippingDestination destination, DateTime effectiveAt)
-        => SampleShippingCompatibilityResolver.Resolve(destination, CurrentTypes, CurrentProcedureBySampleTypeId, effectiveAt);
+        => SampleShippingCompatibilityResolver.Resolve(destination, CurrentTypes, CurrentProcedureBySampleTypeId,
+            effectiveAt, PinnedHistory);
+
+    public static async Task<SampleShippingRevisionData> ReadPinnedAsync(PSeqOperationsDbContext db,
+        IEnumerable<Guid> sampleTypeRevisionIds, Guid procedureRevisionId, CancellationToken ct)
+    {
+        var ids = sampleTypeRevisionIds.Distinct().ToArray();
+        var types = await db.SampleTypeDefinitions.AsNoTracking().Where(item => ids.Contains(item.Id)).ToArrayAsync(ct);
+        if (ids.Length == 0 || types.Length != ids.Length || types.Any(item => item.Lifecycle is
+            ShippingRevisionLifecycle.Draft or ShippingRevisionLifecycle.Discarded or ShippingRevisionLifecycle.LegacyInactive))
+            throw new OrderManagementException("shipping_job_pin_review_required",
+                "The placed Job's exact Sample type revisions need Phaeno review before another packet can be issued.", 409);
+        var procedure = await db.SampleShippingProcedures.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Id == procedureRevisionId, ct);
+        if (procedure is null || procedure.Lifecycle is ShippingRevisionLifecycle.Draft
+            or ShippingRevisionLifecycle.Discarded or ShippingRevisionLifecycle.LegacyInactive)
+            throw new OrderManagementException("shipping_job_pin_review_required",
+                "The placed Job's exact Shipping procedure revision needs Phaeno review before another packet can be issued.", 409);
+        var selectedIds = types.Where(item => item.ShippingProcedureId.HasValue)
+            .Select(item => item.ShippingProcedureId!.Value).Distinct().ToArray();
+        var selectedKeys = await db.SampleShippingProcedures.AsNoTracking()
+            .Where(item => selectedIds.Contains(item.Id)).Select(item => item.DefinitionKey).Distinct().ToArrayAsync(ct);
+        if (selectedIds.Length != types.Length || selectedKeys.Length != 1 || selectedKeys[0] != procedure.DefinitionKey)
+            throw new OrderManagementException("shipping_job_pin_review_required",
+                "The placed Job's saved Sample type and Shipping procedure relationship needs Phaeno review.", 409);
+        return new(types.ToDictionary(item => item.Id), types.ToDictionary(item => item.Id, _ => procedure), true);
+    }
 
     public static async Task<SampleShippingRevisionData> ReadAsync(PSeqOperationsDbContext db,
         Guid destinationId, IEnumerable<Guid> requestedIds, DateTime effectiveAt, CancellationToken ct)

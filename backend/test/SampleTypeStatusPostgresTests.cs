@@ -17,9 +17,11 @@ public partial class SampleShippingPostgresTests
         var now = DateTime.UtcNow;
         // Preserve exact record comparisons across PostgreSQL's microsecond timestamp precision.
         now = now.AddTicks(-(now.Ticks % 10));
-        var destination = await controller.CreateDestination(scope.DestinationRequest(now.AddDays(-3)), default);
+        var destinationDraft = await controller.CreateDestination(scope.DestinationRequest(now.AddDays(-3)) with { IsActive = false }, default);
+        var destination = await controller.SetDestinationStatus(destinationDraft.Id, new(true, destinationDraft.Version), default);
         scope.ClearTrackedState();
-        var first = await controller.CreateSampleType(scope.SampleTypeRequest(now.AddDays(-2)), default);
+        var firstDraft = await controller.CreateSampleType(scope.SampleTypeRequest(now.AddDays(-2)) with { IsActive = false }, default);
+        var first = await controller.SetSampleTypeStatus(firstDraft.Id, new(true, firstDraft.Version), default);
         scope.ClearTrackedState();
         var denied = await Assert.ThrowsAsync<OrderManagementException>(() => scope.CustomerSampleTypeController()
             .SetSampleTypeStatus(first.Id, new(false, first.Version), default));
@@ -28,7 +30,9 @@ public partial class SampleShippingPostgresTests
 
         var inactive = await controller.SetSampleTypeStatus(first.Id, new(false, first.Version), default);
         scope.ClearTrackedState();
-        Assert.Equal(first with { IsActive = false, Version = inactive.Version }, inactive);
+        Assert.Equal(first.Id, inactive.Id);
+        Assert.False(inactive.IsActive);
+        Assert.Equal("Deactivated", inactive.Lifecycle);
         Assert.Equal(first.Version + 1, inactive.Version);
         var unavailable = await Assert.ThrowsAsync<OrderManagementException>(() => controller.Preview(new(destination.Id, [first.Id], DateTime.UtcNow), default));
         Assert.Equal("sample_type_not_effective", unavailable.ErrorCode);
@@ -36,10 +40,10 @@ public partial class SampleShippingPostgresTests
         Assert.Equal("sample_shipping_version_conflict", stale.ErrorCode);
         scope.ClearTrackedState();
 
-        var reactivated = await controller.SetSampleTypeStatus(first.Id, new(true, inactive.Version), default);
+        var reactivation = await Assert.ThrowsAsync<OrderManagementException>(() => controller.SetSampleTypeStatus(first.Id, new(true, inactive.Version), default));
+        Assert.Equal(409, reactivation.StatusCode);
         scope.ClearTrackedState();
-        Assert.Equal(first with { Version = reactivated.Version }, reactivated);
-        Assert.Equal(first.Id, Assert.Single((await controller.Preview(new(destination.Id, [first.Id], DateTime.UtcNow), default)).SampleRules).SampleType.Id);
+        Assert.Equal("sample_type_not_effective", (await Assert.ThrowsAsync<OrderManagementException>(() => controller.Preview(new(destination.Id, [first.Id], DateTime.UtcNow), default))).ErrorCode);
         Assert.Equal(1, await scope.DbContext.SampleTypeDefinitions.CountAsync(value => value.DefinitionKey == first.DefinitionKey));
         var audits = await scope.DbContext.AuditEvents.AsNoTracking().Where(value => value.EntityId == first.Id.ToString() && value.Operation == "Updated").ToListAsync();
         Assert.Equal(2, audits.Count);
@@ -58,11 +62,13 @@ public partial class SampleShippingPostgresTests
         await using var scope = await ShippingTestScope.CreateAsync();
         var controller = scope.CreateConfigurationController();
         var now = DateTime.UtcNow;
-        var destination = await controller.CreateDestination(scope.DestinationRequest(now.AddDays(-4)), default);
+        var destinationDraft = await controller.CreateDestination(scope.DestinationRequest(now.AddDays(-4)) with { IsActive = false }, default);
+        var destination = await controller.SetDestinationStatus(destinationDraft.Id, new(true, destinationDraft.Version), default);
         scope.ClearTrackedState();
-        var first = await controller.CreateSampleType(scope.SampleTypeRequest(now.AddDays(-3)), default);
+        var firstDraft = await controller.CreateSampleType(scope.SampleTypeRequest(now.AddDays(-3)) with { IsActive = false }, default);
+        var first = await controller.SetSampleTypeStatus(firstDraft.Id, new(true, firstDraft.Version), default);
         scope.ClearTrackedState();
-        var draft = await controller.CreateSampleType(scope.SampleTypeRequest(now.AddDays(-2), first.Id, first.Version) with { IsActive = false, ShippingProcedureId = null }, default);
+        var draft = await controller.CreateSampleType(scope.SampleTypeRequest(DateTime.UtcNow, first.Id, first.Version) with { IsActive = false }, default);
         scope.ClearTrackedState();
         var beforeActivation = DateTime.UtcNow;
         var active = await controller.SetSampleTypeStatus(draft.Id, new(true, draft.Version), default);
@@ -78,17 +84,17 @@ public partial class SampleShippingPostgresTests
         var historical = await Assert.ThrowsAsync<OrderManagementException>(() => controller.SetSampleTypeStatus(first.Id, new(true, previous.Version), default));
         Assert.Equal("sample_type_already_superseded", historical.ErrorCode);
         scope.ClearTrackedState();
-        await controller.SetSampleTypeStatus(active.Id, new(true, inactive.Version), default);
+        var reactivation = await Assert.ThrowsAsync<OrderManagementException>(() => controller.SetSampleTypeStatus(active.Id, new(true, inactive.Version), default));
+        Assert.Equal(409, reactivation.StatusCode);
         scope.ClearTrackedState();
-        Assert.Equal(active.Id, Assert.Single((await controller.Preview(new(destination.Id, [first.Id], DateTime.UtcNow), default)).SampleRules).SampleType.Id);
         Assert.Equal(2, await scope.DbContext.SampleTypeDefinitions.CountAsync(value => value.DefinitionKey == first.DefinitionKey));
 
         var current = await scope.DbContext.SampleTypeDefinitions.AsNoTracking().SingleAsync(value => value.Id == active.Id);
-        var future = await controller.CreateSampleType(scope.SampleTypeRequest(now.AddDays(2), active.Id, current.Version) with { IsActive = false, ShippingProcedureId = null }, default);
+        var future = await controller.CreateSampleType(scope.SampleTypeRequest(now.AddDays(2), active.Id, current.Version) with { IsActive = false }, default);
         scope.ClearTrackedState();
         await controller.SetSampleTypeStatus(future.Id, new(true, future.Version), default);
         scope.ClearTrackedState();
-        Assert.Equal(active.Id, Assert.Single((await controller.Preview(new(destination.Id, [first.Id], DateTime.UtcNow), default)).SampleRules).SampleType.Id);
+        Assert.Equal("sample_type_not_effective", (await Assert.ThrowsAsync<OrderManagementException>(() => controller.Preview(new(destination.Id, [first.Id], DateTime.UtcNow), default))).ErrorCode);
         Assert.Equal(future.Id, Assert.Single((await controller.Preview(new(destination.Id, [first.Id], now.AddDays(3)), default)).SampleRules).SampleType.Id);
     }
 

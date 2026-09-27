@@ -28,6 +28,7 @@ export const containerConfiguration: SampleShippingConfiguration = {
     effectiveFrom: '2026-08-01T00:00:00Z',
     effectiveTo: null,
     isActive: true,
+    lifecycle: 'Released',
     version: 1,
   }],
   sampleTypes: [{
@@ -54,6 +55,7 @@ export const containerConfiguration: SampleShippingConfiguration = {
     effectiveFrom: '2026-08-01T00:00:00Z',
     effectiveTo: null,
     isActive: true,
+    lifecycle: 'Released',
     version: 1,
     shippingProcedureId: '66666666-6666-4666-8666-666666666661',
   }],
@@ -72,6 +74,7 @@ export const containerConfiguration: SampleShippingConfiguration = {
     exceptionInstructions: 'Contact Phaeno if delayed.',
     internationalCustomsInstructions: null,
     isActive: true,
+    lifecycle: 'Released',
     version: 1,
   }],
 }
@@ -80,6 +83,7 @@ export const containerDefinition: ShippingContainerDefinition = {
   id: '44444444-4444-4444-8444-444444444441', definitionKey: '44444444-4444-4444-8444-444444444442', sku: '000-20', commonName: 'Standard 20-tube container', tubeCapacity: 20,
   revision: 1, supersedesDefinitionId: null, supplierName: 'Synthetic supplier', supplierProductNumber: 'PRODUCT-20', packingInstructions: 'Use the approved insert and secondary containment.',
   effectiveFrom: '2020-01-01T00:00:00Z', effectiveTo: null, deactivatedAt: null, isActive: true, displayOrder: 0, version: 3,
+  lifecycle: 'Released',
   sampleTypeAnchorId: containerConfiguration.sampleTypes[0].id,
   temperatureControlInstructions: 'Keep frozen.',
 }

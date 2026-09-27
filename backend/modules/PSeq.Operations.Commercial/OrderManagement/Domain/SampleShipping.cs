@@ -71,6 +71,7 @@ public sealed class SampleShippingDestination : IAudit, IConcurrency
     public DateTime EffectiveFrom { get; private set; }
     public DateTime? EffectiveTo { get; private set; }
     public bool IsActive { get; private set; }
+    public ShippingRevisionLifecycle Lifecycle { get; private set; } = ShippingRevisionLifecycle.Draft;
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
@@ -115,25 +116,27 @@ public sealed class SampleShippingDestination : IAudit, IConcurrency
         Revision = revision;
         SupersedesDestinationId = supersedesDestinationId;
         Code = SampleShippingText.Code(code, nameof(code));
-        Name = OrderText.Required(name, nameof(name), 255);
-        RecipientName = OrderText.Required(recipientName, nameof(recipientName), 255);
-        OrganizationName = OrderText.Required(organizationName, nameof(organizationName), 255);
-        AddressLine1 = OrderText.Required(addressLine1, nameof(addressLine1), 255);
+        Name = OrderText.Optional(name, 255) ?? string.Empty;
+        RecipientName = OrderText.Optional(recipientName, 255) ?? string.Empty;
+        OrganizationName = OrderText.Optional(organizationName, 255) ?? string.Empty;
+        AddressLine1 = OrderText.Optional(addressLine1, 255) ?? string.Empty;
         AddressLine2 = OrderText.Optional(addressLine2, 255);
-        City = OrderText.Required(city, nameof(city), 150);
-        StateOrProvince = OrderText.Required(stateOrProvince, nameof(stateOrProvince), 150);
-        PostalCode = OrderText.Required(postalCode, nameof(postalCode), 50);
-        CountryCode = SampleShippingText.CountryCode(countryCode);
+        City = OrderText.Optional(city, 150) ?? string.Empty;
+        StateOrProvince = OrderText.Optional(stateOrProvince, 150) ?? string.Empty;
+        PostalCode = OrderText.Optional(postalCode, 50) ?? string.Empty;
+        CountryCode = string.IsNullOrWhiteSpace(countryCode) ? string.Empty : SampleShippingText.CountryCode(countryCode);
         ReceivingPhone = OrderText.Optional(receivingPhone, 50);
         ReceivingEmail = SampleShippingText.OptionalEmail(receivingEmail);
-        ReceivingHours = OrderText.Required(receivingHours, nameof(receivingHours), 1000);
-        TimeZoneId = OrderText.Required(timeZoneId, nameof(timeZoneId), 100);
+        ReceivingHours = OrderText.Optional(receivingHours, 1000) ?? string.Empty;
+        TimeZoneId = OrderText.Optional(timeZoneId, 100) ?? string.Empty;
         ClosureInstructions = OrderText.Optional(closureInstructions, 2000);
-        DeliveryInstructions = OrderText.Required(deliveryInstructions, nameof(deliveryInstructions), 4000);
+        DeliveryInstructions = OrderText.Optional(deliveryInstructions, 4000) ?? string.Empty;
         CarrierRestrictions = OrderText.Optional(carrierRestrictions, 2000);
         InternationalShippingAllowed = internationalShippingAllowed;
         EffectiveFrom = effectiveFrom;
         IsActive = isActive;
+        Lifecycle = isActive ? ShippingRevisionLifecycle.Released : ShippingRevisionLifecycle.Draft;
+        if (isActive) ValidateRelease();
     }
 
     public bool IsEffectiveAt(DateTime utcNow) =>
@@ -146,13 +149,66 @@ public sealed class SampleShippingDestination : IAudit, IConcurrency
         if (EffectiveTo.HasValue && effectiveTo > EffectiveTo.Value)
             throw new InvalidOperationException("A destination revision cannot be extended after it has been bounded.");
         EffectiveTo = effectiveTo;
+        if (Lifecycle == ShippingRevisionLifecycle.Released)
+            Lifecycle = ShippingRevisionLifecycle.Superseded;
     }
 
     public void SetActive(bool isActive, DateTime utcNow)
     {
         if (EffectiveTo.HasValue && EffectiveTo <= utcNow)
             throw new InvalidOperationException("An ended destination revision cannot change availability.");
+        if (isActive)
+        {
+            if (Lifecycle != ShippingRevisionLifecycle.Draft)
+                throw new InvalidOperationException("Only a Draft destination can be activated.");
+            ValidateRelease();
+            if (EffectiveFrom < utcNow) EffectiveFrom = utcNow;
+            Lifecycle = ShippingRevisionLifecycle.Released;
+        }
+        else
+        {
+            if (Lifecycle is not (ShippingRevisionLifecycle.Released or ShippingRevisionLifecycle.Superseded) || !IsActive)
+                throw new InvalidOperationException("Only a released destination can be deactivated.");
+            Lifecycle = ShippingRevisionLifecycle.Deactivated;
+        }
         IsActive = isActive;
+    }
+
+    public void Discard()
+    {
+        if (Lifecycle != ShippingRevisionLifecycle.Draft)
+            throw new InvalidOperationException("Only a Draft destination can be discarded.");
+        Lifecycle = ShippingRevisionLifecycle.Discarded;
+    }
+
+    public void UpdateDraftFrom(SampleShippingDestination draft)
+    {
+        if (Lifecycle != ShippingRevisionLifecycle.Draft || draft.Lifecycle != ShippingRevisionLifecycle.Draft
+            || draft.DefinitionKey != DefinitionKey || draft.Revision != Revision)
+            throw new InvalidOperationException("Only the matching Draft destination can be edited.");
+        Name = draft.Name; RecipientName = draft.RecipientName; OrganizationName = draft.OrganizationName;
+        AddressLine1 = draft.AddressLine1; AddressLine2 = draft.AddressLine2;
+        City = draft.City; StateOrProvince = draft.StateOrProvince; PostalCode = draft.PostalCode;
+        CountryCode = draft.CountryCode; ReceivingPhone = draft.ReceivingPhone; ReceivingEmail = draft.ReceivingEmail;
+        ReceivingHours = draft.ReceivingHours; TimeZoneId = draft.TimeZoneId;
+        ClosureInstructions = draft.ClosureInstructions; DeliveryInstructions = draft.DeliveryInstructions;
+        CarrierRestrictions = draft.CarrierRestrictions; InternationalShippingAllowed = draft.InternationalShippingAllowed;
+        EffectiveFrom = draft.EffectiveFrom;
+    }
+
+    private void ValidateRelease()
+    {
+        OrderText.Required(Name, "Destination name", 255);
+        OrderText.Required(RecipientName, "Recipient name", 255);
+        OrderText.Required(OrganizationName, "Organization name", 255);
+        OrderText.Required(AddressLine1, "Address", 255);
+        OrderText.Required(City, "City", 150);
+        OrderText.Required(StateOrProvince, "State or province", 150);
+        OrderText.Required(PostalCode, "Postal code", 50);
+        SampleShippingText.CountryCode(CountryCode);
+        OrderText.Required(ReceivingHours, "Receiving hours", 1000);
+        OrderText.Required(TimeZoneId, "Time zone", 100);
+        OrderText.Required(DeliveryInstructions, "Delivery instructions", 4000);
     }
 
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
@@ -186,6 +242,7 @@ public sealed class SampleTypeDefinition : IAudit, IConcurrency
     public DateTime EffectiveFrom { get; private set; }
     public DateTime? EffectiveTo { get; private set; }
     public bool IsActive { get; private set; }
+    public ShippingRevisionLifecycle Lifecycle { get; private set; } = ShippingRevisionLifecycle.Draft;
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
@@ -234,25 +291,27 @@ public sealed class SampleTypeDefinition : IAudit, IConcurrency
         Revision = revision;
         SupersedesSampleTypeId = supersedesSampleTypeId;
         Code = SampleShippingText.Code(code, nameof(code));
-        Name = OrderText.Required(name, nameof(name), 255);
+        Name = OrderText.Optional(name, 255) ?? string.Empty;
         Description = OrderText.Optional(description, 2000) ?? string.Empty;
-        MaterialClass = OrderText.Required(materialClass, nameof(materialClass), 255);
+        MaterialClass = OrderText.Optional(materialClass, 255) ?? string.Empty;
         MinimumQuantity = minimumQuantity;
         MaximumQuantity = maximumQuantity;
-        QuantityUnit = OrderText.Required(quantityUnit, nameof(quantityUnit), 100);
-        PrimaryContainerRequirements = OrderText.Required(primaryContainerRequirements, nameof(primaryContainerRequirements), 2000);
-        TemperatureRequirements = OrderText.Required(temperatureRequirements, nameof(temperatureRequirements), 2000);
+        QuantityUnit = OrderText.Optional(quantityUnit, 100) ?? string.Empty;
+        PrimaryContainerRequirements = OrderText.Optional(primaryContainerRequirements, 2000) ?? string.Empty;
+        TemperatureRequirements = OrderText.Optional(temperatureRequirements, 2000) ?? string.Empty;
         StabilizerRequirements = OrderText.Optional(stabilizerRequirements, 2000);
         PackagingInstructions = OrderText.Optional(packagingInstructions, 4000) ?? string.Empty;
-        LabelingInstructions = OrderText.Required(labelingInstructions, nameof(labelingInstructions), 4000);
-        ProhibitedIdentifiers = OrderText.Required(prohibitedIdentifiers, nameof(prohibitedIdentifiers), 2000);
-        SafetyRequirements = OrderText.Required(safetyRequirements, nameof(safetyRequirements), 2000);
+        LabelingInstructions = OrderText.Optional(labelingInstructions, 4000) ?? string.Empty;
+        ProhibitedIdentifiers = OrderText.Optional(prohibitedIdentifiers, 2000) ?? string.Empty;
+        SafetyRequirements = OrderText.Optional(safetyRequirements, 2000) ?? string.Empty;
         CarrierRestrictions = OrderText.Optional(carrierRestrictions, 2000);
         MaximumTransitHours = maximumTransitHours;
         if (shippingProcedureId == Guid.Empty) throw new ArgumentException("Choose a valid shared shipping procedure.", nameof(shippingProcedureId));
         ShippingProcedureId = shippingProcedureId;
         EffectiveFrom = effectiveFrom;
         IsActive = isActive;
+        Lifecycle = isActive ? ShippingRevisionLifecycle.Released : ShippingRevisionLifecycle.Draft;
+        if (isActive) ValidateRelease();
     }
 
     public bool IsEffectiveAt(DateTime utcNow) =>
@@ -262,6 +321,20 @@ public sealed class SampleTypeDefinition : IAudit, IConcurrency
     {
         if (EffectiveTo.HasValue && EffectiveTo <= utcNow)
             throw new InvalidOperationException("An ended sample-type revision cannot change availability.");
+        if (isActive)
+        {
+            if (Lifecycle != ShippingRevisionLifecycle.Draft)
+                throw new InvalidOperationException("Only a Draft Sample type can be activated.");
+            ValidateRelease();
+            if (EffectiveFrom < utcNow) EffectiveFrom = utcNow;
+            Lifecycle = ShippingRevisionLifecycle.Released;
+        }
+        else
+        {
+            if (Lifecycle is not (ShippingRevisionLifecycle.Released or ShippingRevisionLifecycle.Superseded) || !IsActive)
+                throw new InvalidOperationException("Only a released Sample type can be deactivated.");
+            Lifecycle = ShippingRevisionLifecycle.Deactivated;
+        }
         IsActive = isActive;
     }
 
@@ -272,13 +345,53 @@ public sealed class SampleTypeDefinition : IAudit, IConcurrency
         if (EffectiveTo.HasValue && effectiveTo > EffectiveTo.Value)
             throw new InvalidOperationException("A sample-type revision cannot be extended after it has been bounded.");
         EffectiveTo = effectiveTo;
+        if (Lifecycle == ShippingRevisionLifecycle.Released)
+            Lifecycle = ShippingRevisionLifecycle.Superseded;
     }
 
     public void ChangeShippingProcedure(Guid procedureId)
     {
+        if (Lifecycle != ShippingRevisionLifecycle.Draft)
+            throw new InvalidOperationException("Change the procedure on a Draft Sample type revision.");
         if (procedureId == Guid.Empty)
             throw new ArgumentException("Choose a valid shared shipping procedure.", nameof(procedureId));
         ShippingProcedureId = procedureId;
+    }
+
+    public void Discard()
+    {
+        if (Lifecycle != ShippingRevisionLifecycle.Draft)
+            throw new InvalidOperationException("Only a Draft Sample type can be discarded.");
+        Lifecycle = ShippingRevisionLifecycle.Discarded;
+    }
+
+    public void UpdateDraftFrom(SampleTypeDefinition draft)
+    {
+        if (Lifecycle != ShippingRevisionLifecycle.Draft || draft.Lifecycle != ShippingRevisionLifecycle.Draft
+            || draft.DefinitionKey != DefinitionKey || draft.Revision != Revision)
+            throw new InvalidOperationException("Only the matching Draft Sample type can be edited.");
+        Name = draft.Name; Description = draft.Description; MaterialClass = draft.MaterialClass;
+        MinimumQuantity = draft.MinimumQuantity; MaximumQuantity = draft.MaximumQuantity;
+        QuantityUnit = draft.QuantityUnit; PrimaryContainerRequirements = draft.PrimaryContainerRequirements;
+        TemperatureRequirements = draft.TemperatureRequirements; StabilizerRequirements = draft.StabilizerRequirements;
+        PackagingInstructions = draft.PackagingInstructions; LabelingInstructions = draft.LabelingInstructions;
+        ProhibitedIdentifiers = draft.ProhibitedIdentifiers; SafetyRequirements = draft.SafetyRequirements;
+        CarrierRestrictions = draft.CarrierRestrictions; MaximumTransitHours = draft.MaximumTransitHours;
+        ShippingProcedureId = draft.ShippingProcedureId; EffectiveFrom = draft.EffectiveFrom;
+    }
+
+    private void ValidateRelease()
+    {
+        OrderText.Required(Name, "Sample type name", 255);
+        OrderText.Required(MaterialClass, "Material class", 255);
+        OrderText.Required(QuantityUnit, "Quantity unit", 100);
+        OrderText.Required(PrimaryContainerRequirements, "Primary container requirements", 2000);
+        OrderText.Required(TemperatureRequirements, "Temperature requirements", 2000);
+        OrderText.Required(LabelingInstructions, "Labeling instructions", 4000);
+        OrderText.Required(ProhibitedIdentifiers, "Prohibited identifiers", 2000);
+        OrderText.Required(SafetyRequirements, "Safety requirements", 2000);
+        if (!ShippingProcedureId.HasValue)
+            throw new ArgumentException("Choose a Shipping procedure before activating this Sample type.");
     }
 
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
@@ -312,9 +425,10 @@ public static class SampleShippingCompatibilityResolver
         SampleShippingDestination destination,
         IReadOnlyCollection<SampleTypeDefinition> sampleTypes,
         IReadOnlyDictionary<Guid, SampleShippingProcedure> proceduresBySampleTypeId,
-        DateTime effectiveAt)
+        DateTime effectiveAt,
+        bool pinnedHistory = false)
     {
-        if (!destination.IsEffectiveAt(effectiveAt))
+        if (!pinnedHistory && !destination.IsEffectiveAt(effectiveAt))
             throw new InvalidOperationException("The selected shipping destination is not effective at the requested time.");
         if (sampleTypes.Count == 0)
             throw new ArgumentException("Select at least one sample type.", nameof(sampleTypes));
@@ -326,10 +440,10 @@ public static class SampleShippingCompatibilityResolver
         var resolved = new List<ResolvedSampleShippingRule>(sampleTypes.Count);
         foreach (var sampleType in sampleTypes)
         {
-            if (!sampleType.IsEffectiveAt(effectiveAt))
+            if (!pinnedHistory && !sampleType.IsEffectiveAt(effectiveAt))
                 throw new InvalidOperationException($"Sample type '{sampleType.Name}' is not effective at the requested time.");
 
-            if (!proceduresBySampleTypeId.TryGetValue(sampleType.Id, out var procedure) || !procedure.IsActive)
+            if (!proceduresBySampleTypeId.TryGetValue(sampleType.Id, out var procedure) || !pinnedHistory && !procedure.IsActive)
                 throw new InvalidOperationException($"Sample type '{sampleType.Name}' has no Active shipping procedure.");
             resolved.Add(new ResolvedSampleShippingRule(sampleType, procedure, destination));
         }

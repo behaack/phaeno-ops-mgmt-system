@@ -92,8 +92,11 @@ public partial class SampleShippingPostgresTests
             new AssignSampleTubeRequest(firstTubeBarcode, null, expectedTube.Version, expectedTube.TubeSlotId, CustomerDeclaredQuantity: 20m, CustomerDeclaredQuantityUnit: "µL"),
             CancellationToken.None);
         scope.ClearTrackedState();
-        var currentSample = await configuration.CreateSampleType(scope.SampleTypeRequest(
-            DateTime.UtcNow.AddHours(-1), fixture.SampleType.Id, fixture.SampleType.Version, "Current RNA handling"), CancellationToken.None);
+        var currentDraft = await configuration.CreateSampleType(scope.SampleTypeRequest(
+            DateTime.UtcNow, fixture.SampleType.Id, fixture.SampleType.Version, "Current RNA handling")
+            with { IsActive = false }, CancellationToken.None);
+        var currentSample = await configuration.SetSampleTypeStatus(currentDraft.Id,
+            new SampleShippingStatusRequest(true, currentDraft.Version), CancellationToken.None);
         scope.ClearTrackedState();
         var issued = await customerWorkflow.IssuePacket(
             fixture.Shipment.Id,
@@ -108,7 +111,8 @@ public partial class SampleShippingPostgresTests
             Assert.Equal(currentSample.Id, sampleSnapshot.RootElement.GetProperty("samples")[0].GetProperty("sampleType").GetProperty("id").GetGuid());
         using (var manifestSnapshot = JsonDocument.Parse(packetV1.ManifestSnapshotJson))
             Assert.Contains(currentSample.Id.ToString(), packetV1.ManifestSnapshotJson);
-        await configuration.CreateSampleType(scope.SampleTypeRequest(DateTime.UtcNow, currentSample.Id, currentSample.Version, "Later RNA handling"), CancellationToken.None);
+        await configuration.CreateSampleType(scope.SampleTypeRequest(DateTime.UtcNow, currentSample.Id, currentSample.Version, "Later RNA handling")
+            with { IsActive = false }, CancellationToken.None);
         scope.ClearTrackedState();
         Assert.Equal(packetV1.InstructionSnapshotJson, (await scope.DbContext.SampleShippingPacketRevisions.AsNoTracking().SingleAsync(value => value.Id == packetV1.Id)).InstructionSnapshotJson);
 
@@ -558,17 +562,21 @@ public partial class SampleShippingPostgresTests
                 48,
                 effectiveFrom,
                 true,
-                supersedesId.HasValue ? null : DefaultProcedureId);
+                DefaultProcedureId);
 
         public async Task<ShippingFixture> CreateShipmentAsync(int tubeCount = 1)
         {
             var effectiveFrom = DateTime.UtcNow.AddDays(-1);
             var controller = CreateConfigurationController();
             var destination = await controller.CreateDestination(
-                DestinationRequest(effectiveFrom), CancellationToken.None);
+                DestinationRequest(effectiveFrom) with { IsActive = false }, CancellationToken.None);
+            destination = await controller.SetDestinationStatus(destination.Id,
+                new SampleShippingStatusRequest(true, destination.Version), CancellationToken.None);
             ClearTrackedState();
             var sampleType = await controller.CreateSampleType(
-                SampleTypeRequest(effectiveFrom), CancellationToken.None);
+                SampleTypeRequest(effectiveFrom) with { IsActive = false }, CancellationToken.None);
+            sampleType = await controller.SetSampleTypeStatus(sampleType.Id,
+                new SampleShippingStatusRequest(true, sampleType.Version), CancellationToken.None);
             ClearTrackedState();
             var authorizationSourceId = Guid.NewGuid();
             var workOrder = new LabWorkOrder(
@@ -744,6 +752,7 @@ public partial class SampleShippingPostgresTests
                 await DbContext.LabSpecimens.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabWorkOrders.Where(item => workOrderIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await CleanupContainerDefinitionsAsync();
+                DbContext.ChangeTracker.Clear();
 
                 await DbContext.SampleTypeProcedureLinks.Where(item => sampleTypeIds.Contains(item.SampleTypeAnchorId)).ExecuteDeleteAsync();
                 var sampleTypes = await DbContext.SampleTypeDefinitions

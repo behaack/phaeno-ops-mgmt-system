@@ -110,6 +110,11 @@ export async function generateDocumentation({ check = false, uiOnly = false } = 
     if (check) {
       if (await readFile(target, 'utf8') !== text) throw new Error(`Stale documentation artifact: ${target}. Run pnpm docs:generate.`)
     } else {
+      const current = await readFile(target, 'utf8').catch(error => {
+        if (error.code === 'ENOENT') return null
+        throw error
+      })
+      if (current === text) continue
       await mkdir(path.dirname(target), { recursive: true })
       await writeFile(target, text, 'utf8')
     }

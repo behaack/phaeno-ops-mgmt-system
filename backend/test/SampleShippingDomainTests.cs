@@ -68,15 +68,14 @@ public class SampleShippingDomainTests
     }
 
     [Fact]
-    public void SampleTypeAvailabilityDoesNotReviseContentAndCannotReopenEndedHistory()
+    public void SampleTypeDeactivationPreservesIdentityAndCannotReopenEndedHistory()
     {
         var sample = SampleType("RNA", "Extracted RNA");
         var id = sample.Id;
         var from = sample.EffectiveFrom;
         sample.SetActive(false, Now);
         Assert.False(sample.IsEffectiveAt(Now));
-        sample.SetActive(true, Now);
-        Assert.True(sample.IsEffectiveAt(Now));
+        Assert.Throws<InvalidOperationException>(() => sample.SetActive(true, Now));
         Assert.Equal(id, sample.Id);
         Assert.Equal(1, sample.Revision);
         Assert.Equal(from, sample.EffectiveFrom);
@@ -265,7 +264,8 @@ public class SampleShippingDomainTests
         null,
         48,
         Now.AddDays(-1),
-        true);
+        true,
+        Guid.NewGuid());
 
     private static SampleShippingProcedure Procedure() => new(
             Guid.NewGuid(), 1, null, "Shared procedure",

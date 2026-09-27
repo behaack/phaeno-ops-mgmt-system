@@ -16,8 +16,8 @@ public static class SampleShippingContainerModelConfiguration
             entity.HasKey(item => item.Id);
             entity.Property(item => item.Sku).HasMaxLength(100).IsRequired();
             entity.Property(item => item.NormalizedSku).HasMaxLength(100).IsRequired();
-            entity.HasIndex(item => item.NormalizedSku).IsUnique();
-            entity.HasIndex(item => item.FinishedKitProductId).IsUnique();
+            entity.HasIndex(item => item.NormalizedSku).IsUnique().HasFilter("finished_kit_product_id IS NULL");
+            entity.HasIndex(item => item.FinishedKitProductId);
             entity.HasIndex(item => item.SampleTypeAnchorId);
             entity.HasOne<SampleTypeDefinition>().WithMany().HasForeignKey(item => item.SampleTypeAnchorId)
                 .OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_transportation_kit_sample_type_anchor");
@@ -35,7 +35,13 @@ public static class SampleShippingContainerModelConfiguration
             entity.HasKey(item => item.Id);
             entity.HasIndex(item => new { item.ContainerTypeId, item.Revision }).IsUnique();
             entity.HasIndex(item => item.SupersedesDefinitionId).IsUnique();
+            entity.HasIndex(item => item.SampleTypeAnchorId);
+            entity.HasIndex(item => item.ContainerTypeId).IsUnique().HasFilter("lifecycle = 'Draft'")
+                .HasDatabaseName("ux_shipping_spec_one_draft");
             entity.HasIndex(item => new { item.IsActive, item.EffectiveFrom, item.EffectiveTo });
+            entity.Property(item => item.Lifecycle).HasConversion<string>().HasMaxLength(24);
+            entity.HasOne<SampleTypeDefinition>().WithMany().HasForeignKey(item => item.SampleTypeAnchorId)
+                .OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_shipping_spec_sample_type_anchor");
             entity.HasOne<PSeq.Operations.Laboratory.Domain.LabKitAssemblyWorkflowRevision>().WithMany().HasForeignKey(item => item.AssemblyWorkflowRevisionId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_shipping_spec_assembly_workflow_revision");
             entity.Property(item => item.CommonName).HasMaxLength(255).IsRequired();
             entity.Property(item => item.SupplierName).HasMaxLength(255);
@@ -88,6 +94,10 @@ public static class SampleShippingContainerModelConfiguration
             entity.Property(item => item.TubeLotNumber).HasMaxLength(100);
             entity.Property(item => item.ProductExpirySnapshotJson).HasColumnType("jsonb");
             entity.Property(item => item.WithdrawalReason).HasMaxLength(1000);
+            entity.Property(item => item.PurchasedKitReceiptReference).HasMaxLength(100);
+            entity.Property(item => item.SupplierKitLotNumber).HasMaxLength(100);
+            entity.HasOne<User>().WithMany().HasForeignKey(item => item.PurchasedKitReceivedByUserId)
+                .OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_shipping_stock_kit_purchased_receipt_actor");
             entity.HasOne<PSeq.Operations.Commercial.Accounts.Domain.User>().WithMany()
                 .HasForeignKey(item => item.WithdrawnByUserId).OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("fk_stock_kit_withdraw_actor");

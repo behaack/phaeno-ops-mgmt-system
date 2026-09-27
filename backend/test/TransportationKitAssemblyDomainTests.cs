@@ -6,11 +6,31 @@ using PSeq.Operations.Laboratory.Domain;
 public sealed class TransportationKitAssemblyDomainTests
 {
     [Fact]
+    public void WorkflowTitleChangesWithoutAdvancingRevisionAndDiscardRetainsItsNumber()
+    {
+        var workflow = new LabKitAssemblyWorkflow(Guid.NewGuid(), "  Total RNA kit assembly  ");
+        var draft = new LabKitAssemblyWorkflowRevision(workflow.Id, 1,
+            [new(Guid.NewGuid(), "Pack", "Pack the tubes.")], Guid.NewGuid(), DateTime.UtcNow);
+
+        Assert.Equal("Total RNA kit assembly", workflow.Name);
+        Assert.Throws<ArgumentException>(() => workflow.SetName(" "));
+        Assert.Throws<ArgumentException>(() => workflow.SetName(new string('x', 161)));
+        workflow.SetName("RNA shipping assembly");
+        Assert.Equal("RNA shipping assembly", workflow.Name);
+        Assert.Equal(1, workflow.LatestRevision);
+
+        draft.Discard();
+        Assert.Equal(LabKitAssemblyRevisionStatus.Discarded, draft.Status);
+        Assert.Throws<InvalidOperationException>(draft.Discard);
+        Assert.Equal(2, workflow.NextRevision());
+    }
+
+    [Fact]
     public void WorkflowApprovalPinsAnIndependentReviewAndOrderedProcedure()
     {
         var author = Guid.NewGuid();
         var step = new LabKitAssemblyStep(Guid.NewGuid(), "Pack tubes", "Place scanned tubes in the shipper.");
-        var workflow = new LabKitAssemblyWorkflow(Guid.NewGuid());
+        var workflow = new LabKitAssemblyWorkflow(Guid.NewGuid(), "Total RNA kit assembly");
         var revision = new LabKitAssemblyWorkflowRevision(workflow.Id, 1, [step], author, DateTime.UtcNow);
         revision.Components.Add(new LabKitAssemblyComponent(revision.Id, Guid.NewGuid(), 2, "Tube", 0));
 
@@ -41,7 +61,7 @@ public sealed class TransportationKitAssemblyDomainTests
     public void PlatformAdministratorOverrideRequiresAReason()
     {
         var author = Guid.NewGuid();
-        var workflow = new LabKitAssemblyWorkflow(Guid.NewGuid());
+        var workflow = new LabKitAssemblyWorkflow(Guid.NewGuid(), "Total RNA kit assembly");
         var revision = new LabKitAssemblyWorkflowRevision(workflow.Id, 1,
             [new(Guid.NewGuid(), "Pack", "Pack the tubes.")], author, DateTime.UtcNow);
         revision.Components.Add(new LabKitAssemblyComponent(revision.Id, Guid.NewGuid(), 1, "Tube", 0));

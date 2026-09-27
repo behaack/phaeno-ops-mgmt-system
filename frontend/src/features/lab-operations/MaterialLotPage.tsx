@@ -17,13 +17,13 @@ export function MaterialLotPage({ materialLotId }: { materialLotId: string }) {
   const allowed = Boolean(session?.capabilities.canManageLabOperations)
   const query = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: allowed && authProvider !== 'mock' })
   const lot = query.data?.materialLots.find(item => item.id === materialLotId)
-  return <main className="page-wrap space-y-5 px-4 py-8">
-    <Link to="/lab-operations" search={{ section: 'materials' }} className="text-sm text-primary underline underline-offset-4">Back to Purchased Materials</Link>
+  return <div className="space-y-5">
+    <Link to="/purchasing" search={{ section: 'materials' }} className="text-sm text-primary underline underline-offset-4">← Back to purchased materials</Link>
     {!allowed ? <p>You do not have access to laboratory materials.</p> : authProvider === 'mock' ? <p>Use a connected Phaeno session to view material lots.</p> : <>
       {query.isError ? <Alert variant="destructive"><AlertTitle>Material lot could not be refreshed</AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Try again to load the latest lot details.')}<Button variant="outline" onClick={() => void query.refetch()}>Try again</Button></AlertDescription></Alert> : null}
       {query.isPending ? <p role="status">Loading material lot…</p> : lot ? <>
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0"><h1 className="text-2xl font-semibold wrap-anywhere">{lot.name} · {lot.lotNumber}</h1><p className="mt-1 text-sm text-muted-foreground">{lot.kind === 'PreparedReagent' ? 'Prepared reagent' : 'Supplier lot'}</p></div>
+          <div className="min-w-0"><h2 className="text-2xl font-semibold wrap-anywhere">{lot.name} · {lot.lotNumber}</h2><p className="mt-1 text-sm text-muted-foreground">{lot.kind === 'PreparedReagent' ? 'Prepared reagent' : 'Supplier lot'}</p></div>
           <PreparationActions items={[
             ...((session?.capabilities.canSuperviseLabWork || session?.capabilities.canManageLabAccess) && lot.quantityHoldReason ? [{ label: 'Reconcile quantity', onClick: () => setReconciling(true) }] : []),
             { label: query.isFetching ? 'Refreshing…' : 'Refresh', disabled: query.isFetching, onClick: () => void query.refetch() },
@@ -53,7 +53,7 @@ export function MaterialLotPage({ materialLotId }: { materialLotId: string }) {
         </PreparationPanel>
         {lot.kind === 'PreparedReagent' || lot.components.length > 0 ? <PreparationPanel title="Source component lots" description="The source lots and quantities recorded when this reagent was prepared.">
           {lot.components.length ? <ul className="divide-y">{lot.components.map(component => <li key={component.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
-            <div className="min-w-0"><Link to="/lab-operations/materials/$materialLotId" params={{ materialLotId: component.componentMaterialLotId }} search={{ section: 'materials' }} className="font-medium text-primary underline underline-offset-4 wrap-anywhere">{component.materialName} · {component.lotNumber}</Link><p className="mt-1 text-sm text-muted-foreground">{component.materialKey}</p></div>
+            <div className="min-w-0"><Link to="/purchasing/materials/$materialLotId" params={{ materialLotId: component.componentMaterialLotId }} className="font-medium text-primary underline underline-offset-4 wrap-anywhere">{component.materialName} · {component.lotNumber}</Link><p className="mt-1 text-sm text-muted-foreground">{component.materialKey}</p></div>
             <p className="text-sm">{component.quantity} {component.quantityUnit}</p>
           </li>)}</ul> : <p className="text-sm text-muted-foreground">No source component lots were recorded.</p>}
         </PreparationPanel> : null}
@@ -61,7 +61,7 @@ export function MaterialLotPage({ materialLotId }: { materialLotId: string }) {
         {assigning ? <MaterialLotProductDialog lot={lot} onClose={() => setAssigning(false)} /> : null}
       </> : !query.isError ? <p role="status">Material lot not found.</p> : null}
     </>}
-  </main>
+  </div>
 }
 
 function LotFact({ label, children }: { label: string; children: ReactNode }) {

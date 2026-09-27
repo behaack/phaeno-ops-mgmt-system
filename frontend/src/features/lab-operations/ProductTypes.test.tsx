@@ -37,7 +37,7 @@ describe('product type management', () => {
 
   it('shows the seeded Reagent type without edit or deactivate actions', () => {
     mount(productTypesFixture[2].id)
-    expect(screen.getByText(/Built-in Phaeno product type/)).toBeTruthy()
+    expect(screen.getByText(/Built-in product type/)).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Actions for Reagent' })).toBeNull()
   })
 

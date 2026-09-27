@@ -14,6 +14,7 @@ import { Route as SampleShippingSettingsRouteImport } from './routes/sample-ship
 import { Route as SampleShippingRouteImport } from './routes/sample-shipping'
 import { Route as ReleasedDeliverablesRouteImport } from './routes/released-deliverables'
 import { Route as ReagentOrdersRouteImport } from './routes/reagent-orders'
+import { Route as PurchasingRouteImport } from './routes/purchasing'
 import { Route as PhaenoUsersRouteImport } from './routes/phaeno-users'
 import { Route as OrderOperationsRouteImport } from './routes/order-operations'
 import { Route as OrderConfigurationRouteImport } from './routes/order-configuration'
@@ -21,6 +22,7 @@ import { Route as LabServicesRouteImport } from './routes/lab-services'
 import { Route as LabOperationsRouteImport } from './routes/lab-operations'
 import { Route as LabConfigurationRouteImport } from './routes/lab-configuration'
 import { Route as FileManagementRouteImport } from './routes/file-management'
+import { Route as EquipmentRouteImport } from './routes/equipment'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DepartmentsRouteImport } from './routes/departments'
 import { Route as DeliveryLocationsRouteImport } from './routes/delivery-locations'
@@ -59,11 +61,14 @@ import { Route as CrmCompaniesRouteImport } from './routes/crm.companies'
 import { Route as CrmAdministrationRouteImport } from './routes/crm.administration'
 import { Route as TrialProjectsTrialIdScopeRouteImport } from './routes/trial-projects.$trialId.scope'
 import { Route as SampleShippingShipmentIdPacketRouteImport } from './routes/sample-shipping.$shipmentId.packet'
+import { Route as SampleShippingSettingsKitSpecificationsContainerIdRouteImport } from './routes/sample-shipping-settings_.kit-specifications.$containerId'
 import { Route as ReagentOrdersOrderIdEditRouteImport } from './routes/reagent-orders.$orderId.edit'
+import { Route as PurchasingSuppliersSupplierIdRouteImport } from './routes/purchasing.suppliers.$supplierId'
+import { Route as PurchasingProductTypesProductTypeIdRouteImport } from './routes/purchasing.product-types.$productTypeId'
+import { Route as PurchasingMaterialsMaterialLotIdRouteImport } from './routes/purchasing.materials.$materialLotId'
 import { Route as OrderOperationsResultPackagesPackageIdRouteImport } from './routes/order-operations.result-packages.$packageId'
 import { Route as OrderOperationsIntakeOrderIdRouteImport } from './routes/order-operations.intake.$orderId'
 import { Route as OrderOperationsWorkflowOrderIdRouteImport } from './routes/order-operations.$workflow.$orderId'
-import { Route as OrderConfigurationShippingContainersContainerIdRouteImport } from './routes/order-configuration.shipping-containers.$containerId'
 import { Route as OrderConfigurationSampleTypesSampleTypeIdRouteImport } from './routes/order-configuration.sample-types.$sampleTypeId'
 import { Route as OrderConfigurationCatalogCatalogItemIdRouteImport } from './routes/order-configuration.catalog.$catalogItemId'
 import { Route as LabServicesOrderIdEditRouteImport } from './routes/lab-services.$orderId.edit'
@@ -87,6 +92,7 @@ import { Route as CrmOpportunitiesOpportunityIdRouteImport } from './routes/crm.
 import { Route as CrmLeadsLeadIdRouteImport } from './routes/crm.leads_.$leadId'
 import { Route as CrmContactsContactIdRouteImport } from './routes/crm.contacts_.$contactId'
 import { Route as CrmCompaniesCompanyIdRouteImport } from './routes/crm.companies_.$companyId'
+import { Route as PurchasingProductsSupplierIdProductIdRouteImport } from './routes/purchasing.products.$supplierId.$productId'
 import { Route as OrderOperationsFinanceKindRecordIdRouteImport } from './routes/order-operations.finance.$kind.$recordId'
 import { Route as LabOperationsStepsStepIdEditRouteImport } from './routes/lab-operations.steps.$stepId.edit'
 import { Route as LabOperationsWorkOrderIdSpecimensSpecimenIdRouteImport } from './routes/lab-operations.$workOrderId_.specimens.$specimenId'
@@ -122,6 +128,11 @@ const ReagentOrdersRoute = ReagentOrdersRouteImport.update({
   path: '/reagent-orders',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PurchasingRoute = PurchasingRouteImport.update({
+  id: '/purchasing',
+  path: '/purchasing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PhaenoUsersRoute = PhaenoUsersRouteImport.update({
   id: '/phaeno-users',
   path: '/phaeno-users',
@@ -155,6 +166,11 @@ const LabConfigurationRoute = LabConfigurationRouteImport.update({
 const FileManagementRoute = FileManagementRouteImport.update({
   id: '/file-management',
   path: '/file-management',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EquipmentRoute = EquipmentRouteImport.update({
+  id: '/equipment',
+  path: '/equipment',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DocsRoute = DocsRouteImport.update({
@@ -354,11 +370,35 @@ const SampleShippingShipmentIdPacketRoute =
     path: '/packet',
     getParentRoute: () => SampleShippingShipmentIdRoute,
   } as any)
+const SampleShippingSettingsKitSpecificationsContainerIdRoute =
+  SampleShippingSettingsKitSpecificationsContainerIdRouteImport.update({
+    id: '/sample-shipping-settings_/kit-specifications/$containerId',
+    path: '/sample-shipping-settings/kit-specifications/$containerId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ReagentOrdersOrderIdEditRoute =
   ReagentOrdersOrderIdEditRouteImport.update({
     id: '/edit',
     path: '/edit',
     getParentRoute: () => ReagentOrdersOrderIdRoute,
+  } as any)
+const PurchasingSuppliersSupplierIdRoute =
+  PurchasingSuppliersSupplierIdRouteImport.update({
+    id: '/suppliers/$supplierId',
+    path: '/suppliers/$supplierId',
+    getParentRoute: () => PurchasingRoute,
+  } as any)
+const PurchasingProductTypesProductTypeIdRoute =
+  PurchasingProductTypesProductTypeIdRouteImport.update({
+    id: '/product-types/$productTypeId',
+    path: '/product-types/$productTypeId',
+    getParentRoute: () => PurchasingRoute,
+  } as any)
+const PurchasingMaterialsMaterialLotIdRoute =
+  PurchasingMaterialsMaterialLotIdRouteImport.update({
+    id: '/materials/$materialLotId',
+    path: '/materials/$materialLotId',
+    getParentRoute: () => PurchasingRoute,
   } as any)
 const OrderOperationsResultPackagesPackageIdRoute =
   OrderOperationsResultPackagesPackageIdRouteImport.update({
@@ -377,12 +417,6 @@ const OrderOperationsWorkflowOrderIdRoute =
     id: '/$workflow/$orderId',
     path: '/$workflow/$orderId',
     getParentRoute: () => OrderOperationsRoute,
-  } as any)
-const OrderConfigurationShippingContainersContainerIdRoute =
-  OrderConfigurationShippingContainersContainerIdRouteImport.update({
-    id: '/shipping-containers/$containerId',
-    path: '/shipping-containers/$containerId',
-    getParentRoute: () => OrderConfigurationRoute,
   } as any)
 const OrderConfigurationSampleTypesSampleTypeIdRoute =
   OrderConfigurationSampleTypesSampleTypeIdRouteImport.update({
@@ -517,6 +551,12 @@ const CrmCompaniesCompanyIdRoute = CrmCompaniesCompanyIdRouteImport.update({
   path: '/companies/$companyId',
   getParentRoute: () => CrmRoute,
 } as any)
+const PurchasingProductsSupplierIdProductIdRoute =
+  PurchasingProductsSupplierIdProductIdRouteImport.update({
+    id: '/products/$supplierId/$productId',
+    path: '/products/$supplierId/$productId',
+    getParentRoute: () => PurchasingRoute,
+  } as any)
 const OrderOperationsFinanceKindRecordIdRoute =
   OrderOperationsFinanceKindRecordIdRouteImport.update({
     id: '/finance/$kind/$recordId',
@@ -586,6 +626,7 @@ export interface FileRoutesByFullPath {
   '/delivery-locations': typeof DeliveryLocationsRouteWithChildren
   '/departments': typeof DepartmentsRoute
   '/docs': typeof DocsRouteWithChildren
+  '/equipment': typeof EquipmentRoute
   '/file-management': typeof FileManagementRoute
   '/lab-configuration': typeof LabConfigurationRoute
   '/lab-operations': typeof LabOperationsRouteWithChildren
@@ -593,6 +634,7 @@ export interface FileRoutesByFullPath {
   '/order-configuration': typeof OrderConfigurationRouteWithChildren
   '/order-operations': typeof OrderOperationsRouteWithChildren
   '/phaeno-users': typeof PhaenoUsersRoute
+  '/purchasing': typeof PurchasingRouteWithChildren
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/released-deliverables': typeof ReleasedDeliverablesRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
@@ -646,17 +688,21 @@ export interface FileRoutesByFullPath {
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-configuration/catalog/$catalogItemId': typeof OrderConfigurationCatalogCatalogItemIdRoute
   '/order-configuration/sample-types/$sampleTypeId': typeof OrderConfigurationSampleTypesSampleTypeIdRoute
-  '/order-configuration/shipping-containers/$containerId': typeof OrderConfigurationShippingContainersContainerIdRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
   '/order-operations/result-packages/$packageId': typeof OrderOperationsResultPackagesPackageIdRoute
+  '/purchasing/materials/$materialLotId': typeof PurchasingMaterialsMaterialLotIdRoute
+  '/purchasing/product-types/$productTypeId': typeof PurchasingProductTypesProductTypeIdRoute
+  '/purchasing/suppliers/$supplierId': typeof PurchasingSuppliersSupplierIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
+  '/sample-shipping-settings/kit-specifications/$containerId': typeof SampleShippingSettingsKitSpecificationsContainerIdRoute
   '/sample-shipping/$shipmentId/packet': typeof SampleShippingShipmentIdPacketRoute
   '/trial-projects/$trialId/scope': typeof TrialProjectsTrialIdScopeRoute
   '/lab-operations/$workOrderId/containers/$containerId': typeof LabOperationsWorkOrderIdContainersContainerIdRoute
   '/lab-operations/$workOrderId/specimens/$specimenId': typeof LabOperationsWorkOrderIdSpecimensSpecimenIdRoute
   '/lab-operations/steps/$stepId/edit': typeof LabOperationsStepsStepIdEditRoute
   '/order-operations/finance/$kind/$recordId': typeof OrderOperationsFinanceKindRecordIdRoute
+  '/purchasing/products/$supplierId/$productId': typeof PurchasingProductsSupplierIdProductIdRoute
   '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   '/lab-operations/workflows/$workflowId/versions/new': typeof LabOperationsWorkflowsWorkflowIdVersionsNewRoute
   '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
@@ -675,6 +721,7 @@ export interface FileRoutesByTo {
   '/delivery-locations': typeof DeliveryLocationsRouteWithChildren
   '/departments': typeof DepartmentsRoute
   '/docs': typeof DocsRouteWithChildren
+  '/equipment': typeof EquipmentRoute
   '/file-management': typeof FileManagementRoute
   '/lab-configuration': typeof LabConfigurationRoute
   '/lab-operations': typeof LabOperationsRouteWithChildren
@@ -682,6 +729,7 @@ export interface FileRoutesByTo {
   '/order-configuration': typeof OrderConfigurationRouteWithChildren
   '/order-operations': typeof OrderOperationsRouteWithChildren
   '/phaeno-users': typeof PhaenoUsersRoute
+  '/purchasing': typeof PurchasingRouteWithChildren
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/released-deliverables': typeof ReleasedDeliverablesRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
@@ -735,17 +783,21 @@ export interface FileRoutesByTo {
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-configuration/catalog/$catalogItemId': typeof OrderConfigurationCatalogCatalogItemIdRoute
   '/order-configuration/sample-types/$sampleTypeId': typeof OrderConfigurationSampleTypesSampleTypeIdRoute
-  '/order-configuration/shipping-containers/$containerId': typeof OrderConfigurationShippingContainersContainerIdRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
   '/order-operations/result-packages/$packageId': typeof OrderOperationsResultPackagesPackageIdRoute
+  '/purchasing/materials/$materialLotId': typeof PurchasingMaterialsMaterialLotIdRoute
+  '/purchasing/product-types/$productTypeId': typeof PurchasingProductTypesProductTypeIdRoute
+  '/purchasing/suppliers/$supplierId': typeof PurchasingSuppliersSupplierIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
+  '/sample-shipping-settings/kit-specifications/$containerId': typeof SampleShippingSettingsKitSpecificationsContainerIdRoute
   '/sample-shipping/$shipmentId/packet': typeof SampleShippingShipmentIdPacketRoute
   '/trial-projects/$trialId/scope': typeof TrialProjectsTrialIdScopeRoute
   '/lab-operations/$workOrderId/containers/$containerId': typeof LabOperationsWorkOrderIdContainersContainerIdRoute
   '/lab-operations/$workOrderId/specimens/$specimenId': typeof LabOperationsWorkOrderIdSpecimensSpecimenIdRoute
   '/lab-operations/steps/$stepId/edit': typeof LabOperationsStepsStepIdEditRoute
   '/order-operations/finance/$kind/$recordId': typeof OrderOperationsFinanceKindRecordIdRoute
+  '/purchasing/products/$supplierId/$productId': typeof PurchasingProductsSupplierIdProductIdRoute
   '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   '/lab-operations/workflows/$workflowId/versions/new': typeof LabOperationsWorkflowsWorkflowIdVersionsNewRoute
   '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
@@ -765,6 +817,7 @@ export interface FileRoutesById {
   '/delivery-locations': typeof DeliveryLocationsRouteWithChildren
   '/departments': typeof DepartmentsRoute
   '/docs': typeof DocsRouteWithChildren
+  '/equipment': typeof EquipmentRoute
   '/file-management': typeof FileManagementRoute
   '/lab-configuration': typeof LabConfigurationRoute
   '/lab-operations': typeof LabOperationsRouteWithChildren
@@ -772,6 +825,7 @@ export interface FileRoutesById {
   '/order-configuration': typeof OrderConfigurationRouteWithChildren
   '/order-operations': typeof OrderOperationsRouteWithChildren
   '/phaeno-users': typeof PhaenoUsersRoute
+  '/purchasing': typeof PurchasingRouteWithChildren
   '/reagent-orders': typeof ReagentOrdersRouteWithChildren
   '/released-deliverables': typeof ReleasedDeliverablesRouteWithChildren
   '/sample-shipping': typeof SampleShippingRouteWithChildren
@@ -825,17 +879,21 @@ export interface FileRoutesById {
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-configuration/catalog/$catalogItemId': typeof OrderConfigurationCatalogCatalogItemIdRoute
   '/order-configuration/sample-types/$sampleTypeId': typeof OrderConfigurationSampleTypesSampleTypeIdRoute
-  '/order-configuration/shipping-containers/$containerId': typeof OrderConfigurationShippingContainersContainerIdRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
   '/order-operations/result-packages/$packageId': typeof OrderOperationsResultPackagesPackageIdRoute
+  '/purchasing/materials/$materialLotId': typeof PurchasingMaterialsMaterialLotIdRoute
+  '/purchasing/product-types/$productTypeId': typeof PurchasingProductTypesProductTypeIdRoute
+  '/purchasing/suppliers/$supplierId': typeof PurchasingSuppliersSupplierIdRoute
   '/reagent-orders/$orderId/edit': typeof ReagentOrdersOrderIdEditRoute
+  '/sample-shipping-settings_/kit-specifications/$containerId': typeof SampleShippingSettingsKitSpecificationsContainerIdRoute
   '/sample-shipping/$shipmentId/packet': typeof SampleShippingShipmentIdPacketRoute
   '/trial-projects/$trialId/scope': typeof TrialProjectsTrialIdScopeRoute
   '/lab-operations/$workOrderId_/containers/$containerId': typeof LabOperationsWorkOrderIdContainersContainerIdRoute
   '/lab-operations/$workOrderId_/specimens/$specimenId': typeof LabOperationsWorkOrderIdSpecimensSpecimenIdRoute
   '/lab-operations/steps/$stepId/edit': typeof LabOperationsStepsStepIdEditRoute
   '/order-operations/finance/$kind/$recordId': typeof OrderOperationsFinanceKindRecordIdRoute
+  '/purchasing/products/$supplierId/$productId': typeof PurchasingProductsSupplierIdProductIdRoute
   '/lab-operations/protocols/$protocolId/versions/new': typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
   '/lab-operations/workflows/$workflowId/versions/new': typeof LabOperationsWorkflowsWorkflowIdVersionsNewRoute
   '/lab-operations/protocols/$protocolId/versions/$versionId/edit': typeof LabOperationsProtocolsProtocolIdVersionsVersionIdEditRoute
@@ -856,6 +914,7 @@ export interface FileRouteTypes {
     | '/delivery-locations'
     | '/departments'
     | '/docs'
+    | '/equipment'
     | '/file-management'
     | '/lab-configuration'
     | '/lab-operations'
@@ -863,6 +922,7 @@ export interface FileRouteTypes {
     | '/order-configuration'
     | '/order-operations'
     | '/phaeno-users'
+    | '/purchasing'
     | '/reagent-orders'
     | '/released-deliverables'
     | '/sample-shipping'
@@ -916,17 +976,21 @@ export interface FileRouteTypes {
     | '/lab-services/$orderId/edit'
     | '/order-configuration/catalog/$catalogItemId'
     | '/order-configuration/sample-types/$sampleTypeId'
-    | '/order-configuration/shipping-containers/$containerId'
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
     | '/order-operations/result-packages/$packageId'
+    | '/purchasing/materials/$materialLotId'
+    | '/purchasing/product-types/$productTypeId'
+    | '/purchasing/suppliers/$supplierId'
     | '/reagent-orders/$orderId/edit'
+    | '/sample-shipping-settings/kit-specifications/$containerId'
     | '/sample-shipping/$shipmentId/packet'
     | '/trial-projects/$trialId/scope'
     | '/lab-operations/$workOrderId/containers/$containerId'
     | '/lab-operations/$workOrderId/specimens/$specimenId'
     | '/lab-operations/steps/$stepId/edit'
     | '/order-operations/finance/$kind/$recordId'
+    | '/purchasing/products/$supplierId/$productId'
     | '/lab-operations/protocols/$protocolId/versions/new'
     | '/lab-operations/workflows/$workflowId/versions/new'
     | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
@@ -945,6 +1009,7 @@ export interface FileRouteTypes {
     | '/delivery-locations'
     | '/departments'
     | '/docs'
+    | '/equipment'
     | '/file-management'
     | '/lab-configuration'
     | '/lab-operations'
@@ -952,6 +1017,7 @@ export interface FileRouteTypes {
     | '/order-configuration'
     | '/order-operations'
     | '/phaeno-users'
+    | '/purchasing'
     | '/reagent-orders'
     | '/released-deliverables'
     | '/sample-shipping'
@@ -1005,17 +1071,21 @@ export interface FileRouteTypes {
     | '/lab-services/$orderId/edit'
     | '/order-configuration/catalog/$catalogItemId'
     | '/order-configuration/sample-types/$sampleTypeId'
-    | '/order-configuration/shipping-containers/$containerId'
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
     | '/order-operations/result-packages/$packageId'
+    | '/purchasing/materials/$materialLotId'
+    | '/purchasing/product-types/$productTypeId'
+    | '/purchasing/suppliers/$supplierId'
     | '/reagent-orders/$orderId/edit'
+    | '/sample-shipping-settings/kit-specifications/$containerId'
     | '/sample-shipping/$shipmentId/packet'
     | '/trial-projects/$trialId/scope'
     | '/lab-operations/$workOrderId/containers/$containerId'
     | '/lab-operations/$workOrderId/specimens/$specimenId'
     | '/lab-operations/steps/$stepId/edit'
     | '/order-operations/finance/$kind/$recordId'
+    | '/purchasing/products/$supplierId/$productId'
     | '/lab-operations/protocols/$protocolId/versions/new'
     | '/lab-operations/workflows/$workflowId/versions/new'
     | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
@@ -1034,6 +1104,7 @@ export interface FileRouteTypes {
     | '/delivery-locations'
     | '/departments'
     | '/docs'
+    | '/equipment'
     | '/file-management'
     | '/lab-configuration'
     | '/lab-operations'
@@ -1041,6 +1112,7 @@ export interface FileRouteTypes {
     | '/order-configuration'
     | '/order-operations'
     | '/phaeno-users'
+    | '/purchasing'
     | '/reagent-orders'
     | '/released-deliverables'
     | '/sample-shipping'
@@ -1094,17 +1166,21 @@ export interface FileRouteTypes {
     | '/lab-services/$orderId/edit'
     | '/order-configuration/catalog/$catalogItemId'
     | '/order-configuration/sample-types/$sampleTypeId'
-    | '/order-configuration/shipping-containers/$containerId'
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
     | '/order-operations/result-packages/$packageId'
+    | '/purchasing/materials/$materialLotId'
+    | '/purchasing/product-types/$productTypeId'
+    | '/purchasing/suppliers/$supplierId'
     | '/reagent-orders/$orderId/edit'
+    | '/sample-shipping-settings_/kit-specifications/$containerId'
     | '/sample-shipping/$shipmentId/packet'
     | '/trial-projects/$trialId/scope'
     | '/lab-operations/$workOrderId_/containers/$containerId'
     | '/lab-operations/$workOrderId_/specimens/$specimenId'
     | '/lab-operations/steps/$stepId/edit'
     | '/order-operations/finance/$kind/$recordId'
+    | '/purchasing/products/$supplierId/$productId'
     | '/lab-operations/protocols/$protocolId/versions/new'
     | '/lab-operations/workflows/$workflowId/versions/new'
     | '/lab-operations/protocols/$protocolId/versions/$versionId/edit'
@@ -1124,6 +1200,7 @@ export interface RootRouteChildren {
   DeliveryLocationsRoute: typeof DeliveryLocationsRouteWithChildren
   DepartmentsRoute: typeof DepartmentsRoute
   DocsRoute: typeof DocsRouteWithChildren
+  EquipmentRoute: typeof EquipmentRoute
   FileManagementRoute: typeof FileManagementRoute
   LabConfigurationRoute: typeof LabConfigurationRoute
   LabOperationsRoute: typeof LabOperationsRouteWithChildren
@@ -1131,6 +1208,7 @@ export interface RootRouteChildren {
   OrderConfigurationRoute: typeof OrderConfigurationRouteWithChildren
   OrderOperationsRoute: typeof OrderOperationsRouteWithChildren
   PhaenoUsersRoute: typeof PhaenoUsersRoute
+  PurchasingRoute: typeof PurchasingRouteWithChildren
   ReagentOrdersRoute: typeof ReagentOrdersRouteWithChildren
   ReleasedDeliverablesRoute: typeof ReleasedDeliverablesRouteWithChildren
   SampleShippingRoute: typeof SampleShippingRouteWithChildren
@@ -1138,6 +1216,7 @@ export interface RootRouteChildren {
   TrialProjectsRoute: typeof TrialProjectsRouteWithChildren
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
   SessionTasksSetupMfaRoute: typeof SessionTasksSetupMfaRoute
+  SampleShippingSettingsKitSpecificationsContainerIdRoute: typeof SampleShippingSettingsKitSpecificationsContainerIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1175,6 +1254,13 @@ declare module '@tanstack/react-router' {
       path: '/reagent-orders'
       fullPath: '/reagent-orders'
       preLoaderRoute: typeof ReagentOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/purchasing': {
+      id: '/purchasing'
+      path: '/purchasing'
+      fullPath: '/purchasing'
+      preLoaderRoute: typeof PurchasingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/phaeno-users': {
@@ -1224,6 +1310,13 @@ declare module '@tanstack/react-router' {
       path: '/file-management'
       fullPath: '/file-management'
       preLoaderRoute: typeof FileManagementRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/equipment': {
+      id: '/equipment'
+      path: '/equipment'
+      fullPath: '/equipment'
+      preLoaderRoute: typeof EquipmentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/docs': {
@@ -1492,12 +1585,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SampleShippingShipmentIdPacketRouteImport
       parentRoute: typeof SampleShippingShipmentIdRoute
     }
+    '/sample-shipping-settings_/kit-specifications/$containerId': {
+      id: '/sample-shipping-settings_/kit-specifications/$containerId'
+      path: '/sample-shipping-settings/kit-specifications/$containerId'
+      fullPath: '/sample-shipping-settings/kit-specifications/$containerId'
+      preLoaderRoute: typeof SampleShippingSettingsKitSpecificationsContainerIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reagent-orders/$orderId/edit': {
       id: '/reagent-orders/$orderId/edit'
       path: '/edit'
       fullPath: '/reagent-orders/$orderId/edit'
       preLoaderRoute: typeof ReagentOrdersOrderIdEditRouteImport
       parentRoute: typeof ReagentOrdersOrderIdRoute
+    }
+    '/purchasing/suppliers/$supplierId': {
+      id: '/purchasing/suppliers/$supplierId'
+      path: '/suppliers/$supplierId'
+      fullPath: '/purchasing/suppliers/$supplierId'
+      preLoaderRoute: typeof PurchasingSuppliersSupplierIdRouteImport
+      parentRoute: typeof PurchasingRoute
+    }
+    '/purchasing/product-types/$productTypeId': {
+      id: '/purchasing/product-types/$productTypeId'
+      path: '/product-types/$productTypeId'
+      fullPath: '/purchasing/product-types/$productTypeId'
+      preLoaderRoute: typeof PurchasingProductTypesProductTypeIdRouteImport
+      parentRoute: typeof PurchasingRoute
+    }
+    '/purchasing/materials/$materialLotId': {
+      id: '/purchasing/materials/$materialLotId'
+      path: '/materials/$materialLotId'
+      fullPath: '/purchasing/materials/$materialLotId'
+      preLoaderRoute: typeof PurchasingMaterialsMaterialLotIdRouteImport
+      parentRoute: typeof PurchasingRoute
     }
     '/order-operations/result-packages/$packageId': {
       id: '/order-operations/result-packages/$packageId'
@@ -1519,13 +1640,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/order-operations/$workflow/$orderId'
       preLoaderRoute: typeof OrderOperationsWorkflowOrderIdRouteImport
       parentRoute: typeof OrderOperationsRoute
-    }
-    '/order-configuration/shipping-containers/$containerId': {
-      id: '/order-configuration/shipping-containers/$containerId'
-      path: '/shipping-containers/$containerId'
-      fullPath: '/order-configuration/shipping-containers/$containerId'
-      preLoaderRoute: typeof OrderConfigurationShippingContainersContainerIdRouteImport
-      parentRoute: typeof OrderConfigurationRoute
     }
     '/order-configuration/sample-types/$sampleTypeId': {
       id: '/order-configuration/sample-types/$sampleTypeId'
@@ -1687,6 +1801,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/crm/companies/$companyId'
       preLoaderRoute: typeof CrmCompaniesCompanyIdRouteImport
       parentRoute: typeof CrmRoute
+    }
+    '/purchasing/products/$supplierId/$productId': {
+      id: '/purchasing/products/$supplierId/$productId'
+      path: '/products/$supplierId/$productId'
+      fullPath: '/purchasing/products/$supplierId/$productId'
+      preLoaderRoute: typeof PurchasingProductsSupplierIdProductIdRouteImport
+      parentRoute: typeof PurchasingRoute
     }
     '/order-operations/finance/$kind/$recordId': {
       id: '/order-operations/finance/$kind/$recordId'
@@ -1979,7 +2100,6 @@ const LabServicesRouteWithChildren = LabServicesRoute._addFileChildren(
 interface OrderConfigurationRouteChildren {
   OrderConfigurationCatalogCatalogItemIdRoute: typeof OrderConfigurationCatalogCatalogItemIdRoute
   OrderConfigurationSampleTypesSampleTypeIdRoute: typeof OrderConfigurationSampleTypesSampleTypeIdRoute
-  OrderConfigurationShippingContainersContainerIdRoute: typeof OrderConfigurationShippingContainersContainerIdRoute
 }
 
 const OrderConfigurationRouteChildren: OrderConfigurationRouteChildren = {
@@ -1987,8 +2107,6 @@ const OrderConfigurationRouteChildren: OrderConfigurationRouteChildren = {
     OrderConfigurationCatalogCatalogItemIdRoute,
   OrderConfigurationSampleTypesSampleTypeIdRoute:
     OrderConfigurationSampleTypesSampleTypeIdRoute,
-  OrderConfigurationShippingContainersContainerIdRoute:
-    OrderConfigurationShippingContainersContainerIdRoute,
 }
 
 const OrderConfigurationRouteWithChildren =
@@ -2012,6 +2130,26 @@ const OrderOperationsRouteChildren: OrderOperationsRouteChildren = {
 
 const OrderOperationsRouteWithChildren = OrderOperationsRoute._addFileChildren(
   OrderOperationsRouteChildren,
+)
+
+interface PurchasingRouteChildren {
+  PurchasingMaterialsMaterialLotIdRoute: typeof PurchasingMaterialsMaterialLotIdRoute
+  PurchasingProductTypesProductTypeIdRoute: typeof PurchasingProductTypesProductTypeIdRoute
+  PurchasingSuppliersSupplierIdRoute: typeof PurchasingSuppliersSupplierIdRoute
+  PurchasingProductsSupplierIdProductIdRoute: typeof PurchasingProductsSupplierIdProductIdRoute
+}
+
+const PurchasingRouteChildren: PurchasingRouteChildren = {
+  PurchasingMaterialsMaterialLotIdRoute: PurchasingMaterialsMaterialLotIdRoute,
+  PurchasingProductTypesProductTypeIdRoute:
+    PurchasingProductTypesProductTypeIdRoute,
+  PurchasingSuppliersSupplierIdRoute: PurchasingSuppliersSupplierIdRoute,
+  PurchasingProductsSupplierIdProductIdRoute:
+    PurchasingProductsSupplierIdProductIdRoute,
+}
+
+const PurchasingRouteWithChildren = PurchasingRoute._addFileChildren(
+  PurchasingRouteChildren,
 )
 
 interface ReagentOrdersOrderIdRouteChildren {
@@ -2113,6 +2251,7 @@ const rootRouteChildren: RootRouteChildren = {
   DeliveryLocationsRoute: DeliveryLocationsRouteWithChildren,
   DepartmentsRoute: DepartmentsRoute,
   DocsRoute: DocsRouteWithChildren,
+  EquipmentRoute: EquipmentRoute,
   FileManagementRoute: FileManagementRoute,
   LabConfigurationRoute: LabConfigurationRoute,
   LabOperationsRoute: LabOperationsRouteWithChildren,
@@ -2120,6 +2259,7 @@ const rootRouteChildren: RootRouteChildren = {
   OrderConfigurationRoute: OrderConfigurationRouteWithChildren,
   OrderOperationsRoute: OrderOperationsRouteWithChildren,
   PhaenoUsersRoute: PhaenoUsersRoute,
+  PurchasingRoute: PurchasingRouteWithChildren,
   ReagentOrdersRoute: ReagentOrdersRouteWithChildren,
   ReleasedDeliverablesRoute: ReleasedDeliverablesRouteWithChildren,
   SampleShippingRoute: SampleShippingRouteWithChildren,
@@ -2127,6 +2267,8 @@ const rootRouteChildren: RootRouteChildren = {
   TrialProjectsRoute: TrialProjectsRouteWithChildren,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
   SessionTasksSetupMfaRoute: SessionTasksSetupMfaRoute,
+  SampleShippingSettingsKitSpecificationsContainerIdRoute:
+    SampleShippingSettingsKitSpecificationsContainerIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

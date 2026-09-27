@@ -104,6 +104,8 @@ This is the application-wide default for new work and for touched existing workf
 
 ## Lists and tables
 
+For records with numbered content revisions, follow the application-wide [revision strategy](revision-strategy.md). The main list line must identify the revision whose status and values it displays; link a newer pending revision separately and block another successor until that pending revision is resolved.
+
 Use tables by default for structured scientific and business records that users compare across common attributes.
 
 - Make the primary identifier a clear link to the detail workspace; avoid ambiguous whole-row clicking.
@@ -241,6 +243,7 @@ Feedback is immediate, contextual, and durable.
 - Keep existing data visible during refresh when it remains trustworthy.
 - Do not block an entire page for an operation affecting one section.
 - Errors remain visible until dismissed or resolved.
+- Use amber for warnings and pending prerequisites, and red for errors and failed actions. State the condition and its consequence in text; color alone must not convey severity.
 - Use plain language and an actionable next step; never present raw server messages or stack traces.
 - Long-running jobs show a named status, current stage, start time, and available next action. Users may leave without cancelling the job.
 - Status indicators combine text with color or iconography; color never carries meaning alone.

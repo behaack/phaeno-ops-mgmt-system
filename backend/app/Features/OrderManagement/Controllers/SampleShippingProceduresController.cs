@@ -16,28 +16,41 @@ public sealed class SampleShippingProceduresController(PSeqOperationsDbContext d
     public async Task<SampleShippingProcedureDto> Create(SampleShippingProcedureWriteRequest request, CancellationToken ct)
     {
         await context.RequirePlatformAdminAsync(HttpContext, ct);
-        await using var transaction = request.SupersedesProcedureId.HasValue
-            ? await SampleShippingPackingData.BeginAsync(db, $"shipping-procedure:{request.SupersedesProcedureId.Value}", ct)
-            : null;
+        if (request.IsActive)
+            throw new OrderManagementException("shipping_procedure_invalid", "Create a Draft procedure, then activate it after validation.");
+        var familyKey = request.SupersedesProcedureId.HasValue
+            ? await db.SampleShippingProcedures.AsNoTracking().Where(item => item.Id == request.SupersedesProcedureId.Value)
+                .Select(item => (Guid?)item.DefinitionKey).SingleOrDefaultAsync(ct)
+                ?? throw new OrderManagementException("shipping_procedure_not_found", "The procedure was not found.", 404)
+            : Guid.NewGuid();
+        await using var transaction = await SampleShippingPackingData.BeginAsync(db, $"shipping-procedure:{familyKey}", ct);
         SampleShippingProcedure? previous = null;
         if (request.SupersedesProcedureId.HasValue)
         {
             previous = await db.SampleShippingProcedures.SingleOrDefaultAsync(x => x.Id == request.SupersedesProcedureId, ct)
                 ?? throw new OrderManagementException("shipping_procedure_not_found", "The procedure was not found.", 404);
-            if (previous.Version != request.SupersededVersion || await db.SampleShippingProcedures.AnyAsync(x => x.SupersedesProcedureId == previous.Id, ct))
+            if (previous.Version != request.SupersededVersion)
                 throw new OrderManagementException("shipping_procedure_conflict", "This procedure has changed. Open its latest revision.", 409);
+            var family = await db.SampleShippingProcedures.Where(item => item.DefinitionKey == familyKey)
+                .OrderByDescending(item => item.Revision).ToListAsync(ct);
+            if (family.Any(item => item.Lifecycle == ShippingRevisionLifecycle.Draft))
+                throw new OrderManagementException("shipping_procedure_draft_exists", "Finish or discard the existing Draft before creating another revision.", 409);
+            previous = family[0];
         }
         SampleShippingProcedure procedure;
         try
         {
-            procedure = new(previous?.DefinitionKey ?? Guid.NewGuid(), (previous?.Revision ?? 0) + 1, previous?.Id,
-                request.Name, request.PackingInstructions, request.TemperatureInstructions, request.CarrierInstructions,
-                request.DispatchInstructions, request.RequiredDocuments, request.ExceptionInstructions,
-                request.InternationalCustomsInstructions, request.IsActive, request.Description);
+            procedure = new(familyKey, (previous?.Revision ?? 0) + 1, previous?.Id,
+                request.Name, request.PackingInstructions,
+                request.TemperatureInstructions,
+                request.CarrierInstructions,
+                request.DispatchInstructions,
+                request.RequiredDocuments,
+                request.ExceptionInstructions,
+                request.InternationalCustomsInstructions,
+                false, request.Description);
         }
         catch (ArgumentException error) { throw new OrderManagementException("shipping_procedure_invalid", error.Message); }
-        if (request.IsActive && previous is not null)
-            await RetireActiveRevisionsAsync(previous.DefinitionKey, null, ct);
         db.SampleShippingProcedures.Add(procedure);
         try { await db.SaveChangesAsync(ct); }
         catch (DbUpdateException error) when (error.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
@@ -45,6 +58,45 @@ public sealed class SampleShippingProceduresController(PSeqOperationsDbContext d
         if (transaction != null) await transaction.CommitAsync(ct);
         Response.StatusCode = 201;
         return Map(procedure);
+    }
+
+    [HttpPut("{id:guid}/draft")]
+    public async Task<SampleShippingProcedureDto> EditDraft(Guid id,
+        [FromBody] EditSampleShippingProcedureDraftRequest request, CancellationToken ct)
+    {
+        await context.RequirePlatformAdminAsync(HttpContext, ct);
+        var key = await db.SampleShippingProcedures.AsNoTracking().Where(item => item.Id == id)
+            .Select(item => (Guid?)item.DefinitionKey).SingleOrDefaultAsync(ct)
+            ?? throw new OrderManagementException("shipping_procedure_not_found", "The procedure was not found.", 404);
+        await using var transaction = await SampleShippingPackingData.BeginAsync(db, $"shipping-procedure:{key}", ct);
+        var item = await db.SampleShippingProcedures.SingleAsync(value => value.Id == id, ct);
+        if (item.Version != request.Version) throw new DbUpdateConcurrencyException();
+        try { item.EditDraft(request.Name, request.Description, request.PackingInstructions,
+            request.TemperatureInstructions, request.CarrierInstructions, request.DispatchInstructions,
+            request.RequiredDocuments, request.ExceptionInstructions, request.InternationalCustomsInstructions); }
+        catch (ArgumentException error) { throw new OrderManagementException("shipping_procedure_invalid", error.Message); }
+        catch (InvalidOperationException error) { throw new OrderManagementException("shipping_procedure_conflict", error.Message, 409); }
+        await db.SaveChangesAsync(ct);
+        if (transaction is not null) await transaction.CommitAsync(ct);
+        return Map(item);
+    }
+
+    [HttpPost("{id:guid}/discard")]
+    public async Task<SampleShippingProcedureDto> Discard(Guid id,
+        [FromBody] DiscardSampleShippingProcedureDraftRequest request, CancellationToken ct)
+    {
+        await context.RequirePlatformAdminAsync(HttpContext, ct);
+        var key = await db.SampleShippingProcedures.AsNoTracking().Where(item => item.Id == id)
+            .Select(item => (Guid?)item.DefinitionKey).SingleOrDefaultAsync(ct)
+            ?? throw new OrderManagementException("shipping_procedure_not_found", "The procedure was not found.", 404);
+        await using var transaction = await SampleShippingPackingData.BeginAsync(db, $"shipping-procedure:{key}", ct);
+        var item = await db.SampleShippingProcedures.SingleAsync(value => value.Id == id, ct);
+        if (item.Version != request.Version) throw new DbUpdateConcurrencyException();
+        try { item.Discard(); }
+        catch (InvalidOperationException error) { throw new OrderManagementException("shipping_procedure_conflict", error.Message, 409); }
+        await db.SaveChangesAsync(ct);
+        if (transaction is not null) await transaction.CommitAsync(ct);
+        return Map(item);
     }
 
     [HttpPost("{id:guid}/deactivate")]
@@ -60,7 +112,10 @@ public sealed class SampleShippingProceduresController(PSeqOperationsDbContext d
     private async Task<SampleShippingProcedureDto> ChangeStatusAsync(Guid id, bool isActive, long version, CancellationToken ct)
     {
         await context.RequirePlatformAdminAsync(HttpContext, ct);
-        await using var transaction = await SampleShippingPackingData.BeginAsync(db, $"shipping-procedure:{id}", ct);
+        var key = await db.SampleShippingProcedures.AsNoTracking().Where(item => item.Id == id)
+            .Select(item => (Guid?)item.DefinitionKey).SingleOrDefaultAsync(ct)
+            ?? throw new OrderManagementException("shipping_procedure_not_found", "The procedure was not found.", 404);
+        await using var transaction = await SampleShippingPackingData.BeginAsync(db, $"shipping-procedure:{key}", ct);
         var procedure = await db.SampleShippingProcedures.SingleOrDefaultAsync(item => item.Id == id, ct)
             ?? throw new OrderManagementException("shipping_procedure_not_found", "The procedure was not found.", 404);
         if (procedure.Version != version) throw new DbUpdateConcurrencyException();
@@ -68,18 +123,18 @@ public sealed class SampleShippingProceduresController(PSeqOperationsDbContext d
             throw new OrderManagementException("shipping_procedure_status_unchanged", "This procedure already has that status. Refresh and review its current revision.", 409);
         if (isActive)
         {
-            if (await db.SampleShippingProcedures.AsNoTracking().AnyAsync(item =>
+            if (procedure.Lifecycle != ShippingRevisionLifecycle.Draft || await db.SampleShippingProcedures.AsNoTracking().AnyAsync(item =>
                 item.DefinitionKey == procedure.DefinitionKey && item.Revision > procedure.Revision, ct))
                 throw new OrderManagementException("shipping_procedure_already_superseded", "Activate the latest procedure revision instead.", 409);
+            try { procedure.Activate(); }
+            catch (ArgumentException error) { throw new OrderManagementException("shipping_procedure_invalid", error.Message); }
+            catch (InvalidOperationException error) { throw new OrderManagementException("shipping_procedure_conflict", error.Message, 409); }
             await RetireActiveRevisionsAsync(procedure.DefinitionKey, procedure.Id, ct);
-            procedure.Activate();
         }
         else
         {
-            if (!await db.SampleShippingProcedures.AsNoTracking().AnyAsync(item =>
-                item.DefinitionKey == procedure.DefinitionKey && item.Revision > procedure.Revision, ct))
-                await RetireActiveRevisionsAsync(procedure.DefinitionKey, procedure.Id, ct);
-            procedure.Deactivate();
+            try { procedure.Deactivate(); }
+            catch (InvalidOperationException error) { throw new OrderManagementException("shipping_procedure_conflict", error.Message, 409); }
         }
         await db.SaveChangesAsync(ct);
         if (transaction != null) await transaction.CommitAsync(ct);
@@ -95,11 +150,11 @@ public sealed class SampleShippingProceduresController(PSeqOperationsDbContext d
             await SampleShippingPackingData.LockAsync(db, $"shipping-procedure:{activeId}", ct);
         var active = await db.SampleShippingProcedures.Where(item => item.DefinitionKey == definitionKey
             && item.IsActive && (!exceptId.HasValue || item.Id != exceptId.Value)).ToListAsync(ct);
-        foreach (var earlier in active) earlier.Deactivate();
+        foreach (var earlier in active) earlier.Supersede();
     }
 
     internal static SampleShippingProcedureDto Map(SampleShippingProcedure item) => new(item.Id, item.DefinitionKey,
         item.Revision, item.SupersedesProcedureId, item.Name, item.Description, item.PackingInstructions, item.TemperatureInstructions,
         item.CarrierInstructions, item.DispatchInstructions, item.RequiredDocuments, item.ExceptionInstructions,
-        item.InternationalCustomsInstructions, item.IsActive, item.Version);
+        item.InternationalCustomsInstructions, item.IsActive, item.Version, item.Lifecycle.ToString());
 }

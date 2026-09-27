@@ -575,7 +575,7 @@
       "title": "Prepare and ship samples",
       "summary": "Prepare containers, match tubes with their declared material amounts, print shipping inserts and record dispatch.",
       "order": 35,
-      "reviewedAt": "2026-09-25",
+      "reviewedAt": "2026-09-26",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -1562,9 +1562,9 @@
       "slug": "lab-operations",
       "overviewTitle": "Overview",
       "title": "Laboratory operations",
-      "summary": "Find laboratory work, manage purchased stock, reagent and transportation kit manufacturing, record scientific evidence, and trace result delivery.",
+      "summary": "Find laboratory work, receive purchased kits and stock, assemble Phaeno kits and reagents, record scientific evidence, and trace result delivery.",
       "order": 50,
-      "reviewedAt": "2026-09-24",
+      "reviewedAt": "2026-09-26",
       "navigationGroup": "laboratory-operations",
       "contentType": "overview",
       "topicIds": [
@@ -1593,9 +1593,9 @@
       "slug": "lab-receipt-accession",
       "parentSlug": "lab-operations",
       "title": "Receipt and accession",
-      "summary": "Configure named Phaeno transportation kits and their assembly BOM, verify physical tube rosters, dispatch kits, and record receipt and accession.",
+      "summary": "Configure named Phaeno transportation kits and their approved workflows, verify physical tube rosters, dispatch kits, and record receipt and accession.",
       "order": 51,
-      "reviewedAt": "2026-09-24",
+      "reviewedAt": "2026-09-26",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1640,7 +1640,7 @@
       "title": "Service workflows, protocol control, and execution",
       "summary": "Configure service, reagent, and master-mix workflows; record controlled Lab steps and material use.",
       "order": 54,
-      "reviewedAt": "2026-09-24",
+      "reviewedAt": "2026-09-26",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1675,7 +1675,7 @@
       "title": "Materials and equipment",
       "summary": "Receive purchased lots, configure Phaeno reagent products and manufacture their lots, qualify stock, and track consumption and storage.",
       "order": 55,
-      "reviewedAt": "2026-09-24",
+      "reviewedAt": "2026-09-26",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1811,7 +1811,7 @@
       "title": "Configuration and file retention",
       "summary": "Maintain reusable defaults, services, analyses, Partner rules, Sample types, Shipping procedures, Phaeno ship-to destinations, Transportation kits, and released-file retention.",
       "order": 60,
-      "reviewedAt": "2026-09-25",
+      "reviewedAt": "2026-09-26",
       "navigationGroup": "platform-operations",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1876,7 +1876,7 @@
       "title": "Use Partner Lab services",
       "summary": "Complete Partner ordering, purchased-run allocation and shipping on the Job, then track sample receipt and laboratory results.",
       "order": 25,
-      "reviewedAt": "2026-09-23",
+      "reviewedAt": "2026-09-26",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [

@@ -39,6 +39,9 @@ function LabOperationsRoute() {
   const isChild = useRouterState({ select: (state) => state.location.pathname !== '/lab-operations' })
   const legacyTab = useRouterState({ select: state => state.location.hash === 'standard-kits' ? 'standard-kits' as const : state.location.hash === 'transportation-kit-requests' ? 'kit-requests' as const : undefined })
   const { section, shipmentId, receiptTab, configurationTab, supplierTab, labStepSearch, labStepRetired, labStepPage } = Route.useSearch()
+  if (!isChild && section === 'equipment') return <Navigate to="/equipment" replace />
+  if (!isChild && section === 'materials') return <Navigate to="/purchasing" search={{ section: 'materials' }} replace />
+  if (!isChild && section === 'suppliers') return <Navigate to="/purchasing" search={{ section: supplierTab === 'product-types' ? 'products' : 'suppliers', productTab: supplierTab === 'product-types' ? 'product-types' : undefined }} replace />
   if (!isChild && section === 'protocols') return <Navigate to="/lab-configuration" search={{ configurationTab: configurationTab ?? 'steps', labStepSearch, labStepRetired, labStepPage }} replace />
   const activeTab = receiptTab ?? legacyTab
   if (!isChild && (section === 'receipt' || !section) && (activeTab === 'standard-kits' || activeTab === 'kit-requests' || activeTab === 'return-kits'))
@@ -51,12 +54,6 @@ function LabOperationsRoute() {
           shipmentId={shipmentId}
           receiptTab={activeTab}
           configurationTab={configurationTab ?? 'steps'}
-          supplierTab={supplierTab ?? 'suppliers'}
-          onSupplierTabChange={nextTab => void navigate({
-            to: '/lab-operations',
-            search: previous => ({ ...previous, section: 'suppliers', supplierTab: nextTab }),
-            resetScroll: false,
-          })}
           onConfigurationTabChange={nextTab => void navigate({
             to: '/lab-operations',
             search: { section: 'protocols', configurationTab: nextTab },

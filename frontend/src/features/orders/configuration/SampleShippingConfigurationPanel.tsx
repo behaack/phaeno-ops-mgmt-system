@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
-import { ChevronDown, FilePenLine, MapPin, Plus } from 'lucide-react'
+import { ArrowLeft, ChevronDown, FilePenLine, MapPin, Plus } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useForm, type UseFormRegisterReturn } from 'react-hook-form'
 import { z } from 'zod'
@@ -11,8 +11,11 @@ import { getShippingContainerDefinitions } from '#/api/shipping-containers'
 import {
   createSampleShippingDestination,
   createSampleTypeDefinition,
+  discardSampleShippingDestinationDraft,
   getSampleShippingConfiguration,
   setDefaultShippingDestination,
+  updateSampleShippingDestinationDraft,
+  updateSampleTypeDraft,
   type SampleShippingConfiguration,
   type SampleShippingDestination,
   type SampleTypeDefinition,
@@ -40,7 +43,7 @@ import { ShippingActivationBadge } from './ShippingActivationBadge'
 import { ContainerSizesPanel } from './ContainerSizesPanel'
 import { parseSampleTypeListSearch, type SampleTypeListSearch } from './sample-type-list-navigation'
 import { parseDestinationListSearch, type DestinationListSearch } from './destination-list-navigation'
-import type { ShippingSettingsSection } from './shipping-settings-navigation'
+import { shippingSettingsBackLinkClassName, type ShippingSettingsSection } from './shipping-settings-navigation'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { ScientificTextField } from '#/features/lab-operations/ScientificTextField'
 import { useOrderDraftGuard } from '../use-order-draft-guard'
@@ -75,20 +78,20 @@ const destinationPageSize = 12
 const destinationSchema = z.object({
   code: z.string().trim().min(1, 'Enter a destination code.').max(50).regex(codePattern, 'Use letters, numbers, hyphens, or underscores.'),
   name: z.string().trim().min(1, 'Enter a destination name.').max(255),
-  recipientName: z.string().trim().min(1, 'Enter the receiving person or team.').max(255),
-  organizationName: z.string().trim().min(1, 'Enter the receiving organization.').max(255),
-  addressLine1: z.string().trim().min(1, 'Enter the street address.').max(255),
+  recipientName: z.string().trim().max(255),
+  organizationName: z.string().trim().max(255),
+  addressLine1: z.string().trim().max(255),
   addressLine2: z.string().trim().max(255),
-  city: z.string().trim().min(1, 'Enter the city.').max(150),
-  stateOrProvince: z.string().trim().min(1, 'Enter the state, province, or region.').max(150),
-  postalCode: z.string().trim().min(1, 'Enter the postal code.').max(50),
+  city: z.string().trim().max(150),
+  stateOrProvince: z.string().trim().max(150),
+  postalCode: z.string().trim().max(50),
   countryCode: z.string().trim().length(2, 'Use a two-letter country code.'),
   receivingPhone: z.string().trim().max(50),
   receivingEmail: z.union([z.literal(''), z.string().trim().email('Enter a valid receiving email.').max(255)]),
-  receivingHours: z.string().trim().min(1, 'Enter receiving hours.').max(1000),
-  timeZoneId: z.string().trim().min(1, 'Enter the receiving time zone.').max(100),
+  receivingHours: z.string().trim().max(1000),
+  timeZoneId: z.string().trim().max(100),
   closureInstructions: z.string().trim().max(2000),
-  deliveryInstructions: z.string().trim().min(1, 'Enter detailed delivery instructions.').max(4000),
+  deliveryInstructions: z.string().trim().max(4000),
   carrierRestrictions: z.string().trim().max(2000),
   internationalShippingAllowed: z.boolean(),
   effectiveFrom: z.string().min(1, 'Choose when this revision becomes effective.'),
@@ -98,21 +101,21 @@ const destinationSchema = z.object({
 type DestinationValues = z.infer<typeof destinationSchema>
 
 const sampleTypeSchema = z.object({
-  shippingProcedureId: z.string().uuid('Choose one shared shipping procedure.'),
+  shippingProcedureId: z.union([z.literal(''), z.string().uuid('Choose one shared shipping procedure.')]),
   code: z.string().trim().min(1, 'Enter a sample-type code.').max(50).regex(codePattern, 'Use letters, numbers, hyphens, or underscores.'),
   name: z.string().trim().min(1, 'Enter a sample-type name.').max(255),
   description: z.string().trim().max(2000),
-  materialClass: z.string().trim().min(1, 'Select a material type.').max(255),
+  materialClass: z.string().trim().max(255),
   minimumQuantity: optionalQuantity,
   maximumQuantity: optionalQuantity,
-  quantityUnit: z.string().trim().min(1, 'Enter the quantity unit.').max(100),
-  primaryContainerRequirements: z.string().trim().min(1, 'Enter primary-container requirements.').max(2000),
-  temperatureRequirements: z.string().trim().min(1, 'Enter preservation requirements.').max(2000),
+  quantityUnit: z.string().trim().max(100),
+  primaryContainerRequirements: z.string().trim().max(2000),
+  temperatureRequirements: z.string().trim().max(2000),
   stabilizerRequirements: z.string().trim().max(2000),
   packagingInstructions: z.string().trim().max(4000),
-  labelingInstructions: z.string().trim().min(1, 'Enter customer label instructions.').max(4000),
-  prohibitedIdentifiers: z.string().trim().min(1, 'State which identifiers must not appear.').max(2000),
-  safetyRequirements: z.string().trim().min(1, 'Enter safety and hazard requirements.').max(2000),
+  labelingInstructions: z.string().trim().max(4000),
+  prohibitedIdentifiers: z.string().trim().max(2000),
+  safetyRequirements: z.string().trim().max(2000),
   carrierRestrictions: z.string().trim().max(2000),
   maximumTransitHours: positiveOptionalNumber,
   effectiveFrom: z.string().min(1, 'Choose when this revision becomes effective.'),
@@ -166,7 +169,7 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
     onSuccess: value => { client.setQueryData(['sample-shipping-configuration'], value) },
   })
 
-  const destinations = useMemo(() => latestRevisions(configuration.data?.destinations ?? []), [configuration.data?.destinations])
+  const destinations = useMemo(() => primaryShippingRevisions(configuration.data?.destinations ?? []), [configuration.data?.destinations])
   const activeDestinationChoices = useMemo(() => {
     const current = (configuration.data?.destinations ?? []).filter(item => item.isActive && revisionHasNotEnded(item) && Date.parse(item.effectiveFrom) <= Date.now())
     return latestRevisions(current).sort((a, b) => a.name.localeCompare(b.name))
@@ -181,7 +184,7 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
     return families
   }, [configuration.data?.destinations])
   const selectedDestination = configuration.data?.destinations.find(item => item.id === destinationId)
-  const sampleTypes = useMemo(() => latestRevisions(configuration.data?.sampleTypes ?? []), [configuration.data?.sampleTypes])
+  const sampleTypes = useMemo(() => primaryShippingRevisions(configuration.data?.sampleTypes ?? []), [configuration.data?.sampleTypes])
   const sampleTypeFamilies = useMemo(() => {
     const families = new Map<string, SampleTypeDefinition[]>()
     for (const revision of configuration.data?.sampleTypes ?? []) {
@@ -214,7 +217,7 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
   const destinationNeedle = (destinationListSearch.destinationSearch ?? '').trim().toLocaleLowerCase()
   const filteredDestinations = destinations.filter(item => {
     const revisions = destinationFamilies.get(item.definitionKey) ?? [item]
-    return (destinationListSearch.destinationShowInactive || revisions.some(value => value.isActive && revisionHasNotEnded(value)))
+    return (destinationListSearch.destinationShowInactive || revisions.some(value => (value.isActive || value.lifecycle === 'Draft') && revisionHasNotEnded(value)))
       && (!destinationNeedle || revisions.some(value => `${value.name} ${value.code} ${value.recipientName} ${value.organizationName} ${value.addressLine1} ${value.addressLine2 ?? ''} ${value.city} ${value.stateOrProvince} ${value.postalCode} ${value.countryCode}`.toLocaleLowerCase().includes(destinationNeedle)))
   })
   const destinationPageCount = Math.max(1, Math.ceil(filteredDestinations.length / destinationPageSize))
@@ -227,7 +230,7 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
   const sampleTypeNeedle = (sampleTypeListSearch.sampleTypeSearch ?? '').trim().toLocaleLowerCase()
   const filteredSampleTypes = sampleTypes.filter(item => {
     const revisions = sampleTypeFamilies.get(item.definitionKey) ?? [item]
-    return (sampleTypeListSearch.sampleTypeShowInactive || revisions.some(value => value.isActive && revisionHasNotEnded(value)))
+    return (sampleTypeListSearch.sampleTypeShowInactive || revisions.some(value => (value.isActive || value.lifecycle === 'Draft') && revisionHasNotEnded(value)))
       && (!sampleTypeNeedle || revisions.some(value => `${value.name} ${value.code} ${value.materialClass} ${value.description}`.toLocaleLowerCase().includes(sampleTypeNeedle)))
   })
   const sampleTypePageCount = Math.max(1, Math.ceil(filteredSampleTypes.length / sampleTypePageSize))
@@ -246,7 +249,7 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
       {section === 'containers' ? <ContainerSizesPanel apiEnabled={apiEnabled} configuration={configuration.data} /> : null}
 
       {section === 'destinations' && destinationId ? <>
-        <Link className="text-sm text-primary underline" to="/sample-shipping-settings" search={{ ...destinationListSearch, shippingSection: 'destinations' }}>Back to ship-to destinations</Link>
+        <Link className={shippingSettingsBackLinkClassName} to="/sample-shipping-settings" search={{ ...destinationListSearch, shippingSection: 'destinations' }}><ArrowLeft aria-hidden="true" className="size-4" />Back to ship-to destinations</Link>
         {defaultDestination.error ? <Alert variant="destructive"><AlertTitle>Default destination was not changed</AlertTitle><AlertDescription>{getOrderErrorMessage(defaultDestination.error, 'Refresh the destinations and try again.')}</AlertDescription></Alert> : null}
         {selectedDestination ? <DestinationDetails item={selectedDestination} revisions={destinationFamilies.get(selectedDestination.definitionKey) ?? [selectedDestination]} activeRevision={activeDestinationChoices.find(choice => choice.definitionKey === selectedDestination.definitionKey)} isDefault={selectedDestination.definitionKey === configuration.data.defaultDestinationDefinitionKey} defaultPending={defaultDestination.isPending} onSetDefault={definitionKey => defaultDestination.mutate(definitionKey)} onCreateRevision={setDestinationEditor} onStatusChange={(item, isActive) => setStatusChange({ kind: 'destination', item, isActive })} triggerRef={statusActionsRef} /> : <Alert><AlertTitle>Destination not found</AlertTitle><AlertDescription>Return to Phaeno ship-to destinations and choose an available record.</AlertDescription></Alert>}
       </> : null}
@@ -255,7 +258,7 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
         <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">
           <CardTitle className="min-w-0">Phaeno ship-to destinations</CardTitle>
           <Button className="col-start-2 row-start-1 justify-self-end" type="button" onClick={() => setDestinationEditor(null)}><Plus data-icon="inline-start" />Add destination</Button>
-          <CardDescription className="col-span-full">Receiving addresses, hours, closures, delivery directions, and carrier restrictions printed from a frozen revision. New revisions default to Active; choose Inactive to keep an earlier active revision available.</CardDescription>
+          <CardDescription className="col-span-full">Receiving addresses, hours, closures, delivery directions, and carrier restrictions printed from a frozen revision. Create a Draft, then activate it when complete.</CardDescription>
           <p className="col-span-full text-xs text-muted-foreground">Use a destination's Actions menu to set the default for new Jobs. Phaeno can change a Job's destination when dispatching a requested kit, before sample packing starts.</p>
           <div className="col-span-full grid w-full gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
             <Input id="destination-search" className="w-full" aria-label="Search ship-to destinations" value={destinationSearchText} maxLength={255} onChange={event => setDestinationSearchText(event.target.value)} placeholder="Search by name, code, or location" />
@@ -267,11 +270,11 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
         </CardHeader>
         <CardContent className="space-y-4 p-4">
           {defaultDestination.error ? <Alert variant="destructive"><AlertTitle>Default destination was not changed</AlertTitle><AlertDescription>{getOrderErrorMessage(defaultDestination.error, 'Refresh the destinations and try again.')}</AlertDescription></Alert> : null}
-          {!configuration.data.defaultDestinationDefinitionKey ? <Alert variant="destructive">
+          {!configuration.data.defaultDestinationDefinitionKey ? <Alert variant="warning">
             <AlertTitle>No default Phaeno ship-to destination</AlertTitle>
             <AlertDescription>{activeDestinationChoices.length ? 'Open the Actions menu on a current Active destination and choose Set as default before finalizing another sample list.' : 'Add or activate a destination, then choose Set as default from its Actions menu before finalizing another sample list.'}</AlertDescription>
           </Alert> : null}
-          {configuration.data.defaultDestinationDefinitionKey && !currentDefaultDestination ? <Alert variant="destructive">
+          {configuration.data.defaultDestinationDefinitionKey && !currentDefaultDestination ? <Alert variant="warning">
             <AlertTitle>Default destination is unavailable</AlertTitle>
             <AlertDescription>{activeDestinationChoices.length ? 'Open the Actions menu on a current Active destination and choose Set as default before finalizing another sample list.' : 'Add or activate a destination, then choose Set as default from its Actions menu before finalizing another sample list.'}</AlertDescription>
           </Alert> : null}
@@ -282,6 +285,7 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
                   <div className="flex flex-wrap items-center gap-2"><DestinationLink item={item} /><Badge variant="outline">Rev {item.revision}</Badge><ShippingActivationBadge item={item} />{item.definitionKey === configuration.data.defaultDestinationDefinitionKey ? <Badge>Default</Badge> : null}</div>
                   <p className="mt-2 text-sm">{item.organizationName} · {item.city}, {item.stateOrProvince} {item.postalCode} · {item.countryCode}</p>
                   <p className="mt-1 text-xs text-muted-foreground">Receiving: {item.receivingHours} · {item.timeZoneId}</p>
+                  {(destinationFamilies.get(item.definitionKey) ?? []).filter(value => value.lifecycle === 'Draft' && value.id !== item.id).map(draft => <p key={draft.id} className="mt-2 text-sm"><DestinationLink item={draft}>Draft revision {draft.revision}: {draft.name}</DestinationLink></p>)}
                   <DestinationActiveRevisionNote item={item} revisions={destinationFamilies.get(item.definitionKey) ?? [item]} />
                 </div>
                 <DestinationActions item={item} revisions={destinationFamilies.get(item.definitionKey) ?? [item]} activeRevision={activeDestinationChoices.find(choice => choice.definitionKey === item.definitionKey)} isDefault={item.definitionKey === configuration.data.defaultDestinationDefinitionKey} defaultPending={defaultDestination.isPending} onSetDefault={definitionKey => defaultDestination.mutate(definitionKey)} onCreateRevision={setDestinationEditor} onStatusChange={(target, isActive) => setStatusChange({ kind: 'destination', item: target, isActive })} triggerRef={statusActionsRef} />
@@ -295,7 +299,7 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
       </Card> : null}
 
       {section === 'sample-types' && sampleTypeId ? <>
-        <Link className="text-sm text-primary underline" to="/sample-shipping-settings" search={{ ...sampleTypeListSearch, shippingSection: 'sample-types' }}>Back to sample types</Link>
+        <Link className={shippingSettingsBackLinkClassName} to="/sample-shipping-settings" search={{ ...sampleTypeListSearch, shippingSection: 'sample-types' }}><ArrowLeft aria-hidden="true" className="size-4" />Back to sample types</Link>
         {selectedSampleType ? <SampleTypeDetails item={selectedSampleType} revisions={configuration.data.sampleTypes.filter(item => item.definitionKey === selectedSampleType.definitionKey)} onCreateRevision={setSampleTypeEditor} configuration={configuration.data} apiEnabled={apiEnabled} /> : <Alert><AlertTitle>Sample type not found</AlertTitle><AlertDescription>Return to Sample types and choose an available record.</AlertDescription></Alert>}
       </> : null}
 
@@ -303,7 +307,7 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
         <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">
           <CardTitle className="min-w-0">Sample types</CardTitle>
           <Button className="col-start-2 row-start-1 justify-self-end" type="button" onClick={() => setSampleTypeEditor(null)}><Plus data-icon="inline-start" />Add sample type</Button>
-          <CardDescription className="col-span-full">Scientific material, quantity, preservation, labeling and safety requirements. Review the selected procedure and linked Transportation kits from each Sample type. New revisions default to Active; choose Inactive to keep an earlier active revision available.</CardDescription>
+          <CardDescription className="col-span-full">Scientific material, quantity, preservation, labeling and safety requirements. Review the selected procedure and linked Transportation kits from each Sample type. Create a Draft, then activate it when complete.</CardDescription>
           <div className="col-span-full grid w-full gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
             <Input id="sample-type-search" className="w-full" aria-label="Search sample types" value={sampleTypeSearchText} maxLength={255} onChange={event => setSampleTypeSearchText(event.target.value)} placeholder="Search by name, code, or material" />
             <div className="flex w-full items-center gap-2 sm:w-auto sm:justify-self-end">
@@ -321,16 +325,19 @@ export function SampleShippingConfigurationPanel({ apiEnabled, section, sampleTy
                   <div className="flex flex-wrap items-center gap-2"><SampleTypeLink item={item} /><Badge variant="outline">Rev {item.revision}</Badge><ShippingActivationBadge item={item} /></div>
                   <p className="mt-2 text-sm">{item.materialClass === 'extracted_rna' ? 'Total RNA' : item.materialClass === 'enriched_rna' ? 'Enriched RNA' : item.materialClass} · {quantityRange(item)}</p>
                   <p className="mt-1 text-xs">Procedure: {configuration.data.procedures?.find(procedure => procedure.id === item.shippingProcedureId)?.name ?? 'None'}</p>
-                  {!currentShippingProcedure(configuration.data.procedures, item.shippingProcedureId) ? <p role="alert" className="mt-2 rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-sm text-destructive">Needs attention: the selected Shipping procedure has no Active revision. New Orders of this Sample type are blocked.</p> : null}
+                  {(sampleTypeFamilies.get(item.definitionKey) ?? []).filter(value => value.lifecycle === 'Draft' && value.id !== item.id).map(draft => <p key={draft.id} className="mt-2 text-sm"><SampleTypeLink item={draft}>Draft revision {draft.revision}: {draft.name}</SampleTypeLink></p>)}
+                  {!currentShippingProcedure(configuration.data.procedures, item.shippingProcedureId) ? <p role="alert" className="mt-2 rounded-md border border-warning-border bg-warning-background px-3 py-2 text-sm text-warning">Needs attention: the selected Shipping procedure has no Active revision. New Orders of this Sample type are blocked.</p> : null}
                   {kitDefinitions.data && !kitDefinitions.data.some(kit => kit.sampleTypeAnchorId === (sampleTypeFamilies.get(item.definitionKey) ?? []).find(revision => revision.revision === 1)?.id
                     && kit.isActive && !kit.deactivatedAt && Date.parse(kit.effectiveFrom) <= Date.now()
                     && (!kit.effectiveTo || Date.parse(kit.effectiveTo) > Date.now())
                     && kit.newWorkReady !== false && !containerDependencyWarnings(kit, configuration.data).length)
-                    ? <p role="alert" className="mt-2 rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-sm text-destructive">Needs attention: no usable Active Transportation kit is linked to this Sample type. New Orders are blocked.</p> : null}
-                  <p className="mt-1 text-xs text-muted-foreground">{item.temperatureRequirements}</p>
+                    ? item.lifecycle === 'Draft'
+                      ? <p role="status" className="mt-2 rounded-md border border-warning-border bg-warning-background px-3 py-2 text-sm text-warning">This Sample type can be activated before a kit is ready. New Orders remain blocked until a usable Active Transportation kit is linked.</p>
+                      : <p role="alert" className="mt-2 rounded-md border border-warning-border bg-warning-background px-3 py-2 text-sm text-warning">Needs attention: no usable Active Transportation kit is linked to this Sample type. New Orders are blocked.</p>
+                    : null}
                   <SampleTypeActiveRevisionNote item={item} revisions={sampleTypeFamilies.get(item.definitionKey) ?? [item]} />
                 </div>
-                <SampleTypeActions item={item} revisions={sampleTypeFamilies.get(item.definitionKey) ?? [item]} configuration={configuration.data} onCreateRevision={setSampleTypeEditor} onStatusChanged={(changed, isActive) => {
+                <SampleTypeActions item={item} revisions={sampleTypeFamilies.get(item.definitionKey) ?? [item]} onCreateRevision={setSampleTypeEditor} onStatusChanged={(changed, isActive) => {
                   if (changed.id === item.id && !isActive && !sampleTypeListSearch.sampleTypeShowInactive) {
                     window.requestAnimationFrame(() => document.getElementById('sample-type-search')?.focus())
                   }
@@ -379,14 +386,22 @@ function DestinationActions({ item, revisions, activeRevision, isDefault, defaul
   onStatusChange: (item: SampleShippingDestination, isActive: boolean) => void
   triggerRef: React.RefObject<HTMLButtonElement | null>
 }) {
-  if (revisions.some(value => value.revision > item.revision)) return null
+  const client = useQueryClient()
+  const [discarding, setDiscarding] = useState(false)
+  const discard = useMutation({ mutationFn: () => discardSampleShippingDestinationDraft(item.id, item.version), onSuccess: async () => { await client.invalidateQueries({ queryKey: ['sample-shipping-configuration'] }); setDiscarding(false) } })
+  const draft = revisions.find(value => value.lifecycle === 'Draft')
+  const latest = !revisions.some(value => value.revision > item.revision)
+  const latestReleased = [...revisions].filter(value => value.lifecycle === 'Released' || value.lifecycle === 'Superseded' || value.lifecycle === 'Deactivated').sort((a, b) => b.revision - a.revision)[0]
+  if (!latest && !item.isActive && latestReleased?.id !== item.id) return null
   const earlierActive = !item.isActive ? revisions.filter(value => value.id !== item.id && value.isActive && revisionHasNotEnded(value)) : []
-  return <ActionMenu><DropdownMenuTrigger asChild><Button type="button" variant="outline" onPointerDown={event => { triggerRef.current = event.currentTarget }} onFocus={event => { triggerRef.current = event.currentTarget }}>Actions<ChevronDown aria-hidden="true" className="size-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max max-w-[calc(100vw-2rem)]">
+  return <><ActionMenu><DropdownMenuTrigger asChild><Button type="button" variant="outline" onPointerDown={event => { triggerRef.current = event.currentTarget }} onFocus={event => { triggerRef.current = event.currentTarget }}>Actions<ChevronDown aria-hidden="true" className="size-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max max-w-[calc(100vw-2rem)]">
     {activeRevision && !isDefault ? <DropdownMenuItem disabled={defaultPending} onSelect={() => onSetDefault(item.definitionKey)}><MapPin aria-hidden="true" />{activeRevision.id === item.id ? 'Set as default' : `Set active revision ${activeRevision.revision} as default`}</DropdownMenuItem> : null}
-    <DropdownMenuItem onSelect={() => onCreateRevision(item)}><FilePenLine aria-hidden="true" />Create revision</DropdownMenuItem>
-    {revisionHasNotEnded(item) ? <DropdownMenuItem variant={item.isActive ? 'destructive' : 'default'} onSelect={() => onStatusChange(item, !item.isActive)}>{item.isActive ? 'Deactivate' : 'Activate'}</DropdownMenuItem> : null}
+    {draft ? <DropdownMenuItem onSelect={() => onCreateRevision(draft)}><FilePenLine aria-hidden="true" />Edit Draft revision {draft.revision}</DropdownMenuItem> : latest || latestReleased?.id === item.id ? <DropdownMenuItem onSelect={() => onCreateRevision(latestReleased ?? item)}><FilePenLine aria-hidden="true" />Create revision</DropdownMenuItem> : null}
+    {item.lifecycle === 'Draft' && revisionHasNotEnded(item) ? <DropdownMenuItem onSelect={() => onStatusChange(item, true)}>Activate</DropdownMenuItem> : null}
+    {item.lifecycle === 'Draft' ? <DropdownMenuItem variant="destructive" onSelect={() => setDiscarding(true)}>Discard</DropdownMenuItem> : null}
+    {item.isActive ? <DropdownMenuItem variant="destructive" onSelect={() => onStatusChange(item, false)}>Deactivate</DropdownMenuItem> : null}
     {earlierActive.map(value => <DropdownMenuItem key={value.id} variant="destructive" onSelect={() => onStatusChange(value, false)}>Deactivate revision {value.revision}</DropdownMenuItem>)}
-  </DropdownMenuContent></ActionMenu>
+  </DropdownMenuContent></ActionMenu><Dialog open={discarding} onOpenChange={open => { if (!open && !discard.isPending) setDiscarding(false) }}><DialogContent><DialogHeader><DialogTitle>Discard Draft revision {item.revision}?</DialogTitle><DialogDescription>The number remains in history and cannot be reused. The released revision stays available.</DialogDescription></DialogHeader>{discard.error ? <SaveError title="Draft was not discarded" error={discard.error} /> : null}<RequiredDialogFooter showLegend={false}><Button type="button" variant="outline" onClick={() => setDiscarding(false)}>Cancel</Button><Button type="button" variant="destructive" disabled={discard.isPending} onClick={() => discard.mutate()}>{discard.isPending ? 'Discarding…' : 'Discard Draft'}</Button></RequiredDialogFooter></DialogContent></Dialog></>
 }
 
 function DestinationDetails({ item, revisions, activeRevision, isDefault, defaultPending, onSetDefault, onCreateRevision, onStatusChange, triggerRef }: {
@@ -446,7 +461,7 @@ function SampleTypeDetails({ item, revisions, onCreateRevision, configuration, a
             <h2 className="break-words text-xl font-semibold">{item.name}</h2>
             <div className="mt-2 flex flex-wrap items-center gap-2"><Badge variant="outline" className="h-auto max-w-full whitespace-normal break-all">{item.code} · revision {item.revision}</Badge><EffectiveBadge item={item} /></div>
           </div>
-          <SampleTypeActions item={item} revisions={revisions} configuration={configuration} onCreateRevision={onCreateRevision} />
+          <SampleTypeActions item={item} revisions={revisions} onCreateRevision={onCreateRevision} />
         </div>
         <CardDescription className="mt-2 whitespace-pre-wrap">{item.description || 'No description provided.'}</CardDescription>
         {latest?.id === item.id ? <SampleTypeActiveRevisionNote item={item} revisions={revisions} /> : null}
@@ -457,7 +472,7 @@ function SampleTypeDetails({ item, revisions, onCreateRevision, configuration, a
           <div><dt className="text-muted-foreground">Material type</dt><dd>{item.materialClass === 'extracted_rna' ? 'Total RNA' : item.materialClass === 'enriched_rna' ? 'Enriched RNA' : item.materialClass}</dd></div>
           <div><dt className="text-muted-foreground">Quantity</dt><dd>{quantityRange(item)}</dd></div>
           <div><dt className="text-muted-foreground">Maximum transit time</dt><dd>{item.maximumTransitHours == null ? 'Not specified' : `${item.maximumTransitHours} hours`}</dd></div>
-          <div><dt className="text-muted-foreground">Shared shipping procedure</dt><dd>{(() => { const procedure = configuration.procedures?.find(value => value.id === item.shippingProcedureId); return procedure ? <Link className={recordLinkClassName} to="/sample-shipping-settings" search={{ shippingSection: 'procedures', procedureId: procedure.id }}>{procedure.name}</Link> : <span role="alert" className="text-destructive">Unavailable — choose Change procedure from Actions</span> })()}{item.shippingProcedureId && !currentShippingProcedure(configuration.procedures, item.shippingProcedureId) ? <p role="alert" className="mt-1 text-destructive">This procedure has no Active revision. New Orders are blocked.</p> : null}</dd></div>
+          <div><dt className="text-muted-foreground">Shared shipping procedure</dt><dd>{(() => { const procedure = configuration.procedures?.find(value => value.id === item.shippingProcedureId); return procedure ? <Link className={recordLinkClassName} to="/sample-shipping-settings" search={{ shippingSection: 'procedures', procedureId: procedure.id }}>{procedure.name}</Link> : <span role="alert" className="text-warning">No procedure selected for this revision. Edit a Draft to select one.</span> })()}{item.shippingProcedureId && !currentShippingProcedure(configuration.procedures, item.shippingProcedureId) ? <p role="alert" className="mt-1 text-warning">This procedure has no Active revision. New Orders are blocked.</p> : null}</dd></div>
           <div><dt className="text-muted-foreground">Effective period</dt><dd>{formatDateTime(item.effectiveFrom)} to {item.effectiveTo ? formatDateTime(item.effectiveTo) : 'no end date'} (your local time)</dd></div>
         </dl>
       </CardContent>
@@ -487,9 +502,10 @@ function DestinationDialog({ item, onClose, onSaved }: { item: SampleShippingDes
   const client = useQueryClient()
   const form = useForm<DestinationValues>({ resolver: zodResolver(destinationSchema), defaultValues: emptyDestination })
   const mutation = useMutation({
-    mutationFn: (values: DestinationValues) => createSampleShippingDestination({
+    mutationFn: (values: DestinationValues) => {
+      const draft = {
       ...values,
-      isActive: values.isActive,
+      isActive: false,
       code: values.code.toUpperCase(),
       addressLine2: values.addressLine2 || null,
       receivingPhone: values.receivingPhone || null,
@@ -497,23 +513,25 @@ function DestinationDialog({ item, onClose, onSaved }: { item: SampleShippingDes
       closureInstructions: values.closureInstructions || null,
       carrierRestrictions: values.carrierRestrictions || null,
       effectiveFrom: new Date(values.effectiveFrom).toISOString(),
-      supersedesDestinationId: item?.id ?? null,
+      supersedesDestinationId: item?.lifecycle === 'Draft' ? item.supersedesDestinationId : item?.id ?? null,
       supersededVersion: item?.version ?? null,
-    }),
+      }
+      return item?.lifecycle === 'Draft' ? updateSampleShippingDestinationDraft(item.id, item.version, draft) : createSampleShippingDestination(draft)
+    },
     onSuccess: async saved => { await client.invalidateQueries({ queryKey: ['sample-shipping-configuration'] }); onSaved(saved) },
   })
   const resetMutation = mutation.reset
 
   useEffect(() => {
     if (item === undefined) return
-    form.reset(item ? destinationValues(item) : { ...emptyDestination, code: 'DEST-' + crypto.randomUUID().replaceAll('-', '').toUpperCase(), effectiveFrom: toLocalDateTime(new Date()) })
+    form.reset(item ? { ...destinationValues(item), effectiveFrom: item.lifecycle === 'Draft' ? toLocalDateTime(new Date(item.effectiveFrom)) : toLocalDateTime(new Date(Math.max(Date.now(), Date.parse(item.effectiveFrom) + 60_000))) } : { ...emptyDestination, code: 'DEST-' + crypto.randomUUID().replaceAll('-', '').toUpperCase(), effectiveFrom: toLocalDateTime(new Date()) })
     resetMutation()
   }, [form, item, resetMutation])
 
   return (
     <Dialog open={item !== undefined} onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent className="sm:max-w-3xl">
-        <DialogHeader><DialogTitle>{item ? `Create ${item.name} revision ${item.revision + 1}` : 'Add ship-to destination'}</DialogTitle><DialogDescription>Status defaults to Active. Choose Inactive when this destination needs more review; an earlier Active revision remains available until its successor becomes effective. Existing Orders keep their selected destination revision.</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>{item?.lifecycle === 'Draft' ? `Edit Draft revision ${item.revision}` : item ? `Create ${item.name} revision ${item.revision + 1}` : 'Add ship-to destination'}</DialogTitle><DialogDescription>Save an incomplete Draft and finish it later. Fields marked required must be complete before activation. Existing Orders keep their selected destination revision.</DialogDescription></DialogHeader>
         <form id="sample-shipping-destination-form" noValidate className="grid gap-5 px-1 sm:grid-cols-2" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
           <Field label="Display name" id="destination-name" required error={form.formState.errors.name?.message} full><Input id="destination-name" aria-invalid={Boolean(form.formState.errors.name)} {...form.register('name')} /></Field>
           <Field label="Recipient or receiving team" id="destination-recipient" required error={form.formState.errors.recipientName?.message}><Input id="destination-recipient" {...form.register('recipientName')} /></Field>
@@ -534,10 +552,9 @@ function DestinationDialog({ item, onClose, onSaved }: { item: SampleShippingDes
           <Field label="Carrier restrictions" id="destination-carrier" error={form.formState.errors.carrierRestrictions?.message} full><TextArea id="destination-carrier" rows={3} registration={form.register('carrierRestrictions')} /></Field>
           <div className="flex items-center gap-2"><Checkbox id="destination-international" checked={form.watch('internationalShippingAllowed')} onCheckedChange={(value) => form.setValue('internationalShippingAllowed', value === true, { shouldDirty: true })} /><Label htmlFor="destination-international" className="cursor-pointer font-normal">International shipments are allowed</Label></div>
           <p className="text-sm text-muted-foreground sm:col-span-2">Existing Orders retain their selected destination revision. New Orders use the current Active destination revision.</p>
-          <Field label="Status" id="destination-status" required error={form.formState.errors.isActive?.message} full><select id="destination-status" className="h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring/50 focus-visible:outline-none" value={form.watch('isActive') ? 'active' : 'inactive'} onChange={event => form.setValue('isActive', event.target.value === 'active', { shouldDirty: true })}><option value="active">Active</option><option value="inactive">Inactive</option></select><p className="mt-2 text-sm text-muted-foreground">{item ? 'An Active revision replaces the earlier Active revision at its Effective from time. An Inactive revision leaves the earlier one available.' : 'Choose Inactive to save this destination for later review.'}</p></Field>
         </form>
         {mutation.error ? <SaveError title="Destination revision was not saved" error={mutation.error} /> : null}
-        <RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" form="sample-shipping-destination-form" disabled={mutation.isPending || Boolean(item && !form.formState.isDirty)}>{mutation.isPending ? 'Saving revision…' : item ? 'Create revision' : 'Add destination'}</Button></RequiredDialogFooter>
+        <RequiredDialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" form="sample-shipping-destination-form" disabled={mutation.isPending || Boolean(item?.lifecycle === 'Draft' && !form.formState.isDirty)}>{mutation.isPending ? 'Saving Draft…' : item?.lifecycle === 'Draft' ? 'Save Draft' : 'Create Draft'}</Button></RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -547,20 +564,23 @@ function SampleTypeDialog({ item, configuration, onClose, onSaved }: { item: Sam
   const client = useQueryClient()
   const form = useForm<SampleTypeValues>({ resolver: zodResolver(sampleTypeSchema), defaultValues: emptySampleType })
   const mutation = useMutation({
-    mutationFn: (values: SampleTypeValues) => createSampleTypeDefinition({
+    mutationFn: (values: SampleTypeValues) => {
+      const draft = {
       ...values,
-      isActive: values.isActive,
+      isActive: false,
       code: values.code.toUpperCase(),
       minimumQuantity: optionalNumber(values.minimumQuantity),
       maximumQuantity: optionalNumber(values.maximumQuantity),
       maximumTransitHours: optionalNumber(values.maximumTransitHours),
       stabilizerRequirements: values.stabilizerRequirements || null,
-      shippingProcedureId: item ? null : values.shippingProcedureId,
+      shippingProcedureId: values.shippingProcedureId || null,
       carrierRestrictions: values.carrierRestrictions || null,
       effectiveFrom: new Date(values.effectiveFrom).toISOString(),
-      supersedesSampleTypeId: item?.id ?? null,
+      supersedesSampleTypeId: item?.lifecycle === 'Draft' ? item.supersedesSampleTypeId : item?.id ?? null,
       supersededVersion: item?.version ?? null,
-    }),
+      }
+      return item?.lifecycle === 'Draft' ? updateSampleTypeDraft(item.id, item.version, draft) : createSampleTypeDefinition(draft)
+    },
     onSuccess: async (saved) => { await client.invalidateQueries({ queryKey: ['sample-shipping-configuration'] }); allowNavigation(); form.reset(); onClose(); onSaved(saved) },
   })
   const resetMutation = mutation.reset
@@ -571,25 +591,26 @@ function SampleTypeDialog({ item, configuration, onClose, onSaved }: { item: Sam
 
   useEffect(() => {
     if (item === undefined) return
-    form.reset(item ? { ...sampleTypeValues(item), isActive: true } : { ...emptySampleType, code: 'SAMPLE-' + crypto.randomUUID().replaceAll('-', '').toUpperCase(), effectiveFrom: toLocalDateTime(new Date()) })
+    form.reset(item ? { ...sampleTypeValues(item), effectiveFrom: item.lifecycle === 'Draft' ? toLocalDateTime(new Date(item.effectiveFrom)) : toLocalDateTime(new Date(Math.max(Date.now(), Date.parse(item.effectiveFrom) + 60_000))), isActive: false } : { ...emptySampleType, code: 'SAMPLE-' + crypto.randomUUID().replaceAll('-', '').toUpperCase(), effectiveFrom: toLocalDateTime(new Date()) })
     resetMutation()
   }, [form, item, configuration.procedures, resetMutation])
 
   return (
     <Dialog open={item !== undefined} onOpenChange={(open) => { if (!open) close() }}>
       <DialogContent className="sm:max-w-3xl" showCloseButton={!mutation.isPending} aria-busy={mutation.isPending} aria-describedby={undefined}>
-        <DialogHeader><DialogTitle>{item ? `Create ${item.name} revision ${item.revision + 1}` : 'Add sample type'}</DialogTitle><DialogDescription>Describe the submitted material and its preservation needs. Set coolant methods, amounts and outer-container packing in Kit specifications.</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>{item?.lifecycle === 'Draft' ? `Edit Draft revision ${item.revision}` : item ? `Create ${item.name} revision ${item.revision + 1}` : 'Add sample type'}</DialogTitle><DialogDescription>Save an incomplete Draft and finish it later. Choose this revision's shared procedure here; activate when requirements and dependencies are ready. Fields marked required must be complete before activation.</DialogDescription></DialogHeader>
         <form id="sample-type-form" noValidate onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
           <fieldset disabled={mutation.isPending} className="grid gap-5 px-1 sm:grid-cols-2">
           <Field label="Name" id="sample-type-name" required error={form.formState.errors.name?.message} full><Input id="sample-type-name" {...form.register('name')} /></Field>
           <Field label="Description" id="sample-type-description" error={form.formState.errors.description?.message} full><TextArea id="sample-type-description" rows={3} registration={form.register('description')} /></Field>
-          {!item ? <Field label="Shared shipping procedure" id="sample-type-procedure" required error={form.formState.errors.shippingProcedureId?.message} full>
+          <Field label="Shared shipping procedure" id="sample-type-procedure" required error={form.formState.errors.shippingProcedureId?.message} full>
             <select id="sample-type-procedure" className="h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm" aria-invalid={Boolean(form.formState.errors.shippingProcedureId)} {...form.register('shippingProcedureId')}>
               <option value="">Choose a procedure…</option>
               {latestRevisions((configuration.procedures ?? []).filter(procedure => procedure.isActive)).map(procedure => <option key={procedure.id} value={procedure.id}>{procedure.name}</option>)}
+              {item?.shippingProcedureId && !(configuration.procedures ?? []).some(procedure => procedure.id === item.shippingProcedureId && procedure.isActive) ? <option value={item.shippingProcedureId}>Previously selected procedure (unavailable for new Jobs)</option> : null}
             </select>
-            <p className="mt-1 text-xs text-muted-foreground">The procedure applies to every order of this Sample type. Change it later from the record's Actions menu.</p>
-          </Field> : null}
+            <p className="mt-1 text-xs text-muted-foreground">Changing this choice in a Draft leaves earlier Sample type revisions and placed Jobs unchanged.</p>
+          </Field>
           <Field label="Material type" id="sample-type-material" required error={form.formState.errors.materialClass?.message} full>
             <select id="sample-type-material" className="h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" aria-invalid={Boolean(form.formState.errors.materialClass)} {...form.register('materialClass')}>
               <option value="" disabled>Select material type…</option>
@@ -637,15 +658,12 @@ function SampleTypeDialog({ item, configuration, onClose, onSaved }: { item: Sam
           {item?.carrierRestrictions ? <Field label="Earlier carrier restrictions" id="sample-type-carrier" error={form.formState.errors.carrierRestrictions?.message} full><ScientificTextField control={form.control} name="carrierRestrictions" id="sample-type-carrier" label="Carrier restrictions" multiline rows={3} unit insertUnits unitOptions={instructionUnits} symbolOptions={instructionSymbols} disabled={mutation.isPending} describedBy={form.formState.errors.carrierRestrictions ? 'sample-type-carrier-error' : undefined} /></Field> : null}
           <div className="grid gap-x-5 gap-y-2 sm:col-span-2 sm:grid-cols-2">
             <Field label="Effective from" id="sample-type-effective" required error={form.formState.errors.effectiveFrom?.message}><Input id="sample-type-effective" type="datetime-local" aria-invalid={Boolean(form.formState.errors.effectiveFrom)} aria-describedby={form.formState.errors.effectiveFrom ? 'sample-type-effective-error' : undefined} {...form.register('effectiveFrom')} /></Field>
-            <Field label="Status" id="sample-type-status" required><select id="sample-type-status" className="h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" value={form.watch('isActive') ? 'active' : 'inactive'} onChange={event => form.setValue('isActive', event.target.value === 'active', { shouldDirty: true })}><option value="active">Active</option><option value="inactive">Inactive</option></select></Field>
-            {item
-              ? <p className="text-sm text-muted-foreground sm:col-span-2">Active is the default. Saving Active replaces an earlier active revision at the Effective from time. Saving Inactive leaves an earlier active revision available until it is replaced or deactivated.</p>
-              : <p className="text-sm text-muted-foreground sm:col-span-2">Active is the default for new sample types. Choose Inactive to save for later review. Ordering also requires an Active procedure, a usable linked transportation kit, and a Default destination.</p>}
+            <p className="text-sm text-muted-foreground sm:col-span-2">Saving keeps this revision as a Draft. Activation uses the Effective from time and requires an Active procedure, a usable linked transportation kit, and a Default destination for ordering.</p>
           </div>
           </fieldset>
         </form>
         {mutation.error ? <SaveError title="Sample-type revision was not saved" error={mutation.error} /> : null}
-        <RequiredDialogFooter><Button type="button" variant="outline" onClick={close} disabled={mutation.isPending}>Cancel</Button><Button type="submit" form="sample-type-form" disabled={mutation.isPending || Boolean(item && !form.formState.isDirty)}>{mutation.isPending ? 'Saving revision…' : item ? 'Create revision' : 'Add sample type'}</Button></RequiredDialogFooter>
+        <RequiredDialogFooter><Button type="button" variant="outline" onClick={close} disabled={mutation.isPending}>Cancel</Button><Button type="submit" form="sample-type-form" disabled={mutation.isPending || Boolean(item?.lifecycle === 'Draft' && !form.formState.isDirty)}>{mutation.isPending ? 'Saving Draft…' : item?.lifecycle === 'Draft' ? 'Save Draft' : 'Create Draft'}</Button></RequiredDialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -653,7 +671,7 @@ function SampleTypeDialog({ item, configuration, onClose, onSaved }: { item: Sam
 
 function revisionHasNotEnded(item: { effectiveTo: string | null }) { return !item.effectiveTo || new Date(item.effectiveTo).getTime() > Date.now() }
 
-function EffectiveBadge({ item }: { item: { effectiveFrom: string; effectiveTo: string | null; isActive: boolean } }) {
+function EffectiveBadge({ item }: { item: { effectiveFrom: string; effectiveTo: string | null; isActive: boolean; lifecycle?: string } }) {
   const state = effectiveState(item)
   return <Badge variant={state === 'Active now' ? 'secondary' : 'outline'}>{state}</Badge>
 }
@@ -705,7 +723,26 @@ function latestRevisions<T extends { definitionKey: string; revision: number }>(
   return [...latest.values()]
 }
 
-function effectiveState(item: { effectiveFrom: string; effectiveTo: string | null; isActive: boolean }) {
+function primaryShippingRevisions<T extends { definitionKey: string; revision: number; isActive: boolean; effectiveFrom: string; effectiveTo: string | null; lifecycle: string }>(items: T[]) {
+  const families = new Map<string, T[]>()
+  for (const item of items) families.set(item.definitionKey, [...(families.get(item.definitionKey) ?? []), item])
+  const now = Date.now()
+  return [...families.values()].flatMap(family => {
+    const sorted = [...family].sort((a, b) => b.revision - a.revision)
+    const current = sorted.find(value => value.isActive && Date.parse(value.effectiveFrom) <= now && (!value.effectiveTo || Date.parse(value.effectiveTo) > now))
+      ?? sorted.find(value => value.isActive && (!value.effectiveTo || Date.parse(value.effectiveTo) > now))
+      ?? sorted.find(value => value.lifecycle === 'Draft')
+      ?? sorted.find(value => value.lifecycle === 'Released' || value.lifecycle === 'Superseded' || value.lifecycle === 'Deactivated')
+      ?? sorted[0]
+    return current ? [current] : []
+  })
+}
+
+function effectiveState(item: { effectiveFrom: string; effectiveTo: string | null; isActive: boolean; lifecycle?: string }) {
+  if (item.lifecycle === 'Draft') return 'Draft'
+  if (item.lifecycle === 'Discarded') return 'Discarded'
+  if (item.lifecycle === 'Deactivated') return 'Deactivated'
+  if (item.lifecycle === 'LegacyInactive') return 'Legacy Inactive'
   if (!item.isActive) return 'Inactive'
   const now = Date.now()
   if (new Date(item.effectiveFrom).getTime() > now) return 'Future'
@@ -713,10 +750,10 @@ function effectiveState(item: { effectiveFrom: string; effectiveTo: string | nul
   return 'Active now'
 }
 
-function formatEffectiveRange(item: { effectiveFrom: string; effectiveTo: string | null; isActive: boolean }) {
+function formatEffectiveRange(item: { effectiveFrom: string; effectiveTo: string | null; isActive: boolean; lifecycle?: string }) {
   const start = formatDateTime(item.effectiveFrom)
   const end = item.effectiveTo ? formatDateTime(item.effectiveTo) : 'open-ended'
-  return `${item.isActive ? 'active' : 'inactive'} · ${start} to ${end}`
+  return `${effectiveState(item).toLowerCase()} · ${start} to ${end}`
 }
 
 function quantityRange(item: SampleTypeDefinition) {

@@ -1,6 +1,12 @@
 # Current active sample-type selection
 
+## September 26, 2026 versioning supersession
+
+The [Shipping configuration versioning plan](SHIPPING-CONFIGURATION-VERSIONING-PLAN.md) keeps current Active revisions for newly placed Jobs, then pins each placed Job to exact Sample type and Shipping procedure revisions. A successor Sample type Draft owns its procedure-family choice. Ordinary supersession or deactivation does not advance a placed Job's pins; an explicit audited safety hold blocks later packet issuance when needed. Earlier latest-revision packet rules below are superseded.
+
 Status: active. Owner approved September 19, 2026.
+
+The application-wide [revision strategy](../revision-strategy.md) adopted September 25 supersedes this plan's older list-display rule: a list's primary line should show the currently usable revision, with a newer pending revision linked separately. Sample types still need a focused adoption pass; the earlier implementation notes below describe shipped behavior rather than claiming compliance with the newer policy. The pending-successor gate also needs its own sample-type API and UI implementation.
 
 ## Behavior
 Shipping rules select a sample-type identity and automatically resolve its highest active, currently effective revision for new previews, packing and packet issuance. Inactive, future and ended revisions are excluded; missing effective revisions block issuance explicitly. Published packets retain exact immutable revision snapshots. Destinations remain revision-specific. Container compatibility follows the same sample identity, while its instruction-rule identity remains exact. Activating a sample revision approves that revision for these existing rules and compatible containers; limits and quantity units are revalidated at issuance.

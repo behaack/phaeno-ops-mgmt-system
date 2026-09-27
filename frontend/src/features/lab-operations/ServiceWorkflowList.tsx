@@ -12,6 +12,7 @@ import {
   type LabServiceWorkflow,
 } from '#/api/lab-operations'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
+import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
@@ -19,6 +20,7 @@ import { ActionMenu as DropdownMenu, DropdownMenuContent, DropdownMenuItem, Drop
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
+import { WorkflowListFilters } from './WorkflowListFilters'
 
 type ConfirmedWorkflowAction = 'discard' | 'promote' | 'retire' | 'withdraw'
 
@@ -62,6 +64,8 @@ export function ServiceWorkflowList({
 }) {
   const [overrideTarget, setOverrideTarget] = useState<{ workflow: LabServiceWorkflow; version: LabServiceWorkflow['versions'][number] } | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const [showInactive, setShowInactive] = useState(false)
   const [confirmation, setConfirmation] = useState<{
     workflow: LabServiceWorkflow
     versionId: string
@@ -77,9 +81,14 @@ export function ServiceWorkflowList({
       await refresh()
     },
   })
-  // Keep the canonical service identity visible even when its only candidate was
-  // discarded; otherwise the unique service key would make the next version unreachable.
-  const visibleWorkflows = workflows
+  // Keep an empty canonical identity visible so a first version can be added.
+  // Retired, discarded, and invalidated-only identities remain discoverable
+  // through Show inactive, where staff can add a new version.
+  const needle = search.trim().toLocaleLowerCase()
+  const inactiveStatuses = new Set(['Retired', 'Discarded', 'Invalidated'])
+  const visibleWorkflows = workflows.filter(workflow =>
+    (showInactive || !workflow.versions.length || workflow.versions.some(version => !inactiveStatuses.has(version.status)))
+    && (!needle || `${workflow.name} ${workflow.serviceKey} ${workflow.description ?? ''}`.toLocaleLowerCase().includes(needle)))
 
   return (
     <>
@@ -98,6 +107,7 @@ export function ServiceWorkflowList({
               </Button>
             ) : null}
           </div>
+          <WorkflowListFilters id="service-workflow" search={search} onSearchChange={setSearch} showInactive={showInactive} onShowInactiveChange={setShowInactive} />
         </CardHeader>
         <CardContent className="p-4">
           {transition.error ? (
@@ -106,11 +116,11 @@ export function ServiceWorkflowList({
               <AlertDescription>{getLabOperationsError(transition.error, 'Refresh the workflow and try again.')}</AlertDescription>
             </Alert>
           ) : null}
-          <div className="space-y-4">
+          <ul className="divide-y" aria-label="Controlled service workflows">
             {visibleWorkflows.map((workflow) => {
               const openCandidate = workflow.versions.find((version) => version.status === 'Draft' || version.status === 'Approved' || version.status === 'Invalid')
               return (
-                <section key={workflow.id} className="rounded-lg border bg-background p-4 shadow-xs">
+                <li key={workflow.id} className="py-4">
                   <div className="flex items-start justify-between gap-3">
                     <h3 className="min-w-0 wrap-anywhere font-medium">{workflow.name}</h3>
                     {canManage && !openCandidate ? (
@@ -128,7 +138,7 @@ export function ServiceWorkflowList({
                       <div key={version.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-muted px-3 py-2 text-sm">
                         <div>
                           <span className="font-medium">v{version.workflowVersion}</span>
-                          <Status value={version.status} />
+                          <Badge className="ml-2" variant={version.status === 'Production' ? 'secondary' : 'outline'}>{version.status}</Badge>
                           <span className="ml-2 text-muted-foreground">{version.stages.length} stage(s)</span>
                           {version.approvalOverrideReason ? <p className="mt-1 text-sm"><strong>Administrator override</strong> · {version.approvedAtUtc ? new Date(version.approvedAtUtc).toLocaleString() : ''} · {version.approvalOverrideReason}</p> : null}
                           {version.invalidationReason ? <p className="mt-1 text-xs text-muted-foreground">{version.invalidationReason}</p> : null}
@@ -168,11 +178,11 @@ export function ServiceWorkflowList({
                       </div>
                     ))}
                   </div>
-                </section>
+                </li>
               )
             })}
-          </div>
-          {visibleWorkflows.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">No service workflow has been defined.</p> : null}
+          </ul>
+          {visibleWorkflows.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">{!workflows.length ? 'No service workflow has been defined.' : !showInactive && workflows.every(workflow => workflow.versions.length > 0 && workflow.versions.every(version => inactiveStatuses.has(version.status))) && !needle ? 'All service workflows are inactive. Select Show inactive to review them.' : 'No service workflows match these filters.'}</p> : null}
         </CardContent>
       </Card>
 
@@ -300,8 +310,4 @@ function CreateServiceWorkflowDialog({
       </DialogContent>
     </Dialog>
   )
-}
-
-function Status({ value }: { value: string }) {
-  return <span className="ml-2 rounded-full border bg-background px-2.5 py-1 text-xs font-medium">{value}</span>
 }

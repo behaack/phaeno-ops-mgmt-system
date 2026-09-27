@@ -47,8 +47,9 @@ public partial class SampleShippingPostgresTests
         var fixture = await scope.CreateTransportationShipmentAsync(18);
         var now = DateTime.UtcNow.AddDays(-1);
         var controller = scope.CreateConfigurationController();
-        var alternate = await controller.CreateDestination(scope.DestinationRequest(now, name: "Alternate receiving")
-            with { Code = $"REF_{scope.Suffix}_ALT" }, default);
+        var alternateDraft = await controller.CreateDestination(scope.DestinationRequest(now, name: "Alternate receiving")
+            with { Code = $"REF_{scope.Suffix}_ALT", IsActive = false }, default);
+        var alternate = await controller.SetDestinationStatus(alternateDraft.Id, new(true, alternateDraft.Version), default);
         scope.ClearTrackedState();
         var size = await scope.CreateContainerAsync(fixture, 20);
         scope.ClearTrackedState();
@@ -84,8 +85,9 @@ public partial class SampleShippingPostgresTests
         await using var scope = await ShippingTestScope.CreateAsync();
         var fixture = await scope.CreateTransportationShipmentAsync(30);
         var controller = scope.CreateConfigurationController();
-        var alternate = await controller.CreateDestination(scope.DestinationRequest(DateTime.UtcNow.AddDays(-1),
-            name: "Alternate receiving") with { Code = $"REF_{scope.Suffix}_ALT" }, default);
+        var alternateDraft = await controller.CreateDestination(scope.DestinationRequest(DateTime.UtcNow.AddDays(-1),
+            name: "Alternate receiving") with { Code = $"REF_{scope.Suffix}_ALT", IsActive = false }, default);
+        var alternate = await controller.SetDestinationStatus(alternateDraft.Id, new(true, alternateDraft.Version), default);
         scope.ClearTrackedState();
         var size = await scope.CreateContainerAsync(fixture, 20);
         var location = await scope.CreateTransportationLocationAsync();
@@ -457,6 +459,7 @@ public partial class SampleShippingPostgresTests
             var job = new LabServiceOrder(CustomerOrganization.Id, departmentId, OrderNumberGenerator.Lab(), $"KIT-SUPPLY-{jobSuffix}", null,
                 1, false, "Synthetic", "Frozen", "No hazards", "Ship cold");
             job.SelectSampleType(configured.SampleType.Id, configured.SampleType.MaterialClass);
+            job.PinShippingProcedure(configured.SampleType.ShippingProcedureId!.Value);
             job.SourceGroups.Add(new(job.Id, "Synthetic", 1)); job.Submit(CustomerUser.Id, now); job.BeginQuotePreparation();
             var quote = new LabServiceQuote(job.Id, 1, QuotePurpose.Initial, "[]", 100, 0, "USD", now, now.AddDays(30));
             quote.MarkIssued(); job.Quotes.Add(quote); job.MarkQuoteIssued(quote.Id); quote.Accept(CustomerUser.Id, now); job.AcceptQuote(quote.Id, now);

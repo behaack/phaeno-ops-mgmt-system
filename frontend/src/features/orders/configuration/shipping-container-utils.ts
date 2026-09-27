@@ -9,7 +9,10 @@ export function latestContainerRevisions(items: ShippingContainerDefinition[]) {
   return [...latest.values()].sort((a, b) => a.displayOrder - b.displayOrder || a.commonName.localeCompare(b.commonName) || a.sku.localeCompare(b.sku))
 }
 
-export function containerEffectiveState(item: Pick<ShippingContainerDefinition, 'isActive' | 'effectiveFrom' | 'effectiveTo' | 'deactivatedAt'>) {
+export function containerEffectiveState(item: Pick<ShippingContainerDefinition, 'isActive' | 'effectiveFrom' | 'effectiveTo' | 'deactivatedAt'> & { lifecycle?: ShippingContainerDefinition['lifecycle'] }) {
+  if (item.lifecycle === 'Draft') return 'Draft'
+  if (item.lifecycle === 'Discarded') return 'Discarded'
+  if (item.lifecycle === 'LegacyInactive') return 'Legacy Inactive'
   if (item.deactivatedAt) return 'Deactivated'
   if (item.effectiveTo && new Date(item.effectiveTo).getTime() <= Date.now()) return 'Ended'
   if (!item.isActive) return 'Draft'

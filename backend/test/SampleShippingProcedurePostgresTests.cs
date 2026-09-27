@@ -17,8 +17,9 @@ public partial class SampleShippingPostgresTests
         await using var scope = await ShippingTestScope.CreateAsync();
         var request = new SampleShippingProcedureWriteRequest(null, null, $"PACK-{scope.Suffix}-PROCEDURE",
             "Synthetic shared packing", "Synthetic transit handling", "Synthetic carrier",
-            "Synthetic dispatch", "Synthetic insert", "Synthetic exceptions", null, true);
-        var procedure = await scope.ProcedureController().Create(request, default);
+            "Synthetic dispatch", "Synthetic insert", "Synthetic exceptions", null, false);
+        var draft = await scope.ProcedureController().Create(request, default);
+        var procedure = await scope.ProcedureController().SetStatus(draft.Id, new(true, draft.Version), default);
         scope.ClearTrackedState();
 
         var denied = await Assert.ThrowsAsync<OrderManagementException>(() => scope.ProcedureController(true)
@@ -48,9 +49,10 @@ public partial class SampleShippingPostgresTests
         await using var scope = await ShippingTestScope.CreateAsync();
         var request = new SampleShippingProcedureWriteRequest(null, null, $"PACK-{scope.Suffix}-PROCEDURE",
             "Synthetic shared packing", "Synthetic transit handling", "Synthetic carrier",
-            "Synthetic dispatch", "Synthetic insert", "Synthetic exceptions", null, true,
+            "Synthetic dispatch", "Synthetic insert", "Synthetic exceptions", null, false,
             "Common handling for frozen synthetic samples.");
-        var first = await scope.ProcedureController().Create(request, default);
+        var initialDraft = await scope.ProcedureController().Create(request, default);
+        var first = await scope.ProcedureController().SetStatus(initialDraft.Id, new(true, initialDraft.Version), default);
         Assert.Equal(request.Description, first.Description);
         scope.ClearTrackedState();
         var draft = await scope.ProcedureController().Create(request with {
@@ -75,8 +77,9 @@ public partial class SampleShippingPostgresTests
         Assert.False((await scope.DbContext.SampleShippingProcedures.AsNoTracking().SingleAsync(item => item.Id == first.Id)).IsActive);
         Assert.Equal(1, await scope.DbContext.SampleShippingProcedures.AsNoTracking().CountAsync(item => item.DefinitionKey == first.DefinitionKey && item.IsActive));
 
-        var third = await scope.ProcedureController().Create(request with {
+        var thirdDraft = await scope.ProcedureController().Create(request with {
             SupersedesProcedureId = active.Id, SupersededVersion = active.Version }, default);
+        var third = await scope.ProcedureController().SetStatus(thirdDraft.Id, new(true, thirdDraft.Version), default);
         scope.ClearTrackedState();
         Assert.True(third.IsActive);
         Assert.False((await scope.DbContext.SampleShippingProcedures.AsNoTracking().SingleAsync(item => item.Id == active.Id)).IsActive);
@@ -87,13 +90,6 @@ public partial class SampleShippingPostgresTests
             .SetStatus(first.Id, new(true, firstVersion), default));
         Assert.Equal("shipping_procedure_already_superseded", historical.ErrorCode);
 
-        scope.ClearTrackedState();
-        var staleActiveFlag = await scope.DbContext.SampleShippingProcedures.SingleAsync(item => item.Id == first.Id);
-        staleActiveFlag.Activate();
-        await scope.DbContext.SaveChangesAsync();
-        scope.ClearTrackedState();
-        Assert.Equal(2, await scope.DbContext.SampleShippingProcedures.AsNoTracking()
-            .CountAsync(item => item.DefinitionKey == first.DefinitionKey && item.IsActive));
         var stopped = await scope.ProcedureController().SetStatus(third.Id, new(false, third.Version), default);
         scope.ClearTrackedState();
         Assert.False(stopped.IsActive);
@@ -106,17 +102,20 @@ public partial class SampleShippingPostgresTests
     {
         await using var scope = await ShippingTestScope.CreateAsync();
         var controller = scope.CreateConfigurationController();
-        var first = await controller.CreateSampleType(scope.SampleTypeRequest(DateTime.UtcNow.AddDays(-2)), default);
+        var firstDraft = await controller.CreateSampleType(scope.SampleTypeRequest(DateTime.UtcNow.AddDays(-2))
+            with { IsActive = false }, default);
+        var first = await controller.SetSampleTypeStatus(firstDraft.Id,
+            new SampleShippingStatusRequest(true, firstDraft.Version), default);
         scope.ClearTrackedState();
 
         var next = await controller.CreateSampleType(scope.SampleTypeRequest(
-            DateTime.UtcNow.AddDays(-1), first.Id, first.Version, "Reference RNA revised")
-            with { ShippingProcedureId = null }, default);
+            DateTime.UtcNow, first.Id, first.Version, "Reference RNA revised")
+            with { IsActive = false }, default);
 
         Assert.Equal(2, next.Revision);
         Assert.Equal(scope.DefaultProcedureId, next.ShippingProcedureId);
         Assert.Equal(first.DefinitionKey, next.DefinitionKey);
-        Assert.Single(await scope.DbContext.SampleTypeProcedureLinks.AsNoTracking()
+        Assert.Empty(await scope.DbContext.SampleTypeProcedureLinks.AsNoTracking()
             .Where(link => link.SampleTypeAnchorId == first.Id).ToListAsync());
     }
 
@@ -124,9 +123,11 @@ public partial class SampleShippingPostgresTests
     public async Task NewSampleTypeRequiresOneProcedure()
     {
         await using var scope = await ShippingTestScope.CreateAsync();
+        var draft = await scope.CreateConfigurationController().CreateSampleType(
+            scope.SampleTypeRequest(DateTime.UtcNow.AddDays(-1)) with { ShippingProcedureId = null, IsActive = false }, default);
         var error = await Assert.ThrowsAsync<OrderManagementException>(() =>
-            scope.CreateConfigurationController().CreateSampleType(
-                scope.SampleTypeRequest(DateTime.UtcNow.AddDays(-1)) with { ShippingProcedureId = null }, default));
+            scope.CreateConfigurationController().SetSampleTypeStatus(draft.Id,
+                new SampleShippingStatusRequest(true, draft.Version), default));
         Assert.Equal("shipping_procedure_required", error.ErrorCode);
     }
     private sealed partial class ShippingTestScope

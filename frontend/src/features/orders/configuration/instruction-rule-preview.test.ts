@@ -9,7 +9,7 @@ describe('shared shipping procedure selection', () => {
     name: 'Shared procedure', description: '', packingInstructions: 'Pack safely', temperatureInstructions: 'Keep frozen',
     carrierInstructions: 'Traceable carrier', dispatchInstructions: 'Dispatch on weekdays',
     requiredDocuments: 'Packet', exceptionInstructions: 'Contact Phaeno', internationalCustomsInstructions: null,
-    isActive, version: 1,
+    isActive, version: 1, lifecycle: isActive ? 'Released' : 'Deactivated',
   })
   it('uses the newest active revision of the selected procedure family', () => {
     expect(currentShippingProcedure([procedure('first', 1, false), procedure('second', 2, true)], 'first')?.id).toBe('second')

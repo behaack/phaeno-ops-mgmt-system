@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 
 import { ProtocolVersionBuilderPage } from '#/features/lab-operations/ProtocolVersionBuilderPage'
+import { LabSettingsLayout } from '#/features/lab-operations/LabSettingsLayout'
 
 export const Route = createFileRoute(
   '/lab-operations/protocols/$protocolId/versions/$versionId/edit',
@@ -10,5 +11,5 @@ export const Route = createFileRoute(
 
 function ProtocolVersionEditRoute() {
   const { protocolId, versionId } = Route.useParams()
-  return <ProtocolVersionBuilderPage protocolId={protocolId} draftVersionId={versionId} />
+  return <LabSettingsLayout section="protocols" backLabel="protocols"><ProtocolVersionBuilderPage protocolId={protocolId} draftVersionId={versionId} /></LabSettingsLayout>
 }

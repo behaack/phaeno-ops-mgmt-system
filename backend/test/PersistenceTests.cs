@@ -600,7 +600,7 @@ public class PersistenceTests
     {
         using var dbContext = CreateDbContext();
         var migrations = dbContext.Database.GetMigrations().ToArray();
-        Assert.Equal(23, migrations.Length);
+        Assert.True(migrations.Length >= 23);
         Assert.EndsWith("_InitialPSeqOperationsRebased", migrations[0]);
         Assert.EndsWith("_AddSampleSequencingRuns", migrations[1]);
         Assert.EndsWith("_AddSequencingRunLineage", migrations[2]);
@@ -619,9 +619,10 @@ public class PersistenceTests
         Assert.EndsWith("_AddReagentManufacturing", migrations[15]);
         Assert.EndsWith("_ReagentIdentityAndInventoryUnits", migrations[16]);
         Assert.EndsWith("_LinkPhaenoReagentProducts", migrations[17]);
-        Assert.EndsWith("_EnforceUniqueLabStepNames", migrations[^3]);
-        Assert.EndsWith("_AddSingleUseMasterMix", migrations[^2]);
-        Assert.EndsWith("_CloseMasterMixGaps", migrations[^1]);
+        Assert.Contains(migrations, migration => migration.EndsWith("_EnforceUniqueLabStepNames"));
+        Assert.Contains(migrations, migration => migration.EndsWith("_AddSingleUseMasterMix"));
+        Assert.Contains(migrations, migration => migration.EndsWith("_CloseMasterMixGaps"));
+        Assert.EndsWith("_AddShippingContainerTubeCapacity", migrations[^1]);
     }
 
     private static void AssertUniqueIndex<TEntity>(

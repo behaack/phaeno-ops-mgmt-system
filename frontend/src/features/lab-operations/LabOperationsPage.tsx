@@ -4,7 +4,7 @@ import { JobsList } from './JobsList'
 import { LabStepList } from './LabSteps'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { Building2, CheckCircle2, ChevronDown, ClipboardList, FileX, FlaskConical, Layers3, Microscope, PackageCheck, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, Truck, Workflow } from 'lucide-react'
+import { CheckCircle2, ChevronDown, ClipboardList, FileX, FlaskConical, Layers3, Microscope, PackageCheck, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, Truck, Workflow } from 'lucide-react'
 import { useRef, useState, type FormEvent } from 'react'
 import { Archive, ChevronRight } from 'lucide-react'
 import { retireLabProtocol } from '#/api/lab-operations'
@@ -45,6 +45,7 @@ import {
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { Checkbox } from '#/components/ui/checkbox'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import {
   RequiredDialogFooter,
   RequiredFieldName,
@@ -54,9 +55,7 @@ import { usePhaenoSession } from '#/features/auth/session-context'
 import { LabBatchBarcodeScanner } from './LabBarcodeScanner'
 import { SequencingTubesDialog } from './SequencingTubesDialog'
 import { PreparationActions } from './preparation-ui'
-import { EquipmentCreateDialog } from './EquipmentCreateDialog'
 import { EquipmentRetirementDialog } from './EquipmentRetirementDialog'
-import { MaterialLotCreateDialog } from './MaterialLotCreateDialog'
 import { LabManufacturingQueue } from './LabManufacturingPage'
 import { DataAssemblyWorkspace } from './AssemblyJobs'
 import { LabReceiptAccessionPanel } from './LabReceiptAccessionPanel'
@@ -65,8 +64,6 @@ import { ProtocolIdentityDialog, type ProtocolIdentityFormValues } from './Proto
 import { isProtocolVisible } from './protocol-list'
 import { ServiceWorkflowList } from './ServiceWorkflowList'
 import { PreparationBatchList } from './PreparationBatchList'
-import { SupplierCatalogWorkspace } from './SupplierCatalogWorkspace'
-import type { SupplierCatalogTab } from './supplier-catalog-tabs'
 import { TrayFormatList } from './TrayFormatList'
 import { StorageLocations } from './StorageLocations'
 import { ReagentWorkflowSettings } from './ReagentWorkflowSettings'
@@ -76,9 +73,10 @@ import { MasterMixWorkflowSettings } from './MasterMixWorkflowSettingsV2'
 import { TransportationKitWorkspace } from './TransportationKitWorkspace'
 import { KitAssemblyWorkflowSettings } from './KitAssemblyWorkflowSettings'
 import { labConfigurationTabs, parseLabConfigurationTab, type LabConfigurationTab } from './lab-configuration-tabs'
+import { LabSettingsHeader } from './LabSettingsLayout'
 
-type CreateKind = 'protocol' | 'material' | 'equipment' | 'batch' | null
-type SimpleCreateKind = Exclude<CreateKind, 'material' | 'equipment'>
+type CreateKind = 'protocol' | 'batch' | null
+type SimpleCreateKind = CreateKind
 export type { LabSection } from './lab-sections'
 import type { LabReceiptTab } from './lab-receipt-tabs'
 import type { LabSection } from './lab-sections'
@@ -92,14 +90,11 @@ const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
   { value: 'results', label: 'Results & review', description: 'Result evidence, scientific review, and release readiness', icon: ClipboardList },
   { value: 'kits', label: 'PSeq kits', separatorBefore: true, description: 'Preparation, shipping, and fulfillment', icon: PackageCheck },
   { value: 'assembly', label: 'Data assembly', description: 'Input validation, processing, and release', icon: Workflow },
-  { value: 'materials', label: 'Purchased Materials', separatorBefore: true, description: 'Purchased lots, prepared reagents, and QC', icon: FlaskConical },
   { value: 'reagent-runs', label: 'Reagent manufacturing', description: 'Make and document Phaeno reagent lots', icon: FlaskConical },
   { value: 'transportation-kits', label: 'Transportation kits', description: 'Assembly, inventory, requests, and kits sent', icon: PackageCheck },
-  { value: 'suppliers', label: 'Suppliers & products', separatorBefore: true, description: 'Vendors, reagents, and shipping supplies', icon: Building2 },
-  { value: 'equipment', label: 'Equipment', description: 'Assets, availability, and calibration', icon: Microscope },
 ]
 
-export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTabChange, configurationTab, onConfigurationTabChange, supplierTab, onSupplierTabChange, onSectionChange }: { section: LabSection; shipmentId?: string; receiptTab?: LabReceiptTab; onReceiptTabChange?: (tab: LabReceiptTab) => void; configurationTab?: LabConfigurationTab; onConfigurationTabChange?: (tab: LabConfigurationTab) => void; supplierTab?: SupplierCatalogTab; onSupplierTabChange?: (tab: SupplierCatalogTab) => void; onSectionChange: (section: LabSection) => void }) {
+export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTabChange, configurationTab, onConfigurationTabChange, onSectionChange }: { section: LabSection; shipmentId?: string; receiptTab?: LabReceiptTab; onReceiptTabChange?: (tab: LabReceiptTab) => void; configurationTab?: LabConfigurationTab; onConfigurationTabChange?: (tab: LabConfigurationTab) => void; onSectionChange: (section: LabSection) => void }) {
   const { authProvider, session } = usePhaenoSession()
   const navigate = useNavigate()
   const canView = Boolean(session?.capabilities.canManageLabOperations)
@@ -112,11 +107,9 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
   const activeConfiguration = configurationTab ?? localConfigurationTab
   const needsDashboard = configuring
     ? activeConfiguration === 'protocols' || activeConfiguration === 'workflows'
-    : section !== 'receipt' && section !== 'transportation-kits' && section !== 'suppliers' && section !== 'jobs' && section !== 'assembly' && section !== 'reagent-runs' && section !== 'master-mixes'
+    : section !== 'receipt' && section !== 'transportation-kits' && section !== 'jobs' && section !== 'assembly' && section !== 'reagent-runs' && section !== 'master-mixes'
   const dashboard = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: apiEnabled && needsDashboard })
-  const refresh = () => Promise.all((section === 'suppliers'
-    ? ['supplier-product-types', 'supplier-catalog']
-    : section === 'receipt' || section === 'transportation-kits'
+  const refresh = () => Promise.all((section === 'receipt' || section === 'transportation-kits'
     ? ['platform-transportation-kit-requests', 'shipping-stock-kits', 'sample-shipping-workflow', 'lab-shipment-queue']
     : ['lab-operations', 'lab-storage-locations', 'lab-preparation', 'lab-jobs', 'assembly-jobs', 'assembly-job', 'lab-job-deadline', 'lab-forecast-configuration', 'lab-completion-forecast']).map(key => queryClient.invalidateQueries({ queryKey: [key] })))
 
@@ -135,15 +128,15 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
           } else onSectionChange(value as LabSection)
         }}
       >
-        <div className="page-wrap px-4">
+        <div className={configuring ? "page-wrap px-4 pt-6 lg:pt-0" : "page-wrap px-4"}>
           <section className="mb-6 flex flex-wrap items-start justify-between gap-4">
-            <div className="max-w-3xl">
-              <h1 className="text-3xl font-semibold">{configuring ? "Lab Settings" : "Lab operations"}</h1>
+            {configuring ? <LabSettingsHeader /> : <div className="max-w-3xl">
+              <h1 className="text-3xl font-semibold">Lab operations</h1>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                {configuring ? "Maintain laboratory steps, protocols, workflows, duration estimates, holidays, tray formats, and storage locations." : <>Internal kit fulfillment, receipt and accession, protocol execution, data assembly,
-                materials, equipment, cross-order batching, exceptions, and release readiness.</>}
+                Internal kit fulfillment, receipt and accession, protocol execution, data assembly,
+                cross-order batching, exceptions, and release readiness.
               </p>
-            </div>
+            </div>}
             <Button type="button" variant="outline" disabled={!apiEnabled || dashboard.isFetching} onClick={() => refresh()}>
               <RefreshCw data-icon="inline-start" /> Refresh
             </Button>
@@ -151,7 +144,6 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
           {authProvider === 'mock' ? <Alert className="mb-5"><AlertTitle>Connected Lab operations are paused</AlertTitle><AlertDescription>Use a real Phaeno session to load or change laboratory records.</AlertDescription></Alert> : null}
           {needsDashboard && dashboard.error ? <Alert className="mb-5" variant="destructive"><AlertTitle>Lab operations could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(dashboard.error, 'Try refreshing the workspace.')}</AlertDescription></Alert> : null}
           {needsDashboard && dashboard.isLoading ? <p role="status">Loading laboratory workspace…</p> : null}
-          {section === 'suppliers' ? <SupplierCatalogWorkspace tab={supplierTab} onTabChange={onSupplierTabChange} /> : null}
           {section === 'receipt' ? <LabReceiptAccessionPanel canReceiveShipments={Boolean(session?.capabilities.canOperateLabWork)} tab={receiptTab} onTabChange={onReceiptTabChange} canManageKitSupply={Boolean(session?.capabilities.canManageOrderConfiguration)} shipmentId={shipmentId} apiEnabled={apiEnabled} workOrders={[]} /> : null}
           {section === 'transportation-kits' ? <TransportationKitWorkspace apiEnabled={apiEnabled} canManageKitSupply={Boolean(session?.capabilities.canManageOrderConfiguration)} shipmentId={shipmentId} tab={receiptTab} onTabChange={onReceiptTabChange} /> : null}
           {section === 'jobs' ? <JobsList enabled={apiEnabled} /> : null}
@@ -163,47 +155,29 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
           {section === 'master-mixes' ? <MasterMixWorkspace enabled={apiEnabled} canOperate={Boolean(session?.capabilities.canOperateLabWork)} /> : null}
           {configuring && activeConfiguration === 'steps' ? <LabStepList /> : null}
           {dashboard.data && configuring && activeConfiguration === 'protocols' ? <ProtocolList actorId={session?.user?.id} canOverride={Boolean(session?.isPlatformAdmin)} protocols={dashboard.data.protocols} canManage={Boolean(session?.capabilities.canManageLabProtocols)} onCreate={() => setCreateKind('protocol')} refresh={refresh} /> : null}
-          {dashboard.data && configuring && activeConfiguration === 'workflows' ? <div className="space-y-5"><div className="flex flex-wrap gap-2" role="group" aria-label="Workflow type"><Button type="button" variant={workflowKind === 'library' ? 'default' : 'outline'} onClick={() => setWorkflowKind('library')}>Library preparation</Button><Button type="button" variant={workflowKind === 'reagent' ? 'default' : 'outline'} onClick={() => setWorkflowKind('reagent')}>Reagent manufacturing</Button><Button type="button" variant={workflowKind === 'master-mix' ? 'default' : 'outline'} onClick={() => setWorkflowKind('master-mix')}>Master mix</Button><Button type="button" variant={workflowKind === 'transportation-kit' ? 'default' : 'outline'} onClick={() => setWorkflowKind('transportation-kit')}>Transportation kit assembly</Button></div>{workflowKind === 'library' ? <ServiceWorkflowList actorId={session?.user?.id} canOverride={Boolean(session?.isPlatformAdmin)} workflows={dashboard.data.serviceWorkflows} marketedServices={dashboard.data.marketedServices} canManage={Boolean(session?.capabilities.canManageLabProtocols)} refresh={refresh} /> : workflowKind === 'reagent' ? <ReagentWorkflowSettings actorId={session?.user?.id} isPlatformAdmin={Boolean(session?.isPlatformAdmin)} definitions={dashboard.data.materialDefinitions} canManage={Boolean(session?.capabilities.canManageLabProtocols)} /> : workflowKind === 'master-mix' ? <MasterMixWorkflowSettings actorId={session?.user?.id} isPlatformAdmin={Boolean(session?.isPlatformAdmin)} canManage={Boolean(session?.capabilities.canManageLabProtocols)} /> : <KitAssemblyWorkflowSettings actorId={session?.user?.id} isPlatformAdmin={Boolean(session?.isPlatformAdmin)} canManage={Boolean(session?.capabilities.canManageLabProtocols)} />}</div> : null}
+          {dashboard.data && configuring && activeConfiguration === 'workflows' ? (
+            <Tabs value={workflowKind} onValueChange={value => setWorkflowKind(value as typeof workflowKind)} className="gap-4">
+              <div className="min-w-0 overflow-x-auto pb-1">
+                <TabsList aria-label="Workflow type" className="w-max min-w-full">
+                  <TabsTrigger value="library">Library preparation</TabsTrigger>
+                  <TabsTrigger value="reagent">Reagent manufacturing</TabsTrigger>
+                  <TabsTrigger value="master-mix">Master mix</TabsTrigger>
+                  <TabsTrigger value="transportation-kit">Transportation kit assembly</TabsTrigger>
+                </TabsList>
+              </div>
+              <TabsContent value="library"><ServiceWorkflowList actorId={session?.user?.id} canOverride={Boolean(session?.isPlatformAdmin)} workflows={dashboard.data.serviceWorkflows} marketedServices={dashboard.data.marketedServices} canManage={Boolean(session?.capabilities.canManageLabProtocols)} refresh={refresh} /></TabsContent>
+              <TabsContent value="reagent"><ReagentWorkflowSettings actorId={session?.user?.id} isPlatformAdmin={Boolean(session?.isPlatformAdmin)} definitions={dashboard.data.materialDefinitions} canManage={Boolean(session?.capabilities.canManageLabProtocols)} /></TabsContent>
+              <TabsContent value="master-mix"><MasterMixWorkflowSettings actorId={session?.user?.id} isPlatformAdmin={Boolean(session?.isPlatformAdmin)} canManage={Boolean(session?.capabilities.canManageLabProtocols)} /></TabsContent>
+              <TabsContent value="transportation-kit"><KitAssemblyWorkflowSettings actorId={session?.user?.id} isPlatformAdmin={Boolean(session?.isPlatformAdmin)} canManage={Boolean(session?.capabilities.canManageLabProtocols)} /></TabsContent>
+            </Tabs>
+          ) : null}
           {configuring && activeConfiguration === 'stage-durations' ? <StageDurations /> : null}
           {configuring && activeConfiguration === 'holiday-calendar' ? <HolidayCalendar /> : null}
           {configuring && activeConfiguration === 'tray-formats' ? <TrayFormatList /> : null}
           {configuring && activeConfiguration === 'storage-locations' ? <StorageLocations enabled={apiEnabled} canCreate={Boolean(session?.capabilities.canOperateLabWork)} canEdit={Boolean(session?.capabilities.canSuperviseLabWork)} /> : null}
-          {dashboard.data && section === 'materials' ? <MaterialList items={dashboard.data.materialLots} canManage={Boolean(session?.capabilities.canOperateLabWork)} canApprove={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('material')} refresh={refresh} /> : null}
-          {dashboard.data && section === 'equipment' ? <EquipmentList items={dashboard.data.equipment} canManage={Boolean(session?.capabilities.canSuperviseLabWork)} onCreate={() => setCreateKind('equipment')} /> : null}
           {dashboard.data && section === 'batches' ? <BatchList items={dashboard.data.batches} suppliers={dashboard.data.suppliers} canManage={Boolean(session?.capabilities.canOperateLabWork)} onCreate={() => setCreateKind('batch')} refresh={refresh} /> : null}
-          {dashboard.data ? (
-            <MaterialLotCreateDialog
-              open={createKind === 'material'}
-              definitions={dashboard.data.materialDefinitions}
-              suppliers={dashboard.data.suppliers}
-              storageLocations={dashboard.data.storageLocations}
-              materialLots={dashboard.data.materialLots}
-              onOpenChange={(open) => {
-                if (!open) setCreateKind(null)
-              }}
-              onSaved={async () => {
-                setCreateKind(null)
-                await refresh()
-              }}
-            />
-          ) : null}
-          {dashboard.data ? (
-            <EquipmentCreateDialog
-              open={createKind === 'equipment'}
-              equipment={dashboard.data.equipment}
-              protocols={dashboard.data.protocols}
-              storageLocations={dashboard.data.storageLocations}
-              onOpenChange={(open) => {
-                if (!open) setCreateKind(null)
-              }}
-              onSaved={async () => {
-                setCreateKind(null)
-                await refresh()
-              }}
-            />
-          ) : null}
           <CreateRecordDialog
-            kind={createKind === 'material' || createKind === 'equipment' ? null : createKind}
+            kind={createKind}
             onClose={() => setCreateKind(null)}
             onSaved={async (record) => {
               setCreateKind(null)
@@ -610,7 +584,7 @@ export function ProtocolList({ protocols, canManage, canOverride = false, actorI
   )
 }
 
-function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['materialLots']; canManage: boolean; canApprove: boolean; onCreate: () => void; refresh: () => Promise<unknown> }) {
+export function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['materialLots']; canManage: boolean; canApprove: boolean; onCreate: () => void; refresh: () => Promise<unknown> }) {
   const [qcLot, setQcLot] = useState<LabMaterialLot | null>(null)
   const [qcOutcome, setQcOutcome] = useState<'Passed' | 'Failed' | ''>('')
   const [qcPerformedOn, setQcPerformedOn] = useState(todayDateOnly())
@@ -694,7 +668,7 @@ function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { ite
                 className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-background p-4 shadow-xs focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
               >
                 <div>
-                  <Link className="font-medium text-primary underline underline-offset-4 wrap-anywhere" to="/lab-operations/materials/$materialLotId" params={{ materialLotId: item.id }} search={{ section: 'materials' }}>{item.name} · {item.lotNumber}</Link>
+                  <Link className="font-medium text-primary underline underline-offset-4 wrap-anywhere" to="/purchasing/materials/$materialLotId" params={{ materialLotId: item.id }}>{item.name} · {item.lotNumber}</Link>
                   <p className="text-xs text-muted-foreground">
                     {item.quantityHoldReason ? 'Quantity reconciliation required · ' : ''}{item.materialKey} · {item.availableQuantity} {item.quantityUnit} · {item.storageLocation}
                     {item.supplier ? ` · ${item.supplier}` : ''}
@@ -861,7 +835,7 @@ function MaterialList({ items, canManage, canApprove, onCreate, refresh }: { ite
   )
 }
 
-function EquipmentList({ items, canManage, onCreate }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['equipment']; canManage: boolean; onCreate: () => void }) {
+export function EquipmentList({ items, canManage, onCreate }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['equipment']; canManage: boolean; onCreate: () => void }) {
   const queryClient = useQueryClient()
   const [showRetired, setShowRetired] = useState(false)
   const retiredFilterRef = useRef<HTMLButtonElement>(null)

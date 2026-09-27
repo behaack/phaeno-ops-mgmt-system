@@ -32,7 +32,7 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 public partial class LabOperationsCommercialHandoffPostgresTests
 {
     [PostgreSqlReferenceFact]
-    public async Task RetiredAssemblyOrInactiveKitComponentBlocksNewOrderingAndQuoteAcceptance()
+    public async Task RetiredAssemblyOrInactiveKitComponentKeepsOrderingOpenButStopsNewAssembly()
     {
         await using var scope = await HandoffTestScope.CreateAsync();
         var quoted = await scope.CreateQuotedOrderAsync();
@@ -47,45 +47,38 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             .Where(item => item.ContainerType.SampleTypeAnchorId == anchorId && item.IsActive)
             .SingleAsync();
         var context = new[] { new ContainerSampleTypeContext(sampleTypeId.Value) };
-        async Task AssertReady(bool expected)
+        async Task AssertReadiness(bool assemblyReady)
         {
             scope.DbContext.ChangeTracker.Clear();
             var choices = await LabOrderSampleTypeChoices.ReadAsync(scope.DbContext, default);
-            Assert.Equal(expected, choices.Any(item => item.Id == sampleTypeId));
+            Assert.Contains(choices, item => item.Id == sampleTypeId);
             var kits = await new SampleShippingContainerCatalogService(scope.DbContext)
                 .ReadCompatibleAsync(context, default);
-            Assert.Equal(expected, kits.Any(item => item.Id == definition.Id));
+            Assert.Contains(kits, item => item.Id == definition.Id);
             var listed = await new SampleShippingContainerCatalogService(scope.DbContext)
                 .ReadAsync(definition.Id, default);
-            Assert.Equal(expected, listed.NewWorkReady);
+            Assert.True(listed.NewWorkReady);
+            Assert.Equal(assemblyReady, listed.AssemblyWorkflowReady);
         }
 
-        await AssertReady(true);
+        await AssertReadiness(true);
         var componentId = await scope.DbContext.Set<ShippingKitContent>().AsNoTracking()
             .Where(item => item.ContainerDefinitionId == definition.Id).Select(item => item.SupplierProductId).FirstAsync();
         var component = await scope.DbContext.LabSupplierProducts.SingleAsync(item => item.Id == componentId);
         component.Update(component.ProductNumber, component.Description, component.ProductTypeId, false);
         await scope.DbContext.SaveChangesAsync();
-        await AssertReady(false);
+        await AssertReadiness(false);
         component = await scope.DbContext.LabSupplierProducts.SingleAsync(item => item.Id == componentId);
         component.Update(component.ProductNumber, component.Description, component.ProductTypeId, true);
         await scope.DbContext.SaveChangesAsync();
-        await AssertReady(true);
-        var draft = await scope.CreateDraftOrderAsync();
+        await AssertReadiness(true);
 
         var workflow = await scope.DbContext.LabKitAssemblyWorkflowRevisions
             .SingleAsync(item => item.Id == definition.AssemblyWorkflowRevisionId);
         workflow.Retire();
         await scope.DbContext.SaveChangesAsync();
-        await AssertReady(false);
-        var error = await Assert.ThrowsAsync<OrderManagementException>(() => scope.AcceptQuoteAsync(quoted));
-        Assert.Equal("sample_type_unavailable", error.ErrorCode);
-        var submitError = await Assert.ThrowsAsync<OrderManagementException>(() => scope.SubmitDraftOrderAsync(draft.Id, draft.Version));
-        Assert.Equal("sample_type_unavailable", submitError.ErrorCode);
-        Assert.Equal(LabServiceOrderStatus.QuoteIssued, await scope.DbContext.LabServiceOrders.AsNoTracking()
-            .Where(item => item.Id == quoted.OrderId).Select(item => item.Status).SingleAsync());
-        Assert.Equal(LabServiceOrderStatus.DraftRequest, await scope.DbContext.LabServiceOrders.AsNoTracking()
-            .Where(item => item.Id == draft.Id).Select(item => item.Status).SingleAsync());
+        await AssertReadiness(false);
+        await scope.AcceptQuoteAsync(quoted);
     }
 
     [PostgreSqlReferenceFact]
@@ -1721,7 +1714,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 .Where(item => item.DefinitionKey == sampleType.DefinitionKey && item.Revision == 1)
                 .Select(item => item.Id).SingleAsync();
             var hasKit = await dbContext.SampleShippingContainerDefinitions.AnyAsync(item =>
-                item.ContainerType.SampleTypeAnchorId == anchorId && item.IsActive
+                item.SampleTypeAnchorId == anchorId && item.IsActive
                 && item.EffectiveFrom <= now && (!item.EffectiveTo.HasValue || item.EffectiveTo > now)
                 && item.AssemblyWorkflowRevisionId.HasValue && item.KitContents.Any());
             Guid? createdKitTypeId = null;
@@ -1742,7 +1735,10 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                     "Reference tube", LabProductType.TubeId);
                 var shipper = new LabSupplierProduct(componentSupplier.Id, $"SHIPPER-{suffix}",
                     "Reference outer shipper", LabProductType.ShippingContainerId);
-                var workflow = new LabKitAssemblyWorkflow(finished.Id);
+                tube.SetDefaultQuantityUnit("each");
+                shipper.SetDefaultQuantityUnit("each");
+                shipper.SetTubeCapacity(100);
+                var workflow = new LabKitAssemblyWorkflow(finished.Id, "Total RNA kit assembly");
                 var workflowRevision = new LabKitAssemblyWorkflowRevision(workflow.Id, 1,
                     [new(Guid.NewGuid(), "Pack kit", "Pack the approved contents.")], platformUserId, now);
                 workflowRevision.Components.Add(new(workflowRevision.Id, tube.Id, 100, "Tube", 0));
@@ -1753,7 +1749,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 var specification = new SampleShippingContainerDefinition(kitType.Id, 1, null,
                     finished.Description, 100, null, null, "Use the sealed outer shipper.",
                     now.AddMinutes(-5), null, true, 10, workflowRevision.Id,
-                    temperatureControlInstructions: "Keep the completed kit frozen in transit.");
+                    temperatureControlInstructions: "Keep the completed kit frozen in transit.",
+                    sampleTypeAnchorId: anchorId);
                 specification.KitContents.Add(new(specification.Id, tube.Id, componentSupplier.Id,
                     ShippingKitContentKind.Tube, 100, componentSupplier.Name,
                     tube.ProductNumber, tube.Description, "Tube", 0));

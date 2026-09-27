@@ -161,7 +161,8 @@ public class SampleShippingContainerTests
         Assert.Equal("0012-ab", type.Sku);
         Assert.Equal("0012-AB", type.NormalizedSku);
         var now = DateTime.UtcNow;
-        Assert.Throws<ArgumentException>(() => new SampleShippingContainerDefinition(type.Id, 1, null, "Small box", 0, null, null, null, now, null, false, 0));
+        Assert.Throws<ArgumentException>(() => new SampleShippingContainerDefinition(type.Id, 1, null, "Small box", 0, null, null, null, now, null, true, 0));
+        Assert.False(new SampleShippingContainerDefinition(type.Id, 1, null, "Small box", 0, null, null, null, now, null, false, 0).IsActive);
         Assert.Throws<ArgumentException>(() => new SampleShippingContainerDefinition(type.Id, 1, null, "Small box", 20, null, null, null, now, now.AddDays(-1), false, 0));
         var definition = new SampleShippingContainerDefinition(type.Id, 1, null, "Small box", 20, null, null, null, now, null, false, 0);
         Assert.False(definition.IsActive);

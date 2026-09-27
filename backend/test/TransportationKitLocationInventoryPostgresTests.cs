@@ -209,12 +209,14 @@ public partial class SampleShippingPostgresTests
         var location = await scope.CreateTransportationLocationAsync();
         var request = await scope.KitCustomer().Create(fixture.Shipment.Id, new(fixture.Shipment.Version, location.Id, location.Version, [new(size.Id, 1)]), default);
         var kit = await scope.ReadyTransportationKitAsync(size);
-        await scope.ContainerCatalog().ReviseAsync(size.Id, new(size.Version, "Updated wording", 20,
-            DateTime.UtcNow.AddMinutes(1), IsActive: true,
-            KitContents: size.KitContents!.Select(part => new ShippingKitContentRequest(part.SupplierProductId, part.Quantity)).ToArray(),
+        var successor = await scope.ContainerCatalog().ReviseAsync(size.Id, new(size.Version, "Updated wording", 20,
+            DateTime.UtcNow.AddMinutes(1), IsActive: false,
             AssemblyWorkflowRevisionId: size.AssemblyWorkflowRevisionId,
             PackingInstructions: size.PackingInstructions,
             TemperatureControlInstructions: size.TemperatureControlInstructions), default);
+        successor = await scope.ContainerCatalog().LinkSampleTypeAsync(successor.Id, fixture.SampleType.Id,
+            successor.Version, scope.PlatformUser.Id, default);
+        await scope.ContainerCatalog().ActivateAsync(successor.Id, successor.Version, default);
         scope.ClearTrackedState();
         var dispatched = await scope.KitStaff().Dispatch(request.Id, new(request.Version, [kit.Id], "Carrier", "OLD-REVISION", DateTime.UtcNow), default);
         await scope.KitCustomer().Receive(request.Id, new(dispatched.Request.Version, [kit.Id]), default);

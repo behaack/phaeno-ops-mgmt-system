@@ -29,6 +29,9 @@ public static class OrderManagementModelConfiguration
         modelBuilder.Entity<SampleShippingProcedure>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.Lifecycle).HasConversion<string>().HasMaxLength(24);
+            entity.HasIndex(e => e.DefinitionKey).IsUnique().HasFilter("lifecycle = 'Draft'")
+                .HasDatabaseName("ux_shipping_procedure_one_draft");
             Text(entity.Property(e => e.Name), 255);
             Text(entity.Property(e => e.Description), 4000);
             Text(entity.Property(e => e.PackingInstructions), 4000);
@@ -46,6 +49,9 @@ public static class OrderManagementModelConfiguration
         modelBuilder.Entity<SampleShippingDestination>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.Lifecycle).HasConversion<string>().HasMaxLength(24);
+            entity.HasIndex(e => e.DefinitionKey).IsUnique().HasFilter("lifecycle = 'Draft'")
+                .HasDatabaseName("ux_shipping_destination_one_draft");
             Text(entity.Property(e => e.Code), 50);
             Text(entity.Property(e => e.Name), 255);
             Text(entity.Property(e => e.RecipientName), 255);
@@ -76,6 +82,9 @@ public static class OrderManagementModelConfiguration
         modelBuilder.Entity<SampleTypeDefinition>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.Lifecycle).HasConversion<string>().HasMaxLength(24);
+            entity.HasIndex(e => e.DefinitionKey).IsUnique().HasFilter("lifecycle = 'Draft'")
+                .HasDatabaseName("ux_sample_type_one_draft");
             entity.HasOne<SampleShippingProcedure>().WithMany().HasForeignKey(e => e.ShippingProcedureId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_sample_type_shipping_procedure");
             Text(entity.Property(e => e.Code), 50);
             Text(entity.Property(e => e.Name), 255);
@@ -759,6 +768,13 @@ public static class OrderManagementModelConfiguration
             Text(entity.Property(e => e.Description), 2000, false);
             Text(entity.Property(e => e.SharedBiologicalSource), 500, false);
             entity.HasOne<SampleTypeDefinition>().WithMany().HasForeignKey(e => e.SampleTypeDefinitionId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<SampleShippingProcedure>().WithMany().HasForeignKey(e => e.ShippingProcedureRevisionId)
+                .OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_lab_service_order_shipping_procedure_revision");
+            Text(entity.Property(e => e.ShippingSafetyHoldReason), 2000, false);
+            entity.HasOne<User>().WithMany().HasForeignKey(e => e.ShippingSafetyHeldByUserId)
+                .OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_lab_service_order_shipping_hold_actor");
+            entity.HasOne<User>().WithMany().HasForeignKey(e => e.ShippingSafetyHoldResolvedByUserId)
+                .OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_lab_service_order_shipping_hold_resolver");
             entity.HasOne<SampleShippingDestination>().WithMany().HasForeignKey(e => e.ShippingDestinationId)
                 .OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_lab_service_order_ship_to_revision");
             Text(entity.Property(e => e.SampleTypeMaterialClassSnapshot), 100, false);

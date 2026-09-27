@@ -19,6 +19,12 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
     public bool HasMixedBiologicalSources { get; private set; }
     public string? SharedBiologicalSource { get; private set; }
     public Guid? SampleTypeDefinitionId { get; private set; }
+    public Guid? ShippingProcedureRevisionId { get; private set; }
+    public string? ShippingSafetyHoldReason { get; private set; }
+    public DateTime? ShippingSafetyHeldAt { get; private set; }
+    public Guid? ShippingSafetyHeldByUserId { get; private set; }
+    public DateTime? ShippingSafetyHoldResolvedAt { get; private set; }
+    public Guid? ShippingSafetyHoldResolvedByUserId { get; private set; }
     public string? SampleTypeMaterialClassSnapshot { get; private set; }
     public Guid? ShippingDestinationId { get; private set; }
     public DateTime? ShippingDestinationAssignedAt { get; private set; }
@@ -125,6 +131,42 @@ public sealed class LabServiceOrder : IAudit, IConcurrency
         SampleTypeDefinitionId = sampleTypeDefinitionId;
         SampleTypeMaterialClassSnapshot = OrderText.Required(materialClass, nameof(materialClass), 100);
     }
+
+    public void PinShippingProcedure(Guid revisionId)
+    {
+        if (revisionId == Guid.Empty || !SampleTypeDefinitionId.HasValue)
+            throw new ArgumentException("A selected Sample type and exact Shipping procedure revision are required.");
+        if (ShippingProcedureRevisionId.HasValue && ShippingProcedureRevisionId != revisionId)
+            throw new InvalidOperationException("A placed Job's Shipping procedure revision cannot change.");
+        ShippingProcedureRevisionId = revisionId;
+    }
+
+    public void PlaceShippingSafetyHold(string reason, Guid actorId, DateTime utcNow)
+    {
+        if (!PlacedAt.HasValue || ShippingSafetyHeldAt.HasValue && !ShippingSafetyHoldResolvedAt.HasValue)
+            throw new InvalidOperationException("Only an unheld placed Job can receive a shipping safety hold.");
+        if (actorId == Guid.Empty || utcNow.Kind != DateTimeKind.Utc)
+            throw new ArgumentException("Record the safety-hold actor and UTC time.");
+        ShippingSafetyHoldReason = OrderText.Required(reason, "Safety-hold reason", 2000);
+        ShippingSafetyHeldAt = utcNow;
+        ShippingSafetyHeldByUserId = actorId;
+        ShippingSafetyHoldResolvedAt = null;
+        ShippingSafetyHoldResolvedByUserId = null;
+    }
+
+    public void ResolveShippingSafetyHold(string reason, Guid actorId, DateTime utcNow)
+    {
+        if (!ShippingSafetyHeldAt.HasValue || ShippingSafetyHoldResolvedAt.HasValue)
+            throw new InvalidOperationException("This Job has no active shipping safety hold.");
+        if (actorId == Guid.Empty || utcNow.Kind != DateTimeKind.Utc)
+            throw new ArgumentException("Record the safety-hold resolution actor and UTC time.");
+        OrderText.Required(reason, "Safety-hold resolution reason", 2000);
+        ShippingSafetyHoldResolvedAt = utcNow;
+        ShippingSafetyHoldResolvedByUserId = actorId;
+    }
+
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public bool HasActiveShippingSafetyHold => ShippingSafetyHeldAt.HasValue && !ShippingSafetyHoldResolvedAt.HasValue;
 
     public void AssignShippingDestination(Guid destinationId, DateTime assignedAt)
     {

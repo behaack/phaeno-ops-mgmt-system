@@ -36,7 +36,8 @@ public sealed record SampleShippingDestinationDto(
     DateTime EffectiveFrom,
     DateTime? EffectiveTo,
     bool IsActive,
-    long Version);
+    long Version,
+    string Lifecycle = "Released");
 
 public sealed record SampleShippingDestinationWriteRequest(
     Guid? SupersedesDestinationId,
@@ -87,10 +88,14 @@ public sealed record SampleTypeDefinitionDto(
     DateTime? EffectiveTo,
     bool IsActive,
     long Version,
-    Guid? ShippingProcedureId = null);
+    Guid? ShippingProcedureId = null,
+    string Lifecycle = "Released");
 
 public sealed record SampleShippingStatusRequest(bool IsActive, long Version);
 public sealed record ChangeSampleTypeProcedureRequest(Guid ProcedureId, long Version);
+public sealed record UpdateShippingDestinationDraftRequest(long Version, SampleShippingDestinationWriteRequest Draft);
+public sealed record UpdateSampleTypeDraftRequest(long Version, SampleTypeDefinitionWriteRequest Draft);
+public sealed record DiscardShippingDraftRequest(long Version);
 
 public sealed record SampleTypeDefinitionWriteRequest(
     Guid? SupersedesSampleTypeId,

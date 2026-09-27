@@ -13,7 +13,7 @@ import '../../src/styles.css'
 const packet = {
   shipment: { organizationName: 'Example Research Laboratory', shipmentNumber: 'SHP-EXAMPLE', authorizationReference: 'JOB-EXAMPLE', currentPacket: { id: 'packet-example', packetNumber: 'SP-EXAMPLE-1', barcode: 'PH-P-23456789AB-C', revision: 1 } },
   destinationSnapshotJson: JSON.stringify({ receivingEmail: 'receiving@example.test', receivingPhone: '+1 555 0100', organizationName: 'Example receiving laboratory' }),
-  instructionSnapshotJson: JSON.stringify({ samples: [{ sampleType: { name: 'Extracted RNA', temperatureRequirements: 'Keep frozen. Transfer promptly to the designated frozen storage location.', safetyRequirements: 'Wear gloves when handling tubes.' }, instructionRule: { packingInstructions: 'Use the approved packing configuration and review the full instructions before shipping.' } }] }),
+  instructionSnapshotJson: JSON.stringify({ samples: [{ sampleType: { name: 'Extracted RNA', temperatureRequirements: 'Keep frozen. Transfer promptly to the designated frozen storage location.', safetyRequirements: 'Wear gloves when handling tubes.' }, procedure: { packingInstructions: 'Use the approved packing configuration and review the full instructions before shipping.' } }] }),
   manifestSnapshotJson: JSON.stringify({ authorizationReference: 'JOB-EXAMPLE', shipmentNumber: 'SHP-EXAMPLE', orderBarcode: 'PH-O-EXAMPLE', shipmentBarcode: 'PH-S-EXAMPLE', container: { commonName: '20-tube insulated container', sku: '000-20' }, containerKit: { barcode: 'KIT-58073414ED6C47109A3E073EE5F9311F' }, samples: Array.from({ length: 20 }, (_, i) => ({ submittedSpecimenId: `sample-${Math.floor(i / 2)}`, customerSampleId: `RNA-${Math.floor(i / 2) + 1}`, sampleName: 'Synthetic RNA', sampleTypeName: 'RNA', sampleBarcode: `PH-M-${Math.floor(i / 2)}`, totalSampleTubeCount: 2, tubeOrdinal: i % 2 + 1, supplierTubeBarcode: i === 0 ? 'Tube_001' : `TUBE-${i + 1}` })) }),
 }
 const container: LabContainer = { id: 'container-example', labSpecimenId: 'sample-1', parentContainerId: null, kind: 'SubmittedSpecimen', barcode: 'PH-S-23456789AB-C', barcodeSource: 'PhaenoGenerated', externalBarcodeReferenceId: null, label: 'Submitted specimen ACC-1', labelPrintCount: 0, location: 'Freezer box A', quantity: 25, quantityUnit: 'uL', status: 'Available', retainUntilUtc: null, version: 1 }
@@ -31,7 +31,7 @@ if (packingMode) {
     containerPacking: { commonName: 'Small container', revision: 1, temperatureControlInstructions: control,
       samples: ['rna', 'dna'].map(sampleTypeId => ({ sampleTypeId, packingInstructions: `Seal the ${sampleTypeId.toUpperCase()} secondary bag.` })) },
     samples: ['rna', 'dna'].map(id => ({ sampleType: { id, name: id.toUpperCase(), maximumTransitHours: 24 },
-      instructionRule: { shippingProcedureId: 'shared-procedure', packingInstructions: 'Use the shared approved outer packaging.',
+      procedure: { shippingProcedureId: 'shared-procedure', packingInstructions: 'Use the shared approved outer packaging.',
         dispatchInstructions: 'Dispatch within the receiving window.' } })),
   })
 }

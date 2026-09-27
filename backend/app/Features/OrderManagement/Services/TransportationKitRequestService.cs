@@ -166,7 +166,7 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
         var ready = block is null ? await db.SampleShippingStockKits.AsNoTracking().Where(item => !item.FulfilledAt.HasValue
             && !item.OrganizationId.HasValue && !item.TransportationKitRequestLineId.HasValue && !item.BoundSampleShipmentId.HasValue
             && definitionIds.Contains(item.ContainerDefinitionId) && item.TubesVerifiedAt.HasValue
-            && (!item.FinishedKitProductId.HasValue || item.AssemblyCompletedAt.HasValue)
+            && (!item.FinishedKitProductId.HasValue || item.AssemblyCompletedAt.HasValue || item.PurchasedKitReceivedAt.HasValue)
             && item.Tubes.Count == item.TubeCapacity).OrderBy(item => item.CreatedAt).ToListAsync(ct) : [];
         ready.RemoveAll(item => !TransportationKitInventory.IsPhysicallyUsable(item, DateTime.UtcNow));
         return new(await MapAsync(request, false, true, ct), ready.Select(kit =>
@@ -219,7 +219,7 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
             .Where(item => item.DefinitionKey == sampleKey && item.Revision == 1).Select(item => item.Id).SingleAsync(ct);
         var requestedDefinitions = await db.SampleShippingContainerDefinitions.AsNoTracking()
             .Where(item => requestedIds.Contains(item.Id))
-            .Select(item => new { item.Id, item.ContainerType.SampleTypeAnchorId }).ToArrayAsync(ct);
+            .Select(item => new { item.Id, item.SampleTypeAnchorId }).ToArrayAsync(ct);
         if (requestedDefinitions.Length != requestedIds.Length
             || requestedDefinitions.Any(item => item.SampleTypeAnchorId != sampleAnchorId))
             throw Conflict("A queued Transportation kit request includes a kit for another Sample type or a removed specification.");

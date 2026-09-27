@@ -12,16 +12,18 @@ public partial class SampleShippingPostgresTests
         await using var scope = await ShippingTestScope.CreateAsync();
         var controller = scope.CreateConfigurationController();
         var now = DateTime.UtcNow;
-        var destination = await controller.CreateDestination(scope.DestinationRequest(now.AddDays(-4)), default);
+        var destinationDraft = await controller.CreateDestination(scope.DestinationRequest(now.AddDays(-4)) with { IsActive = false }, default);
+        var destination = await controller.SetDestinationStatus(destinationDraft.Id, new(true, destinationDraft.Version), default);
         scope.ClearTrackedState();
-        var first = await controller.CreateSampleType(scope.SampleTypeRequest(now.AddDays(-3)), default);
+        var firstDraft = await controller.CreateSampleType(scope.SampleTypeRequest(now.AddDays(-3)) with { IsActive = false }, default);
+        var first = await controller.SetSampleTypeStatus(firstDraft.Id, new(true, firstDraft.Version), default);
         scope.ClearTrackedState();
         var draft = await controller.CreateSampleType(
-            scope.SampleTypeRequest(now.AddDays(-2), first.Id, first.Version)
-                with { IsActive = false, ShippingProcedureId = null }, default);
+            scope.SampleTypeRequest(DateTime.UtcNow, first.Id, first.Version)
+                with { IsActive = false }, default);
         scope.ClearTrackedState();
 
-        var before = await controller.Preview(new(destination.Id, [first.Id], now), default);
+        var before = await controller.Preview(new(destination.Id, [first.Id], DateTime.UtcNow), default);
         Assert.Equal(first.Id, Assert.Single(before.SampleRules).SampleType.Id);
         Assert.Equal(scope.DefaultProcedureId, Assert.Single(before.SampleRules).ShippingProcedureId);
 

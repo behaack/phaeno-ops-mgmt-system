@@ -100,6 +100,7 @@ public sealed partial class LabServiceOrdersController
                     configuredOffering = snapshot, prohibitedDataConfirmed = true
                 }, JsonSerializerOptions);
                 var before = order.Status.ToString();
+                await ShippingJobPinning.PinAtPlacementAsync(dbContext, order, token);
                 Execute(() => order.PlaceStandard(quote.Id, snapshot, placement, now));
                 dbContext.OrderStatusEvents.Add(NewEvent(order, before, order.Status.ToString(), currentTenant.Actor.Id));
                 QueueNotice(order, "lab-standard-order-placed", "Standard laboratory order placed",

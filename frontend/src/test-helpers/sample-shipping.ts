@@ -5,6 +5,7 @@ export const shippingContainers: ShippingContainerDefinition[] = [20, 10, 5].map
   id: `container-${capacity}`, definitionKey: `definition-${capacity}`, sku: `000-${capacity}`, commonName: `${capacity}-tube container`, tubeCapacity: capacity,
   revision: 1, supersedesDefinitionId: null, supplierName: null, supplierProductNumber: null, packingInstructions: null,
   effectiveFrom: '2026-01-01T00:00:00Z', effectiveTo: null, deactivatedAt: null, isActive: true, displayOrder: 0, version: 1,
+  lifecycle: 'Released',
   sampleTypeAnchorId: 'sample-type-1', temperatureControlInstructions: 'Keep frozen.',
 }))
 export const packingFixture: SampleShipmentPacking = { shipmentId: 'shipment-1', version: 3, tubeCount: 30, containerTypes: shippingContainers, canPack: true, blockedReason: null }

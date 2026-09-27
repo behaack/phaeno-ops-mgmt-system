@@ -8,10 +8,10 @@ using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
-public sealed record SupplierCatalogProductDto(Guid Id, Guid SupplierId, string ProductNumber, string Description, string Kind, bool IsActive, long Version, Guid ProductTypeId, string ProductTypeName, bool ProductTypeIsActive, bool CanExpire = false, string? DefaultQuantityUnit = null, Guid? MaterialDefinitionId = null);
+public sealed record SupplierCatalogProductDto(Guid Id, Guid SupplierId, string ProductNumber, string Description, string Kind, bool IsActive, long Version, Guid ProductTypeId, string ProductTypeName, bool ProductTypeIsActive, bool CanExpire = false, string? DefaultQuantityUnit = null, Guid? MaterialDefinitionId = null, int? TubeCapacity = null);
 public sealed record SupplierCatalogEntryDto(Guid Id, string Name, bool IsActive, long Version, IReadOnlyList<SupplierCatalogProductDto> Products, bool IsInternalProducer = false);
 public sealed record SaveSupplierRequest(string Name, bool IsActive = true, long Version = 0);
-public sealed record SaveSupplierProductRequest(string ProductNumber, string Description, Guid ProductTypeId, bool IsActive = true, long Version = 0, bool? CanExpire = null, string? DefaultQuantityUnit = null);
+public sealed record SaveSupplierProductRequest(string ProductNumber, string Description, Guid ProductTypeId, bool IsActive = true, long Version = 0, bool? CanExpire = null, string? DefaultQuantityUnit = null, int? TubeCapacity = null);
 
 [ApiController]
 [Authorize]
@@ -71,17 +71,18 @@ public sealed class LabSupplierCatalogController(PSeqOperationsDbContext db, Ord
         if (supplier.IsInternalProducer && request.ProductTypeId != LabProductType.ReagentId
             && request.ProductTypeId != LabProductType.TransportationKitId)
             throw Invalid("Phaeno products must be Reagents or Transportation kits.");
-        if (supplier.IsInternalProducer && request.ProductTypeId == LabProductType.TransportationKitId
+        if (request.ProductTypeId == LabProductType.TransportationKitId
             && request.DefaultQuantityUnit is not null
             && !string.Equals(request.DefaultQuantityUnit.Trim(), "each", StringComparison.OrdinalIgnoreCase))
-            throw Invalid("Phaeno transportation kits use the inventory unit each.");
-        if (supplier.IsInternalProducer && request.ProductTypeId == LabProductType.TransportationKitId
+            throw Invalid("Transportation kits use the inventory unit each.");
+        if (request.ProductTypeId == LabProductType.TransportationKitId
             && request.Description.Trim().Length > 255)
             throw Invalid("A transportation kit product name cannot exceed 255 characters.");
         await using var transaction = await SampleShippingPackingData.BeginAsync(db, $"product-type:{request.ProductTypeId}", ct);
         var type = await ProductType(request.ProductTypeId, null, ct);
+        var tubeCapacity = RequiredContainerCapacity(type, request.TubeCapacity);
         LabSupplierProduct product;
-        try { product = new(supplierId, request.ProductNumber, request.Description, type.Id, request.CanExpire ?? false); product.Update(request.ProductNumber, request.Description, type.Id, request.IsActive, request.CanExpire); product.SetDefaultQuantityUnit(request.DefaultQuantityUnit); }
+        try { product = new(supplierId, request.ProductNumber, request.Description, type.Id, request.CanExpire ?? false); product.Update(request.ProductNumber, request.Description, type.Id, request.IsActive, request.CanExpire); product.SetDefaultQuantityUnit(request.DefaultQuantityUnit); product.SetTubeCapacity(tubeCapacity); }
         catch (ArgumentException e) { throw Invalid(e.Message); }
         if (supplier.IsInternalProducer && request.ProductTypeId == LabProductType.ReagentId)
         {
@@ -114,19 +115,25 @@ public sealed class LabSupplierCatalogController(PSeqOperationsDbContext db, Ord
             throw Invalid("Enter a product name or SKU and its description or kit name.");
         if (supplier.IsInternalProducer && request.ProductTypeId != product.ProductTypeId)
             throw Invalid("A Phaeno product cannot change between Reagent and Transportation kit. Create a separate product.");
-        if (supplier.IsInternalProducer && request.ProductTypeId == LabProductType.TransportationKitId
+        if (request.ProductTypeId == LabProductType.TransportationKitId
             && request.DefaultQuantityUnit is not null
             && !string.Equals(request.DefaultQuantityUnit.Trim(), "each", StringComparison.OrdinalIgnoreCase))
-            throw Invalid("Phaeno transportation kits use the inventory unit each.");
-        if (supplier.IsInternalProducer && request.ProductTypeId == LabProductType.TransportationKitId
+            throw Invalid("Transportation kits use the inventory unit each.");
+        if (request.ProductTypeId == LabProductType.TransportationKitId
             && request.Description.Trim().Length > 255)
             throw Invalid("A transportation kit product name cannot exceed 255 characters.");
         if (supplier.IsInternalProducer && string.IsNullOrWhiteSpace(request.ProductNumber))
             throw Invalid("Enter the product name or SKU.");
-        if (supplier.IsInternalProducer && product.ProductTypeId == LabProductType.TransportationKitId
+        if (product.ProductTypeId == LabProductType.TransportationKitId
             && !string.Equals(product.ProductNumber, request.ProductNumber.Trim(), StringComparison.Ordinal))
             throw new OrderManagementException("kit_sku_frozen",
                 "A transportation kit SKU cannot change after the product is created. Create a new product for a different SKU.", 409);
+        if (product.ProductTypeId == LabProductType.TransportationKitId
+            && request.ProductTypeId != product.ProductTypeId
+            && await db.SampleShippingContainerTypes.AsNoTracking()
+                .AnyAsync(item => item.FinishedKitProductId == product.Id, ct))
+            throw new OrderManagementException("kit_identity_frozen",
+                "A transportation kit with a shipping specification cannot change product type.", 409);
         if (supplier.IsInternalProducer && product.ProductTypeId == LabProductType.TransportationKitId
             && !string.Equals(product.Description, request.Description.Trim(), StringComparison.Ordinal)
             && await db.SampleShippingContainerTypes.AsNoTracking()
@@ -134,6 +141,7 @@ public sealed class LabSupplierCatalogController(PSeqOperationsDbContext db, Ord
             throw new OrderManagementException("kit_identity_frozen",
                 "A kit with a shipping specification keeps its name. Create a new product for a different name.", 409);
         var type = await ProductType(request.ProductTypeId, product.ProductTypeId, ct);
+        var tubeCapacity = RequiredContainerCapacity(type, request.TubeCapacity ?? product.TubeCapacity);
         if (supplier.IsInternalProducer && product.ProductTypeId == LabProductType.ReagentId)
         {
             var definition = await db.LabMaterialDefinitions.SingleOrDefaultAsync(d => d.Id == product.MaterialDefinitionId, ct)
@@ -174,7 +182,7 @@ public sealed class LabSupplierCatalogController(PSeqOperationsDbContext db, Ord
                 && lot.QuantityUnit.ToUpper() != request.DefaultQuantityUnit.Trim().ToUpper(), ct))
             throw new OrderManagementException("product_unit_conflicts_with_lots",
                 "Existing lots use another inventory unit. Verify them before changing this product.", 409);
-        try { product.Update(request.ProductNumber, request.Description, type.Id, request.IsActive, request.CanExpire); if (request.DefaultQuantityUnit is not null) product.SetDefaultQuantityUnit(request.DefaultQuantityUnit); }
+        try { product.Update(request.ProductNumber, request.Description, type.Id, request.IsActive, request.CanExpire); if (request.DefaultQuantityUnit is not null) product.SetDefaultQuantityUnit(request.DefaultQuantityUnit); product.SetTubeCapacity(tubeCapacity); }
         catch (ArgumentException e) { throw Invalid(e.Message); }
         await Save(ct);
         if (transaction is not null) await transaction.CommitAsync(ct);
@@ -187,7 +195,16 @@ public sealed class LabSupplierCatalogController(PSeqOperationsDbContext db, Ord
         catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
         { throw new OrderManagementException("supplier_catalog_duplicate", "That supplier name or product number already exists. Edit the existing record, including inactive records.", 409); }
     }
-    private static SupplierCatalogProductDto Product(LabSupplierProduct p, LabProductType t) => new(p.Id, p.SupplierId, p.ProductNumber, p.Description, t.KitUse.ToString(), p.IsActive, p.Version, t.Id, t.Name, t.IsActive, p.CanExpire, p.DefaultQuantityUnit, p.MaterialDefinitionId);
+    private static SupplierCatalogProductDto Product(LabSupplierProduct p, LabProductType t) => new(p.Id, p.SupplierId, p.ProductNumber, p.Description, t.KitUse.ToString(), p.IsActive, p.Version, t.Id, t.Name, t.IsActive, p.CanExpire, p.DefaultQuantityUnit, p.MaterialDefinitionId, p.TubeCapacity);
+    private static int? RequiredContainerCapacity(LabProductType type, int? capacity)
+    {
+        if (type.KitUse == LabSupplierProductKind.ShippingContainer)
+        {
+            if (capacity is null or <= 0) throw Invalid("Set the Shipping Container product's tube capacity before saving.");
+            return capacity;
+        }
+        return null;
+    }
     private async Task<LabProductType> ProductType(Guid id, Guid? currentId, CancellationToken ct)
     {
         var type = await db.LabProductTypes.SingleOrDefaultAsync(t => t.Id == id, ct) ?? throw Invalid("Choose a saved product type.");

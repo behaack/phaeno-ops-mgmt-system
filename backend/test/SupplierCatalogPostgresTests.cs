@@ -99,7 +99,7 @@ public partial class SampleShippingPostgresTests
         Assert.Equal("supplier_catalog_invalid", missingUnit.ErrorCode);
         var tube = await catalog.CreateProduct(supplier.Id, new("T-1", "Original tube description", LabProductType.TubeId, DefaultQuantityUnit: "each"), default);
         Assert.Equal("each", tube.DefaultQuantityUnit);
-        var shipper = await catalog.CreateProduct(supplier.Id, new("B-1", "Original container description", LabProductType.ShippingContainerId, DefaultQuantityUnit: "each"), default);
+        var shipper = await catalog.CreateProduct(supplier.Id, new("B-1", "Original container description", LabProductType.ShippingContainerId, DefaultQuantityUnit: "each", TubeCapacity: 20), default);
         scope.ClearTrackedState();
         await Assert.ThrowsAsync<OrderManagementException>(() => catalog.CreateProduct(supplier.Id, new("t-1", "Duplicate", LabProductType.TubeId, DefaultQuantityUnit: "each"), default));
         scope.ClearTrackedState();

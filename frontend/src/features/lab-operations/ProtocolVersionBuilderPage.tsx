@@ -5,11 +5,7 @@ import type { ProtocolDefinition } from './protocol-definition'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useBlocker, useNavigate } from '@tanstack/react-router'
-import {
-  ArrowLeft,
-  FileJson,
-  Plus,
-} from 'lucide-react'
+import { FileJson, Plus } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import {
   useFieldArray,
@@ -168,7 +164,7 @@ export function ProtocolVersionBuilderPage({
 
   if (!canManage) {
     return (
-      <main className="page-wrap px-4 py-8">
+      <main className="space-y-4">
         <Alert variant="destructive">
           <AlertTitle>Protocol authoring unavailable</AlertTitle>
           <AlertDescription>An active Protocol Administrator role is required.</AlertDescription>
@@ -179,7 +175,7 @@ export function ProtocolVersionBuilderPage({
 
   if (authProvider === 'mock') {
     return (
-      <main className="page-wrap px-4 py-8">
+      <main className="space-y-4">
         <Alert>
           <AlertTitle>Protocol authoring is paused</AlertTitle>
           <AlertDescription>Connect a real Phaeno session to create a controlled protocol version.</AlertDescription>
@@ -189,15 +185,15 @@ export function ProtocolVersionBuilderPage({
   }
 
   if (dashboard.isLoading) {
-    return <main className="page-wrap px-4 py-8"><p role="status">Loading protocol…</p></main>
+    return <main className="space-y-4"><p role="status">Loading protocol…</p></main>
   }
 
   if (dashboard.error) {
     return (
-      <main className="page-wrap px-4 py-8">
+      <main className="space-y-4">
         <Alert variant="destructive">
           <AlertTitle>Protocol could not be loaded</AlertTitle>
-          <AlertDescription>{getLabOperationsError(dashboard.error, 'Return to Lab operations and try again.')}</AlertDescription>
+          <AlertDescription>{getLabOperationsError(dashboard.error, 'Return to Protocols and try again.')}</AlertDescription>
         </Alert>
       </main>
     )
@@ -205,41 +201,31 @@ export function ProtocolVersionBuilderPage({
 
   if (!protocol) {
     return (
-      <main className="page-wrap px-4 py-8">
+      <main className="space-y-4">
         <Alert variant="destructive">
           <AlertTitle>Protocol not found</AlertTitle>
           <AlertDescription>The protocol may have changed or no longer be available.</AlertDescription>
         </Alert>
-        <Button asChild variant="outline" className="mt-4">
-          <Link to="/lab-configuration" search={{ configurationTab: 'protocols' }}>
-            <ArrowLeft data-icon="inline-start" /> Back to protocols
-          </Link>
-        </Button>
       </main>
     )
   }
 
   if (protocol.retiredAtUtc || (isEditing && (!draft || draft.status !== 'Draft'))) {
     return (
-      <main className="page-wrap px-4 py-8">
+      <main className="space-y-4">
         <Alert variant="destructive">
           <AlertTitle>{protocol.retiredAtUtc ? 'Protocol is retired' : 'Protocol draft is not editable'}</AlertTitle>
           <AlertDescription>
             The selected version may have changed status or no longer be available. Return to Protocols and review its current state.
           </AlertDescription>
         </Alert>
-        <Button asChild variant="outline" className="mt-4">
-          <Link to="/lab-configuration" search={{ configurationTab: 'protocols' }}>
-            <ArrowLeft data-icon="inline-start" /> Back to protocols
-          </Link>
-        </Button>
       </main>
     )
   }
 
   if (!isEditing && openCandidate) {
     return (
-      <main className="page-wrap px-4 py-8">
+      <main className="space-y-4">
         <Alert>
           <AlertTitle>An open protocol version already exists</AlertTitle>
           <AlertDescription>
@@ -256,11 +242,6 @@ export function ProtocolVersionBuilderPage({
               Edit protocol
             </Link>
           </Button>
-          <Button asChild variant="outline">
-            <Link to="/lab-configuration" search={{ configurationTab: 'protocols' }}>
-              Back to protocols
-            </Link>
-          </Button>
         </div>
       </main>
     )
@@ -268,53 +249,36 @@ export function ProtocolVersionBuilderPage({
 
   if (definitionLoadError) {
     return (
-      <main className="page-wrap px-4 py-8">
+      <main className="space-y-4">
         <Alert variant="destructive">
           <AlertTitle>Protocol definition could not be opened</AlertTitle>
           <AlertDescription>
             The stored definition is not compatible with the structured editor. Return to Protocols without changing it.
           </AlertDescription>
         </Alert>
-        <Button asChild variant="outline" className="mt-4">
-          <Link to="/lab-configuration" search={{ configurationTab: 'protocols' }}>
-            <ArrowLeft data-icon="inline-start" /> Back to protocols
-          </Link>
-        </Button>
       </main>
     )
   }
 
   if (!formReady) {
-    return <main className="page-wrap px-4 py-8"><p role="status">Loading protocol definition…</p></main>
+    return <main className="space-y-4"><p role="status">Loading protocol definition…</p></main>
   }
 
   const displayedVersion = draft?.protocolVersion ?? protocol.latestVersion + 1
   const isInitialDefinition = !isEditing && protocol.latestVersion === 0
 
   return (
-    <main className="page-wrap px-4 py-8">
+    <main className="space-y-4">
       <section className="mb-6">
-        <p className="text-sm text-muted-foreground">
-          <Link to="/lab-configuration" search={{ configurationTab: 'protocols' }} className="hover:underline">
-            Lab operations
-          </Link>
-          {' / '}
-          {protocol.name}
-          {isEditing
-              ? ` / Edit draft v${displayedVersion}`
-              : isInitialDefinition
-              ? ' / Edit protocol'
-              : ' / New version'}
-        </p>
-        <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-3xl">
-            <h1 className="text-3xl font-semibold">
+            <h2 className="text-2xl font-semibold">
               {isEditing
                 ? `Edit ${protocol.name} draft v${displayedVersion}`
                 : isInitialDefinition
                   ? `Edit ${protocol.name}`
                   : `Build ${protocol.name} version ${displayedVersion}`}
-            </h1>
+            </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               {isEditing
                 ? 'Continue the open draft. Saving updates this version; formal approval locks it and makes it the approved version for future use.'
