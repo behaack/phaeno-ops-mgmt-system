@@ -68,7 +68,6 @@ type WebOpsDashboardContentProps = {
   demoRequests: WebOpsPanelState<WebOpsDemoRequest>
   isMockData?: boolean
   notificationPanel?: ReactNode
-  briefAction?: WebOpsPanelAction<WebOpsMailingListContact>
 }
 
 export function WebOpsDashboardContent({
@@ -76,13 +75,11 @@ export function WebOpsDashboardContent({
   demoRequests,
   isMockData = false,
   notificationPanel,
-  briefAction,
 }: WebOpsDashboardContentProps) {
   const [contactToUnsubscribe, setContactToUnsubscribe] =
     useState<WebOpsMailingListContact>()
   const [requestToComplete, setRequestToComplete] =
     useState<WebOpsDemoRequest>()
-  const [briefContact, setBriefContact] = useState<WebOpsMailingListContact>()
   const [mailingListSuccess, setMailingListSuccess] = useState<string>()
   const [demoRequestSuccess, setDemoRequestSuccess] = useState<string>()
   const mailingListActionButton = useRef<HTMLElement | null>(null)
@@ -267,10 +264,7 @@ export function WebOpsDashboardContent({
                           >
                             {formatDateTime(contact.createdAtUtc)}
                           </time>
-                          {briefAction && contact.technicalBriefRequested && contact.technicalBriefDeliveryRecorded === false && <Button
-                            size="sm" variant="outline" disabled={briefAction.isPending}
-                            onClick={event => { mailingListActionButton.current = event.currentTarget; briefAction.onReset(); setBriefContact(contact) }}
-                          >Queue technical brief</Button>}
+
                           {mailingList.action ? (
                             <Button
                               type="button"
@@ -431,26 +425,6 @@ export function WebOpsDashboardContent({
         </TabsContent>
         {hasNotificationPanel ? <TabsContent value="email-delivery">{notificationPanel}</TabsContent> : null}
       </Tabs>
-      <WebOpsActionDialog
-        open={Boolean(briefContact)}
-        title="Queue this requested technical brief?"
-        description={`This older signup requested a technical brief, but its original email delivery status is unknown. This queues the brief for ${briefContact?.email ?? 'the signup email'} and may send a duplicate. Review the request before continuing.`}
-        confirmLabel="Queue technical brief"
-        pendingLabel="Queuing…"
-        errorTitle="Technical brief was not queued"
-        error={briefAction?.error}
-        isPending={briefAction?.isPending ?? false}
-        onOpenChange={open => { if (!open && !briefAction?.isPending) { setBriefContact(undefined); closeUnsubscribeDialog() } }}
-        onConfirm={async () => {
-          if (!briefContact || !briefAction) return
-          try {
-            await briefAction.onExecute(briefContact)
-            setMailingListSuccess('The requested technical brief was queued. Review its status in Email delivery.')
-            setBriefContact(undefined)
-            closeUnsubscribeDialog()
-          } catch { /* The error remains visible for recovery. */ }
-        }}
-      />
 
       <WebOpsActionDialog
         open={Boolean(contactToUnsubscribe)}

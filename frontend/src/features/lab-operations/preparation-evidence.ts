@@ -1,11 +1,6 @@
 import type { PreparationDetail } from '#/api/lab-preparation'
 import type { ProtocolDefinition } from './protocol-definition'
 
-export function isOptionalSyntheticQcReference(batch: Pick<PreparationDetail, 'optionalQcReports'>, step: ProtocolDefinition['steps'][number], capture: ProtocolDefinition['steps'][number]['captures'][number]) {
-  return batch.optionalQcReports === true && Boolean(step.qcGate) && capture.type === 'fileReference'
-    && ['synthetic-qc-record-reference', 'synthetic-library-qc-record-reference'].includes(capture.key)
-}
-
 export function isOptionalPreparationReference(batch: Pick<PreparationDetail, 'optionalPreparationReports'>, step: ProtocolDefinition['steps'][number], capture: ProtocolDefinition['steps'][number]['captures'][number]) {
   return batch.optionalPreparationReports === true && !step.qcGate && capture.key === 'preparation-record-reference'
     && capture.type === 'text' && (capture.scope === 'shared' || capture.scope === 'batch')

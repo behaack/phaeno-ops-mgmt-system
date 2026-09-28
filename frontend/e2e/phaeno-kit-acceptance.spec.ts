@@ -4,14 +4,14 @@ import { readFile } from 'node:fs/promises'
 import type { CatalogSupplier, ProductWrite, SupplierProduct } from '../src/api/supplier-catalog'
 import type { ShippingStockKit } from '../src/api/shipping-containers'
 
-const transportationKitProductTypeId = '90000000-0000-4000-8000-000000000004'
-const phaeno: CatalogSupplier = { id: 'phaeno', name: 'Phaeno', isActive: true, isInternalProducer: true, version: 1, products: [] }
+const shippingContainerProductTypeId = '90000000-0000-4000-8000-000000000002'
+const containerSupplier: CatalogSupplier = { id: 'shipping-supplier', name: 'Shipping supplier', isActive: true, isInternalProducer: false, version: 1, products: [] }
 const container = { definitionId: 'container-1', sku: 'SHIPPER-1', commonName: 'Sample shipper', capacity: 1 }
 function kit(id: number, status: ShippingStockKit['status']): ShippingStockKit {
   const atPhaeno = status === 'Preparing'
   return {
     id: `kit-${id}`, kitNumber: `KIT-${String(id).padStart(3, '0')}`, container,
-    status, version: 1, finishedKitProductId: null,
+    status, version: 1,
     tubeSupplierName: 'Tube supplier', tubeProductNumber: 'TUBE-1', tubeLotNumber: 'LOT-1',
     shipperSupplierName: 'Shipper supplier', shipperProductNumber: 'SHIPPER-1',
     organizationId: atPhaeno ? null : 'customer-1', authorizationSourceId: null, authorizationReference: null,
@@ -35,21 +35,22 @@ async function fixture(page: Page, start: 'catalog' | 'inventory') {
     if (!url.pathname.startsWith('/api/')) { await route.continue(); return }
     const path = url.pathname.substring(4), method = request.method()
     const respond = (data: unknown) => route.fulfill({ json: { success: true, data, error: null, meta: {} } })
-    if (path === '/platform/lab-operations/suppliers' && method === 'GET') return respond([{ ...phaeno, products: state.products }])
-    if (path.startsWith('/platform/lab-operations/suppliers/phaeno/products') && (method === 'POST' || method === 'PUT')) {
+    if (path === '/platform/lab-operations/suppliers' && method === 'GET') return respond([{ ...containerSupplier, products: state.products }])
+    if (path.startsWith('/platform/lab-operations/suppliers/shipping-supplier/products') && (method === 'POST' || method === 'PUT')) {
       const body = request.postDataJSON() as ProductWrite
       state.writes.push({ path, method, body })
       const previous = state.products[0]
       const saved: SupplierProduct = {
-        id: previous?.id ?? 'finished-kit-1', supplierId: phaeno.id, productNumber: body.productNumber,
-        description: body.description, kind: 'Other', productTypeId: body.productTypeId,
-        productTypeName: body.productTypeId === transportationKitProductTypeId ? 'Transportation kit' : 'Reagent',
+        id: previous?.id ?? 'shipping-container-1', supplierId: containerSupplier.id, productNumber: body.productNumber,
+        description: body.description, kind: 'ShippingContainer', tubeCapacity: body.tubeCapacity, productTypeId: body.productTypeId,
+        productTypeName: 'Shipping Container',
         productTypeIsActive: true, defaultQuantityUnit: body.defaultQuantityUnit, canExpire: body.canExpire,
         isActive: body.isActive, version: (previous?.version ?? 0) + 1,
       }
       state.products = [saved]
       return respond(saved)
     }
+    if (path === '/platform/lab-operations/product-types' && method === 'GET') return respond([{ id: shippingContainerProductTypeId, name: 'Shipping Container', description: 'Purchased outer containers', kitUse: 'ShippingContainer', isActive: true, version: 1, productCount: state.products.length }])
     if (path === '/platform/sample-shipping/stock-kits' && method === 'GET') return respond(kits)
     if (path.startsWith('/platform/sample-shipping/stock-kits/') && method === 'GET') return respond(kits.find(item => item.id === path.split('/').at(-1)))
     if (path === '/platform/sample-shipping/container-types' && method === 'GET') return respond([])
@@ -60,10 +61,10 @@ async function fixture(page: Page, start: 'catalog' | 'inventory') {
   return state
 }
 
-test('signed-in Phaeno staff can choose an inventory unit, create a kit SKU, and correct its name', async ({ page }, info) => {
+test('signed-in Phaeno staff can create a purchased container with capacity and correct its catalog name', async ({ page }, info) => {
   await page.emulateMedia({ colorScheme: info.project.name === 'mobile-chrome' ? 'dark' : 'light', reducedMotion: 'reduce' })
   const state = await fixture(page, 'catalog')
-  await expect(page.getByRole('heading', { name: 'Phaeno' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Shipping supplier' })).toBeVisible()
   await page.getByRole('button', { name: 'New product' }).click()
   const create = page.getByRole('dialog', { name: 'New product' })
   await create.getByRole('button', { name: 'Units for Inventory unit' }).click()
@@ -71,23 +72,23 @@ test('signed-in Phaeno staff can choose an inventory unit, create a kit SKU, and
   await expect(create.getByRole('textbox', { name: 'Inventory unit' })).toHaveValue('mL')
   await create.getByRole('textbox', { name: 'Inventory unit' }).fill('vials')
   await expect(create.getByRole('textbox', { name: 'Inventory unit' })).toHaveValue('vials')
-  await create.getByRole('combobox', { name: 'Product type' }).selectOption(transportationKitProductTypeId)
-  await expect(create.getByRole('textbox', { name: 'Inventory unit' })).toHaveValue('each')
-  await expect(create.getByRole('textbox', { name: 'Inventory unit' })).toHaveAttribute('readonly', '')
-  await create.getByRole('textbox', { name: 'SKU' }).fill('KIT-ALPHA')
-  await create.getByRole('textbox', { name: 'Kit name' }).fill('Alpha collection kit')
+  await create.getByRole('combobox', { name: 'Product type' }).selectOption(shippingContainerProductTypeId)
+  await create.getByRole('textbox', { name: 'Inventory unit' }).fill('each')
+  await create.getByRole('spinbutton', { name: 'Tube capacity' }).fill('20')
+  await create.getByRole('textbox', { name: 'Product name' }).fill('KIT-ALPHA')
+  await create.getByRole('textbox', { name: 'Product description' }).fill('Alpha shipping container')
   await create.getByRole('button', { name: 'Save' }).click()
-  await expect(page.getByRole('list', { name: 'Products' }).getByText('Alpha collection kit')).toBeVisible()
-  expect(state.writes[0]).toMatchObject({ method: 'POST', path: '/platform/lab-operations/suppliers/phaeno/products', body: { productNumber: 'KIT-ALPHA', description: 'Alpha collection kit', productTypeId: transportationKitProductTypeId, defaultQuantityUnit: 'each' } })
-  await page.getByRole('button', { name: 'Actions for Alpha collection kit' }).click()
+  await expect(page.getByRole('list', { name: 'Products' }).getByText('KIT-ALPHA')).toBeVisible()
+  expect(state.writes[0]).toMatchObject({ method: 'POST', path: '/platform/lab-operations/suppliers/shipping-supplier/products', body: { productNumber: 'KIT-ALPHA', description: 'Alpha shipping container', productTypeId: shippingContainerProductTypeId, defaultQuantityUnit: 'each', tubeCapacity: 20 } })
+  await page.getByRole('button', { name: 'Actions for KIT-ALPHA' }).click()
   await page.getByRole('menuitem', { name: 'Edit' }).click()
   const edit = page.getByRole('dialog', { name: 'Edit product' })
-  await expect(edit.getByRole('textbox', { name: 'SKU' })).toHaveValue('KIT-ALPHA')
-  await expect(edit.getByRole('textbox', { name: 'SKU' })).toHaveAttribute('readonly', '')
-  await edit.getByRole('textbox', { name: 'Kit name' }).fill('Alpha collection kit, corrected')
+  await expect(edit.getByRole('textbox', { name: 'Product name' })).toHaveValue('KIT-ALPHA')
+  await edit.getByRole('textbox', { name: 'Product description' }).fill('Alpha shipping container, corrected')
+  await edit.getByRole('spinbutton', { name: 'Tube capacity' }).fill('24')
   await edit.getByRole('button', { name: 'Save' }).click()
-  await expect(page.getByRole('list', { name: 'Products' }).getByText('Alpha collection kit, corrected')).toBeVisible()
-  expect(state.writes[1]).toMatchObject({ method: 'PUT', path: '/platform/lab-operations/suppliers/phaeno/products/finished-kit-1', body: { productNumber: 'KIT-ALPHA', description: 'Alpha collection kit, corrected', defaultQuantityUnit: 'each', version: 1 } })
+  await expect(page.getByRole('list', { name: 'Products' }).getByText('Alpha shipping container, corrected')).toBeVisible()
+  expect(state.writes[1]).toMatchObject({ method: 'PUT', path: '/platform/lab-operations/suppliers/shipping-supplier/products/shipping-container-1', body: { productNumber: 'KIT-ALPHA', description: 'Alpha shipping container, corrected', defaultQuantityUnit: 'each', tubeCapacity: 24, version: 1 } })
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
   expect(state.unexpected).toEqual([])

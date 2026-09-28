@@ -1,6 +1,6 @@
 namespace PSeq.Operations.Laboratory.Domain;
 
-/// <summary>A bounded compatibility rule for the established conditional QC-review fixture.</summary>
+/// <summary>The configured automatic no-match rule for the prior-input-QC review.</summary>
 public static class LabPreparationConditionalReview
 {
     public const string Condition = "Perform when step 2 history contains a Hold or Fail, even if a permitted repeat now passes; otherwise skip with a reason.";

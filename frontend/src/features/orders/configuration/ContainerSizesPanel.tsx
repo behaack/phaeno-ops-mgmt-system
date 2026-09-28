@@ -6,7 +6,6 @@ import { getOrderErrorMessage } from '#/api/order-management'
 import { getKitAssemblyWorkflows, kitAssemblyWorkflowsKey } from '#/api/lab-kit-assembly'
 import type { SampleShippingConfiguration, SampleTypeDefinition } from '#/api/sample-shipping'
 import { activateShippingContainerDefinition, deactivateShippingContainerDefinition, discardShippingContainerDraft, getShippingContainerDefinitions, type ShippingContainerDefinition } from '#/api/shipping-containers'
-import { useSupplierCatalog } from '#/api/supplier-catalog'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
@@ -38,8 +37,7 @@ export function ContainerSizesPanel({ apiEnabled, configuration, sampleType }: {
   const [discarding, setDiscarding] = useState<ShippingContainerDefinition | null>(null)
   const actionsTriggerRef = useRef<HTMLButtonElement | null>(null)
   const query = useQuery({ queryKey: ['shipping-container-definitions'], queryFn: getShippingContainerDefinitions, enabled: apiEnabled })
-  const suppliers = useSupplierCatalog(apiEnabled && Boolean(activation?.finishedKitProductId))
-  const workflows = useQuery({ queryKey: kitAssemblyWorkflowsKey, queryFn: getKitAssemblyWorkflows, enabled: apiEnabled && Boolean(activation?.finishedKitProductId) })
+  const workflows = useQuery({ queryKey: kitAssemblyWorkflowsKey, queryFn: getKitAssemblyWorkflows, enabled: apiEnabled && Boolean(activation?.shippingContainerProductId) })
   const deactivate = useMutation({
     mutationFn: (item: ShippingContainerDefinition) => deactivateShippingContainerDefinition(item.id, item.version),
     onSuccess: async () => {
@@ -87,15 +85,14 @@ export function ContainerSizesPanel({ apiEnabled, configuration, sampleType }: {
   const activeByKey = new Map(latestContainerRevisions((query.data ?? []).filter(value => containerEffectiveState(value) === 'Active now' && (!sampleType || Boolean(value.sampleTypeAnchorId && familyIds.has(value.sampleTypeAnchorId))))).map(value => [value.definitionKey, value]))
   const latest = allLatest.filter(item => !sampleType || Boolean(item.sampleTypeAnchorId && familyIds.has(item.sampleTypeAnchorId)) || activeByKey.has(item.definitionKey))
   const deactivatableRevisions = (query.data ?? []).filter(value => value.isActive && !value.deactivatedAt && containerEffectiveState(value) !== 'Ended')
-  const activationSupplier = suppliers.data?.find(supplier => supplier.products.some(product => product.id === activation?.finishedKitProductId))
-  const activationWorkflow = workflows.data?.find(value => value.finishedKitProductId === activation?.finishedKitProductId)
+  const activationWorkflow = workflows.data?.find(value => value.id === activation?.assemblyWorkflowId)
     ?.revisions.some(value => value.status === 'Approved')
-  const workflowApprovalMissing = Boolean(activationSupplier?.isInternalProducer && workflows.data && !activationWorkflow)
+  const workflowApprovalMissing = Boolean(activation?.shippingContainerProductId && workflows.data && !activationWorkflow)
   const affectedSpecifications = [...activeByKey.values()]
     .filter(value => containerDependencyWarnings(value, configuration).length > 0)
   const needle = (search.containerSearch ?? '').trim().toLowerCase()
   const visibleByActivation = latest.filter(item => search.containerShowInactive || activeByKey.has(item.definitionKey) || item.lifecycle === 'Draft')
-  const filtered = visibleByActivation.filter(item => (!needle || `${item.commonName} ${item.sku} ${item.supplierName ?? ''} ${item.supplierProductNumber ?? ''} ${activeByKey.get(item.definitionKey)?.commonName ?? ''}`.toLowerCase().includes(needle))
+  const filtered = visibleByActivation.filter(item => (!needle || `${item.commonName} ${item.sku} ${activeByKey.get(item.definitionKey)?.commonName ?? ''}`.toLowerCase().includes(needle))
     && (search.containerStatus === 'all' || (search.containerStatus === 'active' ? activeByKey.has(item.definitionKey) : !activeByKey.has(item.definitionKey))))
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize))
   const page = Math.min(search.containerPage ?? 1, pageCount)
@@ -147,7 +144,7 @@ export function ContainerSizesPanel({ apiEnabled, configuration, sampleType }: {
       <DialogHeader className="pr-[var(--dialog-inset)]"><DialogTitle className="pr-8">Activate kit specification?</DialogTitle><DialogDescription id="kit-list-activation-summary" className="pr-8">{activation.commonName} · SKU {activation.sku} · revision {activation.revision}</DialogDescription></DialogHeader>
       <div id="kit-list-activation-consequences" className="space-y-2 text-sm">
         <p>This revision will become Active. Any earlier active revision will close when this one takes effect.</p>
-        {activation.finishedKitProductId ? <><p>The Sample type may still be Draft or inactive. New Orders require an Active Sample type and Shipping procedure.</p><p>Phaeno-made kits can be ordered before workflow approval, but new physical kits cannot be prepared until a compatible workflow is approved. Every physical kit needs assembly or supplier receipt and tube verification before dispatch.</p></> : <p>This older kit will remain unavailable for new Orders because it is not linked to a catalog product.</p>}
+        <p>New Orders require an Active Sample type and Shipping procedure. Preparing physical kits requires an approved assembly workflow, completed assembly, and verified tubes.</p>
       </div>
       {workflowApprovalMissing ? <Alert variant="warning"><AlertTitle>Assembly workflow pending</AlertTitle><AlertDescription>This specification can become Active and accept kit orders, but new physical kits cannot be prepared yet. <Link className={recordLinkClassName} to="/lab-configuration" search={{ configurationTab: 'workflows' }}>Open Lab settings → Workflows</Link> to approve a compatible Transportation kit workflow.</AlertDescription></Alert> : null}
       {activate.error ? <Alert variant="destructive"><AlertTitle>Kit specification was not activated</AlertTitle><AlertDescription>{getOrderErrorMessage(activate.error, 'Review the kit product, approved workflow, and specification details.')}</AlertDescription></Alert> : null}

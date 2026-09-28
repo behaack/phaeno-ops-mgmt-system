@@ -226,10 +226,7 @@ function WorkActionDialog({ initialValues, reviewPackages, requiresResultPackage
   } })
   function submit(event: FormEvent) { event.preventDefault(); mutation.mutate() }
   const workflow = resources?.serviceWorkflows.find((item) => item.serviceKey.toLowerCase() === serviceKey.toLowerCase())
-  const legacyStageIds = new Set(executions.filter(e => !e.labSpecimenId && e.status !== 'Abandoned').map(e => e.labServiceWorkflowStageId))
-  const pinnedVersion = workflow?.versions.find(version => version.stages.some(stage => legacyStageIds.has(stage.id)))
-    ?? workflow?.versions.find(version => version.status === 'Production')
-    ?? workflow?.versions.find((item) => item.status === 'Production')
+  const pinnedVersion = workflow?.versions.find(version => version.status === 'Production')
   const workflowStages = pinnedVersion?.stages ?? []
   const selectedSpecimenId = form.specimenId || null
   const completedStageIds = new Set(executions

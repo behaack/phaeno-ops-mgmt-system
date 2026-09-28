@@ -8,7 +8,7 @@ public sealed class TransportationKitAssemblyDomainTests
     [Fact]
     public void WorkflowTitleChangesWithoutAdvancingRevisionAndDiscardRetainsItsNumber()
     {
-        var workflow = new LabKitAssemblyWorkflow(Guid.NewGuid(), "  Total RNA kit assembly  ");
+        var workflow = new LabKitAssemblyWorkflow("  Total RNA kit assembly  ");
         var draft = new LabKitAssemblyWorkflowRevision(workflow.Id, 1,
             [new(Guid.NewGuid(), "Pack", "Pack the tubes.")], Guid.NewGuid(), DateTime.UtcNow);
 
@@ -30,9 +30,8 @@ public sealed class TransportationKitAssemblyDomainTests
     {
         var author = Guid.NewGuid();
         var step = new LabKitAssemblyStep(Guid.NewGuid(), "Pack tubes", "Place scanned tubes in the shipper.");
-        var workflow = new LabKitAssemblyWorkflow(Guid.NewGuid(), "Total RNA kit assembly");
+        var workflow = new LabKitAssemblyWorkflow("Total RNA kit assembly");
         var revision = new LabKitAssemblyWorkflowRevision(workflow.Id, 1, [step], author, DateTime.UtcNow);
-        revision.Components.Add(new LabKitAssemblyComponent(revision.Id, Guid.NewGuid(), 2, "Tube", 0));
 
         Assert.Throws<InvalidOperationException>(() => revision.Approve(author, DateTime.UtcNow, null));
         Assert.Throws<InvalidOperationException>(() => revision.Approve(author, DateTime.UtcNow, "On shift"));
@@ -41,10 +40,6 @@ public sealed class TransportationKitAssemblyDomainTests
         Assert.Equal(LabKitAssemblyRevisionStatus.Approved, revision.Status);
 
         var run = new LabKitAssemblyRun(Guid.NewGuid(), revision, Guid.NewGuid(), DateTime.UtcNow);
-        var tubeComponent = Assert.Single(revision.Components);
-        Assert.Throws<InvalidOperationException>(() => tubeComponent.ValidateActualUse(0.5m, "each"));
-        Assert.Throws<InvalidOperationException>(() => tubeComponent.ValidateActualUse(1m, "box"));
-        tubeComponent.ValidateActualUse(1m, "each");
         var sourceLotId = Guid.NewGuid();
         run.EnsureSingleTubeSourceLot(sourceLotId, []);
         run.EnsureSingleTubeSourceLot(sourceLotId, [sourceLotId]);
@@ -61,10 +56,9 @@ public sealed class TransportationKitAssemblyDomainTests
     public void PlatformAdministratorOverrideRequiresAReason()
     {
         var author = Guid.NewGuid();
-        var workflow = new LabKitAssemblyWorkflow(Guid.NewGuid(), "Total RNA kit assembly");
+        var workflow = new LabKitAssemblyWorkflow("Total RNA kit assembly");
         var revision = new LabKitAssemblyWorkflowRevision(workflow.Id, 1,
             [new(Guid.NewGuid(), "Pack", "Pack the tubes.")], author, DateTime.UtcNow);
-        revision.Components.Add(new LabKitAssemblyComponent(revision.Id, Guid.NewGuid(), 1, "Tube", 0));
         Assert.Throws<InvalidOperationException>(() => revision.Approve(author, DateTime.UtcNow, null, true));
         revision.Approve(author, DateTime.UtcNow, "Only qualified reviewer on shift", true);
         Assert.Equal("Only qualified reviewer on shift", revision.ApprovalOverrideReason);

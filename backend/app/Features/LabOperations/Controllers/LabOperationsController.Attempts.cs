@@ -182,16 +182,9 @@ public sealed partial class LabOperationsController
             throw Invalid("repeat_material_confirmation_required", "Confirm sufficient material remains in the selected source and record the evidence before another purchased run.");
         if (unavailable is not null) throw Conflict("attempt_source_unavailable", unavailable);
         if (!string.Equals(tube.Barcode, request.Barcode?.Trim(), StringComparison.Ordinal)) throw Invalid("attempt_barcode_mismatch", "Scan the source tube you selected.");
-        var legacy = await dbContext.LabProtocolExecutions.Where(e => e.LabWorkOrderId == work.Id && e.LabSpecimenId == specimen.Id && e.LabSpecimenAttemptId == null && e.Status != LabExecutionStatus.Abandoned).ToListAsync(ct);
-        if (legacy.Count > 1 || legacy.Any(e => e.Status != LabExecutionStatus.Planned || e.StartedAtUtc.HasValue))
-            throw Conflict("legacy_attempt_review_required", "The existing processing records require supervisor review. No source has been inferred.");
-        var legacyExecution = legacy.SingleOrDefault();
-        var legacyWorkflowId = legacyExecution?.LabServiceWorkflowStageId is { } legacyStageId
-            ? await dbContext.LabServiceWorkflowStages.Where(s => s.Id == legacyStageId).Select(s => (Guid?)s.LabServiceWorkflowVersionId).SingleAsync(ct)
-            : null;
-        var workflowId = selectedWorkflowId ?? request.WorkflowVersionId ?? legacyWorkflowId ?? await ReadDefaultExecutionWorkflowAsync(work, ct)
+        var workflowId = selectedWorkflowId ?? request.WorkflowVersionId ?? await ReadDefaultExecutionWorkflowAsync(work, ct)
             ?? throw Conflict("production_workflow_required", "Promote a service workflow before selecting a source, or add this tube to an approved preparation batch.");
-        await RequireExecutionWorkflowAsync(work, workflowId, ct, newSelection: legacyWorkflowId != workflowId);
+        await RequireExecutionWorkflowAsync(work, workflowId, ct, newSelection: true);
         var first = await dbContext.LabServiceWorkflowStages.Where(s => s.LabServiceWorkflowVersionId == workflowId).OrderBy(s => s.Sequence).FirstOrDefaultAsync(ct)
             ?? throw Conflict("workflow_empty", "The workflow has no stages.");
         await RequireCurrentProtocolsAsync([first.LabProtocolVersionId], ct);
@@ -200,10 +193,8 @@ public sealed partial class LabOperationsController
             specimen.BeginAdditionalPreparation(actorId, DateTime.UtcNow);
         var attempt = new LabSpecimenAttempt(work.Id, specimen.Id, tube.Id, workflowId, (attempts.LastOrDefault()?.Sequence ?? 0) + 1, attempts.LastOrDefault()?.Id);
         dbContext.LabSpecimenAttempts.Add(attempt);
-        var execution = legacy.SingleOrDefault();
-        if (execution is not null && (execution.LabServiceWorkflowStageId != first.Id || execution.LabProtocolVersionId != first.LabProtocolVersionId))
-            throw Conflict("legacy_stage_mismatch", "The existing Planned execution must match the workflow's first stage before adoption.");
-        if (execution is null) { execution = new(work.Id, specimen.Id, first.LabProtocolVersionId, null, first.Id); dbContext.LabProtocolExecutions.Add(execution); }
+        var execution = new LabProtocolExecution(work.Id, specimen.Id, first.LabProtocolVersionId, null, first.Id);
+        dbContext.LabProtocolExecutions.Add(execution);
         Execute(() => execution.AttachAttempt(attempt));
         specimen.RecordProcessingState(LabSpecimenProcessingState.Planned, actorId, DateTime.UtcNow);
         dbContext.Entry(tube).Property(t => t.UpdatedAt).IsModified = true;

@@ -1,5 +1,11 @@
 # Frontend Test Plan
 
+## More workspace navigation — September 28, 2026
+
+Updated `navigation.test.ts` to cover permission-filtered More destinations, Purchasing / Equipment / Data provisioning ordering, one definition per destination, and their removal from Administration and Resources. External organization contexts retain no More destinations. Automated suites remain request-only; scoped lint and TypeScript verification are tracked in the [navigation plan](PORTAL-NAVIGATION-SIMPLIFICATION-PLAN.md).
+
+Mobile navigation now uses a full-width Dialog tray with native theme radios and the existing Department selection callback. More and Settings expand in place, reset on dismissal, and retain destination permissions. The existing home and Documentation E2E expectations cover tray dimensions, the 8 px edge inset and 44 px hamburger, Close/Escape focus return, keyboard movement, and route selection. Scoped lint and TypeScript passed; signed-in phone, tablet, and desktop evidence is recorded in the navigation plan. Automated suites were not requested or run.
+
 ## Shipping Container capacity and kit contents — September 26, 2026
 
 Pending UI coverage: a purchased Shipping Container product form requires a positive whole-number Tube capacity and shows the saved capacity in its catalog row. A complete Transportation kit product is absent from Phaeno kit component choices. A 20-tube kit Draft explains when no configured outer Shipping Container holds 20 tubes, and an existing tube without inventory unit `each` warns beside the selected row. Draft save remains possible while a catalog item is unconfigured; activation remains gated by server validation. Check labels, errors, keyboard behavior, and narrow-width layout. Static lint/typecheck are the checkpoint; automated tests remain request-only.
@@ -2986,3 +2992,31 @@ Purchasing and Equipment navigation (September 26, 2026): the navigation expecta
 The complete frontend suite passed **1,214 tests across 190 files**; TypeScript and ESLint passed. Documentation consistency passed for 56 guides. The Vite production client and server build passed. Windows initially returned `EPERM` when the package build wrapper rewrote the already-current documentation version file. The generator now skips identical output, and the standard `pnpm run build` passed.
 
 The shipping configuration and stock-kit component suites were updated for the released Draft workflow. They now check incomplete Draft saves, in-place Draft edits, activation confirmation, active predecessor visibility, Sample type selection before kit activation, fixed Phaeno contents and supplier catalog identities, and amber assembly warnings. The former one-time Sample type linking and direct Active-on-save tests described in older checkpoints above are retired; those controls no longer exist. This is component coverage, not connected or physical-kit acceptance.
+
+## September 28, 2026 — Mobile workspace sidebar dismissal
+
+Manual signed-in review at 420 px confirmed outside-surface dismissal, inside-header click retention, normal activation of the outside hamburger, focus return from a hidden rail item, and preserved Escape dismissal. The shared pointer handler applies to narrow layouts; desktop pin/hover predicates are unchanged. Scoped lint and TypeScript passed. No component suite was run under the request-only rule.
+
+## September 28, 2026 — Built-in product types and tube inventory defaults
+
+ProductTypes component assertions now hide Actions for Tube, Shipping Container, and Reagent in the list and details, keep Transportation kit manageable, retain its non-component role, and exercise custom-type edit/status management. SupplierCatalog assertions cover a new tube defaulting to each, an unconfigured tube editor defaulting to each, and preservation of a configured inventory unit. Scoped ESLint and TypeScript passed. Manual signed-in Chrome review confirmed built-in list action omission, Tube detail protection, inactive Transportation kit Edit/Activate actions and editable title/status with fixed role, and each in both the existing unconfigured Ajax tube editor and new Tube product form. Review forms were cancelled without saving. Automated component tests were authored but not executed under the request-only rule.
+
+September 28 product type form refinement: the Use in transportation kits field is removed from both create and edit forms. New types submit Other automatically; edits retain their saved classification. Component assertions cover absence of the control and the Other create payload. Manual signed-in local Chrome review confirmed both simplified forms. Scoped lint and TypeScript passed after the refinement; component suites remain unrun.
+
+September 28 product type identity presentation: remove internal kit-role subtype labels from rows and details, and show Built-in badges beside Reagent, Tube, and Shipping Container names. Reagent retains its saved Reagent identity; no classification or database migration changes are needed. Manual signed-in Chrome review confirmed the three list badges and the Reagent detail without Other product or the kit-use metadata row. TypeScript, scoped ESLint, and documentation consistency passed. Automated suites were not run for this presentation change.
+
+
+## September 28, 2026 - Product catalog type filter
+
+ProductCatalogPage.test.tsx adds three component regressions: compose product type, search and inactive visibility with empty-result feedback and Clear filters; retain the combined filters in product detail links; and restore them through Back to products. The component suite was authored but not executed under the request-only test rule. Scoped ESLint and the complete frontend TypeScript check passed. Signed-in local Chrome review confirmed actual product type badges, Reagent plus Tagging search, the inactive toggle, detail-return state, and Clear filters removing saved URL filters. At a 320px CSS viewport, search and type controls each fit within the content width and the page has no horizontal overflow. No catalog records were changed.
+
+
+### Product type filter active options - September 28, 2026
+
+The Products filter options now require productTypeIsActive, independent of supplier/product inactive visibility. A saved inactive or unavailable type filter falls back to All product types. Acceptance scope: inactive type options stay absent with Show inactive both off and on; products under active types still follow existing search and inactive controls; a deactivated saved selection returns to All product types. Scoped ESLint, the complete frontend TypeScript check, documentation consistency (56 guides, corpus 9b9871801414), and git diff --check passed. Automated suites were not run for this bounded follow-up.
+
+## September 28 clean local model and canonical navigation
+
+The [clean local reset](LOCAL-CLEAN-DATABASE-20260928-PLAN.md) replaces old finished-kit and receipt fixtures with purchased Shipping Containers, independent kit SKU/name, specification contents and reusable assembly methods. Catalog tests cover each defaults and container capacity. The unused customer-directory component and its tests are removed; current CRM request and company workflows remain covered. Required QC captures no longer disappear based on synthetic names. Tube progress requires saved slot identities, and current routes replace retired adapters. Earlier historical-kit preservation cases above are superseded for this local model.
+
+Full TypeScript, ESLint and documentation consistency checks are the verification checkpoint. Component suites were not run; fixture authoring and static compilation are not component execution evidence. The signed-in local browser confirmed the single seeded administrator; new kit assembly and physical/scientific acceptance remain separate. CRM compliance-field cleanup is awaiting explicit confirmation.

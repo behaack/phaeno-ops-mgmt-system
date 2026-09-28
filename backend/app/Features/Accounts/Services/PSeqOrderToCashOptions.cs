@@ -19,11 +19,6 @@ public sealed class PSeqOrderToCashOptions
     public string PipelineServiceSecret { get; init; } = string.Empty;
     public string PipelineProviderKey { get; init; } = string.Empty;
     public string ObjectStorageTransferBaseUrl { get; init; } = string.Empty;
-    // Legacy configuration retained for compatibility. New releases use the versioned File Management policy.
-    public int ResultRetentionWarningDays { get; init; }
-    public int ResultRetentionCutoffDays { get; init; }
-    public int ResultRetentionGraceDays { get; init; }
-    public int ResultRetentionDeleteDays { get; init; }
 
     public IReadOnlyList<string> ValidateGovernedResults()
     {

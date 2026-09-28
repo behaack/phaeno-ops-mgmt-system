@@ -7,7 +7,7 @@ using PhaenoPortal.App.Features.OrderManagement.Services;
 public class SampleShippingContainerTests
 {
     private static SampleShippingContainerDefinitionDto Size(int capacity, string? sku = null, int displayOrder = 0)
-        => new(Guid.NewGuid(), Guid.NewGuid(), sku ?? $"C-{capacity}", $"Container {capacity}", capacity, 1, null, null, null, null,
+        => new(Guid.NewGuid(), Guid.NewGuid(), sku ?? $"C-{capacity}", $"Container {capacity}", capacity, 1, null,
             DateTime.UtcNow.AddDays(-1), null, true, displayOrder, 1, KitContents: []);
 
     [Fact]
@@ -161,10 +161,10 @@ public class SampleShippingContainerTests
         Assert.Equal("0012-ab", type.Sku);
         Assert.Equal("0012-AB", type.NormalizedSku);
         var now = DateTime.UtcNow;
-        Assert.Throws<ArgumentException>(() => new SampleShippingContainerDefinition(type.Id, 1, null, "Small box", 0, null, null, null, now, null, true, 0));
-        Assert.False(new SampleShippingContainerDefinition(type.Id, 1, null, "Small box", 0, null, null, null, now, null, false, 0).IsActive);
-        Assert.Throws<ArgumentException>(() => new SampleShippingContainerDefinition(type.Id, 1, null, "Small box", 20, null, null, null, now, now.AddDays(-1), false, 0));
-        var definition = new SampleShippingContainerDefinition(type.Id, 1, null, "Small box", 20, null, null, null, now, null, false, 0);
+        Assert.Throws<ArgumentException>(() => new SampleShippingContainerDefinition(type.Id, 1, null, "Small box", 0, now, null, true, 0));
+        Assert.False(new SampleShippingContainerDefinition(type.Id, 1, null, "Small box", 0, now, null, false, 0).IsActive);
+        Assert.Throws<ArgumentException>(() => new SampleShippingContainerDefinition(type.Id, 1, null, "Small box", 20, now, now.AddDays(-1), false, 0));
+        var definition = new SampleShippingContainerDefinition(type.Id, 1, null, "Small box", 20, now, null, false, 0);
         Assert.False(definition.IsActive);
         Assert.Equal(20, definition.TubeCapacity);
     }
@@ -173,8 +173,8 @@ public class SampleShippingContainerTests
     public void DeactivationRetainsHistoryAndHandlesFutureEffectiveRevisions()
     {
         var now = DateTime.UtcNow;
-        var active = new SampleShippingContainerDefinition(Guid.NewGuid(), 1, null, "Active", 20, null, null, null, now.AddDays(-1), null, true, 0);
-        var future = new SampleShippingContainerDefinition(Guid.NewGuid(), 1, null, "Future", 20, null, null, null, now.AddDays(1), null, true, 0);
+        var active = new SampleShippingContainerDefinition(Guid.NewGuid(), 1, null, "Active", 20, now.AddDays(-1), null, true, 0);
+        var future = new SampleShippingContainerDefinition(Guid.NewGuid(), 1, null, "Future", 20, now.AddDays(1), null, true, 0);
         active.Deactivate(now); future.Deactivate(now);
         Assert.False(active.IsActive); Assert.False(future.IsActive);
         Assert.Equal(now, active.EffectiveTo); Assert.Null(future.EffectiveTo);
@@ -186,7 +186,7 @@ public class SampleShippingContainerTests
     public void ReceivedPhysicalTubeCannotBeReleasedForAnotherAssignment()
     {
         var now = DateTime.UtcNow;
-        var tube = new RegisteredSampleTube(Guid.NewGuid(), "RECEIVED-EXAMPLE");
+        var tube = new RegisteredSampleTube(Guid.NewGuid(), "RECEIVED-EXAMPLE", "TEST_SUPPLIER");
         tube.MarkAssigned(now);
         tube.RecordReceipt(now);
         Assert.Throws<InvalidOperationException>(() => tube.MarkAvailable());

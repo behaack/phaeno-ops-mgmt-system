@@ -147,7 +147,7 @@ function procedureStatusLabel(item: SampleShippingProcedure, revisions?: SampleS
   return item.lifecycle === 'Draft' ? 'Draft' : item.lifecycle === 'Discarded' ? 'Discarded'
     : item.lifecycle === 'Deactivated' ? 'Deactivated'
     : revisions?.some(value => value.isActive && value.revision > item.revision) ? 'Superseded'
-    : item.isActive ? 'Active' : item.lifecycle === 'LegacyInactive' ? 'Legacy Inactive' : 'Superseded'
+    : item.isActive ? 'Active' : 'Superseded'
 }
 
 function ProcedureStatusBadge({ item, revisions }: { item: SampleShippingProcedure; revisions?: SampleShippingProcedure[] }) {

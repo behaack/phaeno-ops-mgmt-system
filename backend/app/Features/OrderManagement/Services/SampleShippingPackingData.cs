@@ -10,11 +10,10 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 public static class SampleShippingPackingData
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    public static int TubeCount(SampleShipmentItem item) => item.TubeSlots.Count > 0 ? item.TubeSlots.Count : 1;
+    public static int TubeCount(SampleShipmentItem item) => item.TubeSlots.Count;
     public static int TubeCount(SampleShipment shipment) => shipment.Items.Sum(TubeCount);
-    public static IEnumerable<Guid> TubeIds(SampleShipmentItem item) => item.TubeSlots.Count > 0
-        ? item.TubeSlots.Where(slot => slot.RegisteredSampleTubeId.HasValue).Select(slot => slot.RegisteredSampleTubeId!.Value)
-        : item.RegisteredSampleTubeId.HasValue ? [item.RegisteredSampleTubeId.Value] : [];
+    public static IEnumerable<Guid> TubeIds(SampleShipmentItem item) =>
+        item.TubeSlots.Where(slot => slot.RegisteredSampleTubeId.HasValue).Select(slot => slot.RegisteredSampleTubeId!.Value);
 
     public static ShipmentContainerDto? Container(string? snapshot)
     {
@@ -116,7 +115,7 @@ public static class SampleShippingPackingData
         if (shipment.Status != SampleShipmentStatus.Preparing) return "This shipment has already been confirmed. Prepare the remaining unpacked tubes instead.";
         if (shipment.ReturnKit is not null) return "This shipment already has a registered physical kit. Keep its tube assignments with that kit.";
         if (shipment.PacketRevisions.Any(packet => !packet.IsVoided)) return "This shipment has a confirmed manifest.";
-        if (shipment.Items.Any(item => item.RegisteredSampleTubeId.HasValue || item.TubeSlots.Any(slot => slot.RegisteredSampleTubeId.HasValue)))
+        if (shipment.Items.Any(item => item.TubeSlots.Any(slot => slot.RegisteredSampleTubeId.HasValue)))
             return "Correct the existing tube assignments before adjusting these containers.";
         if (shipment.Items.Count == 0) return "There are no unpacked tubes remaining here.";
         return null;
@@ -153,11 +152,9 @@ public static class SampleShippingPackingData
         foreach (var barcode in barcodes.Order(StringComparer.Ordinal)) await LockAsync(db, $"supplier-tube:{barcode}", ct);
         var barcodeNamespace = stock.TubeBarcodeNamespace;
         if (await db.RegisteredSampleTubes.AnyAsync(item => barcodes.Contains(item.SupplierBarcode)
-                && (item.BarcodeNamespace == barcodeNamespace || item.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace
-                    || barcodeNamespace == SupplierTubeBarcode.LegacyNamespace), ct)
+                && (item.BarcodeNamespace == barcodeNamespace), ct)
             || await db.LabContainers.AnyAsync(item => barcodes.Contains(item.Barcode.ToUpper())
-                && (item.BarcodeNamespace == barcodeNamespace || item.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace
-                    || barcodeNamespace == SupplierTubeBarcode.LegacyNamespace), ct)
+                && (item.BarcodeNamespace == barcodeNamespace), ct)
             || await db.LabPreparationBatches.AnyAsync(item => (item.TrayBarcode != null && barcodes.Contains(item.TrayBarcode.ToUpper())) || barcodes.Contains(item.Name.ToUpper()), ct))
             throw new OrderManagementException("supplier_tube_already_registered", "This kit contains a barcode already registered to another shipment, laboratory tube or tray.", 409);
 

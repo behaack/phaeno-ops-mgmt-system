@@ -65,7 +65,6 @@ public static class CrmModelConfiguration
             entity.Property(value => value.Email).HasMaxLength(255);
             entity.Property(value => value.NormalizedEmail).HasMaxLength(255);
             entity.Property(value => value.Phone).HasMaxLength(50);
-            entity.Property(value => value.LegacyJobTitle).HasMaxLength(150);
             ConfigureEnum(entity.Property(value => value.CommunicationPreference), 50);
             entity.Property(value => value.LawfulContactBasis).HasMaxLength(255);
             entity.Property(value => value.CommunicationNotes).HasMaxLength(1000);

@@ -161,7 +161,3 @@ export async function getWebOpsNotificationAttempts(id: string) {
 export async function resendWebOpsNotification(notification: WebOpsNotification) {
   await api.post(`/web-ops/notifications/${notification.id}/resend`, { version: notification.version })
 }
-
-export async function queueWebOpsTechnicalBrief(id: string) {
-  await api.post(`/web-ops/mailing-list/${id}/technical-brief`)
-}

@@ -20,44 +20,35 @@ import { containerEffectiveState, localContainerDateTime } from '../configuratio
 import { ShippingKitContents } from '../configuration/ShippingKitContents'
 
 const selectClass = 'h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none'
-const prepareSchema = z.object({ containerDefinitionId: z.string().uuid('Choose an active kit specification.'), tubeSupplierId: z.string().uuid('Choose a tube supplier.'), tubeSupplierProductId: z.string().uuid('Choose a tube product.'), tubeLotNumber: z.string().trim().max(100), shipperSupplierId: z.string().uuid('Choose a shipping container supplier.'), shipperSupplierProductId: z.string().uuid('Choose a shipping container product.'), productExpirations: z.record(z.string(), z.string()), purchasedKitReceiptReference: z.string().trim().max(100), supplierKitLotNumber: z.string().trim().max(100) })
+const prepareSchema = z.object({ containerDefinitionId: z.string().uuid('Choose an active kit specification.'), tubeSupplierId: z.string().uuid('Choose a tube supplier.'), tubeSupplierProductId: z.string().uuid('Choose a tube product.'), tubeLotNumber: z.string().trim().max(100), shipperSupplierId: z.string().uuid('Choose a shipping container supplier.'), shipperSupplierProductId: z.string().uuid('Choose a shipping container product.'), productExpirations: z.record(z.string(), z.string()) })
 type PrepareValues = z.infer<typeof prepareSchema>
 type EditorProps = { onClose: () => void; onSaved: (kit: ShippingStockKit) => void | Promise<void> }
 
-export function PrepareStandardKitDialog({ definitions, onClose, onSaved, mode = 'prepare' }: EditorProps & { definitions: ShippingContainerDefinition[]; mode?: 'prepare' | 'receive' }) {
+export function PrepareStandardKitDialog({ definitions, onClose, onSaved }: EditorProps & { definitions: ShippingContainerDefinition[] }) {
   const catalog = useSupplierCatalog()
   const suppliers = (catalog.data ?? []).filter(supplier => supplier.isActive)
-  const form = useForm<PrepareValues>({ resolver: zodResolver(prepareSchema), defaultValues: { containerDefinitionId: '', tubeSupplierId: '', tubeSupplierProductId: '', tubeLotNumber: '', shipperSupplierId: '', shipperSupplierProductId: '', productExpirations: {}, purchasedKitReceiptReference: '', supplierKitLotNumber: '' } })
-  const candidates = definitions.filter(value => containerEffectiveState(value) === 'Active now' && (catalog.data ?? []).some(supplier => supplier.isActive && supplier.isInternalProducer === (mode === 'prepare') && supplier.products.some(product => product.id === value.finishedKitProductId && product.isActive)))
+  const form = useForm<PrepareValues>({ resolver: zodResolver(prepareSchema), defaultValues: { containerDefinitionId: '', tubeSupplierId: '', tubeSupplierProductId: '', tubeLotNumber: '', shipperSupplierId: '', shipperSupplierProductId: '', productExpirations: {} } })
+  const candidates = definitions.filter(value => containerEffectiveState(value) === 'Active now' && (catalog.data ?? []).some(supplier => supplier.isActive && !supplier.isInternalProducer && supplier.products.some(product => product.id === value.shippingContainerProductId && product.isActive && product.productTypeIsActive)))
   const selected = candidates.find(value => value.id === form.watch('containerDefinitionId'))
-  const workflowPending = mode === 'prepare' && selected?.assemblyWorkflowReady === false
-  const mutation = useMutation({ mutationFn: (values: PrepareValues) => createShippingStockKit({ containerDefinitionId: values.containerDefinitionId, tubeSupplierProductId: values.tubeSupplierProductId, shipperSupplierProductId: values.shipperSupplierProductId, tubeLotNumber: values.tubeLotNumber || null, purchasedKitReceiptReference: mode === 'receive' ? values.purchasedKitReceiptReference : null, supplierKitLotNumber: mode === 'receive' ? values.supplierKitLotNumber || null : null, productExpirations: inventoryProducts.filter(product => values.productExpirations[product.id]).map(product => ({ supplierProductId: product.id, expirationDate: values.productExpirations[product.id] })) }), onSuccess: async kit => { form.reset(form.getValues()); allowSavedNavigation(); await onSaved(kit) } })
+  const workflowPending = selected?.assemblyWorkflowReady === false
+  const mutation = useMutation({ mutationFn: (values: PrepareValues) => createShippingStockKit({ containerDefinitionId: values.containerDefinitionId, tubeSupplierProductId: values.tubeSupplierProductId, shipperSupplierProductId: values.shipperSupplierProductId, tubeLotNumber: values.tubeLotNumber || null, productExpirations: inventoryProducts.filter(product => values.productExpirations[product.id]).map(product => ({ supplierProductId: product.id, expirationDate: values.productExpirations[product.id] })) }), onSuccess: async kit => { form.reset(form.getValues()); allowSavedNavigation(); await onSaved(kit) } })
   const dirty = form.formState.isDirty
   const allowSavedNavigation = useOrderDraftGuard(dirty, mutation.isPending)
   function close() { if (!mutation.isPending && (!dirty || window.confirm('Discard the unsaved standard-kit details?'))) onClose() }
   const errors = form.formState.errors
   const unavailable = mutation.isPending || catalog.isPending || catalog.isError
   const values = form.watch()
-  const inventoryProductIds = new Set([...(selected?.kitContents ?? []).map(item => item.supplierProductId), ...(mode === 'receive' && selected?.finishedKitProductId ? [selected.finishedKitProductId] : []), values.tubeSupplierProductId, values.shipperSupplierProductId])
+  const inventoryProductIds = new Set([...(selected?.kitContents ?? []).map(item => item.supplierProductId), values.tubeSupplierProductId, values.shipperSupplierProductId])
   const inventoryProducts = (catalog.data ?? []).flatMap(supplier => supplier.products.filter(product => inventoryProductIds.has(product.id)).map(product => ({ ...product, supplierName: supplier.name })))
   function productFields(prefix: 'tube' | 'shipper', kind: SupplierProductKind) {
     const supplierField = `${prefix}SupplierId` as const
     const productField = `${prefix}SupplierProductId` as const
     const supplier = suppliers.find(item => item.id === values[supplierField])
     const products = supplier?.products.filter(item => item.isActive && item.productTypeIsActive && item.kind === kind) ?? []
-    if (mode === 'prepare') {
-      const product = products.find(item => item.id === values[productField])
-      return <p className="rounded-md border bg-muted/30 p-3 text-sm">{supplier && product ? `${supplier.name} · ${product.productNumber} — ${product.description}` : 'Choose a Kit specification with approved contents.'}</p>
-    }
-    return <>
-      <StockKitField id={`stock-${supplierField}`} label="Supplier" required error={errors[supplierField]?.message}><select id={`stock-${supplierField}`} className={selectClass} disabled={unavailable} aria-invalid={Boolean(errors[supplierField])} aria-describedby={errors[supplierField] ? `stock-${supplierField}-error` : undefined} {...form.register(supplierField)} onChange={event => { form.setValue(supplierField, event.target.value, { shouldDirty: true, shouldValidate: true }); form.setValue(productField, '', { shouldDirty: true, shouldValidate: true }) }}><option value="">Select supplier</option>{suppliers.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></StockKitField>
-      <StockKitField id={`stock-${productField}`} label="Product name" required error={errors[productField]?.message}><select id={`stock-${productField}`} className={selectClass} disabled={unavailable || !supplier || !products.length} aria-invalid={Boolean(errors[productField])} aria-describedby={errors[productField] ? `stock-${productField}-error` : undefined} {...form.register(productField)} value={values[productField]} onChange={event => form.setValue(productField, event.target.value, { shouldDirty: true, shouldValidate: true })}><option value="">{supplier && !products.length ? 'No active products of this type' : 'Select product'}</option>{products.map(item => <option key={item.id} value={item.id}>{item.productNumber} — {item.description}</option>)}</select></StockKitField>
-    </>
+    const product = products.find(item => item.id === values[productField])
+    return <p className="rounded-md border bg-muted/30 p-3 text-sm">{supplier && product ? `${supplier.name} · ${product.productNumber} — ${product.description}` : 'Choose a Kit specification with approved contents.'}</p>
   }
   function submit(values: PrepareValues) {
-    if (mode === 'receive' && !values.purchasedKitReceiptReference) {
-      form.setError('purchasedKitReceiptReference', { message: 'Enter the supplier receipt or packing-slip reference.' }, { shouldFocus: true }); return
-    }
     for (const [prefix, kind] of [['tube', 'Tube'], ['shipper', 'ShippingContainer']] as const) {
       const supplier = suppliers.find(item => item.id === values[`${prefix}SupplierId`])
       if (!supplier?.products.some(item => item.id === values[`${prefix}SupplierProductId`] && item.isActive && item.productTypeIsActive && item.kind === kind)) {
@@ -71,7 +62,7 @@ export function PrepareStandardKitDialog({ definitions, onClose, onSaved, mode =
     }
     if (!unavailable) mutation.mutate(values)
   }
-  return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>{mode === 'receive' ? 'Receive purchased kit' : 'Prepare standard kit'}</DialogTitle><DialogDescription>{mode === 'receive' ? 'Record one complete supplier kit and its included tube and outer shipper products. A Phaeno KIT barcode is assigned; scan and verify every physical tube before dispatch.' : 'Choose a Kit specification to start assembly. Its required products are fixed; scan the permanent ID on each tube as it is packed. Prepared stock remains at Phaeno until dispatch.'}</DialogDescription></DialogHeader><StockKitSaveError error={mutation.error || catalog.error} />
+  return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Prepare standard kit</DialogTitle><DialogDescription>Choose a Kit specification to start assembly. Its required products are fixed; scan the permanent ID on each tube as it is packed. Prepared stock remains at Phaeno until dispatch.</DialogDescription></DialogHeader><StockKitSaveError error={mutation.error || catalog.error} />
     <form id="prepare-standard-kit" className="space-y-4" noValidate onSubmit={event => {
       event.preventDefault()
       for (const product of inventoryProducts.filter(item => item.canExpire)) {
@@ -94,23 +85,22 @@ export function PrepareStandardKitDialog({ definitions, onClose, onSaved, mode =
           const contents = definition?.kitContents?.filter(item => item.kind === kind) ?? []
           const configured = contents.length === 1 ? contents[0] : undefined
           const supplier = configured ? suppliers.find(item => item.id === configured.supplierId)
-            : mode === 'prepare' && prefix === 'shipper' && !definition?.kitContents?.length ? suppliers.find(item => item.name.trim().toUpperCase() === definition?.supplierName?.trim().toUpperCase()) : undefined
+            : undefined
           const product = supplier?.products.find(item => item.isActive && item.productTypeIsActive && item.kind === kind
-            && (configured ? item.id === configured.supplierProductId : item.productNumber.trim().toUpperCase() === definition?.supplierProductNumber?.trim().toUpperCase()))
+            && item.id === configured?.supplierProductId)
           form.setValue(`${prefix}SupplierId`, supplier?.id ?? '', { shouldDirty: true, shouldValidate: true })
           form.setValue(`${prefix}SupplierProductId`, product?.id ?? '', { shouldDirty: true, shouldValidate: true })
         }
-      }}><option value="">Select a kit configuration</option>{candidates.map(value => <option key={value.id} value={value.id}>{value.commonName} · {(catalog.data ?? []).find(supplier => supplier.products.some(product => product.id === value.finishedKitProductId))?.name ?? 'Supplier'} · SKU {value.sku} · {value.tubeCapacity} tubes</option>)}</select></StockKitField>
-      {!candidates.length ? <p className="text-sm text-muted-foreground">Activate a {mode === 'receive' ? 'supplier' : 'Phaeno'} Transportation kit specification in Samples &amp; shipping settings first.</p> : null}
+      }}><option value="">Select a kit configuration</option>{candidates.map(value => <option key={value.id} value={value.id}>{value.commonName} · {(catalog.data ?? []).find(supplier => supplier.products.some(product => product.id === value.shippingContainerProductId))?.name ?? 'Supplier'} · SKU {value.sku} · {value.tubeCapacity} tubes</option>)}</select></StockKitField>
+      {!candidates.length ? <p className="text-sm text-muted-foreground">Activate a Phaeno Transportation kit specification in Samples &amp; shipping settings first.</p> : null}
       {workflowPending ? <Alert variant="warning"><AlertTitle>Assembly workflow pending</AlertTitle><AlertDescription>This specification can accept orders, but a new physical kit cannot be prepared until a compatible Transportation kit workflow is approved in <Link className="text-primary underline" to="/lab-configuration" search={{ configurationTab: 'workflows' }}>Lab settings → Workflows</Link>.</AlertDescription></Alert> : null}
-      {mode === 'receive' ? <div className="grid gap-4 sm:grid-cols-2"><StockKitField id="stock-purchasedKitReceiptReference" label="Supplier receipt reference" required error={errors.purchasedKitReceiptReference?.message}><Input id="stock-purchasedKitReceiptReference" maxLength={100} disabled={unavailable} aria-invalid={Boolean(errors.purchasedKitReceiptReference)} aria-describedby={errors.purchasedKitReceiptReference ? 'stock-purchasedKitReceiptReference-error' : undefined} {...form.register('purchasedKitReceiptReference')} /></StockKitField><StockKitField id="stock-supplierKitLotNumber" label="Supplier kit lot" error={errors.supplierKitLotNumber?.message}><Input id="stock-supplierKitLotNumber" maxLength={100} disabled={unavailable} aria-invalid={Boolean(errors.supplierKitLotNumber)} aria-describedby={errors.supplierKitLotNumber ? 'stock-supplierKitLotNumber-error' : undefined} {...form.register('supplierKitLotNumber')} /></StockKitField></div> : null}
       {selected ? <p className="rounded-md border bg-muted/40 p-3 text-sm">This kit holds {selected.tubeCapacity} tubes. Register all {selected.tubeCapacity} before recording outbound dispatch.</p> : null}
-       {selected?.kitContents?.length && mode === 'prepare' ? <section aria-labelledby="prepare-kit-contents" className="rounded-md border p-3"><h3 id="prepare-kit-contents" className="text-sm font-medium">Required contents per kit</h3><ShippingKitContents contents={selected.kitContents} /><p className="text-xs text-muted-foreground">The selected specification fixes these products and quantities. Scan each actual tube on the physical kit's assembly record.</p></section> : null}
+       {selected?.kitContents?.length ? <section aria-labelledby="prepare-kit-contents" className="rounded-md border p-3"><h3 id="prepare-kit-contents" className="text-sm font-medium">Required contents per kit</h3><ShippingKitContents contents={selected.kitContents} /><p className="text-xs text-muted-foreground">The selected specification fixes these products and quantities. Scan each actual tube on the physical kit's assembly record.</p></section> : null}
       <fieldset className="min-w-0"><legend className="mb-3 text-sm font-medium">Tubes</legend><div className="grid gap-4">{productFields('tube', 'Tube')}<StockKitField id="stock-tubeLotNumber" label="Lot" error={errors.tubeLotNumber?.message}><Input id="stock-tubeLotNumber" disabled={mutation.isPending} aria-invalid={Boolean(errors.tubeLotNumber)} aria-describedby={errors.tubeLotNumber ? 'stock-tubeLotNumber-error' : undefined} {...form.register('tubeLotNumber')} /></StockKitField></div></fieldset>
       <fieldset className="min-w-0"><legend className="mb-3 text-sm font-medium">Shipping Container</legend><div className="grid gap-4">{productFields('shipper', 'ShippingContainer')}</div></fieldset>
       {inventoryProducts.some(product => product.canExpire) ? <fieldset className="space-y-3"><legend className="text-sm font-medium">Product expiration dates</legend><p className="text-xs text-muted-foreground">Record the labeled expiration date for every product that can expire in this kit, including additional configured contents. Dates are saved with this stock record.</p>{inventoryProducts.filter(product => product.canExpire).map(product => <StockKitField key={product.id} id={`stock-expiry-${product.id}`} label={`${product.supplierName} · ${product.productNumber}`} required error={errors.productExpirations?.[product.id]?.message}><Input id={`stock-expiry-${product.id}`} type="date" required disabled={unavailable} aria-invalid={Boolean(errors.productExpirations?.[product.id])} aria-describedby={errors.productExpirations?.[product.id] ? `stock-expiry-${product.id}-error` : undefined} {...form.register(`productExpirations.${product.id}`)} /></StockKitField>)}</fieldset> : null}
       <p className="text-sm text-muted-foreground">Missing a supplier or product? Add it in <Link className="text-primary underline" to="/purchasing" search={{ section: 'suppliers' }}>Purchasing</Link>, then return to prepare the kit.</p>
-    </form><RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="prepare-standard-kit" disabled={unavailable || workflowPending || !candidates.length || !suppliers.length}>{mutation.isPending ? 'Saving…' : mode === 'receive' ? 'Record receipt' : 'Prepare standard kit'}</Button></RequiredDialogFooter>
+    </form><RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="prepare-standard-kit" disabled={unavailable || workflowPending || !candidates.length || !suppliers.length}>{mutation.isPending ? 'Saving…' : 'Prepare standard kit'}</Button></RequiredDialogFooter>
   </DialogContent></Dialog>
 }
 

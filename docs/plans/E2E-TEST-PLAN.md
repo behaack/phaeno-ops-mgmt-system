@@ -1,5 +1,9 @@
 # Playwright E2E Test Plan
 
+## More workspace navigation — September 28, 2026
+
+Updated the existing `home.spec.ts` menu case for keyboard opening of More, the ordered Purchasing / Equipment / Data provisioning links, Up / Down arrow-key movement, immediate Tab and Shift+Tab exit from each of the three items to the adjacent toolbar tab stop, Escape dismissal and focus return, desktop removal from the user menu, and narrow-screen disclosure rows for More and Settings without a Workspace label. Mobile expectations cover the full-width and full-height modal tray, its Close action, the 8 px hamburger edge gap and 44 px target, initially collapsed links, Enter/Space expansion, one open section at a time, arrow-key access to revealed links, Tab/Shift+Tab movement, reset after Escape and reopening, Close focus return, and destination selection dismissing the tray. Documentation browser navigation uses the mobile tray link and desktop menu item. The user-menu case also checks that Display, Administration, and Resources headings are absent and authorized User management immediately follows Documentation. These expectations supersede the earlier Resources-heading checks. Browser suites remain request-only. Manual local checks also cover active workspace/detail links, resize while open, and light/dark appearance; record their results in the [navigation plan](PORTAL-NAVIGATION-SIMPLIFICATION-PLAN.md).
+
 ## Named Transportation kit workflow acceptance — September 26, 2026
 
 Pending signed-in acceptance: create a Transportation kit workflow whose name differs from its finished product, then confirm the name is primary in the list and searchable while the product name and SKU remain visible. Use Actions to Edit title without incrementing revision, Edit draft, Approve draft with independent approval, New version, and Discard draft with confirmation. Confirm a discarded number remains in history, an earlier Approved revision stays available, and the next revision does not reuse the number. Check revision, status, and **1 step**/**2 steps** pills beside the title. Check Add step at the right end of the Ordered Lab steps label row and keyboard and narrow-width operation. No E2E execution was requested.
@@ -3152,3 +3156,31 @@ Purchasing and Equipment acceptance (September 26, 2026): in an authorized Phaen
 ### September 26 browser regression checkpoint
 
 The full Playwright run on a dedicated HTTPS development server passed **194 cases** across desktop and mobile Chromium; two mobile print cases remain intentionally skipped. The first run attached to an unrelated server already listening on the default port, so it was discarded as invalid evidence. On the dedicated server, six cases exposed two outdated fixtures: the Phaeno catalog fixture used the retired Lab operations route without the Purchasing page heading, and the packing fixture still named the shared instruction snapshot `instructionRule`. After updating them to the Purchasing layout and `procedure` snapshot, all 12 applicable cases in the three affected files passed, followed by the clean full run. This verifies deterministic browser fixtures; authenticated hosted, physical assembly, scanner, and shipping acceptance remain pending.
+
+## September 28, 2026 — Mobile workspace sidebar dismissal
+
+Local signed-in Chrome review on Samples & shipping settings confirmed an outside surface closes the left rail, its own header keeps it open, the outside hamburger opens the user tray while closing the rail, and Escape/focus return work. This is manual browser evidence at 420 px, not a Playwright run or physical-touch-device acceptance. Four audience guides and the 56-guide corpus were updated and verified. Automated suites remain request-only.
+
+## September 28, 2026 — Built-in product types and tube inventory defaults
+
+Manual signed-in local Chrome review confirmed no list Actions for Tube, Shipping Container, or Reagent; Tube details describe the built-in protection. After showing inactive types, Transportation kit retains its Edit/Activate menu and an editable title/status with a read-only complete-kit role. Selecting Tube in a new product form supplies each, and opening the existing unconfigured Ajax tube editor also supplies each. Both forms were cancelled without saving catalog data. The owner separately confirmed that Transportation kit deactivation works after the API refresh. This is manual local browser evidence; no Playwright or connected database suite was run. Phaeno materials/equipment help and the 56-guide corpus were regenerated and consistency-checked.
+
+September 28 follow-up manual review: New product type shows only Type name and Description; Edit Transportation kit shows those fields and Active product type, with no kit-use selector or read-only input. No catalog writes were made. The actual Total RNA 20 PSeq Kit Draft revision 2 is saved with capacity 20 and no persisted required contents; its editor attempts to add the first component rows. Draft-save correction is compiled, while authenticated save acceptance remains pending after API reload. For acceptance, save one outer container and twenty tubes twice, reopen the same Draft revision, verify persisted quantities, and separately confirm an outdated editor still receives the real stale-version conflict.
+
+September 28 product type identity presentation: remove internal kit-role subtype labels from rows and details, and show Built-in badges beside Reagent, Tube, and Shipping Container names. Reagent retains its saved Reagent identity; no classification or database migration changes are needed. Manual signed-in Chrome review confirmed the three list badges and the Reagent detail without Other product or the kit-use metadata row. TypeScript, scoped ESLint, and documentation consistency passed. Automated suites were not run for this presentation change.
+
+
+## September 28, 2026 - Product catalog type filter
+
+Manual signed-in local Chrome acceptance passed for saved product type badges and the All product types default, immediate Reagent filtering combined with Tagging search and Show inactive, filter retention through a product detail and Back to products, and Clear filters restoring defaults and removing filter URL parameters. A 320px CSS viewport check confirmed wrapped full-width controls and no horizontal page overflow. These are manual local browser checks; the Playwright suite was not executed. Automated acceptance should cover inactive-record inclusion, unknown type links and combined empty results. No catalog writes were made.
+
+
+### Product type filter active options - September 28, 2026
+
+Follow-up acceptance: confirm inactive product types never appear in the Products type selector, including with Show inactive enabled, and that a saved selection for a now-inactive type falls back to All product types. No browser or automated acceptance execution was added for this bounded follow-up.
+
+## September 28 clean local reset acceptance scope
+
+The [clean reset record](LOCAL-CLEAN-DATABASE-20260928-PLAN.md) supersedes old finished-kit products, purchased-complete-kit receipt, converted historical specifications and retired-route acceptance instructions above. Customer/company browser fixtures use current CRM routes. Purchased-container fixtures verify external Shipping Container selection, capacity, editable catalog identity and each inventory units; kit specification identity and assembly method are independent. Future connected kit acceptance must create fresh configuration against this model and verify exact specification/method/component/tube pinning through assembly and dispatch.
+
+Manual read-only local Chrome review confirmed Purchasing loads in a fresh authenticated POMS session and the user menu identifies Bill Haack at the sole seeded administrator email. No existing owner tab was reloaded or edited. Playwright suites were not run in this reset slice, and no physical/scientific/provider acceptance is claimed. The production-hosted test reset has not begun; preservation and cutover require a separate review.

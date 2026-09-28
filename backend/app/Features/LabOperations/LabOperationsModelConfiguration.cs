@@ -373,6 +373,13 @@ public static class LabOperationsModelConfiguration
             entity.HasIndex(e => e.NormalizedName).IsUnique();
             entity.HasIndex(e => new { e.IsActive, e.Name });
             entity.HasIndex(e => e.IsInternalProducer).IsUnique().HasFilter("is_internal_producer = true");
+            entity.HasData(new
+            {
+                Id = Guid.Parse("1e739efa-20d6-462d-a954-b12721fcfb20"), Name = "Phaeno", NormalizedName = "PHAENO",
+                IsActive = true, IsInternalProducer = true, Version = 1L,
+                CreatedAt = new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc),
+                UpdatedAt = new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc)
+            });
         });
 
         modelBuilder.Entity<LabProductType>(entity =>
@@ -385,6 +392,10 @@ public static class LabOperationsModelConfiguration
             entity.Property(e => e.Description).HasMaxLength(1000).IsRequired();
             entity.Property(e => e.KitUse).HasConversion<string>().HasMaxLength(30).IsRequired();
             entity.HasIndex(e => e.NormalizedName).IsUnique();
+            entity.HasData(
+                new { Id = LabProductType.TubeId, Name = "Tube", NormalizedName = "TUBE", Description = "Individual sample tubes.", KitUse = LabSupplierProductKind.Tube, IsActive = true, Version = 1L, CreatedAt = new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc) },
+                new { Id = LabProductType.ShippingContainerId, Name = "Shipping Container", NormalizedName = "SHIPPING CONTAINER", Description = "Outer shipping containers with a configured tube capacity.", KitUse = LabSupplierProductKind.ShippingContainer, IsActive = true, Version = 1L, CreatedAt = new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc) },
+                new { Id = LabProductType.ReagentId, Name = "Reagent", NormalizedName = "REAGENT", Description = "Purchased and Phaeno-manufactured reagents.", KitUse = LabSupplierProductKind.Other, IsActive = true, Version = 1L, CreatedAt = new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc) });
         });
 
         modelBuilder.Entity<LabSupplierProduct>(entity =>
@@ -423,7 +434,6 @@ public static class LabOperationsModelConfiguration
             ConfigureAudited(entity);
             entity.Property(e => e.Kind).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.Property(e => e.LotNumber).HasMaxLength(100).IsRequired();
-            entity.Property(e => e.LegacyComponentsJson).HasColumnName("components_json").HasColumnType("jsonb");
             entity.Property(e => e.ExpirationOrRetestDate).HasColumnType("date");
             entity.Property(e => e.QuantityUnit).HasMaxLength(50).IsRequired();
             entity.Property(e => e.QcDisposition).HasConversion<string>().HasMaxLength(50).IsRequired();

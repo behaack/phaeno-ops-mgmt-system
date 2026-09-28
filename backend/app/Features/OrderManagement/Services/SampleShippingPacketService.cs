@@ -62,16 +62,12 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
                 "sample_return_kit_not_fulfilled",
                 "The Phaeno return kit must be fulfilled before the shipping packet can be issued.",
                 StatusCodes.Status409Conflict);
-        if (shipment.Items.Any(item => item.TubeSlots.Count > 0
-            ? item.TubeSlots.Any(slot => !slot.RegisteredSampleTubeId.HasValue)
-            : !item.RegisteredSampleTubeId.HasValue))
+        if (shipment.Items.Any(item => item.TubeSlots.Count == 0 || item.TubeSlots.Any(slot => !slot.RegisteredSampleTubeId.HasValue)))
             throw new OrderManagementException(
                 "sample_tube_assignment_incomplete",
                 "Match every expected tube slot to one Phaeno-supplied tube before issuing the packet.",
                 StatusCodes.Status409Conflict);
-        var assignedTubeIds = shipment.Items.SelectMany(item => item.TubeSlots.Count > 0
-            ? item.TubeSlots.Select(slot => slot.RegisteredSampleTubeId!.Value)
-            : [item.RegisteredSampleTubeId!.Value]).ToList();
+        var assignedTubeIds = shipment.Items.SelectMany(item => item.TubeSlots.Select(slot => slot.RegisteredSampleTubeId!.Value)).ToList();
         if (assignedTubeIds.Distinct().Count() != assignedTubeIds.Count)
             throw new OrderManagementException(
                 "sample_tube_assignment_duplicate",
@@ -263,10 +259,10 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
                 "The physical kit is not linked to this Order's Sample type.", 409);
         return new
         {
-            containerDefinitionId = container.Id, container.CommonName, container.Revision, container.PackingInstructions,
+            containerDefinitionId = container.Id, container.CommonName, container.Revision,
             container.TemperatureControlInstructions, container.DryIceQuantity, container.DryIceUnit,
             samples = resolution.Rules.Select(item => new { sampleTypeId = item.SampleType.Id,
-                container.PackingInstructions, container.TemperatureControlInstructions }).ToArray(),
+                container.TemperatureControlInstructions }).ToArray(),
             billOfMaterials = container.KitContents.OrderBy(item => item.Position).Select(item => new
             { item.SupplierProductId, item.ProductNumber, item.ProductDescription, item.Quantity }).ToArray()
         };
@@ -341,9 +337,8 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
                 .Where(value => value.TubeCount > 0).OrderBy(value => value.ShipmentNumber).ToArray();
             var pending = family.Where(value => value.IsPackingPool).SelectMany(value => value.Items)
                 .Where(value => value.SubmittedSpecimenId == item.SubmittedSpecimenId).Sum(SampleShippingPackingData.TubeCount);
-            IEnumerable<(Guid? Id, int Ordinal, Guid? TubeId)> slots = item.TubeSlots.Count > 0
-                ? item.TubeSlots.OrderBy(slot => slot.Ordinal).Select(slot => ((Guid?)slot.Id, slot.Ordinal, slot.RegisteredSampleTubeId))
-                : [(null, 1, item.RegisteredSampleTubeId)];
+            IEnumerable<(Guid? Id, int Ordinal, Guid? TubeId)> slots = item.TubeSlots.OrderBy(slot => slot.Ordinal)
+                .Select(slot => ((Guid?)slot.Id, slot.Ordinal, slot.RegisteredSampleTubeId));
             foreach (var slot in slots)
             {
                 var declaredTube = slot.TubeId.HasValue ? tubesById[slot.TubeId.Value] : null;

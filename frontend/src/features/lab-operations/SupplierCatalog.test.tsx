@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { supplierCatalogFixture, productTypesFixture } from '#/test-helpers/supplier-catalog'
-import { reagentProductTypeId, transportationKitProductTypeId } from '#/api/supplier-catalog'
+import { reagentProductTypeId } from '#/api/supplier-catalog'
 import { SupplierCatalogPage } from './SupplierCatalogPage'
 const mocks = vi.hoisted(() => ({ catalog: vi.fn(), types: vi.fn(), supplier: vi.fn(), product: vi.fn(), allowed: true }))
 vi.mock('#/api/supplier-catalog', async importOriginal => ({ ...await importOriginal<typeof import('#/api/supplier-catalog')>(), useSupplierCatalog: () => mocks.catalog(), useProductTypes: () => mocks.types(), saveSupplier: mocks.supplier, saveSupplierProduct: mocks.product }))
@@ -39,34 +39,37 @@ describe('supplier catalog', () => {
         defaultQuantityUnit: 'mL' }), undefined))
   })
 
-  it('names a Phaeno transportation kit separately from its stable SKU', async () => {
-    const phaeno = { id: '81000000-0000-4000-8000-000000000099', name: 'Phaeno', isActive: true,
-      isInternalProducer: true, version: 1, products: [] }
-    mocks.catalog.mockReturnValue({ data: [...supplierCatalogFixture, phaeno], isPending: false, isError: false })
-    mount(phaeno.id)
+  it('defaults a new tube product to each', async () => {
+    mount(supplierCatalogFixture[0].id)
     fireEvent.click(screen.getByRole('button', { name: 'New product' }))
-    fireEvent.change(screen.getByLabelText(/Product type/), { target: { value: transportationKitProductTypeId } })
-    expect(screen.getByLabelText('SKU *')).toHaveProperty('readOnly', false)
-    fireEvent.change(screen.getByLabelText('SKU *'), { target: { value: 'TRANS-20' } })
-    fireEvent.change(screen.getByLabelText(/Kit name/), { target: { value: '20-tube RNA transportation kit' } })
+    fireEvent.change(screen.getByLabelText(/Product type/), { target: { value: productTypesFixture[0].id } })
     expect(screen.getByRole('textbox', { name: 'Inventory unit' })).toHaveProperty('value', 'each')
+    fireEvent.change(screen.getByLabelText(/Product name/), { target: { value: 'T-NEW' } })
+    fireEvent.change(screen.getByLabelText(/Product description/), { target: { value: '2 mL tube' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
-    await waitFor(() => expect(mocks.product).toHaveBeenCalledWith(phaeno.id,
-      expect.objectContaining({ productNumber: 'TRANS-20', description: '20-tube RNA transportation kit',
-        productTypeId: transportationKitProductTypeId, defaultQuantityUnit: 'each' }), undefined))
+    await waitFor(() => expect(mocks.product).toHaveBeenCalledWith(supplierCatalogFixture[0].id, expect.objectContaining({ productTypeId: productTypesFixture[0].id, defaultQuantityUnit: 'each' }), undefined))
   })
 
-  it('keeps a saved Phaeno kit SKU read-only while its unlinked name remains editable', async () => {
-    const kitProduct = { id: '82000000-0000-4000-8000-000000000093', supplierId: '81000000-0000-4000-8000-000000000099', productNumber: 'TRANS-20', description: '20-tube kit', kind: 'Other' as const, productTypeId: transportationKitProductTypeId, productTypeName: 'Transportation kit', productTypeIsActive: true, defaultQuantityUnit: 'each', isActive: true, version: 1 }
-    const phaeno = { id: kitProduct.supplierId, name: 'Phaeno', isActive: true, isInternalProducer: true, version: 1, products: [kitProduct] }
-    mocks.catalog.mockReturnValue({ data: [...supplierCatalogFixture, phaeno], isPending: false, isError: false })
-    mount(phaeno.id)
-    fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions for 20-tube kit' }), { button: 0, ctrlKey: false })
+  it('creates a purchased Shipping Container with explicit capacity and each as the default unit', async () => {
+    mount(supplierCatalogFixture[1].id)
+    fireEvent.click(screen.getByRole('button', { name: 'New product' }))
+    fireEvent.change(screen.getByLabelText(/Product type/), { target: { value: productTypesFixture[1].id } })
+    expect(screen.getByRole('textbox', { name: 'Inventory unit' })).toHaveProperty('value', 'each')
+    fireEvent.change(screen.getByLabelText(/Product name/), { target: { value: 'BOX-20' } })
+    fireEvent.change(screen.getByLabelText(/Product description/), { target: { value: 'Insulated container' } })
+    fireEvent.change(screen.getByLabelText(/Tube capacity/), { target: { value: '20' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(mocks.product).toHaveBeenCalledWith(supplierCatalogFixture[1].id,
+      expect.objectContaining({ productNumber: 'BOX-20', productTypeId: productTypesFixture[1].id, tubeCapacity: 20, defaultQuantityUnit: 'each' }), undefined))
+  })
+
+  it.each([null, 'box'])('defaults an unconfigured tube to each while preserving an existing unit (%s)', async savedUnit => {
+    mocks.catalog.mockReturnValue({ data: supplierCatalogFixture.map(s => ({ ...s, products: s.products.map(p => ({ ...p, defaultQuantityUnit: savedUnit })) })), isPending: false, isError: false })
+    mount(supplierCatalogFixture[0].id)
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions for T-001' }), { button: 0, ctrlKey: false })
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Edit' }))
-    expect(screen.getByLabelText('SKU *')).toHaveProperty('value', 'TRANS-20')
-    expect(screen.getByLabelText('SKU *')).toHaveProperty('readOnly', true)
-    expect(screen.getByLabelText('Kit name *')).toHaveProperty('readOnly', false)
-    expect(screen.getByText('The SKU is fixed after creation. Create a new kit product for a different SKU.')).toBeTruthy()
+    expect(screen.getByRole('textbox', { name: 'Inventory unit' })).toHaveProperty('value', savedUnit ?? 'each')
+    expect(mocks.product).not.toHaveBeenCalled()
   })
 
   it('edits the selected supplier directly from its row', async () => {

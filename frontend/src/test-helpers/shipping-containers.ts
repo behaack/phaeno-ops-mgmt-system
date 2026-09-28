@@ -81,14 +81,19 @@ export const containerConfiguration: SampleShippingConfiguration = {
 
 export const containerDefinition: ShippingContainerDefinition = {
   id: '44444444-4444-4444-8444-444444444441', definitionKey: '44444444-4444-4444-8444-444444444442', sku: '000-20', commonName: 'Standard 20-tube container', tubeCapacity: 20,
-  revision: 1, supersedesDefinitionId: null, supplierName: 'Synthetic supplier', supplierProductNumber: 'PRODUCT-20', packingInstructions: 'Use the approved insert and secondary containment.',
+  revision: 1, supersedesDefinitionId: null,
   effectiveFrom: '2020-01-01T00:00:00Z', effectiveTo: null, deactivatedAt: null, isActive: true, displayOrder: 0, version: 3,
   lifecycle: 'Released',
   sampleTypeAnchorId: containerConfiguration.sampleTypes[0].id,
   temperatureControlInstructions: 'Keep frozen.',
+  shippingContainerProductId: '82000000-0000-4000-8000-000000000002',
+  kitContents: [
+    { supplierProductId: '82000000-0000-4000-8000-000000000001', supplierId: '81000000-0000-4000-8000-000000000001', supplierName: 'Tube maker', productNumber: 'T-001', productDescription: 'Sterile transport tube', productTypeName: 'Tube', kind: 'Tube', quantity: 20 },
+    { supplierProductId: '82000000-0000-4000-8000-000000000002', supplierId: '81000000-0000-4000-8000-000000000002', supplierName: 'Synthetic supplier', productNumber: 'PRODUCT-20', productDescription: 'Insulated shipping container', productTypeName: 'Shipping Container', kind: 'ShippingContainer', quantity: 1 },
+  ],
 }
 export const standardKit: ShippingStockKit = {
   id: '55555555-5555-4555-8555-555555555551', kitNumber: 'KIT-000001', container: { definitionId: containerDefinition.id, sku: containerDefinition.sku, commonName: containerDefinition.commonName, capacity: 20 },
-  tubeSupplierName: 'Synthetic tube supplier', tubeProductNumber: 'TUBE-001', tubeLotNumber: null, shipperSupplierName: containerDefinition.supplierName!, shipperProductNumber: containerDefinition.supplierProductNumber!,
+  tubeSupplierName: 'Synthetic tube supplier', tubeProductNumber: 'TUBE-001', tubeLotNumber: null, shipperSupplierName: 'Synthetic supplier', shipperProductNumber: 'PRODUCT-20',
   status: 'Preparing', organizationId: null, authorizationSourceId: null, authorizationReference: null, boundSampleShipmentId: null, outboundCarrier: null, outboundTrackingNumber: null, fulfilledAt: null, version: 2, tubes: [],
 }

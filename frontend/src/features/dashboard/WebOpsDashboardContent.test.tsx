@@ -333,21 +333,3 @@ function selectTab(name: RegExp) {
   fireEvent.mouseDown(tab, { button: 0, ctrlKey: false })
   fireEvent.click(tab)
 }
-
-it('offers legacy technical-brief recovery only for a requested brief without a delivery record', async () => {
-  const recover = vi.fn().mockResolvedValue(undefined)
-  const oldSignup = { ...mailingListPage.items[0], technicalBriefDeliveryRecorded: false }
-  render(<WebOpsDashboardContent
-    mailingList={{ data: { ...mailingListPage, items: [oldSignup, { ...mailingListPage.items[1], technicalBriefRequested: true, technicalBriefDeliveryRecorded: true }] }, error: null, isLoading: false, onPageChange: vi.fn(), onRetry: vi.fn() }}
-    demoRequests={{ data: demoRequestPage, error: null, isLoading: false, onPageChange: vi.fn(), onRetry: vi.fn() }}
-    briefAction={{ error: null, isPending: false, onExecute: recover, onReset: vi.fn() }}
-  />)
-  expect(screen.getAllByRole('button', { name: 'Queue technical brief' })).toHaveLength(1)
-  fireEvent.click(screen.getByRole('button', { name: 'Queue technical brief' }))
-  const dialog = screen.getByRole('dialog')
-  expect(within(dialog).getByText(/original email delivery status is unknown/)).toBeTruthy()
-  expect(within(dialog).getByText(/contact-1@example.com/)).toBeTruthy()
-  fireEvent.click(within(dialog).getByRole('button', { name: 'Queue technical brief' }))
-  await waitFor(() => expect(recover).toHaveBeenCalledWith(oldSignup))
-  expect(await screen.findByText('The requested technical brief was queued. Review its status in Email delivery.')).toBeTruthy()
-})

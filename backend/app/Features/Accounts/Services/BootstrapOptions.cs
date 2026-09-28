@@ -14,5 +14,4 @@ public sealed class BootstrapOptions
 
     public string AdminPassword { get; init; } = "";
 
-    public string ClerkIdentityCutoverPreviousSubjectId { get; init; } = "";
 }

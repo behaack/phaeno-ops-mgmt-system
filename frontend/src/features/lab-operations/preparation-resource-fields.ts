@@ -12,9 +12,7 @@ export type ResourceCatalog = { materialLots: LabMaterialLot[]; masterMixes: Mas
 export const emptyResourceCatalog: ResourceCatalog = { materialLots: [], masterMixes: [], equipment: [], suppliers: [] }
 export const isResourceField = (field: ResourceField) => ['material', 'biologicalMaterial', 'equipment', 'output'].includes(field.type)
 export function stepResourceFields(step: Step): ResourceField[] {
-  const fields = step.captures.filter(isResourceField)
-  const legacy = (labels: string[], type: 'material' | 'equipment' | 'output'): ResourceField[] => labels.map((label, i) => ({ key: `_legacy_${type}_${i}`, label, type, required: false, scope: type === 'output' ? 'tube' : 'batch', includeTracking: type !== 'output', quantityBasis: type === 'material' ? 'total' : undefined }))
-  return [...fields, ...legacy(step.inputMaterials, 'material'), ...legacy(step.equipmentTypes, 'equipment'), ...(!fields.some(f => f.type === 'output') && step.preparedOutputs.length ? legacy([step.preparedOutputs.join(', ')], 'output') : [])]
+  return step.captures.filter(isResourceField)
 }
 export function materialLotMatches(field: ResourceField, lot: LabMaterialLot) {
   if (lot.quantityHoldReason) return false

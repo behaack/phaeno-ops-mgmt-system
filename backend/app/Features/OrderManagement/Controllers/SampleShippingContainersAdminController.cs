@@ -34,9 +34,9 @@ public sealed class SampleShippingContainersAdminController(OrderRequestContext 
     public async Task<SampleShippingContainerDefinitionDto> Create([FromBody] CreateSampleShippingContainerRequest request, CancellationToken cancellationToken)
     {
         await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
-        if (!request.FinishedKitProductId.HasValue)
+        if (!request.ShippingContainerProductId.HasValue)
             throw new OrderManagementException("kit_product_required",
-                "Choose a Transportation kit product before creating its shipping specification.", 400);
+                "Choose a purchased Shipping Container before creating its kit specification.", 400);
         return await catalog.CreateAsync(request, cancellationToken);
     }
     [HttpPost("{id:guid}/revisions")]

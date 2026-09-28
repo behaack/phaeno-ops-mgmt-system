@@ -45,15 +45,6 @@ public sealed class LocalFileStorage : IFileStorage
     internal static string ResolveRoot(IWebHostEnvironment environment, FileStorageOptions options)
     {
         var configuredRoot = options.LocalRootPath;
-        if (string.IsNullOrWhiteSpace(configuredRoot))
-        {
-            foreach (var area in new[] { FileStorageAreas.DataProvisioning, FileStorageAreas.OrderManagement })
-            {
-                var legacy = Path.Combine(environment.ContentRootPath, "App_Data", area);
-                if (Directory.Exists(legacy) && Directory.EnumerateFileSystemEntries(legacy).Any())
-                    throw new InvalidOperationException("Legacy managed files exist under App_Data. Inventory and explicitly migrate them before selecting the new local storage root.");
-            }
-        }
         if (environment.IsProduction() && (!options.LocalPersistentVolumeConfirmed || !Path.IsPathFullyQualified(configuredRoot)))
             throw new InvalidOperationException("Production Local storage requires an absolute path on an explicitly confirmed persistent volume.");
         var root = string.IsNullOrWhiteSpace(configuredRoot)

@@ -166,7 +166,7 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
         var ready = block is null ? await db.SampleShippingStockKits.AsNoTracking().Where(item => !item.FulfilledAt.HasValue
             && !item.OrganizationId.HasValue && !item.TransportationKitRequestLineId.HasValue && !item.BoundSampleShipmentId.HasValue
             && definitionIds.Contains(item.ContainerDefinitionId) && item.TubesVerifiedAt.HasValue
-            && (!item.FinishedKitProductId.HasValue || item.AssemblyCompletedAt.HasValue || item.PurchasedKitReceivedAt.HasValue)
+            && item.AssemblyWorkflowRevisionId.HasValue && item.AssemblyCompletedAt.HasValue
             && item.Tubes.Count == item.TubeCapacity).OrderBy(item => item.CreatedAt).ToListAsync(ct) : [];
         ready.RemoveAll(item => !TransportationKitInventory.IsPhysicallyUsable(item, DateTime.UtcNow));
         return new(await MapAsync(request, false, true, ct), ready.Select(kit =>
@@ -207,8 +207,7 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
                 || item.Status == SampleShipmentStatus.Delivered), ct);
         var routeFixed = fixedDestinationId.HasValue || earlierDispatch || earlierShipment || request.Status != TransportationKitRequestStatus.Pending
             || shipments.Any(item => item.IsPackingPool || item.ContainerDefinitionId.HasValue || item.ReturnKit is not null
-                || item.PacketRevisions.Count > 0 || item.Items.Any(sample => sample.RegisteredSampleTubeId.HasValue
-                    || sample.TubeSlots.Any(slot => slot.RegisteredSampleTubeId.HasValue)))
+                || item.PacketRevisions.Count > 0 || item.Items.Any(sample => sample.TubeSlots.Any(slot => slot.RegisteredSampleTubeId.HasValue)))
             || await db.SampleShippingStockKits.AsNoTracking().AnyAsync(kit =>
                 kit.ReservedSampleShipmentId.HasValue && shipmentIds.Contains(kit.ReservedSampleShipmentId.Value)
                 || kit.BoundSampleShipmentId.HasValue && shipmentIds.Contains(kit.BoundSampleShipmentId.Value), ct);

@@ -22,13 +22,13 @@ public sealed record SampleShippingRevisionData(
         var ids = sampleTypeRevisionIds.Distinct().ToArray();
         var types = await db.SampleTypeDefinitions.AsNoTracking().Where(item => ids.Contains(item.Id)).ToArrayAsync(ct);
         if (ids.Length == 0 || types.Length != ids.Length || types.Any(item => item.Lifecycle is
-            ShippingRevisionLifecycle.Draft or ShippingRevisionLifecycle.Discarded or ShippingRevisionLifecycle.LegacyInactive))
+            ShippingRevisionLifecycle.Draft or ShippingRevisionLifecycle.Discarded))
             throw new OrderManagementException("shipping_job_pin_review_required",
                 "The placed Job's exact Sample type revisions need Phaeno review before another packet can be issued.", 409);
         var procedure = await db.SampleShippingProcedures.AsNoTracking()
             .SingleOrDefaultAsync(item => item.Id == procedureRevisionId, ct);
         if (procedure is null || procedure.Lifecycle is ShippingRevisionLifecycle.Draft
-            or ShippingRevisionLifecycle.Discarded or ShippingRevisionLifecycle.LegacyInactive)
+            or ShippingRevisionLifecycle.Discarded)
             throw new OrderManagementException("shipping_job_pin_review_required",
                 "The placed Job's exact Shipping procedure revision needs Phaeno review before another packet can be issued.", 409);
         var selectedIds = types.Where(item => item.ShippingProcedureId.HasValue)

@@ -2,13 +2,14 @@ import { Outlet, createFileRoute, useNavigate, useRouterState } from '@tanstack/
 import { PurchasingWorkspace, parsePurchasingSection, type PurchasingSection } from '#/features/lab-operations/PurchasingWorkspace'
 
 export const Route = createFileRoute('/purchasing')({
-  validateSearch: (search: Record<string, unknown>): { section?: PurchasingSection; productTab?: 'products' | 'product-types'; supplierSearch?: string; supplierInactive?: boolean; productSearch?: string; productInactive?: boolean; productTypeSearch?: string; productTypeInactive?: boolean } => ({
+  validateSearch: (search: Record<string, unknown>): { section?: PurchasingSection; productTab?: 'products' | 'product-types'; supplierSearch?: string; supplierInactive?: boolean; productSearch?: string; productInactive?: boolean; productTypeFilter?: string; productTypeSearch?: string; productTypeInactive?: boolean } => ({
     section: parsePurchasingSection(search.section),
     productTab: search.productTab === 'product-types' ? 'product-types' : undefined,
     supplierSearch: typeof search.supplierSearch === 'string' ? search.supplierSearch.slice(0, 255) : undefined,
     supplierInactive: search.supplierInactive === true || search.supplierInactive === 'true' ? true : undefined,
     productSearch: typeof search.productSearch === 'string' ? search.productSearch.slice(0, 255) : undefined,
     productInactive: search.productInactive === true || search.productInactive === 'true' ? true : undefined,
+    productTypeFilter: typeof search.productTypeFilter === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(search.productTypeFilter) ? search.productTypeFilter.toLowerCase() : undefined,
     productTypeSearch: typeof search.productTypeSearch === 'string' ? search.productTypeSearch.slice(0, 255) : undefined,
     productTypeInactive: search.productTypeInactive === true || search.productTypeInactive === 'true' ? true : undefined,
   }),

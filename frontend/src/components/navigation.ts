@@ -31,7 +31,7 @@ type NavigationContext = {
   selectedMembership?: SessionMembership | null
 }
 
-export type NavigationGroup = 'workspace' | 'administration' | 'resources'
+export type NavigationGroup = 'workspace' | 'more' | 'administration' | 'resources'
 
 type MainMenuItem = {
   label: string
@@ -79,16 +79,6 @@ export const mainMenuItems: readonly MainMenuItem[] = [
       isPhaenoEmployee(session) &&
       context.selectedOrganizationKind === 'Phaeno' &&
       Boolean(session?.capabilities.canAccessCrm),
-  },
-  {
-    label: 'Data provisioning',
-    to: '/data-provisioning',
-    icon: Database,
-    group: 'resources',
-    visibleWhen: (session, context) =>
-      isPhaenoEmployee(session) &&
-      context.selectedOrganizationKind === 'Phaeno' &&
-      Boolean(session?.capabilities.canViewDatasetConfiguration),
   },
   {
     label: 'Data library',
@@ -154,6 +144,34 @@ export const mainMenuItems: readonly MainMenuItem[] = [
       Boolean(session?.capabilities.canManageLabOperations),
   },
   {
+    label: 'Purchasing',
+    to: '/purchasing',
+    icon: PackageCheck,
+    group: 'more',
+    visibleWhen: (session, context) =>
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session?.capabilities.canManageOrderConfiguration || session?.capabilities.canManageLabOperations),
+  },
+  {
+    label: 'Equipment',
+    to: '/equipment',
+    icon: Microscope,
+    group: 'more',
+    visibleWhen: (session, context) =>
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session?.capabilities.canManageLabOperations),
+  },
+  {
+    label: 'Data provisioning',
+    to: '/data-provisioning',
+    icon: Database,
+    group: 'more',
+    visibleWhen: (session, context) =>
+      isPhaenoEmployee(session) &&
+      context.selectedOrganizationKind === 'Phaeno' &&
+      Boolean(session?.capabilities.canViewDatasetConfiguration),
+  },
+  {
     label: 'Order settings',
     to: '/order-configuration',
     icon: Settings,
@@ -180,24 +198,6 @@ export const mainMenuItems: readonly MainMenuItem[] = [
       session?.state === 'ready' &&
       context.selectedOrganizationKind === 'Phaeno' &&
       Boolean(session.capabilities.canAccessCrm && session.capabilities.canAdministerCrm),
-  },
-  {
-    label: 'Equipment',
-    to: '/equipment',
-    icon: Microscope,
-    group: 'administration',
-    visibleWhen: (session, context) =>
-      context.selectedOrganizationKind === 'Phaeno' &&
-      Boolean(session?.capabilities.canManageLabOperations),
-  },
-  {
-    label: 'Purchasing',
-    to: '/purchasing',
-    icon: PackageCheck,
-    group: 'administration',
-    visibleWhen: (session, context) =>
-      context.selectedOrganizationKind === 'Phaeno' &&
-      Boolean(session?.capabilities.canManageOrderConfiguration || session?.capabilities.canManageLabOperations),
   },
   {
     label: 'Samples & shipping settings',

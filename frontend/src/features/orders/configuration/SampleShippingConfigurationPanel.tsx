@@ -742,7 +742,6 @@ function effectiveState(item: { effectiveFrom: string; effectiveTo: string | nul
   if (item.lifecycle === 'Draft') return 'Draft'
   if (item.lifecycle === 'Discarded') return 'Discarded'
   if (item.lifecycle === 'Deactivated') return 'Deactivated'
-  if (item.lifecycle === 'LegacyInactive') return 'Legacy Inactive'
   if (!item.isActive) return 'Inactive'
   const now = Date.now()
   if (new Date(item.effectiveFrom).getTime() > now) return 'Future'

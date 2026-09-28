@@ -93,9 +93,9 @@ public sealed partial class LabOperationsController
                         throw Invalid("manufacturer_required", "Select the active manufacturer of the physical sequencing tube.");
                     barcodeNamespace = SupplierTubeBarcode.NamespaceForSupplier(request.ManufacturerSupplierId.Value);
                     await SampleShippingPackingData.LockAsync(dbContext, $"supplier-tube:{barcode}", ct);
-                    if (await dbContext.LabContainers.AnyAsync(c => c.Barcode == barcode && (c.BarcodeNamespace == barcodeNamespace || c.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace), ct)
-                        || await dbContext.RegisteredSampleTubes.AnyAsync(t => t.SupplierBarcode == barcode && (t.BarcodeNamespace == barcodeNamespace || t.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace), ct)
-                        || await dbContext.SampleShippingStockTubes.AnyAsync(t => t.SupplierBarcode == barcode && (t.BarcodeNamespace == barcodeNamespace || t.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace), ct)
+                    if (await dbContext.LabContainers.AnyAsync(c => c.Barcode == barcode && (c.BarcodeNamespace == barcodeNamespace), ct)
+                        || await dbContext.RegisteredSampleTubes.AnyAsync(t => t.SupplierBarcode == barcode && (t.BarcodeNamespace == barcodeNamespace), ct)
+                        || await dbContext.SampleShippingStockTubes.AnyAsync(t => t.SupplierBarcode == barcode && (t.BarcodeNamespace == barcodeNamespace), ct)
                         || await dbContext.LabPreparationBatches.AnyAsync(b => (b.TrayBarcode != null && b.TrayBarcode.ToUpper() == barcode) || b.Name.ToUpper() == barcode, ct))
                         throw Conflict("barcode_already_registered", "This barcode already identifies another physical tube.");
                 }

@@ -147,16 +147,13 @@ public sealed class SampleShippingWorkflowAdminController(
         if (kit.Tubes.Any(item => normalized.Contains(item.SupplierBarcode))
             || await dbContext.SampleShippingStockTubes.AsNoTracking()
                 .AnyAsync(item => normalized.Contains(item.SupplierBarcode)
-                    && (item.BarcodeNamespace == barcodeNamespace || item.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace
-                        || barcodeNamespace == SupplierTubeBarcode.LegacyNamespace), cancellationToken)
+                    && (item.BarcodeNamespace == barcodeNamespace), cancellationToken)
             || await dbContext.RegisteredSampleTubes.AsNoTracking()
                 .AnyAsync(item => normalized.Contains(item.SupplierBarcode)
-                    && (item.BarcodeNamespace == barcodeNamespace || item.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace
-                        || barcodeNamespace == SupplierTubeBarcode.LegacyNamespace), cancellationToken)
+                    && (item.BarcodeNamespace == barcodeNamespace), cancellationToken)
             || await dbContext.LabContainers.AsNoTracking()
                 .AnyAsync(item => normalized.Contains(item.Barcode.ToUpper())
-                    && (item.BarcodeNamespace == barcodeNamespace || item.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace
-                        || barcodeNamespace == SupplierTubeBarcode.LegacyNamespace), cancellationToken)
+                    && (item.BarcodeNamespace == barcodeNamespace), cancellationToken)
             || await dbContext.LabPreparationBatches.AsNoTracking()
                 .AnyAsync(item => (item.TrayBarcode != null && normalized.Contains(item.TrayBarcode.ToUpper())) || normalized.Contains(item.Name.ToUpper()), cancellationToken))
             throw Conflict("supplier_tube_barcode_duplicate", "A scanned tube barcode is already registered.");
@@ -210,7 +207,7 @@ public sealed class SampleShippingWorkflowAdminController(
             .SingleOrDefaultAsync(cancellationToken);
         var item = await dbContext.SampleShipmentItems.AsNoTracking()
             .SingleOrDefaultAsync(value => value.SampleShipmentId == packet.SampleShipmentId
-                && (value.RegisteredSampleTubeId == tube.Id || value.Id == slotItemId), cancellationToken);
+                && value.Id == slotItemId, cancellationToken);
         if (item is null)
             return new RegisteredSampleTubeScanDto(normalizedPacket, normalizedTube, false, null, null, null, null,
                 tube.Status.ToString(), tube.Status == RegisteredSampleTubeStatus.Accessioned, "TubeNotExpectedForPacket");

@@ -28,6 +28,8 @@ public sealed class LabProductTypesController(PSeqOperationsDbContext db, OrderR
     public async Task<LabProductTypeDto> Create([FromBody] SaveLabProductTypeRequest request, CancellationToken ct)
     {
         await context.RequirePlatformAdminAsync(HttpContext, ct);
+        if (Use(request.KitUse) != LabSupplierProductKind.Other)
+            throw Invalid("New product types use Other. Tube and Shipping Container are built-in types.");
         LabProductType type;
         try { type = new(request.Name, request.Description, Use(request.KitUse)); type.Update(request.Name, request.Description, Use(request.KitUse), request.IsActive); }
         catch (ArgumentException e) { throw Invalid(e.Message); }
@@ -47,11 +49,16 @@ public sealed class LabProductTypesController(PSeqOperationsDbContext db, OrderR
         if (type.Id == LabProductType.ReagentId && (!string.Equals(requestedName.Trim(), "Reagent", StringComparison.Ordinal)
             || !request.IsActive || Use(request.KitUse) != LabSupplierProductKind.Other))
             throw new OrderManagementException("reagent_type_protected", "The Reagent product type is fixed for Phaeno-made products.", 409);
-        if (type.Id == LabProductType.TransportationKitId && (!string.Equals(requestedName.Trim(), "Transportation kit", StringComparison.Ordinal)
-            || !request.IsActive || Use(request.KitUse) != LabSupplierProductKind.Other))
-            throw new OrderManagementException("transportation_kit_type_protected", "The Transportation kit product type is fixed for Phaeno-made kits.", 409);
+        if (type.Id == LabProductType.TubeId && (!string.Equals(requestedName.Trim(), "Tube", StringComparison.Ordinal)
+            || !request.IsActive || Use(request.KitUse) != LabSupplierProductKind.Tube))
+            throw new OrderManagementException("tube_type_protected", "The Tube product type is built in; its name, active status, and kit use are fixed.", 409);
+        if (type.Id == LabProductType.ShippingContainerId && (!string.Equals(requestedName.Trim(), "Shipping Container", StringComparison.Ordinal)
+            || !request.IsActive || Use(request.KitUse) != LabSupplierProductKind.ShippingContainer))
+            throw new OrderManagementException("shipping_container_type_protected", "The Shipping Container product type is built in; its name, active status, and kit use are fixed.", 409);
         var count = await db.LabSupplierProducts.CountAsync(p => p.ProductTypeId == id, ct);
         if (count > 0 && Use(request.KitUse) != type.KitUse) throw new OrderManagementException("product_type_in_use", "Kit use cannot change while products reference this type. Create a different type instead.", 409);
+        if (Use(request.KitUse) != type.KitUse)
+            throw Invalid("A product type's kit role is assigned automatically and cannot be changed.");
         try { type.Update(requestedName, request.Description, Use(request.KitUse), request.IsActive); }
         catch (ArgumentException e) { throw Invalid(e.Message); }
         await Save(ct);

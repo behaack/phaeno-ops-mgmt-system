@@ -2,8 +2,10 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from './client'
 
 export type SupplierProductKind = 'Tube' | 'ShippingContainer' | 'Other'
+export const tubeProductTypeId = '90000000-0000-4000-8000-000000000001'
+export const shippingContainerProductTypeId = '90000000-0000-4000-8000-000000000002'
 export const reagentProductTypeId = '90000000-0000-4000-8000-000000000003'
-export const transportationKitProductTypeId = '90000000-0000-4000-8000-000000000004'
+export function isBuiltInProductType(id: string) { return id === tubeProductTypeId || id === reagentProductTypeId || id === shippingContainerProductTypeId }
 export type SupplierProduct = { id: string; supplierId: string; productNumber: string; description: string; kind: SupplierProductKind; productTypeId: string; productTypeName: string; productTypeIsActive: boolean; canExpire?: boolean; defaultQuantityUnit?: string | null; tubeCapacity?: number | null; materialDefinitionId?: string | null; isActive: boolean; version: number }
 export type CatalogSupplier = { id: string; name: string; isActive: boolean; version: number; products: SupplierProduct[]; isInternalProducer?: boolean }
 export type SupplierWrite = { name: string; isActive: boolean; version?: number }
@@ -15,7 +17,6 @@ export async function getSupplierCatalog() { return (await api.get<Envelope<Cata
 export function useSupplierCatalog(enabled = true) { return useQuery({ queryKey: supplierCatalogKey, queryFn: getSupplierCatalog, enabled }) }
 export async function saveSupplier(input: SupplierWrite, id?: string) { return (id ? await api.put<Envelope<CatalogSupplier>>(`${path}/${id}`, input) : await api.post<Envelope<CatalogSupplier>>(path, input)).data.data }
 export async function saveSupplierProduct(supplierId: string, input: ProductWrite, id?: string) { return (id ? await api.put<Envelope<SupplierProduct>>(`${path}/${supplierId}/products/${id}`, input) : await api.post<Envelope<SupplierProduct>>(`${path}/${supplierId}/products`, input)).data.data }
-export function productKindLabel(kind: SupplierProductKind) { return kind === 'Tube' ? 'Tube' : kind === 'ShippingContainer' ? 'Shipping Container' : 'Other product' }
 
 export type ProductType = { id: string; name: string; description: string; kitUse: SupplierProductKind; isActive: boolean; version: number; productCount: number }
 export type ProductTypeWrite = { name: string; description: string; kitUse: SupplierProductKind; isActive: boolean; version?: number }

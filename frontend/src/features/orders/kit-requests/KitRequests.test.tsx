@@ -10,9 +10,8 @@ import { KitRequestDetailPage } from './KitRequestDetailPage'
 import { KitRequestDispatchDialog } from './KitRequestDispatchDialog'
 
 const mocks = vi.hoisted(() => ({ catalog: vi.fn(), list: vi.fn(), get: vi.fn(), dispatch: vi.fn(), cancel: vi.fn(), definitions: vi.fn(), create: vi.fn(), navigate: vi.fn(), allowed: true }))
-const kitProductId = '83000000-0000-4000-8000-000000000010'
-const supplierCatalogFixture = [...baseCatalog, { id: '83000000-0000-4000-8000-000000000011', name: 'Phaeno', isInternalProducer: true, isActive: true, version: 1, products: [{ id: kitProductId, supplierId: '83000000-0000-4000-8000-000000000011', productNumber: baseDefinition.sku, description: baseDefinition.commonName, kind: 'Other' as const, productTypeId: '83000000-0000-4000-8000-000000000012', productTypeName: 'Transportation kit', productTypeIsActive: true, isActive: true, version: 1 }] }]
-const containerDefinition = { ...baseDefinition, finishedKitProductId: kitProductId, kitContents: [
+const supplierCatalogFixture = baseCatalog
+const containerDefinition = { ...baseDefinition, shippingContainerProductId: shipperProductId, kitContents: [
   { supplierProductId: tubeProductId, supplierId: tubeSupplierId, supplierName: baseCatalog[0].name, productNumber: baseCatalog[0].products[0].productNumber, productDescription: baseCatalog[0].products[0].description, productTypeName: 'Tube', kind: 'Tube' as const, quantity: 20 },
   { supplierProductId: shipperProductId, supplierId: shipperSupplierId, supplierName: baseCatalog[1].name, productNumber: baseCatalog[1].products[0].productNumber, productDescription: baseCatalog[1].products[0].description, productTypeName: 'Shipping Container', kind: 'ShippingContainer' as const, quantity: 1 },
 ] }

@@ -183,13 +183,6 @@ export function CrmOpportunityDialog({
                   <option value="">Not specified</option>
                   <option value="PSeqLabService">PSeq Lab Service</option>
                   <option value="PSeqKit">PSeq Kit</option>
-                  {opportunity?.productInterest &&
-                  opportunity.productInterest !== "PSeqLabService" &&
-                  opportunity.productInterest !== "PSeqKit" ? (
-                    <option value={opportunity.productInterest}>
-                      {opportunity.productInterest} · legacy value
-                    </option>
-                  ) : null}
                 </select>
               </Field>
               <Field label="Owner" id="opportunity-owner">

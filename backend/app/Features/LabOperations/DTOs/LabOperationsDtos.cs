@@ -102,11 +102,11 @@ public sealed record LabContainerDto(
     Guid Id, Guid? LabSpecimenId, Guid? ParentContainerId, string Kind, string Barcode,
     string BarcodeSource, Guid? ExternalBarcodeReferenceId,
     string Label, int LabelPrintCount, string? Location, decimal? Quantity,
-    string? QuantityUnit, string Status, DateTime? RetainUntilUtc, long Version,
+    string? QuantityUnit, string Status, DateTime? RetainUntilUtc, long Version, string BarcodeNamespace,
     string? IntakeDisposition = null, string? IntakeReasonCode = null, string? IntakeNotes = null,
     DateTime? IntakeReviewedAtUtc = null, Guid? IntakeReviewedByUserId = null,
     decimal? InitialQuantity = null, string? InitialQuantityUnit = null,
-    string? QuantityBasis = null, string QuantityHistoryJson = "[]", string BarcodeNamespace = "LEGACY")
+    string? QuantityBasis = null, string QuantityHistoryJson = "[]")
 {
     public string? QuantityText => Quantity?.ToString(System.Globalization.CultureInfo.InvariantCulture);
     public string? InitialQuantityText => InitialQuantity?.ToString(System.Globalization.CultureInfo.InvariantCulture);

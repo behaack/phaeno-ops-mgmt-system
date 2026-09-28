@@ -11,9 +11,6 @@ public sealed class CrmContact : IAudit, IConcurrency
     public string? Email { get; private set; }
     public string? NormalizedEmail { get; private set; }
     public string? Phone { get; private set; }
-    // Retained only so pre-relationship title data is not discarded by the
-    // migration. Current job titles belong to CrmCompanyContact.
-    public string? LegacyJobTitle { get; private set; }
     public Guid OwnerUserId { get; private set; }
     public User Owner { get; private set; } = null!;
     public CrmCommunicationPreference CommunicationPreference { get; private set; }

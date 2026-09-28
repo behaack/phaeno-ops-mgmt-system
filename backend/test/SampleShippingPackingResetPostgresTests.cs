@@ -131,8 +131,8 @@ public partial class SampleShippingPostgresTests
             else
             {
                 var kit = new SampleReturnKit($"RESET-KIT-{scope.Suffix}", changed.Id, changed.OrganizationId, changed.AuthorizationSource,
-                    changed.AuthorizationSourceId, "Supplier", "Tube", null, "Shipper", "Box", 1);
-                var tube = new RegisteredSampleTube(kit.Id, $"RESET-TUBE-{scope.Suffix}"); kit.Tubes.Add(tube);
+                    changed.AuthorizationSourceId, "Supplier", "Tube", null, "Shipper", "Box", 1, tubeBarcodeNamespace: "TEST_SUPPLIER");
+                var tube = new RegisteredSampleTube(kit.Id, $"RESET-TUBE-{scope.Suffix}", "TEST_SUPPLIER"); kit.Tubes.Add(tube);
                 scope.DbContext.SampleReturnKits.Add(kit);
                 if (evidence != "kit")
                 {

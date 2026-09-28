@@ -268,14 +268,6 @@ public sealed class WebsiteOperationsController(
         return NoContent();
     }
 
-    [HttpPost("mailing-list/{id:guid}/technical-brief")]
-    public async Task<IActionResult> RecoverLegacyTechnicalBrief(Guid id, CancellationToken cancellationToken)
-    {
-        var actor = await RequirePlatformAdministratorAsync(cancellationToken);
-        await notificationRecovery.QueueLegacyBriefAsync(id, actor, cancellationToken);
-        return NoContent();
-    }
-
     private static int NormalizePage(int page, int totalCount)
     {
         var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)PageSize));

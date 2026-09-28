@@ -9,7 +9,7 @@ export function parseStockKitListSearch(search: Record<string, unknown>): StockK
   return { kitSearch: typeof search.kitSearch === 'string' ? search.kitSearch.slice(0, 255) : undefined, kitStatus: status === 'inventory' || status === 'shipped' || status === 'all' || stockKitStates.includes(status as StockKitState) ? status as StockKitStatusFilter : 'inventory', kitPage: Number.isSafeInteger(page) && page > 0 ? page : 1 }
 }
 export function stockKitState(kit: ShippingStockKit): StockKitState {
-  if (kit.status === 'Preparing') return kit.tubesVerifiedAt && (!kit.finishedKitProductId || kit.assemblyCompletedAt || kit.purchasedKitReceivedAt) && kit.tubes.length === kit.container.capacity ? 'Ready' : 'Preparing'
+  if (kit.status === 'Preparing') return kit.tubesVerifiedAt && kit.assemblyCompletedAt && kit.tubes.length === kit.container.capacity ? 'Ready' : 'Preparing'
   if (kit.status === 'Bound') return 'InUse'
   if (kit.status === 'Fulfilled') return kit.customerReceivedAt ? 'Available' : 'OnTheWay'
   return kit.status

@@ -82,7 +82,6 @@ export function LabJobSamplesPanel({ order, embedded = false, page, onPageChange
   const template = useMutation({ mutationFn: () => downloadLabSampleTemplate(order.id, order.orderNumber) })
   const sampleWorkOpen = sample !== undefined || clearSample !== null || confirm !== null || change.isPending || upload.isPending || hasUnsavedEntries || entryLocked
   useBlocker({ shouldBlockFn: () => sampleWorkOpen, enableBeforeUnload: () => sampleWorkOpen, disabled: !sampleWorkOpen })
-  const legacyCleanup = order.canEdit && !order.placedAt && order.samples.length > 0
   const failure = change.error ?? upload.error ?? template.error
   const sourceGroups = groupSampleRows(order)
   const identifyingSamples = order.canEditSamples && (order.samples.length < order.requestedSpecimenCount || hasUnsavedEntries || entryLocked)
@@ -143,7 +142,6 @@ export function LabJobSamplesPanel({ order, embedded = false, page, onPageChange
       {order.samples.length > 0 && allocatedRuns !== purchasedRuns ? <p role="status" className="text-sm text-muted-foreground">Allocate {purchasedRuns} runs across the samples before finalizing. Edit a sample to change its run count; tube quantities are separate.</p> : null}
       {hasSourceIssues || totalExceeded ? <Alert variant="destructive" id={rosterHelpId}><AlertTitle>Sample list needs attention</AlertTitle><AlertDescription>The sample list must match the accepted source counts before it can be finalized. Edit the affected samples or clear their details below.</AlertDescription></Alert> : null}
       {failure ? <Alert variant="destructive"><AlertTitle>Sample list was not updated</AlertTitle><AlertDescription>{getOrderErrorMessage(failure, 'Review the current Job and try again.')}</AlertDescription></Alert> : null}
-      {legacyCleanup ? <Alert><AlertTitle>Legacy draft samples</AlertTitle><AlertDescription>Clear these earlier sample details before submitting for pricing. Enter the current list after accepting the quote.</AlertDescription></Alert> : null}
       {order.canEditSamples && !readyForReview && (hasUnsavedEntries || order.samples.length > 0) ? <div className="space-y-2">
         {hasUnsavedEntries ? <p className="text-xs text-muted-foreground">Save or discard the unsaved sample IDs before importing or finalizing.</p> : null}
         {order.samples.length > 0 ? <p id={`${order.id}-sample-import-help`} className="text-xs text-muted-foreground">Clear all saved sample details before importing a new list.</p> : null}
@@ -190,7 +188,7 @@ export function LabJobSamplesPanel({ order, embedded = false, page, onPageChange
                 {showLabProgress && (value.status !== 'Expected' || order.sampleRosterFinalizedAt) ? <OrderStatusBadge status={value.status} /> : null}
                 {showMatching && showLabProgress ? <span>Receipt: {receiptState === 'loading' ? 'Checking…' : receiptState !== 'ready' || !receipt ? 'Not available' : `${receipt.received} of ${receipt.total} ${receipt.total === 1 ? 'tube' : 'tubes'} received`}</span> : null}
               </div>
-              {(order.canEditSamples || legacyCleanup) && !order.authorizedSampleIds?.includes(value.id) ? (
+              {order.canEditSamples && !order.authorizedSampleIds?.includes(value.id) ? (
                 <div className="col-start-2 row-start-1 justify-self-end sm:col-start-3"><ActionMenu>
                   <DropdownMenuTrigger asChild><Button id={`${order.id}-${value.id}-sample-actions`} type="button" size="sm" variant="outline" aria-label={`Actions for sample ${value.customerSampleId}`}>Actions<ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-52 max-w-[calc(100vw-2rem)]" aria-labelledby={`${order.id}-${value.id}-sample-actions-label`}>

@@ -546,15 +546,6 @@ export async function getCrmCompany(id: string) {
   return unwrap(response.data);
 }
 
-export async function getCrmCompanyByAccessOrganization(
-  organizationId: string,
-) {
-  const response = await api.get<ApiEnvelope<CrmCompany>>(
-    `/platform/crm/companies/by-access/${organizationId}`,
-  );
-  return unwrap(response.data);
-}
-
 export async function createCrmCompany(input: CrmCompanyInput) {
   const response = await api.post<ApiEnvelope<CrmCompany>>(
     "/platform/crm/companies",

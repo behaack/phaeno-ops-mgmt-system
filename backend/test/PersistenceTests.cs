@@ -596,33 +596,11 @@ public class PersistenceTests
     }
 
     [Fact]
-    public void RebasedBaselineAndAdditiveRunMigrationsAreDiscoveredWithoutConnectingToPostgres()
+    public void CleanBaselineIsTheOnlyMigrationDiscoveredWithoutConnectingToPostgres()
     {
         using var dbContext = CreateDbContext();
         var migrations = dbContext.Database.GetMigrations().ToArray();
-        Assert.True(migrations.Length >= 23);
-        Assert.EndsWith("_InitialPSeqOperationsRebased", migrations[0]);
-        Assert.EndsWith("_AddSampleSequencingRuns", migrations[1]);
-        Assert.EndsWith("_AddSequencingRunLineage", migrations[2]);
-        Assert.EndsWith("_AllowRepeatedLibraryPreparation", migrations[3]);
-        Assert.EndsWith("_AddManagedScientificFiles", migrations[4]);
-        Assert.EndsWith("_AddScientificUploadsAndCustomerHolds", migrations[5]);
-        Assert.EndsWith("_AddSharedShippingProceduresAndContainerPacking", migrations[6]);
-        Assert.EndsWith("_AddLabAssemblyJobs", migrations[7]);
-        Assert.EndsWith("_AddCompanyDepartmentSetup", migrations[8]);
-        Assert.EndsWith("_AddCatalogServiceFamily", migrations[9]);
-        Assert.EndsWith("_AddShippingKitContents", migrations[10]);
-        Assert.EndsWith("_AddSampleMaterialTransfersAndProductExpiry", migrations[11]);
-        Assert.EndsWith("_AddReturnKitProductExpiration", migrations[12]);
-        Assert.EndsWith("_AddContainerBarcodeNamespaces", migrations[13]);
-        Assert.EndsWith("_SeedPhaenoInternalSupplier", migrations[14]);
-        Assert.EndsWith("_AddReagentManufacturing", migrations[15]);
-        Assert.EndsWith("_ReagentIdentityAndInventoryUnits", migrations[16]);
-        Assert.EndsWith("_LinkPhaenoReagentProducts", migrations[17]);
-        Assert.Contains(migrations, migration => migration.EndsWith("_EnforceUniqueLabStepNames"));
-        Assert.Contains(migrations, migration => migration.EndsWith("_AddSingleUseMasterMix"));
-        Assert.Contains(migrations, migration => migration.EndsWith("_CloseMasterMixGaps"));
-        Assert.EndsWith("_AddShippingContainerTubeCapacity", migrations[^1]);
+        Assert.EndsWith("_InitialCleanPortal", Assert.Single(migrations));
     }
 
     private static void AssertUniqueIndex<TEntity>(

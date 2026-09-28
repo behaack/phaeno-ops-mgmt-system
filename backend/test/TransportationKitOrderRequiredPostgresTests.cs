@@ -202,8 +202,8 @@ public partial class SampleShippingPostgresTests
         var barcode = $"HISTORICAL-{scope.Suffix}";
         var kit = new SampleReturnKit($"HIST-{scope.Suffix}", fixture.Shipment.Id, scope.CustomerOrganization.Id,
             fixture.Shipment.AuthorizationSource, fixture.Shipment.AuthorizationSourceId,
-            "Supplier", "T-1", null, "Shipper", "B-1", 1);
-        kit.Tubes.Add(new(kit.Id, barcode)); kit.Fulfill("Historical carrier", "HISTORICAL", DateTime.UtcNow);
+            "Supplier", "T-1", null, "Shipper", "B-1", 1, tubeBarcodeNamespace: "TEST_SUPPLIER");
+        kit.Tubes.Add(new(kit.Id, barcode, kit.TubeBarcodeNamespace)); kit.Fulfill("Historical carrier", "HISTORICAL", DateTime.UtcNow);
         scope.DbContext.SampleReturnKits.Add(kit);
         await scope.DbContext.SaveChangesAsync(); scope.ClearTrackedState();
         var slot = fixture.Item.TubeSlots.Single();

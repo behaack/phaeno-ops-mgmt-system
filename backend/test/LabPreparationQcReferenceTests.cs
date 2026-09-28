@@ -7,16 +7,17 @@ public class LabPreparationQcReferenceTests
     [Theory]
     [InlineData("synthetic-qc-record-reference")]
     [InlineData("synthetic-library-qc-record-reference")]
-    public void Legacy_synthetic_reference_is_optional_but_qc_is_still_required(string key)
+    public void Required_qc_reference_has_no_name_based_exemption(string key)
     {
         var original = LabPreparationBatchTests.Definition();
         var step = original.Steps[0] with { Captures = [new() { Key = key, Label = "Reference", Type = "fileReference", Required = true, Scope = "shared" }] };
         var definition = original with { Steps = [step] };
         var input = new LabProtocolStepInput(step.Key, "record", "recorded", new Dictionary<string, System.Text.Json.JsonElement>(), true, false, "pass", null);
-        var evidence = new LabProtocolEvidence(1, []).Append(definition, input, Guid.NewGuid(), new HashSet<LabRole> { LabRole.Operator }, DateTime.UtcNow);
+        Assert.Throws<ArgumentException>(() => new LabProtocolEvidence(1, []).Append(definition, input, Guid.NewGuid(), new HashSet<LabRole> { LabRole.Operator }, DateTime.UtcNow));
+        var completed = input with { Captures = new Dictionary<string, System.Text.Json.JsonElement> { [key] = System.Text.Json.JsonSerializer.SerializeToElement("QC-FILE") } };
+        var evidence = new LabProtocolEvidence(1, []).Append(definition, completed, Guid.NewGuid(), new HashSet<LabRole> { LabRole.Operator }, DateTime.UtcNow);
         Assert.Empty(evidence.CompletionBlockers(definition));
-        Assert.True(step.Captures[0].Required); // Approved definition is not rewritten.
-        Assert.Throws<ArgumentException>(() => new LabProtocolEvidence(1, []).Append(definition, input with { QcOutcome = null }, Guid.NewGuid(), new HashSet<LabRole> { LabRole.Operator }, DateTime.UtcNow));
+        Assert.Throws<ArgumentException>(() => new LabProtocolEvidence(1, []).Append(definition, completed with { QcOutcome = null }, Guid.NewGuid(), new HashSet<LabRole> { LabRole.Operator }, DateTime.UtcNow));
     }
 
     [Theory]

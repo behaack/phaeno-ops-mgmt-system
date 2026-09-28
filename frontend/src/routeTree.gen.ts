@@ -29,7 +29,6 @@ import { Route as DeliveryLocationsRouteImport } from './routes/delivery-locatio
 import { Route as DataProvisioningRouteImport } from './routes/data-provisioning'
 import { Route as DataLibraryRouteImport } from './routes/data-library'
 import { Route as DataAssemblyRouteImport } from './routes/data-assembly'
-import { Route as CustomersRouteImport } from './routes/customers'
 import { Route as CrmRouteImport } from './routes/crm'
 import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
 import { Route as AboutRouteImport } from './routes/about'
@@ -50,7 +49,6 @@ import { Route as DeliveryLocationsLocationIdRouteImport } from './routes/delive
 import { Route as DataLibraryDatasetIdRouteImport } from './routes/data-library.$datasetId'
 import { Route as DataAssemblyNewRouteImport } from './routes/data-assembly.new'
 import { Route as DataAssemblyRequestIdRouteImport } from './routes/data-assembly.$requestId'
-import { Route as CustomersCustomerIdRouteImport } from './routes/customers.$customerId'
 import { Route as CrmTasksRouteImport } from './routes/crm.tasks'
 import { Route as CrmRequestsRouteImport } from './routes/crm.requests'
 import { Route as CrmReportsRouteImport } from './routes/crm.reports'
@@ -69,17 +67,13 @@ import { Route as PurchasingMaterialsMaterialLotIdRouteImport } from './routes/p
 import { Route as OrderOperationsResultPackagesPackageIdRouteImport } from './routes/order-operations.result-packages.$packageId'
 import { Route as OrderOperationsIntakeOrderIdRouteImport } from './routes/order-operations.intake.$orderId'
 import { Route as OrderOperationsWorkflowOrderIdRouteImport } from './routes/order-operations.$workflow.$orderId'
-import { Route as OrderConfigurationSampleTypesSampleTypeIdRouteImport } from './routes/order-configuration.sample-types.$sampleTypeId'
 import { Route as OrderConfigurationCatalogCatalogItemIdRouteImport } from './routes/order-configuration.catalog.$catalogItemId'
 import { Route as LabServicesOrderIdEditRouteImport } from './routes/lab-services.$orderId.edit'
-import { Route as LabOperationsSuppliersSupplierIdRouteImport } from './routes/lab-operations.suppliers.$supplierId'
 import { Route as LabOperationsStockKitsKitIdRouteImport } from './routes/lab-operations.stock-kits.$kitId'
 import { Route as LabOperationsStepsStepIdRouteImport } from './routes/lab-operations.steps.$stepId'
 import { Route as LabOperationsReagentRunsRunIdRouteImport } from './routes/lab-operations.reagent-runs.$runId'
 import { Route as LabOperationsPseqKitOrdersOrderIdRouteImport } from './routes/lab-operations.pseq-kit-orders.$orderId'
-import { Route as LabOperationsProductTypesProductTypeIdRouteImport } from './routes/lab-operations.product-types.$productTypeId'
 import { Route as LabOperationsPreparationPreparationBatchIdRouteImport } from './routes/lab-operations.preparation.$preparationBatchId'
-import { Route as LabOperationsMaterialsMaterialLotIdRouteImport } from './routes/lab-operations.materials.$materialLotId'
 import { Route as LabOperationsMasterMixesMixIdRouteImport } from './routes/lab-operations.master-mixes.$mixId'
 import { Route as LabOperationsKitRequestsRequestIdRouteImport } from './routes/lab-operations.kit-requests.$requestId'
 import { Route as LabOperationsExecutionsExecutionIdRouteImport } from './routes/lab-operations.executions.$executionId'
@@ -203,11 +197,6 @@ const DataAssemblyRoute = DataAssemblyRouteImport.update({
   path: '/data-assembly',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CustomersRoute = CustomersRouteImport.update({
-  id: '/customers',
-  path: '/customers',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CrmRoute = CrmRouteImport.update({
   id: '/crm',
   path: '/crm',
@@ -313,11 +302,6 @@ const DataAssemblyRequestIdRoute = DataAssemblyRequestIdRouteImport.update({
   path: '/$requestId',
   getParentRoute: () => DataAssemblyRoute,
 } as any)
-const CustomersCustomerIdRoute = CustomersCustomerIdRouteImport.update({
-  id: '/$customerId',
-  path: '/$customerId',
-  getParentRoute: () => CustomersRoute,
-} as any)
 const CrmTasksRoute = CrmTasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
@@ -418,12 +402,6 @@ const OrderOperationsWorkflowOrderIdRoute =
     path: '/$workflow/$orderId',
     getParentRoute: () => OrderOperationsRoute,
   } as any)
-const OrderConfigurationSampleTypesSampleTypeIdRoute =
-  OrderConfigurationSampleTypesSampleTypeIdRouteImport.update({
-    id: '/sample-types/$sampleTypeId',
-    path: '/sample-types/$sampleTypeId',
-    getParentRoute: () => OrderConfigurationRoute,
-  } as any)
 const OrderConfigurationCatalogCatalogItemIdRoute =
   OrderConfigurationCatalogCatalogItemIdRouteImport.update({
     id: '/catalog/$catalogItemId',
@@ -435,12 +413,6 @@ const LabServicesOrderIdEditRoute = LabServicesOrderIdEditRouteImport.update({
   path: '/edit',
   getParentRoute: () => LabServicesOrderIdRoute,
 } as any)
-const LabOperationsSuppliersSupplierIdRoute =
-  LabOperationsSuppliersSupplierIdRouteImport.update({
-    id: '/suppliers/$supplierId',
-    path: '/suppliers/$supplierId',
-    getParentRoute: () => LabOperationsRoute,
-  } as any)
 const LabOperationsStockKitsKitIdRoute =
   LabOperationsStockKitsKitIdRouteImport.update({
     id: '/stock-kits/$kitId',
@@ -465,22 +437,10 @@ const LabOperationsPseqKitOrdersOrderIdRoute =
     path: '/pseq-kit-orders/$orderId',
     getParentRoute: () => LabOperationsRoute,
   } as any)
-const LabOperationsProductTypesProductTypeIdRoute =
-  LabOperationsProductTypesProductTypeIdRouteImport.update({
-    id: '/product-types/$productTypeId',
-    path: '/product-types/$productTypeId',
-    getParentRoute: () => LabOperationsRoute,
-  } as any)
 const LabOperationsPreparationPreparationBatchIdRoute =
   LabOperationsPreparationPreparationBatchIdRouteImport.update({
     id: '/preparation/$preparationBatchId',
     path: '/preparation/$preparationBatchId',
-    getParentRoute: () => LabOperationsRoute,
-  } as any)
-const LabOperationsMaterialsMaterialLotIdRoute =
-  LabOperationsMaterialsMaterialLotIdRouteImport.update({
-    id: '/materials/$materialLotId',
-    path: '/materials/$materialLotId',
     getParentRoute: () => LabOperationsRoute,
   } as any)
 const LabOperationsMasterMixesMixIdRoute =
@@ -619,7 +579,6 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/accept-invite': typeof AcceptInviteRoute
   '/crm': typeof CrmRouteWithChildren
-  '/customers': typeof CustomersRouteWithChildren
   '/data-assembly': typeof DataAssemblyRouteWithChildren
   '/data-library': typeof DataLibraryRouteWithChildren
   '/data-provisioning': typeof DataProvisioningRouteWithChildren
@@ -648,7 +607,6 @@ export interface FileRoutesByFullPath {
   '/crm/reports': typeof CrmReportsRoute
   '/crm/requests': typeof CrmRequestsRoute
   '/crm/tasks': typeof CrmTasksRoute
-  '/customers/$customerId': typeof CustomersCustomerIdRoute
   '/data-assembly/$requestId': typeof DataAssemblyRequestIdRouteWithChildren
   '/data-assembly/new': typeof DataAssemblyNewRoute
   '/data-library/$datasetId': typeof DataLibraryDatasetIdRoute
@@ -677,17 +635,13 @@ export interface FileRoutesByFullPath {
   '/lab-operations/executions/$executionId': typeof LabOperationsExecutionsExecutionIdRoute
   '/lab-operations/kit-requests/$requestId': typeof LabOperationsKitRequestsRequestIdRoute
   '/lab-operations/master-mixes/$mixId': typeof LabOperationsMasterMixesMixIdRoute
-  '/lab-operations/materials/$materialLotId': typeof LabOperationsMaterialsMaterialLotIdRoute
   '/lab-operations/preparation/$preparationBatchId': typeof LabOperationsPreparationPreparationBatchIdRoute
-  '/lab-operations/product-types/$productTypeId': typeof LabOperationsProductTypesProductTypeIdRoute
   '/lab-operations/pseq-kit-orders/$orderId': typeof LabOperationsPseqKitOrdersOrderIdRoute
   '/lab-operations/reagent-runs/$runId': typeof LabOperationsReagentRunsRunIdRoute
   '/lab-operations/steps/$stepId': typeof LabOperationsStepsStepIdRouteWithChildren
   '/lab-operations/stock-kits/$kitId': typeof LabOperationsStockKitsKitIdRoute
-  '/lab-operations/suppliers/$supplierId': typeof LabOperationsSuppliersSupplierIdRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-configuration/catalog/$catalogItemId': typeof OrderConfigurationCatalogCatalogItemIdRoute
-  '/order-configuration/sample-types/$sampleTypeId': typeof OrderConfigurationSampleTypesSampleTypeIdRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
   '/order-operations/result-packages/$packageId': typeof OrderOperationsResultPackagesPackageIdRoute
@@ -714,7 +668,6 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/accept-invite': typeof AcceptInviteRoute
   '/crm': typeof CrmRouteWithChildren
-  '/customers': typeof CustomersRouteWithChildren
   '/data-assembly': typeof DataAssemblyRouteWithChildren
   '/data-library': typeof DataLibraryRouteWithChildren
   '/data-provisioning': typeof DataProvisioningRouteWithChildren
@@ -743,7 +696,6 @@ export interface FileRoutesByTo {
   '/crm/reports': typeof CrmReportsRoute
   '/crm/requests': typeof CrmRequestsRoute
   '/crm/tasks': typeof CrmTasksRoute
-  '/customers/$customerId': typeof CustomersCustomerIdRoute
   '/data-assembly/$requestId': typeof DataAssemblyRequestIdRouteWithChildren
   '/data-assembly/new': typeof DataAssemblyNewRoute
   '/data-library/$datasetId': typeof DataLibraryDatasetIdRoute
@@ -772,17 +724,13 @@ export interface FileRoutesByTo {
   '/lab-operations/executions/$executionId': typeof LabOperationsExecutionsExecutionIdRoute
   '/lab-operations/kit-requests/$requestId': typeof LabOperationsKitRequestsRequestIdRoute
   '/lab-operations/master-mixes/$mixId': typeof LabOperationsMasterMixesMixIdRoute
-  '/lab-operations/materials/$materialLotId': typeof LabOperationsMaterialsMaterialLotIdRoute
   '/lab-operations/preparation/$preparationBatchId': typeof LabOperationsPreparationPreparationBatchIdRoute
-  '/lab-operations/product-types/$productTypeId': typeof LabOperationsProductTypesProductTypeIdRoute
   '/lab-operations/pseq-kit-orders/$orderId': typeof LabOperationsPseqKitOrdersOrderIdRoute
   '/lab-operations/reagent-runs/$runId': typeof LabOperationsReagentRunsRunIdRoute
   '/lab-operations/steps/$stepId': typeof LabOperationsStepsStepIdRouteWithChildren
   '/lab-operations/stock-kits/$kitId': typeof LabOperationsStockKitsKitIdRoute
-  '/lab-operations/suppliers/$supplierId': typeof LabOperationsSuppliersSupplierIdRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-configuration/catalog/$catalogItemId': typeof OrderConfigurationCatalogCatalogItemIdRoute
-  '/order-configuration/sample-types/$sampleTypeId': typeof OrderConfigurationSampleTypesSampleTypeIdRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
   '/order-operations/result-packages/$packageId': typeof OrderOperationsResultPackagesPackageIdRoute
@@ -810,7 +758,6 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/accept-invite': typeof AcceptInviteRoute
   '/crm': typeof CrmRouteWithChildren
-  '/customers': typeof CustomersRouteWithChildren
   '/data-assembly': typeof DataAssemblyRouteWithChildren
   '/data-library': typeof DataLibraryRouteWithChildren
   '/data-provisioning': typeof DataProvisioningRouteWithChildren
@@ -839,7 +786,6 @@ export interface FileRoutesById {
   '/crm/reports': typeof CrmReportsRoute
   '/crm/requests': typeof CrmRequestsRoute
   '/crm/tasks': typeof CrmTasksRoute
-  '/customers/$customerId': typeof CustomersCustomerIdRoute
   '/data-assembly/$requestId': typeof DataAssemblyRequestIdRouteWithChildren
   '/data-assembly/new': typeof DataAssemblyNewRoute
   '/data-library/$datasetId': typeof DataLibraryDatasetIdRoute
@@ -868,17 +814,13 @@ export interface FileRoutesById {
   '/lab-operations/executions/$executionId': typeof LabOperationsExecutionsExecutionIdRoute
   '/lab-operations/kit-requests/$requestId': typeof LabOperationsKitRequestsRequestIdRoute
   '/lab-operations/master-mixes/$mixId': typeof LabOperationsMasterMixesMixIdRoute
-  '/lab-operations/materials/$materialLotId': typeof LabOperationsMaterialsMaterialLotIdRoute
   '/lab-operations/preparation/$preparationBatchId': typeof LabOperationsPreparationPreparationBatchIdRoute
-  '/lab-operations/product-types/$productTypeId': typeof LabOperationsProductTypesProductTypeIdRoute
   '/lab-operations/pseq-kit-orders/$orderId': typeof LabOperationsPseqKitOrdersOrderIdRoute
   '/lab-operations/reagent-runs/$runId': typeof LabOperationsReagentRunsRunIdRoute
   '/lab-operations/steps/$stepId': typeof LabOperationsStepsStepIdRouteWithChildren
   '/lab-operations/stock-kits/$kitId': typeof LabOperationsStockKitsKitIdRoute
-  '/lab-operations/suppliers/$supplierId': typeof LabOperationsSuppliersSupplierIdRoute
   '/lab-services/$orderId/edit': typeof LabServicesOrderIdEditRoute
   '/order-configuration/catalog/$catalogItemId': typeof OrderConfigurationCatalogCatalogItemIdRoute
-  '/order-configuration/sample-types/$sampleTypeId': typeof OrderConfigurationSampleTypesSampleTypeIdRoute
   '/order-operations/$workflow/$orderId': typeof OrderOperationsWorkflowOrderIdRoute
   '/order-operations/intake/$orderId': typeof OrderOperationsIntakeOrderIdRoute
   '/order-operations/result-packages/$packageId': typeof OrderOperationsResultPackagesPackageIdRoute
@@ -907,7 +849,6 @@ export interface FileRouteTypes {
     | '/about'
     | '/accept-invite'
     | '/crm'
-    | '/customers'
     | '/data-assembly'
     | '/data-library'
     | '/data-provisioning'
@@ -936,7 +877,6 @@ export interface FileRouteTypes {
     | '/crm/reports'
     | '/crm/requests'
     | '/crm/tasks'
-    | '/customers/$customerId'
     | '/data-assembly/$requestId'
     | '/data-assembly/new'
     | '/data-library/$datasetId'
@@ -965,17 +905,13 @@ export interface FileRouteTypes {
     | '/lab-operations/executions/$executionId'
     | '/lab-operations/kit-requests/$requestId'
     | '/lab-operations/master-mixes/$mixId'
-    | '/lab-operations/materials/$materialLotId'
     | '/lab-operations/preparation/$preparationBatchId'
-    | '/lab-operations/product-types/$productTypeId'
     | '/lab-operations/pseq-kit-orders/$orderId'
     | '/lab-operations/reagent-runs/$runId'
     | '/lab-operations/steps/$stepId'
     | '/lab-operations/stock-kits/$kitId'
-    | '/lab-operations/suppliers/$supplierId'
     | '/lab-services/$orderId/edit'
     | '/order-configuration/catalog/$catalogItemId'
-    | '/order-configuration/sample-types/$sampleTypeId'
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
     | '/order-operations/result-packages/$packageId'
@@ -1002,7 +938,6 @@ export interface FileRouteTypes {
     | '/about'
     | '/accept-invite'
     | '/crm'
-    | '/customers'
     | '/data-assembly'
     | '/data-library'
     | '/data-provisioning'
@@ -1031,7 +966,6 @@ export interface FileRouteTypes {
     | '/crm/reports'
     | '/crm/requests'
     | '/crm/tasks'
-    | '/customers/$customerId'
     | '/data-assembly/$requestId'
     | '/data-assembly/new'
     | '/data-library/$datasetId'
@@ -1060,17 +994,13 @@ export interface FileRouteTypes {
     | '/lab-operations/executions/$executionId'
     | '/lab-operations/kit-requests/$requestId'
     | '/lab-operations/master-mixes/$mixId'
-    | '/lab-operations/materials/$materialLotId'
     | '/lab-operations/preparation/$preparationBatchId'
-    | '/lab-operations/product-types/$productTypeId'
     | '/lab-operations/pseq-kit-orders/$orderId'
     | '/lab-operations/reagent-runs/$runId'
     | '/lab-operations/steps/$stepId'
     | '/lab-operations/stock-kits/$kitId'
-    | '/lab-operations/suppliers/$supplierId'
     | '/lab-services/$orderId/edit'
     | '/order-configuration/catalog/$catalogItemId'
-    | '/order-configuration/sample-types/$sampleTypeId'
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
     | '/order-operations/result-packages/$packageId'
@@ -1097,7 +1027,6 @@ export interface FileRouteTypes {
     | '/about'
     | '/accept-invite'
     | '/crm'
-    | '/customers'
     | '/data-assembly'
     | '/data-library'
     | '/data-provisioning'
@@ -1126,7 +1055,6 @@ export interface FileRouteTypes {
     | '/crm/reports'
     | '/crm/requests'
     | '/crm/tasks'
-    | '/customers/$customerId'
     | '/data-assembly/$requestId'
     | '/data-assembly/new'
     | '/data-library/$datasetId'
@@ -1155,17 +1083,13 @@ export interface FileRouteTypes {
     | '/lab-operations/executions/$executionId'
     | '/lab-operations/kit-requests/$requestId'
     | '/lab-operations/master-mixes/$mixId'
-    | '/lab-operations/materials/$materialLotId'
     | '/lab-operations/preparation/$preparationBatchId'
-    | '/lab-operations/product-types/$productTypeId'
     | '/lab-operations/pseq-kit-orders/$orderId'
     | '/lab-operations/reagent-runs/$runId'
     | '/lab-operations/steps/$stepId'
     | '/lab-operations/stock-kits/$kitId'
-    | '/lab-operations/suppliers/$supplierId'
     | '/lab-services/$orderId/edit'
     | '/order-configuration/catalog/$catalogItemId'
-    | '/order-configuration/sample-types/$sampleTypeId'
     | '/order-operations/$workflow/$orderId'
     | '/order-operations/intake/$orderId'
     | '/order-operations/result-packages/$packageId'
@@ -1193,7 +1117,6 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AcceptInviteRoute: typeof AcceptInviteRoute
   CrmRoute: typeof CrmRouteWithChildren
-  CustomersRoute: typeof CustomersRouteWithChildren
   DataAssemblyRoute: typeof DataAssemblyRouteWithChildren
   DataLibraryRoute: typeof DataLibraryRouteWithChildren
   DataProvisioningRoute: typeof DataProvisioningRouteWithChildren
@@ -1361,13 +1284,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DataAssemblyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/customers': {
-      id: '/customers'
-      path: '/customers'
-      fullPath: '/customers'
-      preLoaderRoute: typeof CustomersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/crm': {
       id: '/crm'
       path: '/crm'
@@ -1508,13 +1424,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DataAssemblyRequestIdRouteImport
       parentRoute: typeof DataAssemblyRoute
     }
-    '/customers/$customerId': {
-      id: '/customers/$customerId'
-      path: '/$customerId'
-      fullPath: '/customers/$customerId'
-      preLoaderRoute: typeof CustomersCustomerIdRouteImport
-      parentRoute: typeof CustomersRoute
-    }
     '/crm/tasks': {
       id: '/crm/tasks'
       path: '/tasks'
@@ -1641,13 +1550,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrderOperationsWorkflowOrderIdRouteImport
       parentRoute: typeof OrderOperationsRoute
     }
-    '/order-configuration/sample-types/$sampleTypeId': {
-      id: '/order-configuration/sample-types/$sampleTypeId'
-      path: '/sample-types/$sampleTypeId'
-      fullPath: '/order-configuration/sample-types/$sampleTypeId'
-      preLoaderRoute: typeof OrderConfigurationSampleTypesSampleTypeIdRouteImport
-      parentRoute: typeof OrderConfigurationRoute
-    }
     '/order-configuration/catalog/$catalogItemId': {
       id: '/order-configuration/catalog/$catalogItemId'
       path: '/catalog/$catalogItemId'
@@ -1661,13 +1563,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/lab-services/$orderId/edit'
       preLoaderRoute: typeof LabServicesOrderIdEditRouteImport
       parentRoute: typeof LabServicesOrderIdRoute
-    }
-    '/lab-operations/suppliers/$supplierId': {
-      id: '/lab-operations/suppliers/$supplierId'
-      path: '/suppliers/$supplierId'
-      fullPath: '/lab-operations/suppliers/$supplierId'
-      preLoaderRoute: typeof LabOperationsSuppliersSupplierIdRouteImport
-      parentRoute: typeof LabOperationsRoute
     }
     '/lab-operations/stock-kits/$kitId': {
       id: '/lab-operations/stock-kits/$kitId'
@@ -1697,25 +1592,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LabOperationsPseqKitOrdersOrderIdRouteImport
       parentRoute: typeof LabOperationsRoute
     }
-    '/lab-operations/product-types/$productTypeId': {
-      id: '/lab-operations/product-types/$productTypeId'
-      path: '/product-types/$productTypeId'
-      fullPath: '/lab-operations/product-types/$productTypeId'
-      preLoaderRoute: typeof LabOperationsProductTypesProductTypeIdRouteImport
-      parentRoute: typeof LabOperationsRoute
-    }
     '/lab-operations/preparation/$preparationBatchId': {
       id: '/lab-operations/preparation/$preparationBatchId'
       path: '/preparation/$preparationBatchId'
       fullPath: '/lab-operations/preparation/$preparationBatchId'
       preLoaderRoute: typeof LabOperationsPreparationPreparationBatchIdRouteImport
-      parentRoute: typeof LabOperationsRoute
-    }
-    '/lab-operations/materials/$materialLotId': {
-      id: '/lab-operations/materials/$materialLotId'
-      path: '/materials/$materialLotId'
-      fullPath: '/lab-operations/materials/$materialLotId'
-      preLoaderRoute: typeof LabOperationsMaterialsMaterialLotIdRouteImport
       parentRoute: typeof LabOperationsRoute
     }
     '/lab-operations/master-mixes/$mixId': {
@@ -1907,18 +1788,6 @@ const CrmRouteChildren: CrmRouteChildren = {
 
 const CrmRouteWithChildren = CrmRoute._addFileChildren(CrmRouteChildren)
 
-interface CustomersRouteChildren {
-  CustomersCustomerIdRoute: typeof CustomersCustomerIdRoute
-}
-
-const CustomersRouteChildren: CustomersRouteChildren = {
-  CustomersCustomerIdRoute: CustomersCustomerIdRoute,
-}
-
-const CustomersRouteWithChildren = CustomersRoute._addFileChildren(
-  CustomersRouteChildren,
-)
-
 interface DataAssemblyRequestIdRouteChildren {
   DataAssemblyRequestIdEditRoute: typeof DataAssemblyRequestIdEditRoute
 }
@@ -2014,14 +1883,11 @@ interface LabOperationsRouteChildren {
   LabOperationsExecutionsExecutionIdRoute: typeof LabOperationsExecutionsExecutionIdRoute
   LabOperationsKitRequestsRequestIdRoute: typeof LabOperationsKitRequestsRequestIdRoute
   LabOperationsMasterMixesMixIdRoute: typeof LabOperationsMasterMixesMixIdRoute
-  LabOperationsMaterialsMaterialLotIdRoute: typeof LabOperationsMaterialsMaterialLotIdRoute
   LabOperationsPreparationPreparationBatchIdRoute: typeof LabOperationsPreparationPreparationBatchIdRoute
-  LabOperationsProductTypesProductTypeIdRoute: typeof LabOperationsProductTypesProductTypeIdRoute
   LabOperationsPseqKitOrdersOrderIdRoute: typeof LabOperationsPseqKitOrdersOrderIdRoute
   LabOperationsReagentRunsRunIdRoute: typeof LabOperationsReagentRunsRunIdRoute
   LabOperationsStepsStepIdRoute: typeof LabOperationsStepsStepIdRouteWithChildren
   LabOperationsStockKitsKitIdRoute: typeof LabOperationsStockKitsKitIdRoute
-  LabOperationsSuppliersSupplierIdRoute: typeof LabOperationsSuppliersSupplierIdRoute
   LabOperationsWorkOrderIdContainersContainerIdRoute: typeof LabOperationsWorkOrderIdContainersContainerIdRoute
   LabOperationsWorkOrderIdSpecimensSpecimenIdRoute: typeof LabOperationsWorkOrderIdSpecimensSpecimenIdRoute
   LabOperationsProtocolsProtocolIdVersionsNewRoute: typeof LabOperationsProtocolsProtocolIdVersionsNewRoute
@@ -2040,18 +1906,13 @@ const LabOperationsRouteChildren: LabOperationsRouteChildren = {
   LabOperationsKitRequestsRequestIdRoute:
     LabOperationsKitRequestsRequestIdRoute,
   LabOperationsMasterMixesMixIdRoute: LabOperationsMasterMixesMixIdRoute,
-  LabOperationsMaterialsMaterialLotIdRoute:
-    LabOperationsMaterialsMaterialLotIdRoute,
   LabOperationsPreparationPreparationBatchIdRoute:
     LabOperationsPreparationPreparationBatchIdRoute,
-  LabOperationsProductTypesProductTypeIdRoute:
-    LabOperationsProductTypesProductTypeIdRoute,
   LabOperationsPseqKitOrdersOrderIdRoute:
     LabOperationsPseqKitOrdersOrderIdRoute,
   LabOperationsReagentRunsRunIdRoute: LabOperationsReagentRunsRunIdRoute,
   LabOperationsStepsStepIdRoute: LabOperationsStepsStepIdRouteWithChildren,
   LabOperationsStockKitsKitIdRoute: LabOperationsStockKitsKitIdRoute,
-  LabOperationsSuppliersSupplierIdRoute: LabOperationsSuppliersSupplierIdRoute,
   LabOperationsWorkOrderIdContainersContainerIdRoute:
     LabOperationsWorkOrderIdContainersContainerIdRoute,
   LabOperationsWorkOrderIdSpecimensSpecimenIdRoute:
@@ -2099,14 +1960,11 @@ const LabServicesRouteWithChildren = LabServicesRoute._addFileChildren(
 
 interface OrderConfigurationRouteChildren {
   OrderConfigurationCatalogCatalogItemIdRoute: typeof OrderConfigurationCatalogCatalogItemIdRoute
-  OrderConfigurationSampleTypesSampleTypeIdRoute: typeof OrderConfigurationSampleTypesSampleTypeIdRoute
 }
 
 const OrderConfigurationRouteChildren: OrderConfigurationRouteChildren = {
   OrderConfigurationCatalogCatalogItemIdRoute:
     OrderConfigurationCatalogCatalogItemIdRoute,
-  OrderConfigurationSampleTypesSampleTypeIdRoute:
-    OrderConfigurationSampleTypesSampleTypeIdRoute,
 }
 
 const OrderConfigurationRouteWithChildren =
@@ -2244,7 +2102,6 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AcceptInviteRoute: AcceptInviteRoute,
   CrmRoute: CrmRouteWithChildren,
-  CustomersRoute: CustomersRouteWithChildren,
   DataAssemblyRoute: DataAssemblyRouteWithChildren,
   DataLibraryRoute: DataLibraryRouteWithChildren,
   DataProvisioningRoute: DataProvisioningRouteWithChildren,

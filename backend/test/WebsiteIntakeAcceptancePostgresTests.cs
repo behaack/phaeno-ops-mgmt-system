@@ -100,23 +100,6 @@ public sealed partial class WebsiteNotificationPostgresTests(ITestOutputHelper o
         output.WriteLine(JsonSerializer.Serialize(new { Mode = "SIMULATED provider and destination inbox; actual Mailgun template is not rendered", DeliveryId = delivery.Id, ProviderAcceptedAtUtc = transport.ProviderAcceptedAtUtc, SavedAcceptedAtUtc = accepted.AcceptedAtUtc, Receipt = receipt, RetainedFailedAttempts = 5 }));
     }
 
-    [PostgreSqlReferenceFact]
-    public async Task InactiveLegacyContactCannotQueueBriefAndActiveOptedInRecoveryRetainsActor()
-    {
-        await using var scope = await Scope.Create();
-        var inactive = await scope.Contact();
-        inactive.Unsubscribe(scope.Actor.Id, DateTimeOffset.UtcNow);
-        await scope.Db.SaveChangesAsync();
-        await Assert.ThrowsAsync<WebsiteNotificationConflictException>(() => scope.Recovery.QueueLegacyBriefAsync(inactive.Id, scope.Actor.Id, default));
-        Assert.False(await scope.Db.Set<WebNotificationDelivery>().AnyAsync(item => item.WebContactId == inactive.Id));
-        var active = await scope.Contact();
-        await scope.Recovery.QueueLegacyBriefAsync(active.Id, scope.Actor.Id, default);
-        var delivery = await scope.Db.Set<WebNotificationDelivery>().AsNoTracking().SingleAsync(item => item.WebContactId == active.Id);
-        Assert.Equal(WebNotificationState.Pending, delivery.State);
-        Assert.Equal(scope.Actor.Id, delivery.LastRecoveryByUserId);
-        Assert.True(await scope.Db.AuditEvents.AnyAsync(item => item.EntityId == delivery.Id.ToString() && item.Operation == "LegacyBriefQueued" && item.ActorUserId == scope.Actor.Id));
-    }
-
     private sealed class AcceptanceCaptcha : IWebsiteRecaptchaVerifier
     {
         public bool Accept { get; set; }

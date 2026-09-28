@@ -24,19 +24,15 @@ public sealed partial class SampleShippingContainerCatalogService
         try
         {
             candidate = new(item.ContainerTypeId, item.Revision, item.SupersedesDefinitionId,
-                request.CommonName, request.TubeCapacity, request.SupplierName, request.SupplierProductNumber,
-                request.PackingInstructions, Utc(request.EffectiveFrom), Utc(request.EffectiveTo), false,
-                request.DisplayOrder, item.AssemblyWorkflowRevisionId, request.DryIceQuantity,
+                request.CommonName, request.TubeCapacity, Utc(request.EffectiveFrom), Utc(request.EffectiveTo), false,
+                request.DisplayOrder, request.DryIceQuantity,
                 request.DryIceUnit, request.TemperatureControlInstructions, sampleTypeAnchorId);
+            candidate.ConfigureAssembly(request.ShippingContainerProductId ?? item.ShippingContainerProductId, request.ShippingContainerProductId.HasValue ? request.AssemblyWorkflowId : item.AssemblyWorkflowId);
             item.UpdateDraftFrom(candidate);
         }
         catch (ArgumentException error) { throw Invalid(error.Message); }
         catch (InvalidOperationException error) { throw Conflict(error.Message); }
-        var internalProduct = item.ContainerType.FinishedKitProductId is Guid productId
-            && await (from product in dbContext.LabSupplierProducts.AsNoTracking()
-                join supplier in dbContext.LabSuppliers.AsNoTracking() on product.SupplierId equals supplier.Id
-                where product.Id == productId select supplier.IsInternalProducer).SingleAsync(ct);
-        if (internalProduct && request.KitContents is not null)
+        if (request.KitContents is not null)
         {
             await dbContext.Set<ShippingKitContent>()
                 .Where(content => content.ContainerDefinitionId == item.Id)
@@ -44,10 +40,11 @@ public sealed partial class SampleShippingContainerCatalogService
             foreach (var existing in item.KitContents.ToArray())
                 dbContext.Entry(existing).State = EntityState.Detached;
             item.KitContents.Clear();
-            await AddContentsAsync(item, request.KitContents, ct, finishedProduct: true);
+            await AddContentsAsync(item, request.KitContents, ct);
+            // Replacement rows have assigned IDs; mark them Added rather than letting EF infer updates.
+            dbContext.Set<ShippingKitContent>().AddRange(item.KitContents);
         }
-        else if (!internalProduct && request.KitContents is { Count: > 0 })
-            throw Invalid("Purchased kit contents are recorded at receipt, not on the specification.");
+        await ValidateAssemblyConfigurationAsync(item, ct);
         var released = await dbContext.SampleShippingContainerDefinitions.AsNoTracking()
             .Where(value => value.ContainerTypeId == typeId && value.Id != id
                 && (value.Lifecycle == ShippingRevisionLifecycle.Released

@@ -1,19 +1,19 @@
-using System;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
-namespace PSeq.Operations.Api.Migrations
+namespace PhaenoPortal.App.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialPSeqOperationsRebased : Migration
+    public partial class InitialCleanPortal : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // A rebase is only safe on a new database; never treat it as an upgrade.
+            // This baseline creates a clean database and is never an in-place upgrade.
             migrationBuilder.Sql("""
                 DO $$ DECLARE previous_history boolean := false; history_name text; BEGIN
                     FOREACH history_name IN ARRAY ARRAY['public.__ef_migrations_history', 'public."__EFMigrationsHistory"'] LOOP
@@ -23,7 +23,7 @@ namespace PSeq.Operations.Api.Migrations
                         END IF;
                     END LOOP;
                     IF previous_history OR EXISTS (SELECT 1 FROM pg_tables WHERE schemaname IN ('commercial_ops', 'lab_ops', 'website')) THEN
-                        RAISE EXCEPTION 'The rebased initial migration requires a new empty database. Restore and selectively import into a replacement database.';
+                        RAISE EXCEPTION 'InitialCleanPortal requires an empty database. Back up and replace the intended database before applying this baseline.';
                     END IF;
                 END $$;
                 """);
@@ -258,6 +258,34 @@ namespace PSeq.Operations.Api.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "lab_master_mix_workflows",
+                schema: "lab_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    name = table.Column<string>(type: "character varying(160)", maxLength: 160, nullable: false),
+                    quantity_unit = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    steps_json = table.Column<string>(type: "jsonb", nullable: false),
+                    ingredients_json = table.Column<string>(type: "jsonb", nullable: false),
+                    revision_history_json = table.Column<string>(type: "jsonb", nullable: false),
+                    revision = table.Column<int>(type: "integer", nullable: false),
+                    status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    authored_by_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    approved_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    approved_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    approval_override_reason = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    created_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    version = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lab_master_mix_workflows", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "lab_material_definitions",
                 schema: "lab_ops",
                 columns: table => new
@@ -267,6 +295,7 @@ namespace PSeq.Operations.Api.Migrations
                     name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     kind = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     is_active = table.Column<bool>(type: "boolean", nullable: false),
+                    default_quantity_unit = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     created_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -432,6 +461,7 @@ namespace PSeq.Operations.Api.Migrations
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     key = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    normalized_name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     description = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
                     latest_version = table.Column<int>(type: "integer", nullable: false),
                     retired_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -477,6 +507,7 @@ namespace PSeq.Operations.Api.Migrations
                     name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     normalized_name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     is_active = table.Column<bool>(type: "boolean", nullable: false),
+                    is_internal_producer = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     created_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -568,6 +599,7 @@ namespace PSeq.Operations.Api.Migrations
                     shipping_configuration_json = table.Column<string>(type: "jsonb", nullable: false),
                     sample_configuration_json = table.Column<string>(type: "jsonb", nullable: false),
                     result_destination_configuration_json = table.Column<string>(type: "jsonb", nullable: false),
+                    default_shipping_destination_definition_key = table.Column<Guid>(type: "uuid", nullable: true),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     created_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -671,6 +703,7 @@ namespace PSeq.Operations.Api.Migrations
                     base_price = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     currency = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: false),
                     is_active = table.Column<bool>(type: "boolean", nullable: false),
+                    service_family = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     last_synced_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     created_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
@@ -777,6 +810,7 @@ namespace PSeq.Operations.Api.Migrations
                     effective_from = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     effective_to = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     is_active = table.Column<bool>(type: "boolean", nullable: false),
+                    lifecycle = table.Column<string>(type: "character varying(24)", maxLength: 24, nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     created_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -796,33 +830,25 @@ namespace PSeq.Operations.Api.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "sample_type_definitions",
+                name: "sample_shipping_procedures",
                 schema: "commercial_ops",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     definition_key = table.Column<Guid>(type: "uuid", nullable: false),
                     revision = table.Column<int>(type: "integer", nullable: false),
-                    supersedes_sample_type_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    code = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    supersedes_procedure_id = table.Column<Guid>(type: "uuid", nullable: true),
                     name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    description = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
-                    material_class = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    minimum_quantity = table.Column<decimal>(type: "numeric(18,6)", precision: 18, scale: 6, nullable: true),
-                    maximum_quantity = table.Column<decimal>(type: "numeric(18,6)", precision: 18, scale: 6, nullable: true),
-                    quantity_unit = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    primary_container_requirements = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
-                    temperature_requirements = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
-                    stabilizer_requirements = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
-                    packaging_instructions = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
-                    labeling_instructions = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
-                    prohibited_identifiers = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
-                    safety_requirements = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
-                    carrier_restrictions = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
-                    maximum_transit_hours = table.Column<int>(type: "integer", nullable: true),
-                    effective_from = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    effective_to = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    description = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
+                    packing_instructions = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
+                    temperature_instructions = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
+                    carrier_instructions = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
+                    dispatch_instructions = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
+                    required_documents = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
+                    exception_instructions = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
+                    international_customs_instructions = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: true),
                     is_active = table.Column<bool>(type: "boolean", nullable: false),
+                    lifecycle = table.Column<string>(type: "character varying(24)", maxLength: 24, nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     created_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -831,12 +857,12 @@ namespace PSeq.Operations.Api.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_sample_type_definitions", x => x.id);
+                    table.PrimaryKey("PK_sample_shipping_procedures", x => x.id);
                     table.ForeignKey(
-                        name: "FK_sample_type_definitions_sample_type_definitions_supersedes_~",
-                        column: x => x.supersedes_sample_type_id,
+                        name: "FK_sample_shipping_procedures_sample_shipping_procedures_super~",
+                        column: x => x.supersedes_procedure_id,
                         principalSchema: "commercial_ops",
-                        principalTable: "sample_type_definitions",
+                        principalTable: "sample_shipping_procedures",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -1029,6 +1055,88 @@ namespace PSeq.Operations.Api.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "lab_master_mix_preparations",
+                schema: "lab_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    workflow_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    workflow_revision = table.Column<int>(type: "integer", nullable: false),
+                    workflow_name = table.Column<string>(type: "character varying(160)", maxLength: 160, nullable: false),
+                    steps_json = table.Column<string>(type: "jsonb", nullable: false),
+                    ingredients_json = table.Column<string>(type: "jsonb", nullable: false),
+                    quantity_unit = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    recorded_step_count = table.Column<int>(type: "integer", nullable: false),
+                    ingredient_use_count = table.Column<int>(type: "integer", nullable: false),
+                    prepared_quantity = table.Column<decimal>(type: "numeric(28,12)", precision: 28, scale: 12, nullable: true),
+                    used_quantity = table.Column<decimal>(type: "numeric(28,12)", precision: 28, scale: 12, nullable: false),
+                    started_by_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    started_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    use_by_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    prepared_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    prepared_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    discarded_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    discarded_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    measured_discard_quantity = table.Column<decimal>(type: "numeric(28,12)", precision: 28, scale: 12, nullable: true),
+                    discard_reason = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    recipe_deviation_reason = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    recipe_deviation_approved_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    recipe_deviation_approved_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    recipe_deviation_approved_ingredient_count = table.Column<int>(type: "integer", nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    created_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    version = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lab_master_mix_preparations", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_lab_master_mix_preparations_lab_master_mix_workflows_workfl~",
+                        column: x => x.workflow_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_master_mix_workflows",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "lab_reagent_workflows",
+                schema: "lab_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    name = table.Column<string>(type: "character varying(160)", maxLength: 160, nullable: false),
+                    material_definition_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    steps_json = table.Column<string>(type: "jsonb", nullable: false),
+                    revision_history_json = table.Column<string>(type: "jsonb", nullable: false),
+                    revision = table.Column<int>(type: "integer", nullable: false),
+                    status = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    authored_by_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    approved_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    approved_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    approval_override_reason = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    created_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    version = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lab_reagent_workflows", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_lab_reagent_workflows_lab_material_definitions_material_def~",
+                        column: x => x.material_definition_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_material_definitions",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "lab_ngs_sendouts",
                 schema: "lab_ops",
                 columns: table => new
@@ -1163,7 +1271,11 @@ namespace PSeq.Operations.Api.Migrations
                     normalized_product_number = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
                     product_type_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    material_definition_id = table.Column<Guid>(type: "uuid", nullable: true),
                     is_active = table.Column<bool>(type: "boolean", nullable: false),
+                    can_expire = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    default_quantity_unit = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    tube_capacity = table.Column<int>(type: "integer", nullable: true),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     created_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -1173,6 +1285,13 @@ namespace PSeq.Operations.Api.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_lab_supplier_products", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_lab_supplier_products_lab_material_definitions_material_def~",
+                        column: x => x.material_definition_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_material_definitions",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_lab_supplier_products_lab_product_types_product_type_id",
                         column: x => x.product_type_id,
@@ -1599,29 +1718,35 @@ namespace PSeq.Operations.Api.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "sample_shipping_instruction_rules",
+                name: "sample_type_definitions",
                 schema: "commercial_ops",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     definition_key = table.Column<Guid>(type: "uuid", nullable: false),
                     revision = table.Column<int>(type: "integer", nullable: false),
-                    supersedes_instruction_rule_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    destination_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    sample_type_definition_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    compatibility_group = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    packing_instructions = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
-                    temperature_instructions = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
-                    carrier_instructions = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
-                    dispatch_instructions = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
-                    delivery_instructions = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
-                    required_documents = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
-                    exception_instructions = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
-                    international_customs_instructions = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: true),
-                    requires_separate_shipment = table.Column<bool>(type: "boolean", nullable: false),
+                    supersedes_sample_type_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    code = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    description = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
+                    material_class = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    minimum_quantity = table.Column<decimal>(type: "numeric(18,6)", precision: 18, scale: 6, nullable: true),
+                    maximum_quantity = table.Column<decimal>(type: "numeric(18,6)", precision: 18, scale: 6, nullable: true),
+                    quantity_unit = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    primary_container_requirements = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
+                    temperature_requirements = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
+                    stabilizer_requirements = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    packaging_instructions = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
+                    labeling_instructions = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
+                    prohibited_identifiers = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
+                    safety_requirements = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
+                    carrier_restrictions = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    maximum_transit_hours = table.Column<int>(type: "integer", nullable: true),
+                    shipping_procedure_id = table.Column<Guid>(type: "uuid", nullable: true),
                     effective_from = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     effective_to = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     is_active = table.Column<bool>(type: "boolean", nullable: false),
+                    lifecycle = table.Column<string>(type: "character varying(24)", maxLength: 24, nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     created_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -1630,26 +1755,19 @@ namespace PSeq.Operations.Api.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_sample_shipping_instruction_rules", x => x.id);
+                    table.PrimaryKey("PK_sample_type_definitions", x => x.id);
                     table.ForeignKey(
-                        name: "FK_sample_shipping_instruction_rules_sample_shipping_destinati~",
-                        column: x => x.destination_id,
-                        principalSchema: "commercial_ops",
-                        principalTable: "sample_shipping_destinations",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_sample_shipping_instruction_rules_sample_shipping_instructi~",
-                        column: x => x.supersedes_instruction_rule_id,
-                        principalSchema: "commercial_ops",
-                        principalTable: "sample_shipping_instruction_rules",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_sample_shipping_instruction_rules_sample_type_definitions_s~",
-                        column: x => x.sample_type_definition_id,
+                        name: "FK_sample_type_definitions_sample_type_definitions_supersedes_~",
+                        column: x => x.supersedes_sample_type_id,
                         principalSchema: "commercial_ops",
                         principalTable: "sample_type_definitions",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_sample_type_shipping_procedure",
+                        column: x => x.shipping_procedure_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "sample_shipping_procedures",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -1832,6 +1950,7 @@ namespace PSeq.Operations.Api.Migrations
                     merged_into_company_id = table.Column<Guid>(type: "uuid", nullable: true),
                     owner_user_id = table.Column<Guid>(type: "uuid", nullable: false),
                     access_organization_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    setup_organization_id = table.Column<Guid>(type: "uuid", nullable: true),
                     is_active = table.Column<bool>(type: "boolean", nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     created_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
@@ -1857,6 +1976,13 @@ namespace PSeq.Operations.Api.Migrations
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
+                        name: "FK_crm_companies_organizations_setup_organization_id",
+                        column: x => x.setup_organization_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "organizations",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
                         name: "FK_crm_companies_users_owner_user_id",
                         column: x => x.owner_user_id,
                         principalSchema: "commercial_ops",
@@ -1876,7 +2002,6 @@ namespace PSeq.Operations.Api.Migrations
                     email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     normalized_email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     phone = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
-                    legacy_job_title = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: true),
                     owner_user_id = table.Column<Guid>(type: "uuid", nullable: false),
                     communication_preference = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     lawful_contact_basis = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
@@ -2030,6 +2155,39 @@ namespace PSeq.Operations.Api.Migrations
                     table.ForeignKey(
                         name: "FK_crm_saved_views_users_owner_user_id",
                         column: x => x.owner_user_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "lab_kit_assembly_workflows",
+                schema: "lab_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    name = table.Column<string>(type: "character varying(160)", maxLength: 160, nullable: false),
+                    latest_revision = table.Column<int>(type: "integer", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    created_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    version = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lab_kit_assembly_workflows", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_lab_kit_assembly_workflows_users_created_by_user_id",
+                        column: x => x.created_by_user_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_kit_assembly_workflows_users_updated_by_user_id",
+                        column: x => x.updated_by_user_id,
                         principalSchema: "commercial_ops",
                         principalTable: "users",
                         principalColumn: "id",
@@ -2388,6 +2546,56 @@ namespace PSeq.Operations.Api.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "lab_master_mix_corrections",
+                schema: "lab_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    preparation_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    target_entry_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    target_kind = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    action = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    reason = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
+                    recorded_by_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    recorded_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lab_master_mix_corrections", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_lab_master_mix_corrections_lab_master_mix_preparations_prep~",
+                        column: x => x.preparation_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_master_mix_preparations",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "lab_master_mix_steps",
+                schema: "lab_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    preparation_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    sequence = table.Column<int>(type: "integer", nullable: false),
+                    notes = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
+                    performed_by_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    performed_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lab_master_mix_steps", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_lab_master_mix_steps_lab_master_mix_preparations_preparatio~",
+                        column: x => x.preparation_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_master_mix_preparations",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "lab_preparation_batches",
                 schema: "lab_ops",
                 columns: table => new
@@ -2555,7 +2763,6 @@ namespace PSeq.Operations.Api.Migrations
                     lot_number = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     supplier_id = table.Column<Guid>(type: "uuid", nullable: true),
                     supplier_product_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    legacy_components_json = table.Column<string>(type: "jsonb", nullable: true),
                     expiration_or_retest_date = table.Column<DateOnly>(type: "date", nullable: true),
                     storage_location_id = table.Column<Guid>(type: "uuid", nullable: false),
                     available_quantity = table.Column<decimal>(type: "numeric", nullable: false),
@@ -2577,7 +2784,6 @@ namespace PSeq.Operations.Api.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_lab_material_lots", x => x.id);
-                    table.CheckConstraint("ck_material_lot_product_kind", "supplier_product_id IS NULL OR kind = 'SupplierLot'");
                     table.ForeignKey(
                         name: "FK_lab_material_lots_lab_material_definitions_material_definit~",
                         column: x => x.material_definition_id,
@@ -2896,7 +3102,18 @@ namespace PSeq.Operations.Api.Migrations
                     description = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
                     has_mixed_biological_sources = table.Column<bool>(type: "boolean", nullable: false),
                     shared_biological_source = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    sample_type_definition_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    shipping_procedure_revision_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    shipping_safety_hold_reason = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    shipping_safety_held_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    shipping_safety_held_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    shipping_safety_hold_resolved_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    shipping_safety_hold_resolved_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    sample_type_material_class_snapshot = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    shipping_destination_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    shipping_destination_assigned_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     requested_specimen_count = table.Column<int>(type: "integer", nullable: false),
+                    sequencing_run_count = table.Column<int>(type: "integer", nullable: true),
                     tube_use_policy_key = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     tube_use_policy_version = table.Column<int>(type: "integer", nullable: true),
                     storage_requirements = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
@@ -2964,6 +3181,13 @@ namespace PSeq.Operations.Api.Migrations
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
+                        name: "FK_lab_service_orders_sample_type_definitions_sample_type_defi~",
+                        column: x => x.sample_type_definition_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "sample_type_definitions",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
                         name: "FK_lab_service_orders_users_assigned_to_user_id",
                         column: x => x.assigned_to_user_id,
                         principalSchema: "commercial_ops",
@@ -2982,6 +3206,34 @@ namespace PSeq.Operations.Api.Migrations
                         column: x => x.sample_roster_finalized_by_user_id,
                         principalSchema: "commercial_ops",
                         principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_lab_service_order_ship_to_revision",
+                        column: x => x.shipping_destination_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "sample_shipping_destinations",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_lab_service_order_shipping_hold_actor",
+                        column: x => x.shipping_safety_held_by_user_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_lab_service_order_shipping_hold_resolver",
+                        column: x => x.shipping_safety_hold_resolved_by_user_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_lab_service_order_shipping_procedure_revision",
+                        column: x => x.shipping_procedure_revision_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "sample_shipping_procedures",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -3008,6 +3260,48 @@ namespace PSeq.Operations.Api.Migrations
                     table.ForeignKey(
                         name: "FK_lab_service_sample_types_sample_type_definitions_sample_typ~",
                         column: x => x.sample_type_definition_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "sample_type_definitions",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "sample_type_procedure_links",
+                schema: "commercial_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    sample_type_anchor_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    procedure_anchor_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    changed_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    changed_by_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    created_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    version = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_sample_type_procedure_links", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_sample_type_procedure_link_actor",
+                        column: x => x.changed_by_user_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_sample_type_procedure_link_procedure_anchor",
+                        column: x => x.procedure_anchor_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "sample_shipping_procedures",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_sample_type_procedure_link_sample_anchor",
+                        column: x => x.sample_type_anchor_id,
                         principalSchema: "commercial_ops",
                         principalTable: "sample_type_definitions",
                         principalColumn: "id",
@@ -3405,6 +3699,48 @@ namespace PSeq.Operations.Api.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "lab_kit_assembly_workflow_revisions",
+                schema: "lab_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    workflow_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    revision = table.Column<int>(type: "integer", nullable: false),
+                    steps_json = table.Column<string>(type: "jsonb", nullable: false),
+                    status = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    authored_by_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    authored_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    approved_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    approved_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    approval_override_reason = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lab_kit_assembly_workflow_revisions", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_lab_kit_assembly_workflow_revisions_lab_kit_assembly_workfl~",
+                        column: x => x.workflow_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_kit_assembly_workflows",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_kit_assembly_workflow_revisions_users_approved_by_user_~",
+                        column: x => x.approved_by_user_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_kit_assembly_workflow_revisions_users_authored_by_user_~",
+                        column: x => x.authored_by_user_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "organization_department_memberships",
                 schema: "commercial_ops",
                 columns: table => new
@@ -3446,16 +3782,20 @@ namespace PSeq.Operations.Api.Migrations
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     container_type_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    shipping_container_product_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    assembly_workflow_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    sample_type_anchor_id = table.Column<Guid>(type: "uuid", nullable: true),
                     revision = table.Column<int>(type: "integer", nullable: false),
                     supersedes_definition_id = table.Column<Guid>(type: "uuid", nullable: true),
                     common_name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     tube_capacity = table.Column<int>(type: "integer", nullable: false),
-                    supplier_name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    supplier_product_number = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    packing_instructions = table.Column<string>(type: "character varying(8000)", maxLength: 8000, nullable: true),
+                    dry_ice_quantity = table.Column<decimal>(type: "numeric(18,3)", precision: 18, scale: 3, nullable: true),
+                    dry_ice_unit = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
+                    temperature_control_instructions = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
                     effective_from = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     effective_to = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     is_active = table.Column<bool>(type: "boolean", nullable: false),
+                    lifecycle = table.Column<string>(type: "character varying(24)", maxLength: 24, nullable: false),
                     deactivated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     display_order = table.Column<int>(type: "integer", nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -3467,6 +3807,7 @@ namespace PSeq.Operations.Api.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_sample_shipping_container_definitions", x => x.id);
+                    table.CheckConstraint("ck_transportation_kit_dry_ice_pair", "(dry_ice_quantity IS NULL AND dry_ice_unit IS NULL) OR (dry_ice_quantity > 0 AND dry_ice_unit IS NOT NULL AND length(btrim(dry_ice_unit)) > 0)");
                     table.ForeignKey(
                         name: "fk_shipping_container_revision_created_by",
                         column: x => x.created_by_user_id,
@@ -3493,6 +3834,27 @@ namespace PSeq.Operations.Api.Migrations
                         column: x => x.updated_by_user_id,
                         principalSchema: "commercial_ops",
                         principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_shipping_spec_assembly_method",
+                        column: x => x.assembly_workflow_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_kit_assembly_workflows",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_shipping_spec_container_product",
+                        column: x => x.shipping_container_product_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_supplier_products",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_shipping_spec_sample_type_anchor",
+                        column: x => x.sample_type_anchor_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "sample_type_definitions",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -3859,6 +4221,41 @@ namespace PSeq.Operations.Api.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "lab_master_mix_ingredients",
+                schema: "lab_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    preparation_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    source_material_lot_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    quantity = table.Column<decimal>(type: "numeric(28,12)", precision: 28, scale: 12, nullable: false),
+                    quantity_unit = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    material_exhausted = table.Column<bool>(type: "boolean", nullable: false),
+                    recorded_by_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    recorded_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    voided_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    voided_by_user_id = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lab_master_mix_ingredients", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_lab_master_mix_ingredients_lab_master_mix_preparations_prep~",
+                        column: x => x.preparation_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_master_mix_preparations",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_master_mix_ingredients_lab_material_lots_source_materia~",
+                        column: x => x.source_material_lot_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_material_lots",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "lab_prepared_reagent_components",
                 schema: "lab_ops",
                 columns: table => new
@@ -3884,6 +4281,50 @@ namespace PSeq.Operations.Api.Migrations
                         column: x => x.prepared_material_lot_id,
                         principalSchema: "lab_ops",
                         principalTable: "lab_material_lots",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "lab_reagent_manufacturing_runs",
+                schema: "lab_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    workflow_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    workflow_revision = table.Column<int>(type: "integer", nullable: false),
+                    workflow_name = table.Column<string>(type: "character varying(160)", maxLength: 160, nullable: false),
+                    steps_json = table.Column<string>(type: "jsonb", nullable: false),
+                    material_lot_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    status = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    recorded_step_count = table.Column<int>(type: "integer", nullable: false),
+                    material_use_count = table.Column<int>(type: "integer", nullable: false),
+                    started_by_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    started_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    finished_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    finished_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    abandonment_reason = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    created_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    version = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lab_reagent_manufacturing_runs", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_lab_reagent_manufacturing_runs_lab_material_lots_material_l~",
+                        column: x => x.material_lot_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_material_lots",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_reagent_manufacturing_runs_lab_reagent_workflows_workfl~",
+                        column: x => x.workflow_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_reagent_workflows",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -4053,6 +4494,7 @@ namespace PSeq.Operations.Api.Migrations
                     customer_sample_id = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     material_type = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     biological_source = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    sequencing_run_count = table.Column<int>(type: "integer", nullable: false, defaultValue: 1),
                     quantity = table.Column<decimal>(type: "numeric(18,6)", precision: 18, scale: 6, nullable: false),
                     quantity_unit = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     storage_requirements = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
@@ -4893,37 +5335,125 @@ namespace PSeq.Operations.Api.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "sample_shipping_container_compatibilities",
+                name: "shipping_kit_contents",
                 schema: "commercial_ops",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     container_definition_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    sample_type_definition_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    instruction_rule_id = table.Column<Guid>(type: "uuid", nullable: false)
+                    supplier_product_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    supplier_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    kind = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    quantity = table.Column<int>(type: "integer", nullable: false),
+                    position = table.Column<int>(type: "integer", nullable: false),
+                    product_type_name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    supplier_name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    product_number = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    product_description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_sample_shipping_container_compatibilities", x => x.id);
+                    table.PrimaryKey("PK_shipping_kit_contents", x => x.id);
+                    table.CheckConstraint("ck_shipping_kit_content_quantity", "quantity > 0");
                     table.ForeignKey(
-                        name: "fk_shipping_container_compat_revision",
+                        name: "FK_shipping_kit_contents_lab_supplier_products_supplier_produc~",
+                        column: x => x.supplier_product_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_supplier_products",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_shipping_kit_contents_lab_suppliers_supplier_id",
+                        column: x => x.supplier_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_suppliers",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_shipping_kit_contents_sample_shipping_container_definitions~",
                         column: x => x.container_definition_id,
                         principalSchema: "commercial_ops",
                         principalTable: "sample_shipping_container_definitions",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "lab_master_mix_tray_uses",
+                schema: "lab_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    preparation_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    lab_preparation_batch_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    lab_preparation_record_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    field_key = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    quantity = table.Column<decimal>(type: "numeric(28,12)", precision: 28, scale: 12, nullable: false),
+                    quantity_unit = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    recorded_by_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    recorded_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    voided_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    voided_by_user_id = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lab_master_mix_tray_uses", x => x.id);
                     table.ForeignKey(
-                        name: "fk_shipping_container_compat_rule",
-                        column: x => x.instruction_rule_id,
-                        principalSchema: "commercial_ops",
-                        principalTable: "sample_shipping_instruction_rules",
+                        name: "FK_lab_master_mix_tray_uses_lab_master_mix_preparations_prepar~",
+                        column: x => x.preparation_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_master_mix_preparations",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_shipping_container_compat_sample_type",
-                        column: x => x.sample_type_definition_id,
-                        principalSchema: "commercial_ops",
-                        principalTable: "sample_type_definitions",
+                        name: "FK_lab_master_mix_tray_uses_lab_preparation_batches_lab_prepar~",
+                        column: x => x.lab_preparation_batch_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_preparation_batches",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_master_mix_tray_uses_lab_preparation_records_lab_prepar~",
+                        column: x => x.lab_preparation_record_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_preparation_records",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "lab_customer_holds",
+                schema: "lab_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    lab_work_order_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    lab_specimen_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    requested_by_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    requested_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    reason = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
+                    state = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    paused_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    response = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    responded_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    responded_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    version = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lab_customer_holds", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_lab_customer_holds_lab_specimens_lab_specimen_id",
+                        column: x => x.lab_specimen_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_specimens",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_customer_holds_lab_work_orders_lab_work_order_id",
+                        column: x => x.lab_work_order_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_work_orders",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -4962,6 +5492,40 @@ namespace PSeq.Operations.Api.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "lab_scientific_files",
+                schema: "lab_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    lab_work_order_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    lab_specimen_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    file_name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    storage_key = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    sha256 = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    size_bytes = table.Column<long>(type: "bigint", nullable: false),
+                    recorded_by_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    recorded_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lab_scientific_files", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_lab_scientific_files_lab_specimens_lab_specimen_id",
+                        column: x => x.lab_specimen_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_specimens",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_scientific_files_lab_work_orders_lab_work_order_id",
+                        column: x => x.lab_work_order_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_work_orders",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "lab_work_events",
                 schema: "lab_ops",
                 columns: table => new
@@ -4989,6 +5553,64 @@ namespace PSeq.Operations.Api.Migrations
                         column: x => x.lab_work_order_id,
                         principalSchema: "lab_ops",
                         principalTable: "lab_work_orders",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "lab_reagent_material_uses",
+                schema: "lab_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    run_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    source_material_lot_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    quantity = table.Column<decimal>(type: "numeric", nullable: false),
+                    quantity_unit = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    material_exhausted = table.Column<bool>(type: "boolean", nullable: false),
+                    recorded_by_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    recorded_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lab_reagent_material_uses", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_lab_reagent_material_uses_lab_material_lots_source_material~",
+                        column: x => x.source_material_lot_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_material_lots",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_reagent_material_uses_lab_reagent_manufacturing_runs_ru~",
+                        column: x => x.run_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_reagent_manufacturing_runs",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "lab_reagent_run_steps",
+                schema: "lab_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    run_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    sequence = table.Column<int>(type: "integer", nullable: false),
+                    step_key = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    notes = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
+                    performed_by_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    performed_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lab_reagent_run_steps", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_lab_reagent_run_steps_lab_reagent_manufacturing_runs_run_id",
+                        column: x => x.run_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_reagent_manufacturing_runs",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -5325,12 +5947,14 @@ namespace PSeq.Operations.Api.Migrations
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
+                    product_expiry_snapshot_json = table.Column<string>(type: "jsonb", nullable: true),
                     kit_number = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     sample_shipment_id = table.Column<Guid>(type: "uuid", nullable: false),
                     organization_id = table.Column<Guid>(type: "uuid", nullable: false),
                     authorization_source = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     authorization_source_id = table.Column<Guid>(type: "uuid", nullable: false),
                     tube_supplier_name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    tube_barcode_namespace = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     tube_product_number = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     tube_lot_number = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     shipper_supplier_name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
@@ -5361,6 +5985,44 @@ namespace PSeq.Operations.Api.Migrations
                         column: x => x.sample_shipment_id,
                         principalSchema: "commercial_ops",
                         principalTable: "sample_shipments",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "sample_shipment_items",
+                schema: "commercial_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    sample_shipment_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    submitted_specimen_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    sample_type_definition_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    customer_sample_id = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    sample_name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    quantity = table.Column<decimal>(type: "numeric(18,6)", precision: 18, scale: 6, nullable: false),
+                    quantity_unit = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    created_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    version = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_sample_shipment_items", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_sample_shipment_items_sample_shipments_sample_shipment_id",
+                        column: x => x.sample_shipment_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "sample_shipments",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_sample_shipment_items_sample_type_definitions_sample_type_d~",
+                        column: x => x.sample_type_definition_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "sample_type_definitions",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -5403,6 +6065,49 @@ namespace PSeq.Operations.Api.Migrations
                         column: x => x.replaced_by_packet_revision_id,
                         principalSchema: "commercial_ops",
                         principalTable: "sample_shipping_packet_revisions",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "lab_scientific_uploads",
+                schema: "lab_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    lab_work_order_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    lab_specimen_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    file_name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    size_bytes = table.Column<long>(type: "bigint", nullable: false),
+                    sha256 = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    chunks_json = table.Column<string>(type: "jsonb", nullable: false),
+                    completed_file_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    expires_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    version = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lab_scientific_uploads", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_lab_scientific_uploads_lab_scientific_files_completed_file_~",
+                        column: x => x.completed_file_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_scientific_files",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_scientific_uploads_lab_specimens_lab_specimen_id",
+                        column: x => x.lab_specimen_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_specimens",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_scientific_uploads_lab_work_orders_lab_work_order_id",
+                        column: x => x.lab_work_order_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_work_orders",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -5686,9 +6391,16 @@ namespace PSeq.Operations.Api.Migrations
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     kit_number = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     container_definition_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    assembly_workflow_revision_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    assembly_completed_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     container_snapshot_json = table.Column<string>(type: "jsonb", nullable: false),
+                    product_expiry_snapshot_json = table.Column<string>(type: "jsonb", nullable: true),
+                    withdrawn_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    withdrawn_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    withdrawal_reason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     tube_capacity = table.Column<int>(type: "integer", nullable: false),
                     tube_supplier_name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    tube_barcode_namespace = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     tube_product_number = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     tube_lot_number = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     shipper_supplier_name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
@@ -5712,6 +6424,8 @@ namespace PSeq.Operations.Api.Migrations
                     outbound_carrier = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     outbound_tracking_number = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     fulfilled_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    tubes_verified_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    tubes_verified_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     created_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -5733,6 +6447,13 @@ namespace PSeq.Operations.Api.Migrations
                         column: x => x.tube_supplier_product_id,
                         principalSchema: "lab_ops",
                         principalTable: "lab_supplier_products",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_shipping_stock_kit_assembly_workflow_revision",
+                        column: x => x.assembly_workflow_revision_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_kit_assembly_workflow_revisions",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -5792,6 +6513,13 @@ namespace PSeq.Operations.Api.Migrations
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
+                        name: "fk_shipping_stock_kit_tubes_verified_by",
+                        column: x => x.tubes_verified_by_user_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
                         name: "fk_shipping_stock_kit_updated_by",
                         column: x => x.updated_by_user_id,
                         principalSchema: "commercial_ops",
@@ -5812,6 +6540,217 @@ namespace PSeq.Operations.Api.Migrations
                         principalTable: "sample_shipments",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_stock_kit_withdraw_actor",
+                        column: x => x.withdrawn_by_user_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "lab_kit_assembly_runs",
+                schema: "lab_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    stock_kit_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    workflow_revision_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    steps_json = table.Column<string>(type: "jsonb", nullable: false),
+                    status = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    recorded_step_count = table.Column<int>(type: "integer", nullable: false),
+                    started_by_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    started_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    finished_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    finished_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    abandonment_reason = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    created_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    version = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lab_kit_assembly_runs", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_lab_kit_assembly_runs_lab_kit_assembly_workflow_revisions_w~",
+                        column: x => x.workflow_revision_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_kit_assembly_workflow_revisions",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_kit_assembly_runs_sample_shipping_stock_kits_stock_kit_~",
+                        column: x => x.stock_kit_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "sample_shipping_stock_kits",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_kit_assembly_runs_users_finished_by_user_id",
+                        column: x => x.finished_by_user_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_kit_assembly_runs_users_started_by_user_id",
+                        column: x => x.started_by_user_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "sample_shipping_stock_tube_corrections",
+                schema: "commercial_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    sample_shipping_stock_kit_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    previous_barcode = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    replacement_barcode = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    barcode_namespace = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    reason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    corrected_by_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    corrected_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_sample_shipping_stock_tube_corrections", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_sample_shipping_stock_tube_corrections_sample_shipping_stoc~",
+                        column: x => x.sample_shipping_stock_kit_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "sample_shipping_stock_kits",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_sample_shipping_stock_tube_corrections_users_corrected_by_u~",
+                        column: x => x.corrected_by_user_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "sample_shipping_stock_tubes",
+                schema: "commercial_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    sample_shipping_stock_kit_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    supplier_barcode = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    barcode_namespace = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    tube_supplier_product_id = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_sample_shipping_stock_tubes", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_shipping_stock_tube_kit",
+                        column: x => x.sample_shipping_stock_kit_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "sample_shipping_stock_kits",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_shipping_stock_tube_product",
+                        column: x => x.tube_supplier_product_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_supplier_products",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "lab_kit_assembly_step_records",
+                schema: "lab_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    run_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    sequence = table.Column<int>(type: "integer", nullable: false),
+                    lab_step_version_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    notes = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
+                    performed_by_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    performed_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lab_kit_assembly_step_records", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_lab_kit_assembly_step_records_lab_kit_assembly_runs_run_id",
+                        column: x => x.run_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_kit_assembly_runs",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_kit_assembly_step_records_lab_step_versions_lab_step_ve~",
+                        column: x => x.lab_step_version_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_step_versions",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_kit_assembly_step_records_users_performed_by_user_id",
+                        column: x => x.performed_by_user_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "lab_kit_assembly_uses",
+                schema: "lab_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    run_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    supplier_product_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    source_material_lot_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    quantity = table.Column<decimal>(type: "numeric(18,6)", precision: 18, scale: 6, nullable: false),
+                    quantity_unit = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    recorded_by_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    recorded_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lab_kit_assembly_uses", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_lab_kit_assembly_uses_lab_kit_assembly_runs_run_id",
+                        column: x => x.run_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_kit_assembly_runs",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_kit_assembly_uses_lab_material_lots_source_material_lot~",
+                        column: x => x.source_material_lot_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_material_lots",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_kit_assembly_uses_lab_supplier_products_supplier_produc~",
+                        column: x => x.supplier_product_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_supplier_products",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_kit_assembly_uses_users_recorded_by_user_id",
+                        column: x => x.recorded_by_user_id,
+                        principalSchema: "commercial_ops",
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -5821,7 +6760,9 @@ namespace PSeq.Operations.Api.Migrations
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     sample_return_kit_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    source_stock_tube_id = table.Column<Guid>(type: "uuid", nullable: true),
                     supplier_barcode = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    barcode_namespace = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     status = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     assigned_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     accessioned_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -5830,6 +6771,10 @@ namespace PSeq.Operations.Api.Migrations
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     updated_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
                     version = table.Column<long>(type: "bigint", nullable: false),
+                    customer_declared_quantity = table.Column<decimal>(type: "numeric(18,6)", precision: 18, scale: 6, nullable: true),
+                    customer_declared_quantity_unit = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    customer_declared_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    customer_declared_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
                     received_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
@@ -5842,72 +6787,18 @@ namespace PSeq.Operations.Api.Migrations
                         principalTable: "sample_return_kits",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "sample_shipping_stock_tubes",
-                schema: "commercial_ops",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    sample_shipping_stock_kit_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    supplier_barcode = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_sample_shipping_stock_tubes", x => x.id);
                     table.ForeignKey(
-                        name: "fk_shipping_stock_tube_kit",
-                        column: x => x.sample_shipping_stock_kit_id,
+                        name: "FK_registered_sample_tubes_users_customer_declared_by_user_id",
+                        column: x => x.customer_declared_by_user_id,
                         principalSchema: "commercial_ops",
-                        principalTable: "sample_shipping_stock_kits",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "sample_shipment_items",
-                schema: "commercial_ops",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    sample_shipment_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    submitted_specimen_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    sample_type_definition_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    customer_sample_id = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    sample_name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    quantity = table.Column<decimal>(type: "numeric(18,6)", precision: 18, scale: 6, nullable: false),
-                    quantity_unit = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    registered_sample_tube_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    tube_assigned_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    created_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    updated_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    version = table.Column<long>(type: "bigint", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_sample_shipment_items", x => x.id);
-                    table.ForeignKey(
-                        name: "FK_sample_shipment_items_registered_sample_tubes_registered_sa~",
-                        column: x => x.registered_sample_tube_id,
-                        principalSchema: "commercial_ops",
-                        principalTable: "registered_sample_tubes",
+                        principalTable: "users",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_sample_shipment_items_sample_shipments_sample_shipment_id",
-                        column: x => x.sample_shipment_id,
+                        name: "fk_registered_tube_source_stock_tube",
+                        column: x => x.source_stock_tube_id,
                         principalSchema: "commercial_ops",
-                        principalTable: "sample_shipments",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_sample_shipment_items_sample_type_definitions_sample_type_d~",
-                        column: x => x.sample_type_definition_id,
-                        principalSchema: "commercial_ops",
-                        principalTable: "sample_type_definitions",
+                        principalTable: "sample_shipping_stock_tubes",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -5962,7 +6853,9 @@ namespace PSeq.Operations.Api.Migrations
                     action = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     reason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     actor_user_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    occurred_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    occurred_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    customer_declared_quantity = table.Column<decimal>(type: "numeric(18,6)", precision: 18, scale: 6, nullable: true),
+                    customer_declared_quantity_unit = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -6447,6 +7340,72 @@ namespace PSeq.Operations.Api.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "lab_assembly_jobs",
+                schema: "lab_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    lab_work_order_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    lab_specimen_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    organization_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    sequencing_run_number = table.Column<int>(type: "integer", nullable: false),
+                    previous_job_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    retry_reason = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    provider_key = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    provider_job_id = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    recipe_json = table.Column<string>(type: "jsonb", nullable: false),
+                    inputs_json = table.Column<string>(type: "jsonb", nullable: false),
+                    request_sha256 = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    requested_by_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    requested_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    dispatch_requested_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    started_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    stopped_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    disposition_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    cancellation_requested_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    cancellation_requested_by_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    cancellation_reason = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    state = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    disposition_reason = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    attention_reason = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    output_manifest_json = table.Column<string>(type: "jsonb", nullable: true),
+                    lab_analysis_run_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    version = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lab_assembly_jobs", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_lab_assembly_jobs_lab_analysis_runs_lab_analysis_run_id",
+                        column: x => x.lab_analysis_run_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_analysis_runs",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_assembly_jobs_lab_assembly_jobs_previous_job_id",
+                        column: x => x.previous_job_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_assembly_jobs",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_assembly_jobs_lab_specimens_lab_specimen_id",
+                        column: x => x.lab_specimen_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_specimens",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_assembly_jobs_lab_work_orders_lab_work_order_id",
+                        column: x => x.lab_work_order_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_work_orders",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "lab_result_releases",
                 schema: "commercial_ops",
                 columns: table => new
@@ -6508,6 +7467,30 @@ namespace PSeq.Operations.Api.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "lab_assembly_events",
+                schema: "lab_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    lab_assembly_job_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    kind = table.Column<string>(type: "character varying(60)", maxLength: 60, nullable: false),
+                    recorded_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    actor_user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    evidence_json = table.Column<string>(type: "jsonb", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lab_assembly_events", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_lab_assembly_events_lab_assembly_jobs_lab_assembly_job_id",
+                        column: x => x.lab_assembly_job_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_assembly_jobs",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "lab_batch_members",
                 schema: "lab_ops",
                 columns: table => new
@@ -6516,7 +7499,9 @@ namespace PSeq.Operations.Api.Migrations
                     lab_operational_batch_id = table.Column<Guid>(type: "uuid", nullable: false),
                     lab_work_order_id = table.Column<Guid>(type: "uuid", nullable: false),
                     lab_library_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    added_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    added_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    sequencing_container_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    material_transfer_id = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -6538,6 +7523,78 @@ namespace PSeq.Operations.Api.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "lab_biological_material_transfers",
+                schema: "lab_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    request_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    request_hash = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    lab_work_order_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    lab_specimen_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    lab_specimen_attempt_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    source_container_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    destination_container_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    preparation_member_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    sequencing_batch_member_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    quantity = table.Column<decimal>(type: "numeric", nullable: false),
+                    quantity_unit = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    source_quantity_before = table.Column<decimal>(type: "numeric", nullable: true),
+                    source_quantity_after = table.Column<decimal>(type: "numeric", nullable: true),
+                    source_quantity_basis = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    exhausted_override = table.Column<bool>(type: "boolean", nullable: false),
+                    balance_adjustment_quantity = table.Column<decimal>(type: "numeric", nullable: true),
+                    exhaustion_reason = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    performed_by_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    performed_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    recorded_by_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    recorded_at_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lab_biological_material_transfers", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_lab_biological_material_transfers_lab_batch_members_sequenc~",
+                        column: x => x.sequencing_batch_member_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_batch_members",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_biological_material_transfers_lab_specimens_lab_specime~",
+                        column: x => x.lab_specimen_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_specimens",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_biological_material_transfers_lab_work_orders_lab_work_~",
+                        column: x => x.lab_work_order_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_work_orders",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "lab_container_barcodes",
+                schema: "lab_ops",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    lab_container_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    @namespace = table.Column<string>(name: "namespace", type: "character varying(50)", maxLength: 50, nullable: false),
+                    value = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    symbology = table.Column<string>(type: "character varying(25)", maxLength: 25, nullable: false),
+                    source = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    is_primary = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_lab_container_barcodes", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "lab_containers",
                 schema: "lab_ops",
                 columns: table => new
@@ -6549,6 +7606,7 @@ namespace PSeq.Operations.Api.Migrations
                     parent_container_id = table.Column<Guid>(type: "uuid", nullable: true),
                     kind = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     barcode = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    barcode_namespace = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     barcode_source = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     external_barcode_reference_id = table.Column<Guid>(type: "uuid", nullable: true),
                     label = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
@@ -6558,6 +7616,10 @@ namespace PSeq.Operations.Api.Migrations
                     location = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     quantity = table.Column<decimal>(type: "numeric", nullable: true),
                     quantity_unit = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    initial_quantity = table.Column<decimal>(type: "numeric", nullable: true),
+                    initial_quantity_unit = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    quantity_basis = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    quantity_history_json = table.Column<string>(type: "jsonb", nullable: false, defaultValue: "[]"),
                     status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     disposition_reason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     retain_until_utc = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -6875,6 +7937,8 @@ namespace PSeq.Operations.Api.Migrations
                     position = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     confirmed_barcode = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     removed = table.Column<bool>(type: "boolean", nullable: false),
+                    library_tube_container_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    material_transfer_id = table.Column<Guid>(type: "uuid", nullable: true),
                     output_container_id = table.Column<Guid>(type: "uuid", nullable: true),
                     output_confirmed = table.Column<bool>(type: "boolean", nullable: false),
                     lab_library_id = table.Column<Guid>(type: "uuid", nullable: true)
@@ -6882,6 +7946,20 @@ namespace PSeq.Operations.Api.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_lab_preparation_members", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_lab_preparation_members_lab_biological_material_transfers_m~",
+                        column: x => x.material_transfer_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_biological_material_transfers",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_lab_preparation_members_lab_containers_library_tube_contain~",
+                        column: x => x.library_tube_container_id,
+                        principalSchema: "lab_ops",
+                        principalTable: "lab_containers",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_lab_preparation_members_lab_containers_output_container_id",
                         column: x => x.output_container_id,
@@ -7043,6 +8121,8 @@ namespace PSeq.Operations.Api.Migrations
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
+                    sequencing_run_number = table.Column<int>(type: "integer", nullable: true),
+                    library_preparation_choice = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: true),
                     scientific_evidence_json = table.Column<string>(type: "jsonb", nullable: true),
                     lab_work_order_id = table.Column<Guid>(type: "uuid", nullable: false),
                     lab_specimen_id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -8031,6 +9111,23 @@ namespace PSeq.Operations.Api.Migrations
                 values: new object[] { new Guid("20000000-0000-0000-0000-000000000001"), new DateTime(2026, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc), null, "Default standalone commercial opportunity pipeline.", true, true, "General Sales", new DateTime(2026, 8, 26, 0, 0, 0, 0, DateTimeKind.Utc), null, 1L });
 
             migrationBuilder.InsertData(
+                schema: "lab_ops",
+                table: "lab_product_types",
+                columns: new[] { "id", "created_at", "created_by_user_id", "description", "is_active", "kit_use", "name", "normalized_name", "updated_at", "updated_by_user_id", "version" },
+                values: new object[,]
+                {
+                    { new Guid("90000000-0000-4000-8000-000000000001"), new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc), null, "Individual sample tubes.", true, "Tube", "Tube", "TUBE", new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc), null, 1L },
+                    { new Guid("90000000-0000-4000-8000-000000000002"), new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc), null, "Outer shipping containers with a configured tube capacity.", true, "ShippingContainer", "Shipping Container", "SHIPPING CONTAINER", new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc), null, 1L },
+                    { new Guid("90000000-0000-4000-8000-000000000003"), new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc), null, "Purchased and Phaeno-manufactured reagents.", true, "Other", "Reagent", "REAGENT", new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc), null, 1L }
+                });
+
+            migrationBuilder.InsertData(
+                schema: "lab_ops",
+                table: "lab_suppliers",
+                columns: new[] { "id", "created_at", "created_by_user_id", "is_active", "is_internal_producer", "name", "normalized_name", "updated_at", "updated_by_user_id", "version" },
+                values: new object[] { new Guid("1e739efa-20d6-462d-a954-b12721fcfb20"), new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc), null, true, true, "Phaeno", "PHAENO", new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc), null, 1L });
+
+            migrationBuilder.InsertData(
                 schema: "commercial_ops",
                 table: "trial_deliverable_definitions",
                 columns: new[] { "id", "created_at", "created_by_user_id", "is_active", "is_default", "key", "name", "revision", "updated_at", "updated_by_user_id", "version" },
@@ -8327,6 +9424,13 @@ namespace PSeq.Operations.Api.Migrations
                 schema: "commercial_ops",
                 table: "crm_companies",
                 column: "owner_user_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_crm_companies_setup_organization_id",
+                schema: "commercial_ops",
+                table: "crm_companies",
+                column: "setup_organization_id",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_crm_company_contacts_company_id_contact_id",
@@ -9118,6 +10222,54 @@ namespace PSeq.Operations.Api.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_lab_assembly_events_lab_assembly_job_id_recorded_at_utc",
+                schema: "lab_ops",
+                table: "lab_assembly_events",
+                columns: new[] { "lab_assembly_job_id", "recorded_at_utc" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_assembly_jobs_lab_analysis_run_id",
+                schema: "lab_ops",
+                table: "lab_assembly_jobs",
+                column: "lab_analysis_run_id",
+                unique: true,
+                filter: "lab_analysis_run_id IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_assembly_jobs_lab_specimen_id_sequencing_run_number",
+                schema: "lab_ops",
+                table: "lab_assembly_jobs",
+                columns: new[] { "lab_specimen_id", "sequencing_run_number" },
+                unique: true,
+                filter: "state NOT IN ('Succeeded', 'Failed', 'Terminated', 'CancelledBeforeStart')");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_assembly_jobs_lab_work_order_id",
+                schema: "lab_ops",
+                table: "lab_assembly_jobs",
+                column: "lab_work_order_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_assembly_jobs_previous_job_id",
+                schema: "lab_ops",
+                table: "lab_assembly_jobs",
+                column: "previous_job_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_assembly_jobs_provider_key_provider_job_id",
+                schema: "lab_ops",
+                table: "lab_assembly_jobs",
+                columns: new[] { "provider_key", "provider_job_id" },
+                unique: true,
+                filter: "provider_job_id IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_assembly_jobs_state_requested_at_utc",
+                schema: "lab_ops",
+                table: "lab_assembly_jobs",
+                columns: new[] { "state", "requested_at_utc" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_lab_attempt_command_receipts_lab_work_order_id",
                 schema: "lab_ops",
                 table: "lab_attempt_command_receipts",
@@ -9170,6 +10322,67 @@ namespace PSeq.Operations.Api.Migrations
                 column: "lab_work_order_id");
 
             migrationBuilder.CreateIndex(
+                name: "IX_lab_batch_members_material_transfer_id",
+                schema: "lab_ops",
+                table: "lab_batch_members",
+                column: "material_transfer_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_batch_members_sequencing_container_id",
+                schema: "lab_ops",
+                table: "lab_batch_members",
+                column: "sequencing_container_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_biological_material_transfers_destination_container_id",
+                schema: "lab_ops",
+                table: "lab_biological_material_transfers",
+                column: "destination_container_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_biological_material_transfers_lab_specimen_attempt_id",
+                schema: "lab_ops",
+                table: "lab_biological_material_transfers",
+                column: "lab_specimen_attempt_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_biological_material_transfers_lab_specimen_id_recorded_~",
+                schema: "lab_ops",
+                table: "lab_biological_material_transfers",
+                columns: new[] { "lab_specimen_id", "recorded_at_utc" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_biological_material_transfers_lab_work_order_id",
+                schema: "lab_ops",
+                table: "lab_biological_material_transfers",
+                column: "lab_work_order_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_biological_material_transfers_preparation_member_id",
+                schema: "lab_ops",
+                table: "lab_biological_material_transfers",
+                column: "preparation_member_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_biological_material_transfers_request_id_source_contain~",
+                schema: "lab_ops",
+                table: "lab_biological_material_transfers",
+                columns: new[] { "request_id", "source_container_id", "destination_container_id" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_biological_material_transfers_sequencing_batch_member_id",
+                schema: "lab_ops",
+                table: "lab_biological_material_transfers",
+                column: "sequencing_batch_member_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_biological_material_transfers_source_container_id",
+                schema: "lab_ops",
+                table: "lab_biological_material_transfers",
+                column: "source_container_id");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_lab_business_calendars_revision",
                 schema: "lab_ops",
                 table: "lab_business_calendars",
@@ -9177,10 +10390,31 @@ namespace PSeq.Operations.Api.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_lab_container_barcodes_lab_container_id",
+                schema: "lab_ops",
+                table: "lab_container_barcodes",
+                column: "lab_container_id",
+                unique: true,
+                filter: "is_primary");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_container_barcodes_namespace_value",
+                schema: "lab_ops",
+                table: "lab_container_barcodes",
+                columns: new[] { "namespace", "value" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_lab_containers_barcode",
                 schema: "lab_ops",
                 table: "lab_containers",
-                column: "barcode",
+                column: "barcode");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_containers_barcode_namespace_barcode",
+                schema: "lab_ops",
+                table: "lab_containers",
+                columns: new[] { "barcode_namespace", "barcode" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -9225,6 +10459,20 @@ namespace PSeq.Operations.Api.Migrations
                 schema: "lab_ops",
                 table: "lab_custody_events",
                 columns: new[] { "lab_ngs_sendout_id", "occurred_at_utc" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_customer_holds_lab_specimen_id",
+                schema: "lab_ops",
+                table: "lab_customer_holds",
+                column: "lab_specimen_id",
+                unique: true,
+                filter: "state <> 'Released'");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_customer_holds_lab_work_order_id_requested_at_utc",
+                schema: "lab_ops",
+                table: "lab_customer_holds",
+                columns: new[] { "lab_work_order_id", "requested_at_utc" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_lab_equipment_asset_code",
@@ -9332,6 +10580,105 @@ namespace PSeq.Operations.Api.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_lab_kit_assembly_runs_finished_by_user_id",
+                schema: "lab_ops",
+                table: "lab_kit_assembly_runs",
+                column: "finished_by_user_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_kit_assembly_runs_started_by_user_id",
+                schema: "lab_ops",
+                table: "lab_kit_assembly_runs",
+                column: "started_by_user_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_kit_assembly_runs_stock_kit_id",
+                schema: "lab_ops",
+                table: "lab_kit_assembly_runs",
+                column: "stock_kit_id",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_kit_assembly_runs_workflow_revision_id",
+                schema: "lab_ops",
+                table: "lab_kit_assembly_runs",
+                column: "workflow_revision_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_kit_assembly_step_records_lab_step_version_id",
+                schema: "lab_ops",
+                table: "lab_kit_assembly_step_records",
+                column: "lab_step_version_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_kit_assembly_step_records_performed_by_user_id",
+                schema: "lab_ops",
+                table: "lab_kit_assembly_step_records",
+                column: "performed_by_user_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_kit_assembly_step_records_run_id_sequence",
+                schema: "lab_ops",
+                table: "lab_kit_assembly_step_records",
+                columns: new[] { "run_id", "sequence" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_kit_assembly_uses_recorded_by_user_id",
+                schema: "lab_ops",
+                table: "lab_kit_assembly_uses",
+                column: "recorded_by_user_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_kit_assembly_uses_run_id_supplier_product_id",
+                schema: "lab_ops",
+                table: "lab_kit_assembly_uses",
+                columns: new[] { "run_id", "supplier_product_id" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_kit_assembly_uses_source_material_lot_id",
+                schema: "lab_ops",
+                table: "lab_kit_assembly_uses",
+                column: "source_material_lot_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_kit_assembly_uses_supplier_product_id",
+                schema: "lab_ops",
+                table: "lab_kit_assembly_uses",
+                column: "supplier_product_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_kit_assembly_workflow_revisions_approved_by_user_id",
+                schema: "lab_ops",
+                table: "lab_kit_assembly_workflow_revisions",
+                column: "approved_by_user_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_kit_assembly_workflow_revisions_authored_by_user_id",
+                schema: "lab_ops",
+                table: "lab_kit_assembly_workflow_revisions",
+                column: "authored_by_user_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_kit_assembly_workflow_revisions_workflow_id_revision",
+                schema: "lab_ops",
+                table: "lab_kit_assembly_workflow_revisions",
+                columns: new[] { "workflow_id", "revision" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_kit_assembly_workflows_created_by_user_id",
+                schema: "lab_ops",
+                table: "lab_kit_assembly_workflows",
+                column: "created_by_user_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_kit_assembly_workflows_updated_by_user_id",
+                schema: "lab_ops",
+                table: "lab_kit_assembly_workflows",
+                column: "updated_by_user_id");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_lab_libraries_lab_specimen_id",
                 schema: "lab_ops",
                 table: "lab_libraries",
@@ -9367,6 +10714,77 @@ namespace PSeq.Operations.Api.Migrations
                 schema: "lab_ops",
                 table: "lab_libraries",
                 column: "source_container_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_master_mix_corrections_preparation_id_recorded_at_utc",
+                schema: "lab_ops",
+                table: "lab_master_mix_corrections",
+                columns: new[] { "preparation_id", "recorded_at_utc" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_master_mix_corrections_preparation_id_target_entry_id",
+                schema: "lab_ops",
+                table: "lab_master_mix_corrections",
+                columns: new[] { "preparation_id", "target_entry_id" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_master_mix_ingredients_preparation_id",
+                schema: "lab_ops",
+                table: "lab_master_mix_ingredients",
+                column: "preparation_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_master_mix_ingredients_source_material_lot_id",
+                schema: "lab_ops",
+                table: "lab_master_mix_ingredients",
+                column: "source_material_lot_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_master_mix_preparations_status_started_at_utc",
+                schema: "lab_ops",
+                table: "lab_master_mix_preparations",
+                columns: new[] { "status", "started_at_utc" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_master_mix_preparations_workflow_id",
+                schema: "lab_ops",
+                table: "lab_master_mix_preparations",
+                column: "workflow_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_master_mix_steps_preparation_id_sequence",
+                schema: "lab_ops",
+                table: "lab_master_mix_steps",
+                columns: new[] { "preparation_id", "sequence" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_master_mix_tray_uses_lab_preparation_batch_id",
+                schema: "lab_ops",
+                table: "lab_master_mix_tray_uses",
+                column: "lab_preparation_batch_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_master_mix_tray_uses_lab_preparation_record_id_field_key",
+                schema: "lab_ops",
+                table: "lab_master_mix_tray_uses",
+                columns: new[] { "lab_preparation_record_id", "field_key" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_master_mix_tray_uses_preparation_id_lab_preparation_bat~",
+                schema: "lab_ops",
+                table: "lab_master_mix_tray_uses",
+                columns: new[] { "preparation_id", "lab_preparation_batch_id" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_master_mix_workflows_name",
+                schema: "lab_ops",
+                table: "lab_master_mix_workflows",
+                column: "name",
+                unique: true,
+                filter: "status <> 'Retired'");
 
             migrationBuilder.CreateIndex(
                 name: "IX_lab_material_consumptions_lab_material_lot_id",
@@ -9555,6 +10973,18 @@ namespace PSeq.Operations.Api.Migrations
                 filter: "NOT removed");
 
             migrationBuilder.CreateIndex(
+                name: "IX_lab_preparation_members_library_tube_container_id",
+                schema: "lab_ops",
+                table: "lab_preparation_members",
+                column: "library_tube_container_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_preparation_members_material_transfer_id",
+                schema: "lab_ops",
+                table: "lab_preparation_members",
+                column: "material_transfer_id");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_lab_preparation_members_output_container_id",
                 schema: "lab_ops",
                 table: "lab_preparation_members",
@@ -9650,6 +11080,58 @@ namespace PSeq.Operations.Api.Migrations
                 schema: "lab_ops",
                 table: "lab_provider_command_receipts",
                 column: "lab_work_order_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_reagent_manufacturing_runs_material_lot_id",
+                schema: "lab_ops",
+                table: "lab_reagent_manufacturing_runs",
+                column: "material_lot_id",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_reagent_manufacturing_runs_status_started_at_utc",
+                schema: "lab_ops",
+                table: "lab_reagent_manufacturing_runs",
+                columns: new[] { "status", "started_at_utc" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_reagent_manufacturing_runs_workflow_id",
+                schema: "lab_ops",
+                table: "lab_reagent_manufacturing_runs",
+                column: "workflow_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_reagent_material_uses_run_id_recorded_at_utc",
+                schema: "lab_ops",
+                table: "lab_reagent_material_uses",
+                columns: new[] { "run_id", "recorded_at_utc" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_reagent_material_uses_source_material_lot_id",
+                schema: "lab_ops",
+                table: "lab_reagent_material_uses",
+                column: "source_material_lot_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_reagent_run_steps_run_id_sequence",
+                schema: "lab_ops",
+                table: "lab_reagent_run_steps",
+                columns: new[] { "run_id", "sequence" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_reagent_workflows_material_definition_id",
+                schema: "lab_ops",
+                table: "lab_reagent_workflows",
+                column: "material_definition_id",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_reagent_workflows_name",
+                schema: "lab_ops",
+                table: "lab_reagent_workflows",
+                column: "name",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_lab_result_releases_lab_analysis_run_id",
@@ -9764,6 +11246,49 @@ namespace PSeq.Operations.Api.Migrations
                 filter: "\"result_output_package_id\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_lab_scientific_files_lab_specimen_id",
+                schema: "lab_ops",
+                table: "lab_scientific_files",
+                column: "lab_specimen_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_scientific_files_lab_work_order_id_lab_specimen_id_reco~",
+                schema: "lab_ops",
+                table: "lab_scientific_files",
+                columns: new[] { "lab_work_order_id", "lab_specimen_id", "recorded_at_utc" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_scientific_files_storage_key",
+                schema: "lab_ops",
+                table: "lab_scientific_files",
+                column: "storage_key",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_scientific_uploads_completed_file_id",
+                schema: "lab_ops",
+                table: "lab_scientific_uploads",
+                column: "completed_file_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_scientific_uploads_expires_at_utc",
+                schema: "lab_ops",
+                table: "lab_scientific_uploads",
+                column: "expires_at_utc");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_scientific_uploads_lab_specimen_id",
+                schema: "lab_ops",
+                table: "lab_scientific_uploads",
+                column: "lab_specimen_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_scientific_uploads_lab_work_order_id",
+                schema: "lab_ops",
+                table: "lab_scientific_uploads",
+                column: "lab_work_order_id");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_lab_sequencing_outputs_corrects_output_id",
                 schema: "lab_ops",
                 table: "lab_sequencing_outputs",
@@ -9795,10 +11320,10 @@ namespace PSeq.Operations.Api.Migrations
                 column: "lab_specimen_attempt_id");
 
             migrationBuilder.CreateIndex(
-                name: "IX_lab_sequencing_outputs_lab_specimen_id",
+                name: "IX_lab_sequencing_outputs_lab_specimen_id_sequencing_run_number",
                 schema: "lab_ops",
                 table: "lab_sequencing_outputs",
-                column: "lab_specimen_id");
+                columns: new[] { "lab_specimen_id", "sequencing_run_number" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_lab_sequencing_outputs_lab_work_order_id_lab_specimen_id_re~",
@@ -9880,6 +11405,36 @@ namespace PSeq.Operations.Api.Migrations
                 schema: "commercial_ops",
                 table: "lab_service_orders",
                 column: "sample_roster_finalized_by_user_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_service_orders_sample_type_definition_id",
+                schema: "commercial_ops",
+                table: "lab_service_orders",
+                column: "sample_type_definition_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_service_orders_shipping_destination_id",
+                schema: "commercial_ops",
+                table: "lab_service_orders",
+                column: "shipping_destination_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_service_orders_shipping_procedure_revision_id",
+                schema: "commercial_ops",
+                table: "lab_service_orders",
+                column: "shipping_procedure_revision_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_service_orders_shipping_safety_held_by_user_id",
+                schema: "commercial_ops",
+                table: "lab_service_orders",
+                column: "shipping_safety_held_by_user_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_service_orders_shipping_safety_hold_resolved_by_user_id",
+                schema: "commercial_ops",
+                table: "lab_service_orders",
+                column: "shipping_safety_hold_resolved_by_user_id");
 
             migrationBuilder.CreateIndex(
                 name: "IX_lab_service_orders_source_request_id",
@@ -10016,7 +11571,7 @@ namespace PSeq.Operations.Api.Migrations
                 table: "lab_specimen_attempts",
                 column: "lab_specimen_id",
                 unique: true,
-                filter: "state IN ('Planned', 'InProgress', 'OnHold', 'Succeeded')");
+                filter: "state IN ('Planned', 'InProgress', 'OnHold')");
 
             migrationBuilder.CreateIndex(
                 name: "IX_lab_specimen_attempts_lab_specimen_id_sequence",
@@ -10043,7 +11598,7 @@ namespace PSeq.Operations.Api.Migrations
                 table: "lab_specimen_attempts",
                 column: "source_container_id",
                 unique: true,
-                filter: "state <> 'Cancelled'");
+                filter: "state IN ('Planned', 'InProgress', 'OnHold')");
 
             migrationBuilder.CreateIndex(
                 name: "IX_lab_specimens_accession_number",
@@ -10088,6 +11643,13 @@ namespace PSeq.Operations.Api.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_lab_steps_normalized_name",
+                schema: "lab_ops",
+                table: "lab_steps",
+                column: "normalized_name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_lab_storage_locations_is_active_name",
                 schema: "lab_ops",
                 table: "lab_storage_locations",
@@ -10099,6 +11661,14 @@ namespace PSeq.Operations.Api.Migrations
                 table: "lab_storage_locations",
                 column: "normalized_name",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_supplier_products_material_definition_id",
+                schema: "lab_ops",
+                table: "lab_supplier_products",
+                column: "material_definition_id",
+                unique: true,
+                filter: "material_definition_id IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_lab_supplier_products_product_type_id",
@@ -10118,6 +11688,14 @@ namespace PSeq.Operations.Api.Migrations
                 schema: "lab_ops",
                 table: "lab_suppliers",
                 columns: new[] { "is_active", "name" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_lab_suppliers_is_internal_producer",
+                schema: "lab_ops",
+                table: "lab_suppliers",
+                column: "is_internal_producer",
+                unique: true,
+                filter: "is_internal_producer = true");
 
             migrationBuilder.CreateIndex(
                 name: "IX_lab_suppliers_normalized_name",
@@ -10969,17 +12547,36 @@ namespace PSeq.Operations.Api.Migrations
                 columns: new[] { "status", "period_end" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_registered_sample_tubes_barcode_namespace_supplier_barcode",
+                schema: "commercial_ops",
+                table: "registered_sample_tubes",
+                columns: new[] { "barcode_namespace", "supplier_barcode" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_registered_sample_tubes_customer_declared_by_user_id",
+                schema: "commercial_ops",
+                table: "registered_sample_tubes",
+                column: "customer_declared_by_user_id");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_registered_sample_tubes_sample_return_kit_id_status",
                 schema: "commercial_ops",
                 table: "registered_sample_tubes",
                 columns: new[] { "sample_return_kit_id", "status" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_registered_sample_tubes_source_stock_tube_id",
+                schema: "commercial_ops",
+                table: "registered_sample_tubes",
+                column: "source_stock_tube_id",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_registered_sample_tubes_supplier_barcode",
                 schema: "commercial_ops",
                 table: "registered_sample_tubes",
-                column: "supplier_barcode",
-                unique: true);
+                column: "supplier_barcode");
 
             migrationBuilder.CreateIndex(
                 name: "IX_released_deliverable_policy_defaults_is_active",
@@ -11235,13 +12832,6 @@ namespace PSeq.Operations.Api.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_sample_shipment_items_registered_sample_tube_id",
-                schema: "commercial_ops",
-                table: "sample_shipment_items",
-                column: "registered_sample_tube_id",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_sample_shipment_items_sample_shipment_id_customer_sample_id",
                 schema: "commercial_ops",
                 table: "sample_shipment_items",
@@ -11325,23 +12915,10 @@ namespace PSeq.Operations.Api.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_sample_shipping_container_compatibilities_container_definit~",
+                name: "IX_sample_shipping_container_definitions_assembly_workflow_id",
                 schema: "commercial_ops",
-                table: "sample_shipping_container_compatibilities",
-                columns: new[] { "container_definition_id", "sample_type_definition_id", "instruction_rule_id" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_sample_shipping_container_compatibilities_instruction_rule_~",
-                schema: "commercial_ops",
-                table: "sample_shipping_container_compatibilities",
-                column: "instruction_rule_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_sample_shipping_container_compatibilities_sample_type_defin~",
-                schema: "commercial_ops",
-                table: "sample_shipping_container_compatibilities",
-                column: "sample_type_definition_id");
+                table: "sample_shipping_container_definitions",
+                column: "assembly_workflow_id");
 
             migrationBuilder.CreateIndex(
                 name: "IX_sample_shipping_container_definitions_container_type_id_rev~",
@@ -11363,6 +12940,18 @@ namespace PSeq.Operations.Api.Migrations
                 columns: new[] { "is_active", "effective_from", "effective_to" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_sample_shipping_container_definitions_sample_type_anchor_id",
+                schema: "commercial_ops",
+                table: "sample_shipping_container_definitions",
+                column: "sample_type_anchor_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_sample_shipping_container_definitions_shipping_container_pr~",
+                schema: "commercial_ops",
+                table: "sample_shipping_container_definitions",
+                column: "shipping_container_product_id");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_sample_shipping_container_definitions_supersedes_definition~",
                 schema: "commercial_ops",
                 table: "sample_shipping_container_definitions",
@@ -11374,6 +12963,14 @@ namespace PSeq.Operations.Api.Migrations
                 schema: "commercial_ops",
                 table: "sample_shipping_container_definitions",
                 column: "updated_by_user_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ux_shipping_spec_one_draft",
+                schema: "commercial_ops",
+                table: "sample_shipping_container_definitions",
+                column: "container_type_id",
+                unique: true,
+                filter: "lifecycle = 'Draft'");
 
             migrationBuilder.CreateIndex(
                 name: "IX_sample_shipping_container_types_created_by_user_id",
@@ -11421,35 +13018,12 @@ namespace PSeq.Operations.Api.Migrations
                 column: "supersedes_destination_id");
 
             migrationBuilder.CreateIndex(
-                name: "IX_sample_shipping_instruction_rules_definition_key_revision",
+                name: "ux_shipping_destination_one_draft",
                 schema: "commercial_ops",
-                table: "sample_shipping_instruction_rules",
-                columns: new[] { "definition_key", "revision" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_sample_shipping_instruction_rules_destination_id_sample_typ~",
-                schema: "commercial_ops",
-                table: "sample_shipping_instruction_rules",
-                columns: new[] { "destination_id", "sample_type_definition_id", "effective_from" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_sample_shipping_instruction_rules_is_active_effective_from_~",
-                schema: "commercial_ops",
-                table: "sample_shipping_instruction_rules",
-                columns: new[] { "is_active", "effective_from", "effective_to" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_sample_shipping_instruction_rules_sample_type_definition_id",
-                schema: "commercial_ops",
-                table: "sample_shipping_instruction_rules",
-                column: "sample_type_definition_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_sample_shipping_instruction_rules_supersedes_instruction_ru~",
-                schema: "commercial_ops",
-                table: "sample_shipping_instruction_rules",
-                column: "supersedes_instruction_rule_id");
+                table: "sample_shipping_destinations",
+                column: "definition_key",
+                unique: true,
+                filter: "lifecycle = 'Draft'");
 
             migrationBuilder.CreateIndex(
                 name: "IX_sample_shipping_packet_revisions_barcode",
@@ -11477,6 +13051,34 @@ namespace PSeq.Operations.Api.Migrations
                 table: "sample_shipping_packet_revisions",
                 columns: new[] { "sample_shipment_id", "revision" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_sample_shipping_procedures_definition_key_revision",
+                schema: "commercial_ops",
+                table: "sample_shipping_procedures",
+                columns: new[] { "definition_key", "revision" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_sample_shipping_procedures_supersedes_procedure_id",
+                schema: "commercial_ops",
+                table: "sample_shipping_procedures",
+                column: "supersedes_procedure_id",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ux_shipping_procedure_one_draft",
+                schema: "commercial_ops",
+                table: "sample_shipping_procedures",
+                column: "definition_key",
+                unique: true,
+                filter: "lifecycle = 'Draft'");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_sample_shipping_stock_kits_assembly_workflow_revision_id",
+                schema: "commercial_ops",
+                table: "sample_shipping_stock_kits",
+                column: "assembly_workflow_revision_id");
 
             migrationBuilder.CreateIndex(
                 name: "IX_sample_shipping_stock_kits_bound_sample_shipment_id",
@@ -11566,10 +13168,41 @@ namespace PSeq.Operations.Api.Migrations
                 column: "tube_supplier_product_id");
 
             migrationBuilder.CreateIndex(
+                name: "IX_sample_shipping_stock_kits_tubes_verified_by_user_id",
+                schema: "commercial_ops",
+                table: "sample_shipping_stock_kits",
+                column: "tubes_verified_by_user_id");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_sample_shipping_stock_kits_updated_by_user_id",
                 schema: "commercial_ops",
                 table: "sample_shipping_stock_kits",
                 column: "updated_by_user_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_sample_shipping_stock_kits_withdrawn_by_user_id",
+                schema: "commercial_ops",
+                table: "sample_shipping_stock_kits",
+                column: "withdrawn_by_user_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_sample_shipping_stock_tube_corrections_corrected_by_user_id",
+                schema: "commercial_ops",
+                table: "sample_shipping_stock_tube_corrections",
+                column: "corrected_by_user_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_sample_shipping_stock_tube_corrections_sample_shipping_stoc~",
+                schema: "commercial_ops",
+                table: "sample_shipping_stock_tube_corrections",
+                columns: new[] { "sample_shipping_stock_kit_id", "corrected_at" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_sample_shipping_stock_tubes_barcode_namespace_supplier_barc~",
+                schema: "commercial_ops",
+                table: "sample_shipping_stock_tubes",
+                columns: new[] { "barcode_namespace", "supplier_barcode" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_sample_shipping_stock_tubes_sample_shipping_stock_kit_id",
@@ -11581,8 +13214,13 @@ namespace PSeq.Operations.Api.Migrations
                 name: "IX_sample_shipping_stock_tubes_supplier_barcode",
                 schema: "commercial_ops",
                 table: "sample_shipping_stock_tubes",
-                column: "supplier_barcode",
-                unique: true);
+                column: "supplier_barcode");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_sample_shipping_stock_tubes_tube_supplier_product_id",
+                schema: "commercial_ops",
+                table: "sample_shipping_stock_tubes",
+                column: "tube_supplier_product_id");
 
             migrationBuilder.CreateIndex(
                 name: "IX_sample_tube_assignment_events_registered_sample_tube_id_occ~",
@@ -11629,10 +13267,69 @@ namespace PSeq.Operations.Api.Migrations
                 columns: new[] { "is_active", "effective_from", "effective_to" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_sample_type_definitions_shipping_procedure_id",
+                schema: "commercial_ops",
+                table: "sample_type_definitions",
+                column: "shipping_procedure_id");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_sample_type_definitions_supersedes_sample_type_id",
                 schema: "commercial_ops",
                 table: "sample_type_definitions",
                 column: "supersedes_sample_type_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ux_sample_type_one_draft",
+                schema: "commercial_ops",
+                table: "sample_type_definitions",
+                column: "definition_key",
+                unique: true,
+                filter: "lifecycle = 'Draft'");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_sample_type_procedure_links_changed_by_user_id",
+                schema: "commercial_ops",
+                table: "sample_type_procedure_links",
+                column: "changed_by_user_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_sample_type_procedure_links_procedure_anchor_id",
+                schema: "commercial_ops",
+                table: "sample_type_procedure_links",
+                column: "procedure_anchor_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_sample_type_procedure_links_sample_type_anchor_id",
+                schema: "commercial_ops",
+                table: "sample_type_procedure_links",
+                column: "sample_type_anchor_id",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_shipping_kit_contents_container_definition_id_position",
+                schema: "commercial_ops",
+                table: "shipping_kit_contents",
+                columns: new[] { "container_definition_id", "position" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_shipping_kit_contents_container_definition_id_supplier_prod~",
+                schema: "commercial_ops",
+                table: "shipping_kit_contents",
+                columns: new[] { "container_definition_id", "supplier_product_id" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_shipping_kit_contents_supplier_id",
+                schema: "commercial_ops",
+                table: "shipping_kit_contents",
+                column: "supplier_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_shipping_kit_contents_supplier_product_id",
+                schema: "commercial_ops",
+                table: "shipping_kit_contents",
+                column: "supplier_product_id");
 
             migrationBuilder.CreateIndex(
                 name: "IX_source_samples_label",
@@ -12226,12 +13923,82 @@ namespace PSeq.Operations.Api.Migrations
                 onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
+                name: "FK_lab_batch_members_lab_biological_material_transfers_materia~",
+                schema: "lab_ops",
+                table: "lab_batch_members",
+                column: "material_transfer_id",
+                principalSchema: "lab_ops",
+                principalTable: "lab_biological_material_transfers",
+                principalColumn: "id",
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_lab_batch_members_lab_containers_sequencing_container_id",
+                schema: "lab_ops",
+                table: "lab_batch_members",
+                column: "sequencing_container_id",
+                principalSchema: "lab_ops",
+                principalTable: "lab_containers",
+                principalColumn: "id",
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
                 name: "FK_lab_batch_members_lab_libraries_lab_library_id",
                 schema: "lab_ops",
                 table: "lab_batch_members",
                 column: "lab_library_id",
                 principalSchema: "lab_ops",
                 principalTable: "lab_libraries",
+                principalColumn: "id",
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_lab_biological_material_transfers_lab_containers_destinatio~",
+                schema: "lab_ops",
+                table: "lab_biological_material_transfers",
+                column: "destination_container_id",
+                principalSchema: "lab_ops",
+                principalTable: "lab_containers",
+                principalColumn: "id",
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_lab_biological_material_transfers_lab_containers_source_con~",
+                schema: "lab_ops",
+                table: "lab_biological_material_transfers",
+                column: "source_container_id",
+                principalSchema: "lab_ops",
+                principalTable: "lab_containers",
+                principalColumn: "id",
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_lab_biological_material_transfers_lab_preparation_members_p~",
+                schema: "lab_ops",
+                table: "lab_biological_material_transfers",
+                column: "preparation_member_id",
+                principalSchema: "lab_ops",
+                principalTable: "lab_preparation_members",
+                principalColumn: "id",
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_lab_biological_material_transfers_lab_specimen_attempts_lab~",
+                schema: "lab_ops",
+                table: "lab_biological_material_transfers",
+                column: "lab_specimen_attempt_id",
+                principalSchema: "lab_ops",
+                principalTable: "lab_specimen_attempts",
+                principalColumn: "id",
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_lab_container_barcodes_lab_containers_lab_container_id",
+                schema: "lab_ops",
+                table: "lab_container_barcodes",
+                column: "lab_container_id",
+                principalSchema: "lab_ops",
+                principalTable: "lab_containers",
                 principalColumn: "id",
                 onDelete: ReferentialAction.Restrict);
 
@@ -12474,1057 +14241,12 @@ namespace PSeq.Operations.Api.Migrations
                 principalTable: "trial_samples",
                 principalColumn: "id",
                 onDelete: ReferentialAction.Restrict);
-
-            // Required system reference data previously installed by historical SQL migrations.
-            // Fixed initialization times keep fresh installs reproducible; selective import restores original metadata.
-            migrationBuilder.Sql("""
-                INSERT INTO commercial_ops.released_deliverable_policy_defaults
-                    (id, revision, standard_retention_days, undownloaded_warning_lead_days, undownloaded_grace_days,
-                     change_reason, is_active, created_at, updated_at, version)
-                VALUES ('6e69a578-ec2d-43bd-af95-e2e7bc4a0fc4', 1, 30, 5, 5,
-                    'Initialized the approved global 30-day retention, 5-day warning, and 5-day grace defaults.',
-                    true, '2026-09-19T00:00:00Z', '2026-09-19T00:00:00Z', 1);
-                INSERT INTO lab_ops.lab_product_types
-                    (id, name, normalized_name, description, kit_use, is_active, created_at, updated_at, version)
-                VALUES
-                    ('90000000-0000-4000-8000-000000000001', 'Tube', 'TUBE', 'Tubes used to transport samples.', 'Tube', true, '2026-09-19T00:00:00Z', '2026-09-19T00:00:00Z', 1),
-                    ('90000000-0000-4000-8000-000000000002', 'Shipping Container', 'SHIPPING CONTAINER', 'Containers used to transport sample tubes.', 'ShippingContainer', true, '2026-09-19T00:00:00Z', '2026-09-19T00:00:00Z', 1),
-                    ('90000000-0000-4000-8000-000000000003', 'Reagent', 'REAGENT', 'Reagents supplied for laboratory work.', 'Other', true, '2026-09-19T00:00:00Z', '2026-09-19T00:00:00Z', 1);
-                """);
-
-            // Preserve database defaults from the retired migration chain.
-            migrationBuilder.Sql("""
-                ALTER TABLE "commercial_ops"."crm_companies" ALTER COLUMN "lifecycle_state" SET DEFAULT ''::character varying;
-                ALTER TABLE "commercial_ops"."lab_result_releases" ALTER COLUMN "traceability_required" SET DEFAULT false;
-                ALTER TABLE "commercial_ops"."lab_service_orders" ALTER COLUMN "has_mixed_biological_sources" SET DEFAULT false;
-                ALTER TABLE "commercial_ops"."lab_service_orders" ALTER COLUMN "requested_specimen_count" SET DEFAULT 0;
-                ALTER TABLE "commercial_ops"."operational_file_downloads" ALTER COLUMN "counts_for_released_package_retention" SET DEFAULT false;
-                ALTER TABLE "commercial_ops"."operational_file_downloads" ALTER COLUMN "version" SET DEFAULT 1;
-                ALTER TABLE "commercial_ops"."order_system_configurations" ALTER COLUMN "result_destination_configuration_json" SET DEFAULT '{}'::jsonb;
-                ALTER TABLE "commercial_ops"."order_system_configurations" ALTER COLUMN "sample_configuration_json" SET DEFAULT '{}'::jsonb;
-                ALTER TABLE "commercial_ops"."organization_commercial_profiles" ALTER COLUMN "configuration_version" SET DEFAULT 1;
-                ALTER TABLE "commercial_ops"."organization_commercial_profiles" ALTER COLUMN "payment_terms_days" SET DEFAULT 30;
-                ALTER TABLE "commercial_ops"."organization_invitations" ALTER COLUMN "first_name" SET DEFAULT ''::character varying;
-                ALTER TABLE "commercial_ops"."organization_invitations" ALTER COLUMN "last_name" SET DEFAULT ''::character varying;
-                ALTER TABLE "commercial_ops"."organizations" ALTER COLUMN "is_operational_readiness_blocked" SET DEFAULT false;
-                ALTER TABLE "commercial_ops"."partner_reagent_orders" ALTER COLUMN "is_kit_bundle" SET DEFAULT false;
-                ALTER TABLE "commercial_ops"."released_deliverable_retention_snapshots" ALTER COLUMN "deletion_attempt_count" SET DEFAULT 0;
-                ALTER TABLE "commercial_ops"."released_deliverable_retention_snapshots" ALTER COLUMN "is_quarantined" SET DEFAULT false;
-                ALTER TABLE "commercial_ops"."result_output_packages" ALTER COLUMN "traceability_required" SET DEFAULT false;
-                ALTER TABLE "commercial_ops"."sample_shipment_items" ALTER COLUMN "created_at" SET DEFAULT CURRENT_TIMESTAMP;
-                ALTER TABLE "commercial_ops"."sample_shipment_items" ALTER COLUMN "updated_at" SET DEFAULT CURRENT_TIMESTAMP;
-                ALTER TABLE "commercial_ops"."sample_shipment_items" ALTER COLUMN "version" SET DEFAULT 1;
-                ALTER TABLE "lab_ops"."lab_containers" ALTER COLUMN "barcode_source" SET DEFAULT 'PhaenoGenerated'::character varying;
-                ALTER TABLE "lab_ops"."lab_work_orders" ALTER COLUMN "projection_version" SET DEFAULT 1;
-                """);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("""
-                DO $$ BEGIN
-                    RAISE EXCEPTION 'The rebased database cannot be downgraded. Restore the matched application and database backup.';
-                END $$;
-                """);
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_assembly_profiles_qbo_catalog_items_qbo_catalog_item_id",
-                schema: "commercial_ops",
-                table: "assembly_profiles");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_partner_reagent_offerings_qbo_catalog_items_qbo_catalog_ite~",
-                schema: "commercial_ops",
-                table: "partner_reagent_offerings");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_partner_reagent_order_lines_qbo_catalog_items_qbo_catalog_i~",
-                schema: "commercial_ops",
-                table: "partner_reagent_order_lines");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_kit_assembly_cases_data_assembly_requests_assembly_request_~",
-                schema: "commercial_ops",
-                table: "kit_assembly_cases");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_crm_companies_users_owner_user_id",
-                schema: "commercial_ops",
-                table: "crm_companies");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_crm_opportunities_users_owner_user_id",
-                schema: "commercial_ops",
-                table: "crm_opportunities");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_projects_users_accepted_by_user_id",
-                schema: "commercial_ops",
-                table: "trial_projects");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_projects_users_created_by_user_id",
-                schema: "commercial_ops",
-                table: "trial_projects");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_projects_users_draft_saved_by_user_id",
-                schema: "commercial_ops",
-                table: "trial_projects");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_projects_users_follow_up_owner_user_id",
-                schema: "commercial_ops",
-                table: "trial_projects");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_projects_users_material_disposed_by_user_id",
-                schema: "commercial_ops",
-                table: "trial_projects");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_projects_users_sales_owner_user_id",
-                schema: "commercial_ops",
-                table: "trial_projects");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_projects_users_updated_by_user_id",
-                schema: "commercial_ops",
-                table: "trial_projects");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_replacement_authorizations_users_approved_by_user_id",
-                schema: "commercial_ops",
-                table: "trial_replacement_authorizations");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_replacement_authorizations_users_created_by_user_id",
-                schema: "commercial_ops",
-                table: "trial_replacement_authorizations");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_replacement_authorizations_users_updated_by_user_id",
-                schema: "commercial_ops",
-                table: "trial_replacement_authorizations");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_result_releases_users_created_by_user_id",
-                schema: "commercial_ops",
-                table: "trial_result_releases");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_result_releases_users_released_by_user_id",
-                schema: "commercial_ops",
-                table: "trial_result_releases");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_result_releases_users_updated_by_user_id",
-                schema: "commercial_ops",
-                table: "trial_result_releases");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_samples_users_created_by_user_id",
-                schema: "commercial_ops",
-                table: "trial_samples");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_samples_users_submitted_by_user_id",
-                schema: "commercial_ops",
-                table: "trial_samples");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_samples_users_updated_by_user_id",
-                schema: "commercial_ops",
-                table: "trial_samples");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_crm_companies_organizations_access_organization_id",
-                schema: "commercial_ops",
-                table: "crm_companies");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_organization_departments_organizations_organization_id",
-                schema: "commercial_ops",
-                table: "organization_departments");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_portal_integration_requests_organizations_organization_id",
-                schema: "commercial_ops",
-                table: "portal_integration_requests");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_projects_organizations_organization_id",
-                schema: "commercial_ops",
-                table: "trial_projects");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_result_releases_organizations_organization_id",
-                schema: "commercial_ops",
-                table: "trial_result_releases");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_crm_handoffs_crm_opportunities_opportunity_id",
-                schema: "commercial_ops",
-                table: "crm_handoffs");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_projects_crm_opportunities_opportunity_id",
-                schema: "commercial_ops",
-                table: "trial_projects");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_crm_handoffs_crm_companies_company_id",
-                schema: "commercial_ops",
-                table: "crm_handoffs");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_projects_crm_companies_company_id",
-                schema: "commercial_ops",
-                table: "trial_projects");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_crm_handoffs_portal_integration_requests_relationship_reque~",
-                schema: "commercial_ops",
-                table: "crm_handoffs");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_projects_organization_departments_department_id",
-                schema: "commercial_ops",
-                table: "trial_projects");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_result_releases_organization_departments_department_id",
-                schema: "commercial_ops",
-                table: "trial_result_releases");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_lab_containers_lab_specimen_attempts_lab_specimen_attempt_id",
-                schema: "lab_ops",
-                table: "lab_containers");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_lab_protocol_executions_lab_specimen_attempts_lab_specimen_~",
-                schema: "lab_ops",
-                table: "lab_protocol_executions");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_samples_lab_work_orders_lab_work_order_id",
-                schema: "commercial_ops",
-                table: "trial_samples");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_projects_trial_result_releases_complete_release_id",
-                schema: "commercial_ops",
-                table: "trial_projects");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_replacement_authorizations_trial_projects_trial_proje~",
-                schema: "commercial_ops",
-                table: "trial_replacement_authorizations");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_samples_trial_projects_trial_project_id",
-                schema: "commercial_ops",
-                table: "trial_samples");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_replacement_authorizations_trial_samples_original_sam~",
-                schema: "commercial_ops",
-                table: "trial_replacement_authorizations");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_trial_replacement_authorizations_trial_samples_used_by_samp~",
-                schema: "commercial_ops",
-                table: "trial_replacement_authorizations");
-
-            migrationBuilder.DropTable(
-                name: "analysis_definitions",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "audit_events",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "business_role_assignments",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "business_role_invitation_intents",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "commercial_sale_summaries",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "crm_company_contacts",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "crm_contact_user_links",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "crm_custom_field_values",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "crm_export_records",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "crm_import_batches",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "crm_merge_records",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "crm_opportunity_contacts",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "crm_opportunity_stage_history",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "crm_saved_views",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "crm_tasks",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "curated_dataset_version_files",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "data_assembly_quotes",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "data_governance_affected_organizations",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "data_governance_affected_versions",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "data_governance_follow_ups",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "data_provisioning_notices",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "dataset_download_audits",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "invitation_delivery_webhook_events",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "invoice_adjustments",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "invoice_lines",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "kit_case_events",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_analysis_inputs",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_attempt_command_receipts",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_authorizations",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_batch_members",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_custody_events",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_equipment_usages",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_exceptions",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_forecast_snapshots",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_forecast_transitions",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_holidays",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_investigation_reports",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_job_deadline_changes",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_job_timing_policies",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_material_consumptions",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_operations_event_receipts",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_operations_outbox_events",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_performance_decisions",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_preparation_members",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_prepared_reagent_components",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_provider_command_receipts",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_role_assignments",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_role_invitation_intents",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_sample_import_previews",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_scientific_approvals",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_service_quote_extension_requests",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_service_request_revisions",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_service_sample_types",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_service_source_groups",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_stage_durations",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_step_versions",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_work_authorization_versions",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_work_events",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_work_projections",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_work_timing_changes",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "operational_attention_items",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "operational_download_commit_evidence",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "order_cancellation_requests",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "order_idempotency_records",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "order_outbox_messages",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "order_status_events",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "order_system_configurations",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "organization_commercial_profiles",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "organization_department_memberships",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "organization_invitation_departments",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "organization_service_entitlements",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "payment_allocations",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "payment_import_batches",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "payment_processor_external_links",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "portal_integration_request_services",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "provisioning_runs",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "reagent_order_adjustments",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "reagent_shipment_lines",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "reconciliation_batch_items",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "released_deliverable_preservation_holds",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "released_deliverable_reissues",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "result_delivery_evidence",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "result_retention_schedules",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "sample_shipping_container_compatibilities",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "sample_shipping_packet_revisions",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "sample_shipping_stock_tubes",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "sample_tube_assignment_events",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "trial_decisions",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "trial_deliverable_definitions",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "trial_events",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "trial_result_files",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "web_notification_attempts",
-                schema: "website");
-
-            migrationBuilder.DropTable(
-                name: "web_notification_processing_controls",
-                schema: "website");
-
-            migrationBuilder.DropTable(
-                name: "crm_activities",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "crm_custom_field_definitions",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "data_governance_incidents",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "managed_files",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "invitation_delivery_attempts",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_sequencing_outputs",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_equipment",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_preparation_records",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_performance_proposals",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_material_lots",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_timing_policies",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_steps",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "operational_file_downloads",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "organization_memberships",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "invoices",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "payment_receipts",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "organization_dataset_grants",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "reconciliation_batches",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "released_deliverable_retention_snapshots",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "sample_shipping_instruction_rules",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "sample_shipping_stock_kits",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "sample_shipment_tube_slots",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "trial_approval_authorities",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "trial_scopes",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "web_notification_deliveries",
-                schema: "website");
-
-            migrationBuilder.DropTable(
-                name: "crm_leads",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "organization_invitations",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_libraries",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_ngs_sendouts",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_preparation_batches",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_material_definitions",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_storage_locations",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_business_calendars",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "managed_operational_files",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "result_artifacts",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_service_quotes",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "curated_dataset_versions",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "order_notifications",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "assembly_output_releases",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "released_deliverable_policy_defaults",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_result_releases",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "organization_released_deliverable_policy_overrides",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_supplier_products",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "transportation_kit_request_lines",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "sample_shipment_items",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "web_contacts",
-                schema: "website");
-
-            migrationBuilder.DropTable(
-                name: "web_orders",
-                schema: "website");
-
-            migrationBuilder.DropTable(
-                name: "crm_contacts",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_operational_batches",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_tray_formats",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "result_output_packages",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "curated_datasets",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "source_samples",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "assembly_processing_runs",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_product_types",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_suppliers",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "transportation_kit_requests",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "registered_sample_tubes",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "sample_type_definitions",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_analysis_runs",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_samples",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "assembly_input_revisions",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "sample_return_kits",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_service_orders",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "sample_shipments",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_service_offerings",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "sample_shipping_destinations",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "sample_shipping_container_definitions",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "customer_delivery_locations",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "sample_shipping_container_types",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "qbo_catalog_items",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "data_assembly_requests",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "kit_assembly_cases",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "commercial_document_links",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "partner_kit_units",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "partner_reagent_order_lines",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "reagent_shipments",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "partner_reagent_offerings",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "partner_reagent_orders",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "assembly_profiles",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "partner_shipping_addresses",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "users",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "organizations",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "crm_opportunities",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "crm_pipeline_stages",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "crm_pipelines",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "crm_companies",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "portal_integration_requests",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "organization_departments",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_specimen_attempts",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_containers",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_protocol_executions",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_service_workflow_stages",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_specimens",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_protocol_versions",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_protocols",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_work_orders",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_service_workflow_versions",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "lab_service_workflows",
-                schema: "lab_ops");
-
-            migrationBuilder.DropTable(
-                name: "trial_result_releases",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "trial_projects",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "crm_handoffs",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "trial_samples",
-                schema: "commercial_ops");
-
-            migrationBuilder.DropTable(
-                name: "trial_replacement_authorizations",
-                schema: "commercial_ops");
+            throw new InvalidOperationException("The clean baseline cannot be rolled back destructively. Restore the matching database backup and application version.");
         }
     }
 }

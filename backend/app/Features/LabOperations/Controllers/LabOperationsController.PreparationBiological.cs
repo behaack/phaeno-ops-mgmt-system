@@ -44,9 +44,9 @@ public sealed partial class LabOperationsController
         if (string.Equals(barcode, source.Barcode, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Choose a library tube with a different printed barcode from the source tube so both physical scans are distinguishable.");
         await SampleShippingPackingData.LockAsync(dbContext, $"supplier-tube:{barcode}", ct);
-        if (await dbContext.LabContainers.AnyAsync(c => c.Barcode == barcode && (c.BarcodeNamespace == barcodeNamespace || c.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace || barcodeNamespace == "PHAENO"), ct)
-            || await dbContext.RegisteredSampleTubes.AnyAsync(t => t.SupplierBarcode == barcode && (t.BarcodeNamespace == barcodeNamespace || t.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace || barcodeNamespace == "PHAENO"), ct)
-            || await dbContext.SampleShippingStockTubes.AnyAsync(t => t.SupplierBarcode == barcode && (t.BarcodeNamespace == barcodeNamespace || t.BarcodeNamespace == SupplierTubeBarcode.LegacyNamespace || barcodeNamespace == "PHAENO"), ct)
+        if (await dbContext.LabContainers.AnyAsync(c => c.Barcode == barcode && (c.BarcodeNamespace == barcodeNamespace || barcodeNamespace == "PHAENO"), ct)
+            || await dbContext.RegisteredSampleTubes.AnyAsync(t => t.SupplierBarcode == barcode && (t.BarcodeNamespace == barcodeNamespace || barcodeNamespace == "PHAENO"), ct)
+            || await dbContext.SampleShippingStockTubes.AnyAsync(t => t.SupplierBarcode == barcode && (t.BarcodeNamespace == barcodeNamespace || barcodeNamespace == "PHAENO"), ct)
             || await dbContext.LabPreparationBatches.AnyAsync(b => (b.TrayBarcode != null && b.TrayBarcode.ToUpper() == barcode) || b.Name.ToUpper() == barcode, ct))
             throw new InvalidOperationException("This barcode is already assigned to another tube, inventory record or tray.");
         var tube = new LabContainer(attempt.LabWorkOrderId, attempt.LabSpecimenId, attempt.SourceContainerId,

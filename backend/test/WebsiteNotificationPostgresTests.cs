@@ -98,24 +98,6 @@ public sealed partial class WebsiteNotificationPostgresTests
     }
 
     [PostgreSqlReferenceFact]
-    public async Task LegacyBriefRecoveryIsConsentScopedAndUnsubscribeCancelsQueuedSending()
-    {
-        await using var scope = await Scope.Create();
-        var contact = await scope.Contact(false);
-        await Assert.ThrowsAsync<WebsiteNotificationConflictException>(() => scope.Recovery.QueueLegacyBriefAsync(contact.Id, scope.Actor.Id, default));
-        contact.SendBrochure = true;
-        await scope.Db.SaveChangesAsync();
-        await scope.Recovery.QueueLegacyBriefAsync(contact.Id, scope.Actor.Id, default);
-        await Assert.ThrowsAsync<WebsiteNotificationConflictException>(() => scope.Recovery.QueueLegacyBriefAsync(contact.Id, scope.Actor.Id, default));
-        var delivery = await scope.Db.Set<WebNotificationDelivery>().SingleAsync(item => item.WebContactId == contact.Id);
-        contact.Unsubscribe(scope.Actor.Id, DateTimeOffset.UtcNow);
-        await scope.Db.SaveChangesAsync();
-        await scope.Dispatcher.ProcessNextAsync(default, delivery.Id);
-        Assert.Equal(WebNotificationState.Cancelled, (await scope.Read(delivery.Id)).State);
-        Assert.Empty(scope.Sender.Sent);
-    }
-
-    [PostgreSqlReferenceFact]
     public async Task CustomerCannotInspectOrRecoverWebsiteNotifications()
     {
         await using var scope = await Scope.Create();
@@ -123,7 +105,7 @@ public sealed partial class WebsiteNotificationPostgresTests
         Assert.Equal(403, (await Assert.ThrowsAsync<WebsiteOperationsAccessException>(() => controller.GetNotifications())).StatusCode);
         Assert.Equal(403, (await Assert.ThrowsAsync<WebsiteOperationsAccessException>(() => controller.GetNotificationSummary())).StatusCode);
         Assert.Equal(403, (await Assert.ThrowsAsync<WebsiteOperationsAccessException>(() => controller.ChangeNotificationProcessing(new(Guid.NewGuid(), true, "Incident")))).StatusCode);
-        Assert.Equal(403, (await Assert.ThrowsAsync<WebsiteOperationsAccessException>(() => controller.RecoverLegacyTechnicalBrief(Guid.NewGuid(), default))).StatusCode);
+        Assert.Equal(403, (await Assert.ThrowsAsync<WebsiteOperationsAccessException>(() => controller.ResendNotification(Guid.NewGuid(), new(Guid.NewGuid()), default))).StatusCode);
     }
 
     [PostgreSqlReferenceFact]
@@ -141,9 +123,6 @@ public sealed partial class WebsiteNotificationPostgresTests
         Assert.Empty(scope.Sender.Sent);
         Assert.False(await scope.Db.Set<WebNotificationAttempt>().AnyAsync(item => item.WebNotificationDeliveryId == delivery.Id));
 
-        var legacy = await scope.Contact();
-        await scope.Recovery.QueueLegacyBriefAsync(legacy.Id, scope.Actor.Id, default);
-        Assert.Equal(WebNotificationState.Pending, (await scope.Db.Set<WebNotificationDelivery>().AsNoTracking().SingleAsync(item => item.WebContactId == legacy.Id)).State);
         var paused = await processing.ReadSummaryAsync();
         Assert.True(paused.IsPaused);
         Assert.Equal("Provider investigation", paused.Reason);

@@ -17,10 +17,10 @@ The [material tracking contract](plans/LAB-OPERATIONS-CONTRACT.md#material-trans
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 139 | 2273 | 374 |
-| `lab_ops` | 78 | 935 | 155 |
+| `commercial_ops` | 139 | 2259 | 369 |
+| `lab_ops` | 77 | 929 | 152 |
 | `website` | 5 | 51 | 4 |
-| **Total** | **223** | **3261** | **533** |
+| **Total** | **222** | **3241** | **525** |
 
 ## `public` schema
 
@@ -271,7 +271,6 @@ erDiagram
         boolean is_active "not null"
         character_varying_100 last_name "not null"
         character_varying_255 lawful_contact_basis "nullable"
-        character_varying_150 legacy_job_title "nullable"
         uuid merged_into_contact_id FK "nullable"
         character_varying_255 normalized_email "nullable"
         character_varying_50 outreach_permission_source "nullable"
@@ -1816,7 +1815,7 @@ erDiagram
     }
     sample_shipping_container_definitions {
         uuid id PK "not null"
-        uuid assembly_workflow_revision_id FK "nullable"
+        uuid assembly_workflow_id FK "nullable"
         character_varying_255 common_name "not null"
         uuid container_type_id FK,UK "not null"
         timestamp_with_time_zone created_at "not null"
@@ -1829,12 +1828,10 @@ erDiagram
         timestamp_with_time_zone effective_to "nullable"
         boolean is_active "not null"
         character_varying_24 lifecycle "not null"
-        character_varying_8000 packing_instructions "nullable"
         integer revision UK "not null"
         uuid sample_type_anchor_id FK "nullable"
+        uuid shipping_container_product_id FK "nullable"
         uuid supersedes_definition_id FK,UK "nullable"
-        character_varying_255 supplier_name "nullable"
-        character_varying_100 supplier_product_number "nullable"
         character_varying_2000 temperature_control_instructions "nullable"
         integer tube_capacity "not null"
         timestamp_with_time_zone updated_at "not null"
@@ -1845,11 +1842,7 @@ erDiagram
         uuid id PK "not null"
         timestamp_with_time_zone created_at "not null"
         uuid created_by_user_id FK "nullable"
-        uuid finished_kit_product_id FK "nullable"
         character_varying_100 normalized_sku UK "not null"
-        uuid sample_type_anchor_id FK "nullable"
-        timestamp_with_time_zone sample_type_linked_at "nullable"
-        uuid sample_type_linked_by_user_id FK "nullable"
         character_varying_100 sku "not null"
         timestamp_with_time_zone updated_at "not null"
         uuid updated_by_user_id FK "nullable"
@@ -1889,16 +1882,14 @@ erDiagram
     partner_kit_units o|--o{ partner_kit_units : "replaced_by_kit_unit_id"
     partner_kit_units o|--o{ partner_kit_units : "replaces_kit_unit_id"
     users o|--o{ partner_kit_units : "updated_by_user_id"
-    lab_kit_assembly_workflow_revisions o|--o{ sample_shipping_container_definitions : "assembly_workflow_revision_id"
+    lab_kit_assembly_workflows o|--o{ sample_shipping_container_definitions : "assembly_workflow_id"
     sample_shipping_container_types ||--o{ sample_shipping_container_definitions : "container_type_id"
     users o|--o{ sample_shipping_container_definitions : "created_by_user_id"
     sample_type_definitions o|--o{ sample_shipping_container_definitions : "sample_type_anchor_id"
+    lab_supplier_products o|--o{ sample_shipping_container_definitions : "shipping_container_product_id"
     sample_shipping_container_definitions o|--o{ sample_shipping_container_definitions : "supersedes_definition_id"
     users o|--o{ sample_shipping_container_definitions : "updated_by_user_id"
     users o|--o{ sample_shipping_container_types : "created_by_user_id"
-    lab_supplier_products o|--o{ sample_shipping_container_types : "finished_kit_product_id"
-    sample_type_definitions o|--o{ sample_shipping_container_types : "sample_type_anchor_id"
-    users o|--o{ sample_shipping_container_types : "sample_type_linked_by_user_id"
     users o|--o{ sample_shipping_container_types : "updated_by_user_id"
 ```
 
@@ -1921,16 +1912,12 @@ erDiagram
         timestamp_with_time_zone customer_received_at "nullable"
         uuid customer_received_by_user_id FK "nullable"
         uuid department_id FK "nullable"
-        uuid finished_kit_product_id FK "nullable"
         timestamp_with_time_zone fulfilled_at "nullable"
         character_varying_100 kit_number UK "not null"
         uuid organization_id FK "nullable"
         character_varying_255 outbound_carrier "nullable"
         character_varying_255 outbound_tracking_number "nullable"
         jsonb product_expiry_snapshot_json "nullable"
-        character_varying_100 purchased_kit_receipt_reference "nullable"
-        timestamp_with_time_zone purchased_kit_received_at "nullable"
-        uuid purchased_kit_received_by_user_id FK "nullable"
         timestamp_with_time_zone reserved_at "nullable"
         uuid reserved_by_user_id FK "nullable"
         uuid reserved_sample_shipment_id FK,UK "nullable"
@@ -1938,7 +1925,6 @@ erDiagram
         character_varying_100 shipper_product_number "not null"
         character_varying_255 shipper_supplier_name "not null"
         uuid shipper_supplier_product_id FK "nullable"
-        character_varying_100 supplier_kit_lot_number "nullable"
         uuid transportation_kit_request_line_id FK "nullable"
         character_varying_50 tube_barcode_namespace "not null"
         integer tube_capacity "not null"
@@ -1980,9 +1966,7 @@ erDiagram
     customer_delivery_locations o|--o{ sample_shipping_stock_kits : "customer_delivery_location_id"
     users o|--o{ sample_shipping_stock_kits : "customer_received_by_user_id"
     organization_departments o|--o{ sample_shipping_stock_kits : "department_id"
-    lab_supplier_products o|--o{ sample_shipping_stock_kits : "finished_kit_product_id"
     organizations o|--o{ sample_shipping_stock_kits : "organization_id"
-    users o|--o{ sample_shipping_stock_kits : "purchased_kit_received_by_user_id"
     users o|--o{ sample_shipping_stock_kits : "reserved_by_user_id"
     sample_shipments o|--o{ sample_shipping_stock_kits : "reserved_sample_shipment_id"
     lab_supplier_products o|--o{ sample_shipping_stock_kits : "shipper_supplier_product_id"
@@ -2653,12 +2637,10 @@ erDiagram
         character_varying_100 customer_sample_id UK "not null"
         numeric_18_6 quantity "not null"
         character_varying_100 quantity_unit "not null"
-        uuid registered_sample_tube_id FK,UK "nullable"
         character_varying_255 sample_name "not null"
         uuid sample_shipment_id FK,UK "not null"
         uuid sample_type_definition_id FK "not null"
         uuid submitted_specimen_id UK "not null"
-        timestamp_with_time_zone tube_assigned_at "nullable"
         timestamp_with_time_zone updated_at "not null"
         uuid updated_by_user_id "nullable"
         bigint version "not null"
@@ -2818,7 +2800,6 @@ erDiagram
     sample_shipping_stock_tubes o|--o{ registered_sample_tubes : "source_stock_tube_id"
     organizations ||--o{ sample_return_kits : "organization_id"
     sample_shipments ||--o| sample_return_kits : "sample_shipment_id"
-    registered_sample_tubes o|--o{ sample_shipment_items : "registered_sample_tube_id"
     sample_shipments ||--o{ sample_shipment_items : "sample_shipment_id"
     sample_type_definitions ||--o{ sample_shipment_items : "sample_type_definition_id"
     registered_sample_tubes o|--o{ sample_shipment_tube_slots : "registered_sample_tube_id"
@@ -3779,7 +3760,6 @@ erDiagram
         uuid created_by_user_id "nullable"
         date expiration_or_retest_date "nullable"
         character_varying_50 kind "not null"
-        jsonb legacy_components_json "nullable"
         character_varying_100 lot_number UK "not null"
         uuid material_definition_id FK,UK "not null"
         timestamp_with_time_zone qc_approved_at_utc "nullable"
@@ -4074,14 +4054,6 @@ erDiagram
 
 ```mermaid
 erDiagram
-    lab_kit_assembly_components {
-        uuid id PK "not null"
-        character_varying_30 kind "not null"
-        integer position UK "not null"
-        integer quantity "not null"
-        uuid supplier_product_id FK,UK "not null"
-        uuid workflow_revision_id FK,UK "not null"
-    }
     lab_kit_assembly_runs {
         uuid id PK "not null"
         character_varying_2000 abandonment_reason "nullable"
@@ -4135,15 +4107,12 @@ erDiagram
         uuid id PK "not null"
         timestamp_with_time_zone created_at "not null"
         uuid created_by_user_id FK "nullable"
-        uuid finished_kit_product_id FK,UK "not null"
         integer latest_revision "not null"
         character_varying_160 name "not null"
         timestamp_with_time_zone updated_at "not null"
         uuid updated_by_user_id FK "nullable"
         bigint version "not null"
     }
-    lab_supplier_products ||--o{ lab_kit_assembly_components : "supplier_product_id"
-    lab_kit_assembly_workflow_revisions ||--o{ lab_kit_assembly_components : "workflow_revision_id"
     users o|--o{ lab_kit_assembly_runs : "finished_by_user_id"
     users ||--o{ lab_kit_assembly_runs : "started_by_user_id"
     sample_shipping_stock_kits ||--o{ lab_kit_assembly_runs : "stock_kit_id"
@@ -4159,7 +4128,6 @@ erDiagram
     users ||--o{ lab_kit_assembly_workflow_revisions : "authored_by_user_id"
     lab_kit_assembly_workflows ||--o{ lab_kit_assembly_workflow_revisions : "workflow_id"
     users o|--o{ lab_kit_assembly_workflows : "created_by_user_id"
-    lab_supplier_products ||--o{ lab_kit_assembly_workflows : "finished_kit_product_id"
     users o|--o{ lab_kit_assembly_workflows : "updated_by_user_id"
 ```
 

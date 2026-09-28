@@ -44,7 +44,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 scope.DbContext.SampleTypeDefinitions.AsNoTracking().Where(item => item.Revision == 1),
                 key => key, item => item.DefinitionKey, (_, item) => item.Id).SingleAsync();
         var definition = await scope.DbContext.SampleShippingContainerDefinitions.AsNoTracking()
-            .Where(item => item.ContainerType.SampleTypeAnchorId == anchorId && item.IsActive)
+            .Where(item => item.SampleTypeAnchorId == anchorId && item.IsActive)
             .SingleAsync();
         var context = new[] { new ContainerSampleTypeContext(sampleTypeId.Value) };
         async Task AssertReadiness(bool assemblyReady)
@@ -74,7 +74,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         await AssertReadiness(true);
 
         var workflow = await scope.DbContext.LabKitAssemblyWorkflowRevisions
-            .SingleAsync(item => item.Id == definition.AssemblyWorkflowRevisionId);
+            .SingleAsync(item => item.WorkflowId == definition.AssemblyWorkflowId && item.Status == LabKitAssemblyRevisionStatus.Approved);
         workflow.Retire();
         await scope.DbContext.SaveChangesAsync();
         await AssertReadiness(false);
@@ -1716,7 +1716,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             var hasKit = await dbContext.SampleShippingContainerDefinitions.AnyAsync(item =>
                 item.SampleTypeAnchorId == anchorId && item.IsActive
                 && item.EffectiveFrom <= now && (!item.EffectiveTo.HasValue || item.EffectiveTo > now)
-                && item.AssemblyWorkflowRevisionId.HasValue && item.KitContents.Any());
+                && item.AssemblyWorkflowId.HasValue && item.KitContents.Any());
             Guid? createdKitTypeId = null;
             Guid? createdKitDefinitionId = null;
             Guid? createdWorkflowId = null;
@@ -1726,11 +1726,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             Guid[] createdComponentProductIds = [];
             if (!hasKit)
             {
-                var phaeno = await dbContext.LabSuppliers.SingleAsync(item => item.IsInternalProducer);
                 var componentSupplier = new LabSupplier($"TEST-HANDOFF-{suffix}");
                 var sku = $"TRANS-{suffix}";
-                var finished = new LabSupplierProduct(phaeno.Id, sku, "Reference Transportation kit",
-                    LabProductType.TransportationKitId);
                 var tube = new LabSupplierProduct(componentSupplier.Id, $"TUBE-{suffix}",
                     "Reference tube", LabProductType.TubeId);
                 var shipper = new LabSupplierProduct(componentSupplier.Id, $"SHIPPER-{suffix}",
@@ -1738,19 +1735,18 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 tube.SetDefaultQuantityUnit("each");
                 shipper.SetDefaultQuantityUnit("each");
                 shipper.SetTubeCapacity(100);
-                var workflow = new LabKitAssemblyWorkflow(finished.Id, "Total RNA kit assembly");
+                var workflow = new LabKitAssemblyWorkflow("Total RNA kit assembly");
                 var workflowRevision = new LabKitAssemblyWorkflowRevision(workflow.Id, 1,
                     [new(Guid.NewGuid(), "Pack kit", "Pack the approved contents.")], platformUserId, now);
-                workflowRevision.Components.Add(new(workflowRevision.Id, tube.Id, 100, "Tube", 0));
-                workflowRevision.Components.Add(new(workflowRevision.Id, shipper.Id, 1, "ShippingContainer", 1));
                 workflowRevision.Approve(platformUserId, now, "Reference fixture", true);
-                var kitType = new SampleShippingContainerType(sku, finished.Id);
-                kitType.LinkSampleType(anchorId, platformUserId, now);
+                var kitType = new SampleShippingContainerType(sku);
                 var specification = new SampleShippingContainerDefinition(kitType.Id, 1, null,
-                    finished.Description, 100, null, null, "Use the sealed outer shipper.",
-                    now.AddMinutes(-5), null, true, 10, workflowRevision.Id,
+                    "Reference RNA kit", 100,
+                    now.AddMinutes(-5), null, false, 10,
                     temperatureControlInstructions: "Keep the completed kit frozen in transit.",
                     sampleTypeAnchorId: anchorId);
+                specification.ConfigureAssembly(shipper.Id, workflow.Id);
+                specification.Activate(now);
                 specification.KitContents.Add(new(specification.Id, tube.Id, componentSupplier.Id,
                     ShippingKitContentKind.Tube, 100, componentSupplier.Name,
                     tube.ProductNumber, tube.Description, "Tube", 0));
@@ -1758,14 +1754,13 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                     ShippingKitContentKind.ShippingContainer, 1, componentSupplier.Name,
                     shipper.ProductNumber, shipper.Description, "Shipping container", 1));
                 kitType.Definitions.Add(specification);
-                dbContext.AddRange(componentSupplier, finished, tube, shipper,
+                dbContext.AddRange(componentSupplier, tube, shipper,
                     workflow, workflowRevision, kitType);
                 await dbContext.SaveChangesAsync();
                 createdKitTypeId = kitType.Id;
                 createdKitDefinitionId = specification.Id;
                 createdWorkflowId = workflow.Id;
                 createdWorkflowRevisionId = workflowRevision.Id;
-                createdFinishedProductId = finished.Id;
                 createdComponentSupplierId = componentSupplier.Id;
                 createdComponentProductIds = [tube.Id, shipper.Id];
             }
@@ -2334,8 +2329,6 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                         .Where(item => item.Id == shippingConfiguration.KitTypeId.Value).ExecuteDeleteAsync();
                 if (shippingConfiguration.WorkflowRevisionId.HasValue)
                 {
-                    await DbContext.LabKitAssemblyComponents
-                        .Where(item => item.WorkflowRevisionId == shippingConfiguration.WorkflowRevisionId.Value).ExecuteDeleteAsync();
                     await DbContext.LabKitAssemblyWorkflowRevisions
                         .Where(item => item.Id == shippingConfiguration.WorkflowRevisionId.Value).ExecuteDeleteAsync();
                 }

@@ -13,10 +13,8 @@ public static class LabKitAssemblyModelConfiguration
         {
             e.ToTable("lab_kit_assembly_workflows", schema);
             e.HasKey(x => x.Id);
-            e.HasIndex(x => x.FinishedKitProductId).IsUnique();
             e.Property(x => x.Name).HasMaxLength(160).IsRequired();
             e.Property(x => x.Version).IsConcurrencyToken();
-            e.HasOne<LabSupplierProduct>().WithMany().HasForeignKey(x => x.FinishedKitProductId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.CreatedByUserId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.UpdatedByUserId).OnDelete(DeleteBehavior.Restrict);
         });
@@ -31,16 +29,6 @@ public static class LabKitAssemblyModelConfiguration
             e.HasOne<LabKitAssemblyWorkflow>().WithMany().HasForeignKey(x => x.WorkflowId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.AuthoredByUserId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.ApprovedByUserId).OnDelete(DeleteBehavior.Restrict);
-        });
-        builder.Entity<LabKitAssemblyComponent>(e =>
-        {
-            e.ToTable("lab_kit_assembly_components", schema);
-            e.HasKey(x => x.Id);
-            e.HasIndex(x => new { x.WorkflowRevisionId, x.SupplierProductId }).IsUnique();
-            e.HasIndex(x => new { x.WorkflowRevisionId, x.Position }).IsUnique();
-            e.Property(x => x.Kind).HasMaxLength(30).IsRequired();
-            e.HasOne<LabKitAssemblyWorkflowRevision>().WithMany(x => x.Components).HasForeignKey(x => x.WorkflowRevisionId).OnDelete(DeleteBehavior.Restrict);
-            e.HasOne<LabSupplierProduct>().WithMany().HasForeignKey(x => x.SupplierProductId).OnDelete(DeleteBehavior.Restrict);
         });
         builder.Entity<LabKitAssemblyRun>(e =>
         {

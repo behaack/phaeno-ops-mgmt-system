@@ -118,20 +118,24 @@ The backend uses Entity Framework Core with PostgreSQL through the Npgsql provid
 - Current business-model target: Commercial/current-flow and Lab projection
   entities map to `commercial_ops`; Laboratory execution entities map to
   `lab_ops`; Website intake entities map to `website`; no default schema is used
-- Laboratory schema: `lab_ops`, with 55 explicitly mapped Laboratory tables
+- Laboratory schema: `lab_ops`, with 77 explicitly mapped Laboratory tables
 - EF migrations history table: `public.__ef_migrations_history`
 - Connection string key: `ConnectionStrings:DefaultConnection`
 
-The September 2026 baseline is `20260919153100_InitialPSeqOperationsRebased`.
-It creates 137 tables in `commercial_ops`, 55 in `lab_ops` and five in `website`,
+The current baseline is `20260928192920_InitialCleanPortal`.
+It creates 139 tables in `commercial_ops`, 77 in `lab_ops` and five in `website`,
 with migration history in `public`; it has no `portal` schema. Apply it only to
-a new empty database. It refuses populated schemas and cannot be downgraded.
-Existing installations require the reviewed selective-preservation procedure,
-not deletion of migration-history rows. The [reset runbook](docs/operations/database-rebase-20260919.md)
-records actual local/production target names, seed content and rollback.
-Keep credentials in ignored environment-specific settings. Fresh development
-databases get system reference defaults; reusable laboratory and commercial
-configuration requires an explicitly reviewed seed or normal administration.
+a new empty database. It refuses populated application schemas or prior migration
+history, and refuses destructive downgrade. The
+[September 28 local reset](docs/plans/LOCAL-CLEAN-DATABASE-20260928-PLAN.md)
+records the applied baseline, verified backup and single administrator seed.
+The September 19 preservation runbook is historical release evidence; its
+preservation selection does not define the current clean local seed.
+A future production-hosted test reset needs its own approved preservation list
+and replacement-database cutover. Keep credentials and bootstrap administrator
+settings in ignored environment-specific configuration. Fresh databases get
+built-in reference defaults; catalog products and operational configuration are
+created through normal administration.
 
 Use environment configuration for non-development database credentials. In ASP.NET Core configuration, the connection string can be supplied with `ConnectionStrings__DefaultConnection`.
 

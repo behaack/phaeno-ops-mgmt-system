@@ -32,16 +32,15 @@ export function jobDateBoundary(value: string | undefined, afterDay = false): st
 export function parseJobListSearch(search: Record<string, unknown>): JobListSearch {
   const text = (v: unknown) => typeof v === 'string' ? v.slice(0, 255) : undefined
   const page = (v: unknown) => Number.isSafeInteger(Number(v)) && Number(v) > 0 ? Number(v) : undefined
-  const legacyClosed = search.jobView === undefined && (search.showComplete === true || search.showComplete === 'true' || search.jobDeadline === 'Cancelled' || typeof search.jobDeadline === 'string' && search.jobDeadline.startsWith('Complete'))
   return {
-    jobView: search.jobView === 'Closed' || legacyClosed ? 'Closed' : undefined,
+    jobView: search.jobView === 'Closed' ? 'Closed' : undefined,
     jobSearch: text(search.jobSearch),
     jobDeadline: typeof search.jobDeadline === 'string' && Object.hasOwn(activeDeadlineLabels, search.jobDeadline) ? search.jobDeadline as JobListSearch['jobDeadline'] : undefined,
     jobPage: page(search.jobPage), jobFrom: parseJobDate(search.jobFrom), jobTo: parseJobDate(search.jobTo),
     jobStatus: typeof search.jobStatus === 'string' && Object.hasOwn(jobStatusLabels, search.jobStatus) ? search.jobStatus as JobStatus : undefined,
-    jobClosedSearch: text(search.jobClosedSearch ?? (legacyClosed ? search.jobSearch : undefined)),
+    jobClosedSearch: text(search.jobClosedSearch),
     jobClosedPage: page(search.jobClosedPage), jobClosedFrom: parseJobDate(search.jobClosedFrom), jobClosedTo: parseJobDate(search.jobClosedTo),
-    jobOutcome: search.jobOutcome === 'Delivered' || search.jobOutcome === 'Cancelled' ? search.jobOutcome : legacyClosed && search.jobDeadline === 'Cancelled' ? 'Cancelled' : undefined,
+    jobOutcome: search.jobOutcome === 'Delivered' || search.jobOutcome === 'Cancelled' ? search.jobOutcome : undefined,
   }
 }
 export function clearJobFilters(view: JobView): JobListSearch {

@@ -22,10 +22,6 @@ public sealed record LabProtocolStepRecord(
 
 public sealed record LabProtocolEvidence(int SchemaVersion, IReadOnlyList<LabProtocolStepRecord> Records)
 {
-    // Legacy software fixtures used arbitrary text instead of an attached QC report.
-    public static bool IsSyntheticQcReference(LabProtocolStepDefinition step, LabProtocolCaptureDefinition capture) =>
-        step.QcGate is not null && capture.Type == "fileReference"
-        && capture.Key is "synthetic-qc-record-reference" or "synthetic-library-qc-record-reference";
     public static bool IsPreparationReportReference(LabProtocolStepDefinition step, LabProtocolCaptureDefinition capture) =>
         step.QcGate is null && capture.Key == "preparation-record-reference" && capture.Type == "text"
         && capture.Scope is "shared" or "batch";
@@ -166,7 +162,7 @@ public sealed record LabProtocolEvidence(int SchemaVersion, IReadOnlyList<LabPro
                 && !(value.ValueKind == JsonValueKind.String && string.IsNullOrWhiteSpace(value.GetString()));
             if (!present)
             {
-                if (capture.Required && !IsSyntheticQcReference(step, capture) && !IsPreparationReportReference(step, capture)) throw new ArgumentException($"{capture.Label} is required.");
+                if (capture.Required && !IsPreparationReportReference(step, capture)) throw new ArgumentException($"{capture.Label} is required.");
                 continue;
             }
             if (capture.Type == "number")

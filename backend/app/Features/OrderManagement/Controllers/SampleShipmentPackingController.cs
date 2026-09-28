@@ -70,13 +70,6 @@ public sealed partial class SampleShipmentPackingController(PSeqOperationsDbCont
             throw Invalid("Each container's tube count must fit its capacity, and the counts must equal the tubes being packed.");
         source.MarkPackingPool();
 
-        // Convert the legacy one-container-per-specimen representation to explicit physical slots.
-        foreach (var item in source.Items.Where(item => item.TubeSlots.Count == 0))
-        {
-            var slot = new SampleShipmentTubeSlot(item.Id, 1);
-            item.TubeSlots.Add(slot);
-            db.SampleShipmentTubeSlots.Add(slot);
-        }
         var queue = new Queue<(SampleShipmentItem Item, SampleShipmentTubeSlot Slot)>(source.Items
             .OrderBy(item => item.CustomerSampleId, StringComparer.OrdinalIgnoreCase)
             .SelectMany(item => item.TubeSlots.OrderBy(slot => slot.Ordinal).Select(slot => (item, slot))));

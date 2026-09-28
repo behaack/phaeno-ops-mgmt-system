@@ -8,13 +8,8 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
     public Guid Id { get; private set; } = Guid.NewGuid();
     public string KitNumber { get; private set; } = null!;
     public Guid ContainerDefinitionId { get; private set; }
-    public Guid? FinishedKitProductId { get; private set; }
     public Guid? AssemblyWorkflowRevisionId { get; private set; }
     public DateTime? AssemblyCompletedAt { get; private set; }
-    public DateTime? PurchasedKitReceivedAt { get; private set; }
-    public Guid? PurchasedKitReceivedByUserId { get; private set; }
-    public string? PurchasedKitReceiptReference { get; private set; }
-    public string? SupplierKitLotNumber { get; private set; }
     public string ContainerSnapshotJson { get; private set; } = null!;
     public string? ProductExpirySnapshotJson { get; private set; }
     public DateTime? WithdrawnAt { get; private set; }
@@ -22,7 +17,7 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
     public string? WithdrawalReason { get; private set; }
     public int TubeCapacity { get; private set; }
     public string TubeSupplierName { get; private set; } = null!;
-    public string TubeBarcodeNamespace { get; private set; } = SupplierTubeBarcode.LegacyNamespace;
+    public string TubeBarcodeNamespace { get; private set; } = null!;
     public string TubeProductNumber { get; private set; } = null!;
     public string? TubeLotNumber { get; private set; }
     public string ShipperSupplierName { get; private set; } = null!;
@@ -63,13 +58,12 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
         Guid? tubeSupplierProductId = null, Guid? shipperSupplierProductId = null,
         string? tubeProductDescription = null, string? shipperProductDescription = null,
         string? productExpirySnapshotJson = null, string? tubeBarcodeNamespace = null,
-        Guid? finishedKitProductId = null, Guid? assemblyWorkflowRevisionId = null)
+        Guid? assemblyWorkflowRevisionId = null)
     {
         if (definitionId == Guid.Empty) throw new ArgumentException("Select a container type.");
         if (tubeCapacity is < 1 or > 10_000) throw new ArgumentOutOfRangeException(nameof(tubeCapacity));
         KitNumber = SampleShippingText.Reference(kitNumber, nameof(kitNumber));
         ContainerDefinitionId = definitionId;
-        FinishedKitProductId = finishedKitProductId;
         AssemblyWorkflowRevisionId = assemblyWorkflowRevisionId;
         ContainerSnapshotJson = OrderText.Json(snapshotJson);
         ProductExpirySnapshotJson = productExpirySnapshotJson is null ? null : OrderText.Json(productExpirySnapshotJson);
@@ -80,7 +74,7 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
         ShipperProductDescription = OrderText.Optional(shipperProductDescription, 1000);
         TubeSupplierName = OrderText.Required(tubeSupplierName, nameof(tubeSupplierName), 255);
         TubeBarcodeNamespace = string.IsNullOrWhiteSpace(tubeBarcodeNamespace)
-            ? SupplierTubeBarcode.LegacyNamespace : OrderText.Required(tubeBarcodeNamespace, nameof(tubeBarcodeNamespace), 50);
+            ? throw new ArgumentException("A supplier barcode namespace is required.") : OrderText.Required(tubeBarcodeNamespace, nameof(tubeBarcodeNamespace), 50);
         TubeProductNumber = SampleShippingText.ProductNumber(tubeProductNumber, nameof(tubeProductNumber));
         TubeLotNumber = OrderText.Optional(tubeLotNumber, 100);
         ShipperSupplierName = OrderText.Required(shipperSupplierName, nameof(shipperSupplierName), 255);
@@ -209,16 +203,6 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
     }
 
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
-    public void RecordPurchasedReceipt(Guid actorUserId, DateTime utcNow, string receiptReference, string? supplierKitLotNumber)
-    {
-        if (!FinishedKitProductId.HasValue || AssemblyWorkflowRevisionId.HasValue || PurchasedKitReceivedAt.HasValue
-            || actorUserId == Guid.Empty || utcNow.Kind != DateTimeKind.Utc)
-            throw new InvalidOperationException("Only a purchased complete kit can have a supplier receipt.");
-        PurchasedKitReceiptReference = OrderText.Required(receiptReference, "Supplier receipt reference", 100);
-        SupplierKitLotNumber = OrderText.Optional(supplierKitLotNumber, 100);
-        PurchasedKitReceivedByUserId = actorUserId;
-        PurchasedKitReceivedAt = utcNow;
-    }
     public void VerifyTubeRoster(Guid actorUserId, IReadOnlyCollection<string> scanned, DateTime utcNow)
     {
         if (FulfilledAt.HasValue || actorUserId == Guid.Empty || utcNow.Kind != DateTimeKind.Utc)
@@ -243,12 +227,8 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
 
     private void EnsureVerifiedTubes()
     {
-        if (FinishedKitProductId.HasValue && !PurchasedKitReceivedAt.HasValue
-            && (!AssemblyWorkflowRevisionId.HasValue || !AssemblyCompletedAt.HasValue))
+        if (!AssemblyWorkflowRevisionId.HasValue || !AssemblyCompletedAt.HasValue)
             throw new InvalidOperationException("Complete the approved kit assembly workflow before dispatch.");
-        if (PurchasedKitReceivedAt.HasValue && (!PurchasedKitReceivedByUserId.HasValue
-            || string.IsNullOrWhiteSpace(PurchasedKitReceiptReference) || AssemblyWorkflowRevisionId.HasValue))
-            throw new InvalidOperationException("Complete the purchased kit receipt before dispatch.");
         if (!TubesVerifiedAt.HasValue || !TubesVerifiedByUserId.HasValue || Tubes.Count != TubeCapacity
             || Tubes.Select(tube => tube.SupplierBarcode).Distinct(StringComparer.Ordinal).Count() != TubeCapacity
             || Tubes.Any(tube => tube.TubeSupplierProductId != TubeSupplierProductId || tube.BarcodeNamespace != TubeBarcodeNamespace))
@@ -256,7 +236,7 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
     }
     public void CompleteAssembly(DateTime utcNow)
     {
-        if (!FinishedKitProductId.HasValue || !AssemblyWorkflowRevisionId.HasValue || FulfilledAt.HasValue
+        if (!AssemblyWorkflowRevisionId.HasValue || FulfilledAt.HasValue
             || AssemblyCompletedAt.HasValue || utcNow.Kind != DateTimeKind.Utc)
             throw new InvalidOperationException("Only an active Phaeno kit assembly can be completed.");
         AssemblyCompletedAt = utcNow;
@@ -277,7 +257,7 @@ public sealed class SampleShippingStockTube
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid SampleShippingStockKitId { get; private set; }
     public string SupplierBarcode { get; private set; } = null!;
-    public string BarcodeNamespace { get; private set; } = SupplierTubeBarcode.LegacyNamespace;
+    public string BarcodeNamespace { get; private set; } = null!;
     public Guid? TubeSupplierProductId { get; private set; }
     private SampleShippingStockTube() { }
     public SampleShippingStockTube(Guid kitId, string supplierBarcode, string? barcodeNamespace = null, Guid? tubeSupplierProductId = null)
@@ -288,7 +268,7 @@ public sealed class SampleShippingStockTube
         SampleShippingStockKitId = kitId;
         SupplierBarcode = normalized;
         BarcodeNamespace = string.IsNullOrWhiteSpace(barcodeNamespace)
-            ? SupplierTubeBarcode.LegacyNamespace : OrderText.Required(barcodeNamespace, nameof(barcodeNamespace), 50);
+            ? throw new ArgumentException("A supplier barcode namespace is required.") : OrderText.Required(barcodeNamespace, nameof(barcodeNamespace), 50);
         TubeSupplierProductId = tubeSupplierProductId;
     }
 }

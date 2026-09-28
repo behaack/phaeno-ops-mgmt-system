@@ -89,13 +89,13 @@ test("reviews Portal access in CRM without a separate customer directory", async
   ).toBeVisible();
 });
 
-test("redirects legacy Requests links into CRM while retaining queue context", async ({ page }) => {
+test("retains Requests queue context in the canonical CRM route", async ({ page }) => {
   await page.route(apiRequestPattern, async (route) => {
     if (route.request().method() === "GET") return envelope(route, []);
     return notFound(route);
   });
 
-  await page.goto(`/customers?section=work&requestId=${requestId}`);
+  await page.goto(`/crm/requests?section=work&requestId=${requestId}`);
   await expect(page.getByRole("heading", { name: "Company request review" })).toBeVisible();
   const destination = new URL(page.url());
   expect(destination.pathname).toBe("/crm/requests");
@@ -106,7 +106,7 @@ test("redirects legacy Requests links into CRM while retaining queue context", a
   await expect(page.getByRole("button", { name: /^Requests/, includeHidden: true })).toHaveAttribute("aria-current", "page");
 });
 
-test("resolves a legacy access link to the canonical Company workspace", async ({
+test("opens the canonical Company workspace with its access scope", async ({
   page,
 }) => {
   const eligibleRequest = relationshipRequest();
@@ -118,9 +118,7 @@ test("resolves a legacy access link to the canonical Company workspace", async (
 
     if (
       method === "GET" &&
-      (url.pathname ===
-        `/api/platform/crm/companies/by-access/${organizationId}` ||
-        url.pathname === `/api/platform/crm/companies/${companyId}`)
+      url.pathname === `/api/platform/crm/companies/${companyId}`
     ) {
       return envelope(route, company());
     }
@@ -226,7 +224,7 @@ test("resolves a legacy access link to the canonical Company workspace", async (
     return notFound(route);
   });
 
-  await page.goto(`/customers/${organizationId}`);
+  await page.goto(`/crm/companies/${companyId}`);
   await expect(page.getByRole("heading", { name: "Atlas Research" })).toBeVisible();
   await expect(page.getByText("Company", { exact: true })).toBeVisible();
   await page.getByRole("tab", { name: "Services", exact: true }).click();

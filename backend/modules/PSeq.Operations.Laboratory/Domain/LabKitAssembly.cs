@@ -9,14 +9,11 @@ public enum LabKitAssemblyRunStatus { InProgress, Completed, Abandoned }
 public sealed class LabKitAssemblyWorkflow : LabAuditedEntity
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
-    public Guid FinishedKitProductId { get; private set; }
     public string Name { get; private set; } = null!;
     public int LatestRevision { get; private set; } = 1;
     private LabKitAssemblyWorkflow() { }
-    public LabKitAssemblyWorkflow(Guid productId, string name)
+    public LabKitAssemblyWorkflow(string name)
     {
-        if (productId == Guid.Empty) throw new ArgumentException("Choose a finished transportation kit product.");
-        FinishedKitProductId = productId;
         SetName(name);
     }
     public void SetName(string name)
@@ -41,7 +38,6 @@ public sealed class LabKitAssemblyWorkflowRevision
     public Guid? ApprovedByUserId { get; private set; }
     public DateTime? ApprovedAtUtc { get; private set; }
     public string? ApprovalOverrideReason { get; private set; }
-    public ICollection<LabKitAssemblyComponent> Components { get; private set; } = [];
     private LabKitAssemblyWorkflowRevision() { }
     public LabKitAssemblyWorkflowRevision(Guid workflowId, int revision, IReadOnlyList<LabKitAssemblyStep> steps,
         Guid authorId, DateTime utcNow)
@@ -93,37 +89,6 @@ public sealed class LabKitAssemblyWorkflowRevision
     {
         if (Status != LabKitAssemblyRevisionStatus.Draft) throw new InvalidOperationException("Only a draft revision can be discarded.");
         Status = LabKitAssemblyRevisionStatus.Discarded;
-    }
-}
-
-public sealed class LabKitAssemblyComponent
-{
-    public Guid Id { get; private set; } = Guid.NewGuid();
-    public Guid WorkflowRevisionId { get; private set; }
-    public Guid SupplierProductId { get; private set; }
-    public int Quantity { get; private set; }
-    public string Kind { get; private set; } = null!;
-    public int Position { get; private set; }
-    private LabKitAssemblyComponent() { }
-    public LabKitAssemblyComponent(Guid revisionId, Guid productId, int quantity, string kind, int position)
-    {
-        if (revisionId == Guid.Empty || productId == Guid.Empty || quantity < 1 || position < 0
-            || kind is not ("Tube" or "ShippingContainer" or "Other"))
-            throw new ArgumentException("Choose a valid component, kind, and positive whole-number quantity.");
-        WorkflowRevisionId = revisionId;
-        SupplierProductId = productId;
-        Quantity = quantity;
-        Kind = kind;
-        Position = position;
-    }
-    public void ValidateActualUse(decimal quantity, string unit)
-    {
-        if (quantity <= 0 || quantity > Quantity)
-            throw new InvalidOperationException("Record a positive amount within the approved component quantity.");
-        if (Kind is "Tube" or "ShippingContainer"
-            && (quantity != decimal.Truncate(quantity)
-                || !string.Equals(unit, "each", StringComparison.OrdinalIgnoreCase)))
-            throw new InvalidOperationException("Count whole tubes and outer shippers in each.");
     }
 }
 

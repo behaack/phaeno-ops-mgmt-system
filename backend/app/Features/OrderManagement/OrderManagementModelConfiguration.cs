@@ -215,7 +215,6 @@ public static class OrderManagementModelConfiguration
             entity.HasIndex(e => new { e.SampleShipmentId, e.SubmittedSpecimenId }).IsUnique();
             entity.HasIndex(e => new { e.SampleShipmentId, e.CustomerSampleId }).IsUnique();
             entity.HasIndex(e => e.SampleTypeDefinitionId);
-            entity.HasIndex(e => e.RegisteredSampleTubeId).IsUnique();
             entity.HasOne<SampleShipment>()
                 .WithMany(e => e.Items)
                 .HasForeignKey(e => e.SampleShipmentId)
@@ -223,10 +222,6 @@ public static class OrderManagementModelConfiguration
             entity.HasOne<SampleTypeDefinition>()
                 .WithMany()
                 .HasForeignKey(e => e.SampleTypeDefinitionId)
-                .OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne<RegisteredSampleTube>()
-                .WithMany()
-                .HasForeignKey(e => e.RegisteredSampleTubeId)
                 .OnDelete(DeleteBehavior.Restrict);
             Audit(entity);
         });

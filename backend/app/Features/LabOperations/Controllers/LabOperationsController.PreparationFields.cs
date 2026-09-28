@@ -38,16 +38,7 @@ public sealed partial class LabOperationsController
 
     private static IReadOnlyList<LabProtocolCaptureDefinition> PreparationResourceFields(LabProtocolStepDefinition step)
     {
-        var fields = step.Captures.Where(c => c.IsResource).ToList();
-        void Legacy(IEnumerable<string> labels, string type) => fields.AddRange(labels.Select((label, i) => new LabProtocolCaptureDefinition
-        {
-            Key = $"_legacy_{type}_{i}", Label = label, Type = type, Scope = type == "output" ? "tube" : "batch",
-            Required = false, IncludeTracking = type != "output", QuantityBasis = type == "material" ? "total" : null
-        }));
-        Legacy(step.InputMaterials, "material");
-        Legacy(step.EquipmentTypes, "equipment");
-        if (step.PreparedOutputs.Count > 0 && !fields.Any(f => f.Type == "output")) Legacy([string.Join(", ", step.PreparedOutputs)], "output");
-        return fields;
+        return step.Captures.Where(c => c.IsResource).ToArray();
     }
 
     private async Task<Dictionary<Guid, Dictionary<string, JsonElement>>> RecordPreparationFieldsAsync(

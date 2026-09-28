@@ -20,11 +20,10 @@ import { AssemblyConfigurationPanel } from './AssemblyConfigurationPanel'
 import { CommercialConfigurationPanel } from './CommercialConfigurationPanel'
 import { ReagentConfigurationPanel } from './ReagentConfigurationPanel'
 import { CatalogConfigurationPanel } from './CatalogConfigurationPanel'
-import { SampleShippingConfigurationPanel } from './SampleShippingConfigurationPanel'
 import { SystemConfigurationPanel } from './SystemConfigurationPanel'
 
-export type ConfigurationSection = 'system' | 'catalog' | 'lab-service-offerings' | 'shipping' | 'sample-types' | 'analyses' | 'reagents' | 'assembly' | 'commercial' | 'retention'
-export function parseConfigurationSection(value: unknown): ConfigurationSection { return ['system', 'catalog', 'lab-service-offerings', 'shipping', 'sample-types', 'analyses', 'reagents', 'assembly', 'commercial', 'retention'].includes(String(value)) ? value as ConfigurationSection : 'system' }
+export type ConfigurationSection = 'system' | 'catalog' | 'analyses' | 'reagents' | 'assembly' | 'commercial'
+export function parseConfigurationSection(value: unknown): ConfigurationSection { return ['system', 'catalog', 'analyses', 'reagents', 'assembly', 'commercial'].includes(String(value)) ? value as ConfigurationSection : 'system' }
 
 const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSection>> = [
   {
@@ -60,20 +59,19 @@ const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSec
   },
 ]
 
-export function OrderConfigurationPage({ catalogItemId, sampleTypeId }: { catalogItemId?: string; sampleTypeId?: string } = {}) {
+export function OrderConfigurationPage({ catalogItemId }: { catalogItemId?: string } = {}) {
   const { authProvider, session } = usePhaenoSession()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const search = useSearch({ strict: false })
   const canManage = Boolean(session?.capabilities.canManageOrderConfiguration)
   const sections = canManage ? configurationSections : []
-  const requestedSection = sampleTypeId ? 'sample-types' : catalogItemId ? 'catalog' : parseConfigurationSection(search.configurationSection)
+  const requestedSection = catalogItemId ? 'catalog' : parseConfigurationSection(search.configurationSection)
   const section = sections.find(item => item.value === requestedSection)?.value ?? sections[0]?.value
-  const showingOrders = Boolean(section && section !== 'retention')
+  const showingOrders = Boolean(section)
   const setSection = (value: ConfigurationSection) => { void navigate({ to: '/order-configuration', search: { configurationSection: value } }) }
   const apiEnabled = canManage && showingOrders && authProvider !== 'mock'
-  const needsOrderConfiguration = section !== 'sample-types'
-  const configuration = useQuery({ queryKey: ['order-configuration'], queryFn: getOrderConfiguration, enabled: apiEnabled && needsOrderConfiguration })
+  const configuration = useQuery({ queryKey: ['order-configuration'], queryFn: getOrderConfiguration, enabled: apiEnabled })
   const sync = useMutation({ mutationFn: syncQuickBooksCatalog, onSuccess: async () => queryClient.invalidateQueries({ queryKey: ['order-configuration'] }) })
 
   if (!canManage) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Order Settings unavailable</AlertTitle><AlertDescription>A Phaeno platform administrator is required.</AlertDescription></Alert></main>
@@ -104,7 +102,7 @@ export function OrderConfigurationPage({ catalogItemId, sampleTypeId }: { catalo
               </AlertDescription>
             </Alert>
           ) : null}
-          {showingOrders && needsOrderConfiguration && configuration.error ? (
+          {showingOrders && configuration.error ? (
             <Alert variant="destructive" className="mb-5">
               <AlertTitle>Configuration could not be loaded</AlertTitle>
               <AlertDescription>
@@ -112,10 +110,9 @@ export function OrderConfigurationPage({ catalogItemId, sampleTypeId }: { catalo
               </AlertDescription>
             </Alert>
           ) : null}
-          {showingOrders && needsOrderConfiguration && configuration.isLoading ? <p role="status">Loading order configuration…</p> : null}
+          {showingOrders && configuration.isLoading ? <p role="status">Loading order configuration…</p> : null}
           {section === 'commercial' ? <div className="mb-5 space-y-3 rounded-lg border p-4"><p className="text-sm text-muted-foreground">Historical accounting mappings and connector recovery. The service catalog is maintained in Service catalog.</p><Button variant="outline" disabled={!apiEnabled || sync.isPending} onClick={() => sync.mutate()}><RefreshCw data-icon="inline-start" />{sync.isPending ? 'Queueing…' : 'Queue QuickBooks catalog recovery'}</Button>{sync.error ? <p role="alert">{getOrderErrorMessage(sync.error, 'Connector recovery is unavailable.')}</p> : null}{sync.isSuccess ? <p role="status">Catalog recovery queued.</p> : null}</div> : null}
           {configuration.data && section === 'catalog' ? <CatalogConfigurationPanel configuration={configuration.data} catalogItemId={catalogItemId} apiEnabled={apiEnabled} /> : null}
-          {section === 'sample-types' ? <SampleShippingConfigurationPanel apiEnabled={apiEnabled} section="sample-types" sampleTypeId={sampleTypeId} /> : null}
           {configuration.data && section === 'system' ? <SystemConfigurationPanel configuration={configuration.data} /> : null}
           {configuration.data && section === 'analyses' ? <AnalysisConfigurationPanel configuration={configuration.data} /> : null}
           {configuration.data && section === 'reagents' ? <ReagentConfigurationPanel configuration={configuration.data} /> : null}

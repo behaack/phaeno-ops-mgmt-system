@@ -71,39 +71,9 @@ public sealed partial class SampleShippingContainerCatalogService(PSeqOperations
     {
         if (request.IsActive)
             throw Invalid("Save the new Transportation kit as a draft, link its Sample type, then activate its specification.");
-        if (!request.FinishedKitProductId.HasValue)
-            throw Invalid("Choose a Transportation kit product before adding its specification.");
-        var selectedProduct = await (from p in dbContext.LabSupplierProducts.AsNoTracking()
-                join s in dbContext.LabSuppliers.AsNoTracking() on p.SupplierId equals s.Id
-                join productType in dbContext.LabProductTypes.AsNoTracking() on p.ProductTypeId equals productType.Id
-                where p.Id == request.FinishedKitProductId && s.IsActive && productType.IsActive
-                    && p.IsActive && p.ProductTypeId == PSeq.Operations.Laboratory.Domain.LabProductType.TransportationKitId
-                select new { p.ProductNumber, s.IsInternalProducer }).SingleOrDefaultAsync(cancellationToken)
-                ?? throw Invalid("Choose an active Transportation kit product from an active supplier.");
-        if (!string.Equals(request.Sku.Trim(), selectedProduct.ProductNumber, StringComparison.OrdinalIgnoreCase))
-            throw Invalid("The shipping specification SKU must match the selected supplier product number.");
-        SampleShippingContainerType type;
-        SampleShippingContainerDefinition definition;
-        try
-        {
-            type = new(request.Sku, request.FinishedKitProductId);
-            definition = new(type.Id, 1, null, request.CommonName, request.TubeCapacity, request.SupplierName,
-                request.SupplierProductNumber, request.PackingInstructions, Utc(request.EffectiveFrom), Utc(request.EffectiveTo), request.IsActive, request.DisplayOrder,
-                null,
-                request.DryIceQuantity, request.DryIceUnit, request.TemperatureControlInstructions,
-                request.SampleTypeDefinitionId.HasValue
-                    ? await SampleTypeAnchorAsync(request.SampleTypeDefinitionId.Value, cancellationToken) : null);
-        }
-        catch (ArgumentException exception) { throw Invalid(exception.Message); }
-        type.Definitions.Add(definition);
-        if (selectedProduct.IsInternalProducer)
-            await AddContentsAsync(definition, request.KitContents, cancellationToken, finishedProduct: true);
-        else if (request.KitContents is { Count: > 0 })
-            throw Invalid("Record included products when receiving a purchased kit; its specification does not consume components.");
-        await ValidateKitReleaseAsync(definition, request.FinishedKitProductId, cancellationToken);
-        dbContext.SampleShippingContainerTypes.Add(type);
-        await SaveAsync(cancellationToken);
-        return Map(definition);
+        if (!request.ShippingContainerProductId.HasValue)
+            throw Invalid("Choose a purchased Shipping Container.");
+        return await CreateContainerSpecificationAsync(request, cancellationToken);
     }
 
     public async Task<IReadOnlyList<SampleShippingContainerDefinitionDto>> ReadStockCompatibleAsync(
@@ -138,12 +108,6 @@ public sealed partial class SampleShippingContainerCatalogService(PSeqOperations
             ?? family.FirstOrDefault(item => item.Lifecycle == ShippingRevisionLifecycle.Deactivated)
             ?? previous;
         var chainHead = family[0];
-        var finishedProductId = previous.ContainerType.FinishedKitProductId.GetValueOrDefault();
-        var internalProduct = finishedProductId != Guid.Empty && await
-            (from product in dbContext.LabSupplierProducts.AsNoTracking()
-             join supplier in dbContext.LabSuppliers.AsNoTracking() on product.SupplierId equals supplier.Id
-             where product.Id == finishedProductId
-             select supplier.IsInternalProducer).SingleAsync(cancellationToken);
         SampleShippingContainerDefinition definition;
         try
         {
@@ -151,37 +115,19 @@ public sealed partial class SampleShippingContainerCatalogService(PSeqOperations
             if (effectiveFrom <= source.EffectiveFrom) throw Invalid("A revision must begin after the preceding released revision starts.");
             definition = new(previous.ContainerTypeId, chainHead.Revision + 1, chainHead.Id,
                 request.CommonName,
-                request.TubeCapacity, request.SupplierName, request.SupplierProductNumber,
-                request.PackingInstructions, effectiveFrom, Utc(request.EffectiveTo), false, request.DisplayOrder,
-                null,
+                request.TubeCapacity, effectiveFrom, Utc(request.EffectiveTo), false, request.DisplayOrder,
                 request.DryIceQuantity, request.DryIceUnit, request.TemperatureControlInstructions,
                 request.SampleTypeDefinitionId.HasValue
                     ? await SampleTypeAnchorAsync(request.SampleTypeDefinitionId.Value, cancellationToken) : null);
         }
         catch (ArgumentException exception) { throw Invalid(exception.Message); }
         catch (InvalidOperationException exception) { throw Conflict(exception.Message); }
-        if (internalProduct)
-        {
-            var contents = request.KitContents ?? await dbContext.Set<ShippingKitContent>().AsNoTracking()
-                .Where(item => item.ContainerDefinitionId == source.Id)
-                .OrderBy(item => item.Position)
-                .Select(item => new ShippingKitContentRequest(item.SupplierProductId, item.Quantity))
-                .ToArrayAsync(cancellationToken);
-            await AddContentsAsync(definition, contents, cancellationToken, finishedProduct: true);
-        }
-        else
-        {
-            if (request.KitContents is { Count: > 0 })
-                throw Invalid("Record included products when receiving a purchased kit; its specification does not consume components.");
-            var historicalContents = await dbContext.Set<ShippingKitContent>().AsNoTracking()
-                .Where(item => item.ContainerDefinitionId == source.Id)
-                .OrderBy(item => item.Position).ToArrayAsync(cancellationToken);
-            foreach (var item in historicalContents)
-                definition.KitContents.Add(new ShippingKitContent(definition.Id, item.SupplierProductId,
-                    item.SupplierId, item.Kind, item.Quantity, item.SupplierName, item.ProductNumber,
-                    item.ProductDescription, item.ProductTypeName, item.Position));
-        }
-        await ValidateKitReleaseAsync(definition, previous.ContainerType.FinishedKitProductId, cancellationToken);
+        definition.ConfigureAssembly(request.ShippingContainerProductId ?? source.ShippingContainerProductId, request.ShippingContainerProductId.HasValue ? request.AssemblyWorkflowId : source.AssemblyWorkflowId);
+        var contents = request.KitContents ?? await dbContext.Set<ShippingKitContent>().AsNoTracking()
+            .Where(item => item.ContainerDefinitionId == source.Id).OrderBy(item => item.Position)
+            .Select(item => new ShippingKitContentRequest(item.SupplierProductId, item.Quantity)).ToArrayAsync(cancellationToken);
+        await AddContentsAsync(definition, contents, cancellationToken);
+        await ValidateKitReleaseAsync(definition, cancellationToken);
         previous.ContainerType.Definitions.Add(definition);
         // Shared type concurrency plus unique predecessor prevents concurrent revision forks.
         previous.ContainerType.MarkUpdated(DateTime.UtcNow, null);
@@ -249,36 +195,15 @@ public sealed partial class SampleShippingContainerCatalogService(PSeqOperations
         if (await dbContext.SampleShippingContainerDefinitions.AnyAsync(item => item.SupersedesDefinitionId == id, cancellationToken))
             throw Conflict("Only the latest specification revision can be activated. Open the latest revision.");
         if (definition.IsActive) throw Conflict("This specification is already active.");
-        if (definition.ContainerType.FinishedKitProductId is Guid finishedProductId)
-        {
-            var internalProduct = await (from product in dbContext.LabSupplierProducts.AsNoTracking()
-                join supplier in dbContext.LabSuppliers.AsNoTracking() on product.SupplierId equals supplier.Id
-                where product.Id == finishedProductId select supplier.IsInternalProducer).SingleAsync(cancellationToken);
-            if (internalProduct)
-            {
-                // The specification owns these contents. The workflow selected for each
-                // future assembly is pinned on the physical kit, not on this revision.
-                definition.PinAssemblyWorkflowRevision(null);
-            }
-        }
         var now = DateTime.UtcNow;
         try { definition.Activate(now); }
         catch (ArgumentException error) { throw Invalid(error.Message); }
         catch (InvalidOperationException error) { throw Conflict(error.Message); }
-        if (definition.ContainerType.FinishedKitProductId.HasValue)
-        {
-            await SampleShippingPackingData.LockAsync(dbContext,
-                $"supplier-product:{definition.ContainerType.FinishedKitProductId.Value}", cancellationToken);
-            var productStatus = await (from product in dbContext.LabSupplierProducts.AsNoTracking()
-                join supplier in dbContext.LabSuppliers.AsNoTracking() on product.SupplierId equals supplier.Id
-                join type in dbContext.LabProductTypes.AsNoTracking() on product.ProductTypeId equals type.Id
-                where product.Id == definition.ContainerType.FinishedKitProductId && product.IsActive
-                    && supplier.IsActive && type.IsActive
-                    && product.ProductTypeId == PSeq.Operations.Laboratory.Domain.LabProductType.TransportationKitId
-                select new { supplier.IsInternalProducer }).SingleOrDefaultAsync(cancellationToken);
-            if (productStatus is null) throw Invalid("Reactivate the Transportation kit product and supplier before activating its shipping specification.");
-            await ValidateKitReleaseAsync(definition, definition.ContainerType.FinishedKitProductId, cancellationToken);
-        }
+        if (!definition.ShippingContainerProductId.HasValue)
+            throw Invalid("Choose a purchased Shipping Container before activation.");
+        await SampleShippingPackingData.LockAsync(dbContext,
+            $"supplier-product:{definition.ShippingContainerProductId.Value}", cancellationToken);
+        await ValidateKitReleaseAsync(definition, cancellationToken);
         var active = await dbContext.SampleShippingContainerDefinitions.Where(item => item.ContainerTypeId == definition.ContainerTypeId
             && item.Id != id && item.IsActive && !item.DeactivatedAt.HasValue
             && (!item.EffectiveTo.HasValue || item.EffectiveTo > definition.EffectiveFrom)).ToListAsync(cancellationToken);
@@ -319,27 +244,18 @@ public sealed partial class SampleShippingContainerCatalogService(PSeqOperations
 
     public static SampleShippingContainerDefinitionDto Map(SampleShippingContainerDefinition item) => new(item.Id, item.ContainerTypeId,
         item.ContainerType.Sku, item.CommonName, item.TubeCapacity, item.Revision, item.SupersedesDefinitionId,
-        item.SupplierName, item.SupplierProductNumber, item.PackingInstructions, item.EffectiveFrom, item.EffectiveTo,
+        item.EffectiveFrom, item.EffectiveTo,
         item.IsActive, item.DisplayOrder, item.Version, item.DeactivatedAt, item.KitContents.OrderBy(part => part.Position).Select(part => new ShippingKitContentDto(
-                part.SupplierProductId, part.SupplierId, part.Kind.ToString(), part.Quantity, part.SupplierName, part.ProductNumber, part.ProductDescription, part.ProductTypeName)).ToArray(), item.ContainerType.FinishedKitProductId, item.AssemblyWorkflowRevisionId,
+                part.SupplierProductId, part.SupplierId, part.Kind.ToString(), part.Quantity, part.SupplierName, part.ProductNumber, part.ProductDescription, part.ProductTypeName)).ToArray(),
         item.SampleTypeAnchorId, item.DryIceQuantity, item.DryIceUnit, item.TemperatureControlInstructions,
-        null, item.Lifecycle.ToString());
+        null, item.Lifecycle.ToString(), null, item.ShippingContainerProductId, item.AssemblyWorkflowId);
 
-    private async Task ValidateKitReleaseAsync(SampleShippingContainerDefinition definition, Guid? productId, CancellationToken ct)
+    private async Task ValidateKitReleaseAsync(SampleShippingContainerDefinition definition, CancellationToken ct)
     {
-        if (!productId.HasValue) return; // Historical status can be Active, but new-work readiness still requires a named product.
+        await ValidateAssemblyConfigurationAsync(definition, ct);
         if (!definition.IsActive) return; // An incomplete draft can be finished after its product workflow is approved.
         if (string.IsNullOrWhiteSpace(definition.TemperatureControlInstructions))
             throw Invalid("Record temperature-control instructions before activating this specification.");
-        var internalProduct = await (from product in dbContext.LabSupplierProducts.AsNoTracking()
-            join supplier in dbContext.LabSuppliers.AsNoTracking() on product.SupplierId equals supplier.Id
-            where product.Id == productId.Value select supplier.IsInternalProducer).SingleAsync(ct);
-        if (!internalProduct)
-        {
-            if (definition.AssemblyWorkflowRevisionId.HasValue || definition.KitContents.Count > 0)
-                throw Invalid("A purchased kit specification cannot consume a Phaeno assembly workflow or components.");
-            return;
-        }
         var contents = definition.KitContents.ToArray();
         try { ShippingKitContent.ValidateRecipe(contents, active: true); }
         catch (ArgumentException error) { throw Invalid(error.Message); }
@@ -357,12 +273,13 @@ public sealed partial class SampleShippingContainerCatalogService(PSeqOperations
             select new { product.Id, product.ProductTypeId, product.DefaultQuantityUnit, product.TubeCapacity, type.KitUse }).ToDictionaryAsync(item => item.Id, ct);
         if (products.Count != contents.Length || contents.Any(item =>
             !products.TryGetValue(item.SupplierProductId, out var product)
-            || product.ProductTypeId == LabProductType.TransportationKitId
             || product.KitUse.ToString() != item.Kind.ToString()
             || item.Kind is ShippingKitContentKind.Tube or ShippingKitContentKind.ShippingContainer
                 && !string.Equals(product.DefaultQuantityUnit, "each", StringComparison.OrdinalIgnoreCase)))
             throw Invalid("Each required component must be an active purchased product with the approved kit role. Tube and outer shipper inventory units must be each.");
         var shipper = contents.Single(item => item.Kind == ShippingKitContentKind.ShippingContainer);
+        if (definition.ShippingContainerProductId.HasValue && shipper.SupplierProductId != definition.ShippingContainerProductId)
+            throw Invalid("Required contents must include the selected Shipping Container once with quantity one.");
         if (products[shipper.SupplierProductId].TubeCapacity is not int capacity || capacity < definition.TubeCapacity)
             throw Invalid("Set the outer Shipping Container product's tube capacity to at least this kit's usable tube capacity.");
     }

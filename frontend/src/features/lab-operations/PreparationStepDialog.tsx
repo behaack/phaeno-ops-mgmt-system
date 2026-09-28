@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { RequiredFieldName, RequiredDialogFooter } from '#/components/ui/required-field'
 import type { PreparationDetail, PreparationStage, PreparationStepInput } from '#/api/lab-preparation'
 import type { ProtocolDefinition } from './protocol-definition'
-import { isAutomaticSpecimenReference, isOptionalPreparationReference, isOptionalSyntheticQcReference, isSharedIdentityCheckDate, preparationFailureReasons } from './preparation-evidence'
+import { isAutomaticSpecimenReference, isOptionalPreparationReference, isSharedIdentityCheckDate, preparationFailureReasons } from './preparation-evidence'
 import { PreparationField, prepRowClass, prepSelectClass } from './preparation-ui'
 
 import { PreparationResourceField } from './PreparationResourceField'
@@ -70,7 +70,7 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
   const applicable = batch.members.filter(m => !isFailed(m.id) && !['Succeeded', 'Cancelled'].includes(m.state) && !m.blocker && m.executions.some(e => e.stageId === stage.id && ['InProgress', 'Blocked'].includes(e.status) && !e.stepPrerequisites?.[step.key]?.length)
     && (preview || (action === 'record' ? !m.executions.find(e => e.stageId === stage.id)?.evidence.records.some(r => r.stepKey === step.key) : m.executions.find(e => e.stageId === stage.id)?.evidence.records.some(r => r.stepKey === step.key))))
   const manualCaptures = step.captures.filter(c =>
-    !isResourceField(c) && !isAutomaticSpecimenReference(batch, c) && !isOptionalSyntheticQcReference(batch, step, c) && !isOptionalPreparationReference(batch, step, c))
+    !isResourceField(c) && !isAutomaticSpecimenReference(batch, c) && !isOptionalPreparationReference(batch, step, c))
   const recordsSpecimenReference = step.captures.some(c => isAutomaticSpecimenReference(batch, c))
   const rationaleSuppliesCondition = action === 'record' && Boolean(step.condition) && !step.qcGate
     && manualCaptures.some(c => c.key === 'review-rationale' && c.type === 'text' && c.required && (c.scope === 'shared' || c.scope === 'batch'))

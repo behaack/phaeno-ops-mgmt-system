@@ -51,12 +51,6 @@ public sealed class SampleShipmentPackingResetService(PSeqOperationsDbContext db
             .GroupBy(row => keys[row.Item.Id]).ToArray();
 
         AttachFreshFamily(active);
-        foreach (var item in active.SelectMany(shipment => shipment.Items).Where(item => item.TubeSlots.Count == 0))
-        {
-            var slot = new SampleShipmentTubeSlot(item.Id, 1);
-            item.TubeSlots.Add(slot);
-            db.SampleShipmentTubeSlots.Add(slot);
-        }
         var targets = new Dictionary<PoolKey, SampleShipment>();
         foreach (var group in groups)
         {
@@ -137,8 +131,7 @@ public sealed class SampleShipmentPackingResetService(PSeqOperationsDbContext db
                 || item.ShippedAt.HasValue || item.DeliveredAt.HasValue || item.ReceivedAt.HasValue
                 || item.Carrier is not null || item.TrackingNumber is not null
                 || item.Status is not (SampleShipmentStatus.Preparing or SampleShipmentStatus.Cancelled)
-                || item.Items.Any(row => row.RegisteredSampleTubeId.HasValue || row.TubeAssignedAt.HasValue
-                    || row.TubeSlots.Any(slot => slot.RegisteredSampleTubeId.HasValue || slot.TubeAssignedAt.HasValue))))
+                || item.Items.Any(row => row.TubeSlots.Any(slot => slot.RegisteredSampleTubeId.HasValue || slot.TubeAssignedAt.HasValue))))
             return "Containers cannot be changed after tube scanning, kit registration or shipment preparation has started for this job.";
         return null;
     }

@@ -155,24 +155,6 @@ public sealed class SampleShippingWorkflowReader(PSeqOperationsDbContext dbConte
                 .SelectMany(item =>
                 {
                     var slots = item.TubeSlots.OrderBy(slot => slot.Ordinal).ToList();
-                    if (slots.Count == 0)
-                    {
-                        RegisteredSampleTube? legacyTube = null;
-                        var hasLegacyTube = item.RegisteredSampleTubeId.HasValue
-                            && tubes.TryGetValue(item.RegisteredSampleTubeId.Value, out legacyTube);
-                        return new[] { new SampleShippingCrosswalkItemDto(
-                            item.Id, item.SubmittedSpecimenId, item.CustomerSampleId, item.SampleName,
-                            sampleTypes.GetValueOrDefault(item.SampleTypeDefinitionId, "Unavailable sample type"),
-                            item.Quantity, item.QuantityUnit, item.RegisteredSampleTubeId,
-                            hasLegacyTube ? legacyTube!.SupplierBarcode : null,
-                            hasLegacyTube ? legacyTube!.Status.ToString() : "Unassigned", item.Version,
-                            null, 1, 1, SampleShippingIdentity.Sample(item.SubmittedSpecimenId), Total(item.SubmittedSpecimenId),
-                            Others(item.SubmittedSpecimenId), SampleReceived(item.SubmittedSpecimenId), Pending(item.SubmittedSpecimenId),
-                            item.RegisteredSampleTubeId.HasValue && Received(item.RegisteredSampleTubeId.Value),
-                            legacyTube?.CustomerDeclaredQuantity, legacyTube?.CustomerDeclaredQuantityUnit,
-                            legacyTube?.CustomerDeclaredAt, legacyTube?.CustomerDeclaredByUserId) };
-                    }
-
                     return slots.Select(slot =>
                     {
                         RegisteredSampleTube? tube = null;

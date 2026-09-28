@@ -73,25 +73,6 @@ public sealed class CrmCompaniesController(
         return ToDto(await RequireCompanyAsync(companyId, tracking: false, cancellationToken));
     }
 
-    [HttpGet("by-access/{organizationId:guid}")]
-    public async Task<CrmCompanyDto> GetCompanyByAccessOrganization(
-        Guid organizationId,
-        CancellationToken cancellationToken)
-    {
-        await CrmAccess.RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
-        var company = await dbContext.CrmCompanies
-            .AsNoTracking()
-            .Include(value => value.Owner)
-            .Include(value => value.AccessOrganization)
-            .FirstOrDefaultAsync(
-                value => value.AccessOrganizationId == organizationId,
-                cancellationToken)
-            ?? throw NotFound(
-                "crm_company_access_not_found",
-                "No Company owns this access scope.");
-        return ToDto(company);
-    }
-
     [HttpPost]
     public async Task<ActionResult<CrmCompanyDto>> CreateCompany(
         [FromBody] CreateCrmCompanyRequest request,

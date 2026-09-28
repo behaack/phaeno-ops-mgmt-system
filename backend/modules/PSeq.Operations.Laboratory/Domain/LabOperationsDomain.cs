@@ -201,7 +201,7 @@ public sealed class LabContainer : LabAuditedEntity
         Kind = kind;
         Barcode = Required(barcode, nameof(barcode), 100);
         if (Barcode.Any(char.IsControl)) throw new ArgumentException("Scan a valid tube barcode.");
-        BarcodeNamespace = Required(barcodeNamespace ?? (barcodeSource == LabContainerBarcodeSource.PhaenoGenerated ? "PHAENO" : "LEGACY"), nameof(barcodeNamespace), 50);
+        BarcodeNamespace = Required(barcodeNamespace ?? (barcodeSource == LabContainerBarcodeSource.PhaenoGenerated ? "PHAENO" : throw new ArgumentException("A supplier barcode namespace is required.", nameof(barcodeNamespace))), nameof(barcodeNamespace), 50);
         Barcodes.Add(new LabContainerBarcode(Id, BarcodeNamespace, Barcode,
             barcodeSource == LabContainerBarcodeSource.PhaenoGenerated ? "DataMatrix" : "Unknown", barcodeSource, true));
         if (barcodeSource == LabContainerBarcodeSource.RegisteredSupplier
@@ -658,7 +658,6 @@ public sealed class LabMaterialLot : LabAuditedEntity
     public string LotNumber { get; private set; } = null!;
     public Guid? SupplierId { get; private set; }
     public Guid? SupplierProductId { get; private set; }
-    public string? LegacyComponentsJson { get; private set; }
     public DateOnly? ExpirationOrRetestDate { get; private set; }
     public Guid StorageLocationId { get; private set; }
     public decimal AvailableQuantity { get; private set; }

@@ -189,10 +189,11 @@ describe('navigation placement', () => {
     const context = { selectedOrganizationKind: 'Phaeno' as const }
     const items = getVisibleMainMenuItems(session, context, 'administration')
     expect(items.map(item => item.label)).toEqual([
-      ...(orders ? ['Order settings', 'Purchasing', 'Samples & shipping settings'] : []),
+      ...(orders ? ['Order settings', 'Samples & shipping settings'] : []),
       ...(retention ? ['File retention policies'] : []),
     ])
     expect(getVisibleMainMenuItems(session, context, 'workspace').some(item => item.label === 'Order ops')).toBe(false)
+    expect(getVisibleMainMenuItems(session, context, 'more').map(item => item.label)).toEqual(orders ? ['Purchasing'] : [])
   })
 
   it('keeps settings independent of operational workspaces', () => {
@@ -203,8 +204,10 @@ describe('navigation placement', () => {
 
   it('shows Lab settings only with laboratory access in Phaeno', () => {
     const session = createSession('Phaeno', { canManageLabOperations: true, canAdministerCrm: false })
-    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Phaeno' }, 'administration').map(item => item.label)).toEqual(['Lab settings', 'Equipment', 'Purchasing'])
+    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Phaeno' }, 'administration').map(item => item.label)).toEqual(['Lab settings'])
+    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Phaeno' }, 'more').map(item => item.label)).toEqual(['Purchasing', 'Equipment'])
     expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Customer' }, 'administration')).toEqual([])
+    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Customer' }, 'more')).toEqual([])
     expect(isMainMenuRouteActive('/lab-configuration', '/lab-operations')).toBe(false)
   })
 
@@ -231,14 +234,16 @@ describe('navigation placement', () => {
       getVisibleMainMenuItems(session, context, 'administration').map(
         (item) => item.label,
       ),
-    ).toEqual(['Order settings', 'Lab settings', 'CRM settings', 'Equipment', 'Purchasing', 'Samples & shipping settings', 'File retention policies'])
-    expect(getVisibleMainMenuItems(session, context, 'administration').filter(item => item.label === 'Equipment')).toHaveLength(1)
-    expect(getVisibleMainMenuItems(session, context, 'administration').filter(item => item.label === 'Purchasing')).toHaveLength(1)
+    ).toEqual(['Order settings', 'Lab settings', 'CRM settings', 'Samples & shipping settings', 'File retention policies'])
+    expect(getVisibleMainMenuItems(session, context, 'more').map(item => item.label)).toEqual(['Purchasing', 'Equipment', 'Data provisioning'])
+    for (const label of ['Purchasing', 'Equipment', 'Data provisioning']) {
+      expect(getVisibleMainMenuItems(session, context).filter(item => item.label === label)).toHaveLength(1)
+    }
     expect(
       getVisibleMainMenuItems(session, context, 'resources').map(
         (item) => item.label,
       ),
-    ).toEqual(['Data provisioning', 'Documentation'])
+    ).toEqual(['Documentation'])
   })
 })
 

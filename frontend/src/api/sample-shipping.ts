@@ -36,7 +36,7 @@ export type SampleShippingDestination = {
   effectiveTo: string | null
   isActive: boolean
   version: number
-  lifecycle: 'Draft' | 'Released' | 'Superseded' | 'Deactivated' | 'Discarded' | 'LegacyInactive'
+  lifecycle: 'Draft' | 'Released' | 'Superseded' | 'Deactivated' | 'Discarded'
 }
 
 export type SampleTypeDefinition = {
@@ -65,7 +65,7 @@ export type SampleTypeDefinition = {
   effectiveTo: string | null
   isActive: boolean
   version: number
-  lifecycle: 'Draft' | 'Released' | 'Superseded' | 'Deactivated' | 'Discarded' | 'LegacyInactive'
+  lifecycle: 'Draft' | 'Released' | 'Superseded' | 'Deactivated' | 'Discarded'
 }
 
 export type SampleShippingConfiguration = {
@@ -255,7 +255,7 @@ export type SampleShippingProcedure = {
   internationalCustomsInstructions: string | null
   isActive: boolean
   version: number
-  lifecycle: 'Draft' | 'Released' | 'Superseded' | 'Deactivated' | 'Discarded' | 'LegacyInactive'
+  lifecycle: 'Draft' | 'Released' | 'Superseded' | 'Deactivated' | 'Discarded'
 }
 export type SampleShippingProcedureWrite = Omit<SampleShippingProcedure, 'id' | 'definitionKey' | 'revision' | 'version' | 'lifecycle'> & { supersededVersion: number | null }
 export async function createSampleShippingProcedure(input: SampleShippingProcedureWrite) {

@@ -5,18 +5,20 @@ using PSeq.Operations.Commercial.OrderManagement.Domain;
 public class SampleShippingPackingInstructionsTests
 {
     [Fact]
-    public void KitSampleTypeLinkIsPermanent()
+    public void SampleTypeLinkBelongsToEachSpecificationRevision()
     {
         var kit = new SampleShippingContainerType("TRANS-20");
         var sampleTypeAnchor = Guid.NewGuid();
-        var actor = Guid.NewGuid();
         var now = new DateTime(2026, 9, 25, 12, 0, 0, DateTimeKind.Utc);
 
-        kit.LinkSampleType(sampleTypeAnchor, actor, now);
-
-        Assert.Equal(sampleTypeAnchor, kit.SampleTypeAnchorId);
-        Assert.Equal(now, kit.SampleTypeLinkedAt);
-        Assert.Throws<InvalidOperationException>(() => kit.LinkSampleType(Guid.NewGuid(), actor, now));
+        var draft = new SampleShippingContainerDefinition(kit.Id, 1, null, "RNA kit", 20, now, null, false, 0);
+        draft.SetDraftSampleType(sampleTypeAnchor);
+        Assert.Equal(sampleTypeAnchor, draft.SampleTypeAnchorId);
+        var nextType = Guid.NewGuid();
+        draft.SetDraftSampleType(nextType);
+        Assert.Equal(nextType, draft.SampleTypeAnchorId);
+        draft.Activate(now);
+        Assert.Throws<InvalidOperationException>(() => draft.SetDraftSampleType(Guid.NewGuid()));
     }
 
     [Theory]
@@ -26,7 +28,7 @@ public class SampleShippingPackingInstructionsTests
     public void KitDryIceRequiresAPositiveAmountAndUnit(decimal amount, string? unit)
     {
         Assert.Throws<ArgumentException>(() => new SampleShippingContainerDefinition(
-            Guid.NewGuid(), 1, null, "Synthetic kit", 20, null, null, "Pack securely",
+            Guid.NewGuid(), 1, null, "Synthetic kit", 20,
             new DateTime(2026, 9, 25, 12, 0, 0, DateTimeKind.Utc), null, false, 0,
             dryIceQuantity: amount, dryIceUnit: unit));
     }

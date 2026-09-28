@@ -43,12 +43,12 @@ export default function Header() {
   )
 
   return (
-    <header ref={headerRef} data-portal-header className="sticky top-0 z-50 border-b bg-background/90 px-2 backdrop-blur md:px-4">
-      <nav className="page-wrap relative flex min-h-[5.25rem] flex-wrap items-center gap-x-3 gap-y-2 py-3 md:flex-nowrap">
-        <div className="m-0 flex-shrink-0 text-base font-semibold">
+    <header ref={headerRef} data-portal-header className="sticky top-0 z-50 w-full shrink-0 border-b bg-background/90 backdrop-blur lg:px-4">
+      <nav className="relative mx-auto flex min-h-18 w-full flex-wrap items-center gap-x-3 gap-y-2 px-2 py-2 md:flex-nowrap lg:min-h-[5.25rem] lg:w-[min(1180px,calc(100%-2rem))] lg:px-0 lg:py-3">
+        <div className="m-0 flex shrink-0 text-base font-semibold lg:block">
           <Link
             to="/"
-            className="inline-flex flex-col items-start gap-0.5 px-0 py-1 no-underline md:px-3"
+            className="flex flex-col items-start gap-0.5 no-underline lg:inline-flex lg:px-3 lg:py-1"
             aria-label={`${branding.name} home`}
             title={branding.fullName}
           >
@@ -57,9 +57,9 @@ export default function Header() {
               alt="Phaeno"
               width={124}
               height={40}
-              className="h-9 w-[112px] object-contain md:h-10 md:w-[124px]"
+              className="h-9 w-[112px] object-contain lg:h-10 lg:w-[124px]"
             />
-            <span className="text-[0.5625rem] font-semibold tracking-[0.32em] text-foreground uppercase md:text-[0.625rem]">
+            <span className="text-[0.5625rem] leading-none font-semibold tracking-[0.32em] text-foreground uppercase lg:text-[0.625rem] lg:leading-normal">
               {branding.name}
             </span>
           </Link>

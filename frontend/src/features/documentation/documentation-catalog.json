@@ -267,7 +267,7 @@
       "title": "Getting started",
       "summary": "Find approved Trials, authorized shipping, curated data, and access for the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-09-19",
+      "reviewedAt": "2026-09-28",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -484,7 +484,7 @@
       "title": "Getting started",
       "summary": "Use Department dashboard attention and new-result counts, open Customer Jobs, and find samples, curated data and retained Trials.",
       "order": 10,
-      "reviewedAt": "2026-09-23",
+      "reviewedAt": "2026-09-28",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -700,7 +700,7 @@
       "title": "Getting started",
       "summary": "Find reagent orders, Assembly requests, curated data, and retained Trials in the selected Department.",
       "order": 10,
-      "reviewedAt": "2026-09-19",
+      "reviewedAt": "2026-09-28",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -871,7 +871,7 @@
       "title": "Phaeno operations guide",
       "summary": "Find each workflow, its owning workspace, reusable configuration, and the roles needed to act.",
       "order": 10,
-      "reviewedAt": "2026-09-21",
+      "reviewedAt": "2026-09-28",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -898,7 +898,7 @@
       "title": "Customer relationship management",
       "summary": "Manage canonical Companies, Contacts, Leads, Opportunities, Portal access, Tasks, reporting, and data quality.",
       "order": 15,
-      "reviewedAt": "2026-09-18",
+      "reviewedAt": "2026-09-28",
       "navigationGroup": "customer-relationship-management",
       "contentType": "overview",
       "topicIds": [
@@ -1041,7 +1041,7 @@
       "title": "Reports and administration",
       "summary": "Interpret commercial reports and manage pipelines, fields, views, duplicates, imports, and exports.",
       "order": 20,
-      "reviewedAt": "2026-09-18",
+      "reviewedAt": "2026-09-28",
       "navigationGroup": "customer-relationship-management",
       "contentType": "guide",
       "topicIds": [
@@ -1107,7 +1107,7 @@
       "title": "Troubleshooting and recovery",
       "summary": "Resolve access, duplicate, stale-update, conversion, stage, import, Task, and handoff problems safely.",
       "order": 22,
-      "reviewedAt": "2026-09-18",
+      "reviewedAt": "2026-09-28",
       "navigationGroup": "customer-relationship-management",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1172,7 +1172,7 @@
       "title": "Data provisioning",
       "summary": "Manage Phaeno-owned sources, immutable packages, exact-version grants, and governance events.",
       "order": 30,
-      "reviewedAt": "2026-09-19",
+      "reviewedAt": "2026-09-28",
       "navigationGroup": "data-provisioning",
       "contentType": "overview",
       "topicIds": [
@@ -1564,7 +1564,7 @@
       "title": "Laboratory operations",
       "summary": "Find laboratory work, receive purchased kits and stock, assemble Phaeno kits and reagents, record scientific evidence, and trace result delivery.",
       "order": 50,
-      "reviewedAt": "2026-09-26",
+      "reviewedAt": "2026-09-28",
       "navigationGroup": "laboratory-operations",
       "contentType": "overview",
       "topicIds": [
@@ -1595,7 +1595,7 @@
       "title": "Receipt and accession",
       "summary": "Configure named Phaeno transportation kits and their approved workflows, verify physical tube rosters, dispatch kits, and record receipt and accession.",
       "order": 51,
-      "reviewedAt": "2026-09-26",
+      "reviewedAt": "2026-09-28",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1640,7 +1640,7 @@
       "title": "Service workflows, protocol control, and execution",
       "summary": "Configure service, reagent, and master-mix workflows; record controlled Lab steps and material use.",
       "order": 54,
-      "reviewedAt": "2026-09-26",
+      "reviewedAt": "2026-09-28",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1675,7 +1675,7 @@
       "title": "Materials and equipment",
       "summary": "Receive purchased lots, configure Phaeno reagent products and manufacture their lots, qualify stock, and track consumption and storage.",
       "order": 55,
-      "reviewedAt": "2026-09-26",
+      "reviewedAt": "2026-09-28",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1811,7 +1811,7 @@
       "title": "Configuration and file retention",
       "summary": "Maintain reusable defaults, services, analyses, Partner rules, Sample types, Shipping procedures, Phaeno ship-to destinations, Transportation kits, and released-file retention.",
       "order": 60,
-      "reviewedAt": "2026-09-26",
+      "reviewedAt": "2026-09-28",
       "navigationGroup": "platform-operations",
       "contentType": "troubleshooting",
       "topicIds": [

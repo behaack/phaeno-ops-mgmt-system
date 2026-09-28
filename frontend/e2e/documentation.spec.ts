@@ -181,8 +181,10 @@ async function openDocumentationFromUserMenu(page: import('@playwright/test').Pa
   const trigger = page.getByRole('button', { name: 'Open user menu' })
   await trigger.focus()
   await trigger.press('Enter')
-  await expect(page.getByRole('menu')).toBeVisible()
-  const documentation = page.getByRole('menuitem', {
+  const mobile = test.info().project.name === 'mobile-chrome'
+  const navigationSurface = mobile ? page.getByRole('dialog', { name: 'Menu', exact: true }) : page.getByRole('menu')
+  await expect(navigationSurface).toBeVisible()
+  const documentation = page.getByRole(mobile ? 'link' : 'menuitem', {
     name: 'Documentation', exact: true,
   })
   await expect(documentation).toHaveCount(1)
@@ -190,7 +192,7 @@ async function openDocumentationFromUserMenu(page: import('@playwright/test').Pa
   await page.screenshot({ path: test.info().outputPath('documentation-menu.png') })
   await documentation.focus()
   await documentation.press('Enter')
-  await expect(page.getByRole('menu')).toHaveCount(0)
+  await expect(navigationSurface).toHaveCount(0)
 }
 
 async function selectOrganization(

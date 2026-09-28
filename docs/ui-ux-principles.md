@@ -39,7 +39,7 @@ Phaeno Portal is desktop-first and fully responsive.
 - Optimize complex creation, editing, analysis, and record management for laptops and desktops.
 - Keep tablets fully functional.
 - On phones, prioritize lookup, status review, notifications, and simple actions instead of compressing complex tables and long forms into unusable replicas.
-- Render primary navigation once per viewport: inline when wide and in the menu when narrow. Documentation stays in the user dropdown menu at every screen size.
+- Render primary navigation once per viewport: inline when wide and in the menu when narrow. Documentation stays in the user menu at every screen size. On narrow screens, that menu is a full-width tray sliding in from the right, with a fixed title and visible Close action, a scrolling body, modal focus containment, Escape dismissal, and focus return to its trigger. Respect reduced motion. Keep the mobile header divider full width, center the logo and menu control vertically, and keep the hamburger at the toolbar edge with an 8 px inset and a 44 px touch target.
 - Preserve information and functionality during zoom and reflow. Allow two-dimensional scrolling only where the content genuinely requires it, such as a complex data table or scientific visualization.
 
 ## Information architecture and navigation
@@ -57,15 +57,15 @@ Use task-oriented entry points with record-centered workspaces.
   and representative priority work, and route users to the full owning
   workspace when one exists. Web Operations shows mailing-list signups, demo
   requests, and email delivery to Phaeno platform administrators. Intake records
-  remain view-first; bounded unsubscribe, completion, technical-brief recovery,
-  and resend actions require explicit confirmation with the affected recipient
+  remain view-first; bounded unsubscribe, completion, email resend actions require explicit confirmation with the affected recipient
   or intake identified. Show queued work, provider acceptance, and failed attempts
   distinctly; provider acceptance does not establish inbox delivery. External
   organization dashboards do not expose this internal
   selector.
 - Work queues surface pending tasks, exceptions, recent activity, and important status changes.
 - Primary navigation uses recognizable business and scientific areas rather than technical modules.
-- Place **Documentation** under **Resources** in the user dropdown menu for Prospect, Customer, Partner, and Phaeno users at every screen size. It opens the guides for the current organization and retains the existing audience access rules.
+- Phaeno's wide-screen toolbar places secondary workspaces under **More**, ordered **Purchasing**, **Equipment**, then **Data provisioning**. On narrow screens, show these links inside a collapsible **More** row in the user tray. Put available configuration links inside a collapsible **Settings** row. Workspace links appear directly without a Workspace heading. Both sections start collapsed on each menu opening, expand within the menu width, and allow only one section open at a time. Preserve Enter/Space toggling, Up/Down movement among visible items, Escape dismissal, and accessible expanded state. Preserve destination permissions, active-route indication, and one visible entry per viewport; hide More when none of its destinations are available. Expanded section headers remain neutral. Indent text-only child links beside a subtle vertical guide and reserve the selection background for the current destination. When collapsed, emphasize a section title if it contains the current destination.
+- Place **Documentation** in the user menu for Prospect, Customer, Partner, and Phaeno users at every screen size. It opens the guides for the current organization and retains the existing audience access rules. Place **User management** directly beneath Documentation when authorized. Keep section dividers without visible Display, Administration, or Resources headings; theme choices retain their accessible group name.
 - Do not expose an organization-context search or act-as switcher in the user
   menu. Phaeno users manage external organizations through the Accounts
   workspace, while external users remain in the organization context
@@ -80,7 +80,7 @@ Use task-oriented entry points with record-centered workspaces.
   possible request outcome alongside product and service, relationship, and
   work outcomes. Creating or editing the Company alone grants no access,
   readiness, service entitlement, or executable work.
-- Multi-section workspaces use one shared sidebar anchored to the far-left viewport edge beneath the primary toolbar. On wide screens it may remain pinned; when unpinned, a fine pointer may preview the same rail from the viewport edge. The persistent edge tab provides keyboard, click, and touch access. On narrow or coarse-pointer layouts, the rail stays open until the user selects a section, toggles the tab, or presses Escape.
+- Multi-section workspaces use one shared sidebar anchored to the far-left viewport edge beneath the primary toolbar. On wide screens it may remain pinned; when unpinned, a fine pointer may preview the same rail from the viewport edge. The persistent edge tab provides keyboard, click, and touch access. On narrow or coarse-pointer layouts, the rail stays open until the user selects a section, toggles the tab, or presses Escape. On narrow screens, clicking or tapping outside the sidebar also closes it and allows the clicked page control to work normally.
 - The unpinned rail is non-modal: it does not add a backdrop, trap focus, blur the page, or move content. A pinned rail preserves the normal centered page position when it fits in the available left margin and reflows the page only when the rail would otherwise overlap it.
 - Remember the sidebar pin preference as a low-risk presentation setting, and show pin controls only on wide layouts. Keep section selection, keyboard focus, Escape behavior, and accessible names intact across pinned and unpinned states, and do not render duplicate navigation for one viewport.
 - Searchable lists provide access to core records.

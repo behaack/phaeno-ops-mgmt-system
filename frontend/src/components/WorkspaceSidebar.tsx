@@ -107,6 +107,33 @@ export function ResponsiveSidebar({
   }, [isPreviewOpen, showPinnedSidebar])
 
   useEffect(() => {
+    if (!isPreviewOpen || isWideLayout) return
+
+    function closeOnOutsidePointer(event: PointerEvent) {
+      const target = event.target
+      if (
+        !(target instanceof Node)
+        || sidebarRef.current?.contains(target)
+        || triggerRef.current?.contains(target)
+      ) return
+
+      const focusWasInsideSidebar = sidebarRef.current?.contains(document.activeElement)
+      setIsPreviewOpen(false)
+      if (focusWasInsideSidebar) {
+        requestAnimationFrame(() => {
+          // Let an outside control take focus; restore the tab only for a plain surface.
+          if (document.activeElement === document.body || sidebarRef.current?.contains(document.activeElement)) {
+            triggerRef.current?.focus()
+          }
+        })
+      }
+    }
+
+    document.addEventListener('pointerdown', closeOnOutsidePointer, true)
+    return () => document.removeEventListener('pointerdown', closeOnOutsidePointer, true)
+  }, [isPreviewOpen, isWideLayout])
+
+  useEffect(() => {
     if (!isPreviewOpen || showPinnedSidebar || !hoverPreviewEnabled) return
 
     function closeAfterPointerLeavesRail(event: MouseEvent) {

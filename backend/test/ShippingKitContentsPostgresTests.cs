@@ -8,26 +8,65 @@ using PhaenoPortal.App.Features.OrderManagement.Services;
 public partial class SampleShippingPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task KitDraftCanReplaceContentsRepeatedlyWhileRejectingAStaleVersion()
+    {
+        await using var scope = await ShippingTestScope.CreateAsync();
+        var shipment = await scope.CreateShipmentAsync();
+        await using var transaction = await scope.DbContext.Database.BeginTransactionAsync();
+        try
+        {
+            var sku = $"PACK-{scope.Suffix}-DRAFT-EDIT";
+            var contents = await scope.KitContentsAsync(20);
+            var product = await scope.DbContext.LabSupplierProducts.SingleAsync(item => item.Id == contents[0].SupplierProductId);
+            var catalog = scope.ContainerCatalog();
+            var draft = await catalog.CreateAsync(new(sku, "Editable RNA kit", 20, DateTime.UtcNow.AddMinutes(-1),
+                ShippingContainerProductId: contents[0].SupplierProductId, TemperatureControlInstructions: "Keep frozen.",
+                SampleTypeDefinitionId: shipment.SampleType.Id, KitContents: contents), default);
+            scope.ClearTrackedState();
+            var replacement = contents.Select(item => item.Quantity == 20 ? item with { Quantity = 19 } : item).ToArray();
+            var request = new EditSampleShippingContainerDraftRequest(draft.Version, "Edited kit", 19,
+                draft.EffectiveFrom, draft.EffectiveTo, draft.DisplayOrder, shipment.SampleType.Id,
+                TemperatureControlInstructions: "Keep frozen.", KitContents: replacement);
+            var first = await catalog.EditDraftAsync(draft.Id, request, default);
+            Assert.Equal(draft.Id, first.Id);
+            Assert.Equal(draft.Revision, first.Revision);
+            Assert.True(first.Version > draft.Version);
+            scope.ClearTrackedState();
+            var saved = await catalog.ReadAsync(draft.Id, default);
+            Assert.Equal(19, saved.TubeCapacity);
+            Assert.Equal(19, Assert.Single(saved.KitContents!, item => item.Kind == "Tube").Quantity);
+            Assert.Equal(1, Assert.Single(saved.KitContents!, item => item.Kind == "ShippingContainer").Quantity);
+            var stale = await Assert.ThrowsAsync<OrderManagementException>(() => catalog.EditDraftAsync(draft.Id, request, default));
+            Assert.Contains("This Draft changed", stale.Message);
+            scope.ClearTrackedState();
+            var second = await catalog.EditDraftAsync(draft.Id, request with { Version = saved.Version, KitContents = contents, TubeCapacity = 20 }, default);
+            Assert.Equal(draft.Revision, second.Revision);
+            Assert.True(second.Version > saved.Version);
+            scope.ClearTrackedState();
+            var reloaded = await catalog.ReadAsync(draft.Id, default);
+            Assert.Equal(20, Assert.Single(reloaded.KitContents!, item => item.Kind == "Tube").Quantity);
+            Assert.Equal(2, await scope.DbContext.Set<ShippingKitContent>().CountAsync(item => item.ContainerDefinitionId == draft.Id));
+        }
+        finally { await transaction.RollbackAsync(); scope.ClearTrackedState(); }
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task KitDraftWaitsForIndividualUnitsAndAnOuterContainerThatFits()
     {
         await using var scope = await ShippingTestScope.CreateAsync();
         var shipment = await scope.CreateShipmentAsync();
-        var producer = await scope.DbContext.LabSuppliers.SingleAsync(item => item.IsInternalProducer);
         var sku = $"PACK-{scope.Suffix}-CAPACITY";
-        var finished = new PSeq.Operations.Laboratory.Domain.LabSupplierProduct(producer.Id, sku,
-            "Twenty-tube kit", PSeq.Operations.Laboratory.Domain.LabProductType.TransportationKitId);
         var contents = await scope.KitContentsAsync(20);
         var shipper = await scope.DbContext.LabSupplierProducts.SingleAsync(item => item.Id == contents[0].SupplierProductId);
         var tube = await scope.DbContext.LabSupplierProducts.SingleAsync(item => item.Id == contents[1].SupplierProductId);
         shipper.SetTubeCapacity(10);
         tube.SetDefaultQuantityUnit(null);
-        scope.DbContext.LabSupplierProducts.Add(finished);
         await scope.DbContext.SaveChangesAsync();
         scope.ClearTrackedState();
 
         var catalog = scope.ContainerCatalog();
-        var draft = await catalog.CreateAsync(new(sku, finished.Description, 20, DateTime.UtcNow.AddMinutes(-1),
-            FinishedKitProductId: finished.Id, TemperatureControlInstructions: "Keep frozen.",
+        var draft = await catalog.CreateAsync(new(sku, "Twenty-tube RNA kit", 20, DateTime.UtcNow.AddMinutes(-1),
+            ShippingContainerProductId: shipper.Id, TemperatureControlInstructions: "Keep frozen.",
             SampleTypeDefinitionId: shipment.SampleType.Id, KitContents: contents), default);
         Assert.False(draft.IsActive);
         scope.ClearTrackedState();
@@ -57,18 +96,11 @@ public partial class SampleShippingPostgresTests
     {
         await using var scope = await ShippingTestScope.CreateAsync();
         var shipment = await scope.CreateShipmentAsync();
-        var supplier = await scope.DbContext.LabSuppliers.SingleAsync(item => item.IsInternalProducer);
         var sku = $"PACK-{scope.Suffix}-PENDING-WORKFLOW";
-        var product = new PSeq.Operations.Laboratory.Domain.LabSupplierProduct(supplier.Id, sku,
-            "Kit awaiting assembly workflow", PSeq.Operations.Laboratory.Domain.LabProductType.TransportationKitId);
-        scope.DbContext.LabSupplierProducts.Add(product);
-        await scope.DbContext.SaveChangesAsync();
-        scope.ClearTrackedState();
-
         var catalog = scope.ContainerCatalog();
         var contents = await scope.KitContentsAsync(20);
-        var draft = await catalog.CreateAsync(new(sku, product.Description, 20, DateTime.UtcNow.AddMinutes(-1),
-            FinishedKitProductId: product.Id, TemperatureControlInstructions: "Keep frozen.",
+        var draft = await catalog.CreateAsync(new(sku, "Editable RNA kit", 20, DateTime.UtcNow.AddMinutes(-1),
+            ShippingContainerProductId: contents[0].SupplierProductId, TemperatureControlInstructions: "Keep frozen.",
             SampleTypeDefinitionId: shipment.SampleType.Id, KitContents: contents), default);
         scope.ClearTrackedState();
         var released = await catalog.ActivateAsync(draft.Id, draft.Version, default);
@@ -103,50 +135,6 @@ public partial class SampleShippingPostgresTests
     }
 
     [PostgreSqlReferenceFact]
-    public async Task HistoricalContainerRevisionCanBecomeActiveWithoutBecomingOrderable()
-    {
-        await using var scope = await ShippingTestScope.CreateAsync();
-        var shipment = await scope.CreateShipmentAsync();
-        var type = new SampleShippingContainerType($"PACK-{scope.Suffix}-LEGACY");
-        type.LinkSampleType(shipment.SampleType.Id, scope.PlatformUser.Id, DateTime.UtcNow);
-        var draft = new SampleShippingContainerDefinition(type.Id, 1, null, "Earlier 20-tube container", 20,
-            null, null, "Earlier packing notes", DateTime.UtcNow.AddDays(-1), null, true, 0,
-            sampleTypeAnchorId: shipment.SampleType.Id);
-        type.Definitions.Add(draft);
-        scope.DbContext.SampleShippingContainerTypes.Add(type);
-        await scope.DbContext.SaveChangesAsync();
-        scope.ClearTrackedState();
-
-        var unlinkedPending = await scope.ContainerCatalog().ReviseAsync(draft.Id,
-            new(draft.Version, draft.CommonName, 20, DateTime.UtcNow, IsActive: false,
-                TemperatureControlInstructions: "Keep frozen."), default);
-        Assert.Null(unlinkedPending.SampleTypeAnchorId);
-        var pending = await scope.ContainerCatalog().LinkSampleTypeAsync(unlinkedPending.Id,
-            shipment.SampleType.Id, unlinkedPending.Version, scope.PlatformUser.Id, default);
-        Assert.Equal(shipment.SampleType.Id, pending.SampleTypeAnchorId);
-        scope.ClearTrackedState();
-        var active = await scope.ContainerCatalog().ActivateAsync(pending.Id, pending.Version, default);
-        Assert.True(active.IsActive);
-        Assert.False((await scope.ContainerCatalog().ReadAsync(active.Id, default)).NewWorkReady);
-        Assert.Empty(await scope.ContainerCatalog().ReadCompatibleAsync(
-            [new ContainerSampleTypeContext(shipment.SampleType.Id)], default));
-        scope.ClearTrackedState();
-        var nextDraft = await scope.ContainerCatalog().ReviseAsync(active.Id,
-            new(active.Version, active.CommonName, 20, DateTime.UtcNow, IsActive: false), default);
-        var nextLinked = await scope.ContainerCatalog().LinkSampleTypeAsync(nextDraft.Id,
-            shipment.SampleType.Id, nextDraft.Version, scope.PlatformUser.Id, default);
-        var next = await scope.ContainerCatalog().ActivateAsync(nextLinked.Id, nextLinked.Version, default);
-        Assert.True(next.IsActive);
-        Assert.Equal(active.SampleTypeAnchorId, next.SampleTypeAnchorId);
-        var stockError = await Assert.ThrowsAsync<OrderManagementException>(() => scope.StockController().Create(
-            new(next.Id, Guid.NewGuid(), Guid.NewGuid(), null), default));
-        Assert.Equal("stock_kit_conflict", stockError.ErrorCode);
-        Assert.Contains("shipping dependencies are not ready", stockError.Message);
-        Assert.Equal(3, await scope.DbContext.SampleShippingContainerDefinitions.AsNoTracking()
-            .CountAsync(item => item.ContainerTypeId == type.Id));
-    }
-
-    [PostgreSqlReferenceFact]
     public async Task InactiveKitRevisionKeepsPredecessorActiveUntilExplicitActivation()
     {
         await using var scope = await ShippingTestScope.CreateAsync();
@@ -155,12 +143,12 @@ public partial class SampleShippingPostgresTests
         var catalog = scope.ContainerCatalog();
         var unlinkedDraft = await catalog.ReviseAsync(active.Id, new(active.Version, active.CommonName, active.TubeCapacity,
             DateTime.UtcNow.AddMinutes(1), IsActive: false,
-            AssemblyWorkflowRevisionId: Guid.NewGuid(),
+            AssemblyWorkflowId: active.AssemblyWorkflowId,
             TemperatureControlInstructions: active.TemperatureControlInstructions), default);
         Assert.Null(unlinkedDraft.SampleTypeAnchorId);
         var draft = await catalog.LinkSampleTypeAsync(unlinkedDraft.Id, shipment.SampleType.Id,
             unlinkedDraft.Version, scope.PlatformUser.Id, default);
-        Assert.Equal(active.AssemblyWorkflowRevisionId, draft.AssemblyWorkflowRevisionId);
+        Assert.Equal(active.AssemblyWorkflowId, draft.AssemblyWorkflowId);
         Assert.Equal(shipment.SampleType.Id, active.SampleTypeAnchorId);
         Assert.Equal(active.SampleTypeAnchorId, draft.SampleTypeAnchorId);
         scope.ClearTrackedState();
@@ -174,7 +162,7 @@ public partial class SampleShippingPostgresTests
         Assert.False(draft.IsActive);
         var pendingError = await Assert.ThrowsAsync<OrderManagementException>(() => catalog.ReviseAsync(draft.Id,
             new(draft.Version, draft.CommonName, draft.TubeCapacity, DateTime.UtcNow.AddMinutes(2),
-                IsActive: true, AssemblyWorkflowRevisionId: draft.AssemblyWorkflowRevisionId,
+                IsActive: true, AssemblyWorkflowId: draft.AssemblyWorkflowId,
                 TemperatureControlInstructions: draft.TemperatureControlInstructions), default));
         Assert.Equal("shipping_container_invalid", pendingError.ErrorCode);
         Assert.Contains("Create a Draft specification", pendingError.Message);
@@ -195,12 +183,7 @@ public partial class SampleShippingPostgresTests
     {
         await using var scope = await ShippingTestScope.CreateAsync();
         var shipment = await scope.CreateShipmentAsync();
-        var type = new SampleShippingContainerType($"PACK-{scope.Suffix}-UNLINKED");
-        var draft = new SampleShippingContainerDefinition(type.Id, 1, null, "Unlinked historical container", 20,
-            null, null, "Earlier packing notes", DateTime.UtcNow.AddDays(-1), null, false, 0);
-        type.Definitions.Add(draft);
-        scope.DbContext.SampleShippingContainerTypes.Add(type);
-        await scope.DbContext.SaveChangesAsync();
+        var draft = await scope.CreateContainerAsync(shipment, 20, active: false);
         scope.ClearTrackedState();
 
         var controller = scope.CreateConfigurationController();
@@ -211,8 +194,8 @@ public partial class SampleShippingPostgresTests
             draft.Version, scope.PlatformUser.Id, default);
         Assert.Equal(shipment.SampleType.Id, linked.SampleTypeAnchorId);
         Assert.False(inactive.IsActive);
-        Assert.Null((await scope.DbContext.SampleShippingContainerTypes.AsNoTracking()
-            .SingleAsync(item => item.Id == type.Id)).SampleTypeAnchorId);
+        Assert.Equal(shipment.SampleType.Id, (await scope.DbContext.SampleShippingContainerDefinitions.AsNoTracking()
+            .SingleAsync(item => item.Id == draft.Id)).SampleTypeAnchorId);
     }
 
     [PostgreSqlReferenceFact]
@@ -258,8 +241,7 @@ public partial class SampleShippingPostgresTests
         var revised = await scope.ContainerCatalog().ReviseAsync(definition.Id,
             new(definition.Version, definition.CommonName, definition.TubeCapacity,
                 DateTime.UtcNow.AddMinutes(1), IsActive: false,
-                AssemblyWorkflowRevisionId: definition.AssemblyWorkflowRevisionId,
-                PackingInstructions: definition.PackingInstructions,
+                AssemblyWorkflowId: definition.AssemblyWorkflowId,
                 TemperatureControlInstructions: definition.TemperatureControlInstructions,
                 KitContents: definition.KitContents!.Select(item => new ShippingKitContentRequest(item.SupplierProductId, item.Quantity)).ToArray()), default);
 

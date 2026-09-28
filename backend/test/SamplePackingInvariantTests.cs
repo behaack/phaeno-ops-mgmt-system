@@ -29,8 +29,8 @@ public sealed class SamplePackingInvariantTests
     {
         var now = DateTime.UtcNow;
         var kit = Guid.NewGuid();
-        var first = new RegisteredSampleTube(kit, "PACK-FIRST");
-        var second = new RegisteredSampleTube(kit, "PACK-SECOND");
+        var first = new RegisteredSampleTube(kit, "PACK-FIRST", "TEST_SUPPLIER");
+        var second = new RegisteredSampleTube(kit, "PACK-SECOND", "TEST_SUPPLIER");
         first.MarkAssigned(now.AddMinutes(-1));
         second.MarkAssigned(now.AddMinutes(-1));
         first.RecordReceipt(now);
@@ -41,7 +41,7 @@ public sealed class SamplePackingInvariantTests
     [Fact]
     public void UnassignedTubeCannotBeReceived()
     {
-        var tube = new RegisteredSampleTube(Guid.NewGuid(), "PACK-UNASSIGNED");
+        var tube = new RegisteredSampleTube(Guid.NewGuid(), "PACK-UNASSIGNED", "TEST_SUPPLIER");
         Assert.Throws<InvalidOperationException>(() => tube.RecordReceipt(DateTime.UtcNow));
         Assert.Null(tube.ReceivedAt);
     }

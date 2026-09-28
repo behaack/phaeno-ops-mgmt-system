@@ -111,7 +111,7 @@ public sealed partial class LabOperationsController(
                 item.LabSpecimenId, item.ParentContainerId, item.Kind.ToString(), item.Barcode,
                 item.BarcodeSource.ToString(), item.ExternalBarcodeReferenceId,
                 item.Label, item.LabelPrintCount, item.Location, item.Quantity, item.QuantityUnit,
-                item.Status.ToString(), item.RetainUntilUtc, item.Version,
+                item.Status.ToString(), item.RetainUntilUtc, item.Version, item.BarcodeNamespace,
                 item.IntakeDisposition == null ? null : item.IntakeDisposition.ToString(), item.IntakeReasonCode, item.IntakeNotes,
                 item.IntakeReviewedAtUtc, item.IntakeReviewedByUserId)).ToListAsync(cancellationToken);
         var executions = await dbContext.LabProtocolExecutions.AsNoTracking().Where(item => item.LabWorkOrderId == work.Id)

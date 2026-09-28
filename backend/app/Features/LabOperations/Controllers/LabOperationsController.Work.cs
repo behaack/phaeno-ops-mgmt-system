@@ -81,7 +81,7 @@ public sealed partial class LabOperationsController
         else
         {
             if (await dbContext.SampleShipmentItems.AnyAsync(item => item.SubmittedSpecimenId == specimen.SubmittedSpecimenId
-                    && (item.RegisteredSampleTubeId.HasValue || item.TubeSlots.Any(slot => slot.RegisteredSampleTubeId.HasValue)), cancellationToken))
+                    && item.TubeSlots.Any(slot => slot.RegisteredSampleTubeId.HasValue), cancellationToken))
                 throw Conflict("physical_tube_receipt_required", "Scan the shipment and physical tube to record receipt. Each tube is received separately.");
             Execute(() => specimen.RecordReceipt(request.ReceivedAtUtc, request.ReceiptCondition, request.CurrentLocation));
         }
@@ -193,7 +193,7 @@ public sealed partial class LabOperationsController
             var slotMatches = await dbContext.SampleShipmentTubeSlots.AsNoTracking()
                 .AnyAsync(slot => slot.SampleShipmentItemId == shipmentItem.Id
                     && slot.RegisteredSampleTubeId == registeredTube.Id, cancellationToken);
-            if (shipmentItem.RegisteredSampleTubeId != registeredTube.Id && !slotMatches)
+            if (!slotMatches)
                 throw Conflict("supplier_tube_sample_mismatch", "The scanned tube is not matched to this Customer sample on the frozen crosswalk.");
             var existingContainer = await dbContext.LabContainers
                 .SingleOrDefaultAsync(item => item.ExternalBarcodeReferenceId == registeredTube.Id, cancellationToken);
@@ -251,7 +251,7 @@ public sealed partial class LabOperationsController
         else
         {
             if (await dbContext.SampleShipmentItems.AnyAsync(item => item.SubmittedSpecimenId == specimen.SubmittedSpecimenId
-                    && (item.RegisteredSampleTubeId.HasValue || item.TubeSlots.Any(slot => slot.RegisteredSampleTubeId.HasValue)), cancellationToken))
+                    && item.TubeSlots.Any(slot => slot.RegisteredSampleTubeId.HasValue), cancellationToken))
                 throw Conflict("registered_tube_pair_required", "Scan the shipment and registered physical tube for this sample.");
             barcode = await LabBarcodeService.AllocateAsync(
                 dbContext, LabContainerKind.SubmittedSpecimen, cancellationToken);

@@ -187,7 +187,7 @@ describe('review rationale condition assessment', () => {
 })
 
 describe('optional QC report', () => {
-  const qcStep: typeof step = { ...step, key: 'qc', name: 'QC', captures: [{ key: 'synthetic-qc-record-reference', label: 'Synthetic QC record reference', type: 'fileReference', required: true, scope: 'shared' }], qcGate: { scope: 'batch', criteria: 'TEST ONLY', outcomes: ['pass', 'fail', 'hold'] } }
+  const qcStep: typeof step = { ...step, key: 'qc', name: 'QC', captures: [], qcGate: { scope: 'batch', criteria: 'TEST ONLY', outcomes: ['pass', 'fail', 'hold'] } }
   const props = { batch: { ...batch, optionalQcReports: true }, stage, step: qcStep, action: 'record' as const, onClose: vi.fn(), onResource: vi.fn(), pending: false }
   const complete = () => {
     fireEvent.change(screen.getByLabelText(/QC outcome/), { target: { value: 'pass' } })

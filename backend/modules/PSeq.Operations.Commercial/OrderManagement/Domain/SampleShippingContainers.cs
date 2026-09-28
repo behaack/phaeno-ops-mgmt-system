@@ -7,10 +7,6 @@ public sealed class SampleShippingContainerType : IAudit, IConcurrency
     public Guid Id { get; private set; } = Guid.NewGuid();
     public string Sku { get; private set; } = null!;
     public string NormalizedSku { get; private set; } = null!;
-    public Guid? FinishedKitProductId { get; private set; }
-    public Guid? SampleTypeAnchorId { get; private set; }
-    public DateTime? SampleTypeLinkedAt { get; private set; }
-    public Guid? SampleTypeLinkedByUserId { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
@@ -18,22 +14,10 @@ public sealed class SampleShippingContainerType : IAudit, IConcurrency
     public long Version { get; private set; } = 1;
     public ICollection<SampleShippingContainerDefinition> Definitions { get; private set; } = [];
     private SampleShippingContainerType() { }
-    public SampleShippingContainerType(string sku, Guid? finishedKitProductId = null)
+    public SampleShippingContainerType(string sku)
     {
         Sku = OrderText.Required(sku, "SKU", 100);
         NormalizedSku = Sku.ToUpperInvariant();
-        if (finishedKitProductId == Guid.Empty) throw new ArgumentException("Choose a valid Transportation kit product.");
-        FinishedKitProductId = finishedKitProductId;
-    }
-    public void LinkSampleType(Guid sampleTypeAnchorId, Guid actorUserId, DateTime utcNow)
-    {
-        if (sampleTypeAnchorId == Guid.Empty || actorUserId == Guid.Empty || utcNow.Kind != DateTimeKind.Utc)
-            throw new ArgumentException("Choose a Sample type and record the actor and UTC time.");
-        if (SampleTypeAnchorId.HasValue)
-            throw new InvalidOperationException("A Transportation kit's Sample type cannot change after it is linked.");
-        SampleTypeAnchorId = sampleTypeAnchorId;
-        SampleTypeLinkedAt = utcNow;
-        SampleTypeLinkedByUserId = actorUserId;
     }
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
     public void MarkUpdated(DateTime utcNow, Guid? actorUserId) { UpdatedAt = utcNow; UpdatedByUserId = actorUserId; }
@@ -43,16 +27,14 @@ public sealed class SampleShippingContainerDefinition : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid ContainerTypeId { get; private set; }
-    public Guid? AssemblyWorkflowRevisionId { get; private set; }
+    public Guid? ShippingContainerProductId { get; private set; }
+    public Guid? AssemblyWorkflowId { get; private set; }
     public Guid? SampleTypeAnchorId { get; private set; }
     public SampleShippingContainerType ContainerType { get; private set; } = null!;
     public int Revision { get; private set; }
     public Guid? SupersedesDefinitionId { get; private set; }
     public string CommonName { get; private set; } = null!;
     public int TubeCapacity { get; private set; }
-    public string? SupplierName { get; private set; }
-    public string? SupplierProductNumber { get; private set; }
-    public string? PackingInstructions { get; private set; }
     public decimal? DryIceQuantity { get; private set; }
     public string? DryIceUnit { get; private set; }
     public string? TemperatureControlInstructions { get; private set; }
@@ -71,9 +53,8 @@ public sealed class SampleShippingContainerDefinition : IAudit, IConcurrency
     private SampleShippingContainerDefinition() { }
 
     public SampleShippingContainerDefinition(Guid containerTypeId, int revision, Guid? supersedesDefinitionId,
-        string commonName, int tubeCapacity, string? supplierName, string? supplierProductNumber,
-        string? packingInstructions, DateTime effectiveFrom, DateTime? effectiveTo, bool isActive, int displayOrder,
-        Guid? assemblyWorkflowRevisionId = null, decimal? dryIceQuantity = null,
+        string commonName, int tubeCapacity, DateTime effectiveFrom, DateTime? effectiveTo, bool isActive, int displayOrder,
+        decimal? dryIceQuantity = null,
         string? dryIceUnit = null, string? temperatureControlInstructions = null,
         Guid? sampleTypeAnchorId = null)
     {
@@ -87,12 +68,9 @@ public sealed class SampleShippingContainerDefinition : IAudit, IConcurrency
         if (dryIceQuantity.HasValue != !string.IsNullOrWhiteSpace(dryIceUnit))
             throw new ArgumentException("Enter both a dry-ice quantity and unit, or leave both empty.");
         ContainerTypeId = containerTypeId; Revision = revision; SupersedesDefinitionId = supersedesDefinitionId;
-        AssemblyWorkflowRevisionId = assemblyWorkflowRevisionId;
         if (sampleTypeAnchorId == Guid.Empty) throw new ArgumentException("Choose a valid Sample type.");
         SampleTypeAnchorId = sampleTypeAnchorId;
         CommonName = OrderText.Required(commonName, "Kit specification name", 255); TubeCapacity = tubeCapacity;
-        SupplierName = OrderText.Optional(supplierName, 255); SupplierProductNumber = OrderText.Optional(supplierProductNumber, 100);
-        PackingInstructions = OrderText.Optional(packingInstructions, 8000);
         DryIceQuantity = dryIceQuantity;
         DryIceUnit = OrderText.Optional(dryIceUnit, 30);
         TemperatureControlInstructions = OrderText.Optional(temperatureControlInstructions, 2000);
@@ -155,17 +133,20 @@ public sealed class SampleShippingContainerDefinition : IAudit, IConcurrency
             || draft.ContainerTypeId != ContainerTypeId || draft.Revision != Revision)
             throw new InvalidOperationException("Only the matching Draft specification can be edited.");
         CommonName = draft.CommonName; TubeCapacity = draft.TubeCapacity;
-        SupplierName = draft.SupplierName; SupplierProductNumber = draft.SupplierProductNumber;
-        PackingInstructions = draft.PackingInstructions; DryIceQuantity = draft.DryIceQuantity;
+        DryIceQuantity = draft.DryIceQuantity;
         DryIceUnit = draft.DryIceUnit; TemperatureControlInstructions = draft.TemperatureControlInstructions;
         EffectiveFrom = draft.EffectiveFrom; EffectiveTo = draft.EffectiveTo;
         DisplayOrder = draft.DisplayOrder; SampleTypeAnchorId = draft.SampleTypeAnchorId;
+        ShippingContainerProductId = draft.ShippingContainerProductId; AssemblyWorkflowId = draft.AssemblyWorkflowId;
     }
-    public void PinAssemblyWorkflowRevision(Guid? revisionId)
+    public void ConfigureAssembly(Guid? shippingContainerProductId, Guid? assemblyWorkflowId)
     {
-        if (revisionId == Guid.Empty) throw new ArgumentException("Choose an approved kit assembly workflow revision.");
-        if (IsActive) throw new InvalidOperationException("An active specification's assembly workflow revision is fixed.");
-        AssemblyWorkflowRevisionId = revisionId;
+        if (Lifecycle != ShippingRevisionLifecycle.Draft)
+            throw new InvalidOperationException("Change the container and assembly method on a Draft specification.");
+        if (shippingContainerProductId == Guid.Empty || assemblyWorkflowId == Guid.Empty)
+            throw new ArgumentException("Choose a valid Shipping Container and assembly method.");
+        ShippingContainerProductId = shippingContainerProductId;
+        AssemblyWorkflowId = assemblyWorkflowId;
     }
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
     public void MarkUpdated(DateTime utcNow, Guid? actorUserId) { UpdatedAt = utcNow; UpdatedByUserId = actorUserId; }

@@ -17,15 +17,15 @@ export function containerDependencyWarnings(container: ShippingContainerDefiniti
   if (anchor && !current) warnings.push({ message: 'Selected sample type is not active.', blocksNewWork: true })
   if (current && !currentShippingProcedure(configuration.procedures, current.shippingProcedureId))
     warnings.push({ message: `${current.name}'s shipping procedure has no Active revision.`, blocksNewWork: true })
-  if (!container.finishedKitProductId) {
-    warnings.push({ message: 'This older kit is not linked to a catalog Transportation kit product, so it cannot be used for new Orders. Create a product under Suppliers & products, then add a replacement kit specification.', blocksNewWork: true })
+  if (!container.shippingContainerProductId) {
+    warnings.push({ message: 'This kit needs a purchased Shipping Container before it can be used for new Orders. Edit or create a Draft revision and select its container.', blocksNewWork: true })
     return warnings
   }
   if (!container.temperatureControlInstructions) warnings.push({ message: 'Record the kit temperature-control instructions.', blocksNewWork: true })
   if (Boolean(container.dryIceQuantity) !== Boolean(container.dryIceUnit))
     warnings.push({ message: 'Record both the dry-ice amount and unit.', blocksNewWork: true })
   if (container.newWorkReady === false && availableAt(container, Date.now()) && !warnings.length)
-    warnings.push({ message: 'The kit product is unavailable or incompatible with this specification. Review the supplier product.', blocksNewWork: true })
+    warnings.push({ message: 'The selected Shipping Container is unavailable or incompatible with this specification. Review its supplier, active status, inventory unit and tube capacity.', blocksNewWork: true })
   return warnings
 }
 

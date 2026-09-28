@@ -7,7 +7,7 @@ using PhaenoPortal.App.Features.OrderManagement.DTOs;
 public sealed partial class SampleShippingContainerCatalogService
 {
     private async Task AddContentsAsync(SampleShippingContainerDefinition definition,
-        IReadOnlyList<ShippingKitContentRequest>? requested, CancellationToken ct, bool finishedProduct = false)
+        IReadOnlyList<ShippingKitContentRequest>? requested, CancellationToken ct)
     {
         requested ??= [];
         var ids = requested.Select(item => item.SupplierProductId).Distinct().ToArray();
@@ -20,9 +20,8 @@ public sealed partial class SampleShippingContainerCatalogService
                 product.Description, type.KitUse, TypeName = type.Name }).ToDictionaryAsync(item => item.Id, ct);
         if (products.Count != ids.Length)
             throw Invalid("Choose existing catalog products for every kit component.");
-        if (finishedProduct && products.Values.Any(item => item.IsInternalProducer
-            || item.ProductTypeId == PSeq.Operations.Laboratory.Domain.LabProductType.TransportationKitId))
-            throw Invalid("Choose purchased component products, not a finished Transportation kit.");
+        if (products.Values.Any(item => item.IsInternalProducer))
+            throw Invalid("Choose purchased component products.");
         try
         {
             var contents = requested.Select((item, position) =>
@@ -32,8 +31,8 @@ public sealed partial class SampleShippingContainerCatalogService
                     Enum.Parse<ShippingKitContentKind>(product.KitUse.ToString()), item.Quantity,
                     product.SupplierName, product.ProductNumber, product.Description, product.TypeName, position);
             }).ToArray();
-            ShippingKitContent.ValidateRecipe(contents, definition.IsActive && finishedProduct);
-            if (finishedProduct && definition.IsActive)
+            ShippingKitContent.ValidateRecipe(contents, definition.IsActive);
+            if (definition.IsActive)
             {
                 var tubeLines = contents.Where(item => item.Kind == ShippingKitContentKind.Tube).ToArray();
                 var shippers = contents.Where(item => item.Kind == ShippingKitContentKind.ShippingContainer).ToArray();

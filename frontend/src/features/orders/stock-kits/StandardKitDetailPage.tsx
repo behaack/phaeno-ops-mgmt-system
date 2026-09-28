@@ -38,13 +38,11 @@ export function StandardKitDetailPage({ kitId }: { kitId: string }) {
   if (!canManage) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Standard kits unavailable</AlertTitle><AlertDescription>A Phaeno configuration administrator is required.</AlertDescription></Alert></main>
   if (!enabled) return <main className="page-wrap px-4 py-8"><p>Use a connected Phaeno session to review standard kits.</p></main>
   if (!query.data) return <main className="page-wrap space-y-5 px-4 py-8">{back}{query.isLoading ? <p role="status">Loading standard kit…</p> : <Alert variant="destructive"><AlertTitle>Standard kit unavailable</AlertTitle><AlertDescription>{getOrderErrorMessage(query.error, 'The requested kit could not be loaded.')} <Button variant="outline" onClick={() => void query.refetch()}>Retry</Button></AlertDescription></Alert>}</main>
-  const kit = query.data, preparing = kit.status === 'Preparing', full = kit.tubes.length === kit.container.capacity, assemblyReady = !kit.finishedKitProductId || Boolean(kit.assemblyCompletedAt || kit.purchasedKitReceivedAt)
+  const kit = query.data, preparing = kit.status === 'Preparing', full = kit.tubes.length === kit.container.capacity, assemblyReady = Boolean(kit.assemblyCompletedAt)
   const availableActions: { kind: NonNullable<typeof action>['kind']; label: string }[] = []
-  if (!kit.finishedKitProductId || kit.purchasedKitReceivedAt) {
-    if (!kit.withdrawnAt && preparing && !full && !kit.tubesVerifiedAt) availableActions.push({ kind: 'register', label: 'Register tubes' })
-    if (!kit.withdrawnAt && preparing && kit.tubes.length) availableActions.push({ kind: 'correct', label: 'Correct tube ID' })
-    if (!kit.withdrawnAt && preparing && full && !kit.tubesVerifiedAt) availableActions.push({ kind: 'verify', label: 'Verify physical tube roster' })
-  }
+  if (!kit.withdrawnAt && preparing && !full && !kit.tubesVerifiedAt) availableActions.push({ kind: 'register', label: 'Register tubes' })
+  if (!kit.withdrawnAt && preparing && kit.tubes.length) availableActions.push({ kind: 'correct', label: 'Correct tube ID' })
+  if (!kit.withdrawnAt && preparing && full && !kit.tubesVerifiedAt) availableActions.push({ kind: 'verify', label: 'Verify physical tube roster' })
   if (!kit.withdrawnAt && preparing && full && kit.tubesVerifiedAt && assemblyReady) {
     availableActions.push({ kind: 'dispatch', label: 'Record Customer dispatch' })
     availableActions.push({ kind: 'legacy-dispatch', label: 'Record Trial or Partner dispatch' })
@@ -57,7 +55,7 @@ export function StandardKitDetailPage({ kitId }: { kitId: string }) {
     {stockKitState(kit) === 'NeedsReview' ? <Alert className="mb-5"><AlertTitle>Inventory needs review</AlertTitle><AlertDescription>{kit.inventoryBlockedReason || 'This kit is not available for Customer preparation. Review its delivery location, receipt and fulfillment history before using it.'}</AlertDescription></Alert> : null}
     {kit.withdrawnAt ? <Alert variant="destructive" className="mb-5"><AlertTitle>Physical kit withdrawn</AlertTitle><AlertDescription>This kit cannot be sent, reserved, or used for a new shipment. {kit.withdrawalReason}</AlertDescription></Alert> : null}
     <StockKitFacts kit={kit} />
-    {kit.finishedKitProductId && !kit.purchasedKitReceivedAt ? <KitAssemblyRunPanel kit={kit} onSaved={saved}
+    {kit.assemblyWorkflowRevisionId ? <KitAssemblyRunPanel kit={kit} onSaved={saved}
       onRegister={() => setAction({ kind: 'register', kit })}
       onVerify={() => setAction({ kind: 'verify', kit })}
       onCorrect={() => setAction({ kind: 'correct', kit })} /> : null}

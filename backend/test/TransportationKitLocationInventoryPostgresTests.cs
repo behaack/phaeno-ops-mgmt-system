@@ -211,8 +211,7 @@ public partial class SampleShippingPostgresTests
         var kit = await scope.ReadyTransportationKitAsync(size);
         var successor = await scope.ContainerCatalog().ReviseAsync(size.Id, new(size.Version, "Updated wording", 20,
             DateTime.UtcNow.AddMinutes(1), IsActive: false,
-            AssemblyWorkflowRevisionId: size.AssemblyWorkflowRevisionId,
-            PackingInstructions: size.PackingInstructions,
+            AssemblyWorkflowId: size.AssemblyWorkflowId, ShippingContainerProductId: size.ShippingContainerProductId,
             TemperatureControlInstructions: size.TemperatureControlInstructions), default);
         successor = await scope.ContainerCatalog().LinkSampleTypeAsync(successor.Id, fixture.SampleType.Id,
             successor.Version, scope.PlatformUser.Id, default);

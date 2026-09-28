@@ -47,7 +47,6 @@ export function SampleTypePackingPanel({ sampleType, configuration }: { sampleTy
           <p className="mt-1 text-xs text-muted-foreground">Revision {container.revision} · capacity {container.tubeCapacity} tubes · {current.some(item => item.definitionKey === container.definitionKey) ? 'Active revision available' : 'Unavailable for new requests'}</p>
           {container.temperatureControlInstructions ? <p className="mt-2 whitespace-pre-wrap"><strong>Temperature control:</strong> {container.temperatureControlInstructions}</p> : null}
           {container.dryIceQuantity != null ? <p className="mt-2"><strong>Dry ice:</strong> {container.dryIceQuantity} {container.dryIceUnit}</p> : null}
-          {container.packingInstructions ? <p className="mt-2 whitespace-pre-wrap"><strong>Packing:</strong> {container.packingInstructions}</p> : null}
           {containerDependencyWarnings(container, configuration).map(warning => <p key={warning.message} role="alert" className="mt-2 text-warning">{warning.message}</p>)}
         </article>)}
       </div>

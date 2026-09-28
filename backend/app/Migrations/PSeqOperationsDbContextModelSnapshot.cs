@@ -8,7 +8,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace PSeq.Operations.Api.Migrations
+namespace PhaenoPortal.App.Migrations
 {
     [DbContext(typeof(PSeqOperationsDbContext))]
     partial class PSeqOperationsDbContextModelSnapshot : ModelSnapshot
@@ -1213,11 +1213,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("lawful_contact_basis");
-
-                    b.Property<string>("LegacyJobTitle")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)")
-                        .HasColumnName("legacy_job_title");
 
                     b.Property<Guid?>("MergedIntoContactId")
                         .HasColumnType("uuid")
@@ -8532,10 +8527,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("quantity_unit");
 
-                    b.Property<Guid?>("RegisteredSampleTubeId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("registered_sample_tube_id");
-
                     b.Property<string>("SampleName")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -8554,10 +8545,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("submitted_specimen_id");
 
-                    b.Property<DateTime?>("TubeAssignedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("tube_assigned_at");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -8572,9 +8559,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnName("version");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("RegisteredSampleTubeId")
-                        .IsUnique();
 
                     b.HasIndex("SampleTypeDefinitionId");
 
@@ -8649,9 +8633,9 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<Guid?>("AssemblyWorkflowRevisionId")
+                    b.Property<Guid?>("AssemblyWorkflowId")
                         .HasColumnType("uuid")
-                        .HasColumnName("assembly_workflow_revision_id");
+                        .HasColumnName("assembly_workflow_id");
 
                     b.Property<string>("CommonName")
                         .IsRequired()
@@ -8707,11 +8691,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(24)")
                         .HasColumnName("lifecycle");
 
-                    b.Property<string>("PackingInstructions")
-                        .HasMaxLength(8000)
-                        .HasColumnType("character varying(8000)")
-                        .HasColumnName("packing_instructions");
-
                     b.Property<int>("Revision")
                         .HasColumnType("integer")
                         .HasColumnName("revision");
@@ -8720,19 +8699,13 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("sample_type_anchor_id");
 
+                    b.Property<Guid?>("ShippingContainerProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("shipping_container_product_id");
+
                     b.Property<Guid?>("SupersedesDefinitionId")
                         .HasColumnType("uuid")
                         .HasColumnName("supersedes_definition_id");
-
-                    b.Property<string>("SupplierName")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("supplier_name");
-
-                    b.Property<string>("SupplierProductNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("supplier_product_number");
 
                     b.Property<string>("TemperatureControlInstructions")
                         .HasMaxLength(2000)
@@ -8758,7 +8731,7 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AssemblyWorkflowRevisionId");
+                    b.HasIndex("AssemblyWorkflowId");
 
                     b.HasIndex("ContainerTypeId")
                         .IsUnique()
@@ -8768,6 +8741,8 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasIndex("CreatedByUserId");
 
                     b.HasIndex("SampleTypeAnchorId");
+
+                    b.HasIndex("ShippingContainerProductId");
 
                     b.HasIndex("SupersedesDefinitionId")
                         .IsUnique();
@@ -8800,27 +8775,11 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
 
-                    b.Property<Guid?>("FinishedKitProductId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("finished_kit_product_id");
-
                     b.Property<string>("NormalizedSku")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("normalized_sku");
-
-                    b.Property<Guid?>("SampleTypeAnchorId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("sample_type_anchor_id");
-
-                    b.Property<DateTime?>("SampleTypeLinkedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("sample_type_linked_at");
-
-                    b.Property<Guid?>("SampleTypeLinkedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("sample_type_linked_by_user_id");
 
                     b.Property<string>("Sku")
                         .IsRequired()
@@ -8845,15 +8804,8 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("CreatedByUserId");
 
-                    b.HasIndex("FinishedKitProductId");
-
                     b.HasIndex("NormalizedSku")
-                        .IsUnique()
-                        .HasFilter("finished_kit_product_id IS NULL");
-
-                    b.HasIndex("SampleTypeAnchorId");
-
-                    b.HasIndex("SampleTypeLinkedByUserId");
+                        .IsUnique();
 
                     b.HasIndex("UpdatedByUserId");
 
@@ -9315,10 +9267,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("department_id");
 
-                    b.Property<Guid?>("FinishedKitProductId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("finished_kit_product_id");
-
                     b.Property<DateTime?>("FulfilledAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("fulfilled_at");
@@ -9346,19 +9294,6 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<string>("ProductExpirySnapshotJson")
                         .HasColumnType("jsonb")
                         .HasColumnName("product_expiry_snapshot_json");
-
-                    b.Property<string>("PurchasedKitReceiptReference")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("purchased_kit_receipt_reference");
-
-                    b.Property<DateTime?>("PurchasedKitReceivedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("purchased_kit_received_at");
-
-                    b.Property<Guid?>("PurchasedKitReceivedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("purchased_kit_received_by_user_id");
 
                     b.Property<DateTime?>("ReservedAt")
                         .HasColumnType("timestamp with time zone")
@@ -9392,11 +9327,6 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid?>("ShipperSupplierProductId")
                         .HasColumnType("uuid")
                         .HasColumnName("shipper_supplier_product_id");
-
-                    b.Property<string>("SupplierKitLotNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("supplier_kit_lot_number");
 
                     b.Property<Guid?>("TransportationKitRequestLineId")
                         .HasColumnType("uuid")
@@ -9489,12 +9419,8 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("DepartmentId");
 
-                    b.HasIndex("FinishedKitProductId");
-
                     b.HasIndex("KitNumber")
                         .IsUnique();
-
-                    b.HasIndex("PurchasedKitReceivedByUserId");
 
                     b.HasIndex("ReservedByUserId");
 
@@ -12681,48 +12607,6 @@ namespace PSeq.Operations.Api.Migrations
                     b.ToTable("lab_job_timing_policies", "lab_ops");
                 });
 
-            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabKitAssemblyComponent", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Kind")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)")
-                        .HasColumnName("kind");
-
-                    b.Property<int>("Position")
-                        .HasColumnType("integer")
-                        .HasColumnName("position");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer")
-                        .HasColumnName("quantity");
-
-                    b.Property<Guid>("SupplierProductId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("supplier_product_id");
-
-                    b.Property<Guid>("WorkflowRevisionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("workflow_revision_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SupplierProductId");
-
-                    b.HasIndex("WorkflowRevisionId", "Position")
-                        .IsUnique();
-
-                    b.HasIndex("WorkflowRevisionId", "SupplierProductId")
-                        .IsUnique();
-
-                    b.ToTable("lab_kit_assembly_components", "lab_ops");
-                });
-
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabKitAssemblyRun", b =>
                 {
                     b.Property<Guid>("Id")
@@ -12920,10 +12804,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
 
-                    b.Property<Guid>("FinishedKitProductId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("finished_kit_product_id");
-
                     b.Property<int>("LatestRevision")
                         .HasColumnType("integer")
                         .HasColumnName("latest_revision");
@@ -12950,9 +12830,6 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedByUserId");
-
-                    b.HasIndex("FinishedKitProductId")
-                        .IsUnique();
 
                     b.HasIndex("UpdatedByUserId");
 
@@ -13696,10 +13573,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("kind");
 
-                    b.Property<string>("LegacyComponentsJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("legacy_components_json");
-
                     b.Property<string>("LotNumber")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -14398,6 +14271,44 @@ namespace PSeq.Operations.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("lab_product_types", "lab_ops");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("90000000-0000-4000-8000-000000000001"),
+                            CreatedAt = new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Individual sample tubes.",
+                            IsActive = true,
+                            KitUse = "Tube",
+                            Name = "Tube",
+                            NormalizedName = "TUBE",
+                            UpdatedAt = new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Version = 1L
+                        },
+                        new
+                        {
+                            Id = new Guid("90000000-0000-4000-8000-000000000002"),
+                            CreatedAt = new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Outer shipping containers with a configured tube capacity.",
+                            IsActive = true,
+                            KitUse = "ShippingContainer",
+                            Name = "Shipping Container",
+                            NormalizedName = "SHIPPING CONTAINER",
+                            UpdatedAt = new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Version = 1L
+                        },
+                        new
+                        {
+                            Id = new Guid("90000000-0000-4000-8000-000000000003"),
+                            CreatedAt = new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Purchased and Phaeno-manufactured reagents.",
+                            IsActive = true,
+                            KitUse = "Other",
+                            Name = "Reagent",
+                            NormalizedName = "REAGENT",
+                            UpdatedAt = new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Version = 1L
+                        });
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabProtocol", b =>
@@ -16110,6 +16021,19 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasIndex("IsActive", "Name");
 
                     b.ToTable("lab_suppliers", "lab_ops");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("1e739efa-20d6-462d-a954-b12721fcfb20"),
+                            CreatedAt = new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            IsInternalProducer = true,
+                            Name = "Phaeno",
+                            NormalizedName = "PHAENO",
+                            UpdatedAt = new DateTime(2026, 9, 28, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Version = 1L
+                        });
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabSupplierProduct", b =>
@@ -20026,11 +19950,6 @@ namespace PSeq.Operations.Api.Migrations
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipmentItem", b =>
                 {
-                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.RegisteredSampleTube", null)
-                        .WithMany()
-                        .HasForeignKey("RegisteredSampleTubeId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShipment", null)
                         .WithMany("Items")
                         .HasForeignKey("SampleShipmentId")
@@ -20060,11 +19979,11 @@ namespace PSeq.Operations.Api.Migrations
 
             modelBuilder.Entity("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerDefinition", b =>
                 {
-                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabKitAssemblyWorkflowRevision", null)
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabKitAssemblyWorkflow", null)
                         .WithMany()
-                        .HasForeignKey("AssemblyWorkflowRevisionId")
+                        .HasForeignKey("AssemblyWorkflowId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_shipping_spec_assembly_workflow_revision");
+                        .HasConstraintName("fk_shipping_spec_assembly_method");
 
                     b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerType", "ContainerType")
                         .WithMany("Definitions")
@@ -20084,6 +20003,12 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("SampleTypeAnchorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_shipping_spec_sample_type_anchor");
+
+                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplierProduct", null)
+                        .WithMany()
+                        .HasForeignKey("ShippingContainerProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_shipping_spec_container_product");
 
                     b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleShippingContainerDefinition", null)
                         .WithMany()
@@ -20107,24 +20032,6 @@ namespace PSeq.Operations.Api.Migrations
                         .HasForeignKey("CreatedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_shipping_container_type_created_by");
-
-                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplierProduct", null)
-                        .WithMany()
-                        .HasForeignKey("FinishedKitProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_shipping_spec_finished_kit_product");
-
-                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.SampleTypeDefinition", null)
-                        .WithMany()
-                        .HasForeignKey("SampleTypeAnchorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_transportation_kit_sample_type_anchor");
-
-                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
-                        .WithMany()
-                        .HasForeignKey("SampleTypeLinkedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_transportation_kit_link_actor");
 
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
                         .WithMany()
@@ -20208,23 +20115,11 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_shipping_stock_kit_department");
 
-                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplierProduct", null)
-                        .WithMany()
-                        .HasForeignKey("FinishedKitProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_shipping_stock_kit_finished_product");
-
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_shipping_stock_kit_organization");
-
-                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
-                        .WithMany()
-                        .HasForeignKey("PurchasedKitReceivedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_shipping_stock_kit_purchased_receipt_actor");
 
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
                         .WithMany()
@@ -21140,21 +21035,6 @@ namespace PSeq.Operations.Api.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabKitAssemblyComponent", b =>
-                {
-                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplierProduct", null)
-                        .WithMany()
-                        .HasForeignKey("SupplierProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabKitAssemblyWorkflowRevision", null)
-                        .WithMany("Components")
-                        .HasForeignKey("WorkflowRevisionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabKitAssemblyRun", b =>
                 {
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
@@ -21234,12 +21114,6 @@ namespace PSeq.Operations.Api.Migrations
                         .WithMany()
                         .HasForeignKey("CreatedByUserId")
                         .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("PSeq.Operations.Laboratory.Domain.LabSupplierProduct", null)
-                        .WithMany()
-                        .HasForeignKey("FinishedKitProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
 
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
                         .WithMany()
@@ -22447,11 +22321,6 @@ namespace PSeq.Operations.Api.Migrations
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabContainer", b =>
                 {
                     b.Navigation("Barcodes");
-                });
-
-            modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabKitAssemblyWorkflowRevision", b =>
-                {
-                    b.Navigation("Components");
                 });
 
             modelBuilder.Entity("PSeq.Operations.Laboratory.Domain.LabTimingPolicy", b =>

@@ -33,7 +33,8 @@ function Blockers({ items }: { items: OrderReadinessBlocker[] }) {
 }
 
 function SetupLink({ code }: { code: string }) {
-  const section = code === 'ActivePSeqOfferingRequired' ? 'catalog' : code === 'ShippingConfigurationIncomplete' || code === 'SampleConfigurationIncomplete' ? 'shipping' : ['OrderConfigurationIncomplete', 'ResultDestinationIncomplete', 'SubmissionInstructionsIncomplete'].includes(code) ? 'system' : null
+  if (code === 'ShippingConfigurationIncomplete' || code === 'SampleConfigurationIncomplete') return <Link target="_blank" rel="noopener" className="underline underline-offset-4" to="/sample-shipping-settings" search={{ shippingSection: code === 'SampleConfigurationIncomplete' ? 'sample-types' : 'containers' }}>Open setup<span className="sr-only"> (opens in a new tab)</span></Link>
+  const section = code === 'ActivePSeqOfferingRequired' ? 'catalog' : ['OrderConfigurationIncomplete', 'ResultDestinationIncomplete', 'SubmissionInstructionsIncomplete'].includes(code) ? 'system' : null
   if (section) return <Link target="_blank" rel="noopener" className="underline underline-offset-4" to="/order-configuration" search={{ configurationSection: section }}>Open setup<span className="sr-only"> (opens in a new tab)</span></Link>
   if (['BillingContactIncomplete', 'BillingAddressIncomplete', 'PaymentTermsIncomplete', 'TaxDecisionIncomplete', 'FinanceTaxApprovalRequired'].includes(code)) return <Link target="_blank" rel="noopener" className="underline underline-offset-4" to="/order-operations" search={{ orderSection: 'finance', financeSection: 'customers' }}>Open Finance<span className="sr-only"> (opens in a new tab)</span></Link>
   return null

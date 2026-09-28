@@ -195,6 +195,13 @@ html {
   margin-inline: auto;
 }
 
+@media (max-width: 1023px) {
+  html {
+    /* Keep the mobile toolbar edge to edge when desktop browsers reserve a scrollbar gutter. */
+    scrollbar-width: none;
+  }
+}
+
 @media (max-width: 767px) {
   .page-wrap.px-4 {
     padding-inline: 0.5rem;

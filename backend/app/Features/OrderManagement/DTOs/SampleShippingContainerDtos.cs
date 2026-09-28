@@ -10,36 +10,30 @@ public sealed record ShippingKitContentDto(Guid SupplierProductId, Guid Supplier
 public sealed record DeactivateSampleShippingContainerRequest(long Version);
 public sealed record ActivateSampleShippingContainerRequest(long Version);
 public sealed record SampleShippingContainerDefinitionDto(Guid Id, Guid DefinitionKey, string Sku,
-    string CommonName, int TubeCapacity, int Revision, Guid? SupersedesDefinitionId, string? SupplierName,
-    string? SupplierProductNumber, string? PackingInstructions, DateTime EffectiveFrom, DateTime? EffectiveTo,
+    string CommonName, int TubeCapacity, int Revision, Guid? SupersedesDefinitionId, DateTime EffectiveFrom, DateTime? EffectiveTo,
     bool IsActive, int DisplayOrder, long Version,
     DateTime? DeactivatedAt = null, IReadOnlyList<ShippingKitContentDto>? KitContents = null,
-    Guid? FinishedKitProductId = null, Guid? AssemblyWorkflowRevisionId = null,
     Guid? SampleTypeAnchorId = null, decimal? DryIceQuantity = null, string? DryIceUnit = null,
     string? TemperatureControlInstructions = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? NewWorkReady = null,
     string Lifecycle = "Released",
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? AssemblyWorkflowReady = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? AssemblyWorkflowReady = null, Guid? ShippingContainerProductId = null, Guid? AssemblyWorkflowId = null);
 public sealed record CreateSampleShippingContainerRequest(string Sku, string CommonName, int TubeCapacity,
     DateTime EffectiveFrom,
-    string? SupplierName = null, string? SupplierProductNumber = null, string? PackingInstructions = null,
     DateTime? EffectiveTo = null, bool IsActive = false, int DisplayOrder = 0,
-    IReadOnlyList<ShippingKitContentRequest>? KitContents = null, Guid? FinishedKitProductId = null,
-    Guid? AssemblyWorkflowRevisionId = null, decimal? DryIceQuantity = null,
+    IReadOnlyList<ShippingKitContentRequest>? KitContents = null, decimal? DryIceQuantity = null,
     string? DryIceUnit = null, string? TemperatureControlInstructions = null,
-    Guid? SampleTypeDefinitionId = null);
+    Guid? SampleTypeDefinitionId = null, Guid? ShippingContainerProductId = null, Guid? AssemblyWorkflowId = null);
 public sealed record ReviseSampleShippingContainerRequest(long Version, string CommonName, int TubeCapacity,
     DateTime EffectiveFrom,
-    string? SupplierName = null, string? SupplierProductNumber = null, string? PackingInstructions = null,
     DateTime? EffectiveTo = null, bool IsActive = false, int DisplayOrder = 0,
-    IReadOnlyList<ShippingKitContentRequest>? KitContents = null, Guid? AssemblyWorkflowRevisionId = null,
+    IReadOnlyList<ShippingKitContentRequest>? KitContents = null,
     decimal? DryIceQuantity = null, string? DryIceUnit = null, string? TemperatureControlInstructions = null,
-    Guid? SampleTypeDefinitionId = null);
+    Guid? SampleTypeDefinitionId = null, Guid? ShippingContainerProductId = null, Guid? AssemblyWorkflowId = null);
 public sealed record EditSampleShippingContainerDraftRequest(long Version, string CommonName, int TubeCapacity,
     DateTime EffectiveFrom, DateTime? EffectiveTo, int DisplayOrder, Guid? SampleTypeDefinitionId,
-    string? SupplierName = null, string? SupplierProductNumber = null, string? PackingInstructions = null,
     decimal? DryIceQuantity = null, string? DryIceUnit = null, string? TemperatureControlInstructions = null,
-    IReadOnlyList<ShippingKitContentRequest>? KitContents = null);
+    IReadOnlyList<ShippingKitContentRequest>? KitContents = null, Guid? ShippingContainerProductId = null, Guid? AssemblyWorkflowId = null);
 public sealed record DiscardSampleShippingContainerDraftRequest(long Version);
 public sealed record LinkTransportationKitSampleTypeRequest(Guid SampleTypeDefinitionId, long Version);
 public sealed record ContainerPackingPreviewRequest(int TubeCount, IReadOnlyList<ContainerSampleTypeContext> Contexts,

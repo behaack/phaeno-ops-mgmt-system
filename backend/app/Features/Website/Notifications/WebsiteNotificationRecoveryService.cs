@@ -36,27 +36,6 @@ public sealed class WebsiteNotificationRecoveryService(PSeqOperationsDbContext d
         if (transaction is not null) await transaction.CommitAsync(cancellationToken);
     }
 
-    public async Task QueueLegacyBriefAsync(Guid contactId, Guid actorUserId, CancellationToken cancellationToken)
-    {
-        var delivery = new WebNotificationDelivery
-        {
-            WebContactId = contactId,
-            Kind = WebNotificationKind.TechnicalBrief,
-            LastRecoveryByUserId = actorUserId,
-            LastRecoveryAtUtc = DateTimeOffset.UtcNow
-        };
-        await RequireActiveTargetAsync(delivery, cancellationToken);
-        if (await dbContext.Set<WebNotificationDelivery>().AnyAsync(item => item.WebContactId == contactId && item.Kind == delivery.Kind, cancellationToken))
-            throw new WebsiteNotificationConflictException("This technical brief already has a delivery record. Review its status in Email delivery before resending.");
-        dbContext.Add(delivery);
-        RecordRecovery(delivery, actorUserId, delivery.LastRecoveryAtUtc!.Value, "LegacyBriefQueued");
-        try { await dbContext.SaveChangesAsync(cancellationToken); }
-        catch (DbUpdateException exception) when (exception.InnerException is Npgsql.PostgresException { SqlState: Npgsql.PostgresErrorCodes.UniqueViolation })
-        {
-            throw new WebsiteNotificationConflictException("This technical brief was already queued. Refresh Email delivery to review it.");
-        }
-    }
-
     private void RecordRecovery(WebNotificationDelivery delivery, Guid actorUserId, DateTimeOffset occurredAt, string operation) =>
         dbContext.AuditEvents.Add(new AuditEvent(
             entityName: nameof(WebNotificationDelivery), entityId: delivery.Id.ToString(), operation: operation,

@@ -18,13 +18,13 @@ public static class TransportationKitDefinitionReadiness
             .Where(item => item.IsActive && item.EffectiveFrom <= at
                 && (!item.EffectiveTo.HasValue || item.EffectiveTo > at)
                 && item.SampleTypeAnchorId.HasValue
-                && item.ContainerType.FinishedKitProductId.HasValue
+                && item.ShippingContainerProductId.HasValue
                 && item.TubeCapacity > 0 && item.TemperatureControlInstructions != null
                 && item.TemperatureControlInstructions != "")
             .Select(item => new
             {
                 item.Id, item.ContainerTypeId, item.SampleTypeAnchorId,
-                item.ContainerType.FinishedKitProductId, item.TubeCapacity
+                item.ShippingContainerProductId, item.AssemblyWorkflowId, item.TubeCapacity
             }).ToArrayAsync(ct);
         if (candidates.Length == 0) return [];
         var definitionIds = candidates.Select(item => item.Id).ToArray();
@@ -62,20 +62,17 @@ public static class TransportationKitDefinitionReadiness
                 && activeProcedureKeys.Contains(procedureKey))
             .Select(item => item.DefinitionKey).ToHashSet();
 
-        var finishedIds = candidates.Select(item => item.FinishedKitProductId!.Value).Distinct().ToArray();
+        var finishedIds = candidates.Select(item => item.ShippingContainerProductId!.Value).Distinct().ToArray();
+        var selectedWorkflowIds = candidates.Where(item => item.AssemblyWorkflowId.HasValue).Select(item => item.AssemblyWorkflowId!.Value).Distinct().ToArray();
         var workflows = await db.LabKitAssemblyWorkflows.AsNoTracking()
-            .Where(item => finishedIds.Contains(item.FinishedKitProductId))
-            .Select(item => new { item.Id, item.FinishedKitProductId }).ToArrayAsync(ct);
+            .Where(item => selectedWorkflowIds.Contains(item.Id))
+            .Select(item => new { item.Id }).ToArrayAsync(ct);
         var workflowIds = workflows.Select(item => item.Id).ToArray();
         var approved = await db.LabKitAssemblyWorkflowRevisions.AsNoTracking()
             .Where(item => workflowIds.Contains(item.WorkflowId) && item.Status == LabKitAssemblyRevisionStatus.Approved)
             .ToArrayAsync(ct);
         var latestByWorkflow = approved.GroupBy(item => item.WorkflowId)
             .ToDictionary(group => group.Key, group => group.OrderByDescending(item => item.Revision).First());
-        var latestByProduct = workflows.Where(item => latestByWorkflow.ContainsKey(item.Id))
-            .GroupBy(item => item.FinishedKitProductId)
-            .ToDictionary(group => group.Key, group => group.Select(item => latestByWorkflow[item.Id])
-                .OrderByDescending(item => item.Revision).First());
         var productIds = finishedIds.Concat(requiredContents.Select(item => item.SupplierProductId)).Distinct().ToArray();
         var activeProducts = await (from product in db.LabSupplierProducts.AsNoTracking()
             join supplier in db.LabSuppliers.AsNoTracking() on product.SupplierId equals supplier.Id
@@ -84,16 +81,17 @@ public static class TransportationKitDefinitionReadiness
             select new { product.Id, product.ProductTypeId, product.DefaultQuantityUnit, product.TubeCapacity,
                 supplier.IsInternalProducer, type.KitUse }).ToArrayAsync(ct);
         var activeProductById = activeProducts.ToDictionary(item => item.Id);
-        var finishedProducts = activeProducts.Where(item => item.ProductTypeId == LabProductType.TransportationKitId)
+        var finishedProducts = activeProducts.Where(item => item.ProductTypeId == LabProductType.ShippingContainerId)
             .ToDictionary(item => item.Id);
         return candidates.Where(item => familyByAnchor.TryGetValue(item.SampleTypeAnchorId!.Value, out var sampleKey)
                 && readySampleFamilies.Contains(sampleKey)
-                && finishedProducts.ContainsKey(item.FinishedKitProductId!.Value))
+                && finishedProducts.TryGetValue(item.ShippingContainerProductId!.Value, out var product)
+                && !product.IsInternalProducer
+                && string.Equals(product.DefaultQuantityUnit, "each", StringComparison.OrdinalIgnoreCase)
+                && product.TubeCapacity >= item.TubeCapacity)
             .Select(item =>
             {
-                var finishedProduct = finishedProducts[item.FinishedKitProductId!.Value];
-                var assemblyReady = !finishedProduct.IsInternalProducer
-                    || latestByProduct.ContainsKey(item.FinishedKitProductId.Value)
+                var assemblyReady = item.AssemblyWorkflowId.HasValue && latestByWorkflow.ContainsKey(item.AssemblyWorkflowId.Value)
                         && contentsByDefinition.TryGetValue(item.Id, out var contents)
                         && contents.Length >= 2
                         && contents.Select(component => component.SupplierProductId).Distinct().Count() == contents.Length
@@ -101,11 +99,12 @@ public static class TransportationKitDefinitionReadiness
                         && contents.Single(component => component.Kind == ShippingKitContentKind.Tube).Quantity == item.TubeCapacity
                         && contents.Count(component => component.Kind == ShippingKitContentKind.ShippingContainer) == 1
                         && contents.Single(component => component.Kind == ShippingKitContentKind.ShippingContainer).Quantity == 1
+                        && (!item.ShippingContainerProductId.HasValue || contents.Single(component => component.Kind == ShippingKitContentKind.ShippingContainer).SupplierProductId == item.ShippingContainerProductId)
                         && activeProductById.TryGetValue(contents.Single(component => component.Kind == ShippingKitContentKind.ShippingContainer).SupplierProductId, out var shipper)
                         && shipper.TubeCapacity >= item.TubeCapacity
                         && contents.All(component => component.Quantity > 0
                             && activeProductById.TryGetValue(component.SupplierProductId, out var product)
-                            && !product.IsInternalProducer && product.ProductTypeId != LabProductType.TransportationKitId
+                            && !product.IsInternalProducer
                             && product.KitUse.ToString() == component.Kind.ToString()
                             && (component.Kind == ShippingKitContentKind.Other
                                 || string.Equals(product.DefaultQuantityUnit, "each", StringComparison.OrdinalIgnoreCase)));

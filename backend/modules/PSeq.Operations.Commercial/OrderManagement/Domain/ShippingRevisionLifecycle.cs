@@ -7,6 +7,5 @@ public enum ShippingRevisionLifecycle
     Released,
     Superseded,
     Deactivated,
-    Discarded,
-    LegacyInactive
+    Discarded
 }

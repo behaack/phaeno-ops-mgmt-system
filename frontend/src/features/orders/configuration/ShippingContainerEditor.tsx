@@ -5,7 +5,7 @@ import { useFieldArray, useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { getOrderErrorMessage } from '#/api/order-management'
 import type { SampleShippingConfiguration } from '#/api/sample-shipping'
-import { transportationKitProductTypeId, useSupplierCatalog } from '#/api/supplier-catalog'
+import { shippingContainerProductTypeId, useSupplierCatalog } from '#/api/supplier-catalog'
 import { getKitAssemblyWorkflows, kitAssemblyWorkflowsKey } from '#/api/lab-kit-assembly'
 import { createShippingContainerDefinition, reviseShippingContainerDefinition, updateShippingContainerDraft, type ShippingContainerDefinition } from '#/api/shipping-containers'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
@@ -21,14 +21,12 @@ import { linkableSampleTypes } from './linkable-sample-types'
 
 const effectiveDate = z.string().min(1, 'Choose an effective date and time.').refine(value => Number.isFinite(new Date(value).getTime()), 'Choose a valid date and time.')
 export const shippingContainerSchema = z.object({
-  finishedKitProductId: z.union([z.string().uuid(), z.literal('')]),
+  shippingContainerProductId: z.union([z.string().uuid(), z.literal('')]),
+  assemblyWorkflowId: z.union([z.string().uuid(), z.literal('')]),
   sampleTypeDefinitionId: z.union([z.string().uuid(), z.literal('')]),
   sku: z.string().trim().min(1, 'Enter the SKU number.').max(100),
   commonName: z.string().trim().min(1, 'Enter the kit specification name.').max(255),
   tubeCapacity: z.coerce.number().int('Capacity must be a whole number of tubes.').min(0, 'Use zero or a positive capacity while drafting.'),
-  supplierName: z.string().trim().max(255),
-  supplierProductNumber: z.string().trim().max(100),
-  packingInstructions: z.string().trim().max(4000),
   temperatureControlInstructions: z.string().trim().max(2000),
   dryIceQuantity: z.string().trim().refine(value => !value || Number.isFinite(Number(value)) && Number(value) > 0, 'Enter a dry-ice amount greater than zero.'),
   dryIceUnit: z.string().trim().max(30),
@@ -59,12 +57,12 @@ export function ShippingContainerEditor({ source, configuration, existingDefinit
   const catalog = useSupplierCatalog()
   const kitWorkflows = useQuery({ queryKey: kitAssemblyWorkflowsKey, queryFn: getKitAssemblyWorkflows })
   const suppliers = (catalog.data ?? []).filter(item => item.isActive)
-  const [supplierId, setSupplierId] = useState('')
+  const [supplierId, setSupplierId] = useState<string | null>(null)
   const [contentSuppliers, setContentSuppliers] = useState<Record<string, string>>({})
-  const isSelectableKitProduct = (product: (typeof suppliers)[number]['products'][number]) => product.isActive && product.productTypeIsActive && product.productTypeId === transportationKitProductTypeId
+  const isSelectableKitProduct = (product: (typeof suppliers)[number]['products'][number]) => product.isActive && product.productTypeIsActive && product.productTypeId === shippingContainerProductTypeId
   const finishedProducts = suppliers.flatMap(item => item.products.filter(isSelectableKitProduct))
-  const productSuppliers = suppliers.filter(item => item.products.some(isSelectableKitProduct))
-  const selectedSupplier = suppliers.find(item => item.id === supplierId)
+  const productSuppliers = suppliers.filter(item => !item.isInternalProducer && item.products.some(isSelectableKitProduct))
+  const selectedSupplier = suppliers.find(item => item.id === (supplierId ?? (catalog.data ?? []).find(value => value.products.some(product => product.id === source?.shippingContainerProductId))?.id))
   const supplierProducts = selectedSupplier?.products.filter(isSelectableKitProduct) ?? []
   const sampleTypeChoices = linkableSampleTypes(configuration.sampleTypes)
   const sourceSampleType = configuration.sampleTypes.find(item => item.id === source?.sampleTypeAnchorId)
@@ -75,15 +73,14 @@ export function ShippingContainerEditor({ source, configuration, existingDefinit
   }
   const form = useForm<z.input<typeof shippingContainerSchema>, unknown, Values>({
     resolver: zodResolver(shippingContainerSchema.superRefine((values, context) => {
-      if (!source && !finishedProducts.some(product => product.id === values.finishedKitProductId))
-        context.addIssue({ code: 'custom', path: ['finishedKitProductId'], message: 'Choose an active Transportation kit product from the selected supplier.' })
+      if (!finishedProducts.some(product => product.id === values.shippingContainerProductId && !suppliers.find(supplier => supplier.id === product.supplierId)?.isInternalProducer))
+        context.addIssue({ code: 'custom', path: ['shippingContainerProductId'], message: 'Choose an active purchased Shipping Container from the selected supplier.' })
     })),
     defaultValues: {
-      finishedKitProductId: source?.finishedKitProductId ?? '',
+      shippingContainerProductId: source?.shippingContainerProductId ?? '', assemblyWorkflowId: source?.assemblyWorkflowId ?? '',
       sampleTypeDefinitionId: initialSampleType?.id ?? source?.sampleTypeAnchorId ?? '',
       sku: source?.sku ?? '', commonName: source?.commonName ?? '', tubeCapacity: source?.tubeCapacity ?? '',
-      supplierName: source?.supplierName ?? '', supplierProductNumber: source?.supplierProductNumber ?? '',
-      packingInstructions: source?.packingInstructions ?? '', effectiveFrom: source?.lifecycle === 'Draft' ? localContainerDateTime(new Date(source.effectiveFrom)) : localContainerDateTime(new Date(Math.max(Date.now(), source ? Date.parse(source.effectiveFrom) + 60_000 : Date.now()))),
+      effectiveFrom: source?.lifecycle === 'Draft' ? localContainerDateTime(new Date(source.effectiveFrom)) : localContainerDateTime(new Date(Math.max(Date.now(), source ? Date.parse(source.effectiveFrom) + 60_000 : Date.now()))),
       temperatureControlInstructions: source?.temperatureControlInstructions ?? '',
       dryIceQuantity: source?.dryIceQuantity?.toString() ?? '', dryIceUnit: source?.dryIceUnit ?? '',
       effectiveTo: source?.lifecycle === 'Draft' && source.effectiveTo ? localContainerDateTime(new Date(source.effectiveTo)) : '', displayOrder: source?.displayOrder ?? 0, isActive: false,
@@ -95,27 +92,23 @@ export function ShippingContainerEditor({ source, configuration, existingDefinit
     mutationFn: (values: Values) => {
       const input = {
         commonName: values.commonName, tubeCapacity: values.tubeCapacity,
-        supplierName: values.supplierName || null, supplierProductNumber: values.supplierProductNumber || null,
-        packingInstructions: values.packingInstructions || null,
         temperatureControlInstructions: values.temperatureControlInstructions || null,
         dryIceQuantity: values.dryIceQuantity ? Number(values.dryIceQuantity) : null,
         dryIceUnit: values.dryIceUnit || null,
         effectiveFrom: new Date(values.effectiveFrom).toISOString(),
         effectiveTo: values.effectiveTo ? new Date(values.effectiveTo).toISOString() : null,
         displayOrder: values.displayOrder, isActive: false, sampleTypeDefinitionId: values.sampleTypeDefinitionId || null,
-        ...(productSupplier?.isInternalProducer ? { kitContents: values.kitContents } : {}),
+        kitContents: values.kitContents, shippingContainerProductId: values.shippingContainerProductId || null, assemblyWorkflowId: values.assemblyWorkflowId || null,
       }
       return source?.lifecycle === 'Draft' ? updateShippingContainerDraft(source.id, source.version, input)
         : source ? reviseShippingContainerDefinition(source.id, { ...input, version: source.version })
-        : createShippingContainerDefinition({ ...input, sku: values.sku, finishedKitProductId: values.finishedKitProductId })
+        : createShippingContainerDefinition({ ...input, sku: values.sku, shippingContainerProductId: values.shippingContainerProductId })
     },
     onSuccess: async value => { form.reset(form.getValues()); allowSavedNavigation(); await onSaved(value) },
   })
   const isDirty = form.formState.isDirty
   const allowSavedNavigation = useOrderDraftGuard(isDirty, mutation.isPending)
-  const selectedProductId = form.watch('finishedKitProductId') || source?.finishedKitProductId
-  const selectedProduct = finishedProducts.find(item => item.id === selectedProductId)
-  const selectedSku = selectedProduct?.productNumber.trim().toUpperCase()
+  const selectedSku = form.watch('sku').trim().toUpperCase()
   const matchingSkuSpecifications = new Map<string, ShippingContainerDefinition>()
   if (!source && selectedSku) for (const item of existingDefinitions) {
     if (item.sku.trim().toUpperCase() !== selectedSku) continue
@@ -129,15 +122,13 @@ export function ShippingContainerEditor({ source, configuration, existingDefinit
   }
   const skuUses = [...matchingSkuSpecifications.values()].sort((a, b) =>
     a.commonName.localeCompare(b.commonName) || a.revision - b.revision)
-  const hasActiveSkuUse = skuUses.some(item => ['Active now', 'Scheduled'].includes(containerEffectiveState(item)))
-  const productSupplier = (catalog.data ?? []).find(item => item.products.some(product => product.id === selectedProductId))
   const componentSuppliers = suppliers.filter(item => !item.isInternalProducer)
-    .map(item => ({ ...item, products: item.products.filter(product => product.isActive && product.productTypeIsActive && product.productTypeId !== transportationKitProductTypeId) }))
+    .map(item => ({ ...item, products: item.products.filter(product => product.isActive && product.productTypeIsActive) }))
     .filter(item => item.products.length > 0)
   const usableTubeCapacity = Number(form.watch('tubeCapacity'))
   const configuredShipperAvailable = componentSuppliers.some(item => item.products.some(product =>
     product.kind === 'ShippingContainer' && (product.tubeCapacity ?? 0) >= usableTubeCapacity))
-  const approvedRevision = kitWorkflows.data?.find(item => item.finishedKitProductId === selectedProductId)
+  const approvedRevision = kitWorkflows.data?.find(item => item.id === form.watch('assemblyWorkflowId'))
     ?.revisions.filter(revision => revision.status === 'Approved').sort((a, b) => b.revision - a.revision)[0]
   const catalogUnavailable = catalog.isPending || catalog.isError
   const errors = form.formState.errors
@@ -159,26 +150,30 @@ export function ShippingContainerEditor({ source, configuration, existingDefinit
     {mutation.error ? <Alert variant="destructive"><AlertTitle>Kit specification was not saved</AlertTitle><AlertDescription>{getOrderErrorMessage(mutation.error, 'Review the values and try again.')}</AlertDescription></Alert> : null}
     <form id="shipping-container-editor" className="space-y-4" noValidate onSubmit={form.handleSubmit(values => { if (!mutation.isPending) mutation.mutate(values) })}>
       <ContainerField id="container-commonName" label="Kit specification name" required error={errors.commonName?.message} help="Name this specification as staff should recognize it. Revisions may update the name without changing the product SKU."><Input id="container-commonName" maxLength={255} disabled={mutation.isPending} aria-invalid={Boolean(errors.commonName)} aria-describedby={`container-commonName-help${errors.commonName ? ' container-commonName-error' : ''}`} {...form.register('commonName')} /></ContainerField>
-      {!source ? <>
-        <ContainerField id="kit-supplier" label="Supplier" required help="Choose the supplier of the complete Transportation kit product."><select id="kit-supplier" className="h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm" disabled={mutation.isPending || catalogUnavailable} value={supplierId} onChange={event => { const previousProduct = finishedProducts.find(item => item.id === form.getValues('finishedKitProductId')); if (form.getValues('commonName') === previousProduct?.description) form.setValue('commonName', '', { shouldDirty: true }); setSupplierId(event.target.value); form.setValue('finishedKitProductId', '', { shouldDirty: true, shouldValidate: true }); form.setValue('sku', '', { shouldDirty: true }); form.setValue('tubeCapacity', '', { shouldDirty: true }); form.setValue('kitContents', [], { shouldDirty: true }) }}><option value="">Select a supplier</option>{productSuppliers.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></ContainerField>
-        <ContainerField id="kit-finished-product" label="Transportation kit product" required error={errors.finishedKitProductId?.message} help="The selected product supplies its supplier SKU. Its description fills the specification name only when the name is blank."><select id="kit-finished-product" className="h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm" disabled={mutation.isPending || catalogUnavailable || !supplierId} {...form.register('finishedKitProductId')} onChange={event => { const previousProduct = finishedProducts.find(item => item.id === form.getValues('finishedKitProductId')); const previousName = form.getValues('commonName'); const product = supplierProducts.find(item => item.id === event.target.value); form.setValue('finishedKitProductId', event.target.value, { shouldDirty: true, shouldValidate: true }); form.setValue('tubeCapacity', '', { shouldDirty: true }); form.setValue('kitContents', [], { shouldDirty: true }); if (product) { form.setValue('sku', product.productNumber, { shouldDirty: true, shouldValidate: true }); if (!previousName || previousName === previousProduct?.description) form.setValue('commonName', product.description, { shouldDirty: true, shouldValidate: true }) } }}><option value="">Select a product</option>{supplierProducts.map(product => <option key={product.id} value={product.id}>{product.productNumber} · {product.description}</option>)}</select></ContainerField>
-        {skuUses.length ? <Alert><AlertTitle>{hasActiveSkuUse ? 'SKU used by an active or scheduled kit' : 'SKU used by another kit specification'}</AlertTitle><AlertDescription><p>This SKU appears in another specification family, including inactive or historical records. You can still create a separate Draft. If you are replacing one of these specifications, create a revision from its record instead.</p><ul className="mt-2 list-disc pl-5">{skuUses.map(item => <li key={item.id}>{item.commonName} · {(catalog.data ?? []).find(supplier => supplier.products.some(product => product.id === item.finishedKitProductId))?.name ?? 'Historical product'} · {configuration.sampleTypes.find(sample => sample.id === item.sampleTypeAnchorId)?.name ?? 'Sample type unavailable'} · {item.tubeCapacity} tubes · display order {item.displayOrder} ({containerEffectiveState(item)})</li>)}</ul></AlertDescription></Alert> : null}
-      </> : source.finishedKitProductId ? <p className="rounded-md border bg-muted/30 p-3 text-sm">Shipping specification for {productSupplier?.name ?? 'catalog'} kit product · SKU {source.sku}</p> : <Alert><AlertTitle>Historical container</AlertTitle><AlertDescription>This older kit is not linked to a catalog product. You can review or revise it, but use Add Transportation kit to create a replacement for new Orders.</AlertDescription></Alert>}
+      {input('sku', 'Kit SKU', 'text', true, 'Identifies this complete kit specification. Fixed across revisions.')}
+      <>
+        <ContainerField id="kit-supplier" label="Container supplier" required><select id="kit-supplier" className="h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm" disabled={mutation.isPending || catalogUnavailable} value={selectedSupplier?.id ?? ''} onChange={event => { setSupplierId(event.target.value); form.setValue('shippingContainerProductId', '', { shouldDirty: true, shouldValidate: true }) }}><option value="">Select a supplier</option>{productSuppliers.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></ContainerField>
+        <ContainerField id="kit-container-product" label="Shipping Container" required error={errors.shippingContainerProductId?.message} help="The purchased outer container for one assembled kit. Its capacity must accommodate the usable tube count."><select id="kit-container-product" className="h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm" disabled={mutation.isPending || catalogUnavailable || !selectedSupplier} {...form.register('shippingContainerProductId')} onChange={event => {
+          const product = supplierProducts.find(item => item.id === event.target.value)
+          form.setValue('shippingContainerProductId', event.target.value, { shouldDirty: true, shouldValidate: true })
+          const otherContents = form.getValues('kitContents').filter(item => !suppliers.some(supplier => supplier.products.some(value => value.id === item.supplierProductId && value.kind === 'ShippingContainer')))
+          form.setValue('kitContents', product ? [...otherContents, { supplierProductId: product.id, quantity: 1 }] : otherContents, { shouldDirty: true, shouldValidate: true })
+          if (product && !form.getValues('tubeCapacity') && product.tubeCapacity) form.setValue('tubeCapacity', product.tubeCapacity, { shouldDirty: true })
+        }}><option value="">Select a Shipping Container</option>{supplierProducts.map(product => <option key={product.id} value={product.id}>{product.productNumber} · {product.description}</option>)}</select></ContainerField>
+      </>
+      {skuUses.length ? <Alert><AlertTitle>Kit SKU already used</AlertTitle><AlertDescription>This kit SKU appears in another specification family. Review the existing specification before creating a separate family.</AlertDescription></Alert> : null}
       <ContainerField id="kit-sample-type" label="Sample type" error={errors.sampleTypeDefinitionId?.message} help="Optional while saving a Draft; required for activation. This kit can be activated while its selected Sample type is Draft. New Orders wait until that Sample type and its Shipping procedure are Active. Changing the choice leaves earlier specifications and physical kits unchanged."><select id="kit-sample-type" className="h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm" disabled={mutation.isPending} {...form.register('sampleTypeDefinitionId')}><option value="">Choose a Sample type…</option>{sampleTypeChoices.map(item => <option key={item.id} value={item.id}>{item.name} — {item.lifecycle === 'Draft' ? `Draft revision ${item.revision}` : pendingByFamily.has(item.definitionKey) ? `Active; Draft revision ${pendingByFamily.get(item.definitionKey)} in progress` : 'Active'}</option>)}{source?.sampleTypeAnchorId && !initialSampleType ? <option value={source.sampleTypeAnchorId}>Previously selected Sample type (unavailable for activation)</option> : null}</select></ContainerField>
-      {selectedProductId && productSupplier?.isInternalProducer && kitWorkflows.isPending ? <p role="status" className="text-sm text-muted-foreground">Loading this product's assembly workflow…</p> : null}
-      {selectedProductId && productSupplier?.isInternalProducer && kitWorkflows.isError ? <Alert variant="destructive"><AlertTitle>Assembly workflow unavailable</AlertTitle><AlertDescription>{getOrderErrorMessage(kitWorkflows.error, 'Try loading it again.')} <Button type="button" variant="outline" onClick={() => void kitWorkflows.refetch()}>Retry</Button></AlertDescription></Alert> : null}
-       {selectedProductId && productSupplier && !productSupplier.isInternalProducer ? <p className="text-sm text-muted-foreground">Purchased complete kits use supplier receipt and physical tube verification. They do not require a Phaeno assembly workflow.</p> : selectedProductId && productSupplier?.isInternalProducer && !kitWorkflows.isPending && !kitWorkflows.isError ? <p className="text-sm text-muted-foreground">{approvedRevision ? `Assembly workflow revision ${approvedRevision.revision} provides the reusable steps. This specification sets the required products and quantities.` : 'This product has no approved assembly workflow yet. Complete this specification’s contents to activate it; new physical kits wait until the workflow is approved in Lab settings.'}</p> : null}
+      <ContainerField id="kit-assembly-method" label="Assembly workflow" help="Choose a reusable method from Lab settings. Activation may precede approval; preparing a physical kit requires an approved version."><select id="kit-assembly-method" className="h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm" disabled={mutation.isPending || kitWorkflows.isPending || kitWorkflows.isError} {...form.register('assemblyWorkflowId')}><option value="">Choose later</option>{kitWorkflows.data?.map(workflow => <option key={workflow.id} value={workflow.id}>{workflow.name}{workflow.revisions.some(revision => revision.status === 'Approved') ? '' : ' (approval pending)'}</option>)}</select>{kitWorkflows.isError ? <p role="alert" className="mt-1 text-sm text-destructive">Assembly workflows could not be loaded.</p> : <p className="mt-1 text-xs text-muted-foreground">{approvedRevision ? 'New physical kits will use approved version ' + approvedRevision.revision + '.' : 'New physical kits wait until an assembly workflow is selected and approved.'}</p>}</ContainerField>
       <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
-        {source?.finishedKitProductId || !source ? <input type="hidden" {...form.register('sku')} /> : input('sku', 'SKU number', 'text', true, 'Keep leading zeros and separators. Fixed across revisions.')}
         {input('tubeCapacity', 'Usable tube capacity', 'number', true, 'Approved capacity with packing materials in place.')}
         {input('displayOrder', 'Display order', 'number', true, 'Lower numbers appear first.')}
       </div>
-      {productSupplier?.isInternalProducer ? <section aria-labelledby="kit-contents-heading" aria-describedby="kit-contents-help" className="rounded-md border bg-muted/20 p-3 sm:p-4">
+      <section aria-labelledby="kit-contents-heading" aria-describedby="kit-contents-help" className="rounded-md border bg-muted/20 p-3 sm:p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <h3 id="kit-contents-heading" className="text-sm font-medium">Required contents for one kit</h3>
           <Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => contents.append({ supplierProductId: '', quantity: 1 })}>Add product</Button>
         </div>
-        <p id="kit-contents-help" className="mt-1 text-xs text-muted-foreground">Choose one tube product with a quantity equal to usable tube capacity, one Shipping Container product with quantity one and enough tube slots, and any other required purchased products. A complete Transportation kit product cannot be used as the outer container. You can finish this list while the revision is a Draft; activation requires a complete list.</p>
+        <p id="kit-contents-help" className="mt-1 text-xs text-muted-foreground">Choose one tube product with a quantity equal to usable tube capacity, one Shipping Container product with quantity one and enough tube slots, and any other required purchased products. The selected Shipping Container must be included once with quantity one. You can finish this list while the revision is a Draft; activation requires a complete list.</p>
         {usableTubeCapacity > 0 && !catalog.isPending && !catalog.isError && !configuredShipperAvailable ? <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">No available Shipping Container product has a configured capacity of at least {usableTubeCapacity} tubes. Add or update one in Suppliers &amp; products.</p> : null}
         {contents.fields.length > 0 || errors.kitContents?.message ? <div className="mt-3 space-y-1.5">
         {contents.fields.length > 0 ? <div aria-hidden="true" className="hidden gap-2 text-xs text-muted-foreground sm:grid sm:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_5rem_5rem]">
@@ -206,7 +201,7 @@ export function ShippingContainerEditor({ source, configuration, existingDefinit
         })}
         {errors.kitContents?.message ? <p role="alert" className="text-sm text-destructive">{errors.kitContents.message}</p> : null}
         </div> : null}
-      </section> : null}
+      </section>
       {catalog.isPending ? <p role="status">Loading suppliers and products…</p> : null}
       {catalog.isError ? <Alert variant="destructive"><AlertTitle>Supplier catalog unavailable</AlertTitle><AlertDescription>{getOrderErrorMessage(catalog.error, 'Try loading the supplier catalog again.')}<Button type="button" variant="outline" disabled={catalog.isFetching || mutation.isPending} onClick={() => void catalog.refetch()}>Retry supplier catalog</Button></AlertDescription></Alert> : null}
       <ContainerField id="kit-temperature-control" label="Temperature-control instructions" error={errors.temperatureControlInstructions?.message} help="Describe the approved cooling method for one complete kit, including when no cooling is needed.">
@@ -220,10 +215,6 @@ export function ShippingContainerEditor({ source, configuration, existingDefinit
           <Input id="kit-dry-ice-unit" placeholder="e.g. kg" disabled={mutation.isPending} aria-invalid={Boolean(errors.dryIceUnit)} aria-describedby={fieldHelpIds('kit-dry-ice-unit', undefined, errors.dryIceUnit?.message)} {...form.register('dryIceUnit')} />
         </ContainerField>
       </div>
-      {source?.supplierName && !source.finishedKitProductId ? <p className="text-xs text-muted-foreground">Earlier container reference: {source.supplierName}{source.supplierProductNumber ? ` · ${source.supplierProductNumber}` : ''}. Its recorded contents remain in the historical revision.</p> : null}
-      {source?.packingInstructions ? <ContainerField id="container-packingInstructions" label="Earlier container notes" error={errors.packingInstructions?.message}>
-        <Textarea id="container-packingInstructions" rows={2} disabled={mutation.isPending} aria-invalid={Boolean(errors.packingInstructions)} aria-describedby={errors.packingInstructions ? 'container-packingInstructions-error' : undefined} {...form.register('packingInstructions')} /><p className="mt-1 text-xs text-muted-foreground">Retained from the earlier setup. Review these notes and clear any repeated instructions.</p>
-      </ContainerField> : null}
       <section aria-labelledby="container-availability-heading" className="space-y-3 border-t pt-4">
         <h3 id="container-availability-heading" className="text-sm font-medium">Availability</h3>
         <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">{input('effectiveFrom', 'Effective from', 'datetime-local', true)}{input('effectiveTo', 'Effective through', 'datetime-local')}</div>

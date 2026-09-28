@@ -1,28 +1,12 @@
-import { Outlet, createFileRoute, redirect, useRouterState } from '@tanstack/react-router'
+import { Outlet, createFileRoute, useRouterState } from '@tanstack/react-router'
 
 import { OrderConfigurationPage, parseConfigurationSection, type ConfigurationSection } from '#/features/orders/configuration/OrderConfigurationPage'
-import { parseShippingContainerListSearch, type ShippingContainerListSearch } from '#/features/orders/configuration/shipping-container-navigation'
 
 export const Route = createFileRoute('/order-configuration')({
-  validateSearch: (search: Record<string, unknown>): { configurationSection?: ConfigurationSection } & ShippingContainerListSearch => ({
+  validateSearch: (search: Record<string, unknown>): { configurationSection?: ConfigurationSection } => ({
     configurationSection: parseConfigurationSection(search.configurationSection),
-    ...parseShippingContainerListSearch(search),
   }),
   component: OrderConfigurationRoute,
-  beforeLoad: ({ search, location }) => {
-    if (search.configurationSection === 'lab-service-offerings') {
-      throw redirect({ to: '/order-configuration', search: { configurationSection: 'catalog' }, replace: true })
-    }
-    if (search.configurationSection === 'retention') {
-      throw redirect({ to: '/file-management', replace: true })
-    }
-    if (location.pathname === '/order-configuration' && search.configurationSection === 'sample-types') {
-      throw redirect({ to: '/sample-shipping-settings', search: { shippingSection: 'sample-types' }, replace: true })
-    }
-    if (location.pathname === '/order-configuration' && search.configurationSection === 'shipping') {
-      throw redirect({ to: '/sample-shipping-settings', search: { ...parseShippingContainerListSearch(search), shippingSection: 'containers' }, replace: true })
-    }
-  },
 })
 
 function OrderConfigurationRoute() {

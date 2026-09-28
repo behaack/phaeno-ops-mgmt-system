@@ -67,9 +67,7 @@ public sealed partial class LabServiceOrdersController
                         json = placement;
                 }
                 var scope = ReadQuoteSnapshot<QuotePdfScope>(json);
-                // Legacy quotes without recorded source groups remain downloadable;
-                // today's editable source groups must never replace historical scope.
-                if (scope?.SourceGroups is not { Count: > 0 }) return null;
+                if (scope?.SourceGroups is not { Count: > 0 }) throw new JsonException("The saved sample scope is missing.");
                 if (scope.RequestedSpecimenCount <= 0 || scope.SourceGroups.Any(source => source is null
                     || string.IsNullOrWhiteSpace(source.BiologicalSource) || source.SpecimenCount <= 0)
                     || scope.SourceGroups.Sum(source => (long)source.SpecimenCount) != scope.RequestedSpecimenCount)

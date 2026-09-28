@@ -174,8 +174,8 @@ function expectedTubes(order: LabServiceOrder) {
 
 function completeRosterCoverage(order: LabServiceOrder, rows: SampleShippingCrosswalkItem[]) {
   if (expectedTubes(order) === null) return false
-  // Tube ordinals repeat across split shipments; the persisted slot (or legacy item) identity does not.
-  const keys = rows.map(row => row.tubeSlotId || (row.shipmentItemId && `${row.shipmentItemId}:${row.tubeOrdinal ?? 1}`))
+  // Tube ordinals repeat across split shipments; persisted slot identities do not.
+  const keys = rows.map(row => row.tubeSlotId)
   if (keys.some(key => !key) || new Set(keys).size !== keys.length) return false
   const bySample = new Map<string, number>()
   rows.forEach(row => bySample.set(row.submittedSpecimenId, (bySample.get(row.submittedSpecimenId) ?? 0) + 1))

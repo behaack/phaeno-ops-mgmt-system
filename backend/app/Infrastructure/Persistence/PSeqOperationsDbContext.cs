@@ -259,7 +259,6 @@ public sealed partial class PSeqOperationsDbContext(
     public DbSet<LabReagentMaterialUse> LabReagentMaterialUses { get; set; }
     public DbSet<LabKitAssemblyWorkflow> LabKitAssemblyWorkflows { get; set; }
     public DbSet<LabKitAssemblyWorkflowRevision> LabKitAssemblyWorkflowRevisions { get; set; }
-    public DbSet<LabKitAssemblyComponent> LabKitAssemblyComponents { get; set; }
     public DbSet<LabKitAssemblyRun> LabKitAssemblyRuns { get; set; }
     public DbSet<LabKitAssemblyStepRecord> LabKitAssemblyStepRecords { get; set; }
     public DbSet<LabKitAssemblyUse> LabKitAssemblyUses { get; set; }

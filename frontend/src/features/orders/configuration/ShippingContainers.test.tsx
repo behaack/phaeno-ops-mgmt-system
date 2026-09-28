@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { transportationKitProductTypeId, type CatalogSupplier, type SupplierProduct } from '#/api/supplier-catalog'
+import { shippingContainerProductTypeId, type CatalogSupplier, type SupplierProduct } from '#/api/supplier-catalog'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { containerConfiguration as configuration, containerDefinition as baseDefinition } from '#/test-helpers/shipping-containers'
 import { ContainerSizesPanel } from './ContainerSizesPanel'
@@ -21,7 +21,7 @@ vi.mock('@tanstack/react-router', () => ({ useNavigate: () => mocks.navigate, us
 function mount(node: ReactNode) { return render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>{node}</QueryClientProvider>) }
 function fill(label: RegExp | string, value: string) { fireEvent.change(screen.getByLabelText(label), { target: { value } }) }
 const product: SupplierProduct = { id: '77777777-7777-4777-8777-777777777771', supplierId: '88888888-8888-4888-8888-888888888881', productNumber: 'PRODUCT-20', description: 'Insulated shipper', kind: 'ShippingContainer', tubeCapacity: 20, defaultQuantityUnit: 'each', productTypeId: 'shipper-type', productTypeName: 'Shipping Container', productTypeIsActive: true, isActive: true, version: 1 }
-const finishedKitProduct: SupplierProduct = { ...product, id: '77777777-7777-4777-8777-777777777775', supplierId: '88888888-8888-4888-8888-888888888885', productNumber: '000-20', description: 'Approved 20-tube kit', kind: 'Other', productTypeId: transportationKitProductTypeId, productTypeName: 'Transportation kit', productTypeIsActive: true }
+const selectedContainerProduct: SupplierProduct = { ...product, id: '77777777-7777-4777-8777-777777777775', supplierId: '88888888-8888-4888-8888-888888888885', productNumber: '000-20', description: 'Approved 20-tube container', kind: 'ShippingContainer', productTypeId: shippingContainerProductTypeId, productTypeName: 'Shipping Container', productTypeIsActive: true }
 const suppliers: CatalogSupplier[] = [
   { id: '88888888-8888-4888-8888-888888888881', name: 'Synthetic supplier', isActive: true, version: 1, products: [product,
     { ...product, id: '77777777-7777-4777-8777-777777777772', productNumber: 'TUBE', kind: 'Tube' },
@@ -30,10 +30,10 @@ const suppliers: CatalogSupplier[] = [
     { ...product, id: 'inactive-type', productNumber: 'INACTIVE-TYPE', productTypeIsActive: false }] },
   { id: '88888888-8888-4888-8888-888888888882', name: 'Other supplier', isActive: true, version: 1, products: [{ ...product, id: '77777777-7777-4777-8777-777777777773', supplierId: '88888888-8888-4888-8888-888888888882', productNumber: 'OTHER-10' }] },
   { id: 'inactive', name: 'Inactive supplier', isActive: false, version: 1, products: [product] },
-  { id: finishedKitProduct.supplierId, name: 'Phaeno', isInternalProducer: true, isActive: true, version: 1, products: [finishedKitProduct] },
+  { id: selectedContainerProduct.supplierId, name: 'Containers R US', isInternalProducer: false, isActive: true, version: 1, products: [selectedContainerProduct] },
 ]
 const definition = { ...baseDefinition, kitContents: [{ supplierProductId: product.id, supplierId: product.supplierId, supplierName: 'Synthetic supplier', productNumber: product.productNumber, productDescription: product.description, productTypeName: product.productTypeName, kind: product.kind, quantity: 1 }] }
-const named = { ...definition, finishedKitProductId: finishedKitProduct.id }
+const named = { ...definition, shippingContainerProductId: selectedContainerProduct.id }
 const draft = { ...named, id: 'draft-revision', revision: 2, supersedesDefinitionId: named.id, commonName: 'Revised kit', lifecycle: 'Draft' as const, isActive: false }
 const catalogState = () => ({ data: suppliers, isPending: false, isError: false, isFetching: false, error: null, refetch: vi.fn() })
 beforeEach(() => { vi.clearAllMocks(); mocks.search = {}; mocks.catalog.mockReturnValue(catalogState()); mocks.workflows.mockResolvedValue([]); mocks.allowed = true; mocks.list.mockResolvedValue([definition]); mocks.get.mockResolvedValue(definition); mocks.history.mockResolvedValue([definition]); mocks.configuration.mockResolvedValue(configuration); mocks.create.mockResolvedValue(draft); mocks.revise.mockResolvedValue(draft); mocks.update.mockResolvedValue(draft); mocks.discard.mockResolvedValue(draft); mocks.activate.mockResolvedValue({ ...draft, lifecycle: 'Released', isActive: true }); mocks.deactivate.mockResolvedValue({ ...definition, isActive: false, deactivatedAt: new Date().toISOString() }) })
@@ -97,17 +97,21 @@ describe('controlled shipping container configuration', () => {
   it('distinguishes draft, scheduled, ended, deactivated, and active revisions without mutating history', () => { const draft = { ...definition, id: 'draft', revision: 2, isActive: false }; const all = [definition, draft]; expect(latestContainerRevisions(all)).toEqual([draft]); expect(all).toEqual([definition, draft]); expect(containerEffectiveState(draft)).toBe('Draft'); expect(containerEffectiveState({ ...definition, effectiveFrom: '2099-01-01' })).toBe('Scheduled'); expect(containerEffectiveState({ ...definition, effectiveTo: '2021-01-01' })).toBe('Ended'); expect(containerEffectiveState({ ...draft, deactivatedAt: '2026-01-01' })).toBe('Deactivated'); expect(containerEffectiveState(definition)).toBe('Active now') })
   it('creates an incomplete Draft and chooses its Sample type in the editor', async () => {
     mount(<ShippingContainerEditor source={null} configuration={configuration} onClose={vi.fn()} onSaved={vi.fn()} />)
-    fill(/^Supplier/, finishedKitProduct.supplierId)
-    fill(/^Transportation kit product/, finishedKitProduct.id)
+    fill(/Kit specification name/, 'Complete kit')
+    fill(/Kit SKU/, 'KIT-20')
+    fill(/^Container supplier/, selectedContainerProduct.supplierId)
+    fill(/^Shipping Container/, selectedContainerProduct.id)
     fill('Sample type', configuration.sampleTypes[0].id)
     fill(/Usable tube capacity/, '20')
     fireEvent.click(screen.getByRole('button', { name: 'Create Draft' }))
-    await waitFor(() => expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ finishedKitProductId: finishedKitProduct.id, sku: finishedKitProduct.productNumber, sampleTypeDefinitionId: configuration.sampleTypes[0].id, tubeCapacity: 20, isActive: false })))
+    await waitFor(() => expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ shippingContainerProductId: selectedContainerProduct.id, sku: 'KIT-20', commonName: 'Complete kit', sampleTypeDefinitionId: configuration.sampleTypes[0].id, tubeCapacity: 20, isActive: false })))
   })
   it('saves a Draft before a Sample type or assembly workflow is ready', async () => {
     mount(<ShippingContainerEditor source={null} configuration={configuration} onClose={vi.fn()} onSaved={vi.fn()} />)
-    fill(/^Supplier/, finishedKitProduct.supplierId)
-    fill(/^Transportation kit product/, finishedKitProduct.id)
+    fill(/Kit specification name/, 'Draft kit')
+    fill(/Kit SKU/, 'DRAFT-20')
+    fill(/^Container supplier/, selectedContainerProduct.supplierId)
+    fill(/^Shipping Container/, selectedContainerProduct.id)
     fireEvent.click(screen.getByRole('button', { name: 'Create Draft' }))
     await waitFor(() => expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ sampleTypeDefinitionId: null, isActive: false })))
     expect(mocks.activate).not.toHaveBeenCalled()

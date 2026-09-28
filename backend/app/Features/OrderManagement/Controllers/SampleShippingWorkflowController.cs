@@ -69,12 +69,9 @@ public sealed class SampleShippingWorkflowController(
                 "sample_tube_assignment_locked",
                 "Tube assignments can be corrected only before the return shipment is recorded as shipped.");
         var item = shipment.Items.SingleOrDefault(value => value.Id == shipmentItemId) ?? throw Missing();
-        var slot = request.TubeSlotId.HasValue
-            ? item.TubeSlots.SingleOrDefault(value => value.Id == request.TubeSlotId.Value) ?? throw Missing()
-            : null;
-        if (item.TubeSlots.Count > 0 && slot is null)
-            throw Invalid("sample_tube_slot_required", "Select the specific tube slot to match.");
-        EnsureVersion(slot?.Version ?? item.Version, request.Version);
+        var slot = item.TubeSlots.SingleOrDefault(value => value.Id == request.TubeSlotId)
+            ?? throw Invalid("sample_tube_slot_required", "Select the specific tube slot to match.");
+        EnsureVersion(slot.Version, request.Version);
         if (!SupplierTubeBarcode.TryNormalize(request.SupplierBarcode, out var normalized))
             throw Invalid("supplier_tube_barcode_invalid", "Scan or enter the complete barcode from a Phaeno-supplied tube.");
         if (request.CustomerDeclaredQuantity is not > 0 || string.IsNullOrWhiteSpace(request.CustomerDeclaredQuantityUnit))
@@ -89,12 +86,11 @@ public sealed class SampleShippingWorkflowController(
         var tube = kit.Tubes.SingleOrDefault(value => value.SupplierBarcode == normalized)
             ?? throw Missing("supplier_tube_not_in_kit", "That tube is not part of this Phaeno return kit.");
         var assignedElsewhere = shipment.Items.Any(value =>
-            value.Id != item.Id && value.RegisteredSampleTubeId == tube.Id
-            || value.TubeSlots.Any(valueSlot => valueSlot.RegisteredSampleTubeId == tube.Id
-                && (slot is null || valueSlot.Id != slot.Id)));
+            value.TubeSlots.Any(valueSlot => valueSlot.RegisteredSampleTubeId == tube.Id
+                && valueSlot.Id != slot.Id));
         if (assignedElsewhere)
             throw Conflict("supplier_tube_already_assigned", "That tube is already matched to another tube slot in this shipment.");
-        var sameTube = (slot?.RegisteredSampleTubeId ?? item.RegisteredSampleTubeId) == tube.Id;
+        var sameTube = slot.RegisteredSampleTubeId == tube.Id;
         var sameDeclaration = tube.CustomerDeclaredQuantity == request.CustomerDeclaredQuantity
             && tube.CustomerDeclaredQuantityUnit == request.CustomerDeclaredQuantityUnit.Trim();
         if (sameTube && sameDeclaration)
@@ -106,7 +102,7 @@ public sealed class SampleShippingWorkflowController(
             throw Conflict("physical_tube_assignment_locked", "This physical tube has already been received or retired and cannot be reassigned.");
 
         var now = DateTime.UtcNow;
-        var previousTubeId = slot?.RegisteredSampleTubeId ?? item.RegisteredSampleTubeId;
+        var previousTubeId = slot.RegisteredSampleTubeId;
         if ((currentPacket is not null || sameTube && tube.CustomerDeclaredQuantity.HasValue)
             && string.IsNullOrWhiteSpace(request.Reason))
             throw Invalid(
@@ -119,10 +115,10 @@ public sealed class SampleShippingWorkflowController(
             var previousTube = kit.Tubes.Single(value => value.Id == previousTubeId.Value);
             if (previousTube.ReceivedAt.HasValue || previousTube.Status == RegisteredSampleTubeStatus.Accessioned)
                 throw Conflict("physical_tube_assignment_locked", "The previous tube has already been received and its sample assignment is locked.");
-            if (slot is null) item.ClearTube(); else slot.ClearTube();
+            slot.ClearTube();
             previousTube.MarkAvailable();
             dbContext.SampleTubeAssignmentEvents.Add(new SampleTubeAssignmentEvent(
-                shipment.Id, item.Id, slot?.Id, previousTube.Id, item.CustomerSampleId,
+                shipment.Id, item.Id, slot.Id, previousTube.Id, item.CustomerSampleId,
                 previousTube.SupplierBarcode, SampleTubeAssignmentAction.Cleared,
                 request.Reason, tenant.Actor.Id, now,
                 previousTube.CustomerDeclaredQuantity, previousTube.CustomerDeclaredQuantityUnit));
@@ -131,9 +127,9 @@ public sealed class SampleShippingWorkflowController(
         tube.MarkAssigned(now);
         Execute(() => tube.DeclareMaterial(request.CustomerDeclaredQuantity.Value,
             request.CustomerDeclaredQuantityUnit, tenant.Actor.Id, now));
-        if (slot is null) item.AssignTube(tube.Id, now); else slot.AssignTube(tube.Id, now);
+        slot.AssignTube(tube.Id, now);
         dbContext.SampleTubeAssignmentEvents.Add(new SampleTubeAssignmentEvent(
-            shipment.Id, item.Id, slot?.Id, tube.Id, item.CustomerSampleId,
+            shipment.Id, item.Id, slot.Id, tube.Id, item.CustomerSampleId,
             tube.SupplierBarcode,
             sameTube ? SampleTubeAssignmentAction.MaterialDeclarationUpdated
                 : previousTubeId.HasValue ? SampleTubeAssignmentAction.Reassigned : SampleTubeAssignmentAction.Assigned,

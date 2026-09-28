@@ -35,8 +35,7 @@ public sealed partial class SampleShipment
     {
         if (Status != SampleShipmentStatus.Preparing || ReturnKit is not null
             || PacketRevisions.Any(packet => !packet.IsVoided)
-            || Items.Any(item => item.RegisteredSampleTubeId.HasValue
-                || item.TubeSlots.Any(slot => slot.RegisteredSampleTubeId.HasValue)))
+            || Items.Any(item => item.TubeSlots.Any(slot => slot.RegisteredSampleTubeId.HasValue)))
             throw new InvalidOperationException("Clear tube assignments and resolve the current kit or packet before repacking.");
     }
 }

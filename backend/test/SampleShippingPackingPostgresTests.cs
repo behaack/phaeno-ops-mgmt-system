@@ -462,12 +462,9 @@ public partial class SampleShippingPostgresTests
         public async Task<SampleShippingContainerDefinitionDto> CreateContainerAsync(ShippingFixture fixture, int capacity, bool active = true)
         {
             var sku = $"PACK-{Suffix}-{capacity}-{Guid.NewGuid():N}";
-            var internalSupplier = await DbContext.LabSuppliers.SingleAsync(item => item.IsInternalProducer);
-            var product = new PSeq.Operations.Laboratory.Domain.LabSupplierProduct(internalSupplier.Id, sku,
-                $"Reference {capacity} tubes", PSeq.Operations.Laboratory.Domain.LabProductType.TransportationKitId);
-            DbContext.LabSupplierProducts.Add(product);
             var contents = await KitContentsAsync(capacity);
-            var workflow = new PSeq.Operations.Laboratory.Domain.LabKitAssemblyWorkflow(product.Id, "Sample kit assembly");
+            var product = await DbContext.LabSupplierProducts.SingleAsync(item => item.Id == contents[0].SupplierProductId);
+            var workflow = new PSeq.Operations.Laboratory.Domain.LabKitAssemblyWorkflow("Assembly " + sku);
             var now = DateTime.UtcNow;
             var step = new PSeq.Operations.Laboratory.Domain.LabStep($"PACK-{Suffix}-{Guid.NewGuid():N}",
                 $"Reference kit assembly {sku}", null);
@@ -483,8 +480,8 @@ public partial class SampleShippingPostgresTests
             await DbContext.SaveChangesAsync();
             ClearTrackedState();
             var draft = await ContainerCatalog().CreateAsync(new(sku, product.Description, capacity,
-                now.AddDays(-1), IsActive: false, FinishedKitProductId: product.Id,
-                AssemblyWorkflowRevisionId: revision.Id, PackingInstructions: "Pack the approved tubes in sealed secondary containment.",
+                now.AddDays(-1), IsActive: false, ShippingContainerProductId: product.Id,
+                AssemblyWorkflowId: workflow.Id,
                 TemperatureControlInstructions: "Keep this container frozen in transit.",
                 KitContents: contents), default);
             ClearTrackedState();
@@ -595,12 +592,9 @@ public partial class SampleShippingPostgresTests
             await DbContext.Set<ShippingKitContent>().Where(item => ids.Contains(item.ContainerDefinitionId)).ExecuteDeleteAsync();
             foreach (var definition in definitions) await DbContext.SampleShippingContainerDefinitions.Where(item => item.Id == definition.Id).ExecuteDeleteAsync();
             await DbContext.SampleShippingContainerTypes.Where(item => typeIds.Contains(item.Id)).ExecuteDeleteAsync();
-            var workflowIds = await DbContext.LabKitAssemblyWorkflows.Where(item => item.FinishedKitProductId != Guid.Empty
-                && DbContext.LabSupplierProducts.Any(product => product.Id == item.FinishedKitProductId
-                    && product.ProductNumber.StartsWith($"PACK-{Suffix}-"))).Select(item => item.Id).ToArrayAsync();
+            var workflowIds = await DbContext.LabKitAssemblyWorkflows.Where(item => item.Name.StartsWith($"Assembly PACK-{Suffix}-")).Select(item => item.Id).ToArrayAsync();
             var workflowRevisionIds = await DbContext.LabKitAssemblyWorkflowRevisions
                 .Where(item => workflowIds.Contains(item.WorkflowId)).Select(item => item.Id).ToArrayAsync();
-            await DbContext.LabKitAssemblyComponents.Where(item => workflowRevisionIds.Contains(item.WorkflowRevisionId)).ExecuteDeleteAsync();
             await DbContext.LabKitAssemblyWorkflowRevisions.Where(item => workflowRevisionIds.Contains(item.Id)).ExecuteDeleteAsync();
             await DbContext.LabKitAssemblyWorkflows.Where(item => workflowIds.Contains(item.Id)).ExecuteDeleteAsync();
             var stepIds = await DbContext.LabSteps.Where(item => item.Key.StartsWith($"PACK-{Suffix}-"))

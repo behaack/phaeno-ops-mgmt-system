@@ -22,29 +22,26 @@ export type ShippingContainerDefinition = {
   tubeCapacity: number
   revision: number
   supersedesDefinitionId: string | null
-  supplierName: string | null
-  supplierProductNumber: string | null
-  packingInstructions: string | null
   effectiveFrom: string
   effectiveTo: string | null
   isActive: boolean
-  lifecycle: 'Draft' | 'Released' | 'Superseded' | 'Deactivated' | 'Discarded' | 'LegacyInactive'
+  lifecycle: 'Draft' | 'Released' | 'Superseded' | 'Deactivated' | 'Discarded'
   deactivatedAt: string | null
   displayOrder: number
   version: number
   kitContents?: ShippingKitContent[] | null
-  finishedKitProductId?: string | null
+  shippingContainerProductId?: string | null
+  assemblyWorkflowId?: string | null
   newWorkReady?: boolean | null
   assemblyWorkflowReady?: boolean | null
-  assemblyWorkflowRevisionId?: string | null
   sampleTypeAnchorId?: string | null
   dryIceQuantity?: number | null
   dryIceUnit?: string | null
   temperatureControlInstructions?: string | null
 }
 export type ShippingContainerWrite = Pick<ShippingContainerDefinition,
-  'commonName' | 'tubeCapacity' | 'supplierName' | 'supplierProductNumber' | 'packingInstructions' |
-  'effectiveFrom' | 'effectiveTo' | 'isActive' | 'displayOrder'> & { kitContents?: Array<{ supplierProductId: string; quantity: number }>; finishedKitProductId?: string | null; assemblyWorkflowRevisionId?: string | null; sampleTypeDefinitionId?: string | null; dryIceQuantity?: number | null; dryIceUnit?: string | null; temperatureControlInstructions?: string | null }
+  'commonName' | 'tubeCapacity' |
+  'effectiveFrom' | 'effectiveTo' | 'isActive' | 'displayOrder'> & { kitContents?: Array<{ supplierProductId: string; quantity: number }>; shippingContainerProductId?: string | null; assemblyWorkflowId?: string | null; sampleTypeDefinitionId?: string | null; dryIceQuantity?: number | null; dryIceUnit?: string | null; temperatureControlInstructions?: string | null }
 export type ContainerQuantity = { containerDefinitionId: string; quantity: number }
 export type ContainerRecommendationRequest = {
   tubeCount: number
@@ -114,13 +111,8 @@ export async function previewContainerRecommendation(input: ContainerRecommendat
 export type ShippingStockKit = {
   id: string
   kitNumber: string
-  finishedKitProductId?: string | null
   assemblyWorkflowRevisionId?: string | null
   assemblyCompletedAt?: string | null
-  purchasedKitReceivedAt?: string | null
-  purchasedKitReceivedByUserId?: string | null
-  purchasedKitReceiptReference?: string | null
-  supplierKitLotNumber?: string | null
   withdrawnAt?: string | null
   withdrawalReason?: string | null
   container: { definitionId: string; sku: string; commonName: string; capacity: number }
@@ -159,7 +151,7 @@ export type ShippingStockKit = {
   tubeCorrections?: Array<{ previousBarcode: string; replacementBarcode: string; reason: string; correctedByUserId: string; correctedAt: string }> | null
   productExpirations?: Array<{ supplierProductId: string; supplierName: string; productNumber: string; canExpire: boolean; expirationDate: string | null }> | null
 }
-export type ShippingStockKitWrite = { containerDefinitionId: string; tubeSupplierProductId: string; shipperSupplierProductId: string; tubeLotNumber: string | null; productExpirations?: Array<{ supplierProductId: string; expirationDate: string }>; purchasedKitReceiptReference?: string | null; supplierKitLotNumber?: string | null }
+export type ShippingStockKitWrite = { containerDefinitionId: string; tubeSupplierProductId: string; shipperSupplierProductId: string; tubeLotNumber: string | null; productExpirations?: Array<{ supplierProductId: string; expirationDate: string }> }
 export type ShippingStockKitDispatch = { shipmentId?: string; requestId?: string; deliveryLocationId?: string; version: number; outboundCarrier: string; outboundTrackingNumber: string; fulfilledAt: string; confirmUnavailableFixedDestination?: boolean }
 const stockPath = '/platform/sample-shipping/stock-kits'
 export async function getShippingStockKits() { return read((await api.get<Envelope<ShippingStockKit[]>>(stockPath)).data) }

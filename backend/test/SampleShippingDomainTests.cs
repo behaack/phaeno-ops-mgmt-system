@@ -138,13 +138,13 @@ public class SampleShippingDomainTests
             "LOT-1",
             "Therapak",
             "37806 / Fisher 22-130-029",
-            2);
-        kit.Tubes.Add(new RegisteredSampleTube(kit.Id, "TUBE-0001"));
+            2, tubeBarcodeNamespace: "TEST_SUPPLIER");
+        kit.Tubes.Add(new RegisteredSampleTube(kit.Id, "TUBE-0001", "TEST_SUPPLIER"));
 
         Assert.Throws<InvalidOperationException>(() =>
             kit.Fulfill("Carrier", "TRACK-1", Now));
 
-        kit.Tubes.Add(new RegisteredSampleTube(kit.Id, "TUBE-0002"));
+        kit.Tubes.Add(new RegisteredSampleTube(kit.Id, "TUBE-0002", "TEST_SUPPLIER"));
         kit.Fulfill("Carrier", "TRACK-1", Now);
 
         Assert.Equal(SampleReturnKitStatus.Fulfilled, kit.Status);
@@ -154,7 +154,7 @@ public class SampleShippingDomainTests
     [Fact]
     public void CustomerDeclaredTubeMaterialStartsUnknownAndRetainsItsProvenance()
     {
-        var tube = new RegisteredSampleTube(Guid.NewGuid(), "DECLARED-TUBE-1");
+        var tube = new RegisteredSampleTube(Guid.NewGuid(), "DECLARED-TUBE-1", "TEST_SUPPLIER");
         var actor = Guid.NewGuid();
         Assert.Null(tube.CustomerDeclaredQuantity);
         Assert.Null(tube.CustomerDeclaredQuantityUnit);
@@ -175,7 +175,7 @@ public class SampleShippingDomainTests
     [InlineData(0.0000001)]
     public void CustomerDeclaredTubeMaterialRejectsNonpositiveOrUnrepresentableAmounts(decimal amount)
     {
-        var tube = new RegisteredSampleTube(Guid.NewGuid(), "DECLARED-TUBE-2");
+        var tube = new RegisteredSampleTube(Guid.NewGuid(), "DECLARED-TUBE-2", "TEST_SUPPLIER");
         Assert.Throws<ArgumentOutOfRangeException>(() => tube.DeclareMaterial(amount, "µL", Guid.NewGuid(), Now));
         Assert.Null(tube.CustomerDeclaredQuantity);
     }
@@ -184,7 +184,7 @@ public class SampleShippingDomainTests
     public void TubeAssignmentAndSupplierBarcodeAdoptionPreserveOnePhysicalIdentity()
     {
         var shipmentId = Guid.NewGuid();
-        var tube = new RegisteredSampleTube(Guid.NewGuid(), "TUBE-0003");
+        var tube = new RegisteredSampleTube(Guid.NewGuid(), "TUBE-0003", "TEST_SUPPLIER");
         var item = new SampleShipmentItem(
             shipmentId,
             Guid.NewGuid(),
@@ -195,7 +195,9 @@ public class SampleShippingDomainTests
             "uL");
 
         tube.MarkAssigned(Now);
-        item.AssignTube(tube.Id, Now);
+        var slot = new SampleShipmentTubeSlot(item.Id, 1);
+        slot.AssignTube(tube.Id, Now);
+        item.TubeSlots.Add(slot);
         var container = new LabContainer(
             Guid.NewGuid(),
             Guid.NewGuid(),
@@ -208,10 +210,11 @@ public class SampleShippingDomainTests
             "uL",
             null,
             LabContainerBarcodeSource.RegisteredSupplier,
-            tube.Id);
+            tube.Id,
+            barcodeNamespace: tube.BarcodeNamespace);
         tube.MarkAccessioned(Now.AddMinutes(1));
 
-        Assert.Equal(tube.Id, item.RegisteredSampleTubeId);
+        Assert.Equal(tube.Id, slot.RegisteredSampleTubeId);
         Assert.Equal(LabContainerBarcodeSource.RegisteredSupplier, container.BarcodeSource);
         Assert.Equal(tube.Id, container.ExternalBarcodeReferenceId);
         Assert.Equal("TUBE-0003", container.Barcode);

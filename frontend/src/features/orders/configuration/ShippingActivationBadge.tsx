@@ -10,7 +10,7 @@ type ShippingActivation = {
 
 export function ShippingActivationBadge({ item }: { item: ShippingActivation }) {
   const active = item.isActive && !item.deactivatedAt
-  const label = item.lifecycle === 'Draft' ? 'Draft' : item.lifecycle === 'Discarded' ? 'Discarded' : item.lifecycle === 'Deactivated' ? 'Deactivated' : item.lifecycle === 'Superseded' ? 'Superseded' : item.lifecycle === 'LegacyInactive' ? 'Legacy Inactive' : active ? 'Active' : 'Inactive'
+  const label = item.lifecycle === 'Draft' ? 'Draft' : item.lifecycle === 'Discarded' ? 'Discarded' : item.lifecycle === 'Deactivated' ? 'Deactivated' : item.lifecycle === 'Superseded' ? 'Superseded' : active ? 'Active' : 'Inactive'
   const now = Date.now()
   const timing = active
     ? item.effectiveTo && new Date(item.effectiveTo).getTime() <= now

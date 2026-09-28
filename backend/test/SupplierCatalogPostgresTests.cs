@@ -56,29 +56,28 @@ public partial class SampleShippingPostgresTests
     }
 
     [PostgreSqlReferenceFact]
-    public async Task PhaenoKitSkuIsFixedFromCreationWhileUnlinkedNameCanBeCorrected()
+    public async Task PurchasedContainerDefaultsToEachAndRetainsEditableCatalogIdentity()
     {
         await using var scope = await ShippingTestScope.CreateAsync();
         await using var transaction = await scope.DbContext.Database.BeginTransactionAsync();
         try
         {
             var catalog = scope.SupplierCatalog();
-            var producer = (await catalog.List(default)).Single(item => item.IsInternalProducer);
-            var created = await catalog.CreateProduct(producer.Id,
-                new($"TEST-KIT-{scope.Suffix}", "Original kit name", LabProductType.TransportationKitId,
-                    DefaultQuantityUnit: "each"), default);
-            var renamed = await catalog.UpdateProduct(producer.Id, created.Id,
-                new(created.ProductNumber, "Corrected kit name", LabProductType.TransportationKitId,
-                    Version: created.Version), default);
-            Assert.Equal("Corrected kit name", renamed.Description);
-
-            var changedSku = await Assert.ThrowsAsync<OrderManagementException>(() =>
-                catalog.UpdateProduct(producer.Id, created.Id,
-                    new($"TEST-CHANGED-{scope.Suffix}", renamed.Description, LabProductType.TransportationKitId,
-                        Version: renamed.Version), default));
-            Assert.Equal("kit_sku_frozen", changedSku.ErrorCode);
-            Assert.Equal(created.ProductNumber, (await scope.DbContext.LabSupplierProducts.SingleAsync(
-                item => item.Id == created.Id)).ProductNumber);
+            var supplier = await catalog.Create(new($"TEST-CONTAINER-{scope.Suffix}"), default);
+            var created = await catalog.CreateProduct(supplier.Id,
+                new("BOX-20", "20-tube container", LabProductType.ShippingContainerId, TubeCapacity: 20), default);
+            Assert.Equal("each", created.DefaultQuantityUnit);
+            Assert.Equal(20, created.TubeCapacity);
+            var renamed = await catalog.UpdateProduct(supplier.Id, created.Id,
+                new("BOX-24", "24-tube container", LabProductType.ShippingContainerId,
+                    Version: created.Version, TubeCapacity: 24), default);
+            Assert.Equal("BOX-24", renamed.ProductNumber);
+            Assert.Equal(24, renamed.TubeCapacity);
+            Assert.Equal("each", renamed.DefaultQuantityUnit);
+            var stale = await Assert.ThrowsAsync<OrderManagementException>(() => catalog.UpdateProduct(supplier.Id, created.Id,
+                new("BOX-OLD", "Stale container", LabProductType.ShippingContainerId,
+                    Version: created.Version, TubeCapacity: 20), default));
+            Assert.Equal("supplier_catalog_conflict", stale.ErrorCode);
         }
         finally { await transaction.RollbackAsync(); scope.ClearTrackedState(); }
     }
@@ -95,7 +94,7 @@ public partial class SampleShippingPostgresTests
         await Assert.ThrowsAsync<OrderManagementException>(() => catalog.Create(new(supplier.Name.ToLowerInvariant()), default));
         scope.ClearTrackedState();
         var missingUnit = await Assert.ThrowsAsync<OrderManagementException>(() =>
-            catalog.CreateProduct(supplier.Id, new("NO-UNIT", "Missing inventory unit", LabProductType.TubeId), default));
+            catalog.CreateProduct(supplier.Id, new("NO-UNIT", "Missing inventory unit", LabProductType.ReagentId), default));
         Assert.Equal("supplier_catalog_invalid", missingUnit.ErrorCode);
         var tube = await catalog.CreateProduct(supplier.Id, new("T-1", "Original tube description", LabProductType.TubeId, DefaultQuantityUnit: "each"), default);
         Assert.Equal("each", tube.DefaultQuantityUnit);
@@ -179,6 +178,88 @@ public partial class SampleShippingPostgresTests
             await scope.DbContext.LabSupplierProducts.Where(p => p.SupplierId == supplier.Id).ExecuteDeleteAsync();
             await scope.DbContext.LabProductTypes.Where(t => t.Id == created.Id).ExecuteDeleteAsync();
         }
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task BuiltInComponentTypesAreProtectedWhileCustomTypesAreManageable()
+    {
+        await using var scope = await ShippingTestScope.CreateAsync();
+        await using var transaction = await scope.DbContext.Database.BeginTransactionAsync();
+        try
+        {
+            var types = scope.ProductTypes();
+            var all = await types.List(default);
+            foreach (var role in new[] { "Tube", "ShippingContainer" })
+            {
+                var error = await Assert.ThrowsAsync<OrderManagementException>(() => types.Create(
+                    new($"TEST disallowed role {role} {scope.Suffix}", "Custom category", role), default));
+                Assert.Equal("product_type_invalid", error.ErrorCode);
+            }
+            var managed = await types.Create(new($"TEST other type {scope.Suffix}", "Custom category", "Other"), default);
+            Assert.Equal("Other", managed.KitUse);
+            var changedRole = await Assert.ThrowsAsync<OrderManagementException>(() => types.Update(managed.Id,
+                new(managed.Name, managed.Description, "Tube", Version: managed.Version), default));
+            Assert.Equal("product_type_invalid", changedRole.ErrorCode);
+            var shippingContainer = all.Single(item => item.Id == LabProductType.ShippingContainerId);
+            foreach (var request in new SaveLabProductTypeRequest[]
+            {
+                new("Renamed shipping container", shippingContainer.Description, "ShippingContainer", Version: shippingContainer.Version),
+                new(shippingContainer.Name, shippingContainer.Description, "ShippingContainer", IsActive: false, Version: shippingContainer.Version),
+                new(shippingContainer.Name, shippingContainer.Description, "Other", Version: shippingContainer.Version)
+            })
+            {
+                var error = await Assert.ThrowsAsync<OrderManagementException>(() => types.Update(shippingContainer.Id, request, default));
+                Assert.Equal("shipping_container_type_protected", error.ErrorCode);
+            }
+            var tube = all.Single(item => item.Id == LabProductType.TubeId);
+            foreach (var request in new SaveLabProductTypeRequest[]
+            {
+                new("Renamed tube", tube.Description, "Tube", Version: tube.Version),
+                new(tube.Name, tube.Description, "Tube", IsActive: false, Version: tube.Version),
+                new(tube.Name, tube.Description, "Other", Version: tube.Version)
+            })
+            {
+                var error = await Assert.ThrowsAsync<OrderManagementException>(() => types.Update(tube.Id, request, default));
+                Assert.Equal("tube_type_protected", error.ErrorCode);
+            }
+            var kit = managed;
+            var renamed = await types.Update(kit.Id,
+                new($"TEST complete kit {scope.Suffix}", kit.Description, "Other", Version: kit.Version), default);
+            Assert.Equal($"TEST complete kit {scope.Suffix}", renamed.Name);
+            var inactive = await types.Update(kit.Id,
+                new(renamed.Name, renamed.Description, "Other", IsActive: false, Version: renamed.Version), default);
+            Assert.False(inactive.IsActive);
+            var invalidUse = await Assert.ThrowsAsync<OrderManagementException>(() => types.Update(kit.Id,
+                new(inactive.Name, inactive.Description, "ShippingContainer", Version: inactive.Version), default));
+            Assert.Equal("product_type_invalid", invalidUse.ErrorCode);
+            var active = await types.Update(kit.Id,
+                new(inactive.Name, inactive.Description, "Other", Version: inactive.Version), default);
+            Assert.True(active.IsActive);
+        }
+        finally { await transaction.RollbackAsync(); scope.ClearTrackedState(); }
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task TubeProductDefaultsToEachAndPreservesExplicitInventoryUnits()
+    {
+        await using var scope = await ShippingTestScope.CreateAsync();
+        await using var transaction = await scope.DbContext.Database.BeginTransactionAsync();
+        try
+        {
+            var catalog = scope.SupplierCatalog();
+            var supplier = await catalog.Create(new($"TEST-TUBE-UNIT-{scope.Suffix}"), default);
+            var tube = await catalog.CreateProduct(supplier.Id,
+                new("DEFAULT-TUBE", "2 mL tube", LabProductType.TubeId), default);
+            Assert.Equal("each", tube.DefaultQuantityUnit);
+            var boxed = await catalog.CreateProduct(supplier.Id,
+                new("BOXED-TUBE", "Tube stock recorded in boxes", LabProductType.TubeId, DefaultQuantityUnit: "box"), default);
+            var updated = await catalog.UpdateProduct(supplier.Id, boxed.Id,
+                new(boxed.ProductNumber, "Corrected description", LabProductType.TubeId, Version: boxed.Version), default);
+            Assert.Equal("box", updated.DefaultQuantityUnit);
+            Assert.Equal("each", (await catalog.List(default)).Single(item => item.Id == supplier.Id)
+                .Products.Single(item => item.Id == tube.Id).DefaultQuantityUnit);
+        }
+        finally { await transaction.RollbackAsync(); scope.ClearTrackedState(); }
     }
 
     private sealed partial class ShippingTestScope

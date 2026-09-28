@@ -3,6 +3,7 @@ namespace PhaenoPortal.App.Features.Accounts.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Commercial.FileManagement.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
 public static class AccountsBootstrapSeeder
@@ -119,6 +120,15 @@ public static class AccountsBootstrapSeeder
             departmentMembership.SetDepartmentAdmin(isDepartmentAdmin: true);
         }
 
+        if (!await dbContext.ReleasedDeliverablePolicyDefaults.AnyAsync(item => item.IsActive, cancellationToken))
+        {
+            dbContext.ReleasedDeliverablePolicyDefaults.Add(new ReleasedDeliverablePolicyDefault(1,
+                ReleasedDeliverablePolicyValues.Create(
+                    ReleasedDeliverablePolicyDefault.InitialStandardRetentionDays,
+                    ReleasedDeliverablePolicyDefault.InitialWarningLeadDays,
+                    ReleasedDeliverablePolicyDefault.InitialGraceDays),
+                "Initialized the global retention policy for a clean database."));
+        }
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

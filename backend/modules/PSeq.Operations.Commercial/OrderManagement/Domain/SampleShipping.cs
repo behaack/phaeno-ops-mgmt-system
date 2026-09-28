@@ -462,7 +462,7 @@ public sealed partial class SampleReturnKit : IAudit, IConcurrency
     public SampleShipmentAuthorizationSource AuthorizationSource { get; private set; }
     public Guid AuthorizationSourceId { get; private set; }
     public string TubeSupplierName { get; private set; } = null!;
-    public string TubeBarcodeNamespace { get; private set; } = SupplierTubeBarcode.LegacyNamespace;
+    public string TubeBarcodeNamespace { get; private set; } = null!;
     public string TubeProductNumber { get; private set; } = null!;
     public string? TubeLotNumber { get; private set; }
     public string ShipperSupplierName { get; private set; } = null!;
@@ -507,7 +507,7 @@ public sealed partial class SampleReturnKit : IAudit, IConcurrency
         AuthorizationSourceId = authorizationSourceId;
         TubeSupplierName = OrderText.Required(tubeSupplierName, nameof(tubeSupplierName), 255);
         TubeBarcodeNamespace = string.IsNullOrWhiteSpace(tubeBarcodeNamespace)
-            ? SupplierTubeBarcode.LegacyNamespace : OrderText.Required(tubeBarcodeNamespace, nameof(tubeBarcodeNamespace), 50);
+            ? throw new ArgumentException("A supplier barcode namespace is required.") : OrderText.Required(tubeBarcodeNamespace, nameof(tubeBarcodeNamespace), 50);
         TubeProductNumber = SampleShippingText.ProductNumber(tubeProductNumber, nameof(tubeProductNumber));
         TubeLotNumber = OrderText.Optional(tubeLotNumber, 100);
         ShipperSupplierName = OrderText.Required(shipperSupplierName, nameof(shipperSupplierName), 255);
@@ -560,7 +560,7 @@ public sealed partial class RegisteredSampleTube : IAudit, IConcurrency
     public Guid SampleReturnKitId { get; private set; }
     public Guid? SourceStockTubeId { get; private set; }
     public string SupplierBarcode { get; private set; } = null!;
-    public string BarcodeNamespace { get; private set; } = SupplierTubeBarcode.LegacyNamespace;
+    public string BarcodeNamespace { get; private set; } = null!;
     public RegisteredSampleTubeStatus Status { get; private set; } = RegisteredSampleTubeStatus.Registered;
     public DateTime? AssignedAt { get; private set; }
     public DateTime? AccessionedAt { get; private set; }
@@ -581,7 +581,7 @@ public sealed partial class RegisteredSampleTube : IAudit, IConcurrency
         SampleReturnKitId = sampleReturnKitId;
         SupplierBarcode = normalized;
         BarcodeNamespace = string.IsNullOrWhiteSpace(barcodeNamespace)
-            ? SupplierTubeBarcode.LegacyNamespace : OrderText.Required(barcodeNamespace, nameof(barcodeNamespace), 50);
+            ? throw new ArgumentException("A supplier barcode namespace is required.") : OrderText.Required(barcodeNamespace, nameof(barcodeNamespace), 50);
         SourceStockTubeId = sourceStockTubeId;
     }
 
@@ -746,7 +746,7 @@ public sealed partial class SampleShipment : IAudit, IConcurrency
         if (DestinationId == destinationId) return;
         if (Status != SampleShipmentStatus.Preparing || IsPackingPool || ContainerDefinitionId.HasValue
             || PacketRevisions.Count > 0 || ReturnKit is not null
-            || Items.Any(item => item.RegisteredSampleTubeId.HasValue || item.TubeSlots.Any(slot => slot.RegisteredSampleTubeId.HasValue)))
+            || Items.Any(item => item.TubeSlots.Any(slot => slot.RegisteredSampleTubeId.HasValue)))
             throw new InvalidOperationException("The selected ship-to destination cannot change after kit fulfillment or shipment preparation.");
         DestinationId = destinationId;
     }
@@ -813,8 +813,6 @@ public sealed partial class SampleShipmentItem : IAudit, IConcurrency
     public string SampleName { get; private set; } = null!;
     public decimal Quantity { get; private set; }
     public string QuantityUnit { get; private set; } = null!;
-    public Guid? RegisteredSampleTubeId { get; private set; }
-    public DateTime? TubeAssignedAt { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
     public DateTime UpdatedAt { get; private set; } = DateTime.UtcNow;
@@ -843,24 +841,6 @@ public sealed partial class SampleShipmentItem : IAudit, IConcurrency
         SampleName = OrderText.Required(sampleName, nameof(sampleName), 255);
         Quantity = quantity;
         QuantityUnit = OrderText.Required(quantityUnit, nameof(quantityUnit), 100);
-    }
-
-    public void AssignTube(Guid registeredSampleTubeId, DateTime assignedAt)
-    {
-        if (registeredSampleTubeId == Guid.Empty)
-            throw new ArgumentException("A registered tube is required.", nameof(registeredSampleTubeId));
-        RegisteredSampleTubeId = registeredSampleTubeId;
-        TubeAssignedAt = assignedAt;
-    }
-
-    public Guid ClearTube()
-    {
-        if (!RegisteredSampleTubeId.HasValue)
-            throw new InvalidOperationException("This sample does not have a tube assignment.");
-        var previous = RegisteredSampleTubeId.Value;
-        RegisteredSampleTubeId = null;
-        TubeAssignedAt = null;
-        return previous;
     }
 
     public void MarkCreated(DateTime utcNow, Guid? actorUserId) { CreatedAt = utcNow; CreatedByUserId = actorUserId; }
@@ -1021,7 +1001,6 @@ public static class SampleShippingBarcode
 
 public static class SupplierTubeBarcode
 {
-    public const string LegacyNamespace = "LEGACY";
 
     public static string NamespaceForSupplier(Guid supplierId) => supplierId == Guid.Empty
         ? throw new ArgumentException("Select the tube manufacturer before registering its barcode.", nameof(supplierId))

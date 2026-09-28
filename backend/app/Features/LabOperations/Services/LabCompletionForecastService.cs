@@ -73,9 +73,7 @@ public sealed class LabCompletionForecastService(PSeqOperationsDbContext db)
             foreach (var sample in samples.Where(s => s.LabWorkOrderId == work.Id))
             {
                 var attempt = attempts.Where(a => a.LabSpecimenId == sample.Id).OrderByDescending(a => a.Sequence).FirstOrDefault();
-                var legacyStageId = executions.Where(e => e.LabSpecimenId == sample.Id && e.LabSpecimenAttemptId == null && e.Status != LabExecutionStatus.Abandoned)
-                    .OrderByDescending(e => e.StartedAtUtc ?? e.CreatedAt).Select(e => e.LabServiceWorkflowStageId).FirstOrDefault();
-                var workflowId = attempt?.LabServiceWorkflowVersionId ?? stages.FirstOrDefault(s => s.Id == legacyStageId)?.LabServiceWorkflowVersionId
+                var workflowId = attempt?.LabServiceWorkflowVersionId
                     ?? work.LabServiceWorkflowVersionId ?? defaultPolicy?.LabServiceWorkflowVersionId;
                 var sampleBinding = jobBindings.FirstOrDefault(b => policies.GetValueOrDefault(b.LabTimingPolicyId)?.LabServiceWorkflowVersionId == workflowId);
                 var selectedPolicyId = previewPolicyId is { } preview && policies[preview].LabServiceWorkflowVersionId == workflowId ? previewPolicyId : sampleBinding?.LabTimingPolicyId;

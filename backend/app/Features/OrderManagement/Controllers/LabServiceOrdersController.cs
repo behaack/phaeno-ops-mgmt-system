@@ -583,9 +583,7 @@ public sealed partial class LabServiceOrdersController(
         var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var order = await ReadLockedRosterAsync(orderId, tenant, cancellationToken);
-        var isLegacyDraftCleanup = order.Status is LabServiceOrderStatus.DraftRequest
-            or LabServiceOrderStatus.ChangesRequested;
-        if (!isLegacyDraftCleanup) Execute(order.EnsureSampleRosterEditable);
+        Execute(order.EnsureSampleRosterEditable);
         var sample = order.Samples.SingleOrDefault(item => item.Id == sampleId) ?? throw Missing();
         await RequireUnfinalizedSampleAsync(order, sampleId, cancellationToken);
         EnsureVersion(sample.Version, request.Version);

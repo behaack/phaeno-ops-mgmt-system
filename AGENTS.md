@@ -64,6 +64,8 @@ Keep the owner focused on scientific meaning, sequencing and laboratory workflow
 - Preserve optimistic concurrency, centralized audit stamping, and soft-deactivation rules for users and organizations.
 - Use snake_case database identifiers, UUID primary keys named `Id` in C#, and unambiguous role-specific foreign-key names.
 - Keep runtime configuration and credentials out of source; use `ConnectionStrings:DefaultConnection` and environment-specific settings.
+- During ongoing development, do not add backward-compatibility code when modifying the data model. Implement against the current model without legacy fields, fallback behavior, dual writes, or compatibility adapters solely to preserve older model behavior.
+- Before applying a data-model change that may cause compatibility issues with existing development or test data, warn the owner, identify the affected data and workflows, and present applicable remedies with a recommendation. Options must include deletion or reset of affected data where applicable, alongside one-time data repair/conversion or reseeding. Explain any data loss and obtain the required authorization before destructive remedies or shared-database migrations.
 - Create EF migrations when an authorized implementation changes the persisted model, and apply them to the configured local development database after appropriate verification.
 - Whenever the persisted database model or an EF migration changes, update `docs/database-erd.md` in the same change so it remains complete across all application schemas, entities, fields, keys, and relationships.
 - Do not add dependencies, change auth, or change a cross-app contract without a short plan and explicit scope.

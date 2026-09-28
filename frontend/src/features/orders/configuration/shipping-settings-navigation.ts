@@ -14,6 +14,5 @@ export const shippingSettingsSections: ReadonlyArray<WorkspaceSidebarItem<Shippi
 ]
 
 export function parseShippingSettingsSection(value: unknown): ShippingSettingsSection {
-  if (value === 'preview' || value === 'instructions') return 'sample-types'
   return shippingSettingsSections.find(item => item.value === value)?.value ?? 'sample-types'
 }
