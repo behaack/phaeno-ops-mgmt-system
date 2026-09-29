@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Commercial.FileManagement.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.Accounts.Services;
@@ -460,6 +461,8 @@ public partial class SampleShippingPostgresTests
                 var customerUser = CreateUser(customerIdentity);
                 var otherCustomerUser = CreateUser(otherCustomerIdentity);
                 var platformUser = CreateUser(platformIdentity);
+                if (!await dbContext.ReleasedDeliverablePolicyDefaults.AnyAsync(value => value.IsActive))
+                    dbContext.Add(new ReleasedDeliverablePolicyDefault(1, ReleasedDeliverablePolicyValues.Create(30, 5, 5), "Synthetic shipping fixture"));
 
                 dbContext.AddRange(
                     customerOrganization,
@@ -668,9 +671,9 @@ public partial class SampleShippingPostgresTests
         public SampleShippingWorkflowController CreateOtherCustomerWorkflowController() =>
             CreateCustomerWorkflowController(otherCustomerIdentity, OtherCustomerOrganization.Id);
 
-        public LabOperationsController CreateLabController() => new(
-            DbContext,
-            new LabOperationsRequestContext(DbContext, new FixedIdentityContext(platformIdentity)))
+        public LabOperationsController CreateLabController(PSeqOperationsDbContext? dbOverride = null) => new(
+            dbOverride ?? DbContext,
+            new LabOperationsRequestContext(dbOverride ?? DbContext, new FixedIdentityContext(platformIdentity)))
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
         };

@@ -239,17 +239,17 @@ public sealed class FileStorageTests
     }
 
     [Fact]
-    public void DefaultRootRefusesToHideLegacyManagedBytes()
+    public void DefaultDevelopmentRootIsPrivateAndOutsideTheApplication()
     {
         var root = NewTemporaryRoot();
         try
         {
-            var legacy = Path.Combine(root, "App_Data", FileStorageAreas.OrderManagement);
-            Directory.CreateDirectory(legacy);
-            File.WriteAllText(Path.Combine(legacy, "retained.txt"), "retained");
-            Assert.Throws<InvalidOperationException>(() => new LocalFileStorage(
-                new TestWebHostEnvironment(Environments.Development, root), Options.Create(new FileStorageOptions())));
-            Assert.Equal("retained", File.ReadAllText(Path.Combine(legacy, "retained.txt")));
+            var resolved = LocalFileStorage.ResolveRoot(
+                new TestWebHostEnvironment(Environments.Development, root), new FileStorageOptions());
+            Assert.Equal(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "PhaenoPortal", "managed-files", Environments.Development), resolved);
+            Assert.True(Path.IsPathFullyQualified(resolved));
+            Assert.False(resolved.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));
         }
         finally { DeleteTemporaryRoot(root); }
     }

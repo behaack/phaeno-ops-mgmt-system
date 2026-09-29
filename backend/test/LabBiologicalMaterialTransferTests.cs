@@ -15,7 +15,8 @@ public sealed class LabBiologicalMaterialTransferTests
             "TEST-SOURCE", "Test source", "Freezer", quantity, quantity.HasValue ? "uL" : null, null, quantityBasis: "CustomerDeclared");
         var attempt = new LabSpecimenAttempt(work, specimen, source.Id, Guid.NewGuid(), 1, null);
         var destination = new LabContainer(work, specimen, source.Id, LabContainerKind.Library,
-            "TEST-LIBRARY", "Test library", "Tray A1", null, null, null, LabContainerBarcodeSource.Manufacturer);
+            "TEST-LIBRARY", "Test library", "Tray A1", null, null, null, LabContainerBarcodeSource.Manufacturer,
+            barcodeNamespace: "TEST-MANUFACTURER");
         destination.AttachAttempt(attempt);
         return (source, destination, attempt);
     }

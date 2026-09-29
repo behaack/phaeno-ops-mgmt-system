@@ -30,7 +30,7 @@ describe('product type management', () => {
   it('offers activation for an inactive type', async () => {
     mocks.types.mockReturnValue({ data: productTypesFixture.map(t => ({ ...t, isActive: false })), isPending: false, isError: false })
     mount(); fireEvent.click(screen.getByLabelText('Show inactive'))
-    fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions for Transportation kit' }), { button: 0, ctrlKey: false })
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions for Labels' }), { button: 0, ctrlKey: false })
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Activate' }))
     fireEvent.click(screen.getByRole('button', { name: 'Activate' }))
     await waitFor(() => expect(mocks.save).toHaveBeenCalledWith(expect.objectContaining({ isActive: true, version: 1 }), productTypesFixture[3].id))
@@ -42,12 +42,12 @@ describe('product type management', () => {
     expect(screen.queryByRole('button', { name: 'Actions for Reagent' })).toBeNull()
   })
 
-  it('exposes actions for Transportation kit and hides them for all built-in types in the list', () => {
+  it('exposes actions for added types and hides them for all built-in types in the list', () => {
     mount()
     expect(screen.queryByRole('button', { name: 'Actions for Shipping Container' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Actions for Tube' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Actions for Reagent' })).toBeNull()
-    expect(screen.getByRole('button', { name: 'Actions for Transportation kit' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Actions for Labels' })).toBeTruthy()
   })
 
   it('shows the built-in Tube detail without management actions', () => {
@@ -62,16 +62,16 @@ describe('product type management', () => {
     expect(screen.queryByRole('button', { name: 'Actions for Shipping Container' })).toBeNull()
   })
 
-  it('edits Transportation kit details while keeping its component use fixed without referenced products', async () => {
+  it('edits an added type while keeping its Other classification without referenced products', async () => {
     mount(productTypesFixture[3].id)
     expect(screen.queryByText(/Built-in product type/)).toBeNull()
-    fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions for Transportation kit' }), { button: 0, ctrlKey: false })
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions for Labels' }), { button: 0, ctrlKey: false })
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Edit' }))
     expect(screen.queryByLabelText(/Use in transportation kits/)).toBeNull()
-    fireEvent.change(screen.getByLabelText(/Type name/), { target: { value: 'Complete kit' } })
+    fireEvent.change(screen.getByLabelText(/Type name/), { target: { value: 'Container labels' } })
     fireEvent.click(screen.getByLabelText('Active product type'))
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
-    await waitFor(() => expect(mocks.save).toHaveBeenCalledWith(expect.objectContaining({ name: 'Complete kit', kitUse: 'Other', isActive: false, version: 1 }), productTypesFixture[3].id))
+    await waitFor(() => expect(mocks.save).toHaveBeenCalledWith(expect.objectContaining({ name: 'Container labels', kitUse: 'Other', isActive: false, version: 1 }), productTypesFixture[3].id))
   })
 
   it('lists reagent and shipping types with dedicated detail links', () => {

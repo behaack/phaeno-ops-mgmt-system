@@ -4,7 +4,7 @@ import { getOrderErrorMessage } from '#/api/order-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
-import { PrepareStandardKitDialog } from '../stock-kits/StandardKitDialogs'
+import { AssembleTransportationKitDialog } from '../stock-kits/AssembleTransportationKitDialog'
 
 export function PrepareRequestedKitsDialog({ neededSizeIds, onClose, onSaved }: {
   neededSizeIds: string[]
@@ -12,7 +12,7 @@ export function PrepareRequestedKitsDialog({ neededSizeIds, onClose, onSaved }: 
   onSaved: (kit: ShippingStockKit) => Promise<void>
 }) {
   const definitions = useQuery({ queryKey: ['shipping-container-definitions'], queryFn: getShippingContainerDefinitions })
-  if (definitions.data && !definitions.error) return <PrepareStandardKitDialog
+  if (definitions.data && !definitions.error) return <AssembleTransportationKitDialog
     definitions={definitions.data.filter(item => neededSizeIds.includes(item.id))}
     onClose={onClose} onSaved={onSaved}
   />

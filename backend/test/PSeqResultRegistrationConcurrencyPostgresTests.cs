@@ -48,8 +48,9 @@ public sealed class PSeqResultRegistrationConcurrencyPostgresTests
             authorization.RecordOutcome(work.Id, "Accepted", "TEST_ONLY");
             setup.AddRange(organization, order, sample, work, authorization);
             await setup.SaveChangesAsync();
+            var analysis = await CreateAnalysisAsync(setup, work, sample);
             var request = new RegisterResultPackageRequest(organization.Id, order.Id, work.Id, sample.Id,
-                null, "{}", Hash("{}"), 1, "identical");
+                null, "{}", Hash("{}"), 1, "identical", LabAnalysisRunId: analysis.Id);
 
             await using var first = Db(connection.ConnectionString);
             await using var second = Db(connection.ConnectionString);
@@ -114,6 +115,49 @@ public sealed class PSeqResultRegistrationConcurrencyPostgresTests
     }
 
     private static string Hash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
+    private static async Task<LabAnalysisRun> CreateAnalysisAsync(PSeqOperationsDbContext db, LabWorkOrder work, LabSample sample)
+    {
+        var now = DateTime.UtcNow;
+        var actor = new User("registration-operator@example.test", "Synthetic", "Operator");
+        var reviewer = new User("registration-reviewer@example.test", "Synthetic", "Reviewer");
+        var specimen = new LabSpecimen(work.Id, sample.Id);
+        var protocol = new LabProtocol("registration-preparation", "Synthetic registration preparation", null);
+        var version = new LabProtocolVersion(protocol.Id, 1, LabProtocolTestData.Definition(), actor.Id, now);
+        version.Approve(reviewer.Id, now);
+        var workflow = new LabServiceWorkflow("registration-workflow", "Synthetic registration workflow", null);
+        var workflowVersion = new LabServiceWorkflowVersion(workflow.Id, 1, actor.Id, now);
+        workflowVersion.Approve(reviewer.Id, now);
+        var stage = new LabServiceWorkflowStage(workflowVersion.Id, 1, "Preparation", version.Id,
+            LabServiceWorkflowStageRequirement.Required, null, null);
+        var source = new LabContainer(work.Id, specimen.Id, null, LabContainerKind.SubmittedSpecimen,
+            "TEST-REGISTRATION-SOURCE", "Synthetic source", "Synthetic freezer", 100, "uL", null);
+        source.ReviewIntake(LabSpecimenIntakeDisposition.Accepted, null, null, actor.Id, now);
+        var attempt = new LabSpecimenAttempt(work.Id, specimen.Id, source.Id, workflowVersion.Id, 1, null);
+        attempt.Start(source.Barcode, source.Barcode, now);
+        var libraryContainer = new LabContainer(work.Id, specimen.Id, source.Id, LabContainerKind.Library,
+            "TEST-REGISTRATION-LIBRARY", "Synthetic library", "Synthetic freezer", 20, "uL", null);
+        libraryContainer.AttachAttempt(attempt);
+        var execution = new LabProtocolExecution(work.Id, specimen.Id, version.Id, actor.Id, stage.Id);
+        execution.AttachAttempt(attempt); execution.Start(now);
+        execution.RecordStep(version, LabProtocolTestData.Input(), actor.Id, new HashSet<LabRole> { LabRole.Operator }, now);
+        execution.Complete(version, null, now);
+        var library = new LabLibrary(work.Id, specimen.Id, source.Id, libraryContainer.Id, execution.Id, "TEST-REGISTRATION-LIBRARY");
+        library.RecordQc(true, "{}");
+        attempt.Refresh(false, true, actor.Id, now);
+        var batch = new LabOperationalBatch("TEST-REGISTRATION-BATCH", "Synthetic sequencing", null);
+        batch.Start(now);
+        var sendout = new LabNgsSendout(batch.Id, "test-only", "Synthetic sendout", "{}", null);
+        sendout.SetStatus(LabNgsSendoutStatus.Complete, now);
+        var output = new LabSequencingOutput(Guid.NewGuid(), work.Id, specimen.Id, attempt.Id, source.Id,
+            library.Id, sendout.Id, "test-only", "TEST-RUN", "TEST-SAMPLE", "TEST-RAW", Hash("raw"), 1,
+            null, null, "{}", Hash("output"), actor.Id, "test-only", now);
+        var analysis = new LabAnalysisRun(Guid.NewGuid(), work.Id, specimen.Id, attempt.Id,
+            "test-only", "TEST-ANALYSIS", null, null, Hash("analysis"), actor.Id, "test-only", now);
+        db.AddRange(actor, reviewer, specimen, protocol, version, workflow, workflowVersion, stage, source,
+            attempt, libraryContainer, execution, library, batch, sendout, output, analysis, new LabAnalysisInput(analysis.Id, output.Id));
+        await db.SaveChangesAsync();
+        return analysis;
+    }
     private static PSeqOperationsDbContext Db(string connection) => new(
         new DbContextOptionsBuilder<PSeqOperationsDbContext>().UseNpgsql(connection).Options, Options.Create(new PersistenceOptions()));
     private static PSeqResultPipelineController Controller(PSeqOperationsDbContext db, IPSeqResultPipelineAdapter adapter)

@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Npgsql;
 using PSeq.Operations.Commercial.Accounts.Domain;
+using PSeq.Operations.Commercial.FileManagement.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.Accounts.Services;
 using PhaenoPortal.App.Features.FileManagement.Services;
@@ -309,6 +310,7 @@ public sealed partial class KitBundlePostgresTests
             try
             {
                 await db.Database.MigrateAsync();
+                db.Add(new ReleasedDeliverablePolicyDefault(1, ReleasedDeliverablePolicyValues.Create(30, 5, 5), "Synthetic kit bundle fixture"));
                 scope.Actor = User(scope.PartnerIdentity); scope.Operator = User(scope.StaffIdentity);
                 scope.Membership = new(scope.Actor.Id, scope.Partner.Id, true);
                 scope.OtherDepartment = new(scope.Partner.Id, "OTHER", "Other Department");

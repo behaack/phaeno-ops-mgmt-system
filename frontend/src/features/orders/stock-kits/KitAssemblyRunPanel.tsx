@@ -1,64 +1,54 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
-import { getLabOperationsDashboard, getLabOperationsError } from '#/api/lab-operations'
-import { abandonKitAssembly, completeKitAssembly, getKitAssemblyRun, recordKitAssemblyStep, recordKitAssemblyUse } from '#/api/lab-kit-assembly'
+import { ChevronDown } from 'lucide-react'
+import { getLabOperationsError } from '#/api/lab-operations'
 import type { ShippingStockKit } from '#/api/shipping-containers'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
-import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
-import { Input } from '#/components/ui/input'
-import { Label } from '#/components/ui/label'
-import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
-import { Textarea } from '#/components/ui/textarea'
+import type { KitAssemblyState } from './use-kit-assembly-run'
+import { RecordKitPackedContentsDialog } from './RecordKitPackedContentsDialog'
 
-export function KitAssemblyRunPanel({ kit, onSaved, onRegister, onVerify, onCorrect }: {
-  kit: ShippingStockKit
-  onSaved: () => Promise<void>
-  onRegister: () => void
-  onVerify: () => void
-  onCorrect: () => void
-}) {
-  const client = useQueryClient()
-  const query = useQuery({ queryKey: ['kit-assembly-run', kit.id], queryFn: () => getKitAssemblyRun(kit.id) })
-  const inventory = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: Boolean(query.data && query.data.status === 'InProgress') })
-  const [stepNotes, setStepNotes] = useState('')
-  const [useProductId, setUseProductId] = useState<string | null>(null)
-  const [useQuantity, setUseQuantity] = useState('')
-  const [sourceLotId, setSourceLotId] = useState('')
-  const [abandonOpen, setAbandonOpen] = useState(false)
-  const [abandonReason, setAbandonReason] = useState('')
-  async function refresh() { await client.invalidateQueries({ queryKey: ['kit-assembly-run', kit.id] }); await client.invalidateQueries({ queryKey: ['lab-operations'] }); await onSaved() }
-  const stepMutation = useMutation({ mutationFn: () => recordKitAssemblyStep(kit.id, { version: query.data!.version, sequence: query.data!.stepRecords.length, notes: stepNotes }), onSuccess: async () => { setStepNotes(''); await refresh() } })
-  const useMutationRecord = useMutation({ mutationFn: () => recordKitAssemblyUse(kit.id, { version: query.data!.version, supplierProductId: useProductId!, quantity: Number(useQuantity), sourceMaterialLotId: sourceLotId || null }), onSuccess: async () => { setUseProductId(null); setUseQuantity(''); setSourceLotId(''); await refresh() } })
-  const finish = useMutation({ mutationFn: () => completeKitAssembly(kit.id, query.data!.version), onSuccess: refresh })
-  const abandon = useMutation({ mutationFn: () => abandonKitAssembly(kit.id, query.data!.version, abandonReason), onSuccess: async () => { setAbandonOpen(false); await refresh() } })
+export function KitAssemblyRunPanel({ assembly }: { assembly: KitAssemblyState }) {
+  const { query, run, used, completedComponents } = assembly
   if (query.isPending) return <p role="status">Loading kit assembly…</p>
-  if (query.error || !query.data) return <Alert variant="destructive"><AlertTitle>Assembly record unavailable</AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Refresh this kit before continuing.')} <Button variant="outline" onClick={() => void query.refetch()}>Retry</Button></AlertDescription></Alert>
-  const run = query.data
-  const next = run.steps[run.stepRecords.length]
-  const used = (productId: string) => run.uses.filter(item => item.supplierProductId === productId).reduce((sum, item) => sum + item.quantity, 0)
-  const ready = run.stepRecords.length === run.steps.length && run.components.every(item => used(item.supplierProductId) === item.quantity) && Boolean(kit.tubesVerifiedAt)
-  const selected = run.components.find(item => item.supplierProductId === useProductId)
-  const tubeSourceLotId = selected?.kind === 'Tube' ? run.uses.find(item => item.supplierProductId === useProductId)?.sourceMaterialLotId : null
-  const lots = (inventory.data?.materialLots ?? []).filter(item => item.supplierProductId === useProductId && item.availableQuantity > 0 && ['Passed', 'ApprovedException'].includes(item.qcDisposition) && (!item.expirationOrRetestDate || item.expirationOrRetestDate >= new Date().toISOString().slice(0, 10)) && (!tubeSourceLotId || item.id === tubeSourceLotId))
-  const allLots = (inventory.data?.materialLots ?? []).filter(item => item.supplierProductId === useProductId)
-  const wholeItemQuantity = selected?.kind !== 'Tube' && selected?.kind !== 'ShippingContainer' || Number.isInteger(Number(useQuantity))
-  const scanActions = kit.status === 'Preparing' && !kit.withdrawnAt ? [
-    ...(run.status === 'InProgress' && !kit.tubesVerifiedAt && kit.tubes.length < kit.container.capacity ? [{ label: 'Scan tubes into kit', run: onRegister }] : []),
-    ...(kit.tubes.length ? [{ label: 'Correct tube ID', run: onCorrect }] : []),
-    ...(!kit.tubesVerifiedAt && kit.tubes.length === kit.container.capacity ? [{ label: 'Verify packed tube roster', run: onVerify }] : []),
-  ] : []
-  return <Card className="mt-5"><CardHeader><div className="flex flex-wrap items-start justify-between gap-3"><div><CardTitle>Kit assembly</CardTitle><CardDescription>Approved workflow steps and required contents pinned to this physical kit. Component use is recorded when it occurs.</CardDescription></div><div className="flex items-center gap-2"><Badge variant="secondary">{run.status}</Badge>{run.status === 'InProgress' ? <ActionMenu><DropdownMenuTrigger asChild><Button variant="outline">Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem disabled={!ready || finish.isPending} onSelect={() => finish.mutate()}>Complete assembly</DropdownMenuItem><DropdownMenuItem onSelect={() => setAbandonOpen(true)}>Stop assembly</DropdownMenuItem></DropdownMenuContent></ActionMenu> : null}</div></div></CardHeader><CardContent className="space-y-6">
-    {[stepMutation.error, useMutationRecord.error, finish.error, abandon.error].find(Boolean) ? <Alert variant="destructive"><AlertTitle>Assembly change was not saved</AlertTitle><AlertDescription>{getLabOperationsError(stepMutation.error ?? useMutationRecord.error ?? finish.error ?? abandon.error, 'Refresh and try again.')}</AlertDescription></Alert> : null}
-    <section><h3 className="font-medium">Ordered Lab steps</h3><ol className="mt-2 list-decimal space-y-2 pl-5 text-sm">{run.steps.map((step, index) => <li key={step.labStepVersionId}><strong>{step.name}</strong> · {step.instructions} {run.stepRecords[index] ? <span className="text-muted-foreground">Recorded: {run.stepRecords[index].notes}</span> : null}</li>)}</ol>{next && run.status === 'InProgress' ? <form className="mt-3 space-y-2" onSubmit={event => { event.preventDefault(); if (stepNotes.trim()) stepMutation.mutate() }}><Label htmlFor="kit-step-notes"><RequiredFieldName>Notes for step {run.stepRecords.length + 1}</RequiredFieldName></Label><Textarea id="kit-step-notes" value={stepNotes} onChange={event => setStepNotes(event.target.value)} maxLength={4000} /><Button type="submit" disabled={!stepNotes.trim() || stepMutation.isPending}>Record step</Button><span className="ml-3 text-xs text-muted-foreground">* Required</span></form> : null}</section>
-    <section aria-labelledby="kit-tube-scans-heading" className="space-y-2"><div className="flex flex-wrap items-center justify-between gap-3"><h3 id="kit-tube-scans-heading" className="font-medium">Physical tube scans</h3>{scanActions.length === 1 ? <Button type="button" variant="outline" onClick={scanActions[0].run}>{scanActions[0].label}</Button> : scanActions.length > 1 ? <ActionMenu><DropdownMenuTrigger asChild><Button type="button" variant="outline">Actions for tube roster</Button></DropdownMenuTrigger><DropdownMenuContent align="end">{scanActions.map(item => <DropdownMenuItem key={item.label} onSelect={item.run}>{item.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu> : null}</div><p className="text-sm">{kit.tubes.length} of {kit.container.capacity} permanent tube IDs scanned into {kit.kitNumber}. {kit.tubesVerifiedAt ? 'Packed roster verified.' : 'Rescan the complete packed roster before completing assembly.'}</p>{kit.tubes.length ? <ul className="flex flex-wrap gap-2 text-xs">{kit.tubes.map(tube => <li key={tube.id} className="rounded border px-2 py-1 font-mono">{tube.supplierBarcode}</li>)}</ul> : null}</section>
-    <section><h3 className="font-medium">Component use</h3><ul className="mt-2 divide-y rounded-md border">{run.components.map(item => <li key={item.supplierProductId} className="flex flex-wrap items-center justify-between gap-3 p-3 text-sm"><div><p className="font-medium">{item.supplierName} · {item.productNumber}</p><p className="text-muted-foreground">{item.kind} · {used(item.supplierProductId)} of {item.quantity} recorded</p></div>{run.status === 'InProgress' && used(item.supplierProductId) < item.quantity && (item.kind !== 'Tube' || kit.tubes.length > used(item.supplierProductId)) ? <Button variant="outline" onClick={() => { setUseProductId(item.supplierProductId); setUseQuantity(String(item.kind === 'Tube' ? kit.tubes.length - used(item.supplierProductId) : item.quantity - used(item.supplierProductId))); setSourceLotId('') }}>Record use</Button> : null}</li>)}</ul><p className="mt-2 text-xs text-muted-foreground">Tube use is counted from scanned IDs. Select the source lot when recording use; stock decreases once when saved. A stopped run retains its recorded uses.</p></section>
-    {run.status === 'InProgress' ? <p className="text-sm text-muted-foreground">{ready ? 'All steps, component quantities, and physical tube IDs are recorded. Complete assembly before dispatch.' : 'Complete every step, exact component quantity, and physical tube verification before assembly can finish.'}</p> : null}
-    {run.abandonmentReason ? <p className="text-sm">Stopped: {run.abandonmentReason}. The kit remains unavailable for dispatch; reconcile any unused components with a supervisor.</p> : null}
-    {useProductId && selected ? <Dialog open onOpenChange={open => { if (!open && !useMutationRecord.isPending) setUseProductId(null) }}><DialogContent><DialogHeader><DialogTitle>Record component use</DialogTitle><DialogDescription>{selected.supplierName} · {selected.productNumber}. Record what went into {kit.kitNumber} now.{selected.kind === 'Tube' ? ' All tubes in this kit must come from one source lot.' : ''}</DialogDescription></DialogHeader><form id="kit-component-use" className="space-y-4" onSubmit={event => { event.preventDefault(); if (!inventory.isPending && !inventory.error && Number(useQuantity) > 0 && wholeItemQuantity && (!allLots.length || sourceLotId)) useMutationRecord.mutate() }}><div><Label htmlFor="kit-use-quantity"><RequiredFieldName>Quantity used</RequiredFieldName></Label><Input id="kit-use-quantity" className="mt-2" type="number" readOnly={selected.kind === 'Tube'} min={selected.kind === 'Other' ? 0.001 : 1} max={selected.quantity - used(selected.supplierProductId)} step={selected.kind === 'Other' ? 'any' : 1} value={useQuantity} onChange={event => setUseQuantity(event.target.value)} />{!wholeItemQuantity ? <p role="alert" className="text-xs text-destructive">Count whole tubes and whole outer shippers.</p> : null}</div>{inventory.isPending ? <p role="status" className="text-sm">Checking component inventory…</p> : inventory.error ? <p role="alert" className="text-sm text-destructive">Inventory could not be loaded. Retry before recording use. <Button type="button" variant="outline" onClick={() => void inventory.refetch()}>Retry</Button></p> : null}{allLots.length ? <div><Label htmlFor="kit-use-lot"><RequiredFieldName>Source material lot</RequiredFieldName></Label><select id="kit-use-lot" className="mt-2 h-9 w-full rounded-md border border-input bg-background px-3 text-sm" value={sourceLotId} onChange={event => setSourceLotId(event.target.value)}><option value="">Select available lot</option>{lots.map(lot => <option key={lot.id} value={lot.id}>{lot.lotNumber} · {lot.availableQuantity} {lot.quantityUnit} available</option>)}</select>{!lots.length ? <p className="text-xs text-destructive">No QC-passed, in-date lot has available stock.</p> : null}</div> : <p className="text-sm text-muted-foreground">No material lots are maintained for this product. Product and quantity will still be recorded.</p>}</form><RequiredDialogFooter><Button variant="outline" onClick={() => setUseProductId(null)}>Cancel</Button><Button type="submit" form="kit-component-use" disabled={useMutationRecord.isPending || inventory.isPending || Boolean(inventory.error) || Number(useQuantity) <= 0 || !wholeItemQuantity || Number(useQuantity) > selected.quantity - used(selected.supplierProductId) || allLots.length > 0 && !sourceLotId}>Record use</Button></RequiredDialogFooter></DialogContent></Dialog> : null}
-    {abandonOpen ? <Dialog open onOpenChange={open => { if (!open && !abandon.isPending) setAbandonOpen(false) }}><DialogContent><DialogHeader><DialogTitle>Stop kit assembly?</DialogTitle><DialogDescription>The physical kit will remain unavailable. Recorded component uses and their source lots remain in history.</DialogDescription></DialogHeader><div><Label htmlFor="kit-abandon-reason"><RequiredFieldName>Reason</RequiredFieldName></Label><Textarea id="kit-abandon-reason" className="mt-2" value={abandonReason} onChange={event => setAbandonReason(event.target.value)} maxLength={2000} /></div><RequiredDialogFooter><Button variant="outline" onClick={() => setAbandonOpen(false)}>Cancel</Button><Button disabled={!abandonReason.trim() || abandon.isPending} onClick={() => abandon.mutate()}>Stop assembly</Button></RequiredDialogFooter></DialogContent></Dialog> : null}
-  </CardContent></Card>
+  if (query.error || !run) return <Alert variant="destructive"><AlertTitle>Assembly record unavailable</AlertTitle><AlertDescription>{getLabOperationsError(query.error, 'Refresh this kit before continuing.')} <Button variant="outline" onClick={() => void query.refetch()}>Retry</Button></AlertDescription></Alert>
+  return <Card className="gap-0 py-0">
+    <CardHeader className="border-b bg-muted/50 p-4">
+      <CardTitle>Kit assembly</CardTitle>
+      <CardDescription>{run.status === 'Completed' ? 'Assembly completed. Recorded steps and component use are retained below.' : run.status === 'Abandoned' ? 'Assembly stopped. Recorded work and component use are retained.' : 'Resume assembly to record packing, label verification and completion together.'}</CardDescription>
+      <dl className="col-span-full grid grid-cols-2 gap-3 pt-2 text-sm">
+        <div><dt className="text-muted-foreground">Assembly step recorded</dt><dd className="mt-1 font-medium">{run.stepRecords.length} of {run.steps.length}</dd></div>
+        <div><dt className="text-muted-foreground">Components recorded</dt><dd className="mt-1 font-medium">{completedComponents} of {run.components.length}</dd></div>
+      </dl>
+    </CardHeader>
+    <CardContent className="space-y-5 p-4">
+      <section aria-labelledby="kit-steps-heading">
+        <h3 id="kit-steps-heading" className="font-medium">Assembly instructions</h3>
+        <ol className="mt-2 divide-y">{run.steps.map((step, index) => <li key={step.labStepVersionId} className="py-2 first:pt-0 last:pb-0">
+          <details className="group" open={index === run.stepRecords.length}>
+            <summary className="flex cursor-pointer items-center gap-2 rounded-sm text-sm focus-visible:outline-2 focus-visible:outline-ring">
+              <ChevronDown aria-hidden="true" className="size-4 shrink-0 -rotate-90 transition-transform group-open:rotate-0 motion-reduce:transition-none" />
+              <span className="min-w-0 flex-1 font-medium">{step.name}</span>
+              <Badge variant={run.stepRecords[index] ? 'secondary' : 'outline'}>{run.stepRecords[index] ? 'Recorded' : 'Pending'}</Badge>
+            </summary>
+            <p className="mt-2 whitespace-pre-wrap pl-6 text-sm">{step.instructions}</p>
+            {run.stepRecords[index]?.notes ? <p className="mt-2 whitespace-pre-wrap pl-6 text-sm text-muted-foreground">Recorded notes: {run.stepRecords[index].notes}</p> : null}
+          </details>
+        </li>)}</ol>
+      </section>
+      <section aria-labelledby="kit-components-heading" className="border-t pt-4">
+        <h3 id="kit-components-heading" className="font-medium">Required contents</h3>
+        <ul className="mt-2 divide-y">{run.components.map(item => <li key={item.supplierProductId} className="flex flex-wrap items-start justify-between gap-3 py-3 text-sm">
+          <div className="min-w-0 flex-1"><p className="font-medium wrap-anywhere">{item.productNumber}</p><p className="text-xs text-muted-foreground wrap-anywhere">{item.supplierName} · {item.productDescription}</p><p className="mt-1 text-muted-foreground">{used(item.supplierProductId)} of {item.quantity} recorded</p></div>
+        </li>)}</ul>
+        <p className="mt-2 text-xs text-muted-foreground">Use Actions → Resume assembly to pack contents, print and scan the container label, then complete the kit in one modal.</p>
+      </section>
+      {run.status === 'InProgress' ? <p className="text-sm text-muted-foreground">{assembly.ready ? 'Everything is recorded. Resume assembly to confirm the attached container label and complete this kit.' : 'Completion in the assembly modal requires exact contents, the unique tube count and the attached container label scan.'}</p> : null}
+      {run.abandonmentReason ? <p className="text-sm">Stopped: {run.abandonmentReason}. The kit remains unavailable for dispatch; reconcile unused components with a supervisor.</p> : null}
+    </CardContent>
+  </Card>
+}
+
+export function KitAssemblyDialogs({ kit, assembly, writesBlocked }: { kit: ShippingStockKit; assembly: KitAssemblyState; writesBlocked: boolean }) {
+  return assembly.componentsOpen && assembly.run ? <RecordKitPackedContentsDialog kit={kit} assembly={assembly} writesBlocked={writesBlocked} /> : null
 }

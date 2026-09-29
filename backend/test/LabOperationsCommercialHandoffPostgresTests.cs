@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using PSeq.Operations.Commercial.Accounts.Domain;
 using PSeq.Operations.Commercial.Crm.Domain;
+using PSeq.Operations.Commercial.FileManagement.Domain;
 using PSeq.Operations.Commercial.LabOperations.Application;
 using PSeq.Operations.Commercial.LabOperations.Domain;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
@@ -32,7 +33,7 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 public partial class LabOperationsCommercialHandoffPostgresTests
 {
     [PostgreSqlReferenceFact]
-    public async Task RetiredAssemblyOrInactiveKitComponentKeepsOrderingOpenButStopsNewAssembly()
+    public async Task RetiredAssemblyOrInactiveTubeKeepsOrderingOpenButInactiveContainerStopsNewWork()
     {
         await using var scope = await HandoffTestScope.CreateAsync();
         var quoted = await scope.CreateQuotedOrderAsync();
@@ -63,7 +64,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
 
         await AssertReadiness(true);
         var componentId = await scope.DbContext.Set<ShippingKitContent>().AsNoTracking()
-            .Where(item => item.ContainerDefinitionId == definition.Id).Select(item => item.SupplierProductId).FirstAsync();
+            .Where(item => item.ContainerDefinitionId == definition.Id && item.Kind == ShippingKitContentKind.Tube)
+            .Select(item => item.SupplierProductId).SingleAsync();
         var component = await scope.DbContext.LabSupplierProducts.SingleAsync(item => item.Id == componentId);
         component.Update(component.ProductNumber, component.Description, component.ProductTypeId, false);
         await scope.DbContext.SaveChangesAsync();
@@ -76,6 +78,25 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         var workflow = await scope.DbContext.LabKitAssemblyWorkflowRevisions
             .SingleAsync(item => item.WorkflowId == definition.AssemblyWorkflowId && item.Status == LabKitAssemblyRevisionStatus.Approved);
         workflow.Retire();
+        await scope.DbContext.SaveChangesAsync();
+        await AssertReadiness(false);
+
+        var container = await scope.DbContext.LabSupplierProducts
+            .SingleAsync(item => item.Id == definition.ShippingContainerProductId);
+        container.Update(container.ProductNumber, container.Description, container.ProductTypeId, false);
+        await scope.DbContext.SaveChangesAsync();
+        scope.DbContext.ChangeTracker.Clear();
+        var choices = await LabOrderSampleTypeChoices.ReadAsync(scope.DbContext, default);
+        Assert.DoesNotContain(choices, item => item.Id == sampleTypeId);
+        var kits = await new SampleShippingContainerCatalogService(scope.DbContext)
+            .ReadCompatibleAsync(context, default);
+        Assert.DoesNotContain(kits, item => item.Id == definition.Id);
+        var listed = await new SampleShippingContainerCatalogService(scope.DbContext)
+            .ReadAsync(definition.Id, default);
+        Assert.False(listed.NewWorkReady);
+        container = await scope.DbContext.LabSupplierProducts
+            .SingleAsync(item => item.Id == definition.ShippingContainerProductId);
+        container.Update(container.ProductNumber, container.Description, container.ProductTypeId, true);
         await scope.DbContext.SaveChangesAsync();
         await AssertReadiness(false);
         await scope.AcceptQuoteAsync(quoted);
@@ -1590,6 +1611,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                     || catalogItem.SalesUnit != OrderSalesUnits.Specimen))
                     throw new InvalidOperationException("The reference database has an incompatible PSeq Lab Service catalog item.");
                 var createdCatalogItem = false;
+                if (!await dbContext.ReleasedDeliverablePolicyDefaults.AnyAsync(value => value.IsActive))
+                    dbContext.Add(new ReleasedDeliverablePolicyDefault(1, ReleasedDeliverablePolicyValues.Create(30, 5, 5), "Synthetic handoff fixture"));
                 if (catalogItem is null)
                 {
                     catalogItem = new QboCatalogItem(

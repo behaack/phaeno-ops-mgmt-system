@@ -213,7 +213,7 @@ public class PersistenceTests
             .Where(entityType => entityType.ClrType.Assembly == laboratoryAssembly)
             .ToList();
 
-        Assert.Equal(77, laboratoryEntities.Count);
+        Assert.Equal(76, laboratoryEntities.Count);
         Assert.Equal("lab_container_barcodes", dbContext.Model.FindEntityType(typeof(LabContainerBarcode))?.GetTableName());
         Assert.Equal("lab_biological_material_transfers", dbContext.Model.FindEntityType(typeof(LabBiologicalMaterialTransfer))?.GetTableName());
         Assert.Equal("lab_assembly_jobs", dbContext.Model.FindEntityType(typeof(LabAssemblyJob))?.GetTableName());
@@ -596,11 +596,14 @@ public class PersistenceTests
     }
 
     [Fact]
-    public void CleanBaselineIsTheOnlyMigrationDiscoveredWithoutConnectingToPostgres()
+    public void MigrationHistoryStartsAtCleanBaselineWithoutConnectingToPostgres()
     {
         using var dbContext = CreateDbContext();
         var migrations = dbContext.Database.GetMigrations().ToArray();
-        Assert.EndsWith("_InitialCleanPortal", Assert.Single(migrations));
+        Assert.NotEmpty(migrations);
+        Assert.Equal("20260928192920_InitialCleanPortal", migrations[0]);
+        Assert.Single(migrations, migration => migration.EndsWith("_InitialCleanPortal", StringComparison.Ordinal));
+        Assert.All(migrations.Skip(1), migration => Assert.True(string.CompareOrdinal(migration, migrations[0]) > 0));
     }
 
     private static void AssertUniqueIndex<TEntity>(

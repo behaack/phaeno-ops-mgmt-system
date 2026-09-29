@@ -1564,7 +1564,7 @@
       "title": "Laboratory operations",
       "summary": "Find laboratory work, receive purchased kits and stock, assemble Phaeno kits and reagents, record scientific evidence, and trace result delivery.",
       "order": 50,
-      "reviewedAt": "2026-09-28",
+      "reviewedAt": "2026-09-29",
       "navigationGroup": "laboratory-operations",
       "contentType": "overview",
       "topicIds": [
@@ -1595,7 +1595,7 @@
       "title": "Receipt and accession",
       "summary": "Configure named Phaeno transportation kits and their approved workflows, verify physical tube rosters, dispatch kits, and record receipt and accession.",
       "order": 51,
-      "reviewedAt": "2026-09-28",
+      "reviewedAt": "2026-09-29",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1811,7 +1811,7 @@
       "title": "Configuration and file retention",
       "summary": "Maintain reusable defaults, services, analyses, Partner rules, Sample types, Shipping procedures, Phaeno ship-to destinations, Transportation kits, and released-file retention.",
       "order": 60,
-      "reviewedAt": "2026-09-28",
+      "reviewedAt": "2026-09-29",
       "navigationGroup": "platform-operations",
       "contentType": "troubleshooting",
       "topicIds": [

@@ -65,7 +65,7 @@ public sealed class TransportationKitAssemblyDomainTests
     }
 
     [Fact]
-    public void PhysicalTubeRosterRequiresExactSecondScanAndCorrectionClearsVerification()
+    public void OptionalPhysicalRescanRequiresExactRosterAndCorrectionClearsVerification()
     {
         var productId = Guid.NewGuid();
         var kit = new SampleShippingStockKit("KIT-TEST-ROSTER", Guid.NewGuid(), "{}", 2,
@@ -82,5 +82,38 @@ public sealed class TransportationKitAssemblyDomainTests
         kit.ConfirmTubeLotNumber("LOT-A");
         kit.ConfirmTubeLotNumber("lot-a");
         Assert.Throws<InvalidOperationException>(() => kit.ConfirmTubeLotNumber("LOT-B"));
+    }
+
+    [Fact]
+    public void AssemblyAndDispatchRequireExactUniqueProductRosterWithoutMandatoryRescan()
+    {
+        var productId = Guid.NewGuid();
+        var kit = new SampleShippingStockKit("KIT-ONE-PASS", Guid.NewGuid(), "{}", 2,
+            "Tube maker", "TUBE", null, "Shipper maker", "BOX",
+            tubeSupplierProductId: productId, tubeBarcodeNamespace: "maker-a",
+            productExpirySnapshotJson: "[]", assemblyWorkflowRevisionId: Guid.NewGuid());
+        var location = new CustomerDeliveryLocation(Guid.NewGuid(), Guid.NewGuid(), "Receiving",
+            "Receiver", "1 Test Street", null, "Irvine", "CA", "92617", "US", null, null, true);
+        kit.Tubes.Add(new(kit.Id, "TUBE-ONE", "maker-a", productId));
+        Assert.Throws<InvalidOperationException>(() => kit.CompleteAssembly(DateTime.UtcNow));
+        kit.Tubes.Add(new(kit.Id, "TUBE-ONE", "maker-a", productId));
+        Assert.Throws<InvalidOperationException>(kit.EnsureCompleteTubeRoster);
+        kit.Tubes.Clear();
+        kit.Tubes.Add(new(kit.Id, "TUBE-ONE", "maker-a", productId));
+        kit.Tubes.Add(new(kit.Id, "TUBE-TWO", "maker-a", Guid.NewGuid()));
+        Assert.Throws<InvalidOperationException>(kit.EnsureCompleteTubeRoster);
+        kit.Tubes.Clear();
+        kit.Tubes.Add(new(kit.Id, "TUBE-ONE", "maker-a", productId));
+        kit.Tubes.Add(new(kit.Id, "TUBE-TWO", "maker-b", productId));
+        Assert.Throws<InvalidOperationException>(kit.EnsureCompleteTubeRoster);
+        kit.Tubes.Clear();
+        kit.Tubes.Add(new(kit.Id, "TUBE-ONE", "maker-a", productId));
+        kit.Tubes.Add(new(kit.Id, "TUBE-TWO", "maker-a", productId));
+        Assert.Throws<InvalidOperationException>(() => kit.DispatchToLocation(location, "Carrier", "TRACK", DateTime.UtcNow));
+        kit.CompleteAssembly(DateTime.UtcNow);
+        kit.DispatchToLocation(location, "Carrier", "TRACK", DateTime.UtcNow);
+        Assert.NotNull(kit.FulfilledAt);
+        Assert.Null(kit.TubesVerifiedAt);
+        Assert.Null(kit.TubesVerifiedByUserId);
     }
 }

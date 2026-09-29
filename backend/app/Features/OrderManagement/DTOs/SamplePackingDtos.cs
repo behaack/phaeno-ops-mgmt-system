@@ -43,7 +43,8 @@ public sealed record StockKitProductExpiryDto(Guid SupplierProductId, string Sup
     bool CanExpire, DateOnly? ExpirationDate);
 public sealed record CreateStockKitRequest(Guid ContainerDefinitionId, Guid TubeSupplierProductId,
     Guid ShipperSupplierProductId, string? TubeLotNumber,
-    IReadOnlyList<StockKitProductExpiryRequest>? ProductExpirations = null);
+    IReadOnlyList<StockKitProductExpiryRequest>? ProductExpirations = null,
+    Guid? AssemblyRequestId = null);
 public sealed record DispatchStockKitRequest(Guid? ShipmentId, long Version, string OutboundCarrier,
     string OutboundTrackingNumber, DateTime FulfilledAt, Guid? DeliveryLocationId = null, Guid? RequestId = null,
     bool ConfirmUnavailableFixedDestination = false);

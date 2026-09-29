@@ -1,5 +1,22 @@
 # Operations and production-readiness boundary
 
+## Deployment hold — September 28, 2026
+
+The owner blocked deployment until a separate deployment plan addresses the new production-hosted test database. The current source uses `20260928192920_InitialCleanPortal`, which requires an empty database and cannot upgrade the existing populated hosted database. The [local clean-database record](plans/LOCAL-CLEAN-DATABASE-20260928-PLAN.md) documents local execution only and does not satisfy this deployment gate.
+
+The GitHub **Deploy Portal Green** workflow (ID `315525604`) was disabled and read back as `disabled_manually`; no active runs were returned by the workflow check. Both `frontend/vercel.json` and `website/vercel.json` retain their automatic Git deployment hold for `codex/portal-documentation-search-release`. Keep these controls in place, and do not perform manual Portal deployments or promotions while this hold applies. The Vercel controls are branch-specific; they do not disable deployment of every branch or revoke manual provider access.
+
+The future plan must resolve:
+
+- The exact hosted database and storage target, including the Portal-owned public Website API dependencies and isolation from OCIA.
+- The owner's preservation/reset list, required relationships and seed identities, with explicit data-loss consequences.
+- Coordinated database and referenced-file backups, restore verification, and retention of the existing recovery points.
+- Preparation and verification of a replacement database using the clean baseline, without applying it to the existing database.
+- The write-stop and cutover sequence, matching API/frontend revisions, rollback triggers and recovery procedure.
+- Schema, preserved-data, identity/access, public Website API and authenticated workflow acceptance checks.
+
+No replacement database, cutover or deployment is authorized by this hold. Creating the plan does not itself authorize destructive remedies or deployment. Re-enabling the workflow and lifting the Vercel holds belong to a separately authorized release after the database plan is complete.
+
 ## Barcode identity and DataMatrix — deployed September 23, 2026
 
 The [release record](operations/barcode-datamatrix-release-20260923.md) documents the separately approved barcode migration, restorable encrypted backup, matching API and Portal application source `b6bab473e0d4c63add8d54eca35e32b76b57c784`, live health checks and the correction that restored the intentionally blank bootstrap administrator setting. The workflow now preserves that setting unless bootstrap installation is explicitly selected. The environment named production is used as staging; physical label/scanner and authenticated operator acceptance remain separate.

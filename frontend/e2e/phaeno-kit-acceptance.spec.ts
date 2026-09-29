@@ -11,7 +11,7 @@ function kit(id: number, status: ShippingStockKit['status']): ShippingStockKit {
   const atPhaeno = status === 'Preparing'
   return {
     id: `kit-${id}`, kitNumber: `KIT-${String(id).padStart(3, '0')}`, container,
-    status, version: 1,
+    status, version: 1, assemblyCompletedAt: '2026-09-24T11:00:00Z',
     tubeSupplierName: 'Tube supplier', tubeProductNumber: 'TUBE-1', tubeLotNumber: 'LOT-1',
     shipperSupplierName: 'Shipper supplier', shipperProductNumber: 'SHIPPER-1',
     organizationId: atPhaeno ? null : 'customer-1', authorizationSourceId: null, authorizationReference: null,
@@ -108,7 +108,8 @@ test('signed-in kit inventory keeps shipped status and page through detail and r
   await page.getByRole('button', { name: 'Next' }).click()
   await expect(page.getByText('13 kits · Page 2 of 2')).toBeVisible()
   await page.getByRole('link', { name: 'KIT-015' }).click()
-  await expect(page.getByRole('heading', { name: 'KIT-015' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: container.commonName })).toBeVisible()
+  await expect(page.getByText('Kit KIT-015', { exact: true })).toBeVisible()
   await page.getByRole('link', { name: 'Back to transportation kits' }).click()
   await expect(page.getByRole('combobox', { name: 'Status' })).toHaveValue('shipped')
   await expect(page.getByText('13 kits · Page 2 of 2')).toBeVisible()

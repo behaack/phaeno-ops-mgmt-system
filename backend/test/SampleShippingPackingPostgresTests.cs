@@ -150,6 +150,310 @@ public partial class SampleShippingPostgresTests
     }
 
     [PostgreSqlReferenceFact]
+    public async Task KitPackingRejectsMismatchedScansAndPartialWritesAndStaleRetry()
+    {
+        await using var scope = await ShippingTestScope.CreateAsync();
+        var fixture = await scope.CreateShipmentAsync(20);
+        var definition = await scope.CreateContainerAsync(fixture, 20);
+        var stock = scope.StockController();
+        var result = await stock.Create(await scope.CatalogKitRequestAsync(definition.Id), default);
+        var kit = Assert.IsType<StockKitDto>(Assert.IsType<CreatedResult>(result.Result).Value);
+        scope.ClearTrackedState();
+        var lab = scope.CreateLabController();
+        var run = await lab.ReadKitAssemblyRun(kit.Id, default);
+        var shipper = run.Components.Single(item => item.Kind == "ShippingContainer");
+        var tube = run.Components.Single(item => item.Kind == "Tube");
+        var codes = Enumerable.Range(1, 20).Select(index => $"BATCH-{scope.Suffix}-{index:00}").ToArray();
+        var request = new PhaenoPortal.App.Features.LabOperations.Controllers.KitPackedContentsRequest(run.Version, kit.Version, codes,
+            [new(shipper.SupplierProductId, shipper.Quantity), new(tube.SupplierProductId, tube.Quantity)], "Reference kit assembled and packed.");
+        var invalid = await Assert.ThrowsAsync<OrderManagementException>(() => lab.RecordKitPackedContents(kit.Id, request with { SupplierBarcodes = codes[..19] }, default));
+        Assert.Equal("kit_tube_quantity_mismatch", invalid.ErrorCode);
+        scope.ClearTrackedState();
+        var unchanged = await lab.ReadKitAssemblyRun(kit.Id, default);
+        Assert.Empty(unchanged.Uses);
+        Assert.Equal(run.Version, unchanged.Version);
+        Assert.Empty((await stock.Read(kit.Id, default)).Tubes);
+
+        var duplicate = await Assert.ThrowsAsync<OrderManagementException>(() => lab.RecordKitPackedContents(kit.Id,
+            request with { SupplierBarcodes = [codes[0], codes[0].ToLowerInvariant()] }, default));
+        Assert.Equal(StatusCodes.Status409Conflict, duplicate.StatusCode);
+        scope.ClearTrackedState();
+        var excess = await Assert.ThrowsAsync<OrderManagementException>(() => lab.RecordKitPackedContents(kit.Id,
+            request with { SupplierBarcodes = [.. codes, $"EXCESS-{scope.Suffix}"] }, default));
+        Assert.Equal(StatusCodes.Status409Conflict, excess.StatusCode);
+        scope.ClearTrackedState();
+        var invalidLot = await Assert.ThrowsAsync<OrderManagementException>(() => lab.RecordKitPackedContents(kit.Id,
+            request with { Components = [new(shipper.SupplierProductId, 1), new(tube.SupplierProductId, 20, Guid.NewGuid())] }, default));
+        Assert.Equal("kit_component_lot_invalid", invalidLot.ErrorCode);
+        scope.ClearTrackedState();
+        Assert.Empty((await stock.Read(kit.Id, default)).Tubes);
+        Assert.Empty((await lab.ReadKitAssemblyRun(kit.Id, default)).Uses);
+
+        var saved = await lab.RecordKitPackedContents(kit.Id, request, default);
+        Assert.Equal(2, saved.Uses.Count);
+        Assert.Equal(shipper.Quantity, saved.Uses.Single(item => item.SupplierProductId == shipper.SupplierProductId).Quantity);
+        Assert.Equal(tube.Quantity, saved.Uses.Single(item => item.SupplierProductId == tube.SupplierProductId).Quantity);
+        scope.ClearTrackedState();
+        Assert.Equal(20, (await stock.Read(kit.Id, default)).Tubes.Count);
+        var stale = await Assert.ThrowsAsync<OrderManagementException>(() => lab.RecordKitPackedContents(kit.Id, request, default));
+        Assert.Equal(StatusCodes.Status409Conflict, stale.StatusCode);
+        scope.ClearTrackedState();
+        Assert.Equal(2, (await lab.ReadKitAssemblyRun(kit.Id, default)).Uses.Count);
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task PartialKitPackingRequiresExactRemainingScansAndBothCurrentVersions()
+    {
+        await using var scope = await ShippingTestScope.CreateAsync();
+        var fixture = await scope.CreateShipmentAsync(20);
+        var definition = await scope.CreateContainerAsync(fixture, 20);
+        var stock = scope.StockController();
+        var result = await stock.Create(await scope.CatalogKitRequestAsync(definition.Id), default);
+        var kit = Assert.IsType<StockKitDto>(Assert.IsType<CreatedResult>(result.Result).Value);
+        scope.ClearTrackedState();
+        var lab = scope.CreateLabController();
+        var run = await lab.ReadKitAssemblyRun(kit.Id, default);
+        var shipper = run.Components.Single(item => item.Kind == "ShippingContainer");
+        var tube = run.Components.Single(item => item.Kind == "Tube");
+        var codes = Enumerable.Range(1, 20).Select(index => $"PART-{scope.Suffix}-{index:00}").ToArray();
+        run = await lab.RecordKitPackedContents(kit.Id, new(run.Version, kit.Version, codes[..18],
+            [new(shipper.SupplierProductId, 1), new(tube.SupplierProductId, 18)]), default);
+        scope.ClearTrackedState();
+        var incomplete = await Assert.ThrowsAsync<OrderManagementException>(() => lab.CompleteKitAssembly(kit.Id, new(run.Version), default));
+        Assert.Equal("kit_bom_incomplete", incomplete.ErrorCode);
+        scope.ClearTrackedState();
+        var staleKit = await Assert.ThrowsAsync<OrderManagementException>(() => lab.RecordKitPackedContents(kit.Id,
+            new(run.Version, kit.Version, codes[18..], [new(tube.SupplierProductId, 2)]), default));
+        Assert.Equal(StatusCodes.Status409Conflict, staleKit.StatusCode);
+        scope.ClearTrackedState();
+        var currentKit = await stock.Read(kit.Id, default);
+        run = await lab.RecordKitPackedContents(kit.Id,
+            new(run.Version, currentKit.Version, codes[18..], [new(tube.SupplierProductId, 2)], "All kit contents packed according to instructions."), default);
+        scope.ClearTrackedState();
+        Assert.Equal(20, run.Uses.Where(item => item.SupplierProductId == tube.SupplierProductId).Sum(item => item.Quantity));
+        currentKit = await stock.Read(kit.Id, default);
+        Assert.Equal(20, currentKit.Tubes.Count);
+        Assert.Equal(20, currentKit.Tubes.Select(item => item.SupplierBarcode).Distinct().Count());
+        var unlabelled = await Assert.ThrowsAsync<OrderManagementException>(() => lab.CompleteKitAssembly(kit.Id, new(run.Version), default));
+        Assert.Equal("lab_transition_not_allowed", unlabelled.ErrorCode);
+        Assert.Contains("label", unlabelled.Message, StringComparison.OrdinalIgnoreCase);
+        scope.ClearTrackedState();
+        Assert.Single(run.StepRecords);
+        Assert.Equal("All kit contents packed according to instructions.", run.StepRecords[0].Notes);
+        run = await lab.RequestKitAssemblyLabelPrint(kit.Id, new(run.Version), default);
+        scope.ClearTrackedState();
+        run = await lab.SaveKitAssemblySession(kit.Id, new(run.Version, currentKit.Version, [], [], null, true, ContainerBarcode: kit.KitNumber), default);
+        Assert.Equal("Completed", run.Status);
+        scope.ClearTrackedState();
+        var finishedKit = await stock.Read(kit.Id, default);
+        var finished = await Assert.ThrowsAsync<OrderManagementException>(() => lab.RecordKitPackedContents(kit.Id,
+            new(run.Version, finishedKit.Version, [], [new(tube.SupplierProductId, 1)]), default));
+        Assert.Equal("kit_assembly_finished", finished.ErrorCode);
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task KitPackingRollsBackTrackedStockAndHistoryWhenALaterComponentFails()
+    {
+        await using var scope = await ShippingTestScope.CreateAsync();
+        var definition = await scope.CreateContainerAsync(await scope.CreateShipmentAsync(20), 20);
+        var stock = scope.StockController();
+        var result = await stock.Create(await scope.CatalogKitRequestAsync(definition.Id), default);
+        var kit = Assert.IsType<StockKitDto>(Assert.IsType<CreatedResult>(result.Result).Value);
+        scope.ClearTrackedState();
+        var lab = scope.CreateLabController();
+        var run = await lab.ReadKitAssemblyRun(kit.Id, default);
+        var shipper = run.Components.Single(item => item.Kind == "ShippingContainer");
+        var tube = run.Components.Single(item => item.Kind == "Tube");
+        var material = new PSeq.Operations.Laboratory.Domain.LabMaterialDefinition($"packing-{scope.Suffix}", "TEST packing material", PSeq.Operations.Laboratory.Domain.LabMaterialLotKind.SupplierLot);
+        var location = new PSeq.Operations.Laboratory.Domain.LabStorageLocation($"TEST packing shelf {scope.Suffix}");
+        var db = scope.DbContext;
+        var products = await db.LabSupplierProducts.Where(item => item.Id == shipper.SupplierProductId || item.Id == tube.SupplierProductId).ToArrayAsync();
+        PSeq.Operations.Laboratory.Domain.LabMaterialLot Lot(Guid productId, decimal quantity,
+            DateOnly? expiration = null, string unit = "each")
+        {
+            var product = products.Single(item => item.Id == productId);
+            var lot = new PSeq.Operations.Laboratory.Domain.LabMaterialLot(PSeq.Operations.Laboratory.Domain.LabMaterialLotKind.SupplierLot,
+                material.Id, $"PACK-{Guid.NewGuid():N}", product.SupplierId, expiration, location.Id, quantity, unit);
+            lot.AssignProduct(product.Id, product.SupplierId);
+            lot.RecordQc(PSeq.Operations.Laboratory.Domain.LabQcDisposition.Passed, DateOnly.FromDateTime(DateTime.UtcNow), null, "{}", scope.PlatformUser.Id, DateTime.UtcNow);
+            return lot;
+        }
+        var shipperLot = Lot(shipper.SupplierProductId, 2);
+        var tubeLot = Lot(tube.SupplierProductId, 20);
+        var insufficientLot = Lot(tube.SupplierProductId, 19);
+        var expiredLot = Lot(tube.SupplierProductId, 20, DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)));
+        var wrongUnitLot = Lot(tube.SupplierProductId, 20, unit: "mL");
+        var failedLot = Lot(tube.SupplierProductId, 20);
+        failedLot.RecordQc(PSeq.Operations.Laboratory.Domain.LabQcDisposition.Failed, DateOnly.FromDateTime(DateTime.UtcNow), "TEST failed QC", "{}", scope.PlatformUser.Id, DateTime.UtcNow);
+        var heldLot = Lot(tube.SupplierProductId, 20);
+        heldLot.HoldQuantity("TEST stock reconciliation", Guid.NewGuid(), scope.PlatformUser.Id, DateTime.UtcNow);
+        var invalidLots = new[] { insufficientLot, expiredLot, wrongUnitLot, failedLot, heldLot };
+        var lotIds = new[] { shipperLot.Id, tubeLot.Id }.Concat(invalidLots.Select(item => item.Id)).ToArray();
+        db.AddRange(material, location, shipperLot, tubeLot);
+        db.AddRange(invalidLots);
+        await db.SaveChangesAsync();
+        var baselineLots = await db.LabMaterialLots.AsNoTracking().Where(item => lotIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id);
+        var codes = Enumerable.Range(1, 20).Select(index => $"STOCK-{scope.Suffix}-{index:00}").ToArray();
+        var request = new PhaenoPortal.App.Features.LabOperations.Controllers.KitPackedContentsRequest(run.Version, kit.Version, codes,
+            [new(shipper.SupplierProductId, 1, shipperLot.Id), new(tube.SupplierProductId, 20, tubeLot.Id)], "Tracked kit contents packed.");
+        try
+        {
+            foreach (var invalidLot in invalidLots)
+            {
+                scope.ClearTrackedState();
+                await Assert.ThrowsAsync<OrderManagementException>(() => lab.RecordKitPackedContents(kit.Id,
+                    request with { Components = [new(shipper.SupplierProductId, 1, shipperLot.Id), new(tube.SupplierProductId, 20, invalidLot.Id)] }, default));
+                scope.ClearTrackedState();
+                Assert.Equal(2, (await db.LabMaterialLots.SingleAsync(item => item.Id == shipperLot.Id)).AvailableQuantity);
+                var unchanged = await db.LabMaterialLots.SingleAsync(item => item.Id == invalidLot.Id);
+                Assert.Equal(baselineLots[invalidLot.Id].AvailableQuantity, unchanged.AvailableQuantity);
+                Assert.Equal(baselineLots[invalidLot.Id].QuantityHistoryJson, unchanged.QuantityHistoryJson);
+                Assert.Equal(baselineLots[invalidLot.Id].Version, unchanged.Version);
+                Assert.Empty((await stock.Read(kit.Id, default)).Tubes);
+                Assert.Empty((await lab.ReadKitAssemblyRun(kit.Id, default)).Uses);
+            }
+            scope.ClearTrackedState();
+            var failed = await Assert.ThrowsAsync<OrderManagementException>(() => lab.RecordKitPackedContents(kit.Id,
+                request with { Components = [.. request.Components, new(Guid.NewGuid(), 1)], AssemblyNotes = null }, default));
+            Assert.Equal("kit_component_unapproved", failed.ErrorCode);
+            scope.ClearTrackedState();
+            var unchangedLots = await db.LabMaterialLots.Where(item => item.Id == shipperLot.Id || item.Id == tubeLot.Id).ToArrayAsync();
+            Assert.Equal(2, unchangedLots.Single(item => item.Id == shipperLot.Id).AvailableQuantity);
+            Assert.Equal(20, unchangedLots.Single(item => item.Id == tubeLot.Id).AvailableQuantity);
+            Assert.All(unchangedLots, item => Assert.Equal("[]", item.QuantityHistoryJson));
+            Assert.Empty((await lab.ReadKitAssemblyRun(kit.Id, default)).Uses);
+            Assert.Empty((await stock.Read(kit.Id, default)).Tubes);
+            scope.ClearTrackedState();
+            var saved = await lab.RecordKitPackedContents(kit.Id, request with {
+                SupplierBarcodes = codes[..18], Components = [new(shipper.SupplierProductId, 1, shipperLot.Id), new(tube.SupplierProductId, 18, tubeLot.Id)], AssemblyNotes = null }, default);
+            Assert.Equal(2, saved.Uses.Count);
+            scope.ClearTrackedState();
+            var partialKit = await stock.Read(kit.Id, default);
+            var tail = request with { Version = saved.Version, StockKitVersion = partialKit.Version, SupplierBarcodes = codes[18..], Components = [new(tube.SupplierProductId, 2, insufficientLot.Id)] };
+            var mixedLot = await Assert.ThrowsAsync<OrderManagementException>(() => lab.RecordKitPackedContents(kit.Id, tail, default));
+            Assert.Equal("kit_tube_lot_mismatch", mixedLot.ErrorCode);
+            scope.ClearTrackedState();
+            Assert.Equal(18, (await stock.Read(kit.Id, default)).Tubes.Count);
+            Assert.Equal(2, (await db.LabMaterialLots.SingleAsync(item => item.Id == tubeLot.Id)).AvailableQuantity);
+            saved = await lab.RecordKitPackedContents(kit.Id, tail with { Components = [new(tube.SupplierProductId, 2, tubeLot.Id)] }, default);
+            Assert.Equal(3, saved.Uses.Count);
+            scope.ClearTrackedState();
+            var savedLots = await db.LabMaterialLots.Where(item => item.Id == shipperLot.Id || item.Id == tubeLot.Id).ToArrayAsync();
+            Assert.Equal(1, savedLots.Single(item => item.Id == shipperLot.Id).AvailableQuantity);
+            Assert.Equal(0, savedLots.Single(item => item.Id == tubeLot.Id).AvailableQuantity);
+            Assert.All(savedLots, item => Assert.Contains("consumed", item.QuantityHistoryJson));
+            Assert.Equal(tubeLot.LotNumber, (await stock.Read(kit.Id, default)).TubeLotNumber);
+        }
+        finally
+        {
+            scope.ClearTrackedState();
+            await db.LabKitAssemblyUses.Where(item => item.RunId == run.Id).ExecuteDeleteAsync();
+            await db.LabMaterialLots.Where(item => lotIds.Contains(item.Id)).ExecuteDeleteAsync();
+            await db.LabMaterialDefinitions.Where(item => item.Id == material.Id).ExecuteDeleteAsync();
+            await db.LabStorageLocations.Where(item => item.Id == location.Id).ExecuteDeleteAsync();
+        }
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task ConcurrentKitPackingRecordsOnceAndRejectsBarcodesInAnotherKit()
+    {
+        await using var scope = await ShippingTestScope.CreateAsync();
+        var definition = await scope.CreateContainerAsync(await scope.CreateShipmentAsync(20), 20);
+        var stock = scope.StockController();
+        var result = await stock.Create(await scope.CatalogKitRequestAsync(definition.Id), default);
+        var kit = Assert.IsType<StockKitDto>(Assert.IsType<CreatedResult>(result.Result).Value);
+        scope.ClearTrackedState();
+        var run = await scope.CreateLabController().ReadKitAssemblyRun(kit.Id, default);
+        var codes = Enumerable.Range(1, 20).Select(index => $"RACE-{scope.Suffix}-{index:00}").ToArray();
+        var request = new PhaenoPortal.App.Features.LabOperations.Controllers.KitPackedContentsRequest(run.Version, kit.Version, codes,
+            run.Components.Select(item => new PhaenoPortal.App.Features.LabOperations.Controllers.KitAssemblyComponentUseRequest(item.SupplierProductId, item.Quantity)).ToArray(), "Packed according to assembly instructions.");
+        await using var firstDb = scope.CreateAdditionalContext();
+        await using var secondDb = scope.CreateAdditionalContext();
+        async Task<bool> Save(PSeqOperationsDbContext context)
+        {
+            try { await scope.CreateLabController(context).RecordKitPackedContents(kit.Id, request, default); return true; }
+            catch (OrderManagementException error) { Assert.Equal(StatusCodes.Status409Conflict, error.StatusCode); return false; }
+        }
+        var outcomes = await Task.WhenAll(Save(firstDb), Save(secondDb));
+        Assert.Single(outcomes, item => item);
+        scope.ClearTrackedState();
+        Assert.Equal(20, (await stock.Read(kit.Id, default)).Tubes.Count);
+        Assert.Equal(2, (await scope.CreateLabController().ReadKitAssemblyRun(kit.Id, default)).Uses.Count);
+        var secondResult = await stock.Create(await scope.CatalogKitRequestAsync(definition.Id), default);
+        var secondKit = Assert.IsType<StockKitDto>(Assert.IsType<CreatedResult>(secondResult.Result).Value);
+        scope.ClearTrackedState();
+        var secondRun = await scope.CreateLabController().ReadKitAssemblyRun(secondKit.Id, default);
+        var collision = await Assert.ThrowsAsync<OrderManagementException>(() => scope.CreateLabController().RecordKitPackedContents(secondKit.Id,
+            request with { Version = secondRun.Version, StockKitVersion = secondKit.Version }, default));
+        Assert.Equal("stock_kit_conflict", collision.ErrorCode);
+        scope.ClearTrackedState();
+        Assert.Empty((await stock.Read(secondKit.Id, default)).Tubes);
+        Assert.Empty((await scope.CreateLabController().ReadKitAssemblyRun(secondKit.Id, default)).Uses);
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task ConcurrentKitPackingCannotOverdrawSharedTubeStock()
+    {
+        await using var scope = await ShippingTestScope.CreateAsync();
+        var definition = await scope.CreateContainerAsync(await scope.CreateShipmentAsync(20), 20);
+        var stock = scope.StockController();
+        async Task<StockKitDto> CreateKit()
+        {
+            var result = await stock.Create(await scope.CatalogKitRequestAsync(definition.Id), default);
+            return Assert.IsType<StockKitDto>(Assert.IsType<CreatedResult>(result.Result).Value);
+        }
+        var kits = new[] { await CreateKit(), await CreateKit() };
+        scope.ClearTrackedState();
+        var runs = new[] { await scope.CreateLabController().ReadKitAssemblyRun(kits[0].Id, default), await scope.CreateLabController().ReadKitAssemblyRun(kits[1].Id, default) };
+        var productId = runs[0].Components.Single(item => item.Kind == "Tube").SupplierProductId;
+        var db = scope.DbContext;
+        var product = await db.LabSupplierProducts.SingleAsync(item => item.Id == productId);
+        var material = new PSeq.Operations.Laboratory.Domain.LabMaterialDefinition($"packing-race-{scope.Suffix}", "TEST shared tube stock", PSeq.Operations.Laboratory.Domain.LabMaterialLotKind.SupplierLot);
+        var location = new PSeq.Operations.Laboratory.Domain.LabStorageLocation($"TEST shared packing shelf {scope.Suffix}");
+        var lot = new PSeq.Operations.Laboratory.Domain.LabMaterialLot(PSeq.Operations.Laboratory.Domain.LabMaterialLotKind.SupplierLot,
+            material.Id, $"RACE-{scope.Suffix}", product.SupplierId, null, location.Id, 2, "each");
+        lot.AssignProduct(productId, product.SupplierId);
+        lot.RecordQc(PSeq.Operations.Laboratory.Domain.LabQcDisposition.Passed, DateOnly.FromDateTime(DateTime.UtcNow), null, "{}", scope.PlatformUser.Id, DateTime.UtcNow);
+        db.AddRange(material, location, lot);
+        await db.SaveChangesAsync();
+        try
+        {
+            await using var firstDb = scope.CreateAdditionalContext();
+            await using var secondDb = scope.CreateAdditionalContext();
+            async Task<bool> Save(int index, PSeqOperationsDbContext context)
+            {
+                try
+                {
+                    await scope.CreateLabController(context).RecordKitPackedContents(kits[index].Id,
+                        new(runs[index].Version, kits[index].Version, [$"SHARED-{scope.Suffix}-{index}-A", $"SHARED-{scope.Suffix}-{index}-B"], [new(productId, 2, lot.Id)]), default);
+                    return true;
+                }
+                catch (OrderManagementException) { return false; }
+            }
+            var outcomes = await Task.WhenAll(Save(0, firstDb), Save(1, secondDb));
+            Assert.Single(outcomes, item => item);
+            scope.ClearTrackedState();
+            var savedLot = await db.LabMaterialLots.SingleAsync(item => item.Id == lot.Id);
+            Assert.Equal(0, savedLot.AvailableQuantity);
+            Assert.Equal(1, JsonDocument.Parse(savedLot.QuantityHistoryJson).RootElement.GetArrayLength());
+            for (var index = 0; index < kits.Length; index++)
+            {
+                Assert.Equal(outcomes[index] ? 2 : 0, (await stock.Read(kits[index].Id, default)).Tubes.Count);
+                Assert.Equal(outcomes[index] ? 1 : 0, (await scope.CreateLabController().ReadKitAssemblyRun(kits[index].Id, default)).Uses.Count);
+            }
+        }
+        finally
+        {
+            scope.ClearTrackedState();
+            var runIds = runs.Select(item => item.Id).ToArray();
+            await db.LabKitAssemblyUses.Where(item => runIds.Contains(item.RunId)).ExecuteDeleteAsync();
+            await db.LabMaterialLots.Where(item => item.Id == lot.Id).ExecuteDeleteAsync();
+            await db.LabMaterialDefinitions.Where(item => item.Id == material.Id).ExecuteDeleteAsync();
+            await db.LabStorageLocations.Where(item => item.Id == location.Id).ExecuteDeleteAsync();
+        }
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task ContainerStockWholeKitBindsOnFirstScanWhilePartialFillKeepsUnusedTubesSeparate()
     {
         await using var scope = await ShippingTestScope.CreateAsync();
@@ -317,6 +621,9 @@ public partial class SampleShippingPostgresTests
             target.AuthorizationName, target.LabWorkOrderId, target.DestinationId);
         previous.SelectContainer(definition.Id, "{}");
         var barcode = $"SHARED-{scope.Suffix}";
+        var assemblyRevisionId = await db.LabKitAssemblyWorkflowRevisions
+            .Where(item => item.WorkflowId == definition.AssemblyWorkflowId)
+            .Select(item => item.Id).SingleAsync();
         async Task<SampleShippingStockKit> Kit(string number)
         {
             var catalog = await scope.CatalogKitRequestAsync(Guid.NewGuid());
@@ -328,9 +635,10 @@ public partial class SampleShippingPostgresTests
                 tubeSupplierProductId: catalog.TubeSupplierProductId,
                 shipperSupplierProductId: catalog.ShipperSupplierProductId,
                 productExpirySnapshotJson: "[]",
-                tubeBarcodeNamespace: barcodeNamespace);
+                tubeBarcodeNamespace: barcodeNamespace, assemblyWorkflowRevisionId: assemblyRevisionId);
             kit.Tubes.Add(new SampleShippingStockTube(kit.Id, barcode, barcodeNamespace, catalog.TubeSupplierProductId));
             kit.VerifyTubeRoster(scope.PlatformUser.Id, [barcode], DateTime.UtcNow);
+            kit.CompleteAssembly(DateTime.UtcNow);
             kit.Dispatch(target, "TEST carrier", "TEST tracking", DateTime.UtcNow);
             return kit;
         }
@@ -469,8 +777,14 @@ public partial class SampleShippingPostgresTests
             var step = new PSeq.Operations.Laboratory.Domain.LabStep($"PACK-{Suffix}-{Guid.NewGuid():N}",
                 $"Reference kit assembly {sku}", null);
             step.RecordVersion(1);
+            var stepDefinition = LabStepTests.Definition();
+            stepDefinition = stepDefinition with { Steps = [stepDefinition.Steps[0] with {
+                Name = "Pack reference kit", Instructions = "Pack the specification's required contents.",
+                Captures = [], InputMaterials = [], PreparedOutputs = [], EquipmentTypes = [],
+                QcGate = null, AttachmentRequired = false, AttachmentKind = "none"
+            }] };
             var stepVersion = new PSeq.Operations.Laboratory.Domain.LabStepVersion(step.Id, 1,
-                LabStepTests.Definition().ToJson(), PlatformUser.Id, now);
+                stepDefinition.ToJson(), PlatformUser.Id, now);
             stepVersion.ApproveWithOverride(PlatformUser.Id, now, "Reference fixture");
             stepVersion.Activate(PlatformUser.Id);
             var revision = new PSeq.Operations.Laboratory.Domain.LabKitAssemblyWorkflowRevision(workflow.Id, 1,
@@ -559,13 +873,15 @@ public partial class SampleShippingPostgresTests
             ClearTrackedState();
             var lab = CreateLabController();
             var run = await lab.ReadKitAssemblyRun(kitId, default);
-            foreach (var step in run.Steps.Select((value, index) => (value, index)))
-                run = await lab.RecordKitAssemblyStep(kitId,
-                    new(run.Version, step.index, "Reference assembly step completed."), default);
-            foreach (var component in run.Components)
-                run = await lab.RecordKitAssemblyUse(kitId,
-                    new(run.Version, component.SupplierProductId, component.Quantity), default);
-            await lab.CompleteKitAssembly(kitId, new(run.Version), default);
+            var kit = await StockController().Read(kitId, default);
+            run = await lab.RecordKitPackedContents(kitId,
+                new(run.Version, kit.Version, [], run.Components.Select(component =>
+                    new PhaenoPortal.App.Features.LabOperations.Controllers.KitAssemblyComponentUseRequest(
+                        component.SupplierProductId, component.Quantity)).ToArray(), "Reference assembly step completed."), default);
+            run = await lab.RequestKitAssemblyLabelPrint(kitId, new(run.Version), default);
+            kit = await StockController().Read(kitId, default);
+            await lab.SaveKitAssemblySession(kitId, new(run.Version, kit.Version, [], [], null, true,
+                ContainerBarcode: kit.KitNumber), default);
             ClearTrackedState();
         }
 

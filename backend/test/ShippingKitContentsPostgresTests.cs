@@ -59,8 +59,8 @@ public partial class SampleShippingPostgresTests
         var contents = await scope.KitContentsAsync(20);
         var shipper = await scope.DbContext.LabSupplierProducts.SingleAsync(item => item.Id == contents[0].SupplierProductId);
         var tube = await scope.DbContext.LabSupplierProducts.SingleAsync(item => item.Id == contents[1].SupplierProductId);
-        shipper.SetTubeCapacity(10);
-        tube.SetDefaultQuantityUnit(null);
+        shipper.SetTubeCapacity(20);
+        tube.SetDefaultQuantityUnit("box");
         await scope.DbContext.SaveChangesAsync();
         scope.ClearTrackedState();
 
@@ -76,10 +76,12 @@ public partial class SampleShippingPostgresTests
 
         tube = await scope.DbContext.LabSupplierProducts.SingleAsync(item => item.Id == contents[1].SupplierProductId);
         tube.SetDefaultQuantityUnit("each");
+        shipper = await scope.DbContext.LabSupplierProducts.SingleAsync(item => item.Id == contents[0].SupplierProductId);
+        shipper.SetTubeCapacity(10);
         await scope.DbContext.SaveChangesAsync();
         scope.ClearTrackedState();
         var capacityError = await Assert.ThrowsAsync<OrderManagementException>(() => catalog.ActivateAsync(draft.Id, draft.Version, default));
-        Assert.Contains("tube capacity", capacityError.Message);
+        Assert.Contains("must hold at least", capacityError.Message);
         scope.ClearTrackedState();
 
         shipper = await scope.DbContext.LabSupplierProducts.SingleAsync(item => item.Id == contents[0].SupplierProductId);
@@ -113,7 +115,7 @@ public partial class SampleShippingPostgresTests
         var request = await scope.CatalogKitRequestAsync(released.Id);
         scope.ClearTrackedState();
         var error = await Assert.ThrowsAsync<OrderManagementException>(() => scope.StockController().Create(request, default));
-        Assert.Contains("no approved assembly workflow", error.Message);
+        Assert.Contains("Choose an approved assembly workflow", error.Message);
     }
 
     [PostgreSqlReferenceFact]

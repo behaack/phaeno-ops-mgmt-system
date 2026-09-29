@@ -165,9 +165,12 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
         var definitionIds = request.Lines.Select(item => item.ContainerDefinitionId).ToArray();
         var ready = block is null ? await db.SampleShippingStockKits.AsNoTracking().Where(item => !item.FulfilledAt.HasValue
             && !item.OrganizationId.HasValue && !item.TransportationKitRequestLineId.HasValue && !item.BoundSampleShipmentId.HasValue
-            && definitionIds.Contains(item.ContainerDefinitionId) && item.TubesVerifiedAt.HasValue
+            && definitionIds.Contains(item.ContainerDefinitionId) && item.TubeSupplierProductId.HasValue
             && item.AssemblyWorkflowRevisionId.HasValue && item.AssemblyCompletedAt.HasValue
-            && item.Tubes.Count == item.TubeCapacity).OrderBy(item => item.CreatedAt).ToListAsync(ct) : [];
+            && item.Tubes.Count == item.TubeCapacity
+            && item.Tubes.Select(tube => tube.SupplierBarcode).Distinct().Count() == item.TubeCapacity
+            && !item.Tubes.Any(tube => tube.TubeSupplierProductId != item.TubeSupplierProductId
+                || tube.BarcodeNamespace != item.TubeBarcodeNamespace)).OrderBy(item => item.CreatedAt).ToListAsync(ct) : [];
         ready.RemoveAll(item => !TransportationKitInventory.IsPhysicallyUsable(item, DateTime.UtcNow));
         return new(await MapAsync(request, false, true, ct), ready.Select(kit =>
         {

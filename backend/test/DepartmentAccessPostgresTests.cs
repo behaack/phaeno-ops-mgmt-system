@@ -452,7 +452,7 @@ public sealed partial class DepartmentAccessPostgresTests
     }
 
     [PostgreSqlReferenceFact]
-    public async Task QuotePdfUsesOnlyItsOwnStandardPlacementAndOmitsUnrecordedLegacyScope()
+    public async Task QuotePdfUsesOnlyItsOwnStandardPlacementAndRejectsMissingScope()
     {
         await using var scope = await Scope.Create();
         scope.UseOrdinaryMember();
@@ -470,8 +470,8 @@ public sealed partial class DepartmentAccessPostgresTests
         var controller = scope.QuoteController();
         using var pdf = PdfDocument.Open((await controller.GetQuotePdf(order.Id, quote.Id, default)).FileContents);
         Assert.Contains("Frozen standard source9", pdf.GetPage(1).Text);
-        using var legacyPdf = PdfDocument.Open((await controller.GetQuotePdf(order.Id, legacy.Id, default)).FileContents);
-        Assert.DoesNotContain("Sample scope", legacyPdf.GetPage(1).Text);
+        var missingScope = await Assert.ThrowsAsync<OrderManagementException>(() => controller.GetQuotePdf(order.Id, legacy.Id, default));
+        Assert.Equal("quote_document_unavailable", missingScope.ErrorCode);
         Assert.False(scope.Db.ChangeTracker.HasChanges());
     }
 
@@ -481,7 +481,7 @@ public sealed partial class DepartmentAccessPostgresTests
         await using var scope = await Scope.Create();
         scope.UseOrdinaryMember();
         var order = scope.AddOrder(scope.General, 9);
-        var quote = scope.AddQuote(order, QuoteStatus.Issued);
+        var quote = scope.AddQuote(order, QuoteStatus.Issued, seedScope: false);
         scope.Db.Add(new LabServiceRequestRevision(order.Id, 1, null,
             "{\"requestedSpecimenCount\":9,\"sourceGroups\":[{\"biologicalSource\":\"Private malformed scope\",\"specimenCount\":4}]}",
             null, scope.Actor.Id, DateTime.UtcNow));
@@ -716,7 +716,7 @@ public sealed partial class DepartmentAccessPostgresTests
         }
 
         public LabServiceQuote AddQuote(LabServiceOrder order, QuoteStatus status,
-            Guid? catalogItemId = null, string? internalNote = null, int revision = 1)
+            Guid? catalogItemId = null, string? internalNote = null, int revision = 1, bool seedScope = true)
         {
             var now = DateTime.UtcNow;
             var lines = JsonSerializer.Serialize(new[] { new {
@@ -725,6 +725,12 @@ public sealed partial class DepartmentAccessPostgresTests
             } });
             var quote = new LabServiceQuote(order.Id, revision, QuotePurpose.Initial, lines, 900, 0, "USD", now, now.AddDays(30));
             quote.RecordPricingDecision(1, 90, 100, internalNote ?? "Private pricing decision", Actor.Id, now);
+            if (seedScope && order.Revisions.Count == 0)
+                db.Add(new LabServiceRequestRevision(order.Id, 1, null, JsonSerializer.Serialize(new
+                {
+                    requestedSpecimenCount = order.RequestedSpecimenCount,
+                    sourceGroups = new[] { new { biologicalSource = "Synthetic quote source", specimenCount = order.RequestedSpecimenCount } }
+                }), null, Actor.Id, now));
             db.Add(quote);
             // Seed persisted lifecycle states without exercising the separate pricing/acceptance workflow.
             db.Entry(quote).Property(value => value.Status).CurrentValue = status;

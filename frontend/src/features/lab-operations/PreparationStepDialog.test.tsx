@@ -234,9 +234,8 @@ describe('optional QC report', () => {
   it('does not offer uploads until the API supports them', () => {
     render(<PreparationStepDialog {...props} batch={batch} onSubmit={vi.fn()} />)
     expect(screen.queryByLabelText('QC report (optional)')).toBeNull()
-    expect(screen.getAllByLabelText(/Synthetic QC record reference/)).toHaveLength(1)
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Record exception' }))
-    expect(screen.getAllByLabelText(/Synthetic QC record reference/)).toHaveLength(3)
+    expect(screen.queryByLabelText(/Synthetic QC record reference/)).toBeNull()
+    expect(screen.getByLabelText(/QC outcome/)).toBeTruthy()
   })
   it('cancels a file selection without submitting it', () => {
     const onSubmit = vi.fn(), onClose = vi.fn()

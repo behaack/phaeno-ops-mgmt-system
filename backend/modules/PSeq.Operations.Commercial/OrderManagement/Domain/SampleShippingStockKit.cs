@@ -86,7 +86,7 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
         EnsurePhysicallyUsable(DateTime.UtcNow);
         if (FulfilledAt.HasValue || OrganizationId.HasValue)
             throw new InvalidOperationException("This kit has already been dispatched.");
-        EnsureVerifiedTubes();
+        EnsurePreparedTubes();
         if (jobContext.Status == SampleShipmentStatus.Cancelled)
             throw new InvalidOperationException("Choose an active authorized job.");
         if (fulfilledAt.Kind != DateTimeKind.Utc || fulfilledAt > DateTime.UtcNow.AddMinutes(5)
@@ -140,7 +140,7 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
         EnsurePhysicallyUsable(DateTime.UtcNow);
         if (FulfilledAt.HasValue || OrganizationId.HasValue || !location.IsActive)
             throw new InvalidOperationException("Choose an active delivery location for an undispatched container.");
-        EnsureVerifiedTubes();
+        EnsurePreparedTubes();
         if (fulfilledAt.Kind != DateTimeKind.Utc || fulfilledAt > DateTime.UtcNow.AddMinutes(5) || fulfilledAt < CreatedAt.AddMinutes(-1))
             throw new ArgumentException("Enter a valid dispatch time after the kit was prepared.");
         OrganizationId = location.OrganizationId; DepartmentId = location.DepartmentId; CustomerDeliveryLocationId = location.Id;
@@ -225,20 +225,26 @@ public sealed class SampleShippingStockKit : IAudit, IConcurrency
         TubesVerifiedByUserId = null;
     }
 
-    private void EnsureVerifiedTubes()
+    public void EnsureCompleteTubeRoster()
+    {
+        if (!TubeSupplierProductId.HasValue || Tubes.Count != TubeCapacity
+            || Tubes.Select(tube => tube.SupplierBarcode).Distinct(StringComparer.Ordinal).Count() != TubeCapacity
+            || Tubes.Any(tube => tube.TubeSupplierProductId != TubeSupplierProductId || tube.BarcodeNamespace != TubeBarcodeNamespace))
+            throw new InvalidOperationException("Register the exact required number of unique tubes from this kit's saved tube product before completion or dispatch.");
+    }
+
+    private void EnsurePreparedTubes()
     {
         if (!AssemblyWorkflowRevisionId.HasValue || !AssemblyCompletedAt.HasValue)
             throw new InvalidOperationException("Complete the approved kit assembly workflow before dispatch.");
-        if (!TubesVerifiedAt.HasValue || !TubesVerifiedByUserId.HasValue || Tubes.Count != TubeCapacity
-            || Tubes.Select(tube => tube.SupplierBarcode).Distinct(StringComparer.Ordinal).Count() != TubeCapacity
-            || Tubes.Any(tube => tube.TubeSupplierProductId != TubeSupplierProductId || tube.BarcodeNamespace != TubeBarcodeNamespace))
-            throw new InvalidOperationException("Verify the full physical tube roster before dispatch.");
+        EnsureCompleteTubeRoster();
     }
     public void CompleteAssembly(DateTime utcNow)
     {
         if (!AssemblyWorkflowRevisionId.HasValue || FulfilledAt.HasValue
             || AssemblyCompletedAt.HasValue || utcNow.Kind != DateTimeKind.Utc)
             throw new InvalidOperationException("Only an active Phaeno kit assembly can be completed.");
+        EnsureCompleteTubeRoster();
         AssemblyCompletedAt = utcNow;
     }
     public void ConfirmTubeLotNumber(string lotNumber)

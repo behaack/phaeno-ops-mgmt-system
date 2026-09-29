@@ -55,7 +55,8 @@ public partial class SampleShippingPostgresTests
             var batch = new LabOperationalBatch($"TUBE-SEQ-{scope.Suffix}", "TEST ONLY sequencing", null); batch.Start(now);
             var member = new LabBatchMember(batch.Id, work.Id, library.Id, now);
             var sequencingTube = new LabContainer(work.Id, specimen.Id, libraryTube.Id, LabContainerKind.Sequencing,
-                $"TUBE-SEND-{scope.Suffix}", "TEST sequencing aliquot", "TEST sendout rack", null, null, null, LabContainerBarcodeSource.Manufacturer);
+                $"TUBE-SEND-{scope.Suffix}", "TEST sequencing aliquot", "TEST sendout rack", null, null, null, LabContainerBarcodeSource.Manufacturer,
+                barcodeNamespace: "TEST-SEQUENCING-MANUFACTURER");
             sequencingTube.AttachAttempt(attempt); member.AssignSequencingTube(sequencingTube.Id);
             db.AddRange(order, work, protocol, version, workflow, workflowVersion, stage, source, attempt,
                 libraryTube, execution, library, batch, member, sequencingTube);

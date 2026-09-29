@@ -37,9 +37,8 @@ public sealed partial class LabOperationsController
             throw Invalid("kit_workflow_name_invalid", "Enter a workflow name of 1 to 160 characters.");
         await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext,
             $"kit-assembly-workflow:{request.WorkflowId}", ct);
-        if (request.StepVersionIds is null || request.StepVersionIds.Count is < 1 or > 100
-            || request.StepVersionIds.Distinct().Count() != request.StepVersionIds.Count)
-            throw Invalid("kit_steps_invalid", "Choose 1 to 100 distinct approved Lab step versions.");
+        if (request.StepVersionIds is null || request.StepVersionIds.Count != 1)
+            throw Invalid("kit_steps_invalid", "Choose exactly one approved Lab step for transportation kit assembly.");
         var versions = await (from version in dbContext.LabStepVersions.AsNoTracking()
             join step in dbContext.LabSteps.AsNoTracking() on version.LabStepId equals step.Id
             where request.StepVersionIds.Contains(version.Id) && step.RetiredAtUtc == null
@@ -146,6 +145,8 @@ public sealed partial class LabOperationsController
         if (revision.AuthoredByUserId == actor.User.Id && !actor.IsPlatformAdmin)
             throw Conflict("kit_workflow_independent_approval_required", "A different administrator must approve this kit workflow.");
         var stepIds = revision.Steps().Select(item => item.LabStepVersionId).ToArray();
+        if (stepIds.Length != 1)
+            throw Invalid("kit_steps_invalid", "Choose exactly one approved Lab step before approving this transportation kit workflow.");
         var approvedSteps = await (from version in dbContext.LabStepVersions.AsNoTracking()
             join step in dbContext.LabSteps.AsNoTracking() on version.LabStepId equals step.Id
             where stepIds.Contains(version.Id) && step.RetiredAtUtc == null

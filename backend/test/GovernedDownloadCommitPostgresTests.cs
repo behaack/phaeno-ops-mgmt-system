@@ -128,9 +128,9 @@ public sealed class GovernedDownloadCommitPostgresTests
             await rollback.RollbackFixtureAsync();
             Assert.False(await observer.OperationalDownloadCommitEvidence.AnyAsync(value => value.Id == rolled.Id));
             var retainedCount = await observer.OperationalDownloadCommitEvidence.CountAsync();
-            var refused = await Assert.ThrowsAsync<NotSupportedException>(() => observer.Database.GetService<IMigrator>()
+            var refused = await Assert.ThrowsAsync<InvalidOperationException>(() => observer.Database.GetService<IMigrator>()
                 .MigrateAsync("0"));
-            Assert.Contains("verified pre-reset database backup", refused.Message);
+            Assert.Contains("clean baseline cannot be rolled back", refused.Message);
             Assert.Equal(retainedCount, await observer.OperationalDownloadCommitEvidence.CountAsync());
         }
         finally

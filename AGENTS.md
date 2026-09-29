@@ -70,6 +70,7 @@ Keep the owner focused on scientific meaning, sequencing and laboratory workflow
 - Whenever the persisted database model or an EF migration changes, update `docs/database-erd.md` in the same change so it remains complete across all application schemas, entities, fields, keys, and relationships.
 - Do not add dependencies, change auth, or change a cross-app contract without a short plan and explicit scope.
 - Do not stage, commit, or perform other Git mutations unless asked.
+- Deployment hold (September 28, 2026): do not deploy the Portal API, publish or promote Portal frontend changes, remove the existing Vercel Git deployment holds, or re-enable `Deploy Portal Green` until a separate deployment plan addresses the new production-hosted test database. The plan must identify the target and preserved/reset data, verified database and file backups, replacement-database preparation, cutover, rollback, and acceptance checks. The local clean-database plan does not satisfy this gate. Plan creation does not itself authorize destructive database changes or deployment; follow the owner's explicit release scope. See `docs/operations-readiness.md` for the hold state.
 
 ## UI expectations
 

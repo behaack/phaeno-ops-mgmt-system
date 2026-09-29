@@ -19,6 +19,28 @@ using PSeq.Operations.Laboratory.Domain;
 public partial class SampleShippingPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task CompletedKitWithoutSecondScanIsOfferedAndDispatchedForCustomerRequest()
+    {
+        await using var scope = await ShippingTestScope.CreateAsync();
+        var fixture = await scope.CreateTransportationShipmentAsync(18);
+        var size = await scope.CreateContainerAsync(fixture, 20);
+        var location = await scope.CreateTransportationLocationAsync();
+        var request = await scope.KitCustomer().Create(fixture.Shipment.Id,
+            new(fixture.Shipment.Version, location.Id, location.Version, [new(size.Id, 1)]), default);
+        var kit = await scope.ReadyTransportationKitAsync(size);
+        Assert.NotNull(kit.AssemblyCompletedAt);
+        Assert.Null(kit.TubesVerifiedAt);
+        var detail = await scope.KitStaff().Read(request.Id, default);
+        Assert.Contains(detail.AvailableStockKits, item => item.Id == kit.Id);
+        await scope.KitStaff().Dispatch(request.Id,
+            new(detail.Request.Version, [kit.Id], "Reference carrier", "ONE-PASS", DateTime.UtcNow), default);
+        scope.ClearTrackedState();
+        var dispatched = await scope.StockController().Read(kit.Id, default);
+        Assert.NotNull(dispatched.FulfilledAt);
+        Assert.Null(dispatched.TubesVerifiedAt);
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task WithdrawnPhysicalKitIsNotOfferedForDispatch()
     {
         await using var scope = await ShippingTestScope.CreateAsync();
@@ -487,7 +509,7 @@ public partial class SampleShippingPostgresTests
             ClearTrackedState();
             var codes = Enumerable.Range(1, size.TubeCapacity).Select(index => $"TK-{created.Id:N}-{index:00}").ToArray();
             var registered = await stock.Register(created.Id, new(codes, created.Version), default); ClearTrackedState();
-            var ready = await stock.VerifyTubes(created.Id, new(registered.Version, codes), default);
+            Assert.Equal(size.TubeCapacity, registered.Tubes.Count);
             ClearTrackedState();
             await CompleteKitAssemblyAsync(created.Id);
             return await stock.Read(created.Id, default);

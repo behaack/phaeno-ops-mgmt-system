@@ -1,10 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link } from '@tanstack/react-router'
 import { useSupplierCatalog, type SupplierProductKind } from '#/api/supplier-catalog'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
+import { stockKitHasFullRoster } from './stock-kit-utils'
 import { getOrderErrorMessage } from '#/api/order-management'
 import type { SampleShipmentWorkflow } from '#/api/sample-shipping'
 import { correctShippingStockKitTube, createShippingStockKit, dispatchShippingStockKit, registerShippingStockKitTubes, verifyShippingStockKitTubes, type ShippingContainerDefinition, type ShippingStockKit } from '#/api/shipping-containers'
@@ -18,20 +20,25 @@ import { Textarea } from '#/components/ui/textarea'
 import { useOrderDraftGuard } from '../use-order-draft-guard'
 import { containerEffectiveState, localContainerDateTime } from '../configuration/shipping-container-utils'
 import { ShippingKitContents } from '../configuration/ShippingKitContents'
+import { getKitAssemblyWorkflows, kitAssemblyWorkflowsKey } from '#/api/lab-kit-assembly'
 
 const selectClass = 'h-9 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none'
 const prepareSchema = z.object({ containerDefinitionId: z.string().uuid('Choose an active kit specification.'), tubeSupplierId: z.string().uuid('Choose a tube supplier.'), tubeSupplierProductId: z.string().uuid('Choose a tube product.'), tubeLotNumber: z.string().trim().max(100), shipperSupplierId: z.string().uuid('Choose a shipping container supplier.'), shipperSupplierProductId: z.string().uuid('Choose a shipping container product.'), productExpirations: z.record(z.string(), z.string()) })
 type PrepareValues = z.infer<typeof prepareSchema>
 type EditorProps = { onClose: () => void; onSaved: (kit: ShippingStockKit) => void | Promise<void> }
 
-export function PrepareStandardKitDialog({ definitions, onClose, onSaved }: EditorProps & { definitions: ShippingContainerDefinition[] }) {
+export function PrepareStandardKitDialog({ definitions, onClose, onSaved, onPrintPrepared }: EditorProps & { definitions: ShippingContainerDefinition[]; onPrintPrepared?: (kit: ShippingStockKit) => void | Promise<void> }) {
+  const [assemblyRequestId] = useState(() => crypto.randomUUID())
+  const intent = useRef<'save' | 'print'>('save')
+  const submitting = useRef(false)
+  const workflows = useQuery({ queryKey: kitAssemblyWorkflowsKey, queryFn: getKitAssemblyWorkflows })
   const catalog = useSupplierCatalog()
   const suppliers = (catalog.data ?? []).filter(supplier => supplier.isActive)
   const form = useForm<PrepareValues>({ resolver: zodResolver(prepareSchema), defaultValues: { containerDefinitionId: '', tubeSupplierId: '', tubeSupplierProductId: '', tubeLotNumber: '', shipperSupplierId: '', shipperSupplierProductId: '', productExpirations: {} } })
   const candidates = definitions.filter(value => containerEffectiveState(value) === 'Active now' && (catalog.data ?? []).some(supplier => supplier.isActive && !supplier.isInternalProducer && supplier.products.some(product => product.id === value.shippingContainerProductId && product.isActive && product.productTypeIsActive)))
   const selected = candidates.find(value => value.id === form.watch('containerDefinitionId'))
   const workflowPending = selected?.assemblyWorkflowReady === false
-  const mutation = useMutation({ mutationFn: (values: PrepareValues) => createShippingStockKit({ containerDefinitionId: values.containerDefinitionId, tubeSupplierProductId: values.tubeSupplierProductId, shipperSupplierProductId: values.shipperSupplierProductId, tubeLotNumber: values.tubeLotNumber || null, productExpirations: inventoryProducts.filter(product => values.productExpirations[product.id]).map(product => ({ supplierProductId: product.id, expirationDate: values.productExpirations[product.id] })) }), onSuccess: async kit => { form.reset(form.getValues()); allowSavedNavigation(); await onSaved(kit) } })
+  const mutation = useMutation({ mutationFn: (values: PrepareValues) => createShippingStockKit({ assemblyRequestId, containerDefinitionId: values.containerDefinitionId, tubeSupplierProductId: values.tubeSupplierProductId, shipperSupplierProductId: values.shipperSupplierProductId, tubeLotNumber: values.tubeLotNumber || null, productExpirations: inventoryProducts.filter(product => values.productExpirations[product.id]).map(product => ({ supplierProductId: product.id, expirationDate: values.productExpirations[product.id] })) }), onSuccess: async kit => { form.reset(form.getValues()); allowSavedNavigation(); if (intent.current === 'print' && onPrintPrepared) await onPrintPrepared(kit); else await onSaved(kit) } })
   const dirty = form.formState.isDirty
   const allowSavedNavigation = useOrderDraftGuard(dirty, mutation.isPending)
   function close() { if (!mutation.isPending && (!dirty || window.confirm('Discard the unsaved standard-kit details?'))) onClose() }
@@ -49,6 +56,7 @@ export function PrepareStandardKitDialog({ definitions, onClose, onSaved }: Edit
     return <p className="rounded-md border bg-muted/30 p-3 text-sm">{supplier && product ? `${supplier.name} · ${product.productNumber} — ${product.description}` : 'Choose a Kit specification with approved contents.'}</p>
   }
   function submit(values: PrepareValues) {
+    if (submitting.current || mutation.isPending) return
     for (const [prefix, kind] of [['tube', 'Tube'], ['shipper', 'ShippingContainer']] as const) {
       const supplier = suppliers.find(item => item.id === values[`${prefix}SupplierId`])
       if (!supplier?.products.some(item => item.id === values[`${prefix}SupplierProductId`] && item.isActive && item.productTypeIsActive && item.kind === kind)) {
@@ -60,9 +68,13 @@ export function PrepareStandardKitDialog({ definitions, onClose, onSaved }: Edit
       if (product.canExpire && !date) { form.setError(`productExpirations.${product.id}`, { message: 'Enter the expiration date for this product.' }, { shouldFocus: true }); return }
       if (date && (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date.startsWith('0000') || !Number.isFinite(Date.parse(`${date}T00:00:00Z`)) || new Date(`${date}T00:00:00Z`).toISOString().slice(0, 10) !== date)) { form.setError(`productExpirations.${product.id}`, { message: 'Enter a valid expiration date.' }, { shouldFocus: true }); return }
     }
-    if (!unavailable) mutation.mutate(values)
+    if (!unavailable && !workflowPending) {
+      submitting.current = true
+      mutation.mutate(values, { onSettled: () => { submitting.current = false } })
+    }
   }
-  return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Prepare standard kit</DialogTitle><DialogDescription>Choose a Kit specification to start assembly. Its required products are fixed; scan the permanent ID on each tube as it is packed. Prepared stock remains at Phaeno until dispatch.</DialogDescription></DialogHeader><StockKitSaveError error={mutation.error || catalog.error} />
+  const method = workflows.data?.find(workflow => workflow.id === selected?.assemblyWorkflowId)?.revisions.find(revision => revision.status === 'Approved')
+  return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Assemble transportation kit</DialogTitle><DialogDescription>Choose the kit specification, then print and attach its permanent label. Continue packing and complete this kit in the same modal, or save it for later outside Inventory.</DialogDescription></DialogHeader><StockKitSaveError error={mutation.error || catalog.error || workflows.error} />
     <form id="prepare-standard-kit" className="space-y-4" noValidate onSubmit={event => {
       event.preventDefault()
       for (const product of inventoryProducts.filter(item => item.canExpire)) {
@@ -78,6 +90,7 @@ export function PrepareStandardKitDialog({ definitions, onClose, onSaved }: Edit
     }}>
       {catalog.isPending ? <p role="status">Loading suppliers and products…</p> : null}
       {catalog.isError ? <Button type="button" variant="outline" onClick={() => void catalog.refetch()}>Retry catalog</Button> : null}
+      {workflows.isError ? <Button type="button" variant="outline" onClick={() => void workflows.refetch()}>Retry assembly instructions</Button> : null}
       <StockKitField id="stock-container" label="Kit specification" required error={errors.containerDefinitionId?.message}><select id="stock-container" className={selectClass} {...form.register('containerDefinitionId')} disabled={unavailable} aria-invalid={Boolean(errors.containerDefinitionId)} aria-describedby={errors.containerDefinitionId ? 'stock-container-error' : undefined} onChange={event => {
         const definition = candidates.find(value => value.id === event.target.value)
         form.setValue('containerDefinitionId', event.target.value, { shouldDirty: true, shouldValidate: true })
@@ -94,13 +107,14 @@ export function PrepareStandardKitDialog({ definitions, onClose, onSaved }: Edit
       }}><option value="">Select a kit configuration</option>{candidates.map(value => <option key={value.id} value={value.id}>{value.commonName} · {(catalog.data ?? []).find(supplier => supplier.products.some(product => product.id === value.shippingContainerProductId))?.name ?? 'Supplier'} · SKU {value.sku} · {value.tubeCapacity} tubes</option>)}</select></StockKitField>
       {!candidates.length ? <p className="text-sm text-muted-foreground">Activate a Phaeno Transportation kit specification in Samples &amp; shipping settings first.</p> : null}
       {workflowPending ? <Alert variant="warning"><AlertTitle>Assembly workflow pending</AlertTitle><AlertDescription>This specification can accept orders, but a new physical kit cannot be prepared until a compatible Transportation kit workflow is approved in <Link className="text-primary underline" to="/lab-configuration" search={{ configurationTab: 'workflows' }}>Lab settings → Workflows</Link>.</AlertDescription></Alert> : null}
-      {selected ? <p className="rounded-md border bg-muted/40 p-3 text-sm">This kit holds {selected.tubeCapacity} tubes. Register all {selected.tubeCapacity} before recording outbound dispatch.</p> : null}
+      {selected ? <p className="rounded-md border bg-muted/40 p-3 text-sm">This kit holds {selected.tubeCapacity} tubes. Completion requires its label scan, exact contents and a full tube verification.</p> : null}
+      {method?.steps[0] ? <section aria-labelledby="new-kit-instructions" className="space-y-1 border-b pb-3"><h3 id="new-kit-instructions" className="text-sm font-medium">Assembly instructions</h3><p className="text-sm font-medium">{method.steps[0].name}</p><p className="whitespace-pre-wrap text-sm">{method.steps[0].instructions}</p></section> : null}
        {selected?.kitContents?.length ? <section aria-labelledby="prepare-kit-contents" className="rounded-md border p-3"><h3 id="prepare-kit-contents" className="text-sm font-medium">Required contents per kit</h3><ShippingKitContents contents={selected.kitContents} /><p className="text-xs text-muted-foreground">The selected specification fixes these products and quantities. Scan each actual tube on the physical kit's assembly record.</p></section> : null}
       <fieldset className="min-w-0"><legend className="mb-3 text-sm font-medium">Tubes</legend><div className="grid gap-4">{productFields('tube', 'Tube')}<StockKitField id="stock-tubeLotNumber" label="Lot" error={errors.tubeLotNumber?.message}><Input id="stock-tubeLotNumber" disabled={mutation.isPending} aria-invalid={Boolean(errors.tubeLotNumber)} aria-describedby={errors.tubeLotNumber ? 'stock-tubeLotNumber-error' : undefined} {...form.register('tubeLotNumber')} /></StockKitField></div></fieldset>
       <fieldset className="min-w-0"><legend className="mb-3 text-sm font-medium">Shipping Container</legend><div className="grid gap-4">{productFields('shipper', 'ShippingContainer')}</div></fieldset>
       {inventoryProducts.some(product => product.canExpire) ? <fieldset className="space-y-3"><legend className="text-sm font-medium">Product expiration dates</legend><p className="text-xs text-muted-foreground">Record the labeled expiration date for every product that can expire in this kit, including additional configured contents. Dates are saved with this stock record.</p>{inventoryProducts.filter(product => product.canExpire).map(product => <StockKitField key={product.id} id={`stock-expiry-${product.id}`} label={`${product.supplierName} · ${product.productNumber}`} required error={errors.productExpirations?.[product.id]?.message}><Input id={`stock-expiry-${product.id}`} type="date" required disabled={unavailable} aria-invalid={Boolean(errors.productExpirations?.[product.id])} aria-describedby={errors.productExpirations?.[product.id] ? `stock-expiry-${product.id}-error` : undefined} {...form.register(`productExpirations.${product.id}`)} /></StockKitField>)}</fieldset> : null}
       <p className="text-sm text-muted-foreground">Missing a supplier or product? Add it in <Link className="text-primary underline" to="/purchasing" search={{ section: 'suppliers' }}>Purchasing</Link>, then return to prepare the kit.</p>
-    </form><RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="prepare-standard-kit" disabled={unavailable || workflowPending || !candidates.length || !suppliers.length}>{mutation.isPending ? 'Saving…' : 'Prepare standard kit'}</Button></RequiredDialogFooter>
+    </form><RequiredDialogFooter><Button variant="ghost" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="prepare-standard-kit" variant="outline" disabled={unavailable || workflowPending || !candidates.length || !suppliers.length} onClick={() => { intent.current = 'save' }}>Save for later</Button><Button type="submit" form="prepare-standard-kit" disabled={unavailable || workflowPending || workflows.isPending || workflows.isError || !candidates.length || !suppliers.length} onClick={() => { intent.current = 'print' }}>{mutation.isPending ? 'Saving…' : 'Print container barcode'}</Button></RequiredDialogFooter>
   </DialogContent></Dialog>
 }
 
@@ -129,7 +143,7 @@ export function VerifyStockKitTubesDialog({ kit, onClose, onSaved }: EditorProps
   const form = useForm<{ barcodes: string }>({ resolver: zodResolver(schema), defaultValues: { barcodes: '' } })
   const mutation = useMutation({ mutationFn: (values: { barcodes: string }) => verifyShippingStockKitTubes(kit.id, { version: kit.version, supplierBarcodes: barcodeLines(values.barcodes) }), onSuccess: onSaved })
   const codes = barcodeLines(form.watch('barcodes'))
-  return <Dialog open onOpenChange={open => { if (!open && !mutation.isPending) onClose() }}><DialogContent><DialogHeader><DialogTitle>Verify physical tube roster</DialogTitle><DialogDescription>Rescan each tube physically packed in {kit.kitNumber} before sealing. Compare all {kit.container.capacity} IDs with the saved roster; a count alone cannot release the kit.</DialogDescription></DialogHeader><StockKitSaveError error={mutation.error} />
+  return <Dialog open onOpenChange={open => { if (!open && !mutation.isPending) onClose() }}><DialogContent><DialogHeader><DialogTitle>Rescan packed tubes (optional)</DialogTitle><DialogDescription>Use this optional check when packing needs review. Rescan all {kit.container.capacity} tubes physically packed in {kit.kitNumber}; the IDs must match the saved roster.</DialogDescription></DialogHeader><StockKitSaveError error={mutation.error} />
     <form id="verify-stock-kit-tubes" className="space-y-3" noValidate onSubmit={form.handleSubmit(values => { if (!mutation.isPending) mutation.mutate(values) })}><StockKitField id="verify-tube-barcodes" label="Physical tube IDs" required error={form.formState.errors.barcodes?.message}><Textarea id="verify-tube-barcodes" rows={7} className="font-mono" autoComplete="off" spellCheck={false} disabled={mutation.isPending} {...form.register('barcodes')} /></StockKitField><p className="text-xs text-muted-foreground">{codes.length} of {kit.container.capacity} scanned. The saved IDs appear on the kit detail for comparison. Verification records your identity and time.</p></form>
     <RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={onClose}>Cancel</Button><Button type="submit" form="verify-stock-kit-tubes" disabled={mutation.isPending || codes.length !== kit.container.capacity}>{mutation.isPending ? 'Verifying…' : 'Verify roster'}</Button></RequiredDialogFooter>
   </DialogContent></Dialog>
@@ -165,7 +179,7 @@ export function DispatchStandardKitDialog({ kit, shipments, initialShipmentId, o
       <StockKitField id="stock-dispatch-job" label="Trial or Partner shipment" required error={errors.shipmentId?.message}><select id="stock-dispatch-job" className={selectClass} disabled={mutation.isPending} aria-invalid={Boolean(errors.shipmentId)} aria-describedby={errors.shipmentId ? 'stock-dispatch-job-error' : undefined} {...form.register('shipmentId')}><option value="">Select a shipment</option>{[...jobs.values()].map(value => <option key={value.id} value={value.id}>{value.organizationName} · {value.authorizationReference}</option>)}</select></StockKitField>
       {!jobs.size ? <p className="text-sm text-muted-foreground">No active Trial or Partner shipments are available for dispatch.</p> : null}<p className="text-sm">{kit.tubes.length} registered tubes · {kit.container.capacity} tube capacity</p>
       {(['outboundCarrier', 'outboundTrackingNumber', 'fulfilledAt'] as const).map((name, index) => <StockKitField key={name} id={`stock-dispatch-${name}`} label={['Carrier', 'Tracking number', 'Dispatched at'][index]} required error={errors[name]?.message}><Input id={`stock-dispatch-${name}`} type={name === 'fulfilledAt' ? 'datetime-local' : 'text'} disabled={mutation.isPending} aria-invalid={Boolean(errors[name])} aria-describedby={errors[name] ? `stock-dispatch-${name}-error` : undefined} {...form.register(name)} /></StockKitField>)}
-    </form><RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="dispatch-standard-kit" disabled={mutation.isPending || !jobs.size || !kit.tubesVerifiedAt || kit.tubes.length !== kit.container.capacity}>{mutation.isPending ? 'Recording…' : 'Record dispatch'}</Button></RequiredDialogFooter>
+    </form><RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="dispatch-standard-kit" disabled={mutation.isPending || !jobs.size || !kit.assemblyCompletedAt || !stockKitHasFullRoster(kit)}>{mutation.isPending ? 'Recording…' : 'Record dispatch'}</Button></RequiredDialogFooter>
   </DialogContent></Dialog>
 }
 function barcodeLines(value: string) { return value.split(/\r?\n/).map(line => line.trim()).filter(Boolean) }

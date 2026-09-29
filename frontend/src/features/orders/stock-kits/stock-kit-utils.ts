@@ -8,8 +8,11 @@ export function parseStockKitListSearch(search: Record<string, unknown>): StockK
   const status = search.kitStatus === 'Fulfilled' ? 'OnTheWay' : search.kitStatus === 'Bound' ? 'InUse' : search.kitStatus
   return { kitSearch: typeof search.kitSearch === 'string' ? search.kitSearch.slice(0, 255) : undefined, kitStatus: status === 'inventory' || status === 'shipped' || status === 'all' || stockKitStates.includes(status as StockKitState) ? status as StockKitStatusFilter : 'inventory', kitPage: Number.isSafeInteger(page) && page > 0 ? page : 1 }
 }
+export function stockKitHasFullRoster(kit: ShippingStockKit) {
+  return kit.tubes.length === kit.container.capacity && new Set(kit.tubes.map(tube => tube.supplierBarcode)).size === kit.container.capacity
+}
 export function stockKitState(kit: ShippingStockKit): StockKitState {
-  if (kit.status === 'Preparing') return kit.tubesVerifiedAt && kit.assemblyCompletedAt && kit.tubes.length === kit.container.capacity ? 'Ready' : 'Preparing'
+  if (kit.status === 'Preparing') return !kit.assemblyCompletedAt ? 'Preparing' : stockKitHasFullRoster(kit) ? 'Ready' : 'NeedsReview'
   if (kit.status === 'Bound') return 'InUse'
   if (kit.status === 'Fulfilled') return kit.customerReceivedAt ? 'Available' : 'OnTheWay'
   return kit.status
@@ -19,7 +22,7 @@ export function stockKitStatus(state: StockKitState) {
 }
 export function stockKitMatchesStatusFilter(kit: ShippingStockKit, filter: StockKitStatusFilter = 'inventory') {
   const state = stockKitState(kit)
-  if (filter === 'inventory') return state === 'Preparing' || state === 'Ready'
-  if (filter === 'shipped') return state !== 'Preparing' && state !== 'Ready'
+  if (filter === 'inventory') return state === 'Ready'
+  if (filter === 'shipped') return Boolean(kit.fulfilledAt) || ['OnTheWay', 'Available', 'Assigned', 'InUse'].includes(state)
   return filter === 'all' || state === filter
 }

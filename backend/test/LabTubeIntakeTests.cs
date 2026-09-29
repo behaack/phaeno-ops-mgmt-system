@@ -80,7 +80,8 @@ public class LabTubeIntakeTests
         var now = DateTime.UtcNow;
         var tube = new LabContainer(specimen.LabWorkOrderId, specimen.Id, null,
             LabContainerKind.SubmittedSpecimen, "TEST-BROKEN", "Expected tube", null, null, null, null,
-            LabContainerBarcodeSource.RegisteredSupplier, expectedTubeId, rejectedAtIntake: true);
+            LabContainerBarcodeSource.RegisteredSupplier, expectedTubeId, rejectedAtIntake: true,
+            barcodeNamespace: "TEST-SUPPLIER");
         tube.ReviewIntake(LabSpecimenIntakeDisposition.Rejected, "damaged_container", "Destroyed on arrival", actor, now);
         Assert.Null(tube.Location);
         Assert.Equal(LabContainerStatus.Rejected, tube.Status);

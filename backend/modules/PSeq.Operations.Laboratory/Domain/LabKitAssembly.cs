@@ -105,6 +105,12 @@ public sealed class LabKitAssemblyRun : LabAuditedEntity
     public Guid? FinishedByUserId { get; private set; }
     public DateTime? FinishedAtUtc { get; private set; }
     public string? AbandonmentReason { get; private set; }
+    public string? DraftNotes { get; private set; }
+    public string? DraftVerificationJson { get; private set; }
+    public DateTime? LabelPrintRequestedAtUtc { get; private set; }
+    public Guid? LabelPrintRequestedByUserId { get; private set; }
+    public DateTime? ContainerBarcodeVerifiedAtUtc { get; private set; }
+    public Guid? ContainerBarcodeVerifiedByUserId { get; private set; }
     private LabKitAssemblyRun() { }
     public LabKitAssemblyRun(Guid stockKitId, LabKitAssemblyWorkflowRevision revision, Guid actorId, DateTime utcNow)
     {
@@ -123,6 +129,35 @@ public sealed class LabKitAssemblyRun : LabAuditedEntity
         if (Status != LabKitAssemblyRunStatus.InProgress || proposedLotId == Guid.Empty
             || priorTubeLotIds.Any(item => item != proposedLotId))
             throw new InvalidOperationException("Use one source tube lot per physical kit.");
+    }
+    public void SaveDraftEvidence(string? notes, IReadOnlyList<string> verification)
+    {
+        if (Status != LabKitAssemblyRunStatus.InProgress) throw new InvalidOperationException("Only an active assembly can be edited.");
+        if (notes?.Trim().Length > 4000) throw new ArgumentException("Use 4,000 characters or fewer for assembly notes.");
+        DraftNotes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
+        DraftVerificationJson = JsonSerializer.Serialize(verification);
+    }
+    public void RequestLabelPrint(Guid actorId, DateTime utcNow)
+    {
+        if (Status != LabKitAssemblyRunStatus.InProgress || actorId == Guid.Empty || utcNow.Kind != DateTimeKind.Utc)
+            throw new InvalidOperationException("Print a label for an active assembly.");
+        LabelPrintRequestedAtUtc ??= utcNow;
+        LabelPrintRequestedByUserId ??= actorId;
+    }
+    public void ConfirmContainerBarcode(string scanned, string expected, Guid actorId, DateTime utcNow)
+    {
+        if (Status != LabKitAssemblyRunStatus.InProgress || !LabelPrintRequestedAtUtc.HasValue
+            || actorId == Guid.Empty || utcNow.Kind != DateTimeKind.Utc)
+            throw new InvalidOperationException("Print the container label before scanning the affixed barcode.");
+        if (!string.Equals(scanned, expected, StringComparison.Ordinal))
+            throw new InvalidOperationException("Scan the attached barcode for this container.");
+        ContainerBarcodeVerifiedAtUtc ??= utcNow;
+        ContainerBarcodeVerifiedByUserId ??= actorId;
+    }
+    public void RequireContainerLabel()
+    {
+        if (!LabelPrintRequestedAtUtc.HasValue || !ContainerBarcodeVerifiedAtUtc.HasValue)
+            throw new InvalidOperationException("Print the container label, affix it, then scan its barcode before completion.");
     }
     public void RecordStep(int sequence)
     {
@@ -159,14 +194,15 @@ public sealed class LabKitAssemblyStepRecord
     public Guid PerformedByUserId { get; private set; }
     public DateTime PerformedAtUtc { get; private set; }
     private LabKitAssemblyStepRecord() { }
-    public LabKitAssemblyStepRecord(Guid runId, int sequence, Guid stepVersionId, string notes, Guid actorId, DateTime utcNow)
+    public LabKitAssemblyStepRecord(Guid runId, int sequence, Guid stepVersionId, string? notes, Guid actorId, DateTime utcNow)
     {
         if (runId == Guid.Empty || stepVersionId == Guid.Empty || actorId == Guid.Empty || sequence < 0)
             throw new ArgumentException("Record an approved step, run, and operator.");
         RunId = runId;
         Sequence = sequence;
         LabStepVersionId = stepVersionId;
-        Notes = LabAuditedEntity.Required(notes, nameof(notes), 4000);
+        Notes = notes?.Trim() ?? string.Empty;
+        if (Notes.Length > 4000) throw new ArgumentException("Use 4,000 characters or fewer for assembly notes.", nameof(notes));
         PerformedByUserId = actorId;
         PerformedAtUtc = utcNow;
     }

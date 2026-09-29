@@ -38,6 +38,10 @@ public static class LabKitAssemblyModelConfiguration
             e.Property(x => x.StepsJson).HasColumnType("jsonb").IsRequired();
             e.Property(x => x.Status).HasConversion<string>().HasMaxLength(30).IsRequired();
             e.Property(x => x.AbandonmentReason).HasMaxLength(2000);
+            e.Property(x => x.DraftNotes).HasMaxLength(4000);
+            e.Property(x => x.DraftVerificationJson).HasColumnType("jsonb");
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.LabelPrintRequestedByUserId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.ContainerBarcodeVerifiedByUserId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => x.StockKitId).IsUnique();
             e.HasOne<SampleShippingStockKit>().WithMany().HasForeignKey(x => x.StockKitId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<LabKitAssemblyWorkflowRevision>().WithMany().HasForeignKey(x => x.WorkflowRevisionId).OnDelete(DeleteBehavior.Restrict);

@@ -77,7 +77,8 @@ public partial class SampleShippingPostgresTests
             var stale = await Assert.ThrowsAsync<OrderManagementException>(() => catalog.UpdateProduct(supplier.Id, created.Id,
                 new("BOX-OLD", "Stale container", LabProductType.ShippingContainerId,
                     Version: created.Version, TubeCapacity: 20), default));
-            Assert.Equal("supplier_catalog_conflict", stale.ErrorCode);
+            Assert.Equal("supplier_catalog_changed", stale.ErrorCode);
+            Assert.Equal(409, stale.StatusCode);
         }
         finally { await transaction.RollbackAsync(); scope.ClearTrackedState(); }
     }

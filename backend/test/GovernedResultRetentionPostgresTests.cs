@@ -240,6 +240,8 @@ public sealed class GovernedResultRetentionPostgresTests
             var db = new PSeqOperationsDbContext(options, Options.Create(new PersistenceOptions()));
             var services = new ServiceCollection().AddLogging().AddControllers().Services.BuildServiceProvider();
             var scope = new Scope(db, await db.Database.BeginTransactionAsync(), services);
+            if (!await db.ReleasedDeliverablePolicyDefaults.AnyAsync(value => value.IsActive))
+                db.Add(new ReleasedDeliverablePolicyDefault(1, ReleasedDeliverablePolicyValues.Create(30, 5, 5), "Synthetic retention fixture"));
             scope.Organization = new($"Retention {Guid.NewGuid():N}", OrganizationKind.Customer);
             var identity = new ExternalIdentity("test", Guid.NewGuid().ToString("N"), $"retention-{Guid.NewGuid():N}@example.test", true);
             scope.Actor = new(identity.Email, "Synthetic", "Member");

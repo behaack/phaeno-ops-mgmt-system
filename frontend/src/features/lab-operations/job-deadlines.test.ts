@@ -15,8 +15,8 @@ describe('Jobs navigation state', () => {
   })
   it('rejects unsupported filters without restoring Show complete', () => {
     expect(parseJobListSearch({ jobDeadline: 'NeedsDueDate', jobStatus: '__proto__', jobOutcome: 'Failed', jobPage: -4 })).toMatchObject({ jobDeadline: undefined, jobStatus: undefined, jobOutcome: undefined, jobPage: undefined })
-    expect(parseJobListSearch({ jobDeadline: 'Cancelled', jobSearch: 'ABC' })).toMatchObject({ jobView: 'Closed', jobOutcome: 'Cancelled', jobClosedSearch: 'ABC', jobDeadline: undefined })
-    expect(parseJobListSearch({ showComplete: true })).toMatchObject({ jobView: 'Closed' })
+    expect(parseJobListSearch({ jobDeadline: 'Cancelled', jobSearch: 'ABC' })).toMatchObject({ jobView: undefined, jobSearch: 'ABC', jobOutcome: undefined, jobClosedSearch: undefined, jobDeadline: undefined })
+    expect(parseJobListSearch({ showComplete: true })).toMatchObject({ jobView: undefined })
   })
 })
 describe('Jobs calendar date filters', () => {

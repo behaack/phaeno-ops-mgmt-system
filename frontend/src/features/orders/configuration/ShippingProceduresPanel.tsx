@@ -39,15 +39,20 @@ const procedureHints: Record<typeof procedureFields[number][0], string> = {
   requiredDocuments: 'List documents to include, or explicitly state that none are required.',
   exceptionInstructions: 'What to do about delays, damage or handling problems, including whom to contact.',
 }
-const requiredText = z.string().trim().max(4000)
+const draftInstructionText = z.string().trim().max(4000)
 const schema = z.object({
   name: z.string().trim().min(1, 'Enter a procedure name.').max(255),
   description: z.string().trim().max(4000),
-  packingInstructions: requiredText, temperatureInstructions: requiredText, carrierInstructions: requiredText,
-  dispatchInstructions: requiredText, requiredDocuments: requiredText, exceptionInstructions: requiredText,
+  packingInstructions: draftInstructionText, temperatureInstructions: draftInstructionText, carrierInstructions: draftInstructionText,
+  dispatchInstructions: draftInstructionText, requiredDocuments: draftInstructionText, exceptionInstructions: draftInstructionText,
   internationalCustomsInstructions: z.string().trim().max(4000),
 })
 type Values = z.infer<typeof schema>
+
+function missingProcedureActivationFields(item: SampleShippingProcedure) {
+  const fields = [['name', 'Name'], ...procedureFields] as const
+  return fields.filter(([key]) => !item[key].trim()).map(([, label]) => label)
+}
 
 export function ShippingProceduresPanel({ procedures, procedureId, configuration }: { procedures: SampleShippingProcedure[]; procedureId?: string; configuration: SampleShippingConfiguration }) {
   const [editor, setEditor] = useState<SampleShippingProcedure | null | undefined>()
@@ -80,6 +85,7 @@ export function ShippingProceduresPanel({ procedures, procedureId, configuration
   }) : []
   const priorRevisions = procedures.filter(item => !latest.some(current => current.id === item.id))
   const affected = statusChange && !statusChange.isActive ? affectedSampleTypesAfterProcedureDeactivation(statusChange.item.id, configuration) : []
+  const missingActivationFields = statusChange?.isActive ? missingProcedureActivationFields(statusChange.item) : []
   function openStatusChange(item: SampleShippingProcedure, isActive: boolean, sourceId: string) { returnFocusId.current = sourceId; changeStatus.reset(); setStatusChange({ item, isActive }) }
   return <div className="space-y-5">
     {procedureId ? <>
@@ -115,10 +121,18 @@ export function ShippingProceduresPanel({ procedures, procedureId, configuration
     </Card>}
     {editor !== undefined ? <ProcedureEditor source={editor} onClose={() => setEditor(undefined)} onSaved={item => { setEditor(undefined); void navigate({ to: '/sample-shipping-settings', search: { shippingSection: 'procedures', procedureId: item.id } }) }} /> : null}
     {statusChange ? <Dialog open onOpenChange={open => { if (!open && !changeStatus.isPending) setStatusChange(null) }}><DialogContent showCloseButton={!changeStatus.isPending} onCloseAutoFocus={event => { event.preventDefault(); (actionsTriggerRef.current?.isConnected ? actionsTriggerRef.current : document.getElementById(`shipping-procedure-${returnFocusId.current}`))?.focus() }}>
-      <DialogHeader><DialogTitle>{statusChange.isActive ? 'Activate shipping procedure?' : 'Deactivate shipping procedure?'}</DialogTitle><DialogDescription>{statusChange.item.name} · revision {statusChange.item.revision}. {statusChange.isActive ? 'Makes this revision current for newly placed Jobs.' : 'Stops new Jobs from using this procedure. Already placed Jobs continue on their saved revision unless a separate safety hold is placed.'} Issued packets keep their saved instructions.</DialogDescription></DialogHeader>
+      <DialogHeader><DialogTitle>{statusChange.isActive ? 'Activate shipping procedure?' : 'Deactivate shipping procedure?'}</DialogTitle><DialogDescription>{statusChange.item.name} · revision {statusChange.item.revision}.</DialogDescription></DialogHeader>
+      <div className="space-y-3 text-sm">
+        <p>{statusChange.isActive ? 'Makes this revision current for newly placed Jobs. Once activated, changes require a new Draft revision.' : 'Stops new Jobs from using this procedure. Already placed Jobs continue on their saved revision unless a separate safety hold is placed.'} Issued packets keep their saved instructions.</p>
+        {statusChange.isActive ? missingActivationFields.length ? <div id="procedure-activation-requirements" className="rounded-md border bg-muted/40 p-3">
+          <p className="font-medium">Complete these fields before activation</p>
+          <ul className="mt-2 list-disc space-y-1 pl-5">{missingActivationFields.map(label => <li key={label}>{label}</li>)}</ul>
+          <p className="mt-3 text-muted-foreground">Choose Cancel, then Actions → Edit Draft to complete and save these instructions.</p>
+        </div> : <p className="text-muted-foreground">All required instruction sections are complete.</p> : null}
+      </div>
       {affected.length ? <Alert variant="destructive"><AlertTitle>{affected.length} Active Sample {affected.length === 1 ? 'type uses' : 'types use'} this procedure</AlertTitle><AlertDescription>These Sample types will have no Active procedure for new Orders: {affected.slice(0, 3).map(item => item.name).join('; ')}{affected.length > 3 ? `; and ${affected.length - 3} more` : ''}.</AlertDescription></Alert> : null}
       {changeStatus.error ? <Alert variant="destructive"><AlertTitle>Procedure status was not changed</AlertTitle><AlertDescription>{getOrderErrorMessage(changeStatus.error, 'Refresh Shipping procedures and try again.')}</AlertDescription></Alert> : null}
-      <RequiredDialogFooter showLegend={false}><Button type="button" variant="outline" disabled={changeStatus.isPending} onClick={() => setStatusChange(null)}>Cancel</Button><Button type="button" variant={statusChange.isActive ? 'default' : 'destructive'} disabled={changeStatus.isPending} onClick={() => changeStatus.mutate(statusChange)}>{changeStatus.isPending ? 'Saving…' : statusChange.isActive ? 'Activate' : 'Deactivate'}</Button></RequiredDialogFooter>
+      <RequiredDialogFooter showLegend={false}><Button type="button" variant="outline" disabled={changeStatus.isPending} onClick={() => setStatusChange(null)}>Cancel</Button><Button type="button" variant={statusChange.isActive ? 'default' : 'destructive'} disabled={changeStatus.isPending || missingActivationFields.length > 0} aria-describedby={missingActivationFields.length ? 'procedure-activation-requirements' : undefined} onClick={() => changeStatus.mutate(statusChange)}>{changeStatus.isPending ? 'Saving…' : statusChange.isActive ? 'Activate' : 'Deactivate'}</Button></RequiredDialogFooter>
     </DialogContent></Dialog> : null}
     {discardDraft ? <Dialog open onOpenChange={open => { if (!open && !discard.isPending) setDiscardDraft(null) }}><DialogContent><DialogHeader><DialogTitle>Discard Draft revision {discardDraft.revision}?</DialogTitle><DialogDescription>The revision remains in audit history and its number will not be reused. The current released revision stays available.</DialogDescription></DialogHeader>{discard.error ? <Alert variant="destructive"><AlertTitle>Draft was not discarded</AlertTitle><AlertDescription>{getOrderErrorMessage(discard.error, 'Refresh the Draft and try again.')}</AlertDescription></Alert> : null}<RequiredDialogFooter showLegend={false}><Button variant="outline" onClick={() => setDiscardDraft(null)} disabled={discard.isPending}>Cancel</Button><Button variant="destructive" onClick={() => discard.mutate(discardDraft)} disabled={discard.isPending}>{discard.isPending ? 'Discarding…' : 'Discard Draft'}</Button></RequiredDialogFooter></DialogContent></Dialog> : null}
   </div>
@@ -181,12 +195,12 @@ function ProcedureEditor({ source, onClose, onSaved }: { source: SampleShippingP
   function close() { if (!mutation.isPending && (!form.formState.isDirty || window.confirm('Discard the unsaved procedure changes?'))) onClose() }
   const errors = form.formState.errors
   return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent className="sm:max-w-2xl">
-      <DialogHeader><DialogTitle>{source?.lifecycle === 'Draft' ? `Edit Draft revision ${source.revision}` : source ? `Create ${source.name} revision ${source.revision + 1}` : 'Add shipping procedure'}</DialogTitle><DialogDescription>Save an incomplete Draft and finish it later. Activate it from Actions when all shared instructions are complete. Placed Jobs keep their pinned procedure revision.</DialogDescription></DialogHeader>
+      <DialogHeader><DialogTitle>{source?.lifecycle === 'Draft' ? `Edit Draft revision ${source.revision}` : source ? `Create ${source.name} revision ${source.revision + 1}` : 'Add shipping procedure'}</DialogTitle><DialogDescription>Only Name is required to save a Draft. Complete all fields marked * before activating it from Actions. Placed Jobs keep their pinned procedure revision.</DialogDescription></DialogHeader>
     {mutation.error ? <Alert variant="destructive"><AlertTitle>Procedure was not saved</AlertTitle><AlertDescription>{getOrderErrorMessage(mutation.error, 'Review the instructions and try again.')}</AlertDescription></Alert> : null}
     <form id="shipping-procedure-form" noValidate onSubmit={form.handleSubmit(values => mutation.mutate(values))}><fieldset disabled={mutation.isPending} className="space-y-4">
       <div><Label htmlFor="procedure-name"><RequiredFieldName>Name</RequiredFieldName></Label><Input id="procedure-name" className="mt-2" aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? 'procedure-name-error' : undefined} {...form.register('name')} />{errors.name ? <p id="procedure-name-error" role="alert" className="text-sm text-destructive">{errors.name.message}</p> : null}</div>
       <div><Label htmlFor="procedure-description">Description</Label><Textarea id="procedure-description" className="mt-2" rows={3} aria-invalid={Boolean(errors.description)} aria-describedby={errors.description ? 'procedure-description-error' : undefined} {...form.register('description')} />{errors.description ? <p id="procedure-description-error" role="alert" className="text-sm text-destructive">{errors.description.message}</p> : null}</div>
-      {procedureFields.map(([key, label]) => <div key={key}><Label htmlFor={`procedure-${key}`}>{label}</Label><p id={`procedure-${key}-help`} className="mt-1 text-xs text-muted-foreground">{procedureHints[key]}</p><Textarea id={`procedure-${key}`} className="mt-2" rows={3} aria-invalid={Boolean(errors[key])} aria-describedby={`procedure-${key}-help${errors[key] ? ` procedure-${key}-error` : ''}`} {...form.register(key)} />{errors[key] ? <p id={`procedure-${key}-error`} role="alert" className="text-sm text-destructive">{errors[key].message}</p> : null}</div>)}
+      {procedureFields.map(([key, label]) => <div key={key}><Label htmlFor={`procedure-${key}`}><RequiredFieldName>{label}</RequiredFieldName></Label><p id={`procedure-${key}-help`} className="mt-1 text-xs text-muted-foreground">Required to activate. {procedureHints[key]}</p><Textarea id={`procedure-${key}`} className="mt-2" rows={3} aria-invalid={Boolean(errors[key])} aria-describedby={`procedure-${key}-help${errors[key] ? ` procedure-${key}-error` : ''}`} {...form.register(key)} />{errors[key] ? <p id={`procedure-${key}-error`} role="alert" className="text-sm text-destructive">{errors[key].message}</p> : null}</div>)}
       <div><Label htmlFor="procedure-customs">International customs</Label><Textarea id="procedure-customs" className="mt-2" rows={3} aria-invalid={Boolean(errors.internationalCustomsInstructions)} aria-describedby={errors.internationalCustomsInstructions ? 'procedure-customs-error' : undefined} {...form.register('internationalCustomsInstructions')} />{errors.internationalCustomsInstructions ? <p id="procedure-customs-error" role="alert" className="text-sm text-destructive">{errors.internationalCustomsInstructions.message}</p> : null}</div>
     </fieldset></form>
     <RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button form="shipping-procedure-form" type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Saving…' : source?.lifecycle === 'Draft' ? 'Save Draft' : 'Create Draft'}</Button></RequiredDialogFooter>

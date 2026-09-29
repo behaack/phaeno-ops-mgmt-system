@@ -151,7 +151,7 @@ export type ShippingStockKit = {
   tubeCorrections?: Array<{ previousBarcode: string; replacementBarcode: string; reason: string; correctedByUserId: string; correctedAt: string }> | null
   productExpirations?: Array<{ supplierProductId: string; supplierName: string; productNumber: string; canExpire: boolean; expirationDate: string | null }> | null
 }
-export type ShippingStockKitWrite = { containerDefinitionId: string; tubeSupplierProductId: string; shipperSupplierProductId: string; tubeLotNumber: string | null; productExpirations?: Array<{ supplierProductId: string; expirationDate: string }> }
+export type ShippingStockKitWrite = { assemblyRequestId?: string; containerDefinitionId: string; tubeSupplierProductId: string; shipperSupplierProductId: string; tubeLotNumber: string | null; productExpirations?: Array<{ supplierProductId: string; expirationDate: string }> }
 export type ShippingStockKitDispatch = { shipmentId?: string; requestId?: string; deliveryLocationId?: string; version: number; outboundCarrier: string; outboundTrackingNumber: string; fulfilledAt: string; confirmUnavailableFixedDestination?: boolean }
 const stockPath = '/platform/sample-shipping/stock-kits'
 export async function getShippingStockKits() { return read((await api.get<Envelope<ShippingStockKit[]>>(stockPath)).data) }

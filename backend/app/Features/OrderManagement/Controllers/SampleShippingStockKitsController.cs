@@ -37,6 +37,23 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
     {
         var actor = await context.RequirePlatformAdminAsync(HttpContext, ct);
         await using var transaction = db.Database.CurrentTransaction is null ? await db.Database.BeginTransactionAsync(ct) : null;
+        if (request.AssemblyRequestId == Guid.Empty) throw Invalid("Use a valid assembly request identity.");
+        var requestedBarcode = request.AssemblyRequestId.HasValue ? $"KIT-{request.AssemblyRequestId.Value:N}".ToUpperInvariant() : null;
+        if (requestedBarcode is not null)
+        {
+            await SampleShippingPackingData.LockAsync(db, $"kit-create:{requestedBarcode}", ct);
+            var existing = await db.SampleShippingStockKits.AsNoTracking().SingleOrDefaultAsync(item => item.KitNumber == requestedBarcode, ct);
+            if (existing is not null)
+            {
+                var ownerId = await db.LabKitAssemblyRuns.AsNoTracking().Where(item => item.StockKitId == existing.Id)
+                    .Select(item => (Guid?)item.StartedByUserId).SingleOrDefaultAsync(ct);
+                if (ownerId != actor.Id || existing.ContainerDefinitionId != request.ContainerDefinitionId
+                    || existing.TubeSupplierProductId != request.TubeSupplierProductId || existing.ShipperSupplierProductId != request.ShipperSupplierProductId)
+                    throw Conflict("This assembly request already belongs to another kit. Review the saved assembly.");
+                if (transaction is not null) await transaction.CommitAsync(ct);
+                return Ok(await ReadAsync(existing.Id, ct));
+            }
+        }
         var scope = await db.SampleShippingContainerDefinitions.AsNoTracking()
             .Where(item => item.Id == request.ContainerDefinitionId)
             .Select(item => new { item.ContainerTypeId, item.SampleTypeAnchorId,
@@ -113,7 +130,7 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
         SampleShippingStockKit kit;
         try
         {
-            kit = new SampleShippingStockKit($"KIT-{Guid.NewGuid():N}".ToUpperInvariant(), definition.Id,
+            kit = new SampleShippingStockKit(requestedBarcode ?? $"KIT-{Guid.NewGuid():N}".ToUpperInvariant(), definition.Id,
                 SampleShippingContainerCatalogService.Snapshot(definition), definition.TubeCapacity,
                 tube.SupplierName, tube.ProductNumber, request.TubeLotNumber,
                 shipper.SupplierName, shipper.ProductNumber,
@@ -136,32 +153,7 @@ public sealed class SampleShippingStockKitsController(PSeqOperationsDbContext db
         await using var transaction = await SampleShippingPackingData.BeginAsync(db, $"stock-kit:{id}", ct);
         var kit = await db.SampleShippingStockKits.Include(item => item.Tubes).SingleOrDefaultAsync(item => item.Id == id, ct) ?? throw Missing();
         Version(kit.Version, request.Version);
-        if (kit.FulfilledAt.HasValue || kit.TubesVerifiedAt.HasValue) throw Conflict("A verified or dispatched tube roster cannot be extended. Correct a mistaken scan before verification.");
-        var codes = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var value in request.SupplierBarcodes ?? [])
-        {
-            if (!SupplierTubeBarcode.TryNormalize(value, out var code)) throw Invalid("Scan a complete barcode for each tube.");
-            if (!codes.Add(code)) throw Conflict("A tube barcode was scanned more than once.");
-        }
-        if (codes.Count == 0) throw Invalid("Scan at least one tube.");
-        if (kit.Tubes.Count + codes.Count > kit.TubeCapacity) throw Conflict($"This standard kit holds {kit.TubeCapacity} tubes.");
-        foreach (var code in codes.Order(StringComparer.Ordinal)) await SampleShippingPackingData.LockAsync(db, $"supplier-tube:{code}", ct);
-        var barcodeNamespace = kit.TubeBarcodeNamespace;
-        if (await db.SampleShippingStockTubes.AnyAsync(item => codes.Contains(item.SupplierBarcode)
-                && (item.BarcodeNamespace == barcodeNamespace), ct)
-            || await db.RegisteredSampleTubes.AnyAsync(item => codes.Contains(item.SupplierBarcode)
-                && (item.BarcodeNamespace == barcodeNamespace), ct)
-            || await db.LabContainers.AnyAsync(item => codes.Contains(item.Barcode.ToUpper())
-                && (item.BarcodeNamespace == barcodeNamespace), ct)
-            || await db.LabPreparationBatches.AnyAsync(item => (item.TrayBarcode != null && codes.Contains(item.TrayBarcode.ToUpper())) || codes.Contains(item.Name.ToUpper()), ct))
-            throw Conflict("A scanned tube barcode is already registered. No tubes were added.");
-        foreach (var code in codes)
-        {
-            var tube = new SampleShippingStockTube(kit.Id, code, kit.TubeBarcodeNamespace, kit.TubeSupplierProductId);
-            kit.Tubes.Add(tube);
-            db.SampleShippingStockTubes.Add(tube);
-        }
-        db.Entry(kit).Property(item => item.Version).IsModified = true;
+        await SampleShippingStockTubeRegistration.AddAsync(db, kit, request.SupplierBarcodes, ct);
         await db.SaveChangesAsync(ct);
         if (transaction is not null) await transaction.CommitAsync(ct);
         return await ReadAsync(id, ct);

@@ -119,6 +119,44 @@ describe('SampleShippingConfigurationPanel', () => {
     expect(screen.getByRole('link', { name: 'Extracted RNA' })).toBeTruthy()
   })
 
+  it('lists every missing instruction section and blocks activation of an incomplete Draft', async () => {
+    const draft = {
+      ...configuration.procedures[0], id: 'incomplete-procedure', isActive: false, lifecycle: 'Draft' as const,
+      packingInstructions: '', temperatureInstructions: '   ', carrierInstructions: '',
+      dispatchInstructions: '', requiredDocuments: '', exceptionInstructions: '',
+    }
+    apiMocks.getConfiguration.mockResolvedValue({ ...configuration, procedures: [draft] })
+    renderPanel('procedures')
+    fireEvent.keyDown(await screen.findByRole('button', { name: `Actions for ${draft.name}` }), { key: 'ArrowDown' })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Activate' }))
+    const dialog = within(screen.getByRole('dialog', { name: 'Activate shipping procedure?' }))
+    expect(dialog.getByText('Complete these fields before activation')).toBeTruthy()
+    expect(dialog.getAllByRole('listitem').map(item => item.textContent)).toEqual([
+      'Common preparation and packing', 'Transit handling', 'Carrier guidance',
+      'Dispatch timing', 'Documents to include', 'Delays, damage and other exceptions',
+    ])
+    expect((dialog.getByRole('button', { name: 'Activate' }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.click(dialog.getByRole('button', { name: 'Activate' }))
+    expect(apiMocks.setProcedureStatus).not.toHaveBeenCalled()
+    fireEvent.click(dialog.getByRole('button', { name: 'Cancel' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('explains activation requirements while still saving a name-only Draft', async () => {
+    apiMocks.createProcedure.mockRejectedValue(new Error('Save unavailable'))
+    renderPanel('procedures')
+    fireEvent.click(await screen.findByRole('button', { name: 'Add procedure' }))
+    const dialog = within(screen.getByRole('dialog', { name: 'Add shipping procedure' }))
+    expect(dialog.getByText(/Only Name is required to save a Draft/)).toBeTruthy()
+    expect(dialog.getAllByText(/^Required to activate\./)).toHaveLength(6)
+    fireEvent.change(dialog.getByLabelText(/^Name/), { target: { value: 'Unfinished procedure' } })
+    fireEvent.click(dialog.getByRole('button', { name: 'Create Draft' }))
+    await waitFor(() => expect(apiMocks.createProcedure).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'Unfinished procedure', packingInstructions: '', requiredDocuments: '', isActive: false,
+    })))
+    expect(apiMocks.setProcedureStatus).not.toHaveBeenCalled()
+  })
+
   it('sets the default from destination Actions with the saved configuration version', async () => {
     const destination = configuration.destinations[0]
     apiMocks.getConfiguration.mockResolvedValue({ ...configuration, defaultDestinationVersion: 7 })

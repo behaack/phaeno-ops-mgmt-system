@@ -164,6 +164,9 @@ public sealed partial class ManagedReleaseRetentionPostgresTests
             fixture.Actor = new(external.Email, "Synthetic", "Recipient"); fixture.Actor.Activate(); fixture.Actor.LinkExternalIdentity(external.Provider, external.SubjectId);
             fixture.identity = new Identity(external);
             db.AddRange(fixture.Organization, fixture.Actor, new OrganizationMembership(fixture.Actor.Id, fixture.Organization.Id, true));
+            if (!await db.ReleasedDeliverablePolicyDefaults.AnyAsync(value => value.IsActive))
+                db.Add(new ReleasedDeliverablePolicyDefault(1, ReleasedDeliverablePolicyValues.Create(30, 5, 5), "Synthetic managed retention fixture"));
+            await db.SaveChangesAsync();
             var department = fixture.Organization.Departments.Single();
             Guid parent;
             AssemblyOutputRelease? output = null;

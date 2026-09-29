@@ -18,9 +18,9 @@ The [material tracking contract](plans/LAB-OPERATIONS-CONTRACT.md#material-trans
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
 | `commercial_ops` | 139 | 2259 | 369 |
-| `lab_ops` | 77 | 929 | 152 |
+| `lab_ops` | 77 | 935 | 154 |
 | `website` | 5 | 51 | 4 |
-| **Total** | **222** | **3241** | **525** |
+| **Total** | **222** | **3247** | **527** |
 
 ## `public` schema
 
@@ -4057,10 +4057,16 @@ erDiagram
     lab_kit_assembly_runs {
         uuid id PK "not null"
         character_varying_2000 abandonment_reason "nullable"
+        timestamp_with_time_zone container_barcode_verified_at_utc "nullable"
+        uuid container_barcode_verified_by_user_id FK "nullable"
         timestamp_with_time_zone created_at "not null"
         uuid created_by_user_id "nullable"
+        character_varying_4000 draft_notes "nullable"
+        jsonb draft_verification_json "nullable"
         timestamp_with_time_zone finished_at_utc "nullable"
         uuid finished_by_user_id FK "nullable"
+        timestamp_with_time_zone label_print_requested_at_utc "nullable"
+        uuid label_print_requested_by_user_id FK "nullable"
         integer recorded_step_count "not null"
         timestamp_with_time_zone started_at_utc "not null"
         uuid started_by_user_id FK "not null"
@@ -4113,7 +4119,9 @@ erDiagram
         uuid updated_by_user_id FK "nullable"
         bigint version "not null"
     }
+    users o|--o{ lab_kit_assembly_runs : "container_barcode_verified_by_user_id"
     users o|--o{ lab_kit_assembly_runs : "finished_by_user_id"
+    users o|--o{ lab_kit_assembly_runs : "label_print_requested_by_user_id"
     users ||--o{ lab_kit_assembly_runs : "started_by_user_id"
     sample_shipping_stock_kits ||--o{ lab_kit_assembly_runs : "stock_kit_id"
     lab_kit_assembly_workflow_revisions ||--o{ lab_kit_assembly_runs : "workflow_revision_id"

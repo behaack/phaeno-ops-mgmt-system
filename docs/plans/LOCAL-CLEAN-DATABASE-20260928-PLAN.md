@@ -43,6 +43,8 @@ The complete solution builds with zero warnings and errors. Full frontend TypeSc
 
 ## Later production-hosted test exercise
 
+On September 28 the owner explicitly blocked deployment until a separate deployment plan addresses the new production-hosted test database. `Deploy Portal Green` is disabled in GitHub, and the existing Vercel Git holds remain. This local reset record does not satisfy that gate. The [current hold and required plan scope](../operations-readiness.md#deployment-hold--september-28-2026) cover target isolation, preservation/reset decisions, coordinated backup and restore, replacement preparation, cutover, rollback and acceptance. Do not re-enable deployment controls or perform manual deployments/promotions while the hold applies.
+
 Prepare a separate owner-approved preservation list, including the records and relationships to retain. Inventory the deployed schema and snapshot those records, verify a backup, construct and verify a replacement database against the new model, and review the preserved result before a separately authorized cutover. Never apply this clean baseline as an in-place upgrade to the existing populated database. The future preservation list and execution remain undecided and unperformed.
 
 ## Acceptance
