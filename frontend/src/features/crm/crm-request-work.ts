@@ -108,18 +108,17 @@ export function buildRequestWork(request: RelationshipRequest, facts: RequestWor
       add('service-' + service, 'Enable ' + label + ' for the approved company or department', usable ? 'done' : scheduled ? 'waiting' : 'todo',
         usable ? 'The saved service permission is Ready, currently effective, and linked to this request.'
           : scheduled ? 'The saved service permission is Ready but starts in the future. This step updates when its start date arrives; no change is needed if that date is correct.'
-            : hasEditablePermission ? 'A service permission is already linked to this request. Review and finish that permission rather than adding another.'
-              : 'Approval is recorded. Now save the service permission, called an entitlement. This enables the service; it does not create an order.',
+            : hasEditablePermission ? 'A service permission is already linked to this request. Finish its setup from this request.'
+              : 'Approval is recorded. Save the service permission from this request to enable the approved service; this does not create an order.',
         usable || scheduled ? undefined : hasEditablePermission ? [
-          'Open this Company → Services → Entitlements, find the permission linked to ' + sourceRequest + ', and select Edit.',
-          'Check that Applies to matches the approved scope and review Effective from and Effective to. If the department is inactive, review its status in Company → Departments.',
-          'Set Service configuration to Ready when the approved permission is ready to use, then select Save entitlement. Pending, Blocked, or expired permissions keep this step unfinished.',
+          'In this request, open Actions → Set up approved services. The permission linked to ' + sourceRequest + ' is selected for review.',
+          'Check Applies to and the effective dates. If the department is inactive, review its status in Company → Departments.',
+          'Set Service configuration to Ready when the approved permission is ready to use, then select Save services. Pending, Blocked, or expired permissions keep this step unfinished.',
         ] : [
-          'Open this Company → Services → Entitlements.',
-          'Select Add entitlement. If a matching permission already exists for the approved service and department, select Edit on that permission instead.',
-          'For a new entitlement, select Service: ' + serviceOption + '. Under Applies to, choose the approved department or All departments (organization default).',
-          'Set Effective from to the approved start date; leave Effective to blank if there is no end date. Set Service configuration to Ready when the approved permission is ready to use.',
-          'Under Approved source request, select ' + sourceRequest + '. Select Add entitlement to save, or Save entitlement when editing. Linking the request lets this checklist verify the saved permission.',
+          'In this request, open Actions → Set up approved services.',
+          'Review ' + serviceOption + ' and choose the approved Department under Applies to, or All departments (Company default). Select an existing permission if one covers that scope.',
+          'Set Effective from to the approved start date; leave Effective to blank if there is no end date. Choose Ready when the service can be used, or Pending while setup remains.',
+          'Select Save services. The permission is linked to ' + sourceRequest + ' automatically, so this checklist can verify it.',
         ])
     }
     if (!request.requestedServices.length) {

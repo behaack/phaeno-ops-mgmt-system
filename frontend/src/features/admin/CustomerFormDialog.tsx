@@ -99,7 +99,7 @@ export function CustomerFormDialog({
           }
         }}
       >
-        <DialogHeader className="border-b py-5 pr-12 pl-6">
+        <DialogHeader className="border-b px-6 py-5">
           <DialogTitle>
             {isEditing ? `Edit ${customer.name}` : 'New customer'}
           </DialogTitle>

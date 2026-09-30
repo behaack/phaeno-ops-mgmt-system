@@ -1,7 +1,17 @@
 # Company request work and progress
 
-Status: implemented; local verification complete, including automatic online-access completion. Requested September 19, 2026.
+Status: implemented; local verification complete for the earlier automatic online-access completion. Requested September 19, 2026.
 Owner: [CRM plan](CRM-PLAN.md).
+
+## September 29, 2026 service-change approval simplification
+
+Phaeno platform reviewers need to authorize a Company service change without re-entering the same service on the Company page. The request already names the services; the approval decision now collects the Company or active Department scope, effective dates, and Ready/Pending/Blocked configuration for each service. New permissions default to Pending so the reviewer must deliberately choose Ready when setup is complete. Approval and linked entitlement creation or update save in one transaction. Existing overlapping permissions are selected for review and updated with optimistic concurrency rather than duplicated. The entitlement remains the ordering authority; a future start waits, and Pending or Blocked remains unfinished. No order or scientific work is created.
+
+Already approved service changes use **Actions → Set up approved services** in the same Requests queue to create or update the linked permissions, including later transition from Pending to Ready. If the Company does not yet have an access scope, the service decision can be approved without a grant; after the separately approved online-access setup associates that scope, the same Requests action saves the permission. The server checks the exact requested services, active Department, existing permission identity/version, dates, and overlap. The current manual **Complete request** gate and Customer PSeq operational-readiness requirements remain. This is an additive request API and UI change; there is no persisted-model change or migration.
+
+Acceptance: a new service approval saves its linked entitlement without Company navigation; a prior approval can be fulfilled from Requests; an existing permission is updated without a duplicate; invalid or stale input leaves the approval/permission unchanged; future-effective and Pending states remain visible in Work needed. Success is one review visit for a ready service, with no second service-entry journey. Backend PostgreSQL and frontend regression sources cover the main paths; automated test execution remains request-only under repository policy.
+
+Local static checkpoint: Release build of the API/test project passed with zero warnings or errors; frontend TypeScript and full ESLint passed; the 56-guide documentation corpus check and `git diff --check` passed. The Debug build could not copy DLLs held by the running Visual Studio/IIS Express process, so the Release build was used. Automated tests, signed-in browser acceptance, deployment, and live Company-record changes were not part of this checkpoint.
 
 ## September 22 follow-up — Completion feedback and optional notes
 

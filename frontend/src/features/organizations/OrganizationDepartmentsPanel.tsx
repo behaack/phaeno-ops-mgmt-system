@@ -24,13 +24,14 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { ActionMenu as DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 
-export function OrganizationDepartmentsPanel({ organizationId, organizationAdmin = true, managedDepartmentIds = [], deliveryLocations = false, companyId, manageMembers = true }: {
+export function OrganizationDepartmentsPanel({ organizationId, organizationAdmin = true, managedDepartmentIds = [], deliveryLocations = false, companyId, manageMembers = true, showOrganizationDefaults = true }: {
   organizationId: string
   organizationAdmin?: boolean
   managedDepartmentIds?: string[]
   deliveryLocations?: boolean
   companyId?: string
   manageMembers?: boolean
+  showOrganizationDefaults?: boolean
 }) {
   const client = useQueryClient()
   const [editTarget, setEditTarget] = useState<Department | 'new' | null>(null)
@@ -83,9 +84,9 @@ export function OrganizationDepartmentsPanel({ organizationId, organizationAdmin
 
   return (
     <div className="space-y-5">
-      {organizationAdmin ? <OrganizationDefaultsPanel organizationId={organizationId} /> : null}
-      <Card>
-        <CardHeader>
+      {organizationAdmin && showOrganizationDefaults ? <OrganizationDefaultsPanel organizationId={organizationId} /> : null}
+      <Card className="gap-0 py-0">
+        <CardHeader className="border-b bg-muted/50 p-4">
               <CardTitle>{m.departments}</CardTitle>
               <CardDescription>
                 {m.departmentDescription}
@@ -95,7 +96,7 @@ export function OrganizationDepartmentsPanel({ organizationId, organizationAdmin
               {m.addDepartment}
             </Button></CardAction> : null}
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 p-4">
           {!departments.isPending && !departments.error && !(departments.data ?? []).some((department) => organizationAdmin || managedDepartmentIds.includes(department.id)) ? <p role="status" className="text-sm text-muted-foreground">{m.noDepartments}</p> : null}
           {lifecycle.error && !lifecycleTarget ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(lifecycle.error)} {m.reopenAction}</AlertDescription></Alert> : null}
           {departments.error ? (

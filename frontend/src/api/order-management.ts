@@ -92,6 +92,7 @@ export type OperationalFile = {
 };
 
 export type Quote = {
+  deliveryTargetBusinessDays?: number | null;
   changeScopeSnapshotJson?: string | null;
   acceptedAmendmentSnapshotJson?: string | null;
   id: string;
@@ -321,6 +322,7 @@ export type LabServiceOrder = {
   labReadyForRelease?: boolean;
   requestedSpecimenCount: number;
   sampleTypeDefinitionId?: string | null;
+  usesPairedPreparation?: boolean;
   sampleTypeName?: string | null;
   sourceGroups: LabServiceSourceGroup[];
   sampleRosterFinalizedAt: string | null;
@@ -780,12 +782,49 @@ export async function acceptLabQuote(
   quoteId: string,
   version: number,
   purchaseOrderNumber?: string,
+  confirmedSampleTypeId?: string,
+  kitDeliveryLocation?: { id: string; version: number },
 ) {
   return post<LabServiceOrder>(
     `/lab-service-orders/${orderId}/quotes/${quoteId}/accept`,
-    { version, quoteId, purchaseOrderNumber: purchaseOrderNumber || null },
+    { version, quoteId, purchaseOrderNumber: purchaseOrderNumber || null,
+      confirmedSampleTypeId, kitDeliveryLocationId: kitDeliveryLocation?.id,
+      kitDeliveryLocationVersion: kitDeliveryLocation?.version },
     true,
   );
+}
+export type LabSampleTubePair = {
+  id: string; customerSampleId: string; biologicalSource: string; stockKitId: string; kitNumber: string;
+  supplierTubeBarcode: string; declaredQuantity: number; declaredQuantityUnit: string;
+  sequencingRunCount: number; version: number;
+}
+export type LabSampleTubeWorkspace = {
+  pairs: LabSampleTubePair[];
+  kits: Array<{ id: string; kitNumber: string; tubeCapacity: number; availableTubeCount: number; finishedAt?: string | null; maximumSampleAmount: number | null; sampleAmountUnit: string | null }>;
+  expectedSampleCount: number; expectedSequencingRunCount: number; isFinalized: boolean;
+  minimumSampleAmount: number | null; sampleAmountUnit: string | null;
+}
+export type LabSampleTubePairInput = {
+  orderVersion: number; stockKitId: string; customerSampleId: string; biologicalSource: string;
+  supplierTubeBarcode: string; declaredQuantity: number; declaredQuantityUnit: string; sequencingRunCount: number;
+}
+export async function getLabSampleTubePairs(orderId: string) {
+  return get<LabSampleTubeWorkspace>(`/lab-service-orders/${orderId}/sample-tube-pairs`)
+}
+export async function saveLabSampleTubeKit(orderId: string, orderVersion: number, kitNumber: string) {
+  return post<LabSampleTubeWorkspace>(`/lab-service-orders/${orderId}/sample-tube-pairs/kits`,
+    { orderVersion, kitNumber })
+}
+export async function finishLabSampleTubeKit(orderId: string, kitId: string, orderVersion: number) {
+  return post<LabSampleTubeWorkspace>(`/lab-service-orders/${orderId}/sample-tube-pairs/kits/${kitId}/finish`,
+    { orderVersion })
+}
+export async function addLabSampleTubePair(orderId: string, input: LabSampleTubePairInput) {
+  return post<LabSampleTubeWorkspace>(`/lab-service-orders/${orderId}/sample-tube-pairs`, input)
+}
+export async function removeLabSampleTubePair(orderId: string, pairId: string, version: number, reason: string) {
+  return unwrap((await api.delete<ApiEnvelope<LabSampleTubeWorkspace>>(`/lab-service-orders/${orderId}/sample-tube-pairs/${pairId}`,
+    { data: { version, reason } })).data)
 }
 export async function requestLabQuoteExtension(
   orderId: string,
@@ -1284,6 +1323,7 @@ export async function issuePlatformQuote(
     sourceQuoteId?: string;
     additionalSources?: Array<{ biologicalSource: string; specimenCount: number }>;
     additionalSequencingRunCount?: number;
+    deliveryTargetBusinessDays?: number | null;
   },
 ) {
   const path =

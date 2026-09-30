@@ -146,7 +146,7 @@ function CreateOpportunityHandoffDialog({ open, pending, error, onOpenChange, on
           const data = new FormData(event.currentTarget);
           onSubmit({ summary: String(data.get("summary") ?? "").trim(), internalNotes: nullable(data.get("notes")) });
         }}>
-          <DialogHeader className="px-5 pt-5 pr-12">
+          <DialogHeader className="px-5 pt-5">
             <DialogTitle>Create Customer order handoff</DialogTitle>
             <DialogDescription>
               This creates a pending Customer PSeq Lab Service request. Company request review is required before an order can start.

@@ -4,7 +4,7 @@
 
 On September 28, 2026 the owner requested deletion of the EF migration files, a completely clean local database, and one seeded administrator, `bhaack@phaenobiotech.com`. The owner expanded compatibility cleanup to the entire Portal, local only. This supersedes the selective local preservation decisions from September 19 and the additive purchased-container migration proposed earlier today.
 
-The future production-hosted test reset is a separate exercise. Its preservation list has not been selected or authorized. No production reset, deployment, commit, or push is included here.
+The production-hosted test reset is a separate exercise from this local checkpoint. Its preservation list was not selected or authorized at the time of local execution. The later September 29 owner authorization and completed hosted release are recorded in the [hosted reset plan](HOSTED-CLEAN-DATABASE-20260929-PLAN.md) and [release record](../operations/hosted-clean-reset-release-20260929.md).
 
 ## Engineering decisions
 
@@ -43,10 +43,10 @@ The complete solution builds with zero warnings and errors. Full frontend TypeSc
 
 ## Later production-hosted test exercise
 
-On September 28 the owner explicitly blocked deployment until a separate deployment plan addresses the new production-hosted test database. `Deploy Portal Green` is disabled in GitHub, and the existing Vercel Git holds remain. This local reset record does not satisfy that gate. The [current hold and required plan scope](../operations-readiness.md#deployment-hold--september-28-2026) cover target isolation, preservation/reset decisions, coordinated backup and restore, replacement preparation, cutover, rollback and acceptance. Do not re-enable deployment controls or perform manual deployments/promotions while the hold applies.
+On September 28 the owner explicitly blocked deployment until a separate deployment plan addresses the new production-hosted test database. This local reset record did not satisfy that gate. The [previous hold and required plan scope](../operations-readiness.md#previous-deployment-hold--september-28-2026) covered target isolation, preservation/reset decisions, coordinated backup and restore, replacement preparation, cutover, rollback and acceptance.
 
-Prepare a separate owner-approved preservation list, including the records and relationships to retain. Inventory the deployed schema and snapshot those records, verify a backup, construct and verify a replacement database against the new model, and review the preserved result before a separately authorized cutover. Never apply this clean baseline as an in-place upgrade to the existing populated database. The future preservation list and execution remain undecided and unperformed.
+On September 29 the owner authorized API/UI deployment and the hosted reset, preserving Chris Yourch, William Agnew, Bill Haack and the three built-in product types, with all other application data excluded. The [hosted reset plan](HOSTED-CLEAN-DATABASE-20260929-PLAN.md) and [completed release record](../operations/hosted-clean-reset-release-20260929.md) supersede the earlier undecided hosted scope. The replacement was built from an empty database and verified before cutover; the original populated database did not receive the rebased baseline. `Deploy Portal Green` remains disabled in GitHub and the existing Vercel automatic Git holds remain.
 
 ## Acceptance
 
-One migration recreates all current schemas. Local application rows contain exactly one active administrator and its required access, with no imported activity or catalog products. Built-in defaults remain reproducible. The owner can sign in with the existing local Clerk account. New kit configuration and preparation use only the purchased-container model. Repository scans distinguish genuine compatibility adapters from supported current capabilities. Production remains unchanged.
+At the local checkpoint, one migration recreated all current schemas. Local application rows contained exactly one active administrator and its required access, with no imported activity or catalog products. Built-in defaults remained reproducible. The owner can sign in with the existing local Clerk account. New kit configuration and preparation use only the purchased-container model. Repository scans distinguish genuine compatibility adapters from supported current capabilities. Production was unchanged by that checkpoint; the later hosted release is recorded separately above.

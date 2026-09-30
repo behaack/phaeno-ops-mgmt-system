@@ -89,11 +89,20 @@ one complete set of instructions for their shipment and container.
 | General container notes encouraged a second copy of packing steps. | New containers use combination instructions only; retain earlier notes explicitly for reviewed cleanup. |
 | Assignment previews sounded complete but omitted actual container packing. | Rename to “Preview shared steps” and link to container packing; preserve the selected sample when managing its assignments. |
 | Combined previews repeated the same procedure. | Show each shared procedure once, identify applicable samples and keep sample-specific requirements separate. Include transit limits. |
-| Customers could print without a visible path to full instructions. | Add “Review packing instructions” to shipment Actions and “Review packing and print” as the Send next step. Read the frozen actual-container instructions in place before printing. Preserve revision checks and explicit printed-and-packed confirmation. |
+| Customers could print without a visible path to full instructions. | Show the frozen actual-container instructions before printing. The September 29 refinement below separates review from printing while preserving revision checks and explicit printed-and-packed confirmation. |
 
 No scientific text is automatically deleted or merged. Existing standalone rules,
 legacy notes and issued packets retain their history. Temperature control remains
 free-form and explicitly supports regular ice, dry ice, other methods or no cooling.
+
+## September 29 shipping-instruction actions
+
+For a current Send shipment with an issued insert, the Job's next-step card has
+separate **Review shipping instructions** and **Print shipping insert** buttons.
+The same review command appears in Actions. Its dialog contains the frozen
+instructions without printing guidance or a print button. Printing starts from
+the separate button or Actions, checks the current insert revision, and still
+requires explicit printed-and-packed confirmation before dispatch recording.
 
 ## Authorized release verification
 

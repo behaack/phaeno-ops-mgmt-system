@@ -1,5 +1,14 @@
 # File Management Plan
 
+## Company retention override actions — September 29, 2026
+
+The Company Services → Retention header uses a plus icon for its single **Add
+override** action. Once an override exists, **Edit override** and **Remove
+override** appear in one **Actions** dropdown. Permissions, required reasons,
+reviewed versions, saved policies, and retention deadlines are unchanged. The
+Phaeno guide and existing component interaction checks follow the new action
+location; automated suites and browser review remain request-only.
+
 ## Sample investigation evidence — local implementation, September 18, 2026
 
 The owner approved indefinite internal sample-history, traceability, investigation-report and supporting-report preservation, independently of customer downloadable result retention. The [governance contract](LAB-EVIDENCE-GOVERNANCE-CONTRACT.md) documents the implemented deletion guards and versioned evidence/review controls. No new evidence deletion schedule or external file ownership is introduced.

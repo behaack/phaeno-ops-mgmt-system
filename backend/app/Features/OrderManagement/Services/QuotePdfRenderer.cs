@@ -17,7 +17,7 @@ public sealed record QuotePdfDocument(
     DateTime? AcceptedAt, IReadOnlyList<QuotePdfLine> Lines, decimal Subtotal, decimal Tax,
     decimal Total, string Currency, bool TaxDetermined, string? BillingContactName,
     string? BillingContactEmail, IReadOnlyList<string> BillingAddress, int? PaymentTermsDays,
-    QuotePdfScope? SampleScope = null);
+    QuotePdfScope? SampleScope = null, int? DeliveryTargetBusinessDays = null);
 
 /// <summary>A downloadable presentation of the saved quote, with no commercial recalculation.</summary>
 public static class QuotePdfRenderer
@@ -291,6 +291,11 @@ public static class QuotePdfRenderer
             {
                 y -= 10;
                 Paragraph($"Payment terms: Net {days.ToString(CultureInfo.InvariantCulture)} days.", 10);
+            }
+            if (document.DeliveryTargetBusinessDays is { } businessDays)
+            {
+                y -= 10;
+                Paragraph($"Delivery target: {businessDays} business days after Phaeno physically receives every required tube for all samples. Business days are Monday-Friday, excluding Phaeno holidays.", 10);
             }
             y -= 8;
             Paragraph("Review this quote and its current status in Phaeno Portal.", 9, muted: true);

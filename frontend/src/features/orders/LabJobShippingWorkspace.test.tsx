@@ -7,16 +7,20 @@ import { shippingFixture } from '#/test-helpers/sample-shipping'
 import { LabJobShippingWorkspace } from './LabJobShippingWorkspace'
 import type { LabJobWorkspaceSearch } from './lab-job-workspace-search'
 
-const mocks = vi.hoisted(() => ({ source: vi.fn(), detail: vi.fn(), navigate: vi.fn(), print: vi.fn(), cancel: vi.fn(), activity: vi.fn(), retry: vi.fn() }))
+const mocks = vi.hoisted(() => ({ source: vi.fn(), detail: vi.fn(), navigate: vi.fn(), review: vi.fn(), print: vi.fn(), cancel: vi.fn(), activity: vi.fn(), retry: vi.fn() }))
 vi.mock('#/features/sample-shipping/use-source-sample-shipments', () => ({ useSourceSampleShipments: mocks.source }))
 vi.mock('./LabJobSamplesPanel', () => ({ LabJobSamplesPanel: ({ page, onPageChange }: { page: number; onPageChange: (page: number) => void }) => <section aria-label="Consolidated sample roster"><p>Sample page {page + 1}</p><button onClick={() => onPageChange(page + 1)}>Next sample page</button></section> }))
 vi.mock('#/features/sample-shipping/SampleShippingDetailPage', () => ({
   SampleShippingDetailPage: function MockShipmentDetail(props: ComponentProps<typeof SampleShippingDetailPage>) {
     mocks.detail(props)
     const ref = useRef<HTMLButtonElement>(null)
-    const actions: ShipmentHeaderAction[] = [{ kind: 'command', label: 'Print shipping insert', onSelect: mocks.print }]
+    const actions: ShipmentHeaderAction[] = [
+      { kind: 'command', label: 'Review shipping instructions', variant: 'outline', onSelect: mocks.review },
+      { kind: 'command', label: 'Print shipping insert', onSelect: mocks.print },
+    ]
     const sendRef = useRef<HTMLButtonElement>(null)
-    return <section aria-label="Embedded shipment"><p>Shipment {props.shipmentId}</p>{props.embedded?.renderActions(actions, ref, false)}{props.embedded?.renderSendAction?.(actions[0], sendRef)}{props.embedded?.renderSamples?.()}{props.embedded?.showPreparation ? <p>Tube preparation</p> : null}</section>
+    const printRef = useRef<HTMLButtonElement>(null)
+    return <section aria-label="Embedded shipment"><p>Shipment {props.shipmentId}</p>{props.embedded?.renderActions(actions, ref, false)}{props.embedded?.renderSendAction?.(actions[0], sendRef, actions[1], printRef)}{props.embedded?.renderSamples?.()}{props.embedded?.showPreparation ? <p>Tube preparation</p> : null}</section>
   },
 }))
 
@@ -44,8 +48,11 @@ describe('Lab Job shipping host selection and navigation', () => {
     expect(target.closest('[data-slot="card-header"]')?.textContent).toContain('Samples and shipping')
   })
 
-  it('prints directly from the next-step card without leaving the sample view', () => {
+  it('reviews or prints directly from separate next-step buttons without leaving the sample view', () => {
     render(<Harness />)
+    fireEvent.click(within(screen.getByTestId('next-step-action')).getByRole('button', { name: 'Review shipping instructions' }))
+    expect(mocks.review).toHaveBeenCalledTimes(1)
+    expect(mocks.print).not.toHaveBeenCalled()
     fireEvent.click(within(screen.getByTestId('next-step-action')).getByRole('button', { name: 'Print shipping insert' }))
     expect(mocks.print).toHaveBeenCalledTimes(1)
     expect(mocks.navigate).not.toHaveBeenCalled()

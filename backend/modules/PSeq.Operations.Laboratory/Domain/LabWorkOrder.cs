@@ -23,6 +23,7 @@ public enum LabWorkOrderStatus
 
 public sealed class LabWorkOrder : IAudit, IConcurrency
 {
+    public const string FullReceiptBusinessDayPolicy = "business-days-after-full-receipt";
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid AuthorizationId { get; private set; }
     public int CurrentAuthorizationVersion { get; private set; }
@@ -212,7 +213,7 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
 
     public void RefreshAcceptedSpecimenTargets()
     {
-        if (Specimens.Any(value => value.AcceptedAtUtc.HasValue)) RequireAcceptanceDeadline();
+        if (TurnaroundPolicyKey == FullReceiptBusinessDayPolicy) return;
         if (!MaximumTurnaroundDays.HasValue) return;
         foreach (var specimen in Specimens.Where(value => value.AcceptedAtUtc.HasValue))
             specimen.SetOriginalTarget(MaximumTurnaroundDays.Value);
@@ -223,10 +224,18 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
         if (!HasTimingOverride) ExpectedCompletionAtUtc = OriginalTargetAtUtc;
     }
 
-    public void RequireAcceptanceDeadline()
+    public void RecordFullReceiptDeadline(DateTime lastRequiredTubeReceivedAtUtc, DateTime dueAtUtc)
     {
-        if (!MaximumTurnaroundDays.HasValue && !OriginalDeliveryDueAtUtc.HasValue && !AdjustedDeliveryDueAtUtc.HasValue)
-            throw new InvalidOperationException("Set the job's delivery due date from its Actions menu before accepting samples. No standard turnaround is recorded for this job.");
+        if (TurnaroundPolicyKey != FullReceiptBusinessDayPolicy || !MaximumTurnaroundDays.HasValue)
+            throw new InvalidOperationException("This Job has no full-receipt business-day commitment.");
+        if (OriginalDeliveryDueAtUtc.HasValue) return;
+        if (lastRequiredTubeReceivedAtUtc.Kind != DateTimeKind.Utc || dueAtUtc.Kind != DateTimeKind.Utc
+            || dueAtUtc <= lastRequiredTubeReceivedAtUtc)
+            throw new ArgumentException("The deadline must follow the last required tube receipt.");
+        OriginalTargetAtUtc = dueAtUtc;
+        OriginalDeliveryDueAtUtc = dueAtUtc;
+        if (!HasTimingOverride) ExpectedCompletionAtUtc = dueAtUtc;
+        ProjectionVersion++;
     }
 
     public void AdjustDeliveryDueDate(DateTime dueAtUtc)

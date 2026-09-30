@@ -22,15 +22,15 @@ export function CustomerLabRequestsCard({ view, page, onPageChange, query }: {
   if (!canView) return null
 
   const data = !mock && hasScope && !query.isError ? query.data?.requests : undefined
-  return <Card id="customer-lab-requests" aria-labelledby="customer-lab-requests-heading" className="min-w-0">
-    <CardHeader>
+  return <Card id="customer-lab-requests" aria-labelledby="customer-lab-requests-heading" className="min-w-0 gap-0 py-0">
+    <CardHeader className="border-b bg-muted/50 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <CardTitle id="customer-lab-requests-heading">{view === 'attention' ? 'Requests requiring attention' : view === 'results' ? 'Jobs with new results' : 'Lab service requests'}</CardTitle>
         {data ? <Badge variant="outline">{data.totalCount} {view === 'active' ? 'active ' : ''}{view === 'results' ? data.totalCount === 1 ? 'Job' : 'Jobs' : data.totalCount === 1 ? 'request' : 'requests'}</Badge> : null}
       </div>
       <CardDescription>{view === 'results' ? 'Open a Job to download its released results. A Job can contain more than one new result package.' : 'Open each Job to review pricing, complete requested work, or follow progress. Pricing reviews appear first.'}</CardDescription>
     </CardHeader>
-    <CardContent aria-busy={query.isFetching}>
+    <CardContent className="p-4" aria-busy={query.isFetching}>
       {mock ? <p className="text-sm text-muted-foreground">Live requests are unavailable in mock-session mode.</p>
         : !hasScope ? <p className="text-sm text-muted-foreground">Select a Department to see its requests.</p>
           : query.isError ? <Alert variant="destructive"><AlertTitle>Requests could not be loaded</AlertTitle>
@@ -59,7 +59,7 @@ export function CustomerLabRequestsCard({ view, page, onPageChange, query }: {
               </ul> : <p role="status" className="text-sm text-muted-foreground">{data?.totalCount ? 'No requests on this page. Return to the previous page.' : view === 'results' ? 'No new results awaiting download.' : view === 'attention' ? 'No requests require attention.' : 'No active laboratory requests. Completed requests remain in Lab services.'}</p>}
     </CardContent>
     <CardFooter className="flex flex-wrap justify-between gap-3">
-      <Button asChild variant="ghost"><Link to="/lab-services">View all lab services</Link></Button>
+      <Button asChild variant="outline" className="bg-background"><Link to="/lab-services">View all lab services</Link></Button>
       {data && (page > 1 || data.totalCount > data.pageSize) ? <nav aria-label="Lab request pages" className="flex flex-wrap items-center gap-2">
         <span className="text-xs text-muted-foreground">Page {page} of {Math.max(page, Math.ceil(data.totalCount / data.pageSize))}</span>
         <Button type="button" variant="outline" disabled={page === 1 || query.isFetching} onClick={() => onPageChange(page - 1)}>Previous</Button>

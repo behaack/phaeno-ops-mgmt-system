@@ -135,8 +135,10 @@ executable scientific work, or overwrite POMS-owned operational state.
 1. A CRM company, contact, or lead is not automatically a Portal account.
 2. A Portal Prospect is an approved evaluation tenant, not a CRM lead or
    opportunity stage.
-3. An account proposal begins as a request. Creation or approval alone grants
-   no invitation, membership, service entitlement, order, or laboratory work.
+3. An account proposal begins as a request. Online-access approval grants no
+   invitation, membership, service entitlement, order, or laboratory work.
+   Service-change approval separately saves the reviewed dated entitlement;
+   Ready and effective permissions can be used when other operational gates pass.
 4. A company already approved to buy may be created directly as a pending
    Customer or Partner; it need not pass through Prospect.
 5. Prospect conversion is an explicit, authorized POMS action and preserves
@@ -174,9 +176,10 @@ executable scientific work, or overwrite POMS-owned operational state.
    department setup, or creates the pending internal tenant scope if needed.
    It does not add or remove product or service entitlements, grant membership, or create an
    order.
-6. Staff complete readiness, review or add any remaining approved services,
-   and invite the designated organization administrator through explicit
-   actions.
+6. Staff complete readiness and invite the designated organization administrator
+   through explicit actions. Service-change approvals save their reviewed
+   entitlements in Requests; older approvals and unfinished setup use the
+   request's **Set up approved services** action.
 7. Staff mark the request complete only after the owning setup checks pass.
 
 Order-pricing preparation may begin before step 6 is complete when the active

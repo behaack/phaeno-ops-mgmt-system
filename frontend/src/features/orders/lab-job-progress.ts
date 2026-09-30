@@ -2,8 +2,10 @@ import { hasCompleteSampleIdentification } from './sample-source-capacity'
 import type { LabServiceOrder, Quote } from '#/api/order-management'
 import type { SampleShipmentWorkflow, SampleShippingCrosswalkItem } from '#/api/sample-shipping'
 import type { ShipmentKitSupply } from '#/api/transportation-kit-requests'
+import type { TransportationKitRequest } from '#/api/transportation-kit-requests'
+import type { LabSampleTubeWorkspace } from '#/api/order-management'
 
-export type LabJobProgressStepId = 'confirm-order' | 'samples' | 'kits' | 'containers' | 'tubes' | 'send'
+export type LabJobProgressStepId = 'confirm-order' | 'samples' | 'kits' | 'containers' | 'tubes' | 'receive-kits' | 'prepare' | 'send'
 export type LabJobProgressState = 'not-started' | 'complete' | 'in-progress' | 'waiting-for-you' | 'waiting-for-administrator' | 'waiting-for-phaeno' | 'waiting-for-delivery' | 'needs-attention' | 'unavailable'
 export type LabJobProgressOwner = 'You' | 'Your administrator' | 'Phaeno' | 'Carrier'
 export type LabJobProgressStep = {
@@ -12,6 +14,7 @@ export type LabJobProgressStep = {
   state: LabJobProgressState
   owner: LabJobProgressOwner
   detail: string
+  statusLabel?: string
   actionLabel?: string
 }
 export type LabJobProgressException = { label: string; detail: string; owner: LabJobProgressOwner }
@@ -31,6 +34,10 @@ export type LabJobProgressInput = {
   canManageShipping: boolean
   canAcceptOrder: boolean
   kitSupply?: ShipmentKitSupply
+  kitRequest?: TransportationKitRequest | null
+  kitState?: 'loading' | 'unavailable' | 'ready'
+  pairWorkspace?: LabSampleTubeWorkspace
+  pairState?: 'loading' | 'unavailable' | 'ready'
   now?: number
 }
 
@@ -45,6 +52,14 @@ const labels: Record<LabJobProgressStepId, string> = {
   'confirm-order': 'Confirm pricing', samples: 'Identify and finalize samples',
   kits: 'Have transportation kits ready', containers: 'Assign containers', tubes: 'Match samples to tubes',
   send: 'Send and record shipments',
+  'receive-kits': 'Receive transportation kits', prepare: 'Prepare sample shipment',
+}
+export function transportationKitStageLabel(status?: TransportationKitRequest['status'] | null) {
+  if (status === 'Pending') return 'Preparing your transportation kits'
+  if (status === 'PartiallyDispatched' || status === 'Dispatched') return 'Receive transportation kits'
+  if (status === 'Received') return 'Transportation kits received'
+  if (status === 'Cancelled') return 'Kit order cancelled'
+  return 'Transportation kits'
 }
 const hasDate = (value: string | null | undefined) => !!value && Number.isFinite(Date.parse(value))
 const positiveInteger = (value: number | undefined): value is number => Number.isInteger(value) && value! > 0
@@ -55,6 +70,7 @@ const count = (value: number, singular: string) => `${value} ${singular}${value 
 
 /** Display evidence only. The existing server-backed commands still decide whether a write is allowed. */
 export function buildLabJobProgress(input: LabJobProgressInput): LabJobProgress {
+  if (!input.order.placedAt || input.order.usesPairedPreparation) return buildPairedLabJobProgress(input)
   const { order, shippingState, canManageShipping, canAcceptOrder } = input
   const owner = customerOwner(canManageShipping)
   const readyState = customerState(canManageShipping)
@@ -141,6 +157,57 @@ export function buildLabJobProgress(input: LabJobProgressInput): LabJobProgress 
   steps.push({ ...step('send', allSent ? 'complete' : sent.length > 0 || issued.length > 0 ? 'in-progress' : !allMatched ? 'not-started' : readyState, sendDetail),
     label: singleShipment ? 'Send and record your shipment' : labels.send })
   return finish(steps, allSent, exception, shipmentCount)
+}
+
+function buildPairedLabJobProgress(input: LabJobProgressInput): LabJobProgress {
+  const { order, canManageShipping, canAcceptOrder } = input
+  const owner = customerOwner(canManageShipping)
+  const readyState = customerState(canManageShipping)
+  const accepted = hasDate(order.placedAt) || order.quotes.some(quote => quote.status === 'Accepted' || hasDate(quote.acceptedAt))
+  const first = { ...confirmationStep(order, accepted, canAcceptOrder, input.now ?? Date.now()), label: 'Confirm price and order' }
+  const step = (id: LabJobProgressStepId, state: LabJobProgressState, detail: string, stepOwner = owner): LabJobProgressStep => ({ id, label: labels[id], state, owner: stepOwner, detail })
+  const request = input.kitRequest
+  const kitStatusLabel = !accepted || input.kitState !== 'ready' ? undefined
+    : request?.status === 'Received' ? request.kits.length === 1 ? 'Kit received' : 'Kits received'
+      : request?.kits.some(kit => kit.receivedAt) ? 'Some kits received'
+        : request?.status === 'Dispatched' ? request.kits.length === 1 ? 'Kit sent' : 'Kits sent'
+          : request?.status === 'PartiallyDispatched' ? request.kits.length === 1 ? 'One kit sent' : 'Some kits sent'
+            : request?.status === 'Pending' ? 'Kit order received by Phaeno'
+              : request?.status === 'Cancelled' ? 'Kit order cancelled'
+                : input.pairState === 'ready' && ((input.pairWorkspace?.kits.length ?? 0) > 0 || hasDate(order.sampleRosterFinalizedAt)) ? 'Kit received' : undefined
+  const pairs = input.pairWorkspace?.pairs.length ?? 0
+  const expected = order.requestedSpecimenCount
+  const shipments = input.shipments.filter(item => item.authorizationSourceId === order.id && item.status !== 'Cancelled')
+  const sent = shipments.filter(item => hasDate(item.shippedAt))
+  const allSent = shipments.length > 0 && sent.length === shipments.length && hasDate(order.sampleRosterFinalizedAt)
+  const kits = !accepted ? step('receive-kits', 'not-started', 'Confirm the order first.')
+    : input.kitState !== 'ready' || input.pairState !== 'ready'
+      ? step('receive-kits', 'unavailable', 'Checking kit fulfillment and physical receipt…')
+      : request?.status === 'Received' || !request && ((input.pairWorkspace?.kits.length ?? 0) > 0 || hasDate(order.sampleRosterFinalizedAt))
+        ? step('receive-kits', 'complete', request ? 'All dispatched kits were physically confirmed received.' : 'Compatible received stock covers this Job.')
+        : request?.status === 'Dispatched'
+          ? step('receive-kits', readyState, 'Track the kits and confirm each physical kit after it arrives.')
+          : request?.status === 'PartiallyDispatched'
+            ? step('receive-kits', 'waiting-for-phaeno', 'Some kits are on the way; Phaeno is preparing the rest.', 'Phaeno')
+            : request?.status === 'Pending'
+              ? step('receive-kits', 'waiting-for-phaeno', 'Phaeno is preparing the kit configuration for this Job.', 'Phaeno')
+              : step('receive-kits', 'needs-attention', 'No available received kits were found. Ask Phaeno to review kit fulfillment.', 'Phaeno')
+  const finalized = hasDate(order.sampleRosterFinalizedAt)
+  const prepare = finalized
+    ? step('prepare', 'complete', `${expected} Sample IDs and their physical tube barcodes were confirmed together.`)
+    : !accepted ? step('prepare', 'not-started', 'Confirm the order and receive kits first.')
+      : input.pairState !== 'ready' ? step('prepare', 'unavailable', 'Checking saved sample/tube pairs…')
+        : kits.state !== 'complete' && pairs === 0 ? step('prepare', 'not-started', 'Confirm physical kit receipt before entering Sample IDs and tube barcodes.')
+          : step('prepare', pairs > 0 ? 'in-progress' : readyState,
+            `${pairs} of ${expected} Sample ID/tube pairs saved. Enter and verify one pair at a time.`)
+  const send = allSent ? step('send', 'complete', `All ${shipments.length} return shipments were recorded as sent.`)
+    : !finalized ? step('send', 'not-started', 'Confirm every Sample ID/tube pair before reviewing the shipping insert.')
+      : input.shippingState !== 'ready' ? step('send', 'unavailable', 'Checking return shipments…')
+        : step('send', readyState, `${sent.length} of ${shipments.length} physical kit shipments recorded as sent. Review each insert, pack and record carrier handoff.`)
+  const kitActionLabel = request?.status === 'PartiallyDispatched' || request?.status === 'Dispatched'
+    ? 'Record receipt' : 'View kit order'
+  return finish([first, { ...kits, label: accepted ? transportationKitStageLabel(request?.status) : labels['receive-kits'],
+    statusLabel: kitStatusLabel, actionLabel: kitActionLabel }, prepare, send], allSent, orderException(order), finalized ? shipments.length : null)
 }
 
 function confirmationStep(order: LabServiceOrder, accepted: boolean, allowed: boolean, now: number): LabJobProgressStep {

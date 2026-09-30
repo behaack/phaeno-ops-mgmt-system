@@ -1,5 +1,6 @@
 namespace PhaenoPortal.App.Features.OrderManagement.Services;
 
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.DTOs;
@@ -11,6 +12,25 @@ public static class TransportationKitInventory
     {
         try { kit.EnsurePhysicallyUsable(at); return true; }
         catch (InvalidOperationException) { return false; }
+    }
+    public static bool IsExpirySnapshotUsable(string? snapshotJson, DateTime at)
+    {
+        if (snapshotJson is null || at.Kind != DateTimeKind.Utc) return false;
+        try
+        {
+            using var document = JsonDocument.Parse(snapshotJson);
+            if (document.RootElement.ValueKind != JsonValueKind.Array) return false;
+            foreach (var product in document.RootElement.EnumerateArray())
+            {
+                if (!product.TryGetProperty("canExpire", out var canExpire) || canExpire.ValueKind != JsonValueKind.True)
+                    continue;
+                if (!product.TryGetProperty("expirationDate", out var value) || value.ValueKind != JsonValueKind.String
+                    || !DateOnly.TryParse(value.GetString(), out var expirationDate)
+                    || expirationDate < DateOnly.FromDateTime(at)) return false;
+            }
+            return true;
+        }
+        catch (JsonException) { return false; }
     }
     public static IQueryable<SampleShippingStockKit> AtLocation(PSeqOperationsDbContext db, Guid organizationId, Guid departmentId, Guid? locationId)
         => db.SampleShippingStockKits.AsNoTracking().Where(kit => locationId.HasValue && kit.OrganizationId == organizationId

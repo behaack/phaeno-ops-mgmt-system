@@ -23,7 +23,8 @@ public enum OperationalReadinessBlockerCode
     BillingAddressIncomplete,
     PaymentTermsIncomplete,
     TaxDecisionIncomplete,
-    FinanceTaxApprovalRequired
+    FinanceTaxApprovalRequired,
+    ActiveCustomerDepartmentUserRequired
 }
 
 public sealed record OperationalReadinessInput(

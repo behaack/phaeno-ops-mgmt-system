@@ -193,7 +193,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             var orderOptions = Options.Create(new OrderManagementOptions());
             return new LabServiceOrdersController(context,
                 new OrderRequestContext(context, new FixedIdentityContext(customerIdentity)),
-                new OrderIdempotencyService(context), NullOperationalFileStorage.Instance,
+                new OrderIdempotencyService(context), null!, NullOperationalFileStorage.Instance,
                 Options.Create(new PSeqOrderToCashOptions { NativePSeqAccountsReceivable = true }),
                 new InternalLabOperationsProvider(context),
                 new ReleasedDeliverableDownloadAttemptService(context, orderOptions, NullLogger<ReleasedDeliverableDownloadAttemptService>.Instance),

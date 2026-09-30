@@ -61,6 +61,7 @@ const schema = z.object({
     .min(1)
     .max(100),
   pricingDecisionReason: z.string().trim().max(2000),
+  deliveryTargetBusinessDays: z.coerce.number().int().min(1).max(365).nullable(),
 });
 type FormValues = z.input<typeof schema>;
 type Values = z.output<typeof schema>;
@@ -158,6 +159,7 @@ export function PlatformQuoteDialog({
         version: latestRecord.version,
         tax: workflow === "lab" ? 0 : values.tax,
         expiresAt: values.expiresAt || null,
+        deliveryTargetBusinessDays: workflow === "lab" && values.purpose === "Initial" ? values.deliveryTargetBusinessDays : null,
         pricingDecisionReason:
           workflow === "lab" && amendsProposedPrice
             ? values.pricingDecisionReason
@@ -461,6 +463,12 @@ export function PlatformQuoteDialog({
               <FieldError id="quote-expiration-error">{form.formState.errors.expiresAt?.message}</FieldError>
             </div>
           </div>
+          {workflow === "lab" && form.watch("purpose") === "Initial" ? <div className="space-y-1">
+            <Label htmlFor="quote-delivery-target"><RequiredFieldName>Delivery target (business days)</RequiredFieldName></Label>
+            <Input id="quote-delivery-target" type="number" min={1} max={365} step={1} className="max-w-40" {...form.register("deliveryTargetBusinessDays", { valueAsNumber: true })} aria-invalid={Boolean(form.formState.errors.deliveryTargetBusinessDays)} />
+            <p className="text-xs text-muted-foreground">Starts when Phaeno physically receives every required tube for all samples. Monday–Friday, excluding Phaeno holidays.</p>
+            <FieldError>{form.formState.errors.deliveryTargetBusinessDays?.message}</FieldError>
+          </div> : null}
           <fieldset>
             <legend className="text-sm font-medium">
               <RequiredFieldName>Itemized quote</RequiredFieldName>
@@ -734,6 +742,7 @@ function createDefaultValues(
       expiresAt: "",
       lines: readSavedQuoteLines(sourceQuote),
       pricingDecisionReason: "",
+      deliveryTargetBusinessDays: sourceQuote.deliveryTargetBusinessDays ?? 14,
     };
   }
   const item = workflow === "lab" ? requiredLabItem : undefined;
@@ -751,6 +760,7 @@ function createDefaultValues(
       },
     ],
     pricingDecisionReason: "",
+    deliveryTargetBusinessDays: workflow === "lab" ? 14 : null,
   };
 }
 

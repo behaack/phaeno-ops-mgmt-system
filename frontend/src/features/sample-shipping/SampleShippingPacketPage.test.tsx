@@ -59,16 +59,15 @@ describe('SampleShippingPacketPage', () => {
 
   it('shows frozen packing immediately in the shipment review without a second page or print side effect', async () => {
     api.getPacket.mockResolvedValue({ ...packet, instructionSnapshotJson: JSON.stringify({ containerPacking: { commonName: 'Reviewed shipper', revision: 2, temperatureControlInstructions: 'No cooling required.' } }) })
-    const onPrint = vi.fn()
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-    render(<QueryClientProvider client={client}><SampleShippingPacketPage shipmentId="shipment-1" embedded packingOnly onPrint={onPrint} /></QueryClientProvider>)
+    render(<QueryClientProvider client={client}><SampleShippingPacketPage shipmentId="shipment-1" embedded packingOnly /></QueryClientProvider>)
     expect(await screen.findByText('No cooling required.')).toBeTruthy()
     expect(screen.queryByRole('main')).toBeNull()
     expect(screen.queryByRole('link', { name: 'Back to shipment' })).toBeNull()
     expect(screen.queryByText('Full packing instructions and sample / tube list')).toBeNull()
     expect(window.print).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('button', { name: 'Print shipping insert' }))
-    expect(onPrint).toHaveBeenCalledOnce()
+    expect(screen.queryByText(/Printing creates the receiving sheet/)).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Print shipping insert' })).toBeNull()
   })
 
   it('retains standalone packing in historical packets', async () => {

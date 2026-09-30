@@ -7,10 +7,12 @@ import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger 
 import type { RequestAction } from '#/features/organizations/RequestActionDialog'
 import { useCrmRequestWork } from './use-crm-request-work'
 
+export type CrmRequestAction = RequestAction | 'setupServices'
+
 export function CrmRequestCard({ request, isPending, onAction, onRecover }: {
   request: RelationshipRequest
   isPending: boolean
-  onAction: (action: RequestAction, request: RelationshipRequest) => void
+  onAction: (action: CrmRequestAction, request: RelationshipRequest) => void
   onRecover: (request: RelationshipRequest) => void
 }) {
   const work = useCrmRequestWork(request)
@@ -20,6 +22,7 @@ export function CrmRequestCard({ request, isPending, onAction, onRecover }: {
   const onlineAccess = request.requestType === 'Onboarding' || request.requestType === 'Evaluation'
   const needsAccess = onlineAccess && !request.organizationId
   const relationship = request.requestType === 'RelationshipChange'
+  const serviceChange = request.requestType === 'ServiceChange' && request.requestedServices.length > 0
   const checklistId = 'request-work-' + request.id
   const companySection = onlineAccess ? 'people' : request.requestType === 'ServiceChange' ? 'services' : 'overview'
   const companyAction = onlineAccess ? 'Manage people and invitations'
@@ -62,10 +65,11 @@ export function CrmRequestCard({ request, isPending, onAction, onRecover }: {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64">
             {request.status === 'PendingReview' ? <>
-              <DropdownMenuItem disabled={isPending} onSelect={() => onAction('approve', request)}>{needsAccess ? 'Approve and enable access' : 'Approve request'}</DropdownMenuItem>
+              <DropdownMenuItem disabled={isPending} onSelect={() => onAction('approve', request)}>{needsAccess ? 'Approve and enable access' : serviceChange && request.organizationId ? 'Approve and set up services' : 'Approve request'}</DropdownMenuItem>
               <DropdownMenuItem disabled={isPending} onSelect={() => onAction('decline', request)}>Decline request</DropdownMenuItem>
             </> : null}
             {approved && needsAccess ? <DropdownMenuItem disabled={isPending} onSelect={() => onRecover(request)}>Complete access enablement</DropdownMenuItem> : null}
+            {approved && serviceChange && request.organizationId ? <DropdownMenuItem disabled={isPending} onSelect={() => onAction('setupServices', request)}>Set up approved services</DropdownMenuItem> : null}
             {approved && request.companyId ? <DropdownMenuItem asChild>
               <Link to="/crm/companies/$companyId" params={{ companyId: request.companyId }}
                 search={previous => ({ ...previous, section: companySection })}>{companyAction}</Link>

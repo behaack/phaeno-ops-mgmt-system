@@ -61,6 +61,16 @@ public sealed partial class LabServiceOrdersController
                     throw Invalid("purchase_order_number_required", "A purchase order number is required for this Department.");
                 var profile = await dbContext.OrganizationCommercialProfiles.SingleAsync(value => value.OrganizationId == order.OrganizationId, token);
                 var offering = preview.Offering;
+                if (!request.ConfirmedSampleTypeId.HasValue || request.ConfirmedSampleTypeId != order.SampleTypeDefinitionId
+                    || offering.SupportedSampleTypes?.Any(value => value.Id == request.ConfirmedSampleTypeId && value.IsAvailable) != true)
+                    throw Conflict("sample_type_confirmation_required", "Confirm the Sample type supported by this offering. Review a different order if it needs to change.");
+                if (!request.KitDeliveryLocationId.HasValue || !request.KitDeliveryLocationVersion.HasValue)
+                    throw Invalid("kit_delivery_location_required", "Select and confirm the kit delivery address.");
+                var kitLocation = await dbContext.CustomerDeliveryLocations.AsNoTracking().SingleOrDefaultAsync(item =>
+                    item.Id == request.KitDeliveryLocationId && item.OrganizationId == order.OrganizationId
+                    && item.DepartmentId == order.DepartmentId && item.IsActive, token)
+                    ?? throw Conflict("kit_delivery_location_unavailable", "Choose an active kit delivery address in this Department.");
+                EnsureVersion(kitLocation.Version, request.KitDeliveryLocationVersion.Value);
                 var analyses = await dbContext.AnalysisDefinitions.AsNoTracking().Where(value => offering.AnalysisIds.Contains(value.Id))
                     .Select(value => new { value.Id, value.Name, value.Description, value.SubmissionInstructions,
                         value.RequiredIntakeFieldsJson, value.ResultContractJson, value.Version }).ToListAsync(token);
@@ -70,12 +80,14 @@ public sealed partial class LabServiceOrdersController
                     offering.Currency, offering.UnitPrice, order.RequestedSpecimenCount, preview.Subtotal, preview.Tax!.Value,
                     preview.Total!.Value, offering.AnalysisIds, JsonSerializer.Serialize(analyses, JsonSerializerOptions),
                     offering.IncludedOutputContract, offering.MinimumTurnaroundDays, offering.MaximumTurnaroundDays, now,
-                    offering.SupportedSampleTypes!.Select(type => type.Id).ToArray(), order.RequestedSequencingRunCount);
+                    offering.SupportedSampleTypes!.Select(type => type.Id).ToArray(), order.RequestedSequencingRunCount,
+                    offering.MaximumTurnaroundDays);
                 var lines = JsonSerializer.Serialize(new[] { new { catalogItemId = offering.CatalogItemId,
                     externalItemId = offering.CatalogCode, description = offering.Name,
                     quantity = order.RequestedSequencingRunCount, unitPrice = offering.UnitPrice } }, JsonSerializerOptions);
                 var quote = new LabServiceQuote(order.Id, order.Quotes.Select(value => value.Revision).DefaultIfEmpty(0).Max() + 1,
                     QuotePurpose.Initial, lines, preview.Subtotal, preview.Tax.Value, offering.Currency, now, now.AddDays(1));
+                quote.SetDeliveryTarget(offering.MaximumTurnaroundDays);
                 quote.FreezeCommercialTerms(JsonSerializer.Serialize(new { name = profile.BillingContactName,
                         email = currentTenant.Configuration.BillingContactEmail ?? profile.BillingContactEmail }, JsonSerializerOptions),
                     profile.BillingAddressJson!, profile.PaymentTermsDays, JsonSerializer.Serialize(new {
@@ -97,14 +109,17 @@ public sealed partial class LabServiceOrdersController
                     order.StorageRequirements, order.SafetyDeclaration, serviceKey = OrderServiceKeys.PSeqLabService,
                     materialType = order.SampleTypeMaterialClassSnapshot ?? StandardMaterialType, quantityUnit = StandardQuantityUnit, quoteId = quote.Id,
                     quote.Revision, quote.LinesJson, quote.Total, quote.Currency, acceptedAt = now,
-                    configuredOffering = snapshot, prohibitedDataConfirmed = true
+                    configuredOffering = snapshot, prohibitedDataConfirmed = true,
+                    confirmedSampleTypeId = request.ConfirmedSampleTypeId,
+                    kitDeliveryAddress = kitLocation.ToDto()
                 }, JsonSerializerOptions);
                 var before = order.Status.ToString();
                 await ShippingJobPinning.PinAtPlacementAsync(dbContext, order, token);
                 Execute(() => order.PlaceStandard(quote.Id, snapshot, placement, now));
+                await transportationKits.QueueAtAcceptanceAsync(order, kitLocation, currentTenant.Actor.Id, token);
                 dbContext.OrderStatusEvents.Add(NewEvent(order, before, order.Status.ToString(), currentTenant.Actor.Id));
                 QueueNotice(order, "lab-standard-order-placed", "Standard laboratory order placed",
-                    $"{order.OrderNumber} is placed and awaiting its sample roster.", currentTenant.Actor.Id);
+                    $"{order.OrderNumber} is placed. Phaeno is preparing Transportation kits; confirm physical receipt before pairing samples and tubes.", currentTenant.Actor.Id);
                 await new CommercialSaleSummaryService(dbContext).StageAsync(OrderWorkflowTypes.LabService, order.Id,
                     order.OrganizationId, null, offering.Name, order.RequestedSequencingRunCount, quote.Total, quote.Currency,
                     now, currentTenant.Actor.Id, token);
@@ -119,6 +134,8 @@ public sealed partial class LabServiceOrdersController
     {
         var offering = await new LabServiceOfferingService(dbContext).ReadOneAsync(offeringId, token);
         var blockers = new List<string>();
+        if (!await LabDeliveryCalendarReadiness.HasCoverageAsync(dbContext, offering.MaximumTurnaroundDays, token))
+            blockers.Add("Phaeno must configure an observed-holiday calendar covering this delivery target before the order can be placed.");
         if (!tenant.IsDepartmentAdmin) blockers.Add("An organization or assigned-department administrator must place a standard order.");
         if (order.Status is not (LabServiceOrderStatus.DraftRequest or LabServiceOrderStatus.ChangesRequested))
             blockers.Add("Only an unplaced draft can be placed as a standard order.");

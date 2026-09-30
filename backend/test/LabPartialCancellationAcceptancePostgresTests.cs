@@ -18,9 +18,9 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         var fixture = await scope.CreateQuotedOrderAsync("partial-cancellation", 2);
         var accepted = await scope.AcceptQuoteAsync(fixture);
         var first = await scope.AddReferenceSampleAsync(fixture.OrderId, accepted.Version);
-        var second = await scope.AddReferenceSampleAsync(fixture.OrderId, first.Version);
+        var finished = await scope.FinishCurrentReferenceKitAsync(fixture.OrderId, first.Version);
+        var second = await scope.AddReferenceSampleAsync(fixture.OrderId, finished.Version);
         var authorized = await scope.FinalizeSampleRosterAsync(fixture.OrderId, second.Version, new InternalLabOperationsProvider(scope.DbContext));
-        await scope.SeparateSyntheticShipmentContents(fixture.OrderId);
         var authorization = await scope.DbContext.CommercialLabAuthorizations.SingleAsync(value => value.CommercialOrderId == fixture.OrderId);
         var specimens = await scope.DbContext.LabSpecimens.Where(value => value.LabWorkOrderId == authorization.LabWorkOrderId).OrderBy(value => value.Id).ToArrayAsync();
         specimens[0].RecordReceipt(DateTime.UtcNow, "Intact", "SIMULATED receipt");
@@ -80,27 +80,6 @@ public partial class LabOperationsCommercialHandoffPostgresTests
 
     private sealed partial class HandoffTestScope
     {
-        public async Task SeparateSyntheticShipmentContents(Guid orderId)
-        {
-            // Arrange the same unscanned one-specimen containers produced by packing; no physical dispatch is claimed.
-            var source = await DbContext.SampleShipments.Include(value => value.Items).ThenInclude(value => value.TubeSlots)
-                .SingleAsync(value => value.AuthorizationSourceId == orderId);
-            foreach (var original in source.Items.ToArray())
-            {
-                var shipment = new SampleShipment($"SHP-{Guid.NewGuid():N}"[..24], source.OrganizationId, source.DepartmentId,
-                    source.AuthorizationSource, source.AuthorizationSourceId, source.AuthorizationReference, source.AuthorizationName,
-                    source.LabWorkOrderId, source.DestinationId);
-                shipment.MarkPackingPool();
-                var target = new SampleShipmentItem(shipment.Id, original.SubmittedSpecimenId, original.SampleTypeDefinitionId,
-                    original.CustomerSampleId, original.SampleName, original.Quantity, original.QuantityUnit);
-                foreach (var slot in original.TubeSlots.ToArray())
-                { original.TubeSlots.Remove(slot); slot.MoveTo(target.Id); target.TubeSlots.Add(slot); }
-                shipment.Items.Add(target); DbContext.SampleShipments.Add(shipment);
-                source.Items.Remove(original); DbContext.SampleShipmentItems.Remove(original);
-            }
-            source.Cancel(); await DbContext.SaveChangesAsync();
-        }
-
         public Task<LabServiceOrderDto> AttemptChangeQuote(Guid orderId, long version)
             => CreatePlatformController(new InternalLabOperationsProvider(DbContext), Guid.NewGuid().ToString("N"))
                 .IssueQuote(orderId, new(version, [new(Guid.NewGuid(), "PSeq Lab Service", 3, 100m)], 0, "USD", null, "Change"), default);

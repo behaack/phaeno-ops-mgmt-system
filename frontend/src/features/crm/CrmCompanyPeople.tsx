@@ -166,8 +166,8 @@ export function CrmCompanyPeople({
 
   return (
     <>
-      <Card>
-        <CardHeader>
+      <Card className="gap-0 py-0">
+        <CardHeader className="border-b bg-muted/50 p-4">
           <CardTitle>People</CardTitle>
           <CardDescription>
             {canAdminister ? 'Company contacts, Portal identities, invitations, and department access in one reviewed list.' : 'Company contacts and their roles. A Phaeno administrator manages Portal invitations and access.'}
@@ -180,7 +180,7 @@ export function CrmCompanyPeople({
             <Button size="sm" onClick={() => { create.reset(); setCreateOpen(true) }}>New person</Button>
           </CardAction>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 p-4">
           {invitationFeedback ? <p role="status" className="text-sm">{invitationFeedback}</p> : null}
           {canAdminister ? <CrmCollectionFeedback name="people" query={people} /> : null}
           <CrmCollectionFeedback name="contacts" query={contacts} />

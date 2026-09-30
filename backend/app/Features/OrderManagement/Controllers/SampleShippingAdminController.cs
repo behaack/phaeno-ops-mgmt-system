@@ -236,7 +236,9 @@ public sealed partial class SampleShippingAdminController(
                 request.MaximumTransitHours,
                 effectiveFrom,
                 false,
-                selectedSampleProcedureId));
+                selectedSampleProcedureId,
+                request.MinimumSampleAmount,
+                request.SampleAmountUnit));
         dbContext.SampleTypeDefinitions.Add(item);
         await dbContext.SaveChangesAsync(cancellationToken);
         if (transaction != null) await transaction.CommitAsync(cancellationToken);
@@ -508,7 +510,9 @@ public sealed partial class SampleShippingAdminController(
         item.IsActive,
         item.Version,
         item.ShippingProcedureId,
-        item.Lifecycle.ToString());
+        item.Lifecycle.ToString(),
+        item.MinimumSampleAmount,
+        item.SampleAmountUnit);
 
     private static DateTime RequireUtc(DateTime value, string label)
     {

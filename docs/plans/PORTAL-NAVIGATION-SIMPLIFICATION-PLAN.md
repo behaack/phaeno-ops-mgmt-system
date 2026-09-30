@@ -71,3 +71,19 @@ Signed-in local Chrome checks at CSS widths 320, 392, and 768 confirmed a divide
 September 28: the Product Owner requested outside-click dismissal for the shared left sidebar on narrow screens. A capture-phase pointer handler closes an open narrow sidebar when a surface outside the rail and its edge tab is pressed. Clicks within the rail remain active; outside controls receive their normal action and focus. If focus was inside the rail and the user presses a plain surface, focus returns to the persistent edge tab. Section selection, tab toggling, and Escape retain their existing behavior; the desktop pin and hover rules are unchanged. Updated all four audience getting-started guides and regenerated the 56-guide corpus (`3de70eda8b76`).
 
 Signed-in local Chrome review at CSS width 420 confirmed that clicking the rail header keeps it open, pressing an empty header surface closes it, and pressing the hamburger closes the rail while opening the user tray. A Tab-focused rail item returned focus to the edge tab after outside dismissal; Escape also closed the rail and returned focus. Scoped ESLint, TypeScript, documentation generation/check, and whitespace verification passed. No automated suite, Git mutation, deployment, database change, or build output was produced. The Product Owner confirmed the earlier mobile header was correct; its accepted implementation is retained.
+
+## Customer settings consolidation — September 29, 2026
+
+The Product Owner subsequently authorized the settings landing page that was
+outside the September 28 slice. In a Customer context, the user menu opens
+**Customer settings** at the existing `/departments` route. Tabs separate
+Transportation-kit delivery, Departments, organization-administrator-only
+Organization defaults, and organization-administrator-only People and access.
+The delivery tab filters saved locations by an active Department within the
+administrator's scope and opens bounded create and view-first detail flows.
+The selected Department remains in the URL when returning from location detail.
+Customer user management reuses its existing panel in People and access; prior
+`/phaeno-users` links remain functional. Other audiences keep their existing
+menu entry and route. Backend access rules, authentication, and data contracts
+are unchanged. Automated suites and signed-in browser acceptance remain
+request-only; the living frontend and E2E plans track those checks.

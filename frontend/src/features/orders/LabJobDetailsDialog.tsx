@@ -177,7 +177,7 @@ export function LabJobDetailsDialog({
   });
   const selectedDepartment = departmentId
     ? departments.data?.find((value) => value.id === departmentId)
-    : departments.data?.find((value) => value.isDefault);
+    : departments.data?.length === 1 ? departments.data[0] : undefined;
   const readiness = useQuery({
     queryKey: ['customer-order-readiness', organizationId, selectedDepartment?.id],
     queryFn: () => getCustomerOrderReadiness(organizationId, selectedDepartment!.id),
@@ -407,7 +407,7 @@ export function LabJobDetailsDialog({
             openerRef.current.focus();
           }
         }}>
-        <DialogHeader className="pt-5 pr-12 pl-5">
+        <DialogHeader className="px-5 pt-5">
           <DialogTitle>
             {editing
               ? platformMode ? "Edit Job pricing details" : "Modify lab service request"
@@ -511,6 +511,8 @@ export function LabJobDetailsDialog({
                   emptyMessage="No active Customers are available."
                   required
                   disabled={Boolean(sourceHandoff)}
+                  clearable={!sourceHandoff}
+                  clearLabel="Clear Customer"
                   aria-describedby={`${formId}-organization-help`}
                 />
                 {eligiblePlatformOrganizations.length === 0 ? (
@@ -531,7 +533,7 @@ export function LabJobDetailsDialog({
                       {(departments.data ?? []).map((value) => <option key={value.id} value={value.id}>{value.name}{value.isDefault ? " (default)" : ""}</option>)}
                     </select>
                   )}
-                  <FieldDescription id={`${formId}-department-help`}>This department owns the Job and controls Customer access and applicable service rules.</FieldDescription>
+                  <FieldDescription id={`${formId}-department-help`}>This department owns the Job and controls Customer access and applicable service rules. Choose one with an active Customer user; when several are available, select it explicitly.</FieldDescription>
                   {departments.isError ? <FieldError>Customer departments could not be loaded. Check your connection and reopen the form.</FieldError> : null}
                   {!departments.isPending && !departments.isError && !departments.data?.length ? <FieldError>No active Customer departments are available.</FieldError> : null}
                 </div> : null}
@@ -542,10 +544,9 @@ export function LabJobDetailsDialog({
                       <AlertTitle>Customer readiness could not be checked</AlertTitle>
                       <AlertDescription>Your entries are kept. Retry before starting pricing.</AlertDescription>
                       <Button className="mt-2" type="button" variant="outline" disabled={readiness.isFetching} onClick={() => void readiness.refetch()}>Retry readiness check</Button>
-                    </Alert> : readiness.data ? <>
-                      <CustomerOrderReadiness readiness={readiness.data} />
-                      <Button className="mt-2" type="button" variant="outline" disabled={readiness.isFetching} onClick={() => void readiness.refetch()}>Refresh readiness</Button>
-                    </> : null}
+                    </Alert> : readiness.data ? (
+                      <CustomerOrderReadiness readiness={readiness.data} refreshing={readiness.isFetching} onRefresh={() => void readiness.refetch()} />
+                    ) : null}
                   </>
                 ) : null}
               </>
@@ -592,12 +593,26 @@ export function LabJobDetailsDialog({
               {!sampleTypes.isPending && !sampleTypes.isError && !sampleTypes.data?.length ? <FieldError>No active PSeq sample type is available. Ask Phaeno to complete setup.</FieldError> : null}
             </div>
 
-            <fieldset className="mt-4">
-              <legend className="text-sm font-medium">
-                <RequiredFieldName>
-                  Biological-source composition
-                </RequiredFieldName>
-              </legend>
+            <fieldset className="mt-4" aria-labelledby={`${formId}-source-composition-label`}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span id={`${formId}-source-composition-label`} className="text-sm font-medium">
+                  <RequiredFieldName>Biological-source composition</RequiredFieldName>
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="ml-auto"
+                  onClick={() =>
+                    sourceGroups.append({
+                      biologicalSource: "",
+                      specimenCount: 1,
+                    })
+                  }
+                >
+                  <Plus data-icon="inline-start" />
+                  Add source
+                </Button>
+              </div>
               <FieldDescription>
                 List each organism/species and tissue or cell type with its
                 sample count.
@@ -694,24 +709,9 @@ export function LabJobDetailsDialog({
                 </div>
               </div>
               <FieldError>{sourceGroupsError}</FieldError>
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() =>
-                    sourceGroups.append({
-                      biologicalSource: "",
-                      specimenCount: 1,
-                    })
-                  }
-                >
-                  <Plus data-icon="inline-start" />
-                  Add source
-                </Button>
-                <p className="text-sm text-muted-foreground">
-                  Total samples: {sourceTotal}
-                </p>
-              </div>
+              <p className="mt-3 text-right text-sm text-muted-foreground">
+                Total samples: {sourceTotal}
+              </p>
             </fieldset>
 
             <div className="mt-4 space-y-1">

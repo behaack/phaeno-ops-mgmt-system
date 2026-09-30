@@ -43,6 +43,8 @@ export const containerConfiguration: SampleShippingConfiguration = {
     minimumQuantity: 1,
     maximumQuantity: 10,
     quantityUnit: 'tube',
+    minimumSampleAmount: 1.5,
+    sampleAmountUnit: 'mL',
     primaryContainerRequirements: 'Use an approved sealed primary tube.',
     temperatureRequirements: 'Keep frozen.',
     stabilizerRequirements: null,

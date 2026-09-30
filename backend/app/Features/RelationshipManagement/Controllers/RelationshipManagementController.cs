@@ -281,6 +281,8 @@ public sealed partial class RelationshipManagementController(
         await LockCompanySetupAsync(requestId, cancellationToken);
         var value = await RequireRequestAsync(requestId, tracking: true, cancellationToken);
         EnsureVersion(value.Version, request.Version);
+        if (!request.Approved && request.ServiceEntitlements.Count > 0)
+            throw Conflict("service_entitlements_require_approval", "Only an approved service change can save service permissions.");
         Execute(() => value.Decide(request.Approved, request.Reason, actor.Id, DateTime.UtcNow));
 
         if (request.Approved && IsNewAccountRequest(value))
@@ -294,6 +296,11 @@ public sealed partial class RelationshipManagementController(
         if (request.Approved)
         {
             await EnsureCompanyPortalAccessAsync(value, actor.Id, cancellationToken);
+            if (value.RequestType == PortalIntegrationRequestType.ServiceChange && value.RequestedServices.Count > 0
+                && value.OrganizationId.HasValue)
+                await SaveRequestedServiceEntitlementsAsync(value, request.ServiceEntitlements, actor.Id, cancellationToken);
+            else if (request.ServiceEntitlements.Count > 0)
+                throw Conflict("service_entitlements_not_applicable", "Only a service change request can save service permissions during approval.");
             await OnlineAccessRequestCompletion.CompleteIfReadyAsync(dbContext, value, actor.Id, cancellationToken);
         }
 

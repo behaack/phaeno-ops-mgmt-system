@@ -1,5 +1,74 @@
 # Frontend Test Plan
 
+## Shipment confirmation labels and cancellation menu — September 29, 2026
+
+Existing sample-shipping component assertions use **Review and confirm shipment contents** and **Confirm and create receiving sheet**. The Lab Job action-menu assertion checks that **Request cancellation** uses the destructive item treatment while preserving its disabled state. Component execution remains pending under the request-only test rule.
+
+## Transportation kit dispatch scan feedback — September 29, 2026
+
+The kit-request component regression checks that a resolved barcode remains
+selected without a false verification error, while an invalid barcode stays in
+the input with adjacent feedback and never becomes a removable kit. Dispatch
+still submits only verified kit identities. The component suite remains unrun
+under the request-only test rule.
+
+## Customer billing language — September 29, 2026
+
+The existing invoice-capability assertion uses customer-facing empty-state
+language without the internal POMS name. Component execution remains pending
+under the request-only test rule.
+
+## Four-stage Customer Lab preparation — September 29, 2026
+
+Frontend lint and TypeScript compilation cover the new four-stage progress branch, quote and standard-order address/type confirmation, kit receipt, and one-pair-at-a-time preparation. Component execution remains pending under the request-only test rule. Add focused coverage for four visible stages before and after acceptance; address/type required states; member versus administrator receipt; barcode mismatch blocking the single-kit receipt and scanner Enter focus advance; scanner-first kit save and fixed readback across reload; the Save pair action at the row end, saved-row append and new blank row; prevention of a second kit until the first is explicitly finished, including unused tubes; failed saves retaining entries; audited correction that reopens a finished kit; automatic one-run allocation without a run-count field for ordinary orders; explicit allocation for accepted additional-run orders; exact totals before confirmation; and historical six-stage records. Review phone/desktop widths, keyboard focus, contrast, dark mode and reduced motion in a signed-in browser.
+The single-kit receipt component regression now covers required barcode entry,
+wrong-kit rejection, retained entry, scanner Enter focus, and confirmation of
+only the matching kit. Its execution is pending under the request-only rule.
+The one-pair form uses the configured sample amount unit in its Quantity label, shows the Sample type minimum and selected Tube product maximum, and blocks an amount outside that range or missing/mismatched configuration. The sole biological
+source; review both one-source and multi-source forms at wide and narrow widths
+when the signed-in browser acceptance is requested.
+Cover missing or mismatched sample/tube amount units on the first Save pair action: show
+the setup problem without clearing Sample ID, tube barcode or quantity, and keep
+the next row closed. If a later finalization error occurs, the feedback should
+span the dialog's content width while its close button remains unobstructed.
+
+The kit step also needs coverage for pending, partial dispatch, dispatched, partial physical receipt, and fully received labels. The sample-entry panel must remain absent while no compatible kit has a recorded physical receipt, including during loading/error states; it becomes available for received stock or a partial delivery after the receipt query refreshes. The backend remains the final pair-save gate. Component and browser execution remain request-only.
+
+## Customer order Department ownership — September 29, 2026
+
+`LabJobDetailsDialog.test.tsx` now expects no automatic General selection when
+more than one Customer Department exists; staff must select one before readiness
+can load or pricing can start. Check the readiness blocker for an unstaffed
+Department during future browser acceptance. Automated tests remain request-only.
+
+## Company retention override actions — September 29, 2026
+
+The existing `OrganizationRetentionPolicyPanel.test.tsx` interactions open the
+single **Actions** menu before editing or removing an active override. The
+single **Add override** button uses the standard plus icon. Regression source
+is updated; automated suites remain request-only.
+
+## Customer order readiness controls — September 29, 2026
+
+`LabJobDetailsDialog.test.tsx` covers clearing a selected Customer, removal of
+its Department/readiness, retention of entered Job text, choosing another
+Customer, and the Refresh readiness button inside the status panel. Existing
+handoff coverage retains the fixed Customer. The regression source was updated;
+automated suites remain request-only.
+
+## Company list headers — September 29, 2026
+
+The Company Requests row regression now opens the Actions menu before checking
+the pending Trial link, while the single Open Trial link remains direct. Header
+styling across People, Sales, Requests, Departments, Activity, Tasks, and
+Services uses existing card classes; no new style-only tests were added.
+Scoped ESLint, TypeScript, and generated-help consistency checks pass.
+Automated suites remain request-only for this change.
+
+## Service-change approval in Requests — September 29, 2026
+
+`ServiceRequestEntitlementsDialog.test.tsx` covers approval-time Company/Department scope and status capture, plus reuse of an existing permission for an already approved request. The Requests card exposes the setup action; the work checklist describes that path. The regression source is added but Vitest is not executed under the repository's request-only test policy. Full TypeScript and ESLint checks passed.
+
 ## Publication verification — September 29, 2026
 
 The owner requested tests, commit and push without deployment. The complete Vitest run covered 192 files and 1,244 cases. Seven obsolete expectations failed initially; all 55 cases in the four affected files pass after correction, resolving those seven failures. Coverage now uses the current Labels type, excludes unfinished kits from Inventory, requires assembly completion and a unique complete roster, rejects removed Jobs URL compatibility mappings, and does not invent a synthetic QC reference. Full ESLint with zero warnings, TypeScript and the 56-guide documentation corpus check pass. Evidence is local under `artifacts/publication-20260929/`; fixtures and logs are not committed.
@@ -43,6 +112,16 @@ Component-recording follow-up: required contents is read-only and Actions → Re
 Updated `StandardKits.test.tsx` to read expiration evidence from Details & history and expect the specification name as the detail title. The detail now has one header Actions menu, an expanded-state chevron, Preparation and Details & history tabs, and bounded step/completion dialogs. Component recording now uses the single header action and shared dialog described above. Verify required notes, exact component/source-lot quantities, complete verified roster, pending-write blocking, and immutable recorded evidence at the next requested suite checkpoint. No automated suite was run for this presentation change; static and manual browser verification are recorded in the [location/inventory plan](TRANSPORTATION-KIT-LOCATION-INVENTORY-PLAN.md).
 
 ## More workspace navigation — September 28, 2026
+
+Customer settings navigation (September 29, 2026): `navigation.test.ts` now
+checks that Customer organization and Department administrators receive one
+Customer settings menu entry, that Partner administrators retain Departments,
+and that a Customer without administrator access receives neither. Customer
+settings now filters and lists saved delivery locations by Department, preserves
+the filter in the URL when returning from detail, and separates Departments,
+Organization defaults, and People and access into permission-scoped tabs.
+Customer user management moves from the separate menu entry into that tab.
+Automated test execution remains request-only.
 
 Updated `navigation.test.ts` to cover permission-filtered More destinations, Purchasing / Equipment / Data provisioning ordering, one definition per destination, and their removal from Administration and Resources. External organization contexts retain no More destinations. Automated suites remain request-only; scoped lint and TypeScript verification are tracked in the [navigation plan](PORTAL-NAVIGATION-SIMPLIFICATION-PLAN.md).
 
@@ -2979,6 +3058,8 @@ September 26 link treatment: the Lab step and protocol editor's Insert symbol an
 
 ### Transportation kit workspace and assembly (2026-09-24)
 
+September 29 navigation refinement: coverage should expect one **Kit requests** tab under Receipt & accession containing Customer requests and shipment-specific kits sent, with **Active requests**, **Kits sent**, and **Kits received** status views. A request remains active while any ordered kit is unreceived, then leaves that view after full Customer confirmation; partial receipts stay actionable. **Trans. kit inventory** remains in the existing sidebar position and contains assembly and physical inventory only. Check old `receiptTab` links and return navigation. This updated coverage has not been run in this change, per the repository test-run rule.
+
 Focused tab-resolution coverage now expects Kit requests, Inventory and Kits sent under Transportation kits while Receipt & accession contains only arrival and accession work. Supplier catalog and built-in product-type tests cover the Phaeno product-type selector and fixed categories. The shipping settings, shipping specification, and standard-kit group passed 70 tests after updating create and dispatch cases for named products and physical tube verification. The separate Lab tabs/catalog/product-type group passed 22 tests; lint and typecheck passed. Browser coverage remains needed for product → approved workflow/BOM → paired shipping specification → physical assembly and source-lot use → complete tube rescan → corrected roster → dispatch, including keyboard, narrow screen and stale-version feedback.
 
 ### September 24 review-remediation scope
@@ -3068,3 +3149,24 @@ Full TypeScript, ESLint and documentation consistency checks are the verificatio
 SampleShippingConfigurationPanel component regressions cover whitespace/empty instruction sections, a complete six-item missing-fields list, disabled Activate without a status request, cancellation, and a name-only partial Draft save. The editor marks each activation-required section and explains its distinction from Draft save requirements; Description/customs remain optional. Existing complete-Draft confirmed activation coverage remains. Automated suites were authored but not run under the request-only rule; TypeScript/lint and manual browser review are the checkpoint.
 
 Verification: complete frontend TypeScript and ESLint pass. Signed-in local Chrome confirms all activation-required labels/help and Name-only Draft guidance; Escape returns focus to Add procedure. A temporary preview of the actual component with all API requests blocked confirms the full missing-sections list, disabled Activate, Cancel/Escape focus return, and enabled Activate for complete instructions. The confirmation fits a 390×844 viewport. The preview files/server/tabs were removed and viewport restored. No procedure was saved, activated or deactivated during review. Automated suites were not run.
+
+## September 29 transportation-kit barcode dispatch
+
+Kit-request component coverage now uses a type summary and barcode resolution instead of a checkbox per physical kit. It covers required scans, quantity limits, retained draft entries, and stable retry keys. Stock-kit dispatch resolves only its current barcode. Component suites were updated but not executed under the request-only test rule. Type recommendation and flexible quantities remain gated in the owning plan.
+
+## September 29 shipping-instruction controls
+
+The Job shipping workspace assertions cover separate Review shipping instructions
+and Print shipping insert buttons in the Send next step. Shipment detail and
+packet assertions cover an instructions-only dialog, direct printing, revision
+validation, the printed-and-packed modal's explicit body details and physical
+checks, and print focus restoration. These
+assertions were updated but not executed under the request-only test rule.
+
+## September 29 delivery target and modal feedback
+
+Manual acceptance should show the quote's business-day target on the Job and in the approval dialog; standard review should show the single target before placement. The Phaeno quote editor requires a target, and an older issued quote without one must request reissue rather than allow acceptance. Modal destructive feedback should have equal left and right inset while titles reserve room for Close. TypeScript checking was run; component suites were not run under the request-only test rule.
+
+## September 29 requested full component run
+
+The owner requested the complete frontend suite. The Customer quote-acceptance dialog fixture now selects its named case correctly and exercises the confirmed Sample type, delivery address, and retry interaction. The full Vitest rerun passed **1,249 of 1,249** tests. ESLint, TypeScript checking, documentation generation/check, and the Production UI build also pass. This is local component and build evidence; the separate full browser run and hosted acceptance are recorded in the E2E and release plans.

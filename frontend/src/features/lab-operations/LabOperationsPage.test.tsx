@@ -9,7 +9,7 @@ vi.mock('#/api/lab-operations', async importOriginal => ({ ...await importOrigin
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider: 'clerk', session: { capabilities: { canManageLabOperations: true, canManageOrderConfiguration: true, canOperateLabWork: false } } }) }))
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn(), Link: ({ children }: { children: ReactNode }) => <a href="#test">{children}</a> }))
 vi.mock('#/components/WorkspaceSidebar', () => ({ WorkspaceSidebar: ({ children }: { children: ReactNode }) => <div>{children}</div> }))
-vi.mock('./LabReceiptAccessionPanel', () => ({ LabReceiptAccessionPanel: ({ canManageKitSupply, apiEnabled }: { canManageKitSupply: boolean; apiEnabled: boolean }) => canManageKitSupply && apiEnabled ? <p>Authorized kit queues</p> : null }))
+vi.mock('./LabReceiptAccessionPanel', () => ({ LabReceiptAccessionPanel: ({ apiEnabled }: { apiEnabled: boolean }) => apiEnabled ? <p>Authorized kit queues</p> : null }))
 
 it('opens fulfillment queues without requiring a laboratory dashboard role', async () => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })

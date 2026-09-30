@@ -143,7 +143,7 @@
       "title": "Trial Projects",
       "summary": "Configure authorities and deliverables, approve scope, oversee samples and Lab work, release results, and close Trials.",
       "order": 26,
-      "reviewedAt": "2026-09-19",
+      "reviewedAt": "2026-09-29",
       "navigationGroup": "trial-project",
       "contentType": "guide",
       "topicIds": [
@@ -325,7 +325,7 @@
       "title": "Prepare and ship samples",
       "summary": "Prepare containers, match tubes with their declared material amounts, print shipping inserts and record dispatch.",
       "order": 25,
-      "reviewedAt": "2026-09-23",
+      "reviewedAt": "2026-09-29",
       "navigationGroup": "trial-project",
       "contentType": "guide",
       "topicIds": [
@@ -484,7 +484,7 @@
       "title": "Getting started",
       "summary": "Use Department dashboard attention and new-result counts, open Customer Jobs, and find samples, curated data and retained Trials.",
       "order": 10,
-      "reviewedAt": "2026-09-28",
+      "reviewedAt": "2026-09-29",
       "navigationGroup": "basics",
       "contentType": "overview",
       "topicIds": [
@@ -510,7 +510,7 @@
       "title": "Account and access",
       "summary": "Accept invitations, protect sign-in, select a Department, and manage access within organization and Department roles.",
       "order": 20,
-      "reviewedAt": "2026-09-22",
+      "reviewedAt": "2026-09-29",
       "navigationGroup": "basics",
       "contentType": "guide",
       "topicIds": [
@@ -540,9 +540,9 @@
       "locale": "en-US",
       "slug": "lab-services",
       "title": "Request laboratory services",
-      "summary": "Complete ordering and shipping on the Job, then follow receipt, laboratory progress and results.",
+      "summary": "Confirm price, Sample type and kit delivery; pair one sample and tube at a time, send kits, and follow results.",
       "order": 30,
-      "reviewedAt": "2026-09-25",
+      "reviewedAt": "2026-09-29",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -573,9 +573,9 @@
       "locale": "en-US",
       "slug": "sample-shipping",
       "title": "Prepare and ship samples",
-      "summary": "Prepare containers, match tubes with their declared material amounts, print shipping inserts and record dispatch.",
+      "summary": "Receive Transportation kits, save each Sample ID with its exact tube barcode, then print inserts and send samples.",
       "order": 35,
-      "reviewedAt": "2026-09-26",
+      "reviewedAt": "2026-09-29",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -642,7 +642,7 @@
       "title": "Data Library and organization access",
       "summary": "Distinguish Job results from curated data, manage organization access, and track transportation kits at delivery locations.",
       "order": 50,
-      "reviewedAt": "2026-09-09",
+      "reviewedAt": "2026-09-29",
       "navigationGroup": "data-and-access",
       "contentType": "guide",
       "topicIds": [
@@ -1078,7 +1078,7 @@
       "title": "Company requests and approvals",
       "summary": "Create Company requests, decide them centrally, complete approved work, and apply reviewed Prospect conversions.",
       "order": 21,
-      "reviewedAt": "2026-09-22",
+      "reviewedAt": "2026-09-29",
       "navigationGroup": "customer-relationship-management",
       "contentType": "guide",
       "topicIds": [
@@ -1139,7 +1139,7 @@
       "title": "Company access and user administration",
       "summary": "Manage Company access and request completion, staged Department readiness, service entitlements, invitation recovery and membership lifecycle.",
       "order": 25,
-      "reviewedAt": "2026-09-22",
+      "reviewedAt": "2026-09-29",
       "navigationGroup": "platform-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1371,9 +1371,9 @@
       "slug": "order-customer-lab-authorization",
       "parentSlug": "order-operations",
       "title": "Customer lab authorization",
-      "summary": "Start a Customer Job for its Department, resolve readiness by stage, issue pricing, and authorize Lab work after sample finalization.",
+      "summary": "Start a Department Job, issue pricing, fulfill compatible kits, and authorize Lab work after exact sample and tube pairing.",
       "order": 41,
-      "reviewedAt": "2026-09-25",
+      "reviewedAt": "2026-09-29",
       "navigationGroup": "order-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1876,7 +1876,7 @@
       "title": "Use Partner Lab services",
       "summary": "Complete Partner ordering, purchased-run allocation and shipping on the Job, then track sample receipt and laboratory results.",
       "order": 25,
-      "reviewedAt": "2026-09-26",
+      "reviewedAt": "2026-09-29",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [

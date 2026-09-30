@@ -78,7 +78,8 @@ public sealed partial class SampleShippingAdminController
             draft.TemperatureRequirements, draft.StabilizerRequirements, draft.PackagingInstructions,
             draft.LabelingInstructions, draft.ProhibitedIdentifiers, draft.SafetyRequirements,
             draft.CarrierRestrictions, draft.MaximumTransitHours,
-            RequireUtc(draft.EffectiveFrom, "Sample-type effective-from"), false, draft.ShippingProcedureId));
+            RequireUtc(draft.EffectiveFrom, "Sample-type effective-from"), false, draft.ShippingProcedureId,
+            draft.MinimumSampleAmount, draft.SampleAmountUnit));
         var released = await dbContext.SampleTypeDefinitions.AsNoTracking()
             .Where(value => value.DefinitionKey == key && value.Id != id
                 && (value.Lifecycle == ShippingRevisionLifecycle.Released

@@ -30,16 +30,21 @@ function LabOperationsRoute() {
   const navigate = useNavigate()
   const isChild = useRouterState({ select: (state) => state.location.pathname !== '/lab-operations' })
   const { section, shipmentId, receiptTab } = Route.useSearch()
+  const activeSection = receiptTab === 'standard-kits' && (!section || section === 'receipt')
+    ? 'transportation-kits'
+    : (receiptTab === 'kit-requests' || receiptTab === 'return-kits') && section === 'transportation-kits'
+      ? 'receipt'
+      : section ?? 'receipt'
   return isChild
     ? <Outlet />
     : (
         <LabOperationsPage
-          section={section ?? 'receipt'}
+          section={activeSection}
           shipmentId={shipmentId}
           receiptTab={receiptTab}
           onReceiptTabChange={nextTab => void navigate({
             to: '/lab-operations',
-            search: previous => ({ ...previous, section: ['standard-kits', 'kit-requests', 'return-kits'].includes(nextTab) ? 'transportation-kits' : 'receipt', receiptTab: nextTab }),
+            search: previous => ({ ...previous, section: nextTab === 'standard-kits' ? 'transportation-kits' : 'receipt', receiptTab: nextTab }),
             resetScroll: false,
             hash: '',
           })}

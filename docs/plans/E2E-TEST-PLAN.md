@@ -1,5 +1,89 @@
 # Playwright E2E Test Plan
 
+## Customer settings and quote confirmation layout — September 29, 2026
+
+With a Customer organization administrator and a Department administrator,
+open **Customer settings** from the desktop user dropdown and narrow-screen
+Settings tray. Confirm that Transportation-kit delivery, Departments, and
+organization-administrator-only defaults and people/access appear as separate
+tabs. Check Department filtering, visible saved locations, add/detail/return,
+and unchanged role scope. Verify that the Customer user menu no longer duplicates
+People and access, while authorized Partner/Phaeno User management remains.
+Review Order scope on the left and Quote and billing on the right at desktop
+widths; at phone widths, confirm they stack in that order. Confirm the former
+Sample submission card is absent and saved instructions appear with available
+sample preparation. Review sample/kit confirmation sections in light/dark
+themes. Verify tax-inclusive and
+pre-tax totals, required-field focus, keyboard navigation and the fixed modal
+footer. Signed-in browser acceptance remains pending under the request-only
+test rule.
+
+## Four-stage Customer Lab preparation — September 29, 2026
+
+Connected acceptance remains pending under the request-only test rule. Use a new manual quote and a configured standard order to confirm Sample type and Department kit address, then verify one idempotent fulfillment obligation, Phaeno dispatch before Sample IDs, partial physical receipt, a saved scanned kit number before tube entry, one sample/barcode save per received kit, a new blank row after each save, fixed kit association across reload, another kit only after explicitly finishing the current kit with unused tubes allowed, automatic allocation of one run per sample without a run-count field, wrong-kit and duplicate rejection without clearing entries, exact final confirmation and per-kit frozen return shipment. Separately verify explicit allocation for an accepted order with additional purchased runs, corrected pair audit and reopening, carrier send, historical Job rendering and accepted supplemental scope. Physical label/scanner handling and Phaeno receipt are distinct acceptance evidence from API/browser checks.
+For a paired order pinned to a material quantity unit that is not a tube count,
+verify pair save and finalization preserve one physical tube per pair and the
+separate declared amount without a false tube-unit error. Configure a Sample
+type minimum of 1.5 mL and Tube product maximum of 2.0 mL; confirm the Customer
+form labels Quantity (mL), shows 1.5–2.0 mL, and rejects values outside the
+range at Save pair. A missing or mismatched unit must block pair save with a
+clear configuration message. Inspect any finalization
+feedback at phone and desktop widths for full content width and clear title
+and close-button spacing.
+At physical kit receipt, confirm the dialog body identifies the saved kit
+number, carrier and tracking. Scan an empty or wrong physical kit barcode and
+confirm that receipt is blocked with an inline error and the entry retained.
+Scan the selected kit's barcode with an Enter suffix, check that focus moves
+to Confirm physical receipt, then confirm and verify only that kit is received.
+In Prepare sample shipment, inspect the single active pair form at desktop and
+phone widths. Biological source, Sample ID, Tube barcode and Quantity (configured unit)
+share a row when space permits without horizontal overflow; there is no Unit
+column. A one-source order shows its accepted source as read-only, while an order
+with multiple sources retains a selector. Saved pair rows do not repeat the
+form headings.
+
+## Customer dashboard Lab request card presentation — September 29, 2026
+
+Inspect the shaded request-card header and the outlined View all lab services
+action on the muted footer in light and dark themes, including narrow layout,
+keyboard focus, and hover. Browser review remains request-only.
+
+## Customer order Department ownership — September 29, 2026
+
+Using a Customer with an unstaffed General Department and a staffed Oncology
+Department, verify that New Customer order starts with no Department chosen,
+General shows a staffing blocker, and Oncology allows pricing. Confirm a
+Quote-issued Oncology order appears in that Department's Customer Portal
+dashboard and cannot be viewed from General. Browser acceptance remains open
+under the request-only test policy.
+
+## Company retention override actions — September 29, 2026
+
+Review the direct **Add override** control and the active override's **Actions**
+menu on desktop and narrow viewports, including keyboard focus and return from
+the edit/remove dialogs. Browser review remains open under the request-only
+test policy.
+
+## Customer order readiness controls — September 29, 2026
+
+Review the New Customer order picker and pricing-readiness panel at desktop and
+narrow widths in light/dark themes. Check clear-button keyboard focus, reopening
+the Customer choices, retention of Job entries, handoff-fixed selection, and the
+trailing Refresh readiness action. Browser verification remains open under the
+request-only test policy.
+
+## Company list headers — September 29, 2026
+
+Review the muted list headers and action placement across Company People,
+Sales, Requests, Departments, Activity, Tasks, and Services on desktop and
+narrow light/dark layouts. Confirm request and entitlement row Actions menus
+retain keyboard access and focus behavior. No browser suite or signed-in visual
+review was requested for this presentation change; those checks remain open.
+
+## Service-change approval in Requests — September 29, 2026
+
+Browser acceptance remains to verify pending service review → approval with a Ready entitlement → Work needed completion, plus a preexisting approved request completed through **Set up approved services**, future start/Pending states, and responsive keyboard operation of the dialog. No Playwright suite or signed-in business-record mutation was requested for this turn; API build and TypeScript checks do not establish browser acceptance.
+
 ## Publication verification — September 29, 2026
 
 The requested desktop Chromium and mobile Chromium fixture run exercised 196 cases: 192 passed initially, two failed and two mobile cases were intentionally skipped because physical-label print checks run on desktop. The mobile tray geometry assertion now waits for the opening animation to finish without a fixed sleep. The initial desktop CRM case remained on its loading state under the parallel cold-server run; it passed unchanged on rerun. All 16 CRM/navigation cases passed on the isolated fixture server, resolving both failures and producing 194 distinct passing browser cases across the full run and rerun. Desktop/phone navigation, dropdown keyboard exit, modal focus, Inventory return state and existing axe checks are included.
@@ -3160,6 +3244,8 @@ In the full kit journey, try two source tube lots for one kit, a fractional tube
 
 ### Transportation kit inventory filter (2026-09-24)
 
+September 29 navigation acceptance to run when requested: open Receipt & accession → Kit requests; verify the combined request and shipment-specific sent-kit content, the sent and received filters, a partially received request retaining only its outstanding work, and a fully received request leaving Active requests. Follow an older kit link into Trans. kit inventory and back; check keyboard tab selection, narrow layout, and permissions. This browser journey has not been run in this change.
+
 With prepared, dispatched, in-use and needs-review kits present, verify Inventory initially lists only kits at Phaeno. Choose Shipped kits and confirm all dispatched records are reachable, including in-use and needs-review kits; select one status, open a kit, return, and verify the filter and page remain selected. Clear filters and verify the At Phaeno view returns. On September 24, `e2e/phaeno-kit-acceptance.spec.ts` passed this signed-in browser path in desktop and mobile Chromium with synthetic prepared, dispatched, in-use and needs-review records, including page-two return and accessible page checks. A read-only signed-in production check confirmed the default, Shipped kits selection and reset, but production has no prepared kits, so record grouping and return navigation still need live acceptance.
 
 ## Lab step naming and initial draft follow-up — September 24, 2026
@@ -3234,3 +3320,15 @@ Manual read-only local Chrome review confirmed Purchasing loads in a fresh authe
 Browser acceptance: open an incomplete shipping procedure Draft and confirm all six instruction sections are marked Required to activate while a name-only Draft remains saveable. Open Actions → Activate: its body names all missing sections before any request and Activate is unavailable. Cancel/Escape return focus without a write. A complete saved Draft must show transition consequences and keep Activate available for confirmation. Verify a narrow viewport fits the missing-fields list and footer, with one scroll region and readable optional Description/customs labels. Automated E2E execution is not requested for this bounded correction.
 
 Verification: complete frontend TypeScript and ESLint pass. Signed-in local Chrome confirms all activation-required labels/help and Name-only Draft guidance; Escape returns focus to Add procedure. A temporary preview of the actual component with all API requests blocked confirms the full missing-sections list, disabled Activate, Cancel/Escape focus return, and enabled Activate for complete instructions. The confirmation fits a 390×844 viewport. The preview files/server/tabs were removed and viewport restored. No procedure was saved, activated or deactivated during review. Automated suites were not run.
+
+## September 29 transportation-kit barcode dispatch
+
+Acceptance should scan a ready physical KIT barcode, reject an unknown, expired or withdrawn barcode, prevent a duplicate or excess scan, remove a mistaken scan, retain entries after a failed save, and confirm the saved shipment contains only scanned IDs. Verify the request detail stays responsive with a large physical inventory because it loads counts by type. No E2E suite or physical scanner qualification was run for this slice. The quantity-flexible recommendation remains a separate gated acceptance path.
+
+## September 29 business-day turnaround acceptance
+
+Manual acceptance coverage: issue a quote with a 14-business-day target, verify the Customer sees it on the Job, in the confirmation, and in the PDF, then approve. Standard review must show one target before placement. Receive only some of several required physical tubes and verify no due date; record the last tube across shipments and verify the frozen due date skips weekends and configured Phaeno holidays. Confirm a previously placed Job retains its accepted dates. Check an undated historical Job can record intake and stays visible for deadline correction. Browser and connected E2E suites were not run under the request-only test rule.
+
+## September 29 requested full browser run
+
+The owner requested the full suite for this release. An initial run reused an unrelated server on port 3000 and is invalid as product evidence. A dedicated mock-session server exposed stale bundle, Company/Department navigation, and kit-inventory fixture expectations, which were corrected. The clean final full run on an isolated server at port 3028 passed **194 cases, with 2 intentional mobile print skips and 0 failures** across desktop and mobile Chromium. This is simulated browser verification; authenticated hosted use, physical scanners, and scientific acceptance require separate evidence.

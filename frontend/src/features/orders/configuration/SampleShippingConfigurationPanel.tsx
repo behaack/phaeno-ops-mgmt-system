@@ -109,6 +109,8 @@ const sampleTypeSchema = z.object({
   minimumQuantity: optionalQuantity,
   maximumQuantity: optionalQuantity,
   quantityUnit: z.string().trim().max(100),
+  minimumSampleAmount: positiveOptionalNumber,
+  sampleAmountUnit: z.enum(['', 'µL', 'mL']),
   primaryContainerRequirements: z.string().trim().max(2000),
   temperatureRequirements: z.string().trim().max(2000),
   stabilizerRequirements: z.string().trim().max(2000),
@@ -121,6 +123,8 @@ const sampleTypeSchema = z.object({
   effectiveFrom: z.string().min(1, 'Choose when this revision becomes effective.'),
   isActive: z.boolean(),
 }).superRefine((values, context) => {
+  if (Boolean(values.minimumSampleAmount) !== Boolean(values.sampleAmountUnit))
+    context.addIssue({ code: 'custom', message: 'Enter both the minimum sample amount and its unit.', path: ['sampleAmountUnit'] })
   if (values.minimumQuantity !== '' && values.maximumQuantity !== ''
     && Number(values.minimumQuantity) >= 0 && Number(values.maximumQuantity) > 0
     && Number(values.maximumQuantity) < Number(values.minimumQuantity)) {
@@ -139,7 +143,7 @@ const emptyDestination: DestinationValues = {
 
 const emptySampleType: SampleTypeValues = {
   shippingProcedureId: '',
-  code: '', name: '', description: '', materialClass: '', minimumQuantity: '1', maximumQuantity: '', quantityUnit: '',
+  code: '', name: '', description: '', materialClass: '', minimumQuantity: '1', maximumQuantity: '', quantityUnit: '', minimumSampleAmount: '', sampleAmountUnit: '',
   primaryContainerRequirements: '', temperatureRequirements: '', stabilizerRequirements: '', packagingInstructions: '',
   labelingInstructions: '', prohibitedIdentifiers: '', safetyRequirements: '', carrierRestrictions: '', maximumTransitHours: '',
   effectiveFrom: toLocalDateTime(new Date()), isActive: true,
@@ -471,6 +475,7 @@ function SampleTypeDetails({ item, revisions, onCreateRevision, configuration, a
         <dl className="grid gap-4 text-sm sm:grid-cols-2">
           <div><dt className="text-muted-foreground">Material type</dt><dd>{item.materialClass === 'extracted_rna' ? 'Total RNA' : item.materialClass === 'enriched_rna' ? 'Enriched RNA' : item.materialClass}</dd></div>
           <div><dt className="text-muted-foreground">Quantity</dt><dd>{quantityRange(item)}</dd></div>
+          <div><dt className="text-muted-foreground">Minimum sample amount</dt><dd>{item.minimumSampleAmount != null && item.sampleAmountUnit ? `${item.minimumSampleAmount} ${item.sampleAmountUnit}` : 'Not configured'}</dd></div>
           <div><dt className="text-muted-foreground">Maximum transit time</dt><dd>{item.maximumTransitHours == null ? 'Not specified' : `${item.maximumTransitHours} hours`}</dd></div>
           <div><dt className="text-muted-foreground">Shared shipping procedure</dt><dd>{(() => { const procedure = configuration.procedures?.find(value => value.id === item.shippingProcedureId); return procedure ? <Link className={recordLinkClassName} to="/sample-shipping-settings" search={{ shippingSection: 'procedures', procedureId: procedure.id }}>{procedure.name}</Link> : <span role="alert" className="text-warning">No procedure selected for this revision. Edit a Draft to select one.</span> })()}{item.shippingProcedureId && !currentShippingProcedure(configuration.procedures, item.shippingProcedureId) ? <p role="alert" className="mt-1 text-warning">This procedure has no Active revision. New Orders are blocked.</p> : null}</dd></div>
           <div><dt className="text-muted-foreground">Effective period</dt><dd>{formatDateTime(item.effectiveFrom)} to {item.effectiveTo ? formatDateTime(item.effectiveTo) : 'no end date'} (your local time)</dd></div>
@@ -571,6 +576,8 @@ function SampleTypeDialog({ item, configuration, onClose, onSaved }: { item: Sam
       code: values.code.toUpperCase(),
       minimumQuantity: optionalNumber(values.minimumQuantity),
       maximumQuantity: optionalNumber(values.maximumQuantity),
+      minimumSampleAmount: optionalNumber(values.minimumSampleAmount),
+      sampleAmountUnit: values.sampleAmountUnit || null,
       maximumTransitHours: optionalNumber(values.maximumTransitHours),
       stabilizerRequirements: values.stabilizerRequirements || null,
       shippingProcedureId: values.shippingProcedureId || null,
@@ -647,6 +654,14 @@ function SampleTypeDialog({ item, configuration, onClose, onSaved }: { item: Sam
               </div>
             </CardContent>
           </Card>
+          <Card role="group" aria-label="Minimum sample amount" className="min-w-0 gap-0 rounded-lg py-0 sm:col-span-2">
+            <div className="rounded-t-lg border-b bg-muted/50 px-3 py-1.5"><h3 className="text-sm font-medium">Minimum sample amount</h3></div>
+            <CardContent className="grid gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+              <Field label="Minimum per sample" id="sample-type-minimum-sample" error={form.formState.errors.minimumSampleAmount?.message}><Input id="sample-type-minimum-sample" type="number" min="0" step="any" aria-invalid={Boolean(form.formState.errors.minimumSampleAmount)} {...form.register('minimumSampleAmount')} /></Field>
+              <Field label="Unit" id="sample-type-sample-unit" error={form.formState.errors.sampleAmountUnit?.message}><select id="sample-type-sample-unit" className="h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm" aria-invalid={Boolean(form.formState.errors.sampleAmountUnit)} {...form.register('sampleAmountUnit')}><option value="">Choose unit…</option><option value="µL">µL</option><option value="mL">mL</option></select></Field>
+              <p className="text-xs text-muted-foreground sm:col-span-2">Customers must enter at least this much material per sample. The unit must match the tube product's maximum before a sample/tube pair can be saved.</p>
+            </CardContent>
+          </Card>
           <Field label="Maximum transit hours" id="sample-type-transit" error={form.formState.errors.maximumTransitHours?.message}><Input id="sample-type-transit" inputMode="numeric" {...form.register('maximumTransitHours')} /></Field>
           <Field label="Sample tube or vessel requirements" id="sample-type-container" required error={form.formState.errors.primaryContainerRequirements?.message} full><ScientificTextField control={form.control} name="primaryContainerRequirements" id="sample-type-container" label="Sample tube or vessel requirements" multiline rows={3} unit insertUnits unitOptions={instructionUnits} symbolOptions={instructionSymbols} disabled={mutation.isPending} describedBy={form.formState.errors.primaryContainerRequirements ? 'sample-type-container-error' : undefined} /></Field>
           <Field label="Preservation requirements" id="sample-type-temperature" required error={form.formState.errors.temperatureRequirements?.message} full><ScientificTextField control={form.control} name="temperatureRequirements" id="sample-type-temperature" label="Preservation requirements" multiline rows={3} unit insertUnits unitOptions={instructionUnits} symbolOptions={instructionSymbols} disabled={mutation.isPending} describedBy={form.formState.errors.temperatureRequirements ? 'sample-type-temperature-error' : undefined} /></Field>
@@ -706,7 +721,7 @@ function destinationValues(item: SampleShippingDestination): DestinationValues {
 }
 
 function sampleTypeValues(item: SampleTypeDefinition): SampleTypeValues {
-  return { shippingProcedureId: item.shippingProcedureId ?? '', code: item.code, name: item.name, description: item.description, materialClass: item.materialClass, minimumQuantity: optionalNumberText(item.minimumQuantity), maximumQuantity: optionalNumberText(item.maximumQuantity), quantityUnit: item.quantityUnit, primaryContainerRequirements: item.primaryContainerRequirements, temperatureRequirements: item.temperatureRequirements, stabilizerRequirements: item.stabilizerRequirements ?? '', packagingInstructions: item.packagingInstructions, labelingInstructions: item.labelingInstructions, prohibitedIdentifiers: item.prohibitedIdentifiers, safetyRequirements: item.safetyRequirements, carrierRestrictions: item.carrierRestrictions ?? '', maximumTransitHours: optionalNumberText(item.maximumTransitHours), effectiveFrom: toLocalDateTime(new Date()), isActive: item.isActive }
+  return { shippingProcedureId: item.shippingProcedureId ?? '', code: item.code, name: item.name, description: item.description, materialClass: item.materialClass, minimumQuantity: optionalNumberText(item.minimumQuantity), maximumQuantity: optionalNumberText(item.maximumQuantity), quantityUnit: item.quantityUnit, minimumSampleAmount: optionalNumberText(item.minimumSampleAmount), sampleAmountUnit: item.sampleAmountUnit === 'µL' || item.sampleAmountUnit === 'mL' ? item.sampleAmountUnit : '', primaryContainerRequirements: item.primaryContainerRequirements, temperatureRequirements: item.temperatureRequirements, stabilizerRequirements: item.stabilizerRequirements ?? '', packagingInstructions: item.packagingInstructions, labelingInstructions: item.labelingInstructions, prohibitedIdentifiers: item.prohibitedIdentifiers, safetyRequirements: item.safetyRequirements, carrierRestrictions: item.carrierRestrictions ?? '', maximumTransitHours: optionalNumberText(item.maximumTransitHours), effectiveFrom: toLocalDateTime(new Date()), isActive: item.isActive }
 }
 
 function Detail({ label, value }: { label: string; value: string | null | undefined }) {

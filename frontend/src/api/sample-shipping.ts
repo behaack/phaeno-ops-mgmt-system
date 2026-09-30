@@ -52,6 +52,8 @@ export type SampleTypeDefinition = {
   minimumQuantity: number | null
   maximumQuantity: number | null
   quantityUnit: string
+  minimumSampleAmount: number | null
+  sampleAmountUnit: string | null
   primaryContainerRequirements: string
   temperatureRequirements: string
   stabilizerRequirements: string | null

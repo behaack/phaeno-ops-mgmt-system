@@ -229,6 +229,8 @@ public sealed class SampleTypeDefinition : IAudit, IConcurrency
     public decimal? MinimumQuantity { get; private set; }
     public decimal? MaximumQuantity { get; private set; }
     public string QuantityUnit { get; private set; } = null!;
+    public decimal? MinimumSampleAmount { get; private set; }
+    public string? SampleAmountUnit { get; private set; }
     public string PrimaryContainerRequirements { get; private set; } = null!;
     public string TemperatureRequirements { get; private set; } = null!;
     public string? StabilizerRequirements { get; private set; }
@@ -273,7 +275,9 @@ public sealed class SampleTypeDefinition : IAudit, IConcurrency
         int? maximumTransitHours,
         DateTime effectiveFrom,
         bool isActive,
-        Guid? shippingProcedureId = null)
+        Guid? shippingProcedureId = null,
+        decimal? minimumSampleAmount = null,
+        string? sampleAmountUnit = null)
     {
         if (definitionKey == Guid.Empty) throw new ArgumentException("A sample-type definition key is required.", nameof(definitionKey));
         if (revision < 1) throw new ArgumentOutOfRangeException(nameof(revision));
@@ -297,6 +301,7 @@ public sealed class SampleTypeDefinition : IAudit, IConcurrency
         MinimumQuantity = minimumQuantity;
         MaximumQuantity = maximumQuantity;
         QuantityUnit = OrderText.Optional(quantityUnit, 100) ?? string.Empty;
+        SetMinimumSampleAmount(minimumSampleAmount, sampleAmountUnit);
         PrimaryContainerRequirements = OrderText.Optional(primaryContainerRequirements, 2000) ?? string.Empty;
         TemperatureRequirements = OrderText.Optional(temperatureRequirements, 2000) ?? string.Empty;
         StabilizerRequirements = OrderText.Optional(stabilizerRequirements, 2000);
@@ -358,6 +363,19 @@ public sealed class SampleTypeDefinition : IAudit, IConcurrency
         ShippingProcedureId = procedureId;
     }
 
+    private void SetMinimumSampleAmount(decimal? amount, string? unit)
+    {
+        if (amount.HasValue != !string.IsNullOrWhiteSpace(unit))
+            throw new ArgumentException("Enter both the minimum sample amount and its unit.");
+        if (amount is <= 0 || amount is > 999999999999.999999m ||
+            amount.HasValue && decimal.Round(amount.Value, 6) != amount.Value)
+            throw new ArgumentException("Enter a positive minimum sample amount with no more than six decimal places.");
+        if (unit is not null && unit.Trim() is not ("µL" or "mL"))
+            throw new ArgumentException("Choose µL or mL for the minimum sample amount.");
+        MinimumSampleAmount = amount;
+        SampleAmountUnit = unit?.Trim();
+    }
+
     public void Discard()
     {
         if (Lifecycle != ShippingRevisionLifecycle.Draft)
@@ -373,6 +391,7 @@ public sealed class SampleTypeDefinition : IAudit, IConcurrency
         Name = draft.Name; Description = draft.Description; MaterialClass = draft.MaterialClass;
         MinimumQuantity = draft.MinimumQuantity; MaximumQuantity = draft.MaximumQuantity;
         QuantityUnit = draft.QuantityUnit; PrimaryContainerRequirements = draft.PrimaryContainerRequirements;
+        MinimumSampleAmount = draft.MinimumSampleAmount; SampleAmountUnit = draft.SampleAmountUnit;
         TemperatureRequirements = draft.TemperatureRequirements; StabilizerRequirements = draft.StabilizerRequirements;
         PackagingInstructions = draft.PackagingInstructions; LabelingInstructions = draft.LabelingInstructions;
         ProhibitedIdentifiers = draft.ProhibitedIdentifiers; SafetyRequirements = draft.SafetyRequirements;

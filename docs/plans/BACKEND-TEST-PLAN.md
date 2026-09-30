@@ -1,5 +1,33 @@
 # Backend Test Plan
 
+## Four-stage Customer Lab preparation — September 29, 2026
+
+The additive `AddLabSampleTubePairs` migration was applied to the configured local development database. Release builds of the API and test project compile; test execution remains pending under the request-only test rule. Integration coverage must exercise manual quote and configured standard placement with supported Sample type and Department address confirmation, idempotent shortage creation, Phaeno dispatch before roster, physical receipt, one physical-kit tube per Sample ID, duplicate and wrong-kit rejection, exact source/run finalization, shipment binding and retry rollback. The transportation-kit receipt integration case now includes rejection of a scanned barcode from a different physical kit before receipt, followed by acceptance and replay of the selected shipped kit's barcode; execution remains pending. Existing historical and Change-quote fixtures using the previous sample-list path need a deliberate historical setup or updated paired fixtures before their suites run.
+
+The additive `AddLabSampleTubeKitSelections` migration was applied to the configured local development database. It backfills selected kit records from any existing draft pairs. Add integration coverage for exact scanned-kit lookup at the accepted location, receipt and compatibility checks, cross-Job kit claim rejection, fixed selection across reload, rejection of pair entry before kit save, one active kit at a time, explicit finish with unused tubes before selecting another kit, and correction of a saved pair that reopens a finished kit before finalization. Test execution remains request-only.
+
+Add a paired-preparation regression with a placed Job pinned to a Sample type whose material quantity unit is not a tube count: the pair-save and finalization paths must still count one physical tube per saved pair and preserve the separately declared amount in its configured unit. Missing Sample type minimum or Tube product maximum, mismatched units, below-minimum amount, and above-maximum amount must reject the initial pair save without creating a pair or history event. A configured amount at either inclusive boundary must save. The physical tube count and tube volume capacity must remain distinct. A linked kit is orderable only when its tube maximum meets or exceeds the current Sample type minimum in the same unit. Once physical kits use a configured tube product, a changed maximum or unit must require a new product identity. The older sample-list path retains its tube-count guard because it derives physical slots from sample quantity. Execution remains pending under the request-only test rule.
+
+Add a manual-quote regression with no configured standard offerings: an active quoted Sample type that matches the Job and passes shipping readiness must accept, while a changed or unavailable type still fails. This regression is pending under the request-only test rule.
+
+## Customer order Department ownership — September 29, 2026
+
+`LabOperationsCommercialHandoffPostgresTests` now expects POMS initiation to
+reject a Department with no active Customer user; the quote-administrator case
+starts pricing while a Customer user exists, then removes that access before
+quote issuance. The readiness and initiation paths share the active-user check.
+Automated tests remain request-only.
+
+## Service-change approval in Requests — September 29, 2026
+
+`CrmRequestAcceptancePostgresTests` now expects approval and the dated source-linked entitlement to save together. `CrmRequestCompletionPostgresTests` adds approved-request setup that updates an existing permission with optimistic concurrency and no duplicate, rejection that leaves an invalid approval pending, and service approval that waits for a separately approved Company access scope. Active Department, date, overlap and stale-version validation remain server checks. These PostgreSQL regression sources compile in the Release API/test build with zero warnings or errors; automated tests were not run because this turn did not request test execution.
+
+## Hosted reset preparation — September 29, 2026
+
+The owner authorized the hosted clean reset and API/UI release with three accounts and canonical product types preserved. The maintenance importer now permits the current baseline's Phaeno supplier only through the existing exact expected-model-seed guard. Its Release/Linux publish and isolated candidate import pass. Wrong target, raw snapshot, conflicting replay and populated-baseline attempts are refused; exact replay and every-table verification preserve the reviewed 57-row package. The matching additive migration applies only to the candidate, with successful exact re-verification. No broad application suite is repeated for this maintenance-only allowlist correction; the full publication results below remain the API/UI source evidence. Protected receipts live under `artifacts/hosted-clean-reset-20260929/`.
+
+The [hosted release record](../operations/hosted-clean-reset-release-20260929.md) confirms cutover and matching API/UI activation. Post-startup every-table preservation/emptiness checks, three production Clerk bindings, retained access, API/database/public-read health and recent runtime-error checks pass. Coordinated and final write-frozen backups were restore-verified and encrypted copies verified off-server. No authenticated operator or physical/scientific workflow acceptance was performed.
+
 ## Publication verification — September 29, 2026
 
 The owner requested tests, commit and push without deployment. The final complete backend run exercised 1,126 cases: 1,106 passed, 18 failed and two were intentionally skipped. All remaining failures pass after fixture/assertion corrections in 32 targeted cases across retention, kit bundles, result-registration concurrency, baseline rollback and kit readiness. This produces 1,124 distinct passing cases across the complete run and targeted reruns; it does not claim a new single green full run. The skipped cases require Unix symbolic links or opt-in PostgreSQL backup/restore qualification.
@@ -2413,3 +2441,15 @@ September 28 follow-up: ProductTypes connected assertions reject creating a mana
 The [local reset record](LOCAL-CLEAN-DATABASE-20260928-PLAN.md) supersedes earlier additive-migration and old-kit fixture requirements. PersistenceTests now expects exactly one InitialCleanPortal migration. Shipping fixtures use purchased Shipping Containers, specification-owned contents, reusable named methods, explicit tube slots and supplier barcode namespaces. Catalog fixtures verify editable purchased-container identity/capacity and each defaults. QC capture tests require every configured required reference, with no exemption based on fixture names; optional attachments and conditional review remain current capabilities. Retired Website recovery and finished-kit receipt cases are removed.
 
 The complete solution builds with zero warnings/errors. The guarded baseline was applied locally and EF reports no pending model changes. Local seed counts and authenticated administrator access were verified. Automated backend suites were not run for this slice; authored fixture changes are not passing execution evidence. Production is unchanged. CRM compliance-field removal remains pending explicit confirmation.
+
+## September 29 transportation-kit barcode dispatch
+
+Connected request tests now assert type-level ready counts, exact barcode resolution, and withdrawn-kit rejection. The dispatch transaction continues to revalidate physical stock under its existing lock. These cases were updated but not executed under the request-only test rule. Quantity-flexible fulfillment and historical-demand conversion remain gated in the owning plan.
+
+## September 29 delivery target after complete physical receipt
+
+`LabJobDeadlineTests` now expects historical undated Jobs to accept tube intake without a deadline exception and covers observed-holiday arithmetic and the frozen due baseline. New connected coverage is still needed for standard and manual quote snapshots, rejection of initial quotes without a target, complete multi-tube and multi-shipment receipt, missing-calendar attention, and preserving existing placed Job dates. These suites were not run under the request-only test rule; the Release solution build is the static gate for this change.
+
+## September 29 requested full backend release run
+
+The complete Release solution builds with zero warnings or errors. All seven current EF migrations applied to a fresh disposable PostgreSQL reference database. The final full connected run passed **1,128 tests, with 2 intentional environment-dependent skips and 0 failures** (1,130 total). The skipped cases require a recovery-export environment and a supported file-storage host, respectively. Historical commercial handoff fixtures now use a received physical kit, a saved sample/tube pair, an issued shipping packet, shipment receipt, and registered-tube accession. Trial fixture grants are effective before the test clock boundary. The preceding full run had five failures, including a Windows socket-exhaustion error while another diagnostic suite was running; the isolated final run passed without concurrent tests. This evidence is local and simulated, not physical scanner, hosted authenticated, provider, or scientific acceptance.

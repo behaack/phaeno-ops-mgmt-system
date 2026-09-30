@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { ArrowLeft, Copy, Pencil, Plus, UserPlus, Users } from 'lucide-react'
+import { ArrowLeft, ChevronDown, Copy, Pencil, Plus, UserPlus, Users } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -33,8 +33,9 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
@@ -155,22 +156,23 @@ export function OrganizationDetailPage({
         <TabsContent value="overview" className="mt-5 space-y-4"><div className="grid gap-4 md:grid-cols-2"><Info label="Portal relationship" value={organization.kind} /><Info label="Access status" value={organization.isActive ? 'Enabled' : 'Suspended'} /><Info label="Pending requests" value={`${summary?.pendingRequestCount ?? 0}`} /></div>{organization.kind === 'Customer' ? <section className="space-y-3"><Label htmlFor="company-readiness-department">Department readiness</Label><select id="company-readiness-department" className="h-9 rounded-md border bg-background px-3 text-sm" value={selectedReadinessDepartment} onChange={event => setReadinessDepartmentId(event.target.value)}>{departmentsQuery.data?.filter(value => value.isActive).map(value => <option key={value.id} value={value.id}>{value.name}</option>)}</select>{pricingReadiness.isPending ? <p role="status">Checking readiness…</p> : null}{pricingReadiness.error ? <Alert variant="destructive"><AlertDescription>{apiErrorMessage(pricingReadiness.error)}</AlertDescription></Alert> : null}{pricingReadiness.data ? <CustomerOrderReadiness readiness={pricingReadiness.data} /> : null}</section> : null}<div className="rounded-lg border p-4"><h2 className="font-medium">Readiness note</h2><p className="mt-2 text-sm text-muted-foreground">{organization.portalReadinessNote || 'No readiness note recorded. It does not authorize transactions.'}</p></div>{!embedded && organization.kind === 'Prospect' ? <div className="rounded-lg border p-4"><h2 className="font-medium">Convert qualified prospect</h2><p className="mt-1 text-sm text-muted-foreground">Conversion changes the relationship type only. Access, invitations, and services remain explicit.</p><div className="mt-3 flex gap-2"><Button size="sm" disabled={conversionMutation.isPending} onClick={() => setConversionTarget('Customer')}>Convert to customer</Button><Button size="sm" variant="outline" disabled={conversionMutation.isPending} onClick={() => setConversionTarget('Partner')}>Convert to partner</Button></div></div> : null}</TabsContent>
         <TabsContent value="members" className="mt-5 space-y-5"><div className="flex items-center justify-between gap-3"><div><h2 className="font-medium">Portal users and invitations</h2><p className="text-sm text-muted-foreground">Only a Phaeno-reviewed Portal invitation grants access. Email delivery is tracked separately from invitation access.</p></div><Button size="sm" onClick={() => setInviteOpen(true)}><UserPlus data-icon="inline-start" />Invite user</Button></div><div className="space-y-3">{(usersQuery.data ?? []).map((user) => { const membership = user.memberships.find((value) => value.organizationId === organizationId); if (!membership) return null; return <div key={user.id} className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium">{user.firstName} {user.lastName}</p><p className="text-sm text-muted-foreground">{user.email} · {membership.isOrganizationAdmin ? 'Administrator' : 'Member'} · {membership.isActive ? user.status : 'Membership inactive'}</p></div><div className="flex gap-2">{membership.isActive ? <><Button size="sm" variant="outline" disabled={memberMutation.isPending} onClick={() => memberMutation.mutate({ membershipId: membership.id, action: 'role', isAdmin: !membership.isOrganizationAdmin })}>{membership.isOrganizationAdmin ? 'Make member' : 'Make admin'}</Button>{user.id !== session?.user?.id ? <Button size="sm" variant="destructive" disabled={memberMutation.isPending} onClick={() => setLifecycleTarget({ kind: 'member', membershipId: membership.id, email: user.email })}>Deactivate</Button> : null}</> : null}</div></div> })}{!usersQuery.isLoading && !(usersQuery.data ?? []).length ? <p className="rounded-lg border p-6 text-center text-sm text-muted-foreground">No Portal users yet.</p> : null}</div><div><h3 className="mb-3 font-medium">Pending invitations</h3><div className="space-y-2">{pendingInvitations.map((invite) => <InvitationRow key={invite.id} invitation={invite} isPending={inviteAction.isPending || developmentLinkMutation.isPending} onAction={(action) => inviteAction.mutate({ id: invite.id, action })} onDevelopmentLink={import.meta.env.DEV ? () => developmentLinkMutation.mutate(invite.id) : undefined} />)}{invitationsQuery.isLoading ? <p role="status" className="text-sm text-muted-foreground">Checking invitation delivery…</p> : null}{!invitationsQuery.isLoading && !pendingInvitations.length ? <p className="text-sm text-muted-foreground">No pending invitations.</p> : null}</div></div></TabsContent>
         <TabsContent value="services" className="mt-5 space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="font-medium">Service entitlements</h2>
-              <p className="text-sm text-muted-foreground">
+          <Card className="gap-0 py-0">
+            <CardHeader className="border-b bg-muted/50 p-4">
+              <CardTitle>Service entitlements</CardTitle>
+              <CardDescription>
                 PSeq Kit always includes its data-assembly phase; it is not a
                 separate entitlement.
-              </p>
-            </div>
-            {organization.kind === 'Customer' || organization.kind === 'Partner' ? (
-              <Button size="sm" onClick={() => setEntitlementOpen(true)}>
-                <Plus data-icon="inline-start" />
-                Add entitlement
-              </Button>
-            ) : null}
-          </div>
-          <div className="space-y-3">
+              </CardDescription>
+              {organization.kind === 'Customer' || organization.kind === 'Partner' ? (
+                <CardAction>
+                  <Button size="sm" onClick={() => setEntitlementOpen(true)}>
+                    <Plus data-icon="inline-start" />
+                    Add entitlement
+                  </Button>
+                </CardAction>
+              ) : null}
+            </CardHeader>
+            <CardContent className="space-y-3 p-4">
             {(entitlementsQuery.data ?? []).map((value) => (
               <div
                 key={value.id}
@@ -199,34 +201,26 @@ export function OrganizationDetailPage({
                     </p>
                   ) : null}
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {!value.endReason ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={editEntitlementMutation.isPending}
-                      onClick={() => {
+                <ActionMenu modal={false}>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" variant="outline" aria-label={`Actions for ${serviceLabel(value.service)}`}>
+                      Actions <ChevronDown aria-hidden="true" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-max min-w-40 max-w-[calc(100vw-2rem)]">
+                    {!value.endReason ? (
+                      <DropdownMenuItem disabled={editEntitlementMutation.isPending} onSelect={() => {
                         editEntitlementMutation.reset()
                         setEntitlementEditTarget(value)
-                      }}
-                    >
-                      <Pencil data-icon="inline-start" />
-                      Edit
-                    </Button>
-                  ) : null}
-                  {value.isEffective ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={endMutation.isPending}
-                      onClick={() =>
+                      }}><Pencil aria-hidden="true" />Edit</DropdownMenuItem>
+                    ) : null}
+                    {value.isEffective ? (
+                      <DropdownMenuItem disabled={endMutation.isPending} onSelect={() =>
                         setLifecycleTarget({ kind: 'entitlement', entitlement: value })
-                      }
-                    >
-                      End now
-                    </Button>
-                  ) : null}
-                </div>
+                      }>End now</DropdownMenuItem>
+                    ) : null}
+                  </DropdownMenuContent>
+                </ActionMenu>
               </div>
             ))}
             {!entitlementsQuery.isLoading && !(entitlementsQuery.data ?? []).length ? (
@@ -234,7 +228,8 @@ export function OrganizationDetailPage({
                 No service entitlements recorded.
               </p>
             ) : null}
-          </div>
+            </CardContent>
+          </Card>
         </TabsContent>
         <TabsContent value="retention" className="mt-5"><OrganizationRetentionPolicyPanel enabled={activeTab === 'retention'} organizationId={organizationId} organizationName={organization.name} /></TabsContent>
       </Tabs></CardContent></Card>

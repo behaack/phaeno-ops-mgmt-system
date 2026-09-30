@@ -93,6 +93,8 @@ public static class OrderManagementModelConfiguration
             Quantity(entity.Property(e => e.MinimumQuantity));
             Quantity(entity.Property(e => e.MaximumQuantity));
             Text(entity.Property(e => e.QuantityUnit), 100);
+            Quantity(entity.Property(e => e.MinimumSampleAmount));
+            Text(entity.Property(e => e.SampleAmountUnit), 8, false);
             Text(entity.Property(e => e.PrimaryContainerRequirements), 2000);
             Text(entity.Property(e => e.TemperatureRequirements), 2000);
             Text(entity.Property(e => e.StabilizerRequirements), 2000, false);
@@ -854,6 +856,35 @@ public static class OrderManagementModelConfiguration
             entity.HasIndex(e => new { e.LabServiceOrderId, e.Status });
             entity.HasOne<LabServiceOrder>().WithMany(e => e.Samples).HasForeignKey(e => e.LabServiceOrderId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<LabSample>().WithMany().HasForeignKey(e => e.ReplacementForSampleId).OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<LabSampleTubeKitSelection>(entity =>
+        {
+            entity.ToTable("lab_sample_tube_kit_selections", commercialSchema);
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.LabServiceOrderId, e.StockKitId }).IsUnique();
+            entity.HasIndex(e => e.StockKitId).IsUnique();
+            entity.HasOne<LabServiceOrder>().WithMany().HasForeignKey(e => e.LabServiceOrderId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<SampleShippingStockKit>().WithMany().HasForeignKey(e => e.StockKitId).OnDelete(DeleteBehavior.Restrict);
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<LabSampleTubePair>(entity =>
+        {
+            entity.ToTable("lab_sample_tube_pairs", commercialSchema);
+            entity.HasKey(e => e.Id);
+            Text(entity.Property(e => e.CustomerSampleId), 255);
+            Text(entity.Property(e => e.BiologicalSource), 500);
+            Text(entity.Property(e => e.SupplierTubeBarcode), 255);
+            Text(entity.Property(e => e.DeclaredQuantityUnit), 50);
+            Quantity(entity.Property(e => e.DeclaredQuantity));
+            entity.HasIndex(e => new { e.LabServiceOrderId, e.CustomerSampleId }).IsUnique();
+            entity.HasIndex(e => new { e.LabServiceOrderId, e.StockTubeId }).IsUnique();
+            entity.HasIndex(e => e.StockTubeId).IsUnique();
+            entity.HasOne<LabServiceOrder>().WithMany().HasForeignKey(e => e.LabServiceOrderId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<SampleShippingStockKit>().WithMany().HasForeignKey(e => e.StockKitId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<SampleShippingStockTube>().WithMany().HasForeignKey(e => e.StockTubeId).OnDelete(DeleteBehavior.Restrict);
             Audit(entity);
         });
 

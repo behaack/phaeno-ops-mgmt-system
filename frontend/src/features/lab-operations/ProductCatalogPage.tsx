@@ -69,6 +69,7 @@ export function ProductCatalogPage({ supplierId, productId }: { supplierId?: str
         <Fact label="Description">{current.product.description}</Fact>
         <Fact label="Inventory unit">{current.product.defaultQuantityUnit ?? 'Needs configuration'}</Fact>
         {current.product.kind === 'ShippingContainer' ? <Fact label="Tube capacity">{current.product.tubeCapacity ?? 'Needs configuration'}</Fact> : null}
+        {current.product.kind === 'Tube' ? <Fact label="Maximum sample amount">{current.product.maximumSampleAmount != null && current.product.sampleAmountUnit ? `${current.product.maximumSampleAmount} ${current.product.sampleAmountUnit}` : 'Needs configuration'}</Fact> : null}
         <Fact label="Status"><Badge variant="secondary">{current.product.isActive ? 'Active' : 'Inactive'}</Badge></Fact>
       </dl></CardContent></Card>
     </> : <Card className="gap-0 overflow-hidden py-0"><CardHeader className="border-b bg-muted/50 p-4"><CardTitle>Products</CardTitle><CardDescription>Find purchased and Phaeno-made catalog products across suppliers.</CardDescription><CardAction><Button type="button" onClick={() => setChoosingSupplier(true)}><Plus data-icon="inline-start" /> New product</Button></CardAction>

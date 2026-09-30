@@ -25,7 +25,7 @@ type FrozenSample = {
   tubes: Array<{ barcode: string; ordinal: string; quantity: string; quantityUnit: string }>
 }
 
-export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAutoPrint, onFailure, embedded = false, packingOnly = false, onPrint }: { shipmentId: string; autoPrint?: boolean; onAutoPrint?: (insert: ShippingInsertIdentity) => void; onFailure?: (message: string) => void; embedded?: boolean; packingOnly?: boolean; onPrint?: () => void }) {
+export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAutoPrint, onFailure, embedded = false, packingOnly = false }: { shipmentId: string; autoPrint?: boolean; onAutoPrint?: (insert: ShippingInsertIdentity) => void; onFailure?: (message: string) => void; embedded?: boolean; packingOnly?: boolean }) {
   const Page = packingOnly ? 'div' : 'main'
   const autoPrintHandled = useRef(false)
   const [manifestPage, setManifestPage] = useState<{ revisionKey: string; page: number } | null>(null)
@@ -93,7 +93,6 @@ export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAuto
   if (packingOnly) return <div className="space-y-6 wrap-anywhere" data-packet-id={packet.id} data-packet-revision={packet.revision}>
     <p className="text-sm text-muted-foreground">Shipment {shipment.shipmentNumber} · Shipping insert {packet.packetNumber} · revision {packet.revision}</p>
     <FrozenPackingInstructions destination={destination} instructions={instructions} />
-    {onPrint ? <div className="border-t pt-4"><p className="mb-3 text-sm text-muted-foreground">Printing creates the receiving sheet to place inside this container. Return to these instructions at any time from the shipment’s Actions menu.</p><Button onClick={onPrint}><Printer aria-hidden="true" data-icon="inline-start" />Print shipping insert</Button></div> : null}
   </div>
 
   return (

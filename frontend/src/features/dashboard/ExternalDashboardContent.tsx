@@ -51,6 +51,7 @@ type WorkflowCardProps = {
   href:
     | '/data-assembly'
     | '/data-library'
+    | '/departments'
     | '/lab-services'
     | '/phaeno-users'
     | '/reagent-orders'
@@ -255,7 +256,7 @@ export function ExternalDashboardContent({
         title="User management"
         description={`Manage members and pending invitations for ${membership.organizationName}.`}
         icon={UsersRound}
-        href="/phaeno-users"
+        href={isCustomer ? '/departments' : '/phaeno-users'}
         actionLabel="Manage users"
         summary="Administrator access"
         isLoading={false}
@@ -361,10 +362,7 @@ function WorkflowCard({
       </CardContent>
       <CardFooter className="py-2">
         <Button asChild variant="ghost" className="-ml-3">
-          <Link to={href}>
-            {actionLabel}
-            <ArrowRight data-icon="inline-end" />
-          </Link>
+          {href === '/departments' ? <Link to="/departments" search={{ settingsTab: 'people' }}>{actionLabel}<ArrowRight data-icon="inline-end" /></Link> : <Link to={href}>{actionLabel}<ArrowRight data-icon="inline-end" /></Link>}
         </Button>
       </CardFooter>
     </Card>

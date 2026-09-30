@@ -33,6 +33,7 @@ const mocks = vi.hoisted(() => ({
   getKit: vi.fn(),
   getAssembly: vi.fn(),
   profiles: vi.fn(),
+  locations: vi.fn(),
   prepare: vi.fn(),
   update: vi.fn(),
   upload: vi.fn(),
@@ -90,6 +91,9 @@ vi.mock('#/api/order-management', async (original) => ({
   uploadAssemblyInput: mocks.upload,
   submitAssemblyRequest: mocks.submit,
 }))
+vi.mock('#/api/customer-delivery-locations', () => ({
+  getCustomerDeliveryLocations: mocks.locations,
+}))
 function show(content: ReactNode) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -113,6 +117,7 @@ beforeEach(() => {
   mocks.getKit.mockResolvedValue(structuredClone(bundleKitOrder))
   mocks.getAssembly.mockResolvedValue(structuredClone(bundleAssembly))
   mocks.profiles.mockResolvedValue([])
+  mocks.locations.mockResolvedValue([{ id: '10000000-0000-4000-8000-000000000011', organizationId: bundleIds.organization, departmentId: bundleIds.department, label: 'Training receiving', recipient: 'Training lab', line1: '1 Test Way', line2: null, city: 'Baltimore', region: 'MD', postalCode: '21201', countryCode: 'US', phone: null, deliveryInstructions: null, isDefault: true, isActive: true, version: 1 }])
 })
 async function reviewStandard() {
   fireEvent.change(await screen.findByRole('combobox', { name: 'Offering' }), {
@@ -124,7 +129,9 @@ async function reviewStandard() {
     ).toHaveProperty('disabled', false),
   )
   fireEvent.click(screen.getByRole('button', { name: 'Review standard order' }))
-  return within(screen.getByRole('dialog'))
+  const dialog = within(screen.getByRole('dialog'))
+  await waitFor(() => expect(dialog.getByRole('button', { name: 'Confirm price and order' })).toHaveProperty('disabled', false))
+  return dialog
 }
 
 describe('configured Lab Service commitment', () => {
@@ -133,12 +140,9 @@ describe('configured Lab Service commitment', () => {
     const dialog = await reviewStandard()
     expect(dialog.getByText('Total $220.00')).toBeTruthy()
     fireEvent.click(
-      dialog.getByRole('button', { name: 'Place standard order' }),
+      dialog.getByRole('button', { name: 'Confirm price and order' }),
     )
-    expect(await dialog.findByRole('alert')).toHaveProperty(
-      'textContent',
-      expect.stringContaining('Confirm the scope'),
-    )
+    await waitFor(() => expect(dialog.getAllByRole('alert').some(alert => alert.textContent?.includes('Confirm the scope'))).toBe(true))
     expect(mocks.place).not.toHaveBeenCalled()
     mocks.preview.mockResolvedValue({
       ...bundlePreview,
@@ -155,9 +159,11 @@ describe('configured Lab Service commitment', () => {
       dialog.getByRole('textbox', { name: /Purchase order number/ }),
       { target: { value: 'TRAINING-PO' } },
     )
-    fireEvent.click(dialog.getByRole('checkbox'))
+    fireEvent.change(dialog.getByRole('combobox', { name: /Ship Transportation kits to/ }), { target: { value: '10000000-0000-4000-8000-000000000011' } })
+    fireEvent.click(dialog.getByRole('checkbox', { name: /I confirm this is the Sample type/ }))
+    fireEvent.click(dialog.getByRole('checkbox', { name: /I accept the displayed scope/ }))
     fireEvent.click(
-      dialog.getByRole('button', { name: 'Place standard order' }),
+      dialog.getByRole('button', { name: 'Confirm price and order' }),
     )
     await waitFor(() =>
       expect(mocks.place).toHaveBeenCalledWith(
@@ -172,6 +178,7 @@ describe('configured Lab Service commitment', () => {
           catalogItemVersion: 4,
           prohibitedDataConfirmed: true,
           purchaseOrderNumber: 'TRAINING-PO',
+          kitDeliveryLocationId: '10000000-0000-4000-8000-000000000011',
         }),
         expect.any(String),
       ),
@@ -212,9 +219,11 @@ describe('configured Lab Service commitment', () => {
       dialog.getByRole('textbox', { name: /Purchase order number/ }),
       { target: { value: 'TRAINING-PO' } },
     )
-    fireEvent.click(dialog.getByRole('checkbox'))
+    fireEvent.change(dialog.getByRole('combobox', { name: /Ship Transportation kits to/ }), { target: { value: '10000000-0000-4000-8000-000000000011' } })
+    fireEvent.click(dialog.getByRole('checkbox', { name: /I confirm this is the Sample type/ }))
+    fireEvent.click(dialog.getByRole('checkbox', { name: /I accept the displayed scope/ }))
     fireEvent.click(
-      dialog.getByRole('button', { name: 'Place standard order' }),
+      dialog.getByRole('button', { name: 'Confirm price and order' }),
     )
     fireEvent.click(
       await dialog.findByRole('button', {
@@ -232,7 +241,7 @@ describe('configured Lab Service commitment', () => {
     )
     expect(
       within(screen.getByRole('dialog'))
-        .getByRole('checkbox')
+        .getByRole('checkbox', { name: /I accept the displayed scope/ })
         .getAttribute('aria-checked'),
     ).toBe('false')
   })

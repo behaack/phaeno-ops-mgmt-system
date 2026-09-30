@@ -31,7 +31,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         Assert.Equal(1, preview.SpecimenCount);
         Assert.Equal(20, preview.SequencingRunCount);
         Assert.Equal(preview.Offering.UnitPrice * 20, preview.Subtotal);
-        var placed = await controller.PlaceStandard(order.Id, StandardRequest(preview), default);
+        var placed = await controller.PlaceStandard(order.Id, StandardRequest(scope, preview), default);
         Assert.Equal(1, placed.RequestedSpecimenCount);
         Assert.Equal(20, placed.RequestedSequencingRunCount);
         Assert.Equal(20, placed.StandardCommercialSnapshot!.SequencingRunCount);
@@ -97,7 +97,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         Assert.True(preview.CanPlaceStandardOrder, string.Join("; ", preview.Blockers));
         var expectedTotal = decimal.Round(preview.Offering.UnitPrice * 1.1m, 2, MidpointRounding.AwayFromZero);
         Assert.Equal(expectedTotal, preview.Total);
-        var request = StandardRequest(preview);
+        var request = StandardRequest(scope, preview);
         var placed = await controller.PlaceStandard(order.Id, request, default);
         var replay = await controller.PlaceStandard(order.Id, request, default);
         Assert.Equal(placed.Id, replay.Id); Assert.Equal("ConfiguredDirect", placed.EntryMode);
@@ -131,7 +131,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         var analysis = await scope.DbContext.AnalysisDefinitions.SingleAsync(value => value.Id == offering.AnalysisIds().Single());
         analysis.Update(analysis.Name, "Changed scientific scope", analysis.SubmissionInstructions, analysis.RequiredIntakeFieldsJson,
             "[\"updated-output\"]", true, false); await scope.DbContext.SaveChangesAsync();
-        var stale = await Assert.ThrowsAsync<OrderManagementException>(() => controller.PlaceStandard(order.Id, StandardRequest(preview), default));
+        var stale = await Assert.ThrowsAsync<OrderManagementException>(() => controller.PlaceStandard(order.Id, StandardRequest(scope, preview), default));
         Assert.Equal("standard_review_expired", stale.ErrorCode);
         scope.DbContext.ChangeTracker.Clear();
         Assert.Equal(LabServiceOrderStatus.DraftRequest, (await scope.DbContext.LabServiceOrders.SingleAsync(value => value.Id == order.Id)).Status);
@@ -140,7 +140,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         var current = await controller.PreviewStandard(order.Id, offering.Id, default);
         Assert.NotEqual(preview.ReviewToken, current.ReviewToken);
         await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => controller.PlaceStandard(order.Id,
-            StandardRequest(current) with { CatalogItemVersion = current.Offering.CatalogItemVersion - 1 }, default));
+            StandardRequest(scope, current) with { CatalogItemVersion = current.Offering.CatalogItemVersion - 1 }, default));
     }
 
     [PostgreSqlReferenceFact]
@@ -170,9 +170,9 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         controller.HttpContext.Request.Headers["X-Department-Id"] = order.DepartmentId.ToString();
         var assignment = await scope.DbContext.OrganizationDepartmentMemberships.SingleAsync(value => value.OrganizationMembershipId == membership.Id);
         assignment.SetDepartmentAdmin(false); await scope.DbContext.SaveChangesAsync();
-        Assert.Equal(403, (await Assert.ThrowsAsync<OrderManagementException>(() => controller.PlaceStandard(order.Id, StandardRequest(current), default))).StatusCode);
+        Assert.Equal(403, (await Assert.ThrowsAsync<OrderManagementException>(() => controller.PlaceStandard(order.Id, StandardRequest(scope, current), default))).StatusCode);
         assignment.SetDepartmentAdmin(true); await scope.DbContext.SaveChangesAsync();
-        Assert.Equal("PlacedAwaitingSamples", (await controller.PlaceStandard(order.Id, StandardRequest(current), default)).Status);
+        Assert.Equal("PlacedAwaitingSamples", (await controller.PlaceStandard(order.Id, StandardRequest(scope, current), default)).Status);
     }
 
     [PostgreSqlReferenceFact]
@@ -207,9 +207,12 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         Assert.Single(await scope.DbContext.OrderNotifications.Where(value => value.WorkflowId == order.Id).ToListAsync());
     }
 
-    private static PlaceStandardLabOrderRequest StandardRequest(StandardLabOrderPreviewDto value) => new(value.OrderVersion,
+    private static PlaceStandardLabOrderRequest StandardRequest(HandoffTestScope scope, StandardLabOrderPreviewDto value) => new(value.OrderVersion,
         value.Offering.Id, value.Offering.OfferingVersion, value.Offering.Version, value.Offering.CatalogItemVersion,
-        value.CommercialProfileVersion!.Value, value.DepartmentVersion, value.OrganizationVersion, value.ReviewToken, true);
+        value.CommercialProfileVersion!.Value, value.DepartmentVersion, value.OrganizationVersion, value.ReviewToken, true,
+        ConfirmedSampleTypeId: scope.ActiveSampleTypeId,
+        KitDeliveryLocationId: scope.DeliveryLocationId,
+        KitDeliveryLocationVersion: 1);
 
     private sealed partial class HandoffTestScope
     {

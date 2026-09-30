@@ -4,7 +4,7 @@ using NpgsqlTypes;
 
 internal static partial class DatabaseReset
 {
-    private static readonly HashSet<string> ModelSeedTables = ["commercial_ops.crm_pipelines", "commercial_ops.crm_pipeline_stages", "commercial_ops.trial_deliverable_definitions", "commercial_ops.released_deliverable_policy_defaults", "lab_ops.lab_product_types", "website.web_notification_processing_controls"];
+    private static readonly HashSet<string> ModelSeedTables = ["commercial_ops.crm_pipelines", "commercial_ops.crm_pipeline_stages", "commercial_ops.trial_deliverable_definitions", "commercial_ops.released_deliverable_policy_defaults", "lab_ops.lab_product_types", "lab_ops.lab_suppliers", "website.web_notification_processing_controls"];
     private static async Task Import(NpgsqlConnection db, string path, bool verifyOnly)
     {
         var bytes = await File.ReadAllBytesAsync(path); var hash = Hash(bytes);

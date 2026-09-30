@@ -1,5 +1,5 @@
 import { Popover } from "radix-ui";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type Ref } from "react";
 
 import { Input } from "#/components/ui/input";
@@ -27,6 +27,8 @@ export function SearchableSelect({
   portal = false,
   disabled = false,
   required = false,
+  clearable = false,
+  clearLabel = "Clear selection",
   "aria-describedby": ariaDescribedBy,
   "aria-invalid": ariaInvalid,
   inputRef: externalInputRef,
@@ -46,6 +48,8 @@ export function SearchableSelect({
   portal?: boolean;
   disabled?: boolean;
   required?: boolean;
+  clearable?: boolean;
+  clearLabel?: string;
   "aria-describedby"?: string;
   "aria-invalid"?: boolean;
   inputRef?: Ref<HTMLInputElement>;
@@ -184,7 +188,7 @@ export function SearchableSelect({
                 : undefined
             }
             autoComplete="off"
-            className="pl-9"
+            className={cn("pl-9", clearable && selectedOption && !disabled && "pr-10")}
             placeholder={placeholder}
             onFocus={() => {
               if (disabled) return;
@@ -216,6 +220,24 @@ export function SearchableSelect({
               } else dismissChoices(event);
             }}
           />
+          {clearable && selectedOption && !disabled ? (
+            <button
+              type="button"
+              aria-label={clearLabel}
+              title={clearLabel}
+              className="absolute top-1/2 right-1 flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={() => {
+                onValueChange("");
+                setSearch("");
+                setActiveIndex(0);
+                setOpen(true);
+                inputRef.current?.setCustomValidity("");
+                inputRef.current?.focus();
+              }}
+            >
+              <X aria-hidden="true" className="size-4" />
+            </button>
+          ) : null}
         </div></Popover.Anchor>
 
         {open && portal ? (

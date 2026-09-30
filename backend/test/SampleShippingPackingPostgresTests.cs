@@ -859,6 +859,7 @@ public partial class SampleShippingPostgresTests
             }
             var supplier = new PSeq.Operations.Laboratory.Domain.LabSupplier($"TEST-CATALOG-{Suffix}-{Guid.NewGuid():N}");
             var tube = new PSeq.Operations.Laboratory.Domain.LabSupplierProduct(supplier.Id, "T-1", "TEST ONLY tube", PSeq.Operations.Laboratory.Domain.LabProductType.TubeId);
+            tube.SetMaximumSampleAmount(1000m, "µL");
             var shipper = new PSeq.Operations.Laboratory.Domain.LabSupplierProduct(supplier.Id, "B-1", "TEST ONLY shipper", PSeq.Operations.Laboratory.Domain.LabProductType.ShippingContainerId);
             tube.SetDefaultQuantityUnit("each");
             shipper.SetDefaultQuantityUnit("each");

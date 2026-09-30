@@ -88,7 +88,9 @@ export function UserMenu() {
     session,
     selectedMembership,
     selectedOrganizationKind,
-  )
+  ) && !(selectedOrganizationKind === 'Customer'
+    && selectedMembership?.isOrganizationAdmin
+    && session?.capabilities.canManageMembers)
   useEffect(() => {
     const viewport = window.matchMedia('(min-width: 1024px)')
     const closeOnLayoutChange = () => {

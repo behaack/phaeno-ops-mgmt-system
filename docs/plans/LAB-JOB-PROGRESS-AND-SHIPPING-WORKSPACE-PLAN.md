@@ -124,7 +124,9 @@ progress**. It becomes **Complete** only after every required dispatch is record
 ### Direct next-step printing and packing acknowledgement
 
 When **Send** is current and the selected eligible shipment has a current shipping
-insert, **Your next step** offers **Print shipping insert** directly. It uses the
+insert, **Your next step** offers separate **Review shipping instructions** and
+**Print shipping insert** buttons. Review opens the frozen instructions without
+a second print control inside them. Print uses the
 existing current-revision print flow and keeps the Job, selected container, page,
 saved matches and focus context intact. Missing insert confirmation continues to
 use the existing review/confirm action and its prerequisites.
@@ -134,6 +136,8 @@ was successfully printed and placed inside the correct container. Do not infer
 success from opening, closing or cancelling the browser print dialog. Dismissing
 this acknowledgement, cancelling printing, or a print/validation error must not
 record it. Confirm only after the physical printing and packing work was done.
+The confirmation modal keeps a brief header and shows the insert number, revision,
+shipment number, and two physical checks in its body.
 
 An explicit acknowledgement switches the next-step button to **Record shipment**;
 its instructions still require carrier handoff before recording carrier, tracking
@@ -428,8 +432,9 @@ Acceptance criteria:
   carrier handoff and dispatch recording. It completes only after every required
   active shipment is recorded as sent; neither insert confirmation nor printing
   alone completes it.
-- A ready current insert gives **Your next step** a direct **Print shipping insert**
-  action. Only an explicit printed-and-packed acknowledgement changes it to
+- A ready current insert gives **Your next step** separate **Review shipping
+  instructions** and direct **Print shipping insert** actions. The review dialog
+  contains instructions only. Only an explicit printed-and-packed acknowledgement changes them to
   **Record shipment**. Cancellation, dismissal, error or a changed insert revision
   cannot acknowledge the work; reprint stays in Actions. Tab/user/organization/
   shipment/insert scope and deliberate multi-container selection prevent reuse

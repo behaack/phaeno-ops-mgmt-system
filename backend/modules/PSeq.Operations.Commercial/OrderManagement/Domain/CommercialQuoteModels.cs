@@ -43,6 +43,8 @@ public sealed class LabServiceQuote : IAudit, IConcurrency
     public decimal Subtotal { get; private set; }
     public decimal Tax { get; private set; }
     public decimal Total { get; private set; }
+    // Null identifies quotes issued before the full-receipt business-day commitment.
+    public int? DeliveryTargetBusinessDays { get; private set; }
     public string Currency { get; private set; } = "USD";
     public DateTime IssuedAt { get; private set; }
     public DateTime ExpiresAt { get; private set; }
@@ -96,6 +98,13 @@ public sealed class LabServiceQuote : IAudit, IConcurrency
 
     public QuoteStatus EffectiveStatus(DateTime utcNow)
         => Status == QuoteStatus.Issued && AcceptedAt is null && ExpiresAt <= utcNow ? QuoteStatus.Expired : Status;
+
+    public void SetDeliveryTarget(int businessDays)
+    {
+        if (Status != QuoteStatus.SyncPending || businessDays is < 1 or > 365)
+            throw new InvalidOperationException("Choose a delivery target of 1 to 365 business days before issuing the quote.");
+        DeliveryTargetBusinessDays = businessDays;
+    }
 
     public void MarkIssued() { if (Status != QuoteStatus.SyncPending) throw new InvalidOperationException(); Status = QuoteStatus.Issued; }
 

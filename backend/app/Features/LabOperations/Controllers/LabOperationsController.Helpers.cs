@@ -171,11 +171,77 @@ public sealed partial class LabOperationsController
         CancellationToken cancellationToken)
     {
         if (work.Status is LabWorkOrderStatus.Cancelled or LabWorkOrderStatus.ReadyForRelease) return;
+        await EstablishFullReceiptDeadlineAsync(work, actorUserId, cancellationToken);
         if (work.Status == LabWorkOrderStatus.AwaitingSpecimens)
             work.RecordMilestone(LabWorkOrderStatus.Received);
         else work.AdvanceProjectionVersion();
         await EmitProjectionAsync(work, actorUserId, "IntakeProgressUpdated", cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task EstablishFullReceiptDeadlineAsync(LabWorkOrder work, Guid actorUserId,
+        CancellationToken cancellationToken)
+    {
+        if (work.TurnaroundPolicyKey != LabWorkOrder.FullReceiptBusinessDayPolicy
+            || work.OriginalDeliveryDueAtUtc.HasValue || !work.MaximumTurnaroundDays.HasValue
+            || work.Specimens.Count == 0) return;
+
+        var specimenIds = work.Specimens.Select(item => item.SubmittedSpecimenId).ToHashSet();
+        var shipmentIds = await dbContext.SampleShipments
+            .Where(item => item.LabWorkOrderId == work.Id && item.Status != SampleShipmentStatus.Cancelled)
+            .Select(item => item.Id).ToArrayAsync(cancellationToken);
+        var items = await dbContext.SampleShipmentItems.Include(item => item.TubeSlots)
+            .Where(item => shipmentIds.Contains(item.SampleShipmentId)
+                && specimenIds.Contains(item.SubmittedSpecimenId))
+            .ToListAsync(cancellationToken);
+        if (specimenIds.Any(id => !items.Any(item => item.SubmittedSpecimenId == id))
+            || items.Any(item => item.TubeSlots.Count == 0
+                || item.TubeSlots.Any(slot => !slot.RegisteredSampleTubeId.HasValue))) return;
+        var tubeIds = items.SelectMany(item => item.TubeSlots)
+            .Select(slot => slot.RegisteredSampleTubeId!.Value).Distinct().ToArray();
+        var tubes = await dbContext.RegisteredSampleTubes
+            .Where(item => tubeIds.Contains(item.Id)).ToListAsync(cancellationToken);
+        if (tubes.Count != tubeIds.Length || tubes.Any(item => !item.ReceivedAt.HasValue)) return;
+        var lastReceivedAt = tubes.Max(item => item.ReceivedAt!.Value);
+        var calendar = await dbContext.Set<LabBusinessCalendar>().Include(item => item.Holidays)
+            .OrderByDescending(item => item.Revision).FirstOrDefaultAsync(cancellationToken);
+        if (calendar is null)
+        {
+            await RecordCalendarPendingAsync();
+            return;
+        }
+        DateTime dueAt;
+        try
+        {
+            dueAt = LabForecastClock.AddDays(lastReceivedAt,
+                work.MaximumTurnaroundDays.Value, LabDayBasis.Business, calendar);
+        }
+        catch (LabForecastCalendarException)
+        {
+            // Physical receipt is retained even when the holiday calendar needs extension.
+            await RecordCalendarPendingAsync();
+            return;
+        }
+        work.RecordFullReceiptDeadline(lastReceivedAt, dueAt);
+        dbContext.LabWorkEvents.Add(new LabWorkEvent(work.Id, null, "DeliveryDeadlineEstablished",
+            DateTime.UtcNow, actorUserId, JsonSerializer.Serialize(new
+            {
+                lastRequiredTubeReceivedAtUtc = lastReceivedAt, dueAtUtc = dueAt,
+                businessDays = work.MaximumTurnaroundDays, calendarId = calendar.Id,
+                calendarRevision = calendar.Revision
+            }, JsonOptions)));
+
+        async Task RecordCalendarPendingAsync()
+        {
+            if (await dbContext.LabWorkEvents.AnyAsync(item => item.LabWorkOrderId == work.Id
+                && item.EventCode == "DeliveryDeadlinePendingCalendar", cancellationToken)) return;
+            dbContext.LabWorkEvents.Add(new LabWorkEvent(work.Id, null, "DeliveryDeadlinePendingCalendar",
+                DateTime.UtcNow, actorUserId, JsonSerializer.Serialize(new
+                {
+                    lastRequiredTubeReceivedAtUtc = lastReceivedAt,
+                    businessDays = work.MaximumTurnaroundDays
+                }, JsonOptions)));
+        }
     }
 
     private async Task<List<LabProtocolDto>> ReadProtocolsAsync(CancellationToken cancellationToken)

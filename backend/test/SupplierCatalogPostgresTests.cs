@@ -119,12 +119,12 @@ public partial class SampleShippingPostgresTests
         Assert.Equal(approvedShipperPart.ProductDescription, kit.ShipperProductDescription);
         scope.ClearTrackedState();
         approvedTube = (await catalog.List(default)).Single(s => s.Id == approvedSupplier.Id).Products.Single(p => p.Id == approvedTube.Id);
-        var changed = await catalog.UpdateProduct(approvedSupplier.Id, approvedTube.Id, new("T-NEW", "Changed description", LabProductType.TubeId, false, approvedTube.Version), default);
+        var changed = await catalog.UpdateProduct(approvedSupplier.Id, approvedTube.Id, new("T-NEW", "Changed description", LabProductType.TubeId, false, approvedTube.Version, MaximumSampleAmount: approvedTube.MaximumSampleAmount, SampleAmountUnit: approvedTube.SampleAmountUnit), default);
         scope.ClearTrackedState();
-        await Assert.ThrowsAsync<OrderManagementException>(() => catalog.UpdateProduct(approvedSupplier.Id, approvedTube.Id, new("T-OLD", "Stale edit", LabProductType.TubeId, true, approvedTube.Version), default));
+        await Assert.ThrowsAsync<OrderManagementException>(() => catalog.UpdateProduct(approvedSupplier.Id, approvedTube.Id, new("T-OLD", "Stale edit", LabProductType.TubeId, true, approvedTube.Version, MaximumSampleAmount: approvedTube.MaximumSampleAmount, SampleAmountUnit: approvedTube.SampleAmountUnit), default));
         scope.ClearTrackedState();
         await Assert.ThrowsAsync<OrderManagementException>(() => stock.Create(new(size.Id, approvedTube.Id, approvedShipperPart.SupplierProductId, null), default));
-        await catalog.UpdateProduct(approvedSupplier.Id, approvedTube.Id, new(changed.ProductNumber, changed.Description, LabProductType.TubeId, true, changed.Version), default);
+        await catalog.UpdateProduct(approvedSupplier.Id, approvedTube.Id, new(changed.ProductNumber, changed.Description, LabProductType.TubeId, true, changed.Version, MaximumSampleAmount: changed.MaximumSampleAmount, SampleAmountUnit: changed.SampleAmountUnit), default);
         scope.ClearTrackedState();
         await catalog.Update(approvedSupplier.Id, new(approvedSupplier.Name, false, approvedSupplier.Version), default);
         scope.ClearTrackedState();

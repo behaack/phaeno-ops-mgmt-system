@@ -59,7 +59,7 @@ describe('Lab Job customer preparation evidence', () => {
   it('does not treat submitting a request or an order status as customer commitment', () => {
     const value = { ...order, status: 'SubmittedForQuote', placedAt: null, sampleRosterFinalizedAt: null }
     expect(find('confirm-order', { order: value })).toMatchObject({ state: 'waiting-for-phaeno', owner: 'Phaeno' })
-    expect(find('samples', { order: value }).state).toBe('not-started')
+    expect(find('receive-kits', { order: value }).state).toBe('not-started')
     expect(find('confirm-order', { order: { ...value, status: 'PlacedAwaitingSamples' } }).state).not.toBe('complete')
   })
 
@@ -70,10 +70,10 @@ describe('Lab Job customer preparation evidence', () => {
   it('shows pricing review while pending and confirmation only when pricing is issued', () => {
     const pending = { ...order, placedAt: null, status: 'QuoteInPreparation', canEdit: true, canWithdraw: true,
       quoteAcceptanceBlockedReason: 'There is no current issued quote available to accept.' }
-    expect(find('confirm-order', { order: pending })).toMatchObject({ label: 'Waiting for pricing', owner: 'Phaeno' })
+    expect(find('confirm-order', { order: pending })).toMatchObject({ label: 'Confirm price and order', state: 'waiting-for-phaeno', owner: 'Phaeno' })
     expect(find('confirm-order', { order: pending }).detail).toContain('modify or withdraw')
     expect(find('confirm-order', { order: pending }).detail).not.toContain('no current issued quote')
-    expect(find('confirm-order', { order: { ...pending, status: 'QuoteIssued', canAcceptQuote: true, quotes: [quote()] } }).label).toBe('Confirm pricing')
+    expect(find('confirm-order', { order: { ...pending, status: 'QuoteIssued', canAcceptQuote: true, quotes: [quote()] } }).label).toBe('Confirm price and order')
   })
 
   it('makes quote expiry and administrator responsibility explicit', () => {

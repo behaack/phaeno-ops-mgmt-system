@@ -1,5 +1,5 @@
 import type { CustomerDeliveryLocation } from '#/api/customer-delivery-locations'
-import type { TransportationKitRequest, TransportationKitRequestDetail } from '#/api/transportation-kit-requests'
+import type { AvailableTransportationStockKit, TransportationKitRequest, TransportationKitRequestDetail } from '#/api/transportation-kit-requests'
 
 export const deliveryLocationFixture: CustomerDeliveryLocation = {
   id: '10000000-0000-4000-8000-000000000001', organizationId: '10000000-0000-4000-8000-000000000002', departmentId: '10000000-0000-4000-8000-000000000003',
@@ -10,7 +10,8 @@ export const kitRequestFixture: TransportationKitRequest = {
   status: 'Pending', requestedAt: '2026-09-08T12:00:00Z', version: 3, includedInLabOrder: true,
   lines: [{ id: '20000000-0000-4000-8000-000000000003', containerDefinitionId: '20000000-0000-4000-8000-000000000004', sku: 'TRANS-20', commonName: '20-tube transportation kit', tubeCapacity: 20, requestedQuantity: 2, dispatchedQuantity: 0, receivedQuantity: 0 }], kits: [], canConfirmReceipt: false, canCancel: true, cancellationReason: null,
 }
+export const availableTransportationStockKitsFixture: AvailableTransportationStockKit[] = [1, 2, 3].map(value => ({ id: `30000000-0000-4000-8000-00000000000${value}`, kitNumber: `KIT-00${value}`, containerDefinitionId: kitRequestFixture.lines[0].containerDefinitionId, sku: 'TRANS-20', commonName: '20-tube transportation kit', tubeCapacity: 20, version: 1 }))
 export const kitRequestDetailFixture: TransportationKitRequestDetail = {
   request: kitRequestFixture, canDispatch: true, dispatchBlockedReason: null,
-  availableStockKits: [1, 2, 3].map(value => ({ id: `30000000-0000-4000-8000-00000000000${value}`, kitNumber: `KIT-00${value}`, containerDefinitionId: kitRequestFixture.lines[0].containerDefinitionId, sku: 'TRANS-20', commonName: '20-tube transportation kit', tubeCapacity: 20, version: 1 })),
+  availableTypes: [{ containerDefinitionId: kitRequestFixture.lines[0].containerDefinitionId, sku: 'TRANS-20', commonName: '20-tube transportation kit', tubeCapacity: 20, requestedQuantity: 2, dispatchedQuantity: 0, availableQuantity: 3 }],
 }

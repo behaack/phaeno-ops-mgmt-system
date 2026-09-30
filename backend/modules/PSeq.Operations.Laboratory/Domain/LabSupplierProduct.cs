@@ -15,6 +15,8 @@ public sealed class LabSupplierProduct : LabAuditedEntity
     public bool CanExpire { get; private set; }
     public string? DefaultQuantityUnit { get; private set; }
     public int? TubeCapacity { get; private set; }
+    public decimal? MaximumSampleAmount { get; private set; }
+    public string? SampleAmountUnit { get; private set; }
 
     private LabSupplierProduct() { }
     public LabSupplierProduct(Guid supplierId, string productNumber, string description, Guid productTypeId, bool canExpire = false)
@@ -44,6 +46,19 @@ public sealed class LabSupplierProduct : LabAuditedEntity
     {
         if (capacity is <= 0) throw new ArgumentException("Enter a positive whole-number tube capacity.");
         TubeCapacity = capacity;
+    }
+
+    public void SetMaximumSampleAmount(decimal? amount, string? unit)
+    {
+        if (amount.HasValue != !string.IsNullOrWhiteSpace(unit))
+            throw new ArgumentException("Enter both the tube's maximum sample amount and its unit.");
+        if (amount is <= 0 || amount is > 999999999999.999999m ||
+            amount.HasValue && decimal.Round(amount.Value, 6) != amount.Value)
+            throw new ArgumentException("Enter a positive tube maximum with no more than six decimal places.");
+        if (unit is not null && unit.Trim() is not ("µL" or "mL"))
+            throw new ArgumentException("Choose µL or mL for the tube maximum.");
+        MaximumSampleAmount = amount;
+        SampleAmountUnit = unit?.Trim();
     }
 
     public void LinkPreparedReagent(Guid materialDefinitionId)

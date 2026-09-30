@@ -67,8 +67,8 @@ test('department admin manages only assigned settings and reviewed member access
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
   const { writes, requests } = await fixture(page, 'valley-diagnostics')
-  await page.goto('/departments')
-  await expect(page.getByRole('heading', { name: 'Departments for Valley Diagnostics' })).toBeVisible()
+  await page.goto('/departments?settingsTab=departments')
+  await expect(page.getByRole('heading', { name: 'Customer settings' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Add department' })).toHaveCount(0)
   await expect(page.getByRole('heading', { name: 'Research', exact: true })).toHaveCount(0)
   const actions = page.getByRole('button', { name: 'Actions for General' })
@@ -103,7 +103,7 @@ test('department admin manages only assigned settings and reviewed member access
 
 test('organization administrator can discover every department and create one', async ({ page }) => {
   await fixture(page, 'northline-labs')
-  await page.goto('/departments')
+  await page.goto('/departments?settingsTab=departments')
   await expect(page.getByRole('heading', { name: 'Research', exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Add department' }).click()
   await expect(page.getByRole('dialog', { name: 'Add department' })).toBeVisible()
@@ -146,7 +146,7 @@ test('organization invitation reviews department intent, admin scope, and unsave
 test('organization defaults preserve entries through conflict and require review before saving', async ({ page }, testInfo) => {
   if (testInfo.project.name === 'mobile-chrome') await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
   const { writes } = await fixture(page, 'northline-labs')
-  await page.goto('/departments')
+  await page.goto('/departments?settingsTab=defaults')
   const edit = page.getByRole('button', { name: 'Edit organization defaults' })
   await edit.click()
   await page.getByLabel('Purchase order rule').selectOption('required')

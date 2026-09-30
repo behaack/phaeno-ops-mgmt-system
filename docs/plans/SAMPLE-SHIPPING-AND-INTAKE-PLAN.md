@@ -1,5 +1,11 @@
 # Sample Shipping and Intake Plan
 
+## September 29, 2026 shipping insert confirmation correction
+
+Keep the confirmation title and brief description in the fixed header, with the shipment's sample and tube counts and print/packing guidance in the dialog body. Name the shipping insert as the receiving sheet created by confirmation: its printed face has shipment details, sample and tube totals, and a scan barcode; the full packing instructions and sample/tube crosswalk remain available separately for review. The entry action is **Review and confirm shipment contents** and the final button is **Confirm and create receiving sheet**. A server error spans the available dialog width while the title retains space for the close control. In the Lab Job Actions menu, **Request cancellation** uses destructive red text while retaining its existing confirmation and permission rules.
+
+The accepted Sample type's submission unit describes a count of physical tubes, including sized labels such as `2mL tube`; the entered material amount is checked separately against the Sample type minimum and Tube product maximum in matching volume units. Paired shipment items must carry the pinned Sample type's exact submission unit. Existing paired Customer shipments saved with the generic `tube` count are equivalent for insert confirmation when the pinned type also counts tubes. This must not weaken the volume bounds or accept a non-tube submission unit. For the local sample `9595955`, 1.65 mL is within the configured 1.5–2.0 mL range; the insert rejection was caused by comparing `tube` to `2mL tube` as literal strings.
+
 ## September 26, 2026 versioning supersession
 
 The [Shipping configuration versioning plan](SHIPPING-CONFIGURATION-VERSIONING-PLAN.md) supersedes earlier Active-by-default create/revision flows for Sample types, Phaeno ship-to destinations, Shipping procedures, and Kit specifications. Each begins as a Draft, may be edited in place or discarded, and is activated separately. The Sample type's procedure and Kit specification's Sample type are per-revision choices; the immediate Change procedure and permanent Link Sample type flows retire. Ordinary Sample type/procedure deactivation blocks new Jobs while placed Jobs continue on exact pins unless separately placed on an audited shipping safety hold. Existing historical sections below describe earlier decisions and should be read under this supersession.
@@ -978,6 +984,16 @@ Customer/Department workspace, with bounded create/edit modals and a default
 location. The order freezes the confirmed address and container revisions.
 Missing address setup must be explicit; the general CRM address and Phaeno's
 inbound sample destinations must not be silently substituted.
+
+Customer organization and Department administrators reach these records before
+quote acceptance through **Customer settings** in the user menu. Separate
+**Transportation-kit delivery** and **Departments** tabs keep address management
+and Department administration distinct. The delivery tab filters the complete
+saved-location list to one active Department within the administrator's scope,
+supports adding a location, and returns from a location detail to that same
+Department. The quote dialog retains its contextual
+address-management link. The existing `/departments` route hosts Customer
+settings and remains the Department administration route for other audiences.
 
 Customer helper text addresses the reader directly: "Phaeno will send your
 department’s transportation kits to this address." The Phaeno staff view keeps

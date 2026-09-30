@@ -27,7 +27,7 @@ public sealed class LabJobDeadlineTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Acceptance_requires_configured_turnaround_or_explicit_delivery_date(bool configured)
+    public void Legacy_acceptance_does_not_block_physical_intake_when_deadline_is_missing(bool configured)
     {
         var work = new LabWorkOrder(Guid.NewGuid(), 1, LabAuthorizationSource.CommercialOrder,
             Guid.NewGuid(), Guid.NewGuid(), "pseq", 1, "standard", null,
@@ -40,13 +40,7 @@ public sealed class LabJobDeadlineTests
             "TEST-DEADLINE-TUBE", "Test tube", "Freezer", null, null, null);
         work.RefreshAcceptedSpecimenTargets();
         Assert.Null(work.OriginalDeliveryDueAtUtc);
-        if (!configured)
-        {
-            Assert.Throws<InvalidOperationException>(work.RequireAcceptanceDeadline);
-            Assert.Null(specimen.AcceptedAtUtc);
-            work.AdjustDeliveryDueDate(Now.AddDays(10));
-        }
-        work.RequireAcceptanceDeadline();
+        if (!configured) work.AdjustDeliveryDueDate(Now.AddDays(10));
         tube.ReviewIntake(LabSpecimenIntakeDisposition.Accepted, null, null, Guid.NewGuid(), Now);
         specimen.RefreshIntakeFromTubes([tube], Now);
         work.RefreshAcceptedSpecimenTargets();
@@ -55,7 +49,7 @@ public sealed class LabJobDeadlineTests
     }
 
     [Fact]
-    public void Accepted_specimens_cannot_refresh_without_a_delivery_deadline()
+    public void Accepted_specimens_can_refresh_without_a_legacy_delivery_deadline()
     {
         var work = new LabWorkOrder(Guid.NewGuid(), 1, LabAuthorizationSource.CommercialOrder,
             Guid.NewGuid(), Guid.NewGuid(), "pseq", 1, "standard", null);
@@ -65,7 +59,28 @@ public sealed class LabJobDeadlineTests
             "TEST-MISSING-DUE-TUBE", "Test tube", "Freezer", null, null, null);
         tube.ReviewIntake(LabSpecimenIntakeDisposition.Accepted, null, null, Guid.NewGuid(), Now);
         specimen.RefreshIntakeFromTubes([tube], Now); work.Specimens.Add(specimen);
-        Assert.Throws<InvalidOperationException>(work.RefreshAcceptedSpecimenTargets);
+        work.RefreshAcceptedSpecimenTargets();
+        Assert.Null(work.OriginalDeliveryDueAtUtc);
+    }
+
+    [Fact]
+    public void Business_day_due_skips_observed_holiday_and_freezes_after_full_receipt()
+    {
+        var calendar = new LabBusinessCalendar(1, "America/Los_Angeles",
+            new DateOnly(2026, 9, 1), new DateOnly(2026, 10, 31), "Confirmed observed holidays");
+        calendar.AddHoliday(new DateOnly(2026, 9, 30), "Observed closure");
+        var finalReceipt = new DateTime(2026, 9, 29, 12, 0, 0, DateTimeKind.Utc);
+        var due = LabForecastClock.AddDays(finalReceipt, 2, LabDayBasis.Business, calendar);
+        Assert.Equal(new DateTime(2026, 10, 2, 12, 0, 0, DateTimeKind.Utc), due);
+
+        var work = new LabWorkOrder(Guid.NewGuid(), 1, LabAuthorizationSource.CommercialOrder,
+            Guid.NewGuid(), Guid.NewGuid(), "pseq", 1, LabWorkOrder.FullReceiptBusinessDayPolicy,
+            null, minimumTurnaroundDays: 2, maximumTurnaroundDays: 2);
+        work.RecordFullReceiptDeadline(finalReceipt, due);
+        work.RecordFullReceiptDeadline(finalReceipt.AddDays(1), due.AddDays(1));
+        Assert.Equal(due, work.OriginalDeliveryDueAtUtc);
+        Assert.Equal(due, work.OriginalTargetAtUtc);
+        Assert.Equal(due, work.ExpectedCompletionAtUtc);
     }
 
     [Fact]

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { LabJobDetailsDialog } from "./LabJobDetailsDialog";
@@ -44,6 +44,36 @@ describe("LabJobDetailsDialog request submission", () => {
     api.listLabOrderSampleTypes.mockResolvedValue([{ id: '22222222-2222-4222-8222-222222222221', name: 'PSeq Total RNA', revision: 4 }]);
   });
 
+  it("clears the selected Customer and its readiness before choosing another", async () => {
+    api.listCustomerOrderDepartments.mockImplementation(async (organizationId: string) =>
+      organizationId === 'customer-a'
+        ? [{ id: 'general-a', name: 'General A', isDefault: true }]
+        : [{ id: 'general-b', name: 'General B', isDefault: true }]);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={client}><LabJobDetailsDialog open onOpenChange={vi.fn()} onSaved={vi.fn()}
+      platformOrganizations={[{ id: 'customer-a', name: 'Atlas Research' }, { id: 'customer-b', name: 'Borealis Labs' }]}
+    /></QueryClientProvider>);
+
+    const customer = screen.getByRole('combobox', { name: 'Customer' });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Job name' }), { target: { value: 'Retained job' } });
+    fireEvent.focus(customer);
+    fireEvent.click(screen.getByRole('option', { name: 'Atlas Research' }));
+    const ready = await screen.findByText('Ready to start pricing');
+    expect(await screen.findByText('General A')).toBeTruthy();
+    expect(within(ready.closest('[data-slot="alert"]') as HTMLElement).getByRole('button', { name: 'Refresh readiness' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear Customer' }));
+    expect(customer).toHaveProperty('value', '');
+    expect(document.activeElement).toBe(customer);
+    expect(screen.queryByText('General A')).toBeNull();
+    expect(screen.queryByText('Ready to start pricing')).toBeNull();
+    expect(screen.getByRole('textbox', { name: 'Job name' })).toHaveProperty('value', 'Retained job');
+
+    fireEvent.click(screen.getByRole('option', { name: 'Borealis Labs' }));
+    expect(await screen.findByText('General B')).toBeTruthy();
+    await waitFor(() => expect(api.getCustomerOrderReadiness).toHaveBeenLastCalledWith('customer-b', 'general-b'));
+  });
+
   it("sends the explicitly selected Customer department when staff start pricing", async () => {
     api.listCustomerOrderDepartments.mockResolvedValue([
       { id: 'general', name: 'General', isDefault: true },
@@ -55,9 +85,13 @@ describe("LabJobDetailsDialog request submission", () => {
       platformOrganizations={[{ id: 'customer', name: 'Atlas Research' }]}
       sourceHandoff={{ requestId: 'request', requestNumber: 'REQ-1', organizationId: 'customer', organizationName: 'Atlas Research' }}
     /></QueryClientProvider>);
+    expect(screen.queryByRole('button', { name: 'Clear Customer' })).toBeNull();
     const department = await screen.findByRole('combobox', { name: 'Department' });
-    await waitFor(() => expect(department).toHaveProperty('value', 'general'));
+    expect(department).toHaveProperty('value', '');
+    expect(api.getCustomerOrderReadiness).not.toHaveBeenCalled();
+    await screen.findByRole('option', { name: 'Research' });
     fireEvent.change(department, { target: { value: 'research' } });
+    expect(department).toHaveProperty('value', 'research');
     fireEvent.change(screen.getByRole('textbox', { name: 'Job name' }), { target: { value: 'Research job' } });
     await screen.findByRole('option', { name: 'PSeq Total RNA' });
     fireEvent.change(screen.getByRole('combobox', { name: 'Sample type' }), { target: { value: '22222222-2222-4222-8222-222222222221' } });
@@ -65,6 +99,8 @@ describe("LabJobDetailsDialog request submission", () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Storage requirements' }), { target: { value: 'Frozen' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Safety declaration' }), { target: { value: 'No hazard' } });
     fireEvent.click(screen.getByRole('checkbox', { name: /I confirm/ }));
+    await waitFor(() => expect(api.getCustomerOrderReadiness).toHaveBeenCalledWith('customer', 'research'));
+    await screen.findByText('Ready to start pricing');
     await waitFor(() => expect(screen.getByRole('button', { name: 'Start pricing' })).toHaveProperty('disabled', false));
     fireEvent.click(screen.getByRole('button', { name: 'Start pricing' }));
     await waitFor(() => expect(api.initiateCustomerLabOrder).toHaveBeenCalledWith(expect.objectContaining({ organizationId: 'customer', departmentId: 'research', sampleTypeDefinitionId: '22222222-2222-4222-8222-222222222221' })));

@@ -78,7 +78,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         var expiry = DateTime.UtcNow.AddDays(45);
         var issued = await scope.ExtensionPlatformController().IssueQuote(fixture.OrderId,
             new IssueQuoteRequest(requested.Version, [new QuoteLineRequest(item.Id, item.Name, 1, 100)], 0, "USD", expiry,
-                SourceQuoteId: fixture.QuoteId), default);
+                SourceQuoteId: fixture.QuoteId, DeliveryTargetBusinessDays: 14), default);
 
         Assert.Equal(2, issued.Quotes.Count);
         var original = issued.Quotes.Single(value => value.Id == fixture.QuoteId);
@@ -100,7 +100,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         Assert.Single(await scope.DbContext.OrderNotifications.Where(value => value.OrganizationId == scope.CustomerOrganization.Id).ToListAsync());
         var staleSource = await Assert.ThrowsAsync<OrderManagementException>(() => scope.ExtensionPlatformController().IssueQuote(fixture.OrderId,
             new IssueQuoteRequest(issued.Version, [new QuoteLineRequest(item.Id, item.Name, 1, 100)], 0, "USD", expiry.AddDays(1),
-                SourceQuoteId: fixture.QuoteId), default));
+                SourceQuoteId: fixture.QuoteId, DeliveryTargetBusinessDays: 14), default));
         Assert.Equal("quote_not_current", staleSource.ErrorCode);
         Assert.Equal(2, await scope.DbContext.LabServiceQuotes.CountAsync(value => value.LabServiceOrderId == fixture.OrderId));
     }

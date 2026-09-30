@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using PSeq.Operations.Commercial.OrderManagement.Domain;
+using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Services;
@@ -29,14 +30,21 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             await using var scope = await HandoffTestScope.CreateAsync(isolatedConnection: connection.ConnectionString);
             var fixture = await scope.CreateQuotedOrderAsync("completion-transaction-only");
             var accepted = await scope.AcceptQuoteAsync(fixture);
-            await scope.AddReferenceSampleAsync(fixture.OrderId, accepted.Version);
+            var paired = await scope.AddReferenceSampleAsync(fixture.OrderId, accepted.Version);
+            await scope.FinalizeSampleRosterAsync(fixture.OrderId, paired.Version,
+                new InternalLabOperationsProvider(scope.DbContext));
             scope.DbContext.ChangeTracker.Clear();
             var order = await scope.DbContext.LabServiceOrders.Include(value => value.Samples).SingleAsync(value => value.Id == fixture.OrderId);
             var sample = Assert.Single(order.Samples);
+            var laboratorySpecimen = await scope.DbContext.LabSpecimens
+                .SingleAsync(value => value.SubmittedSpecimenId == sample.Id);
+            laboratorySpecimen.RecordProcessingState(LabSpecimenProcessingState.Failed,
+                scope.PlatformUser.Id, DateTime.UtcNow, "material_exhausted",
+                "SIMULATED final outcome for commercial completion transaction verification.");
             sample.Receive(DateTime.UtcNow, "Synthetic completion transaction fixture");
             sample.Accession("COMPLETION-TRANSACTION");
-            foreach (var status in new[] { LabSampleStatus.LabAnalysis, LabSampleStatus.DataProcessing, LabSampleStatus.DataAvailable, LabSampleStatus.Completed })
-                sample.TransitionTo(status, null, null);
+            sample.ApplyLaboratoryOutcome(LabSampleStatus.Failed,
+                "SIMULATED final outcome for completion transaction verification.");
             order.MarkWorkStarted();
             var profile = new OrganizationCommercialProfile(order.OrganizationId);
             profile.UpdateBillingConfiguration("Test billing", "billing@example.invalid", "{\"line1\":\"Test address\"}", 30, EffectiveTaxDecision.Taxable, .1m, null);

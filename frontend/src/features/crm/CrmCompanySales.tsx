@@ -7,7 +7,7 @@ import { CrmOpportunityDialog } from './CrmOpportunityDialog'
 import { Button } from '#/components/ui/button'
 import { CrmListPagination } from './CrmListNavigation'
 import { Badge } from '#/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { CrmCollectionFeedback } from './CrmCollectionFeedback'
 
 export function CrmCompanySales({ companyId, company }: { companyId: string; company?: CrmCompany }) {
@@ -25,14 +25,15 @@ export function CrmCompanySales({ companyId, company }: { companyId: string; com
 
   return (
     <>
-    <Card>
-      <CardHeader>
-        <div className="flex flex-wrap items-center justify-between gap-3"><CardTitle>Sales</CardTitle><Button size="sm" onClick={() => { create.reset(); setOpen(true) }}>New opportunity</Button></div>
+    <Card className="gap-0 py-0">
+      <CardHeader className="border-b bg-muted/50 p-4">
+        <CardTitle>Sales</CardTitle>
         <CardDescription>
           Opportunities and commercial pursuits owned by Phaeno, separate from the Company&apos;s people.
         </CardDescription>
+        <CardAction><Button size="sm" onClick={() => { create.reset(); setOpen(true) }}>New opportunity</Button></CardAction>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-2 p-4">
         <CrmCollectionFeedback name="opportunities" query={opportunities} />
         {(opportunities.data?.items ?? []).map((opportunity) => (
           <Link

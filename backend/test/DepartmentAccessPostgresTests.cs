@@ -737,7 +737,7 @@ public sealed partial class DepartmentAccessPostgresTests
             return quote;
         }
 
-        public LabServiceOrdersController QuoteController() => new(db, Context, null!, null!,
+        public LabServiceOrdersController QuoteController() => new(db, Context, null!, null!, null!,
             Options.Create(new PSeqOrderToCashOptions()), null!, null!, null!, null!, null!)
             { ControllerContext = new() { HttpContext = Http } };
 

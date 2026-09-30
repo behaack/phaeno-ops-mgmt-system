@@ -82,7 +82,7 @@ import type { LabReceiptTab } from './lab-receipt-tabs'
 import type { LabSection } from './lab-sections'
 
 const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
-  { value: 'receipt', label: 'Receipt & accession', description: 'Shipment intake and accession', icon: Truck },
+  { value: 'receipt', label: 'Receipt & accession', description: 'Kit requests, shipment intake, and accession', icon: Truck },
   { value: 'jobs', label: 'Jobs', description: 'Open jobs, delivery deadlines, and specimens', icon: Microscope },
   { value: 'work', label: 'Library prep', description: 'Source tubes, preparation, and library QC', icon: ClipboardList },
   { value: 'master-mixes', label: 'Master mixes', description: 'Prepare one mix for several library trays', icon: FlaskConical },
@@ -91,7 +91,7 @@ const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
   { value: 'kits', label: 'PSeq kits', separatorBefore: true, description: 'Preparation, shipping, and fulfillment', icon: PackageCheck },
   { value: 'assembly', label: 'Data assembly', description: 'Input validation, processing, and release', icon: Workflow },
   { value: 'reagent-runs', label: 'Reagent manufacturing', description: 'Make and document Phaeno reagent lots', icon: FlaskConical },
-  { value: 'transportation-kits', label: 'Transportation kits', description: 'Assembly, inventory, requests, and kits sent', icon: PackageCheck },
+  { value: 'transportation-kits', label: 'Trans. kit inventory', description: 'Assembly and physical kit inventory', icon: PackageCheck },
 ]
 
 export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTabChange, configurationTab, onConfigurationTabChange, onSectionChange }: { section: LabSection; shipmentId?: string; receiptTab?: LabReceiptTab; onReceiptTabChange?: (tab: LabReceiptTab) => void; configurationTab?: LabConfigurationTab; onConfigurationTabChange?: (tab: LabConfigurationTab) => void; onSectionChange: (section: LabSection) => void }) {
@@ -144,8 +144,8 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
           {authProvider === 'mock' ? <Alert className="mb-5"><AlertTitle>Connected Lab operations are paused</AlertTitle><AlertDescription>Use a real Phaeno session to load or change laboratory records.</AlertDescription></Alert> : null}
           {needsDashboard && dashboard.error ? <Alert className="mb-5" variant="destructive"><AlertTitle>Lab operations could not be loaded</AlertTitle><AlertDescription>{getLabOperationsError(dashboard.error, 'Try refreshing the workspace.')}</AlertDescription></Alert> : null}
           {needsDashboard && dashboard.isLoading ? <p role="status">Loading laboratory workspace…</p> : null}
-          {section === 'receipt' ? <LabReceiptAccessionPanel canReceiveShipments={Boolean(session?.capabilities.canOperateLabWork)} tab={receiptTab} onTabChange={onReceiptTabChange} canManageKitSupply={Boolean(session?.capabilities.canManageOrderConfiguration)} shipmentId={shipmentId} apiEnabled={apiEnabled} workOrders={[]} /> : null}
-          {section === 'transportation-kits' ? <TransportationKitWorkspace apiEnabled={apiEnabled} canManageKitSupply={Boolean(session?.capabilities.canManageOrderConfiguration)} shipmentId={shipmentId} tab={receiptTab} onTabChange={onReceiptTabChange} /> : null}
+          {section === 'receipt' ? <LabReceiptAccessionPanel canReceiveShipments={Boolean(session?.capabilities.canOperateLabWork)} tab={receiptTab} onTabChange={onReceiptTabChange} shipmentId={shipmentId} apiEnabled={apiEnabled} workOrders={[]} /> : null}
+          {section === 'transportation-kits' ? <TransportationKitWorkspace apiEnabled={apiEnabled} shipmentId={shipmentId} /> : null}
           {section === 'jobs' ? <JobsList enabled={apiEnabled} /> : null}
           {dashboard.data && section === 'work' ? <PreparationBatchList /> : null}
           {dashboard.data && section === 'results' ? <ResultsWorkQueue items={dashboard.data.workOrders.filter((item) => item.status !== 'AwaitingSpecimens')} /> : null}

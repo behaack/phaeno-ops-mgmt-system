@@ -43,13 +43,16 @@ export async function confirmLocationKitsReceived(locationId: string, input: { k
 export async function getTransportationKitRequest(id: string) {
   return read((await api.get<Envelope<TransportationKitRequest>>(`/transportation-kit-requests/${id}`)).data)
 }
+export async function getLabOrderTransportationKits(orderId: string) {
+  return read((await api.get<Envelope<TransportationKitRequest | null>>(`/lab-service-orders/${orderId}/transportation-kits`)).data)
+}
 export async function getShipmentKitSupply(shipmentId: string, deliveryLocationId?: string) {
   return read((await api.get<Envelope<ShipmentKitSupply>>(`/sample-shipping/${shipmentId}/kit-supply`, { params: { deliveryLocationId } })).data)
 }
 export async function orderTransportationKits(shipmentId: string, input: TransportationKitOrderInput, idempotencyKey: string) {
   return read((await api.post<Envelope<TransportationKitRequest>>(`/sample-shipping/${shipmentId}/kit-requests`, input, { headers: { 'Idempotency-Key': idempotencyKey } })).data)
 }
-export async function confirmTransportationKitsReceived(id: string, input: { version: number; stockKitIds: string[] }, idempotencyKey: string) {
+export async function confirmTransportationKitsReceived(id: string, input: { version: number; stockKitIds: string[]; scannedKitBarcode?: string }, idempotencyKey: string) {
   return read((await api.post<Envelope<TransportationKitRequest>>(`/transportation-kit-requests/${id}/received`, input, { headers: { 'Idempotency-Key': idempotencyKey } })).data)
 }
 export async function cancelTransportationKitRequest(id: string, input: { version: number; reason?: string }, idempotencyKey: string) {
@@ -57,9 +60,11 @@ export async function cancelTransportationKitRequest(id: string, input: { versio
 }
 
 export type AvailableTransportationStockKit = { id: string; kitNumber: string; containerDefinitionId: string; sku: string; commonName: string; tubeCapacity: number; version: number }
-export type TransportationKitRequestDetail = { request: TransportationKitRequest; availableStockKits: AvailableTransportationStockKit[]; canDispatch: boolean; dispatchBlockedReason: string | null; selectedPhaenoDestinationId?: string | null; phaenoDestinations?: Array<{ id: string; name: string; revision: number; isCurrentForNewWork?: boolean }> }
+export type TransportationKitTypeAvailability = { containerDefinitionId: string; sku: string; commonName: string; tubeCapacity: number; requestedQuantity: number; dispatchedQuantity: number; availableQuantity: number }
+export type TransportationKitRequestDetail = { request: TransportationKitRequest; availableTypes: TransportationKitTypeAvailability[]; canDispatch: boolean; dispatchBlockedReason: string | null; selectedPhaenoDestinationId?: string | null; phaenoDestinations?: Array<{ id: string; name: string; revision: number; isCurrentForNewWork?: boolean }> }
 const platformPath = '/platform/sample-shipping/kit-requests'
 export async function getPlatformTransportationKitRequests(status?: string) { return read((await api.get<Envelope<TransportationKitRequest[]>>(platformPath, { params: { status } })).data) }
 export async function getPlatformTransportationKitRequest(id: string) { return read((await api.get<Envelope<TransportationKitRequestDetail>>(`${platformPath}/${id}`)).data) }
+export async function resolveTransportationKitBarcode(id: string, barcode: string) { return read((await api.post<Envelope<AvailableTransportationStockKit>>(`${platformPath}/${id}/resolve-kit`, { barcode })).data) }
 export async function dispatchTransportationKitRequest(id: string, input: { version: number; stockKitIds: string[]; outboundCarrier: string; outboundTrackingNumber: string; fulfilledAt: string; phaenoDestinationId?: string; confirmUnavailableFixedDestination?: boolean }, idempotencyKey: string) { return read((await api.post<Envelope<TransportationKitRequestDetail>>(`${platformPath}/${id}/dispatch`, input, { headers: { 'Idempotency-Key': idempotencyKey } })).data) }
 export async function cancelPlatformTransportationKitRequest(id: string, input: { version: number; reason?: string }, idempotencyKey: string) { return read((await api.post<Envelope<TransportationKitRequest>>(`${platformPath}/${id}/cancel`, input, { headers: { 'Idempotency-Key': idempotencyKey } })).data) }

@@ -35,15 +35,15 @@ export function CrmCompanyDepartments({ company }: { company: CrmCompany }) {
   />
 
   return <>
-    <Card>
-      <CardHeader>
+    <Card className="gap-0 py-0">
+      <CardHeader className="border-b bg-muted/50 p-4">
         <CardTitle>Departments</CardTitle>
         <CardDescription>Set up this Company's departments and their settings.</CardDescription>
         <CardAction><Button id="add-department" size="sm" disabled={!company.isActive} onClick={() => { create.reset(); setAdding(true) }}>
           <Plus data-icon="inline-start" />Add department
         </Button></CardAction>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4">
         <p className="text-sm text-muted-foreground">{company.isActive ? 'No departments have been added.' : 'Reactivate this Company to add departments.'}</p>
       </CardContent>
     </Card>

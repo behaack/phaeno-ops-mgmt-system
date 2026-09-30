@@ -357,7 +357,7 @@ public sealed class DepartmentSecondaryPathPostgresTests
         var hidden = new LabServiceOrder(scope.Organization.Id, scope.Research.Id, $"HIDDEN-{Guid.NewGuid():N}", "Hidden", null, 1, false, "RNA", "Frozen", "Safe", "Instructions");
         scope.Db.AddRange(own, hidden);
         await scope.Db.SaveChangesAsync();
-        var controller = new LabServiceOrdersController(scope.Db, scope.Context, null!, null!, Options.Create(new PSeqOrderToCashOptions()), null!, null!, null!, null!, null!) { ControllerContext = new() { HttpContext = scope.Http } };
+        var controller = new LabServiceOrdersController(scope.Db, scope.Context, null!, null!, null!, Options.Create(new PSeqOrderToCashOptions()), null!, null!, null!, null!, null!) { ControllerContext = new() { HttpContext = scope.Http } };
         await CheckExport(() => controller.List(null, null, null, null, null), () => controller.List(null, hidden.OrderNumber, null, null, null),
             () => controller.Export(null, null, null, null, null), () => controller.Export(null, hidden.OrderNumber, null, null, null), own.Id, own.OrderNumber, hidden.OrderNumber);
     }

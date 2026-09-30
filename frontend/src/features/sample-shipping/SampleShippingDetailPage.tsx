@@ -46,7 +46,7 @@ export type ShipmentHeaderAction = {
   disabled?: boolean
   busy?: boolean
   descriptionId?: string
-  variant?: 'default' | 'outline'
+  variant?: 'default' | 'outline' | 'destructive'
   kind: 'command'
   onSelect: () => void
 }
@@ -60,7 +60,7 @@ type EmbeddedShippingWorkspace = {
   onSelectShipment: (id: string) => Promise<void>
   onOpenPreparation: () => void
   renderActions: (actions: ShipmentHeaderAction[], triggerRef: RefObject<HTMLButtonElement | null>, dialogOpen: boolean) => ReactNode
-  renderSendAction?: (action: ShipmentHeaderAction | null, triggerRef: RefObject<HTMLButtonElement | null>) => ReactNode
+  renderSendAction?: (action: ShipmentHeaderAction | null, triggerRef: RefObject<HTMLButtonElement | null>, printAction?: ShipmentHeaderAction, printTriggerRef?: RefObject<HTMLButtonElement | null>) => ReactNode
   specimenSources?: Record<string, string>
   sampleOrder?: string[]
   jobTubeProgress?: { matched: number; total: number }
@@ -95,8 +95,9 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false,
   const [, setAcknowledgementVersion] = useState(0)
   const headerActionRef = useRef<HTMLButtonElement>(null)
   const sendActionRef = useRef<HTMLButtonElement>(null)
+  const sendPrintActionRef = useRef<HTMLButtonElement>(null)
   const reprintActionRef = useRef<HTMLButtonElement>(null)
-  const actionOrigin = useRef<'header' | 'send' | 'reprint'>('header')
+  const actionOrigin = useRef<'header' | 'send' | 'send-print' | 'reprint'>('header')
   const userId = session?.user?.id
   const acknowledgementScope = canView && authProvider !== 'mock' && userId && selectedOrganizationId && sourceMatches && query.data?.id === shipmentId
     ? shippingInsertScope(userId, selectedOrganizationId, shipmentId)
@@ -109,12 +110,12 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false,
     // The host unlocks its portal button after our dialog closes. Its target may
     // also be replaced during a refresh, so fall back to the stable Actions menu.
     window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
-      const target = actionOrigin.current === 'send' ? sendActionRef.current : actionOrigin.current === 'reprint' ? reprintActionRef.current : headerActionRef.current
+      const target = actionOrigin.current === 'send' ? sendActionRef.current : actionOrigin.current === 'send-print' ? sendPrintActionRef.current : actionOrigin.current === 'reprint' ? reprintActionRef.current : headerActionRef.current
       const available = target && !target.disabled ? target : headerActionRef.current
       available?.focus({ preventScroll: true })
     }))
   }, [])
-  const startPrint = useCallback((origin: 'header' | 'send' | 'reprint' = actionOrigin.current) => {
+  const startPrint = useCallback((origin: 'header' | 'send' | 'send-print' | 'reprint' = actionOrigin.current) => {
     actionOrigin.current = origin
     setPrintFailure(null)
     setPrintRequest({ shipmentId, scope: acknowledgementScope })
@@ -190,12 +191,16 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false,
   }
   const openInstructions = (origin: 'header' | 'send') => { actionOrigin.current = origin; setInstructionsOpen(true) }
   let sendAction: ShipmentHeaderAction | null = null
+  let sendPrintAction: ShipmentHeaderAction | undefined
   if (canManage && readyToConfirm && !currentPacket) {
-    sendAction = { kind: 'command', label: 'Review and confirm shipping insert', disabled: sendActionBlocked, onSelect: () => openConfirmation('send') }
+    sendAction = { kind: 'command', label: 'Review and confirm shipment contents', disabled: sendActionBlocked, onSelect: () => openConfirmation('send') }
   } else if (shipment.status === 'ReadyToShip' && currentPacket) {
-    sendAction = insertAcknowledged && canManage
-      ? { kind: 'command', label: 'Record shipment', disabled: sendActionBlocked || !preparationAllowed || !amountsComplete, onSelect: () => openRecordShipment('send') }
-      : { kind: 'command', label: 'Review packing and print', icon: Printer, disabled: sendActionBlocked, busy: printing, onSelect: () => openInstructions('send') }
+    if (insertAcknowledged && canManage) {
+      sendAction = { kind: 'command', label: 'Record shipment', disabled: sendActionBlocked || !preparationAllowed || !amountsComplete, onSelect: () => openRecordShipment('send') }
+    } else {
+      sendAction = { kind: 'command', label: 'Review shipping instructions', variant: 'outline', disabled: sendActionBlocked, onSelect: () => openInstructions('send') }
+      sendPrintAction = { kind: 'command', label: 'Print shipping insert', icon: Printer, disabled: sendActionBlocked || printing || Boolean(printedConfirmation), busy: printing, onSelect: () => startPrint('send-print') }
+    }
   }
   const error = download.error
   const headerActions: ShipmentHeaderAction[] = []
@@ -205,12 +210,12 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false,
   }
   if (shipment.currentPacket) {
     headerActions.push(
-      { kind: 'command', label: 'Review packing instructions', variant: 'outline', disabled: navigationLocked, onSelect: () => openInstructions('header') },
+      { kind: 'command', label: 'Review shipping instructions', variant: 'outline', disabled: navigationLocked, onSelect: () => openInstructions('header') },
       { kind: 'command', label: 'Print shipping insert', icon: Printer, variant: 'outline', disabled: printing || Boolean(printedConfirmation), onSelect: () => startPrint('header') },
       { kind: 'command', label: 'Download tube list (CSV)', icon: Download, variant: 'outline', disabled: download.isPending, onSelect: () => download.mutate() },
     )
   }
-  if (canManage && readyToConfirm) headerActions.push({ kind: 'command', label: 'Review and confirm shipping insert', disabled: sendActionBlocked, onSelect: () => openConfirmation('header') })
+  if (canManage && readyToConfirm) headerActions.push({ kind: 'command', label: 'Review and confirm shipment contents', disabled: sendActionBlocked, onSelect: () => openConfirmation('header') })
   if (canManage && shipment.status === 'ReadyToShip') headerActions.push({ kind: 'command', label: 'Record shipment', disabled: sendActionBlocked || !preparationAllowed || !amountsComplete, onSelect: () => openRecordShipment('header') })
   const containerLocationControl = customerKitSupply && shipment.isPackingPool && !retired ? <div className="max-w-xl space-y-1.5">{containerLocations.length === 1 && departureLocationId === containerLocations[0].id ? <div><p className="text-sm font-medium">Container location</p><p className="text-sm">{containerLocations[0].label}</p></div> : <><Label htmlFor="container-location">Container location</Label><select id="container-location" className="h-9 w-full cursor-pointer rounded-md border bg-background px-3 text-sm" value={departureLocationId ?? ''} disabled={packingOpen || scanActive} onChange={event => setLocationSelection({ shipmentId, locationId: event.target.value })}><option value="">Select a container location</option>{containerLocations.map(location => <option key={location.id} value={location.id}>{location.label}</option>)}</select></>}{containerLocations.length > 1 ? <p className="text-xs text-muted-foreground">Choose where your received containers are stored.</p> : null}{departureLocationId ? <Link to="/delivery-locations/$locationId" params={{ locationId: departureLocationId }} search={{ organizationId: shipment.organizationId, departmentId: selectedDepartmentId ?? '', shipmentId, returnOrderId: embedded?.sourceId }} className="text-sm text-primary underline">View shipping and receiving location</Link> : null}</div> : null
   const preparation = shipment.isPackingPool ? <SampleShipmentPackingPanel shipment={shipment} canManage={canManage && !retired} locationInventory={customerKitSupply} locationControl={containerLocationControl} hasLocationChoice={containerLocations.length > 1} deliveryLocationId={departureLocationId} sampleTypeName={kitSupply.data?.sampleTypeName ?? undefined} writesBlocked={Boolean(inventoryBlocked || query.error || customerKitSupply && !departureLocationId)} onOpenChange={setPackingOpen} onSelectShipment={embedded?.onSelectShipment} /> : <SampleTubeScanner key={shipment.id} renderSamples={embedded?.renderSamples} scanActionsTarget={embedded?.scanActionsTarget} scanning={!embedded?.renderSamples || embedded.showPreparation} onStartScanning={embedded?.onOpenPreparation} onStopScanning={embedded?.onClosePreparation} shipment={shipment} canManage={canManage && !retired} requiresAssignedContainer={customerKitSupply} writesBlocked={!preparationAllowed} specimenSources={embedded?.specimenSources} sampleOrder={embedded?.sampleOrder} jobTubeProgress={embedded?.jobTubeProgress} onScanActivityChange={setScanActive} onPendingChange={setScanPending} onCorrect={item => { assignment.reset(); setAssignmentItem(item) }} onAssign={async (item, barcode, amount, unit) => {
@@ -248,7 +253,7 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false,
         </div>
         <ShipmentHeaderActions actions={headerActions} triggerRef={headerActionRef} dialogOpen={dialogOpen} />
       </section>}
-      {embedded?.renderSendAction?.(sendAction, sendActionRef)}
+      {embedded?.renderSendAction?.(sendAction, sendActionRef, sendPrintAction, sendPrintActionRef)}
       {embedded && sentInsert ? <section aria-label="Shipping insert" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4">
         <div><h3 className="text-sm font-medium">Shipping insert · {shipment.shipmentNumber}</h3><p className="text-sm text-muted-foreground">Print another copy of the current insert for this sent shipment.</p></div>
         <Button ref={reprintActionRef} type="button" variant="outline" size="sm" disabled={!currentShipmentVerified || navigationLocked || scanActive} aria-busy={printing || undefined} onClick={() => startPrint('reprint')}><Printer aria-hidden="true" />Reprint shipping insert</Button>
@@ -281,8 +286,8 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false,
       <TubeAssignmentDialog item={assignmentItem} replacesPacket={Boolean(shipment.currentPacket)} isPending={assignment.isPending} error={assignment.error ? apiErrorMessage(assignment.error) : undefined} onOpenChange={(open) => { if (!open) setAssignmentItem(null) }} onSubmit={(values) => { if (assignmentItem) assignment.mutate({ item: assignmentItem, values }) }} />
       <Dialog open={instructionsOpen} onOpenChange={setInstructionsOpen}>
         <DialogContent className="sm:max-w-3xl" onCloseAutoFocus={event => { event.preventDefault(); if (!printing) restoreActionFocus() }}>
-          <DialogHeader><DialogTitle>Packing instructions</DialogTitle><DialogDescription>Follow the approved instructions for this shipment’s samples, destination and container. Review the cooling method and amount before packing.</DialogDescription></DialogHeader>
-          {instructionsOpen ? <SampleShippingPacketPage shipmentId={shipmentId} embedded packingOnly onPrint={() => { setInstructionsOpen(false); startPrint() }} /> : null}
+          <DialogHeader><DialogTitle>Shipping instructions</DialogTitle><DialogDescription>Follow the approved instructions for this shipment’s samples, destination and container. Review the cooling method and amount before packing.</DialogDescription></DialogHeader>
+          {instructionsOpen ? <SampleShippingPacketPage shipmentId={shipmentId} embedded packingOnly /> : null}
           <DialogFooter><Button variant="outline" onClick={() => setInstructionsOpen(false)}>Close</Button></DialogFooter>
         </DialogContent>
       </Dialog>
@@ -290,7 +295,15 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false,
       <RecordShipmentDialog open={shipmentOpen} isPending={shipped.isPending} error={shipped.error ? apiErrorMessage(shipped.error) : undefined} onOpenChange={setShipmentOpen} onSubmit={(values) => shipped.mutate(values)} onReturnFocus={restoreActionFocus} />
       <Dialog open={Boolean(printedConfirmation)} onOpenChange={open => { if (!open) setPrintedInsert(null) }}>
         <DialogContent onCloseAutoFocus={event => { event.preventDefault(); restoreActionFocus() }}>
-          <DialogHeader><DialogTitle>Confirm printed and packed</DialogTitle><DialogDescription>Confirm that shipping insert {printedConfirmation?.insert.packetNumber}, revision {printedConfirmation?.insert.revision}, was printed and packed with shipment {shipment.shipmentNumber}. Closing the print dialog does not confirm this.</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>Confirm printed and packed</DialogTitle><DialogDescription>Check the printed insert and container before continuing.</DialogDescription></DialogHeader>
+          <div className="space-y-4 text-sm">
+            <dl className="space-y-2 rounded-md border bg-muted/30 p-3">
+              <div><dt className="text-muted-foreground">Shipping insert</dt><dd className="font-medium wrap-anywhere">{printedConfirmation?.insert.packetNumber} · Revision {printedConfirmation?.insert.revision}</dd></div>
+              <div><dt className="text-muted-foreground">Shipment</dt><dd className="font-medium wrap-anywhere">{shipment.shipmentNumber}</dd></div>
+            </dl>
+            <div><p className="font-medium">Before confirming</p><ul className="mt-2 list-disc space-y-1 pl-5"><li>You printed this insert revision.</li><li>You placed it inside this shipment’s container.</li></ul></div>
+            <p className="text-muted-foreground">Closing the browser print dialog does not confirm these steps.</p>
+          </div>
           {!currentShipmentVerified || printedConfirmation?.checking ? <p role="status" className="text-sm text-muted-foreground">The current shipment must be checked before you can confirm. {query.error || query.fetchStatus === 'paused' ? 'Reconnect if needed and try printing again.' : 'Checking the current revision…'}</p> : !printedRevisionCurrent ? <p role="alert" className="text-sm text-destructive">The shipping insert has changed. Print its current revision before confirming it is packed.</p> : shipment.status !== 'ReadyToShip' ? <p role="status" className="text-sm text-muted-foreground">This shipment is no longer awaiting dispatch. Close this confirmation to review its current status.</p> : !preparationAllowed ? <p role="status" className="text-sm text-muted-foreground">Container preparation must be verified before you can confirm. Close this confirmation to review the container and kit details.</p> : null}
           <DialogFooter><Button variant="outline" onClick={() => setPrintedInsert(null)}>Not yet</Button><Button disabled={!canAcknowledgePrintedInsert} onClick={() => {
             if (!canAcknowledgePrintedInsert || !printedConfirmation) return
@@ -314,7 +327,7 @@ function ShipmentHeaderActions({ actions, triggerRef, dialogOpen }: { actions: S
   return <DropdownMenu>
     <DropdownMenuTrigger asChild><Button ref={triggerRef} type="button" className="self-start">Actions<ChevronDown aria-hidden="true" data-icon="inline-end" /></Button></DropdownMenuTrigger>
     <DropdownMenuContent align="end" className="w-56 max-w-[calc(100vw-2rem)]" onCloseAutoFocus={event => { if (dialogOpen) event.preventDefault() }}>
-      {actions.map(action => <DropdownMenuItem key={action.label} disabled={action.disabled} onSelect={action.onSelect}>{content(action)}</DropdownMenuItem>)}
+      {actions.map(action => <DropdownMenuItem key={action.label} variant={action.variant === 'destructive' ? 'destructive' : 'default'} disabled={action.disabled} onSelect={action.onSelect}>{content(action)}</DropdownMenuItem>)}
     </DropdownMenuContent>
   </DropdownMenu>
 }
@@ -366,14 +379,18 @@ function TubeAssignmentDialog({ item, replacesPacket, isPending, error, onOpenCh
 function ConfirmPacketDialog({ action, shipmentNumber, sampleCount, tubeCount, isPending, error, onOpenChange, onConfirm, onReturnFocus }: { action: 'confirm' | null; shipmentNumber: string; sampleCount: number; tubeCount: number; isPending: boolean; error?: string; onOpenChange: (open: boolean) => void; onConfirm: () => void; onReturnFocus: () => void }) {
   return <Dialog open={Boolean(action)} onOpenChange={onOpenChange}>
     <DialogContent onCloseAutoFocus={event => { event.preventDefault(); onReturnFocus() }}>
-      <DialogHeader>
-        <DialogTitle>Confirm shipping insert</DialogTitle>
-        <DialogDescription>This confirms {sampleCount} {sampleCount === 1 ? 'sample' : 'samples'} across {tubeCount} {tubeCount === 1 ? 'tube' : 'tubes'} for {shipmentNumber}. Print the shipping insert and place it inside this container. A later correction will replace it with an updated version.</DialogDescription>
+      <DialogHeader className="pr-[var(--dialog-inset)]">
+        <DialogTitle className="pr-8">Confirm shipment contents</DialogTitle>
+        <DialogDescription className="pr-8">Review this shipment before creating its receiving sheet.</DialogDescription>
       </DialogHeader>
       {error ? <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}
+      <div className="space-y-3 text-sm">
+        <p>Shipment <strong>{shipmentNumber}</strong> contains <strong>{sampleCount} {sampleCount === 1 ? 'sample' : 'samples'}</strong> in <strong>{tubeCount} {tubeCount === 1 ? 'tube' : 'tubes'}</strong>.</p>
+        <p>Confirming creates the shipping insert: a receiving sheet with shipment details, sample and tube totals, and a barcode for Phaeno to scan. Print it and place it inside this container. If you correct the shipment later, print the updated version.</p>
+      </div>
       <RequiredDialogFooter showLegend={false}>
         <Button variant="outline" onClick={() => onOpenChange(false)}>Keep reviewing</Button>
-        <Button disabled={isPending} onClick={onConfirm}>{isPending ? 'Confirming…' : 'Confirm and issue shipping insert'}</Button>
+        <Button disabled={isPending} onClick={onConfirm}>{isPending ? 'Confirming…' : 'Confirm and create receiving sheet'}</Button>
       </RequiredDialogFooter>
     </DialogContent>
   </Dialog>

@@ -1,6 +1,7 @@
 import { CrmProvisioningReturn } from "./CrmListNavigation";
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CrmRequestCard } from './CrmRequestCard'
+import { CrmRequestCard, type CrmRequestAction } from './CrmRequestCard'
+import { ServiceRequestEntitlementsDialog } from './ServiceRequestEntitlementsDialog'
 
 import {
   apiErrorMessage,
@@ -9,9 +10,11 @@ import {
   cancelRelationshipRequest,
   completeRelationshipRequestAccountCreation,
   decideRelationshipRequest,
+  saveApprovedServiceEntitlements,
   listRelationshipRequests,
   listRelationshipRequestHistory,
   type RelationshipRequest,
+  type RequestedServiceEntitlement,
 } from '#/api/organization-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
@@ -48,6 +51,7 @@ export function CrmPortalAccessPage() {
   } | null>(null)
   const [recoveryTarget, setRecoveryTarget] =
     useState<RelationshipRequest | null>(null)
+  const [serviceTarget, setServiceTarget] = useState<{ request: RelationshipRequest; mode: 'approve' | 'setup' } | null>(null)
   const requests = useQuery({
     queryKey: ['relationship-requests', 'crm-access-review', 'active'],
     queryFn: () => listRelationshipRequests({ activeOnly: true }),
@@ -69,6 +73,8 @@ export function CrmPortalAccessPage() {
       client.invalidateQueries({ queryKey: ['crm-company'] }),
       client.invalidateQueries({ queryKey: ['organizations'] }),
       client.invalidateQueries({ queryKey: ['organization-summary'] }),
+      client.invalidateQueries({ queryKey: ['organization-entitlements'] }),
+      client.invalidateQueries({ queryKey: ['organization-operational-readiness'] }),
       client.invalidateQueries({ queryKey: ['request-completion-readiness'] }),
     ])
   const action = useMutation({
@@ -112,6 +118,26 @@ export function CrmPortalAccessPage() {
       ),
     onSuccess: async () => {
       setRecoveryTarget(null)
+      await refresh()
+    },
+  })
+  const serviceAction = useMutation({
+    mutationFn: async ({ request, mode, approvalNote, serviceEntitlements }: {
+      request: RelationshipRequest
+      mode: 'approve' | 'setup'
+      approvalNote: string
+      serviceEntitlements: RequestedServiceEntitlement[]
+    }) => {
+      if (mode === 'approve') {
+        await decideRelationshipRequest(request.id, {
+          approved: true, reason: approvalNote, version: request.version, serviceEntitlements,
+        })
+      } else {
+        await saveApprovedServiceEntitlements(request.id, { version: request.version, serviceEntitlements })
+      }
+    },
+    onSuccess: async () => {
+      setServiceTarget(null)
       await refresh()
     },
   })
@@ -174,8 +200,16 @@ export function CrmPortalAccessPage() {
                 <CrmRequestCard
                   key={request.id}
                   request={request}
-                  isPending={action.isPending || recovery.isPending}
-                  onAction={(nextAction, target) => { action.reset(); setActionTarget({ action: nextAction, request: target }) }}
+                  isPending={action.isPending || recovery.isPending || serviceAction.isPending}
+                  onAction={(nextAction: CrmRequestAction, target) => {
+                    if (nextAction === 'setupServices' || (nextAction === 'approve' && target.requestType === 'ServiceChange' && target.requestedServices.length > 0 && target.organizationId)) {
+                      serviceAction.reset()
+                      setServiceTarget({ request: target, mode: nextAction === 'approve' ? 'approve' : 'setup' })
+                    } else {
+                      action.reset()
+                      setActionTarget({ action: nextAction, request: target })
+                    }
+                  }}
                   onRecover={setRecoveryTarget}
                 />
               ))}
@@ -212,6 +246,15 @@ export function CrmPortalAccessPage() {
           }
         }}
       />
+      {serviceTarget ? <ServiceRequestEntitlementsDialog
+        key={serviceTarget.request.id + serviceTarget.mode}
+        request={serviceTarget.request}
+        mode={serviceTarget.mode}
+        isPending={serviceAction.isPending}
+        error={serviceAction.error}
+        onOpenChange={open => { if (!open) { setServiceTarget(null); serviceAction.reset() } }}
+        onSubmit={values => serviceAction.mutate({ ...serviceTarget, ...values })}
+      /> : null}
       <AccountCreationRecoveryDialog
         request={recoveryTarget}
         isPending={recovery.isPending}

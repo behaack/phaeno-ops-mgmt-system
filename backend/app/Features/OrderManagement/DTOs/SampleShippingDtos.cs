@@ -89,7 +89,9 @@ public sealed record SampleTypeDefinitionDto(
     bool IsActive,
     long Version,
     Guid? ShippingProcedureId = null,
-    string Lifecycle = "Released");
+    string Lifecycle = "Released",
+    decimal? MinimumSampleAmount = null,
+    string? SampleAmountUnit = null);
 
 public sealed record SampleShippingStatusRequest(bool IsActive, long Version);
 public sealed record ChangeSampleTypeProcedureRequest(Guid ProcedureId, long Version);
@@ -118,7 +120,9 @@ public sealed record SampleTypeDefinitionWriteRequest(
     int? MaximumTransitHours,
     DateTime EffectiveFrom,
     bool IsActive,
-    Guid? ShippingProcedureId = null);
+    Guid? ShippingProcedureId = null,
+    decimal? MinimumSampleAmount = null,
+    string? SampleAmountUnit = null);
 
 public sealed record SampleShippingPreviewRequest(
     Guid DestinationId,

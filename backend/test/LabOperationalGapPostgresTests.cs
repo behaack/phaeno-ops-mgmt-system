@@ -154,7 +154,7 @@ public partial class SampleShippingPostgresTests
             var http = new DefaultHttpContext();
             http.Request.Headers["X-Organization-Id"] = (other ? OtherCustomerOrganization : CustomerOrganization).Id.ToString();
             return new LabServiceOrdersController(DbContext, new OrderRequestContext(DbContext, new FixedIdentityContext(other ? otherCustomerIdentity : customerIdentity)),
-                null!, null!, null!, null!, null!, null!, null!, null!) { ControllerContext = new ControllerContext { HttpContext = http } };
+                null!, null!, null!, null!, null!, null!, null!, null!, null!) { ControllerContext = new ControllerContext { HttpContext = http } };
         }
     }
 

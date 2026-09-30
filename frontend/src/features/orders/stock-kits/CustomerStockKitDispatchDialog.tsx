@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { stockKitHasFullRoster } from './stock-kit-utils'
 import { getOrderErrorMessage } from '#/api/order-management'
 import { dispatchShippingStockKit, type ShippingStockKit } from '#/api/shipping-containers'
-import { getPlatformTransportationKitRequest, getPlatformTransportationKitRequests, type TransportationKitRequest } from '#/api/transportation-kit-requests'
+import { getPlatformTransportationKitRequest, getPlatformTransportationKitRequests, resolveTransportationKitBarcode, type TransportationKitRequest } from '#/api/transportation-kit-requests'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
@@ -26,6 +26,7 @@ export function CustomerStockKitDispatchDialog({ kit, onClose, onSaved }: { kit:
   const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { requestId: '', confirmUnavailableFixedDestination: false, outboundCarrier: '', outboundTrackingNumber: '', fulfilledAt: localContainerDateTime() } })
   const requestId = form.watch('requestId')
   const detail = useQuery({ queryKey: ['platform-transportation-kit-request', requestId], queryFn: () => getPlatformTransportationKitRequest(requestId), enabled: Boolean(requestId) })
+  const kitCheck = useQuery({ queryKey: ['platform-transportation-kit-kit-check', requestId, kit.kitNumber], queryFn: () => resolveTransportationKitBarcode(requestId, kit.kitNumber), enabled: Boolean(requestId) })
   const candidates = (requests.data ?? []).filter(request => matchingRequest(request, kit))
   const selected = detail.data?.request
   const savedDestination = detail.data?.phaenoDestinations?.find(destination =>
@@ -35,10 +36,10 @@ export function CustomerStockKitDispatchDialog({ kit, onClose, onSaved }: { kit:
   const selectedStillOpen = candidates.some(request => request.id === requestId)
   const blocked = !selectedStillOpen ? 'This request is no longer awaiting this container size. Choose a current request.'
     : detail.data && !detail.data.canDispatch ? detail.data.dispatchBlockedReason ?? 'This request is not ready for dispatch.'
-      : detail.data && !detail.data.availableStockKits.some(value => value.id === kit.id) ? 'This physical kit is not available for the selected request. Review the kit and requested size.' : null
+      : kitCheck.data && kitCheck.data.id !== kit.id ? 'This barcode resolved to another physical kit. Review inventory before dispatch.' : null
   const submitting = useRef(false)
   const mutation = useMutation({ mutationFn: (values: Values) => {
-    if (!selected || selected.id !== values.requestId || requests.error || detail.error || detail.isFetching || blocked) throw new Error(blocked ?? 'Refresh the request before recording dispatch.')
+    if (!selected || selected.id !== values.requestId || requests.error || detail.error || kitCheck.error || detail.isFetching || kitCheck.isFetching || !kitCheck.data || blocked) throw new Error(blocked ?? 'Refresh the request and physical kit before recording dispatch.')
     return dispatchShippingStockKit(kit.id, { requestId: selected.id, deliveryLocationId: selected.deliveryLocationId, version: kit.version, outboundCarrier: values.outboundCarrier, outboundTrackingNumber: values.outboundTrackingNumber, fulfilledAt: new Date(values.fulfilledAt).toISOString(),
       ...(savedDestination ? { confirmUnavailableFixedDestination: values.confirmUnavailableFixedDestination } : {}) })
   }, onSuccess: async result => { form.reset(form.getValues()); allowNavigation(); await onSaved(result) }, onSettled: () => { submitting.current = false } })
@@ -58,7 +59,7 @@ export function CustomerStockKitDispatchDialog({ kit, onClose, onSaved }: { kit:
   return <Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent className="max-w-xl" showCloseButton={!mutation.isPending}>
     <DialogHeader><DialogTitle>Record Customer kit dispatch</DialogTitle><DialogDescription>{kit.kitNumber} · {kit.container.commonName}. Send this physical kit to the request's saved delivery location.</DialogDescription></DialogHeader>
     {mutation.error ? <Alert variant="destructive"><AlertTitle>Dispatch was not recorded</AlertTitle><AlertDescription>{getOrderErrorMessage(mutation.error, 'Your entries are retained. Review the request and try again.')}</AlertDescription></Alert> : null}
-    {requests.error || detail.error ? <Alert variant="destructive"><AlertTitle>Kit request could not be checked</AlertTitle><AlertDescription>{getOrderErrorMessage(requests.error ?? detail.error, 'Your entries are retained. Refresh before dispatch.')} <Button variant="outline" size="sm" disabled={mutation.isPending} onClick={() => { void requests.refetch(); if (requestId) void detail.refetch() }}>Retry request check</Button></AlertDescription></Alert> : null}
+    {requests.error || detail.error || kitCheck.error ? <Alert variant="destructive"><AlertTitle>Kit request could not be checked</AlertTitle><AlertDescription>{getOrderErrorMessage(requests.error ?? detail.error ?? kitCheck.error, 'Your entries are retained. Refresh before dispatch.')} <Button variant="outline" size="sm" disabled={mutation.isPending} onClick={() => { void requests.refetch(); if (requestId) { void detail.refetch(); void kitCheck.refetch() } }}>Retry request check</Button></AlertDescription></Alert> : null}
     <form id="customer-stock-kit-dispatch" className="space-y-4" noValidate onSubmit={form.handleSubmit(submit)}>
       <div className="space-y-2"><Label htmlFor="customer-dispatch-request"><RequiredFieldName>Kit request</RequiredFieldName></Label><select id="customer-dispatch-request" className="h-10 w-full cursor-pointer rounded-md border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none" disabled={mutation.isPending || requests.isPending} aria-invalid={Boolean(errors.requestId)} aria-describedby={errors.requestId ? 'customer-dispatch-request-error' : undefined} {...form.register('requestId', { onChange: () => { form.setValue('confirmUnavailableFixedDestination', false); form.clearErrors('confirmUnavailableFixedDestination') } })}>
         <option value="">Select a kit request</option>{candidates.map(request => <option key={request.id} value={request.id}>{kitRequestReference(request)} · {request.organizationName} · {request.deliveryAddress.label}</option>)}
@@ -72,7 +73,7 @@ export function CustomerStockKitDispatchDialog({ kit, onClose, onSaved }: { kit:
       <div className="grid gap-4 sm:grid-cols-2">{input('outboundCarrier', 'Carrier')}{input('outboundTrackingNumber', 'Tracking number')}</div>{input('fulfilledAt', 'Dispatched at', 'datetime-local')}
       <p className="text-xs text-muted-foreground">This updates the request and places the kit On the way. Availability begins after Customer receipt.</p>
     </form>
-    <RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="customer-stock-kit-dispatch" disabled={mutation.isPending || kit.status !== 'Preparing' || !kit.assemblyCompletedAt || !stockKitHasFullRoster(kit) || Boolean(requests.error || detail.error) || Boolean(requestId && (detail.isFetching || blocked))}>{mutation.isPending ? 'Recording…' : 'Record dispatch'}</Button></RequiredDialogFooter>
+    <RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="customer-stock-kit-dispatch" disabled={mutation.isPending || kit.status !== 'Preparing' || !kit.assemblyCompletedAt || !stockKitHasFullRoster(kit) || Boolean(requests.error || detail.error || kitCheck.error) || Boolean(requestId && (detail.isFetching || kitCheck.isFetching || !kitCheck.data || blocked))}>{mutation.isPending ? 'Recording…' : 'Record dispatch'}</Button></RequiredDialogFooter>
   </DialogContent></Dialog>
 }
 

@@ -8,10 +8,10 @@ using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
-public sealed record SupplierCatalogProductDto(Guid Id, Guid SupplierId, string ProductNumber, string Description, string Kind, bool IsActive, long Version, Guid ProductTypeId, string ProductTypeName, bool ProductTypeIsActive, bool CanExpire = false, string? DefaultQuantityUnit = null, Guid? MaterialDefinitionId = null, int? TubeCapacity = null);
+public sealed record SupplierCatalogProductDto(Guid Id, Guid SupplierId, string ProductNumber, string Description, string Kind, bool IsActive, long Version, Guid ProductTypeId, string ProductTypeName, bool ProductTypeIsActive, bool CanExpire = false, string? DefaultQuantityUnit = null, Guid? MaterialDefinitionId = null, int? TubeCapacity = null, decimal? MaximumSampleAmount = null, string? SampleAmountUnit = null);
 public sealed record SupplierCatalogEntryDto(Guid Id, string Name, bool IsActive, long Version, IReadOnlyList<SupplierCatalogProductDto> Products, bool IsInternalProducer = false);
 public sealed record SaveSupplierRequest(string Name, bool IsActive = true, long Version = 0);
-public sealed record SaveSupplierProductRequest(string ProductNumber, string Description, Guid ProductTypeId, bool IsActive = true, long Version = 0, bool? CanExpire = null, string? DefaultQuantityUnit = null, int? TubeCapacity = null);
+public sealed record SaveSupplierProductRequest(string ProductNumber, string Description, Guid ProductTypeId, bool IsActive = true, long Version = 0, bool? CanExpire = null, string? DefaultQuantityUnit = null, int? TubeCapacity = null, decimal? MaximumSampleAmount = null, string? SampleAmountUnit = null);
 
 [ApiController]
 [Authorize]
@@ -76,7 +76,7 @@ public sealed class LabSupplierCatalogController(PSeqOperationsDbContext db, Ord
             throw Invalid("Set the product's inventory unit before saving it.");
         var tubeCapacity = RequiredContainerCapacity(type, request.TubeCapacity);
         LabSupplierProduct product;
-        try { product = new(supplierId, request.ProductNumber, request.Description, type.Id, request.CanExpire ?? false); product.Update(request.ProductNumber, request.Description, type.Id, request.IsActive, request.CanExpire); product.SetDefaultQuantityUnit(defaultQuantityUnit); product.SetTubeCapacity(tubeCapacity); }
+        try { product = new(supplierId, request.ProductNumber, request.Description, type.Id, request.CanExpire ?? false); product.Update(request.ProductNumber, request.Description, type.Id, request.IsActive, request.CanExpire); product.SetDefaultQuantityUnit(defaultQuantityUnit); product.SetTubeCapacity(tubeCapacity); product.SetMaximumSampleAmount(type.KitUse == LabSupplierProductKind.Tube ? request.MaximumSampleAmount : null, type.KitUse == LabSupplierProductKind.Tube ? request.SampleAmountUnit : null); }
         catch (ArgumentException e) { throw Invalid(e.Message); }
         if (supplier.IsInternalProducer && request.ProductTypeId == LabProductType.ReagentId)
         {
@@ -113,6 +113,14 @@ public sealed class LabSupplierCatalogController(PSeqOperationsDbContext db, Ord
             throw Invalid("Enter the product name or SKU.");
         var type = await ProductType(request.ProductTypeId, product.ProductTypeId, ct);
         var tubeCapacity = RequiredContainerCapacity(type, request.TubeCapacity ?? product.TubeCapacity);
+        var maximumSampleAmount = type.KitUse == LabSupplierProductKind.Tube ? request.MaximumSampleAmount : null;
+        var sampleAmountUnit = type.KitUse == LabSupplierProductKind.Tube ? request.SampleAmountUnit?.Trim() : null;
+        if (product.MaximumSampleAmount.HasValue
+            && (product.MaximumSampleAmount != maximumSampleAmount
+                || !string.Equals(product.SampleAmountUnit, sampleAmountUnit, StringComparison.Ordinal))
+            && await db.SampleShippingStockKits.AsNoTracking().AnyAsync(kit => kit.TubeSupplierProductId == product.Id, ct))
+            throw new OrderManagementException("tube_sample_capacity_in_use",
+                "This tube product is already in physical kits. Create a new product for a different maximum sample amount or unit.", 409);
         if (supplier.IsInternalProducer && product.ProductTypeId == LabProductType.ReagentId)
         {
             var definition = await db.LabMaterialDefinitions.SingleOrDefaultAsync(d => d.Id == product.MaterialDefinitionId, ct)
@@ -153,7 +161,7 @@ public sealed class LabSupplierCatalogController(PSeqOperationsDbContext db, Ord
                 && lot.QuantityUnit.ToUpper() != request.DefaultQuantityUnit.Trim().ToUpper(), ct))
             throw new OrderManagementException("product_unit_conflicts_with_lots",
                 "Existing lots use another inventory unit. Verify them before changing this product.", 409);
-        try { product.Update(request.ProductNumber, request.Description, type.Id, request.IsActive, request.CanExpire); if (request.DefaultQuantityUnit is not null) product.SetDefaultQuantityUnit(request.DefaultQuantityUnit); product.SetTubeCapacity(tubeCapacity); }
+        try { product.Update(request.ProductNumber, request.Description, type.Id, request.IsActive, request.CanExpire); if (request.DefaultQuantityUnit is not null) product.SetDefaultQuantityUnit(request.DefaultQuantityUnit); product.SetTubeCapacity(tubeCapacity); product.SetMaximumSampleAmount(maximumSampleAmount, sampleAmountUnit); }
         catch (ArgumentException e) { throw Invalid(e.Message); }
         await Save(ct);
         if (transaction is not null) await transaction.CommitAsync(ct);
@@ -166,7 +174,7 @@ public sealed class LabSupplierCatalogController(PSeqOperationsDbContext db, Ord
         catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
         { throw new OrderManagementException("supplier_catalog_duplicate", "That supplier name or product number already exists. Edit the existing record, including inactive records.", 409); }
     }
-    private static SupplierCatalogProductDto Product(LabSupplierProduct p, LabProductType t) => new(p.Id, p.SupplierId, p.ProductNumber, p.Description, t.KitUse.ToString(), p.IsActive, p.Version, t.Id, t.Name, t.IsActive, p.CanExpire, p.DefaultQuantityUnit, p.MaterialDefinitionId, p.TubeCapacity);
+    private static SupplierCatalogProductDto Product(LabSupplierProduct p, LabProductType t) => new(p.Id, p.SupplierId, p.ProductNumber, p.Description, t.KitUse.ToString(), p.IsActive, p.Version, t.Id, t.Name, t.IsActive, p.CanExpire, p.DefaultQuantityUnit, p.MaterialDefinitionId, p.TubeCapacity, p.MaximumSampleAmount, p.SampleAmountUnit);
     private static int? RequiredContainerCapacity(LabProductType type, int? capacity)
     {
         if (type.KitUse == LabSupplierProductKind.ShippingContainer)

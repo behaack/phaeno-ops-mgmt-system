@@ -232,7 +232,7 @@ public sealed partial class ManagedReleaseRetentionPostgresTests
                     NullLogger<CompletionTrackedFileStreamResult>.Instance, NullLogger<CompletionTrackedArchiveResult>.Instance) { ControllerContext = new() { HttpContext = Http } };
                 return archive ? controller.DownloadOutputRelease(WorkflowId, ReleaseId, default) : controller.DownloadOutput(WorkflowId, ReleaseId, Files[0].Id, default);
             }
-            var lab = new LabServiceOrdersController(target, context, null!, Storage, Options.Create(new PSeqOrderToCashOptions()), null!, attempts, new(target, options),
+            var lab = new LabServiceOrdersController(target, context, null!, null!, Storage, Options.Create(new PSeqOrderToCashOptions()), null!, attempts, new(target, options),
                 NullLogger<CompletionTrackedFileStreamResult>.Instance, NullLogger<CompletionTrackedArchiveResult>.Instance) { ControllerContext = new() { HttpContext = Http } };
             return archive ? lab.DownloadRelease(WorkflowId, ReleaseId, default) : lab.Download(WorkflowId, Files[0].Id, default);
         }

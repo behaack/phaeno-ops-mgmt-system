@@ -93,7 +93,8 @@ describe("Company relationship collections", () => {
     expect(screen.queryByText("No Company requests")).toBeNull();
     expect(screen.getByRole("button", { name: "Create request" })).toHaveProperty("disabled", true);
     fireEvent.click(screen.getByRole("button", { name: "Retry Company requests" }));
-    expect(await screen.findByRole("link", { name: "Start Trial" })).toHaveProperty("href", expect.stringContaining("/trial-projects?requestId=request-1&fromCompanyId=company-1"));
+    fireEvent.pointerDown(await screen.findByRole("button", { name: "Actions for REQ-1" }), { button: 0, ctrlKey: false });
+    expect(await screen.findByRole("menuitem", { name: "Start Trial" })).toHaveProperty("href", expect.stringContaining("/trial-projects?requestId=request-1&fromCompanyId=company-1"));
     expect(screen.getByRole("link", { name: "Open Trial" })).toHaveProperty("href", expect.stringContaining("/trial-projects/trial-2?fromCompanyId=company-1"));
   });
 

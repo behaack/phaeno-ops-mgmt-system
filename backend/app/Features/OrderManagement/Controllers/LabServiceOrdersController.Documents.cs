@@ -44,7 +44,8 @@ public sealed partial class LabServiceOrdersController
                 quote.Purpose.ToString(), quote.IssuedAt, quote.ExpiresAt, quote.AcceptedAt,
                 lines, quote.Subtotal, quote.Tax, quote.Total, quote.Currency,
                 !string.IsNullOrWhiteSpace(quote.TaxDecisionSnapshotJson), contact?.Name,
-                contact?.Email, addressLines, quote.PaymentTermsDaysSnapshot, ReadSampleScope());
+                contact?.Email, addressLines, quote.PaymentTermsDaysSnapshot, ReadSampleScope(),
+                quote.DeliveryTargetBusinessDays);
             var bytes = QuotePdfRenderer.Render(document);
             return File(bytes, "application/pdf", $"{order.OrderNumber}-quote-r{quote.Revision}.pdf");
 

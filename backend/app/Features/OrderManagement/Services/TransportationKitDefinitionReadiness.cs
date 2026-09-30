@@ -44,9 +44,11 @@ public static class TransportationKitDefinitionReadiness
         var effectiveSamples = await db.SampleTypeDefinitions.AsNoTracking()
             .Where(item => familyKeys.Contains(item.DefinitionKey) && item.IsActive
                 && item.EffectiveFrom <= at && (!item.EffectiveTo.HasValue || item.EffectiveTo > at))
-            .Select(item => new { item.DefinitionKey, item.Revision, item.ShippingProcedureId }).ToArrayAsync(ct);
+            .Select(item => new { item.DefinitionKey, item.Revision, item.ShippingProcedureId,
+                item.MinimumSampleAmount, item.SampleAmountUnit }).ToArrayAsync(ct);
         var currentSamples = effectiveSamples.GroupBy(item => item.DefinitionKey)
             .Select(group => group.OrderByDescending(item => item.Revision).First()).ToArray();
+        var currentSampleByFamily = currentSamples.ToDictionary(item => item.DefinitionKey);
         var selectedProcedureIds = currentSamples.Where(item => item.ShippingProcedureId.HasValue)
             .Select(item => item.ShippingProcedureId!.Value).Distinct().ToArray();
         var selectedProcedures = await db.SampleShippingProcedures.AsNoTracking()
@@ -79,12 +81,20 @@ public static class TransportationKitDefinitionReadiness
             join type in db.LabProductTypes.AsNoTracking() on product.ProductTypeId equals type.Id
             where productIds.Contains(product.Id) && product.IsActive && supplier.IsActive && type.IsActive
             select new { product.Id, product.ProductTypeId, product.DefaultQuantityUnit, product.TubeCapacity,
+                product.MaximumSampleAmount, product.SampleAmountUnit,
                 supplier.IsInternalProducer, type.KitUse }).ToArrayAsync(ct);
         var activeProductById = activeProducts.ToDictionary(item => item.Id);
         var finishedProducts = activeProducts.Where(item => item.ProductTypeId == LabProductType.ShippingContainerId)
             .ToDictionary(item => item.Id);
         return candidates.Where(item => familyByAnchor.TryGetValue(item.SampleTypeAnchorId!.Value, out var sampleKey)
                 && readySampleFamilies.Contains(sampleKey)
+                && currentSampleByFamily.TryGetValue(sampleKey, out var sampleType)
+                && sampleType.MinimumSampleAmount is > 0
+                && contentsByDefinition.TryGetValue(item.Id, out var required)
+                && required.Count(component => component.Kind == ShippingKitContentKind.Tube) == 1
+                && activeProductById.TryGetValue(required.Single(component => component.Kind == ShippingKitContentKind.Tube).SupplierProductId, out var tubeProduct)
+                && tubeProduct.MaximumSampleAmount >= sampleType.MinimumSampleAmount
+                && string.Equals(tubeProduct.SampleAmountUnit, sampleType.SampleAmountUnit, StringComparison.Ordinal)
                 && finishedProducts.TryGetValue(item.ShippingContainerProductId!.Value, out var product)
                 && !product.IsInternalProducer
                 && string.Equals(product.DefaultQuantityUnit, "each", StringComparison.OrdinalIgnoreCase)

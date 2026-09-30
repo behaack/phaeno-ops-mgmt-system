@@ -145,7 +145,8 @@ public sealed record QuoteDto(
     Guid? PricingDecidedByUserId = null,
     DateTime? PricingDecidedAt = null,
     QuoteExtensionRequestDto? ExtensionRequest = null,
-    string? ChangeScopeSnapshotJson = null, string? AcceptedAmendmentSnapshotJson = null);
+    string? ChangeScopeSnapshotJson = null, string? AcceptedAmendmentSnapshotJson = null,
+    int? DeliveryTargetBusinessDays = null);
 
 public sealed record LabSampleDto(
     Guid Id,
@@ -292,7 +293,8 @@ public sealed record LabServiceOrderDto(
     string? QuoteAcceptanceBlockedReason = null,
     LabCustomerProgress? LaboratoryProgress = null, string? TubeUsePolicyKey = null, int? TubeUsePolicyVersion = null,
     IReadOnlyList<Guid>? AuthorizedSampleIds = null, bool CanProposeChange = false, int RequestedSequencingRunCount = 0,
-    Guid? SampleTypeDefinitionId = null, string? SampleTypeName = null);
+    Guid? SampleTypeDefinitionId = null, string? SampleTypeName = null,
+    bool UsesPairedPreparation = false);
 
 public sealed record LabOrderSampleTypeChoiceDto(Guid Id, string Name, int Revision);
 
@@ -640,6 +642,20 @@ public sealed record LabSampleRosterWriteRequest(
     string? Notes = null,
     long? Version = null,
     long? OrderVersion = null, int? SequencingRunCount = null);
+public sealed record AddLabSampleTubePairRequest(long OrderVersion, Guid StockKitId,
+    string CustomerSampleId, string BiologicalSource, string SupplierTubeBarcode,
+    decimal DeclaredQuantity, string DeclaredQuantityUnit, int SequencingRunCount = 1);
+public sealed record SaveLabSampleTubeKitRequest(long OrderVersion, string KitNumber);
+public sealed record FinishLabSampleTubeKitRequest(long OrderVersion);
+public sealed record RemoveLabSampleTubePairRequest(long Version, string Reason);
+public sealed record LabSampleTubePairDto(Guid Id, string CustomerSampleId, string BiologicalSource,
+    Guid StockKitId, string KitNumber, string SupplierTubeBarcode, decimal DeclaredQuantity,
+    string DeclaredQuantityUnit, int SequencingRunCount, long Version);
+public sealed record LabSampleTubeKitOptionDto(Guid Id, string KitNumber, int TubeCapacity, int AvailableTubeCount,
+    DateTime? FinishedAt, decimal? MaximumSampleAmount = null, string? SampleAmountUnit = null);
+public sealed record LabSampleTubeWorkspaceDto(IReadOnlyList<LabSampleTubePairDto> Pairs,
+    IReadOnlyList<LabSampleTubeKitOptionDto> Kits, int ExpectedSampleCount, int ExpectedSequencingRunCount,
+    bool IsFinalized, decimal? MinimumSampleAmount = null, string? SampleAmountUnit = null);
 public sealed record LabSampleImportRowDto(
     int RowNumber,
     string CustomerSampleId,
@@ -661,9 +677,11 @@ public sealed record LabSampleAccessionRequest(long Version, string AccessionId)
 public sealed record LabSampleTransitionRequest(long Version, string Status, string? Reason, string? InternalNote);
 public sealed record QuoteLineRequest(Guid CatalogItemId, string Description, decimal Quantity, decimal UnitPrice);
 public sealed record IssueQuoteRequest(long Version, IReadOnlyList<QuoteLineRequest> Lines, decimal Tax, string Currency, DateTime? ExpiresAt, string Purpose = "Initial", string? PricingDecisionReason = null, Guid? SourceQuoteId = null,
-    IReadOnlyList<LabChangeSource>? AdditionalSources = null, int? AdditionalSequencingRunCount = null);
+    IReadOnlyList<LabChangeSource>? AdditionalSources = null, int? AdditionalSequencingRunCount = null,
+    int? DeliveryTargetBusinessDays = null);
 public sealed record QuoteExtensionRequestBody(long Version, string? Reason = null);
-public sealed record AcceptQuoteRequest(long Version, Guid QuoteId, string? PurchaseOrderNumber = null);
+public sealed record AcceptQuoteRequest(long Version, Guid QuoteId, string? PurchaseOrderNumber = null,
+    Guid? ConfirmedSampleTypeId = null, Guid? KitDeliveryLocationId = null, long? KitDeliveryLocationVersion = null);
 
 public sealed record ReagentLineWriteRequest(Guid OfferingId, decimal Quantity, string? Note);
 public sealed record ReagentDraftDetailsRequest(string? PurchaseOrderNumber, Guid? ShippingAddressId,
@@ -769,7 +787,8 @@ public static class OrderManagementMappings
         extensionRequest is null ? null : new QuoteExtensionRequestDto(extensionRequest.Id,
             extensionRequest.QuoteId, extensionRequest.ResolvedAt.HasValue ? "Resolved" : "Pending",
             extensionRequest.Reason, extensionRequest.RequestedAt, extensionRequest.ResolvedAt, extensionRequest.ReplacementQuoteId),
-        quote.ChangeScopeSnapshotJson, quote.AcceptedAmendmentSnapshotJson);
+        quote.ChangeScopeSnapshotJson, quote.AcceptedAmendmentSnapshotJson,
+        quote.DeliveryTargetBusinessDays);
 
     public static QuoteDto ToDto(this DataAssemblyQuote quote) => new(
         quote.Id, quote.Revision, quote.Purpose.ToString(), quote.Status.ToString(), quote.LinesJson,

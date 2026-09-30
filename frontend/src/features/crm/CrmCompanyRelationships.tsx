@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Pencil, Plus } from "lucide-react";
+import { ArrowRight, ChevronDown, Pencil, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   apiErrorMessage,
@@ -25,6 +25,7 @@ import {
   CardTitle,
 } from "#/components/ui/card";
 import { Checkbox } from "#/components/ui/checkbox";
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "#/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -244,8 +245,8 @@ export function CrmCompanyRelationships({
         </>
       ) : (
         <>
-          <Card>
-            <CardHeader>
+          <Card className="gap-0 py-0">
+            <CardHeader className="border-b bg-muted/50 p-4">
               <CardTitle>Company requests</CardTitle>
               <CardDescription>
                 Request online access, product or service changes, relationship
@@ -259,7 +260,7 @@ export function CrmCompanyRelationships({
                 </Button>
               </CardAction>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-4">
               <CollectionFeedback name="Company requests" query={handoffs} />
               {(handoffs.data ?? []).map((value) => (
                 <div key={value.id} className="rounded-lg border p-3">
@@ -272,23 +273,32 @@ export function CrmCompanyRelationships({
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="outline">{spaced(value.status)}</Badge>
-                      {value.type === "TrialProject" ? (
-                        <Button asChild size="sm" variant="outline">
-                          {value.trialProjectId ? (
-                            <Link to="/trial-projects/$trialId" params={{ trialId: value.trialProjectId }} search={{ fromCompanyId: companyId }}>Open Trial</Link>
-                          ) : (
-                            <Link to="/trial-projects" search={{ requestId: value.id, fromCompanyId: companyId }}>Start Trial</Link>
-                          )}
-                        </Button>
-                      ) : null}
-                      {value.status === "PendingReview" || value.status === "Approved" ? (
-                        <Button asChild size="sm" variant="outline">
-                          <Link to="/crm/requests" search={previous => ({ ...previous, section: value.status === "Approved" ? "work" : "decision", requestId: value.relationshipRequestId })}>
-                            Open in Requests
-                            <ArrowRight data-icon="inline-end" />
-                          </Link>
-                        </Button>
-                      ) : null}
+                      <ActionMenu modal={false}>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="outline" aria-label={`Actions for ${value.requestNumber}`}>
+                            Actions <ChevronDown aria-hidden="true" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-max min-w-40 max-w-[calc(100vw-2rem)]">
+                          {value.type === "TrialProject" ? (
+                            <DropdownMenuItem asChild>
+                              {value.trialProjectId ? (
+                                <Link to="/trial-projects/$trialId" params={{ trialId: value.trialProjectId }} search={{ fromCompanyId: companyId }}>Open Trial</Link>
+                              ) : (
+                                <Link to="/trial-projects" search={{ requestId: value.id, fromCompanyId: companyId }}>Start Trial</Link>
+                              )}
+                            </DropdownMenuItem>
+                          ) : null}
+                          {value.status === "PendingReview" || value.status === "Approved" ? (
+                            <DropdownMenuItem asChild>
+                              <Link to="/crm/requests" search={previous => ({ ...previous, section: value.status === "Approved" ? "work" : "decision", requestId: value.relationshipRequestId })}>
+                                Open in Requests
+                                <ArrowRight aria-hidden="true" />
+                              </Link>
+                            </DropdownMenuItem>
+                          ) : null}
+                        </DropdownMenuContent>
+                      </ActionMenu>
                     </div>
                   </div>
                 </div>

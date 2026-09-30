@@ -14,8 +14,8 @@ export function LabJobWorkspaceActions({ orderActions, shipmentActions = [], shi
   const actions = [...shipmentActions, ...orderActions]
   if (!actions.length) return null
   const content = (action: ShipmentHeaderAction) => <>{action.icon ? <action.icon aria-hidden="true" data-icon="inline-start" /> : null}{action.label}</>
-  if (actions.length === 1) return <Button ref={triggerRef} disabled={actions[0].disabled} aria-busy={actions[0].busy || undefined} aria-describedby={actions[0].descriptionId} onClick={actions[0].onSelect}>{content(actions[0])}</Button>
-  const items = (values: ShipmentHeaderAction[]) => values.map(action => <DropdownMenuItem key={action.label} disabled={action.disabled} aria-busy={action.busy || undefined} aria-describedby={action.descriptionId} onSelect={action.onSelect}>{content(action)}</DropdownMenuItem>)
+  if (actions.length === 1) return <Button ref={triggerRef} variant={actions[0].variant === 'destructive' ? 'destructive' : undefined} disabled={actions[0].disabled} aria-busy={actions[0].busy || undefined} aria-describedby={actions[0].descriptionId} onClick={actions[0].onSelect}>{content(actions[0])}</Button>
+  const items = (values: ShipmentHeaderAction[]) => values.map(action => <DropdownMenuItem key={action.label} variant={action.variant === 'destructive' ? 'destructive' : 'default'} disabled={action.disabled} aria-busy={action.busy || undefined} aria-describedby={action.descriptionId} onSelect={action.onSelect}>{content(action)}</DropdownMenuItem>)
   return <DropdownMenu>
     <DropdownMenuTrigger asChild><Button ref={triggerRef}>Actions<ChevronDown aria-hidden="true" data-icon="inline-end" /></Button></DropdownMenuTrigger>
     <DropdownMenuContent align="end" className="w-72 max-w-[calc(100vw-2rem)]" onCloseAutoFocus={event => { if (dialogOpen) event.preventDefault() }}>

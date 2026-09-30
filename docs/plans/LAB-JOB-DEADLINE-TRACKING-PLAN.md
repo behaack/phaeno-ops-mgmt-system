@@ -1,6 +1,14 @@
 # Jobs workspace and deadline tracking
 
-Status: implemented locally. On September 18, 2026 the owner authorized documentation reconciliation, commit, push, production deployment and required EF migrations. See [release evidence](PORTAL-JOBS-SETTINGS-RELEASE-2026-09-18.md).
+## September 29, 2026 turnaround change (supersedes acceptance-based rule for new approvals)
+
+The Customer approves one delivery target, **X business days**, before placing a standard order or accepting an initial Phaeno quote. For the current Test Lab Service, X is **14**. The clock starts when Phaeno records physical receipt of **every required tube for every sample** in the approved Job, including across multiple shipments. A sample with several tubes is complete only after all of them are received. Count Monday–Friday in Phaeno's Los Angeles timezone, excluding dates in the Phaeno observed-holiday calendar. Freeze the resulting due date and the calendar revision used; later calendar or offering edits do not rewrite the commitment. An operator may make a reasoned due-date adjustment through the existing Jobs action.
+
+New initial quotes persist the agreed business-day value. Standard placements snapshot the offering's single target; new offering revisions use one target rather than a minimum–maximum range. Phaeno must configure a holiday calendar covering the target before issuing an initial quote or placing a standard order. Already placed Jobs and their accepted terms remain unchanged. Previously issued initial quotes without the new target must be reissued before a new Customer approval. Historical Jobs without a deadline are flagged in Jobs, but physical receipt and scientific acceptance are not blocked. The existing calendar-day acceptance target remains historical data and is displayed as such. If the holiday calendar lacks coverage when the final tube arrives, retain the physical receipt and flag the deadline for operational correction; never invent a holiday schedule. Saving a covering calendar revision establishes pending deadlines without moving dates already established.
+
+Acceptance checks: the Customer sees the target before approval and in the quote PDF; no deadline is set after only part of the required tube roster arrives; the final receipt freezes the due date using the saved target and observed holidays; an existing placed Job's dates do not change; a historic undated Job can record intake and remains visible for deadline correction. Success is an agreed target on every new approval and a due date established from the complete physical receipt milestone.
+
+Status: the September 29 receipt-based business-day policy is implemented locally and its migration is applied to the configured local development database. Release and connected acceptance for this change remain pending. The September 18 release evidence applies to the earlier acceptance-based policy and Jobs workspace only; see [that release record](PORTAL-JOBS-SETTINGS-RELEASE-2026-09-18.md).
 Decision date: September 18, 2026.
 Owners: Product Owner for deadline meaning and commercial commitments; engineering for implementation.
 
@@ -26,7 +34,7 @@ Implemented name: **Jobs**, immediately above Library prep. Specimens remain acc
 
 Relevant sources: `backend/modules/PSeq.Operations.Laboratory/Domain/LabWorkOrder.cs`, `LabSpecimen.cs`; `backend/app/Features/LabOperations/Controllers/LabOperationsController.Timing.cs`, `LabOperationsController.Helpers.cs`, `LabOperationsController.cs`; `backend/app/Features/OrderManagement/Services/LabServiceTimingService.cs`; `frontend/src/features/orders/LabServiceTimingPanel.tsx`.
 
-## Confirmed product decisions
+## Historical confirmed decisions (superseded for new approvals)
 
 1. **Deadline endpoint:** data for **all samples under the job** is made available to the customer through the Portal. The owner explicitly confirmed this definition. Customer download or acknowledgement is not required. Laboratory completion / ReadyForRelease remains a separate milestone and does not complete the job for this workspace. When implemented, Show complete follows this all-samples delivery rule, so jobs awaiting any sample's data remain open.
 2. **Deadline source:** start with a configurable standard turnaround time (TAT), then allow an authorized Phaeno employee to adjust the job's due date. Reuse service-specific turnaround configuration and the existing acceptance-based clock unless the owner changes that policy. Standard TAT must cover delivery of results, not only laboratory processing.
@@ -34,7 +42,7 @@ Relevant sources: `backend/modules/PSeq.Operations.Laboratory/Domain/LabWorkOrde
 
 These decisions were confirmed by the owner on September 18. They settle the endpoint and source questions; execution was subsequently authorized with “Okay, please implement.”
 
-### Remaining design assumptions
+### Historical design assumptions
 
 - Proposed initial Due soon window: three calendar days. Keep the existing calendar-day turnaround convention; business-day calendars and holidays are separate scope.
 - Implement the confirmed delivery rule against authoritative Portal release/access records and the job's sample roster. Partial releases may accumulate; completion is recorded when data for the last outstanding sample becomes available and all samples are covered. File upload or an email attempt alone is not delivery. Reuse existing authorization and release gates; do not infer accessibility from a laboratory status or require a customer download.
@@ -163,7 +171,7 @@ For Job **69SJN4PA** (`1dfe715e-a315-437c-93a2-9ffea167e6a8`), the owner confirm
 
 Completed the previously authorized 14-calendar-day delivery baseline for this remaining job: first acceptance `2026-09-10T21:35:58.727675Z`, original delivery due `2026-09-24T21:35:58.727675Z`. No quote turnaround, processing forecast, global offering, customer notification or publication was changed. Retained seven `HistoricalAcceptanceBackfilled` work events, one `DeliveryDeadlineBackfilled` work event and 34 audit records under request `local-69SJN4PA-acceptance-backfill-20260918`. Fresh post-commit read verified 7 accepted specimens, 26 accepted tubes, the due date and queue status `NoKnownRisk`. This supersedes the earlier note that this job remained awaiting acceptance. Temporary maintenance source removed after completion; no product code or migration required.
 
-### Required delivery date at acceptance - September 18, 2026
+### Historical required delivery date at acceptance - September 18, 2026
 
 The owner confirmed the date becomes mandatory at acceptance, not before shipment. Reuse the configured maximum calendar-day turnaround to calculate the date on first acceptance. When no turnaround exists, require an operator/supervisor to save an explicit date with the existing versioned, reasoned deadline action before accepting samples. The shared tube-intake path checks this before refreshing specimen acceptance; all intake writes remain in their existing transactions. The domain target refresh also rejects accepted work lacking both turnaround and due date. No schema, new API contract or default TAT change. The prior 14-day backfill was not a new global default.
 

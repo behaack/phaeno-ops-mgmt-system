@@ -168,6 +168,20 @@ describe('sample-shipping navigation permissions', () => {
 })
 
 describe('navigation placement', () => {
+  it('offers Customer settings to Customer administrators without duplicating Departments', () => {
+    const customer = createSession('Customer', {})
+    const customerContext = { selectedOrganizationKind: 'Customer' as const, selectedMembership: customer.memberships[1] }
+    expect(getVisibleMainMenuItems(customer, customerContext, 'administration').map(item => item.label)).toEqual(['Customer settings'])
+
+    const partner = createSession('Partner', {})
+    expect(getVisibleMainMenuItems(partner, { selectedOrganizationKind: 'Partner', selectedMembership: partner.memberships[1] }, 'administration').map(item => item.label)).toEqual(['Departments'])
+
+    customer.memberships[1].isOrganizationAdmin = false
+    expect(getVisibleMainMenuItems(customer, customerContext, 'administration')).toEqual([])
+    customer.memberships[1].departments = [{ departmentId: 'oncology', departmentName: 'Oncology', departmentCode: 'ONC', isDefault: false, isDepartmentAdmin: true }]
+    expect(getVisibleMainMenuItems(customer, customerContext, 'administration').map(item => item.label)).toEqual(['Customer settings'])
+  })
+
   it('keeps CRM settings permission-scoped and selected separately from CRM', () => {
     const session = createSession('Phaeno', {})
     expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Phaeno' }, 'administration')).toContainEqual(expect.objectContaining({ label: 'CRM settings', to: '/crm/administration' }))

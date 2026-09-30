@@ -26,9 +26,51 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
             && item.OrganizationId == organizationId && item.DepartmentId == departmentId && !item.IsDiscarded, ct) ?? throw Missing();
 
     public static string? JobBlock(LabServiceOrder job)
-        => !job.AcceptedQuoteId.HasValue || !job.SampleRosterFinalizedAt.HasValue
+        => !job.AcceptedQuoteId.HasValue
             || job.Status is not (LabServiceOrderStatus.PlacedAwaitingSamples or LabServiceOrderStatus.InProgress)
-                ? "Transportation kits can be ordered for an accepted, active laboratory Job with a finalized sample list." : null;
+                ? "Transportation kits require an accepted, active laboratory Job." : null;
+
+    /// <summary>Queue the initial kit shortage in the same transaction as quote acceptance.</summary>
+    public async Task QueueAtAcceptanceAsync(LabServiceOrder order, CustomerDeliveryLocation location,
+        Guid actorId, CancellationToken ct)
+    {
+        if (!order.SampleTypeDefinitionId.HasValue || order.RequestedSpecimenCount < 1)
+            throw Conflict("Confirm a supported Sample type and sample count before requesting kits.");
+        if (await db.TransportationKitRequests.AnyAsync(item => item.LabServiceOrderId == order.Id, ct))
+            throw Conflict("A Transportation kit request already exists for this Job.");
+        var contexts = new[] { new ContainerSampleTypeContext(order.SampleTypeDefinitionId.Value) };
+        var stock = await db.SampleShippingStockKits.AsNoTracking().Where(item =>
+            item.OrganizationId == order.OrganizationId && item.DepartmentId == order.DepartmentId
+            && item.CustomerDeliveryLocationId == location.Id && item.CustomerReceivedAt.HasValue
+            && !item.ReservedSampleShipmentId.HasValue && !item.BoundSampleShipmentId.HasValue
+            && !item.WithdrawnAt.HasValue).ToArrayAsync(ct);
+        var stockDefinitions = stock.Length == 0 ? [] : await catalog.ReadStockCompatibleAsync(contexts,
+            stock.Select(item => item.ContainerDefinitionId).Distinct().ToArray(), ct);
+        var compatibleStock = stock.Where(item => stockDefinitions.Any(definition => definition.Id == item.ContainerDefinitionId)
+            && TransportationKitInventory.IsPhysicallyUsable(item, DateTime.UtcNow)).ToArray();
+        var stockCoverage = SampleShippingContainerPacker.Preview(stockDefinitions, order.RequestedSpecimenCount,
+            compatibleStock.GroupBy(item => item.ContainerDefinitionId)
+                .Select(group => new ContainerQuantityRequest(group.Key, group.Count())).ToArray());
+        if (stockCoverage.UnallocatedTubes == 0) return;
+        var definitions = (await catalog.ReadCompatibleAsync(contexts, ct))
+            .Where(item => item.AssemblyWorkflowReady == true).ToArray();
+        if (definitions.Length == 0)
+            throw Conflict("No approved, assembly-ready Transportation kit supports this Sample type. Ask Phaeno to complete kit setup.");
+        var recommendation = SampleShippingContainerPacker.Preview(definitions, stockCoverage.UnallocatedTubes);
+        if (!recommendation.IsComplete || recommendation.ContainerCount == 0)
+            throw Conflict("No compatible Transportation kit can cover the accepted sample count.");
+        var request = new TransportationKitRequest(order.Id, order.OrganizationId, order.DepartmentId,
+            location.Id, JsonSerializer.Serialize(location.ToDto(), Json), actorId, DateTime.UtcNow);
+        foreach (var quantity in recommendation.Containers)
+        {
+            var definition = definitions.Single(item => item.Id == quantity.ContainerDefinitionId);
+            request.Lines.Add(new TransportationKitRequestLine(request.Id, definition.Id,
+                SampleShippingContainerCatalogService.Snapshot(definition), quantity.Quantity));
+        }
+        db.TransportationKitRequests.Add(request);
+        AddEvent(request, actorId, "Created", "Kit fulfillment was initiated when the quote was accepted. No separate Customer approval is required.");
+        await NotifyFulfillmentAsync(request, order.OrderNumber, ct);
+    }
 
     public async Task<ShipmentKitSupplyDto> SupplyAsync(Guid shipmentId, OrderTenantContext tenant, Guid? locationId, CancellationToken ct)
     {
@@ -162,24 +204,57 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
         var (selectedDestinationId, destinationChoices) = await DispatchDestinationChoicesAsync(request, job, ct);
         if (block is null && destinationChoices.Count == 0)
             block = "No current Active Phaeno ship-to destination is available for this request. Review the Default destination and the requested kit specifications.";
+        var available = new Dictionary<Guid, int>();
+        if (block is null)
+        {
+            await foreach (var kit in ReadyStock(request).Select(item => new
+                { item.ContainerDefinitionId, item.ProductExpirySnapshotJson }).AsAsyncEnumerable().WithCancellation(ct))
+            {
+                if (!TransportationKitInventory.IsExpirySnapshotUsable(kit.ProductExpirySnapshotJson, DateTime.UtcNow)) continue;
+                available[kit.ContainerDefinitionId] = available.GetValueOrDefault(kit.ContainerDefinitionId) + 1;
+            }
+        }
+        var mapped = await MapAsync(request, false, true, ct);
+        return new(mapped, request.Lines.Select(line =>
+        {
+            var definition = JsonSerializer.Deserialize<SampleShippingContainerDefinitionDto>(line.ContainerSnapshotJson, Json)!;
+            return new TransportationKitTypeAvailabilityDto(line.ContainerDefinitionId, definition.Sku,
+                definition.CommonName, definition.TubeCapacity, line.Quantity,
+                mapped.Lines.Single(item => item.Id == line.Id).DispatchedQuantity,
+                available.GetValueOrDefault(line.ContainerDefinitionId));
+        }).ToArray(), block is null, block, selectedDestinationId,
+            destinationChoices.Select(item => new PhaenoDestinationOptionDto(item.Id,
+                item.Name, item.Revision, item.IsEffectiveAt(DateTime.UtcNow))).ToArray());
+    }
+
+    private IQueryable<SampleShippingStockKit> ReadyStock(TransportationKitRequest request)
+    {
         var definitionIds = request.Lines.Select(item => item.ContainerDefinitionId).ToArray();
-        var ready = block is null ? await db.SampleShippingStockKits.AsNoTracking().Where(item => !item.FulfilledAt.HasValue
+        return db.SampleShippingStockKits.AsNoTracking().Where(item => !item.FulfilledAt.HasValue
             && !item.OrganizationId.HasValue && !item.TransportationKitRequestLineId.HasValue && !item.BoundSampleShipmentId.HasValue
+            && !item.WithdrawnAt.HasValue
             && definitionIds.Contains(item.ContainerDefinitionId) && item.TubeSupplierProductId.HasValue
             && item.AssemblyWorkflowRevisionId.HasValue && item.AssemblyCompletedAt.HasValue
             && item.Tubes.Count == item.TubeCapacity
             && item.Tubes.Select(tube => tube.SupplierBarcode).Distinct().Count() == item.TubeCapacity
             && !item.Tubes.Any(tube => tube.TubeSupplierProductId != item.TubeSupplierProductId
-                || tube.BarcodeNamespace != item.TubeBarcodeNamespace)).OrderBy(item => item.CreatedAt).ToListAsync(ct) : [];
-        ready.RemoveAll(item => !TransportationKitInventory.IsPhysicallyUsable(item, DateTime.UtcNow));
-        return new(await MapAsync(request, false, true, ct), ready.Select(kit =>
-        {
-            var definition = JsonSerializer.Deserialize<SampleShippingContainerDefinitionDto>(kit.ContainerSnapshotJson, Json)!;
-            return new AvailableTransportationStockKitDto(kit.Id, kit.KitNumber, kit.ContainerDefinitionId,
-                definition.Sku, definition.CommonName, kit.TubeCapacity, kit.Version);
-        }).ToArray(), block is null, block, selectedDestinationId,
-            destinationChoices.Select(item => new PhaenoDestinationOptionDto(item.Id,
-                item.Name, item.Revision, item.IsEffectiveAt(DateTime.UtcNow))).ToArray());
+                || tube.BarcodeNamespace != item.TubeBarcodeNamespace));
+    }
+
+    public async Task<AvailableTransportationStockKitDto> ResolveKitAsync(TransportationKitRequest request, string barcode, CancellationToken ct)
+    {
+        var value = barcode?.Trim();
+        if (string.IsNullOrWhiteSpace(value) || value.Length > 100)
+            throw Invalid("Scan a complete physical kit barcode.");
+        if (request.ClosedAt.HasValue || request.Status == TransportationKitRequestStatus.Dispatched)
+            throw Conflict("This request has no kits remaining to dispatch.");
+        var kit = await ReadyStock(request).SingleOrDefaultAsync(item => item.KitNumber == value, ct)
+            ?? throw Invalid("This barcode does not identify a ready kit of a requested type. Check the kit inventory and scan again.");
+        if (!TransportationKitInventory.IsPhysicallyUsable(kit, DateTime.UtcNow))
+            throw Conflict("This physical kit cannot be shipped. Review its withdrawal and component expiration records.");
+        var definition = JsonSerializer.Deserialize<SampleShippingContainerDefinitionDto>(kit.ContainerSnapshotJson, Json)!;
+        return new(kit.Id, kit.KitNumber, kit.ContainerDefinitionId, definition.Sku, definition.CommonName,
+            kit.TubeCapacity, kit.Version);
     }
 
     private async Task<(Guid? SelectedId, IReadOnlyList<SampleShippingDestination> Choices)> DispatchDestinationChoicesAsync(
@@ -190,12 +265,12 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
                 SampleShipmentAuthorizationSource.CustomerLabServiceOrder && item.AuthorizationSourceId == job.Id
                 && item.Status == SampleShipmentStatus.Preparing).ToArrayAsync(ct);
         var selectedIds = shipments.Select(item => item.DestinationId).Distinct().ToArray();
+        Guid? selectedShipmentId = selectedIds.Length == 0 ? null : selectedIds[0];
         if (selectedIds.Length > 1) throw Conflict("The Job has conflicting ship-to destinations. Review its shipments before dispatch.");
-        if (shipments.Length == 0) return (null, []);
         var fixedDestinationId = job.ShippingDestinationId;
         if (fixedDestinationId.HasValue && selectedIds.Length == 1 && selectedIds[0] != fixedDestinationId.Value)
             throw Conflict("The Job's shipment and fixed Phaeno destination disagree. Review this Order before dispatch.");
-        if (!job.SampleTypeDefinitionId.HasValue) return (fixedDestinationId ?? selectedIds.FirstOrDefault(), []);
+        if (!job.SampleTypeDefinitionId.HasValue) return (fixedDestinationId ?? selectedShipmentId, []);
         var shipmentIds = shipments.Select(item => item.Id).ToArray();
         var earlierDispatch = await db.TransportationKitRequests.AsNoTracking().AnyAsync(item =>
             item.LabServiceOrderId == job.Id && item.Id != request.Id
@@ -214,6 +289,8 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
             || await db.SampleShippingStockKits.AsNoTracking().AnyAsync(kit =>
                 kit.ReservedSampleShipmentId.HasValue && shipmentIds.Contains(kit.ReservedSampleShipmentId.Value)
                 || kit.BoundSampleShipmentId.HasValue && shipmentIds.Contains(kit.BoundSampleShipmentId.Value), ct);
+        if (routeFixed && !fixedDestinationId.HasValue && !selectedShipmentId.HasValue)
+            throw Conflict("This Job has a fixed Phaeno ship-to route without a saved destination. Ask Phaeno to review it before dispatch.");
         var requestedIds = request.Lines.Select(item => item.ContainerDefinitionId).Distinct().ToArray();
         var sampleKey = await db.SampleTypeDefinitions.AsNoTracking().Where(item => item.Id == job.SampleTypeDefinitionId.Value)
             .Select(item => item.DefinitionKey).SingleAsync(ct);
@@ -239,10 +316,10 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
         var result = new List<SampleShippingDestination>();
         foreach (var candidate in candidates)
         {
-            if (routeFixed && candidate.Destination.Id != (fixedDestinationId ?? selectedIds[0])) continue;
+            if (routeFixed && candidate.Destination.Id != (fixedDestinationId ?? selectedShipmentId)) continue;
             result.Add(candidate.Destination);
         }
-        return (fixedDestinationId ?? selectedIds.FirstOrDefault(), result);
+        return (fixedDestinationId ?? selectedShipmentId, result);
     }
 
     public async Task<TransportationKitRequestDetailDto> DispatchAsync(Guid id, Guid actorId, DispatchTransportationKitsRequest body, CancellationToken ct)
@@ -384,6 +461,10 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
         foreach (var kitId in kitIds.Order()) await SampleShippingPackingData.LockAsync(db, $"stock-kit:{kitId}", ct);
         var kits = await RequestKitsAsync(request, ct);
         if (kitIds.Any(id => !kits.Any(kit => kit.Id == id))) throw Missing();
+        if (body.ScannedKitBarcode is not null && (kitIds.Length != 1
+            || !string.Equals(body.ScannedKitBarcode.Trim(), kits.Single(kit => kit.Id == kitIds[0]).KitNumber,
+                StringComparison.OrdinalIgnoreCase)))
+            throw Invalid("The scanned kit barcode does not match the selected shipped kit.");
         if (kits.Where(kit => kitIds.Contains(kit.Id)).All(kit => kit.CustomerReceivedAt.HasValue)) return await MapAsync(request, true, false, ct);
         Version(request.Version, body.Version);
         var selected = await db.SampleShippingStockKits.Where(kit => kitIds.Contains(kit.Id)).ToListAsync(ct);

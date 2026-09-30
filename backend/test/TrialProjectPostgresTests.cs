@@ -488,8 +488,10 @@ public sealed partial class TrialProjectPostgresTests
             db.AddRange(phaeno, fixture.Organization, membership, new OrganizationMembership(commercial.Id, phaeno.Id, true), new OrganizationMembership(scientific.Id, phaeno.Id, false));
             fixture.Commercial = new(commercial, true, true, null); fixture.Scientific = new(scientific, true, false, null);
             fixture.Prospect = new(fixture.Customer, false, false, new(fixture.Customer, fixture.Organization, membership, fixture.Department, true));
-            var commercialAuthority = new TrialApprovalAuthority(commercial.Id, TrialApprovalDomain.Commercial, true, null, commercial.Id, "Fixture commercial authority", now);
-            fixture.ScientificAuthority = new(scientific.Id, TrialApprovalDomain.ScientificOperations, true, null, commercial.Id, "Fixture scientific authority", now);
+            // An established fixture grant should remain active if the host clock is adjusted during the suite.
+            var authorityEffectiveAt = now.AddMinutes(-1);
+            var commercialAuthority = new TrialApprovalAuthority(commercial.Id, TrialApprovalDomain.Commercial, true, null, commercial.Id, "Fixture commercial authority", authorityEffectiveAt);
+            fixture.ScientificAuthority = new(scientific.Id, TrialApprovalDomain.ScientificOperations, true, null, commercial.Id, "Fixture scientific authority", authorityEffectiveAt);
             // Reference fixtures are isolated by rollback; existing assignments are restored with it.
             foreach (var current in await db.TrialApprovalAuthorities.Where(value => value.RevokedAtUtc == null).ToListAsync()) current.Revoke(commercial.Id, "Isolated fixture", now);
             await db.SaveChangesAsync(); db.AddRange(commercialAuthority, fixture.ScientificAuthority);

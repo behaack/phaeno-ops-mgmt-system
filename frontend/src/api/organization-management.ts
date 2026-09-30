@@ -421,11 +421,32 @@ export async function decideRelationshipRequest(
     existingOrganizationId?: string
     reason?: string | null
     version: number
+    serviceEntitlements?: RequestedServiceEntitlement[]
   },
 ) {
   const response = await api.post<ApiEnvelope<RelationshipRequest>>(
     `/platform/relationships/requests/${id}/decision`,
     input,
+  )
+  return unwrap(response.data)
+}
+
+export type RequestedServiceEntitlement = {
+  service: PortalService
+  departmentId: string | null
+  effectiveFrom: string
+  effectiveTo: string | null
+  configurationStatus: 'Pending' | 'Ready' | 'Blocked'
+  existingEntitlementId?: string | null
+  existingEntitlementVersion?: number | null
+}
+
+export async function saveApprovedServiceEntitlements(
+  id: string,
+  input: { version: number; serviceEntitlements: RequestedServiceEntitlement[] },
+) {
+  const response = await api.put<ApiEnvelope<ServiceEntitlement[]>>(
+    `/platform/relationships/requests/${id}/service-entitlements`, input,
   )
   return unwrap(response.data)
 }

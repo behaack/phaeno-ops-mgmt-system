@@ -54,7 +54,10 @@ async function fixture(page: Page, screen: string, patch: Partial<LabServiceOrde
       const assemblyPath = `/data-assembly-requests/${bundleIds.request}`
       if (method === 'GET') {
         if (path === '/platform/sample-shipping/configuration') return send({ destinations: [], sampleTypes: [], instructionRules: [] })
+        if (path === '/customer-delivery-locations') return send([{ id: '10000000-0000-4000-8000-000000000011', organizationId: bundleIds.organization, departmentId: bundleIds.department, label: 'Training receiving', recipient: 'Training lab', line1: '1 Test Way', line2: null, city: 'Baltimore', region: 'MD', postalCode: '21201', countryCode: 'US', isActive: true, isDefault: true, version: 1 }])
         if (path === labPath) return send(lab)
+        if (path === `${labPath}/transportation-kits`) return send(null)
+        if (path === `${labPath}/sample-tube-pairs`) return send({ pairs: [], kits: [], expectedSampleCount: 2, expectedSequencingRunCount: 2, isFinalized: false })
         if (path === `${labPath}/standard-preview`) return send(bundlePreview)
         if (
           path === '/order-catalog/lab-service-offerings' ||
@@ -95,6 +98,7 @@ async function fixture(page: Page, screen: string, patch: Partial<LabServiceOrde
             canFinalizeSamples: true,
             canWithdraw: false,
             placedAt: '2026-09-07T10:05:00Z',
+            usesPairedPreparation: true,
             entryMode: 'ConfiguredDirect',
             standardCommercialSnapshot: {
               ...bundleOffering,
@@ -306,15 +310,16 @@ for (const audience of ['lab', 'partner-lab'])
     await dialog
       .getByRole('textbox', { name: /Purchase order number/ })
       .fill('TRAINING-PO')
-    await dialog.getByRole('checkbox').check()
+    await dialog.getByRole('checkbox', { name: /I confirm this is the Sample type/ }).check()
+    await dialog.getByRole('combobox', { name: /Ship Transportation kits to/ }).selectOption('10000000-0000-4000-8000-000000000011')
+    await dialog.getByRole('checkbox', { name: /I accept the displayed scope/ }).check()
     await capture(page, info, `${audience}-price-confirmation`)
     await dialog
-      .getByRole('button', { name: 'Place standard order', exact: true })
+      .getByRole('button', { name: 'Confirm price and order', exact: true })
       .click()
     await expect(dialog).toHaveCount(0)
-    await expect(
-      page.getByRole('textbox', { name: 'Sample ID 1 for Yeast', exact: true }),
-    ).toBeVisible()
+    await expect(page.getByText('No available received kits were found. Ask Phaeno to review kit fulfillment.')).toBeVisible()
+    await expect(page.getByRole('textbox', { name: 'Sample ID 1 for Yeast', exact: true })).toHaveCount(0)
     await capture(page, info, `${audience}-placed-samples`)
     expect(state.writes).toHaveLength(1)
     expect(state.unexpected).toEqual([])

@@ -1,5 +1,61 @@
 # Order Management Plan
 
+September 29, 2026 superseding decision for new PSeq Lab Service approvals: Customer review presents one delivery target in business days. The agreed target is saved on the initial quote or standard placement before Customer approval. Its due date is calculated after Phaeno physically receives all required tubes for all samples, using the Phaeno observed-holiday calendar. Existing placed Jobs retain their prior accepted terms. See `LAB-JOB-DEADLINE-TRACKING-PLAN.md` for the receipt trigger, calendar, historical behavior, and acceptance criteria.
+
+The approved four-stage Customer quote-to-shipment redesign is tracked in
+[Customer Lab order: four-step kit and sample workflow](CUSTOMER-LAB-ORDER-FOUR-STEP-WORKFLOW-PLAN.md).
+
+## Customer dashboard Lab request card presentation — September 29, 2026
+
+Shade the Customer dashboard Lab service requests header using the existing
+muted card-header pattern. Keep the request list on the card surface and give
+the View all lab services action an outlined background so it remains distinct
+from the muted footer. This is a visual change only; Department scope, list
+contents, actions, and pagination remain as implemented. Automated and browser
+tests remain request-only.
+
+## Customer order Department ownership — September 29, 2026
+
+The Johns Hopkins POMS order 6MZBLUGM was created under the default General
+Department even though the Customer's active user is assigned only to Oncology.
+The Customer Portal correctly scopes its dashboard to Oncology, making that
+Quote-issued order invisible there. For Customers with several active Departments,
+New Customer order now requires staff to select one explicitly. Department
+readiness and the initiation endpoint both block pricing when no active Customer
+user can access the selected Department; organization administrators count as
+having access to every active Department. An active non-admin user is enough to
+start pricing, while existing quote-approval requirements remain separate.
+
+Correct only this preexisting local order to Oncology after guarding its identity,
+unaccepted quote, and absence of downstream work. Preserve its issued quote and
+historical failed notification; do not retry or send a Customer notice as part of
+the repair. Backend and frontend regression sources are updated. Automated and
+browser tests remain request-only.
+
+## Customer order source composition control — September 29, 2026
+
+Move the existing **Add source** button to the trailing edge of the required
+Biological-source composition heading in New Customer order. Keep the sample
+total below the source rows, aligned right. The source count, validation,
+pricing, and submission behavior remain unchanged; the grouped field keeps an
+accessible name and the control may wrap to the trailing edge on narrow widths.
+Automated and browser verification remain request-only.
+
+## Customer order readiness controls — September 29, 2026
+
+Phaeno order staff can clear a freely selected Customer in New Customer order,
+then select another without losing entered Job details. Clearing also removes
+the prior Department and readiness display until the new Customer is selected;
+the Customer of an approved CRM handoff remains fixed. Refresh readiness sits
+inside the readiness message at the trailing edge, centered against its text,
+and retains the draft while checking current setup. On narrow layouts the action
+may wrap within the same message. No pricing gate, authorization, or API rule
+changes.
+
+Implemented locally. TypeScript, scoped ESLint, documentation generation/check,
+and whitespace checks pass. A focused Customer-switch regression source was
+added but automated and browser tests remain request-only.
+
 ## One Sample type per PSeq order — September 25, 2026
 
 Customer and Phaeno Job creation require one currently Active PSeq Sample type. The Job stores its selected controlled type and shows it in the order scope. Every sample entered later belongs to that same type, regardless of biological source. A request covering another type must be placed as a separate order with separate containers, packets, and tracking labels. A selected type can follow an approved Active revision in the same family for new shipping work; already issued instructions retain their saved facts. Older orders without a recorded selection remain readable. Each pricing request snapshot includes the selected type. The type may change only while the Job is editable and has no sample rows or placement; changing a pending request submits a revised pricing scope.
@@ -373,7 +429,10 @@ The full-width **Samples and shipping** workspace combines the paginated sample
 roster and tube matching in one grouped list, with selected-container commands in
 the Job's **Actions** menu and in-place insert printing. **Accept quote** and
 **Decline quote** appear at the end of the **Order details and billing** heading
-row. Sample submission and shipping appear when relevant after commitment;
+row. Order scope sits left of Quote and billing on wide screens, with pricing
+and invoices on the right. The separate Sample submission card is removed;
+saved instructions appear with sample preparation when relevant. Samples and
+shipping appear after commitment;
 **After you send** appears when shipment, receipt, lab progress or results exist.
 A detailed scientific checklist is deferred.
 The owning plan records scope, navigation guards, meaningful assertions and
@@ -1199,6 +1258,11 @@ verified behavior until that work is completed.
 CRM-to-operations handoff. When implementation is explicitly requested, this
 plan must be expanded into exact transition, pricing, API, migration, UI, and
 rollout changes before modifying the current order aggregates.
+
+The turnaround-range and acceptance-start bullets in this historical direction
+describe already placed Jobs. For new approvals, the September 29 business-day
+delivery target and complete physical receipt trigger at the top of this plan
+supersede them.
 
 - A direct Portal order is standard, configured, entitlement-checked work. The
   complete price is shown before commitment and no Sales negotiation is needed.

@@ -12,7 +12,7 @@ Acceptance opens sample entry for the additional counts. Previously authorized s
 
 ## Follow the Job workspace
 
-The Job has two areas. **Ordering and shipping** shows six horizontal icons: **Pricing review** (or **Confirm pricing** when a quote is ready), **Sample identification**, **Container supply**, **Assign containers**, **Match samples to tubes**, and **Send samples**. Checkmarks show completed work, the current step is highlighted, and future steps are muted. On a narrow screen, move along the step strip to review the remaining steps. Once transportation kits are ordered and compatible containers are still needed, **Your next step** reads **Wait for containers to arrive**. **View kit delivery** opens the shipping area; the message distinguishes Phaeno preparing the containers from containers in transit. Confirm receipt only after the kits physically arrive. **Assign shipping containers** appears when compatible received containers are available at the selected container location; previously received stock can be used without waiting for a new delivery. **Container location** appears with container selection: one active location is shown as plain text, while multiple locations offer a selector. The selector remains available when the selected location has no stock so you can check another location. The kit-order modal separately uses **Kit receiving location** for the address where new kits should arrive.
+For earlier Jobs, the Job has two areas. **Ordering and shipping** shows six horizontal icons: **Pricing review** (or **Confirm pricing** when a quote is ready), **Sample identification**, **Container supply**, **Assign containers**, **Match samples to tubes**, and **Send samples**. Checkmarks show completed work, the current step is highlighted, and future steps are muted. On a narrow screen, move along the step strip to review the remaining steps. Once transportation kits are ordered and compatible containers are still needed, **Your next step** reads **Wait for containers to arrive**. **View kit delivery** opens the shipping area; the message distinguishes Phaeno preparing the containers from containers in transit. Confirm receipt only after the kits physically arrive. **Assign shipping containers** appears when compatible received containers are available at the selected container location; previously received stock can be used without waiting for a new delivery. **Container location** appears with container selection: one active location is shown as plain text, while multiple locations offer a selector. The selector remains available when the selected location has no stock so you can check another location. The kit-order modal separately uses **Kit receiving location** for the address where new kits should arrive.
 
 Hover over an icon, focus it with the keyboard, or tap it to read its detailed explanation and status, including who must act when work remains. Press Escape, move keyboard focus away or tap outside to close the information. Icons provide information; selecting one does not open work or change the Job. This also applies to completed and future steps. **Your next step** below the icons explains the required task, any prerequisite, and whether it is with you, your administrator, Phaeno or the carrier. Use its action button for the required work on the same Job. The steps reflect saved records; they are not checkboxes to mark yourself. Waiting for pricing or delivery is not a task you must complete personally.
 
@@ -45,7 +45,7 @@ If an older draft still contains sample rows from the former workflow, the Job i
 
 ## Existing configured standard drafts
 
-For an existing unsubmitted draft with a configured standard offering, in **Standard PSeq Lab Service**, choose an available **Offering**. Review its allowed material types and biological sources, included scientific outputs, published turnaround range, sample count, purchased sample-sequencing runs, and price per run. The bundle includes laboratory processing and data assembly; it does not require a separate assembly purchase.
+For an existing unsubmitted draft with a configured standard offering, in **Standard PSeq Lab Service**, choose an available **Offering**. Review its allowed material types and biological sources, included scientific outputs, single delivery target in business days, sample count, purchased sample-sequencing runs, and price per run. The bundle includes laboratory processing and data assembly; it does not require a separate assembly purchase.
 
 Choose **Review standard order**. The review shows the current subtotal, approved tax, and final total. An organization or assigned-Department administrator supplies a PO when required, confirms the scope and prohibited-data statement, and selects **Place standard order**. The offering, scope, price and approved tax are retained with the Job. Detailed samples are entered afterward.
 
@@ -67,7 +67,7 @@ From the Job's **Actions**, select **Download quote PDF** to save a Phaeno-brand
 
 Laboratory services are priced per job. Phaeno issues an itemized, immutable Portal quote for the accepted scope. When your approved billing and tax information is available, the quote includes calculated tax and freezes those commercial terms. Otherwise the quote is labeled **Pre-tax total**, and applicable tax is calculated when the invoice is issued. A zero tax amount is valid for an exempt, non-taxable, or zero-rate determination. The quote is available after all non-billing readiness items are complete and a Customer administrator is active; billing must be complete before invoicing.
 
-Before accepting, confirm the committed sample count, biological-source composition, standard service scope, price, currency, expiration date, and whether the displayed amount includes tax or is pre-tax. A Customer organization administrator or an administrator of the selected Department can accept the current unexpired quote.
+Before accepting, confirm the committed sample count, biological-source composition, standard service scope, price, currency, expiration date, and whether the displayed amount includes tax or is pre-tax. Confirm the quoted Sample type you will send and select the Department delivery address for Transportation kits. A Customer organization administrator or an administrator of the selected Department can accept the current unexpired quote. Phaeno chooses the compatible kit configuration and starts fulfillment as part of that confirmation; you do not approve kit types separately.
 
 If the scope changes after acceptance, Phaeno issues a separate change quote. Added work does not begin until the applicable change is accepted.
 
@@ -85,7 +85,17 @@ For the current expired quote, an organization or department administrator can s
 
 If Phaeno issues a new revision, review its price, terms and new expiration date before accepting. An extension request does not accept a quote or automatically extend its deadline. The original revision remains in the history, and its PDF stays available. An accepted quote remains **Accepted** when its former expiration date passes.
 
-## Ship and track samples
+## Prepare and send samples for a newly confirmed order
+
+The Job shows four stages: **Confirm price and order**, the transportation-kit stage, **Prepare sample shipment**, and **Send samples**. While Phaeno prepares an unshipped kit order, the stage reads **Preparing your transportation kits** and the button reads **View kit order**. After a kit is sent, the stage reads **Receive transportation kits** and the button reads **Record receipt**. The kit status shows an order received by Phaeno, kits sent, and physical receipt. Phaeno fulfills the appropriate transportation kits after confirmation. Follow dispatch and tracking, then have an organization or assigned-Department administrator confirm each kit only after physically checking its kit number. The sample-entry panel stays hidden until a compatible kit is recorded as received; previously received compatible, unused kits at the selected address can also open it.
+
+For each sample, select one received kit and enter one non-PHI Sample ID with one barcode from a physical tube in that kit. Enter the accepted biological source and actual material amount. The Quantity label shows the accepted unit and range. One sequencing run is assigned automatically unless the accepted order explicitly includes additional runs. Select **Save pair** at the end of the row; a new row opens after it is saved. The page shows the saved pairs and remaining accepted totals. A wrong-kit, duplicate, unknown or unavailable barcode is rejected without clearing the entry. Use **Correct pair** with a reason before final confirmation if a saved match needs correction.
+
+When the number of pairs, source counts and run allocation match the accepted order, review all pairs and select **Confirm all pairs**, then confirm the reviewed crosswalk. This locks the exact Sample ID/tube crosswalk and authorizes Lab work. Review, print and pack the current insert for each kit's return shipment, then record carrier handoff and tracking after giving it to the carrier. A partially sent Job remains open for its other kits. See **Prepare and ship samples** for details.
+
+## Earlier Jobs and supplemental sample work
+
+The following sample-list, CSV, container-assignment and tube-matching instructions apply to earlier Jobs and additional sample scope accepted through a Change quote. Their saved history remains available.
 
 After placing the standard order or accepting the manual quote, open **Sample identification** in **Samples and shipping**. A blank row is provided for each remaining accepted sample, grouped under its biological source. Enter a unique **Sample ID** in each row; **Tubes** starts at 1 and can be changed if that sample includes reserves. Select **Save sample IDs** for the group. You can save part of a group and return to the remaining blank rows. The counts show saved samples; blank rows are not saved records. If a save is interrupted, confirmed saves remain and unconfirmed entries stay available for review and retry.
 
@@ -111,7 +121,7 @@ Scan each physical container's permanent barcode, review tube allocations, and c
 
 Use **Match tubes** in **Samples and shipping** or the Job's **Actions** to match registered tubes in the selected container. One scan field opens inside the active tube row in the expanded sample. Container identity and overall progress stay above the list. For the displayed sample and tube number, scan its permanent barcode and press Enter or **Save scan**. Each match is saved separately before the next sample and tube are revealed. A successful save updates the barcode and progress, expands the next unmatched tube’s sample, scrolls its row into view and focuses its inline field. Failed, unknown, ineligible, duplicate and already-used scans retain the entered barcode and current target for review and retry. The first saved match locks container reset. Expand a sample to review its individual tubes and container identities. The same list keeps 10 samples per page throughout matching. Reviewing another page does not change the entered barcode or target; **Return to active tube** restores its sample. **Done scanning** appears at the right of the **Samples and shipping** heading only after every tube in the selected container has a saved match. The last saved match closes the field and leaves the list open for review.
 
-As part of **Send**, review and confirm each shipping insert from the Job's **Actions**. When the selected shipment's current insert is ready, **Your next step** offers **Print shipping insert** directly and prints in place. Follow its packing instructions and put that current insert inside its container. After the print dialog returns, confirm that printing and packing are complete only when you have done both. Cancelling printing, dismissing the confirmation or a print error does not acknowledge the work. The Job, selected container and saved matches remain intact.
+As part of **Send**, review and confirm each shipment's contents from the Job's **Actions**. When the selected shipment's current insert is ready, **Your next step** offers separate **Review shipping instructions** and **Print shipping insert** buttons. Review the instructions before packing, then print and place the current insert inside its container. After the print dialog returns, confirm that printing and packing are complete only when you have done both. Cancelling printing, dismissing the confirmation or a print error does not acknowledge the work. The Job, selected container and saved matches remain intact.
 
 After that explicit confirmation, the next-step button becomes **Record shipment**. Your confirmation is remembered in this browser tab for this shipment's current insert. A corrected insert must be printed and confirmed again. You must still hand the package to the carrier before recording its carrier, tracking number and shipment time. With several shipments, deliberately select the container you are working on; each keeps its own reminder. A sole available container remains selected directly. Reprint the current insert from **Actions**. **Samples** returns to the grouped overview without opening another page. Existing standalone shipment bookmarks remain available, and Trial shipping keeps its existing entry point. See **Prepare and ship samples** for the complete inventory, receipt, packing and scanning steps.
 
@@ -129,7 +139,9 @@ If Phaeno needs replacement material or clarification, the job shows a Customer-
 
 ## Understand turnaround
 
-In **After you send**, **Turnaround and progress** shows first receipt, scientific acceptance, the original processing target, current expected completion, laboratory completion, delivery due date, original delivery target, and retained full Portal-delivery time. The published turnaround starts at scientific acceptance, not the day the package first arrives. Receipt-to-acceptance elapsed time remains visible separately.
+For newly approved Jobs, the quote or standard-order review shows one delivery target before you approve. The business-day clock starts after Phaeno physically receives every required tube for every sample, including across separate shipments. Business days are Monday–Friday, excluding Phaeno holidays. At that point the due date is set. Earlier approved Jobs keep the turnaround terms shown when they were placed.
+
+In **After you send**, **Turnaround and progress** shows first receipt, scientific acceptance, the original processing target, current expected completion, laboratory completion, delivery due date, original delivery target, and retained full Portal-delivery time. Receipt and scientific acceptance remain separate milestones.
 
 Phaeno may update the expected completion with a recorded reason. The original target remains visible. A later expected date queues a notice; an earlier date updates the Portal. Read the customer-safe explanation and current dates on the Job rather than treating an earlier message as the current schedule.
 
@@ -146,13 +158,14 @@ Search and filter by status, dates, or **Submitted by me**. **Previous** and **N
 While reviewing an order or quote, **Order details and billing** stays open.
 Its heading row shows **Accept quote** and **Decline quote** when your permissions
 and the current order allow those actions. Review the total sample count and the
-biological-source counts in **Quote and billing**, alongside the price and expiry.
+biological-source counts in **Order scope** and the price and expiry in **Quote and billing**.
 Accepting still opens the confirmation dialog and any required purchase-order
 entry; selecting the first button alone does not place the order. Expired quotes
 cannot be accepted, and Members retain their existing review-only permissions.
 
-**Sample submission** and **Samples and shipping** appear after the order is
-placed or accepted and sample work becomes relevant. Existing sample records
+**Samples and shipping** appears after the order is placed or accepted and
+sample work becomes relevant. Saved submission instructions appear there when
+sample preparation is available. Existing sample records
 remain available for review. Order details may then be collapsed unless a quote
 decision is pending.
 

@@ -128,6 +128,24 @@ public sealed record DecidePortalIntegrationRequest
     public string? Reason { get; init; }
     public required long Version { get; init; }
     public Guid? ExistingOrganizationId { get; init; }
+    public IReadOnlyList<RequestedServiceEntitlement> ServiceEntitlements { get; init; } = [];
+}
+
+public sealed record RequestedServiceEntitlement
+{
+    public required PortalService Service { get; init; }
+    public Guid? DepartmentId { get; init; }
+    public required DateTime EffectiveFrom { get; init; }
+    public DateTime? EffectiveTo { get; init; }
+    public required EntitlementConfigurationStatus ConfigurationStatus { get; init; }
+    public Guid? ExistingEntitlementId { get; init; }
+    public long? ExistingEntitlementVersion { get; init; }
+}
+
+public sealed record SaveApprovedServiceEntitlementsRequest
+{
+    public required long Version { get; init; }
+    public required IReadOnlyList<RequestedServiceEntitlement> ServiceEntitlements { get; init; }
 }
 
 public sealed record CreateAccountFromPortalIntegrationRequest

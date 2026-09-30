@@ -54,12 +54,23 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     visibleWhen: (session, context) => session?.state === 'ready' && isExternalOrganizationKind(context.selectedOrganizationKind) && Boolean(session.capabilities.canViewTrialProjects),
   },
   {
+    label: 'Customer settings',
+    to: '/departments',
+    icon: Settings,
+    group: 'administration',
+    visibleWhen: (session, context) => session?.state === 'ready'
+      && context.selectedOrganizationKind === 'Customer'
+      && Boolean(context.selectedMembership?.isOrganizationAdmin
+        || context.selectedMembership?.departments?.some((department) => department.isDepartmentAdmin)),
+  },
+  {
     label: departmentMessages.departments,
     to: '/departments',
     icon: UsersRound,
     group: 'administration',
     visibleWhen: (session, context) => session?.state === 'ready'
       && isExternalOrganizationKind(context.selectedOrganizationKind)
+      && context.selectedOrganizationKind !== 'Customer'
       && Boolean(context.selectedMembership?.isOrganizationAdmin
         || context.selectedMembership?.departments?.some((department) => department.isDepartmentAdmin)),
   },

@@ -103,6 +103,8 @@ export const bundleLabDraft: LabServiceOrder = {
       version: 1,
     },
   ],
+  sampleTypeDefinitionId: '10000000-0000-4000-8000-000000000012',
+  sampleTypeName: 'Training RNA',
   sampleRosterFinalizedAt: null,
   canEditSamples: false,
   canFinalizeSamples: false,

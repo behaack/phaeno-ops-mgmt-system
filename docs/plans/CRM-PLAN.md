@@ -1,5 +1,16 @@
 # First-Party CRM Plan
 
+## September 29, 2026 — Company list headers
+
+Use the established muted, bordered list header and padded content treatment in
+the Company People, Sales, Requests, Departments, Activity, and Tasks lists and
+the Services entitlement list. Apply it to both department states, before and
+after Portal access is enabled. Keep row content, permissions, and workflows
+unchanged; group concurrent request and entitlement row actions under the
+standard Actions menu. The semantic muted color must work in light and dark
+themes. Scoped ESLint, TypeScript, generated-help consistency, and whitespace
+checks pass; browser layout review remains open.
+
 ## September 22, 2026 — Company request completion notes
 
 Completed work is optional; cancellation still requires a reason. Completion keeps
@@ -872,8 +883,9 @@ commercial history.
 - A Company can exist without Portal access; when access is enabled, its
   internal tenant scope belongs to exactly that Company.
 - CRM-to-Portal handoffs are explicit, authorized, idempotent, and audited.
-- No CRM action directly grants membership, service entitlement, Trial Project
-  execution, order commitment, or laboratory work.
+- CRM service-change approval saves the reviewed dated entitlement in the
+  same decision, while membership, Trial Project execution, order commitment,
+  and laboratory work retain their owning workflows.
 - CRM search, lists, details, boards, reports, imports, and exports enforce the
   approved field and capability boundaries.
 - Duplicate detection and merge preserve identifiers, relationships, history,

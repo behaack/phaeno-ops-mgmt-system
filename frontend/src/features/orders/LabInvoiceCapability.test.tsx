@@ -33,6 +33,6 @@ it('loads current native invoices when the server explicitly permits them', asyn
   mocks.mayReadInvoices = true
   show()
   await waitFor(() => expect(mocks.invoices).toHaveBeenCalledTimes(1))
-  await screen.findByText('No POMS invoice has been issued for this order.')
+  await screen.findByText('No invoice has been issued for this order.')
   expect(screen.queryByText('Contact Phaeno for billing records.')).toBeNull()
 })

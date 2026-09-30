@@ -15,7 +15,7 @@ vi.mock('./StandardLabServicePanel', () => ({ StandardLabServicePanel: () => nul
 vi.mock('./LabServiceTimingPanel', () => ({ LabServiceTimingPanel: () => null }))
 vi.mock('./LabJobSamplesPanel', () => ({ LabJobSamplesPanel: () => null }))
 
-const quote: Quote = { id: 'quote-1', revision: 1, status: 'Expired', purpose: 'Initial', issuedAt: '2020-09-04T14:00:00Z', expiresAt: '2020-10-04T14:00:00Z', acceptedAt: null, linesJson: '[{"description":"PSeq Lab Service","quantity":9,"unitPrice":100}]', subtotal: 900, tax: 0, total: 900, currency: 'USD', version: 1 }
+const quote: Quote = { id: 'quote-1', revision: 1, status: 'Expired', purpose: 'Initial', issuedAt: '2020-09-04T14:00:00Z', expiresAt: '2020-10-04T14:00:00Z', acceptedAt: null, linesJson: '[{"description":"PSeq Lab Service","quantity":9,"unitPrice":100}]', subtotal: 900, tax: 0, total: 900, currency: 'USD', version: 1, deliveryTargetBusinessDays: 14 }
 const expired: LabServiceOrder = { ...bundleLabDraft, status: 'QuoteIssued', version: 3, quotes: [quote], canEdit: false, canSubmit: false, canWithdraw: false, canAcceptQuote: false, canManageQuotes: true, canRequestQuoteExtension: true }
 const pending: LabServiceOrder = { ...expired, version: 4, canRequestQuoteExtension: false, quotes: [{ ...quote, extensionRequest: { id: 'extension-1', quoteId: quote.id, status: 'Pending', reason: 'Need time for approval', requestedAt: '2026-09-08T12:00:00Z', resolvedAt: null, replacementQuoteId: null } }] }
 beforeEach(() => { vi.clearAllMocks(); mocks.read.mockResolvedValue(expired); mocks.extend.mockReset(); mocks.accept.mockReset(); mocks.withdraw.mockReset() })
@@ -230,7 +230,7 @@ describe('Lab quote acceptance and extensions', () => {
     const dialog = await screen.findByRole('dialog', { name: /Accept quote for/ })
     act(() => client.setQueryData(['lab-service-order', expired.id], { ...valid, version: 4, quotes: [{ ...valid.quotes[0], id: 'quote-2', revision: 2 }] }))
     expect(await within(dialog).findByText('The quote changed. Close this dialog and review the current revision.')).toBeTruthy()
-    expect(within(dialog).getByRole('button', { name: 'Accept quote and place order' })).toHaveProperty('disabled', true)
+    expect(within(dialog).getByRole('button', { name: 'Confirm price and order' })).toHaveProperty('disabled', true)
     expect(mocks.accept).not.toHaveBeenCalled()
   })
 
@@ -242,7 +242,7 @@ describe('Lab quote acceptance and extensions', () => {
     const dialog = await screen.findByRole('dialog', { name: /Accept quote for/ })
     const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(now + 60_001)
     act(() => window.dispatchEvent(new Event('focus')))
-    expect(within(dialog).getByRole('button', { name: 'Accept quote and place order' })).toHaveProperty('disabled', true)
+    expect(within(dialog).getByRole('button', { name: 'Confirm price and order' })).toHaveProperty('disabled', true)
     expect(within(dialog).getByText(/This quote has expired and cannot be accepted/)).toBeTruthy()
     expect(mocks.accept).not.toHaveBeenCalled()
     nowSpy.mockRestore()

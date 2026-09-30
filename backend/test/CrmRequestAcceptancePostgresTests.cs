@@ -48,10 +48,12 @@ public sealed partial class CrmCommercialAccessPostgresTests
             new(CrmHandoffType.ServiceChange, null, Guid.NewGuid().ToString(), null, [PortalService.PSeqLabService],
                 "SIMULATED service approval", null), default)).Result).Value);
         var service = await requests.DecideRequest(serviceHandoff.RelationshipRequestId,
-            new() { Approved = true, Reason = "SIMULATED service decision", Version = serviceHandoff.RequestVersion }, default);
+            new() { Approved = true, Reason = "SIMULATED service decision", Version = serviceHandoff.RequestVersion,
+                ServiceEntitlements = [new() { Service = PortalService.PSeqLabService, EffectiveFrom = start,
+                    ConfigurationStatus = EntitlementConfigurationStatus.Ready }] }, default);
         entitlementInput = entitlementInput with { SourceRequestId = service.Id };
-        var entitlement = Assert.IsType<OrganizationServiceEntitlementDto>(Assert.IsType<CreatedResult>(
-            (await requests.CreateEntitlement(organization.Id, entitlementInput, default)).Result).Value);
+        var entitlement = Assert.Single(await requests.ListEntitlements(organization.Id, default));
+        Assert.Equal(service.Id, entitlement.SourceRequestId);
         await Assert.ThrowsAsync<RelationshipManagementException>(() => requests.CreateEntitlement(organization.Id, entitlementInput, default));
         entitlement = await requests.UpdateEntitlement(organization.Id, entitlement.Id, new() { EffectiveFrom = start,
             ConfigurationStatus = EntitlementConfigurationStatus.Ready, SourceRequestId = service.Id,

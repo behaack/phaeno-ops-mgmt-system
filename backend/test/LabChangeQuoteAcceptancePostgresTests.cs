@@ -173,7 +173,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             Assert.Empty(await DbContext.LabSamples.ToListAsync());
             Assert.Empty(await DbContext.LabWorkOrders.ToListAsync());
             var item = await DbContext.QboCatalogItems.SingleAsync(i => i.ExternalItemId == OrderServiceKeys.PSeqLabService);
-            var request = new IssueQuoteRequest(revised.Version, [new(item.Id, "PSeq Lab Service", 2, 100m)], 0, "USD", null);
+            var request = new IssueQuoteRequest(revised.Version, [new(item.Id, "PSeq Lab Service", 2, 100m)], 0, "USD", null,
+                DeliveryTargetBusinessDays: 14);
             Task<LabServiceOrderDto> Issue(IssueQuoteRequest value)
             {
                 staff.HttpContext.Request.Headers["Idempotency-Key"] = Guid.NewGuid().ToString("N");

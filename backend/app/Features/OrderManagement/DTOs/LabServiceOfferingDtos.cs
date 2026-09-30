@@ -25,7 +25,8 @@ public sealed record LabServiceOfferingAvailabilityRequest(
 public sealed record PlaceStandardLabOrderRequest(
     long Version, Guid OfferingId, int OfferingVersion, long OfferingRecordVersion,
     long CatalogItemVersion, long CommercialProfileVersion, long DepartmentVersion,
-    long OrganizationVersion, string ReviewToken, bool ProhibitedDataConfirmed, string? PurchaseOrderNumber = null);
+    long OrganizationVersion, string ReviewToken, bool ProhibitedDataConfirmed, string? PurchaseOrderNumber = null,
+    Guid? ConfirmedSampleTypeId = null, Guid? KitDeliveryLocationId = null, long? KitDeliveryLocationVersion = null);
 
 public sealed record StandardLabOrderPreviewDto(
     LabServiceOfferingDto Offering, int SpecimenCount, decimal Subtotal, decimal? Tax, decimal? Total,
@@ -37,7 +38,8 @@ public sealed record LabServiceCommercialSnapshotDto(
     Guid CatalogItemId, string CatalogCode, long CatalogItemVersion, string Currency,
     decimal UnitPrice, int SpecimenCount, decimal Subtotal, decimal Tax, decimal Total,
     IReadOnlyList<Guid> AnalysisIds, string IncludedOutputContract,
-    int MinimumTurnaroundDays, int MaximumTurnaroundDays, DateTime CommittedAtUtc, int SequencingRunCount = 0);
+    int MinimumTurnaroundDays, int MaximumTurnaroundDays, DateTime CommittedAtUtc, int SequencingRunCount = 0,
+    int? DeliveryTargetBusinessDays = null);
 
 public sealed record LabServiceTimingDto(
     DateTime? FirstReceivedAtUtc, DateTime? AcceptedAtUtc, DateTime? OriginalTargetAtUtc,

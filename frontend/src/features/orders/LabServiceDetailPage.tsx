@@ -18,7 +18,9 @@ import { Link, useBlocker, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, Download, FileCheck2, TriangleAlert } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-import { acceptLabQuote, downloadLabQuotePdf, getLabOrder, getOrderErrorMessage, requestLabCancellation, submitLabOrder, type Quote, withdrawLabOrder } from '#/api/order-management'
+import { acceptLabQuote, downloadLabQuotePdf, getLabOrder, getLabSampleTubePairs, getOrderErrorMessage, requestLabCancellation, submitLabOrder, type Quote, withdrawLabOrder } from '#/api/order-management'
+import { getLabOrderTransportationKits } from '#/api/transportation-kit-requests'
+import { getCustomerDeliveryLocations } from '#/api/customer-delivery-locations'
 import { downloadCustomerInvoicePdf, downloadCustomerResultArtifact, listCustomerInvoices, listCustomerResultPackages, type CustomerResultPackage, type InvoiceReceivable } from '#/api/pseq-order-to-cash'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
@@ -60,11 +62,21 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
   const [dialog, setDialog] = useState<'accept' | 'cancel' | 'withdraw' | 'decline' | null>(null)
   const [cancellationReason, setCancellationReason] = useState('')
   const [purchaseOrderNumber, setPurchaseOrderNumber] = useState('')
+  const [kitDeliveryLocationId, setKitDeliveryLocationId] = useState('')
+  const [sampleTypeConfirmed, setSampleTypeConfirmed] = useState(false)
   const [extensionQuote, setExtensionQuote] = useState<Quote | null>(null)
   const [decisionQuote, setDecisionQuote] = useState<Quote | null>(null)
   const apiEnabled = Boolean(session?.capabilities.canViewLabServiceOrders) && authProvider !== 'mock'
   const canViewInvoices = session?.capabilities.canViewLabServiceInvoices === true
   const orderQuery = useQuery({ queryKey: ['lab-service-order', orderId], queryFn: () => getLabOrder(orderId), enabled: apiEnabled })
+  const kitLocations = useQuery({ queryKey: ['customer-delivery-locations', orderQuery.data?.organizationId, session?.selectedDepartment?.departmentId],
+    queryFn: () => getCustomerDeliveryLocations({ organizationId: orderQuery.data!.organizationId, departmentId: session!.selectedDepartment!.departmentId }),
+    enabled: apiEnabled && dialog === 'accept' && Boolean(orderQuery.data?.organizationId && session?.selectedDepartment?.departmentId) })
+  const selectedKitLocation = kitLocations.data?.find(item => item.id === kitDeliveryLocationId && item.isActive)
+  const jobKits = useQuery({ queryKey: ['lab-order-transportation-kits', orderId], queryFn: () => getLabOrderTransportationKits(orderId),
+    enabled: apiEnabled && orderQuery.data?.usesPairedPreparation === true && Boolean(orderQuery.data.placedAt) })
+  const pairWorkspace = useQuery({ queryKey: ['lab-sample-tube-pairs', orderId], queryFn: () => getLabSampleTubePairs(orderId),
+    enabled: apiEnabled && orderQuery.data?.usesPairedPreparation === true && Boolean(orderQuery.data.placedAt) })
   const quote = orderQuery.data ? currentLabQuote(orderQuery.data.quotes) : null
   const quoteStatus = useQuoteStatus(quote)
   const deadlinePassed = quote?.status === 'Issued' && quoteStatus === 'Expired'
@@ -87,23 +99,26 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
         if (!current || current.id !== decisionQuote?.id) throw new Error('The quote changed. Close this dialog and review the current quote.')
         if (quoteStatusAt(current, Date.now()) === 'Expired') throw new Error('This quote has expired and cannot be accepted. Request an extension to continue.')
         if (!order.canAcceptQuote) throw new Error(order.quoteAcceptanceBlockedReason || 'This quote is not available for acceptance.')
-        return acceptLabQuote(order.id, current.id, order.version, purchaseOrderNumber)
+        if (!sampleTypeConfirmed || !order.sampleTypeDefinitionId) throw new Error('Confirm the quoted Sample type.')
+        if (!selectedKitLocation) throw new Error('Select an active kit delivery address.')
+        return acceptLabQuote(order.id, current.id, order.version, purchaseOrderNumber, order.sampleTypeDefinitionId,
+          { id: selectedKitLocation.id, version: selectedKitLocation.version })
       }
       if (kind === 'withdraw') return withdrawLabOrder(order.id, order.version, cancellationReason)
       return requestLabCancellation(order.id, order.version, cancellationReason)
     },
     onSuccess: async () => {
-      setDialog(null); setCancellationReason(''); setPurchaseOrderNumber('')
+      setDialog(null); setCancellationReason(''); setPurchaseOrderNumber(''); setKitDeliveryLocationId(''); setSampleTypeConfirmed(false)
       await queryClient.invalidateQueries({ queryKey: ['lab-service-order', orderId] })
       await queryClient.invalidateQueries({ queryKey: ['lab-service-orders'] })
     },
   })
 
-  const dialogDirty = dialog === 'accept' ? purchaseOrderNumber !== '' : dialog !== null && cancellationReason !== ''
+  const dialogDirty = dialog === 'accept' ? purchaseOrderNumber !== '' || kitDeliveryLocationId !== '' || sampleTypeConfirmed : dialog !== null && cancellationReason !== ''
   useOrderDraftGuard(dialogDirty, dialog !== null && action.isPending)
   function openDecision(next: 'accept' | 'cancel' | 'withdraw' | 'decline') {
     if (action.isPending) return
-    action.reset(); setCancellationReason(''); setPurchaseOrderNumber(''); setDecisionQuote(next === 'accept' ? quote : null); setDialog(next)
+    action.reset(); setCancellationReason(''); setPurchaseOrderNumber(''); setKitDeliveryLocationId(''); setSampleTypeConfirmed(false); setDecisionQuote(next === 'accept' ? quote : null); setDialog(next)
   }
   function closeDecision() {
     if (!action.isPending && (!dialogDirty || window.confirm('Discard unsaved order changes?'))) setDialog(null)
@@ -117,9 +132,10 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
   const canManageQuotes = order.canManageQuotes ?? (order.canAcceptQuote || session?.capabilities.canAcceptLabServiceQuotes === true)
   const awaitingQuoteAcceptance = !order.standardCommercialSnapshot && (quoteStatus === 'Issued' || quoteStatus === 'Expired')
   const extensionPending = quote?.extensionRequest?.status === 'Pending'
-  const acceptanceBlocked = quoteStatus === 'Expired' || !order.canAcceptQuote
+  const acceptanceBlocked = quoteStatus === 'Expired' || !order.canAcceptQuote || (awaitingQuoteAcceptance && !quote?.deliveryTargetBusinessDays)
   const acceptanceExplanation = quoteStatus === 'Expired'
     ? 'This quote has expired and cannot be accepted. Phaeno must issue a new revision before you can continue.'
+    : !quote?.deliveryTargetBusinessDays ? 'Phaeno must issue a new quote revision with a business-day delivery target before this order can be approved.'
     : order.quoteAcceptanceBlockedReason || 'This quote is not currently available for acceptance. Contact Phaeno for help.'
   const requiresPurchaseOrder = session?.selectedDepartment?.purchaseOrderRequired === true
   const invoices = canViewInvoices ? invoicesQuery.data?.filter((invoice) => invoice.labServiceOrderId === order.id) ?? [] : []
@@ -133,12 +149,13 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
   if (quote && !order.standardCommercialSnapshot) orderActions.push({ kind: 'command', label: 'Download quote PDF', disabled: quoteDownload.isPending || shippingActive, busy: quoteDownload.isPending, onSelect: () => quoteDownload.mutate({ orderNumber: order.orderNumber, quote }) })
   if (awaitingQuoteAcceptance && !extensionPending && order.canRequestQuoteExtension && quoteStatus === 'Expired' && quote) orderActions.push({ kind: 'command', label: 'Request quote extension', disabled: shippingActive || action.isPending, onSelect: () => setExtensionQuote(quote) })
   if (order.canWithdraw && !awaitingQuoteAcceptance) orderActions.push({ kind: 'command', label: 'Withdraw request', disabled: shippingActive || action.isPending, onSelect: () => openDecision('withdraw') })
-  if (order.canRequestCancellation) orderActions.push({ kind: 'command', label: 'Request cancellation', disabled: shippingActive || action.isPending, onSelect: () => openDecision('cancel') })
+  if (order.canRequestCancellation) orderActions.push({ kind: 'command', label: 'Request cancellation', variant: 'destructive', disabled: shippingActive || action.isPending, onSelect: () => openDecision('cancel') })
   const openStep = (step: string) => {
-    const targetId = step === 'confirm-order' ? 'job-commercial' : 'samples-and-shipping'
+    const targetId = step === 'confirm-order' ? 'job-commercial' : step === 'receive-kits' ? 'job-kit-delivery'
+      : step === 'prepare' ? 'paired-sample-preparation' : 'samples-and-shipping'
     const showTarget = () => { const target = document.getElementById(targetId); target?.scrollIntoView({ block: 'start' }); target?.focus({ preventScroll: true }) }
     if (step === 'confirm-order') showTarget()
-    else void changeWorkspace({ shippingView: step === 'samples' ? undefined : 'tubes', orderKits: undefined }).then(() => window.requestAnimationFrame(showTarget))
+    else void changeWorkspace({ shippingView: step === 'samples' || step === 'receive-kits' || step === 'prepare' ? undefined : 'tubes', orderKits: undefined }).then(() => window.requestAnimationFrame(showTarget))
   }
   return (
     <main className="page-wrap px-4 py-8">
@@ -152,7 +169,7 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
       {quoteDownload.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Quote could not be downloaded</AlertTitle><AlertDescription>{getOrderErrorMessage(quoteDownload.error, 'Try Download quote PDF again. If the problem continues, contact Phaeno.')}</AlertDescription></Alert> : null}
       <section id="ordering-and-shipping" className="space-y-5">
         <LabChangeQuotes order={order} onSaved={async () => { await queryClient.invalidateQueries({ queryKey: ['lab-service-order', orderId] }); await queryClient.invalidateQueries({ queryKey: ['lab-service-orders'] }) }} />
-        <LabJobOrderProgress order={order} shipments={shipping.related} shippingState={shipping.receiptState} kitSupply={kitSupply} canManageShipping={session?.capabilities.canManageSampleShipping === true} canAcceptOrder={Boolean(canManageQuotes || order.canPlaceStandardOrder)} onStepSelect={openStep} sendActionTargetRef={setSendActionTarget} sampleReviewTargetRef={setSampleReviewTarget} />
+        <LabJobOrderProgress order={order} shipments={shipping.related} shippingState={shipping.receiptState} kitSupply={kitSupply} kitRequest={jobKits.data} kitState={jobKits.isLoading ? 'loading' : jobKits.error ? 'unavailable' : 'ready'} pairWorkspace={pairWorkspace.data} pairState={pairWorkspace.isLoading ? 'loading' : pairWorkspace.error ? 'unavailable' : 'ready'} canManageShipping={session?.capabilities.canManageSampleShipping === true} canAcceptOrder={Boolean(canManageQuotes || order.canPlaceStandardOrder)} onStepSelect={openStep} sendActionTargetRef={setSendActionTarget} sampleReviewTargetRef={setSampleReviewTarget} />
         <section id="job-commercial" tabIndex={-1} className="space-y-4 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <StandardLabServicePanel order={order} />
           <CommercialSection key={visibility.confirmed ? 'confirmed' : 'unconfirmed'} aria-labelledby="order-details-heading" className="rounded-lg border bg-card p-4">
@@ -163,20 +180,21 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
                 {order.canWithdraw ? <Button variant="outline" disabled={shippingActive || action.isPending} onClick={() => openDecision('decline')}>Decline quote</Button> : null}
               </div> : null}
             </div>}
-            <div className={`mt-4 grid gap-5${visibility.samplesRelevant ? ' lg:grid-cols-2' : ''}`}>
-          <Card><CardHeader><CardTitle>{order.standardCommercialSnapshot ? "Billing" : "Quote and billing"}</CardTitle><CardDescription>{order.standardCommercialSnapshot ? "The accepted standard bundle is recorded above. Issued invoices and audited adjustments remain with this Job." : "Proposed pricing is not a quote. Issued and accepted POMS pricing remains immutable; corrections appear as audited revisions or adjustments."}</CardDescription></CardHeader><CardContent><LabOrderScope order={order} />{order.proposedUnitPrice != null ? <div className={quote ? 'mb-4 border-b pb-4' : 'mb-4'}><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Your proposed price</p><p className="mt-1 font-semibold">{formatMoney(order.proposedUnitPrice, order.proposedCurrency ?? 'USD')} per sample-sequencing run</p><p className="mt-1 text-sm text-muted-foreground">Proposed subtotal {formatMoney(order.proposedUnitPrice * (order.requestedSequencingRunCount ?? order.requestedSpecimenCount), order.proposedCurrency ?? 'USD')} for {order.requestedSequencingRunCount ?? order.requestedSpecimenCount} sample-sequencing runs. Phaeno may approve or amend this before issuing the quote.</p>{order.priceProposalNote ? <p className="mt-2 text-sm">{order.priceProposalNote}</p> : null}</div> : null}{order.standardCommercialSnapshot ? <p className="text-sm text-muted-foreground">Standard bundle accepted. No separate assembly quote is required.</p> : quote ? <>
+            <div className="mt-4 grid items-start gap-5 lg:grid-cols-2">
+          <Card><CardHeader><CardTitle>Order scope</CardTitle></CardHeader><CardContent><LabOrderScope order={order} /></CardContent></Card>
+          <Card><CardHeader><CardTitle>{order.standardCommercialSnapshot ? "Billing" : "Quote and billing"}</CardTitle><CardDescription>{order.standardCommercialSnapshot ? "The accepted standard bundle is recorded above. Issued invoices and audited adjustments remain with this Job." : "Proposed pricing is not a quote. Issued and accepted quotes remain unchanged; corrections appear as documented revisions or adjustments."}</CardDescription></CardHeader><CardContent>{order.proposedUnitPrice != null ? <div className={quote ? 'mb-4 border-b pb-4' : 'mb-4'}><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Your proposed price</p><p className="mt-1 font-semibold">{formatMoney(order.proposedUnitPrice, order.proposedCurrency ?? 'USD')} per sample-sequencing run</p><p className="mt-1 text-sm text-muted-foreground">Proposed subtotal {formatMoney(order.proposedUnitPrice * (order.requestedSequencingRunCount ?? order.requestedSpecimenCount), order.proposedCurrency ?? 'USD')} for {order.requestedSequencingRunCount ?? order.requestedSpecimenCount} sample-sequencing runs. Phaeno may approve or amend this before issuing the quote.</p>{order.priceProposalNote ? <p className="mt-2 text-sm">{order.priceProposalNote}</p> : null}</div> : null}{order.standardCommercialSnapshot ? <p className="text-sm text-muted-foreground">Standard bundle accepted. No separate assembly quote is required.</p> : quote ? <>
             <QuoteSummary quote={quote} status={quoteStatus ?? quote.status} />
+            {quote.deliveryTargetBusinessDays ? <p className="mt-3 rounded-md border bg-muted/40 p-3 text-sm"><strong>Delivery target: {quote.deliveryTargetBusinessDays} business days</strong> after Phaeno physically receives every required tube for all samples. Business days are Monday–Friday, excluding Phaeno holidays. The due date is set when the final required tube is received.</p> : null}
             {awaitingQuoteAcceptance ? <div className="mt-4 space-y-3">
               {canManageQuotes ? acceptanceBlocked && acceptanceExplanation ? <p id="quote-acceptance-help" className="text-sm text-muted-foreground">{acceptanceExplanation}</p> : null
                 : <p className="text-sm text-muted-foreground">An organization or department administrator must accept this quote{quoteStatus === 'Expired' ? ' or request an extension' : ''}. Your Member access lets you review and download it.</p>}
               {extensionPending ? <div className="space-y-1" role="status"><p className="text-sm font-medium">Extension requested</p><p className="text-sm text-muted-foreground">Phaeno is reviewing the request. A new quote revision will appear here if approved.</p></div> : null}
             </div> : null}
-          </> : <p className="text-sm text-muted-foreground">Phaeno has not issued pricing yet.</p>}{canViewInvoices && invoicesQuery.isLoading ? <p role="status" className="mt-4 border-t pt-4 text-sm text-muted-foreground">Loading invoices…</p> : null}{canViewInvoices && invoicesQuery.isFetching && !invoicesQuery.isLoading ? <p role="status" className="mt-4 text-xs text-muted-foreground">Refreshing invoice status…</p> : null}{canViewInvoices && (invoicesQuery.error || invoiceDownload.error) ? <Alert variant="destructive" className="mt-4"><AlertTitle>Invoice could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(invoicesQuery.error ?? invoiceDownload.error, 'Refresh and try again.')}</AlertDescription></Alert> : null}{invoices.map((invoice) => <div key={invoice.id} className="mt-4 border-t pt-4"><div className="flex items-center justify-between gap-2"><span className="text-sm font-medium">Invoice {invoice.invoiceNumber}</span><OrderStatusBadge status={invoice.status} /></div><p className="mt-1 text-sm text-muted-foreground">Due {formatDate(invoice.dueOn)} · Balance {formatMoney(invoice.balance, invoice.currency)}</p><Button type="button" size="sm" variant="outline" className="mt-2" disabled={invoiceDownload.isPending} onClick={() => invoiceDownload.mutate(invoice)}><Download data-icon="inline-start" />Download invoice PDF</Button></div>)}{canViewInvoices && !invoicesQuery.isLoading && !invoicesQuery.error && !invoices.length ? <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">No POMS invoice has been issued for this order.</p> : null}{!canViewInvoices ? <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">Contact Phaeno for billing records.</p> : null}{order.documents.map((document) => <div key={document.id} className="mt-4 border-t pt-4"><div className="flex items-center justify-between gap-2"><span className="text-sm font-medium">Legacy billing source · {document.kind} {document.documentNumber ?? ''}</span><OrderStatusBadge status={document.syncStatus} /></div><p className="mt-1 text-sm text-muted-foreground">Finance review required · Historical balance {formatMoney(document.balance, document.currency)}</p>{document.documentUrl ? <a href={document.documentUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-primary hover:underline">Open legacy record</a> : null}</div>)}</CardContent></Card>
-          {visibility.samplesRelevant ? <Card><CardHeader><CardTitle>Sample submission</CardTitle></CardHeader><CardContent><p className="whitespace-pre-wrap text-sm leading-6">{order.submissionInstructions || 'Finalize the accepted sample list, then follow the instructions in the shipping insert. Contact Phaeno if instructions are unavailable.'}</p></CardContent></Card> : null}
+          </> : <p className="text-sm text-muted-foreground">Phaeno has not issued pricing yet.</p>}{canViewInvoices && invoicesQuery.isLoading ? <p role="status" className="mt-4 border-t pt-4 text-sm text-muted-foreground">Loading invoices…</p> : null}{canViewInvoices && invoicesQuery.isFetching && !invoicesQuery.isLoading ? <p role="status" className="mt-4 text-xs text-muted-foreground">Refreshing invoice status…</p> : null}{canViewInvoices && (invoicesQuery.error || invoiceDownload.error) ? <Alert variant="destructive" className="mt-4"><AlertTitle>Invoice could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(invoicesQuery.error ?? invoiceDownload.error, 'Refresh and try again.')}</AlertDescription></Alert> : null}{invoices.map((invoice) => <div key={invoice.id} className="mt-4 border-t pt-4"><div className="flex items-center justify-between gap-2"><span className="text-sm font-medium">Invoice {invoice.invoiceNumber}</span><OrderStatusBadge status={invoice.status} /></div><p className="mt-1 text-sm text-muted-foreground">Due {formatDate(invoice.dueOn)} · Balance {formatMoney(invoice.balance, invoice.currency)}</p><Button type="button" size="sm" variant="outline" className="mt-2" disabled={invoiceDownload.isPending} onClick={() => invoiceDownload.mutate(invoice)}><Download data-icon="inline-start" />Download invoice PDF</Button></div>)}{canViewInvoices && !invoicesQuery.isLoading && !invoicesQuery.error && !invoices.length ? <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">No invoice has been issued for this order.</p> : null}{!canViewInvoices ? <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">Contact Phaeno for billing records.</p> : null}{order.documents.map((document) => <div key={document.id} className="mt-4 border-t pt-4"><div className="flex items-center justify-between gap-2"><span className="text-sm font-medium">Legacy billing source · {document.kind} {document.documentNumber ?? ''}</span><OrderStatusBadge status={document.syncStatus} /></div><p className="mt-1 text-sm text-muted-foreground">Finance review required · Historical balance {formatMoney(document.balance, document.currency)}</p>{document.documentUrl ? <a href={document.documentUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-primary hover:underline">Open legacy record</a> : null}</div>)}</CardContent></Card>
             </div>
           </CommercialSection>
         </section>
-        {visibility.samplesRelevant ? <LabJobShippingWorkspace order={order} workspace={workspace} onWorkspaceChange={changeWorkspace} headerTarget={headerTarget} sendActionTarget={sendActionTarget} sampleReviewTarget={sampleReviewTarget} orderActions={orderActions} orderDialogOpen={Boolean(dialog) || Boolean(extensionQuote)} onActivityChange={setShippingActive} navigationLocked={navigationLocked} onNavigationLockChange={setNavigationLocked} onKitSupplyChange={setKitSupply} /> : null}
+        {visibility.samplesRelevant ? <LabJobShippingWorkspace order={order} workspace={workspace} onWorkspaceChange={changeWorkspace} headerTarget={headerTarget} sendActionTarget={sendActionTarget} sampleReviewTarget={sampleReviewTarget} orderActions={orderActions} orderDialogOpen={Boolean(dialog) || Boolean(extensionQuote)} onActivityChange={setShippingActive} navigationLocked={navigationLocked} onNavigationLockChange={setNavigationLocked} onKitSupplyChange={setKitSupply} pairWorkspace={pairWorkspace.data} pairState={pairWorkspace.isLoading ? 'loading' : pairWorkspace.error ? 'unavailable' : 'ready'} onPairRefresh={() => { void pairWorkspace.refetch() }} /> : null}
       </section>
       {visibility.trackingRelevant ? <section id="after-you-send" className="mt-8 space-y-5" aria-labelledby="after-send-title">
         <div><h2 id="after-send-title" className="text-xl font-semibold">After you send</h2><p className="mt-1 text-sm text-muted-foreground">Track your shipments, laboratory progress and results here. We will show any action needed from you above.</p></div>
@@ -187,7 +205,7 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
           <Card id="results">
             <CardHeader>
               <CardTitle>Files and results</CardTitle>
-              <CardDescription>Scientific approval and release are governed in POMS. Payment balance and credit status never gate PSeq result release.</CardDescription>
+              <CardDescription>Phaeno manages scientific approval and release. Payment balance and credit status do not delay result release.</CardDescription>
             </CardHeader>
             <CardContent>
               {resultPackagesQuery.isLoading ? <p role="status" className="text-sm text-muted-foreground">Checking released result packages…</p> : null}
@@ -218,23 +236,46 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
         <DialogContent showCloseButton={!action.isPending} aria-busy={action.isPending}>
           <DialogHeader>
             <DialogTitle>Accept quote for {order.orderNumber}?</DialogTitle>
-            <DialogDescription>
-              This accepts the quoted scope and opens sample entry. Laboratory work and shipping are authorized after you finalize the exact sample list.{' '}
-              {quote?.taxDecisionSnapshotJson ? 'The displayed total includes the current tax determination.' : 'This quote is pre-tax; applicable tax will be calculated at invoicing.'}{' '}
-              The accepted Department and commercial settings remain in the order history.
-            </DialogDescription>
+            <DialogDescription>Review the quote, then confirm your Sample type and kit delivery address.</DialogDescription>
           </DialogHeader>{action.error ? <Alert variant="destructive"><AlertDescription>{getOrderErrorMessage(action.error, 'Review the details and try again.')}</AlertDescription></Alert> : null}
-          {decisionQuote ? <QuoteSummary quote={decisionQuote} status={decisionQuote.id === quote?.id ? quoteStatus ?? decisionQuote.status : decisionQuote.status} /> : null}
+          {decisionQuote ? <section aria-labelledby="accept-quote-details" className="overflow-hidden rounded-lg border">
+            <h3 id="accept-quote-details" className="border-b bg-muted/50 px-4 py-2 text-sm font-medium">Quote details</h3>
+            <div className="p-4"><QuoteSummary quote={decisionQuote} status={decisionQuote.id === quote?.id ? quoteStatus ?? decisionQuote.status : decisionQuote.status} />{decisionQuote.deliveryTargetBusinessDays ? <p className="mt-3 rounded-md border bg-muted/40 p-3 text-sm"><strong>Delivery target: {decisionQuote.deliveryTargetBusinessDays} business days</strong> after Phaeno receives every required physical tube for all samples. Monday–Friday, excluding Phaeno holidays.</p> : null}</div>
+          </section> : null}
           {acceptanceBlocked || decisionQuote?.id !== quote?.id ? <Alert variant="destructive"><AlertTitle>Quote cannot be accepted</AlertTitle><AlertDescription>{decisionQuote?.id !== quote?.id ? 'The quote changed. Close this dialog and review the current revision.' : acceptanceExplanation || 'Close this dialog and review the current quote.'}</AlertDescription></Alert> : null}
-          {requiresPurchaseOrder ? (
-            <div>
-              <Label htmlFor="labPurchaseOrderNumber"><RequiredFieldName>Purchase order number</RequiredFieldName></Label>
-              <Input disabled={action.isPending} id="labPurchaseOrderNumber" className="mt-2" value={purchaseOrderNumber} onChange={(event) => setPurchaseOrderNumber(event.target.value)} />
+          <section aria-labelledby="accept-order-details" className="overflow-hidden rounded-lg border">
+            <h3 id="accept-order-details" className="border-b bg-muted/50 px-4 py-2 text-sm font-medium">Sample and kit delivery</h3>
+            <div className="space-y-4 p-4">
+              <div className="space-y-2">
+                <Label htmlFor="confirmed-lab-sample-type"><RequiredFieldName>Sample type</RequiredFieldName></Label>
+                <p className="text-sm">{order.sampleTypeName ?? 'No Sample type was quoted'}</p>
+                <label className="flex items-start gap-2 text-sm"><input id="confirmed-lab-sample-type" type="checkbox" className="mt-1" checked={sampleTypeConfirmed} disabled={action.isPending || !order.sampleTypeDefinitionId} onChange={event => setSampleTypeConfirmed(event.target.checked)} /><span>I confirm this is the Sample type I will send. A different type requires a revised quote.</span></label>
+              </div>
+              <div className="space-y-2 border-t pt-4">
+                <Label htmlFor="kit-delivery-address"><RequiredFieldName>Ship Transportation kits to</RequiredFieldName></Label>
+                <select id="kit-delivery-address" className="h-10 w-full cursor-pointer rounded-md border bg-background px-3 text-sm" value={kitDeliveryLocationId} disabled={action.isPending || kitLocations.isLoading} onChange={event => setKitDeliveryLocationId(event.target.value)}>
+                  <option value="">Select a Department delivery address</option>
+                  {kitLocations.data?.filter(item => item.isActive).map(item => <option key={item.id} value={item.id}>{item.label} · {item.line1}, {item.city}</option>)}
+                </select>
+                {selectedKitLocation ? <p className="rounded-md bg-muted/40 p-3 text-sm">{selectedKitLocation.recipient} · {selectedKitLocation.line1}{selectedKitLocation.line2 ? `, ${selectedKitLocation.line2}` : ''} · {selectedKitLocation.city}, {selectedKitLocation.region} {selectedKitLocation.postalCode}</p> : null}
+                {kitLocations.error ? <p role="alert" className="text-sm text-destructive">Delivery addresses could not be loaded. Close and reopen this dialog to retry.</p> : null}
+                {!kitLocations.isLoading && !kitLocations.data?.some(item => item.isActive) ? <p className="text-sm">Add a Department delivery address before accepting the quote.</p> : null}
+                <Link to="/delivery-locations" search={{ organizationId: order.organizationId, departmentId: session?.selectedDepartment?.departmentId ?? '' }} className="text-sm text-primary underline">Manage delivery addresses</Link>
+              </div>
             </div>
+            <p className="border-t bg-muted/30 px-4 py-3 text-xs text-muted-foreground">Accepting starts kit fulfillment. Lab work begins after you confirm the samples and tubes. Your accepted terms are saved in order history.</p>
+          </section>
+          {requiresPurchaseOrder ? (
+            <section aria-labelledby="accept-billing-reference" className="overflow-hidden rounded-lg border">
+              <h3 id="accept-billing-reference" className="border-b bg-muted/50 px-4 py-2 text-sm font-medium">Billing reference</h3>
+              <div className="p-4"><Label htmlFor="labPurchaseOrderNumber"><RequiredFieldName>Purchase order number</RequiredFieldName></Label>
+                <Input disabled={action.isPending} id="labPurchaseOrderNumber" className="mt-2" value={purchaseOrderNumber} onChange={(event) => setPurchaseOrderNumber(event.target.value)} />
+              </div>
+            </section>
           ) : null}
-          <RequiredDialogFooter showLegend={requiresPurchaseOrder}>
+          <RequiredDialogFooter showLegend>
             <DialogClose asChild><Button type="button" variant="outline" disabled={action.isPending}>Keep reviewing</Button></DialogClose>
-            <Button type="button" onClick={() => action.mutate('accept')} disabled={action.isPending || acceptanceBlocked || decisionQuote?.id !== quote?.id || (requiresPurchaseOrder && !purchaseOrderNumber.trim())}>{action.isPending ? 'Accepting…' : 'Accept quote and place order'}</Button>
+            <Button type="button" onClick={() => action.mutate('accept')} disabled={action.isPending || acceptanceBlocked || decisionQuote?.id !== quote?.id || !sampleTypeConfirmed || !selectedKitLocation || (requiresPurchaseOrder && !purchaseOrderNumber.trim())}>{action.isPending ? 'Accepting…' : 'Confirm price and order'}</Button>
           </RequiredDialogFooter>
         </DialogContent>
       </Dialog>

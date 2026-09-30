@@ -270,7 +270,8 @@ public sealed partial class SampleShippingContainerCatalogService(PSeqOperations
             join type in dbContext.LabProductTypes.AsNoTracking() on product.ProductTypeId equals type.Id
             where componentIds.Contains(product.Id) && product.IsActive && supplier.IsActive
                 && !supplier.IsInternalProducer && type.IsActive
-            select new { product.Id, product.ProductTypeId, product.DefaultQuantityUnit, product.TubeCapacity, type.KitUse }).ToDictionaryAsync(item => item.Id, ct);
+            select new { product.Id, product.ProductTypeId, product.DefaultQuantityUnit, product.TubeCapacity,
+                product.MaximumSampleAmount, product.SampleAmountUnit, type.KitUse }).ToDictionaryAsync(item => item.Id, ct);
         if (products.Count != contents.Length || contents.Any(item =>
             !products.TryGetValue(item.SupplierProductId, out var product)
             || product.KitUse.ToString() != item.Kind.ToString()
@@ -282,6 +283,25 @@ public sealed partial class SampleShippingContainerCatalogService(PSeqOperations
             throw Invalid("Required contents must include the selected Shipping Container once with quantity one.");
         if (products[shipper.SupplierProductId].TubeCapacity is not int capacity || capacity < definition.TubeCapacity)
             throw Invalid("Set the outer Shipping Container product's tube capacity to at least this kit's usable tube capacity.");
+        if (definition.SampleTypeAnchorId.HasValue)
+        {
+            var anchor = await dbContext.SampleTypeDefinitions.AsNoTracking()
+                .SingleOrDefaultAsync(item => item.Id == definition.SampleTypeAnchorId.Value, ct);
+            if (anchor is not null)
+            {
+                var sampleType = await dbContext.SampleTypeDefinitions.AsNoTracking()
+                    .Where(item => item.DefinitionKey == anchor.DefinitionKey && item.IsActive)
+                    .OrderByDescending(item => item.Revision).FirstOrDefaultAsync(ct);
+                if (sampleType is not null)
+                {
+                    var tube = products[contents.Single(item => item.Kind == ShippingKitContentKind.Tube).SupplierProductId];
+                    if (sampleType.MinimumSampleAmount is not > 0 || tube.MaximumSampleAmount is not > 0
+                        || !string.Equals(sampleType.SampleAmountUnit, tube.SampleAmountUnit, StringComparison.Ordinal)
+                        || tube.MaximumSampleAmount < sampleType.MinimumSampleAmount)
+                        throw Invalid("Set matching Sample type minimum and Tube product maximum units; the tube maximum must be at least the sample minimum before activating this kit specification.");
+                }
+            }
+        }
     }
 
     private IQueryable<SampleShippingContainerDefinition> Query() => dbContext.SampleShippingContainerDefinitions.AsNoTracking()

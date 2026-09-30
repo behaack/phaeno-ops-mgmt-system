@@ -169,6 +169,7 @@ export function LabServiceOfferingsPanel({
           })
         : saveLabServiceOffering(editing?.item?.id ?? null, {
             ...values,
+            minimumTurnaroundDays: values.maximumTurnaroundDays,
             version: editing?.item?.version,
             effectiveFrom: `${values.effectiveFrom}T00:00:00Z`,
             effectiveTo: values.effectiveTo
@@ -332,8 +333,7 @@ export function LabServiceOfferingsPanel({
                 style: 'currency',
                 currency: item.currency,
               }).format(item.unitPrice)}{' '}
-              per specimen · {item.minimumTurnaroundDays}–
-              {item.maximumTurnaroundDays} days after scientific acceptance ·{' '}
+              per specimen · new approval target {item.maximumTurnaroundDays} business days after all required tubes are received ·{' '}
               {item.catalogName}
             </p>
             <details className="mt-2 text-sm">
@@ -501,33 +501,13 @@ export function LabServiceOfferingsPanel({
                     'Describe the outputs included in the per-specimen price.',
                     true,
                   )}
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {(
-                      [
-                        'minimumTurnaroundDays',
-                        'maximumTurnaroundDays',
-                      ] as const
-                    ).map((name, index) => (
-                      <div key={name}>
-                        <Label htmlFor={`offering-${name}`}>
-                          <RequiredFieldName>
-                            {index
-                              ? 'Maximum turnaround (days)'
-                              : 'Minimum turnaround (days)'}
-                          </RequiredFieldName>
-                        </Label>
-                        <Input
-                          id={`offering-${name}`}
-                          className="mt-2"
-                          type="number"
-                          min={1}
-                          max={365}
-                          step={1}
-                          {...form.register(name)}
-                        />
-                        {error(name)}
-                      </div>
-                    ))}
+                  <div>
+                    <Label htmlFor="offering-maximumTurnaroundDays"><RequiredFieldName>Delivery target (business days)</RequiredFieldName></Label>
+                    <Input id="offering-maximumTurnaroundDays" className="mt-2 max-w-40" type="number" min={1} max={365} step={1}
+                      {...form.register('maximumTurnaroundDays', { onChange: event => form.setValue('minimumTurnaroundDays', Number(event.target.value), { shouldValidate: true }) })} />
+                    <input type="hidden" {...form.register('minimumTurnaroundDays')} />
+                    <p className="mt-1 text-xs text-muted-foreground">Starts after Phaeno receives all required physical tubes for the Job. Monday–Friday, excluding Phaeno holidays.</p>
+                    {error('maximumTurnaroundDays')}
                   </div>
                   <label
                     htmlFor="offering-synthetic"

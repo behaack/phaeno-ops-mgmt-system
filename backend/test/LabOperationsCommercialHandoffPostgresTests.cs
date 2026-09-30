@@ -33,7 +33,7 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 public partial class LabOperationsCommercialHandoffPostgresTests
 {
     [PostgreSqlReferenceFact]
-    public async Task RetiredAssemblyOrInactiveTubeKeepsOrderingOpenButInactiveContainerStopsNewWork()
+    public async Task RetiredAssemblyKeepsOrderingOpenButInactiveTubeOrContainerStopsNewWork()
     {
         await using var scope = await HandoffTestScope.CreateAsync();
         var quoted = await scope.CreateQuotedOrderAsync();
@@ -48,18 +48,34 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             .Where(item => item.SampleTypeAnchorId == anchorId && item.IsActive)
             .SingleAsync();
         var context = new[] { new ContainerSampleTypeContext(sampleTypeId.Value) };
-        async Task AssertReadiness(bool assemblyReady)
+        async Task AssertReadiness(bool assemblyReady, bool orderable = true)
         {
             scope.DbContext.ChangeTracker.Clear();
             var choices = await LabOrderSampleTypeChoices.ReadAsync(scope.DbContext, default);
-            Assert.Contains(choices, item => item.Id == sampleTypeId);
             var kits = await new SampleShippingContainerCatalogService(scope.DbContext)
                 .ReadCompatibleAsync(context, default);
-            Assert.Contains(kits, item => item.Id == definition.Id);
             var listed = await new SampleShippingContainerCatalogService(scope.DbContext)
                 .ReadAsync(definition.Id, default);
-            Assert.True(listed.NewWorkReady);
-            Assert.Equal(assemblyReady, listed.AssemblyWorkflowReady);
+            if (orderable)
+            {
+                Assert.Contains(choices, item => item.Id == sampleTypeId);
+                Assert.Contains(kits, item => item.Id == definition.Id);
+            }
+            else
+            {
+                Assert.DoesNotContain(choices, item => item.Id == sampleTypeId);
+                Assert.DoesNotContain(kits, item => item.Id == definition.Id);
+            }
+            if (orderable)
+            {
+                Assert.True(listed.NewWorkReady);
+                Assert.Equal(assemblyReady, listed.AssemblyWorkflowReady);
+            }
+            else
+            {
+                Assert.NotEqual(true, listed.NewWorkReady);
+                Assert.NotEqual(true, listed.AssemblyWorkflowReady);
+            }
         }
 
         await AssertReadiness(true);
@@ -69,7 +85,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         var component = await scope.DbContext.LabSupplierProducts.SingleAsync(item => item.Id == componentId);
         component.Update(component.ProductNumber, component.Description, component.ProductTypeId, false);
         await scope.DbContext.SaveChangesAsync();
-        await AssertReadiness(false);
+        await AssertReadiness(false, orderable: false);
         component = await scope.DbContext.LabSupplierProducts.SingleAsync(item => item.Id == componentId);
         component.Update(component.ProductNumber, component.Description, component.ProductTypeId, true);
         await scope.DbContext.SaveChangesAsync();
@@ -99,48 +115,34 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         container.Update(container.ProductNumber, container.Description, container.ProductTypeId, true);
         await scope.DbContext.SaveChangesAsync();
         await AssertReadiness(false);
-        await scope.AcceptQuoteAsync(quoted);
+        var blocked = await Assert.ThrowsAsync<OrderManagementException>(() => scope.AcceptQuoteAsync(quoted));
+        Assert.Equal("transportation_kit_conflict", blocked.ErrorCode);
     }
 
     [PostgreSqlReferenceFact]
-    public async Task AuthorizedPhaenoUserInitiatesCustomerOrderBeforeCustomerAdministratorActivation()
+    public async Task AuthorizedPhaenoUserCannotInitiateOrderWithoutAnActiveCustomerUser()
     {
         await using var scope = await HandoffTestScope.CreateAsync();
         await scope.DbContext.OrganizationMemberships
             .Where(value => value.OrganizationId == scope.CustomerOrganization.Id)
             .ExecuteDeleteAsync();
 
-        var response = await scope.InitiateCustomerOrderAsync();
+        var exception = await Assert.ThrowsAsync<OrderManagementException>(() =>
+            scope.InitiateCustomerOrderAsync());
 
-        Assert.Equal(scope.CustomerOrganization.Id, response.OrganizationId);
-        Assert.Equal(LabServiceOrderStatus.QuoteInPreparation.ToString(), response.Status);
-        Assert.Equal(3, response.RequestedSpecimenCount);
-        var sourceGroups = Assert.IsAssignableFrom<IReadOnlyList<LabServiceSourceGroupDto>>(response.SourceGroups);
-        Assert.Equal(2, sourceGroups.Count);
-        Assert.Empty(response.Samples);
-        var requestRevision = Assert.Single(response.RequestRevisions ?? []);
-        Assert.Equal(scope.PlatformUser.Id, requestRevision.SubmittedByUserId);
-
-        scope.DbContext.ChangeTracker.Clear();
-        var persisted = await scope.DbContext.LabServiceOrders.AsNoTracking()
-            .Include(order => order.SourceGroups)
-            .Include(order => order.Revisions)
-            .SingleAsync(order => order.Id == response.Id);
-        Assert.Equal(LabServiceOrderStatus.QuoteInPreparation, persisted.Status);
-        Assert.Equal(3, persisted.SourceGroups.Sum(group => group.SpecimenCount));
-        Assert.Single(persisted.Revisions);
-        Assert.Equal(3, await scope.DbContext.OrderStatusEvents
-            .CountAsync(item => item.WorkflowId == persisted.Id));
+        Assert.Equal("customer_department_has_no_active_user", exception.ErrorCode);
+        Assert.False(await scope.DbContext.LabServiceOrders.AsNoTracking()
+            .AnyAsync(order => order.OrganizationId == scope.CustomerOrganization.Id));
     }
 
     [PostgreSqlReferenceFact]
     public async Task QuoteIssueStillRequiresCustomerAdministratorAfterPricingStarts()
     {
         await using var scope = await HandoffTestScope.CreateAsync();
+        var order = await scope.InitiateCustomerOrderAsync();
         await scope.DbContext.OrganizationMemberships
             .Where(value => value.OrganizationId == scope.CustomerOrganization.Id)
             .ExecuteDeleteAsync();
-        var order = await scope.InitiateCustomerOrderAsync();
         var catalogItem = await scope.DbContext.QboCatalogItems.AsNoTracking()
             .SingleAsync(item => item.IsActive
                 && item.ExternalItemId == OrderServiceKeys.PSeqLabService
@@ -592,7 +594,10 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         Assert.Equal(LabServiceOrderStatus.PlacedAwaitingSamples, order.Status);
         Assert.Null(order.SampleRosterFinalizedAt);
         Assert.Equal(QuoteStatus.Accepted, quote.Status);
-        Assert.Single(await scope.DbContext.LabSamples
+        Assert.Empty(await scope.DbContext.LabSamples
+            .Where(item => item.LabServiceOrderId == fixture.OrderId)
+            .ToListAsync());
+        Assert.Single(await scope.DbContext.LabSampleTubePairs
             .Where(item => item.LabServiceOrderId == fixture.OrderId)
             .ToListAsync());
         Assert.Empty(await scope.DbContext.CommercialLabAuthorizations
@@ -906,38 +911,32 @@ public partial class LabOperationsCommercialHandoffPostgresTests
 
             var work = await lab.WorkOrder(workOrderId.Value, CancellationToken.None);
             var specimen = Assert.Single(work.Specimens);
-            work = await lab.ReceiveSpecimen(
-                workOrderId.Value,
-                specimen.Id,
-                new SpecimenReceiptRequest(
-                    DateTime.UtcNow,
-                    "Received intact and frozen",
-                    "Intake freezer",
-                    specimen.Version),
-                CancellationToken.None);
+            var shipment = await scope.DbContext.SampleShipments.AsNoTracking()
+                .SingleAsync(item => item.AuthorizationSourceId == fixture.OrderId);
+            var tubeBarcode = await scope.DbContext.LabSampleTubePairs.AsNoTracking()
+                .Where(item => item.LabServiceOrderId == fixture.OrderId)
+                .Select(item => item.SupplierTubeBarcode).SingleAsync();
+            var workflow = scope.CreateCustomerShippingWorkflowController();
+            var issued = await workflow.IssuePacket(shipment.Id,
+                new IssueSampleShippingPacketRequest(shipment.Version, null), CancellationToken.None);
+            var packetBarcode = Assert.IsType<SampleShippingPacketSummaryDto>(issued.CurrentPacket).Barcode;
+            await lab.ReceiveShipment(new LabShipmentReceiptRequest(packetBarcode), CancellationToken.None);
+            work = await lab.WorkOrder(workOrderId.Value, CancellationToken.None);
             specimen = Assert.Single(work.Specimens);
 
-            var accessionNumber = $"ACC-{Guid.NewGuid():N}";
             Assert.Equal("Received", work.WorkOrder.Status);
             Assert.Null((await scope.DbContext.LabWorkOrders.AsNoTracking().SingleAsync(value => value.Id == workOrderId)).OriginalTargetAtUtc);
             await LabOperationsProjectionDispatcher.DispatchAsync(scope.DbContext, NullLogger.Instance, CancellationToken.None);
             var receivedOrder = await scope.DbContext.LabServiceOrders.AsNoTracking().Include(item => item.Samples)
                 .SingleAsync(item => item.Id == work.WorkOrder.CommercialOrderId);
             Assert.Equal(LabServiceOrderStatus.InProgress, receivedOrder.Status);
-            Assert.Equal(LabSampleStatus.Received, Assert.Single(receivedOrder.Samples).Status);
-            work = await lab.AccessionSpecimen(
-                workOrderId.Value,
-                specimen.Id,
-                new SpecimenAccessionRequest(
-                    accessionNumber,
-                    $"Submitted specimen {accessionNumber}",
-                    "Intake rack A",
-                    25,
-                    "uL",
-                    DateTime.UtcNow.AddYears(1),
-                    specimen.Version),
+            Assert.Equal(LabSampleStatus.Expected, Assert.Single(receivedOrder.Samples).Status);
+            work = await lab.AccessionShipmentTube(workOrderId.Value, shipment.Id,
+                new ShipmentTubeAccessionRequest(packetBarcode, tubeBarcode, "Intake rack A"),
                 CancellationToken.None);
             specimen = Assert.Single(work.Specimens);
+            var accessionNumber = specimen.AccessionNumber;
+            Assert.StartsWith("ACC-", accessionNumber);
             await LabOperationsProjectionDispatcher.DispatchAsync(scope.DbContext, NullLogger.Instance, CancellationToken.None);
             var accessionedSample = await scope.DbContext.LabSamples.AsNoTracking()
                 .SingleAsync(item => item.Id == specimen.SubmittedSpecimenId);
@@ -959,56 +958,16 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             Assert.DoesNotContain("PRIVATE-INTERNAL-TIMING", JsonSerializer.Serialize(safeTiming));
 
             var submittedContainer = Assert.Single(work.Containers);
-            Assert.StartsWith("PH-S-", submittedContainer.Barcode);
+            Assert.Equal(tubeBarcode, submittedContainer.Barcode);
             Assert.Equal(0, submittedContainer.LabelPrintCount);
-            Assert.Equal(LabContainerStatus.LabelPending.ToString(), submittedContainer.Status);
-            var initialLabel = await lab.ContainerLabel(
-                submittedContainer.Id,
-                CancellationToken.None);
-            Assert.Empty(initialLabel.PrintHistory);
-            var initialPrint = await lab.PrintContainerLabel(
-                submittedContainer.Id,
-                new RecordLabelPrintRequest(
-                    "Initial accession label",
-                    "Succeeded",
-                    null,
-                    submittedContainer.Barcode),
-                CancellationToken.None);
-            submittedContainer = initialPrint.Container;
-            Assert.Equal(1, submittedContainer.LabelPrintCount);
             Assert.Equal(LabContainerStatus.Available.ToString(), submittedContainer.Status);
-            Assert.Single(initialPrint.PrintHistory);
-            var reprint = await lab.PrintContainerLabel(
-                submittedContainer.Id,
-                new RecordLabelPrintRequest(
-                    "Original label damaged during handling",
-                    "Succeeded",
-                    null,
-                    submittedContainer.Barcode),
-                CancellationToken.None);
-            submittedContainer = reprint.Container;
-            Assert.Equal(2, submittedContainer.LabelPrintCount);
-            var failedPrint = await lab.PrintContainerLabel(
-                submittedContainer.Id,
-                new RecordLabelPrintRequest(
-                    "Replace damaged label",
-                    "Failed",
-                    "Printer was offline."),
-                CancellationToken.None);
-            Assert.Equal(2, failedPrint.Container.LabelPrintCount);
-            Assert.Equal(3, failedPrint.PrintHistory.Count);
-            Assert.Equal("Failed", failedPrint.PrintHistory[0].Outcome);
-            Assert.Equal("Printer was offline.", failedPrint.PrintHistory[0].FailureDetails);
             var scannedSubmittedContainer = await lab.ScanContainer(
                 $"*{submittedContainer.Barcode.ToLowerInvariant()}*",
                 CancellationToken.None);
             Assert.Equal(submittedContainer.Id, scannedSubmittedContainer.Container.Id);
             Assert.Equal(accessionNumber, scannedSubmittedContainer.AccessionNumber);
-            var persistedSubmittedContainer = await scope.DbContext.LabContainers
-                .AsNoTracking()
-                .SingleAsync(item => item.Id == submittedContainer.Id);
-            Assert.Equal(staff.User.Id, persistedSubmittedContainer.LastLabelPrintedByUserId);
-            Assert.NotNull(persistedSubmittedContainer.LastLabelPrintedAtUtc);
+            Assert.Equal(0, (await scope.DbContext.LabContainers.AsNoTracking()
+                .SingleAsync(item => item.Id == submittedContainer.Id)).LabelPrintCount);
 
             // Pin this fixture's approved protocol through an explicit production workflow.
             // The complete journey must not depend on workflow state from another test.
@@ -1406,10 +1365,9 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 .Where(item => item.LabWorkOrderId == workOrderId.Value)
                 .Select(item => item.EventCode)
                 .ToListAsync();
-            Assert.Contains("SpecimenReceived", eventTypes);
+            Assert.Contains("ShipmentReceived", eventTypes);
+            Assert.Contains("TubeIntakeReviewed", eventTypes);
             Assert.Contains("SpecimenAccessioned", eventTypes);
-            Assert.Contains("ContainerLabelPrintSucceeded", eventTypes);
-            Assert.Contains("ContainerLabelPrintFailed", eventTypes);
             Assert.Contains("ScientificApprovalRecorded", eventTypes);
             await scope.VerifyGovernedPublicationAsync(output.Id, artifact.Id, simulatedBytes);
             await scope.VerifyMixedProgressAsync(fixture.OrderId, workOrderId.Value, released: true);
@@ -1508,7 +1466,11 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         private readonly List<Guid> createdCrmOpportunityIds = [];
         private readonly List<Guid> createdCrmPipelineIds = [];
         private readonly List<Guid> createdRelationshipRequestIds = [];
+        private readonly Dictionary<Guid, (Guid StockKitId, string KitNumber, string[] Barcodes)> pairedKits = [];
         private readonly ShippingConfigurationFixture shippingConfiguration;
+        private readonly string platformOrganizationName;
+        private Guid? createdCalendarId;
+        private Guid createdDeliveryLocationId;
         private bool ownsDisposableDatabase;
 
         private HandoffTestScope(
@@ -1519,7 +1481,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             ExternalIdentity customerIdentity,
             ExternalIdentity platformIdentity,
             string requestId,
-            ShippingConfigurationFixture shippingConfiguration)
+            ShippingConfigurationFixture shippingConfiguration,
+            string platformOrganizationName)
         {
             DbContext = dbContext;
             CustomerOrganization = customerOrganization;
@@ -1529,12 +1492,15 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             this.platformIdentity = platformIdentity;
             this.requestId = requestId;
             this.shippingConfiguration = shippingConfiguration;
+            this.platformOrganizationName = platformOrganizationName;
         }
 
         public PSeqOperationsDbContext DbContext { get; }
         public Organization CustomerOrganization { get; }
         public User CustomerUser { get; }
         public User PlatformUser { get; }
+        public Guid DeliveryLocationId => createdDeliveryLocationId;
+        public Guid ActiveSampleTypeId => shippingConfiguration.ActiveSampleTypeId;
 
         public static async Task<HandoffTestScope> CreateAsync(OrganizationKind organizationKind = OrganizationKind.Customer, string? isolatedConnection = null)
         {
@@ -1639,6 +1605,20 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                         null,
                         "Reference-test ordering authorization."));
                 await dbContext.SaveChangesAsync();
+                var calendarRevision = (await dbContext.Set<LabBusinessCalendar>()
+                    .Select(item => (int?)item.Revision).MaxAsync() ?? 0) + 1;
+                var year = DateTime.UtcNow.Year;
+                var calendar = new LabBusinessCalendar(calendarRevision, "America/Los_Angeles",
+                    new DateOnly(year - 1, 1, 1), new DateOnly(year + 2, 12, 31),
+                    "Reference handoff delivery calendar");
+                dbContext.Add(calendar);
+                await dbContext.SaveChangesAsync();
+                var deliveryLocation = new CustomerDeliveryLocation(customerOrganization.Id,
+                    customerOrganization.Departments.Single(department => department.IsDefault).Id,
+                    "Reference receiving", "Reference lab", "1 Test Way", null,
+                    "Baltimore", "MD", "21201", "US", null, null, true);
+                dbContext.CustomerDeliveryLocations.Add(deliveryLocation);
+                await dbContext.SaveChangesAsync();
                 var shippingConfiguration = await EnsureShippingConfigurationAsync(
                     dbContext,
                     suffix,
@@ -1651,8 +1631,11 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                     customerIdentity,
                     platformIdentity,
                     requestId,
-                    shippingConfiguration);
+                    shippingConfiguration,
+                    platformOrganization.Name);
                 scope.ownsDisposableDatabase = isolatedConnection is not null;
+                scope.createdCalendarId = calendar.Id;
+                scope.createdDeliveryLocationId = deliveryLocation.Id;
                 if (createdCatalogItem)
                 {
                     scope.catalogItemIds.Add(catalogItem.Id);
@@ -1699,7 +1682,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                     "Ship frozen.", null, "Use a secondary sealed container.",
                     "Use the Customer sample ID only.", "Do not include patient identifiers.",
                     "Follow the declared safety requirements.", null, 48, now.AddMinutes(-5),
-                    true, procedure.Id);
+                    true, procedure.Id, minimumSampleAmount: 1m, sampleAmountUnit: "µL");
                 var link = new SampleTypeProcedureLink(sampleType.Id, procedure.Id, platformUserId, now);
                 dbContext.AddRange(procedure, sampleType, link);
                 createdSampleTypeId = sampleType.Id;
@@ -1756,6 +1739,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 var shipper = new LabSupplierProduct(componentSupplier.Id, $"SHIPPER-{suffix}",
                     "Reference outer shipper", LabProductType.ShippingContainerId);
                 tube.SetDefaultQuantityUnit("each");
+                tube.SetMaximumSampleAmount(1000m, "µL");
                 shipper.SetDefaultQuantityUnit("each");
                 shipper.SetTubeCapacity(100);
                 var workflow = new LabKitAssemblyWorkflow("Total RNA kit assembly");
@@ -1852,6 +1836,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 "USD",
                 now,
                 now.AddDays(30));
+            quote.SetDeliveryTarget(14);
             quote.MarkIssued();
             order.Quotes.Add(quote);
             order.MarkQuoteIssued(quote.Id);
@@ -2001,7 +1986,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                     [new QuoteLineRequest(item.Id, item.Name, order.RequestedSpecimenCount, item.BasePrice)],
                     0m,
                     "USD",
-                    null),
+                    null,
+                    DeliveryTargetBusinessDays: 14),
                 CancellationToken.None);
         }
 
@@ -2014,7 +2000,10 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             return await controller.AcceptQuote(
                 fixture.OrderId,
                 fixture.QuoteId,
-                new AcceptQuoteRequest(fixture.OrderVersion, fixture.QuoteId),
+                new AcceptQuoteRequest(fixture.OrderVersion, fixture.QuoteId,
+                    ConfirmedSampleTypeId: ActiveSampleTypeId,
+                    KitDeliveryLocationId: DeliveryLocationId,
+                    KitDeliveryLocationVersion: 1),
                 CancellationToken.None);
         }
 
@@ -2026,14 +2015,66 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             var controller = CreateCustomerController(
                 new InternalLabOperationsProvider(DbContext),
                 Guid.NewGuid().ToString("N"));
-            return await controller.AddSample(
-                orderId,
-                new LabSampleRosterWriteRequest(
-                    $"sample-{Guid.NewGuid():N}",
-                    "synthetic_reference",
-                    1,
-                    OrderVersion: orderVersion),
-                CancellationToken.None);
+            var order = await DbContext.LabServiceOrders.AsNoTracking()
+                .SingleAsync(item => item.Id == orderId);
+            // An accepted addition to an already authorized Job still uses the change roster.
+            if (order.SampleRosterFinalizedAt.HasValue)
+                return await controller.AddSample(orderId,
+                    new LabSampleRosterWriteRequest($"sample-{Guid.NewGuid():N}",
+                        "synthetic_reference", 1, OrderVersion: orderVersion),
+                    CancellationToken.None);
+
+            if (!pairedKits.TryGetValue(orderId, out var physicalKit))
+            {
+                var definition = await DbContext.SampleShippingContainerDefinitions.AsNoTracking()
+                    .Include(item => item.KitContents)
+                    .Where(item => item.SampleTypeAnchorId == shippingConfiguration.ActiveSampleTypeId
+                        || item.Id == shippingConfiguration.KitDefinitionId)
+                    .OrderByDescending(item => item.Revision).FirstAsync();
+                var tube = definition.KitContents.Single(item => item.Kind == ShippingKitContentKind.Tube);
+                var shipper = definition.KitContents.Single(item => item.Kind == ShippingKitContentKind.ShippingContainer);
+                var revisionId = await DbContext.LabKitAssemblyWorkflowRevisions.AsNoTracking()
+                    .Where(item => item.WorkflowId == definition.AssemblyWorkflowId)
+                    .OrderByDescending(item => item.Revision).Select(item => item.Id).FirstAsync();
+                var location = await DbContext.CustomerDeliveryLocations
+                    .SingleAsync(item => item.Id == DeliveryLocationId);
+                var barcodeNamespace = SupplierTubeBarcode.NamespaceForSupplier(tube.SupplierId);
+                var kitNumber = $"KIT-HANDOFF-{Guid.NewGuid():N}";
+                var barcodes = Enumerable.Range(1, definition.TubeCapacity)
+                    .Select(index => $"HND-{Guid.NewGuid():N}-{index:000}".ToUpperInvariant()).ToArray();
+                var containerSnapshot = JsonSerializer.Serialize(await new SampleShippingContainerCatalogService(DbContext)
+                    .ReadAsync(definition.Id, CancellationToken.None));
+                var stock = new SampleShippingStockKit(kitNumber, definition.Id, containerSnapshot,
+                    definition.TubeCapacity, tube.SupplierName, tube.ProductNumber, null,
+                    shipper.SupplierName, shipper.ProductNumber,
+                    tubeSupplierProductId: tube.SupplierProductId,
+                    shipperSupplierProductId: shipper.SupplierProductId,
+                    productExpirySnapshotJson: "[]", tubeBarcodeNamespace: barcodeNamespace,
+                    assemblyWorkflowRevisionId: revisionId);
+                foreach (var barcode in barcodes)
+                    stock.Tubes.Add(new SampleShippingStockTube(stock.Id, barcode,
+                        barcodeNamespace, tube.SupplierProductId));
+                stock.VerifyTubeRoster(PlatformUser.Id, barcodes, DateTime.UtcNow);
+                stock.CompleteAssembly(DateTime.UtcNow);
+                stock.DispatchToLocation(location, "Reference carrier", "Reference tracking", DateTime.UtcNow);
+                stock.ConfirmCustomerReceipt(CustomerUser.Id, DateTime.UtcNow);
+                DbContext.SampleShippingStockKits.Add(stock);
+                await DbContext.SaveChangesAsync();
+                physicalKit = (stock.Id, kitNumber, barcodes);
+                pairedKits.Add(orderId, physicalKit);
+                DbContext.ChangeTracker.Clear();
+                await controller.SaveSampleTubeKit(orderId,
+                    new SaveLabSampleTubeKitRequest(orderVersion, kitNumber), CancellationToken.None);
+                orderVersion = (await controller.Get(orderId, CancellationToken.None)).Version;
+            }
+            var pairNumber = await DbContext.LabSampleTubePairs.AsNoTracking()
+                .CountAsync(item => item.LabServiceOrderId == orderId);
+            DbContext.ChangeTracker.Clear();
+            await controller.AddSampleTubePair(orderId,
+                new AddLabSampleTubePairRequest(orderVersion, physicalKit.StockKitId,
+                    $"sample-{Guid.NewGuid():N}", "synthetic_reference",
+                    physicalKit.Barcodes[pairNumber], 10m, "µL"), CancellationToken.None);
+            return await controller.Get(orderId, CancellationToken.None);
         }
 
         public async Task<LabServiceOrderDto> FinalizeSampleRosterAsync(
@@ -2050,6 +2091,17 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 orderId,
                 new FinalizeLabSampleRosterRequest(orderVersion, true),
                 CancellationToken.None);
+        }
+
+        public async Task<LabServiceOrderDto> FinishCurrentReferenceKitAsync(Guid orderId, long orderVersion)
+        {
+            DbContext.ChangeTracker.Clear();
+            var controller = CreateCustomerController(new InternalLabOperationsProvider(DbContext),
+                Guid.NewGuid().ToString("N"));
+            await controller.FinishSampleTubeKit(orderId, pairedKits[orderId].StockKitId,
+                new FinishLabSampleTubeKitRequest(orderVersion), CancellationToken.None);
+            pairedKits.Remove(orderId);
+            return await controller.Get(orderId, CancellationToken.None);
         }
 
         public async Task<LabServiceOrderDto> AuthorizeSampleRosterAsync(
@@ -2126,6 +2178,19 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         public LabOperationsController CreatePlatformLabController() =>
             CreateLabController(platformIdentity);
 
+        public SampleShippingWorkflowController CreateCustomerShippingWorkflowController()
+        {
+            var httpContext = new DefaultHttpContext();
+            httpContext.Request.Headers["X-Organization-Id"] = CustomerOrganization.Id.ToString();
+            return new SampleShippingWorkflowController(DbContext,
+                new OrderRequestContext(DbContext, new FixedIdentityContext(customerIdentity)),
+                new SampleShippingPacketService(DbContext),
+                new SampleShippingWorkflowReader(DbContext))
+            {
+                ControllerContext = new ControllerContext { HttpContext = httpContext }
+            };
+        }
+
         public async Task VerifyGovernedPublicationAsync(Guid packageId, Guid artifactId, byte[] bytes)
         {
             var package = await DbContext.ResultOutputPackages.SingleAsync(value => value.Id == packageId);
@@ -2200,6 +2265,9 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 DbContext,
                 new OrderRequestContext(DbContext, new FixedIdentityContext(customerIdentity)),
                 new OrderIdempotencyService(DbContext),
+                new TransportationKitRequestService(DbContext,
+                    new SampleShippingContainerCatalogService(DbContext),
+                    Options.Create(new BootstrapOptions { PhaenoOrganizationName = platformOrganizationName })),
                 NullOperationalFileStorage.Instance,
                 Options.Create(new PSeqOrderToCashOptions
                 {
@@ -2276,6 +2344,9 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                     .Where(item => organizationIds.Contains(item.OrganizationId))
                     .Select(item => item.Id)
                     .ToArrayAsync();
+                var kitRequestIds = await DbContext.TransportationKitRequests
+                    .Where(item => orderIds.Contains(item.LabServiceOrderId))
+                    .Select(item => item.Id).ToArrayAsync();
                 var authorizationIds = await DbContext.CommercialLabAuthorizations
                     .Where(item => orderIds.Contains(item.CommercialOrderId))
                     .Select(item => item.AuthorizationId)
@@ -2293,6 +2364,12 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                     .Where(item => shipmentIds.Contains(item.SampleShipmentId))
                     .Select(item => item.Id)
                     .ToArrayAsync();
+                var returnKitIds = await DbContext.SampleReturnKits
+                    .Where(item => shipmentIds.Contains(item.SampleShipmentId))
+                    .Select(item => item.Id).ToArrayAsync();
+                var stockKitIds = await DbContext.SampleShippingStockKits
+                    .Where(item => item.CustomerDeliveryLocationId == createdDeliveryLocationId)
+                    .Select(item => item.Id).ToArrayAsync();
 
                 await DbContext.AuditEvents.Where(item => item.RequestId == requestId).ExecuteDeleteAsync();
                 await DbContext.LabWorkTimingChanges.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
@@ -2306,7 +2383,14 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 await DbContext.LabScientificApprovals.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabWorkAuthorizationVersions.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabSpecimens.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
+                await DbContext.SampleTubeAssignmentEvents.Where(item => shipmentIds.Contains(item.SampleShipmentId)).ExecuteDeleteAsync();
                 await DbContext.SampleShipmentTubeSlots.Where(item => shipmentItemIds.Contains(item.SampleShipmentItemId)).ExecuteDeleteAsync();
+                await DbContext.RegisteredSampleTubes.Where(item => returnKitIds.Contains(item.SampleReturnKitId)).ExecuteDeleteAsync();
+                await DbContext.SampleReturnKits.Where(item => returnKitIds.Contains(item.Id)).ExecuteDeleteAsync();
+                await DbContext.LabSampleTubePairs.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
+                await DbContext.LabSampleTubeKitSelections.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
+                await DbContext.SampleShippingStockTubes.Where(item => stockKitIds.Contains(item.SampleShippingStockKitId)).ExecuteDeleteAsync();
+                await DbContext.SampleShippingStockKits.Where(item => stockKitIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await DbContext.SampleShipmentItems.Where(item => shipmentIds.Contains(item.SampleShipmentId)).ExecuteDeleteAsync();
                 await DbContext.SampleShipments.Where(item => shipmentIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await DbContext.LabWorkOrders.Where(item => workOrderIds.Contains(item.Id)).ExecuteDeleteAsync();
@@ -2324,6 +2408,10 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 await DbContext.LabSampleImportPreviews.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabSamples.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabServiceSourceGroups.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
+                await DbContext.TransportationKitRequestLines
+                    .Where(item => kitRequestIds.Contains(item.TransportationKitRequestId)).ExecuteDeleteAsync();
+                await DbContext.TransportationKitRequests
+                    .Where(item => kitRequestIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await DbContext.LabServiceOrders.Where(item => orderIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await DbContext.Set<LabServiceSampleType>().Where(item => configuredOfferingIds.Contains(item.LabServiceOfferingId)).ExecuteDeleteAsync();
                 await DbContext.LabServiceOfferings.Where(item => configuredOfferingIds.Contains(item.Id)).ExecuteDeleteAsync();
@@ -2388,10 +2476,15 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                     await DbContext.SampleShippingDestinations
                         .Where(item => item.Id == shippingConfiguration.DestinationId.Value).ExecuteDeleteAsync();
                 await DbContext.OrganizationDepartmentMemberships.Where(item => organizationIds.Contains(item.Department.OrganizationId)).ExecuteDeleteAsync();
+                await DbContext.CustomerDeliveryLocations
+                    .Where(item => item.Id == createdDeliveryLocationId).ExecuteDeleteAsync();
                 await DbContext.OrganizationDepartments.Where(item => organizationIds.Contains(item.OrganizationId)).ExecuteDeleteAsync();
                 await DbContext.OrganizationMemberships.Where(item => organizationIds.Contains(item.OrganizationId)).ExecuteDeleteAsync();
                 await DbContext.Users.Where(item => item.Id == CustomerUser.Id || item.Id == PlatformUser.Id).ExecuteDeleteAsync();
                 await DbContext.Organizations.Where(item => organizationIds.Contains(item.Id)).ExecuteDeleteAsync();
+                if (createdCalendarId.HasValue)
+                    await DbContext.Set<LabBusinessCalendar>()
+                        .Where(item => item.Id == createdCalendarId.Value).ExecuteDeleteAsync();
             }
             finally
             {

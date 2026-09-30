@@ -78,8 +78,8 @@ export function CrmRecordWork({ links }: { links: RecordLinks }) {
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <Card>
-        <CardHeader>
+      <Card className="gap-0 py-0">
+        <CardHeader className="border-b bg-muted/50 p-4">
           <CardTitle>Activity timeline</CardTitle>
           <CardDescription>
             Notes, calls, meetings, email, status changes, and Portal handoffs.
@@ -95,7 +95,7 @@ export function CrmRecordWork({ links }: { links: RecordLinks }) {
             </Button>
           </CardAction>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 p-4">
           {(activities.data?.items ?? []).map((activity) => (
             <article key={activity.id} className="rounded-lg border p-3">
               <div className="flex flex-wrap items-center gap-2">
@@ -119,8 +119,8 @@ export function CrmRecordWork({ links }: { links: RecordLinks }) {
           ) : null}
         </CardContent>
       </Card>
-      <Card>
-        <CardHeader>
+      <Card className="gap-0 py-0">
+        <CardHeader className="border-b bg-muted/50 p-4">
           <CardTitle>Tasks</CardTitle>
           <CardDescription>
             Durable follow-up, reminders, and recurring work.
@@ -132,7 +132,7 @@ export function CrmRecordWork({ links }: { links: RecordLinks }) {
             </Button>
           </CardAction>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 p-4">
           {(tasks.data?.items ?? []).map((task) => (
             <div
               key={task.id}

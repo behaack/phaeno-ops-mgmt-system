@@ -421,6 +421,7 @@ public partial class SampleShippingPostgresTests
             var shipperSupplier = string.Equals(request.TubeSupplierName.Trim(), request.ShipperSupplierName.Trim(), StringComparison.OrdinalIgnoreCase)
                 ? tubeSupplier : new LabSupplier($"{request.ShipperSupplierName} {suffix}");
             var tube = new LabSupplierProduct(tubeSupplier.Id, request.TubeProductNumber, "Reference tube", LabProductType.TubeId, canExpire);
+            tube.SetMaximumSampleAmount(1000m, "µL");
             var shipper = new LabSupplierProduct(shipperSupplier.Id, request.ShipperProductNumber, "Reference shipper", LabProductType.ShippingContainerId);
             DbContext.AddRange(tubeSupplier, shipperSupplier, tube, shipper);
             await DbContext.SaveChangesAsync();
@@ -565,7 +566,9 @@ public partial class SampleShippingPostgresTests
                 48,
                 effectiveFrom,
                 true,
-                DefaultProcedureId);
+                DefaultProcedureId,
+                MinimumSampleAmount: 1m,
+                SampleAmountUnit: "µL");
 
         public async Task<ShippingFixture> CreateShipmentAsync(int tubeCount = 1)
         {

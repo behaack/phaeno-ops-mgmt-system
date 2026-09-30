@@ -1,21 +1,24 @@
 import { createPortal } from 'react-dom'
 import { useRef, useState, type RefObject } from 'react'
-import type { LabServiceOrder } from '#/api/order-management'
+import type { LabSampleTubeWorkspace, LabServiceOrder } from '#/api/order-management'
 import type { ShipmentKitSupply } from '#/api/transportation-kit-requests'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Label } from '#/components/ui/label'
+import { usePhaenoSession } from '#/features/auth/session-context'
 import { SampleShippingDetailPage, type ShipmentHeaderAction } from '#/features/sample-shipping/SampleShippingDetailPage'
 import { useSourceSampleShipments } from '#/features/sample-shipping/use-source-sample-shipments'
 import type { SampleTubeListContext } from '#/features/sample-shipping/SampleTubeScanner'
 import { groupSampleRows } from './sample-source-capacity'
 import { LabJobSamplesPanel } from './LabJobSamplesPanel'
+import { LabJobKitDeliveryPanel } from './LabJobKitDeliveryPanel'
+import { LabJobPairedPreparation } from './LabJobPairedPreparation'
 import { LabJobWorkspaceActions } from './LabJobWorkspaceActions'
 import type { ChangeLabJobWorkspace, LabJobWorkspaceSearch } from './lab-job-workspace-search'
 import { humanizeStatus } from './OrderStatusBadge'
 
-export function LabJobShippingWorkspace({ order, workspace, onWorkspaceChange, headerTarget, sendActionTarget, sampleReviewTarget, orderActions, orderDialogOpen, onActivityChange, navigationLocked = false, onNavigationLockChange, onKitSupplyChange }: {
+export function LabJobShippingWorkspace({ order, workspace, onWorkspaceChange, headerTarget, sendActionTarget, sampleReviewTarget, orderActions, orderDialogOpen, onActivityChange, navigationLocked = false, onNavigationLockChange, onKitSupplyChange, pairWorkspace, pairState, onPairRefresh }: {
   order: LabServiceOrder
   workspace: LabJobWorkspaceSearch
   onWorkspaceChange: ChangeLabJobWorkspace
@@ -28,7 +31,11 @@ export function LabJobShippingWorkspace({ order, workspace, onWorkspaceChange, h
   navigationLocked?: boolean
   onNavigationLockChange?: (active: boolean) => void
   onKitSupplyChange?: (supply: ShipmentKitSupply | undefined) => void
+  pairWorkspace?: LabSampleTubeWorkspace
+  pairState?: 'loading' | 'unavailable' | 'ready'
+  onPairRefresh?: () => void
 }) {
+  const { session } = usePhaenoSession()
   const { allowed, shipments, related, retired, receiptState } = useSourceSampleShipments(order.id)
   const [sampleActionsTarget, setSampleActionsTarget] = useState<HTMLDivElement | null>(null)
   const fallbackActionRef = useRef<HTMLButtonElement>(null)
@@ -47,7 +54,7 @@ export function LabJobShippingWorkspace({ order, workspace, onWorkspaceChange, h
   const hasSentInsert = jobShipments.some(item => item.shippedAt && item.currentPacket && !item.currentPacket.isVoided)
   const fallbackShippingActions: ShipmentHeaderAction[] = jobShipments.length > 1 ? [{ kind: 'command', label: hasSentInsert ? 'Select container to reprint insert' : 'Select a shipping container', onSelect: () => document.getElementById('job-shipment-selector')?.focus() }] : []
   const needsShipmentSelection = !selected || !['Preparing', 'ReadyToShip'].includes(selected.status)
-  const renderSendAction = (action: ShipmentHeaderAction | null, triggerRef: RefObject<HTMLButtonElement | null>) => {
+  const renderSendAction = (action: ShipmentHeaderAction | null, triggerRef: RefObject<HTMLButtonElement | null>, printAction?: ShipmentHeaderAction, printTriggerRef?: RefObject<HTMLButtonElement | null>) => {
     if (!sendActionTarget) return null
     const fallback: ShipmentHeaderAction = {
       kind: 'command',
@@ -64,20 +71,38 @@ export function LabJobShippingWorkspace({ order, workspace, onWorkspaceChange, h
     }
     const command = action ?? fallback
     return createPortal(<div className="flex max-w-full flex-col items-start gap-1.5">
-      <Button ref={triggerRef} type="button" size="sm" disabled={command.disabled || navigationLocked || orderDialogOpen || !allowed || receiptState !== 'ready' || shipments.isFetching} aria-busy={command.busy || undefined} aria-describedby={command.descriptionId} onClick={command.onSelect}>
-        {command.icon ? <command.icon aria-hidden="true" /> : null}{command.label}
-      </Button>
+      <div className="flex max-w-full flex-wrap items-center gap-2">
+        <Button ref={triggerRef} type="button" variant={command.variant} size="sm" disabled={command.disabled || navigationLocked || orderDialogOpen || !allowed || receiptState !== 'ready' || shipments.isFetching} aria-busy={command.busy || undefined} aria-describedby={command.descriptionId} onClick={command.onSelect}>
+          {command.icon ? <command.icon aria-hidden="true" /> : null}{command.label}
+        </Button>
+        {printAction ? <Button ref={printTriggerRef} type="button" variant={printAction.variant} size="sm" disabled={printAction.disabled || navigationLocked || orderDialogOpen || !allowed || receiptState !== 'ready' || shipments.isFetching} aria-busy={printAction.busy || undefined} aria-describedby={printAction.descriptionId} onClick={printAction.onSelect}>
+          {printAction.icon ? <printAction.icon aria-hidden="true" /> : null}{printAction.label}
+        </Button> : null}
+      </div>
       {jobShipments.length > 1 && selected && action ? <p className="max-w-64 text-xs text-muted-foreground wrap-anywhere">{selected.shipmentNumber}</p> : null}
     </div>, sendActionTarget)
   }
-  const renderSamples = (context?: SampleTubeListContext) => <LabJobSamplesPanel key={order.id} order={order} embedded actionsTarget={sampleActionsTarget} reviewActionTarget={sampleReviewTarget}
+  const awaitingPairedPreparation = order.usesPairedPreparation && order.placedAt && !order.sampleRosterFinalizedAt
+  const hasReceivedCompatibleKit = pairState === 'ready' && Boolean(pairWorkspace?.pairs.length
+    || pairWorkspace?.kits.some(kit => kit.availableTubeCount > 0))
+  const submissionInstructions = order.submissionInstructions?.trim()
+  const pairedWorkspaceDescription = !order.placedAt
+    ? 'Confirm the order before preparing samples.'
+    : order.sampleRosterFinalizedAt
+      ? 'Review each shipping insert and record carrier handoff.'
+      : hasReceivedCompatibleKit
+        ? 'Save one Sample ID and physical tube barcode at a time.'
+        : 'Review your kit order and delivery details below.'
+  const renderSamples = (context?: SampleTubeListContext) => awaitingPairedPreparation
+    ? hasReceivedCompatibleKit ? <LabJobPairedPreparation key={order.id} order={order} /> : null
+    : <LabJobSamplesPanel key={order.id} order={order} embedded actionsTarget={sampleActionsTarget} reviewActionTarget={sampleReviewTarget}
     tubeShipments={allowed ? selected?.status === 'Cancelled' ? [...jobShipments, selected] : jobShipments : undefined} tubeContext={context} navigationLocked={navigationLocked || orderDialogOpen}
     page={(workspace.samplePage ?? 1) - 1} onPageChange={page => change({ samplePage: page ? page + 1 : undefined })} />
   return <Card id="samples-and-shipping" tabIndex={-1} className="min-w-0 scroll-mt-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
     <CardHeader>
       <CardTitle>Samples and shipping</CardTitle>
-      <CardAction ref={setSampleActionsTarget} className="flex flex-wrap justify-end gap-2 empty:hidden" />
-      <CardDescription>{order.sampleRosterFinalizedAt ? 'Review your samples, prepare each container and record its shipment here.' : 'Identify each accepted sample below, then review and finalize the list before preparing your shipment.'}</CardDescription>
+      <CardAction ref={setSampleActionsTarget} className="row-span-1 flex flex-wrap justify-end gap-2 empty:hidden" />
+      <CardDescription className="col-span-full row-start-2 text-left">{order.usesPairedPreparation ? pairedWorkspaceDescription : order.sampleRosterFinalizedAt ? 'Review your samples, prepare each container and record its shipment here.' : 'Identify each accepted sample below, then review and finalize the list before preparing your shipment.'}</CardDescription>
     </CardHeader>
     <CardContent className="space-y-5">
       {!selected && headerTarget ? createPortal(<LabJobWorkspaceActions orderActions={orderActions} shipmentActions={fallbackShippingActions} triggerRef={fallbackActionRef} dialogOpen={orderDialogOpen} />, headerTarget) : null}
@@ -94,6 +119,13 @@ export function LabJobShippingWorkspace({ order, workspace, onWorkspaceChange, h
       {selected ? <p className="text-sm wrap-anywhere"><span className="font-medium">{selected.isPackingPool ? 'Tubes awaiting containers' : `Selected shipment: ${selected.shipmentNumber}`}</span> · {humanizeStatus(selected.status)} · {selected.destinationName}</p> : null}
       {unknownSelection ? <Alert><AlertTitle>Selected shipment is not available for this Job</AlertTitle><AlertDescription>Choose a current container to continue. <Button variant="outline" onClick={() => change({ shipmentId: undefined, orderKits: undefined })}>Choose current container</Button></AlertDescription></Alert> : null}
       {shipments.error ? <Alert variant="destructive"><AlertTitle>Shipping information could not be loaded</AlertTitle><AlertDescription>Your sample list is preserved. <Button variant="outline" onClick={() => void shipments.refetch()}>Retry shipments</Button></AlertDescription></Alert> : null}
+      {order.placedAt && !order.sampleRosterFinalizedAt ? <LabJobKitDeliveryPanel orderId={order.id} canConfirm={session?.capabilities.canManageSampleShipping === true} /> : null}
+      {awaitingPairedPreparation && !hasReceivedCompatibleKit ? pairState === 'loading'
+        ? <p role="status" className="text-sm text-muted-foreground">Checking for a received, compatible kit…</p>
+        : pairState === 'unavailable'
+          ? <Alert variant="destructive"><AlertTitle>Kit receipt could not be checked</AlertTitle><AlertDescription>Refresh the kit status before preparing samples. {onPairRefresh ? <Button type="button" variant="outline" size="sm" onClick={onPairRefresh}>Retry</Button> : null}</AlertDescription></Alert>
+          : null : null}
+      {submissionInstructions && (!order.usesPairedPreparation || hasReceivedCompatibleKit) ? <section aria-label="Sample preparation instructions" className="rounded-md border bg-muted/30 px-4 py-3 text-sm"><h3 className="font-medium">Sample preparation instructions</h3><p className="mt-1 whitespace-pre-wrap wrap-anywhere text-muted-foreground">{submissionInstructions}</p></section> : null}
       {!selected ? renderSamples() : null}
       {selected ? <SampleShippingDetailPage key={selected.id} shipmentId={selected.id} autoOpenKitOrder={workspace.orderKits} embedded={{
         sourceId: order.id,

@@ -6,18 +6,18 @@ import { standardKit } from '#/test-helpers/shipping-containers'
 import { kitRequestFixture } from '#/test-helpers/transportation-kit-requests'
 import { CustomerStockKitDispatchDialog } from './CustomerStockKitDispatchDialog'
 
-const mocks = vi.hoisted(() => ({ list: vi.fn(), detail: vi.fn(), dispatch: vi.fn() }))
-vi.mock('#/api/transportation-kit-requests', () => ({ getPlatformTransportationKitRequests: mocks.list, getPlatformTransportationKitRequest: mocks.detail }))
+const mocks = vi.hoisted(() => ({ list: vi.fn(), detail: vi.fn(), resolve: vi.fn(), dispatch: vi.fn() }))
+vi.mock('#/api/transportation-kit-requests', () => ({ getPlatformTransportationKitRequests: mocks.list, getPlatformTransportationKitRequest: mocks.detail, resolveTransportationKitBarcode: mocks.resolve }))
 vi.mock('#/api/shipping-containers', () => ({ dispatchShippingStockKit: mocks.dispatch }))
 vi.mock('../use-order-draft-guard', () => ({ useOrderDraftGuard: () => vi.fn() }))
 const kit = { ...standardKit, container: { ...standardKit.container, capacity: 1 }, tubes: [{ id: 'tube-1', supplierBarcode: 'TUBE-001' }], assemblyCompletedAt: '2026-09-29T00:00:00Z', tubesVerifiedAt: null }
 const request = { ...kitRequestFixture, lines: kitRequestFixture.lines.map(line => ({ ...line, containerDefinitionId: kit.container.definitionId, requestedQuantity: 1 })) }
-const detail = { request, canDispatch: true, dispatchBlockedReason: null, availableStockKits: [{ id: kit.id, kitNumber: kit.kitNumber, containerDefinitionId: kit.container.definitionId, commonName: kit.container.commonName, sku: kit.container.sku, tubeCapacity: 1, version: kit.version }] }
+const detail = { request, canDispatch: true, dispatchBlockedReason: null, availableTypes: [{ containerDefinitionId: kit.container.definitionId, commonName: kit.container.commonName, sku: kit.container.sku, tubeCapacity: 1, requestedQuantity: 1, dispatchedQuantity: 0, availableQuantity: 1 }] }
 function mount(node: ReactNode, client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })) { return render(<QueryClientProvider client={client}>{node}</QueryClientProvider>) }
 function fill(label: RegExp, value: string) { fireEvent.change(screen.getByLabelText(label), { target: { value } }) }
 async function selectRequest() { await screen.findByRole('option', { name: /Request 20000000/ }); fill(/Kit request/, request.id); await screen.findByText('100 Science Avenue'); await waitFor(() => expect((screen.getByRole('button', { name: 'Record dispatch' }) as HTMLButtonElement).disabled).toBe(false)) }
 function fillDispatch() { fill(/Carrier/, 'Saved carrier'); fill(/Tracking number/, 'TRACK-001') }
-beforeEach(() => { vi.clearAllMocks(); mocks.list.mockResolvedValue([request]); mocks.detail.mockResolvedValue(detail); mocks.dispatch.mockResolvedValue({ ...kit, status: 'OnTheWay' }) })
+beforeEach(() => { vi.clearAllMocks(); mocks.list.mockResolvedValue([request]); mocks.detail.mockResolvedValue(detail); mocks.resolve.mockResolvedValue({ id: kit.id, kitNumber: kit.kitNumber }); mocks.dispatch.mockResolvedValue({ ...kit, status: 'OnTheWay' }) })
 
 describe('Customer stock dispatch to the requested location', () => {
   it('requires a request instead of a Job or sample shipment', async () => {

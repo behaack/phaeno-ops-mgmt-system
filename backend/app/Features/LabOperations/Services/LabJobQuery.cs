@@ -25,6 +25,7 @@ public sealed class LabJobRow
     public DateTime? CompletedAtUtc { get; set; }
     public bool IsComplete { get; set; }
     public bool HasAcceptedSamples { get; set; }
+    public bool DeadlineCalendarPending { get; set; }
     public bool IsBlocked { get; set; }
     public DateTime? CompletionDeadlineAtUtc { get; set; }
     public int? TurnaroundDays { get; set; }
@@ -149,6 +150,8 @@ public sealed class LabJobQuery(PSeqOperationsDbContext db)
                 ? w.FirstDeliveredAtUtc ?? samples.Where(s => s.LabWorkOrderId == w.Id).Max(s => s.ReleasedAt) : null,
             NextSampleDueAtUtc = samples.Where(s => s.LabWorkOrderId == w.Id && s.ReleasedAt == null).Min(s => s.OriginalTargetAtUtc),
             HasAcceptedSamples = samples.Any(s => s.LabWorkOrderId == w.Id && s.AcceptedAtUtc != null),
+            DeadlineCalendarPending = db.LabWorkEvents.Any(e => e.LabWorkOrderId == w.Id
+                && e.EventCode == "DeliveryDeadlinePendingCalendar"),
             IsBlocked = w.Status == LabWorkOrderStatus.OnHold || db.LabCustomerHolds.Any(h => h.LabWorkOrderId == w.Id && h.State != "Released") || db.LabExceptions.Any(e => e.LabWorkOrderId == w.Id
                 && e.Status == LabExceptionStatus.Open && e.IsBlocking)
         });
@@ -173,13 +176,19 @@ public sealed class LabJobQuery(PSeqOperationsDbContext db)
             j.OperationalStatus == LabWorkOrderStatus.Cancelled ? "Cancelled"
             : j.IsComplete ? j.FirstDeliveredAtUtc == null ? "CompleteUnverified" : j.CompletionDeadlineAtUtc == null ? "CompleteUndated"
                 : j.CompletedAtUtc > j.CompletionDeadlineAtUtc ? "CompleteLate" : "CompleteOnTime"
-            : j.DueAtUtc == null ? j.HasAcceptedSamples ? "AtRisk" : "AwaitingAcceptance"
+            : j.DueAtUtc == null ? j.DeadlineCalendarPending ? "AtRisk"
+                : j.TurnaroundPolicyKey == LabWorkOrder.FullReceiptBusinessDayPolicy ? "AwaitingReceipt"
+                : j.HasAcceptedSamples ? "AtRisk" : "AwaitingAcceptance"
             : j.DueAtUtc < now ? "Overdue"
             : j.IsBlocked || j.ExpectedCompletionAtUtc > j.DueAtUtc || j.NextSampleDueAtUtc < now ? "AtRisk"
             : j.DueAtUtc <= soon || j.NextSampleDueAtUtc <= soon ? "DueSoon" : "NoKnownRisk", Reason =
             j.OperationalStatus == LabWorkOrderStatus.Cancelled ? "Cancelled; not counted as successful delivery."
             : j.IsComplete ? "Results for every sample have been published to the Portal."
-            : j.DueAtUtc == null ? j.HasAcceptedSamples ? "A required delivery due date is missing. Set it from the job's Actions menu." : "The acceptance-based turnaround clock has not started."
+            : j.DueAtUtc == null ? j.DeadlineCalendarPending
+                ? "All required tubes are received, but the Phaeno holiday calendar does not cover this deadline. Extend the calendar to calculate the due date."
+                : j.TurnaroundPolicyKey == LabWorkOrder.FullReceiptBusinessDayPolicy
+                ? "The delivery clock starts after every required tube is physically received. If receipt is complete, review the Phaeno holiday calendar coverage."
+                : j.HasAcceptedSamples ? "A delivery due date is missing from this historical Job. Set it from the Job's Actions menu." : "The historical acceptance-based turnaround clock has not started."
             : j.DueAtUtc < now ? "The delivery deadline has passed; results remain outstanding."
             : j.IsBlocked ? "An open blocking exception or hold needs attention."
             : j.ExpectedCompletionAtUtc > j.DueAtUtc ? "Expected completion is later than the delivery due date."

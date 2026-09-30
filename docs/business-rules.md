@@ -67,6 +67,11 @@ Phaeno's platform-admin protection is unchanged.
   and be available to the current User. Invalid department context fails closed.
 - Customer operational roots, address books, searches, exports, downloads, and
   outbound operational notifications are scoped by Department.
+- POMS Customer order intake requires an explicit Department choice when the
+  Customer has multiple active Departments. Starting pricing requires at least
+  one active Customer user with access to the selected Department, through
+  active Department membership or organization administration. The Customer
+  administrator needed to approve a quote may be activated later.
 - New curated download history retains the Department at the time of the event,
   including Organization-wide packages. Department admins see only their selected
   Department. Unknown historical Department rows remain Organization-admin-only;

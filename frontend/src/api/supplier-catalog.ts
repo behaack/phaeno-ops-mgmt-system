@@ -6,10 +6,10 @@ export const tubeProductTypeId = '90000000-0000-4000-8000-000000000001'
 export const shippingContainerProductTypeId = '90000000-0000-4000-8000-000000000002'
 export const reagentProductTypeId = '90000000-0000-4000-8000-000000000003'
 export function isBuiltInProductType(id: string) { return id === tubeProductTypeId || id === reagentProductTypeId || id === shippingContainerProductTypeId }
-export type SupplierProduct = { id: string; supplierId: string; productNumber: string; description: string; kind: SupplierProductKind; productTypeId: string; productTypeName: string; productTypeIsActive: boolean; canExpire?: boolean; defaultQuantityUnit?: string | null; tubeCapacity?: number | null; materialDefinitionId?: string | null; isActive: boolean; version: number }
+export type SupplierProduct = { id: string; supplierId: string; productNumber: string; description: string; kind: SupplierProductKind; productTypeId: string; productTypeName: string; productTypeIsActive: boolean; canExpire?: boolean; defaultQuantityUnit?: string | null; tubeCapacity?: number | null; maximumSampleAmount?: number | null; sampleAmountUnit?: string | null; materialDefinitionId?: string | null; isActive: boolean; version: number }
 export type CatalogSupplier = { id: string; name: string; isActive: boolean; version: number; products: SupplierProduct[]; isInternalProducer?: boolean }
 export type SupplierWrite = { name: string; isActive: boolean; version?: number }
-export type ProductWrite = { productNumber: string; description: string; productTypeId: string; canExpire?: boolean; defaultQuantityUnit?: string | null; tubeCapacity?: number | null; isActive: boolean; version?: number }
+export type ProductWrite = { productNumber: string; description: string; productTypeId: string; canExpire?: boolean; defaultQuantityUnit?: string | null; tubeCapacity?: number | null; maximumSampleAmount?: number | null; sampleAmountUnit?: string | null; isActive: boolean; version?: number }
 type Envelope<T> = { data: T }
 const path = '/platform/lab-operations/suppliers'
 export const supplierCatalogKey = ['supplier-catalog'] as const

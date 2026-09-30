@@ -37,7 +37,7 @@ public sealed partial class LabOperationsController
     [HttpPost("forecast-calendars")]
     public async Task<LabBusinessCalendar> SaveForecastCalendar(ForecastCalendarInput input, CancellationToken token)
     {
-        await requestContext.RequireAsync(HttpContext, token, LabRole.ProtocolAdministrator, LabRole.Supervisor);
+        var actor = await requestContext.RequireAsync(HttpContext, token, LabRole.ProtocolAdministrator, LabRole.Supervisor);
         await using var tx = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, token);
         var latest = await dbContext.Set<LabBusinessCalendar>().OrderByDescending(c => c.Revision).FirstOrDefaultAsync(token);
         if (latest?.Id != input.PreviousId) throw Conflict("forecast_calendar_changed", "The holiday calendar changed. Reload before saving.");
@@ -47,7 +47,24 @@ public sealed partial class LabOperationsController
             calendar = new((latest?.Revision ?? 0) + 1, "America/Los_Angeles", input.CoverageFrom, input.CoverageTo, input.Reason);
             foreach (var h in input.Holidays) calendar.AddHoliday(h.Date, h.Name);
         });
-        dbContext.Add(calendar); await dbContext.SaveChangesAsync(token); await tx.CommitAsync(token); return calendar;
+        dbContext.Add(calendar);
+        await dbContext.SaveChangesAsync(token);
+        var pendingIds = await dbContext.LabWorkOrders
+            .Where(work => work.TurnaroundPolicyKey == LabWorkOrder.FullReceiptBusinessDayPolicy
+                && !work.OriginalDeliveryDueAtUtc.HasValue && !work.AdjustedDeliveryDueAtUtc.HasValue
+                && dbContext.LabWorkEvents.Any(entry => entry.LabWorkOrderId == work.Id
+                    && entry.EventCode == "DeliveryDeadlinePendingCalendar"))
+            .Select(work => work.Id).ToArrayAsync(token);
+        foreach (var workId in pendingIds)
+        {
+            var work = await RequireWorkOrderAsync(workId, token);
+            await EstablishFullReceiptDeadlineAsync(work, actor.User.Id, token);
+            if (work.OriginalDeliveryDueAtUtc.HasValue)
+                await EmitProjectionAsync(work, actor.User.Id, "DeliveryDeadlineEstablished", token);
+        }
+        await dbContext.SaveChangesAsync(token);
+        await tx.CommitAsync(token);
+        return calendar;
     }
 
     [HttpPost("forecast-policies/{workflowId:guid}")]

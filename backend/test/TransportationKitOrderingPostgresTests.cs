@@ -31,7 +31,8 @@ public partial class SampleShippingPostgresTests
         Assert.NotNull(kit.AssemblyCompletedAt);
         Assert.Null(kit.TubesVerifiedAt);
         var detail = await scope.KitStaff().Read(request.Id, default);
-        Assert.Contains(detail.AvailableStockKits, item => item.Id == kit.Id);
+        Assert.Contains(detail.AvailableTypes, item => item.ContainerDefinitionId == size.Id && item.AvailableQuantity == 1);
+        Assert.Equal(kit.Id, (await scope.KitStaff().ResolveKit(request.Id, new(kit.KitNumber), default)).Id);
         await scope.KitStaff().Dispatch(request.Id,
             new(detail.Request.Version, [kit.Id], "Reference carrier", "ONE-PASS", DateTime.UtcNow), default);
         scope.ClearTrackedState();
@@ -50,13 +51,14 @@ public partial class SampleShippingPostgresTests
         var request = await scope.KitCustomer().Create(fixture.Shipment.Id,
             new(fixture.Shipment.Version, location.Id, location.Version, [new(size.Id, 1)]), default);
         var kit = await scope.ReadyTransportationKitAsync(size);
-        Assert.Contains((await scope.KitStaff().Read(request.Id, default)).AvailableStockKits,
-            item => item.Id == kit.Id);
+        Assert.Contains((await scope.KitStaff().Read(request.Id, default)).AvailableTypes,
+            item => item.ContainerDefinitionId == size.Id && item.AvailableQuantity == 1);
 
         await scope.StockController().Withdraw(kit.Id, new(kit.Version, "Damaged insulation"), default);
         scope.ClearTrackedState();
         var detail = await scope.KitStaff().Read(request.Id, default);
-        Assert.DoesNotContain(detail.AvailableStockKits, item => item.Id == kit.Id);
+        Assert.Contains(detail.AvailableTypes, item => item.ContainerDefinitionId == size.Id && item.AvailableQuantity == 0);
+        await Assert.ThrowsAsync<OrderManagementException>(() => scope.KitStaff().ResolveKit(request.Id, new(kit.KitNumber), default));
         var error = await Assert.ThrowsAsync<OrderManagementException>(() => scope.KitStaff().Dispatch(request.Id,
             new(detail.Request.Version, [kit.Id], "Carrier", "WITHDRAWN", DateTime.UtcNow), default));
         Assert.Equal("transportation_kit_conflict", error.ErrorCode);
@@ -298,9 +300,14 @@ public partial class SampleShippingPostgresTests
             new(fixture.Shipment.Version, [new(twenty.Id, 1)]), default));
         Assert.Equal("transportation_kit_unavailable", blocked.ErrorCode);
         scope.ClearTrackedState();
-        var received = await scope.KitCustomer().Receive(created.Id, new(dispatch.Request.Version, [kit20.Id]), default);
+        var wrongBarcode = await Assert.ThrowsAsync<OrderManagementException>(() => scope.KitCustomer().Receive(created.Id,
+            new(dispatch.Request.Version, [kit20.Id], kit10.KitNumber), default));
+        Assert.Equal("transportation_kit_invalid", wrongBarcode.ErrorCode);
+        Assert.Null((await scope.DbContext.SampleShippingStockKits.AsNoTracking().SingleAsync(item => item.Id == kit20.Id)).CustomerReceivedAt);
+        scope.ClearTrackedState();
+        var received = await scope.KitCustomer().Receive(created.Id, new(dispatch.Request.Version, [kit20.Id], kit20.KitNumber), default);
         Assert.Equal("PartiallyDispatched", received.Status);
-        var receiptReplay = await scope.KitCustomer().Receive(created.Id, new(dispatch.Request.Version, [kit20.Id]), default);
+        var receiptReplay = await scope.KitCustomer().Receive(created.Id, new(dispatch.Request.Version, [kit20.Id], kit20.KitNumber), default);
         Assert.Equal(received.Version, receiptReplay.Version);
         scope.ClearTrackedState();
         Assert.True((await scope.KitCustomer().Supply(fixture.Shipment.Id, location.Id, default)).CanPrepareSamples);

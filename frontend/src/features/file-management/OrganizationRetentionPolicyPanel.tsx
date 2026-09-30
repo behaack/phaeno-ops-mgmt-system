@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Pencil, RotateCcw } from 'lucide-react'
+import { ChevronDown, Pencil, Plus, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
 import { useForm, type FieldError, type UseFormRegisterReturn } from 'react-hook-form'
 import { z } from 'zod'
@@ -17,6 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
@@ -164,10 +165,19 @@ export function OrganizationRetentionPolicyPanel({
           <h2 className="font-medium">Released-deliverable retention</h2>
           <p className="mt-1 text-sm text-muted-foreground">The effective values below apply only to future packages released for {organizationName}.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {configuration.override ? <Button type="button" size="sm" variant="outline" onClick={openRemoval}><RotateCcw data-icon="inline-start" />Remove override</Button> : null}
-          <Button type="button" size="sm" onClick={() => openEditor(configuration)}><Pencil data-icon="inline-start" />{configuration.override ? 'Edit override' : 'Add override'}</Button>
-        </div>
+        {configuration.override ? (
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" size="sm" variant="outline">Actions<ChevronDown aria-hidden="true" /></Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]">
+              <DropdownMenuItem onSelect={() => openEditor(configuration)}><Pencil aria-hidden="true" />Edit override</DropdownMenuItem>
+              <DropdownMenuItem onSelect={openRemoval}><RotateCcw aria-hidden="true" />Remove override</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Button type="button" size="sm" onClick={() => openEditor(configuration)}><Plus data-icon="inline-start" />Add override</Button>
+        )}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">

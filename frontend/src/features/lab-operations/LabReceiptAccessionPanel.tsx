@@ -16,24 +16,30 @@ import { Label } from '#/components/ui/label'
 import { LabShipmentReceiptPanel } from './LabShipmentReceiptPanel'
 import { LabShipmentQueue } from './LabShipmentQueue'
 import { ContainerAccessionDialog } from './ContainerAccessionDialog'
+import { KitRequestsPanel } from '#/features/orders/kit-requests/KitRequestsPanel'
+import { ReturnKitFulfillmentPanel } from '#/features/orders/ReturnKitFulfillmentPanel'
 
 export function LabReceiptAccessionPanel({
   apiEnabled,
   tab,
   onTabChange,
   canReceiveShipments = false,
+  shipmentId,
 }: {
   apiEnabled: boolean
   tab?: LabReceiptTab
   onTabChange?: (tab: LabReceiptTab) => void
-  canManageKitSupply?: boolean
   canReceiveShipments?: boolean
   shipmentId?: string
   workOrders: LabWorkOrderSummary[]
 }) {
   const [localTab, setLocalTab] = useState<LabReceiptTab>()
   const selectedTab = resolveLabReceiptTab(onTabChange ? tab : localTab ?? tab)
-  const visibleTabs = [{ value: 'receiving', label: 'Receive shipments' }, { value: 'accession', label: 'Accession samples' }] as const
+  const visibleTabs = [
+    { value: 'kit-requests', label: 'Kit requests' },
+    { value: 'receiving', label: 'Receive shipments' },
+    { value: 'accession', label: 'Accession samples' },
+  ] as const
   const packetBarcodeInput = useRef<HTMLInputElement>(null)
   const [packetBarcode, setPacketBarcode] = useState('')
   const [containerOpen, setContainerOpen] = useState(false)
@@ -61,7 +67,7 @@ export function LabReceiptAccessionPanel({
     <div className="space-y-5">
       <div className="space-y-1">
         <h2 className="text-lg font-semibold">Receipt and accession</h2>
-        <p className="text-sm text-muted-foreground">Receive incoming shipments and accession their physical tubes.</p>
+        <p className="text-sm text-muted-foreground">Fulfill kit requests, receive incoming shipments, and accession their physical tubes.</p>
       </div>
       <Tabs value={selectedTab} onValueChange={value => changeTab(value as LabReceiptTab)} className="gap-4">
         <div className="min-w-0 overflow-x-auto pb-1">
@@ -69,6 +75,7 @@ export function LabReceiptAccessionPanel({
             {visibleTabs.map(item => <TabsTrigger key={item.value} value={item.value}>{item.label}</TabsTrigger>)}
           </TabsList>
         </div>
+        <TabsContent value="kit-requests" className="space-y-5"><KitRequestsPanel apiEnabled={apiEnabled} /><ReturnKitFulfillmentPanel apiEnabled={apiEnabled} shipmentId={shipmentId} showEmpty /></TabsContent>
         <TabsContent value="receiving"><LabShipmentReceiptPanel apiEnabled={apiEnabled} canReceive={canReceiveShipments} onAccession={openAccession} /></TabsContent>
         <TabsContent value="accession" className="space-y-5">
       <LabShipmentQueue apiEnabled={apiEnabled} received onOpen={barcode => packetScan.mutate(barcode)} />

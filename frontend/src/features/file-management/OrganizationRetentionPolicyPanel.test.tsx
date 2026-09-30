@@ -37,7 +37,7 @@ describe('OrganizationRetentionPolicyPanel', () => {
     expect(screen.getAllByText('Global')).toHaveLength(2)
     expect(screen.getByText('Active override revision 1. Blank override fields inherit the current global value.')).toBeTruthy()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit override' }))
+    await openOverrideAction('Edit override')
     fireEvent.change(screen.getByLabelText(/Change reason/), {
       target: { value: 'Keep the customer retention exception current.' },
     })
@@ -60,7 +60,7 @@ describe('OrganizationRetentionPolicyPanel', () => {
     renderPanel()
 
     await screen.findByRole('heading', { name: 'Released-deliverable retention' })
-    fireEvent.click(screen.getByRole('button', { name: 'Remove override' }))
+    await openOverrideAction('Remove override')
     const removeButton = screen.getByRole('button', { name: 'Remove override' })
     fireEvent.click(removeButton)
 
@@ -83,8 +83,8 @@ describe('OrganizationRetentionPolicyPanel', () => {
 
   it('retains the reviewed inheritance and versions after a background policy refresh', async () => {
     const { client } = renderPanel()
-    await screen.findByRole('button', { name: 'Edit override' })
-    fireEvent.click(screen.getByRole('button', { name: 'Edit override' }))
+    await screen.findByRole('button', { name: 'Actions' })
+    await openOverrideAction('Edit override')
     fireEvent.change(screen.getByLabelText(/Change reason/), { target: { value: 'Reviewed exception.' } })
     act(() => client.setQueryData(['organization-released-deliverable-policy', configuration.organizationId], {
       ...configuration,
@@ -98,8 +98,8 @@ describe('OrganizationRetentionPolicyPanel', () => {
 
   it('removes only the override revision reviewed when the confirmation opened', async () => {
     const { client } = renderPanel()
-    await screen.findByRole('button', { name: 'Remove override' })
-    fireEvent.click(screen.getByRole('button', { name: 'Remove override' }))
+    await screen.findByRole('button', { name: 'Actions' })
+    await openOverrideAction('Remove override')
     fireEvent.change(screen.getByLabelText(/Change reason/), { target: { value: 'Return to global.' } })
     act(() => client.setQueryData(['organization-released-deliverable-policy', configuration.organizationId], { ...configuration, override: { ...configuration.override!, version: 2 } }))
     fireEvent.click(screen.getByRole('button', { name: 'Remove override' }))
@@ -108,8 +108,8 @@ describe('OrganizationRetentionPolicyPanel', () => {
 
   it('focuses an invalid effective warning before starting a save', async () => {
     renderPanel()
-    await screen.findByRole('button', { name: 'Edit override' })
-    fireEvent.click(screen.getByRole('button', { name: 'Edit override' }))
+    await screen.findByRole('button', { name: 'Actions' })
+    await openOverrideAction('Edit override')
     fireEvent.change(screen.getByLabelText(/Undownloaded warning lead/), { target: { value: '50' } })
     fireEvent.change(screen.getByLabelText(/Change reason/), { target: { value: 'Review warning window.' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
@@ -118,6 +118,11 @@ describe('OrganizationRetentionPolicyPanel', () => {
     expect(document.activeElement).toBe(screen.getByLabelText(/Undownloaded warning lead/))
   })
 })
+
+async function openOverrideAction(name: 'Edit override' | 'Remove override') {
+  fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions' }), { button: 0, ctrlKey: false })
+  fireEvent.click(await screen.findByRole('menuitem', { name }))
+}
 
 function renderPanel() {
   const client = new QueryClient({

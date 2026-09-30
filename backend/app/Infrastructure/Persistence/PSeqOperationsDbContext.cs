@@ -159,6 +159,8 @@ public sealed partial class PSeqOperationsDbContext(
     public DbSet<LabSampleImportPreview> LabSampleImportPreviews { get; set; }
     public DbSet<LabServiceRequestRevision> LabServiceRequestRevisions { get; set; }
     public DbSet<LabSample> LabSamples { get; set; }
+    public DbSet<LabSampleTubePair> LabSampleTubePairs { get; set; }
+    public DbSet<LabSampleTubeKitSelection> LabSampleTubeKitSelections { get; set; }
     public DbSet<LabServiceQuote> LabServiceQuotes { get; set; }
     public DbSet<LabServiceQuoteExtensionRequest> LabServiceQuoteExtensionRequests { get; set; }
     public DbSet<LabResultRelease> LabResultReleases { get; set; }

@@ -148,7 +148,12 @@ public sealed class SampleShippingPacketService(PSeqOperationsDbContext dbContex
         foreach (var shipmentItem in shipment.Items)
         {
             var sampleType = sampleTypesById[shipmentItem.SampleTypeDefinitionId];
-            if (!string.Equals(shipmentItem.QuantityUnit, sampleType.QuantityUnit, StringComparison.OrdinalIgnoreCase)
+            var unitMatches = string.Equals(shipmentItem.QuantityUnit, sampleType.QuantityUnit,
+                StringComparison.OrdinalIgnoreCase)
+                || (shipment.AuthorizationSource == SampleShipmentAuthorizationSource.CustomerLabServiceOrder
+                    && string.Equals(shipmentItem.QuantityUnit, "tube", StringComparison.OrdinalIgnoreCase)
+                    && SampleSubmissionUnits.IsTubeCount(sampleType.QuantityUnit));
+            if (!unitMatches
                 || (sampleType.MinimumQuantity.HasValue && shipmentItem.Quantity < sampleType.MinimumQuantity.Value)
                 || (sampleType.MaximumQuantity.HasValue && shipmentItem.Quantity > sampleType.MaximumQuantity.Value))
                 throw new OrderManagementException(

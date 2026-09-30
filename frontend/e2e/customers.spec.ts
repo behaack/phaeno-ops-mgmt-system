@@ -236,7 +236,8 @@ test("opens the canonical Company workspace with its access scope", async ({
 
   await page.getByRole("tab", { name: "Entitlements", exact: true }).click();
   await expect(page.getByText("PSeq Lab Service", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "End now" }).click();
+  await page.getByRole("button", { name: "Actions for PSeq Lab Service" }).click();
+  await page.getByRole("menuitem", { name: "End now" }).click();
   const endDialog = page.getByRole("dialog", {
     name: "End service entitlement",
   });

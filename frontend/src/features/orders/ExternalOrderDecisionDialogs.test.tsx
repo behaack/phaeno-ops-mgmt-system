@@ -8,6 +8,10 @@ import { LabServiceDetailPage } from './LabServiceDetailPage'
 import { ReagentOrderDetailPage } from './ReagentOrderDetailPage'
 
 const mocks = vi.hoisted(() => ({ read: vi.fn(), save: vi.fn(), blocker: vi.fn() }))
+const kitLocationId = '10000000-0000-4000-8000-000000000011'
+vi.mock('#/api/customer-delivery-locations', () => ({
+  getCustomerDeliveryLocations: async () => [{ id: '10000000-0000-4000-8000-000000000011', label: 'Training receiving', recipient: 'Training lab', line1: '1 Test Way', line2: null, city: 'Baltimore', region: 'MD', postalCode: '21201', countryCode: 'US', isActive: true, isDefault: true, version: 1 }],
+}))
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children }: { children: ReactNode }) => <a href="#orders">{children}</a>,
   useNavigate: () => vi.fn(), useBlocker: mocks.blocker,
@@ -15,7 +19,7 @@ vi.mock('@tanstack/react-router', () => ({
 vi.mock('#/features/auth/session-context', () => ({
   usePhaenoSession: () => ({ authProvider: 'clerk', session: {
     capabilities: { canViewLabServiceOrders: true, canViewDataAssemblyRequests: true, canViewReagentOrders: true },
-    selectedDepartment: { purchaseOrderRequired: true },
+    selectedDepartment: { departmentId: 'department-1', purchaseOrderRequired: true },
   } }),
 }))
 vi.mock('#/api/order-management', async importOriginal => ({
@@ -40,20 +44,21 @@ vi.mock('./GovernedResultPackagePanel', () => ({ GovernedResultPackagePanel: () 
 vi.mock('./ReleasedDeliverableRetentionNotice', () => ({ ReleasedDeliverableRetentionNotice: () => null }))
 
 const record = {
-  id: 'order-1', version: 3, orderNumber: 'ORDER-1', requestNumber: 'ASSEMBLY-1', projectReference: 'Assembly project',
+  id: 'order-1', organizationId: 'customer-1', version: 3, orderNumber: 'ORDER-1', requestNumber: 'ASSEMBLY-1', projectReference: 'Assembly project',
   status: 'Quoted', updatedAt: '2026-09-07T12:00:00Z', metadataJson: '{}', shippingAddressSnapshotJson: null,
   canAcceptQuote: true, canRequestCancellation: true, canWithdraw: true,
+  sampleTypeDefinitionId: '10000000-0000-4000-8000-000000000012', sampleTypeName: 'Training RNA',
   requestedSpecimenCount: 7, sourceGroups: [{ id: 'source-1', biologicalSource: 'Human PBMCs', specimenCount: 7, version: 1 }],
   samples: [], resultFiles: [], resultReleases: [], inputRevisions: [], inputFiles: [], outputReleases: [],
   lines: [], timeline: [], documents: [], adjustments: [], shipments: [],
-  quotes: [{ id: 'quote-1', revision: 1, status: 'Issued', expiresAt: '2026-10-07T12:00:00Z',
+  quotes: [{ id: 'quote-1', revision: 1, status: 'Issued', expiresAt: '2026-10-07T12:00:00Z', deliveryTargetBusinessDays: 14,
     linesJson: '[]', currency: 'USD', subtotal: 50, tax: 0, total: 50 }],
 }
 const cases = [
   { name: 'Customer Lab services', page: <LabServiceDetailPage orderId={record.id} />, field: /Reason/, open: 'Request cancellation', keep: 'Keep order', save: 'Request cancellation' },
   { name: 'Partner Data assembly', page: <DataAssemblyDetailPage requestId={record.id} />, field: /Reason/, open: 'Request cancellation', keep: 'Keep request', save: 'Request cancellation' },
   { name: 'Partner Reagent orders', page: <ReagentOrderDetailPage orderId={record.id} />, field: /Reason/, open: 'Request cancellation', keep: 'Keep order', save: 'Request cancellation' },
-  { name: 'Customer quote acceptance', page: <LabServiceDetailPage orderId={record.id} />, field: /Purchase order number/, open: 'Accept quote', keep: 'Keep reviewing', save: 'Accept quote and place order' },
+  { name: 'Customer quote acceptance', page: <LabServiceDetailPage orderId={record.id} />, field: /Purchase order number/, open: 'Accept quote', keep: 'Keep reviewing', save: 'Confirm price and order' },
   { name: 'Partner quote acceptance', page: <DataAssemblyDetailPage requestId={record.id} />, field: /Purchase order number/, open: 'Accept quote', keep: 'Keep reviewing', save: 'Accept quote and queue work' },
 ]
 
@@ -70,7 +75,7 @@ function decisionBlocker() {
   return mocks.blocker.mock.calls.filter(([options]) => typeof options.enableBeforeUnload === 'function').at(-1)![0]
 }
 
-describe.each(cases)('$name decision dialog', ({ page, field, open, keep, save }) => {
+describe.each(cases)('$name decision dialog', ({ name, page, field, open, keep, save }) => {
   beforeEach(() => { vi.clearAllMocks(); mocks.read.mockResolvedValue(record); mocks.save.mockReset() })
   afterEach(() => { vi.restoreAllMocks() })
 
@@ -104,9 +109,23 @@ describe.each(cases)('$name decision dialog', ({ page, field, open, keep, save }
   it('blocks repeat submission, editing and dismissal while pending, retains a failed draft, and closes after a successful retry', async () => {
     let rejectSave!: (error: Error) => void
     mocks.save.mockImplementationOnce(() => new Promise((_resolve, reject) => { rejectSave = reject }))
-    const dialog = await openDialog()
-    const input = within(dialog).getByLabelText(field)
+    let dialog = await openDialog()
+    let input = within(dialog).getByLabelText(field)
     fireEvent.change(input, { target: { value: 'Reviewed entry' } })
+    if (name === 'Customer quote acceptance') {
+      await within(dialog).findByRole('option', { name: /Training receiving/ })
+      dialog = screen.getByRole('dialog')
+      input = within(dialog).getByLabelText(field)
+      fireEvent.change(input, { target: { value: 'Reviewed entry' } })
+      expect(input).toHaveProperty('value', 'Reviewed entry')
+      const address = within(dialog).getByRole('combobox', { name: /Ship Transportation kits to/ })
+      fireEvent.change(address, { target: { value: kitLocationId } })
+      await within(dialog).findByText(/Training lab · 1 Test Way/)
+      const sampleTypeConfirmation = within(dialog).getByRole('checkbox', { name: /I confirm this is the Sample type/ })
+      fireEvent.click(sampleTypeConfirmation.closest('label') as HTMLLabelElement)
+      expect(sampleTypeConfirmation).toHaveProperty('checked', true)
+    }
+    await waitFor(() => expect(within(dialog).getByRole('button', { name: save }).matches(':disabled')).toBe(false))
     fireEvent.click(within(dialog).getByRole('button', { name: save }))
     await waitFor(() => expect(mocks.save).toHaveBeenCalledOnce())
     expect(input.matches(':disabled')).toBe(true)

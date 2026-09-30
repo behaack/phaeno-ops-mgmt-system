@@ -103,15 +103,19 @@ describe('LabReceiptAccessionPanel navigation', () => {
     expect(screen.getAllByRole('tabpanel')).toHaveLength(1)
   })
 
-  it('hides configuration-only queues and supports keyboard tab selection', async () => {
+  it('combines kit requests and sent kits in one tab and supports keyboard tab selection', async () => {
     render(<QueryClientProvider client={new QueryClient()}><LabReceiptAccessionPanel apiEnabled tab="accession" workOrders={[]} /></QueryClientProvider>)
-    expect(screen.queryByRole('tab', { name: 'Kit requests' })).toBeNull()
+    expect(screen.getByRole('tab', { name: 'Kit requests' })).toBeTruthy()
     expect(screen.queryByRole('tab', { name: 'Prepare kits' })).toBeNull()
+    expect(screen.queryByRole('tab', { name: 'Kits sent' })).toBeNull()
     const accession = screen.getByRole('tab', { name: 'Accession samples' })
     act(() => accession.focus())
     fireEvent.keyDown(accession, { key: 'ArrowLeft' })
     await waitFor(() => expect(screen.getByRole('tab', { name: 'Receive shipments' }).getAttribute('aria-selected')).toBe('true'))
     expect(screen.queryByLabelText('Shipping insert barcode')).toBeNull()
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Kit requests' }), { button: 0, ctrlKey: false })
+    expect(screen.getByText('Kit-request queue')).toBeTruthy()
+    expect(screen.getByText('Return-kit queue')).toBeTruthy()
   })
 
   it('opens shipment-specific receipt in Receive shipments', () => {

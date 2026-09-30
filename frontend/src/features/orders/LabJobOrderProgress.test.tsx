@@ -25,7 +25,7 @@ beforeEach(() => {
 
 function show() {
   const select = vi.fn()
-  render(<LabJobOrderProgress order={bundleLabDraft} shipments={[]} shippingState="ready" canManageShipping canAcceptOrder onStepSelect={select} />)
+  render(<LabJobOrderProgress order={{ ...bundleLabDraft, placedAt: '2026-09-10T00:00:00Z', usesPairedPreparation: false }} shipments={[]} shippingState="ready" canManageShipping canAcceptOrder onStepSelect={select} />)
   return select
 }
 
@@ -54,7 +54,7 @@ describe('Lab Job step information', () => {
     show()
     const strip = screen.getByRole('list', { name: 'Ordering and shipping steps' })
     expect(within(strip).getAllByRole('listitem')).toHaveLength(6)
-    expect(within(strip).getByText('Sample identification')).toBeTruthy()
+    expect(within(strip).getByText('Identify and finalize samples')).toBeTruthy()
     expect(within(strip).getAllByRole('button')).toHaveLength(6)
     expect(strip.className).toContain('repeat(6,')
     expect(within(strip).queryByRole('link')).toBeNull()

@@ -78,6 +78,12 @@ public sealed class PlatformTransportationKitRequestsController(PSeqOperationsDb
         await context.RequirePlatformAdminAsync(HttpContext, ct);
         return await service.DetailAsync(await service.LoadAsync(id, null, null, ct), ct);
     }
+    [HttpPost("{id:guid}/resolve-kit")]
+    public async Task<AvailableTransportationStockKitDto> ResolveKit(Guid id, [FromBody] ResolveTransportationKitBarcodeRequest body, CancellationToken ct)
+    {
+        await context.RequirePlatformAdminAsync(HttpContext, ct);
+        return await service.ResolveKitAsync(await service.LoadAsync(id, null, null, ct), body.Barcode, ct);
+    }
     [HttpPost("{id:guid}/dispatch")]
     public async Task<TransportationKitRequestDetailDto> Dispatch(Guid id, [FromBody] DispatchTransportationKitsRequest body, CancellationToken ct)
     {

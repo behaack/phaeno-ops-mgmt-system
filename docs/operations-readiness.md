@@ -1,6 +1,10 @@
 # Operations and production-readiness boundary
 
-## Deployment hold — September 28, 2026
+## Controlled hosted rebuild — September 29, 2026
+
+The owner explicitly authorized API/Portal UI deployment and a fresh hosted test database, retaining Chris Yourch, William Agnew, Bill Haack and the three built-in product types, with all other application data excluded. The [hosted rebuild plan](plans/HOSTED-CLEAN-DATABASE-20260929-PLAN.md) supplies the preservation/access list, exact target, fresh candidate verification, restore-verified encrypted recovery, cutover and rollback. This authorizes one controlled manual release after its preparation gates; it supersedes the earlier undecided preservation scope and manual release hold for this exercise. The [completed release record](operations/hosted-clean-reset-release-20260929.md) confirms matching API/UI source `04e2b9a785c0b29453f067dd031b627548260693`, a 14-second API pause, three preserved accounts, three built-in types, exact data/access checks, healthy public endpoints and off-server restore-verified recovery. The original database remains retained with connections disabled. GitHub deployment and Vercel automatic Git controls remain held; fresh person sign-in and authenticated/physical workflow acceptance are separate.
+
+## Previous deployment hold — September 28, 2026
 
 The owner blocked deployment until a separate deployment plan addresses the new production-hosted test database. The current source uses `20260928192920_InitialCleanPortal`, which requires an empty database and cannot upgrade the existing populated hosted database. The [local clean-database record](plans/LOCAL-CLEAN-DATABASE-20260928-PLAN.md) documents local execution only and does not satisfy this deployment gate.
 

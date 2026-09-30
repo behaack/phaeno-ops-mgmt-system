@@ -20,6 +20,8 @@ const stepAppearance = {
   kits: { icon: Package, label: 'Container supply', purpose: 'Have compatible kits physically received and registered for use. Use available permitted stock or arrange any missing supplies.' },
   containers: { icon: Boxes, label: 'Assign containers', purpose: 'Review the physical container identities, compatible sizes and tube allocations, then confirm which containers will hold the samples.' },
   tubes: { icon: ScanBarcode, label: 'Match samples to tubes', purpose: 'Scan each permanent tube barcode to save which physical tube belongs to each sample. Matching tubes is separate from the laboratory recording their receipt.' },
+  'receive-kits': { icon: Package, label: 'Receive transportation kits', purpose: 'Phaeno chooses and dispatches compatible transportation kits. Track each kit and confirm only physical receipt.' },
+  prepare: { icon: ScanBarcode, label: 'Prepare sample shipment', purpose: 'Enter one Sample ID and one tube barcode together. The physical tube must belong to the selected received kit.' },
   send: { icon: Truck, label: 'Send samples', purpose: 'Review and confirm the current shipping insert, print it and pack it with the matching container. Hand the package to the carrier, then record the carrier, tracking number and shipment time.' },
 } satisfies Record<LabJobProgressStepId, { icon: typeof ClipboardCheck; label: string; purpose: string }>
 
@@ -33,7 +35,7 @@ export function LabJobOrderProgress({ onStepSelect, sendActionTargetRef, sampleR
   const { nextStep, allSent, exception, shipmentCount } = progress
   const currentStepId = nextStep?.id
   const currentStepIndex = progress.steps.findIndex(step => step.id === currentStepId)
-  const reviewLabel = nextStep?.actionLabel ?? (currentStepId === 'confirm-order' ? nextStep?.state === 'waiting-for-phaeno' ? 'View request' : 'Review pricing' : currentStepId === 'samples' ? 'Review samples' : 'Show shipping work')
+  const reviewLabel = nextStep?.actionLabel ?? (currentStepId === 'confirm-order' ? nextStep?.state === 'waiting-for-phaeno' ? 'View request' : 'Review pricing' : currentStepId === 'samples' ? 'Review samples' : currentStepId === 'receive-kits' ? 'View kit order' : currentStepId === 'prepare' ? 'Prepare samples' : 'Show shipping work')
   useEffect(() => {
     const strip = stepsRef.current
     const current = strip?.querySelector<HTMLElement>('[aria-current="step"]')
@@ -49,7 +51,7 @@ export function LabJobOrderProgress({ onStepSelect, sendActionTargetRef, sampleR
       <h2 id={headingId} className="text-lg font-semibold">Ordering and shipping</h2>
       <p className="text-sm text-muted-foreground">Complete these steps to prepare and send your samples.</p>
     </div>
-    <ol ref={stepsRef} aria-label="Ordering and shipping steps" className="relative grid grid-cols-[repeat(6,minmax(6.5rem,1fr))] gap-2 overflow-x-auto px-1 py-1">
+    <ol ref={stepsRef} aria-label="Ordering and shipping steps" className={cn('relative grid gap-2 overflow-x-auto px-1 py-1', !input.order.placedAt || input.order.usesPairedPreparation ? 'grid-cols-[repeat(4,minmax(7rem,1fr))]' : 'grid-cols-[repeat(6,minmax(6.5rem,1fr))]')}>
       {progress.steps.map((step, index) => {
         const current = currentStepId === step.id
         return <li key={step.id} aria-current={current ? 'step' : undefined} className="min-w-0">
@@ -98,21 +100,22 @@ function StepInformation({ step, current, future, index, open, onOpenChange: set
 
   return <Popover.Root open={open} onOpenChange={setOpen}>
     <Popover.Anchor asChild>
-      <button ref={triggerRef} type="button" aria-label={`Information about step ${index + 1}: ${step.label}. ${labJobProgressStateLabels[step.state]}`} aria-haspopup="dialog" aria-expanded={open} aria-controls={open ? contentId : undefined} aria-describedby={open ? descriptionId : undefined}
+      <button ref={triggerRef} type="button" aria-label={`Information about step ${index + 1}: ${step.label}. ${step.statusLabel ? `${step.statusLabel}. ` : ''}${labJobProgressStateLabels[step.state]}`} aria-haspopup="dialog" aria-expanded={open} aria-controls={open ? contentId : undefined} aria-describedby={open ? descriptionId : undefined}
         className={cn('flex h-full w-full cursor-help flex-col items-center gap-2 rounded-lg border px-2 py-3 text-center hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none', current ? 'border-primary bg-accent/60' : 'border-transparent', future ? 'text-muted-foreground' : 'text-foreground')}
         onPointerEnter={event => { if (event.pointerType !== 'touch') show() }} onPointerLeave={event => { if (event.pointerType !== 'touch') leave() }} onFocus={show} onBlur={event => { if (!contentRef.current?.contains(event.relatedTarget)) setOpen(false) }} onClick={show}>
         <span aria-hidden="true" className={cn('relative flex size-9 shrink-0 items-center justify-center rounded-full border', future ? 'border-border text-muted-foreground' : step.state === 'complete' ? 'border-border text-[var(--status-ready)]' : current ? 'border-primary bg-primary text-primary-foreground' : 'border-border text-muted-foreground')}>
           <Icon className="size-4" />
           {step.state === 'complete' ? <CircleCheck className="absolute -right-1 -bottom-0.5 size-4 rounded-full bg-background" /> : null}
         </span>
-        <span className="text-sm font-medium">{step.id === 'confirm-order' && step.state === 'waiting-for-phaeno' ? 'Pricing review' : appearance.label}</span>
+        <span className="text-sm font-medium">{step.id === 'confirm-order' && step.state === 'waiting-for-phaeno' ? 'Pricing review' : step.label}</span>
+        {step.statusLabel ? <span className="text-xs font-medium text-muted-foreground">{step.statusLabel}</span> : null}
       </button>
     </Popover.Anchor>
     <Popover.Portal>
       <Popover.Content ref={contentRef} id={contentId} aria-labelledby={titleId} aria-describedby={descriptionId} side="bottom" sideOffset={8} collisionPadding={16}
         className="z-50 w-80 max-w-[calc(100vw-2rem)] space-y-3 rounded-lg border bg-popover p-4 text-sm text-popover-foreground shadow-md"
         onOpenAutoFocus={event => event.preventDefault()} onCloseAutoFocus={event => event.preventDefault()} onPointerEnter={cancelClose} onPointerLeave={leave}>
-        <div className="space-y-1"><p id={titleId} className="font-semibold">{step.label}</p><p className="text-xs text-muted-foreground">{labJobProgressStateLabels[step.state]}</p></div>
+        <div className="space-y-1"><p id={titleId} className="font-semibold">{step.label}</p>{step.statusLabel ? <p className="text-xs font-medium">{step.statusLabel}</p> : null}<p className="text-xs text-muted-foreground">{labJobProgressStateLabels[step.state]}</p></div>
         <div id={descriptionId} className="space-y-3"><p>{appearance.purpose}</p><p>{step.detail}</p>{step.state !== 'complete' ? <p className="text-xs text-muted-foreground">With: {step.owner}</p> : null}</div>
       </Popover.Content>
     </Popover.Portal>

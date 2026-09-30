@@ -93,8 +93,14 @@ public sealed class PlatformLabServiceOrdersController(
             throw Conflict("customer_department_not_available", "Select an active Customer department to check readiness.");
         var readiness = (await new OperationalReadinessService(dbContext)
             .EvaluateAsync(organizationId, cancellationToken, departmentId)).Evaluation;
-        var stageCodes = readiness.StageBlockers.Select(item => item.Code).ToHashSet();
-        return new CustomerOrderReadinessDto(readiness.CanStageOrder, readiness.StageBlockers,
+        var stageBlockers = readiness.StageBlockers.ToList();
+        if (!await CustomerDepartmentUserAccess.HasActiveAsync(dbContext, organizationId, departmentId, cancellationToken))
+            stageBlockers.Add(new(
+                PSeq.Operations.Commercial.Relationships.Application.OperationalReadinessBlockerCode.ActiveCustomerDepartmentUserRequired,
+                "No active Customer user in this Department",
+                "Assign an active Customer user to this Department, or select a Department they can access."));
+        var stageCodes = stageBlockers.Select(item => item.Code).ToHashSet();
+        return new CustomerOrderReadinessDto(stageBlockers.Count == 0, stageBlockers,
             readiness.QuoteBlockers.Where(item => !stageCodes.Contains(item.Code)).ToList(), readiness.InvoiceBlockers);
     }
 
@@ -268,6 +274,11 @@ public sealed class PlatformLabServiceOrdersController(
                     customer.Id,
                     request.DepartmentId,
                     operationCancellationToken);
+
+                if (!await CustomerDepartmentUserAccess.HasActiveAsync(
+                    dbContext, customer.Id, department.Id, operationCancellationToken))
+                    throw Conflict("customer_department_has_no_active_user",
+                        "Assign an active Customer user to this Department, or select a Department they can access, before starting pricing.");
 
                 await LabServiceOrderingEligibility.RequireAsync(
                     dbContext,
@@ -485,6 +496,11 @@ public sealed class PlatformLabServiceOrdersController(
         if (!Enum.TryParse<QuotePurpose>(request.Purpose, true, out var purpose) || !Enum.IsDefined(purpose))
             throw Invalid("quote_purpose_invalid", "The quote purpose is invalid.");
         var isChange = purpose == QuotePurpose.Change;
+        if (!isChange && request.DeliveryTargetBusinessDays is not (>= 1 and <= 365))
+            throw Invalid("delivery_target_required", "Set a delivery target of 1 to 365 business days before issuing the quote.");
+        if (!isChange && !await LabDeliveryCalendarReadiness.HasCoverageAsync(dbContext,
+                request.DeliveryTargetBusinessDays!.Value, cancellationToken))
+            throw Conflict("delivery_calendar_required", "Configure Phaeno's observed-holiday calendar to cover the delivery target before issuing this quote.");
         LabChangeScope? changeScope = null;
         if (isChange)
         {
@@ -560,6 +576,7 @@ public sealed class PlatformLabServiceOrdersController(
         var computedTax = canCalculateTax ? CalculateTax(subtotal, commercial!) : nativeReceivables ? 0 : request.Tax;
         var quote = new LabServiceQuote(order.Id, revision, purpose, JsonSerializer.Serialize(snapshots, JsonOptions), subtotal,
             computedTax, nativeReceivables ? "USD" : request.Currency, now, expiresAt);
+        if (!isChange) quote.SetDeliveryTarget(request.DeliveryTargetBusinessDays!.Value);
         if (changeScope is not null) quote.FreezeChangeScope(JsonSerializer.Serialize(changeScope, JsonOptions));
         if (canCalculateTax)
         {
@@ -1272,6 +1289,9 @@ public sealed class PlatformLabServiceOrdersController(
     {
         var query = dbContext.OrganizationDepartments.AsNoTracking().Include(value => value.Organization)
             .Where(value => value.OrganizationId == organizationId && value.IsActive);
+        if (!departmentId.HasValue && await query.CountAsync(cancellationToken) > 1)
+            throw Conflict("customer_department_selection_required",
+                "Select the Department that owns this Job before starting pricing.");
         var department = departmentId.HasValue
             ? await query.SingleOrDefaultAsync(value => value.Id == departmentId.Value, cancellationToken)
             : await query.SingleOrDefaultAsync(value => value.IsDefault, cancellationToken);

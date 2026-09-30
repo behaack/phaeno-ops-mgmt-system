@@ -91,6 +91,7 @@ export type LabServiceCommercialSnapshot = {
   minimumTurnaroundDays: number
   maximumTurnaroundDays: number
   committedAtUtc: string
+  deliveryTargetBusinessDays?: number | null
 }
 export type StandardLabOrderPreview = {
   sequencingRunCount?: number;
@@ -240,6 +241,9 @@ export async function placeStandardLabOrder(
     organizationVersion: number
     prohibitedDataConfirmed: boolean
     purchaseOrderNumber?: string
+    confirmedSampleTypeId: string
+    kitDeliveryLocationId: string
+    kitDeliveryLocationVersion: number
   },
   key: string,
 ) {

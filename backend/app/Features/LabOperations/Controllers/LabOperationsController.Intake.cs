@@ -77,8 +77,6 @@ public sealed partial class LabOperationsController
         var tubes = await dbContext.LabContainers.Where(item => item.LabWorkOrderId == work.Id
             && item.LabSpecimenId == specimen.Id && item.Kind == LabContainerKind.SubmittedSpecimen).ToListAsync(cancellationToken);
         if (tubes.All(item => item.Id != reviewed.Id)) tubes.Add(reviewed);
-        if (tubes.Any(item => item.IntakeDisposition == LabSpecimenIntakeDisposition.Accepted))
-            Execute(work.RequireAcceptanceDeadline);
         var before = specimen.IntakeDisposition;
         Execute(() => specimen.RefreshIntakeFromTubes(tubes, DateTime.UtcNow));
         // Also serialize against execution start, not just other intake requests.

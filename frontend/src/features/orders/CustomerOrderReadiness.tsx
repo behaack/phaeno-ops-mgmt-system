@@ -1,18 +1,29 @@
 import { Link } from '@tanstack/react-router'
 import type { CustomerOrderReadiness as Readiness, OrderReadinessBlocker } from '#/api/order-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
+import { Button } from '#/components/ui/button'
 
-export function CustomerOrderReadiness({ readiness }: { readiness: Readiness }) {
+export function CustomerOrderReadiness({ readiness, onRefresh, refreshing = false }: {
+  readiness: Readiness
+  onRefresh?: () => void
+  refreshing?: boolean
+}) {
   const hasLaterRequirements = readiness.quoteBlockers.length > 0 || readiness.invoiceBlockers.length > 0
+  const status = <>
+    <AlertTitle>{readiness.canStartPricing ? 'Ready to start pricing' : 'Before starting pricing'}</AlertTitle>
+    <AlertDescription className={onRefresh && !readiness.canStartPricing ? 'text-destructive/90' : undefined}>
+      {readiness.canStartPricing
+        ? <>You can create this order for pricing.{hasLaterRequirements ? ' Quote and invoice requirements below can be completed later.' : ''}</>
+        : <Blockers items={readiness.startPricingBlockers} />}
+    </AlertDescription>
+  </>
 
   return <section aria-label="Customer readiness" className="mt-4 space-y-3">
     <Alert variant={readiness.canStartPricing ? 'default' : 'destructive'}>
-      <AlertTitle>{readiness.canStartPricing ? 'Ready to start pricing' : 'Before starting pricing'}</AlertTitle>
-      <AlertDescription>
-        {readiness.canStartPricing
-          ? <>You can create this order for pricing.{hasLaterRequirements ? ' Quote and invoice requirements below can be completed later.' : ''}</>
-          : <Blockers items={readiness.startPricingBlockers} />}
-      </AlertDescription>
+      {onRefresh ? <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-0 flex-1 basis-40">{status}</div>
+        <Button className="ml-auto shrink-0" type="button" size="sm" variant="outline" disabled={refreshing} onClick={onRefresh}>Refresh readiness</Button>
+      </div> : status}
     </Alert>
     {readiness.startPricingBlockers.length + readiness.quoteBlockers.length + readiness.invoiceBlockers.length > 0 ? <p className="text-xs text-muted-foreground">Setup links open in a new tab, keeping these order details here. A platform administrator may need to complete setup.</p> : null}
     {hasLaterRequirements ? <details className="rounded-lg border p-3">
