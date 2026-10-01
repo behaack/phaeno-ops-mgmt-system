@@ -1,8 +1,6 @@
 {
   "git": {
-    "deploymentEnabled": {
-      "codex/portal-documentation-search-release": false
-    }
+    "deploymentEnabled": false
   },
   "redirects": [
     {

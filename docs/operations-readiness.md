@@ -1,5 +1,11 @@
 # Operations and production-readiness boundary
 
+## Automatic deployment hold — October 1, 2026
+
+The owner authorized turning automatic deployment off while publishing the pending changes without deployment. Both `frontend/vercel.json` and `website/vercel.json` now set `git.deploymentEnabled` to `false`, disabling automatic Git deployments for every branch carrying this configuration. This replaces the previous branch-specific hold. See [Vercel's Git configuration](https://vercel.com/docs/project-configuration/git-configuration#turning-off-all-automatic-deployments).
+
+The live GitHub check found **Deploy Portal Green** (ID `315525604`) enabled despite the earlier recorded hold. It accepts manual dispatch only. The workflow was disabled again and read back as `disabled_manually`, with no active run. No application deployment, promotion or database migration was performed. Keep the GitHub workflow disabled and retain both Vercel controls until a separately authorized release.
+
 ## Controlled hosted rebuild — September 29, 2026
 
 The owner explicitly authorized API/Portal UI deployment and a fresh hosted test database, retaining Chris Yourch, William Agnew, Bill Haack and the three built-in product types, with all other application data excluded. The [hosted rebuild plan](plans/HOSTED-CLEAN-DATABASE-20260929-PLAN.md) supplies the preservation/access list, exact target, fresh candidate verification, restore-verified encrypted recovery, cutover and rollback. This authorizes one controlled manual release after its preparation gates; it supersedes the earlier undecided preservation scope and manual release hold for this exercise. The [completed release record](operations/hosted-clean-reset-release-20260929.md) confirms matching API/UI source `04e2b9a785c0b29453f067dd031b627548260693`, a 14-second API pause, three preserved accounts, three built-in types, exact data/access checks, healthy public endpoints and off-server restore-verified recovery. The original database remains retained with connections disabled. GitHub deployment and Vercel automatic Git controls remain held; fresh person sign-in and authenticated/physical workflow acceptance are separate.
