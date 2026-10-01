@@ -136,11 +136,11 @@ public partial class SampleShippingPostgresTests
 
     private sealed record RestoreFixture(Guid WorkId, Guid SpecimenId, Guid PackageId, Guid RunId, Guid RecordId, string Barcode, string StorageKey, string FileSha256);
 
-    private static async Task<RestoreFixture> SeedRestoreEvidence(ShippingTestScope scope, IOperationalFileStorage files)
+    private static async Task<RestoreFixture> SeedRestoreEvidence(ShippingTestScope scope, IOperationalFileStorage files, int sampleCount = 1)
     {
         var db = scope.DbContext; var now = LabEvidenceTime.UtcNow; var actor = scope.PlatformUser.Id;
         var order = new LabServiceOrder(scope.CustomerOrganization.Id, scope.CustomerOrganization.Departments.Single(d => d.IsDefault).Id,
-            "RESTORE-" + scope.Suffix, "TEST ONLY restore", null, 1, false, "TEST source", "Frozen", "TEST safe", "TEST instructions");
+            "RESTORE-" + scope.Suffix, "TEST ONLY restore", null, sampleCount, false, "TEST source", "Frozen", "TEST safe", "TEST instructions");
         var sample = new LabSample(order.Id, "TEST-RESTORE", "RNA", "TEST source", 1, "uL", "Frozen", "TEST safe", null, null, null, "[]");
         order.Samples.Add(sample);
         var work = new LabWorkOrder(Guid.NewGuid(), 1, LabAuthorizationSource.CommercialOrder, order.Id, order.OrganizationId, "restore-test", 1, "test", null);

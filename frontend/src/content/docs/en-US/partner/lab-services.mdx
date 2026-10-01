@@ -53,7 +53,7 @@ If an older draft still contains sample rows from the former workflow, the Job i
 
 ## Existing configured standard drafts
 
-For an existing unsubmitted draft with a configured standard offering, in **Standard PSeq Lab Service**, choose an available **Offering**. Review its allowed material types and biological sources, included scientific outputs, single delivery target in business days, sample count, purchased sample-sequencing runs, and price per run. The bundle includes laboratory processing and data assembly; it does not require a separate assembly purchase.
+For an existing unsubmitted draft with a configured standard offering, in **Standard PSeq Lab Service**, choose an available **Offering**. Review its allowed material types and biological sources, included scientific outputs, single delivery target in business days, sample count, purchased sample-sequencing runs, and price per sample. Standard pricing includes one library preparation, one sequencing run and data assembly per sample; it does not require a separate assembly purchase. Extra runs use the existing prepared library while material remains available and are quoted separately through pricing review.
 
 Choose **Review standard order**. The review shows the current subtotal, approved tax, and final total. An organization or assigned-Department administrator supplies a PO when required, confirms the scope and prohibited-data statement, and selects **Place standard order**. The offering, scope, price and approved tax are retained with the Job. Detailed samples are entered afterward.
 
@@ -200,7 +200,7 @@ Shipping inserts, printable kit labels and retained packet copies show QR codes 
 
 ## Multiple tubes for one sample
 
-Pricing counts **sample-sequencing runs**. Twenty samples sequenced once and one sample sequenced twenty times both count as 20. In the Job profile, leave **Sample-sequencing runs** blank for one run per sample, or enter the total requested runs. A machine batch is not the pricing unit.
+Standard pricing is per **sample** and includes one library preparation, one sequencing run and data assembly. Additional runs are priced separately and use the prepared library while material remains available. Twenty samples sequenced once require twenty standard services. One sample sequenced twenty times requires one standard service plus nineteen additional runs. Both allocate twenty **sample-sequencing runs** for laboratory execution. In the Job profile, leave **Sample-sequencing runs** blank for one run per sample, or enter the total requested runs. A machine batch is not the pricing unit.
 
 After accepting pricing, enter each sample once. When pricing includes one run per sample, **Runs** shows a fixed **1** during sample entry, and **Sample-sequencing runs** is fixed at **1** in **Edit sample**. **Tubes** remains editable: you may send reserve tubes so material is available in case of failure, without buying extra runs. For Jobs explicitly priced with additional runs, allocate those purchased runs across samples; the total must equal the purchased run count before **Review and finalize list** becomes available. The CSV template includes **sequencing_runs** and validates the same purchased total; an older three-column CSV defaults each sample to one run. Existing accepted prices and previously recorded scope are preserved.
 
@@ -225,3 +225,17 @@ The request immediately blocks new preparation, new sequencing handoffs, new ana
 Use **Request resumption** when ready. Work remains blocked until Phaeno approves resumption. Other authorization, material, quality and workflow requirements still apply, and approval does not automatically start work. Read **Hold history** for the recorded reasons and decisions.
 
 A hold does not automatically change charges, deadlines or retention dates, and results already delivered remain available. Contact Phaeno directly for an urgent request or a separate commercial or retention adjustment.
+
+## Follow phased Jobs
+
+One Job may have several ordered phases, each with its own samples, agreed turnaround expectation and billing portion. The **Phases** card shows each cohort, receipt counts, current sample stages and delivery due date. **Mixed** means samples are at different stages; **Received** remains the customer-facing receipt status. Held and review counts accompany progress. Results complete a phase only when all required outputs for its samples and purchased runs are available through the Portal. The next phase can then begin processing.
+
+A phase's TAT starts when Phaeno physically receives the last required tube across that phase's samples and containers. Receiving a future cohort early starts its clock even while it waits for the preceding phase. A container arrival alone is not complete tube receipt.
+
+An administrator can select **Request cancellation** for an eligible phase before the first required tube is received. Phaeno reviews the request; a request is not approval. Receipt closes eligibility. Cancellation retains the recorded scope and any invoices for separate financial review.
+
+Approved cancelled cohorts are excluded from outstanding preparation counts. Prepare the remaining phases; existing cancelled sample and tube records remain in the history. Phaeno must establish a phase's biological-source and run allocation before approving cancellation if those allocations have not been recorded.
+
+Phaeno may propose rephasing an open Job. Review the previous plan, proposed counts, TAT, billing portions and named sample moves, then use **Actions → Accept rephasing** or **Decline rephasing**. Only unsent future samples can move, including while earlier work runs. Sending any required tube fixes that sample's assignment; received and processing samples remain fixed. Acceptance rechecks current facts and retains original commitments and issued invoices. Closed Jobs cannot be rephased.
+
+Invoices follow the agreed billing schedule and can cover upfront or completed work, or portions of several phases. Phase completion does not automatically issue an invoice. Payment does not gate PSeq result release.

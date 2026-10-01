@@ -1,7 +1,7 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 
 import { listCrmOrderHandoffs, type CrmOrderHandoff } from '#/api/crm'
 import {
@@ -16,7 +16,6 @@ import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
-import { LabJobDetailsDialog } from './LabJobDetailsDialog'
 import { OrderStatusBadge } from './OrderStatusBadge'
 
 type OrganizationOption = { id: string; name: string }
@@ -38,9 +37,6 @@ export function CommercialOrderIntakePanel({
   organizations: OrganizationOption[]
 }) {
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const [createOpen, setCreateOpen] = useState(false)
-  const [selectedHandoff, setSelectedHandoff] = useState<CrmOrderHandoff | null>(null)
   const searchState = useSearch({ strict: false })
   const search = searchState.intakeSearch ?? ''
   const view = searchState.intakeView ?? 'active'
@@ -82,13 +78,6 @@ export function CommercialOrderIntakePanel({
     return items.filter((item) => item.kind === 'order' || intakeSearchText(item, organizationNames).includes(term))
   }, [handoffs.data, orders.data?.items, organizationNames, search, view, page])
 
-  async function refreshIntake() {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['commercial-orders'] }),
-      queryClient.invalidateQueries({ queryKey: ['order-intake-handoffs'] }),
-    ])
-  }
-
   return (
     <div className="space-y-5">
       <Card className="gap-0 overflow-hidden py-0">
@@ -99,7 +88,7 @@ export function CommercialOrderIntakePanel({
               className="shrink-0"
               type="button"
               disabled={!canCreate || (!mock && (!apiEnabled || customers.isLoading || customers.isError || eligibleCustomers.length === 0))}
-              onClick={() => setCreateOpen(true)}
+              onClick={() => void navigate({ to: '/order-operations/new', search: { organizationId: undefined, sourceRequestId: undefined } })}
             >
               <Plus data-icon="inline-start" /> New Order
             </Button>
@@ -156,7 +145,7 @@ export function CommercialOrderIntakePanel({
                 key={item.handoff.handoff.id}
                 item={item.handoff}
                 canCreate={canCreate}
-                onStart={setSelectedHandoff}
+                onStart={handoff => void navigate({ to: '/order-operations/new', search: { organizationId: handoff.handoff.organizationId ?? undefined, sourceRequestId: handoff.handoff.relationshipRequestId } })}
               />
             ))}
           </div>
@@ -173,42 +162,6 @@ export function CommercialOrderIntakePanel({
         </CardContent>
       </Card>
 
-      <LabJobDetailsDialog
-        open={createOpen}
-        platformOrganizations={eligibleCustomers}
-        onOpenChange={setCreateOpen}
-        onSaved={async (order) => {
-          setCreateOpen(false)
-          await refreshIntake()
-          await navigate({
-            to: '/order-operations/$workflow/$orderId',
-            params: { workflow: 'lab', orderId: order.id },
-            search: previous => ({ ...previous, orderSection: 'intake' }),
-          })
-        }}
-      />
-      <LabJobDetailsDialog
-        open={Boolean(selectedHandoff)}
-        platformOrganizations={eligibleCustomers}
-        sourceHandoff={selectedHandoff?.handoff.organizationId ? {
-          requestId: selectedHandoff.handoff.relationshipRequestId,
-          requestNumber: selectedHandoff.handoff.requestNumber,
-          organizationId: selectedHandoff.handoff.organizationId,
-          organizationName: selectedHandoff.organizationName ?? selectedHandoff.companyName,
-          companyName: selectedHandoff.companyName,
-          opportunityName: selectedHandoff.opportunityName,
-        } : null}
-        onOpenChange={(open) => { if (!open) setSelectedHandoff(null) }}
-        onSaved={async (order) => {
-          setSelectedHandoff(null)
-          await refreshIntake()
-          await navigate({
-            to: '/order-operations/$workflow/$orderId',
-            params: { workflow: 'lab', orderId: order.id },
-            search: previous => ({ ...previous, orderSection: 'intake' }),
-          })
-        }}
-      />
     </div>
   )
 }
@@ -247,7 +200,7 @@ function CommercialOrderRow({
         </p>
         {order.orderType === 'PSeqLabService' && order.proposedUnitPrice != null ? (
           <p className="mt-1 text-xs font-medium text-foreground">
-            Price proposed · {formatMoney(order.proposedUnitPrice, order.proposedCurrency ?? 'USD')} per sample-sequencing run
+            Price proposed · {formatMoney(order.proposedUnitPrice, order.proposedCurrency ?? 'USD')} per sample
           </p>
         ) : null}
         {order.orderType === 'PSeqLabService' && order.status === 'QuoteInPreparation' ? (

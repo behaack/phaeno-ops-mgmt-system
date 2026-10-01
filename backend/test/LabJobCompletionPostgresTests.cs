@@ -14,7 +14,7 @@ using PhaenoPortal.App.Features.OrderManagement.Services;
 public partial class LabOperationsCommercialHandoffPostgresTests
 {
     [PostgreSqlReferenceFact]
-    public async Task CompletionFinalSaveFailureRollsBackInvoiceAndSafeRetryReplaysOnePdf()
+    public async Task PhaseInvoiceFinalSaveFailureRollsBackInvoiceAndSafeRetryReplaysOnePdf()
     {
         var connection = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("PSEQ_OPERATIONS_REFERENCE_CONNECTION")!);
         if (connection.Host is not ("localhost" or "127.0.0.1"))
@@ -52,6 +52,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             scope.DbContext.Add(profile);
             await scope.DbContext.SaveChangesAsync();
             var version = order.Version;
+            var invoiceRequest = new LabPhaseInvoiceWriteRequest(order.PhasePlanRevision, [new(Assert.Single(order.Phases).Id, 100m)]);
             var eventsBefore = await scope.DbContext.OrderStatusEvents.CountAsync();
             var noticesBefore = await scope.DbContext.OrderNotifications.CountAsync();
             var key = Guid.NewGuid().ToString("N");
@@ -63,7 +64,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 CREATE TRIGGER fail_completion_receipt BEFORE INSERT ON commercial_ops.order_idempotency_records
                 FOR EACH ROW EXECUTE FUNCTION public.fail_completion_receipt();
                 """);
-            await Assert.ThrowsAsync<DbUpdateException>(() => controller.Complete(order.Id, new(version), default));
+            await Assert.ThrowsAsync<DbUpdateException>(() => controller.IssuePhaseInvoice(order.Id, invoiceRequest, default));
             scope.DbContext.ChangeTracker.Clear();
             Assert.Empty(await scope.DbContext.Invoices.ToListAsync());
             Assert.Equal(LabServiceOrderStatus.InProgress, (await scope.DbContext.LabServiceOrders.SingleAsync(value => value.Id == order.Id)).Status);
@@ -73,18 +74,21 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             Assert.Single(storage.Deleted);
             await scope.DbContext.Database.ExecuteSqlRawAsync("DROP TRIGGER fail_completion_receipt ON commercial_ops.order_idempotency_records; DROP FUNCTION public.fail_completion_receipt();");
             scope.DbContext.ChangeTracker.Clear();
-            var completed = await scope.CompletionController(key, storage).Complete(order.Id, new(version), default);
-            Assert.Equal("Completed", completed.Status);
+            var completed = await scope.CompletionController(key, storage).IssuePhaseInvoice(order.Id, invoiceRequest, default);
+            Assert.Equal(order.Id, completed.OrderId);
+            Assert.Equal(LabServiceOrderStatus.InProgress, (await scope.DbContext.LabServiceOrders.AsNoTracking().SingleAsync(o => o.Id == order.Id)).Status);
+            var incomplete = await Assert.ThrowsAsync<OrderManagementException>(() => scope.CompletionController(Guid.NewGuid().ToString("N"), storage).Complete(order.Id, new(version), default));
+            Assert.Equal("phase_results_not_delivered", incomplete.ErrorCode);
             var invoice = Assert.Single(await scope.DbContext.Invoices.AsNoTracking().ToListAsync());
             Assert.Equal(110m, invoice.Total);
             Assert.Equal(invoice.IssuedOn.AddDays(30), invoice.DueOn);
             var pdf = Assert.Single(storage.Files).Value;
             Assert.StartsWith("%PDF-", Encoding.ASCII.GetString(pdf));
-            Assert.Equal(invoice.PdfSha256, Convert.ToHexString(SHA256.HashData(pdf)));
+            Assert.Equal(Convert.FromHexString(invoice.PdfSha256!), SHA256.HashData(pdf));
             scope.DbContext.ChangeTracker.Clear();
             var replayController = scope.CompletionController(key, storage);
-            var replay = await replayController.Complete(order.Id, new(version), default);
-            Assert.Equal(completed.Version, replay.Version);
+            var replay = await replayController.IssuePhaseInvoice(order.Id, invoiceRequest, default);
+            Assert.Equal(completed.Revision, replay.Revision);
             Assert.Equal(StatusCodes.Status201Created, replayController.Response.StatusCode);
             Assert.Single(await scope.DbContext.Invoices.ToListAsync());
             Assert.Single(storage.Files);

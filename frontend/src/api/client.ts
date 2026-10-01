@@ -41,4 +41,6 @@ export function configureApiAuth(config: ApiAuthConfig) {
   authConfig = config
 }
 
+export async function getApiAccessToken() { return await authConfig.getToken?.() ?? null }
+
 export type ApiClient = typeof api

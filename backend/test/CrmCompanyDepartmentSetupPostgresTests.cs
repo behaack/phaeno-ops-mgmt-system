@@ -23,6 +23,7 @@ public sealed partial class CrmCommercialAccessPostgresTests
         var db = scope.Db;
         var company = new CrmCompany($"Department setup {Guid.NewGuid():N}", scope.Actor.Id);
         db.Add(company); await db.SaveChangesAsync();
+        var requestIds = await db.PortalIntegrationRequests.OrderBy(value => value.Id).Select(value => value.Id).ToArrayAsync();
         var controller = scope.Controller(new CrmCompanyDepartmentsController(db, scope.Identity));
         var input = new UpsertDepartmentRequest("Cardiology", "Research group", true, "billing@example.test", null, "Keep upright", null, null);
         await Assert.ThrowsAsync<CrmException>(() => controller.CreateDepartment(company.Id, input, default));
@@ -35,7 +36,7 @@ public sealed partial class CrmCommercialAccessPostgresTests
         Assert.Null(company.AccessOrganizationId);
         Assert.False(setup.IsActive);
         Assert.Equal(PortalReadinessStatus.NotReviewed, setup.PortalReadiness);
-        Assert.Empty(await db.PortalIntegrationRequests.ToListAsync());
+        Assert.Equal(requestIds, await db.PortalIntegrationRequests.OrderBy(value => value.Id).Select(value => value.Id).ToArrayAsync());
         Assert.False(await db.OrganizationMemberships.AnyAsync(value => value.OrganizationId == setup.Id));
         Assert.False(await db.OrganizationInvitations.AnyAsync(value => value.OrganizationId == setup.Id));
         Assert.False(await db.OrganizationServiceEntitlements.AnyAsync(value => value.OrganizationId == setup.Id));

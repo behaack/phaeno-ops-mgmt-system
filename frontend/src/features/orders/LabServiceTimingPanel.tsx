@@ -84,10 +84,12 @@ export function LabServiceTimingPanel({
   orderId,
   timing,
   staff = false,
+  phaseCount = 1,
 }: {
   orderId: string
   timing?: LabServiceTiming | null
   staff?: boolean
+  phaseCount?: number
 }) {
   const client = useQueryClient()
   const [reviewed, setReviewed] = useState<LabServiceTiming | null>(null)
@@ -142,8 +144,8 @@ export function LabServiceTimingPanel({
     <Card className="mb-5">
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <CardTitle>Turnaround and progress</CardTitle>
-          {staff && timing.canOverrideTiming ? (
+          <CardTitle>{phaseCount > 1 ? 'Whole-Job milestones' : 'Turnaround and progress'}</CardTitle>
+          {staff && phaseCount === 1 && timing.canOverrideTiming ? (
             <Button
               variant="outline"
               onClick={() => {
@@ -162,8 +164,7 @@ export function LabServiceTimingPanel({
           ) : null}
         </div>
         <CardDescription>
-          The published turnaround starts at scientific acceptance. The original
-          target remains in the record when expected timing changes. Laboratory completion is separate from delivery of every sample’s results.
+          {phaseCount > 1 ? 'Review the Phases card for each cohort’s receipt-triggered TAT, original commitment and current delivery due date.' : 'Processing targets track scientific acceptance. Delivery TAT starts after physical receipt of every required tube. Original targets remain recorded when timing changes.'} Laboratory completion is separate from delivery of every required result.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -171,11 +172,9 @@ export function LabServiceTimingPanel({
           {[
             ['First receipt', timing.firstReceivedAtUtc],
             ['Scientific acceptance', timing.acceptedAtUtc],
-            ['Original target', timing.originalTargetAtUtc],
-            ['Current expected completion', timing.expectedCompletionAtUtc],
+            ...phaseCount === 1 ? [['Original target', timing.originalTargetAtUtc], ['Current expected completion', timing.expectedCompletionAtUtc]] : [],
             ['Laboratory completion', timing.completedAtUtc],
-            ['Delivery due date', timing.deliveryDueAtUtc ?? null],
-            ['Original delivery target', timing.originalDeliveryDueAtUtc ?? null],
+            ...phaseCount === 1 ? [['Delivery due date', timing.deliveryDueAtUtc ?? null], ['Original delivery target', timing.originalDeliveryDueAtUtc ?? null]] : [],
             ['All samples delivered to Portal', timing.portalDeliveredAtUtc ?? null],
           ].map(([label, value]) => (
             <div key={label}>

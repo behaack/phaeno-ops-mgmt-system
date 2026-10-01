@@ -1,5 +1,31 @@
 # Shared, single-use master mix for library preparation
 
+## List header refinement — September 30, 2026
+
+Operators need the list's start action and discovery controls together in its
+header. Place **Start master mix** at the upper right of the title row. Keep the
+description beside the button and let it wrap within a shrinking left column.
+Move the name/barcode and status filters into the same shaded header. The fields
+fill the available width beside Search on wide screens and stack at full width
+on narrow screens. Keep the existing permissions, filter application, recovery
+and creation workflow.
+
+Acceptance: the start action stays on the first row, the description wraps without
+overlap, filters span the header, and results remain below its divider. Verify
+desktop/narrow layout, labeled controls and opening/cancelling the start dialog
+without creating a preparation. Use scoped lint, typecheck and documentation
+checks; no new automated test is needed for this reversible layout adjustment.
+The production deployment hold remains in effect.
+
+Local checkpoint: the rendered desktop header confirms the top-right start action,
+wrapping description and expanding filter row. At an observed 520 px CSS viewport,
+DOM measurements confirm equal full-width search/status controls, title/start
+alignment and no horizontal page overflow. The start dialog opened and cancelled
+without creating a mix. Narrow screenshots were unavailable from the connected
+browser; no smaller-device or theme-specific visual acceptance is claimed. Backend
+build (zero warnings/errors), frontend typecheck/scoped lint, documentation
+generation/consistency and diff checks passed. Automated suites were not run.
+
 ## Product decision — September 24, 2026
 
 Laboratory Operators prepare one master-mix batch that may serve several library trays. The mix is consumed within that work session and any remainder is discarded. It is not a received or manufactured inventory lot and must not appear as available stock. The existing untracked Material used field records a tray quantity but cannot identify one mix across trays. The existing reagent-manufacturing run creates an inventory lot, storage assignment and QC-pending stock, so it does not express this workflow.

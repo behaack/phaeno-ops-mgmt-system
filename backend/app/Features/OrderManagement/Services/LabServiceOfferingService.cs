@@ -78,7 +78,7 @@ public sealed class LabServiceOfferingService(PSeqOperationsDbContext db)
         item.Id, item.ExternalItemId, item.Name, item.Version, item.BasePrice, item.Currency,
         offering.AnalysisIds(), offering.AllowedMaterialTypes(), offering.AllowedBiologicalSources(), offering.IncludedOutputContract,
         offering.MinimumTurnaroundDays, offering.MaximumTurnaroundDays, offering.EffectiveFrom, offering.EffectiveTo,
-        offering.IsActive, offering.IsSynthetic, available, offering.Version);
+        offering.IsActive, offering.IsSynthetic, available, offering.Version, MaximumCustomerSamples: item.MaximumCustomerSamples);
 
     public static LabServiceOffering Build(Guid familyId, int version, LabServiceOfferingWriteRequest request)
     {

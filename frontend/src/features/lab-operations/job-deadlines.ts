@@ -1,6 +1,6 @@
 export const deadlineLabels = {
   Overdue: 'Overdue', AtRisk: 'At risk', DueSoon: 'Due soon',
-  AwaitingAcceptance: 'Awaiting acceptance', NoKnownRisk: 'No known risk',
+  AwaitingReceipt: 'Awaiting receipt', AwaitingAcceptance: 'Awaiting acceptance', NoKnownRisk: 'No known risk',
   CompleteOnTime: 'Complete on time', CompleteLate: 'Complete late', CompleteUndated: 'Complete — no due date', CompleteUnverified: 'Complete — timing unverified', Cancelled: 'Cancelled',
 } as const
 export type DeadlineStatus = keyof typeof deadlineLabels
@@ -13,7 +13,7 @@ export const jobStatusLabels = {
 export type JobStatus = keyof typeof jobStatusLabels
 export type JobView = 'Active' | 'Closed'
 export type JobListSearch = {
-  jobView?: JobView; jobSearch?: string; jobDeadline?: keyof typeof activeDeadlineLabels; jobPage?: number
+  jobGrouping?: 'Phases' | 'Jobs'; jobView?: JobView; jobSearch?: string; jobDeadline?: keyof typeof activeDeadlineLabels; jobPage?: number
   jobFrom?: string; jobTo?: string; jobStatus?: JobStatus
   jobClosedSearch?: string; jobClosedFrom?: string; jobClosedTo?: string; jobOutcome?: 'Delivered' | 'Cancelled'; jobClosedPage?: number
 }
@@ -33,6 +33,7 @@ export function parseJobListSearch(search: Record<string, unknown>): JobListSear
   const text = (v: unknown) => typeof v === 'string' ? v.slice(0, 255) : undefined
   const page = (v: unknown) => Number.isSafeInteger(Number(v)) && Number(v) > 0 ? Number(v) : undefined
   return {
+    jobGrouping: search.jobGrouping === 'Jobs' ? 'Jobs' : undefined,
     jobView: search.jobView === 'Closed' ? 'Closed' : undefined,
     jobSearch: text(search.jobSearch),
     jobDeadline: typeof search.jobDeadline === 'string' && Object.hasOwn(activeDeadlineLabels, search.jobDeadline) ? search.jobDeadline as JobListSearch['jobDeadline'] : undefined,

@@ -81,7 +81,8 @@ public partial class SampleShippingPostgresTests
         var first = await scope.KitCustomer().Create(fixture.Shipment.Id,
             new(fixture.Shipment.Version, location.Id, location.Version, [new(size.Id, 1)]), default);
         var beforeDispatch = await scope.KitStaff().Read(first.Id, default);
-        Assert.Equal(2, beforeDispatch.PhaenoDestinations?.Count);
+        Assert.Contains(beforeDispatch.PhaenoDestinations!, value => value.Id == fixture.Destination.Id);
+        Assert.Contains(beforeDispatch.PhaenoDestinations!, value => value.Id == alternate.Id);
         var kit = await scope.ReadyTransportationKitAsync(size);
         var dispatched = await scope.KitStaff().Dispatch(first.Id,
             new(first.Version, [kit.Id], "Reference carrier", "FIRST-ROUTE", DateTime.UtcNow), default);
@@ -557,6 +558,12 @@ public partial class SampleShippingPostgresTests
             await DbContext.LabSamples.Where(item => jobs.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
             await DbContext.LabServiceQuotes.Where(item => jobs.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
             await DbContext.LabServiceSourceGroups.Where(item => jobs.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
+            var phaseIds = DbContext.Set<PhaenoPortal.App.Features.OrderManagement.Domain.LabJobPhase>().Where(p => jobs.Contains(p.LabServiceOrderId)).Select(p => p.Id);
+            await DbContext.Set<PhaenoPortal.App.Features.OrderManagement.Domain.LabPhaseCancellationRequest>().Where(r => phaseIds.Contains(r.LabJobPhaseId)).ExecuteDeleteAsync();
+            await DbContext.Set<PhaenoPortal.App.Features.OrderManagement.Domain.LabPhasePlanProposal>().Where(r => jobs.Contains(r.LabServiceOrderId)).ExecuteDeleteAsync();
+            await DbContext.Set<PhaenoPortal.App.Features.OrderManagement.Domain.LabPhaseBillingAssignment>().Where(r => phaseIds.Contains(r.LabJobPhaseId)).ExecuteDeleteAsync();
+            await DbContext.Set<PhaenoPortal.App.Features.OrderManagement.Domain.LabPhaseInvoiceAllocation>().Where(r => phaseIds.Contains(r.LabJobPhaseId)).ExecuteDeleteAsync();
+            await DbContext.Set<PhaenoPortal.App.Features.OrderManagement.Domain.LabJobPhase>().Where(p => jobs.Contains(p.LabServiceOrderId)).ExecuteDeleteAsync();
             await DbContext.LabServiceOrders.Where(item => jobs.Contains(item.Id)).ExecuteDeleteAsync();
         }
     }

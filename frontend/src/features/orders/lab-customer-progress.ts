@@ -5,7 +5,7 @@ export const customerLabStages = ['Received', 'LibraryPrep', 'Sequencing', 'Data
 export const customerLabStageLabels: Record<string, string> = {
   Received: 'Received', LibraryPrep: 'Library Prep', Sequencing: 'Sequencing',
   DataAssembly: 'Data Assembly', QualityReview: 'Quality Review', ResultsAvailable: 'Results Available',
-  AwaitingReceipt: 'Awaiting receipt', OnHold: 'On Hold', NeedsAttention: 'Needs attention', Cancelled: 'Cancelled',
+  Mixed: 'Mixed', AwaitingReceipt: 'Awaiting receipt', OnHold: 'On Hold', NeedsAttention: 'Needs attention', Cancelled: 'Cancelled',
 }
 
 export function customerLabStatus(status: string, progress?: LabCustomerProgress | null) {

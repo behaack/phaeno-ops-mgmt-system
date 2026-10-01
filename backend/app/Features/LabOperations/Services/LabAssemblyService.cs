@@ -98,7 +98,7 @@ public sealed class LabAssemblyService(PSeqOperationsDbContext db, ILabAssemblyP
         var job = new LabAssemblyJob(request.Id, workId, specimen.Id, work.SubmittingOrganizationId, request.SequencingRunNumber,
             actorId, provider.Key, JsonSerializer.Serialize(recipe, Json), JsonSerializer.Serialize(new AssemblyFrozenInputs(frozen, verification, work.CurrentAuthorizationVersion), Json),
             hash, Now, request.PreviousJobId, request.Reason);
-        db.Add(job); Record(job, "Requested", actorId);
+        db.Add(job); db.Add(new LabAssemblyCommand(job.Id, "Run", job.RequestedAtUtc)); Record(job, "Requested", actorId);
         // Participate in concurrency with a new parent hold/cancellation.
         db.Entry(work).Property(w => w.UpdatedAt).IsModified = true;
         await db.SaveChangesAsync(ct);
@@ -114,7 +114,14 @@ public sealed class LabAssemblyService(PSeqOperationsDbContext db, ILabAssemblyP
         if (job.Version != request.Version) throw Error("This job changed. Refresh before requesting cancellation.", 409);
         if (job.State != "Queued" && (!provider.Availability.SupportsCancellation || job.ProviderKey != provider.Key))
             throw Error("The processing service does not currently support cancellation.", 409);
-        try { if (job.RequestCancellation(actorId, request.Reason, Now)) Record(job, job.IsTerminal ? "CancelledBeforeStart" : "CancellationRequested", actorId); }
+        try { if (job.RequestCancellation(actorId, request.Reason, Now)) {
+            Record(job, job.IsTerminal ? "CancelledBeforeStart" : "CancellationRequested", actorId);
+            if (!job.IsTerminal) db.Add(new LabAssemblyCommand(job.Id, "Cancel", job.CancellationRequestedAtUtc!.Value));
+            else {
+                var command = await db.Set<LabAssemblyCommand>().SingleAsync(c => c.LabAssemblyJobId == job.Id && c.Kind == "Run", ct);
+                command.Suppress();
+            }
+        } }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException) { throw Error(ex.Message, 409); }
         await db.SaveChangesAsync(ct); if (tx is not null) await tx.CommitAsync(ct);
         if (job.IsTerminal) progress.Forget(job.Id);

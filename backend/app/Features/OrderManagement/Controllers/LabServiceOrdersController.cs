@@ -80,7 +80,7 @@ public sealed partial class LabServiceOrdersController(
         var query = dbContext.LabServiceOrders.AsNoTracking()
             .Where(order => order.OrganizationId == tenant.Organization.Id
                 && order.DepartmentId == tenant.Department.Id
-                && !order.IsDiscarded);
+                && !order.IsDiscarded && order.CommercialDraftJson == null);
         if (dashboard && dashboardView is not ("active" or "attention" or "results"))
             throw Invalid("invalid_dashboard_view", "Choose an available dashboard view.");
         if (dashboard && dashboardView == "results")
@@ -148,7 +148,7 @@ public sealed partial class LabServiceOrdersController(
         var query = dbContext.LabServiceOrders.AsNoTracking()
             .Where(order => order.OrganizationId == tenant.Organization.Id
                 && order.DepartmentId == tenant.Department.Id
-                && !order.IsDiscarded);
+                && !order.IsDiscarded && order.CommercialDraftJson == null);
         if (!string.IsNullOrWhiteSpace(status))
         {
             if (!Enum.TryParse<LabServiceOrderStatus>(status, true, out var parsed))
@@ -211,6 +211,8 @@ public sealed partial class LabServiceOrdersController(
     public async Task<LabServiceOrderDto> Create([FromBody] LabOrderWriteRequest request, CancellationToken cancellationToken)
     {
         var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
+        if (tenant.Organization.Kind == OrganizationKind.Customer)
+            throw Invalid("customer_standard_draft_required", "Create a Customer standard Draft and review its applicable price. Contact Sales for additional runs or phased work.");
         var key = idempotency.RequireKey(HttpContext);
         var execution = await idempotency.ExecuteAsync(
             tenant.Actor.Id,
@@ -268,6 +270,10 @@ public sealed partial class LabServiceOrdersController(
         var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
         var order = await ReadOrderAsync(orderId, tenant, cancellationToken);
         EnsureVersion(order.Version, request.Version);
+        if (order.CustomerDraftJson is not null)
+            throw Conflict("customer_standard_draft_required", "Edit this Customer Draft through its Scope and Review form.");
+        if (order.Phases.Any(p => p.ScopeJson != null && p.SupersededAtUtc == null))
+            throw Conflict("sales_scope_owned_by_phaeno", "Phaeno maintains the agreed phase scope. Contact Sales to request a correction.");
         var normalizedJobName = NormalizeJobName(request.CustomerReference);
         await EnsureUniqueJobNameAsync(tenant.Organization.Id, tenant.Department.Id, normalizedJobName, order.Id, cancellationToken);
         if (request.Samples.Count != 0)
@@ -355,6 +361,8 @@ public sealed partial class LabServiceOrdersController(
     private async Task SubmitRequestAsync(LabServiceOrder order, Guid actorId, CancellationToken cancellationToken,
         string? revisionReason = null, string? previousStatus = null)
     {
+        if (order.CustomerDraftJson is not null)
+            throw Conflict("customer_standard_review_required", "Review and place this standard order. Contact Sales for negotiated scope or additional runs.");
         await LabServiceOrderingEligibility.RequireAsync(dbContext, order.OrganizationId, DateTime.UtcNow,
             cancellationToken, order.DepartmentId);
         await LabOrderSampleTypeChoices.RequireAsync(dbContext, order.SampleTypeDefinitionId, cancellationToken);
@@ -500,7 +508,23 @@ public sealed partial class LabServiceOrdersController(
                     var change = quote.ChangeScopeSnapshotJson is null ? null : JsonSerializer.Deserialize<LabChangeScope>(quote.ChangeScopeSnapshotJson, JsonSerializerOptions);
                     if (change is null) throw Conflict("change_scope_missing", "The Change quote scope is unavailable.");
                     Execute(() => order.AcceptAdditionalScope(change));
+                    dbContext.AddRange(order.SourceGroups.Where(source => dbContext.Entry(source).State == EntityState.Detached));
                     Execute(() => quote.Accept(tenant.Actor.Id, acceptedAt));
+                    var phasePosition = order.Phases.Where(p => p.SupersededAtUtc == null).Max(p => p.Position) + 1;
+                    var additionalPhase = new LabJobPhase(order.Id, phasePosition, $"Additional scope {phasePosition}",
+                        change.AdditionalSources.Sum(x => x.SpecimenCount),
+                        order.Quotes.Single(q => q.Id == order.AcceptedQuoteId).DeliveryTargetBusinessDays,
+                        quote.Subtotal, 0, quote.LinesJson);
+                    if (order.Phases.Any(p => p.ScopeJson != null))
+                    {
+                        var count = change.AdditionalSources.Sum(s => s.SpecimenCount);
+                        var runs = change.AdditionalSequencingRunCount ?? count;
+                        additionalPhase.SetScope(new(change.AdditionalSources.Select(s => new PhaseSourceScope(s.BiologicalSource, s.SpecimenCount)).ToArray(),
+                            runs == count ? 1 : null, runs));
+                    }
+                    order.Phases.Add(additionalPhase);
+                    dbContext.Add(additionalPhase);
+                    order.AdvancePhasePlan();
                     quote.RecordAcceptedAmendment(JsonSerializer.Serialize(new { change, purchaseOrderNumber, acceptedAt, acceptedByUserId = tenant.Actor.Id }, JsonSerializerOptions));
                     order.MarkUpdated(acceptedAt, tenant.Actor.Id);
                 }
@@ -728,13 +752,15 @@ public sealed partial class LabServiceOrdersController(
                     ? await dbContext.LabSampleTubePairs.Where(item => item.LabServiceOrderId == order.Id)
                         .OrderBy(item => item.CreatedAt).ThenBy(item => item.Id).ToArrayAsync(operationCancellationToken)
                     : [];
+                draftPairs = draftPairs.Where(p => order.RequiresPreparation(p.LabJobPhaseId)).ToArray();
+                var preparation = order.ReadPreparationScope();
                 Dictionary<Guid, SampleShippingStockKit>? pairedKits = null;
                 if (pairedPreparation && !order.HasPendingChangeRoster)
                 {
-                    if (order.Samples.Count != 0 || draftPairs.Length != order.RequestedSpecimenCount
-                        || draftPairs.Sum(item => item.SequencingRunCount) != order.RequestedSequencingRunCount
-                        || order.SourceGroups.Any(group => draftPairs.Count(item =>
-                            LabServiceSourceGroup.Normalize(item.BiologicalSource) == group.NormalizedBiologicalSource) != group.SpecimenCount))
+                    if (order.Samples.Count != 0 || draftPairs.Length != preparation.Sources.Sum(s => s.SpecimenCount)
+                        || draftPairs.Sum(item => item.SequencingRunCount) != preparation.SequencingRunCount
+                        || preparation.Sources.Any(group => draftPairs.Count(item =>
+                            LabServiceSourceGroup.Normalize(item.BiologicalSource) == LabServiceSourceGroup.Normalize(group.BiologicalSource)) != group.SpecimenCount))
                         throw Conflict("paired_roster_incomplete", "Save one distinct Sample ID and tube barcode for every accepted sample and allocate every purchased run before confirming preparation.");
                     var locationId = PairedKitLocation(order);
                     var kitIds = draftPairs.Select(item => item.StockKitId).Distinct().ToArray();
@@ -760,7 +786,7 @@ public sealed partial class LabServiceOrdersController(
                     foreach (var pair in draftPairs)
                     {
                         var sample = ToRosterSample(order, new LabSampleRosterWriteRequest(pair.CustomerSampleId,
-                            pair.BiologicalSource, 1, SequencingRunCount: pair.SequencingRunCount));
+                            pair.BiologicalSource, 1, SequencingRunCount: pair.SequencingRunCount, PhaseId: pair.LabJobPhaseId));
                         order.Samples.Add(sample);
                         dbContext.LabSamples.Add(sample);
                     }
@@ -778,7 +804,7 @@ public sealed partial class LabServiceOrdersController(
                 var existingAuthorization = await dbContext.CommercialLabAuthorizations.SingleOrDefaultAsync(item => item.CommercialOrderId == order.Id, operationCancellationToken);
                 var originalCommand = existingAuthorization is null ? null : JsonSerializer.Deserialize<AuthorizeLabWorkCommand>(existingAuthorization.AuthorizationSnapshotJson, JsonSerializerOptions);
                 var authorizedIds = originalCommand?.Specimens.Select(s => s.SubmittedSpecimenId).ToHashSet() ?? [];
-                var newSamples = order.Samples.Where(s => !authorizedIds.Contains(s.Id)).ToList();
+                var newSamples = order.Samples.Where(s => !authorizedIds.Contains(s.Id) && order.RequiresPreparation(s.LabJobPhaseId)).ToList();
                 if (existingAuthorization is not null && (!order.HasPendingChangeRoster || originalCommand is null || newSamples.Count == 0))
                     throw Conflict("lab_authorization_exists", "There is no accepted additional sample list to authorize.");
                 Execute(() => order.FinalizeSampleRoster(tenant.Actor.Id, DateTime.UtcNow));
@@ -812,7 +838,7 @@ public sealed partial class LabServiceOrdersController(
                     order.OrganizationId, OrderServiceKeys.PSeqLabService, 1,
                     agreedTargetDays.HasValue
                         ? "business-days-after-full-receipt" : "quoted-turnaround", order.OrderNumber,
-                    order.Samples.Select(sample => new AuthorizedSpecimen(
+                    order.Samples.Where(s => order.RequiresPreparation(s.LabJobPhaseId)).Select(sample => new AuthorizedSpecimen(
                         sample.Id, sample.CustomerSampleId, sample.MaterialType, sample.BiologicalSource,
                         sample.Quantity, sample.QuantityUnit, sample.StorageRequirements, sample.SafetyDeclaration,
                         sample.CollectionDate, sample.Concentration, sample.Notes, [OrderServiceKeys.PSeqLabService], sample.SequencingRunCount)).ToList(),
@@ -1067,15 +1093,15 @@ public sealed partial class LabServiceOrdersController(
             .FirstOrDefaultAsync(order => order.Id == orderId
                 && order.OrganizationId == tenant.Organization.Id
                 && order.DepartmentId == tenant.Department.Id
-                && !order.IsDiscarded, cancellationToken)
+                && !order.IsDiscarded && order.CommercialDraftJson == null, cancellationToken)
             ?? throw Missing();
 
     private static IReadOnlyList<LabServiceSourceGroupWriteRequest> ValidatePricingProfile(
         int requestedSpecimenCount,
         IReadOnlyList<LabServiceSourceGroupWriteRequest>? requestedGroups)
     {
-        if (requestedSpecimenCount is < 1 or > 100)
-            throw Invalid("requested_specimen_count_invalid", "Requested specimen count must be between 1 and 100.");
+        if (requestedSpecimenCount is < 1 or > 10000)
+            throw Invalid("requested_specimen_count_invalid", "Requested specimen count must be between 1 and 10,000.");
         var groups = requestedGroups?.ToList() ?? [];
         if (groups.Count == 0)
             throw Invalid("biological_source_required", "Add at least one biological-source group.");
@@ -1098,6 +1124,9 @@ public sealed partial class LabServiceOrdersController(
             order.StorageRequirements, order.SafetyDeclaration, request.CollectionDate, request.Concentration,
             request.Notes, JsonSerializer.Serialize(order.ReadConfiguredSnapshot()?.AnalysisIds ?? [], JsonSerializerOptions));
         Execute(() => sample.SetSequencingRunCount(request.SequencingRunCount ?? sample.SequencingRunCount));
+        var phase = LabPhaseScopeRules.Resolve(order, request.PhaseId);
+        LabPhaseScopeRules.Validate(phase, sample.BiologicalSource!, sample.SequencingRunCount, order.Samples.Where(s => s.LabJobPhaseId == phase.Id).Select(s => (s.BiologicalSource!, s.SequencingRunCount)));
+        sample.AssignPhase(phase.Id);
         return sample;
     }
 
@@ -1191,7 +1220,7 @@ public sealed partial class LabServiceOrdersController(
                 throw Invalid("sample_required", "At least one sample is required.");
             return;
         }
-        if (samples.Count > 100) throw Invalid("sample_limit", "A laboratory request cannot contain more than 100 samples.");
+        if (samples.Count > 10000) throw Invalid("sample_limit", "A laboratory request cannot contain more than 10,000 samples.");
         if (samples.Select(item => item.CustomerSampleId.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Count() != samples.Count)
             throw Invalid("duplicate_customer_sample_id", "Customer sample identifiers must be unique within the request.");
     }
@@ -1278,10 +1307,12 @@ public sealed partial class LabServiceOrdersController(
         {
             var savedPairs = await dbContext.LabSampleTubePairs.AsNoTracking()
                 .Where(item => item.LabServiceOrderId == order.Id).ToArrayAsync(cancellationToken);
-            canFinalizePaired = savedPairs.Length == order.RequestedSpecimenCount
-                && savedPairs.Sum(item => item.SequencingRunCount) == order.RequestedSequencingRunCount
-                && order.SourceGroups.All(group => savedPairs.Count(item =>
-                    LabServiceSourceGroup.Normalize(item.BiologicalSource) == group.NormalizedBiologicalSource) == group.SpecimenCount);
+            savedPairs = savedPairs.Where(p => order.RequiresPreparation(p.LabJobPhaseId)).ToArray();
+            var preparation = order.ReadPreparationScope();
+            canFinalizePaired = preparation.Sources.Count > 0 && savedPairs.Length == preparation.Sources.Sum(s => s.SpecimenCount)
+                && savedPairs.Sum(item => item.SequencingRunCount) == preparation.SequencingRunCount
+                && preparation.Sources.All(group => savedPairs.Count(item =>
+                    LabServiceSourceGroup.Normalize(item.BiologicalSource) == LabServiceSourceGroup.Normalize(group.BiologicalSource)) == group.SpecimenCount);
         }
         var timing = await new LabServiceTimingService(dbContext).ReadAsync(order.Id, order.OrganizationId, false, false, cancellationToken);
         return new LabServiceOrderDto(order.Id, order.OrganizationId, order.OrderNumber, order.CustomerReference, order.Description,
@@ -1291,9 +1322,9 @@ public sealed partial class LabServiceOrdersController(
             order.PlacedAt, order.CompletedAt, order.TenantSafeReason, platform ? order.InternalNote : null,
             order.CreatedAt, order.UpdatedAt, order.Version,
             canManage && orderingEligible && editable,
-            canManage && orderingEligible && submittable,
+            canManage && orderingEligible && submittable && order.CustomerDraftJson is null,
             canAcceptQuote,
-            canManage && order.Status is LabServiceOrderStatus.DraftRequest or LabServiceOrderStatus.SubmittedForQuote
+            canManage && !order.Phases.Any(p => p.ScopeJson != null && p.SupersededAtUtc == null) && order.Status is LabServiceOrderStatus.DraftRequest or LabServiceOrderStatus.SubmittedForQuote
                 or LabServiceOrderStatus.ChangesRequested or LabServiceOrderStatus.QuoteInPreparation or LabServiceOrderStatus.QuoteIssued,
             canManage && order.Status is LabServiceOrderStatus.PlacedAwaitingSamples or LabServiceOrderStatus.InProgress or LabServiceOrderStatus.ResultsAvailable,
             order.Samples.OrderBy(item => item.CreatedAt).Select(item => item.ToDto(platform)).ToList(),
@@ -1317,6 +1348,11 @@ public sealed partial class LabServiceOrdersController(
             TubeUsePolicyKey: order.TubeUsePolicyKey, TubeUsePolicyVersion: order.TubeUsePolicyVersion,
             RequestedSpecimenCount: order.RequestedSpecimenCount,
             RequestedSequencingRunCount: order.RequestedSequencingRunCount,
+            DepartmentId: order.DepartmentId,
+            CustomerDraft: order.ReadCustomerDraft(),
+            PhaseCount: order.Phases.Count(p => p.SupersededAtUtc == null),
+            PhaseScopes: order.Phases.Where(p => p.SupersededAtUtc == null && p.ScopeJson != null).OrderBy(p => p.Position)
+                .Select(p => new LabOrderPhaseScopeDto(p.Id, p.Position, p.Name, p.SampleCount, p.ReadScope()!, p.TurnaroundBusinessDays, p.ProposedUnitPrice, p.PriceProposalNote, p.ProposedAdditionalRunPrice)).ToArray(),
             SourceGroups: order.SourceGroups.OrderBy(group => group.BiologicalSource)
                 .Select(group => new LabServiceSourceGroupDto(group.Id, group.BiologicalSource, group.SpecimenCount, group.Version)).ToList(),
             SampleRosterFinalizedAt: order.SampleRosterFinalizedAt,

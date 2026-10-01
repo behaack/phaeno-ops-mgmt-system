@@ -78,10 +78,12 @@ public partial class SampleShippingPostgresTests
         db.AddRange(workflow, protocol, pv, wv, stage, format, material, storage, lot, tubeManufacturer);
         for (var i = 0; i < 2; i++)
         {
-            var work = new LabWorkOrder(Guid.NewGuid(), 1, LabAuthorizationSource.CommercialOrder, Guid.NewGuid(), scope.CustomerOrganization.Id,
+            var order = scope.AddCommercialPhaseOrder($"TEST-PREP-{scope.Suffix}-{i}");
+            var sample = scope.AddCommercialPhaseSample(order, $"SAMPLE-{i}", i == 0 ? "Human liver" : "Human kidney");
+            var work = new LabWorkOrder(Guid.NewGuid(), 1, LabAuthorizationSource.CommercialOrder, order.Id, scope.CustomerOrganization.Id,
                 workflow.ServiceKey, 1, "test", $"TEST-PREP-{scope.Suffix}-{i}", wv.Id);
             work.SetTubeUsePolicy(LabTubeUsePolicy.RunOneWithFailureFallback, 1); work.RecordMilestone(LabWorkOrderStatus.Received);
-            var specimen = new LabSpecimen(work.Id, Guid.NewGuid()); specimen.RecordReceipt(now, "TEST ONLY", "TEST-BOX"); specimen.AssignAccession($"TEST-PREP-{scope.Suffix}-{i}");
+            var specimen = new LabSpecimen(work.Id, sample.Id); specimen.RecordReceipt(now, "TEST ONLY", "TEST-BOX"); specimen.AssignAccession($"TEST-PREP-{scope.Suffix}-{i}");
             var declaration = new { specimens = new[] { new { submittedSpecimenId = specimen.SubmittedSpecimenId, submitterSpecimenReference = $"SAMPLE-{i}",
                 declaredBiologicalSource = i == 0 ? "Human liver" : "Human kidney",
                 declaredSafetyInformation = i == 0 ? "TEST ONLY safety declaration.\nHandle according to recorded instructions." : (string?)null } } };

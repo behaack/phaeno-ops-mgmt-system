@@ -1,5 +1,16 @@
 # Progress-based expected completion calculator
 
+September 30 planning follow-up: [sequential phase Jobs](MULTI-PHASE-LAB-JOBS-PLAN.md)
+will have phase-specific result obligations and TAT clocks starting at complete
+physical receipt. Future phase forecasts must include preceding unfinished work;
+early receipt can start a clock before the phase may execute. Mutually accepted
+rephasing of unsent future samples updates forecasts from the current accepted
+membership and order. Sent/received sample assignments stay fixed; retain their
+actual receipt events and prior deadline baselines when reviewing timing effects.
+Regrouping does not restart a clock or reset elapsed progress for existing work.
+This extension is not implemented by the current calculator and must not be
+presented as supported.
+
 Status: implemented locally September 18, 2026; local migration applied. The owner subsequently authorized production deployment and required EF migrations. See [release evidence](PORTAL-JOBS-SETTINGS-RELEASE-2026-09-18.md).
 
 Owning area: Lab operations / Jobs. Related plan: [Jobs workspace and deadline tracking](LAB-JOB-DEADLINE-TRACKING-PLAN.md).
@@ -24,7 +35,7 @@ Confirmed by the owner:
 - Calculate expected days remaining using that progress information.
 - Completion means results for all samples under the job are available to the customer through the Portal, not merely laboratory completion or scientific approval.
 - Keep the committed delivery due date separate from expected completion.
-- Jobs currently have one phase. Future phases may have separate deadlines under one contract.
+- Jobs currently have one phase. The September 30 future phase plan places sequential phases with separate deadlines within one order.
 - Partial sample failure does not yet have an agreed whole-job closure rule; this plan must not invent one.
 
 Initial implementation defaults:
@@ -192,7 +203,7 @@ Initial durations and their day bases will be supplied through the configuration
 
 Use the documented Monday-Friday business calendar and fixed laboratory timezone as explicit initial assumptions. Holiday exclusions are included in scope through the configurable calendar; the actual observed dates will be entered there. Retain the proposed internal-only rollout and separate manual estimate history; no customer communication is authorized by these planning decisions.
 
-Deferred: capacity-aware scheduling, empirical duration/residual models, forecast accuracy thresholds, multi-phase contract forecasting, and partial-failure job closure policy. Preserve identifiers and evidence so these can be added later without redefining historical events.
+Deferred: capacity-aware scheduling, empirical duration/residual models, forecast accuracy thresholds, multi-phase Job forecasting, and partial-failure job closure policy. Preserve identifiers and evidence so these can be added later without redefining historical events.
 
 ## Implementation record — September 18, 2026
 
@@ -225,3 +236,9 @@ The workflow-version selector and timing-policy/calendar setup messages now sit 
 Holiday calendar has its own Lab settings sidebar page, following Stage durations. Its revision/coverage message, coverage warning and year filter are in the card header. Display dates use `MMM dd, yyyy` without timezone conversion; saved holiday rows open in ascending observed-date order in the editor. New rows stay where added while editing so date typing does not reorder the focused field. Lab steps remains the default. Phaeno help updated in the same change.
 
 Verification: frontend type checking and scoped lint passed. Signed-in browser confirmed the standalone tab, header placement, formatted dates, absence of the calendar from Stage durations, and all 15 existing editor rows in ascending observed-date order. The editor was cancelled without saving.
+
+September 30 local phase implementation: [MULTI-PHASE-LAB-JOBS-PLAN.md](MULTI-PHASE-LAB-JOBS-PLAN.md) now owns the implemented sequential cohort extension, derived mixed progress, phase-specific receipt/TAT/deadline, unsent-only mutual rephasing, first-tube cancellation cutoff and explicit partial/combined phase invoices. It supersedes older whole-Job completion invoicing and single-status assumptions for phased PSeq Jobs. Local migration applied after the authorized Job purge; connected/browser/physical/scientific acceptance and release remain separate, unverified gates.
+
+### Federal holiday calendar seed - September 30, 2026
+
+The owner authorized a data-only seed in configured local development and production Portal databases. Both now have calendar revision 1 covering January 1, 2026 through December 31, 2028 in America/Los_Angeles, with all 33 OPM observed holidays from the 2026-2028 schedules. New Year's Day 2028 is recorded on December 31, 2027. Both targets were empty before seeding; exact date/name and audit readback passed, local replay was a no-op, and production health/database probes passed. No schema, timing-policy or commitment changes were needed. See the [operation and recovery evidence](../operations/federal-holidays-seed-20260930.md).

@@ -505,10 +505,19 @@ remain separate audited actions.
 
 ### Repeated sample sequencing
 
-Commercial quantity counts sample-sequencing runs: one sample sequenced twenty times and twenty samples sequenced once both have quantity 20. Physical tubes and preparation attempts do not determine the purchased quantity. A library preparation may provide enough material for multiple runs. For each run, Lab explicitly records a new preparation or use of an existing prepared library, preserving the actual library, source and preparation evidence. Authorized allocations are frozen in the Lab authorization. Additional files, linked replacements after failure and reanalysis retain the purchased run number and count once. Approved and released results must cover all allocated runs before completion and full delivery, respectively. Accepted pricing is immutable.
+For phased and non-phased orders, standard pricing is per sample and includes one library preparation, one sequencing run and data assembly. Price additional sequencing runs separately, using the existing prepared library while material remains available. Quote quantities are one standard service per sample plus only the runs beyond the first per sample: `samples × sample price + (total runs − samples) × additional-run price`. One sample sequenced twenty times buys one standard service and nineteen additional runs; twenty samples sequenced once buy twenty standard services. Both still allocate twenty purchased runs for laboratory execution. Physical tubes and preparation attempts do not determine the purchased quantity. A library preparation may provide enough material for multiple runs. For each run, Lab explicitly records a new preparation or use of an existing prepared library, preserving the actual library, source and preparation evidence. Authorized allocations are frozen in the Lab authorization. Additional files, linked replacements after failure and reanalysis retain the purchased run number and count once. Approved and released results must cover all allocated runs before completion and full delivery, respectively. Accepted pricing is immutable.
 
 When the purchased run count equals the accepted sample count, each sample has
 one fixed run during sample identification and editing. Customers may increase
 tube counts to provide reserve material in case of failure; this does not increase
 purchased runs. Explicit additional-run purchases retain allocation of their
 accepted total.
+
+
+## Customer standard-order rules — September 30, 2026
+
+New Customer self-service Lab orders have one scope and one included run per sample, with no Customer-authored phase configuration or pricing proposal. Additional runs and phased scope require Sales. A Job name permits an incomplete Draft save; placement requires reviewed scope, current permission/readiness, confirmed Sample type and kit delivery address, approved tax and a final total.
+
+Each service catalog item has an explicit nullable maximum Customer sample count. Null disables Customer standard placement; a configured positive limit allows exactly that count and sends larger orders to Sales, even with a negotiated rate. No commercial default is inferred from the 10,000-record technical cap.
+
+A current negotiated USD service price applies at Organization scope or within the selected Department. One applicable rate overrides the standard catalog price. When both apply, use the lower negotiated rate; another Department's rate never applies. Active effective windows are non-overlapping within one service/scope. Pricing records grant no service access. Placement rechecks price/configuration and freezes the unit price, source, selected-rate identity/version and catalog evidence. Later changes cannot alter accepted commitments. Existing orders are not converted.

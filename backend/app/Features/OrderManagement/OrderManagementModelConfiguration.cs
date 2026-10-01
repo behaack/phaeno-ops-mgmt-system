@@ -13,10 +13,11 @@ public static class OrderManagementModelConfiguration
 {
     public static void Configure(ModelBuilder modelBuilder, string commercialSchema)
     {
-        ConfigureCatalog(modelBuilder);
+        ConfigureCatalog(modelBuilder, commercialSchema);
         ConfigureCommercial(modelBuilder);
         ConfigureAccountsReceivable(modelBuilder, commercialSchema);
         ConfigureCommercialLabServiceRecords(modelBuilder, commercialSchema);
+        LabJobPhaseModelConfiguration.Configure(modelBuilder, commercialSchema);
         ConfigurePSeqResultDelivery(modelBuilder, commercialSchema);
         ConfigureSampleShipping(modelBuilder);
         ConfigureReagents(modelBuilder);
@@ -298,7 +299,7 @@ public static class OrderManagementModelConfiguration
         });
     }
 
-    private static void ConfigureCatalog(ModelBuilder modelBuilder)
+    private static void ConfigureCatalog(ModelBuilder modelBuilder, string commercialSchema)
     {
         modelBuilder.Entity<QboCatalogItem>(entity =>
         {
@@ -312,6 +313,18 @@ public static class OrderManagementModelConfiguration
             Text(entity.Property(e => e.Currency), 3);
             entity.HasIndex(e => e.ExternalItemId).IsUnique();
             entity.HasIndex(e => new { e.IsActive, e.Name });
+            Audit(entity);
+        });
+
+        modelBuilder.Entity<LabServiceNegotiatedPrice>(entity =>
+        {
+            entity.ToTable("lab_service_negotiated_prices", commercialSchema);
+            entity.HasKey(e => e.Id);
+            Money(entity.Property(e => e.UnitPrice));
+            entity.HasOne<Organization>().WithMany().HasForeignKey(e => e.OrganizationId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_lab_service_negotiated_prices_organization");
+            entity.HasOne<OrganizationDepartment>().WithMany().HasForeignKey(e => e.DepartmentId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_lab_service_negotiated_prices_department");
+            entity.HasOne<QboCatalogItem>().WithMany().HasForeignKey(e => e.CatalogItemId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_lab_service_negotiated_prices_catalog");
+            entity.HasIndex(e => new { e.OrganizationId, e.CatalogItemId, e.DepartmentId, e.EffectiveFrom }).HasDatabaseName("ix_lab_service_negotiated_prices_scope");
             Audit(entity);
         });
 
@@ -535,8 +548,8 @@ public static class OrderManagementModelConfiguration
             Text(entity.Property(e => e.PdfSha256), 64);
             Text(entity.Property(e => e.VoidReason), 2000, false);
             entity.HasIndex(e => e.InvoiceNumber).IsUnique();
-            entity.HasIndex(e => e.LabServiceOrderId).IsUnique();
-            entity.HasIndex(e => e.AcceptedQuoteId).IsUnique();
+            entity.HasIndex(e => e.LabServiceOrderId);
+            entity.HasIndex(e => e.AcceptedQuoteId);
             entity.HasIndex(e => new { e.OrganizationId, e.Status, e.DueOn });
             entity.HasOne<Organization>().WithMany().HasForeignKey(e => e.OrganizationId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<LabServiceOrder>().WithMany().HasForeignKey(e => e.LabServiceOrderId).OnDelete(DeleteBehavior.Restrict);
@@ -780,6 +793,7 @@ public static class OrderManagementModelConfiguration
             Text(entity.Property(e => e.SafetyDeclaration), 2000);
             Text(entity.Property(e => e.SubmissionInstructionsSnapshot), 8000);
             Json(entity.Property(e => e.PlacementSnapshotJson), false);
+            Json(entity.Property(e => e.CustomerDraftJson), false);
             entity.Property(e => e.ProposedUnitPrice).HasPrecision(18, 2);
             Text(entity.Property(e => e.PriceProposalNote), 1000, false);
             EnumText(entity.Property(e => e.Status));

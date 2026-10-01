@@ -22,7 +22,7 @@ using PhaenoPortal.App.Features.OrderManagement.Services;
 public partial class LabOperationsCommercialHandoffPostgresTests
 {
     [PostgreSqlReferenceFact]
-    public async Task FailedProcessingRemainsBillableButCurrentLabHoldsBlockCompletion()
+    public async Task FailedProcessingRemainsBillableButNeverSatisfiesPhaseDelivery()
     {
         var connection = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("PSEQ_OPERATIONS_REFERENCE_CONNECTION")!);
         if (connection.Host is not ("localhost" or "127.0.0.1")) throw new InvalidOperationException("Requires disposable loopback PostgreSQL.");
@@ -62,16 +62,18 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             scope.DbContext.Add(hold); await scope.DbContext.SaveChangesAsync();
             var storage = new CompletionPdfStorage();
             var error = await Assert.ThrowsAsync<OrderManagementException>(() => scope.CompletionController(Guid.NewGuid().ToString("N"), storage).Complete(order.Id, new(version), default));
-            Assert.Equal("laboratory_outcomes_not_final", error.ErrorCode); Assert.Empty(storage.Files);
+            Assert.Equal("phase_results_not_delivered", error.ErrorCode); Assert.Empty(storage.Files);
             scope.DbContext.ChangeTracker.Clear();
             hold = await scope.DbContext.LabExceptions.SingleAsync(value => value.Id == hold.Id);
             hold.Resolve(scope.PlatformUser.Id, DateTime.UtcNow, "SIMULATED review complete");
             await scope.DbContext.SaveChangesAsync();
-            var completed = await scope.CompletionController(Guid.NewGuid().ToString("N"), storage).Complete(order.Id, new(version), default);
-            Assert.Equal("Completed", completed.Status);
+            var stillUndelivered = await Assert.ThrowsAsync<OrderManagementException>(() => scope.CompletionController(Guid.NewGuid().ToString("N"), storage).Complete(order.Id, new(version), default));
+            Assert.Equal("phase_results_not_delivered", stillUndelivered.ErrorCode);
+            await scope.CompletionController(Guid.NewGuid().ToString("N"), storage).IssuePhaseInvoice(order.Id,
+                new(order.PhasePlanRevision, [new(Assert.Single(order.Phases).Id, 200m)]), default);
             var invoice = Assert.Single(await scope.DbContext.Invoices.ToListAsync());
             Assert.Equal(200m, invoice.Subtotal); Assert.Equal(20m, invoice.TaxTotal); Assert.Equal(220m, invoice.Total);
-            Assert.Equal(2m, (await scope.DbContext.InvoiceLines.SingleAsync()).Quantity);
+            Assert.Equal(200m, (await scope.DbContext.InvoiceLines.SingleAsync()).Subtotal);
             Assert.All(await scope.DbContext.LabSamples.ToListAsync(), sample => Assert.Equal(LabSampleStatus.Failed, sample.Status));
         }
         finally { await using var drop = new NpgsqlCommand($"DROP DATABASE {name} WITH (FORCE)", admin); await drop.ExecuteNonQueryAsync(); }
@@ -97,17 +99,23 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             var key = Guid.NewGuid().ToString("N");
             var completed = await CompletionController(key, storage).Complete(order.Id, new(reviewedVersion), default);
             Assert.Equal("Completed", completed.Status);
+            Assert.Empty(await DbContext.Invoices.Where(i => i.LabServiceOrderId == order.Id).ToListAsync());
+            var invoiceKey = Guid.NewGuid().ToString("N");
+            var invoiceRequest = new LabPhaseInvoiceWriteRequest(order.PhasePlanRevision, [new(Assert.Single(order.Phases).Id, 100m)]);
+            await CompletionController(invoiceKey, storage).IssuePhaseInvoice(order.Id, invoiceRequest, default);
             var invoice = await DbContext.Invoices.SingleAsync(value => value.LabServiceOrderId == order.Id);
             Assert.Equal(100m, invoice.Subtotal); Assert.Equal(10m, invoice.TaxTotal); Assert.Equal(110m, invoice.Balance);
             Assert.Equal(invoice.IssuedOn.AddDays(30), invoice.DueOn);
             Assert.Equal(accepted.Id, invoice.AcceptedQuoteId);
             var pdf = Assert.Single(storage.Files).Value.ToArray();
             Assert.StartsWith("%PDF-", Encoding.ASCII.GetString(pdf));
-            Assert.Equal(invoice.PdfSha256, Convert.ToHexString(SHA256.HashData(pdf)));
+            Assert.Equal(Convert.FromHexString(invoice.PdfSha256!), SHA256.HashData(pdf));
             var frozen = (invoice.PdfStorageKey, invoice.PdfSha256, invoice.BillingContactSnapshotJson,
                 invoice.BillingAddressSnapshotJson, invoice.TaxDecisionSnapshotJson, invoice.DueOn);
             var replay = await CompletionController(key, storage).Complete(order.Id, new(reviewedVersion), default);
-            Assert.Equal(completed.Version, replay.Version); Assert.Equal(1, storage.SaveCount);
+            Assert.Equal(completed.Version, replay.Version);
+            await CompletionController(invoiceKey, storage).IssuePhaseInvoice(order.Id, invoiceRequest, default);
+            Assert.Equal(1, storage.SaveCount);
             Assert.Equal(1, await DbContext.Invoices.CountAsync(value => value.LabServiceOrderId == order.Id));
             // The invoice is still wholly unpaid; exercise the same published scientific download after issuance.
             using (var services = new ServiceCollection().AddLogging().AddControllers().Services.BuildServiceProvider())

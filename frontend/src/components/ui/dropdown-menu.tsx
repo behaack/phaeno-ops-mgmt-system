@@ -2,7 +2,7 @@ import * as React from "react"
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui"
 
 import { cn } from "#/lib/utils"
-import { CheckIcon, ChevronRightIcon } from "lucide-react"
+import { CheckIcon, ChevronDownIcon, ChevronRightIcon } from "lucide-react"
 import { Button } from "#/components/ui/button"
 
 // Action menus count rendered items after permission/status conditions resolve.
@@ -48,7 +48,26 @@ function ActionMenu(props: React.ComponentProps<typeof DropdownMenuPrimitive.Roo
       })
     }
   }
+  // Dropdown indicators belong to the shared control, not individual screens.
+  // Keep an existing chevron so callers cannot accidentally render two.
+  if (React.isValidElement<{ children?: React.ReactNode }>(trigger)) {
+    const button = React.Children.toArray(trigger.props.children)[0]
+    if (trigger.props.children && React.isValidElement<React.ComponentProps<typeof Button>>(button) && button.type === Button) {
+      const dropdownTrigger = React.cloneElement(trigger, {
+        children: React.cloneElement(button, {
+          size: button.props.size?.startsWith('icon') ? 'sm' : button.props.size,
+          children: <>{button.props.children}{hasActionMenuIndicator(button.props.children) ? null : <ChevronDownIcon aria-hidden="true" data-icon="inline-end" data-slot="action-menu-indicator" />}</>,
+        }),
+      })
+      return <DropdownMenu {...props}>{children.map(child => child === trigger ? dropdownTrigger : child)}</DropdownMenu>
+    }
+  }
   return <DropdownMenu {...props} />
+}
+
+function hasActionMenuIndicator(children: React.ReactNode): boolean {
+  return React.Children.toArray(children).some(child => React.isValidElement<{ children?: React.ReactNode }>(child)
+    && (child.type === ChevronDownIcon || hasActionMenuIndicator(child.props.children)))
 }
 
 function DropdownMenu({

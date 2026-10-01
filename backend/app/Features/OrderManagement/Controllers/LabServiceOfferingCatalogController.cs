@@ -17,6 +17,14 @@ public sealed class LabServiceOfferingCatalogController(PSeqOperationsDbContext 
         var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, false, cancellationToken);
         var eligibility = await LabServiceOrderingEligibility.ReadAsync(dbContext, tenant.Organization.Id,
             DateTime.UtcNow, cancellationToken, tenant.Department.Id);
-        return eligibility.CanOrder ? await new LabServiceOfferingService(dbContext).ReadAsync(true, cancellationToken) : [];
+        if (!eligibility.CanOrder) return [];
+        var offerings = await new LabServiceOfferingService(dbContext).ReadAsync(true, cancellationToken);
+        var result = new List<LabServiceOfferingDto>();
+        foreach (var offering in offerings)
+        {
+            var price = await LabServicePriceResolver.ResolveAsync(dbContext, tenant.Organization.Id, tenant.Department.Id, offering, cancellationToken);
+            result.Add(offering with { UnitPrice = price.UnitPrice, PriceProvenance = price });
+        }
+        return result;
     }
 }

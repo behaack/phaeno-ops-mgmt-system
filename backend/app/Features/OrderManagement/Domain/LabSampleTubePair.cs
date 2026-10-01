@@ -7,6 +7,7 @@ using PSeq.Operations.Commercial.OrderManagement.Domain;
 public sealed class LabSampleTubePair : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
+    public Guid LabJobPhaseId { get; private set; }
     public Guid LabServiceOrderId { get; private set; }
     public Guid OrganizationId { get; private set; }
     public Guid DepartmentId { get; private set; }
@@ -27,9 +28,9 @@ public sealed class LabSampleTubePair : IAudit, IConcurrency
     private LabSampleTubePair() { }
     public LabSampleTubePair(Guid orderId, Guid organizationId, Guid departmentId, Guid stockKitId,
         Guid stockTubeId, string customerSampleId, string biologicalSource, string barcode,
-        decimal declaredQuantity, string declaredQuantityUnit, int sequencingRunCount)
+        decimal declaredQuantity, string declaredQuantityUnit, int sequencingRunCount, Guid labJobPhaseId)
     {
-        if (new[] { orderId, organizationId, departmentId, stockKitId, stockTubeId }.Any(id => id == Guid.Empty))
+        if (new[] { orderId, organizationId, departmentId, stockKitId, stockTubeId, labJobPhaseId }.Any(id => id == Guid.Empty))
             throw new ArgumentException("Choose an order and a registered physical tube.");
         if (!PSeq.Operations.Commercial.OrderManagement.Domain.SupplierTubeBarcode.TryNormalize(barcode, out var normalized))
             throw new ArgumentException("Scan the complete barcode printed on the tube.");
@@ -37,6 +38,7 @@ public sealed class LabSampleTubePair : IAudit, IConcurrency
             || decimal.Round(declaredQuantity, 6) != declaredQuantity || sequencingRunCount < 1)
             throw new ArgumentException("Enter a positive biological material amount and sequencing run count.");
         LabServiceOrderId = orderId; OrganizationId = organizationId; DepartmentId = departmentId;
+        LabJobPhaseId = labJobPhaseId;
         StockKitId = stockKitId; StockTubeId = stockTubeId;
         CustomerSampleId = OrderText.Required(customerSampleId, nameof(customerSampleId), 255);
         BiologicalSource = OrderText.Required(biologicalSource, nameof(biologicalSource), 500);

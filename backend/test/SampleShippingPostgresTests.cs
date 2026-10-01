@@ -733,6 +733,13 @@ public partial class SampleShippingPostgresTests
                     .Select(item => item.Id)
                     .ToArrayAsync();
 
+                var assemblyIds = await DbContext.Set<LabAssemblyJob>().Where(item => workOrderIds.Contains(item.LabWorkOrderId))
+                    .Select(item => item.Id).ToArrayAsync();
+                await DbContext.Set<LabAssemblyReceipt>().Where(item => assemblyIds.Contains(item.LabAssemblyJobId)).ExecuteDeleteAsync();
+                await DbContext.Set<LabAssemblyCommand>().Where(item => assemblyIds.Contains(item.LabAssemblyJobId)).ExecuteDeleteAsync();
+                await DbContext.Set<LabAssemblyEvent>().Where(item => assemblyIds.Contains(item.LabAssemblyJobId)).ExecuteDeleteAsync();
+                await DbContext.Set<LabAssemblyJob>().Where(item => assemblyIds.Contains(item.Id) && item.PreviousJobId != null).ExecuteDeleteAsync();
+                await DbContext.Set<LabAssemblyJob>().Where(item => assemblyIds.Contains(item.Id)).ExecuteDeleteAsync();
                 await DbContext.LabWorkEvents.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabOperationsOutboxEvents.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabContainerBarcodes.Where(item => DbContext.LabContainers.Any(container =>
@@ -757,6 +764,7 @@ public partial class SampleShippingPostgresTests
                 await DbContext.CustomerDeliveryLocations.Where(item => organizationIds.Contains(item.OrganizationId)).ExecuteDeleteAsync();
                 await DbContext.LabSpecimens.Where(item => workOrderIds.Contains(item.LabWorkOrderId)).ExecuteDeleteAsync();
                 await DbContext.LabWorkOrders.Where(item => workOrderIds.Contains(item.Id)).ExecuteDeleteAsync();
+                await DbContext.LabServiceOrders.Where(item => organizationIds.Contains(item.OrganizationId)).ExecuteDeleteAsync();
                 await CleanupContainerDefinitionsAsync();
                 DbContext.ChangeTracker.Clear();
 

@@ -30,22 +30,25 @@ Open the Job and review its committed sample count, biological-source compositio
 
 For a manually quoted Job, individual sample entry remains unavailable until your organization accepts the quote.
 
-## Submit a lab service request
+## Create and save a standard order
 
-**Request lab service** is available only while your organization has current ordering authorization and PSeq Lab Service is offered. If new Jobs are unavailable, the page explains whether Phaeno must enable ordering authorization or the service is temporarily unavailable. Existing accepted Jobs remain available and follow their normal hold or cancellation workflow.
+Choose **Request lab service** in the selected Department. Select a service, enter a unique Job name, choose one Sample type, and enter each biological source with its sample count. Each sample includes one library preparation, one sequencing run and data assembly. Additional sequencing runs and multiple phases require Sales.
 
-1. Open **Lab services** and select **Request lab service**.
-2. In **Submit lab service request**, enter a unique **Job name**, select one **Sample type**, and enter each **Biological source** with its sample count. If you need PSeq on a different sample type, create a separate Job. The Portal calculates the Job's total sample count from those source groups. Enter the **Storage requirements** and **Safety declaration** shared by every sample, and any optional **Job notes**. Do not enter a patient name or identifier.
-3. Select **Submit request**. The portal assigns an immutable eight-character **Job number** using unambiguous uppercase letters and numbers.
-4. The request opens on its detail page at **Pricing review**, with **Waiting for pricing** as its next step. Phaeno prepares pricing for you to accept or decline. Submission does not authorize work; individual sample entry remains unavailable until you accept.
+**Save draft** retains incomplete work without accepting pricing or authorizing laboratory work. A Job name is required to save. Reopen the Job and choose **Edit Draft** to continue. Storage uses the Sample type's configured requirements; check **Use different storage requirements** only for an exception. Enter handling risks in **Safety declaration**, or enter “No known hazards”. Keep patient names and identifying information out of notes.
 
-Members can review work in their assigned Department. Organization and Department administrators may create, edit, submit and accept applicable manual quotes in that Department. Organization and assigned-Department administrators may also place configured standard orders. Department authority does not grant access to other Departments.
+If another administrator changes your Draft, the latest values are loaded and your edits are preserved. Review the form and the latest saved changes shown in the message, then select **I reviewed the refreshed Draft** before saving or reviewing pricing again. Locally edited source rows remain together; check their sources and counts against the other administrator's changes.
 
-If an older draft still contains sample rows from the former workflow, the Job identifies them as legacy rows. Clear each row’s details before submitting for pricing; enter the current sample roster again only after accepting the price.
+The displayed price uses your applicable negotiated service price, when one exists. If both your Organization and selected Department have negotiated prices, the lower of those two applies. Otherwise the standard catalog price applies. You cannot edit these prices. Each service shows its maximum Customer sample count. At the limit, ordering is allowed; above it, retain your entries as a Draft and contact your sales representative for negotiated pricing.
+
+Choose **Review order** to save the scope and refresh the authoritative price. Review the sample count, included service, subtotal, approved tax and total. Complete any listed setup blockers, select the Department's kit delivery address, enter a purchase order number when required, and confirm the Sample type, scope and prohibited-data statement. **Place order** accepts those reviewed terms directly, without a separate manual pricing request. Exact Sample IDs and tube pairing follow placement.
+
+If prices or configuration change, use **Refresh review** to return to the scope and review again before placing. Accepted orders keep their saved price and source. If the placement outcome is uncertain, keep the review open and choose **Retry placement**; the same placement is recovered rather than creating another commitment.
+
+Members can review work in their assigned Department. Organization and assigned-Department administrators may prepare and place orders. Department authority does not grant access to other Departments.
 
 ## Existing configured standard drafts
 
-For an existing unsubmitted draft with a configured standard offering, in **Standard PSeq Lab Service**, choose an available **Offering**. Review its allowed material types and biological sources, included scientific outputs, single delivery target in business days, sample count, purchased sample-sequencing runs, and price per run. The bundle includes laboratory processing and data assembly; it does not require a separate assembly purchase.
+For an existing unsubmitted draft with a configured standard offering, in **Standard PSeq Lab Service**, choose an available **Offering**. Review its allowed material types and biological sources, included scientific outputs, single delivery target in business days, sample count, purchased sample-sequencing runs, and price per sample. Standard pricing includes one library preparation, one sequencing run and data assembly per sample; it does not require a separate assembly purchase. Extra runs use the existing prepared library while material remains available and are quoted separately through pricing review.
 
 Choose **Review standard order**. The review shows the current subtotal, approved tax, and final total. An organization or assigned-Department administrator supplies a PO when required, confirms the scope and prohibited-data statement, and selects **Place standard order**. The offering, scope, price and approved tax are retained with the Job. Detailed samples are entered afterward.
 
@@ -53,9 +56,9 @@ If a readiness or billing requirement is incomplete, the displayed blockers expl
 
 Describe any required sources, outputs or timing in the lab service request and its **Job notes**. There is no separate custom-work inquiry to submit for this Job.
 
-## Submit for review
+## Existing requests awaiting manual pricing
 
-New requests are submitted for pricing when you select **Submit request**. Older unsubmitted drafts can use **Actions → Submit for pricing**. Do not include patient identifiers, PHI, or unnecessary personal data. No individual sample list is required or permitted at this stage. Submission preserves a pricing-profile revision. Phaeno can prepare pricing, request specific corrections, or reject work that cannot be performed.
+Existing unsubmitted manual requests can use **Actions → Submit for pricing**. New Customer standard orders use the Draft and Review flow above. Do not include patient identifiers, PHI, or unnecessary personal data. No individual sample list is required or permitted at this stage. Submission preserves a pricing-profile revision. Phaeno can prepare pricing, request specific corrections, or reject work that cannot be performed.
 
 While **Pricing review** is pending, use **Actions → Edit request** to change the scope and select **Submit changes**, or **Actions → Withdraw request** to stop the request. Each submitted change preserves the earlier revision and returns the latest scope to Phaeno for pricing. When pricing is issued, the first step changes to **Confirm pricing**; review the quote and accept or decline it. Direct scope edits are unavailable once pricing is issued.
 
@@ -178,7 +181,7 @@ for your attention remains visible above the work areas.
 
 ## Multiple tubes for one sample
 
-Pricing counts **sample-sequencing runs**. Twenty samples sequenced once and one sample sequenced twenty times both count as 20. In the Job profile, leave **Sample-sequencing runs** blank for one run per sample, or enter the total requested runs. A machine batch is not the pricing unit.
+Standard pricing is per **sample** and includes one library preparation, one sequencing run and data assembly. Additional runs are priced separately and use the prepared library while material remains available. Twenty samples sequenced once require twenty standard services. One sample sequenced twenty times requires one standard service plus nineteen additional runs. Both allocate twenty **sample-sequencing runs** for laboratory execution. In the Job profile, leave **Sample-sequencing runs** blank for one run per sample, or enter the total requested runs. A machine batch is not the pricing unit.
 
 After accepting pricing, enter each sample once. When pricing includes one run per sample, **Runs** shows a fixed **1** during sample entry, and **Sample-sequencing runs** is fixed at **1** in **Edit sample**. **Tubes** remains editable: you may send reserve tubes so material is available in case of failure, without buying extra runs. For Jobs explicitly priced with additional runs, allocate those purchased runs across samples; the total must equal the purchased run count before **Review and finalize list** becomes available. The CSV template includes **sequencing_runs** and validates the same purchased total; an older three-column CSV defaults each sample to one run. Existing accepted prices and previously recorded scope are preserved.
 
@@ -197,3 +200,19 @@ The request immediately blocks new preparation, new sequencing handoffs, new ana
 Use **Request resumption** when ready. Work remains blocked until Phaeno approves resumption. Other authorization, material, quality and workflow requirements still apply, and approval does not automatically start work. Read **Hold history** for the recorded reasons and decisions.
 
 A hold does not automatically change charges, deadlines or retention dates, and results already delivered remain available. Contact Phaeno directly for an urgent request or a separate commercial or retention adjustment.
+
+## Follow phased Jobs
+
+Sales may agree phase-specific biological sources, sample counts and sequencing runs per sample with you. Review those phases and prices in the one issued quote. During **Prepare sample shipment**, select the phase for each Sample ID/tube pair. Choose one of that phase's biological sources. The agreed runs per sample are shown as a fixed value. Saved pairs cannot exceed the phase's source counts or purchased runs. A single-scope Job does not require phase selection. Contact Phaeno to correct Sales-entered scope before accepting pricing.
+
+One Job may have several ordered phases, each with its own samples, agreed turnaround expectation and billing portion. The **Phases** card shows each cohort, receipt counts, current sample stages and delivery due date. **Mixed** means samples are at different stages; **Received** remains the customer-facing receipt status. Held and review counts accompany progress. Results complete a phase only when all required outputs for its samples and purchased runs are available through the Portal. The next phase can then begin processing.
+
+A phase's TAT starts when Phaeno physically receives the last required tube across that phase's samples and containers. Receiving a future cohort early starts its clock even while it waits for the preceding phase. A container arrival alone is not complete tube receipt.
+
+An administrator can select **Request cancellation** for an eligible phase before the first required tube is received. Phaeno reviews the request; a request is not approval. Receipt closes eligibility. Cancellation retains the recorded scope and any invoices for separate financial review.
+
+After approval, that phase no longer requires Sample IDs or physical tube pairs to complete preparation. Prepare all remaining phases. Previously saved cancelled pairs remain marked as history and are excluded from the required totals and new shipments.
+
+Phaeno may propose rephasing an open Job. Review the previous plan, proposed counts, TAT, billing portions and named sample moves, then use **Actions → Accept rephasing** or **Decline rephasing**. Only unsent future samples can move, including while earlier work runs. Sending any required tube fixes that sample's assignment; received and processing samples remain fixed. Acceptance rechecks current facts and retains original commitments and issued invoices. Closed Jobs cannot be rephased.
+
+Invoices follow the agreed billing schedule and can cover upfront or completed work, or portions of several phases. Phase completion does not automatically issue an invoice. Payment does not gate PSeq result release.

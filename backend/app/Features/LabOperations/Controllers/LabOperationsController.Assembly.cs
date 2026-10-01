@@ -39,10 +39,13 @@ public sealed partial class LabOperationsController
         var job = await service.RequireJobAsync(jobId, ct);
         var events = await dbContext.Set<LabAssemblyEvent>().AsNoTracking().Where(e => e.LabAssemblyJobId == jobId)
             .OrderBy(e => e.RecordedAtUtc).Select(e => new { e.Id, e.Kind, e.RecordedAtUtc, e.ActorUserId, e.EvidenceJson }).ToListAsync(ct);
+        var delivery = await dbContext.Set<LabAssemblyCommand>().AsNoTracking().Where(c => c.LabAssemblyJobId == jobId)
+            .OrderBy(c => c.RequestedAtUtc).Select(c => new { c.Kind, c.AttemptCount, c.LastAttemptAtUtc, c.NextAttemptAtUtc,
+                c.ReceivedAtUtc, c.ConfirmedAtUtc, c.EscalatedAtUtc, c.Suppressed }).ToListAsync(ct);
         var analyses = await dbContext.LabAnalysisRuns.AsNoTracking().Where(a => a.LabWorkOrderId == job.LabWorkOrderId
             && a.LabSpecimenId == job.LabSpecimenId && a.ProviderKey == job.ProviderKey && a.RunReference == job.ProviderJobId)
             .Select(a => new { a.Id, a.RunReference, a.RecordedAtUtc }).ToListAsync(ct);
-        return new { job = await service.ReadAsync(jobId, ct), events, analyses,
+        return new { job = await service.ReadAsync(jobId, ct), events, analyses, delivery,
             inputs = JsonSerializer.Deserialize<AssemblyFrozenInputs>(job.InputsJson, LabAssemblyService.Json)!.Inputs,
             recipe = JsonSerializer.Deserialize<AssemblyRecipe>(job.RecipeJson, LabAssemblyService.Json),
             availability = service.Availability, canOperate = actor.HasAny(LabRole.Operator, LabRole.Supervisor) };

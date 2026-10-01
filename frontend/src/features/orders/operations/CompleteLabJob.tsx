@@ -1,3 +1,4 @@
+import { useLabPhasePlan } from '../use-lab-phases'
 import { useMutation } from '@tanstack/react-query'
 import { useRef, useState, type ReactNode } from 'react'
 
@@ -24,9 +25,9 @@ export function CompleteLabJob({ order, authorized, onSaved, renderActions, onCl
     mutationFn: onSaved,
     onSuccess: () => { attempt.current = null; mutation.reset(); setOpen(false) },
   })
-  if (!authorized || !['InProgress', 'ResultsAvailable'].includes(order.status)) return renderActions?.(undefined, false) ?? null
-  const unresolved = order.samples.filter(sample => !['Completed', 'Rejected', 'Failed', 'Cancelled'].includes(sample.status)).length
-  const ready = order.samples.length > 0 && unresolved === 0
+  const phases = useLabPhasePlan(order.id, true)
+  if (!authorized || !['PlacedAwaitingSamples', 'InProgress', 'ResultsAvailable'].includes(order.status)) return renderActions?.(undefined, false) ?? null
+  const ready = Boolean(phases.data?.phases.length && phases.data.phases.every(p => ['ResultsDelivered', 'Cancelled'].includes(p.lifecycle) && !p.cancellationPending))
   const conflict = isOrderConcurrencyError(mutation.error)
   const pending = mutation.isPending || reload.isPending
   function openCompletion() {
@@ -39,12 +40,12 @@ export function CompleteLabJob({ order, authorized, onSaved, renderActions, onCl
       <DialogContent className="sm:max-w-lg" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle>Complete Job {order.orderNumber}</DialogTitle>
-          <DialogDescription>Close this Job after reviewing every sample outcome. Completion issues its invoice from the accepted quote and applicable approved billing details. Unpaid PSeq invoices do not prevent scientific result access.</DialogDescription>
+          <DialogDescription>Close this Job after every non-cancelled phase delivers all its required results through the Portal. Finance chooses invoice timing and portions separately.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3 text-sm">
           <p>{order.customerReference} · {order.samples.length} samples</p>
-          {!ready ? <p role="status">{order.samples.length === 0 ? 'Add and finalize the sample roster before completing this Job.' : `${unresolved} samples still need a final laboratory outcome. Review their Lab work before completion.`}</p> : <p>All samples have a recorded final laboratory outcome. Review the accepted quote and billing details before confirming.</p>}
-          <p>Failed processing remains billable at the accepted price. Any credit or replacement requires a separate reviewed decision.</p>
+          {!ready ? <p role="status">Every non-cancelled phase must deliver all required outputs, and cancellation requests must be resolved.</p> : <p>Every phase is delivered or approved cancelled. Review cancelled scope before confirming.</p>}
+          <p>Approved cancelled scope remains recorded and is not successful delivery. Issued invoices and adjustments remain with Finance.</p>
           {conflict ? <p role="alert">The Job changed after you reviewed it. Reload, review its current outcomes, then open completion again.</p> : null}
         </div>
         {mutation.error || reload.error ? <DialogFeedback><p role="alert">{getOrderErrorMessage(reload.error ?? mutation.error, 'Completion could not be confirmed. Retry to recover the same operation.')}</p></DialogFeedback> : null}

@@ -13,11 +13,17 @@ import { Label } from '#/components/ui/label'
 import { RequiredDialogFooter } from '#/components/ui/required-field'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { useQuoteStatus } from './use-quote-status'
+import { sampleServicePricing } from './sample-service-pricing'
 
 const changeSchema = z.object({
-  sources: z.array(z.object({ biologicalSource: z.string().trim().min(1).max(500), specimenCount: z.coerce.number().int().min(1).max(100) })).min(1),
+  sources: z.array(z.object({ biologicalSource: z.string().trim().min(1).max(500), specimenCount: z.coerce.number().int().min(1).max(10000) })).min(1),
   runs: z.string().trim().refine(v => !v || (/^\d+$/.test(v) && Number(v) > 0 && Number(v) <= 10000), "Enter a whole number from 1 to 10,000."),
   unitPrice: z.coerce.number().positive().refine(value => Math.round(value * 100) / 100 === value, 'Use at most two decimal places.'),
+  additionalRunPrice: z.number().nonnegative().multipleOf(0.01).nullable(),
+}).superRefine((values, context) => {
+  const samples = values.sources.reduce((sum, source) => sum + source.specimenCount, 0)
+  if (values.runs && Number(values.runs) > samples && values.additionalRunPrice === null)
+    context.addIssue({ code: 'custom', path: ['additionalRunPrice'], message: 'Enter the price per additional sequencing run.' })
 })
 
 export function IssueLabChangeQuote({ order, catalogItems, onSaved }: { order: LabServiceOrder; catalogItems: OrderConfiguration['catalogItems']; onSaved: () => Promise<void> }) {
@@ -27,17 +33,23 @@ export function IssueLabChangeQuote({ order, catalogItems, onSaved }: { order: L
   const acceptedIds = acceptedCatalogIds(accepted)
   const matched = catalogItems.filter(item => acceptedIds.includes(item.id) && item.isPSeqLabService && item.isActive && item.salesUnit.toLowerCase() === 'specimen')
   const catalog = matched.length === 1 ? matched[0] : undefined
-  const form = useForm<z.input<typeof changeSchema>, unknown, z.output<typeof changeSchema>>({ resolver: zodResolver(changeSchema), defaultValues: { sources: [{ biologicalSource: '', specimenCount: 1 }], runs: '', unitPrice: catalog?.basePrice ?? 0 } })
+  const form = useForm<z.input<typeof changeSchema>, unknown, z.output<typeof changeSchema>>({ resolver: zodResolver(changeSchema), defaultValues: { sources: [{ biologicalSource: '', specimenCount: 1 }], runs: '', unitPrice: catalog?.basePrice ?? 0, additionalRunPrice: null } })
   const sources = useFieldArray({ control: form.control, name: 'sources' })
+  const watched = form.watch()
+  const sampleCount = watched.sources.reduce((sum, source) => sum + (Number(source.specimenCount) || 0), 0)
+  const totalRuns = watched.runs ? Number(watched.runs) : sampleCount
+  const pricing = sampleServicePricing(sampleCount, totalRuns, Number(watched.unitPrice) || null, watched.additionalRunPrice)
   const change = useMutation({
     mutationFn: async (values: z.output<typeof changeSchema>) => {
       if (!catalog) throw new Error('The accepted Job’s laboratory offering must be available for additional work.')
       const quantity = values.sources.reduce((total, source) => total + source.specimenCount, 0)
-      if (quantity + order.requestedSpecimenCount > 100) throw new Error('A Job can contain at most 100 accepted samples.')
+      if (quantity + order.requestedSpecimenCount > 10000) throw new Error('A Job can contain at most 10,000 accepted samples.')
       const runs = values.runs ? Number(values.runs) : quantity
       if (runs < quantity || runs + (order.requestedSequencingRunCount ?? order.requestedSpecimenCount) > 10000) throw new Error('Runs must cover every new sample without exceeding 10,000 total runs.')
+      if (runs > quantity && values.additionalRunPrice === null) throw new Error('Enter the separate price per additional sequencing run.')
       return issuePlatformQuote('lab', order.id, { version: reviewVersion, purpose: 'Change', currency: 'USD', tax: 0, additionalSources: values.sources, additionalSequencingRunCount: runs,
-        lines: [{ catalogItemId: catalog.id, description: `Additional ${catalog.name} sample-sequencing runs`, quantity: runs, unitPrice: values.unitPrice }] })
+        lines: [{ catalogItemId: catalog.id, description: `${catalog.name} standard sample service`, quantity, unitPrice: values.unitPrice, pricingComponent: 'StandardSample' },
+          ...(runs > quantity ? [{ catalogItemId: catalog.id, description: 'Additional sequencing runs using prepared library', quantity: runs - quantity, unitPrice: values.additionalRunPrice!, pricingComponent: 'AdditionalRun' as const }] : [])] })
     },
     onSuccess: async () => { await onSaved(); setOpen(false); form.reset() },
   })
@@ -52,16 +64,19 @@ export function IssueLabChangeQuote({ order, catalogItems, onSaved }: { order: L
           {sources.fields.map((field, index) => <div key={field.id} className="space-y-2 rounded-md border p-3">
             <Label htmlFor={`change-source-${index}`}>Biological source *</Label><Input id={`change-source-${index}`} {...form.register(`sources.${index}.biologicalSource`)} aria-invalid={Boolean(form.formState.errors.sources?.[index]?.biologicalSource)} aria-describedby={`change-source-error-${index}`} />
             <p id={`change-source-error-${index}`} role="alert" className="text-sm text-destructive">{form.formState.errors.sources?.[index]?.biologicalSource?.message}</p>
-            <Label htmlFor={`change-count-${index}`}>Additional samples *</Label><Input id={`change-count-${index}`} type="number" min={1} max={100} {...form.register(`sources.${index}.specimenCount`)} aria-invalid={Boolean(form.formState.errors.sources?.[index]?.specimenCount)} aria-describedby={`change-count-error-${index}`} />
+            <Label htmlFor={`change-count-${index}`}>Additional samples *</Label><Input id={`change-count-${index}`} type="number" min={1} max={10000} {...form.register(`sources.${index}.specimenCount`)} aria-invalid={Boolean(form.formState.errors.sources?.[index]?.specimenCount)} aria-describedby={`change-count-error-${index}`} />
             <p id={`change-count-error-${index}`} role="alert" className="text-sm text-destructive">{form.formState.errors.sources?.[index]?.specimenCount?.message}</p>
             {sources.fields.length > 1 ? <Button type="button" variant="ghost" onClick={() => sources.remove(index)}>Remove source {index + 1}</Button> : null}
           </div>)}
           <Button type="button" variant="outline" onClick={() => sources.append({ biologicalSource: '', specimenCount: 1 })}>Add biological source</Button>
-          <Label htmlFor="change-runs">Additional sample-sequencing runs</Label><Input id="change-runs" type="number" min={1} max={10000} step={1} placeholder="One per additional sample" {...form.register('runs')} aria-invalid={Boolean(form.formState.errors.runs)} aria-describedby="change-runs-help" />
+          <Label htmlFor="change-runs">Total runs for added samples</Label><Input id="change-runs" type="number" min={1} max={10000} step={1} placeholder="One per additional sample" {...form.register('runs')} aria-invalid={Boolean(form.formState.errors.runs)} aria-describedby="change-runs-help" />
           <p id="change-runs-help" className="text-xs text-muted-foreground">{form.formState.errors.runs?.message ?? 'Leave blank for one run per new sample. Allocate these runs when identifying the additional samples.'}</p>
-          <Label htmlFor="change-price">Price per sample-sequencing run (USD) *</Label><Input id="change-price" type="number" min="0.01" step="0.01" {...form.register('unitPrice')} aria-invalid={Boolean(form.formState.errors.unitPrice)} aria-describedby="change-price-error" />
+          <Label htmlFor="change-price">Price per sample (USD) *</Label><Input id="change-price" type="number" min="0.01" step="0.01" {...form.register('unitPrice')} aria-invalid={Boolean(form.formState.errors.unitPrice)} aria-describedby="change-price-error" />
           <p id="change-price-error" role="alert" className="text-sm text-destructive">{form.formState.errors.unitPrice?.message}</p>
-          <p className="text-sm">Additional subtotal: {money((Number(form.watch('runs')) || form.watch('sources').reduce((sum, source) => sum + (Number(source.specimenCount) || 0), 0)) * (Number(form.watch('unitPrice')) || 0))}. Tax is included when approved information is available; otherwise it is calculated at invoicing.</p>
+          <p className="text-xs text-muted-foreground">Tax is included when approved information is available; otherwise it is calculated at invoicing.</p>
+          <p className="text-xs text-muted-foreground">The sample price includes one library preparation, one run and data assembly.</p>
+          {pricing.additionalRuns > 0 ? <div className="space-y-2"><Label htmlFor="change-extra-price">Price per additional run (USD) *</Label><Input id="change-extra-price" type="number" min={0} step="0.01" {...form.register('additionalRunPrice', { setValueAs: value => value === '' ? null : Number(value) })} aria-invalid={Boolean(form.formState.errors.additionalRunPrice)} aria-describedby="change-extra-price-error" /><p id="change-extra-price-error" role="alert" className="text-sm text-destructive">{form.formState.errors.additionalRunPrice?.message}</p><p className="text-xs text-muted-foreground">Uses the existing prepared library while material remains available.</p></div> : null}
+          <p className="text-sm">{sampleCount} standard sample services · {pricing.additionalRuns} additional runs · Subtotal: {pricing.subtotal === null ? 'Complete the prices' : money(pricing.subtotal)}</p>
         </fieldset>
       </form>
       {change.error ? <Alert variant="destructive"><AlertTitle>Quote was not issued</AlertTitle><AlertDescription>{getOrderErrorMessage(change.error, 'Refresh the Job and review the additional scope again.')}</AlertDescription></Alert> : null}

@@ -30,6 +30,10 @@ Repeating an ended attempt requires a reason and keeps it linked to the earlier 
 
 Successful execution does not approve or publish results. Record the completed analysis and scientific evidence through the existing capture workflow. When the matching analysis is available, **Link completed analysis** checks its provider execution, inputs and actual start/stop times. Result files still require verification and scientific QC before the separate customer-release workflow.
 
+The attempt's **Delivery and recovery** section shows saved Run/Cancel delivery attempts and their confirmation status. Command delivery does not prove processing started. An unconfirmed receipt, start or cancellation remains visible as attention required; recovery retries with bounded delays and escalates after the configured interval (30 minutes by default). A successful result can arrive after a cancellation request and remains the recorded outcome. Conflicting evidence preserves saved execution facts and requires Operations reconciliation.
+
+Authorized Phaeno users receive refresh notifications for the assembly attempts they are viewing. The page reloads saved status from the API after a notification or reconnect and continues polling when notifications are unavailable. Closing the page does not cancel server recovery. Live DPS transport and independent Operations alerts still require integration setup.
+
 ## Prepare a library
 
 For tray-based preparation, open **Library prep** and the preparation batch. Select an eligible source tube from its job, then scan its physical barcode into an empty tray position. From a tube's actions, assign its distinct library tray tube using an existing manufacturer barcode or a POMS-generated label. For a manufacturer-barcoded tube, select its manufacturer and scan the printed barcode. The accessioned source tube, library tube and reusable tray each retain their own identity. A new POMS tube is **Label pending** until you print its DataMatrix label, attach it to the physical tube and scan the printed label back. Complete that verification before recording the transfer.

@@ -7,10 +7,8 @@ import {
   apiErrorMessage,
   createCrmHandoff,
   listCrmHandoffs,
-  type CrmHandoff,
   type CrmOpportunity,
 } from "#/api/crm";
-import { listEligibleCustomerCompanies } from "#/api/order-management";
 import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -19,20 +17,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from "#/components/ui/label";
 import { RequiredDialogFooter, RequiredFieldName } from "#/components/ui/required-field";
 import { Textarea } from "#/components/ui/textarea";
-import { LabJobDetailsDialog } from "#/features/orders/LabJobDetailsDialog";
 
 export function CrmOpportunityOrderHandoffCard({ opportunity }: { opportunity: CrmOpportunity }) {
   const client = useQueryClient();
   const navigate = useNavigate();
   const [createOpen, setCreateOpen] = useState(false);
-  const [startHandoff, setStartHandoff] = useState<CrmHandoff | null>(null);
   const handoffs = useQuery({
     queryKey: ["crm-handoffs", opportunity.companyId],
     queryFn: () => listCrmHandoffs(opportunity.companyId),
-  });
-  const customers = useQuery({
-    queryKey: ["order-operations", "eligible-customers"],
-    queryFn: listEligibleCustomerCompanies,
   });
   const create = useMutation({
     mutationFn: (input: { summary: string; internalNotes: string | null }) =>
@@ -87,7 +79,7 @@ export function CrmOpportunityOrderHandoffCard({ opportunity }: { opportunity: C
                   </Link>
                 </Button>
               ) : handoff.canStartCustomerOrder && handoff.organizationId ? (
-                <Button type="button" onClick={() => setStartHandoff(handoff)}>Start Customer order</Button>
+                <Button type="button" onClick={() => void navigate({ to: '/order-operations/new', search: { organizationId: handoff.organizationId ?? undefined, sourceRequestId: handoff.relationshipRequestId } })}>Start Customer order</Button>
               ) : (
                 <Button asChild variant="outline"><Link to="/crm/companies">Review Company access</Link></Button>
               )}
@@ -105,27 +97,6 @@ export function CrmOpportunityOrderHandoffCard({ opportunity }: { opportunity: C
         error={create.error}
         onOpenChange={setCreateOpen}
         onSubmit={(input) => create.mutate(input)}
-      />
-      <LabJobDetailsDialog
-        open={Boolean(startHandoff)}
-        platformOrganizations={customers.data ?? []}
-        sourceHandoff={startHandoff?.organizationId ? {
-          requestId: startHandoff.relationshipRequestId,
-          requestNumber: startHandoff.requestNumber,
-          organizationId: startHandoff.organizationId,
-          organizationName: customers.data?.find((value) => value.id === startHandoff.organizationId)?.name ?? opportunity.companyName,
-          companyName: opportunity.companyName,
-          opportunityName: opportunity.name,
-        } : null}
-        onOpenChange={(open) => { if (!open) setStartHandoff(null) }}
-        onSaved={async (order) => {
-          setStartHandoff(null);
-          await Promise.all([
-            client.invalidateQueries({ queryKey: ["crm-handoffs", opportunity.companyId] }),
-            client.invalidateQueries({ queryKey: ["order-intake-handoffs"] }),
-          ]);
-          await navigate({ to: "/order-operations/$workflow/$orderId", params: { workflow: "lab", orderId: order.id } });
-        }}
       />
     </>
   );

@@ -138,12 +138,13 @@ public sealed partial class CrmCommercialAccessPostgresTests
         var request = new PortalIntegrationRequest(null, "TEST ONLY unprovisioned Company", PortalIntegrationRequestType.ServiceChange,
             PortalIntegrationRequestSource.FirstPartyCrm, OrganizationKind.Partner, null, "TEST ONLY service", null, scope.Actor.Id, [PortalService.PSeqKit]);
         db.Add(request); await db.SaveChangesAsync();
+        var entitlementIds = await db.OrganizationServiceEntitlements.OrderBy(value => value.Id).Select(value => value.Id).ToArrayAsync();
 
         var approved = await controller.DecideRequest(request.Id,
             new DecidePortalIntegrationRequest { Version = request.Version, Approved = true }, default);
         Assert.Equal(PortalIntegrationRequestStatus.Approved, approved.Status);
         Assert.Null(approved.OrganizationId);
-        Assert.False(await db.OrganizationServiceEntitlements.AnyAsync());
+        Assert.Equal(entitlementIds, await db.OrganizationServiceEntitlements.OrderBy(value => value.Id).Select(value => value.Id).ToArrayAsync());
     }
 
     [PostgreSqlReferenceFact]

@@ -81,13 +81,15 @@ public sealed partial class LabServiceOrdersController
                     preview.Total!.Value, offering.AnalysisIds, JsonSerializer.Serialize(analyses, JsonSerializerOptions),
                     offering.IncludedOutputContract, offering.MinimumTurnaroundDays, offering.MaximumTurnaroundDays, now,
                     offering.SupportedSampleTypes!.Select(type => type.Id).ToArray(), order.RequestedSequencingRunCount,
-                    offering.MaximumTurnaroundDays);
+                    offering.MaximumTurnaroundDays, preview.PriceProvenance);
                 var lines = JsonSerializer.Serialize(new[] { new { catalogItemId = offering.CatalogItemId,
-                    externalItemId = offering.CatalogCode, description = offering.Name,
-                    quantity = order.RequestedSequencingRunCount, unitPrice = offering.UnitPrice } }, JsonSerializerOptions);
+                    externalItemId = offering.CatalogCode, description = $"{offering.Name}: library preparation, one run and data assembly per sample",
+                    quantity = order.RequestedSpecimenCount, unitPrice = offering.UnitPrice,
+                    pricingComponent = LabPhasePricing.StandardSample } }, JsonSerializerOptions);
                 var quote = new LabServiceQuote(order.Id, order.Quotes.Select(value => value.Revision).DefaultIfEmpty(0).Max() + 1,
                     QuotePurpose.Initial, lines, preview.Subtotal, preview.Tax.Value, offering.Currency, now, now.AddDays(1));
                 quote.SetDeliveryTarget(offering.MaximumTurnaroundDays);
+                LabPhasePlans.FreezeQuote(order, quote);
                 quote.FreezeCommercialTerms(JsonSerializer.Serialize(new { name = profile.BillingContactName,
                         email = currentTenant.Configuration.BillingContactEmail ?? profile.BillingContactEmail }, JsonSerializerOptions),
                     profile.BillingAddressJson!, profile.PaymentTermsDays, JsonSerializer.Serialize(new {
@@ -133,7 +135,18 @@ public sealed partial class LabServiceOrdersController
         Guid offeringId, CancellationToken token)
     {
         var offering = await new LabServiceOfferingService(dbContext).ReadOneAsync(offeringId, token);
+        var price = await LabServicePriceResolver.ResolveAsync(dbContext, order.OrganizationId, order.DepartmentId, offering, token);
+        offering = offering with { UnitPrice = price.UnitPrice, PriceProvenance = price };
         var blockers = new List<string>();
+        if (tenant.Organization.Kind == PSeq.Operations.Commercial.Accounts.Domain.OrganizationKind.Customer)
+        {
+            var limitBlocker = CustomerStandardOrderRules.SampleLimitBlocker(order.RequestedSpecimenCount, offering.MaximumCustomerSamples);
+            if (limitBlocker is not null) blockers.Add(limitBlocker);
+        }
+        if (order.Phases.Count(p => p.SupersededAtUtc == null) != 1 || order.Phases.Any(p => p.ScopeJson != null))
+            blockers.Add("Customer standard orders use one scope. Contact Sales for phased orders.");
+        if (order.ReadCustomerDraft() is { } draft && draft.OfferingId != offeringId)
+            blockers.Add("Review the service selected in your saved Draft.");
         if (!await LabDeliveryCalendarReadiness.HasCoverageAsync(dbContext, offering.MaximumTurnaroundDays, token))
             blockers.Add("Phaeno must configure an observed-holiday calendar covering this delivery target before the order can be placed.");
         if (!tenant.IsDepartmentAdmin) blockers.Add("An organization or assigned-department administrator must place a standard order.");
@@ -141,6 +154,8 @@ public sealed partial class LabServiceOrdersController
             blockers.Add("Only an unplaced draft can be placed as a standard order.");
         if (order.SourceRequestId.HasValue || order.ProposedUnitPrice.HasValue)
             blockers.Add("This Job uses sales-assisted or custom pricing. Continue its pricing request.");
+        if (order.RequestedSequencingRunCount > order.RequestedSpecimenCount)
+            blockers.Add("Standard sample pricing includes one run per sample. Submit for pricing so Phaeno can quote additional runs separately using the prepared library.");
         if (order.Samples.Count != 0) blockers.Add("Resolve legacy draft samples before placing this Job.");
         if (!order.SampleTypeDefinitionId.HasValue)
             blockers.Add("Select one sample type for this Job before placing it.");
@@ -160,7 +175,7 @@ public sealed partial class LabServiceOrdersController
                 blockers.Add("This offering does not support the Job's selected sample type. Choose a supporting offering or create a separate order.");
         }
         if (!offering.IsAvailable) blockers.Add("This offering is no longer available. Choose a current offering.");
-        if (order.RequestedSpecimenCount is < 1 or > 100 || order.SourceGroups.Count == 0
+        if (order.RequestedSpecimenCount is < 1 or > 10000 || order.SourceGroups.Count == 0
             || order.SourceGroups.Sum(value => value.SpecimenCount) != order.RequestedSpecimenCount)
             blockers.Add("Complete the Job's specimen count and biological-source groups.");
         if (order.SourceGroups.Any(value => !offering.AllowedBiologicalSources.Contains(value.BiologicalSource, StringComparer.OrdinalIgnoreCase)))
@@ -175,8 +190,8 @@ public sealed partial class LabServiceOrdersController
             && System.Net.Mail.MailAddress.TryCreate(billingEmail, out _) && profile.HasCompleteBillingAddress
             && profile.PaymentTermsDays is >= 0 and <= 365 && profile.HasEffectiveTaxDecision && profile.HasFinanceApprovedTaxDecision;
         if (!financeReady) blockers.Add("Complete billing details and Finance-approved tax before reviewing a final standard total.");
-        var subtotal = decimal.Round(offering.UnitPrice * order.RequestedSequencingRunCount, 2, MidpointRounding.AwayFromZero);
-        decimal? tax = financeReady ? profile!.TaxDecision == EffectiveTaxDecision.Taxable
+        var subtotal = decimal.Round(offering.UnitPrice * order.RequestedSpecimenCount, 2, MidpointRounding.AwayFromZero);
+        decimal? tax = financeReady && order.RequestedSequencingRunCount == order.RequestedSpecimenCount ? profile!.TaxDecision == EffectiveTaxDecision.Taxable
             ? decimal.Round(subtotal * profile.ApprovedTaxRate!.Value, 2, MidpointRounding.AwayFromZero) : 0 : null;
         var analysisVersions = await dbContext.AnalysisDefinitions.AsNoTracking().Where(value => offering.AnalysisIds.Contains(value.Id))
             .OrderBy(value => value.Id).Select(value => new { value.Id, value.Version }).ToListAsync(token);
@@ -189,6 +204,6 @@ public sealed partial class LabServiceOrdersController
         }, JsonSerializerOptions))));
         return new(offering, order.RequestedSpecimenCount, subtotal, tax, tax.HasValue ? subtotal + tax.Value : null,
             offering.Currency, blockers.Count == 0, blockers.Distinct().ToList(), order.Version, profile?.Version,
-            tenant.Department.Version, tenant.Organization.Version, reviewToken, order.RequestedSequencingRunCount);
+            tenant.Department.Version, tenant.Organization.Version, reviewToken, order.RequestedSequencingRunCount, price);
     }
 }

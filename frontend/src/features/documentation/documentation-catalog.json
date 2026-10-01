@@ -542,7 +542,7 @@
       "title": "Request laboratory services",
       "summary": "Confirm price, Sample type and kit delivery; pair one sample and tube at a time, send kits, and follow results.",
       "order": 30,
-      "reviewedAt": "2026-09-29",
+      "reviewedAt": "2026-09-30",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -898,7 +898,7 @@
       "title": "Customer relationship management",
       "summary": "Manage canonical Companies, Contacts, Leads, Opportunities, Portal access, Tasks, reporting, and data quality.",
       "order": 15,
-      "reviewedAt": "2026-09-28",
+      "reviewedAt": "2026-09-30",
       "navigationGroup": "customer-relationship-management",
       "contentType": "overview",
       "topicIds": [
@@ -1346,7 +1346,7 @@
       "title": "Order operations",
       "summary": "Find the Order operations workspace available to your role, manage commercial decisions, and continue Lab, Finance, and release work in their owning screens.",
       "order": 40,
-      "reviewedAt": "2026-09-22",
+      "reviewedAt": "2026-09-30",
       "navigationGroup": "order-operations",
       "contentType": "overview",
       "topicIds": [
@@ -1489,7 +1489,7 @@
       "title": "PSeq billing, cash, and result release",
       "summary": "Review PSeq invoices, record and reconcile cash, release scientifically approved results, and distinguish disabled capabilities from loading failures.",
       "order": 45,
-      "reviewedAt": "2026-09-22",
+      "reviewedAt": "2026-09-30",
       "navigationGroup": "order-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1564,7 +1564,7 @@
       "title": "Laboratory operations",
       "summary": "Find laboratory work, receive purchased kits and stock, assemble Phaeno kits and reagents, record scientific evidence, and trace result delivery.",
       "order": 50,
-      "reviewedAt": "2026-09-29",
+      "reviewedAt": "2026-09-30",
       "navigationGroup": "laboratory-operations",
       "contentType": "overview",
       "topicIds": [
@@ -1640,7 +1640,7 @@
       "title": "Service workflows, protocol control, and execution",
       "summary": "Configure service, reagent, and master-mix workflows; record controlled Lab steps and material use.",
       "order": 54,
-      "reviewedAt": "2026-09-28",
+      "reviewedAt": "2026-09-30",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1708,7 +1708,7 @@
       "title": "Libraries, batches, and sequencing",
       "summary": "Track barcoded library and sequencing tubes, actual aliquots, remaining material, QC, sendout manifests and custody.",
       "order": 56,
-      "reviewedAt": "2026-09-23",
+      "reviewedAt": "2026-09-30",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1811,7 +1811,7 @@
       "title": "Configuration and file retention",
       "summary": "Maintain reusable defaults, services, analyses, Partner rules, Sample types, Shipping procedures, Phaeno ship-to destinations, Transportation kits, and released-file retention.",
       "order": 60,
-      "reviewedAt": "2026-09-29",
+      "reviewedAt": "2026-09-30",
       "navigationGroup": "platform-operations",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1876,7 +1876,7 @@
       "title": "Use Partner Lab services",
       "summary": "Complete Partner ordering, purchased-run allocation and shipping on the Job, then track sample receipt and laboratory results.",
       "order": 25,
-      "reviewedAt": "2026-09-29",
+      "reviewedAt": "2026-09-30",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [

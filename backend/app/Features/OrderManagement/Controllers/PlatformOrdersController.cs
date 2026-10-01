@@ -59,7 +59,8 @@ public sealed class PlatformOrdersController(
         {
             var query = dbContext.LabServiceOrders.AsNoTracking().Where(item => !item.IsDiscarded);
             if (activeIntake) query = query.Where(item =>
-                item.Status == LabServiceOrderStatus.SubmittedForQuote
+                item.Status == LabServiceOrderStatus.DraftRequest
+                || item.Status == LabServiceOrderStatus.SubmittedForQuote
                 || item.Status == LabServiceOrderStatus.ChangesRequested
                 || item.Status == LabServiceOrderStatus.QuoteInPreparation
                 || item.Status == LabServiceOrderStatus.QuoteIssued

@@ -23,6 +23,7 @@ public sealed partial class LabServiceOrdersController
     {
         await idempotency.AcquireOrderLockAsync($"lab-order:{orderId}", token);
         await idempotency.AcquireOrderLockAsync($"lab-order:{orderId}:sample-roster", token);
+        await new LabPhasePlans(dbContext).LockAsync(orderId, token);
         var order = await ReadOrderAsync(orderId, tenant, token);
         await dbContext.Entry(order).ReloadAsync(token);
         if (order.IsDiscarded || order.OrganizationId != tenant.Organization.Id || order.DepartmentId != tenant.Department.Id)
@@ -32,6 +33,8 @@ public sealed partial class LabServiceOrdersController
         foreach (var sample in order.Samples.ToList()) dbContext.Entry(sample).State = EntityState.Detached;
         order.Samples.Clear();
         await dbContext.LabSamples.Where(sample => sample.LabServiceOrderId == order.Id).LoadAsync(token);
+        foreach (var phase in order.Phases) await dbContext.Entry(phase).ReloadAsync(token);
+        await dbContext.Set<LabJobPhase>().Where(p => p.LabServiceOrderId == order.Id).LoadAsync(token);
         foreach (var quote in order.Quotes) await dbContext.Entry(quote).ReloadAsync(token);
         await dbContext.LabServiceQuotes.Where(q => q.LabServiceOrderId == order.Id).LoadAsync(token);
         foreach (var group in order.SourceGroups) await dbContext.Entry(group).ReloadAsync(token);

@@ -1,5 +1,54 @@
 # Playwright E2E Test Plan
 
+## POMS assembly messaging foundation — September 30, 2026
+
+Deferred live acceptance: with the updated local API, verify authorized WebSocket notification connection, saved status refresh after reconnect, account/role revocation, expiry, attention and delivery history presentation, keyboard/small-viewport behavior, and polling fallback when WebSockets fail. The Vite development configuration explicitly proxies the assembly notification upgrade path. Hosted release planning must verify a WebSocket-capable API origin or reverse proxy; an HTTP-only frontend proxy is insufficient.
+
+After DPS contract/broker setup, verify agreed wire/topic/enum fixtures, TLS identity/topic authorization, QoS duplicates, retention/replay, multi-instance progress routing, prolonged outage and final-event acknowledgment after commit. Independent Operations alert delivery and scientific output acceptance remain separate gates. No live DPS browser E2E is claimed by the internal PostgreSQL and React regressions in the [foundation run](../testing/runs/2026-09-30-poms-assembly-messaging-foundation.md).
+
+## Service catalog header filters — September 30, 2026
+
+For Company Services → Lab service pricing, verify Add negotiated price offers only active Lab services, no active services produces a clear setup message, and an existing inactive service remains named and fixed when editing its saved price. Deactivate a previously selected service in another session and confirm creation is rejected. These pricing acceptance checks require the updated local API after restart.
+
+Verify active-only default, Show inactive inclusion, case-insensitive search combined with status filtering, distinct filtered empty messages, Clear all, and filter retention through item details and Back to service catalog. Verify the search textbox and Show inactive remain inside the header, the search textbox has an accessible name without a visible label, and list/detail descriptions wrap beside their action buttons at desktop/narrow widths, with keyboard focus and both themes. No catalog writes are required. Automated browser execution is deferred for this presentation change; record manual observations separately from the existing order-flow acceptance.
+
+Manual local Chrome verification passed: active-only default shows one item; Show inactive includes all five; uppercase name search finds the inactive item only when inclusion is enabled; item detail/Back retains both filters; removing inclusion gives the expected empty-search message; Clear all restores defaults. Space toggles the checkbox. A 390px viewport shows the description wrapping alongside Add item with no horizontal page overflow, header-contained filters and no visible search label. Detail DOM bounds confirm its description shares the title column alongside Actions. Temporary viewport overrides were reset and the list restored to its default. No catalog data was written. Dark theme and the negotiated-price selector after API restart remain pending.
+
+## Order review follow-up — September 30, 2026
+
+The bundled-order preparation fixture includes the current active-source/phase contract. Connected acceptance still needs two administrators editing the same Customer Draft, including conflicting source-row edits and acknowledgement focus return; early cancellation with an already saved cancelled pair; and partial invoice PDF/tax totals. Component and PostgreSQL regression coverage do not replace that connected business walkthrough. Follow-up execution is recorded in [the review-fix run](../testing/runs/2026-09-30-order-review-fixes.md).
+
+## Order management verification checkpoint — September 30, 2026
+
+The owner lifted the tests/builds hold. The complete deterministic suite passed 194 cases with 2 intentional skips across desktop Chromium and mobile Chrome. [The run ledger](../testing/runs/2026-09-30-order-management-verification.md) records full and focused results. Fixtures now supply the phase endpoint, use the current sample-price label, and follow the dedicated Sales Draft route and Customer standard modal. The mock session explicitly blocks Sales Draft persistence and Customer writes; these checks do not claim signed-in save/reopen or commercial placement acceptance.
+
+Browser verification corrected dark-theme destructive-button contrast and the shared dialog layout for conditional fragments. Customer creation checks assert an accessible dialog name and a fixed action footer. Keep the connected Customer/Sales acceptance cases below open; earlier hold-only checkpoints describe their state before this run.
+
+## Customer standard ordering — September 30, 2026
+
+Pending after the owner hold is lifted: Customer Draft save/reopen with incomplete fields, selected-Department isolation, one scope/one run and no proposal controls, configured Sample type storage/default exception, standard/Organization/Department prices and lower negotiated rate, inactive/future/expired rates, explicit missing-limit setup and N versus N+1 orders even with negotiated pricing. Review and placement must reject changed terms/limits, preserve accepted pricing, and recover a dropped placement response with exactly one order/quote/kit request. Check Company Commercial pricing permissions, overlapping windows, no ordering permission granted from pricing alone, and Customer attempts to submit phase/run/price fields. Complete kit receipt, pairing and shipment on the placed Job; verify Sales-originated phased orders remain readable. Cover keyboard, fixed modal header/body/footer, discard cancellation/focus, narrow reflow, both themes and no horizontal overflow. No browser acceptance or suite was executed; migrations/runtime activation/generated help remain pending.
+
+
+## Sample service and additional-run pricing — September 30, 2026
+
+Pending after the owner's tests/builds hold: on a single-scope Draft and multiple phases, enter different sample rates and extra-run rates; verify 3 samples × 3 runs prices 3 standard services and 6 extra runs. One run per sample hides the extra-rate field and needs no extra price. Save/reopen incomplete proposals; block submission when an applicable rate is missing. Review and issue single-scope and phased quotes, amend either rate with a reason, reissue using retained components, accept and invoice the correct totals, and confirm downloaded documents describe both components. Test added-sample Change quotes and standard catalog placement's explicit extra-run pricing-review path. Check keyboard behavior, focus, narrow layout, dark theme, stale writes and uncertain retries. Retained purchased quantities do not prove physical prepared-library capacity; exhausted material must block a further transfer without charging another preparation automatically.
+
+No browser or automated acceptance is executed for this pricing correction. Final builds, migration application, local API activation and generated-help projection remain pending under the hold.
+
+## Compact Draft entry and Sample type storage — September 30, 2026
+
+Check the compact scope row with phases disabled/enabled and validation errors. Add source belongs at the end of Biological-source composition at wide and narrow widths; it appends exactly one row and remains disabled at 100 rows. Select a Sample type: show its configured storage default with no exception textarea. Changing types updates that default. Enable an exception, enter different requirements and retain them across type changes and Draft reopen. Cancelled/failed submission must retain entries. Reject an unfinished exception or a missing default; submitting default mode must retain server-resolved requirements on the order, while exception mode preserves the supplied text. Check keyboard and error focus, responsive layout and themes. Automated execution remains pending; unsaved browser checks do not establish persisted acceptance.
+
+## Actions cues and form alignment — September 30, 2026
+
+Check Sales Draft phase Actions: each multi-action trigger shows one down-chevron, opens with keyboard input, exposes disabled movement/removal correctly and restores focus after Escape. Check one-action controls remain directly labeled without a dropdown cue and existing manual icons are not duplicated. Inspect Customer, Department, Job name and Sample type: equal single-line heights, equal label gaps and aligned edges in each desktop row. Check narrow reflow, both themes and visible focus. Automated execution remains pending under the request-only test rule.
+
+## Sales Draft acceptance — September 30, 2026
+
+Check HTML confirmation for clearing Use phases, reducing the count and removing a phase. Confirm three visible regions: title header, body with the affected scope and consequences, and action footer. Cancel, Close and Escape must preserve every scope and proposed price. Confirmation must remove only the described scope, retain the first phase when disabling phases and restore focus to a surviving control. Verify initial Cancel focus, focus containment and no browser system confirmation. These checks use unsaved local entries and do not establish Draft persistence or backend acceptance.
+
+Pending connected acceptance: save an incomplete Draft with Customer, Department and Job name; reopen and retain all entries; enable multiple phases with different sources, counts, runs and proposed rates; block incomplete pricing submission while retaining the Draft; submit once and confirm Customer visibility begins only then; review prices and TAT per phase and accept one quote; select phase-specific sample/tube pairs; reject wrong source, run count and capacity; exercise concurrent saves and uncertain-submit recovery. Check keyboard behavior, narrow layout and dark theme. Compilation and an unsaved local browser inspection do not establish persistence or end-to-end acceptance.
+
 ## Customer settings and quote confirmation layout — September 29, 2026
 
 With a Customer organization administrator and a Department administrator,
@@ -3123,6 +3172,14 @@ Jobs & specimens follow-up acceptance: verify completed (`ReadyForRelease`) jobs
 
 ## Jobs delivery deadlines — September 18, 2026
 
+September 30 list storage display: compare the Job card's recorded freezer boxes
+with its Tubes tab, confirm Current status is separate from deadline risk, and
+review desktop/narrow layout and Job/list return. Multi-box/no-box, long-barcode,
+saved-move, retained held/rejected and disposed-tube scenarios remain additional
+acceptance cases when fixtures are available. Read existing records only; do not
+move or accession real tubes to verify presentation. Automated E2E execution is
+not requested.
+
 Jobs deadline acceptance: verify Jobs sidebar above Library prep; shaded header search/status/Show complete/scanner; counts/paging beyond 250; record-return state; desktop/narrow/keyboard; exact-time adjustment with reason and concurrent-version conflict; customer-safe due-date visibility; partial/all-sample Portal publication, withdrawal/restoration and ReadyForRelease still open. Do not require download. Local authenticated browser results are recorded in the owning deadline plan; full automated E2E execution not requested.
 
 Jobs queue follow-up supersedes the earlier scanner checks: no container lookup on Jobs; Clear filters is in the header and resets search/status/completion/page. Verify preparing/ready shipments stay out, dispatched/delivered/received jobs appear, historical receipt qualifies, and counts and paging use the same eligible set. Manual and automated browser acceptance pending.
@@ -3254,6 +3311,13 @@ Connected acceptance should create a uniquely named Lab step, confirm version 1 
 
 ## Single-use master mix — September 24, 2026
 
+September 30 header layout received a connected, read-only desktop review and
+narrow-layout DOM checks at 520 px CSS width: title/start alignment, description
+wrapping, full-width stacked fields and no horizontal overflow. Opening/cancelling
+Start master mix left the list unchanged. No mix was created and no automated
+E2E suite was requested. Narrow screenshot and theme-specific acceptance remain
+unverified; this presentation check does not establish the scientific journey below.
+
 With a signed-in Phaeno Protocol Administrator and Operator, create and independently approve a master-mix workflow; configure and approve a library-preparation step that uses its exact revision; prepare one mix from released source lots; record ordered steps and actual yield; use that mix on two library trays; inspect both tray links, ingredient lots and remaining quantity; then discard the remainder and confirm further use is blocked. Try an expired/held source lot, mismatched unit, stale version, uncertain save replay, competing final-quantity use, unknown per-sample amount, retired or revised workflow, keyboard navigation, narrow viewport, and light/dark themes. The September 24 general browser suite passed 190 cases with two skips, but this master-mix journey has not run; physical bench qualification remains separate.
 
 The gap-closure journey must also review an exact structured recipe at approval, scan the printed full `PH-MX` container label on both trays, cross the Los Angeles local-day cutoff and find the overdue mix, recover an uncertain source-lot save after browser reload without a second deduction, approve a variance as a different Supervisor, and inspect actors and reasons for both a verified never-dispensed void and a retained discrepancy. Search by name and barcode, page through records, return from detail with filters intact, and retry a stale mix conflict after catalog refresh. Retirement must refuse an active approved Lab step, permit an already open tray to consume an existing Ready mix until its frozen cutoff, remove retired-recipe workflows from new-tray choices, and reject direct new-tray requests using those workflows without creating a batch. Race new-tray creation against retirement and verify the committed order decides the result. No connected browser or physical label/scanner qualification has run.
@@ -3332,3 +3396,9 @@ Manual acceptance coverage: issue a quote with a 14-business-day target, verify 
 ## September 29 requested full browser run
 
 The owner requested the full suite for this release. An initial run reused an unrelated server on port 3000 and is invalid as product evidence. A dedicated mock-session server exposed stale bundle, Company/Department navigation, and kit-inventory fixture expectations, which were corrected. The clean final full run on an isolated server at port 3028 passed **194 cases, with 2 intentional mobile print skips and 0 failures** across desktop and mobile Chromium. This is simulated browser verification; authenticated hosted use, physical scanners, and scientific acceptance require separate evidence.
+
+## September 30 sequential phase acceptance (not executed)
+
+Use an accepted 350-sample Job with distinct 50/150/150 cohorts, then a different number and distribution of phases. Verify Customer one-Job detail, Phaeno phase/holistic views, all recorded freezer boxes, mixed sample/container progress and overlapping holds. Receive a cohort across containers and confirm that first tube closes cancellation while last declared tube starts its TAT. Receive future scope early and retain that clock during the wait. Reject every later-phase processing start until all purchased outputs of its predecessors are Portal-accessible; release and billing are independent.
+
+Propose rephasing while Phase I runs, move only unsent future samples, review exact before/after named moves and priced portions, then accept as the authorized Customer administrator. Dispatch/receive between proposal and acceptance must reject stale eligibility. Retain prior commitments and original issued invoice snapshots through split/merge. Request/approve cancellation before receipt; reject after first tube; retain a separate cancelled outcome. Exercise Billing-only explicit upfront/partial/combined invoices, uncertain-response retry, tax snapshots, over-invoicing rejection and unchanged release access while unpaid. Confirm all-noncancelled-output completion creates no invoice. Hosted, physical tube/scanner, provider and scientific evidence remain separate gates. No E2E suite has been run for this slice.

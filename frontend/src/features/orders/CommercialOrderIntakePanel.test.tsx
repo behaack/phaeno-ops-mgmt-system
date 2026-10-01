@@ -85,7 +85,8 @@ describe("Commercial order intake CRM handoffs", () => {
     expect(await screen.findByText("PRQ-100")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Start Customer order" }));
 
-    expect(screen.getByRole("dialog").textContent).toBe("Start PRQ-100");
+    expect(router.navigate).toHaveBeenCalledWith({ to: "/order-operations/new", search: { organizationId: "customer-1", sourceRequestId: "request-1" } });
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("shows active pricing work in the same intake queue", async () => {
@@ -128,7 +129,7 @@ describe("Commercial order intake CRM handoffs", () => {
     expect(await screen.findByRole("link", { name: "Johns Hopkins pilot" })).toBeTruthy();
     expect(screen.getByText(/JOB-1001 · Johns Hopkins University/)).toBeTruthy();
     expect(screen.getByText("Quote In Preparation")).toBeTruthy();
-    expect(screen.getByText("Price proposed · $120.00 per sample-sequencing run")).toBeTruthy();
+    expect(screen.getByText("Price proposed · $120.00 per sample")).toBeTruthy();
     expect(apiMocks.orders).toHaveBeenCalledWith({ activeIntake: true, holds: false, search: undefined, page: 1, pageSize: 25 });
   });
 

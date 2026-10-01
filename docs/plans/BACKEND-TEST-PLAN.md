@@ -1,5 +1,48 @@
 # Backend Test Plan
 
+## POMS assembly messaging foundation — September 30, 2026
+
+`LabAssemblyMessagingTests` covers stable retry identity/backoff, receipt versus execution, escalation without abandonment, cancellation completion without inventing command receipt, provider cancellation before start, immutable conflict evidence, and scoped reconnect subscriptions. `LabAssemblyMessagingPostgresTests` covers commit-before-acknowledgment receipts, restart/replay, stale tracked receipts after another instance records conflict, transient percentages excluded from payload/hash, preserved terminal outcomes, deadline/start confirmation, retry persistence, wrong-provider/foreign-event rejection, owned transaction boundaries, fresh notification authorization after revocation/expiry and transient progress refresh without job writes. Existing assembly recovery/no-percentage-history tests remain included.
+
+Run these reference cases in a task-owned migrated PostgreSQL database, then remove only that owned database. The [run record](../testing/runs/2026-09-30-poms-assembly-messaging-foundation.md) separates this internal normalized-message proof from DPS wire, broker/replay, output verification, scientific and hosted acceptance.
+
+## Negotiated price active-service selection — September 30, 2026
+
+Company Lab pricing reads expose catalog active status for service choices. New negotiated prices require an active USD PSeq Lab service; updates retain their fixed service/scope and can manage an existing price after catalog deactivation. Add focused coverage at the next requested test checkpoint for active creation, inactive/stale creation rejection and retained inactive-price updates. No persistence or migration changes are required; test execution is deferred for this change.
+
+## Order review regressions — September 30, 2026
+
+`CommercialOrderDraftDomainTests.EarlyCancellationRemovesOnlyItsSourcesAndRunsFromPreparation` preserves accepted scope while removing a cancelled cohort's additional runs from preparation. `LabOrderReviewEdgeCasesPostgresTests` exercises approval before any sample/tube pairs, finalization/authorization/shipment for only the remaining cohort, four pre-tax partial invoices with rounding reconciliation, and a later approved tax rate without changing earlier charges. Focused execution and database cleanup evidence are retained in [the review-fix run](../testing/runs/2026-09-30-order-review-fixes.md). No shared development migration is required.
+
+## Order management verification checkpoint — September 30, 2026
+
+The owner requested migration application, tests and builds, lifting the earlier verification hold, then requested resolution of the remaining 25 backend failures. Both pending additive migrations were applied to the configured local database after backup; EF reports no pending model changes. The corrected solution builds with zero warnings/errors. The final complete PostgreSQL-enabled suite passes 1,157 cases with zero failures and two environment-specific skips (1,159 total). All 31 originally failing cases, including the remaining 25, have matching passing full-run results in [the run ledger](../testing/runs/2026-09-30-order-management-verification.md). The final reference/concurrency run used a disposable loopback database migrated from empty; cleanup was verified. This is automated API/database evidence, not live provider, physical laboratory or final business acceptance.
+
+Verification corrected tracking of newly created source/phase rows in Customer review, Sales submission and additional-scope acceptance. Customer Draft coverage now reviews an edited Draft a second time and verifies the old phase is removed. Quoted-order fixtures freeze accepted phase pricing, Sales Draft creation replay is tested separately from later status transitions, and readiness checks retain the saved Draft when pricing submission is blocked. Prior checkpoints below describe their state before this run.
+
+The remaining-failure correction adds `ManualRequestRevisionKeepsItsSingleCohortIdentityAndReconcilesCount` for Draft and requested-correction edits, plus a stored phase-count assertion on the request integration test. Manual request/correction and independent quote-review acceptance cases now explicitly use Partner organizations, which retain that workflow; Customer standard-order cases continue to cover the distinct Customer path. Scientific preparation, assembly, queue, history and reissue fixtures use actual commercial parents and valid sample cohorts. The mixed-progress fixture adds a separate accepted future cohort rather than changing started scope. Phase-cancellation acceptance checks first-receipt rejection, whole future-cohort cancellation, unchanged quote/custody, preserved received work, replay and stale-decision rejection. CRM and receiving-destination assertions isolate owned records without assuming the database is globally empty. Execution results are retained in the run ledger.
+
+## Customer standard ordering — September 30, 2026
+
+Authored CustomerStandardOrderTests covers negotiated rates versus standard, Organization/Department selection, other-scope isolation, inactive/future/expired windows, overlapping rates, inclusive and missing sample limits, incomplete Drafts, prohibited client fields and frozen price evidence. CustomerStandardOrderPostgresTests covers selected-rate changes between review and commitment, accepted price preservation and missing-limit enforcement; CustomerStandardDraftPostgresTests covers incomplete save/replay and complete one-run review. Updated configured-standard fixtures explicitly configure and restore their service limit and reject extra-run placement; teardown removes only test-owned negotiated rates. Pending connected coverage includes Company pricing permissions/tenant isolation/overlap concurrency, no-entitlement bypass, N+1 placement and changed-limit races, phase/price override requests and uncertain replay. AddCustomerStandardOrdering and AddSeparateSampleRunPricing are authored but unapplied; no builds or tests were run under the owner hold.
+
+
+## Sample service and additional-run pricing — September 30, 2026
+
+Authored `LabSampleServicePricingTests` covers phased and single-scope sample/additional-run quantities, prevention of charging standard preparation for every run, retained quote components and monetary portions, amendment of the additional-run rate, and incomplete Draft proposal submission. Updated Draft materialization and existing quote-lifecycle fixtures retain explicit pricing components. Coverage is authored only; execution is pending. Connected coverage must also check standard direct-placement rejection of unpriced extra runs, quote/reissue idempotency and concurrency, both-rate dual control, native/QBO line retention, phase invoicing and PDF totals. Confirm existing prepared-library material guards remain authoritative for another transfer.
+
+`AddSeparateSampleRunPricing` adds a nullable phase rate with no existing-order conversion. The owner halted builds and tests during implementation. The isolated backend build completed before that hold and before the final source/migration/coverage edits; it does not validate the final change. Migration application, runtime activation and further compilation remain deferred.
+
+## Draft storage defaults — September 30, 2026
+
+The solution (including authored domain cases) and local API compiled with zero warnings and errors. The refreshed local API supplied the selected type's configured Preservation requirements to the signed-in Draft page. No order write or pricing submission was performed for verification, and no migration was created or applied. Automated case execution remains pending.
+
+The existing nullable Draft storage field distinguishes Sample type mode (null) from a supplied exception (text). Sample choices expose Preservation requirements; the authorized submit endpoint resolves the validated type and materialization retains final requirements in the order. `CommercialOrderDraftDomainTests` now covers inherited defaults, override precedence, and atomic rejection of missing defaults or empty exceptions before operational phases are created. Existing materialization coverage uses the explicit default argument. Automated execution remains pending under the request-only rule; a build verifies compilation only. No schema migration or existing-order conversion is part of this refinement.
+
+## Sales order Draft and phase scope — September 30, 2026
+
+Authored `CommercialOrderDraftDomainTests` covers incomplete Draft retention without submission or operational phases, materialization of distinct phase runs and proposed prices, repeated biological sources across phases, required proposal completion, and rejection of wrong source/run/capacity during sample preparation. PostgreSQL commercial-handoff fixtures now follow Save Draft, Submit for pricing, and Begin quote. Automated execution is pending under the request-only test rule. Connected coverage remains required for Customer Draft invisibility, stale writes, duplicate/uncertain submission, phase quote allocation and proposal-review permissions.
+
 ## Four-stage Customer Lab preparation — September 29, 2026
 
 The additive `AddLabSampleTubePairs` migration was applied to the configured local development database. Release builds of the API and test project compile; test execution remains pending under the request-only test rule. Integration coverage must exercise manual quote and configured standard placement with supported Sample type and Department address confirmation, idempotent shortage creation, Phaeno dispatch before roster, physical receipt, one physical-kit tube per Sample ID, duplicate and wrong-kit rejection, exact source/run finalization, shipment binding and retry rollback. The transportation-kit receipt integration case now includes rejection of a scanned barcode from a different physical kit before receipt, followed by acceptance and replay of the selected shipped kit's barcode; execution remains pending. Existing historical and Change-quote fixtures using the previous sample-list path need a deliberate historical setup or updated paired fixtures before their suites run.
@@ -2302,6 +2345,14 @@ Preparation step recording now requires a catalog equipment identity for every E
 
 ## Jobs delivery deadlines — September 18, 2026
 
+September 30 list storage display: the authorized Jobs response now reads distinct
+nonblank current submitted-tube locations for the displayed page in one query;
+disposed and derived containers are excluded. Verify same-Job scoping, duplicate
+boxes, multiple/no-box cases, retained held/rejected material and a saved move.
+Stage classification and deadline rules are unchanged. Automated coverage and
+suite execution are deferred under the request-only policy; solution builds and
+a read-only populated local browser check are the current checkpoint.
+
 Authored `LabJobDeadlineTests`: undated/acceptance, exact cutoff, three-day warning, blocking risk, reforecast independence, earlier specimen target, partial publication/ReadyForRelease, cancellation, immutable deadline-at-delivery and SQL translation/pagination beyond the dashboard cap. Automated execution not requested. Local read-only database acceptance verified query translation and complete counts; live concurrent release, withdrawals/reissue, roles and actual publication fixtures remain acceptance cases.
 
 `LabJobDeadlinePostgresTests` additionally defines rollback-scoped acceptance cases for a 276-job queue/page 12, complete-query counts, distinct sample coverage and retained completion/deadline history. These cases compile but have not been run.
@@ -2453,3 +2504,17 @@ Connected request tests now assert type-level ready counts, exact barcode resolu
 ## September 29 requested full backend release run
 
 The complete Release solution builds with zero warnings or errors. All seven current EF migrations applied to a fresh disposable PostgreSQL reference database. The final full connected run passed **1,128 tests, with 2 intentional environment-dependent skips and 0 failures** (1,130 total). The skipped cases require a recovery-export environment and a supported file-storage host, respectively. Historical commercial handoff fixtures now use a received physical kit, a saved sample/tube pair, an issued shipping packet, shipment receipt, and registered-tube accession. Trial fixture grants are effective before the test clock boundary. The preceding full run had five failures, including a Windows socket-exhaustion error while another diagnostic suite was running; the isolated final run passed without concurrent tests. This evidence is local and simulated, not physical scanner, hosted authenticated, provider, or scientific acceptance.
+
+## September 30 sequential Job phases
+
+Authored, not executed under the request-only test rule: LabJobPhaseDomainTests covers generalized 350/10,000-sample scope, first receipt versus complete receipt, frozen commitments, sent/received assignment restrictions, fixed started scope, cancelled outcomes and immutable invoice attribution. LabJobCompletionPostgresTests now covers explicit phase invoice rollback, PDF cleanup, safe retry and incomplete delivery rejection. Completion acceptance and accepted-scope change cases issue invoices explicitly. Customer progress cases expect Mixed from differing attributed stages and require complete purchased-run release evidence. Scoped fixture cleanup includes the new phase dependencies.
+
+Connected acceptance still needs execution and expansion for multi-container partial tube receipt, early future-cohort TAT, preceding-phase start gates across trays/analysis/assembly, concurrent first receipt versus cancellation/rephasing, tenant/Department authority, invoice tax rounding, partial/combined invoices, voids and billed rephasing. Static compilation is not proof of these workflows. See MULTI-PHASE-LAB-JOBS-PLAN.md.
+
+## September 30 Portal reconstruction maintenance workflow
+
+The [reconstruction plan](PORTAL-DATABASE-RECONSTRUCTION-WORKFLOW-PLAN.md) defines a manual data-only reset. Automated/destructive suites are deferred under the request-only test rule. A read-only production preview checked all 223 deployed application tables and returned three preserved Phaeno users, three built-in types, one calendar and 33 holidays; it finished with ROLLBACK. This does not exercise destructive execution, API stop/restart, or GitHub dispatch.
+
+Requested connected rehearsal must use an isolated PostgreSQL 18 instance with database name `phaeno_portal_green`, never the production endpoint. Populate Customer/Partner/Prospect users and a dual-membership Phaeno user; active/inactive staff memberships, departments, role assignments and Trial primary/delegate authority links; all three canonical types plus custom types/catalog/stock; multiple calendar revisions; customized reference defaults; and jobs/invoices/Website intake/audits. Assert preview changes no persistent rows or database comment. Assert reset retains exact Phaeno identities/access states and all calendars, discards customer access and all nonallowed operational rows, recreates exact model defaults, preserves schema/migration history, and leaves exactly one new maintenance audit. Include two successive resets and newly added operational tables.
+
+Refuse wrong database, absent active linked administrator, missing canonical type/calendar, changed seed columns, unresolved retained authority references, cross-schema foreign keys/descendants and cross-table preservation cycles. Force reinsertion/comparison failure after TRUNCATE and prove transaction atomicity. Shell coverage must verify failed SQL restarts only the original API container, another maintenance lock/client refuses reset, confirmation is mandatory, secret/profile values never enter logs, and failed post-commit health is reported without inventing a rollback. No production reset or test suite was run for this implementation.

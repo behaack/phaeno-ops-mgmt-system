@@ -55,7 +55,8 @@ public static class CatalogItemDeletion
             || await db.PartnerReagentOfferings.AnyAsync(value => value.QboCatalogItemId == id, ct)
             || await db.AssemblyProfiles.AnyAsync(value => value.QboCatalogItemId == id, ct)
             || await db.PartnerReagentOrderLines.AnyAsync(value => value.QboCatalogItemId == id, ct)
-            || await db.LabServiceOfferings.AnyAsync(value => value.CatalogItemId == id, ct)) return true;
+            || await db.LabServiceOfferings.AnyAsync(value => value.CatalogItemId == id, ct)
+            || await db.Set<LabServiceNegotiatedPrice>().AnyAsync(value => value.CatalogItemId == id, ct)) return true;
         var camel = JsonSerializer.Serialize(new[] { new { catalogItemId = id } });
         var pascal = JsonSerializer.Serialize(new[] { new { CatalogItemId = id } });
         return await db.LabServiceQuotes.AnyAsync(value => EF.Functions.JsonContains(value.LinesJson, camel)

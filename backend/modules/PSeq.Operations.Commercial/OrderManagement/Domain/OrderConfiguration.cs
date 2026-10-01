@@ -15,6 +15,7 @@ public sealed class QboCatalogItem : IAudit, IConcurrency
     public string Currency { get; private set; } = "USD";
     public bool IsActive { get; private set; } = true;
     public CatalogServiceFamily ServiceFamily { get; private set; }
+    public int? MaximumCustomerSamples { get; private set; }
     public DateTime LastSyncedAt { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
@@ -44,6 +45,14 @@ public sealed class QboCatalogItem : IAudit, IConcurrency
     {
         if (!Enum.IsDefined(family)) throw new ArgumentOutOfRangeException(nameof(family));
         ServiceFamily = family;
+    }
+
+    public void SetMaximumCustomerSamples(int? maximum)
+    {
+        if (maximum is < 1 or > 10000) throw new ArgumentException("Use a Customer sample limit from 1 to 10,000, or leave it unconfigured.");
+        if (maximum.HasValue && ServiceFamily != CatalogServiceFamily.PSeqLabService)
+            throw new ArgumentException("Customer sample limits apply to Lab services.");
+        MaximumCustomerSamples = maximum;
     }
 
     public void Sync(

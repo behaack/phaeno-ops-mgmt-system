@@ -77,7 +77,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         var item = await scope.DbContext.QboCatalogItems.AsNoTracking().FirstAsync(value => value.IsActive && value.ExternalItemId == OrderServiceKeys.PSeqLabService);
         var expiry = DateTime.UtcNow.AddDays(45);
         var issued = await scope.ExtensionPlatformController().IssueQuote(fixture.OrderId,
-            new IssueQuoteRequest(requested.Version, [new QuoteLineRequest(item.Id, item.Name, 1, 100)], 0, "USD", expiry,
+            new IssueQuoteRequest(requested.Version, [new QuoteLineRequest(item.Id, item.Name, 1, 100, PricingComponent: LabPhasePricing.StandardSample)], 0, "USD", expiry,
                 SourceQuoteId: fixture.QuoteId, DeliveryTargetBusinessDays: 14), default);
 
         Assert.Equal(2, issued.Quotes.Count);
@@ -99,7 +99,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         Assert.False(customer.CanRequestQuoteExtension);
         Assert.Single(await scope.DbContext.OrderNotifications.Where(value => value.OrganizationId == scope.CustomerOrganization.Id).ToListAsync());
         var staleSource = await Assert.ThrowsAsync<OrderManagementException>(() => scope.ExtensionPlatformController().IssueQuote(fixture.OrderId,
-            new IssueQuoteRequest(issued.Version, [new QuoteLineRequest(item.Id, item.Name, 1, 100)], 0, "USD", expiry.AddDays(1),
+            new IssueQuoteRequest(issued.Version, [new QuoteLineRequest(item.Id, item.Name, 1, 100, PricingComponent: LabPhasePricing.StandardSample)], 0, "USD", expiry.AddDays(1),
                 SourceQuoteId: fixture.QuoteId, DeliveryTargetBusinessDays: 14), default));
         Assert.Equal("quote_not_current", staleSource.ErrorCode);
         Assert.Equal(2, await scope.DbContext.LabServiceQuotes.CountAsync(value => value.LabServiceOrderId == fixture.OrderId));
@@ -167,7 +167,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         var item = await scope.DbContext.QboCatalogItems.AsNoTracking().FirstAsync(value => value.IsActive && value.ExternalItemId == OrderServiceKeys.PSeqLabService);
         var expiredDate = DateTime.UtcNow.AddDays(-1);
         await Assert.ThrowsAsync<OrderManagementException>(() => scope.ExtensionPlatformController().IssueQuote(fixture.OrderId,
-            new IssueQuoteRequest(fixture.OrderVersion, [new QuoteLineRequest(item.Id, item.Name, 1, 100)], 0, "USD", expiredDate, SourceQuoteId: fixture.QuoteId), default));
+            new IssueQuoteRequest(fixture.OrderVersion, [new QuoteLineRequest(item.Id, item.Name, 1, 100, PricingComponent: LabPhasePricing.StandardSample)], 0, "USD", expiredDate, SourceQuoteId: fixture.QuoteId), default));
         Assert.Equal(1, await scope.DbContext.LabServiceQuotes.CountAsync(value => value.LabServiceOrderId == fixture.OrderId));
 
         scope.DbContext.ChangeTracker.Clear();

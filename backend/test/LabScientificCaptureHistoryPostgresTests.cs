@@ -47,7 +47,7 @@ public partial class SampleShippingPostgresTests
         await using var transaction = await scope.DbContext.Database.BeginTransactionAsync();
         try
         {
-            var fixture = await SeedRestoreEvidence(scope, RestoreFiles(Path.Combine(Path.GetTempPath(), "phaeno-history-" + Guid.NewGuid(), "files")));
+            var fixture = await SeedRestoreEvidence(scope, RestoreFiles(Path.Combine(Path.GetTempPath(), "phaeno-history-" + Guid.NewGuid(), "files")), sampleCount: 2);
             var db = scope.DbContext; var now = LabEvidenceTime.UtcNow; var org = scope.CustomerOrganization.Id; var actor = scope.CustomerUser.Id;
             var work = await db.LabWorkOrders.SingleAsync(w => w.Id == fixture.WorkId);
             var specimen = await db.LabSpecimens.SingleAsync(s => s.Id == fixture.SpecimenId);

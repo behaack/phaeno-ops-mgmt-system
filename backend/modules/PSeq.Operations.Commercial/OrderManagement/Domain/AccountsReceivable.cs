@@ -187,7 +187,7 @@ public sealed class InvoiceLine
     private InvoiceLine() { }
 
     public InvoiceLine(Guid invoiceId, int lineNumber, Guid? sourceQuoteLineId,
-        string description, decimal quantity, decimal unitPrice, decimal taxRate)
+        string description, decimal quantity, decimal unitPrice, decimal taxRate, decimal? allocatedTax = null)
     {
         if (invoiceId == Guid.Empty) throw new ArgumentException("An invoice is required.");
         if (lineNumber < 1) throw new ArgumentOutOfRangeException(nameof(lineNumber));
@@ -201,7 +201,9 @@ public sealed class InvoiceLine
         UnitPrice = Money(unitPrice);
         TaxRate = decimal.Round(taxRate, 6, MidpointRounding.AwayFromZero);
         Subtotal = Money(quantity * UnitPrice);
-        TaxAmount = Money(Subtotal * TaxRate);
+        if (allocatedTax.HasValue && (allocatedTax < 0 || allocatedTax > Subtotal))
+            throw new ArgumentOutOfRangeException(nameof(allocatedTax));
+        TaxAmount = allocatedTax.HasValue ? Money(allocatedTax.Value) : Money(Subtotal * TaxRate);
         Total = Money(Subtotal + TaxAmount);
     }
 

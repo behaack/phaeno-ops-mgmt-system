@@ -37,6 +37,7 @@ public sealed class LabServiceQuote : IAudit, IConcurrency
     public QuotePurpose Purpose { get; private set; }
     public QuoteStatus Status { get; private set; } = QuoteStatus.SyncPending;
     public string LinesJson { get; private set; } = "[]";
+    public string? PhasePlanSnapshotJson { get; private set; }
     public string? ChangeScopeSnapshotJson { get; private set; }
     public string? AcceptedAmendmentSnapshotJson { get; private set; }
     public DateTime? ChangeRosterFinalizedAt { get; private set; }
@@ -98,6 +99,12 @@ public sealed class LabServiceQuote : IAudit, IConcurrency
 
     public QuoteStatus EffectiveStatus(DateTime utcNow)
         => Status == QuoteStatus.Issued && AcceptedAt is null && ExpiresAt <= utcNow ? QuoteStatus.Expired : Status;
+
+    public void FreezePhasePlan(string json)
+    {
+        if (Status != QuoteStatus.SyncPending) throw new InvalidOperationException("Freeze phases before quote issuance.");
+        PhasePlanSnapshotJson = OrderText.Json(json);
+    }
 
     public void SetDeliveryTarget(int businessDays)
     {
@@ -181,6 +188,16 @@ public sealed class LabServiceQuote : IAudit, IConcurrency
             PricingDecisionReason = null;
         PricingDecidedByUserId = actorUserId;
         PricingDecidedAt = utcNow;
+    }
+    public void RecordPhasePricingDecision(IEnumerable<(decimal? Proposed, decimal Final)> phases, string? amendmentReason)
+    {
+        if (Status != QuoteStatus.SyncPending || !PricingDecidedByUserId.HasValue)
+            throw new InvalidOperationException("Record the pricing reviewer before phase decisions.");
+        var proposals = phases.Where(p => p.Proposed.HasValue).ToArray();
+        PricingDecision = proposals.Length == 0 ? QuotePricingDecision.PricedWithoutProposal
+            : proposals.Any(p => p.Proposed != p.Final) ? QuotePricingDecision.AmendedProposal : QuotePricingDecision.ApprovedAsProposed;
+        PricingDecisionReason = PricingDecision == QuotePricingDecision.AmendedProposal
+            ? OrderText.Required(amendmentReason, "Price amendment reason", 2000) : null;
     }
     public void Supersede(Guid nextQuoteId) { if (Status is QuoteStatus.Accepted or QuoteStatus.Superseded) throw new InvalidOperationException(); Status = QuoteStatus.Superseded; SupersededByQuoteId = nextQuoteId; }
 

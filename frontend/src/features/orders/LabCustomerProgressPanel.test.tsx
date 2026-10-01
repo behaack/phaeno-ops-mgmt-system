@@ -6,7 +6,7 @@ import { LabCustomerProgressPanel } from './LabCustomerProgressPanel'
 import { customerLabStatus } from './lab-customer-progress'
 
 const progress: LabCustomerProgress = {
-  currentStage: 'Received', jobStage: 'LibraryPrep', hasContainerReceipt: true,
+  currentStage: 'Mixed', jobStage: 'LibraryPrep', hasContainerReceipt: true,
   counts: [{ stage: 'Received', count: 2 }, { stage: 'LibraryPrep', count: 1 }, { stage: 'ResultsAvailable', count: 1 }],
   samples: [{ sampleId: 'sample-1', stage: 'Received' }],
 }
@@ -16,7 +16,8 @@ describe('customer laboratory stages', () => {
     render(<LabCustomerProgressPanel order={{ ...bundleLabDraft, laboratoryProgress: progress }} />)
     const stages = within(screen.getByRole('list', { name: 'Laboratory stages' })).getAllByRole('listitem')
     expect(stages).toHaveLength(6)
-    expect(stages[0].getAttribute('aria-current')).toBe('step')
+    expect(stages[0].getAttribute('aria-current')).toBeNull()
+    expect(screen.getByText('Mixed')).toBeTruthy()
     expect(stages[5].getAttribute('aria-current')).toBeNull()
     expect(within(stages[0]).getByText('2 samples')).toBeTruthy()
     expect(within(stages[5]).getByText('1 sample')).toBeTruthy()
@@ -32,8 +33,8 @@ describe('customer laboratory stages', () => {
   })
 
   it('preserves order holds, cancellation and pre-order states in list and header', () => {
-    expect(customerLabStatus('InProgress', progress)).toBe('Received')
-    expect(customerLabStatus('ResultsAvailable', progress)).toBe('Received')
+    expect(customerLabStatus('InProgress', progress)).toBe('Mixed')
+    expect(customerLabStatus('ResultsAvailable', progress)).toBe('Mixed')
     for (const state of ['OnHold', 'CancellationRequested', 'Cancelled', 'Completed', 'QuoteIssued']) {
       expect(customerLabStatus(state, progress)).toBe(state)
     }

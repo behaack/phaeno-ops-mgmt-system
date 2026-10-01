@@ -6,12 +6,14 @@ using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence;
 
-public sealed class LabJobRow
+public sealed record LabJobRow
 {
     public Guid Id { get; set; }
+    public Guid? CommercialOrderId { get; set; }
     public string Name { get; set; } = "";
     public string? CustomerReference { get; set; }
     public string OrganizationName { get; set; } = "";
+    public IReadOnlyList<string> FreezerBoxBarcodes { get; set; } = [];
     public LabWorkOrderStatus OperationalStatus { get; set; }
     public int SampleCount { get; set; }
     public int DeliveredSampleCount { get; set; }
@@ -49,6 +51,18 @@ public sealed class LabJobQueueItem
     public string DeadlineStatus { get; set; } = "";
     public string Reason { get; set; } = "";
     public string JobStatus { get; set; } = "";
+    public Guid? PhaseId { get; set; }
+    public string? PhaseName { get; set; }
+    public string? Lifecycle { get; set; }
+    public IReadOnlyDictionary<string, int> StageCounts { get; set; } = new Dictionary<string, int>();
+    public int HeldSamples { get; set; }
+    public int FailedSamples { get; set; }
+    public int ContainerCount { get; set; }
+    public int SentContainers { get; set; }
+    public int ArrivedContainers { get; set; }
+    public int ExpectedTubes { get; set; }
+    public int ReceivedTubes { get; set; }
+    public int AccessionedTubes { get; set; }
 }
 public sealed record LabJobQueue(IReadOnlyList<LabJobQueueItem> Items, int TotalCount, int Page, int PageSize,
     IReadOnlyDictionary<string, int> Counts, DateTime EvaluatedAtUtc);
@@ -94,6 +108,23 @@ public sealed class LabJobQuery(PSeqOperationsDbContext db)
         || db.LabSpecimens.Any(s => s.LabWorkOrderId == j.Id && s.ReceivedAtUtc != null
             && s.IntakeDisposition != LabSpecimenIntakeDisposition.Cancelled));
 
+    public async Task PopulateFreezerBoxesAsync(IReadOnlyList<LabJobRow> jobs, CancellationToken cancellationToken)
+    {
+        if (jobs.Count == 0) return;
+        var jobIds = jobs.Select(job => job.Id).ToArray();
+        var locations = await db.LabContainers.AsNoTracking()
+            .Where(container => jobIds.Contains(container.LabWorkOrderId)
+                && container.Kind == LabContainerKind.SubmittedSpecimen
+                && container.Status != LabContainerStatus.Disposed && container.Location != null)
+            .Select(container => new { container.LabWorkOrderId, container.Location })
+            .ToListAsync(cancellationToken);
+        var byJob = locations.ToLookup(container => container.LabWorkOrderId);
+        foreach (var job in jobs)
+            job.FreezerBoxBarcodes = byJob[job.Id].Select(container => container.Location!.Trim())
+                .Where(location => location.Length > 0).Distinct(StringComparer.Ordinal)
+                .Order(StringComparer.Ordinal).ToArray();
+    }
+
     public IQueryable<LabJobRow> Rows()
     {
         var releases = Releases();
@@ -117,6 +148,7 @@ public sealed class LabJobQuery(PSeqOperationsDbContext db)
         return db.LabWorkOrders.AsNoTracking().Select(w => new LabJobRow
         {
             Id = w.Id,
+            CommercialOrderId = w.AuthorizationSource == LabAuthorizationSource.CommercialOrder ? w.AuthorizationSourceId : null,
             Name = db.LabServiceOrders.Where(o => w.AuthorizationSource == LabAuthorizationSource.CommercialOrder
                 && o.Id == w.AuthorizationSourceId && o.OrganizationId == w.SubmittingOrganizationId)
                 .Select(o => o.OrderNumber).FirstOrDefault() ?? w.OpaqueSubmitterReference ?? "Job",

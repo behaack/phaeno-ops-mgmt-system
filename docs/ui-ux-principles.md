@@ -168,6 +168,7 @@ Prioritize clarity and error prevention over maximum visual compactness.
 - Use a single-column reading flow by default.
 - Use two columns only for short, naturally paired fields such as start/end dates.
 - Place persistent labels above controls; placeholders never replace labels.
+- Keep single-line text, search and select controls the same height within a form. Use shared `Field` spacing and `NativeSelect`/`Input` sizing rather than per-screen height and margin overrides. Adjacent fields must align at their control edges with the same label-to-control gap.
 - Group fields by the user's mental model and workflow, not the data model.
 - Use concise helper text only when it prevents a likely mistake.
 - Place helper text immediately below its field label and before the control.
@@ -224,11 +225,14 @@ Each page, modal, or workflow has one visually dominant primary action.
   call to action whose width communicates hierarchy rather than compensating
   for layout.
 - Group multiple record or version actions in an `Actions` dropdown, including status transitions. When exactly one action is shown, surface it as a directly labeled button; do not hide it in an Actions dropdown. Preserve its disabled state when prerequisites are unmet. Keep menus wide enough for clear labels and aligned to the trailing edge of the record or version row.
+- Every labeled Actions dropdown shows one trailing down-chevron. The shared `ActionMenu` owns this cue so screens do not have to supply it. A direct action has no dropdown chevron. Keep the icon decorative so it does not change the button's accessible name.
 - Hide actions the user is never authorized to perform.
 - Disable a temporarily unavailable action only when knowing it exists is useful, and explain the blocking condition.
 - Use destructive styling only for the action that causes harm, not for Cancel or ordinary navigation.
 - Confirm destructive, irreversible, externally visible, or consequential workflow-transition actions.
 - Name the affected record and consequence in confirmation text.
+- Use a Portal HTML dialog for in-page confirmations, with initial focus on the cancel action and focus return to the invoking control or a surviving adjacent control. Do not use browser system confirmations for these actions; browser-required unload prompts remain browser-managed.
+- Confirmation dialogs have a title header, a visible body explaining affected scope and consequences, and an action footer. Explanations belong in the body; do not render a header and footer with no meaningful body between them.
 - Require typed confirmation only for exceptionally consequential bulk or irreversible operations.
 - Prefer undo over confirmation when an action is safely reversible.
 - Reserve icon-only controls for universally familiar actions and provide accessible names and tooltips.

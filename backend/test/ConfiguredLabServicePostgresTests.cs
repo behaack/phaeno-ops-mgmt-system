@@ -19,7 +19,7 @@ using PhaenoPortal.App.Features.OrderManagement.Services;
 public partial class LabOperationsCommercialHandoffPostgresTests
 {
     [PostgreSqlReferenceFact]
-    public async Task StandardPriceAndCommitmentCountTwentyRunsForOnePhysicalSample()
+    public async Task StandardPlacementRejectsAdditionalRunsWithoutChargingAnotherLibraryPreparation()
     {
         await using var scope = await HandoffTestScope.CreateAsync();
         var (order, offering) = await scope.ConfigureStandardAsync();
@@ -30,13 +30,13 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         var preview = await controller.PreviewStandard(order.Id, offering.Id, default);
         Assert.Equal(1, preview.SpecimenCount);
         Assert.Equal(20, preview.SequencingRunCount);
-        Assert.Equal(preview.Offering.UnitPrice * 20, preview.Subtotal);
-        var placed = await controller.PlaceStandard(order.Id, StandardRequest(scope, preview), default);
-        Assert.Equal(1, placed.RequestedSpecimenCount);
-        Assert.Equal(20, placed.RequestedSequencingRunCount);
-        Assert.Equal(20, placed.StandardCommercialSnapshot!.SequencingRunCount);
-        var summary = await scope.DbContext.CommercialSaleSummaries.SingleAsync(s => s.OrderId == order.Id);
-        Assert.Equal(20, summary.Quantity);
+        Assert.Equal(preview.Offering.UnitPrice, preview.Subtotal);
+        Assert.Null(preview.Total); Assert.False(preview.CanPlaceStandardOrder);
+        Assert.Contains(preview.Blockers, value => value.Contains("additional runs separately"));
+        var error = await Assert.ThrowsAsync<OrderManagementException>(() => controller.PlaceStandard(order.Id, StandardRequest(scope, preview), default));
+        Assert.Equal("standard_order_not_ready", error.ErrorCode);
+        Assert.False(await scope.DbContext.LabServiceQuotes.AnyAsync(q => q.LabServiceOrderId == order.Id));
+        Assert.False(await scope.DbContext.CommercialSaleSummaries.AnyAsync(s => s.OrderId == order.Id));
         Assert.False(await scope.DbContext.CommercialLabAuthorizations.AnyAsync(a => a.CommercialOrderId == order.Id));
     }
 
@@ -216,6 +216,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
 
     private sealed partial class HandoffTestScope
     {
+        private readonly Dictionary<Guid, int?> configuredCatalogLimits = [];
         private readonly List<Guid> configuredOfferingIds = [];
         private readonly List<Guid> configuredAnalysisIds = [];
         private readonly List<Guid> configuredSystemIds = [];
@@ -241,6 +242,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         {
             var now = DateTime.UtcNow;
             var catalog = await DbContext.QboCatalogItems.SingleAsync(value => value.ExternalItemId == OrderServiceKeys.PSeqLabService);
+            configuredCatalogLimits.TryAdd(catalog.Id, catalog.MaximumCustomerSamples);
+            catalog.SetMaximumCustomerSamples(50);
             var analysis = new AnalysisDefinition(catalog.Id, "Included analysis", "Reference scope", "Follow instructions", "[]", "[\"FASTQ\"]", true, false);
             configuredAnalysisIds.Add(analysis.Id);
             var offering = new LabServiceOffering(Guid.NewGuid(), 1, "Standard Lab", "Processing and assembly", catalog.Id,

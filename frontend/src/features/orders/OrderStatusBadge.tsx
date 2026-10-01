@@ -12,6 +12,8 @@ export function OrderStatusBadge({ status }: { status: string }) {
 }
 
 export function humanizeStatus(status: string) {
+  if (status === 'DraftRequest') return 'Draft'
+  if (status === 'SubmittedForQuote') return 'Submitted for pricing'
   return status
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
     .replace(/[-_]+/g, ' ')

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { vi } from 'vitest'
 
 import { Alert } from './alert'
@@ -62,6 +62,37 @@ describe('DialogContent', () => {
     expect(dialog.querySelector(':scope > [data-slot="dialog-body"]')).toBeTruthy()
     expect(footer).toBeTruthy()
     expect(footer?.classList.contains('bg-muted/40')).toBe(true)
+    expect(consoleError.mock.calls.flat().join(' ')).not.toContain('same key')
+    consoleError.mockRestore()
+  })
+
+  it('keeps nested conditional fragment actions fixed and sibling keys distinct', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    render(
+      <Dialog open>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Conditional modal</DialogTitle>
+            <DialogDescription>Fixed actions across steps</DialogDescription>
+          </DialogHeader>
+          <Fragment key="first">
+            <div key="field">First field</div>
+          </Fragment>
+          <Fragment key="second">
+            <div key="field">Second field</div>
+            <>
+              <DialogFooter><button type="button">Review</button></DialogFooter>
+            </>
+          </Fragment>
+        </DialogContent>
+      </Dialog>,
+    )
+
+    const dialog = screen.getByRole('dialog', { name: 'Conditional modal' })
+    expect(dialog.querySelector(':scope > [data-slot="dialog-footer"]')?.textContent).toBe('Review')
+    const body = dialog.querySelector(':scope > [data-slot="dialog-body"]')
+    expect(body?.textContent).toBe('First fieldSecond field')
+    expect(body?.querySelector('[data-slot="dialog-footer"]')).toBeNull()
     expect(consoleError.mock.calls.flat().join(' ')).not.toContain('same key')
     consoleError.mockRestore()
   })

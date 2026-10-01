@@ -80,18 +80,20 @@ public sealed class LabAssemblyJob : IConcurrency
         providerJobId = LabLineageText.Required(providerJobId, 255);
         if (ProviderJobId is not null && ProviderJobId != providerJobId)
             throw new InvalidOperationException("The provider returned a different execution identity for this attempt.");
-        if (state is not ("Accepted" or "Running" or "Succeeded" or "Failed" or "Terminated"))
+        RequireUtc(receivedAtUtc);
+        if (state is not ("Accepted" or "Running" or "Succeeded" or "Failed" or "Terminated" or "CancelledBeforeStart"))
             throw new ArgumentException("Unsupported assembly disposition.");
         foreach (var timestamp in new[] { startedAtUtc, stoppedAtUtc, dispositionAtUtc }.OfType<DateTime>())
         { RequireUtc(timestamp); if (timestamp > receivedAtUtc.AddMinutes(5)) throw new ArgumentException("An execution time is in the future."); }
         // PostgreSQL timestamps retain microseconds. Normalize before replay comparisons.
         startedAtUtc = Precision(startedAtUtc); stoppedAtUtc = Precision(stoppedAtUtc); dispositionAtUtc = Precision(dispositionAtUtc);
         reason = string.IsNullOrWhiteSpace(reason) ? null : LabLineageText.Required(reason, 2000);
-        var terminal = state is "Succeeded" or "Failed" or "Terminated";
-        if (state == "Running" && !startedAtUtc.HasValue || terminal && !dispositionAtUtc.HasValue
+        var terminal = state is "Succeeded" or "Failed" or "Terminated" or "CancelledBeforeStart";
+        if (state == "Accepted" && startedAtUtc.HasValue || state == "Running" && !startedAtUtc.HasValue || terminal && !dispositionAtUtc.HasValue
             || terminal && !neverStarted && (!startedAtUtc.HasValue || !stoppedAtUtc.HasValue)
             || !terminal && (stoppedAtUtc.HasValue || dispositionAtUtc.HasValue)
-            || neverStarted && (state != "Failed" || StartedAtUtc.HasValue || startedAtUtc.HasValue || stoppedAtUtc.HasValue)
+            || state == "CancelledBeforeStart" && !neverStarted
+            || neverStarted && (state is not ("Failed" or "CancelledBeforeStart") || StartedAtUtc.HasValue || startedAtUtc.HasValue || stoppedAtUtc.HasValue)
             || stoppedAtUtc.HasValue && (!startedAtUtc.HasValue || stoppedAtUtc < startedAtUtc)
             || dispositionAtUtc.HasValue && stoppedAtUtc > dispositionAtUtc)
             throw new ArgumentException("The provider must supply consistent actual start, stop and disposition times.");

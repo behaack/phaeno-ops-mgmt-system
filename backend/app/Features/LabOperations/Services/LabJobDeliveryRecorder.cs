@@ -42,6 +42,9 @@ public sealed class LabJobDeliveryRecorder(PSeqOperationsDbContext db)
             releases.AddRange(published);
             var first = releases.Where(r => r.ReleasedAtUtc != null).GroupBy(r => r.SampleId)
                 .ToDictionary(g => g.Key, g => g.Min(r => r.ReleasedAtUtc!.Value));
+            if (work.AuthorizationSource == LabAuthorizationSource.CommercialOrder)
+                await new Features.OrderManagement.Services.LabPhaseOperations(db)
+                    .RecordDeliveryAsync(work.AuthorizationSourceId, first, token);
             if (roster.All(first.ContainsKey)) work.RecordFirstDelivery(roster.Max(id => first[id]));
         }
         work.AdvanceProjectionVersion();

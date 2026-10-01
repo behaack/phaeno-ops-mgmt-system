@@ -9,7 +9,12 @@ for (const theme of ['light', 'dark'] as const) for (const width of [320, 1440])
     const errors: string[] = []; const writes: { path: string; body: unknown }[] = []
     page.on('pageerror', error => errors.push(error.message))
     await page.route(url => url.pathname.startsWith('/api/'), async route => {
-      const request = route.request(); writes.push({ path: new URL(request.url()).pathname, body: request.postDataJSON() })
+      const request = route.request()
+      if (request.method() === 'GET' && new URL(request.url()).pathname.endsWith('/phases')) {
+        await route.fulfill({ json: { success: true, data: { phases: [{ lifecycle: 'ResultsDelivered', cancellationPending: false }] }, error: null } })
+        return
+      }
+      writes.push({ path: new URL(request.url()).pathname, body: request.postDataJSON() })
       await route.fulfill({ json: { success: true, data: {}, error: null } })
     })
     const html = await readFile(new URL('./fixtures/remaining-acceptance.html', import.meta.url), 'utf8')
@@ -30,7 +35,7 @@ for (const theme of ['light', 'dark'] as const) for (const width of [320, 1440])
     await expect(page.getByRole('dialog')).toHaveCount(0)
     expect(writes[0].body).toMatchObject({ version: 9, status: 'PartiallyApproved', sampleIds: ['44444444-4444-4444-8444-444444444444'] })
     await page.getByRole('button', { name: 'Complete Job' }).click()
-    await expect(page.getByText(/Failed processing remains billable/)).toBeVisible()
+    await expect(page.getByText(/Issued invoices and adjustments remain with Finance/)).toBeVisible()
     expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([])
     await page.screenshot({ path: info.outputPath('complete-job.png'), fullPage: true })
     await page.getByRole('button', { name: 'Confirm completion' }).click()

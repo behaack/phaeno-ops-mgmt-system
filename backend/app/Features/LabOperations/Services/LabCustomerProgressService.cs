@@ -51,10 +51,9 @@ public sealed class LabCustomerProgressService(PSeqOperationsDbContext db)
             .Where(package => package.OrganizationId == organizationId && package.LabServiceOrderId.HasValue
                 && orderIds.Contains(package.LabServiceOrderId.Value) && workIds.Contains(package.LabWorkOrderId))
             .Select(package => new { package.LabServiceOrderId, package.LabWorkOrderId, package.LabSampleId, package.State }).ToListAsync(cancellationToken);
-        var released = await db.LabResultReleases.AsNoTracking()
-            .Where(release => orderIds.Contains(release.LabServiceOrderId) && release.ReleaseStatus == FileReleaseStatus.Released
-                && release.ReleasedAt.HasValue)
-            .Select(release => release.LabSampleId).Distinct().ToListAsync(cancellationToken);
+        var sampleIds = samples.Select(s => s.Id).ToArray();
+        var released = await new LabJobQuery(db).Releases().Where(r => sampleIds.Contains(r.SampleId))
+            .Select(r => r.SampleId).Distinct().ToListAsync(cancellationToken);
         var arrivals = await db.SampleShipments.AsNoTracking()
             .Where(shipment => shipment.OrganizationId == organizationId
                 && workIds.Contains(shipment.LabWorkOrderId) && !shipment.IsPackingPool
@@ -96,7 +95,7 @@ public sealed class LabCustomerProgressService(PSeqOperationsDbContext db)
         if (status == "OnHold" || disposition == "OnHold") return "OnHold";
         if (status is "Rejected" or "Failed" || disposition == "Rejected") return "NeedsAttention";
         if (status == "Cancelled" || disposition == "Cancelled") return "Cancelled";
-        if (legacyReleased || packages.Contains("Released")) return "ResultsAvailable";
+        if (legacyReleased) return "ResultsAvailable";
         if (packages.Any(state => state is "ReadyForReview" or "ScientificallyApproved" or "ReadyForRelease")) return "QualityReview";
         if (status == "DataProcessing" || packages.Any(state => state is "Uploading" or "Scanning")) return "DataAssembly";
         if (sequencingStarted) return "Sequencing";
@@ -108,17 +107,10 @@ public sealed class LabCustomerProgressService(PSeqOperationsDbContext db)
     {
         var counts = samples.GroupBy(sample => sample.Stage).Select(group => new LabCustomerStageCount(group.Key, group.Count())).ToArray();
         var active = samples.Where(sample => sample.Stage != "Cancelled").ToArray();
-        var indices = active.Select(sample => Array.IndexOf(Stages, sample.Stage)).Where(index => index >= 0).ToArray();
-        var current = jobStage == "OnHold" ? "OnHold"
-            : active.Length > 0 && active.All(sample => sample.Stage == "ResultsAvailable") ? "ResultsAvailable"
-            : active.Any(sample => sample.Stage is "OnHold" or "NeedsAttention") ? "NeedsAttention"
-            : active.Any(sample => sample.Stage == "AwaitingReceipt") && (arrived || indices.Length > 0) ? "Received"
-            : indices.Length > 0 ? Stages[indices.Min()]
-            : arrived ? "Received" : jobStage ?? "AwaitingReceipt";
-        // Work-wide records are a fallback when all attributed samples share one earlier stage.
-        // Preserve the attributed counts instead of claiming every sample reached the Job milestone.
-        if (indices.Length > 0 && indices.Distinct().Count() == 1 && active.All(sample => Stages.Contains(sample.Stage))
-            && Array.IndexOf(Stages, jobStage) > indices[0] && jobStage is "LibraryPrep" or "DataAssembly" or "QualityReview") current = jobStage;
+        var activeStages = active.Select(sample => sample.Stage).Distinct().ToArray();
+        var current = activeStages.Length > 1 ? "Mixed"
+            : activeStages.Length == 1 ? activeStages[0]
+            : samples.Count > 0 ? "Cancelled" : arrived ? "Received" : jobStage ?? "AwaitingReceipt";
         return new(current, jobStage, arrived, counts, samples);
     }
 }

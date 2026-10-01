@@ -14,7 +14,7 @@ export function LabCustomerProgressPanel({ order }: { order: LabServiceOrder }) 
     <CardContent className="space-y-4">
       <div className="flex flex-wrap items-center gap-3"><OrderStatusBadge status={progress.currentStage} />
         {order.labScheduleHealth ? <span className="text-sm text-muted-foreground">Schedule: {humanizeStatus(order.labScheduleHealth)}</span> : null}
-        {order.labExpectedCompletionAtUtc ? <span className="text-sm text-muted-foreground">Expected {new Date(order.labExpectedCompletionAtUtc).toLocaleDateString()}</span> : null}
+        {(order.phaseCount ?? 1) === 1 && order.labExpectedCompletionAtUtc ? <span className="text-sm text-muted-foreground">Expected {new Date(order.labExpectedCompletionAtUtc).toLocaleDateString()}</span> : null}
       </div>
       <ol aria-label="Laboratory stages" className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
         {customerLabStages.map(stage => <li key={stage} aria-current={progress.currentStage === stage ? 'step' : undefined}

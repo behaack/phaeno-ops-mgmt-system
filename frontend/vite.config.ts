@@ -16,6 +16,12 @@ const config = defineConfig(({ command, mode }) => ({
   server: {
     host: '127.0.0.1',
     port: 3000,
+    // Give POMS notifications an explicit upgrade route alongside the HTTP API proxy.
+    proxy: {
+      '/api/platform/lab-operations/assembly-notifications': {
+        target: 'https://localhost:44399', changeOrigin: true, secure: false, ws: true,
+      },
+    },
     https:
       command === 'serve' && mode !== 'test'
         ? {

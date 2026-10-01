@@ -22,7 +22,7 @@ public static class LabQuoteCatalog
             && item.ServiceFamily == CatalogServiceFamily.PSeqLabService
             && item.SalesUnit.ToLower() == OrderSalesUnits.Specimen && (!requireActive || item.IsActive))
             .Select(item => item.Id).ToListAsync(ct);
-        var selected = ids.Where(available.Contains).ToArray();
+        var selected = ids.Where(available.Contains).Distinct().ToArray();
         if (selected.Length != 1) throw Unavailable();
         return selected[0];
     }

@@ -59,10 +59,19 @@ public sealed partial class PSeqOperationsDbContext
     private async Task<int> SaveWithCustomerHoldsAsync(bool acceptAllChangesOnSuccess, CancellationToken ct)
     {
         ProtectLineageHistory();
+        var phaseOperations = new Features.OrderManagement.Services.LabPhaseOperations(this);
+        var phaseStarts = phaseOperations.StartingSpecimens();
+        var phaseOrders = await phaseOperations.WriteOrderIdsAsync(phaseStarts, ct);
         var targets = await HoldWriteTargets(ct);
-        if (targets.NewWork.Count == 0 && targets.Ongoing.Count == 0)
+        if (targets.NewWork.Count == 0 && targets.Ongoing.Count == 0 && phaseOrders.Count == 0)
             return await base.SaveChangesAsync(acceptAllChangesOnSuccess, ct);
         await using var tx = Database.IsRelational() && Database.CurrentTransaction is null ? await Database.BeginTransactionAsync(ct) : null;
+        foreach (var orderId in phaseOrders.Order())
+            await Features.OrderManagement.Services.SampleShippingPackingData.LockAsync(this, "phase-plan:" + orderId, ct);
+        await phaseOperations.AssignNewSamplesAsync(ct);
+        await phaseOperations.RequireStartsAsync(phaseStarts, ct);
+        foreach (var orderId in phaseOrders)
+            await phaseOperations.RefreshReceiptAsync(orderId, ct);
         // All affected samples lock in one stable order, shared with hold decisions and requests.
         foreach (var id in targets.NewWork.Concat(targets.Ongoing).Distinct().Order())
             await Features.OrderManagement.Services.SampleShippingPackingData.LockAsync(this, "customer-hold:" + id, ct);

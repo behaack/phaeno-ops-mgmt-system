@@ -302,13 +302,10 @@ test("opens an approved Won Opportunity handoff as a locked Customer order", asy
   await editDialog.getByRole("button", { name: "Cancel" }).click();
   await page.getByRole("button", { name: "Start Customer order" }).click();
 
-  const dialog = page.getByRole("dialog", { name: "Start order from PRQ-ORDER-1" });
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByText(/Atlas Research · PSeq program · PRQ-ORDER-1/)).toBeVisible();
-  await expect(dialog.getByLabel("Customer")).toBeDisabled();
-  await expect(dialog.getByLabel("Customer")).toHaveValue(
-    "Atlas Research Customer",
-  );
+  await expect(page).toHaveURL(/\/order-operations\/new\?.*sourceRequestId=request-1/);
+  await expect(page).toHaveURL(/organizationId=customer-1/);
+  await expect(page.getByText("Draft entry unavailable")).toBeVisible();
+  await expect(page.getByText("A real Phaeno session with Commercial Operator access is required.")).toBeVisible();
 });
 
 async function expectCompactCardHeaderAction(

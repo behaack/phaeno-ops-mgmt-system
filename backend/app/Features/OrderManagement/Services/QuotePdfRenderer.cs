@@ -10,6 +10,8 @@ using UglyToad.PdfPig.Writer;
 public sealed record QuotePdfLine(string Description, decimal Quantity, decimal UnitPrice);
 public sealed record QuotePdfSource(string BiologicalSource, int SpecimenCount);
 public sealed record QuotePdfScope(int RequestedSpecimenCount, IReadOnlyList<QuotePdfSource> SourceGroups, int? RequestedSequencingRunCount = null);
+public sealed record QuotePdfPhase(string Name, int SampleCount, int TurnaroundBusinessDays, decimal AcceptedSubtotal,
+    PhaenoPortal.App.Features.OrderManagement.Domain.LabPhaseScope? Scope = null);
 
 public sealed record QuotePdfDocument(
     string OrderNumber, string? JobName, string OrganizationName, string DepartmentName,
@@ -17,7 +19,7 @@ public sealed record QuotePdfDocument(
     DateTime? AcceptedAt, IReadOnlyList<QuotePdfLine> Lines, decimal Subtotal, decimal Tax,
     decimal Total, string Currency, bool TaxDetermined, string? BillingContactName,
     string? BillingContactEmail, IReadOnlyList<string> BillingAddress, int? PaymentTermsDays,
-    QuotePdfScope? SampleScope = null, int? DeliveryTargetBusinessDays = null);
+    QuotePdfScope? SampleScope = null, int? DeliveryTargetBusinessDays = null, IReadOnlyList<QuotePdfPhase>? Phases = null);
 
 /// <summary>A downloadable presentation of the saved quote, with no commercial recalculation.</summary>
 public static class QuotePdfRenderer
@@ -292,7 +294,19 @@ public static class QuotePdfRenderer
                 y -= 10;
                 Paragraph($"Payment terms: Net {days.ToString(CultureInfo.InvariantCulture)} days.", 10);
             }
-            if (document.DeliveryTargetBusinessDays is { } businessDays)
+            if (document.Phases is { Count: > 1 } phases)
+            {
+                y -= 10;
+                Paragraph("Phase scope and delivery targets", 10, strong: true);
+                foreach (var phase in phases)
+                {
+                    Paragraph($"{phase.Name}: {phase.SampleCount} samples; {phase.TurnaroundBusinessDays} business days; subtotal {Money(phase.AcceptedSubtotal)}.", 10);
+                    if (phase.Scope is { } scope)
+                        Paragraph($"{scope.SequencingRunCount} purchased sequencing runs. " + string.Join("; ", scope.Sources.Select(s => $"{s.BiologicalSource}: {s.SpecimenCount} samples")), 9);
+                }
+                Paragraph("Each target starts when Phaeno physically receives every required tube for that phase. Business days are Monday-Friday, excluding Phaeno holidays.", 10);
+            }
+            else if (document.DeliveryTargetBusinessDays is { } businessDays)
             {
                 y -= 10;
                 Paragraph($"Delivery target: {businessDays} business days after Phaeno physically receives every required tube for all samples. Business days are Monday-Friday, excluding Phaeno holidays.", 10);

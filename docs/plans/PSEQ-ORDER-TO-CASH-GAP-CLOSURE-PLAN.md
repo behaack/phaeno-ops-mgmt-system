@@ -1,5 +1,21 @@
 # PSeq Order-to-Cash Gap-Closure Plan
 
+## Phase invoice attribution — planning, September 30, 2026
+
+For the future [sequential phase Job workflow](MULTI-PHASE-LAB-JOBS-PLAN.md),
+the owner selected deliberate Phaeno invoice timing and amounts, allowing upfront,
+completion and mixed billing without collecting contract terms. Attribute billed
+portions and adjustments to accepted phase lines within one order; retain phase
+totals, invoiced amounts and remaining uninvoiced balances. Phase result delivery
+and final Job closure must not automatically issue or duplicate an invoice for
+phased work. Preserve existing Finance readiness, immutable invoices, payment
+allocations, adjustments and independence of PSeq result release from payment.
+Mutually agreed rephasing of unsent future work retains immutable issued
+invoices and their original attribution. Reconcile billed obligations to the
+amended plan and explicitly allocate remaining unbilled accepted scope; splitting
+or merging phases cannot create new charges or duplicate billable balance.
+This is planning only and does not change current single-phase invoice behavior.
+
 ## Readable tax-decision label — September 22, 2026
 
 Display NonTaxable as Non-taxable in the Customer billing summary, matching the existing edit-form label. Taxable, Exempt and Not configured remain clear display labels. Preserve the stored enum and API values. Update Phaeno billing help to use the displayed labels. This presentation-only correction needs no new tests; local servers remain stopped.
@@ -576,3 +592,5 @@ Result release now defaults to ReadyForRelease when no valid package-state filte
 UAT-20260912-01 is fixed locally: a PostgreSQL unique conflict during result-package insertion detaches the failed insert and rereads the committed idempotency key. Replay validates manifest hash, organization/order/work/sample/trial scope, correction reference and expected artifact count. Identical requests return the same package using the established replay response; changed requests receive result_idempotency_conflict. A collision without a matching key returns a deliberate result_package_registration_conflict so the caller can retry the unchanged key. Existing unique constraints remain authoritative; no model, migration, dependency or authentication change.
 
 A deterministic disposable-local-PostgreSQL regression covers identical overlap, changed overlap/replay and competing sample versions with retry. The original HTTP race now returns 200/200 and subsequent retry 200 for one persisted package. UAT-20260912-02 is also fixed locally by removing the body's 320px minimum width; signed-in queue/detail/confirmation checks fit the available width at measured 320, 390 and 1440 CSS pixels. The Phaeno release guide remains accurate; the user's workflow and release rules do not change. See the active UAT run for evidence and retained fixtures. These changes are not deployed and do not close scanner, provider, full scientific lineage or production acceptance gates.
+
+September 30 local phase implementation: [MULTI-PHASE-LAB-JOBS-PLAN.md](MULTI-PHASE-LAB-JOBS-PLAN.md) now owns the implemented sequential cohort extension, derived mixed progress, phase-specific receipt/TAT/deadline, unsent-only mutual rephasing, first-tube cancellation cutoff and explicit partial/combined phase invoices. It supersedes older whole-Job completion invoicing and single-status assumptions for phased PSeq Jobs. Local migration applied after the authorized Job purge; connected/browser/physical/scientific acceptance and release remain separate, unverified gates.

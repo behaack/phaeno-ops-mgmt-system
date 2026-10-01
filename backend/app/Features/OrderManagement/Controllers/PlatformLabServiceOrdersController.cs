@@ -24,7 +24,7 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [ApiController]
 [Authorize]
 [Route("api/platform/lab-service-orders")]
-public sealed class PlatformLabServiceOrdersController(
+public sealed partial class PlatformLabServiceOrdersController(
     PSeqOperationsDbContext dbContext,
     OrderRequestContext requestContext,
     OrderIdempotencyService idempotency,
@@ -201,7 +201,7 @@ public sealed class PlatformLabServiceOrdersController(
 
     [HttpPost]
     public async Task<LabServiceOrderDto> Initiate(
-        [FromBody] InitiateCustomerLabOrderRequest request,
+        [FromBody] CommercialLabDraftWriteRequest request,
         CancellationToken cancellationToken)
     {
         var actor = await RequireCommercialAsync(false, cancellationToken);
@@ -214,10 +214,7 @@ public sealed class PlatformLabServiceOrdersController(
             request,
             async operationCancellationToken =>
             {
-                if (!request.ProhibitedDataConfirmed)
-                    throw Invalid(
-                        "prohibited_data_confirmation_required",
-                        "Confirm that the Job pricing details contain no patient identifiers, PHI, or unnecessary personal data.");
+                Execute(() => CommercialDraftRules.Validate(request.Draft, false));
 
                 CrmHandoff? sourceHandoff = null;
                 if (request.SourceRequestId.HasValue)
@@ -261,87 +258,22 @@ public sealed class PlatformLabServiceOrdersController(
                     ?? throw Conflict(
                         "customer_not_available",
                         "Select an active Customer organization before initiating the order.");
-                if (customer.IsOperationalReadinessBlocked)
-                {
-                    throw Conflict(
-                        "customer_operationally_blocked",
-                        string.IsNullOrWhiteSpace(customer.OperationalReadinessBlockReason)
-                            ? "Clear the Customer's manual operational block before starting pricing."
-                            : customer.OperationalReadinessBlockReason);
-                }
-
                 var department = await ResolveDepartmentAsync(
                     customer.Id,
                     request.DepartmentId,
                     operationCancellationToken);
 
-                if (!await CustomerDepartmentUserAccess.HasActiveAsync(
-                    dbContext, customer.Id, department.Id, operationCancellationToken))
-                    throw Conflict("customer_department_has_no_active_user",
-                        "Assign an active Customer user to this Department, or select a Department they can access, before starting pricing.");
-
-                await LabServiceOrderingEligibility.RequireAsync(
-                    dbContext,
-                    customer.Id,
-                    DateTime.UtcNow,
-                    operationCancellationToken,
-                    department.Id);
-
-                var normalizedJobName = NormalizeJobName(request.CustomerReference);
+                var normalizedJobName = NormalizeJobName(request.Draft.JobName);
                 await EnsureUniqueJobNameAsync(customer.Id, department.Id, normalizedJobName, operationCancellationToken);
-                var sourceGroups = ValidatePricingProfile(request.RequestedSpecimenCount, request.SourceGroups);
-                var sampleType = await LabOrderSampleTypeChoices.RequireAsync(dbContext, request.SampleTypeDefinitionId, operationCancellationToken);
                 var configuration = await dbContext.OrderSystemConfigurations.AsNoTracking()
-                    .OrderBy(item => item.CreatedAt)
-                    .FirstOrDefaultAsync(operationCancellationToken);
-                var order = new LabServiceOrder(
-                    customer.Id,
-                    department.Id,
-                    await GenerateUniqueJobNumberAsync(operationCancellationToken),
-                    request.CustomerReference,
-                    request.Description,
-                    request.RequestedSpecimenCount,
-                    sourceGroups.Count > 1,
-                    sourceGroups.Count == 1 ? sourceGroups[0].BiologicalSource : null,
-                    request.StorageRequirements,
-                    request.SafetyDeclaration,
+                    .OrderBy(item => item.CreatedAt).FirstOrDefaultAsync(operationCancellationToken);
+                var order = LabServiceOrder.CreateCommercialDraft(customer.Id, department.Id,
+                    await GenerateUniqueJobNumberAsync(operationCancellationToken), request.Draft, request.SourceRequestId,
                     department.ResolveConfiguration(department.Organization).ShippingInstructions
-                        ?? configuration?.SampleSubmissionInstructions
-                        ?? string.Empty,
-                    request.SourceRequestId);
-                order.SelectSampleType(sampleType.Id, sampleType.MaterialClass);
-                foreach (var group in sourceGroups)
-                {
-                    order.SourceGroups.Add(new LabServiceSourceGroup(
-                        order.Id,
-                        group.BiologicalSource,
-                        group.SpecimenCount));
-                }
-
-                Execute(() => order.SetSequencingRunCount(request.SequencingRunCount));
+                        ?? configuration?.SampleSubmissionInstructions ?? string.Empty);
                 var initiatedAt = DateTime.UtcNow;
-                Execute(() => order.UpdatePriceProposal(
-                    request.ProposedUnitPrice,
-                    request.PriceProposalNote,
-                    actor.Id,
-                    initiatedAt));
                 dbContext.LabServiceOrders.Add(order);
                 Event(order, "Created", order.Status.ToString(), actor.Id);
-                var draftStatus = order.Status.ToString();
-                Execute(() => order.Submit(actor.Id, initiatedAt));
-                var revision = new LabServiceRequestRevision(
-                    order.Id,
-                    order.RequestRevision,
-                    null,
-                    BuildRequestSnapshot(order),
-                    null,
-                    actor.Id,
-                    initiatedAt);
-                dbContext.LabServiceRequestRevisions.Add(revision);
-                Event(order, draftStatus, order.Status.ToString(), actor.Id);
-                var submittedStatus = order.Status.ToString();
-                Execute(order.BeginQuotePreparation);
-                Event(order, submittedStatus, order.Status.ToString(), actor.Id);
 
                 if (sourceHandoff is not null)
                 {
@@ -496,9 +428,10 @@ public sealed class PlatformLabServiceOrdersController(
         if (!Enum.TryParse<QuotePurpose>(request.Purpose, true, out var purpose) || !Enum.IsDefined(purpose))
             throw Invalid("quote_purpose_invalid", "The quote purpose is invalid.");
         var isChange = purpose == QuotePurpose.Change;
-        if (!isChange && request.DeliveryTargetBusinessDays is not (>= 1 and <= 365))
+        var scopedPhases = !isChange && order.Phases.Any(p => p.SupersededAtUtc == null && p.ScopeJson != null);
+        if (!isChange && !scopedPhases && request.DeliveryTargetBusinessDays is not (>= 1 and <= 365))
             throw Invalid("delivery_target_required", "Set a delivery target of 1 to 365 business days before issuing the quote.");
-        if (!isChange && !await LabDeliveryCalendarReadiness.HasCoverageAsync(dbContext,
+        if (!isChange && !scopedPhases && !await LabDeliveryCalendarReadiness.HasCoverageAsync(dbContext,
                 request.DeliveryTargetBusinessDays!.Value, cancellationToken))
             throw Conflict("delivery_calendar_required", "Configure Phaeno's observed-holiday calendar to cover the delivery target before issuing this quote.");
         LabChangeScope? changeScope = null;
@@ -508,7 +441,7 @@ public sealed class PlatformLabServiceOrdersController(
                 throw Conflict("quote_not_allowed", "Change quotes require an active accepted Job and native billing.");
             var additions = request.AdditionalSources;
             if (additions is null || additions.Count == 0 || additions.Any(s => string.IsNullOrWhiteSpace(s.BiologicalSource)
-                    || s.BiologicalSource.Trim().Length > 500 || s.SpecimenCount < 1 || s.SpecimenCount > 100)
+                    || s.BiologicalSource.Trim().Length > 500 || s.SpecimenCount < 1 || s.SpecimenCount > 10000)
                 || additions.Select(s => LabServiceSourceGroup.Normalize(s.BiologicalSource)).Distinct().Count() != additions.Count
                 || additions.Sum(s => s.SpecimenCount) + order.RequestedSpecimenCount > 100)
                 throw Invalid("change_scope_invalid", "Specify unique biological sources and positive additional counts, up to 100 total samples per Job.");
@@ -522,8 +455,8 @@ public sealed class PlatformLabServiceOrdersController(
         if (!isChange && order.Status != LabServiceOrderStatus.QuoteInPreparation && order.Status != LabServiceOrderStatus.QuoteIssued)
             throw Conflict("quote_not_allowed", "A quote can be issued only while pricing this request.");
         if (orderToCashOptions.Value.DualControlEnforced
-            && order.ProposedUnitPrice.HasValue
-            && order.PriceProposedByUserId == actor.Id)
+            && (order.ProposedUnitPrice.HasValue && order.PriceProposedByUserId == actor.Id
+                || !isChange && order.Phases.Any(p => p.SupersededAtUtc == null && p.ProposedUnitPrice.HasValue && p.PriceProposedByUserId == actor.Id)))
             throw Conflict("price_proposal_self_approval_not_allowed", "A different Commercial Operator must review this proposed price.");
         if (request.Lines.Count == 0) throw Invalid("quote_lines_required", "At least one quote line is required.");
         if (request.Lines.Any(line => line.Quantity <= 0
@@ -538,9 +471,20 @@ public sealed class PlatformLabServiceOrdersController(
             catalog.TryGetValue(line.CatalogItemId, out var item)
             && item.ServiceFamily == CatalogServiceFamily.PSeqLabService
             && string.Equals(item.SalesUnit, OrderSalesUnits.Specimen, StringComparison.OrdinalIgnoreCase)).ToList();
-        if (labServiceLines.Count != 1)
-            throw Invalid("quote_lab_service_line_required", "Include the active PSeq Lab Service specimen item exactly once.");
-        var labServiceLine = labServiceLines[0];
+        if (labServiceLines.Count == 0)
+            throw Invalid("quote_lab_service_line_required", "Include the active PSeq Lab Service item for standard sample service and any additional runs.");
+        if (request.Lines.Any(line => line.PricingComponent != null && !labServiceLines.Contains(line)))
+            throw Invalid("quote_pricing_component_invalid", "Sample-service and additional-run pricing apply only to the laboratory service item.");
+        if (scopedPhases)
+        {
+            LabPhasePricing.Validate(order, request, labServiceLines);
+            foreach (var target in labServiceLines.Where(l => l.TurnaroundBusinessDays.HasValue).Select(l => l.TurnaroundBusinessDays!.Value).Distinct())
+                if (!await LabDeliveryCalendarReadiness.HasCoverageAsync(dbContext, target, cancellationToken))
+                    throw Conflict("delivery_calendar_required", "Configure the observed-holiday calendar to cover every phase target.");
+        }
+        else LabPhasePricing.ValidateSingle(labServiceLines, changeScope?.AdditionalSources.Sum(s => s.SpecimenCount) ?? order.RequestedSpecimenCount,
+            changeScope?.AdditionalSequencingRunCount ?? order.RequestedSequencingRunCount);
+        var labServiceLine = labServiceLines.First(l => l.PricingComponent == LabPhasePricing.StandardSample);
         if (changeScope != null)
         {
             var original = order.Quotes.SingleOrDefault(item => item.Id == order.AcceptedQuoteId)
@@ -548,7 +492,7 @@ public sealed class PlatformLabServiceOrdersController(
             if (labServiceLine.CatalogItemId != await LabQuoteCatalog.ReadItemAsync(dbContext, original.LinesJson, false, cancellationToken))
                 throw Conflict("change_quote_service_mismatch", "Additional work must retain the service from the accepted Job.");
         }
-        if (labServiceLine.Quantity != (changeScope?.AdditionalSequencingRunCount ?? changeScope?.AdditionalSources.Sum(s => s.SpecimenCount) ?? order.RequestedSequencingRunCount))
+        if (labServiceLines.Sum(l => l.Quantity) != (changeScope?.AdditionalSequencingRunCount ?? changeScope?.AdditionalSources.Sum(s => s.SpecimenCount) ?? order.RequestedSequencingRunCount))
             throw Invalid("quote_lab_service_quantity_mismatch", "The PSeq Lab Service quantity must equal the requested sample-sequencing run count.");
         var commercial = await dbContext.OrganizationCommercialProfiles.AsNoTracking()
             .FirstOrDefaultAsync(item => item.OrganizationId == order.OrganizationId, cancellationToken);
@@ -568,7 +512,11 @@ public sealed class PlatformLabServiceOrdersController(
         if (expiresAt.Kind != DateTimeKind.Utc || expiresAt <= now)
             throw Invalid("quote_expiration_invalid", "Choose a quote expiration date in the future.");
         var snapshots = request.Lines.Select(line => new QuoteLineSnapshot(line.CatalogItemId, catalog[line.CatalogItemId].ExternalItemId,
-            line.Description.Trim(), line.Quantity, line.UnitPrice)).ToList();
+            line.PricingComponent != null
+                ? $"{(scopedPhases ? order.Phases.Single(p => p.Id == line.PhaseId).Name : catalog[line.CatalogItemId].Name)} · {(line.PricingComponent == LabPhasePricing.StandardSample ? "Standard sample service (library preparation, one run and data assembly)" : "Additional sequencing run (existing library)")}"
+                : line.Description.Trim(), line.Quantity, line.UnitPrice, line.PhaseId, line.TurnaroundBusinessDays,
+            scopedPhases ? LabPhasePricing.ProposedPrice(order.Phases.Single(p => p.Id == line.PhaseId), line.PricingComponent) : null,
+            request.PricingDecisionReason, line.PricingComponent)).ToList();
         var subtotal = snapshots.Sum(line => decimal.Round(line.Quantity * line.UnitPrice, 2, MidpointRounding.AwayFromZero));
         var revision = order.Quotes.Count == 0 ? 1 : order.Quotes.Max(item => item.Revision) + 1;
         var canCalculateTax = nativeReceivables
@@ -576,7 +524,7 @@ public sealed class PlatformLabServiceOrdersController(
         var computedTax = canCalculateTax ? CalculateTax(subtotal, commercial!) : nativeReceivables ? 0 : request.Tax;
         var quote = new LabServiceQuote(order.Id, revision, purpose, JsonSerializer.Serialize(snapshots, JsonOptions), subtotal,
             computedTax, nativeReceivables ? "USD" : request.Currency, now, expiresAt);
-        if (!isChange) quote.SetDeliveryTarget(request.DeliveryTargetBusinessDays!.Value);
+        if (!isChange) { quote.SetDeliveryTarget(scopedPhases ? labServiceLines.Where(l => l.TurnaroundBusinessDays.HasValue).Max(l => l.TurnaroundBusinessDays!.Value) : request.DeliveryTargetBusinessDays!.Value); LabPhasePlans.FreezeQuote(order, quote); }
         if (changeScope is not null) quote.FreezeChangeScope(JsonSerializer.Serialize(changeScope, JsonOptions));
         if (canCalculateTax)
         {
@@ -594,6 +542,8 @@ public sealed class PlatformLabServiceOrdersController(
             request.PricingDecisionReason,
             actor.Id,
             now));
+        if (scopedPhases) Execute(() => quote.RecordPhasePricingDecision(labServiceLines
+            .Select(line => (LabPhasePricing.ProposedPrice(order.Phases.Single(p => p.Id == line.PhaseId), line.PricingComponent), line.UnitPrice)), request.PricingDecisionReason));
         var previous = order.Quotes.Where(item => item.Purpose == purpose && item.Status is QuoteStatus.Issued or QuoteStatus.Expired or QuoteStatus.SyncPending).OrderByDescending(item => item.Revision).FirstOrDefault();
         previous?.Supersede(quote.Id);
         dbContext.LabServiceQuotes.Add(quote);
@@ -812,6 +762,7 @@ public sealed class PlatformLabServiceOrdersController(
         var actor = await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
         await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         await SampleShippingPackingData.LockAsync(dbContext, $"sample-shipping:{orderId}", cancellationToken);
+        await new LabPhasePlans(dbContext).LockAsync(orderId, cancellationToken);
         var order = await ReadAsync(orderId, cancellationToken);
         EnsureVersion(order.Version, request.Version);
         var cancellation = await dbContext.OrderCancellationRequests.FirstOrDefaultAsync(item => item.Id == cancellationId
@@ -840,6 +791,15 @@ public sealed class PlatformLabServiceOrdersController(
                     || shipment.Items.Any(item => !selectedIds.Contains(item.SubmittedSpecimenId)))))
                 throw Conflict("cancellation_shipping_review_required", "Review dispatched shipments and separate selected samples from mixed containers before approving cancellation.");
         }
+        var phaseFacts = await new LabPhaseFacts(dbContext).ReadAsync(orderId, cancellationToken);
+        var affectedPhases = phaseFacts.Phases.Where(p => p.Lifecycle != "Cancelled" &&
+            (decision == CancellationRequestStatus.Approved || p.SampleIds.Any(selectedIds.Contains))).ToArray();
+        if (decision is CancellationRequestStatus.Approved or CancellationRequestStatus.PartiallyApproved)
+        {
+            if (affectedPhases.Any(p => !p.CancellationEligible || decision == CancellationRequestStatus.PartiallyApproved
+                && (p.SampleIds.Count != p.SampleCount || p.SampleIds.Any(id => !selectedIds.Contains(id)))))
+                throw Conflict("phase_cancellation_closed", "Cancel only complete eligible phase cohorts before their first required tube receipt. Use the phase cancellation workflow for future scope.");
+        }
         var before = order.Status.ToString();
         if (decision is CancellationRequestStatus.Approved or CancellationRequestStatus.PartiallyApproved)
         {
@@ -867,6 +827,15 @@ public sealed class PlatformLabServiceOrdersController(
                 }
                 if (decision == CancellationRequestStatus.Approved) authorization.MarkCancelled();
             }
+        }
+        if (decision is CancellationRequestStatus.Approved or CancellationRequestStatus.PartiallyApproved)
+        {
+            foreach (var affected in affectedPhases)
+                Execute(() => order.Phases.Single(p => p.Id == affected.Id).Cancel(actor.Id, request.Reason, DateTime.UtcNow));
+            if (decision == CancellationRequestStatus.Approved)
+                foreach (var sample in order.Samples.Where(s => s.Status != LabSampleStatus.Cancelled))
+                    Execute(() => sample.ApplyLaboratoryOutcome(LabSampleStatus.Cancelled, request.Reason));
+            order.AdvancePhasePlan();
         }
         cancellation.Decide(decision, request.Reason, actor.Id, DateTime.UtcNow);
         Execute(() => order.ResolveCancellation(decision is CancellationRequestStatus.Approved, request.Reason, null));
@@ -929,157 +898,26 @@ public sealed class PlatformLabServiceOrdersController(
     }
 
     [HttpPost("{orderId:guid}/complete")]
-    public async Task<LabServiceOrderDto> Complete(Guid orderId, [FromBody] VersionRequest request, CancellationToken cancellationToken)
+    public async Task<LabServiceOrderDto> Complete(Guid orderId, [FromBody] VersionRequest request, CancellationToken ct)
     {
-        var nativeReceivables = orderToCashOptions.Value.NativePSeqAccountsReceivable;
-        var actor = nativeReceivables
-            ? await requestContext.RequireBusinessRoleAsync(HttpContext, BusinessRole.CommercialOperator,
-                orderToCashOptions.Value.BusinessRoles || orderToCashOptions.Value.DualControlEnforced,
-                cancellationToken)
-            : await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
-        var key = idempotency.RequireKey(HttpContext);
-        var scope = $"platform:lab-order:{orderId}:complete";
-        string? createdPdfKey = null;
-        try
-        {
-            var execution = await idempotency.ExecuteAsync(actor.Id, scope, key, request, async operationCancellationToken =>
+        var actor = await RequireCommercialAsync(false, ct);
+        var execution = await idempotency.ExecuteAsync(actor.Id, $"platform:lab-order:{orderId}:complete",
+            idempotency.RequireKey(HttpContext), request, async token =>
             {
-                var order = await ReadAsync(orderId, operationCancellationToken);
-                await dbContext.Entry(order).ReloadAsync(operationCancellationToken);
-                foreach (var sample in order.Samples) await dbContext.Entry(sample).ReloadAsync(operationCancellationToken);
+                await new LabPhasePlans(dbContext).LockAsync(orderId, token);
+                var order = await ReadAsync(orderId, token);
                 EnsureVersion(order.Version, request.Version);
+                var facts = await new LabPhaseFacts(dbContext).ReadAsync(orderId, token);
+                if (facts.Phases.Any(p => p.CancellationPending || p.Lifecycle is not ("ResultsDelivered" or "Cancelled")))
+                    throw Conflict("phase_results_not_delivered", "Deliver every required result for every non-cancelled phase and resolve cancellation requests before closing this Job.");
                 var before = order.Status.ToString();
-                var labWork = await dbContext.LabWorkOrders.AsNoTracking().Include(value => value.Specimens)
-                    .SingleOrDefaultAsync(value => value.AuthorizationSourceId == order.Id
-                        && value.AuthorizationSource == LabAuthorizationSource.CommercialOrder
-                        && value.SubmittingOrganizationId == order.OrganizationId, operationCancellationToken);
-                if (labWork is not null)
-                {
-                    var outcomes = await PhaenoPortal.App.Features.LabOperations.Services.LabIntakeProgress
-                        .ReadAsync(dbContext, labWork, operationCancellationToken);
-                    if (labWork.Status == LabWorkOrderStatus.OnHold
-                        || await dbContext.LabExceptions.AsNoTracking().AnyAsync(value => value.LabWorkOrderId == labWork.Id
-                            && value.IsBlocking && value.Status == LabExceptionStatus.Open, operationCancellationToken)
-                        || order.Samples.Any(sample => !(outcomes.TerminalOutcomes ?? []).Any(outcome =>
-                            outcome.SubmittedSpecimenId == sample.Id && outcome.Outcome == sample.Status.ToString())))
-                        throw Conflict("laboratory_outcomes_not_final", "Review current laboratory outcomes and resolve all holds before completing this Job.");
-                }
                 Execute(() => order.Complete(DateTime.UtcNow));
-                var acceptedQuote = order.Quotes.SingleOrDefault(item => item.Id == order.AcceptedQuoteId) ?? throw Conflict("accepted_quote_missing", "The accepted quote snapshot is unavailable.");
-                var profile = await dbContext.OrganizationCommercialProfiles.AsNoTracking().FirstOrDefaultAsync(item => item.OrganizationId == order.OrganizationId, operationCancellationToken);
-                var acceptedQuotes = order.Quotes.Where(q => q.Id == acceptedQuote.Id || q.Purpose == QuotePurpose.Change && q.Status == QuoteStatus.Accepted).ToList();
-                var invoiceSubtotal = acceptedQuotes.Sum(q => q.Subtotal);
-                var lines = acceptedQuotes.SelectMany(q => JsonSerializer.Deserialize<List<QuoteLineSnapshot>>(q.LinesJson, JsonOptions) ?? []).ToList();
-                if (nativeReceivables)
-                {
-                    if (!string.Equals(acceptedQuote.Currency, "USD", StringComparison.Ordinal))
-                        throw Conflict("currency_not_supported", "PSeq accounts receivable supports USD only.");
-                    if (await dbContext.Invoices.AnyAsync(item => item.LabServiceOrderId == order.Id, operationCancellationToken))
-                        throw Conflict("invoice_already_issued", "An invoice has already been issued for this completed order.");
-                    var quoteHasCommercialSnapshot = acceptedQuote.BillingContactSnapshotJson is not null
-                        && acceptedQuote.BillingAddressSnapshotJson is not null
-                        && acceptedQuote.TaxDecisionSnapshotJson is not null
-                        && acceptedQuote.PaymentTermsDaysSnapshot.HasValue;
-                    if (acceptedQuotes.Any(q => q.TaxDecisionSnapshotJson is null))
-                    {
-                        if (profile is null
-                            || !profile.HasCompleteBillingContact
-                            || !profile.HasCompleteBillingAddress
-                            || profile.PaymentTermsDays is < 0 or > 365
-                            || !profile.HasEffectiveTaxDecision)
-                            throw Conflict("billing_profile_required", "Complete the Customer billing contact, address, payment terms, and tax decision before issuing the invoice.");
-                        if (!profile.HasFinanceApprovedTaxDecision)
-                            throw Conflict("finance_tax_approval_required", "Finance must approve the effective tax decision before invoice issuance.");
-                    }
-                    var billingContactSnapshotJson = quoteHasCommercialSnapshot
-                        ? acceptedQuote.BillingContactSnapshotJson!
-                        : SerializeBillingContact(profile!, profile!.BillingContactEmail!);
-                    var billingAddressSnapshotJson = quoteHasCommercialSnapshot
-                        ? acceptedQuote.BillingAddressSnapshotJson!
-                        : profile!.BillingAddressJson!;
-                    var taxDecisionSnapshotJson = quoteHasCommercialSnapshot
-                        ? acceptedQuote.TaxDecisionSnapshotJson!
-                        : SerializeTaxDecision(profile!);
-                    var paymentTermsDays = quoteHasCommercialSnapshot
-                        ? acceptedQuote.PaymentTermsDaysSnapshot!.Value
-                        : profile!.PaymentTermsDays;
-                    var invoiceTax = acceptedQuotes.Sum(q => q.TaxDecisionSnapshotJson is not null ? q.Tax : CalculateTax(q.Subtotal, profile!));
-                    if (acceptedQuotes.Count > 1)
-                        taxDecisionSnapshotJson = JsonSerializer.Serialize(new { originalDecision = taxDecisionSnapshotJson,
-                            components = acceptedQuotes.Select(q => new { quoteId = q.Id, q.Revision, q.Subtotal,
-                                tax = q.TaxDecisionSnapshotJson is not null ? q.Tax : CalculateTax(q.Subtotal, profile!), q.TaxDecisionSnapshotJson }) }, JsonOptions);
-                    var invoiceTotal = decimal.Round(invoiceSubtotal + invoiceTax, 2, MidpointRounding.AwayFromZero);
-                    var issuedOn = DateOnly.FromDateTime(order.CompletedAt ?? DateTime.UtcNow);
-                    var dueOn = issuedOn.AddDays(paymentTermsDays);
-                    var invoiceNumber = $"INV-{issuedOn:yyyyMMdd}-{Guid.NewGuid():N}"[..21].ToUpperInvariant();
-                    var customerName = await dbContext.Organizations.AsNoTracking()
-                        .Where(item => item.Id == order.OrganizationId).Select(item => item.Name)
-                        .SingleAsync(operationCancellationToken);
-                    var pdf = InvoicePdfRenderer.Render(invoiceNumber, customerName, issuedOn, dueOn,
-                        lines.Select(line => new InvoicePdfLine(line.Description, line.Quantity, line.UnitPrice,
-                            decimal.Round(line.Quantity * line.UnitPrice, 2, MidpointRounding.AwayFromZero))).ToList(),
-                        invoiceSubtotal, invoiceTax, invoiceTotal, "USD");
-                    await using var pdfStream = new MemoryStream(pdf, writable: false);
-                    var stored = await fileStorage.SaveAsync(pdfStream, ".pdf", 5_000_000, operationCancellationToken);
-                    createdPdfKey = stored.StorageKey;
-                    var nativeInvoice = new Invoice(order.OrganizationId, order.Id, acceptedQuote.Id,
-                        invoiceNumber, issuedOn, paymentTermsDays,
-                        billingContactSnapshotJson, billingAddressSnapshotJson,
-                        taxDecisionSnapshotJson, invoiceSubtotal, invoiceTax,
-                        stored.StorageKey, stored.Sha256, actor.Id, DateTime.UtcNow);
-                    dbContext.Invoices.Add(nativeInvoice);
-                    var lineNumber = 0;
-                    foreach (var component in acceptedQuotes)
-                    {
-                        var componentTax = component.TaxDecisionSnapshotJson is not null ? component.Tax : CalculateTax(component.Subtotal, profile!);
-                        var taxRate = component.Subtotal == 0 ? 0 : decimal.Round(componentTax / component.Subtotal, 6, MidpointRounding.AwayFromZero);
-                        foreach (var line in JsonSerializer.Deserialize<List<QuoteLineSnapshot>>(component.LinesJson, JsonOptions) ?? [])
-                            dbContext.InvoiceLines.Add(new InvoiceLine(nativeInvoice.Id, ++lineNumber, null, line.Description, line.Quantity, line.UnitPrice, taxRate));
-                    }
-                    Notice(order, "lab-invoice-issued", "Invoice available",
-                        $"Invoice {invoiceNumber} is available for {order.OrderNumber} and is due {dueOn:yyyy-MM-dd}.");
-                }
-                else
-                {
-                    if (string.IsNullOrWhiteSpace(profile?.QboCustomerId)) throw Conflict("qbo_customer_required", "Link this customer to QuickBooks before completing the order.");
-                    var estimate = await dbContext.CommercialDocumentLinks.AsNoTracking().Where(item => item.WorkflowType == OrderWorkflowTypes.LabService
-                        && item.WorkflowId == orderId && item.Kind == CommercialDocumentKind.Estimate && item.SyncStatus == IntegrationStatus.Succeeded)
-                        .OrderByDescending(item => item.SynchronizedAt).FirstOrDefaultAsync(operationCancellationToken);
-                    var invoice = new CommercialDocumentLink(OrderWorkflowTypes.LabService, order.Id, CommercialDocumentKind.Invoice, acceptedQuote.Total, acceptedQuote.Currency);
-                    dbContext.CommercialDocumentLinks.Add(invoice);
-                    var payload = new OrderDocumentOutboxPayload(invoice.Id, null, profile.QboCustomerId!, order.OrderNumber, null,
-                        acceptedQuote.Currency, lines.Select(line => new QuickBooksLineRequest(line.ExternalItemId, line.Description, line.Quantity, line.UnitPrice)).ToList(), estimate?.ExternalDocumentId);
-                    dbContext.OrderOutboxMessages.Add(new OrderOutboxMessage(IntegrationOperation.CreateInvoice, OrderWorkflowTypes.LabService,
-                        order.Id, key, JsonSerializer.Serialize(payload, JsonOptions)));
-                }
                 Event(order, before, order.Status.ToString(), actor.Id);
-                Notice(order, "lab-order-completed", "Laboratory service completed", $"Laboratory work for {order.OrderNumber} is complete.");
-                await dbContext.SaveChangesAsync(operationCancellationToken);
-                var response = await MapAsync(order, operationCancellationToken);
-                return response;
-            }, nativeReceivables ? StatusCodes.Status201Created : StatusCodes.Status202Accepted,
-                cancellationToken, concurrencyScope: $"lab-order:{orderId}", isolationLevel: IsolationLevel.Serializable);
-            Response.StatusCode = execution.StatusCode;
-            return execution.Response;
-        }
-        catch
-        {
-            if (createdPdfKey is not null)
-            {
-                try
-                {
-                    // A lost commit acknowledgment must not remove a successfully issued invoice PDF.
-                    if (!await dbContext.Invoices.AsNoTracking().AnyAsync(item => item.PdfStorageKey == createdPdfKey,
-                        CancellationToken.None))
-                        await fileStorage.DeleteIfExistsAsync(createdPdfKey, CancellationToken.None);
-                }
-                catch (Exception cleanupError)
-                {
-                    logger.LogWarning(cleanupError, "Invoice PDF cleanup could not be verified for Job {OrderId}; retain the file for recovery.", orderId);
-                }
-            }
-            throw;
-        }
+                Notice(order, "lab-order-completed", "Laboratory service completed", $"Every non-cancelled phase of {order.OrderNumber} has delivered its results. Finance manages invoicing separately.");
+                await dbContext.SaveChangesAsync(token);
+                return await MapAsync(order, token);
+            }, cancellationToken: ct, concurrencyScope: $"lab-order:{orderId}");
+        return execution.Response;
     }
 
     private async Task<LabServiceOrderDto> MutateOrder(Guid orderId, ReasonRequest request, Action<LabServiceOrder> action, string eventName, CancellationToken cancellationToken)
@@ -1208,6 +1046,10 @@ public sealed class PlatformLabServiceOrdersController(
             TubeUsePolicyKey: order.TubeUsePolicyKey, TubeUsePolicyVersion: order.TubeUsePolicyVersion,
             RequestedSpecimenCount: order.RequestedSpecimenCount,
             RequestedSequencingRunCount: order.RequestedSequencingRunCount,
+            DepartmentId: order.DepartmentId,
+            PhaseCount: order.Phases.Count(p => p.SupersededAtUtc == null),
+            PhaseScopes: order.Phases.Where(p => p.SupersededAtUtc == null && p.ScopeJson != null).OrderBy(p => p.Position)
+                .Select(p => new LabOrderPhaseScopeDto(p.Id, p.Position, p.Name, p.SampleCount, p.ReadScope()!, p.TurnaroundBusinessDays, p.ProposedUnitPrice, p.PriceProposalNote, p.ProposedAdditionalRunPrice)).ToArray(),
             SourceGroups: order.SourceGroups.OrderBy(group => group.BiologicalSource)
                 .Select(group => new LabServiceSourceGroupDto(group.Id, group.BiologicalSource, group.SpecimenCount, group.Version)).ToList(),
             SampleRosterFinalizedAt: order.SampleRosterFinalizedAt,
@@ -1225,6 +1067,7 @@ public sealed class PlatformLabServiceOrdersController(
             CanManageQuotes: await CanManageQuotesAsync(cancellationToken),
             CanProposeChange: orderToCashOptions.Value.NativePSeqAccountsReceivable && order.CanProposeChange,
             SampleTypeDefinitionId: order.SampleTypeDefinitionId,
+            CommercialDraft: order.ReadCommercialDraft(),
             SampleTypeName: order.SampleTypeDefinitionId.HasValue
                 ? await dbContext.SampleTypeDefinitions.AsNoTracking().Where(value => value.Id == order.SampleTypeDefinitionId.Value)
                     .Select(value => value.Name).SingleOrDefaultAsync(cancellationToken) : null);
@@ -1252,8 +1095,8 @@ public sealed class PlatformLabServiceOrdersController(
         int requestedSpecimenCount,
         IReadOnlyList<LabServiceSourceGroupWriteRequest>? requestedGroups)
     {
-        if (requestedSpecimenCount is < 1 or > 100)
-            throw Invalid("requested_specimen_count_invalid", "Requested specimen count must be between 1 and 100.");
+        if (requestedSpecimenCount is < 1 or > 10000)
+            throw Invalid("requested_specimen_count_invalid", "Requested specimen count must be between 1 and 10,000.");
         var groups = requestedGroups?.ToList() ?? [];
         if (groups.Count == 0)
             throw Invalid("biological_source_required", "Add at least one biological-source group.");
@@ -1271,12 +1114,12 @@ public sealed class PlatformLabServiceOrdersController(
         Guid organizationId,
         Guid departmentId,
         string normalizedJobName,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, Guid? excludingOrderId = null)
     {
         var exists = await dbContext.LabServiceOrders.AsNoTracking().AnyAsync(
             order => order.OrganizationId == organizationId
                 && order.DepartmentId == departmentId
-                && order.NormalizedJobName == normalizedJobName,
+                && order.NormalizedJobName == normalizedJobName && order.Id != excludingOrderId,
             cancellationToken);
         if (exists)
             throw Conflict("duplicate_job_name", "A Job with this name already exists for this Customer.");
@@ -1342,7 +1185,7 @@ public sealed class PlatformLabServiceOrdersController(
             priceProposedAt = order.PriceProposedAt,
             serviceKey = OrderServiceKeys.PSeqLabService,
             submissionInstructions = order.SubmissionInstructionsSnapshot,
-            prohibitedDataConfirmed = true,
+            phases = order.Phases.OrderBy(p => p.Position).Select(p => new { p.Id, p.Position, p.Name, scope = p.ReadScope(), p.ProposedUnitPrice, p.ProposedAdditionalRunPrice, p.PriceProposalNote, p.TurnaroundBusinessDays }),
             samples = Array.Empty<object>(),
             analyses = Array.Empty<object>()
         }, JsonOptions);
@@ -1350,8 +1193,8 @@ public sealed class PlatformLabServiceOrdersController(
     private static string PricingDecisionAudit(LabServiceQuote quote)
         => quote.PricingDecision switch
         {
-            QuotePricingDecision.ApprovedAsProposed => $"Approved the proposed USD {quote.ProposedUnitPriceSnapshot:0.00} per sample-sequencing run and issued quote revision {quote.Revision}.",
-            QuotePricingDecision.AmendedProposal => $"Amended the proposed USD {quote.ProposedUnitPriceSnapshot:0.00} per sample-sequencing run and issued quote revision {quote.Revision}. Reason: {quote.PricingDecisionReason}",
+            QuotePricingDecision.ApprovedAsProposed => $"Approved the proposed pricing and issued quote revision {quote.Revision}.",
+            QuotePricingDecision.AmendedProposal => $"Amended the proposed pricing and issued quote revision {quote.Revision}. Reason: {quote.PricingDecisionReason}",
             _ => $"Set pricing without a proposal and issued quote revision {quote.Revision}."
         };
 
@@ -1432,5 +1275,5 @@ public sealed class PlatformLabServiceOrdersController(
         catch (JsonException) { }
         throw Invalid("result_manifest_invalid", "The result manifest does not identify valid managed files.");
     }
-    private sealed record QuoteLineSnapshot(Guid CatalogItemId, string ExternalItemId, string Description, decimal Quantity, decimal UnitPrice);
+    private sealed record QuoteLineSnapshot(Guid CatalogItemId, string ExternalItemId, string Description, decimal Quantity, decimal UnitPrice, Guid? PhaseId = null, int? TurnaroundBusinessDays = null, decimal? ProposedUnitPrice = null, string? PricingDecisionReason = null, string? PricingComponent = null);
 }

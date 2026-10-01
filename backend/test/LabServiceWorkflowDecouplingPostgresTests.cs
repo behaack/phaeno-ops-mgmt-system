@@ -35,11 +35,13 @@ public partial class SampleShippingPostgresTests
         db.AddRange(workflow, protocol, protocolVersion, oldVersion, newVersion, oldStage, newStage, format);
         (Guid Work, Guid Specimen, string Barcode) AddJob(string service, string suffix, bool accepted = true)
         {
-            var work = new LabWorkOrder(Guid.NewGuid(), 1, LabAuthorizationSource.CommercialOrder, Guid.NewGuid(), scope.CustomerOrganization.Id,
+            var order = scope.AddCommercialPhaseOrder("TEST ONLY " + suffix);
+            var sample = scope.AddCommercialPhaseSample(order, "TEST-DECOUPLE-" + scope.Suffix + suffix);
+            var work = new LabWorkOrder(Guid.NewGuid(), 1, LabAuthorizationSource.CommercialOrder, order.Id, scope.CustomerOrganization.Id,
                 service, 1, "test", "TEST ONLY " + suffix, oldVersion.Id);
             work.SetTubeUsePolicy(LabTubeUsePolicy.RunOneWithFailureFallback, 1);
             work.RecordMilestone(LabWorkOrderStatus.Received);
-            var specimen = new LabSpecimen(work.Id, Guid.NewGuid());
+            var specimen = new LabSpecimen(work.Id, sample.Id);
             specimen.RecordReceipt(now, "TEST ONLY", "TEST-BOX");
             specimen.AssignAccession("TEST-DECOUPLE-" + scope.Suffix + suffix);
             work.Specimens.Add(specimen);

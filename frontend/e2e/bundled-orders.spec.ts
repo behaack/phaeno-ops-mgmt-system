@@ -56,8 +56,9 @@ async function fixture(page: Page, screen: string, patch: Partial<LabServiceOrde
         if (path === '/platform/sample-shipping/configuration') return send({ destinations: [], sampleTypes: [], instructionRules: [] })
         if (path === '/customer-delivery-locations') return send([{ id: '10000000-0000-4000-8000-000000000011', organizationId: bundleIds.organization, departmentId: bundleIds.department, label: 'Training receiving', recipient: 'Training lab', line1: '1 Test Way', line2: null, city: 'Baltimore', region: 'MD', postalCode: '21201', countryCode: 'US', isActive: true, isDefault: true, version: 1 }])
         if (path === labPath) return send(lab)
+        if (path === `${labPath}/phases`) return send({ orderId: lab.id, revision: 1, sampleCount: lab.requestedSpecimenCount, acceptedSubtotal: 0, currency: 'USD', phases: [], samples: [], proposals: [], cancellations: [] })
         if (path === `${labPath}/transportation-kits`) return send(null)
-        if (path === `${labPath}/sample-tube-pairs`) return send({ pairs: [], kits: [], expectedSampleCount: 2, expectedSequencingRunCount: 2, isFinalized: false })
+        if (path === `${labPath}/sample-tube-pairs`) return send({ pairs: [], kits: [], expectedSampleCount: 2, expectedSequencingRunCount: 2, isFinalized: false, preparationSources: lab.sourceGroups ?? [], preparationPhaseIds: lab.phaseScopes?.map(p => p.id) ?? [], minimumSampleAmount: null, sampleAmountUnit: null })
         if (path === `${labPath}/standard-preview`) return send(bundlePreview)
         if (
           path === '/order-catalog/lab-service-offerings' ||

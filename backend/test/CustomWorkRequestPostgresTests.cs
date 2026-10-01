@@ -195,6 +195,13 @@ public sealed class CustomWorkRequestPostgresTests
                 }
                 await Db.CrmCompanies.Where(value => value.Id == Company.Id).ExecuteDeleteAsync();
                 await Db.OrderIdempotencyRecords.Where(value => value.ActorUserId == Actor.Id).ExecuteDeleteAsync();
+                var phaseOrderIds = await Db.LabServiceOrders.Where(o => o.OrganizationId == Tenant.Id).Select(o => o.Id).ToArrayAsync();
+                var phaseIds = Db.Set<PhaenoPortal.App.Features.OrderManagement.Domain.LabJobPhase>().Where(p => phaseOrderIds.Contains(p.LabServiceOrderId)).Select(p => p.Id);
+                await Db.Set<PhaenoPortal.App.Features.OrderManagement.Domain.LabPhaseCancellationRequest>().Where(r => phaseIds.Contains(r.LabJobPhaseId)).ExecuteDeleteAsync();
+                await Db.Set<PhaenoPortal.App.Features.OrderManagement.Domain.LabPhasePlanProposal>().Where(r => phaseOrderIds.Contains(r.LabServiceOrderId)).ExecuteDeleteAsync();
+                await Db.Set<PhaenoPortal.App.Features.OrderManagement.Domain.LabPhaseBillingAssignment>().Where(r => phaseIds.Contains(r.LabJobPhaseId)).ExecuteDeleteAsync();
+                await Db.Set<PhaenoPortal.App.Features.OrderManagement.Domain.LabPhaseInvoiceAllocation>().Where(r => phaseIds.Contains(r.LabJobPhaseId)).ExecuteDeleteAsync();
+                await Db.Set<PhaenoPortal.App.Features.OrderManagement.Domain.LabJobPhase>().Where(p => phaseOrderIds.Contains(p.LabServiceOrderId)).ExecuteDeleteAsync();
                 await Db.LabServiceOrders.Where(value => value.OrganizationId == Tenant.Id).ExecuteDeleteAsync();
                 await Db.PartnerReagentOrders.Where(value => value.OrganizationId == Tenant.Id).ExecuteDeleteAsync();
                 await Db.AuditEvents.Where(value => value.RequestId == AuditRequest).ExecuteDeleteAsync();

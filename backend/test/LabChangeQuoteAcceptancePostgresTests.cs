@@ -13,7 +13,8 @@ using PhaenoPortal.App.Features.LabOperations.Services;
 public partial class LabOperationsCommercialHandoffPostgresTests
 {
     [PostgreSqlReferenceFact]
-    public Task ManualQuoteRetainsCorrectionAndIndependentPriceReview() => WithChangeDatabase(scope => scope.VerifyManualQuoteLifecycleAsync());
+    public Task PartnerManualQuoteRetainsCorrectionAndIndependentPriceReview()
+        => WithChangeDatabase(scope => scope.VerifyManualQuoteLifecycleAsync(), OrganizationKind.Partner);
 
     [PostgreSqlReferenceFact]
     public Task ChangeQuotePreservesAgreementAndRequiresCurrentCustomerAcceptance() => WithChangeDatabase(async scope =>
@@ -97,13 +98,15 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         var storage = new CompletionPdfStorage();
         var key = Guid.NewGuid().ToString("N");
         var version = order.Version;
-        await scope.CompletionController(key, storage).Complete(order.Id, new(version), default);
+        await scope.CompletionController(key, storage).IssuePhaseInvoice(order.Id,
+            new(order.PhasePlanRevision, order.Phases.Where(p => p.SupersededAtUtc == null).Select(p => new LabPhaseInvoicePart(p.Id, p.AcceptedSubtotal)).ToArray()), default);
         var invoice = await scope.DbContext.Invoices.SingleAsync();
         Assert.Equal(200m, invoice.Subtotal);
         Assert.Equal(20m, invoice.TaxTotal);
         Assert.Equal(220m, invoice.Total);
         Assert.Equal(2, await scope.DbContext.InvoiceLines.CountAsync());
-        await scope.CompletionController(key, storage).Complete(order.Id, new(version), default);
+        await scope.CompletionController(key, storage).IssuePhaseInvoice(order.Id,
+            new(order.PhasePlanRevision, order.Phases.Where(p => p.SupersededAtUtc == null).Select(p => new LabPhaseInvoicePart(p.Id, p.AcceptedSubtotal)).ToArray()), default);
         Assert.Equal(1, await scope.DbContext.Invoices.CountAsync());
     });
 
@@ -134,7 +137,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         Assert.Empty(await scope.DbContext.CommercialLabAuthorizations.ToListAsync());
     });
 
-    private static async Task WithChangeDatabase(Func<HandoffTestScope, Task> action)
+    private static async Task WithChangeDatabase(Func<HandoffTestScope, Task> action, OrganizationKind organizationKind = OrganizationKind.Customer)
     {
         var connection = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("PSEQ_OPERATIONS_REFERENCE_CONNECTION")!);
         if (connection.Host is not ("localhost" or "127.0.0.1")) throw new InvalidOperationException("Requires disposable loopback PostgreSQL.");
@@ -142,7 +145,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         await using var admin = new NpgsqlConnection(connection.ConnectionString); await admin.OpenAsync();
         await using (var create = new NpgsqlCommand($"CREATE DATABASE {name}", admin)) await create.ExecuteNonQueryAsync();
         connection.Database = name; connection.Pooling = false;
-        try { await using var scope = await HandoffTestScope.CreateAsync(isolatedConnection: connection.ConnectionString); await action(scope); }
+        try { await using var scope = await HandoffTestScope.CreateAsync(organizationKind, isolatedConnection: connection.ConnectionString); await action(scope); }
         finally { await using var drop = new NpgsqlCommand($"DROP DATABASE {name} WITH (FORCE)", admin); await drop.ExecuteNonQueryAsync(); }
     }
 
@@ -173,7 +176,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             Assert.Empty(await DbContext.LabSamples.ToListAsync());
             Assert.Empty(await DbContext.LabWorkOrders.ToListAsync());
             var item = await DbContext.QboCatalogItems.SingleAsync(i => i.ExternalItemId == OrderServiceKeys.PSeqLabService);
-            var request = new IssueQuoteRequest(revised.Version, [new(item.Id, "PSeq Lab Service", 2, 100m)], 0, "USD", null,
+            var request = new IssueQuoteRequest(revised.Version, [new(item.Id, "PSeq Lab Service", 2, 100m, PricingComponent: LabPhasePricing.StandardSample)], 0, "USD", null,
                 DeliveryTargetBusinessDays: 14);
             Task<LabServiceOrderDto> Issue(IssueQuoteRequest value)
             {
@@ -251,7 +254,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             DbContext.ChangeTracker.Clear();
             var item = await DbContext.QboCatalogItems.SingleAsync(i => i.ExternalItemId == OrderServiceKeys.PSeqLabService);
             return await CreatePlatformController(new InternalLabOperationsProvider(DbContext), Guid.NewGuid().ToString("N"))
-                .IssueQuote(orderId, new(version, [new(item.Id, "Additional PSeq samples", 1, 100m)], 0, "USD", null, "Change",
+                .IssueQuote(orderId, new(version, [new(item.Id, "Additional PSeq samples", 1, 100m, PricingComponent: LabPhasePricing.StandardSample)], 0, "USD", null, "Change",
                     AdditionalSources: [new("synthetic_reference", 1)]), default);
         }
         public Task<LabServiceOrderDto> AcceptAddition(Guid orderId, Guid quoteId, long version)

@@ -1,6 +1,7 @@
 namespace PhaenoPortal.Test;
 
 using Microsoft.EntityFrameworkCore;
+using PSeq.Operations.Commercial.Accounts.Domain;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 using PhaenoPortal.App.Features.OrderManagement.DTOs;
 using PhaenoPortal.App.Features.OrderManagement.Services;
@@ -8,7 +9,8 @@ using PhaenoPortal.App.Features.OrderManagement.Services;
 public partial class LabOperationsCommercialHandoffPostgresTests
 {
     [PostgreSqlReferenceFact]
-    public Task CustomerRequestSubmitsAtomicallyAndRevisesPendingScope() => WithChangeDatabase(scope => scope.VerifyRequestSubmissionAsync());
+    public Task PartnerRequestSubmitsAtomicallyAndRevisesPendingScope()
+        => WithChangeDatabase(scope => scope.VerifyRequestSubmissionAsync(), OrganizationKind.Partner);
 
     private sealed partial class HandoffTestScope
     {
@@ -39,6 +41,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             Assert.Equal("SubmittedForQuote", revised.Status);
             Assert.Equal(2, revised.RequestRevision);
             Assert.Equal(3, revised.RequestedSpecimenCount);
+            Assert.Equal(3, (await DbContext.Set<LabJobPhase>().SingleAsync(p => p.LabServiceOrderId == submitted.Id)).SampleCount);
             var revisions = await DbContext.LabServiceRequestRevisions.AsNoTracking()
                 .Where(r => r.LabServiceOrderId == submitted.Id).OrderBy(r => r.Revision).ToListAsync();
             Assert.Equal(2, revisions.Count);

@@ -43,7 +43,7 @@ public static class LabOrderSampleTypeChoices
                 && procedureKeyById.TryGetValue(item.ShippingProcedureId.Value, out var key) && activeSet.Contains(key)
                 && anchorByKey.TryGetValue(item.DefinitionKey, out var anchorId) && usableAnchors.Contains(anchorId))
             .OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
-            .Select(item => new LabOrderSampleTypeChoiceDto(item.Id, item.Name, item.Revision))
+            .Select(item => new LabOrderSampleTypeChoiceDto(item.Id, item.Name, item.Revision, item.TemperatureRequirements))
             .ToArray();
     }
 

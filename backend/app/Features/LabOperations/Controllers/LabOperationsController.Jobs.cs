@@ -8,10 +8,10 @@ using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Features.OrderManagement.Domain;
 
-public sealed record AdjustJobDeadlineRequest(long Version, DateTime DueAtUtc, string Reason);
+public sealed record AdjustJobDeadlineRequest(long Version, DateTime DueAtUtc, string Reason, Guid? PhaseId = null);
 public sealed record JobDeadlineChangeDto(Guid Id, DateTime? PreviousDueAtUtc, DateTime DueAtUtc,
-    string Reason, Guid ActorUserId, string ActorName, DateTime OccurredAtUtc);
-public sealed record LabJobDeadlineDetail(LabJobQueueItem Summary, IReadOnlyList<JobDeadlineChangeDto> Changes);
+    string Reason, Guid ActorUserId, string ActorName, DateTime OccurredAtUtc, Guid? PhaseId = null);
+public sealed record LabJobDeadlineDetail(LabJobQueueItem Summary, IReadOnlyList<JobDeadlineChangeDto> Changes, IReadOnlyList<LabJobQueueItem>? Phases = null);
 
 public sealed partial class LabOperationsController
 {
@@ -22,7 +22,7 @@ public sealed partial class LabOperationsController
     [HttpGet("jobs")]
     public async Task<LabJobQueue> Jobs(CancellationToken cancellationToken, string? search = null,
         string? deadlineStatus = null, int page = 1, int pageSize = 25, string view = "Active",
-        string? jobStatus = null, string? outcome = null, DateTime? fromUtc = null, DateTime? toExclusiveUtc = null)
+        string? jobStatus = null, string? outcome = null, DateTime? fromUtc = null, DateTime? toExclusiveUtc = null, string grouping = "Phases")
     {
         await RequireJobsReaderAsync(cancellationToken);
         if (view is not ("Active" or "Closed")) throw Invalid("job_view_invalid", "Choose Active or Closed jobs.");
@@ -35,22 +35,20 @@ public sealed partial class LabOperationsController
             throw Invalid("job_status_invalid", "Choose a valid Active job status.");
         if (!string.IsNullOrEmpty(outcome) && (view != "Closed" || outcome is not ("Delivered" or "Cancelled")))
             throw Invalid("job_outcome_invalid", "Choose All outcomes, Delivered or Cancelled for Closed jobs.");
+        if (grouping is not ("Phases" or "Jobs")) throw Invalid("job_grouping_invalid", "Choose Phases or Jobs.");
         var now = DateTime.UtcNow;
         var query = new LabJobQuery(dbContext);
-        var rows = view == "Closed" ? query.Rows().Where(j => j.IsComplete || j.OperationalStatus == LabWorkOrderStatus.Cancelled)
-            : query.QueueRows().Where(j => !j.IsComplete && j.OperationalStatus != LabWorkOrderStatus.Cancelled);
+        var rows = query.Rows();
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim().ToLowerInvariant();
             if (term.Length > 255) throw Invalid("job_search_invalid", "Search must be 255 characters or fewer.");
             rows = rows.Where(j => j.Name.ToLower().Contains(term) || j.OrganizationName.ToLower().Contains(term)
-                || j.CustomerReference != null && j.CustomerReference.ToLower().Contains(term));
+                || j.CustomerReference != null && j.CustomerReference.ToLower().Contains(term)
+                || j.CommercialOrderId != null && dbContext.Set<LabJobPhase>().Any(p => p.LabServiceOrderId == j.CommercialOrderId
+                    && p.SupersededAtUtc == null && p.Name.ToLower().Contains(term)));
         }
-        if (fromUtc.HasValue) rows = view == "Closed" ? rows.Where(j => j.OrderCreatedAtUtc >= fromUtc.Value) : rows.Where(j => j.DueAtUtc >= fromUtc.Value);
-        if (toExclusiveUtc.HasValue) rows = view == "Closed" ? rows.Where(j => j.OrderCreatedAtUtc < toExclusiveUtc.Value) : rows.Where(j => j.DueAtUtc < toExclusiveUtc.Value);
         var classified = LabJobQuery.Classify(rows, now);
-        if (!string.IsNullOrEmpty(jobStatus)) classified = classified.Where(j => j.JobStatus == jobStatus);
-        if (!string.IsNullOrEmpty(outcome)) classified = classified.Where(j => j.JobStatus == outcome);
         // Materialize candidates in one query, then forecast in bounded batches before risk filtering/paging.
         var candidates = await classified.ToListAsync(cancellationToken);
         foreach (var batch in candidates.Chunk(200))
@@ -58,6 +56,12 @@ public sealed partial class LabOperationsController
             var forecasts = await new LabCompletionForecastService(dbContext).CalculateAsync(batch.Select(j => j.Job.Id).ToArray(), now, cancellationToken);
             foreach (var item in batch) ApplyCompletionForecast(item, forecasts[item.Job.Id], now);
         }
+        candidates = await new LabPhaseQueue(dbContext).ExpandAsync(candidates, grouping == "Jobs", now, cancellationToken);
+        candidates = candidates.Where(j => view == "Closed" ? j.Job.IsComplete || j.JobStatus == "Cancelled" : !j.Job.IsComplete && j.JobStatus != "Cancelled").ToList();
+        if (fromUtc.HasValue) candidates = candidates.Where(j => (view == "Closed" ? j.Job.OrderCreatedAtUtc : j.Job.DueAtUtc) >= fromUtc).ToList();
+        if (toExclusiveUtc.HasValue) candidates = candidates.Where(j => (view == "Closed" ? j.Job.OrderCreatedAtUtc : j.Job.DueAtUtc) < toExclusiveUtc).ToList();
+        if (!string.IsNullOrEmpty(jobStatus)) candidates = candidates.Where(j => jobStatus == "OnHold" ? j.HeldSamples > 0 || j.Job.IsBlocked : j.StageCounts.GetValueOrDefault(jobStatus) > 0 || j.JobStatus == jobStatus).ToList();
+        if (!string.IsNullOrEmpty(outcome)) candidates = candidates.Where(j => j.JobStatus == outcome).ToList();
         var counts = view == "Active" ? candidates.GroupBy(j => j.DeadlineStatus).ToDictionary(g => g.Key, g => g.Count()) : new Dictionary<string, int>();
         var filtered = string.IsNullOrEmpty(deadlineStatus) ? candidates : candidates.Where(j => j.DeadlineStatus == deadlineStatus).ToList();
         var total = filtered.Count;
@@ -68,6 +72,7 @@ public sealed partial class LabOperationsController
                 : j.DeadlineStatus == "DueSoon" ? 2 : j.DeadlineStatus == "AwaitingAcceptance" ? 4 : 3)
                 .ThenBy(j => j.Job.DueAtUtc).ThenBy(j => j.Job.Id);
         var items = ordered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        await query.PopulateFreezerBoxesAsync(items.Where(item => item.PhaseId == null).Select(item => item.Job).ToArray(), cancellationToken);
         return new(items, total, page, pageSize, counts, now);
     }
 
@@ -100,13 +105,16 @@ public sealed partial class LabOperationsController
         await RequireJobsReaderAsync(cancellationToken);
         var summary = await LabJobQuery.Classify(new LabJobQuery(dbContext).Rows().Where(j => j.Id == workOrderId), DateTime.UtcNow)
             .SingleOrDefaultAsync(cancellationToken) ?? throw Missing();
+        await new LabJobQuery(dbContext).PopulateFreezerBoxesAsync([summary.Job], cancellationToken);
         var changes = await dbContext.Set<LabJobDeadlineChange>().AsNoTracking().Where(c => c.LabWorkOrderId == workOrderId)
             .OrderByDescending(c => c.OccurredAtUtc).Select(c => new JobDeadlineChangeDto(c.Id, c.PreviousDueAtUtc, c.DueAtUtc,
-                c.Reason, c.ActorUserId, dbContext.Users.Where(u => u.Id == c.ActorUserId).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault() ?? "Phaeno employee", c.OccurredAtUtc))
+                c.Reason, c.ActorUserId, dbContext.Users.Where(u => u.Id == c.ActorUserId).Select(u => u.FirstName + " " + u.LastName).FirstOrDefault() ?? "Phaeno employee", c.OccurredAtUtc, c.LabJobPhaseId))
             .ToListAsync(cancellationToken);
         var forecasts = await new LabCompletionForecastService(dbContext).CalculateAsync([workOrderId], DateTime.UtcNow, cancellationToken);
         ApplyCompletionForecast(summary, forecasts[workOrderId], DateTime.UtcNow);
-        return new(summary, changes);
+        var phaseRows = await new LabPhaseQueue(dbContext).ExpandAsync([summary], false, DateTime.UtcNow, cancellationToken);
+        var holistic = await new LabPhaseQueue(dbContext).ExpandAsync([summary], true, DateTime.UtcNow, cancellationToken);
+        return new(holistic.Single(), changes, phaseRows.Where(p => p.PhaseId != null).ToArray());
     }
 
     [HttpPost("work-orders/{workOrderId:guid}/deadline")]
@@ -117,23 +125,32 @@ public sealed partial class LabOperationsController
         var work = await RequireWorkOrderAsync(workOrderId, cancellationToken);
         EnsureVersion(work.Version, request.Version);
         var summary = await new LabJobQuery(dbContext).Rows().SingleAsync(j => j.Id == workOrderId, cancellationToken);
-        if (summary.IsComplete || work.FirstDeliveredAtUtc != null)
-            throw Conflict("job_already_delivered", "A delivered job's deadline history cannot be rewritten.");
-        var previous = work.AdjustedDeliveryDueAtUtc ?? work.OriginalDeliveryDueAtUtc;
         var now = DateTime.UtcNow;
-        Execute(() =>
-        {
-            var change = new LabJobDeadlineChange(work.Id, previous, request.DueAtUtc, request.Reason, actor.User.Id, now);
-            work.AdjustDeliveryDueDate(request.DueAtUtc);
-            dbContext.Add(change);
-        });
+        LabJobPhase? phase = null;
         if (work.AuthorizationSource == LabAuthorizationSource.CommercialOrder)
         {
+            await new OrderManagement.Services.LabPhasePlans(dbContext).LockAsync(work.AuthorizationSourceId, cancellationToken);
+            var phases = await dbContext.Set<LabJobPhase>().Where(p => p.LabServiceOrderId == work.AuthorizationSourceId && p.SupersededAtUtc == null).ToListAsync(cancellationToken);
+            phase = request.PhaseId.HasValue ? phases.SingleOrDefault(p => p.Id == request.PhaseId) : phases.Count == 1 ? phases[0] : null;
+            if (phase == null) throw Invalid("deadline_phase_required", "Choose the phase whose delivery commitment is being adjusted.");
+            if (phase.CancelledAtUtc.HasValue || phase.FirstDeliveredAtUtc.HasValue) throw Conflict("phase_closed", "Closed phase deadline history cannot be rewritten.");
+            var previous = phase.AdjustedDueAtUtc ?? phase.OriginalDueAtUtc;
+            Execute(() => phase.AdjustDeadline(request.DueAtUtc));
+            dbContext.Add(new LabJobDeadlineChange(work.Id, previous, request.DueAtUtc, request.Reason, actor.User.Id, now, phase.Id));
+            work.AdvanceProjectionVersion();
             var order = await dbContext.LabServiceOrders.AsNoTracking().SingleAsync(o => o.Id == work.AuthorizationSourceId
                 && o.OrganizationId == work.SubmittingOrganizationId, cancellationToken);
             dbContext.OrderNotifications.Add(new OrderNotification(order.OrganizationId, order.CreatedByUserId,
-                OrderWorkflowTypes.LabService, order.Id, "lab-deadline-changed", "Laboratory delivery due date changed",
-                $"The delivery due date for {order.OrderNumber} is now {request.DueAtUtc:yyyy-MM-dd HH:mm} UTC. {request.Reason.Trim()}", order.DepartmentId));
+                OrderWorkflowTypes.LabService, order.Id, "lab-deadline-changed", "Phase delivery due date changed",
+                $"The delivery due date for {order.OrderNumber} · {phase.Name} is now {request.DueAtUtc:yyyy-MM-dd HH:mm} UTC. {request.Reason.Trim()}", order.DepartmentId));
+        }
+        else
+        {
+            if (summary.IsComplete || work.FirstDeliveredAtUtc != null) throw Conflict("job_already_delivered", "A delivered Job's deadline history cannot be rewritten.");
+            Execute(() => {
+                dbContext.Add(new LabJobDeadlineChange(work.Id, work.AdjustedDeliveryDueAtUtc ?? work.OriginalDeliveryDueAtUtc, request.DueAtUtc, request.Reason, actor.User.Id, now));
+                work.AdjustDeliveryDueDate(request.DueAtUtc);
+            });
         }
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);

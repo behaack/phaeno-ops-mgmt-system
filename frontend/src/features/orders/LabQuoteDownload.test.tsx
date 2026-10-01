@@ -16,6 +16,7 @@ vi.mock('#/api/pseq-order-to-cash', () => ({ listCustomerInvoices: async () => [
 vi.mock('./StandardLabServicePanel', () => ({ StandardLabServicePanel: () => null }))
 vi.mock('./LabServiceTimingPanel', () => ({ LabServiceTimingPanel: () => null }))
 vi.mock('./LabJobSamplesPanel', () => ({ LabJobSamplesPanel: () => null }))
+vi.mock('./LabPhasesPanel', () => ({ LabPhasesPanel: () => null }))
 
 const issuedQuote: Quote = {
   id: 'issued-quote', revision: 2, purpose: 'Initial', status: 'Issued', linesJson: '[{"description":"PSeq Lab Service","quantity":9,"unitPrice":100}]',

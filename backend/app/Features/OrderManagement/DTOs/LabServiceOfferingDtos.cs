@@ -7,7 +7,9 @@ public sealed record LabServiceOfferingDto(
     IReadOnlyList<string> AllowedBiologicalSources, string IncludedOutputContract,
     int MinimumTurnaroundDays, int MaximumTurnaroundDays,
     DateTime EffectiveFrom, DateTime? EffectiveTo, bool IsActive, bool IsSynthetic,
-    bool IsAvailable, long Version, IReadOnlyList<ServiceSampleTypeDto>? SupportedSampleTypes = null);
+    bool IsAvailable, long Version, IReadOnlyList<ServiceSampleTypeDto>? SupportedSampleTypes = null,
+    int? MaximumCustomerSamples = null,
+    PSeq.Operations.Commercial.OrderManagement.Domain.LabServicePriceProvenance? PriceProvenance = null);
 
 public sealed record ServiceSampleTypeDto(Guid Id, string Code, string Name, int Revision,
     string MaterialClass, string QuantityUnit, bool IsAvailable);
@@ -22,6 +24,7 @@ public sealed record LabServiceOfferingWriteRequest(
 public sealed record LabServiceOfferingAvailabilityRequest(
     long Version, DateTime EffectiveFrom, DateTime? EffectiveTo, bool IsActive);
 
+[System.Text.Json.Serialization.JsonUnmappedMemberHandling(System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow)]
 public sealed record PlaceStandardLabOrderRequest(
     long Version, Guid OfferingId, int OfferingVersion, long OfferingRecordVersion,
     long CatalogItemVersion, long CommercialProfileVersion, long DepartmentVersion,
@@ -31,7 +34,8 @@ public sealed record PlaceStandardLabOrderRequest(
 public sealed record StandardLabOrderPreviewDto(
     LabServiceOfferingDto Offering, int SpecimenCount, decimal Subtotal, decimal? Tax, decimal? Total,
     string Currency, bool CanPlaceStandardOrder, IReadOnlyList<string> Blockers,
-    long OrderVersion, long? CommercialProfileVersion, long DepartmentVersion, long OrganizationVersion, string ReviewToken, int SequencingRunCount = 0);
+    long OrderVersion, long? CommercialProfileVersion, long DepartmentVersion, long OrganizationVersion, string ReviewToken, int SequencingRunCount = 0,
+    PSeq.Operations.Commercial.OrderManagement.Domain.LabServicePriceProvenance? PriceProvenance = null);
 
 public sealed record LabServiceCommercialSnapshotDto(
     Guid OfferingId, Guid FamilyId, int OfferingVersion, string ProductName,
@@ -39,7 +43,8 @@ public sealed record LabServiceCommercialSnapshotDto(
     decimal UnitPrice, int SpecimenCount, decimal Subtotal, decimal Tax, decimal Total,
     IReadOnlyList<Guid> AnalysisIds, string IncludedOutputContract,
     int MinimumTurnaroundDays, int MaximumTurnaroundDays, DateTime CommittedAtUtc, int SequencingRunCount = 0,
-    int? DeliveryTargetBusinessDays = null);
+    int? DeliveryTargetBusinessDays = null,
+    PSeq.Operations.Commercial.OrderManagement.Domain.LabServicePriceProvenance? PriceProvenance = null);
 
 public sealed record LabServiceTimingDto(
     DateTime? FirstReceivedAtUtc, DateTime? AcceptedAtUtc, DateTime? OriginalTargetAtUtc,

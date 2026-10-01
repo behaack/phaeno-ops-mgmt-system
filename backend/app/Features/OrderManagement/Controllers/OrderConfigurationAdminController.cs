@@ -253,6 +253,7 @@ public sealed class OrderConfigurationAdminController(
         {
             item = new QboCatalogItem(request.ExternalItemId, request.Name, request.Description, request.SalesUnit,
                 request.BasePrice, request.Currency, request.IsActive, DateTime.UtcNow, family);
+            item.SetMaximumCustomerSamples(request.MaximumCustomerSamples);
         }
         catch (ArgumentException exception) { throw Invalid("catalog_item_invalid", exception.Message); }
         dbContext.QboCatalogItems.Add(item);
@@ -280,6 +281,7 @@ public sealed class OrderConfigurationAdminController(
             item.Sync(request.ExternalItemId, request.Name, request.Description, request.SalesUnit,
                 request.BasePrice, request.Currency, request.IsActive, DateTime.UtcNow);
             item.SetServiceFamily(family);
+            item.SetMaximumCustomerSamples(request.MaximumCustomerSamples);
         }
         catch (ArgumentException exception) { throw Invalid("catalog_item_invalid", exception.Message); }
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -401,7 +403,7 @@ public sealed class OrderConfigurationAdminController(
     }
     private static CatalogItemDto Catalog(QboCatalogItem item) => new(item.Id, item.ExternalItemId, item.Name, item.Description,
         item.SalesUnit, item.BasePrice, item.Currency, item.IsActive, item.ServiceFamily == CatalogServiceFamily.PSeqLabService,
-        item.LastSyncedAt, item.Version);
+        item.LastSyncedAt, item.Version, item.MaximumCustomerSamples);
     private static AnalysisDefinitionDto Analysis(AnalysisDefinition item) => new(item.Id, item.QboCatalogItemId, item.Name,
         item.Description, item.SubmissionInstructions, item.RequiredIntakeFieldsJson, item.ResultContractJson, item.IsActive, item.IsSynthetic, item.Version);
     private static ReagentOfferingDto Offering(PartnerReagentOffering item, string name, AssemblyProfile? profile = null) => new(item.Id, item.PartnerOrganizationId,

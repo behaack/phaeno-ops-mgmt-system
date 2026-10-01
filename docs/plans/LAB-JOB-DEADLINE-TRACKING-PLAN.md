@@ -1,5 +1,37 @@
 # Jobs workspace and deadline tracking
 
+## September 30, 2026 list status and freezer boxes
+
+Phaeno laboratory operators need to see a Job's current operational stage and
+its recorded sample storage without opening the Job. Show **Current status**
+prominently on each Active/Closed Job card, separate from deadline risk. Show
+every distinct recorded freezer-box barcode for that Job's submitted specimen
+tubes, with **Not recorded** when none is saved. Use current container locations,
+including retained held/rejected material; omit disposed tubes and derived
+library/reagent containers. Multiple boxes must remain visible and wrap on narrow
+screens. Do not infer accession, scientific acceptance or started preparation
+from a storage location.
+
+Scope: enrich the existing authorized Phaeno Jobs list response with a read-only
+freezer-box summary from saved Lab containers, in one query for the displayed
+page. Preserve stage classification, filtering, paging and deadline rules. No
+persisted-model, provider-contract, Customer status or Customer storage change is
+required. Update the Phaeno guide. Acceptance is a visible current status,
+accurate unique box identifiers (including multiple/no-box cases), and unchanged
+record navigation and responsive layout. Use build/static checks and a read-only
+browser review; automated suites are not requested.
+
+Implemented locally. Debug and Release solution builds pass with zero warnings
+and errors; TypeScript, scoped ESLint, documentation generation/check and diff
+whitespace checks pass. Connected authenticated local Chrome confirms the
+populated Job's single box matches all five saved tubes, Current status is
+prominent and separate from risk, the card stacks at the 520px narrow viewport,
+and Job/list return plus the empty Closed view work. Temporary viewport sizing
+was reset. Multiple/no-box, saved-move, held/rejected/disposed and populated
+Closed-card scenarios remain fixture-dependent acceptance; dark-theme rendering
+was not exercised. Automated suites were not run. No model migration, laboratory
+record changes, Git mutations or deployment occurred.
+
 ## September 29, 2026 turnaround change (supersedes acceptance-based rule for new approvals)
 
 The Customer approves one delivery target, **X business days**, before placing a standard order or accepting an initial Phaeno quote. For the current Test Lab Service, X is **14**. The clock starts when Phaeno records physical receipt of **every required tube for every sample** in the approved Job, including across multiple shipments. A sample with several tubes is complete only after all of them are received. Count Monday–Friday in Phaeno's Los Angeles timezone, excluding dates in the Phaeno observed-holiday calendar. Freeze the resulting due date and the calendar revision used; later calendar or offering edits do not rewrite the commitment. An operator may make a reasoned due-date adjustment through the existing Jobs action.
@@ -18,7 +50,7 @@ Implemented locally: [Progress-based expected completion calculator](LAB-EXPECTE
 
 Laboratory operators, supervisors and Operations need to track open jobs, see which commitments require attention and understand why a deadline may be missed. Historical lookup remains available but is not the primary purpose of the page.
 
-The owner requested a better name than Job and specimen history, job due dates and early warning of missed deadlines. Initially each job has one phase. Future jobs may have multiple phases, each with a deadline, under a single contract.
+The owner requested a better name than Job and specimen history, job due dates and early warning of missed deadlines. Initially each job has one phase. The September 30 future scope is several sequential phases, each with a deadline, within one order; see the multi-phase section below.
 
 Implemented name: **Jobs**, immediately above Library prep. Specimens remain accessible within each job; the Jobs list no longer includes container lookup. Active jobs and Closed jobs replace Show complete. Preserve each tab's filters and list state when returning from a record.
 
@@ -91,17 +123,45 @@ Evaluate time-based warnings on read/refresh, not only when a job is edited. Kee
 
 The job detail exposes dates, basis, risk reasons and timing history. Reuse existing authorized timing-change controls and customer-safe/internal note boundaries. Maintain version checks, audit trails, notification history and tenant isolation.
 
-## Future delivery: multiple phases under one contract
+## Future delivery: sequential phases within one order
 
-The conceptual hierarchy is **Contract → Job → Phases**. The current job is treated as one logical phase; do not add a phase-management screen or fabricate phase records merely to show a due date.
+The September 30 Product Owner decision supersedes the earlier Contract → Job →
+Phases concept: keep **one order → one Job → ordered phases**, collecting only
+what is needed for invoicing and operations. No Contract entity or contract-term
+management is included. The [multi-phase Job plan](MULTI-PHASE-LAB-JOBS-PLAN.md)
+owns this planning-only extension; current single-phase Jobs remain unchanged.
 
-- A future phase has a stable identity, name/order, agreed scope or deliverable, due date/basis, expected completion, actual completion and status, plus timing/risk history.
-- Each phase retains its own deadline and performance baseline. The job summarizes the next unfinished phase due and the strongest actionable risk; a later final-phase deadline must never hide an earlier missed phase.
-- One completed phase does not complete the job. Completion requires all required phases or explicitly agreed cancellation/waiver outcomes, preserving scientific and release gates.
-- Phases do not automatically create new contracts, quotes, invoices or unrelated jobs. Map them to the existing commercial commitment and approved amendments; determine any new contract entity only when the actual contract relationships are confirmed.
-- Protocols, workflow stages, preparation batches and sequencing batches describe execution. They are not automatically contractual phases. Multiple protocols or batches may satisfy one phase, and a batch may include work for multiple jobs.
-- Dependencies, overlapping phases, phase-specific specimen membership, partial delivery and phase billing are deferred. Do not assume every phase is sequential or has the same samples.
-- Later migration maps existing single-phase jobs without losing their dates, audit history, specimens, outputs, financial lineage or performance baseline. Scheduling calculations should accept a deadline scope so phase support can reuse them without requiring a generic workflow engine now.
+- Configure ordered phases and their distinct sample cohorts rather than a fixed
+  phase count or sample split. Phase quantities reconcile to the accepted Job
+  sample scope; the 350-sample 50/150/150 example is illustrative.
+- Each phase completes by delivering all its required results through the Portal,
+  using the existing delivery coverage and release safeguards. The next phase
+  cannot begin processing before that completion.
+- Each phase has its own agreed business-day TAT, starting when every required
+  tube for every phase sample has been physically received. Early receipt starts
+  the clock even when the phase is waiting for earlier work.
+- Preserve original/current phase deadlines, forecasts and actual delivery. Show
+  the active/next phase and strongest actionable risk; a final-phase date must
+  not conceal an earlier missed commitment.
+- Permit mutually agreed rephasing of unsent future samples in open Jobs,
+  including while earlier work runs. First required tube sending fixes the whole
+  sample's assignment; sent/received/started/delivered samples cannot move. Use
+  actual receipts for fixed phase members, preserve original deadline baselines
+  and review any complete-receipt change from moving unsent obligations. Changed
+  commitments require agreement; rephasing is not a clock reset.
+- Keep phase lifecycle separate from derived container, tube and sample-stage
+  distributions. Support independent Phases and holistic Jobs views using the
+  same scoped facts; mixed progress must not be hidden by one earliest-stage label.
+- Support requests to cancel unstarted phases with retained decisions and phase
+  invoice attribution. A cancelled phase is not a completed phase; preserve the
+  difference between fully delivered Jobs and closure with cancelled scope.
+- Protocol stages and laboratory batches remain execution structures within or
+  across phase work. They do not automatically become commercial phases.
+- Phaeno chooses invoice timing and billable portions, supporting upfront and
+  completion billing without a contract-term engine. First required tube receipt
+  closes cancellation eligibility even before processing; complete phase receipt
+  starts TAT. Data-model implementation, existing-data conversion/reset and
+  migration scope require a later plan.
 
 ## Implementation sequence after approval
 
@@ -208,3 +268,5 @@ Manual Edge verification: typed month/day and the first year digit in both date 
 Active filter layout now groups Job or organization, Job status and Deadline status in the first responsive row, followed by a separate two-column Due date From/To row and the timezone note. Overdue, At risk and Due soon count links are grouped directly below the Deadline status selector inside the collapsible content. The first-row fields align at the top. Closed jobs retains its search/outcome and order-date rows.
 
 Added All before the deadline count links; it clears only deadline status and resets the current page, preserving search, job status and due-date bounds.
+
+September 30 local phase implementation: [MULTI-PHASE-LAB-JOBS-PLAN.md](MULTI-PHASE-LAB-JOBS-PLAN.md) now owns the implemented sequential cohort extension, derived mixed progress, phase-specific receipt/TAT/deadline, unsent-only mutual rephasing, first-tube cancellation cutoff and explicit partial/combined phase invoices. It supersedes older whole-Job completion invoicing and single-status assumptions for phased PSeq Jobs. Local migration applied after the authorized Job purge; connected/browser/physical/scientific acceptance and release remain separate, unverified gates.

@@ -1,6 +1,7 @@
 import { createRef, type ReactNode } from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import { ChevronDown } from 'lucide-react'
 import { Button } from './button'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './dropdown-menu'
 
@@ -20,7 +21,30 @@ describe('record action presentation', () => {
   })
   it('retains a dropdown for multiple actions including disabled actions', () => {
     render(<Menu><DropdownMenuItem>Edit</DropdownMenuItem><DropdownMenuItem disabled>Delete</DropdownMenuItem></Menu>)
-    expect(screen.getByRole('button', { name: 'Record actions' }).getAttribute('aria-haspopup')).toBe('menu')
+    const trigger = screen.getByRole('button', { name: 'Record actions' })
+    expect(trigger.getAttribute('aria-haspopup')).toBe('menu')
+    const indicator = trigger.querySelector('svg.lucide-chevron-down')
+    expect(indicator).not.toBeNull()
+    expect(indicator?.getAttribute('aria-hidden')).toBe('true')
+    expect(trigger.getAttribute('data-size')).toBe('sm')
+  })
+  it('does not duplicate a chevron already supplied by the screen', () => {
+    render(<ActionMenu><DropdownMenuTrigger asChild><Button>Actions <ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger><DropdownMenuContent><DropdownMenuItem>Edit</DropdownMenuItem><DropdownMenuItem>Delete</DropdownMenuItem></DropdownMenuContent></ActionMenu>)
+    expect(screen.getByRole('button', { name: 'Actions' }).querySelectorAll('svg.lucide-chevron-down')).toHaveLength(1)
+  })
+  it('adds or removes the dropdown cue as permission-dependent actions change', () => {
+    const ref = createRef<HTMLButtonElement>()
+    const { rerender } = render(<Menu triggerRef={ref}><DropdownMenuItem>Edit record</DropdownMenuItem></Menu>)
+    expect(ref.current?.querySelector('svg.lucide-chevron-down')).toBeNull()
+    rerender(<Menu triggerRef={ref}><DropdownMenuItem>Edit record</DropdownMenuItem><DropdownMenuItem>Delete record</DropdownMenuItem></Menu>)
+    const trigger = screen.getByRole('button', { name: 'Record actions' })
+    expect(ref.current).toBe(trigger)
+    expect(trigger.querySelectorAll('svg.lucide-chevron-down')).toHaveLength(1)
+    rerender(<Menu triggerRef={ref}><DropdownMenuItem>Edit record</DropdownMenuItem></Menu>)
+    const direct = screen.getByRole('button', { name: 'Edit record' })
+    expect(ref.current).toBe(direct)
+    expect(direct.getAttribute('aria-haspopup')).toBeNull()
+    expect(direct.querySelector('svg.lucide-chevron-down')).toBeNull()
   })
   it('does not render an empty action group', () => {
     render(<Menu>{null}</Menu>)

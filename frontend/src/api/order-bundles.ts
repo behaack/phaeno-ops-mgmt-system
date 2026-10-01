@@ -29,7 +29,20 @@ export async function requestCustomWork(input: CustomWorkInput, key: string) {
   )
 }
 
+export type LabServicePriceProvenance = {
+  source: 'Standard' | 'Organization' | 'Department'
+  negotiatedPriceId: string | null
+  negotiatedPriceVersion: number | null
+  organizationId: string
+  departmentId: string | null
+  catalogItemId: string
+  catalogItemVersion: number
+  standardUnitPrice: number
+  unitPrice: number
+}
 export type LabServiceOffering = {
+  maximumCustomerSamples?: number | null
+  priceProvenance?: LabServicePriceProvenance | null
   id: string
   familyId: string
   offeringVersion: number
@@ -72,6 +85,7 @@ export type LabServiceOfferingWrite = Pick<
   | 'isSynthetic'
 > & { version?: number; supportedSampleTypeIds: string[] }
 export type LabServiceCommercialSnapshot = {
+  priceProvenance?: LabServicePriceProvenance | null
   sequencingRunCount?: number;
   offeringId: string
   familyId: string
@@ -94,6 +108,7 @@ export type LabServiceCommercialSnapshot = {
   deliveryTargetBusinessDays?: number | null
 }
 export type StandardLabOrderPreview = {
+  priceProvenance?: LabServicePriceProvenance | null
   sequencingRunCount?: number;
   reviewToken: string
   offering: LabServiceOffering

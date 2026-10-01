@@ -19,6 +19,7 @@ import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/require
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { Textarea } from '#/components/ui/textarea'
 import { usePhaenoSession } from '#/features/auth/session-context'
+import { useAssemblyNotifications } from './use-assembly-notifications'
 import { AssemblyStartDialog } from './AssemblyStartDialog'
 import { assemblyDuration, assemblyMatches, assemblyStateLabel, currentAssemblyPercentage } from './assembly-jobs'
 import { LabManufacturingQueue } from './LabManufacturingPage'
@@ -52,6 +53,7 @@ export function AssemblyJobsList({ enabled, workOrderId, specimenId, search = ''
   const query = useQuery({ queryKey: ['assembly-jobs', workOrderId, specimenId], queryFn: () => getAssemblyJobs(workOrderId, specimenId), enabled,
     refetchInterval: q => q.state.data?.jobs.some(j => !j.isTerminal || j.attentionReason) ? 5000 : false })
   const data = query.data
+  useAssemblyNotifications(data?.jobs.map(job => job.id) ?? [], enabled)
   return <Card><CardHeader><div className="flex flex-wrap items-center justify-between gap-3"><CardTitle>Sequencing assembly</CardTitle>
     {data?.canOperate ? <Button onClick={() => setCreating(true)} disabled={!data.availability.available}>Start assembly</Button> : null}</div></CardHeader><CardContent className="space-y-4">
     {!enabled ? <p className="text-sm text-muted-foreground">Connect with an authorized Phaeno session to view assembly jobs.</p> : null}
@@ -72,6 +74,7 @@ export function AssemblyJobsList({ enabled, workOrderId, specimenId, search = ''
 }
 
 export function AssemblyJobPage({ jobId }: { jobId: string }) {
+  useAssemblyNotifications([jobId])
   const { session, authProvider } = usePhaenoSession()
   const allowed = Boolean(session?.capabilities.canManageLabOperations)
   const [action, setAction] = useState<'retry' | 'cancel' | 'analysis' | null>(null)
@@ -100,6 +103,16 @@ export function AssemblyJobPage({ jobId }: { jobId: string }) {
         {job.dispositionReason ? <p>{job.dispositionReason}</p> : null}{job.retryReason ? <p>Reason for repeat: {job.retryReason}</p> : null}
         {job.previousJobId ? <Link className={linkStyle} to="/lab-operations/assembly-jobs/$jobId" params={{ jobId: job.previousJobId }} search={p => ({ ...p, section: 'assembly', assemblyTab: 'runs' })}>Previous assembly attempt</Link> : null}
       </CardContent></Card>
+      {data.delivery.length ? <Card><CardHeader><CardTitle>Delivery and recovery</CardTitle></CardHeader><CardContent className="space-y-3 text-sm">
+        <p className="text-muted-foreground">A command receipt confirms delivery. Actual start and final outcome require processing evidence.</p>
+        {data.delivery.map(command => <div key={command.kind} className="space-y-1 rounded-lg border p-3">
+          <p className="font-medium">{command.kind === 'Run' ? 'Run request' : 'Cancellation request'} · {command.suppressed ? 'Further delivery stopped' : command.confirmedAtUtc ? command.kind === 'Run' && !job.isTerminal ? 'Start confirmed' : 'Outcome confirmed' : command.escalatedAtUtc ? 'Operations review required' : 'Awaiting confirmation'}</p>
+          <p>{command.attemptCount} delivery attempt{command.attemptCount === 1 ? '' : 's'} · Last attempt: {date(command.lastAttemptAtUtc)}</p>
+          <p>Receipt: {date(command.receivedAtUtc)} · Confirmation: {date(command.confirmedAtUtc)}</p>
+          {command.nextAttemptAtUtc ? <p>Next recovery attempt: {date(command.nextAttemptAtUtc)}</p> : null}
+          {command.escalatedAtUtc ? <p>Escalated: {date(command.escalatedAtUtc)}</p> : null}
+        </div>)}
+      </CardContent></Card> : null}
       <Card><CardHeader><CardTitle>Inputs and results</CardTitle></CardHeader><CardContent className="space-y-3 text-sm">
         <p>{data.inputs.length} registered sequencing input{data.inputs.length === 1 ? '' : 's'} · exact input identities retained.</p>
         {data.inputs.map((input, i) => <div key={input.sequencingOutputId} className="break-all border-b pb-2"><p>Input {i + 1} · {input.sizeBytes.toLocaleString()} bytes</p><p className="text-xs text-muted-foreground">SHA-256: {input.sha256}</p></div>)}

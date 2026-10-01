@@ -91,7 +91,7 @@ const labSections: ReadonlyArray<WorkspaceSidebarItem<LabSection>> = [
   { value: 'kits', label: 'PSeq kits', separatorBefore: true, description: 'Preparation, shipping, and fulfillment', icon: PackageCheck },
   { value: 'assembly', label: 'Data assembly', description: 'Input validation, processing, and release', icon: Workflow },
   { value: 'reagent-runs', label: 'Reagent manufacturing', description: 'Make and document Phaeno reagent lots', icon: FlaskConical },
-  { value: 'transportation-kits', label: 'Trans. kit inventory', description: 'Assembly and physical kit inventory', icon: PackageCheck },
+  { value: 'transportation-kits', label: 'Transportation kit inventory', description: 'Assembly and physical kit inventory', icon: PackageCheck },
 ]
 
 export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTabChange, configurationTab, onConfigurationTabChange, onSectionChange }: { section: LabSection; shipmentId?: string; receiptTab?: LabReceiptTab; onReceiptTabChange?: (tab: LabReceiptTab) => void; configurationTab?: LabConfigurationTab; onConfigurationTabChange?: (tab: LabConfigurationTab) => void; onSectionChange: (section: LabSection) => void }) {

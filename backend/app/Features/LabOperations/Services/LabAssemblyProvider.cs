@@ -12,7 +12,7 @@ public sealed record AssemblyProviderSnapshot(string ProviderJobId, string State
     DateTime? StoppedAtUtc = null, DateTime? DispositionAtUtc = null, string? Reason = null,
     string? OutputManifestJson = null, bool NeverStarted = false, double? Percentage = null, long? ProgressSequence = null);
 
-/// <summary>POMS-owned boundary, not a claim about the external SignalR wire contract.</summary>
+/// <summary>POMS-owned processing boundary; normalized evidence does not define the external MQTT wire contract.</summary>
 public interface ILabAssemblyProvider
 {
     string Key { get; }
@@ -67,4 +67,10 @@ public sealed class LabAssemblyOptions
     public bool WorkerEnabled { get; set; } // Default off, independently of provider readiness.
     public int PollSeconds { get; set; } = 5;
     public int MaximumConcurrentJobs { get; set; } = 4;
+    public int CommandReceiptSeconds { get; set; } = 300;
+    public int StartConfirmationSeconds { get; set; } = 600;
+    public int CancellationConfirmationSeconds { get; set; } = 300;
+    public int EscalationSeconds { get; set; } = 1800;
+    public int RetryInitialSeconds { get; set; } = 5;
+    public int RetryMaximumSeconds { get; set; } = 60;
 }

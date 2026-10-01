@@ -102,11 +102,12 @@ public sealed partial class LabServiceOrdersController
             .Where(item => tubeProductIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, cancellationToken);
         var names = stock.ToDictionary(item => item.Id, item => item.KitNumber);
         var usedIds = pairs.Select(item => item.StockTubeId).ToHashSet();
+        var preparation = order.ReadPreparationScope();
         return new LabSampleTubeWorkspaceDto(
             pairs.Select(item => new LabSampleTubePairDto(item.Id, item.CustomerSampleId, item.BiologicalSource,
                 item.StockKitId, names.GetValueOrDefault(item.StockKitId) ?? "Historical kit",
                 item.SupplierTubeBarcode, item.DeclaredQuantity, item.DeclaredQuantityUnit,
-                item.SequencingRunCount, item.Version)).ToArray(),
+                item.SequencingRunCount, item.Version, item.LabJobPhaseId)).ToArray(),
             selections.Where(item => names.ContainsKey(item.StockKitId)).Select(selection =>
             {
                 var item = stock.Single(kit => kit.Id == selection.StockKitId);
@@ -116,8 +117,9 @@ public sealed partial class LabServiceOrdersController
                     item.Tubes.Count(tube => !usedIds.Contains(tube.Id)), selection.FinishedAt,
                     product?.MaximumSampleAmount, product?.SampleAmountUnit);
             }).ToArray(),
-            order.RequestedSpecimenCount, order.RequestedSequencingRunCount,
-            order.SampleRosterFinalizedAt.HasValue,
+            preparation.Sources.Sum(s => s.SpecimenCount), preparation.SequencingRunCount,
+            order.SampleRosterFinalizedAt.HasValue, preparation.Sources,
+            order.Phases.Where(p => p.SupersededAtUtc == null && p.CancelledAtUtc == null).Select(p => p.Id).ToArray(),
             sampleType.MinimumSampleAmount, sampleType.SampleAmountUnit);
     }
 
@@ -238,13 +240,17 @@ public sealed partial class LabServiceOrdersController
         var sampleType = await ReadShippingSampleTypeAsync(order, cancellationToken);
         var locationId = PairedKitLocation(order);
         var saved = await dbContext.LabSampleTubePairs.Where(item => item.LabServiceOrderId == orderId).ToArrayAsync(cancellationToken);
-        if (saved.Length >= order.RequestedSpecimenCount)
+        var preparation = order.ReadPreparationScope();
+        var activePairs = saved.Where(p => order.RequiresPreparation(p.LabJobPhaseId)).ToArray();
+        if (activePairs.Length >= preparation.Sources.Sum(s => s.SpecimenCount))
             throw Conflict("paired_sample_count_exceeded", "Every accepted sample already has a saved tube pair.");
         if (saved.Any(item => string.Equals(item.CustomerSampleId, request.CustomerSampleId?.Trim(), StringComparison.OrdinalIgnoreCase)))
             throw Conflict("duplicate_customer_sample_id", "Choose a distinct Sample ID for each physical tube.");
         var source = ResolveRosterSource(order, request.BiologicalSource);
-        var sourceLimit = order.SourceGroups.Single(item => item.NormalizedBiologicalSource == LabServiceSourceGroup.Normalize(source)).SpecimenCount;
-        if (saved.Count(item => LabServiceSourceGroup.Normalize(item.BiologicalSource) == LabServiceSourceGroup.Normalize(source)) >= sourceLimit)
+        var phase = LabPhaseScopeRules.Resolve(order, request.PhaseId);
+        LabPhaseScopeRules.Validate(phase, source, request.SequencingRunCount, saved.Where(p => p.LabJobPhaseId == phase.Id).Select(p => (p.BiologicalSource, p.SequencingRunCount)));
+        var sourceLimit = preparation.Sources.SingleOrDefault(item => LabServiceSourceGroup.Normalize(item.BiologicalSource) == LabServiceSourceGroup.Normalize(source))?.SpecimenCount ?? 0;
+        if (activePairs.Count(item => LabServiceSourceGroup.Normalize(item.BiologicalSource) == LabServiceSourceGroup.Normalize(source)) >= sourceLimit)
             throw Conflict("biological_source_count_exceeded", "This biological source already has its accepted number of samples.");
         var selections = await dbContext.LabSampleTubeKitSelections.AsNoTracking()
             .Where(item => item.LabServiceOrderId == order.Id
@@ -258,7 +264,7 @@ public sealed partial class LabServiceOrdersController
         if (activeKitId != request.StockKitId)
             throw Conflict("kit_not_active", "Finish entering the active physical kit before using another kit's tubes.");
         Execute(() => order.EnsureSampleRunCountMatchesPricing(request.SequencingRunCount));
-        if (saved.Sum(item => item.SequencingRunCount) + request.SequencingRunCount > order.RequestedSequencingRunCount)
+        if (activePairs.Sum(item => item.SequencingRunCount) + request.SequencingRunCount > preparation.SequencingRunCount)
             throw Conflict("sequencing_run_count_exceeded", "The saved pairs cannot exceed the accepted sample-sequencing runs.");
         if (!SupplierTubeBarcode.TryNormalize(request.SupplierTubeBarcode, out var barcode))
             throw Invalid("supplier_tube_barcode_invalid", "Scan the complete barcode printed on one tube.");
@@ -307,7 +313,7 @@ public sealed partial class LabServiceOrdersController
         LabSampleTubePair pair;
         try { pair = new(order.Id, order.OrganizationId, order.DepartmentId, kit.Id, tube.Id,
             request.CustomerSampleId, source, barcode, request.DeclaredQuantity,
-            request.DeclaredQuantityUnit, request.SequencingRunCount); }
+            request.DeclaredQuantityUnit, request.SequencingRunCount, phase.Id); }
         catch (ArgumentException error) { throw Invalid("sample_tube_pair_invalid", error.Message); }
         dbContext.LabSampleTubePairs.Add(pair);
         order.MarkUpdated(DateTime.UtcNow, tenant.Actor.Id);

@@ -1,24 +1,20 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Minus, Plus } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import {
   createLabOrder,
   getLabOrder,
-  getCustomerOrderReadiness,
   listLabOrderSampleTypes,
   getOrderErrorMessage,
-  initiateCustomerLabOrder,
   isOrderConcurrencyError,
   updateLabOrder,
   type LabServiceOrder,
 } from "#/api/order-management";
 import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
-import { Checkbox } from "#/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -33,21 +29,14 @@ import { Label } from "#/components/ui/label";
 import {
   RequiredDialogFooter,
   RequiredFieldName,
-  RequiredMark,
   RequiredLegend,
 } from "#/components/ui/required-field";
-import { SearchableSelect } from "#/components/ui/searchable-select";
 import { Textarea } from "#/components/ui/textarea";
 import { usePhaenoSession } from "#/features/auth/session-context";
-import { listCustomerOrderDepartments } from "#/api/order-management";
-import { CustomerOrderReadiness } from './CustomerOrderReadiness';
+import { CustomerStandardOrderDialog } from './CustomerStandardOrderDialog';
 
 const duplicateBiologicalSourcesMessage =
   "Duplicate biological sources are not permitted.";
-const duplicateBiologicalSourcesMessages = new Set([
-  duplicateBiologicalSourcesMessage,
-  "Each biological source can appear only once.",
-]);
 
 const jobDetailsSchema = z
   .object({
@@ -73,12 +62,6 @@ const jobDetailsSchema = z
       )
       .min(1, "Add at least one biological source."),
     sequencingRunCount: z.string().trim().refine(v => v === "" || (/^\d+$/.test(v) && Number(v) >= 1 && Number(v) <= 10000), "Enter a whole number from 1 to 10,000."),
-    proposePrice: z.boolean(),
-    proposedUnitPrice: z.string().trim().max(30),
-    priceProposalNote: z
-      .string()
-      .trim()
-      .max(1000, "Pricing note must be 1,000 characters or fewer."),
     storageRequirements: z
       .string()
       .trim()
@@ -100,11 +83,11 @@ const jobDetailsSchema = z
       0,
     );
     if (values.sequencingRunCount && Number(values.sequencingRunCount) < sourceTotal) context.addIssue({ code: "custom", path: ["sequencingRunCount"], message: "Include at least one run for every sample." });
-    if (sourceTotal > 100)
+    if (sourceTotal > 10000)
       context.addIssue({
         code: "custom",
         path: ["sourceGroups"],
-        message: "A Job can contain at most 100 samples.",
+        message: "A Job can contain at most 10,000 samples.",
       });
     const sources = normalizedBiologicalSources(values.sourceGroups);
     if (new Set(sources).size !== sources.length)
@@ -113,21 +96,6 @@ const jobDetailsSchema = z
         path: ["sourceGroups"],
         message: duplicateBiologicalSourcesMessage,
       });
-    if (values.proposePrice) {
-      if (!/^\d+(?:\.\d{1,2})?$/.test(values.proposedUnitPrice)) {
-        context.addIssue({
-          code: "custom",
-          path: ["proposedUnitPrice"],
-          message: "Enter a proposed price with no more than two decimal places.",
-        });
-      } else if (Number(values.proposedUnitPrice) <= 0) {
-        context.addIssue({
-          code: "custom",
-          path: ["proposedUnitPrice"],
-          message: "Proposed price must be greater than zero.",
-        });
-      }
-    }
   });
 
 type JobDetailsFormInput = z.input<typeof jobDetailsSchema>;
@@ -136,56 +104,31 @@ type JobDetailsValues = z.output<typeof jobDetailsSchema>;
 type LabJobDetailsDialogProps = {
   open: boolean;
   order?: LabServiceOrder | null;
-  platformOrganizations?: Array<{ id: string; name: string }>;
-  sourceHandoff?: CommercialOrderHandoffSource | null;
   onOpenChange: (open: boolean) => void;
   onSaved: (order: LabServiceOrder) => void | Promise<void>;
 };
 
-export type CommercialOrderHandoffSource = {
-  requestId: string;
-  requestNumber: string;
-  organizationId: string;
-  organizationName: string;
-  companyName?: string;
-  opportunityName?: string | null;
-};
+export function LabJobDetailsDialog(props: LabJobDetailsDialogProps) {
+  const { session, selectedOrganizationId } = usePhaenoSession();
+  const kind = session?.memberships.find(m => m.organizationId === selectedOrganizationId)?.organizationKind;
+  return kind === 'Customer' && (!props.order || props.order.customerDraft)
+    ? <CustomerStandardOrderDialog {...props} />
+    : <SalesPricingRequestDialog {...props} />;
+}
 
-export function LabJobDetailsDialog({
+function SalesPricingRequestDialog({
   open,
   order,
-  platformOrganizations,
-  sourceHandoff,
   onOpenChange,
   onSaved,
 }: LabJobDetailsDialogProps) {
   const { authProvider, session } = usePhaenoSession();
   const queryClient = useQueryClient();
-  const platformMode = platformOrganizations !== undefined;
-  const eligiblePlatformOrganizations = platformOrganizations ?? [];
-  const [organizationId, setOrganizationId] = useState("");
-  const [departmentId, setDepartmentId] = useState("");
-  const [prohibitedDataConfirmed, setProhibitedDataConfirmed] = useState(false);
-  const canCreate = platformMode
-    ? Boolean(session?.capabilities.canQuoteLabServiceWork)
-    : Boolean(session?.capabilities.canCreateLabServiceRequests);
+  const canCreate = Boolean(session?.capabilities.canCreateLabServiceRequests);
   const apiEnabled = authProvider !== "mock" && canCreate;
-  const departments = useQuery({
-    queryKey: ["customer-order-departments", organizationId],
-    queryFn: () => listCustomerOrderDepartments(organizationId),
-    enabled: open && platformMode && apiEnabled && Boolean(organizationId),
-  });
-  const selectedDepartment = departmentId
-    ? departments.data?.find((value) => value.id === departmentId)
-    : departments.data?.length === 1 ? departments.data[0] : undefined;
-  const readiness = useQuery({
-    queryKey: ['customer-order-readiness', organizationId, selectedDepartment?.id],
-    queryFn: () => getCustomerOrderReadiness(organizationId, selectedDepartment!.id),
-    enabled: open && platformMode && !order && apiEnabled && Boolean(selectedDepartment) && !departments.isError,
-  });
   const sampleTypes = useQuery({
-    queryKey: ["lab-order-sample-types", platformMode],
-    queryFn: () => listLabOrderSampleTypes(platformMode),
+    queryKey: ["lab-order-sample-types", false],
+    queryFn: () => listLabOrderSampleTypes(false),
     enabled: open && apiEnabled,
   });
   const form = useForm<JobDetailsFormInput, unknown, JobDetailsValues>({
@@ -196,9 +139,6 @@ export function LabJobDetailsDialog({
       sampleTypeDefinitionId: "",
       sourceGroups: [{ biologicalSource: "", specimenCount: 1 }],
       sequencingRunCount: "",
-      proposePrice: false,
-      proposedUnitPrice: "",
-      priceProposalNote: "",
       storageRequirements: "",
       safetyDeclaration: "",
       jobNotes: "",
@@ -228,37 +168,7 @@ export function LabJobDetailsDialog({
         : values.sourceGroups[0].biologicalSource;
       const storageRequirements = values.storageRequirements;
       const safetyDeclaration = values.safetyDeclaration;
-      const proposedUnitPrice = platformMode && values.proposePrice
-        ? Number(values.proposedUnitPrice)
-        : undefined;
-      const priceProposalNote = platformMode && values.proposePrice
-        ? values.priceProposalNote || undefined
-        : undefined;
       if (!order) {
-        if (platformMode) {
-          if (!organizationId)
-            throw new Error("Select a Customer organization.");
-          if (!selectedDepartment || departments.isError)
-            throw new Error("Select an available Customer department.");
-          if (!readiness.data?.canStartPricing || readiness.isError)
-            throw new Error("Resolve Customer readiness before starting pricing.");
-          return initiateCustomerLabOrder({
-            sampleTypeDefinitionId,
-            organizationId,
-            departmentId: selectedDepartment.id,
-            customerReference,
-            description,
-            storageRequirements,
-            safetyDeclaration,
-            prohibitedDataConfirmed,
-            requestedSpecimenCount,
-            sourceGroups: values.sourceGroups,
-            sequencingRunCount: Number(values.sequencingRunCount) || requestedSpecimenCount,
-            sourceRequestId: sourceHandoff?.requestId,
-            proposedUnitPrice,
-            priceProposalNote,
-          });
-        }
         return createLabOrder({
           sampleTypeDefinitionId,
           submitForPricing: true,
@@ -272,8 +182,6 @@ export function LabJobDetailsDialog({
           requestedSpecimenCount,
           sourceGroups: values.sourceGroups,
             sequencingRunCount: Number(values.sequencingRunCount) || requestedSpecimenCount,
-          proposedUnitPrice,
-          priceProposalNote,
         });
       }
 
@@ -282,7 +190,7 @@ export function LabJobDetailsDialog({
       const update = (version: number) =>
         updateLabOrder(baseOrder.id, {
           sampleTypeDefinitionId,
-          submitForPricing: !platformMode,
+          submitForPricing: true,
           customerReference,
           description,
           hasMixedBiologicalSources,
@@ -294,8 +202,6 @@ export function LabJobDetailsDialog({
           requestedSpecimenCount,
           sourceGroups: values.sourceGroups,
             sequencingRunCount: Number(values.sequencingRunCount) || requestedSpecimenCount,
-          proposedUnitPrice,
-          priceProposalNote,
         });
 
       try {
@@ -348,604 +254,52 @@ export function LabJobDetailsDialog({
       return;
     }
 
-    const resetKey = order?.id
-      ?? (sourceHandoff ? `handoff-${sourceHandoff.requestId}` : platformMode ? "new-platform-job" : "new-job");
+    const resetKey = order?.id ?? "new-job";
     if (resetKeyRef.current === resetKey) return;
     resetKeyRef.current = resetKey;
     baseOrderRef.current = order ?? null;
     saveVersionRef.current = order?.version ?? null;
-    setOrganizationId(sourceHandoff?.organizationId ?? "");
-    setDepartmentId("");
-    setProhibitedDataConfirmed(false);
     form.reset(jobDetailsFormValues(order));
-  }, [form, open, order, platformMode, sourceHandoff]);
+  }, [form, open, order]);
 
   const formId = order ? `job-details-${order.id}` : "create-lab-job";
   const editing = Boolean(order);
   const canSave =
     apiEnabled &&
     !sampleTypes.isPending && !sampleTypes.isError &&
-    (!editing || Boolean(order?.canEdit)) &&
-    (!platformMode || (Boolean(organizationId && selectedDepartment) && !departments.isError)) &&
-    (!platformMode || editing || (readiness.data?.canStartPricing === true && !readiness.isError && !readiness.isFetching)) &&
-    (!platformMode || prohibitedDataConfirmed);
+    (!editing || Boolean(order?.canEdit));
   const watchedSourceGroups = form.watch("sourceGroups");
-  const proposesPrice = form.watch("proposePrice");
-  const proposedUnitPriceValue = Number(form.watch("proposedUnitPrice"));
   const sourceTotal = watchedSourceGroups.reduce(
     (sum, group) => sum + (Number(group.specimenCount) || 0),
     0,
   );
-  const proposedSubtotal =
-    proposesPrice && Number.isFinite(proposedUnitPriceValue)
-      ? (Number(form.watch("sequencingRunCount")) || sourceTotal) * proposedUnitPriceValue
-      : null;
-  const normalizedSources = normalizedBiologicalSources(watchedSourceGroups);
-  const hasDuplicateSources =
-    new Set(normalizedSources).size !== normalizedSources.length;
-  const schemaSourceGroupsError =
-    form.formState.errors.sourceGroups?.root?.message ??
-    form.formState.errors.sourceGroups?.message;
-  const duplicateErrorHasBeenShown = schemaSourceGroupsError
-    ? duplicateBiologicalSourcesMessages.has(schemaSourceGroupsError)
-    : false;
-  const sourceGroupsError =
-    hasDuplicateSources &&
-    (form.formState.isSubmitted || duplicateErrorHasBeenShown)
-      ? duplicateBiologicalSourcesMessage
-      : duplicateErrorHasBeenShown
-        ? undefined
-        : schemaSourceGroupsError;
-
-  return (
-    <Dialog open={open} onOpenChange={requestOpenChange}>
-      <DialogContent className="max-h-[90dvh] p-0 [--dialog-inset:0px] sm:max-w-3xl"
-        onOpenAutoFocus={() => { openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; }}
-        onCloseAutoFocus={(event) => {
-          if (openerRef.current?.isConnected) {
-            event.preventDefault();
-            openerRef.current.focus();
-          }
-        }}>
-        <DialogHeader className="px-5 pt-5">
-          <DialogTitle>
-            {editing
-              ? platformMode ? "Edit Job pricing details" : "Modify lab service request"
-              : platformMode
-                ? sourceHandoff
-                  ? `Start order from ${sourceHandoff.requestNumber}`
-                  : "New Customer order"
-                : "Submit lab service request"}
-          </DialogTitle>
-          <DialogDescription>
-            {platformMode
-              ? "Select the Customer, enter the price-bearing Job scope, and optionally record the price discussed by Sales. Phaeno reviews that proposal before issuing the Customer quote."
-              : "Enter each biological source and its sample count. Phaeno will review your request and prepare pricing. Individual sample details follow your acceptance."}
-          </DialogDescription>
-        </DialogHeader>
-
-        {authProvider === "mock" || !canCreate || mutation.error ? (
-          <DialogFeedback className="space-y-2">
-            {authProvider === "mock" ? (
-              <Alert>
-                <AlertTitle>Creation is paused in mock-session mode</AlertTitle>
-                <AlertDescription>
-                  {platformMode
-                    ? "Connect a real Phaeno session to initiate a Customer order."
-                    : "Connect a Customer or Partner session to create a laboratory Job."}
-                </AlertDescription>
-              </Alert>
-            ) : null}
-            {!canCreate ? (
-              <Alert variant="destructive">
-                <AlertTitle>Job details cannot be changed</AlertTitle>
-                <AlertDescription>
-                  {platformMode
-                    ? "Phaeno order-pricing authority is required."
-                    : "An active organization or Department administrator is required to maintain Job details."}
-                </AlertDescription>
-              </Alert>
-            ) : null}
-            {mutation.error ? (
-              <Alert variant="destructive" role="alert">
-                <AlertTitle>Job details were not saved</AlertTitle>
-                <AlertDescription>
-                  {getOrderErrorMessage(
-                    mutation.error,
-                    "Review the job details and try again.",
-                  )}
-                </AlertDescription>
-              </Alert>
-            ) : null}
-          </DialogFeedback>
-        ) : null}
-
-        <div className="px-5 py-4">
-          <form id={formId} noValidate onSubmit={form.handleSubmit(submit)}>
-            <p className="mb-4 rounded-lg border bg-muted/30 p-3 text-sm"><strong>Tube use:</strong> Submitted tubes and purchased runs are separate. Allocate runs after pricing; the laboratory confirms material availability for repeated runs.</p>
-            {platformMode ? (
-              <>
-                {sourceHandoff ? (
-                  <Alert className="mb-4">
-                    <AlertTitle>Approved CRM handoff</AlertTitle>
-                    <AlertDescription>
-                      {sourceHandoff.companyName ?? sourceHandoff.organizationName}
-                      {sourceHandoff.opportunityName ? ` · ${sourceHandoff.opportunityName}` : ""}
-                      {" · "}{sourceHandoff.requestNumber}
-                    </AlertDescription>
-                  </Alert>
-                ) : null}
-                <Label htmlFor={`${formId}-organization`}>
-                  <RequiredFieldName>Customer</RequiredFieldName>
-                </Label>
-                <FieldDescription id={`${formId}-organization-help`}>
-                  Choose a Customer to check its setup. You can prepare pricing
-                  before an online administrator is active. Exact sample IDs and
-                  tube counts are entered after quote acceptance.
-                </FieldDescription>
-                <SearchableSelect
-                  portal
-                  id={`${formId}-organization`}
-                  className="mt-2"
-                  options={[
-                    ...(sourceHandoff &&
-                    !eligiblePlatformOrganizations.some(
-                      (organization) =>
-                        organization.id === sourceHandoff.organizationId,
-                    )
-                      ? [
-                          {
-                            value: sourceHandoff.organizationId,
-                            label: sourceHandoff.organizationName,
-                          },
-                        ]
-                      : []),
-                    ...eligiblePlatformOrganizations.map((organization) => ({
-                      value: organization.id,
-                      label: organization.name,
-                    })),
-                  ]}
-                  value={organizationId}
-                  onValueChange={(value) => { setOrganizationId(value); setDepartmentId(""); }}
-                  placeholder="Search Customers"
-                  emptyMessage="No active Customers are available."
-                  required
-                  disabled={Boolean(sourceHandoff)}
-                  clearable={!sourceHandoff}
-                  clearLabel="Clear Customer"
-                  aria-describedby={`${formId}-organization-help`}
-                />
-                {eligiblePlatformOrganizations.length === 0 ? (
-                  <FieldError>
-                    No active Customers are available.
-                  </FieldError>
-                ) : null}
-                {organizationId ? <div className="mt-4 grid gap-1.5">
-                  {(departments.data?.length ?? 0) === 1
-                    ? <p className="text-sm font-medium">Department</p>
-                    : <Label htmlFor={`${formId}-department`}><RequiredFieldName>Department</RequiredFieldName></Label>}
-                  {departments.isLoading ? <p role="status" className="text-sm text-muted-foreground">Loading Customer departments…</p> : null}
-                  {(departments.data?.length ?? 0) === 1 ? <p className="text-sm">{selectedDepartment?.name}</p> : (
-                    <select id={`${formId}-department`} className="h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm"
-                      value={selectedDepartment?.id ?? ""} onChange={(event) => setDepartmentId(event.target.value)}
-                      disabled={departments.isLoading || departments.isError || mutation.isPending} required aria-describedby={`${formId}-department-help`}>
-                      <option value="" disabled>Select department</option>
-                      {(departments.data ?? []).map((value) => <option key={value.id} value={value.id}>{value.name}{value.isDefault ? " (default)" : ""}</option>)}
-                    </select>
-                  )}
-                  <FieldDescription id={`${formId}-department-help`}>This department owns the Job and controls Customer access and applicable service rules. Choose one with an active Customer user; when several are available, select it explicitly.</FieldDescription>
-                  {departments.isError ? <FieldError>Customer departments could not be loaded. Check your connection and reopen the form.</FieldError> : null}
-                  {!departments.isPending && !departments.isError && !departments.data?.length ? <FieldError>No active Customer departments are available.</FieldError> : null}
-                </div> : null}
-                {selectedDepartment && !order && apiEnabled ? (
-                  <>
-                    {readiness.isFetching ? <p role="status" className="mt-4 text-sm text-muted-foreground">Checking Customer readiness…</p> : null}
-                    {readiness.isError ? <Alert className="mt-4" variant="destructive">
-                      <AlertTitle>Customer readiness could not be checked</AlertTitle>
-                      <AlertDescription>Your entries are kept. Retry before starting pricing.</AlertDescription>
-                      <Button className="mt-2" type="button" variant="outline" disabled={readiness.isFetching} onClick={() => void readiness.refetch()}>Retry readiness check</Button>
-                    </Alert> : readiness.data ? (
-                      <CustomerOrderReadiness readiness={readiness.data} refreshing={readiness.isFetching} onRefresh={() => void readiness.refetch()} />
-                    ) : null}
-                  </>
-                ) : null}
-              </>
-            ) : null}
-
-            <Label
-              htmlFor={`${formId}-reference`}
-              className={platformMode ? "mt-4" : undefined}
-            >
-              <RequiredFieldName>Job name</RequiredFieldName>
-            </Label>
-            <FieldDescription id={`${formId}-reference-help`}>
-              Use a short name your organization will recognize. Job names must
-              be unique within your organization.
-            </FieldDescription>
-            <Input
-              id={`${formId}-reference`}
-              className="mt-2"
-              required
-              aria-invalid={Boolean(form.formState.errors.customerReference)}
-              aria-describedby={`${formId}-reference-help${form.formState.errors.customerReference ? ` ${formId}-reference-error` : ""}`}
-              {...form.register("customerReference")}
-            />
-            <FieldError id={`${formId}-reference-error`}>
-              {form.formState.errors.customerReference?.message}
-            </FieldError>
-
-            <div className="mt-4">
-              <Label htmlFor={`${formId}-sample-type`}><RequiredFieldName>Sample type</RequiredFieldName></Label>
-              <FieldDescription id={`${formId}-sample-type-help`}>Choose one type for this Job. Different types require separate orders, containers, packets, and tracking labels.</FieldDescription>
-              <select id={`${formId}-sample-type`} className="mt-2 h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-                required
-                disabled={sampleTypes.isPending || sampleTypes.isError || mutation.isPending}
-                aria-invalid={Boolean(form.formState.errors.sampleTypeDefinitionId)}
-                aria-describedby={`${formId}-sample-type-help${form.formState.errors.sampleTypeDefinitionId ? ` ${formId}-sample-type-error` : ""}`}
-                {...form.register("sampleTypeDefinitionId")}>
-                <option value="">Select sample type</option>
-                {order?.sampleTypeDefinitionId && !sampleTypes.data?.some(type => type.id === order.sampleTypeDefinitionId)
-                  ? <option value={order.sampleTypeDefinitionId}>{order.sampleTypeName ?? "Previously selected type"} · saved choice</option> : null}
-                {(sampleTypes.data ?? []).map(type => <option key={type.id} value={type.id}>{type.name}</option>)}
-              </select>
-              <FieldError id={`${formId}-sample-type-error`}>{form.formState.errors.sampleTypeDefinitionId?.message}</FieldError>
-              {sampleTypes.isError ? <FieldError>Sample types could not be loaded. Reopen the form to retry.</FieldError> : null}
-              {!sampleTypes.isPending && !sampleTypes.isError && !sampleTypes.data?.length ? <FieldError>No active PSeq sample type is available. Ask Phaeno to complete setup.</FieldError> : null}
-            </div>
-
-            <fieldset className="mt-4" aria-labelledby={`${formId}-source-composition-label`}>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span id={`${formId}-source-composition-label`} className="text-sm font-medium">
-                  <RequiredFieldName>Biological-source composition</RequiredFieldName>
-                </span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="ml-auto"
-                  onClick={() =>
-                    sourceGroups.append({
-                      biologicalSource: "",
-                      specimenCount: 1,
-                    })
-                  }
-                >
-                  <Plus data-icon="inline-start" />
-                  Add source
-                </Button>
-              </div>
-              <FieldDescription>
-                List each organism/species and tissue or cell type with its
-                sample count.
-              </FieldDescription>
-              <div className="mt-3 overflow-hidden rounded-lg border">
-                <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_2.25rem] gap-3 border-b bg-muted/40 px-3 py-2 sm:grid-cols-[minmax(0,1fr)_9rem_2.25rem]">
-                  <span className="text-sm font-medium">
-                    <RequiredFieldName>Biological source</RequiredFieldName>
-                  </span>
-                  <span className="text-sm font-medium">
-                    <RequiredFieldName>Samples</RequiredFieldName>
-                  </span>
-                  <span className="sr-only">Actions</span>
-                </div>
-                <div className="divide-y">
-                  {sourceGroups.fields.map((field, index) => {
-                    const sourceErrorId = `${formId}-source-${index}-error`;
-                    const countErrorId = `${formId}-source-count-${index}-error`;
-                    const sourceError =
-                      form.formState.errors.sourceGroups?.[index]
-                        ?.biologicalSource;
-                    const countError =
-                      form.formState.errors.sourceGroups?.[index]
-                        ?.specimenCount;
-
-                    return (
-                      <div
-                        key={field.id}
-                        className="grid grid-cols-[minmax(0,1fr)_5.5rem_2.25rem] items-start gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_9rem_2.25rem]"
-                      >
-                        <div>
-                          <Label
-                            className="sr-only"
-                            htmlFor={`${formId}-source-${index}`}
-                          >
-                            Biological source for source group {index + 1}
-                          </Label>
-                          <Input
-                            id={`${formId}-source-${index}`}
-                            required
-                            placeholder="Human PBMCs, mouse liver…"
-                            aria-invalid={Boolean(sourceError)}
-                            aria-describedby={
-                              sourceError ? sourceErrorId : undefined
-                            }
-                            {...form.register(
-                              `sourceGroups.${index}.biologicalSource`,
-                            )}
-                          />
-                          <FieldError id={sourceErrorId}>
-                            {sourceError?.message}
-                          </FieldError>
-                        </div>
-                        <div>
-                          <Label
-                            className="sr-only"
-                            htmlFor={`${formId}-source-count-${index}`}
-                          >
-                            Samples for source group {index + 1}
-                          </Label>
-                          <Input
-                            id={`${formId}-source-count-${index}`}
-                            required
-                            type="number"
-                            min="1"
-                            max="100"
-                            step="1"
-                            inputMode="numeric"
-                            aria-invalid={Boolean(countError)}
-                            aria-describedby={
-                              countError ? countErrorId : undefined
-                            }
-                            {...form.register(
-                              `sourceGroups.${index}.specimenCount`,
-                            )}
-                          />
-                          <FieldError id={countErrorId}>
-                            {countError?.message}
-                          </FieldError>
-                        </div>
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="outline"
-                          aria-label={`Remove source group ${index + 1}`}
-                          disabled={sourceGroups.fields.length === 1}
-                          onClick={() => sourceGroups.remove(index)}
-                        >
-                          <Minus />
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <FieldError>{sourceGroupsError}</FieldError>
-              <p className="mt-3 text-right text-sm text-muted-foreground">
-                Total samples: {sourceTotal}
-              </p>
-            </fieldset>
-
-            <div className="mt-4 space-y-1">
-              <Label htmlFor={`${formId}-sequencing-runs`}>Sample-sequencing runs</Label>
-              <Input id={`${formId}-sequencing-runs`} type="number" min={sourceTotal || 1} max={10000} step={1} inputMode="numeric"
-                placeholder={String(sourceTotal)} disabled={mutation.isPending}
-                aria-invalid={Boolean(form.formState.errors.sequencingRunCount)}
-                aria-describedby={`${formId}-sequencing-runs-help ${formId}-sequencing-runs-error`}
-                {...form.register("sequencingRunCount")} />
-              <p id={`${formId}-sequencing-runs-help`} className="text-xs text-muted-foreground">Leave blank for one run per sample. One sample sequenced 20 times is 20 runs. Allocate the purchased runs to individual samples after accepting pricing. Submitted tubes are counted separately.</p>
-              <p id={`${formId}-sequencing-runs-error`} className="text-xs text-destructive">{form.formState.errors.sequencingRunCount?.message}</p>
-            </div>
-            {platformMode ? (
-            <section className="mt-4 rounded-lg border p-4">
-              <label
-                htmlFor={`${formId}-propose-price`}
-                className="flex cursor-pointer items-start gap-3"
-              >
-                <Checkbox
-                  id={`${formId}-propose-price`}
-                  checked={proposesPrice}
-                  onCheckedChange={(checked) =>
-                    form.setValue("proposePrice", checked === true, {
-                      shouldDirty: true,
-                      shouldValidate: true,
-                    })
-                  }
-                />
-                <span>
-                  <span className="block text-sm font-medium">
-                    Propose a price
-                  </span>
-                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-                    Record a Sales-discussed or requested price. This proposal is
-                    not a quote and does not authorize work.
-                  </span>
-                </span>
-              </label>
-              {proposesPrice ? (
-                <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <Label htmlFor={`${formId}-proposed-unit-price`}>
-                      <RequiredFieldName>Proposed price per sample-sequencing run</RequiredFieldName>
-                    </Label>
-                    <FieldDescription id={`${formId}-proposed-unit-price-help`}>
-                      USD per sample-sequencing run. Phaeno may approve or amend this amount.
-                    </FieldDescription>
-                    <div className="relative mt-2">
-                      <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-muted-foreground">$</span>
-                      <Input
-                        id={`${formId}-proposed-unit-price`}
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        inputMode="decimal"
-                        className="pl-7"
-                        required
-                        aria-invalid={Boolean(form.formState.errors.proposedUnitPrice)}
-                        aria-describedby={`${formId}-proposed-unit-price-help${form.formState.errors.proposedUnitPrice ? ` ${formId}-proposed-unit-price-error` : ""}`}
-                        {...form.register("proposedUnitPrice")}
-                      />
-                    </div>
-                    <FieldError id={`${formId}-proposed-unit-price-error`}>
-                      {form.formState.errors.proposedUnitPrice?.message}
-                    </FieldError>
-                  </div>
-                  <div className="rounded-lg bg-muted/40 p-3">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Proposed subtotal</p>
-                    <p className="mt-1 text-xl font-semibold">
-                      {proposedSubtotal === null
-                        ? "—"
-                        : formatUsd(proposedSubtotal)}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {Number(form.watch("sequencingRunCount")) || sourceTotal} sample-sequencing runs
-                    </p>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <Label htmlFor={`${formId}-price-proposal-note`}>
-                      Pricing note <span className="font-normal text-muted-foreground">(optional)</span>
-                    </Label>
-                    <FieldDescription id={`${formId}-price-proposal-note-help`}>
-                      Add Customer-safe context from the pricing conversation. Do not include PHI.
-                    </FieldDescription>
-                    <Textarea
-                      id={`${formId}-price-proposal-note`}
-                      className="mt-2 min-h-20"
-                      aria-invalid={Boolean(form.formState.errors.priceProposalNote)}
-                      aria-describedby={`${formId}-price-proposal-note-help${form.formState.errors.priceProposalNote ? ` ${formId}-price-proposal-note-error` : ""}`}
-                      {...form.register("priceProposalNote")}
-                    />
-                    <FieldError id={`${formId}-price-proposal-note-error`}>
-                      {form.formState.errors.priceProposalNote?.message}
-                    </FieldError>
-                  </div>
-                </div>
-              ) : null}
-            </section>
-            ) : null}
-
-            <Label htmlFor={`${formId}-storage`} className="mt-4">
-              <RequiredFieldName>Storage requirements</RequiredFieldName>
-            </Label>
-            <FieldDescription id={`${formId}-storage-help`}>
-              Describe the storage and transport temperature and any freeze/thaw
-              limits for every sample in this job.
-            </FieldDescription>
-            <Textarea
-              id={`${formId}-storage`}
-              className="mt-2 min-h-24"
-              placeholder="For example: Ship frozen on dry ice; avoid thawing."
-              aria-invalid={Boolean(form.formState.errors.storageRequirements)}
-              aria-describedby={`${formId}-storage-help${form.formState.errors.storageRequirements ? ` ${formId}-storage-error` : ""}`}
-              {...form.register("storageRequirements")}
-            />
-            <FieldError id={`${formId}-storage-error`}>
-              {form.formState.errors.storageRequirements?.message}
-            </FieldError>
-
-            <Label htmlFor={`${formId}-safety`} className="mt-4">
-              <RequiredFieldName>Safety declaration</RequiredFieldName>
-            </Label>
-            <FieldDescription id={`${formId}-safety-help`}>
-              Identify biohazards or handling risks shared by the job. Enter “No
-              known hazards” when none apply.
-            </FieldDescription>
-            <Textarea
-              id={`${formId}-safety`}
-              className="mt-2 min-h-24"
-              placeholder="No known hazards"
-              aria-invalid={Boolean(form.formState.errors.safetyDeclaration)}
-              aria-describedby={`${formId}-safety-help${form.formState.errors.safetyDeclaration ? ` ${formId}-safety-error` : ""}`}
-              {...form.register("safetyDeclaration")}
-            />
-            <FieldError id={`${formId}-safety-error`}>
-              {form.formState.errors.safetyDeclaration?.message}
-            </FieldError>
-
-            <Label htmlFor={`${formId}-notes`} className="mt-4">
-              Job notes{" "}
-              <span className="font-normal text-muted-foreground">
-                (optional)
-              </span>
-            </Label>
-            <FieldDescription id={`${formId}-notes-help`}>
-              Add information that applies to the job as a whole. Do not include
-              names or direct identifiers.
-            </FieldDescription>
-            <Textarea
-              id={`${formId}-notes`}
-              className="mt-2 min-h-24"
-              aria-invalid={Boolean(form.formState.errors.jobNotes)}
-              aria-describedby={`${formId}-notes-help${form.formState.errors.jobNotes ? ` ${formId}-notes-error` : ""}`}
-              {...form.register("jobNotes")}
-            />
-            <FieldError id={`${formId}-notes-error`}>
-              {form.formState.errors.jobNotes?.message}
-            </FieldError>
-
-            {platformMode ? (
-              <label
-                htmlFor={`${formId}-prohibited-data-confirmation`}
-                className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border p-4"
-              >
-                <Checkbox
-                  id={`${formId}-prohibited-data-confirmation`}
-                  checked={prohibitedDataConfirmed}
-                  onCheckedChange={(checked) =>
-                    setProhibitedDataConfirmed(checked === true)
-                  }
-                />
-                <span className="text-sm leading-5">
-                  I confirm that these Job pricing details contain no patient
-                  identifiers, PHI, or unnecessary personal data.{" "}
-                  <RequiredMark />
-                </span>
-              </label>
-            ) : null}
-          </form>
-        </div>
-
-        <RequiredDialogFooter showLegend={false} className="flex-col border-t bg-muted/40 px-5 py-4 sm:flex-col">
-          {!platformMode ? <p className="text-sm text-muted-foreground">Phaeno will prepare pricing for you to accept or decline. Submitting does not authorize work. You can modify or withdraw your request while pricing is under review.</p> : null}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <RequiredLegend />
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={mutation.isPending}
-                onClick={() => requestOpenChange(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                form={formId}
-                disabled={!canSave || mutation.isPending}
-              >
-                {mutation.isPending
-                  ? editing
-                    ? "Saving…"
-                    : platformMode
-                      ? "Starting pricing…"
-                      : "Submitting…"
-                  : editing
-                    ? platformMode ? "Save job details" : "Submit changes"
-                    : platformMode
-                      ? "Start pricing"
-                      : "Submit request"}
-              </Button>
-            </div>
-          </div>
-        </RequiredDialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-
-  function requestOpenChange(nextOpen: boolean) {
-    if (
-      !nextOpen &&
-      form.formState.isDirty &&
-      !mutation.isPending &&
-      !window.confirm("Discard the unsaved job details?")
-    ) {
-      return;
-    }
-    if (!nextOpen) mutation.reset();
-    onOpenChange(nextOpen);
-  }
-
   function submit(values: JobDetailsValues) {
     mutation.mutate(values);
   }
+  function requestOpenChange(nextOpen: boolean) {
+    if (mutation.isPending) return;
+    if (!nextOpen && form.formState.isDirty && !window.confirm("Discard your unsaved Job details?")) return;
+    mutation.reset();
+    onOpenChange(nextOpen);
+  }
+  const sourceError = form.formState.errors.sourceGroups?.root?.message ?? form.formState.errors.sourceGroups?.message;
+  return <Dialog open={open} onOpenChange={requestOpenChange}>
+    <DialogContent className="sm:max-w-3xl" showCloseButton={!mutation.isPending} onOpenAutoFocus={() => { openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null }} onCloseAutoFocus={event => { if (openerRef.current?.isConnected) { event.preventDefault(); openerRef.current.focus() } }}>
+      <DialogHeader><DialogTitle>{editing ? "Modify lab service request" : "Submit lab service request"}</DialogTitle><DialogDescription>Enter each biological source and its sample count. Phaeno reviews your request and prepares pricing. Individual sample details follow acceptance.</DialogDescription></DialogHeader>
+      {!apiEnabled || mutation.error ? <DialogFeedback><Alert variant="destructive"><AlertTitle>{mutation.error ? 'Job details were not saved' : 'Job details cannot be changed'}</AlertTitle><AlertDescription>{mutation.error ? getOrderErrorMessage(mutation.error, 'Review your retained entries and try again.') : 'An active Customer or Partner administrator session is required.'}</AlertDescription></Alert></DialogFeedback> : null}
+      <form id={formId} noValidate onSubmit={form.handleSubmit(submit)} className="max-h-[65vh] space-y-4 overflow-y-auto px-1">
+        <fieldset disabled={mutation.isPending} className="space-y-4">
+          <p className="rounded-md border bg-muted/30 p-3 text-sm"><strong>Tube use:</strong> Submitted tubes and purchased runs are separate. Allocate runs after pricing; the laboratory confirms material availability for repeated runs.</p>
+          <div><Label htmlFor={`${formId}-reference`}><RequiredFieldName>Job name</RequiredFieldName></Label><FieldDescription id={`${formId}-reference-help`}>Use a short name your organization will recognize. Job names must be unique within your organization.</FieldDescription><Input id={`${formId}-reference`} className="mt-2" {...form.register('customerReference')} aria-invalid={Boolean(form.formState.errors.customerReference)} aria-describedby={`${formId}-reference-help ${formId}-reference-error`} /><FieldError id={`${formId}-reference-error`}>{form.formState.errors.customerReference?.message}</FieldError></div>
+          <div><Label htmlFor={`${formId}-sample-type`}><RequiredFieldName>Sample type</RequiredFieldName></Label><FieldDescription>Choose one Sample type for this Job. Different types require separate orders.</FieldDescription><select id={`${formId}-sample-type`} className="mt-2 h-9 w-full cursor-pointer rounded-lg border bg-background px-3 text-sm" {...form.register('sampleTypeDefinitionId')} aria-invalid={Boolean(form.formState.errors.sampleTypeDefinitionId)} aria-describedby={`${formId}-sample-type-error`}><option value="">Select sample type</option>{sampleTypes.data?.map(type => <option key={type.id} value={type.id}>{type.name}</option>)}</select><FieldError id={`${formId}-sample-type-error`}>{form.formState.errors.sampleTypeDefinitionId?.message}</FieldError>{sampleTypes.error ? <p role="alert" className="text-sm text-destructive">Sample types could not be loaded. <Button type="button" variant="outline" onClick={() => void sampleTypes.refetch()}>Retry</Button></p> : null}</div>
+          <fieldset className="space-y-3"><legend className="text-sm font-medium"><RequiredFieldName>Biological-source composition</RequiredFieldName></legend><FieldDescription>List each organism/species and tissue or cell type with its sample count.</FieldDescription>{sourceGroups.fields.map((field, index) => <div key={field.id} className="grid items-end gap-3 sm:grid-cols-[minmax(0,1fr)_7rem_auto]"><div><Label htmlFor={`${formId}-source-${index}`}><RequiredFieldName>Biological source</RequiredFieldName></Label><Input id={`${formId}-source-${index}`} className="mt-2" aria-label={`Biological source for source group ${index + 1}`} placeholder="Human PBMCs, mouse liver…" {...form.register(`sourceGroups.${index}.biologicalSource`)} aria-invalid={Boolean(form.formState.errors.sourceGroups?.[index]?.biologicalSource)} aria-describedby={`${formId}-source-${index}-error`} /><FieldError id={`${formId}-source-${index}-error`}>{form.formState.errors.sourceGroups?.[index]?.biologicalSource?.message}</FieldError></div><div><Label htmlFor={`${formId}-count-${index}`}><RequiredFieldName>Samples</RequiredFieldName></Label><Input id={`${formId}-count-${index}`} type="number" min={1} className="mt-2" {...form.register(`sourceGroups.${index}.specimenCount`)} aria-invalid={Boolean(form.formState.errors.sourceGroups?.[index]?.specimenCount)} aria-describedby={`${formId}-count-${index}-error`} /><FieldError id={`${formId}-count-${index}-error`}>{form.formState.errors.sourceGroups?.[index]?.specimenCount?.message}</FieldError></div><Button type="button" variant="outline" disabled={sourceGroups.fields.length === 1} onClick={() => sourceGroups.remove(index)} aria-label={`Remove biological source ${index + 1}`}>Remove</Button></div>)}<Button type="button" variant="outline" onClick={() => sourceGroups.append({ biologicalSource: '', specimenCount: 1 })}>Add source</Button><FieldError>{sourceError}</FieldError><p className="text-sm">Total samples: {sourceTotal}</p></fieldset>
+          <div><Label htmlFor={`${formId}-runs`}>Sample-sequencing runs</Label><Input id={`${formId}-runs`} type="number" min={1} max={10000} className="mt-2" {...form.register('sequencingRunCount')} aria-invalid={Boolean(form.formState.errors.sequencingRunCount)} aria-describedby={`${formId}-runs-help ${formId}-runs-error`} /><FieldDescription id={`${formId}-runs-help`}>Leave blank for one run per sample. One sample sequenced 20 times is 20 runs.</FieldDescription><FieldError id={`${formId}-runs-error`}>{form.formState.errors.sequencingRunCount?.message}</FieldError></div>
+          {(['storageRequirements', 'safetyDeclaration', 'jobNotes'] as const).map(name => <div key={name}><Label htmlFor={`${formId}-${name}`}>{name === 'jobNotes' ? 'Job notes (optional)' : <RequiredFieldName>{name === 'storageRequirements' ? 'Storage requirements' : 'Safety declaration'}</RequiredFieldName>}</Label><FieldDescription id={`${formId}-${name}-help`}>{name === 'storageRequirements' ? 'Describe storage and transport temperature and freeze/thaw limits for every sample.' : name === 'safetyDeclaration' ? 'Identify biohazards or handling risks. Enter “No known hazards” when none apply.' : 'Add information that applies to the Job. Do not include names or direct identifiers.'}</FieldDescription><Textarea id={`${formId}-${name}`} className="mt-2" {...form.register(name)} aria-invalid={Boolean(form.formState.errors[name])} aria-describedby={`${formId}-${name}-help ${formId}-${name}-error`} /><FieldError id={`${formId}-${name}-error`}>{form.formState.errors[name]?.message}</FieldError></div>)}
+        </fieldset>
+      </form>
+      <RequiredDialogFooter showLegend={false} className="flex-col sm:flex-col"><p className="text-sm text-muted-foreground">Phaeno will prepare pricing for you to accept or decline. Submitting does not authorize laboratory work.</p><div className="flex flex-wrap items-center justify-between gap-3"><RequiredLegend /><div className="flex gap-2"><Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => requestOpenChange(false)}>Cancel</Button><Button type="submit" form={formId} disabled={!canSave || mutation.isPending}>{mutation.isPending ? editing ? 'Saving…' : 'Submitting…' : editing ? 'Submit changes' : 'Submit request'}</Button></div></div></RequiredDialogFooter>
+    </DialogContent>
+  </Dialog>;
 }
 
 class RefreshedJobConflictError extends Error {
@@ -975,9 +329,6 @@ function jobDetailsFormValues(
           },
         ],
     sequencingRunCount: order?.requestedSequencingRunCount && order.requestedSequencingRunCount !== order.requestedSpecimenCount ? String(order.requestedSequencingRunCount) : "",
-    proposePrice: order?.proposedUnitPrice != null,
-    proposedUnitPrice: order?.proposedUnitPrice?.toFixed(2) ?? "",
-    priceProposalNote: order?.priceProposalNote ?? "",
     storageRequirements: order?.storageRequirements ?? "",
     safetyDeclaration: order?.safetyDeclaration ?? "",
     jobNotes: order?.description ?? "",
@@ -1020,11 +371,4 @@ function normalizedBiologicalSources(
   return groups
     .map((group) => group.biologicalSource?.trim().toLocaleLowerCase() ?? "")
     .filter(Boolean);
-}
-
-function formatUsd(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(value);
 }

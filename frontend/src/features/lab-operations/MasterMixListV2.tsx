@@ -61,13 +61,22 @@ export function MasterMixWorkspace({ enabled, canOperate }: { enabled: boolean; 
     .flatMap(item => item.revisions.filter(revision => revision.status === 'Approved')
       .map(revision => ({ id: `${item.id}:${revision.revision}`, label: `${revision.name} · revision ${revision.revision} · ${revision.quantityUnit}` }))) ?? []
   return <>
-    <Card className="gap-0 py-0"><CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 border-b bg-muted/50 p-4"><div><CardTitle>Master mixes</CardTitle><CardDescription>Prepare one mix under an approved recipe, use it across library trays during the local work day, then discard the remainder.</CardDescription></div>{canOperate ? <Button type="button" onClick={() => setOpen(true)}><Plus data-icon="inline-start" /> Start master mix</Button> : null}</CardHeader>
-      <CardContent className="space-y-4 p-4">
-        <form className="flex flex-wrap items-end gap-3" onSubmit={event => { event.preventDefault(); updateFilters({ ...filters, search: searchText.trim(), page: 1 }) }}>
+    <Card className="gap-0 py-0">
+      <CardHeader className="gap-4 border-b bg-muted/50 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <CardTitle>Master mixes</CardTitle>
+            <CardDescription>Prepare one mix under an approved recipe, use it across library trays during the local work day, then discard the remainder.</CardDescription>
+          </div>
+          {canOperate ? <Button type="button" className="shrink-0" onClick={() => setOpen(true)}><Plus data-icon="inline-start" /> Start master mix</Button> : null}
+        </div>
+        <form className="grid w-full grid-cols-1 items-end gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto]" onSubmit={event => { event.preventDefault(); updateFilters({ ...filters, search: searchText.trim(), page: 1 }) }}>
           <PreparationField id="mix-list-search" label="Find by name or full container barcode"><Input id="mix-list-search" value={searchText} onChange={event => setSearchText(event.target.value)} /></PreparationField>
           <PreparationField id="mix-list-status" label="Status"><select id="mix-list-status" className={prepSelectClass} value={filters.status} onChange={event => updateFilters({ ...filters, status: event.target.value, page: 1 })}><option value="">All statuses</option><option value="Overdue">Overdue — discard needed</option><option value="Preparing">Preparing</option><option value="Ready">Ready</option><option value="Discarded">Discarded</option></select></PreparationField>
-          <Button type="submit" variant="outline">Search</Button>
+          <Button type="submit" variant="outline" className="justify-self-end">Search</Button>
         </form>
+      </CardHeader>
+      <CardContent className="space-y-4 p-4">
         {mixes.isPending ? <p role="status">Loading master mixes…</p> : mixes.isError ? <p role="alert">{getLabOperationsError(mixes.error, 'Master mixes could not be loaded.')}</p> : mixes.data.items.length ? <>
           <ul className="space-y-2">{mixes.data.items.map(item => { const overdue = item.status !== 'Discarded' && new Date(item.useByUtc).getTime() <= Date.now(); return <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"><div><Link to="/lab-operations/master-mixes/$mixId" params={{ mixId: item.id }} className="font-medium text-primary hover:underline">{item.barcode} · {item.workflowName}</Link><p className="text-sm text-muted-foreground">Revision {item.workflowRevision} · started {new Date(item.startedAtUtc).toLocaleString()} · {item.status === 'Ready' ? `${item.remainingQuantityText ?? item.remainingQuantity} ${item.quantityUnit} remaining · use by ${labCutoff(item.useByUtc)}` : item.status}</p>{overdue ? <p className="text-sm text-destructive">Overdue — discard this mix.</p> : null}</div><Badge variant="secondary">{item.status}</Badge></li> })}</ul>
           <div className="flex flex-wrap items-center justify-between gap-3 text-sm"><p>Showing page {mixes.data.page} of {Math.max(1, Math.ceil(mixes.data.total / mixes.data.pageSize))} · {mixes.data.total} mixes</p><div className="flex gap-2"><Button type="button" variant="outline" disabled={filters.page <= 1} onClick={() => updateFilters({ ...filters, page: filters.page - 1 })}>Previous</Button><Button type="button" variant="outline" disabled={filters.page * mixes.data.pageSize >= mixes.data.total} onClick={() => updateFilters({ ...filters, page: filters.page + 1 })}>Next</Button></div></div>

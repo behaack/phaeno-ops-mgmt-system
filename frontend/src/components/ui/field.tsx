@@ -2,6 +2,10 @@ import * as React from 'react'
 
 import { cn } from '#/lib/utils'
 
+function Field({ className, ...props }: React.ComponentProps<'div'>) {
+  return <div data-slot="field" className={cn('grid content-start gap-2 [&>[data-slot=label]]:leading-5 [&>[data-slot=field-error]]:-mt-1 [&>[data-slot=field-description]]:-mt-1', className)} {...props} />
+}
+
 function FieldDescription({
   className,
   ...props
@@ -34,4 +38,4 @@ function FieldError({
   )
 }
 
-export { FieldDescription, FieldError }
+export { Field, FieldDescription, FieldError }

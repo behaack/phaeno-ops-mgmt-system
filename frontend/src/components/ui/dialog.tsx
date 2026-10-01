@@ -161,13 +161,25 @@ function splitDialogChildren(children: React.ReactNode) {
   const body: React.ReactNode[] = []
   const footer: React.ReactNode[] = []
 
-  for (const child of React.Children.toArray(children)) {
-    const region = dialogRegion(child)
-    if (region === "header") header.push(child)
-    else if (region === "feedback") feedback.push(child)
-    else if (region === "footer") footer.push(child)
-    else body.push(child)
+  function visit(nodes: React.ReactNode, prefix: string) {
+    for (const child of React.Children.toArray(nodes)) {
+      const key = React.isValidElement(child) ? `${prefix}/${child.key}` : prefix
+      if (React.isValidElement<{ children?: React.ReactNode }>(child) && child.type === React.Fragment) {
+        visit(child.props.children, key)
+        continue
+      }
+
+      const keyedChild = React.isValidElement(child) ? React.cloneElement(child, { key }) : child
+      const region = dialogRegion(child)
+      if (region === "header") header.push(keyedChild)
+      else if (region === "feedback") feedback.push(keyedChild)
+      else if (region === "footer") footer.push(keyedChild)
+      else body.push(keyedChild)
+    }
   }
+
+  // Conditional fragments group JSX without defining a layout region.
+  visit(children, "dialog")
 
   return { header, feedback, body, footer }
 }

@@ -126,7 +126,7 @@ public sealed partial class ManagedReleaseRetentionPostgresTests
     {
         foreach (var assembly in new[] { false, true })
         {
-            await using var fixture = await Fixture.Create(connection, assembly, DateTime.UtcNow.AddDays(-36));
+            await using var fixture = await Fixture.Create(connection, assembly, DateTime.UtcNow.AddDays(-36), sampleCount: 2);
             var storage = new CleanupStorage(); var actor = await PlatformIdentity(fixture.Db);
             await Lifecycle(fixture.Db, storage).ProcessCleanupAsync(fixture.Snapshot!.Id, default);
             var originalLineage = fixture.Snapshot.ReceiptLineageJson;

@@ -16,6 +16,8 @@ The owner also explicitly requires actual job start and stop timestamps. Store p
 
 ## Product outcome and users
 
+September 30 implementation: the [MQTT messaging plan](POMS-DPS-MQTT-MESSAGING-PLAN.md) now records the authorized POMS foundation: durable command attempts, commit-before-acknowledgment lifecycle receipts, persistent deadline/escalation attention and scoped POMS-to-UI SignalR refresh notifications. Percentages remain transient. This does not enable the external provider or processing worker, define DPS wire fixtures, or authorize deployment. See the messaging plan and its verification record for the exact remaining integration gates.
+
 After sequencing data arrive in S3, an authorized POMS laboratory user can start assembly, follow its progress, investigate every attempt, submit its outputs for scientific QC, and release approved results through the existing customer-distribution workflow. Closing the browser must not interrupt assembly or lose its history.
 
 The requesting operator, external processing service, scientific reviewer and release manager have distinct responsibilities. Existing laboratory and release permissions remain authoritative. Customers see only explicitly released deliverables; provider progress and internal diagnostic details remain internal.

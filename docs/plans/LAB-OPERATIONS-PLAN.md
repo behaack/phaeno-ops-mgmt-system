@@ -1,5 +1,39 @@
 # Lab Operations Plan
 
+## Sequential phase Jobs — planning, September 30, 2026
+
+Plan one order/Job with ordered phases sufficient for invoicing and operations;
+do not introduce contract-management functionality. Each phase completes only
+when its required results are available through the Portal, before processing
+the next phase. Each phase has its own TAT starting on complete physical receipt
+of its required sample/tube roster. Unstarted phases may be requested for
+cancellation only before their first required sample/tube is received. Invoice
+timing and partial amounts are chosen deliberately by Phaeno. The
+[owning phase plan](MULTI-PHASE-LAB-JOBS-PLAN.md) preserves
+phase-specific input/output lineage, receipt/deadline meaning and retained
+cancellation/billing outcomes. Phase lifecycle is separate from derived shipping,
+intake, sample-work and delivery counts; independent Phases and holistic Jobs
+views expose mixed progress without treating one stage as every sample's status.
+The implementation scope is a distinct sample cohort per phase, with configurable
+phase counts, names and quantities rather than a fixed 50/150/150 structure.
+The generalized product model is ready for implementation within that scope.
+Mutually agreed rephasing is available only for unsent future samples of an open
+Job while an earlier phase executes. First required tube dispatch fixes the whole
+sample's phase assignment; in-transit and received-but-unprocessed samples are
+ineligible. Sent/started/delivered work stays fixed; dispatch, receipt, storage,
+material use, original deadlines and billing history are retained. Completed Jobs
+cannot be rephased; returns and holds do not restore sample eligibility.
+This is planning only; implementation, data-model changes, migrations and
+deployment are not authorized.
+
+## Customer intake status — September 30, 2026
+
+The owner retained **Received** for the Customer/Partner Job status after intake.
+Do not add Accessioned to the customer Job progress stages. Internal receipt,
+accession and freezer-box records continue to retain their scientific and physical
+meaning. Phaeno's Lab operations Job cards show the current internal status and
+all recorded freezer boxes, as covered by the Job deadline plan.
+
 ## Purchasing and Equipment navigation — September 26, 2026
 
 Phaeno staff need a clear place for catalog, purchased stock, and laboratory assets outside the operational Lab operations sidebar. The Administration menu has one **Equipment** destination with no sidebar and one **Purchasing** destination with **Suppliers**, **Products**, and **Purchased materials** in its sidebar. Products includes the existing Product types management tab. The moved lists and their view-first details retain the established create, edit, status, QC, and retirement actions and existing capability checks. Canonical detail routes now live under `/purchasing`; old Lab operations URLs redirect to the corresponding destination. Existing backend catalog and inventory APIs remain unchanged.
@@ -1536,3 +1570,5 @@ The physical container keeps its UUID identity. Each lab container now has a pri
 Shipment and packet scans resolve supplier tube identity within that shipment. An unscoped lookup reports ambiguity when two laboratory containers share printed text; it does not choose a physical tube arbitrarily. Library preparation lets the operator select an eligible tube from its job before scanning it into a tray. A source and destination in one biological transfer must have different printed values even if their manufacturer namespaces differ, because two identical scans cannot prove which tube was used. POMS-generated tubes remain unusable until the printed DataMatrix is scanned back after printing. A newly rejected POMS tube still requires that first scan-back if its intake is corrected; migrated historical tubes retain their available state. A failed label print is recorded before retrying. Saved scan results show readable identifiers without repeating the QR image. The print CSS keeps the label's dialog portal visible and clips the output to the 50 × 25 mm stock. Thermal printer stock, DataMatrix scanner decoding, adhesion and scan-back are physical acceptance gates.
 
 The tube detail page adds an operator or supervisor action to scan the container, scan a destination freezer box or location barcode and confirm a move. The container's stored location and immutable job event record the previous location, destination, actor and time. The detail page reads those move events as location history. The destination is a scanned text identifier under the existing free-text location model; a registered freezer-box inventory and box-position model remain governed by the deferred location plan above.
+
+September 30 local phase implementation: [MULTI-PHASE-LAB-JOBS-PLAN.md](MULTI-PHASE-LAB-JOBS-PLAN.md) now owns the implemented sequential cohort extension, derived mixed progress, phase-specific receipt/TAT/deadline, unsent-only mutual rephasing, first-tube cancellation cutoff and explicit partial/combined phase invoices. It supersedes older whole-Job completion invoicing and single-status assumptions for phased PSeq Jobs. Local migration applied after the authorized Job purge; connected/browser/physical/scientific acceptance and release remain separate, unverified gates.

@@ -154,6 +154,11 @@ builder.Services.AddScoped<LabOperationsRequestContext>();
 builder.Services.Configure<LabAssemblyOptions>(builder.Configuration.GetSection(LabAssemblyOptions.SectionName));
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<ILabAssemblyProvider, UnavailableLabAssemblyProvider>();
+builder.Services.AddSignalR(options => options.MaximumReceiveMessageSize = 16 * 1024);
+builder.Services.AddSingleton<LabAssemblySubscriptions>();
+builder.Services.AddScoped<LabAssemblyDelivery>();
+builder.Services.AddScoped<LabAssemblyReceiptService>();
+builder.Services.AddHostedService<LabAssemblyNotificationWorker>();
 builder.Services.AddSingleton<LabAssemblyProgress>();
 builder.Services.AddScoped<LabAssemblyService>();
 builder.Services.AddScoped<LabAssemblyProcessor>();
@@ -250,6 +255,15 @@ builder.Services
             ? null
             : clerkOptions.Audience;
         options.RequireHttpsMetadata = clerkOptions.RequireHttpsMetadata;
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                if (context.Request.Path == LabAssemblyNotificationHub.Path && context.HttpContext.WebSockets.IsWebSocketRequest)
+                    context.Token = context.Request.Query["access_token"];
+                return Task.CompletedTask;
+            }
+        };
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -407,5 +421,10 @@ app.MapMembershipEndpoints();
 app.MapDepartmentEndpoints();
 app.MapSessionEndpoints();
 app.MapControllers().RequireRateLimiting("api");
+app.MapHub<LabAssemblyNotificationHub>(LabAssemblyNotificationHub.Path, options =>
+{
+    options.Transports = Microsoft.AspNetCore.Http.Connections.HttpTransportType.WebSockets;
+    options.CloseOnAuthenticationExpiration = true;
+}).RequireRateLimiting("api");
 
 app.Run();

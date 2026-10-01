@@ -11,8 +11,8 @@ vi.mock('#/features/auth/session-context', () => ({
   getSelectedMembership: vi.fn(),
 }))
 vi.mock('./operations/CancellationDecisionPanel', () => ({ CancellationDecisionPanel: () => null }))
-vi.mock('./operations/PlatformQuoteDialog', () => ({
-  PlatformQuoteDialog: ({ open, sourceQuote }: { open: boolean; sourceQuote?: Quote }) => open
+vi.mock('./operations/PhaseQuoteDialog', () => ({
+  PhaseQuoteDialog: ({ open, sourceQuote }: { open: boolean; sourceQuote?: Quote }) => open
     ? <div role="dialog">Reissue revision {sourceQuote?.revision}</div> : null,
 }))
 

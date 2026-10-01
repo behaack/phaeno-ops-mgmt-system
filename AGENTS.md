@@ -83,6 +83,10 @@ Keep the owner focused on scientific meaning, sequencing and laboratory workflow
   existing tokens and patterns under `website/src/styles/`. Portal
   record-management conventions do not automatically apply to marketing pages.
 - Use pointer cursors for mouse-clickable actions and accessible labels for icon-only controls.
+- Use the shared `ActionMenu` from `frontend/src/components/ui/dropdown-menu.tsx` for contextual Actions menus, with `DropdownMenuTrigger asChild` wrapping a labeled `Button`. It supplies the dropdown chevron for multiple actions and renders one action directly without a chevron. Do not hand-author the chevron in new Actions triggers or bypass `ActionMenu` with a plain dropdown. Verify one visible indicator, accessible name, keyboard opening and focus return on touched menus.
+- Use shared `Field` spacing and `NativeSelect` sizing for new or touched single-line form fields. `Input`, `SearchableSelect` and `NativeSelect` use the same control styles. Do not mix local height overrides or per-control label margins within a form row; verify aligned control edges and label gaps with both text inputs and selects.
+- Use the shared Portal `Dialog` for in-page confirmations instead of `window.confirm`. Name the affected scope and consequence, initially focus the cancel action, and restore focus to the invoking control or a surviving adjacent control. Browser-required unload prompts remain browser-managed.
+- Every confirmation dialog must have three visible regions: a header with the title, a body explaining the affected scope and consequences, and an action footer. Do not put all explanatory content in `DialogHeader` and leave the body absent. The shared `DialogContent` moves direct `DialogDescription` children into the header; wrap a body description in a body container. Inspect the rendered dialog to verify that a meaningful `[data-slot="dialog-body"]` sits between the header and footer.
 - Keep required-field presentation consistent: label, tightly spaced required
   marker, control, and error. Every form with required fields must include a
   visible `* Required` legend. Place the legend in the footer of modal forms,
@@ -109,6 +113,8 @@ Keep the owner focused on scientific meaning, sequencing and laboratory workflow
 ## Verification
 
 Run only the checks appropriate to the change and requested scope. Standard commands are:
+
+- Clean up temporary build artifacts after use, including isolated verification output directories. Remove only artifacts created for the task that are no longer needed; preserve output required by a running application or development session. Verify the resolved cleanup path stays within the intended workspace before deleting it.
 
 - Backend: `dotnet build backend/PSeq.Operations.slnx` and `dotnet test backend/PSeq.Operations.slnx`.
 - Frontend: from `frontend/`, `pnpm run lint`, `pnpm run typecheck`, `pnpm run test`, and `pnpm run test:e2e`.

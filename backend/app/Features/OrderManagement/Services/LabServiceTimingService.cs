@@ -62,5 +62,5 @@ public sealed class LabServiceTimingService(PSeqOperationsDbContext db)
         value.OfferingId, value.FamilyId, value.OfferingVersion, value.ProductName, value.CatalogItemId, value.CatalogCode,
         value.CatalogItemVersion, value.Currency, value.UnitPrice, value.SpecimenCount, value.Subtotal, value.Tax, value.Total,
         value.AnalysisIds, value.IncludedOutputContract, value.MinimumTurnaroundDays, value.MaximumTurnaroundDays, value.CommittedAtUtc, value.SequencingRunCount ?? value.SpecimenCount,
-        value.DeliveryTargetBusinessDays);
+        value.DeliveryTargetBusinessDays, value.PriceProvenance);
 }

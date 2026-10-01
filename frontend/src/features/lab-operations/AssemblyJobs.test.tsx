@@ -4,12 +4,13 @@ import type { ReactNode } from 'react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 import type { AssemblyJob } from '#/api/lab-assembly'
-import { AssemblyJobProgress, AssemblyJobsList } from './AssemblyJobs'
+import { AssemblyJobPage, AssemblyJobProgress, AssemblyJobsList } from './AssemblyJobs'
 
-const mockApi = vi.hoisted(() => ({ list: vi.fn() }))
+const mockApi = vi.hoisted(() => ({ list: vi.fn(), allowed: false }))
+vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider: 'mock', session: { capabilities: { canManageLabOperations: mockApi.allowed } }, selectedOrganizationId: null }) }))
 vi.mock('#/api/lab-assembly', async original => ({ ...await original<object>(), getAssemblyJobs: mockApi.list }))
 vi.mock('@tanstack/react-router', () => ({ Link: ({ children }: { children: ReactNode }) => <a href="#job">{children}</a>, useNavigate: () => vi.fn(), useSearch: () => ({}) }))
-afterEach(cleanup)
+afterEach(() => { cleanup(); mockApi.allowed = false })
 const job = { id: 'test-job', sampleName: 'Sample A', sequencingRunNumber: 2, state: 'Running', isTerminal: false,
   cancellationRequested: false, progress: { percentage: 42, receivedAtUtc: new Date().toISOString(), sequence: 1 } } as AssemblyJob
 
@@ -40,4 +41,21 @@ it('shows unavailable progress after transient data is lost', () => {
   expect(screen.getByText('Progress unavailable')).toBeTruthy()
   expect(screen.queryByRole('progressbar')).toBeNull()
   expect(screen.getByText('Running')).toBeTruthy()
+})
+
+it('shows a confirmed cancellation outcome without claiming an unsent cancellation was received', () => {
+  mockApi.allowed = true
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  client.setQueryData(['assembly-job', job.id], { job: { ...job, state: 'Succeeded', isTerminal: true },
+    recipe: { name: 'TEST recipe', version: '1' }, inputs: [], events: [], canOperate: false,
+    availability: { available: false, message: 'Processing connection is not configured.' },
+    delivery: [{ kind: 'Cancel', attemptCount: 0, receivedAtUtc: null, confirmedAtUtc: new Date().toISOString(),
+      escalatedAtUtc: null, suppressed: false, lastAttemptAtUtc: null, nextAttemptAtUtc: null }],
+  })
+  render(<QueryClientProvider client={client}><AssemblyJobPage jobId={job.id} /></QueryClientProvider>)
+  expect(screen.getByText('Delivery and recovery')).toBeTruthy()
+  expect(screen.getByText('Cancellation request · Outcome confirmed')).toBeTruthy()
+  expect(screen.getByText(/0 delivery attempts/)).toBeTruthy()
+  expect(screen.queryByText(/Recovery continues until/)).toBeNull()
+  client.clear()
 })

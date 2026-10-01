@@ -1,5 +1,97 @@
 # Order Management Plan
 
+## Service catalog discovery — September 30, 2026
+
+The Company's Add negotiated price Service dropdown also excludes inactive services, with backend validation against stale or direct inactive-service creation. Existing price records remain readable/editable with their saved inactive service fixed. Current catalog status is included in the existing pricing response; no persistence change is required.
+
+The catalog header contains an accessibly named search textbox without a visible label and Show inactive; inactive items are hidden by default. Search matches names, descriptions, permanent references and displayed sales units without regard to case. Filters combine, apply without submission, persist through item details and Back to service catalog, and Clear all restores the active-only default. Empty configuration, no search matches and no active items have distinct messages. Both list and item headers group title/description beside their action so text wraps in the available column instead of being pushed below the button. This presentation change uses the existing configuration response and changes no persisted model or permissions. The configuration guide corrects its older sales-unit wording to match the implemented Per sample service pricing.
+
+## Review corrections — September 30, 2026
+
+The owner authorized fixes for three reviewed edge cases. Accepted sample/source/run counts and quote history remain unchanged when a phase is cancelled. The preparation workspace instead returns the outstanding source/run scope and active phase IDs; pairing, finalization, laboratory authorization and new shipments require only those cohorts. Existing cancelled sample/pair identities remain recorded. An unscoped phase without a named allocation must have its sources/runs established before partial cancellation can be approved; do not guess the removed composition.
+
+Customer Draft conflict recovery loads current server values and preserves local edits through a field-level merge, keeping source rows and storage choices together. Save and Review stay blocked until the user reviews the latest saved changes and acknowledges the refreshed Draft. The refreshed version is adopted only then. Phase invoices reconcile rounding against prior non-void invoices with the same issued tax rate; a new approved rate does not recalculate earlier invoices.
+
+Regression coverage and follow-up verification are recorded in [the review-fix run](../testing/runs/2026-09-30-order-review-fixes.md). This correction changes no persisted model, dependencies or authentication and requires no migration or existing-order conversion.
+
+## Customer-initiated standard orders — confirmed September 30, 2026
+
+Status: implemented in source. On September 30, 2026 the owner lifted the verification hold and requested migration application, tests and builds, followed by resolution of the remaining 25 backend failures. The two pending additive migrations were applied to the configured local development database, with a preserved backup and no existing-order conversion. The corrected backend build passes with zero warnings/errors, and the complete PostgreSQL-enabled rerun passes 1,157 cases with zero failures and two environment-specific skips. All original failures are closed in [the current run](../testing/runs/2026-09-30-order-management-verification.md); broader connected business acceptance remains open. No commit or deployment is included. Earlier implementation checkpoints below describe the hold as it stood at that time.
+
+### Customer experience
+
+Use one bounded modal with Scope and Review states, preserving the list context. This is appropriate because the Customer orders one service, one sample type and one scope without phase configuration or proposed-price entry. The selected Department identifies the order. Choose an available service, enter a unique Job name and biological-source sample counts, and complete handling/safety notes using the Sample type's configured storage default where applicable. Exact Sample IDs and physical tubes remain part of preparation after placement.
+
+Customers cannot create or configure multiple phases. Every Customer-created order has one scope and one included run per sample. Do not expose phase controls, a run-count editor or proposed-price controls in this flow. Sales-originated phased orders can remain visible to the Customer with their agreed scope; this restriction does not remove Customer access to those orders.
+
+Show the effective per-sample price, included service (one library preparation, one run and data assembly), sample count, subtotal, applicable tax and total before placement. Save draft retains incomplete work without accepting prices or authorizing work. Review order refreshes the authoritative price and availability. Place order confirms that review and records the accepted standard commitment without a separate manual quote-preparation step. Later price/configuration changes require a new review before placement and cannot change accepted order terms. Preserve the existing kit-receipt, sample/tube pairing, shipment and result-delivery workflow after placement.
+
+### Service pricing
+
+The configured standard service price applies when no current negotiated service price exists for the Customer. Negotiated pricing must be stored per specific catalog service at Organization scope or at a Department belonging to that Organization. Phaeno Commercial staff maintain the rates from the Company's service-pricing context; Customers see their applicable effective price and cannot edit it. Keep these commercial rates separate from service entitlements and scientific-definition versions.
+
+If only one applicable negotiated price exists, use it. If both Organization and selected-Department prices exist, use the lower of those two. Another Department's price must never affect this order. If neither exists, use the standard catalog price. Do not substitute Department priority for the owner's lower-price rule. Track active/effective pricing and audit changes; freeze the chosen unit price and its source in the accepted order's pricing snapshot. Negotiated pricing does not itself grant ordering permission or bypass readiness.
+
+Example: a standard price of USD 1,000, Organization price of USD 900 and selected-Department price of USD 850 yields USD 850 per sample. With Department price USD 950, the Organization's USD 900 wins. Without either negotiated rate, USD 1,000 applies.
+
+### Customer sample limit and Sales boundary
+
+Configure the maximum Customer-order sample count on each service's commercial settings. No numerical limit has been selected in this conversation; do not guess one or reuse the 10,000-record technical cap as a commercial policy. The service must have an explicit positive configured limit before new Customer standard placement is available. Count samples across all biological-source rows; physical tubes, reserve tubes and sequencing batches do not increase that count. Orders at the configured limit are allowed; orders above it require Sales negotiation and cannot be placed through Customer self-service, even when a stored negotiated unit price exists.
+
+Display the limit near the sample counts and show “For orders above [limit] samples, contact your sales representative for negotiated pricing.” Retain entries when the limit is exceeded and block Customer placement. Additional sequencing runs also require Sales pricing; do not make them an alternative way to expand Customer standard orders. Sales retains the dedicated Draft workflow, phase configuration and separate additional-run pricing.
+
+### Engineering and acceptance scope
+
+Pre-implementation evidence: `/lab-services/new` already opens `LabJobDetailsDialog`; the older unused `LabServiceCreatePage` does not determine the current entry workflow. Standard preview/placement and accepted commercial snapshots exist. Lab Service prices currently come from the catalog only. Organization/Department service entitlements govern permission and do not contain negotiated Lab Service rates. Partner PSeq Kit negotiated offerings are a separate business model and must not become Customer Lab Service price records.
+
+Implement service-scoped commercial negotiated-price records, a service-owned Customer sample limit, backend price resolution and limit enforcement, current-preview concurrency evidence, immutable accepted price provenance, Company pricing administration and the compact Customer scope/review form. Persisted changes require additive migrations and ERD updates. Existing orders remain excluded from conversion. Update Customer help only with implemented behavior; keep this proposed behavior in the plan until implemented.
+
+Acceptance must cover: standard fallback; Organization-only and Department-only negotiated pricing; lower-price resolution with both; other-Department isolation; expired/future/inactive rates; no permission gained from a price record; missing sample-limit setup; exactly the limit versus one sample above it; retained Draft entries after a blocked review; Customer rejection of extra runs, phase creation and submitted price overrides; repricing between review and placement; accepted-price preservation; duplicate/uncertain placement recovery; keyboard, focus, narrow layout and themes. Success means an eligible Customer can place a standard order at the displayed applicable price without Commercial quote preparation, with zero price-resolution or sample-limit bypasses. The current run distinguishes automated source/API evidence from connected Customer acceptance, which remains pending.
+
+
+### Implementation checkpoint — September 30, 2026
+
+- The service catalog owns nullable **Maximum Customer samples**. Null explicitly disables Customer standard placement; no default was guessed. It is independent of scientific-definition revisions.
+- Commercial staff maintain audited USD negotiated rates under **Company → Services → Lab service pricing** at Organization or selected-Department scope. Serializable writes reject overlapping active windows for the same service and scope. Pricing records do not grant entitlements.
+- New Customer entry uses a Scope/Review modal with no phase, run-count or proposed-price controls. A Job name is required to save; other fields may remain incomplete. Draft JSON is tenant/Department scoped. Customer payloads reject unknown phase/run/price properties. Partner requests and existing Sales-managed orders retain their entry workflow.
+- Review resolves the selected Sample type storage default on the server, fixes one run per sample and validates a single scope. Customer placement rechecks readiness, membership, maximum sample count, effective negotiated price and the existing current-review token within the serializable idempotent commitment transaction. The accepted snapshot retains price provenance and selected-rate version. Retry placement preserves the same key and request when the outcome is uncertain.
+- The additive authored migration is `20260930233000_AddCustomerStandardOrdering`; it adds catalog sample limits, Customer Draft JSON and `lab_service_negotiated_prices`. The complete model snapshot/designer and generated ERD were updated. It depends on the pending separate sample/additional-run pricing migration. Neither migration is applied in this checkpoint.
+- Authored domain and component coverage covers negotiated resolution/isolation/windows, inclusive limits, incomplete Drafts, disallowed client overrides, price evidence, Draft storage and reviewed placement. PostgreSQL persistence coverage and the living verification plans track further acceptance. Source review and diff whitespace review are the only validation here; no build, lint, typecheck, suite or browser acceptance was run.
+
+## Pricing clarification — September 30, 2026
+
+The owner clarified that phased and non-phased standard pricing is per sample, including one library preparation, one run and data assembly. Price only additional runs separately from the existing prepared library, subject to remaining material. Draft proposals, formal review, Change quotes and retained quote/Finance portions use separate sample and additional-run components. Standard direct placement covers one run per sample; additional runs require explicit pricing review. See `MULTI-PHASE-LAB-JOBS-PLAN.md` for scope, the additive rate migration and the owner-requested hold on tests/builds. Existing orders are excluded from conversion; final compilation, migration application and runtime activation remain pending.
+
+## Sales Draft entry decision — September 30, 2026
+
+The owner authorized dedicated-page initial Sales entry, a phaseless default, optional phase count and per-phase biological sources, sample counts, sequencing runs per sample and pricing. **Save draft** retains incomplete work before **Submit for pricing**. Phase-specific final rates and turnaround remain part of one Customer quote. The documented complexity exception and detailed scope are owned by `MULTI-PHASE-LAB-JOBS-PLAN.md`. Existing orders are excluded from conversion and deletion. No Git mutation, automated test execution or deployment is authorized by this implementation request.
+
+## Sequential phase Jobs — planning, September 30, 2026
+
+The owner selected one commercial order and Job with sequential phases, each
+completed by Portal results delivery before the next begins. Capture phase scope,
+required samples/tubes, accepted priced lines and phase TAT for operations and
+invoicing. Each phase's TAT starts on complete physical receipt of its required
+samples. Support cancellation requests for unstarted phases only until the first
+required sample/tube is received. Phaeno chooses invoice timing and amounts
+allocated to accepted phase scope, including upfront and completion portions,
+without creating a contract-management system or collecting additional general
+contract terms. The first implementation partitions the accepted Job sample
+roster into distinct phase cohorts with configurable names, ordering and sample
+quantities; the 350-sample split of 50/150/150 is an example, not a fixed template.
+See [the owning phase plan](MULTI-PHASE-LAB-JOBS-PLAN.md) for confirmed rules,
+cancellation/invoice handling, receipt-before-activation implications and the
+implementation boundary. The generalized product model is ready for implementation
+within that scope. Mutually agreed rephasing may split, merge, reorder or
+redistribute unsent future cohorts of an open Job, even while an earlier
+phase processes. The first required tube sent fixes that sample's assignment;
+in-transit and received-but-unprocessed samples are ineligible. Preserve sent,
+started and delivered work, original dispatch/receipt/deadline history and issued
+invoices; retain the exact accepted before/after plan and
+reconcile remaining sample and billing scope. Completed Jobs cannot be rephased.
+This is future scope; current order, quote, invoice and single-phase completion
+behavior is unchanged.
+
 September 29, 2026 superseding decision for new PSeq Lab Service approvals: Customer review presents one delivery target in business days. The agreed target is saved on the initial quote or standard placement before Customer approval. Its due date is calculated after Phaeno physically receives all required tubes for all samples, using the Phaeno observed-holiday calendar. Existing placed Jobs retain their prior accepted terms. See `LAB-JOB-DEADLINE-TRACKING-PLAN.md` for the receipt trigger, calendar, historical behavior, and acceptance criteria.
 
 The approved four-stage Customer quote-to-shipment redesign is tracked in
@@ -3259,3 +3351,5 @@ The Order Settings sidebar now calls Defaults Quote & workflow. It retains quote
 The catalog modal uses one field per row at every viewport size. The catalog editor now uses an explicit Status selector (Active/Inactive) and explains new-pricing availability. Inactive item details give the exact activation path. Creation selects PSeq Lab Service or Other catalog item: the canonical PSeq reference/unit are supplied automatically, while other items receive a generated ITEM UUID reference retained through retries and renames. Existing references are preserved and shown under Reference details, outside routine editing. Sales units use predefined per-specimen, per-kit, per-item and per-service choices plus saved catalog units for compatibility. PSeq uses the required specimen unit. Existing API contracts, uniqueness/concurrency validation, permissions and saved records are unchanged. No migration or automatic activation is performed. Request instructions and Phaeno configuration help match the controls.
 
 Verification: TypeScript, scoped ESLint, generated documentation consistency and whitespace checks passed. Signed-in browser inspection confirmed the edit and create dialogs, one field per row, fixed PSeq unit, no code input, predefined unit choices, and Status changes enabling Save item. No catalog save was submitted during verification; existing pricing and activation were not changed by the agent. No browser errors were reported. Automated suites were not run under repository policy.
+
+September 30 local phase implementation: [MULTI-PHASE-LAB-JOBS-PLAN.md](MULTI-PHASE-LAB-JOBS-PLAN.md) now owns the implemented sequential cohort extension, derived mixed progress, phase-specific receipt/TAT/deadline, unsent-only mutual rephasing, first-tube cancellation cutoff and explicit partial/combined phase invoices. It supersedes older whole-Job completion invoicing and single-status assumptions for phased PSeq Jobs. Local migration applied after the authorized Job purge; connected/browser/physical/scientific acceptance and release remain separate, unverified gates.

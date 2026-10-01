@@ -304,6 +304,13 @@ public class PersistenceTests
             .Where(foreignKey => foreignKey.PrincipalEntityType.ClrType.Assembly != laboratoryAssembly);
         Assert.All(crossSchemaForeignKeys, foreignKey =>
         {
+            if (foreignKey.DeclaringEntityType.ClrType == typeof(LabJobDeadlineChange))
+            {
+                Assert.Equal(typeof(LabJobPhase), foreignKey.PrincipalEntityType.ClrType);
+                Assert.Equal([nameof(LabJobDeadlineChange.LabJobPhaseId)], foreignKey.Properties.Select(property => property.Name));
+                Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
+                return;
+            }
             Assert.Contains(foreignKey.DeclaringEntityType.ClrType, new[]
             {
                 typeof(LabKitAssemblyWorkflow),
@@ -531,7 +538,9 @@ public class PersistenceTests
             nameof(ResultOutputPackage.LabSampleId),
             nameof(ResultOutputPackage.PackageVersion));
         AssertUniqueIndex<Invoice>(dbContext, nameof(Invoice.InvoiceNumber));
-        AssertUniqueIndex<Invoice>(dbContext, nameof(Invoice.LabServiceOrderId));
+        var invoiceOrderIndex = Assert.Single(dbContext.Model.FindEntityType(typeof(Invoice))!.GetIndexes(),
+            index => index.Properties.Select(property => property.Name).SequenceEqual([nameof(Invoice.LabServiceOrderId)]));
+        Assert.False(invoiceOrderIndex.IsUnique); // Finance may issue separate accepted phase portions.
         AssertUniqueIndex<PaymentReceipt>(
             dbContext,
             nameof(PaymentReceipt.Source),

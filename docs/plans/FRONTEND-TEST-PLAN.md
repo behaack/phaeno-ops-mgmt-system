@@ -1,5 +1,54 @@
 # Frontend Test Plan
 
+## POMS assembly notifications and recovery — September 30, 2026
+
+`use-assembly-notifications.test.tsx` covers authenticated watched-job subscription, fresh access token retrieval, HTTP invalidation, foreign notices, reconnect, organization change, late events after cleanup, mock/unauthorized/disabled sessions, initial failure retry and cleanup. `AssemblyJobs.test.tsx` includes delivery/outcome presentation for an unsent cancellation resolved by a terminal race. Existing assembly progress/setup/filter tests remain included. Run lint, typecheck, the three focused assembly test files, documentation checks and the production frontend build at the checkpoint. Live browser-to-hub/DPS acceptance remains separately recorded in the [run](../testing/runs/2026-09-30-poms-assembly-messaging-foundation.md).
+
+## Service catalog header filters — September 30, 2026
+
+Negotiated-price creation offers active catalog services only and explains when none are available. Existing prices retain a fixed inactive service option for editing. Verify against the updated API response after local restart; no compatibility fallback is added for the preceding response shape.
+
+Search and Show inactive are implemented in the Service catalog header. Inactive items are excluded by default, text search and status inclusion combine, and URL filters survive item detail/return. Clear all restores defaults. List/detail title and description share the text column beside the action button. No new unit tests are added for this reversible presentation change; scoped lint, type checking and manual browser checks are the appropriate verification. Automated suite execution is deferred for this change.
+
+Verification: frontend type checking and ESLint pass. The backend solution builds in an isolated artifacts folder with zero warnings/errors; the default output is locked by the running Visual Studio/IIS Express session. Help is regenerated and checked. No automated tests or frontend production build were run for this change.
+
+## Order review regressions — September 30, 2026
+
+Customer Draft coverage now checks a 409 conflict, preservation of local notes, incorporation of another administrator's sample-count change, blocked Save/Review until acknowledgement, and retry using the reviewed current version. Form coverage preserves a locally edited source collection as a whole when the server reorders rows. `LabJobPairedPreparation.test.tsx` checks that cancelled saved pairs/runs are excluded from required counts and finalization uses the active source scope. Results and static checks are recorded in [the review-fix run](../testing/runs/2026-09-30-order-review-fixes.md).
+
+## Order management verification checkpoint — September 30, 2026
+
+The owner lifted the tests/builds hold. Current type checking, lint, production build, generated-help consistency and full unit-suite results are recorded in [the run ledger](../testing/runs/2026-09-30-order-management-verification.md). Revised coverage follows the Customer standard Scope/Review modal, Sales dedicated Draft route, per-sample pricing and phase-based completion readiness. Customer modal coverage verifies its accessible name. Shared dialog regression coverage ensures nested conditional fragments keep the footer outside the scrolling body without duplicate keys. Existing quote-download coverage isolates unrelated phase reads.
+
+Automated checks do not close the connected acceptance cases below. Earlier hold-only checkpoints remain historical.
+
+## Customer standard ordering — September 30, 2026
+
+Authored customer-standard-order-form.test.ts checks incomplete Draft payloads, storage defaults/exceptions, source quantities and absence of phase/run/price inputs. CustomerStandardOrderDialog.test.tsx covers Draft saving, above-limit retained entries with review blocked, inclusive-limit review and server-evidence placement. Existing request-dialog coverage now explicitly uses Partner context; the Customer uses the new standard-order flow. Pending Company pricing editor coverage must exercise scope immutability, date/status edits, stale-write review and read-only access. Pending Customer component coverage includes missing sample limits, blocked Finance readiness, repricing, uncertain placement with retained key/payload, HTML discard and focus restoration. No typecheck, lint, build, suite, browser or generated-help projection verification was run under the owner hold.
+
+
+## Sample service and additional-run pricing — September 30, 2026
+
+Authored `sample-service-pricing.test.ts` distinguishes twenty samples with one run each from one sample with twenty runs, requires a separate extra-run rate, and checks currency rounding. Updated `commercial-draft.test.ts` checks per-phase totals, unfinished extra-run proposals, and required submission rates. Intake text assertions now use price per sample. Authored `PhaseQuoteDialog.test.tsx` covers phased/non-phased line quantities, applicable-rate visibility and rejection of missing extra-run pricing. All new/updated automated coverage remains unrun. Further component coverage must check clearing proposals, quote reissue defaults, both-rate amendment reasons and retained dirty entries on failures.
+
+The owner halted builds and tests during implementation. No further typecheck, lint, build, suite or browser verification will run until reauthorized. Final source and generated help projection verification remain pending.
+
+## Compact Draft scope and handling — September 30, 2026
+
+Local verification passed for the configured Sample type preview, optional exception prefilling, retained exception text across selection changes, reverting to defaults and Add source pointer/keyboard behavior. Notes and Safety align side by side above full-width Storage; narrow reflow preserves that reading order without horizontal overflow at the observed 436 px CSS viewport. Type checking, scoped lint and documentation checks passed. These were unsaved local checks; save/reopen, pricing submission, 100-source limit and both-theme connected acceptance remain pending.
+
+Use phases and Number of phases share a wrapping row in a compact card; Add source is at the trailing edge of the Biological-source composition legend and the fieldset keeps its accessible name. Handling uses compact textareas and a visible Sample type storage default; the exception textarea appears only for Use different storage requirements. Nullable storage mode survives save/reopen without inventing an extra stored flag. `commercial-draft.test.ts` covers default mode, incomplete exception saves, submission validation and completed exceptions. Automated execution remains pending. Check changing the selected type while using defaults, preserving an entered exception, reverting to defaults, narrow reflow, keyboard entry, required-field focus and the source-row limit in the browser.
+
+## Shared Actions indicator and Draft field alignment — September 30, 2026
+
+`ActionMenu` supplies a decorative down-chevron while preserving the direct-button and empty-action rules. Extended `action-menu.test.tsx` covers automatic indicators with disabled items, existing-chevron deduplication, changing permission-dependent action counts and trigger refs. Execution remains pending under the request-only test rule. Draft identity fields now use shared `Field` spacing and `NativeSelect` sizing, with shared single-line styles also used by `Input` and Customer search. Local browser measurements confirmed approximately 32 px heights, 8 px label gaps and aligned paired-row edges; the four controls retain equal dimensions and alignment after narrow reflow at the observed 436 px CSS viewport, without horizontal overflow. Both phase Actions had one chevron, keyboard opening and Escape focus return passed. Phase removal, count reduction and clearing Use phases now use Portal HTML confirmations; local cancellation, retained-value and focus-recovery evidence is recorded below. Type checking and lint do not establish end-to-end acceptance.
+
+## Sales Draft entry — September 30, 2026
+
+Local browser checks for phase HTML confirmations passed: each has a visible title header, consequence body and action footer; initial focus is Cancel. Cancel, Close and Escape retained all unsaved scope and proposed values. Confirmed removal deleted only the selected phase and focused a surviving phase action; confirmed count reduction retained the first phases and focused the count; disabling phases retained the first scope and proposed price and focused Use phases. Trigger labels continue to name the menu; focus restoration uses data attributes without replacing Radix-generated trigger IDs. Keyboard Tab remained in the dialog. These checks used unsaved local entries, with no persistence or backend acceptance claim. Screenshot capture was unavailable because the browser capture command timed out. Final type checking, scoped lint, documentation generation/check and diff whitespace checks passed; automated suites remain unrun.
+
+Commercial intake and CRM handoff navigate to a dedicated entry page. Obsolete staff-modal assertions were removed while retaining Customer request coverage. Authored `commercial-draft.test.ts` covers incomplete save versus pricing requirements, different phase run counts and partial proposed totals, repeated sources across phases versus duplicates within a phase, unfinished proposals and purchased-run limits. Automated execution is pending under the request-only test rule. Component coverage remains required for save/reopen, phase resize/reorder, dirty navigation, stale saves and submission recovery. Build, type checking and lint do not establish acceptance.
+
 ## Shipment confirmation labels and cancellation menu — September 29, 2026
 
 Existing sample-shipping component assertions use **Review and confirm shipment contents** and **Confirm and create receiving sheet**. The Lab Job action-menu assertion checks that **Request cancellation** uses the destructive item treatment while preserving its disabled state. Component execution remains pending under the request-only test rule.
@@ -2930,6 +2979,13 @@ Authored helper cases for common amounts plus sample overrides, unknown/zero amo
 
 ## Jobs delivery deadlines — September 18, 2026
 
+September 30 list storage display: each card shows Current status as primary
+metadata, separate from deadline risk, and the complete recorded freezer-box
+summary or Not recorded. Review status labels, single/multiple/no-box states,
+long identifier wrapping, Active/Closed cards, and unchanged Job navigation.
+This bounded read-only display change adds no automated test; suite execution is
+not requested. Use scoped lint, TypeScript and connected browser review.
+
 Authored `job-deadlines.test.ts`: URL filter/page parsing, invalid values and explicit cancellation. Typecheck and targeted lint cover Jobs, deadline detail/modal and additive commercial timing fields. Automated test execution not requested.
 
 Jobs header follow-up: container lookup removed and Clear filters moved from pagination footer into header controls. Use targeted lint/typecheck; no new tests for this reversible layout change.
@@ -3072,6 +3128,13 @@ Focused stock-kit tests now cover the At Phaeno default, every dispatched status
 
 ### Single-use master mix (2026-09-24)
 
+September 30 header layout: Start master mix remains at the title's upper right,
+the description wraps beside it, and name/barcode plus status filters fill the
+shaded header. This reversible layout adjustment adds no automated test. Scoped
+lint/typecheck passed; connected desktop inspection and 520 px DOM measurements
+confirmed alignment and full-width narrow fields without horizontal overflow.
+The start dialog opened and cancelled without creating a preparation.
+
 Component coverage remains to verify approved workflow selection and explicit adoption of a newer revision in the Lab step editor, ready-mix filtering, amount/remaining validation for batch and per-sample entries, tray-to-mix links, and the create, ingredient, step, complete and discard dialogs. The September 24 full shared-checkout frontend unit suite passed 1,220 tests across 189 files. The exact release tree passed 1,217 tests across 189 files; lint, typecheck, documentation consistency, and production build passed. Those tests are general regression evidence; dedicated master-mix component cases remain to be added.
 
 Gap-closure component coverage should verify recipe ingredient editing and approval review, full container barcode scan, search/status/overdue paging with list-state restoration, actor and correction history, expired-mix blocking, supervisor deviation and verified-void/discrepancy dialogs, persisted uncertain ingredient recovery across reload, and refreshed ready-mix availability after a stale tray save. Verify the retirement dialog explains that open trays may use Ready mixes until cutoff, the new-tray workflow picker excludes a workflow pinned to a retired recipe, and a stale picker refreshes after a rejected create. Include exact text transport for recipe, ingredient, yield and measured discard amounts, decimal case `0.1 × 3 = 0.3`, and multiple fields using the same mix. These component checks remain unrun under the repository's request-only test rule.
@@ -3170,3 +3233,7 @@ Manual acceptance should show the quote's business-day target on the Job and in 
 ## September 29 requested full component run
 
 The owner requested the complete frontend suite. The Customer quote-acceptance dialog fixture now selects its named case correctly and exercises the confirmed Sample type, delivery address, and retry interaction. The full Vitest rerun passed **1,249 of 1,249** tests. ESLint, TypeScript checking, documentation generation/check, and the Production UI build also pass. This is local component and build evidence; the separate full browser run and hosted acceptance are recorded in the E2E and release plans.
+
+## September 30 phase workspace
+
+Authored, not executed: LabPhaseDialogs.test.tsx checks Customer Received aggregation and invoice portions limited to active remaining scope. LabCustomerProgressPanel tests now show Mixed without selecting one whole-Job stage. Static type checking and lint cover the phase editor/review, cancellation decision, scoped Finance Job picker, phase invoice dialog and Jobs grouping. Manual responsive/keyboard acceptance and stale-response/retry interaction remain unverified.

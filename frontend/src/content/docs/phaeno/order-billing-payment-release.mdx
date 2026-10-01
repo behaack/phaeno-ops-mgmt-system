@@ -16,15 +16,21 @@ When Attention queues are enabled, an overdue invoice, unapplied receipt or reco
 
 ## Configure and issue PSeq documents
 
+Sales saves proposed sample and additional-run prices in the initial order Draft. For both phased and non-phased orders, the sample price includes one library preparation, one sequencing run and data assembly. Only runs beyond the first per sample are charged at the separate additional-run rate and use the existing prepared library while material remains available. The pricing operator reviews sample and additional-run quantities, both proposed and final rates, and turnaround before issuing one quote. Standard catalog placement covers one run per sample; extra runs require pricing review. Change quotes for added samples use the same pricing split. Phase subtotals reconcile to the order subtotal. A price amendment requires a recorded reason. Customer acceptance and Finance invoicing remain separate from saving or submitting the Draft.
+
 - Record billing contact/address and Net 30 terms by default.
 - Record **Taxable**, **Exempt**, or **Non-taxable**, including the approved rate or exemption evidence. Finance approval is required before the tax determination can be used.
 - If the profile is complete and approved at quote issuance, POMS includes calculated tax and freezes billing, tax, terms, currency, and configuration version in the quote. Zero calculated tax is valid.
 - If the profile is not ready, issue an explicitly pre-tax quote. Complete and approve the profile before invoicing; POMS then calculates tax and freezes the current billing terms in the invoice.
-- Job completion idempotently creates one numbered invoice and immutable PDF. Due date is completion plus the applicable snapshotted terms.
+- Billing Operators explicitly issue one or more phase invoices. Due date is invoice issuance plus the applicable snapshotted payment terms. Job and phase completion do not automatically create invoices.
 
 Saving billing changes clears approval. After Finance approves the current profile, the approval badge and date confirm its saved state; the reminder to approve is removed.
 
-A Commercial Operator can open an In progress or Results available Job in Order Operations and choose **Complete Job**. Review the sample outcomes and billing details, then choose **Confirm completion**. An empty roster or any sample without a final Completed, Failed, Rejected, or Cancelled outcome blocks confirmation. POMS also checks current Lab outcomes and unresolved holds when you confirm. Successful processing becomes final after the applicable scientific approval. Failed processing remains billable at the accepted price; any credit or replacement requires a separate reviewed decision. If the Job changed, choose **Reload Job**, review its current outcomes and reopen completion. If the connection fails before completion is confirmed, retry the same open Job to recover the existing operation.
+When billing a quote in portions, tax rounding reconciles across non-void invoices issued at the same rate, so splitting the subtotal does not change its total tax. A later approved rate applies to the new billing portions without recalculating tax on earlier invoices.
+
+In **Finance → Invoices and aging**, select **Issue phase invoice**. Find the accepted Job, choose it and select **Choose billing portions**. Enter the agreed subtotal for one or several active phases; zero omits a phase. Portions cannot exceed the remaining accepted subtotal. Use this for upfront, completion or mixed billing according to the agreement handled outside POMS. The resulting numbered invoice and PDF retain the original phase and price snapshots. Retrying an uncertain issuance recovers the same operation. Billing-only staff can use this workflow without commercial or laboratory access. Cancelled scope is reviewed through separate invoice adjustments.
+
+A Commercial Operator chooses **Complete Job** only after every non-cancelled phase has delivered every required sample/run result through the Portal and pending phase cancellation requests are resolved. Failed or rejected processing alone does not satisfy delivery. Approved cancelled scope remains recorded separately; an entirely cancelled Job closes as cancelled. Completion does not require billing setup or payment.
 
 POMS calculates the approved tax rate without a tax engine. Never edit an issued invoice; use an append-only credit, debit, or write-off adjustment.
 

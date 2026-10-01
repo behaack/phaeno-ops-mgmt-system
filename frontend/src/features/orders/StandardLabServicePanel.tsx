@@ -73,6 +73,7 @@ export function StandardLabServicePanel({
   const committed = order.standardCommercialSnapshot
   const canReview =
     !readOnly &&
+    !order.customerDraft &&
     !order.placedAt &&
     ['DraftRequest', 'ChangesRequested'].includes(order.status) &&
     (order.canEdit || order.canSubmit || order.canPlaceStandardOrder)
@@ -196,6 +197,7 @@ export function StandardLabServicePanel({
       client.invalidateQueries({ queryKey: ['lab-service-order', order.id] }),
     ])
   }
+  if (order.customerDraft && !committed) return <Card><CardHeader><CardTitle>Order Draft</CardTitle><CardDescription>{order.customerReference} · {order.requestedSpecimenCount} samples · one run per sample</CardDescription></CardHeader><CardContent><p className="text-sm text-muted-foreground">Use Edit Draft to complete the scope and review the applicable price before placing the order. Saving a Draft does not authorize laboratory work.</p></CardContent></Card>
   if (!committed && !canReview) return null
   return (
     <Card className="mb-5">
@@ -206,8 +208,7 @@ export function StandardLabServicePanel({
             : 'Standard PSeq Lab Service'}
         </CardTitle>
         <CardDescription>
-          Specimen processing and data assembly are included in one per-specimen
-          price.
+          One library preparation, one sequencing run and data assembly are included in the price per sample.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -224,9 +225,10 @@ export function StandardLabServicePanel({
             <p className="whitespace-pre-wrap text-sm">
               {committed.includedOutputContract}
             </p>
+            {committed.priceProvenance ? <p className="text-sm text-muted-foreground">Accepted {committed.priceProvenance.source === 'Standard' ? 'standard service price' : `${committed.priceProvenance.source.toLowerCase()} negotiated price`}. Later price changes do not affect this commitment.</p> : null}
             <p className="text-sm text-muted-foreground">
               {committed.deliveryTargetBusinessDays
-                ? <>Delivery target: {committed.deliveryTargetBusinessDays} business days after Phaeno physically receives every required tube for all samples. Monday–Friday, excluding Phaeno holidays.</>
+                ? <>Delivery target: {committed.deliveryTargetBusinessDays} business days after Phaeno physically receives every required tube for a phase. Review the Phases card for phased commitments. Monday–Friday, excluding Phaeno holidays.</>
                 : <>Published turnaround: {committed.minimumTurnaroundDays}–{committed.maximumTurnaroundDays} days after scientific acceptance.</>} Accepted{' '}
               {new Date(committed.committedAtUtc).toLocaleDateString()}.
             </p>
@@ -272,7 +274,7 @@ export function StandardLabServicePanel({
                 {selected ? (
                   <OfferingSummary
                     offering={selected}
-                    quantity={order.requestedSequencingRunCount ?? order.requestedSpecimenCount}
+                    quantity={order.requestedSpecimenCount}
                   />
                 ) : null}
                 {preview.isLoading ? (
@@ -366,7 +368,7 @@ export function StandardLabServicePanel({
               <>
                 <OfferingSummary
                   offering={review.preview.offering}
-                  quantity={review.preview.sequencingRunCount || review.preview.specimenCount}
+                  quantity={review.preview.specimenCount}
                 />
                 <PreviewTotal preview={review.preview} />
               </>
@@ -492,10 +494,11 @@ export function OfferingSummary({
         sources: {offering.allowedBiologicalSources.join(', ')}.
       </p>
       <p>
-        Delivery target: {offering.maximumTurnaroundDays} business days after Phaeno physically receives every required tube for all samples. Monday–Friday, excluding Phaeno holidays.
+        Delivery target: {offering.maximumTurnaroundDays} business days after Phaeno physically receives every required tube for a phase. Review the Phases card for phased commitments. Monday–Friday, excluding Phaeno holidays.
       </p>
       <p className="text-base font-semibold">
-        {money(offering.unitPrice, offering.currency)} × {quantity} sample-sequencing runs ={' '}
+        Standard sample-service subtotal:{' '}
+        {money(offering.unitPrice, offering.currency)} × {quantity} samples ={' '}
         {money(offering.unitPrice * quantity, offering.currency)}
       </p>
       <p className="text-muted-foreground">

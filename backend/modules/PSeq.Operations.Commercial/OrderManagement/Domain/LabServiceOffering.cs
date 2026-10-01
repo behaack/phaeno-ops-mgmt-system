@@ -101,7 +101,7 @@ public sealed record ConfiguredLabServiceSnapshot(
     string AnalysesSnapshotJson, string IncludedOutputContract, int MinimumTurnaroundDays,
     int MaximumTurnaroundDays, DateTime CommittedAtUtc,
     IReadOnlyList<Guid>? SupportedSampleTypeIds = null, int? SequencingRunCount = null,
-    int? DeliveryTargetBusinessDays = null);
+    int? DeliveryTargetBusinessDays = null, LabServicePriceProvenance? PriceProvenance = null);
 
 public sealed class LabServiceSampleType
 {

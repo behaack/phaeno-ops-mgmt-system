@@ -9,5 +9,7 @@ export function useCrmPermissions() {
   return {
     canAccess: Boolean(isPhaeno && session?.capabilities.canAccessCrm),
     canAdminister: Boolean(isPhaeno && session?.capabilities.canAdministerCrm),
+    canManageLabServicePricing: Boolean(isPhaeno && session?.capabilities.canOperateCommercialWork),
+    canViewLabServicePricing: Boolean(isPhaeno && (session?.capabilities.canOperateCommercialWork || session?.capabilities.canManageOrderConfiguration)),
   }
 }

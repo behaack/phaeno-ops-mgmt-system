@@ -16,7 +16,7 @@ public sealed class LabAssemblyWorker(IServiceScopeFactory scopes, ILabAssemblyP
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(Math.Clamp(options.Value.PollSeconds, 2, 60)));
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
-            if (!options.Value.WorkerEnabled || !provider.Availability.Available) continue;
+            if (!options.Value.WorkerEnabled) continue;
             try { await PumpAsync(stoppingToken); }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { return; }
             catch (Exception error) { logger.LogError("Assembly runner check failed ({ErrorType}); saved jobs will be reconciled.", error.GetType().Name); }
@@ -25,7 +25,7 @@ public sealed class LabAssemblyWorker(IServiceScopeFactory scopes, ILabAssemblyP
 
     public async Task PumpAsync(CancellationToken ct)
     {
-        if (!options.Value.WorkerEnabled || !provider.Availability.Available) return;
+        if (!options.Value.WorkerEnabled) return;
         await using var scope = scopes.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<PSeqOperationsDbContext>();
         // Connection-owned advisory lease: only one dispatcher across API replicas. A process loss releases it.
@@ -47,8 +47,10 @@ public sealed class LabAssemblyWorker(IServiceScopeFactory scopes, ILabAssemblyP
             foreach (var candidate in jobs.Where(j => j.State != "Queued"))
             {
                 await using var jobScope = scopes.CreateAsyncScope();
-                await jobScope.ServiceProvider.GetRequiredService<LabAssemblyProcessor>().ProcessAsync(candidate.Id, ct);
+                await jobScope.ServiceProvider.GetRequiredService<LabAssemblyDelivery>().CheckDeadlinesAsync(candidate.Id, ct);
+                if (provider.Availability.Available) await jobScope.ServiceProvider.GetRequiredService<LabAssemblyProcessor>().ProcessAsync(candidate.Id, ct);
             }
+            if (!provider.Availability.Available) return;
             var active = await db.Set<LabAssemblyJob>().CountAsync(j => j.State == "Dispatching" || j.State == "Accepted" || j.State == "Running", ct);
             var slots = Math.Max(0, Math.Clamp(options.Value.MaximumConcurrentJobs, 1, 32) - active);
             foreach (var candidate in jobs.Where(j => j.State == "Queued"))
@@ -74,7 +76,7 @@ public sealed class LabAssemblyWorker(IServiceScopeFactory scopes, ILabAssemblyP
 }
 
 public sealed class LabAssemblyProcessor(PSeqOperationsDbContext db, LabAssemblyService service,
-    ILabAssemblyProvider provider, LabAssemblyProgress progress, TimeProvider time)
+    ILabAssemblyProvider provider, LabAssemblyProgress progress, TimeProvider time, LabAssemblyDelivery delivery)
 {
     public async Task ProcessAsync(Guid id, CancellationToken ct)
     {
@@ -113,12 +115,14 @@ public sealed class LabAssemblyProcessor(PSeqOperationsDbContext db, LabAssembly
                     await VerifyFrozenInputsAsync(job, token);
                     if (tx is not null) await tx.CommitAsync(token);
                 }
+                if (!await delivery.BeginAttemptAsync(id, "Run", token)) return;
                 snapshot = await provider.StartAsync(job, token);
             }
             await ApplyAsync(id, snapshot, token);
             await db.Entry(job).ReloadAsync(token);
             if (!job.IsTerminal && job.CancellationRequestedAtUtc.HasValue && provider.Availability.SupportsCancellation)
             {
+                if (!await delivery.BeginAttemptAsync(id, "Cancel", token)) return;
                 var cancelled = await provider.CancelAsync(id, job.CancellationReason!, token);
                 if (cancelled is not null) await ApplyAsync(id, cancelled, token);
             }
@@ -134,7 +138,10 @@ public sealed class LabAssemblyProcessor(PSeqOperationsDbContext db, LabAssembly
                 : error is ArgumentException or InvalidOperationException
                     ? "The processing service returned inconsistent execution evidence. Operations must reconcile this job."
                     : "The processing service could not be reached. The job outcome remains unconfirmed; recovery will retry.";
-            if (job.SetAttention(message)) { service.Record(job, "AttentionRequired"); await db.SaveChangesAsync(ct); }
+            if (await delivery.RefreshAttentionAsync(job, ct)) service.Record(job, "DeliveryAttentionRequired");
+            else if (job.AttentionReason is null || !job.AttentionReason.StartsWith("Unconfirmed ") && job.AttentionReason != LabAssemblyDelivery.ConflictAttention)
+            { if (job.SetAttention(message)) service.Record(job, "AttentionRequired"); }
+            await db.SaveChangesAsync(ct);
             if (tx is not null) await tx.CommitAsync(ct);
             progress.Forget(id);
         }
@@ -145,6 +152,7 @@ public sealed class LabAssemblyProcessor(PSeqOperationsDbContext db, LabAssembly
         await using var tx = await SampleShippingPackingData.BeginAsync(db, "assembly-job:" + id, ct);
         var job = await service.RequireJobAsync(id, ct);
         await db.Entry(job).ReloadAsync(ct);
+        if (await delivery.HasConflictAsync(id, ct)) throw LabAssemblyService.Error(LabAssemblyDelivery.ConflictAttention, 409);
         if (job.IsTerminal && snapshot.ProviderJobId == job.ProviderJobId && snapshot.State is "Accepted" or "Running")
         { progress.Forget(id); return; }
         if (snapshot.OutputManifestJson is { } manifest)
@@ -154,11 +162,14 @@ public sealed class LabAssemblyProcessor(PSeqOperationsDbContext db, LabAssembly
         }
         var changed = job.Observe(snapshot.ProviderJobId, snapshot.State, snapshot.StartedAtUtc, snapshot.StoppedAtUtc,
             snapshot.DispositionAtUtc, snapshot.Reason, snapshot.OutputManifestJson, snapshot.NeverStarted, time.GetUtcNow().UtcDateTime);
+        await delivery.ConfirmAsync(job, ct);
+        if (await delivery.RefreshAttentionAsync(job, ct)) changed = true;
         if (changed)
         {
             service.Record(job, job.State);
             await db.SaveChangesAsync(ct);
         }
+        else await db.SaveChangesAsync(ct);
         if (tx is not null) await tx.CommitAsync(ct);
         if (job.IsTerminal) progress.Forget(id);
         else if (snapshot.Percentage is { } percentage) progress.Report(id, percentage, snapshot.ProgressSequence);

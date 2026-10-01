@@ -19,6 +19,7 @@ public sealed partial class CrmCommercialAccessPostgresTests
     {
         await using var scope = await Scope.Create();
         var db = scope.Db;
+        var entitlementIds = await db.OrganizationServiceEntitlements.OrderBy(value => value.Id).Select(value => value.Id).ToArrayAsync();
         var company = new CrmCompany("SIMULATED request acceptance", scope.Actor.Id);
         db.Add(company); await db.SaveChangesAsync();
         var requests = scope.Controller(new RelationshipManagementController(db, scope.Identity));
@@ -29,7 +30,7 @@ public sealed partial class CrmCommercialAccessPostgresTests
             new(CrmHandoffType.PortalOnboarding, null, Guid.NewGuid().ToString(), OrganizationKind.Partner, [],
                 "SIMULATED online access", "SIMULATED internal context"), default)).Result).Value);
         Assert.Null(company.AccessOrganizationId);
-        Assert.False(await db.OrganizationServiceEntitlements.AnyAsync());
+        Assert.Equal(entitlementIds, await db.OrganizationServiceEntitlements.OrderBy(value => value.Id).Select(value => value.Id).ToArrayAsync());
         var pending = await requests.GetRequest(created.RelationshipRequestId, default);
         Assert.Equal(PortalIntegrationRequestStatus.PendingReview, pending.Status);
         var approved = await requests.DecideRequest(pending.Id, new() { Approved = true, Reason = "SIMULATED approval", Version = pending.Version }, default);

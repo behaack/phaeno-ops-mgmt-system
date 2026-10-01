@@ -319,6 +319,25 @@ and the replacement Clerk user has the same verified primary email. The command
 is idempotent and writes `ClerkProductionIdentityCutover` to the audit log. Leave
 the gate off for every ordinary deployment.
 
+## Portal database reconstruction
+
+The manual **Reconstruct Portal Database** workflow is defined in
+`.github/workflows/reconstruct-portal-database.yml`. Run `preview` to inspect
+count-only preservation/clear/reseed results. Run `reset` with the exact phrase
+`RESET PORTAL DATABASE` to clear operational data while retaining Phaeno users
+and their access dependencies, the three canonical product types, and every
+holiday-calendar revision/date. It recreates the standard model reference
+defaults and records one new maintenance audit. It keeps the current schema
+and migration history and pauses/restarts only the existing Portal API.
+
+This is a single transactional data reset, with no separate backup, replacement
+database or rollback process. External identities, runtime configuration,
+physical file bytes, other databases and OCIA services are outside its scope.
+Future schema migrations are separate. See the
+[owning plan](../../../docs/plans/PORTAL-DATABASE-RECONSTRUCTION-WORKFLOW-PLAN.md)
+for exact preservation rules, deferred destructive verification and activation
+boundaries. The workflow must be published to GitHub before it can be selected.
+
 ## Retired Web Operations record cleanup
 
 `.github/workflows/purge-retired-web-operations.yml` provides the manual

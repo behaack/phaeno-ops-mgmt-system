@@ -73,7 +73,7 @@ public sealed record AccountsReceivableCustomerDto(
 [ApiController]
 [Authorize]
 [Route("api/platform/accounts-receivable")]
-public sealed class AccountsReceivableController(
+public sealed partial class AccountsReceivableController(
     PSeqOperationsDbContext dbContext,
     OrderRequestContext requestContext,
     IOptions<PSeqOrderToCashOptions> rolloutOptions,

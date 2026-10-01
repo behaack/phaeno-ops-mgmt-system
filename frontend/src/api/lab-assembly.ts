@@ -13,6 +13,8 @@ export type AssemblyJob = {
 export type AssemblyInputChoice = { id: string; labWorkOrderId: string; labSpecimenId: string; sampleName: string | null; sequencingRunNumber: number; labSpecimenAttemptId: string; providerRunReference: string; sampleMappingReference: string; sizeBytes: number; sha256: string }
 export type AssemblyQueue = { availability: AssemblyAvailability; canOperate: boolean; jobs: AssemblyJob[] }
 export type AssemblyDetail = {
+  delivery: { kind: string; attemptCount: number; lastAttemptAtUtc: string | null; nextAttemptAtUtc: string | null;
+    receivedAtUtc: string | null; confirmedAtUtc: string | null; escalatedAtUtc: string | null; suppressed: boolean }[]
   job: AssemblyJob; availability: AssemblyAvailability; canOperate: boolean; recipe: AssemblyRecipe
   inputs: { sequencingOutputId: string; externalFileReference: string; sha256: string; sizeBytes: number }[]
   events: { id: string; kind: string; recordedAtUtc: string; actorUserId: string | null; evidenceJson: string }[]

@@ -16,10 +16,14 @@ public partial class SampleShippingPostgresTests
         {
             for (var i = 0; i < 276; i++)
             {
+                var order = scope.AddCommercialPhaseOrder($"TEST deadline-{scope.Suffix}-{i}");
+                var sample = scope.AddCommercialPhaseSample(order, $"TEST-{i}");
                 var work = new LabWorkOrder(Guid.NewGuid(), 1, LabAuthorizationSource.CommercialOrder,
-                    Guid.NewGuid(), scope.CustomerOrganization.Id, "reference-service", 1, "reference-turnaround", $"TEST deadline-{scope.Suffix}-{i}");
-                work.AdjustDeliveryDueDate(DateTime.UtcNow.AddDays(-10));
-                var specimen = new LabSpecimen(work.Id, Guid.NewGuid());
+                    order.Id, scope.CustomerOrganization.Id, "reference-service", 1, "reference-turnaround", $"TEST deadline-{scope.Suffix}-{i}");
+                var due = DateTime.UtcNow.AddDays(-10);
+                work.AdjustDeliveryDueDate(due);
+                order.Phases.Single().AdjustDeadline(due);
+                var specimen = new LabSpecimen(work.Id, sample.Id);
                 specimen.RecordReceipt(DateTime.UtcNow, "TEST receipt", null);
                 work.Specimens.Add(specimen);
                 db.LabWorkOrders.Add(work);
@@ -75,13 +79,21 @@ public partial class SampleShippingPostgresTests
             var prefix = $"TEST tabs-{scope.Suffix}";
             for (var index = 0; index < 4; index++)
             {
+                var order = scope.AddCommercialPhaseOrder($"{prefix}-{index}");
+                var sample = scope.AddCommercialPhaseSample(order, $"TEST-{index}");
                 var work = new LabWorkOrder(Guid.NewGuid(), 1, LabAuthorizationSource.CommercialOrder,
-                    Guid.NewGuid(), scope.CustomerOrganization.Id, "reference-service", 1, "reference-turnaround", $"{prefix}-{index}");
-                if (index == 3) work.CancelBeforeExecution();
+                    order.Id, scope.CustomerOrganization.Id, "reference-service", 1, "reference-turnaround", $"{prefix}-{index}");
+                if (index == 3)
+                {
+                    order.Phases.Single().Cancel(scope.PlatformUser.Id, "TEST cancelled cohort", DateTime.UtcNow);
+                    work.CancelBeforeExecution();
+                }
                 else
                 {
-                    work.AdjustDeliveryDueDate(index == 0 ? start : index == 1 ? end.AddTicks(-1) : end);
-                    var specimen = new LabSpecimen(work.Id, Guid.NewGuid());
+                    var due = index == 0 ? start : index == 1 ? end.AddTicks(-1) : end;
+                    work.AdjustDeliveryDueDate(due);
+                    order.Phases.Single().AdjustDeadline(due);
+                    var specimen = new LabSpecimen(work.Id, sample.Id);
                     specimen.RecordReceipt(start.AddDays(-1), "TEST receipt", null);
                     work.Specimens.Add(specimen);
                 }

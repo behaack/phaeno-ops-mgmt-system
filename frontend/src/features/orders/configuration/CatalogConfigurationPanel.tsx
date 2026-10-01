@@ -1,10 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
-import { useRef, useState } from "react";
-import { Link, useNavigate } from '@tanstack/react-router';
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { LabServiceOfferingsPanel } from './LabServiceOfferingsPanel';
 import { CatalogItemActions } from './CatalogItemActions';
+import { parseCatalogListSearch } from './catalog-list-navigation';
 import { useOrderDraftGuard } from '../use-order-draft-guard';
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -18,6 +19,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
+import { Checkbox } from "#/components/ui/checkbox";
 import {
   Card,
   CardContent,
@@ -33,7 +35,9 @@ import {
   DialogTitle,
 } from "#/components/ui/dialog";
 import { Input } from "#/components/ui/input";
+import { Field as SharedField, FieldDescription, FieldError } from '#/components/ui/field';
 import { Label } from "#/components/ui/label";
+import { NativeSelect } from '#/components/ui/native-select';
 import {
   RequiredDialogFooter,
   RequiredFieldName,
@@ -53,6 +57,7 @@ const schema = z
     currency: z.string().trim().length(3, "Use a three-letter currency code."),
     isActive: z.boolean(),
     serviceFamily: z.enum(['Other', 'PSeqLabService']),
+    maximumCustomerSamples: z.union([z.literal(''), z.coerce.number().int('Use a whole number.').min(1).max(10000)]).transform(v => v === '' ? null : v).nullable(),
   })
   .superRefine((value, context) => {
     if (
@@ -62,7 +67,7 @@ const schema = z
       context.addIssue({
         code: "custom",
         path: ["salesUnit"],
-        message: "PSeq Lab Service offerings use Per sample-sequencing run.",
+        message: "PSeq Lab Service offerings use Per sample.",
       });
     }
   });
@@ -71,12 +76,11 @@ type FormValues = z.input<typeof schema>;
 type Values = z.output<typeof schema>;
 type CatalogItem = OrderConfiguration["catalogItems"][number];
 const salesUnits = [
-  { value: 'specimen', label: 'Per sample-sequencing run' },
+  { value: 'specimen', label: 'Per sample' },
   { value: 'kit', label: 'Per kit' },
   { value: 'each', label: 'Per item' },
   { value: 'service', label: 'Per service' },
 ];
-const selectClass = 'h-9 w-full cursor-pointer rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none';
 function salesUnitLabel(value: string) {
   return salesUnits.find(unit => unit.value === value)?.label ?? value;
 }
@@ -89,6 +93,7 @@ const empty: Values = {
   currency: "USD",
   isActive: false,
   serviceFamily: 'PSeqLabService',
+  maximumCustomerSamples: null,
 };
 
 export function CatalogConfigurationPanel({
@@ -102,6 +107,30 @@ export function CatalogConfigurationPanel({
 }) {
   const client = useQueryClient();
   const navigate = useNavigate();
+  const listSearch = parseCatalogListSearch(useSearch({ strict: false }));
+  const catalogSearch = listSearch.catalogSearch ?? '';
+  const [searchInput, setSearchInput] = useState({ saved: catalogSearch, text: catalogSearch });
+  if (searchInput.saved !== catalogSearch) {
+    setSearchInput({ saved: catalogSearch, text: catalogSearch });
+  }
+  useEffect(() => {
+    if (catalogItemId || searchInput.text.trim() === catalogSearch) return;
+    const timer = setTimeout(() => {
+      void navigate({
+        to: '/order-configuration',
+        search: previous => ({ ...previous, configurationSection: 'catalog', catalogSearch: searchInput.text.trim() || undefined }),
+        replace: true,
+        resetScroll: false,
+      });
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [catalogItemId, catalogSearch, navigate, searchInput.text]);
+  const needle = catalogSearch.toLocaleLowerCase();
+  const visibleItems = configuration.catalogItems.filter(item =>
+    (listSearch.catalogShowInactive || item.isActive)
+    && (!needle || [item.name, item.description, item.externalItemId, salesUnitLabel(item.salesUnit)].some(value => value.toLocaleLowerCase().includes(needle))),
+  );
+  const hasFilters = Boolean(searchInput.text || listSearch.catalogShowInactive);
   const actionRef = useRef<HTMLButtonElement | null>(null);
   const [editing, setEditing] = useState<CatalogItem | null | undefined>(
     undefined,
@@ -116,20 +145,21 @@ export function CatalogConfigurationPanel({
       saveCatalogItem(editing?.id ?? null, {
         ...values,
         currency: values.currency.toUpperCase(),
+        maximumCustomerSamples: values.serviceFamily === 'PSeqLabService' ? values.maximumCustomerSamples : null,
         version: editing?.version,
       }),
     onError: async () => {
       try {
         const fresh = await client.fetchQuery({ queryKey: ['order-configuration'], queryFn: getOrderConfiguration, staleTime: 0 });
         const current = fresh.catalogItems.find(item => item.id === editing?.id);
-        if (current) { setEditing(current); form.reset({ ...current, serviceFamily: current.isPSeqLabService ? 'PSeqLabService' : 'Other' }, { keepDirtyValues: true }); }
+        if (current) { setEditing(current); form.reset({ ...current, serviceFamily: current.isPSeqLabService ? 'PSeqLabService' : 'Other', maximumCustomerSamples: current.maximumCustomerSamples ?? null }, { keepDirtyValues: true }); }
       } catch { /* Keep the original save error and entered values visible. */ }
     },
     onSuccess: async (saved) => {
       await client.invalidateQueries({ queryKey: ["order-configuration"] });
       setEditing(undefined);
       form.reset(empty);
-      if (!editing) await navigate({ to: '/order-configuration/catalog/$catalogItemId', params: { catalogItemId: saved.id }, search: { configurationSection: 'catalog' } });
+      if (!editing) await navigate({ to: '/order-configuration/catalog/$catalogItemId', params: { catalogItemId: saved.id }, search: { ...listSearch, configurationSection: 'catalog' } });
     },
   });
   const selected = configuration.catalogItems.find(item => item.id === catalogItemId);
@@ -157,6 +187,7 @@ export function CatalogConfigurationPanel({
             currency: item.currency,
             isActive: item.isActive,
             serviceFamily: item.isPSeqLabService ? 'PSeqLabService' : 'Other',
+            maximumCustomerSamples: item.maximumCustomerSamples ?? null,
           }
         : { ...empty, externalItemId: generatedCode.current },
     );
@@ -165,13 +196,15 @@ export function CatalogConfigurationPanel({
 
   return (
     <>
-      {catalogItemId ? <div className="mb-4"><Link className="text-sm text-primary underline" to="/order-configuration" search={{ configurationSection: 'catalog' }}>Back to service catalog</Link></div> : null}
+      {catalogItemId ? <div className="mb-4"><Link className="text-sm text-primary underline" to="/order-configuration" search={{ ...listSearch, configurationSection: 'catalog' }}>Back to service catalog</Link></div> : null}
       {catalogItemId && !selected ? <Alert variant="destructive"><AlertTitle>Service item not found</AlertTitle><AlertDescription>Return to the catalog and select an available item.</AlertDescription></Alert> : selected ? <div className="space-y-5">
         <Card className="gap-0 py-0">
           <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">
-            <CardTitle className="min-w-0">{selected.name}</CardTitle>
+            <div className="min-w-0 space-y-1">
+              <CardTitle>{selected.name}</CardTitle>
+              <CardDescription>Commercial pricing and availability</CardDescription>
+            </div>
             <CatalogItemActions key={selected.id} item={selected} apiEnabled={apiEnabled} onEdit={trigger => { open(selected); actionRef.current = trigger }} />
-            <CardDescription className="col-span-full">Commercial pricing and availability</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 p-4">
             <p className="text-sm">{selected.description || 'No description provided.'}</p>
@@ -180,6 +213,7 @@ export function CatalogConfigurationPanel({
               <div><dt className="text-muted-foreground">Sales unit</dt><dd>{salesUnitLabel(selected.salesUnit)}</dd></div>
               <div><dt className="text-muted-foreground">Status</dt><dd>{selected.isActive ? 'Active' : 'Inactive'}</dd></div>
               <div><dt className="text-muted-foreground">Service family</dt><dd>{selected.isPSeqLabService ? 'PSeq Lab Service' : 'Other'}</dd></div>
+              {selected.isPSeqLabService ? <div><dt className="text-muted-foreground">Customer sample limit</dt><dd>{selected.maximumCustomerSamples ?? 'Unconfigured — Customer placement unavailable'}</dd></div> : null}
             </dl>
             {!selected.isActive ? <p className="text-sm text-muted-foreground">Inactive items are excluded from new pricing.</p> : null}
             <details className="text-sm"><summary className="w-fit cursor-pointer rounded-sm text-primary focus-visible:ring-2 focus-visible:ring-ring">Reference details</summary><p className="mt-2 break-all text-muted-foreground">Item reference: {selected.externalItemId}. This permanent reference links pricing and accounting records and stays the same when the item is renamed.</p></details>
@@ -189,17 +223,32 @@ export function CatalogConfigurationPanel({
       </div> : (
       <Card className="gap-0 py-0">
         <CardHeader className="grid-cols-[minmax(0,1fr)_auto] gap-x-3 border-b bg-muted/50 p-4">
-          <CardTitle className="min-w-0">Service catalog</CardTitle>
-          <Button className="col-start-2 row-start-1 justify-self-end" type="button" disabled={!apiEnabled} onClick={() => open(null)}>
+          <div className="min-w-0 space-y-1">
+            <CardTitle>Service catalog</CardTitle>
+            <CardDescription>
+              Maintain what each price covers, its amount, and whether the item is active for new pricing.
+            </CardDescription>
+          </div>
+          <Button className="col-start-2 row-start-1 self-start justify-self-end" type="button" disabled={!apiEnabled} onClick={() => open(null)}>
             <Plus data-icon="inline-start" />
             Add item
           </Button>
-          <CardDescription className="col-span-full">
-            Maintain what each price covers, its amount, and whether the item is active for new pricing.
-          </CardDescription>
+          <div className="col-span-full flex flex-col gap-3 sm:flex-row sm:items-end">
+            <SharedField className="min-w-0 flex-1">
+              <Input id="catalog-search" type="search" aria-label="Search service catalog" placeholder="Search by name, description, reference or sales unit" maxLength={255} value={searchInput.text} onChange={event => setSearchInput({ saved: catalogSearch, text: event.target.value })} />
+            </SharedField>
+            <div className="flex min-h-9 flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Checkbox id="catalog-show-inactive" checked={Boolean(listSearch.catalogShowInactive)} onCheckedChange={checked => void navigate({ to: '/order-configuration', search: previous => ({ ...previous, configurationSection: 'catalog', catalogShowInactive: checked === true || undefined }), replace: true, resetScroll: false })} />
+                <Label htmlFor="catalog-show-inactive" className="cursor-pointer">Show inactive</Label>
+              </div>
+              {hasFilters ? <Button type="button" variant="ghost" size="sm" onClick={() => { setSearchInput({ saved: catalogSearch, text: '' }); void navigate({ to: '/order-configuration', search: previous => ({ ...previous, configurationSection: 'catalog', catalogSearch: undefined, catalogShowInactive: undefined }), replace: true, resetScroll: false }); }}>Clear all</Button> : null}
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="p-4">
-          {configuration.catalogItems.length ? (
+          <p role="status" className="sr-only">{visibleItems.length} {visibleItems.length === 1 ? 'catalog item' : 'catalog items'} shown.</p>
+          {visibleItems.length ? (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="border-b text-muted-foreground">
@@ -213,13 +262,13 @@ export function CatalogConfigurationPanel({
                   </tr>
                 </thead>
                 <tbody>
-                  {configuration.catalogItems.map((item) => (
+                  {visibleItems.map((item) => (
                     <tr key={item.id} className="border-b last:border-0">
                       <td className="py-3 pr-3">
                         <Link
                           to="/order-configuration/catalog/$catalogItemId"
                           params={{ catalogItemId: item.id }}
-                          search={{ configurationSection: 'catalog' }}
+                          search={{ ...listSearch, configurationSection: 'catalog' }}
                           className="cursor-pointer text-left font-medium text-primary hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
                         >
                           {item.name}
@@ -243,7 +292,7 @@ export function CatalogConfigurationPanel({
             </div>
           ) : (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              No catalog items configured.
+              {!configuration.catalogItems.length ? 'No catalog items configured.' : needle ? 'No catalog items match this search.' : 'No active catalog items. Select Show inactive to review inactive items.'}
             </p>
           )}
         </CardContent>
@@ -279,20 +328,20 @@ export function CatalogConfigurationPanel({
           >
             <fieldset disabled={mutation.isPending} className="grid grid-cols-1 gap-4">
             <Field id="catalog-type" label="Service family">
-              <select id="catalog-type" className={selectClass} value={isLabService ? 'lab' : 'other'} onChange={event => {
+              <NativeSelect id="catalog-type" value={isLabService ? 'lab' : 'other'} onChange={event => {
                 const lab = event.target.value === 'lab';
                 form.setValue('serviceFamily', lab ? 'PSeqLabService' : 'Other', { shouldDirty: true, shouldValidate: true });
                 form.setValue('salesUnit', lab ? 'specimen' : 'each', { shouldDirty: true, shouldValidate: true });
               }}>
                 <option value="lab">PSeq Lab Service</option>
                 <option value="other">Other</option>
-              </select>
+              </NativeSelect>
             </Field>
             <div className="space-y-2">
               <Label htmlFor="catalog-status"><RequiredFieldName>Status</RequiredFieldName></Label>
-              <select id="catalog-status" className={selectClass} value={form.watch('isActive') ? 'active' : 'inactive'} aria-describedby="catalog-status-help" onChange={event => form.setValue('isActive', event.target.value === 'active', { shouldDirty: true })}>
+              <NativeSelect id="catalog-status" value={form.watch('isActive') ? 'active' : 'inactive'} aria-describedby="catalog-status-help" onChange={event => form.setValue('isActive', event.target.value === 'active', { shouldDirty: true })}>
                 <option value="active">Active</option><option value="inactive">Inactive</option>
-              </select>
+              </NativeSelect>
               <p id="catalog-status-help" className="text-xs text-muted-foreground">Active makes this item available for new pricing. Inactive keeps it out of new pricing; saved orders retain their details.</p>
             </div>
             <Field
@@ -321,12 +370,12 @@ export function CatalogConfigurationPanel({
               error={form.formState.errors.salesUnit?.message}
             >
               {isLabService ? <>
-                <select id="catalog-unit" className={selectClass} value="specimen" disabled aria-describedby="catalog-unit-fixed-help"><option value="specimen">Per sample-sequencing run</option></select>
-                <p id="catalog-unit-fixed-help" className="mt-1 text-xs text-muted-foreground">PSeq Lab Service offerings are priced per sample-sequencing run. One sample sequenced 20 times counts as 20 runs. This unit is fixed automatically.</p>
+                <NativeSelect id="catalog-unit" value="specimen" disabled aria-describedby="catalog-unit-fixed-help"><option value="specimen">Per sample</option></NativeSelect>
+                <p id="catalog-unit-fixed-help" className="mt-1 text-xs text-muted-foreground">The standard price is per sample and includes one library preparation, one sequencing run and data assembly. Additional runs use the prepared library and are priced separately during quote review. The sample unit is fixed automatically.</p>
               </> : <>
-                <select id="catalog-unit" className={selectClass} aria-invalid={Boolean(form.formState.errors.salesUnit)} aria-describedby="catalog-unit-help" {...form.register('salesUnit')}>
+                <NativeSelect id="catalog-unit" aria-invalid={Boolean(form.formState.errors.salesUnit)} aria-describedby="catalog-unit-help" {...form.register('salesUnit')}>
                   {unitOptions.map(unit => <option key={unit} value={unit}>{salesUnitLabel(unit)}</option>)}
-                </select>
+                </NativeSelect>
                 <p id="catalog-unit-help" className="mt-1 text-xs text-muted-foreground">Choose what one unit of the base price covers. Existing catalog units remain available.</p>
               </>}
             </Field>
@@ -357,6 +406,7 @@ export function CatalogConfigurationPanel({
                 {...form.register("currency")}
               />
             </Field>
+            {isLabService ? <SharedField><Label htmlFor="catalog-customer-limit">Maximum Customer samples</Label><FieldDescription>Set the largest order Customers may place directly. Above this limit, they contact Sales for negotiated pricing. Leave blank to disable Customer standard placement until a limit is configured.</FieldDescription><Input id="catalog-customer-limit" type="number" min={1} max={10000} {...form.register('maximumCustomerSamples')} aria-invalid={Boolean(form.formState.errors.maximumCustomerSamples)} aria-describedby="catalog-customer-limit-error" /><FieldError id="catalog-customer-limit-error">{form.formState.errors.maximumCustomerSamples?.message}</FieldError></SharedField> : null}
             </fieldset>
           </form>
           {mutation.error ? (
@@ -401,11 +451,11 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div>
+    <div className="grid content-start gap-2">
       <Label htmlFor={id}>
         <RequiredFieldName>{label}</RequiredFieldName>
       </Label>
-      <div className="mt-2">{children}</div>
+      <div>{children}</div>
       {error ? (
         <p role="alert" className="mt-1 text-sm text-destructive">
           {error}

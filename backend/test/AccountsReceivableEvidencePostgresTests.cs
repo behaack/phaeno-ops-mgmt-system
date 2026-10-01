@@ -305,9 +305,17 @@ public sealed class AccountsReceivableEvidencePostgresTests
                 var invoiceIds = Db.Invoices.Where(item => organizations.Contains(item.OrganizationId)).Select(item => item.Id);
                 await Db.PaymentAllocations.Where(item => invoiceIds.Contains(item.InvoiceId)).ExecuteDeleteAsync();
                 await Db.InvoiceAdjustments.Where(item => invoiceIds.Contains(item.InvoiceId)).ExecuteDeleteAsync();
-                await Db.Invoices.Where(item => organizations.Contains(item.OrganizationId)).ExecuteDeleteAsync();
+
                 var orderIds = Db.LabServiceOrders.Where(item => organizations.Contains(item.OrganizationId)).Select(item => item.Id);
+
+                var phaseIds = Db.Set<PhaenoPortal.App.Features.OrderManagement.Domain.LabJobPhase>().Where(p => orderIds.Contains(p.LabServiceOrderId)).Select(p => p.Id);
+                await Db.Set<PhaenoPortal.App.Features.OrderManagement.Domain.LabPhaseCancellationRequest>().Where(r => phaseIds.Contains(r.LabJobPhaseId)).ExecuteDeleteAsync();
+                await Db.Set<PhaenoPortal.App.Features.OrderManagement.Domain.LabPhasePlanProposal>().Where(r => orderIds.Contains(r.LabServiceOrderId)).ExecuteDeleteAsync();
+                await Db.Set<PhaenoPortal.App.Features.OrderManagement.Domain.LabPhaseBillingAssignment>().Where(r => phaseIds.Contains(r.LabJobPhaseId)).ExecuteDeleteAsync();
+                await Db.Set<PhaenoPortal.App.Features.OrderManagement.Domain.LabPhaseInvoiceAllocation>().Where(r => phaseIds.Contains(r.LabJobPhaseId)).ExecuteDeleteAsync();
+                await Db.Invoices.Where(item => organizations.Contains(item.OrganizationId)).ExecuteDeleteAsync();
                 await Db.LabServiceQuotes.Where(item => orderIds.Contains(item.LabServiceOrderId)).ExecuteDeleteAsync();
+                await Db.Set<PhaenoPortal.App.Features.OrderManagement.Domain.LabJobPhase>().Where(p => orderIds.Contains(p.LabServiceOrderId)).ExecuteDeleteAsync();
                 await Db.LabServiceOrders.Where(item => organizations.Contains(item.OrganizationId)).ExecuteDeleteAsync();
                 await Db.PaymentReceipts.Where(item => organizations.Contains(item.OrganizationId)).ExecuteDeleteAsync();
                 await Db.PaymentImportBatches.Where(item => item.Source == Source).ExecuteDeleteAsync();

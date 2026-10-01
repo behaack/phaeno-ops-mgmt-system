@@ -15,7 +15,7 @@ public sealed class CustomerLabDashboardService(PSeqOperationsDbContext db)
 {
     public IQueryable<LabServiceOrder> Orders(Guid organizationId, Guid departmentId) =>
         db.LabServiceOrders.AsNoTracking().Where(order => order.OrganizationId == organizationId
-            && order.DepartmentId == departmentId && !order.IsDiscarded);
+            && order.DepartmentId == departmentId && !order.IsDiscarded && order.CommercialDraftJson == null);
 
     public static IQueryable<LabServiceOrder> RequiringAttention(IQueryable<LabServiceOrder> orders) =>
         orders.Where(order => order.Status == LabServiceOrderStatus.QuoteIssued

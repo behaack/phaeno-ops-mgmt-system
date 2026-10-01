@@ -66,6 +66,7 @@ import { toInput } from "./CrmCompaniesPage";
 import { OrganizationDetailPage } from "#/features/organizations/OrganizationDetailPage";
 import { useCrmState } from './CrmListNavigation';
 import { CrmCompanyDepartments } from "./CrmCompanyDepartments";
+import { CompanyLabServicePricing } from './CompanyLabServicePricing';
 
 const companyReviewFields: ReadonlyArray<readonly [keyof CrmCompany, string]> = [
   ["name", "Company name"], ["websiteUrl", "Website"], ["domainName", "Domain"],
@@ -83,7 +84,7 @@ function reviewValue(value: CrmCompany[keyof CrmCompany]) {
 }
 
 export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
-  const { canAdminister } = useCrmPermissions();
+  const { canAdminister, canManageLabServicePricing: canManagePrices, canViewLabServicePricing: canViewPrices } = useCrmPermissions();
   const actionsTrigger = useRef<HTMLButtonElement>(null);
   const selectedAction = useRef<(() => void) | null>(null);
   const queryClient = useQueryClient();
@@ -99,7 +100,7 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
   const [storedSection, setActiveSection] = useCrmState<
     "overview" | "people" | "sales" | "departments" | "services" | "requests" | "activity"
   >("section", "overview");
-  const allowedSections = canAdminister ? ["overview", "people", "sales", "departments", "services", "requests", "activity"] : ["overview", "people", "sales", "activity"];
+  const allowedSections = canAdminister ? ["overview", "people", "sales", "departments", "services", "requests", "activity"] : ["overview", "people", "sales", ...(canViewPrices ? ['services'] : []), "activity"];
   const activeSection = allowedSections.includes(storedSection) ? storedSection : "overview";
   const companyQuery = useQuery({
     queryKey: ["crm-company", companyId],
@@ -304,12 +305,10 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
           {canAdminister ? <><TabsTrigger className="min-w-fit flex-none" value="departments">
             Departments
           </TabsTrigger>
-          <TabsTrigger className="min-w-fit flex-none" value="services">
-            Services
-          </TabsTrigger>
           <TabsTrigger className="min-w-fit flex-none" value="requests">
             Requests
           </TabsTrigger></> : null}
+          {canAdminister || canViewPrices ? <TabsTrigger className="min-w-fit flex-none" value="services">Services</TabsTrigger> : null}
           <TabsTrigger className="min-w-fit flex-none" value="activity">
             Activity
           </TabsTrigger>
@@ -427,7 +426,9 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
           <CrmCompanyDepartments company={company} />
         </TabsContent> : null}
 
-        {canAdminister ? <TabsContent value="services" className="space-y-6">
+        {canAdminister || canViewPrices ? <TabsContent value="services" className="space-y-6">
+          {canViewPrices && company.portalRelationship === 'Customer' ? <CompanyLabServicePricing companyId={company.id} canManage={canManagePrices} /> : null}
+          {canAdminister ? <>
           {company.accessOrganizationId ? (
             <OrganizationDetailPage
               organizationId={company.accessOrganizationId}
@@ -449,6 +450,7 @@ export function CrmCompanyDetailPage({ companyId }: { companyId: string }) {
               </CardContent>
             </Card>
           )}
+          </> : null}
         </TabsContent> : null}
 
         <TabsContent value="activity">

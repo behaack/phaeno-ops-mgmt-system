@@ -20,16 +20,19 @@ public partial class SampleShippingPostgresTests
             var now = DateTime.UtcNow.AddMinutes(-10);
             now = new DateTime(now.Ticks - now.Ticks % 10, DateTimeKind.Utc);
             var clock = new AssemblyTestClock(now.AddMinutes(5));
-            var work = new LabWorkOrder(Guid.NewGuid(), 1, LabAuthorizationSource.CommercialOrder, Guid.NewGuid(),
+            var order = scope.AddCommercialPhaseOrder("TEST assembly recovery");
+            var sample = scope.AddCommercialPhaseSample(order, "TEST assembly sample");
+            var work = new LabWorkOrder(Guid.NewGuid(), 1, LabAuthorizationSource.CommercialOrder, order.Id,
                 scope.CustomerOrganization.Id, "assembly-test", 1, "test", null);
-            var specimen = new LabSpecimen(work.Id, Guid.NewGuid()); work.Specimens.Add(specimen);
+            var specimen = new LabSpecimen(work.Id, sample.Id); work.Specimens.Add(specimen);
             var job = new LabAssemblyJob(Guid.NewGuid(), work.Id, specimen.Id, scope.CustomerOrganization.Id, 1,
                 scope.PlatformUser.Id, "test-provider", "{}", "{}", new string('B', 64), now);
             job.BeginDispatch(now); db.AddRange(work, job); await db.SaveChangesAsync();
             var adapter = new AssemblyTestProvider { Snapshot = new("external-test-1", "Running", now, Percentage: 1) };
             var cache = new LabAssemblyProgress(clock);
             var service = new LabAssemblyService(db, adapter, cache, Options.Create(new LabAssemblyOptions { WorkerEnabled = true }), Options.Create(new PSeqOrderToCashOptions()), clock);
-            var processor = new LabAssemblyProcessor(db, service, adapter, cache, clock);
+            var processor = new LabAssemblyProcessor(db, service, adapter, cache, clock,
+                new LabAssemblyDelivery(db, service, Options.Create(new LabAssemblyOptions()), clock));
             // The start was accepted before a simulated connection loss. Recovery must discover it, not send another start.
             await processor.ProcessAsync(job.Id, default);
             Assert.Equal(0, adapter.StartCalls);
@@ -44,7 +47,8 @@ public partial class SampleShippingPostgresTests
             Assert.Equal(100, cache.Read(job.Id, false)!.Percentage); Assert.False(job.IsTerminal);
             // Discard all volatile progress as if the API restarted, then recover the current provider snapshot.
             cache = new LabAssemblyProgress(clock);
-            processor = new LabAssemblyProcessor(db, service, adapter, cache, clock);
+            processor = new LabAssemblyProcessor(db, service, adapter, cache, clock,
+                new LabAssemblyDelivery(db, service, Options.Create(new LabAssemblyOptions()), clock));
             await processor.ProcessAsync(job.Id, default); Assert.Equal(0, adapter.StartCalls);
             var stopped = now.AddMinutes(2);
             adapter.Snapshot = new("external-test-1", "Failed", now, stopped, stopped, "TEST ONLY processing failed");

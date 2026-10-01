@@ -154,7 +154,7 @@ public sealed partial class ManagedReleaseRetentionPostgresTests
         private IExternalIdentityContext identity = null!;
         public IExternalIdentityContext IdentityContext => identity;
         public ReleasedDeliverablePackageType Type => Assembly ? ReleasedDeliverablePackageType.AssemblyOutput : ReleasedDeliverablePackageType.LabResult;
-        public static async Task<Fixture> Create(string connection, bool assembly, DateTime released, bool snapshot = true, bool held = false)
+        public static async Task<Fixture> Create(string connection, bool assembly, DateTime released, bool snapshot = true, bool held = false, int sampleCount = 1)
         {
             var db = ManagedReleaseRetentionPostgresTests.Db(connection);
             var services = new ServiceCollection().AddLogging().AddControllers().Services.BuildServiceProvider();
@@ -184,7 +184,7 @@ public sealed partial class ManagedReleaseRetentionPostgresTests
             }
             else
             {
-                lab = new(fixture.Organization.Id, department.Id, $"RET-{Guid.NewGuid():N}", "Synthetic", null, 1, false, "RNA", "Frozen", "Safe", "Synthetic");
+                lab = new(fixture.Organization.Id, department.Id, $"RET-{Guid.NewGuid():N}", "Synthetic", null, sampleCount, false, "RNA", "Frozen", "Safe", "Synthetic");
                 sample = new(lab.Id, "Sample", "RNA", "Synthetic", 1, "tube", "Frozen", "Safe", null, null, null, "[]");
                 fixture.WorkflowId = lab.Id; parent = sample.Id; db.AddRange(lab, sample);
             }

@@ -1,4 +1,8 @@
 import axios from "axios";
+import type { CommercialDraftForm } from "#/features/orders/commercial-draft";
+import type { CustomerStandardDraft } from './customer-standard-orders';
+
+export type LabOrderPhaseScope = { id: string; position: number; name: string; sampleCount: number; scope: { sources: Array<{ biologicalSource: string; specimenCount: number }>; runsPerSample: number | null; sequencingRunCount: number }; turnaroundBusinessDays: number | null; proposedUnitPrice: number | null; proposedAdditionalRunPrice: number | null; pricingNote: string | null };
 
 import { api } from "./client";
 import type { KitAssemblyCase, KitUnit, LabServiceCommercialSnapshot, LabServiceOffering, LabServiceTiming } from './order-bundles';
@@ -93,6 +97,7 @@ export type OperationalFile = {
 
 export type Quote = {
   deliveryTargetBusinessDays?: number | null;
+  phasePlanSnapshotJson?: string | null;
   changeScopeSnapshotJson?: string | null;
   acceptedAmendmentSnapshotJson?: string | null;
   id: string;
@@ -265,6 +270,11 @@ export type LabRequestRevision = {
 };
 
 export type LabServiceOrder = {
+  departmentId: string;
+  commercialDraft?: CommercialDraftForm | null;
+  customerDraft?: CustomerStandardDraft | null;
+  phaseScopes?: LabOrderPhaseScope[] | null;
+  phaseCount?: number;
   requestedSequencingRunCount?: number;
   authorizedSampleIds?: string[];
   canProposeChange?: boolean;
@@ -638,7 +648,7 @@ export type ManualJournalEntryRow = {
 export type OrderConfiguration = {
   labServiceOfferings?: LabServiceOffering[];
   system: { id: string; quoteValidityDays: number; sampleSubmissionInstructions: string; shippingConfigurationJson: string; sampleConfigurationJson: string; resultDestinationConfigurationJson: string; version: number }
-  catalogItems: Array<{ id: string; externalItemId: string; name: string; description: string; salesUnit: string; basePrice: number; currency: string; isActive: boolean; isPSeqLabService: boolean; lastSyncedAt: string; version: number }>
+  catalogItems: Array<{ id: string; externalItemId: string; name: string; description: string; salesUnit: string; basePrice: number; currency: string; isActive: boolean; isPSeqLabService: boolean; lastSyncedAt: string; version: number; maximumCustomerSamples?: number | null }>
   analyses: AnalysisDefinition[]
   reagentOfferings: ReagentOffering[]
   assemblyProfiles: AssemblyProfile[]
@@ -709,7 +719,7 @@ export async function downloadLabQuotePdf(
 export async function listAnalysisDefinitions() {
   return get<AnalysisDefinition[]>("/order-catalog/analyses");
 }
-export type LabOrderSampleTypeChoice = { id: string; name: string; revision: number };
+export type LabOrderSampleTypeChoice = { id: string; name: string; revision: number; storageRequirements: string };
 export async function listLabOrderSampleTypes(platform = false) {
   return get<LabOrderSampleTypeChoice[]>(platform ? "/platform/lab-service-orders/sample-types" : "/lab-service-orders/sample-types");
 }
@@ -722,16 +732,6 @@ export type LabPricingProfileWrite = {
   proposedUnitPrice?: number;
   priceProposalNote?: string;
 };
-export type InitiateCustomerLabOrderInput = {
-  organizationId: string;
-  departmentId?: string;
-  customerReference: string;
-  description?: string;
-  storageRequirements: string;
-  safetyDeclaration: string;
-  prohibitedDataConfirmed: boolean;
-  sourceRequestId?: string;
-} & LabPricingProfileWrite;
 export async function createLabOrder(
   input: {
     customerReference: string;
@@ -794,6 +794,7 @@ export async function acceptLabQuote(
   );
 }
 export type LabSampleTubePair = {
+  phaseId: string;
   id: string; customerSampleId: string; biologicalSource: string; stockKitId: string; kitNumber: string;
   supplierTubeBarcode: string; declaredQuantity: number; declaredQuantityUnit: string;
   sequencingRunCount: number; version: number;
@@ -802,9 +803,12 @@ export type LabSampleTubeWorkspace = {
   pairs: LabSampleTubePair[];
   kits: Array<{ id: string; kitNumber: string; tubeCapacity: number; availableTubeCount: number; finishedAt?: string | null; maximumSampleAmount: number | null; sampleAmountUnit: string | null }>;
   expectedSampleCount: number; expectedSequencingRunCount: number; isFinalized: boolean;
+  preparationSources: Array<{ biologicalSource: string; specimenCount: number }>;
+  preparationPhaseIds: string[];
   minimumSampleAmount: number | null; sampleAmountUnit: string | null;
 }
 export type LabSampleTubePairInput = {
+  phaseId?: string;
   orderVersion: number; stockKitId: string; customerSampleId: string; biologicalSource: string;
   supplierTubeBarcode: string; declaredQuantity: number; declaredQuantityUnit: string; sequencingRunCount: number;
 }
@@ -1238,11 +1242,6 @@ export async function listCommercialOrders(
 ) {
   return get<PagedResult<CommercialOrderListItem>>("/platform/orders", params);
 }
-export async function initiateCustomerLabOrder(
-  input: InitiateCustomerLabOrderInput,
-) {
-  return post<LabServiceOrder>("/platform/lab-service-orders", input, true);
-}
 export async function listEligibleCustomerCompanies() {
   return get<EligibleCustomerCompany[]>(
     "/platform/lab-service-orders/eligible-customers",
@@ -1304,6 +1303,9 @@ export function completeLabJob(id: string, version: number, idempotencyKey: stri
   return post<LabServiceOrder>(`/platform/lab-service-orders/${id}/complete`, { version }, true, idempotencyKey);
 }
 export type QuoteLineInput = {
+  pricingComponent?: "StandardSample" | "AdditionalRun" | null;
+  phaseId?: string | null;
+  turnaroundBusinessDays?: number | null;
   catalogItemId: string;
   description: string;
   quantity: number;
@@ -1324,6 +1326,7 @@ export async function issuePlatformQuote(
     additionalSources?: Array<{ biologicalSource: string; specimenCount: number }>;
     additionalSequencingRunCount?: number;
     deliveryTargetBusinessDays?: number | null;
+  phasePlanSnapshotJson?: string | null;
   },
 ) {
   const path =
@@ -1449,6 +1452,7 @@ export async function saveCatalogItem(
     isActive: boolean;
     version?: number;
     serviceFamily?: 'Other' | 'PSeqLabService';
+    maximumCustomerSamples?: number | null;
   },
 ) {
   return id
