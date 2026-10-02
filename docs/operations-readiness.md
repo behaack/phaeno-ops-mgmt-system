@@ -1,5 +1,21 @@
 # Operations and production-readiness boundary
 
+## Controlled workflow release — October 2, 2026
+
+The owner authorized documentation, complete tests, commit/push, matched API/Portal
+UI deployment and necessary EF migrations under the
+[hosted workflow release plan](plans/PORTAL-WORKFLOW-RELEASE-20261002-PLAN.md).
+The [completed receipt](operations/portal-workflow-release-20261002.md) confirms
+application source `66240861c32c49af1b85ac4fa4c0dcf9f6fcd5c7`, seven rehearsed
+migrations applied above the existing seven, fresh restore-verified encrypted
+database/private-file recovery and off-server copies, unchanged counts for all
+223 existing application tables, preserved runtime/storage and passing live
+health, proxy and production sign-in checks. No reset, hosted data repair or
+Clerk cutover was performed. Automatic deployment controls remain held; both
+protected workflows were disabled again immediately after their manual runs.
+Authenticated operator, physical/scientific and real-provider acceptance remain
+separate.
+
 ## Automatic deployment hold — October 1, 2026
 
 The owner authorized turning automatic deployment off while publishing the pending changes without deployment. Both `frontend/vercel.json` and `website/vercel.json` now set `git.deploymentEnabled` to `false`, disabling automatic Git deployments for every branch carrying this configuration. This replaces the previous branch-specific hold. See [Vercel's Git configuration](https://vercel.com/docs/project-configuration/git-configuration#turning-off-all-automatic-deployments).

@@ -110,3 +110,14 @@ browser run passed after an overlapping build caused development-server reloads.
 Exact activation, recovery and smoke identities will be recorded in the final
 release receipt. Physical/scientific/provider and hosted operator acceptance
 remain distinct from these automated gates.
+
+## Completed activation
+
+The [release receipt](../operations/portal-workflow-release-20261002.md) records
+matching API/UI application source `66240861c32c49af1b85ac4fa4c0dcf9f6fcd5c7`,
+successful protected backup/deployment runs, all fourteen hosted migrations,
+both verified encrypted off-server recovery copies, preserved counts for all
+223 existing tables and runtime/storage hashes, public UI alias and live smoke
+checks. Automatic deployment holds remain in place. This controlled release is
+complete; remaining physical/scientific/provider and hosted operator acceptance
+are not claimed by these release checks.
