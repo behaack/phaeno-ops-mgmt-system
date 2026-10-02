@@ -21,7 +21,7 @@ public static class LabCustomerHolds
             join sample in db.LabSamples.AsNoTracking() on specimen.SubmittedSpecimenId equals sample.Id
             where specimen.LabWorkOrderId == work
             orderby sample.CustomerSampleId
-            select new { specimen.Id, name = sample.CustomerSampleId }).ToListAsync(ct);
+            select new { specimen.Id, sampleId = sample.Id, name = sample.CustomerSampleId }).ToListAsync(ct);
         var holds = await db.LabCustomerHolds.AsNoTracking().Where(h => h.LabWorkOrderId == work).OrderByDescending(h => h.RequestedAtUtc).ToListAsync(ct);
         var events = await db.LabWorkEvents.AsNoTracking().Where(e => e.LabWorkOrderId == work && e.EventCode.StartsWith("CustomerHold"))
             .OrderByDescending(e => e.OccurredAtUtc).Select(e => new { e.Id, e.LabSpecimenId, e.OccurredAtUtc, e.DetailsJson }).ToListAsync(ct);

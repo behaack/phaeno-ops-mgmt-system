@@ -10,6 +10,7 @@ public sealed class LabSampleTubeKitSelection : IAudit, IConcurrency
     public Guid OrganizationId { get; private set; }
     public Guid DepartmentId { get; private set; }
     public Guid StockKitId { get; private set; }
+    public Guid? LabJobPhaseId { get; private set; }
     public DateTime? FinishedAt { get; private set; }
     public Guid? FinishedByUserId { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
@@ -20,14 +21,22 @@ public sealed class LabSampleTubeKitSelection : IAudit, IConcurrency
 
     private LabSampleTubeKitSelection() { }
 
-    public LabSampleTubeKitSelection(Guid orderId, Guid organizationId, Guid departmentId, Guid stockKitId)
+    public LabSampleTubeKitSelection(Guid orderId, Guid organizationId, Guid departmentId, Guid stockKitId, Guid? phaseId = null)
     {
-        if (new[] { orderId, organizationId, departmentId, stockKitId }.Any(id => id == Guid.Empty))
+        if (new[] { orderId, organizationId, departmentId, stockKitId }.Any(id => id == Guid.Empty) || phaseId == Guid.Empty)
             throw new ArgumentException("Scan a registered physical kit for this Job.");
         LabServiceOrderId = orderId;
         OrganizationId = organizationId;
         DepartmentId = departmentId;
         StockKitId = stockKitId;
+        LabJobPhaseId = phaseId;
+    }
+
+    public void AssignPhase(Guid phaseId)
+    {
+        if (phaseId == Guid.Empty || LabJobPhaseId.HasValue && LabJobPhaseId != phaseId)
+            throw new InvalidOperationException("A physical kit belongs to one phase.");
+        LabJobPhaseId = phaseId;
     }
 
     public void Finish(Guid actorUserId, DateTime utcNow)

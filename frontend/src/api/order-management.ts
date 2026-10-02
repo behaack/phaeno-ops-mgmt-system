@@ -53,6 +53,7 @@ export type CommercialOrderListItem = OrderListItem & {
 
 export type TimelineItem = {
   id: string;
+  childRecordId?: string | null;
   fromStatus: string;
   toStatus: string;
   reason: string | null;
@@ -105,6 +106,7 @@ export type Quote = {
   purpose: string;
   status: string;
   linesJson: string;
+  catalogItemNames?: Record<string, string> | null;
   subtotal: number;
   tax: number;
   total: number;
@@ -148,6 +150,7 @@ export type CancellationRequest = {
 };
 
 export type LabSample = {
+  phaseId?: string | null;
   sequencingRunCount?: number;
   id: string;
   customerSampleId: string;
@@ -270,6 +273,8 @@ export type LabRequestRevision = {
 };
 
 export type LabServiceOrder = {
+  requestedCatalogItemId?: string | null;
+  requestedServiceName?: string | null;
   departmentId: string;
   commercialDraft?: CommercialDraftForm | null;
   customerDraft?: CustomerStandardDraft | null;
@@ -309,6 +314,9 @@ export type LabServiceOrder = {
   canSubmit: boolean;
   canAcceptQuote: boolean;
   canManageQuotes?: boolean;
+  canProposeQuoteChanges?: boolean;
+  canDeclineQuote?: boolean;
+  quoteChangeProposal?: { quoteId: string; quoteRevision: number; reason: string; proposedAt: string } | null;
   canRequestQuoteExtension?: boolean;
   quoteAcceptanceBlockedReason?: string | null;
   canWithdraw: boolean;
@@ -777,19 +785,23 @@ export async function withdrawLabOrder(
     reason,
   });
 }
+export async function proposeLabQuoteChanges(orderId: string, quoteId: string, version: number, reason: string, idempotencyKey: string) {
+  return post<LabServiceOrder>(`/lab-service-orders/${orderId}/quotes/${quoteId}/propose-changes`, { version, reason }, true, idempotencyKey);
+}
+export async function declineLabQuote(orderId: string, quoteId: string, version: number, reason: string, idempotencyKey: string) {
+  return post<LabServiceOrder>(`/lab-service-orders/${orderId}/quotes/${quoteId}/decline`, { version, reason }, true, idempotencyKey);
+}
 export async function acceptLabQuote(
   orderId: string,
   quoteId: string,
   version: number,
   purchaseOrderNumber?: string,
   confirmedSampleTypeId?: string,
-  kitDeliveryLocation?: { id: string; version: number },
 ) {
   return post<LabServiceOrder>(
     `/lab-service-orders/${orderId}/quotes/${quoteId}/accept`,
     { version, quoteId, purchaseOrderNumber: purchaseOrderNumber || null,
-      confirmedSampleTypeId, kitDeliveryLocationId: kitDeliveryLocation?.id,
-      kitDeliveryLocationVersion: kitDeliveryLocation?.version },
+      confirmedSampleTypeId },
     true,
   );
 }
@@ -801,10 +813,11 @@ export type LabSampleTubePair = {
 }
 export type LabSampleTubeWorkspace = {
   pairs: LabSampleTubePair[];
-  kits: Array<{ id: string; kitNumber: string; tubeCapacity: number; availableTubeCount: number; finishedAt?: string | null; maximumSampleAmount: number | null; sampleAmountUnit: string | null }>;
+  kits: Array<{ id: string; kitNumber: string; tubeCapacity: number; availableTubeCount: number; finishedAt?: string | null; maximumSampleAmount: number | null; sampleAmountUnit: string | null; phaseId?: string | null; isUsable?: boolean }>;
   expectedSampleCount: number; expectedSequencingRunCount: number; isFinalized: boolean;
   preparationSources: Array<{ biologicalSource: string; specimenCount: number }>;
   preparationPhaseIds: string[];
+  preparedPhaseIds?: string[];
   minimumSampleAmount: number | null; sampleAmountUnit: string | null;
 }
 export type LabSampleTubePairInput = {
@@ -815,9 +828,9 @@ export type LabSampleTubePairInput = {
 export async function getLabSampleTubePairs(orderId: string) {
   return get<LabSampleTubeWorkspace>(`/lab-service-orders/${orderId}/sample-tube-pairs`)
 }
-export async function saveLabSampleTubeKit(orderId: string, orderVersion: number, kitNumber: string) {
+export async function saveLabSampleTubeKit(orderId: string, orderVersion: number, kitNumber: string, phaseId?: string) {
   return post<LabSampleTubeWorkspace>(`/lab-service-orders/${orderId}/sample-tube-pairs/kits`,
-    { orderVersion, kitNumber })
+    { orderVersion, kitNumber, phaseId })
 }
 export async function finishLabSampleTubeKit(orderId: string, kitId: string, orderVersion: number) {
   return post<LabSampleTubeWorkspace>(`/lab-service-orders/${orderId}/sample-tube-pairs/kits/${kitId}/finish`,
@@ -926,10 +939,11 @@ export async function finalizeLabSampleRoster(
   orderId: string,
   version: number,
   confirmTubeUsePolicy = false,
+  phaseId?: string,
 ) {
   return post<LabServiceOrder>(
     `/lab-service-orders/${orderId}/samples/finalize`,
-    { version, confirmTubeUsePolicy },
+    { version, confirmTubeUsePolicy, phaseId },
     true,
   );
 }

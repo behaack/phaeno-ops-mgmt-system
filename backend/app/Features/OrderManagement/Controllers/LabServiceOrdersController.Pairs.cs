@@ -16,7 +16,6 @@ public sealed partial class LabServiceOrdersController
         Guid labWorkOrderId, Guid destinationId,
         Guid actorId, DateTime now, CancellationToken ct)
     {
-        var locationId = PairedKitLocation(order);
         var samplesById = samples.ToDictionary(item => item.CustomerSampleId, StringComparer.OrdinalIgnoreCase);
         foreach (var group in pairs.GroupBy(item => item.StockKitId))
         {
@@ -25,7 +24,7 @@ public sealed partial class LabServiceOrdersController
                 ($"SHP-{now:yyyyMMdd}-{Guid.NewGuid():N}")[..24].ToUpperInvariant(),
                 order.OrganizationId, order.DepartmentId, SampleShipmentAuthorizationSource.CustomerLabServiceOrder,
                 order.Id, order.OrderNumber, order.CustomerReference, labWorkOrderId, destinationId);
-            shipment.SetDepartureLocation(locationId);
+            shipment.SetDepartureLocation(stock.CustomerDeliveryLocationId ?? throw Conflict("kit_location_missing", "This physical kit has no confirmed Customer delivery location."));
             shipment.SelectContainer(stock.ContainerDefinitionId, stock.ContainerSnapshotJson);
             foreach (var pair in group)
             {
@@ -62,19 +61,6 @@ public sealed partial class LabServiceOrdersController
         }
     }
 
-    private static Guid PairedKitLocation(LabServiceOrder order)
-    {
-        if (string.IsNullOrWhiteSpace(order.PlacementSnapshotJson))
-            throw Conflict("kit_delivery_address_missing", "This Job has no confirmed kit delivery address. Ask Phaeno to review its historical order setup.");
-        using var document = JsonDocument.Parse(order.PlacementSnapshotJson);
-        if (!document.RootElement.TryGetProperty("kitDeliveryAddress", out var address)
-            || address.ValueKind != JsonValueKind.Object
-            || !address.TryGetProperty("id", out var id)
-            || !id.TryGetGuid(out var locationId))
-            throw Conflict("kit_delivery_address_missing", "This Job has no confirmed kit delivery address. Ask Phaeno to review its historical order setup.");
-        return locationId;
-    }
-
     [HttpGet("{orderId:guid}/sample-tube-pairs")]
     public async Task<LabSampleTubeWorkspaceDto> ReadSampleTubePairs(Guid orderId, CancellationToken cancellationToken)
     {
@@ -90,10 +76,9 @@ public sealed partial class LabServiceOrdersController
             .OrderBy(item => item.CreatedAt).ThenBy(item => item.Id)
             .ToArrayAsync(cancellationToken);
         var selectedKitIds = selections.Select(item => item.StockKitId).ToArray();
-        var locationId = PairedKitLocation(order);
         var stock = await dbContext.SampleShippingStockKits.AsNoTracking().Include(item => item.Tubes)
             .Where(item => item.OrganizationId == order.OrganizationId && item.DepartmentId == order.DepartmentId
-                && item.CustomerDeliveryLocationId == locationId && selectedKitIds.Contains(item.Id))
+                && selectedKitIds.Contains(item.Id))
             .ToArrayAsync(cancellationToken);
         var sampleType = await ReadShippingSampleTypeAsync(order, cancellationToken);
         var tubeProductIds = stock.Where(item => item.TubeSupplierProductId.HasValue)
@@ -113,14 +98,18 @@ public sealed partial class LabServiceOrdersController
                 var item = stock.Single(kit => kit.Id == selection.StockKitId);
                 var product = item.TubeSupplierProductId.HasValue
                     ? tubeProducts.GetValueOrDefault(item.TubeSupplierProductId.Value) : null;
+                var usable = item.CustomerReceivedAt.HasValue && TransportationKitInventory.HasPreparedTubeRoster(item)
+                    && TransportationKitInventory.IsPhysicallyUsable(item, DateTime.UtcNow);
                 return new LabSampleTubeKitOptionDto(item.Id, item.KitNumber, item.TubeCapacity,
-                    item.Tubes.Count(tube => !usedIds.Contains(tube.Id)), selection.FinishedAt,
-                    product?.MaximumSampleAmount, product?.SampleAmountUnit);
+                    usable ? item.Tubes.Count(tube => !usedIds.Contains(tube.Id)) : 0, selection.FinishedAt,
+                    product?.MaximumSampleAmount, product?.SampleAmountUnit, selection.LabJobPhaseId,
+                    usable);
             }).ToArray(),
             preparation.Sources.Sum(s => s.SpecimenCount), preparation.SequencingRunCount,
             order.SampleRosterFinalizedAt.HasValue, preparation.Sources,
             order.Phases.Where(p => p.SupersededAtUtc == null && p.CancelledAtUtc == null).Select(p => p.Id).ToArray(),
-            sampleType.MinimumSampleAmount, sampleType.SampleAmountUnit);
+            sampleType.MinimumSampleAmount, sampleType.SampleAmountUnit,
+            order.Phases.Where(p => p.PreparationCompletedAtUtc.HasValue).Select(p => p.Id).ToArray());
     }
 
     [HttpPost("{orderId:guid}/sample-tube-pairs/kits")]
@@ -132,15 +121,17 @@ public sealed partial class LabServiceOrdersController
             $"sample-shipping:{orderId}", cancellationToken);
         var order = await ReadLockedRosterAsync(orderId, tenant, cancellationToken);
         Execute(order.EnsureSampleRosterEditable);
-        if (order.Samples.Count > 0 || order.SampleRosterFinalizedAt.HasValue)
+        if (order.SampleRosterFinalizedAt.HasValue)
             throw Conflict("paired_preparation_unavailable", "This Job already has a confirmed sample list.");
+        var phase = LabPhaseScopeRules.Resolve(order, request.PhaseId);
+        await LabPhaseShippingSequence.RequireCurrentAsync(dbContext, order, phase, cancellationToken);
+        if (phase.PreparationCompletedAtUtc.HasValue) throw Conflict("phase_preparation_locked", "This phase's sample preparation is already confirmed.");
         var kitNumber = request.KitNumber?.Trim();
         if (string.IsNullOrWhiteSpace(kitNumber) || kitNumber.Length > 100)
             throw Invalid("kit_barcode_invalid", "Scan the complete physical kit barcode.");
-        var locationId = PairedKitLocation(order);
         var kitId = await dbContext.SampleShippingStockKits.AsNoTracking()
             .Where(item => item.KitNumber == kitNumber && item.OrganizationId == order.OrganizationId
-                && item.DepartmentId == order.DepartmentId && item.CustomerDeliveryLocationId == locationId)
+                && item.DepartmentId == order.DepartmentId)
             .Select(item => (Guid?)item.Id).SingleOrDefaultAsync(cancellationToken);
         if (!kitId.HasValue)
             throw Invalid("kit_not_at_location", "This kit barcode is not a received kit at this Job's delivery location.");
@@ -148,26 +139,42 @@ public sealed partial class LabServiceOrdersController
         var kit = await dbContext.SampleShippingStockKits.AsNoTracking().Include(item => item.Tubes)
             .SingleAsync(item => item.Id == kitId.Value, cancellationToken);
         if (!kit.CustomerReceivedAt.HasValue || kit.BoundSampleShipmentId.HasValue || kit.ReservedSampleShipmentId.HasValue
-            || kit.Tubes.Count != kit.TubeCapacity || !kit.TubesVerifiedAt.HasValue
+            || !TransportationKitInventory.HasPreparedTubeRoster(kit)
             || !TransportationKitInventory.IsPhysicallyUsable(kit, DateTime.UtcNow))
             throw Conflict("kit_unavailable", "This physical kit is not received and available for sample preparation.");
-        var alreadySelected = await dbContext.LabSampleTubeKitSelections.AsNoTracking()
+        var alreadySelected = await dbContext.LabSampleTubeKitSelections
             .SingleOrDefaultAsync(item => item.StockKitId == kit.Id, cancellationToken);
+        if (kit.TransportationKitRequestLineId.HasValue)
+        {
+            var requestPhaseId = await dbContext.TransportationKitRequestLines.Where(l => l.Id == kit.TransportationKitRequestLineId)
+                .Join(dbContext.TransportationKitRequests, l => l.TransportationKitRequestId, r => r.Id, (l, r) => r.LabJobPhaseId)
+                .SingleOrDefaultAsync(cancellationToken);
+            if (requestPhaseId.HasValue && requestPhaseId != phase.Id)
+                throw Conflict("kit_for_another_phase", "This kit was requested for another phase. Select that phase's own kit.");
+        }
         if (alreadySelected is not null)
         {
-            if (alreadySelected.LabServiceOrderId != order.Id)
-                throw Conflict("kit_claimed_by_another_job", "This physical kit is already selected for another Job.");
+            if (alreadySelected.LabServiceOrderId != order.Id || alreadySelected.LabJobPhaseId.HasValue && alreadySelected.LabJobPhaseId != phase.Id)
+                throw Conflict("kit_claimed_by_another_phase", "This physical kit is already selected for another Job or phase.");
+            if (await dbContext.LabSampleTubePairs.AnyAsync(p => p.StockKitId == kit.Id && p.LabJobPhaseId != phase.Id, cancellationToken))
+                throw Conflict("kit_has_multiple_phases", "This kit contains historical pairs from another phase. Ask Phaeno to review the preparation.");
+            EnsureVersion(order.Version, request.OrderVersion);
+            alreadySelected.AssignPhase(phase.Id);
+            order.MarkUpdated(DateTime.UtcNow, tenant.Actor.Id);
+            await dbContext.SaveChangesAsync(cancellationToken);
             if (transaction is not null) await transaction.CommitAsync(cancellationToken);
             return await ReadSampleTubePairs(orderId, cancellationToken);
         }
         var selections = await dbContext.LabSampleTubeKitSelections.AsNoTracking()
-            .Where(item => item.LabServiceOrderId == order.Id)
+            .Where(item => item.LabServiceOrderId == order.Id && item.LabJobPhaseId == phase.Id)
             .OrderBy(item => item.CreatedAt).ThenBy(item => item.Id)
             .ToArrayAsync(cancellationToken);
-        if (selections.Any(item => !item.FinishedAt.HasValue))
+        var unfinishedIds = selections.Where(item => !item.FinishedAt.HasValue).Select(item => item.StockKitId).ToArray();
+        var unfinishedStock = await dbContext.SampleShippingStockKits.AsNoTracking().Where(k => unfinishedIds.Contains(k.Id)).ToArrayAsync(cancellationToken);
+        if (unfinishedStock.Any(k => TransportationKitInventory.IsPhysicallyUsable(k, DateTime.UtcNow)))
             throw Conflict("current_kit_not_finished", "Finish the current kit before scanning another kit.");
         if (await dbContext.LabSampleTubePairs.AsNoTracking()
-            .CountAsync(item => item.LabServiceOrderId == order.Id, cancellationToken) >= order.RequestedSpecimenCount)
+            .CountAsync(item => item.LabServiceOrderId == order.Id && item.LabJobPhaseId == phase.Id, cancellationToken) >= phase.SampleCount)
             throw Conflict("all_samples_paired", "Every accepted sample already has a saved tube pair.");
         if (await dbContext.LabSampleTubePairs.AsNoTracking().AnyAsync(item =>
             item.StockKitId == kit.Id && item.LabServiceOrderId != order.Id, cancellationToken))
@@ -178,7 +185,7 @@ public sealed partial class LabServiceOrdersController
             throw Conflict("kit_sample_type_mismatch", "This kit is not compatible with the confirmed Sample type.");
         EnsureVersion(order.Version, request.OrderVersion);
         dbContext.LabSampleTubeKitSelections.Add(new LabSampleTubeKitSelection(order.Id,
-            order.OrganizationId, order.DepartmentId, kit.Id));
+            order.OrganizationId, order.DepartmentId, kit.Id, phase.Id));
         order.MarkUpdated(DateTime.UtcNow, tenant.Actor.Id);
         dbContext.OrderStatusEvents.Add(NewEvent(order, order.Status.ToString(), order.Status.ToString(), tenant.Actor.Id,
             $"Physical kit {kit.KitNumber} scanned and fixed for sample preparation."));
@@ -198,15 +205,19 @@ public sealed partial class LabServiceOrdersController
         var order = await ReadLockedRosterAsync(orderId, tenant, cancellationToken);
         EnsureVersion(order.Version, request.OrderVersion);
         Execute(order.EnsureSampleRosterEditable);
-        if (order.Samples.Count > 0 || order.SampleRosterFinalizedAt.HasValue)
+        if (order.SampleRosterFinalizedAt.HasValue)
             throw Conflict("paired_preparation_unavailable", "This Job already has a confirmed sample list.");
         var selections = await dbContext.LabSampleTubeKitSelections
             .Where(item => item.LabServiceOrderId == order.Id && item.OrganizationId == tenant.Organization.Id
                 && item.DepartmentId == tenant.Department.Id)
             .OrderBy(item => item.CreatedAt).ThenBy(item => item.Id).ToArrayAsync(cancellationToken);
-        var selection = selections.FirstOrDefault(item => !item.FinishedAt.HasValue);
+        var selection = selections.FirstOrDefault(item => item.StockKitId == kitId && !item.FinishedAt.HasValue);
         if (selection is null || selection.StockKitId != kitId)
             throw Conflict("kit_not_active", "Finish the current saved kit before moving to another.");
+        var phase = LabPhaseScopeRules.Resolve(order, selection.LabJobPhaseId);
+        await LabPhaseShippingSequence.RequireCurrentAsync(dbContext, order, phase, cancellationToken);
+        if (order.Phases.Any(p => p.Id == selection.LabJobPhaseId && p.PreparationCompletedAtUtc.HasValue))
+            throw Conflict("phase_preparation_locked", "This phase's sample preparation is already confirmed.");
         var pairCount = await dbContext.LabSampleTubePairs.AsNoTracking()
             .CountAsync(item => item.LabServiceOrderId == order.Id && item.StockKitId == kitId,
                 cancellationToken);
@@ -235,10 +246,9 @@ public sealed partial class LabServiceOrdersController
         var order = await ReadLockedRosterAsync(orderId, tenant, cancellationToken);
         EnsureVersion(order.Version, request.OrderVersion);
         Execute(order.EnsureSampleRosterEditable);
-        if (order.Samples.Count > 0 || order.SampleRosterFinalizedAt.HasValue)
+        if (order.SampleRosterFinalizedAt.HasValue)
             throw Conflict("paired_preparation_unavailable", "This Job already has a sample list. Review its saved preparation instead.");
         var sampleType = await ReadShippingSampleTypeAsync(order, cancellationToken);
-        var locationId = PairedKitLocation(order);
         var saved = await dbContext.LabSampleTubePairs.Where(item => item.LabServiceOrderId == orderId).ToArrayAsync(cancellationToken);
         var preparation = order.ReadPreparationScope();
         var activePairs = saved.Where(p => order.RequiresPreparation(p.LabJobPhaseId)).ToArray();
@@ -248,6 +258,8 @@ public sealed partial class LabServiceOrdersController
             throw Conflict("duplicate_customer_sample_id", "Choose a distinct Sample ID for each physical tube.");
         var source = ResolveRosterSource(order, request.BiologicalSource);
         var phase = LabPhaseScopeRules.Resolve(order, request.PhaseId);
+        await LabPhaseShippingSequence.RequireCurrentAsync(dbContext, order, phase, cancellationToken);
+        if (phase.PreparationCompletedAtUtc.HasValue) throw Conflict("phase_preparation_locked", "This phase's sample preparation is already confirmed.");
         LabPhaseScopeRules.Validate(phase, source, request.SequencingRunCount, saved.Where(p => p.LabJobPhaseId == phase.Id).Select(p => (p.BiologicalSource, p.SequencingRunCount)));
         var sourceLimit = preparation.Sources.SingleOrDefault(item => LabServiceSourceGroup.Normalize(item.BiologicalSource) == LabServiceSourceGroup.Normalize(source))?.SpecimenCount ?? 0;
         if (activePairs.Count(item => LabServiceSourceGroup.Normalize(item.BiologicalSource) == LabServiceSourceGroup.Normalize(source)) >= sourceLimit)
@@ -260,7 +272,10 @@ public sealed partial class LabServiceOrdersController
         var selectedKitIds = selections.Select(item => item.StockKitId).ToArray();
         if (!selectedKitIds.Contains(request.StockKitId))
             throw Conflict("kit_not_saved", "Scan and save this physical kit before entering its sample tubes.");
-        var activeKitId = selections.FirstOrDefault(item => !item.FinishedAt.HasValue)?.StockKitId;
+        var unfinishedPhaseKitIds = selections.Where(s => s.LabJobPhaseId == phase.Id && !s.FinishedAt.HasValue).Select(s => s.StockKitId).ToArray();
+        var unfinishedPhaseKits = await dbContext.SampleShippingStockKits.AsNoTracking().Where(k => unfinishedPhaseKitIds.Contains(k.Id)).ToArrayAsync(cancellationToken);
+        var activeKitId = selections.FirstOrDefault(s => unfinishedPhaseKits.Any(k => k.Id == s.StockKitId
+            && TransportationKitInventory.IsPhysicallyUsable(k, DateTime.UtcNow)))?.StockKitId;
         if (activeKitId != request.StockKitId)
             throw Conflict("kit_not_active", "Finish entering the active physical kit before using another kit's tubes.");
         Execute(() => order.EnsureSampleRunCountMatchesPricing(request.SequencingRunCount));
@@ -272,10 +287,10 @@ public sealed partial class LabServiceOrdersController
         await SampleShippingPackingData.LockAsync(dbContext, $"supplier-tube:{barcode}", cancellationToken);
         var kit = await dbContext.SampleShippingStockKits.AsNoTracking().Include(item => item.Tubes)
             .SingleOrDefaultAsync(item => item.Id == request.StockKitId && item.OrganizationId == order.OrganizationId
-                && item.DepartmentId == order.DepartmentId && item.CustomerDeliveryLocationId == locationId,
+                && item.DepartmentId == order.DepartmentId,
                 cancellationToken) ?? throw Conflict("kit_not_for_order", "Select a received kit at this Job's confirmed delivery location.");
         if (!kit.CustomerReceivedAt.HasValue || kit.BoundSampleShipmentId.HasValue || kit.ReservedSampleShipmentId.HasValue
-            || !TransportationKitInventory.IsPhysicallyUsable(kit, DateTime.UtcNow))
+            || !TransportationKitInventory.HasPreparedTubeRoster(kit) || !TransportationKitInventory.IsPhysicallyUsable(kit, DateTime.UtcNow))
             throw Conflict("kit_unavailable", "This kit is not physically received and available for this Job.");
         var compatible = await new SampleShippingContainerCatalogService(dbContext).ReadStockCompatibleAsync(
             [new ContainerSampleTypeContext(order.SampleTypeDefinitionId!.Value)], [kit.ContainerDefinitionId], cancellationToken);
@@ -338,6 +353,8 @@ public sealed partial class LabServiceOrdersController
         var pair = await dbContext.LabSampleTubePairs.SingleOrDefaultAsync(item => item.Id == pairId
             && item.LabServiceOrderId == orderId && item.OrganizationId == tenant.Organization.Id
             && item.DepartmentId == tenant.Department.Id, cancellationToken) ?? throw Missing();
+        if (order.Phases.Any(p => p.Id == pair.LabJobPhaseId && p.PreparationCompletedAtUtc.HasValue))
+            throw Conflict("phase_preparation_locked", "This phase's finalized pairs cannot be removed.");
         EnsureVersion(pair.Version, request.Version);
         if (string.IsNullOrWhiteSpace(request.Reason))
             throw Invalid("pair_correction_reason_required", "Enter a reason for removing this saved sample/tube pair.");

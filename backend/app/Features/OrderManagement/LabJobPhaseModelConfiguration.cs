@@ -20,11 +20,14 @@ public static class LabJobPhaseModelConfiguration
         phase.Property(x => x.ProposedAdditionalRunPrice).HasPrecision(18, 2);
         phase.Property(x => x.PriceProposalNote).HasMaxLength(1000);
         model.Entity<LabServiceOrder>().Property(x => x.CommercialDraftJson).HasColumnType("jsonb");
+        model.Entity<LabServiceOrder>().HasOne<QboCatalogItem>().WithMany().HasForeignKey(x => x.RequestedCatalogItemId).OnDelete(DeleteBehavior.Restrict);
         phase.Property(x => x.CancellationReason).HasMaxLength(2000);
         phase.HasOne<LabServiceOrder>().WithMany(x => x.Phases).HasForeignKey(x => x.LabServiceOrderId).OnDelete(DeleteBehavior.Restrict);
         phase.HasIndex(x => new { x.LabServiceOrderId, x.Position }).HasFilter("superseded_at_utc IS NULL");
         model.Entity<LabServiceOrder>().Navigation(x => x.Phases).AutoInclude();
         model.Entity<LabSampleTubePair>().HasOne<LabJobPhase>().WithMany().HasForeignKey(p => p.LabJobPhaseId).OnDelete(DeleteBehavior.Restrict);
+        model.Entity<LabSampleTubeKitSelection>().HasOne<LabJobPhase>().WithMany().HasForeignKey(p => p.LabJobPhaseId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_lab_sample_tube_kit_selection_phase");
+        model.Entity<LabSampleTubeKitSelection>().HasIndex(p => p.LabJobPhaseId).HasDatabaseName("ix_lab_sample_tube_kit_selection_phase");
         model.Entity<LabSample>().HasOne<LabJobPhase>().WithMany().HasForeignKey(x => x.LabJobPhaseId).OnDelete(DeleteBehavior.Restrict);
         model.Entity<LabSample>().Property(x => x.LabJobPhaseId).IsRequired();
         model.Entity<LabSample>().HasIndex(x => new { x.LabJobPhaseId, x.Status });

@@ -1,10 +1,8 @@
-import { useId, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useBlocker } from '@tanstack/react-router'
+import { useEffect, useId, useRef, useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ChevronDown } from 'lucide-react'
 import { api } from '#/api/client'
 import { Button } from '#/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '#/components/ui/card'
@@ -13,21 +11,23 @@ import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/require
 import { Label } from '#/components/ui/label'
 import { ActionMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '#/components/ui/dropdown-menu'
 import { EvidenceError } from '#/features/lab-operations/InvestigationEvidence'
+import { useSpecimenHolds, type SpecimenHold as Hold } from './use-specimen-holds'
+import { useOrderDecisionDismissal } from './use-order-decision-dismissal'
 
-type Hold = { id: string; labSpecimenId: string; state: string; reason: string; response: string | null; version: number; requestedAtUtc: string }
-type Workspace = { workOrderId: string | null; specimens: { id: string; name: string }[]; holds: Hold[]; history?: { id: string; labSpecimenId: string; occurredAtUtc: string; state: string; reason: string }[]; canRequest: boolean; canDecide: boolean }
 type Decision = { specimen: { id: string; name: string }; hold?: Hold; action: string; label: string }
 const labels: Record<string, string> = { Requested: 'Pause requested — awaiting Phaeno', Applied: 'Pause confirmed', UnableToPause: 'Unable to pause ongoing work — new work remains blocked', ResumeRequested: 'Resumption requested — still blocked', Released: 'Hold released' }
 const schema = z.object({ reason: z.string().trim().min(1, 'Enter a reason.').max(2000), confirmed: z.boolean() })
 
-export function SpecimenHolds({ orderId, workOrderId }: { orderId?: string; workOrderId?: string }) {
+export function SpecimenHolds({ orderId, workOrderId, sampleIds, embedded = false, onModalChange }: { orderId?: string; workOrderId?: string; sampleIds?: string[]; embedded?: boolean; onModalChange?: (open: boolean) => void }) {
   const staff = Boolean(workOrderId)
-  const url = staff ? `/platform/lab-operations/work-orders/${workOrderId}/customer-holds` : `/lab-service-orders/${orderId}/specimen-holds`
+  const { url, query } = useSpecimenHolds(orderId, workOrderId)
   const client = useQueryClient()
-  const query = useQuery({ queryKey: ['specimen-holds', url], queryFn: async () => (await api.get<{ data: Workspace }>(url)).data.data, refetchInterval: 15000 })
   const [decision, setDecision] = useState<Decision | null>(null)
   const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { reason: '', confirmed: false } })
   const id = useId()
+  const cancelRef = useRef<HTMLButtonElement>(null)
+  const opener = useRef<HTMLElement | null>(null)
+  useEffect(() => { onModalChange?.(Boolean(decision)); return () => onModalChange?.(false) }, [decision, onModalChange])
   const mutation = useMutation({ mutationFn: async (values: z.infer<typeof schema>) => {
     if (!decision) throw new Error('Choose a sample first.')
     if (staff && !values.confirmed) { form.setError('confirmed', { message: 'Confirm the safe operational boundary.' }); throw new Error('Confirm the safe operational boundary.') }
@@ -40,14 +40,21 @@ export function SpecimenHolds({ orderId, workOrderId }: { orderId?: string; work
     await Promise.all(['lab-operations', 'lab-work-order', 'lab-jobs', 'lab-service-order'].map(key => client.invalidateQueries({ queryKey: [key] })))
   }, retry: false })
   const dirty = decision !== null && form.formState.isDirty
-  useBlocker({ shouldBlockFn: () => mutation.isPending || dirty && !window.confirm('Discard the unsaved hold request or decision?'), enableBeforeUnload: () => dirty || mutation.isPending })
-  function close() { if (!mutation.isPending && (!dirty || window.confirm('Discard the unsaved hold request or decision?'))) { setDecision(null); form.reset() } }
-  function choose(value: Decision) { mutation.reset(); form.reset(); setDecision(value) }
+  const dismissal = useOrderDecisionDismissal(dirty, mutation.isPending, () => { setDecision(null); form.reset() }, { scope: 'hold request', description: 'Your unsaved reason will be discarded. The sample’s saved hold status will remain unchanged.' })
+  const close = dismissal.close
+  function choose(value: Decision) { opener.current = document.getElementById(`hold-action-${value.specimen.id}`); mutation.reset(); form.reset(); setDecision(value) }
   if (query.isPending) return <p role="status">Loading specimen holds…</p>
   if (query.isError) return <div><EvidenceError error={query.error} /><Button variant="outline" onClick={() => void query.refetch()}>Reload specimen holds</Button></div>
   if (!query.data.workOrderId || !query.data.specimens.length) return null
-  return <Card className="my-4 gap-0 overflow-hidden py-0"><CardHeader className="border-b bg-muted/50 p-4"><CardTitle>Specimen holds</CardTitle><p className="text-sm text-muted-foreground">A request blocks new work and result release. Phaeno confirms when an ongoing procedure can safely pause or resume. Charges and retention dates do not change automatically. Results already delivered remain available.</p></CardHeader>
-    <CardContent className="space-y-3 p-4">{query.data.specimens.map(specimen => {
+  const specimens = query.data.specimens.filter(specimen => !sampleIds || sampleIds.includes(specimen.sampleId))
+  if (!specimens.length) return null
+  const activeHolds = query.data.holds.filter(hold => hold.state !== 'Released' && specimens.some(specimen => specimen.id === hold.labSpecimenId))
+  const Container = embedded ? 'details' : Card
+  const Header = embedded ? 'summary' : CardHeader
+  const Title = embedded ? 'span' : CardTitle
+  const Content = embedded ? 'div' : CardContent
+  return <Container open={embedded ? activeHolds.length > 0 : undefined} className={embedded ? 'space-y-3 border-t pt-4' : 'my-4 gap-0 overflow-hidden py-0'}><Header className={embedded ? 'cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring' : 'border-b bg-muted/50 p-4'}><Title className="font-semibold">Specimen holds{embedded ? ` · ${activeHolds.length} active` : ''}</Title></Header>
+    <Content className={embedded ? 'divide-y' : 'space-y-3 p-4'}><p className="pb-3 text-sm text-muted-foreground">A request blocks new work and result release. Phaeno confirms when an ongoing procedure can safely pause or resume. Charges and retention dates do not change automatically. Results already delivered remain available.</p>{specimens.map(specimen => {
       const history = query.data.holds.filter(h => h.labSpecimenId === specimen.id)
       const hold = history.find(h => h.state !== 'Released')
       const actions: Decision[] = []
@@ -57,17 +64,19 @@ export function SpecimenHolds({ orderId, workOrderId }: { orderId?: string; work
         if (hold.state === 'Requested') actions.push({ specimen, hold, action: 'unable', label: 'Cannot pause ongoing work' })
         if (hold.state === 'ResumeRequested') actions.push({ specimen, hold, action: 'resume', label: 'Approve resumption' }, { specimen, hold, action: 'keep-held', label: 'Keep paused' })
       }
-      return <div key={specimen.id} className="rounded-md border p-3"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="font-medium wrap-anywhere">{specimen.name}</p><p className="text-sm">{hold ? labels[hold.state] : 'No customer hold'}</p></div>
-        {actions.length === 1 ? <Button size="sm" variant="outline" onClick={() => choose(actions[0])}>{actions[0].label}</Button> : actions.length > 1 ? <ActionMenu><DropdownMenuTrigger asChild><Button size="sm" variant="outline">Actions<ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max max-w-[calc(100vw-2rem)]">{actions.map(action => <DropdownMenuItem key={action.action} onSelect={() => choose(action)}>{action.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu> : null}</div>
+      return <div key={specimen.id} className={embedded ? 'py-3' : 'rounded-md border p-3'}><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><p className="font-medium wrap-anywhere">{specimen.name}</p><p className="text-sm">{hold ? labels[hold.state] : 'No customer hold'}</p></div>
+        {actions.length === 1 ? <Button id={`hold-action-${specimen.id}`} size="sm" variant="outline" onClick={() => choose(actions[0])}>{actions[0].label}</Button> : actions.length > 1 ? <ActionMenu><DropdownMenuTrigger asChild><Button id={`hold-action-${specimen.id}`} size="sm" variant="outline">Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max max-w-[calc(100vw-2rem)]">{actions.map(action => <DropdownMenuItem key={action.action} onSelect={() => choose(action)}>{action.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu> : null}</div>
         {hold ? <div className="mt-2 text-sm whitespace-pre-wrap"><p>{hold.reason}</p>{hold.response ? <p className="mt-1">Latest response: {hold.response}</p> : null}</div> : null}
         {history.length ? <details className="mt-2 text-sm"><summary className="cursor-pointer">Hold history</summary>{(query.data.history ?? []).filter(h => h.labSpecimenId === specimen.id).map(h => <p key={h.id} className="mt-2 whitespace-pre-wrap">{new Date(h.occurredAtUtc).toLocaleString()} · {labels[h.state]} · {h.reason}</p>)}</details> : null}
       </div>
-    })}</CardContent>
-    <Dialog open={decision !== null} onOpenChange={open => { if (!open) close() }}><DialogContent showCloseButton={!mutation.isPending}><form onSubmit={form.handleSubmit(values => mutation.mutate(values))}><DialogHeader><DialogTitle>{decision?.label}</DialogTitle><DialogDescription>{decision?.specimen.name}. Changes are recorded in the sample history. Releasing this hold does not automatically start work or clear other restrictions.</DialogDescription></DialogHeader>
+    })}</Content>
+    <Dialog open={decision !== null} onOpenChange={open => { if (!open) close() }}><DialogContent showCloseButton={!mutation.isPending} onOpenAutoFocus={event => { event.preventDefault(); cancelRef.current?.focus() }} onCloseAutoFocus={event => { event.preventDefault(); if (opener.current?.isConnected) opener.current.focus(); else document.getElementById('job-phase-progress')?.focus() }}><form onSubmit={form.handleSubmit(values => mutation.mutate(values))}><DialogHeader><DialogTitle>{decision?.label}</DialogTitle></DialogHeader>
+      <div><DialogDescription>{decision?.specimen.name}. Changes are recorded in the sample history. Releasing this hold does not automatically start work or clear other restrictions.</DialogDescription></div>
       <div className="my-4 space-y-3"><Label htmlFor={id}><RequiredFieldName>{staff ? 'Reason shared with the customer' : 'Reason'}</RequiredFieldName></Label><textarea id={id} disabled={mutation.isPending} maxLength={2000} aria-invalid={Boolean(form.formState.errors.reason)} className="min-h-24 w-full rounded-md border bg-background p-2" {...form.register('reason')} />{form.formState.errors.reason ? <p role="alert">{form.formState.errors.reason.message}</p> : null}
       {staff ? <label className="flex items-start gap-2"><input type="checkbox" disabled={mutation.isPending} {...form.register('confirmed')} /><span>I verified the safe operational boundary, including work with external providers.</span></label> : null}{form.formState.errors.confirmed ? <p role="alert">{form.formState.errors.confirmed.message}</p> : null}
       {mutation.isError ? <EvidenceError error={mutation.error} /> : null}</div>
-      <RequiredDialogFooter><Button type="button" variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Saving…' : decision?.label}</Button></RequiredDialogFooter>
+      <RequiredDialogFooter><Button ref={cancelRef} type="button" variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" disabled={mutation.isPending}>{mutation.isPending ? 'Saving…' : decision?.label}</Button></RequiredDialogFooter>
     </form></DialogContent></Dialog>
-  </Card>
+    {dismissal.confirmation}
+  </Container>
 }

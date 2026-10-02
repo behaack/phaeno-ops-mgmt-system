@@ -51,6 +51,9 @@ public static class CatalogItemDeletion
 
     public static async Task<bool> HasReferencesAsync(PSeqOperationsDbContext db, Guid id, CancellationToken ct)
     {
+        var requested = JsonSerializer.Serialize(new { catalogItemId = id });
+        if (await db.LabServiceOrders.AnyAsync(value => value.RequestedCatalogItemId == id
+            || value.CommercialDraftJson != null && EF.Functions.JsonContains(value.CommercialDraftJson, requested), ct)) return true;
         if (await db.AnalysisDefinitions.AnyAsync(value => value.QboCatalogItemId == id, ct)
             || await db.PartnerReagentOfferings.AnyAsync(value => value.QboCatalogItemId == id, ct)
             || await db.AssemblyProfiles.AnyAsync(value => value.QboCatalogItemId == id, ct)

@@ -1,5 +1,7 @@
 namespace PhaenoPortal.Test;
 
+using PhaenoPortal.App.Features.OrderManagement.Services;
+
 using PSeq.Operations.Commercial.OrderManagement.Domain;
 using PSeq.Operations.Laboratory.Domain;
 
@@ -110,7 +112,9 @@ public sealed class TransportationKitAssemblyDomainTests
         kit.Tubes.Add(new(kit.Id, "TUBE-ONE", "maker-a", productId));
         kit.Tubes.Add(new(kit.Id, "TUBE-TWO", "maker-a", productId));
         Assert.Throws<InvalidOperationException>(() => kit.DispatchToLocation(location, "Carrier", "TRACK", DateTime.UtcNow));
+        Assert.False(TransportationKitInventory.HasPreparedTubeRoster(kit));
         kit.CompleteAssembly(DateTime.UtcNow);
+        Assert.True(TransportationKitInventory.HasPreparedTubeRoster(kit));
         kit.DispatchToLocation(location, "Carrier", "TRACK", DateTime.UtcNow);
         Assert.NotNull(kit.FulfilledAt);
         Assert.Null(kit.TubesVerifiedAt);

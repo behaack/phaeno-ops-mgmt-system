@@ -1,5 +1,193 @@
 # Frontend Test Plan
 
+## Progress for single-phase Jobs — October 1, 2026
+
+Authored component regressions cover the Progress tab, directly visible single-order
+details, one-sample wording, waiting states before tube/container identities,
+single-order TAT and the on-demand kit dialog without Phase 1 wording. Existing
+multi-phase expansion, shipment membership and sequential next-step cases remain.
+Manual checkpoint: desktop and narrow/dark layouts, tab keyboard navigation,
+request-modal body/footer, Cancel focus and return, and multi-phase expansion.
+Automated tests remain unexecuted under the request-only rule.
+
+## Consolidated Job detail workspace — October 1, 2026
+
+Regression source: `LabServiceDetailTabs.test.tsx` preserves unsaved preparation across tab changes and background refresh, checks exact phase result membership, and keeps unaccepted orders in commercial review. Automated tests are not executed under this request.
+
+The owner approved one current-task area and four supporting tabs. This
+supersedes the earlier Sent phases/After you send/disclosure presentation.
+Authored phase-list regressions cover a single list of sent/current phases,
+exact cohort expansion, outbound kit versus sample dispatch labels and shipment
+links. Updated URL parsing coverage retains supporting tab, expanded phase and
+result filter separately from the active shipping phase. Updated quote snapshot
+navigation and phase-card regressions. Hold coverage verifies ID-based phase
+filtering even with duplicate sample names, a meaningful dialog body and initial
+Cancel focus. Existing scientific/permission/concurrency rules are retained.
+
+Manual review: default accepted Phases / unaccepted billing, keyboard tab
+switching, exact result phase filter, one open phase, active-hold notice and focus,
+current preparation retained across tab/background refresh, Request/Receive
+without preparation, direct Send confirmation without duplicated kit/preparation panels, current insert instructions,
+one Actions indicator, narrow/dark reflow and guarded downloads. Automated tests
+are authored/updated but not run; use TypeScript, scoped lint and synthetic UI
+verification at the checkpoint.
+
+## Shipping next phase after dispatch — October 1, 2026
+
+Supersedes the earlier results-based shipping progression below. Updated helper
+and phase-card regressions cover exact full-dispatch advancement, partial and
+mixed-phase shipment rejection, Phase 2 kit request with zero Phase 1 results,
+on-demand ordering, visible sent-phase status and final shipping completion.
+Manually verify matching View phase progress / Download quote PDF dimensions,
+status versus actual receipt/results, disclosure navigation, permissions and
+narrow/dark layouts. Automated tests are authored/updated, not run.
+
+## Ordered phase shipping refinement — October 1, 2026
+
+Selected-shipment Send action follow-up: authored integration coverage in
+`LabJobPhaseSendAction.test.tsx` mounts the phase card and shipping workspace
+together, retains the Send and record shipments title and verifies the supplied
+Review and confirm shipment contents command runs without navigation. The
+workspace's navigation lock still disables the command. Existing shipment-detail
+coverage owns the confirmation modal, contents, focus and write guards. Automated
+execution remains request-only; compile/lint and manually inspect the modal.
+
+Simple Send refinement: the embedded shipment supplies exactly one current
+command (confirm contents → print insert → record shipment). Adapted existing
+shipment-detail and workspace regressions retain instructions in header actions,
+cancelled-print focus, exact-revision acknowledgement and revision invalidation.
+Record is absent from Job header commands before printed/packed acknowledgement.
+Instructions remain available to authorized readers; no extra progress strip is
+added. The printed-and-packed dialog contains expanded, collapsible frozen packing
+instructions for the printed revision. Shipment-detail coverage asserts the
+instructions and one dialog; packet coverage rejects mismatched revisions.
+Tests are authored/updated, not executed.
+
+Preparation-header follow-up: inspect a padded shaded header with a proper
+Prepare sample shipment heading and separate body inset. Next-phase guidance
+must reflect full prior-phase result delivery. No new automated layout test is
+needed; use scoped lint/type checking and a manual component preview.
+
+Accepted phase-disclosure follow-up: Phases / Delivery scope starts collapsed
+and remains available by its labeled summary. View phase progress opens it
+before scrolling and focusing. No new automated test was added for this bounded
+disclosure change; verify keyboard toggling, indicator alignment and shortcut
+navigation at the static/manual checkpoint.
+
+Received-stock follow-up: authored, not executed. The progress helper requires
+explicitly usable kits and enough available/paired tubes for the entire phase;
+insufficient, unavailable or finished-without-pairs stock stays at Request.
+An outstanding outbound order stays at Receive even with allocated stock.
+Component coverage checks Existing kits allocated / Received · existing stock,
+the no-new-delivery explanation and Prepare navigation, plus outbound receipt
+waiting. Manual synthetic preview and static checks are recorded in the checkpoint.
+The helper also covers Request received, Sent, Received and partial dispatch/
+receipt labels; the Receive caption announces status changes to assistive technology.
+
+Review-before-acceptance follow-up: `LabJobOrderProgress.test.tsx` covers Draft,
+pricing and issued-quote states with **Review and Accept Order**, no step strip,
+no next-step card and no duplicate review action. Existing sample/shipment tests
+use genuinely placed fixtures. Quote-detail coverage retains the Actions menu
+and open scope/pricing without confirmation guidance. Authored, not executed;
+accepted phase shipping remains covered by the current-phase component tests.
+
+Authored, not executed: currentShippingPhase selects the earliest unfinished phase by position, skips approved cancellations and advances only on full Portal result coverage. LabJobPhaseShipping covers the Shipping heading with phase name/sample count and no repeated phase line, removal of the selector/overview, Next step, current-phase-only requests, address/retry retention, dialog body/footer and focus return, phase advancement and finished-state progress navigation. Manual actual-component browser checks and static verification are recorded in the local checkpoint; no automated suite is authorized.
+
+## Initial on-demand phase kits checkpoint — October 1, 2026
+
+Authored, not executed: `LabJobPhaseShipping.test.tsx` covers no write on load,
+the request dialog's body and footer, address/phase selection, safe initial
+focus and focus return, failed-request entry preservation, and stable retry
+identity. `lab-phase-shipping.test.ts` covers independent phase progress,
+received stock, partial receipt, cancelled/unassigned history, and only the
+selected phase's sent shipments. The kit-order modal adds unshipped-request
+cancellation with an optional reason; standard-order tests expect placement
+without a kit address.
+
+TypeScript and scoped ESLint pass. Manual browser checks use actual components
+with a synthetic offline adapter: bulk phase selection, failed retry,
+discard protection, focus return, phase-specific modal/cancellation, received
+phase independence, and keyboard Actions opening pass. Light/dark screenshots
+were inspected. At 390 px, the page has no horizontal overflow and the dialog's
+header/body/footer remain within the viewport; mobile screenshot capture was
+unreliable, so this is DOM/bounds evidence. Connected Customer/Partner and
+physical operational verification remain separate. No automated test execution.
+
+## Kit requests default tab — October 1, 2026
+
+Updated existing tab-resolution and receipt-panel regressions to expect Kit
+requests without a selected tab, retain explicit receiving/accession choices,
+and select receiving deliberately in receipt workflow cases. The existing
+keyboard-tab case now starts at the default Kit requests view. The assigned
+shipment link explicitly chooses receiving. Tests were updated but not run.
+Manual acceptance opens Receipt & accession without receiptTab, then verifies
+explicit receiving/accession URLs and switching back to this section.
+
+## Placed transportation kit order modal — October 1, 2026
+
+`LabJobKitDeliveryPanel.test.tsx` now covers an initially closed view opening
+the saved pending request and quantities/address, Close restoring its trigger,
+tracking-to-receipt-to-overview within one dialog, Member review without receipt
+commands, and required/wrong/matching barcode validation. Initial receipt focus
+is Cancel; a matching barcode Enter still advances to Confirm. Existing query
+invalidations keep pair-preparation availability current after receipt.
+Tests are authored, not executed, under the request-only policy.
+
+Manual review must include the placed Job's next-step action and shared Actions
+entry, visible header/body/footer, Escape and focus return, narrow reflow, both
+themes, and read-only opening with no new kit order or physical receipt write.
+
+Local checkpoint: TypeScript/scoped lint and manual UI-preview checks passed
+for the modal/menu, barcode validation and keyboard transitions. Desktop light
+and 320px dark views showed fixed header/footer, scrolling body and no horizontal
+overflow. This used synthetic data with the actual components, not automated
+component execution or a connected Customer session. Physical receipt remains
+a separate acceptance gate.
+
+## Unified on-screen phase review — October 1, 2026
+
+Updated `LabOrderQuoteReview.test.tsx` covers singular service/sample quantity from quoted lines, frozen scope and prices in one phase region, exact phase-ID matching, a base-only phase, conditional additional charges, 15 × (3 − 1) = 30 additional runs, suppression of inconsistent calculations, aggregate allocation when runs per sample is not recorded, ungrouped unknown-phase charges and preserved saved tax/totals. Tests are authored, not executed, under the request-only policy.
+
+Manual checkpoint covers the existing 25-sample/two-phase quote: 45 total runs in phase 1, 1 included plus 2 additional per sample, 30 additional runs, $26,250 phase price, $12,500 phase 2 and $38,750 total. Check shared phase borders, same-block scope/prices, base-only omission, responsive ordering, no overflow and existing Actions keyboard/focus behavior. PDF files are outside this change.
+
+Checkpoint passed: TypeScript, scoped ESLint and generated-help verification; actual-component synthetic desktop review and 320px dark-content reflow with two/twenty phases; Enter menu opening, Escape focus return, one indicator, one divider and four single-line actions. The owner supplied a connected Customer screenshot and accepted the presentation. Preview files/server/tab were removed and the viewport reset. Automated tests remain unrun; no Customer decision was submitted.
+
+Checkpoint passed: TypeScript, scoped ESLint and generated-help verification; actual-component synthetic desktop review and 320px dark-content reflow with two/twenty phases; Enter menu opening, Escape focus return, one indicator, one divider and four single-line actions. The owner supplied a connected Customer screenshot and accepted the presentation. Preview files/server/tab were removed and the viewport reset. Automated tests remain unrun; no Customer decision was submitted.
+
+## Shared handling controls — October 1, 2026
+
+The POMS Draft's empty Safety declaration offers a shared link-style **Insert “No known hazards”** button. Manual acceptance covers exact insertion, editable text and textarea focus, dirty Draft tracking, no form submission, preservation of an existing declaration, whitespace-only entry, helper restoration after clearing, inherited busy disabling, keyboard use and narrow/light/dark reflow. This reversible field convenience does not require a new mirrored unit test; automated suites were not requested.
+
+Storage override is placed beside the Storage requirements heading/default indicator. Verify the default remains below, the checkbox toggles the existing editable override, its label/description stay associated, and the row wraps without horizontal overflow on narrow screens.
+
+## Service catalog row actions — October 1, 2026
+
+Authored, not executed: `CatalogItemRowActions.test.tsx` covers Edit and status-dependent actions, one shared menu indicator, unavailable writes, named confirmation/body, Cancel focus and focus return, preserved fields and reviewed version, cache refresh, failed/stale saves, pending dismissal/duplicate prevention and search focus when deactivation removes an active-only row. Automated suites remain request-only. Static and manual presentation verification are recorded in the owning Order Management plan after the checkpoint.
+
+## Quote decisions and scope refinements — October 1, 2026
+
+Authored, not executed: `LabQuoteProposalDialog.test.tsx` covers one multiline field, whitespace/length validation, draft retention, stable retry identity, busy dismissal/duplicate prevention, replaced quotes and shared discard confirmation. `LabQuoteExtension.test.tsx` covers all initial-quote choices despite the older withdrawal flag, exact-quote decline, submitted proposal presentation, member permissions and PDF download below a divider. `LabQuoteDeclineDialog.test.tsx` uses the shared discard confirmation. `LabOrderQuoteReview.test.tsx` checks summed service quantities across phases, separate additional runs and multiple recorded catalog services against later order changes.
+
+Checkpoint passed: TypeScript, scoped ESLint and generated-help checks. A synthetic actual-component preview confirmed a 224px menu with five single-line entries and one divider, service quantities of 10 base services and 5 additional runs, hidden None notes and the approved TAT copy. Keyboard opening, required-field feedback, one proposal textarea, cancel initial focus, shared dirty discard and focus return were checked. At 320px, dark content reflows without horizontal overflow; phase details/pricing stack in order and menu items stay on one line. No captured console errors. Preview files/server/tab were removed and the viewport restored. Automated component suites remain request-only; no customer decision was submitted.
+
+## Phase quote review and catalog selection — October 1, 2026
+
+Authored, not executed: `LabOrderQuoteReview.test.tsx` checks frozen phase identity/scope/TAT against current-order changes, repeated names, differing line order, unmatched lines, concise catalog labels, conditional additional runs, billing placement and pre-tax totals. `LabQuoteExtension.test.tsx` now covers grouped quote decisions, no duplicate operational phase panel before acceptance and retained progress after acceptance. `commercial-draft.test.ts` adds the service-selection submission requirement while preserving incomplete Draft save. `PhaseQuoteDialog.test.tsx` checks that several catalog choices retain the requested service and its price instead of choosing the first item. Component suites remain request-only.
+
+TypeScript and scoped ESLint passed. Manual signed-in local inspection confirmed Catalog service offers PSeq RNA Sequencing, aligns with Sample type at desktop and fits a measured 320px CSS viewport without horizontal overflow. No Draft was saved/submitted. The actual quote components in a synthetic preview paired two and twenty phases at desktop, stacked details/pricing at 320px in dark theme, retained one-line currency and bold inline labels, and reduced phase-row heights from about 288px to 176px/156px with a 12px inter-row gap. This is presentation evidence; connected save/reopen/issue/accept verification requires the updated API. This earlier checkpoint preceded runtime activation; the local API has subsequently been rebuilt and restarted for the quote-decision follow-up.
+
+Synthetic keyboard checks confirmed one Actions chevron with two decisions, Enter opening the menu, Escape returning focus to Actions, and one direct Accept quote without a chevron when only one decision is available. Enter opened the shared preview dialog with the dismissal action focused; closing returned focus to Accept quote. Preview files/tab were removed and the viewport restored.
+
+## Saved Draft readability — October 1, 2026
+
+Phase-price wording: renamed Accepted phase portion to Phase price because the value is established at quote issuance before Customer acceptance. Scoped lint passed; browser DOM inspection confirmed the new bold label in both phases with unchanged $4,750.00 and $0.00 invoiced values. No regression test added or executed for this text-only correction.
+
+Commercial scope follow-up: type checking and scoped lint passed. Browser inspection confirmed 700 weight for the six visible labels and no desktop/narrow horizontal overflow. The conditional Proposal note shares the same class but was not rendered in this record. No regression tests added or executed for this presentation-only change; dark-theme inspection remains pending.
+
+Follow-up phase-card label correction: scoped lint and type checking passed. Manual signed-in inspection of the Quote-issued order confirmed 700 weight on all 16 visible labels across two phase cards and no horizontal overflow at desktop/narrow widths. Automated suites were not requested or run. Conditional additional-run and dark-theme visual cases remain pending.
+
+Presentation-only correction: count/price definition terms are bold and inline with their values; handling terms are bold above longer text. No regression tests added or executed for this low-impact change. Local signed-in inspection confirmed 700-weight labels and same-line phase values in both existing phases, semantic definition lists and no horizontal overflow at 1163 px and 487 px CSS widths. The Draft remained at Version 2; no save or submission occurred. Dark-theme and entered-price/additional-run visual cases remain unverified. Type checking passed; lint and generated-help verification are recorded in the owning phase plan.
+
 ## POMS assembly notifications and recovery — September 30, 2026
 
 `use-assembly-notifications.test.tsx` covers authenticated watched-job subscription, fresh access token retrieval, HTTP invalidation, foreign notices, reconnect, organization change, late events after cleanup, mock/unauthorized/disabled sessions, initial failure retry and cleanup. `AssemblyJobs.test.tsx` includes delivery/outcome presentation for an unsent cancellation resolved by a terminal race. Existing assembly progress/setup/filter tests remain included. Run lint, typecheck, the three focused assembly test files, documentation checks and the production frontend build at the checkpoint. Live browser-to-hub/DPS acceptance remains separately recorded in the [run](../testing/runs/2026-09-30-poms-assembly-messaging-foundation.md).

@@ -16,7 +16,14 @@ public sealed record TransportationKitRequestDto(Guid Id, Guid JobId, string Job
     Guid DepartmentId, Guid DeliveryLocationId, CustomerDeliveryLocationDto DeliveryAddress, string Status,
     DateTime RequestedAt, long Version, bool IncludedInLabOrder, IReadOnlyList<TransportationKitRequestLineDto> Lines,
     IReadOnlyList<TransportationKitDispatchDto> Kits, bool CanConfirmReceipt, bool CanCancel, string? CancellationReason,
-    string OrganizationName, string DepartmentName);
+    string OrganizationName, string DepartmentName, Guid? PhaseId = null, string? PhaseName = null);
+public sealed record LabPhaseKitSupplyDto(Guid PhaseId, string PhaseName, int SampleCount,
+    Guid? DeliveryLocationId, ContainerPackingPreviewDto Recommendation,
+    IReadOnlyList<AvailableTransportationStockKitDto> ReceivedStock, bool CanRequest, string? BlockedReason);
+public sealed record LabOrderKitWorkspaceDto(IReadOnlyList<TransportationKitRequestDto> Requests,
+    IReadOnlyList<LabPhaseKitSupplyDto> Phases, IReadOnlyList<CustomerDeliveryLocationDto> Locations);
+public sealed record RequestLabPhaseKitsRequest(long OrderVersion, IReadOnlyList<Guid> PhaseIds,
+    Guid DeliveryLocationId, long DeliveryLocationVersion);
 public sealed record AvailableTransportationStockKitDto(Guid Id, string KitNumber, Guid ContainerDefinitionId,
     string Sku, string CommonName, int TubeCapacity, long Version);
 public sealed record TransportationKitTypeAvailabilityDto(Guid ContainerDefinitionId, string Sku,

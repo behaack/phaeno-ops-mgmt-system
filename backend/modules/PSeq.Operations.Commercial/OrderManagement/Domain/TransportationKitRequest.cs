@@ -8,6 +8,8 @@ public sealed class TransportationKitRequest : IAudit, IConcurrency
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid LabServiceOrderId { get; private set; }
+    public Guid? LabJobPhaseId { get; private set; }
+    public int? PhaseSampleCount { get; private set; }
     public Guid OrganizationId { get; private set; }
     public Guid DepartmentId { get; private set; }
     public Guid DeliveryLocationId { get; private set; }
@@ -26,12 +28,17 @@ public sealed class TransportationKitRequest : IAudit, IConcurrency
 
     private TransportationKitRequest() { }
     public TransportationKitRequest(Guid jobId, Guid organizationId, Guid departmentId, Guid locationId,
-        string addressSnapshotJson, Guid requestedByUserId, DateTime utcNow)
+        string addressSnapshotJson, Guid requestedByUserId, DateTime utcNow, Guid? phaseId = null, int? phaseSampleCount = null)
     {
         if (new[] { jobId, organizationId, departmentId, locationId, requestedByUserId }.Any(id => id == Guid.Empty))
             throw new ArgumentException("Choose an authorized Job, delivery location and requesting user.");
         if (utcNow.Kind != DateTimeKind.Utc) throw new ArgumentException("Request time must be UTC.");
         LabServiceOrderId = jobId; OrganizationId = organizationId; DepartmentId = departmentId;
+        if (phaseId == Guid.Empty) throw new ArgumentException("Choose a valid phase for the kit request.");
+        LabJobPhaseId = phaseId;
+        if (phaseSampleCount.HasValue && phaseSampleCount is < 1 or > 10000)
+            throw new ArgumentException("A phase kit request needs a positive physical sample count.");
+        PhaseSampleCount = phaseSampleCount;
         DeliveryLocationId = locationId; DeliveryAddressSnapshotJson = OrderText.Json(addressSnapshotJson);
         RequestedByUserId = requestedByUserId; RequestedAt = utcNow;
     }

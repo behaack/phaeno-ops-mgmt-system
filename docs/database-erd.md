@@ -17,10 +17,10 @@ The [material tracking contract](plans/LAB-OPERATIONS-CONTRACT.md#material-trans
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 147 | 2395 | 386 |
+| `commercial_ops` | 147 | 2401 | 389 |
 | `lab_ops` | 79 | 962 | 157 |
 | `website` | 5 | 51 | 4 |
-| **Total** | **232** | **3410** | **547** |
+| **Total** | **232** | **3416** | **550** |
 
 ## `public` schema
 
@@ -1202,6 +1202,7 @@ erDiagram
         uuid department_id "not null"
         timestamp_with_time_zone finished_at "nullable"
         uuid finished_by_user_id "nullable"
+        uuid lab_job_phase_id FK "nullable"
         uuid lab_service_order_id FK,UK "not null"
         uuid organization_id "not null"
         uuid stock_kit_id FK,UK "not null"
@@ -1293,6 +1294,7 @@ erDiagram
         uuid price_proposed_by_user_id FK "nullable"
         numeric_18_2 proposed_unit_price "nullable"
         integer request_revision "not null"
+        uuid requested_catalog_item_id FK "nullable"
         integer requested_specimen_count "not null"
         character_varying_100 resume_status "nullable"
         character_varying_2000 safety_declaration "not null"
@@ -1321,6 +1323,7 @@ erDiagram
         integer tube_use_policy_version "nullable"
         timestamp_with_time_zone updated_at "not null"
         uuid updated_by_user_id "nullable"
+        boolean uses_paired_preparation "not null"
         bigint version "not null"
     }
     lab_service_quotes {
@@ -1378,6 +1381,7 @@ erDiagram
     users ||--o{ lab_sample_import_previews : "actor_user_id"
     lab_service_orders ||--o{ lab_sample_import_previews : "lab_service_order_id"
     organizations ||--o{ lab_sample_import_previews : "organization_id"
+    lab_job_phases o|--o{ lab_sample_tube_kit_selections : "lab_job_phase_id"
     lab_service_orders ||--o{ lab_sample_tube_kit_selections : "lab_service_order_id"
     sample_shipping_stock_kits ||--o{ lab_sample_tube_kit_selections : "stock_kit_id"
     lab_job_phases ||--o{ lab_sample_tube_pairs : "lab_job_phase_id"
@@ -1392,6 +1396,7 @@ erDiagram
     lab_service_offerings o|--o{ lab_service_orders : "lab_service_offering_id"
     organizations ||--o{ lab_service_orders : "organization_id"
     users o|--o{ lab_service_orders : "price_proposed_by_user_id"
+    qbo_catalog_items o|--o{ lab_service_orders : "requested_catalog_item_id"
     users o|--o{ lab_service_orders : "sample_roster_finalized_by_user_id"
     sample_type_definitions o|--o{ lab_service_orders : "sample_type_definition_id"
     sample_shipping_destinations o|--o{ lab_service_orders : "shipping_destination_id"
@@ -1748,6 +1753,7 @@ erDiagram
         character_varying_150 name "not null"
         timestamp_with_time_zone original_due_at_utc "nullable"
         integer position "not null"
+        timestamp_with_time_zone preparation_completed_at_utc "nullable"
         jsonb price_lines_json "not null"
         character_varying_1000 price_proposal_note "nullable"
         timestamp_with_time_zone price_proposed_at_utc "nullable"
@@ -2121,8 +2127,10 @@ erDiagram
         jsonb delivery_address_snapshot_json "not null"
         uuid delivery_location_id FK "not null"
         uuid department_id FK "not null"
+        uuid lab_job_phase_id FK,UK "nullable"
         uuid lab_service_order_id FK,UK "not null"
         uuid organization_id FK "not null"
+        integer phase_sample_count "nullable"
         timestamp_with_time_zone requested_at "not null"
         uuid requested_by_user_id FK "not null"
         character_varying_40 status "not null"
@@ -2153,6 +2161,7 @@ erDiagram
     users o|--o{ transportation_kit_requests : "created_by_user_id"
     customer_delivery_locations ||--o{ transportation_kit_requests : "delivery_location_id"
     organization_departments ||--o{ transportation_kit_requests : "department_id"
+    lab_job_phases o|--o{ transportation_kit_requests : "lab_job_phase_id"
     lab_service_orders ||--o{ transportation_kit_requests : "lab_service_order_id"
     organizations ||--o{ transportation_kit_requests : "organization_id"
     users ||--o{ transportation_kit_requests : "requested_by_user_id"

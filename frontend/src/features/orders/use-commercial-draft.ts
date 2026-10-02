@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRef } from 'react'
 import { saveCommercialDraft, submitCommercialDraft, type CommercialDraftWrite } from '#/api/commercial-drafts'
-import { getPlatformOrder, getCustomerOrderReadiness, listCustomerOrderDepartments, listCustomerOrderOptions, listLabOrderSampleTypes } from '#/api/order-management'
+import { getPlatformOrder, getCommercialPricingCatalog, getCustomerOrderReadiness, listCustomerOrderDepartments, listCustomerOrderOptions, listLabOrderSampleTypes } from '#/api/order-management'
 
 export function useCommercialDraftData(orderId: string | undefined, organizationId: string, departmentId: string, enabled: boolean) {
   const order = useQuery({ queryKey: ['platform-order', 'lab', orderId], queryFn: () => getPlatformOrder('lab', orderId!), enabled: enabled && Boolean(orderId) })
@@ -10,7 +10,8 @@ export function useCommercialDraftData(orderId: string | undefined, organization
   const selectedDepartmentId = departmentId || (departments.data?.length === 1 ? departments.data[0].id : '')
   const readiness = useQuery({ queryKey: ['customer-order-readiness', organizationId, selectedDepartmentId], queryFn: () => getCustomerOrderReadiness(organizationId, selectedDepartmentId), enabled: enabled && Boolean(organizationId && selectedDepartmentId) })
   const sampleTypes = useQuery({ queryKey: ['lab-order-sample-types', true], queryFn: () => listLabOrderSampleTypes(true), enabled })
-  return { order, customers, departments, readiness, sampleTypes, selectedDepartmentId }
+  const pricingCatalog = useQuery({ queryKey: ['commercial-pricing-catalog'], queryFn: getCommercialPricingCatalog, enabled })
+  return { order, customers, departments, readiness, sampleTypes, pricingCatalog, selectedDepartmentId }
 }
 export function useCommercialDraftWrite() {
   const client = useQueryClient()

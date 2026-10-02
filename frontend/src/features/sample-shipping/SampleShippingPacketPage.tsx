@@ -25,7 +25,7 @@ type FrozenSample = {
   tubes: Array<{ barcode: string; ordinal: string; quantity: string; quantityUnit: string }>
 }
 
-export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAutoPrint, onFailure, embedded = false, packingOnly = false }: { shipmentId: string; autoPrint?: boolean; onAutoPrint?: (insert: ShippingInsertIdentity) => void; onFailure?: (message: string) => void; embedded?: boolean; packingOnly?: boolean }) {
+export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAutoPrint, onFailure, embedded = false, packingOnly = false, expectedInsert }: { shipmentId: string; autoPrint?: boolean; onAutoPrint?: (insert: ShippingInsertIdentity) => void; onFailure?: (message: string) => void; embedded?: boolean; packingOnly?: boolean; expectedInsert?: ShippingInsertIdentity }) {
   const Page = packingOnly ? 'div' : 'main'
   const autoPrintHandled = useRef(false)
   const [manifestPage, setManifestPage] = useState<{ revisionKey: string; page: number } | null>(null)
@@ -81,6 +81,7 @@ export function SampleShippingPacketPage({ shipmentId, autoPrint = false, onAuto
   const { shipment } = query.data
   const packet = shipment.currentPacket
   if (!packet || packet.isVoided) return <Page className="page-wrap space-y-5 px-4 py-8">{!packingOnly ? <PacketReturnLink shipmentId={shipmentId} /> : null}<Alert><AlertTitle>Shipping insert no longer current</AlertTitle><AlertDescription>Return to the shipment to review its current contents and shipping insert revision before printing.</AlertDescription></Alert><Button variant="outline" onClick={() => void query.refetch()}>Try again</Button></Page>
+  if (expectedInsert && (packet.id !== expectedInsert.id || packet.revision !== expectedInsert.revision)) return <Alert variant="destructive"><AlertTitle>Shipping insert has changed</AlertTitle><AlertDescription>Close this confirmation and print the current shipping insert before packing its container.</AlertDescription></Alert>
   const destination = parseObject(query.data.destinationSnapshotJson)
   const instructions = parseObject(query.data.instructionSnapshotJson)
   const manifest = parseObject(query.data.manifestSnapshotJson)

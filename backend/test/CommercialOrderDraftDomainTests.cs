@@ -28,6 +28,7 @@ public sealed class CommercialOrderDraftDomainTests
         order.MaterializeCommercialDraft(actor, DateTime.UtcNow, "Sample type storage");
         Assert.Equal(LabServiceOrderStatus.SubmittedForQuote, order.Status);
         Assert.Null(order.ReadCommercialDraft());
+        Assert.Equal(CompleteDraft().CatalogItemId, order.RequestedCatalogItemId);
         Assert.Equal(5, order.RequestedSpecimenCount);
         Assert.Equal(11, order.SequencingRunCount);
         Assert.Equal(5, Assert.Single(order.SourceGroups).SpecimenCount);
@@ -35,6 +36,19 @@ public sealed class CommercialOrderDraftDomainTests
             first => { Assert.Equal(2, first.SampleCount); Assert.Equal(1, first.ReadScope()!.RunsPerSample); Assert.Equal(12.50m, first.ProposedUnitPrice); Assert.Equal(actor, first.PriceProposedByUserId); },
             second => { Assert.Equal(3, second.SampleCount); Assert.Equal(3, second.ReadScope()!.RunsPerSample); Assert.Equal(9, second.ReadScope()!.SequencingRunCount); Assert.Equal(20m, second.ProposedUnitPrice); Assert.Equal(5m, second.ProposedAdditionalRunPrice); });
         Assert.Throws<InvalidOperationException>(() => order.SaveCommercialDraft(CompleteDraft()));
+    }
+
+    [Fact]
+    public void UnselectedServiceCanBeSavedButCannotSubmitOrMaterializeScope()
+    {
+        var draft = CompleteDraft() with { CatalogItemId = null };
+        var order = Create(draft);
+        Assert.Null(order.ReadCommercialDraft()!.CatalogItemId);
+        Assert.Throws<ArgumentException>(() => order.MaterializeCommercialDraft(Guid.NewGuid(), DateTime.UtcNow, "Frozen"));
+        Assert.Empty(order.Phases);
+        Assert.Empty(order.SourceGroups);
+        Assert.Null(order.RequestedCatalogItemId);
+        Assert.Equal(LabServiceOrderStatus.DraftRequest, order.Status);
     }
 
     [Fact]
@@ -107,5 +121,6 @@ public sealed class CommercialOrderDraftDomainTests
 
     private static CommercialLabOrderDraft CompleteDraft() => new("Study", Guid.NewGuid(), "Frozen", "No known hazards", "", true,
         [new("Discovery", [new("Human PBMC", 2)], 1, 10, 12.50m, "Discussed with Customer", true),
-         new("Validation", [new("Human PBMC", 3)], 3, 20, 20m, "", true, 5m)]);
+         new("Validation", [new("Human PBMC", 3)], 3, 20, 20m, "", true, 5m)],
+        Guid.Parse("00000000-0000-4000-8000-000000000010"));
 }

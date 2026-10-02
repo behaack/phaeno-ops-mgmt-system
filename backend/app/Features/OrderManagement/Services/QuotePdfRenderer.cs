@@ -7,11 +7,12 @@ using UglyToad.PdfPig.Fonts.TrueType;
 using UglyToad.PdfPig.Fonts.TrueType.Parser;
 using UglyToad.PdfPig.Writer;
 
-public sealed record QuotePdfLine(string Description, decimal Quantity, decimal UnitPrice);
+public sealed record QuotePdfLine(string Description, decimal Quantity, decimal UnitPrice,
+    Guid? CatalogItemId = null, Guid? PhaseId = null, string? PricingComponent = null);
 public sealed record QuotePdfSource(string BiologicalSource, int SpecimenCount);
 public sealed record QuotePdfScope(int RequestedSpecimenCount, IReadOnlyList<QuotePdfSource> SourceGroups, int? RequestedSequencingRunCount = null);
 public sealed record QuotePdfPhase(string Name, int SampleCount, int TurnaroundBusinessDays, decimal AcceptedSubtotal,
-    PhaenoPortal.App.Features.OrderManagement.Domain.LabPhaseScope? Scope = null);
+    PhaenoPortal.App.Features.OrderManagement.Domain.LabPhaseScope? Scope = null, Guid? Id = null, int Position = 0);
 
 public sealed record QuotePdfDocument(
     string OrderNumber, string? JobName, string OrganizationName, string DepartmentName,
@@ -19,7 +20,8 @@ public sealed record QuotePdfDocument(
     DateTime? AcceptedAt, IReadOnlyList<QuotePdfLine> Lines, decimal Subtotal, decimal Tax,
     decimal Total, string Currency, bool TaxDetermined, string? BillingContactName,
     string? BillingContactEmail, IReadOnlyList<string> BillingAddress, int? PaymentTermsDays,
-    QuotePdfScope? SampleScope = null, int? DeliveryTargetBusinessDays = null, IReadOnlyList<QuotePdfPhase>? Phases = null);
+    QuotePdfScope? SampleScope = null, int? DeliveryTargetBusinessDays = null, IReadOnlyList<QuotePdfPhase>? Phases = null,
+    IReadOnlyDictionary<Guid, string>? CatalogItemNames = null);
 
 /// <summary>A downloadable presentation of the saved quote, with no commercial recalculation.</summary>
 public static class QuotePdfRenderer
@@ -52,6 +54,9 @@ public static class QuotePdfRenderer
         private const double Right = 564;
         private const double Bottom = 76;
         private const double Leading = 14;
+        private const double PricingLeft = 300;
+        private const double DetailsWidth = 232;
+        private const string PhaseTiming = "Each phase's TAT starts when Phaeno physically receives every required sample for that phase. Business days exclude Phaeno holidays.";
         private readonly QuotePdfDocument document;
         private readonly PdfDocumentBuilder builder = new();
         private readonly PdfDocumentBuilder.AddedFont regular;
@@ -75,9 +80,24 @@ public static class QuotePdfRenderer
         {
             NewPage();
             Context();
-            SampleScope();
-            TableHeader();
-            foreach (var line in document.Lines) TableRow(line);
+            if (document.Phases is { Count: > 1 } phases) PhaseReview(phases);
+            else
+            {
+                SampleScope();
+                if (document.Lines.Count > 0)
+                    Ensure(43 + Math.Min(Wrap(ServiceName(document.Lines[0]), 268, 10).Count, 3) * Leading + 14);
+                TableHeader();
+                for (var index = 0; index < document.Lines.Count; index++)
+                    TableRow(document.Lines[index], index == document.Lines.Count - 1);
+                if (document.DeliveryTargetBusinessDays is { } days)
+                {
+                    y -= 4;
+                    var timing = $"TAT: {days} business days after Phaeno physically receives every required sample. Business days exclude Phaeno holidays.";
+                    Ensure(Wrap(timing, Right - Left, 10).Count * Leading + FooterHeight + 18);
+                    Paragraph(timing, 10);
+                    y -= 12;
+                }
+            }
             TotalsAndTerms();
             for (var index = 0; index < pages.Count; index++)
             {
@@ -94,7 +114,7 @@ public static class QuotePdfRenderer
             page = builder.AddPage(612, 792);
             pages.Add(page);
             page.AddPng(Logo.Value, new PdfRectangle(Left, 706, Left + 124, 746));
-            RightText("QUOTE", Right, 726, 24, strong: true);
+            RightText(document.Purpose == "Change" ? "CHANGE QUOTE" : "QUOTE", Right, 726, 24, strong: true);
             RightText($"Revision {document.Revision} | {document.Status}", Right, 706, 10);
             page.SetStrokeColor(162, 185, 59);
             page.DrawLine(new PdfPoint(Left, 689), new PdfPoint(Right, 689), 2);
@@ -112,49 +132,38 @@ public static class QuotePdfRenderer
 
         private void Context()
         {
-            var leftLines = new List<(string Text, double Size, bool Strong, bool Muted)>
+            var prepared = new List<(string Text, double Size, bool Strong, bool Muted)>
             {
-                ("PREPARED FOR", 8, true, true),
-                (document.OrganizationName, 13, true, false),
-                ($"Department: {document.DepartmentName}", 10, false, false),
-                ($"Job: {document.OrderNumber}", 10, true, false)
+                ("PREPARED FOR", 9, true, true),
+                (document.OrganizationName, 14, true, false),
+                ($"Department: {document.DepartmentName}", 10.5, false, false),
+                ($"Job: {document.OrderNumber}", 11, true, false)
             };
-            if (!string.IsNullOrWhiteSpace(document.JobName)) leftLines.Add((document.JobName, 10, false, false));
-            var details = new List<(string Label, string Value)>
-            {
-                ("Issued", Date(document.IssuedAt)),
-                ("Expires", Date(document.ExpiresAt)),
-                ("Purpose", document.Purpose)
-            };
-            if (document.AcceptedAt is { } accepted) details.Add(("Accepted", Date(accepted)));
-            var initialY = y;
-            var leftEnd = Block(leftLines, Left, initialY, 300);
-            Text("QUOTE DETAILS", 378, initialY, 8, strong: true, muted: true);
-            var rightEnd = initialY - 22;
-            foreach (var detail in details)
-            {
-                Text($"{detail.Label}: ", 378, rightEnd, 9, muted: true);
-                foreach (var value in Wrap(detail.Value, 126, 10))
-                {
-                    Text(value, 438, rightEnd, 10);
-                    rightEnd -= Leading;
-                }
-                rightEnd -= 6;
-            }
-            y = Math.Min(leftEnd, rightEnd) - 4;
-
-            var billing = new List<string>();
-            if (!string.IsNullOrWhiteSpace(document.BillingContactName)) billing.Add(document.BillingContactName);
-            if (!string.IsNullOrWhiteSpace(document.BillingContactEmail)) billing.Add(document.BillingContactEmail);
-            billing.AddRange(document.BillingAddress.Where(value => !string.IsNullOrWhiteSpace(value)));
+            if (!string.IsNullOrWhiteSpace(document.JobName)) prepared.Add((document.JobName, 11, false, false));
+            var billing = new List<(string Text, double Size, bool Strong, bool Muted)>();
+            if (!string.IsNullOrWhiteSpace(document.BillingContactName)) billing.Add((document.BillingContactName, 10.5, false, false));
+            if (!string.IsNullOrWhiteSpace(document.BillingContactEmail)) billing.Add((document.BillingContactEmail, 10.5, false, false));
+            billing.AddRange(document.BillingAddress.Where(value => !string.IsNullOrWhiteSpace(value)).Select(value => (value, 10.5, false, false)));
+            var top = y;
+            var preparedEnd = Block(prepared, Left, top, 266);
+            var billingEnd = top;
             if (billing.Count > 0)
             {
-                y -= 6;
-                Paragraph("BILLING DETAILS", 8, strong: true, muted: true);
-                y -= 3;
-                foreach (var value in billing) Paragraph(value, 10);
-                y -= 9;
+                billing.Insert(0, ("BILLING DETAILS", 9, true, true));
+                billingEnd = Block(billing, 334, top, Right - 334);
             }
+            y = Math.Min(preparedEnd, billingEnd) - 12;
+            Ensure(50);
+            InlineField("Issued:", Date(document.IssuedAt), Left, y, 172);
+            InlineField("Expires:", Date(document.ExpiresAt), Left + 172, y, 172);
+            InlineField("Purpose:", document.Purpose, Left + 344, y, 172);
+            y -= Leading;
+            if (document.AcceptedAt is { } accepted)
+            {
+                InlineField("Accepted:", Date(accepted), Left, y, 240);
+                y -= Leading;
+            }
+            y -= 12;
         }
 
         private double Block(IEnumerable<(string Text, double Size, bool Strong, bool Muted)> values, double x, double top, double width)
@@ -169,10 +178,206 @@ public static class QuotePdfRenderer
                     Text(line, x, top, value.Size, value.Strong, value.Muted);
                     top -= Math.Max(Leading, value.Size + 4);
                 }
-                top -= 3;
             }
-            return top + 3;
+            return top;
         }
+
+        private sealed record ContentRow(string Text = "", string? RightValue = null, bool Strong = false,
+            bool Muted = false, bool RuleBefore = false, double Size = 10.5,
+            string? Label = null, string? SecondLabel = null, string? SecondValue = null);
+
+        private void PhaseReview(IReadOnlyList<QuotePdfPhase> phases)
+        {
+            var ids = phases.Select(phase => phase.Id).ToHashSet();
+            if (ids.Count != phases.Count || ids.Contains(null) || ids.Contains(Guid.Empty)
+                || phases.Any(phase => phase.Position <= 0 || phase.SampleCount <= 0 || phase.TurnaroundBusinessDays <= 0)
+                || document.Lines.Any(line => !line.PhaseId.HasValue || !ids.Contains(line.PhaseId)))
+                throw new InvalidOperationException("The quote's phase identities and prices are incomplete.");
+
+            var ordered = phases.OrderBy(phase => phase.Position).ToArray();
+            ServiceSummary(ordered);
+            for (var index = 0; index < ordered.Length; index++)
+            {
+                var phase = ordered[index];
+                var details = PhaseDetails(phase);
+                var prices = PhasePrices(phase);
+                var rows = Math.Max(details.Count, prices.Count);
+                var headingHeight = PhaseHeadingHeight(phase, false);
+                var finalReserve = index == ordered.Length - 1
+                    ? Wrap(PhaseTiming, Right - Left, 10).Count * Leading + FooterHeight + 30 : 0;
+                var height = headingHeight + rows * Leading + 16;
+                // Ordinary phases stay intact; the final phase keeps its totals/terms nearby.
+                if (height + finalReserve <= 640 - Bottom) Ensure(height + finalReserve);
+                else Ensure(headingHeight + 3 * Leading);
+
+                var offset = 0;
+                var firstPage = 0;
+                while (offset < rows)
+                {
+                    if (offset > 0) NewPage();
+                    var sourceHeading = details.FindIndex(row => row.Text == "Biological source" && row.RightValue == "Samples");
+                    var repeatedDetails = offset > 0 && sourceHeading >= 0 ? sourceHeading + 1 : 0;
+                    var remainingHeight = PhaseHeadingHeight(phase, offset > 0) + (rows - offset + repeatedDetails) * Leading + 16 + finalReserve;
+                    if (remainingHeight <= 640 - Bottom) Ensure(remainingHeight);
+                    if (offset == 0) firstPage = pages.Count;
+                    var blockTop = y + 2;
+                    DrawPhaseHeading(phase, offset > 0);
+                    for (var detail = 0; detail < repeatedDetails; detail++)
+                    {
+                        DrawContentRow(details[detail], Left + 8, DetailsWidth - 16);
+                        if (detail == 0 && offset >= prices.Count)
+                            DrawContentRow(new($"Pricing shown on page {firstPage}.", Muted: true), PricingLeft + 8, Right - PricingLeft - 16);
+                        y -= Leading;
+                    }
+                    var available = Math.Max(1, (int)Math.Floor((y - Bottom - 16) / Leading));
+                    var count = Math.Min(rows - offset, available);
+                    for (var row = offset; row < offset + count; row++)
+                    {
+                        if (row < details.Count) DrawContentRow(details[row], Left + 8, DetailsWidth - 16);
+                        if (row < prices.Count) DrawContentRow(prices[row], PricingLeft + 8, Right - PricingLeft - 16);
+                        y -= Leading;
+                    }
+                    offset += count;
+                    page.SetStrokeColor(200, 213, 223);
+                    page.DrawRectangle(new PdfPoint(Left, y + 3), Right - Left, blockTop - y - 3, 0.7, false);
+                    y -= 16;
+                }
+            }
+            Ensure(Wrap(PhaseTiming, Right - Left, 10).Count * Leading + FooterHeight + 14);
+            Paragraph(PhaseTiming, 10, muted: true);
+            y -= 14;
+        }
+
+        private void ServiceSummary(IReadOnlyList<QuotePdfPhase> phases)
+        {
+            var services = document.Lines.Where(line => line.PricingComponent != "AdditionalRun")
+                .GroupBy(line => line.CatalogItemId?.ToString() ?? ServiceName(line)).ToArray();
+            if (services.Length == 1)
+            {
+                var lines = Wrap($"Service: {ServiceName(services[0].First())}", Right - Left, 11, true);
+                Ensure(lines.Count * Leading + 26);
+                foreach (var line in lines) { Text(line, Left, y, 11, strong: true); y -= Leading; }
+            }
+            Ensure(26);
+            Text($"Order scope · {Number(phases.Sum(phase => phase.SampleCount))} samples · {phases.Count} phases", Left, y, 10.5);
+            y -= 24;
+        }
+
+        private List<ContentRow> PhaseDetails(QuotePdfPhase phase)
+        {
+            var result = new List<ContentRow>();
+            if (phase.Scope is { } scope)
+            {
+                if (scope.Sources.Any(source => string.IsNullOrWhiteSpace(source.BiologicalSource) || source.SpecimenCount <= 0)
+                    || scope.Sources.Sum(source => (long)source.SpecimenCount) != phase.SampleCount
+                    || scope.SequencingRunCount < phase.SampleCount)
+                    throw new InvalidOperationException("The quote's phase sample allocation is incomplete.");
+                result.Add(new(Number(phase.SampleCount), Label: "Samples:", SecondLabel: "Sequencing runs:", SecondValue: Number(scope.SequencingRunCount)));
+                result.Add(scope.RunsPerSample is { } runs
+                    ? new(Number(runs), Label: "Runs per sample:", SecondLabel: "TAT:", SecondValue: $"{phase.TurnaroundBusinessDays} business days")
+                    : new($"{phase.TurnaroundBusinessDays} business days", Label: "TAT:"));
+                if (RunBreakdown(phase) is { AdditionalRuns: > 0, AdditionalRunsPerSample: { } additional })
+                    result.Add(new($"1 included + {additional} additional per sample", Muted: true, Size: 10));
+                result.Add(new("Biological source", "Samples", Strong: true, Size: 9.5));
+                foreach (var source in scope.Sources)
+                {
+                    var wrapped = Wrap(source.BiologicalSource, DetailsWidth - 54, 10.5);
+                    for (var index = 0; index < wrapped.Count; index++)
+                        result.Add(new(wrapped[index], index == 0 ? Number(source.SpecimenCount) : null));
+                }
+            }
+            else
+            {
+                result.Add(new(Number(phase.SampleCount), Label: "Samples:", SecondLabel: "TAT:", SecondValue: $"{phase.TurnaroundBusinessDays} business days"));
+            }
+            return result;
+        }
+
+        private List<ContentRow> PhasePrices(QuotePdfPhase phase)
+        {
+            var result = new List<ContentRow>();
+            if (RunBreakdown(phase) is { AdditionalRuns: > 0 } breakdown)
+            {
+                var basis = breakdown.AdditionalRunsPerSample is { } additional
+                    ? $"{Number(phase.SampleCount)} samples × {additional} additional {(additional == 1 ? "run" : "runs")}/sample = {Number(breakdown.AdditionalRuns)} additional runs."
+                    : $"{Number(phase.Scope!.SequencingRunCount)} total runs - {Number(phase.SampleCount)} included runs = {Number(breakdown.AdditionalRuns)} additional runs.";
+                result.AddRange(Wrap(basis, Right - PricingLeft - 16, 10).Select(text => new ContentRow(text, Muted: true, Size: 10)));
+            }
+            foreach (var line in document.Lines.Where(line => line.PhaseId == phase.Id)
+                .OrderBy(line => line.PricingComponent == "AdditionalRun"))
+            {
+                var amount = Money(LineAmount(line));
+                var amountWidth = Math.Max(68, Width(amount, 10.5));
+                var name = ServiceName(line);
+                var quantityPrice = $"{Number(line.Quantity)} × {Money(line.UnitPrice, preservePrecision: true)}";
+                var width = Right - PricingLeft - amountWidth - 28;
+                var text = $"{name} {quantityPrice}";
+                var wrapped = Width(text, 10.5) <= width ? new List<string> { text }
+                    : Wrap(name, width, 10.5).Concat(Wrap(quantityPrice, width, 10.5)).ToList();
+                for (var index = 0; index < wrapped.Count; index++)
+                    result.Add(new(wrapped[index], index == 0 ? amount : null));
+            }
+            result.Add(new("Phase price:", Money(phase.AcceptedSubtotal), Strong: true, RuleBefore: true));
+            return result;
+        }
+
+        private sealed record PhaseRunBreakdown(decimal AdditionalRuns, int? AdditionalRunsPerSample);
+
+        private PhaseRunBreakdown? RunBreakdown(QuotePdfPhase phase)
+        {
+            if (phase.Scope is not { } scope) return null;
+            var lines = document.Lines.Where(line => line.PhaseId == phase.Id).ToArray();
+            var included = lines.Where(line => line.PricingComponent == "StandardSample").Sum(line => line.Quantity);
+            var additional = lines.Where(line => line.PricingComponent == "AdditionalRun").Sum(line => line.Quantity);
+            if (included != phase.SampleCount || included + additional != scope.SequencingRunCount
+                || (scope.RunsPerSample is { } runs && (long)phase.SampleCount * runs != scope.SequencingRunCount)) return null;
+            return new(additional, scope.RunsPerSample is { } count ? count - 1 : null);
+        }
+
+        private double PhaseHeadingHeight(QuotePdfPhase phase, bool continued) =>
+            Wrap($"{phase.Position}. {phase.Name}" + (continued ? " (continued)" : ""), DetailsWidth - 16, 11, true).Count * Leading + 17;
+
+        private void DrawPhaseHeading(QuotePdfPhase phase, bool continued)
+        {
+            var height = PhaseHeadingHeight(phase, continued);
+            page.SetTextAndFillColor(242, 247, 249);
+            page.SetStrokeColor(242, 247, 249);
+            page.DrawRectangle(new PdfPoint(Left, y - height + 15), Right - Left, height - 13, 0, true);
+            var top = y - 12;
+            foreach (var line in Wrap($"{phase.Position}. {phase.Name}" + (continued ? " (continued)" : ""), DetailsWidth - 16, 11, true))
+            {
+                Text(line, Left + 8, top, 11, strong: true); top -= Leading;
+            }
+            Text("Pricing", PricingLeft + 8, y - 12, 11, strong: true);
+            y -= height;
+        }
+
+        private void DrawContentRow(ContentRow row, double x, double width)
+        {
+            if (row.RuleBefore) Rule(x, x + width, y + 10);
+            if (row.Label is { } label)
+            {
+                InlineField(label, row.Text, x, y, row.SecondLabel is null ? width : width / 2);
+                if (row.SecondLabel is { } second) InlineField(second, row.SecondValue!, x + width / 2, y, width / 2);
+            }
+            else Text(row.Text, x, y, row.Size, row.Strong, row.Muted);
+            if (row.RightValue is { } value) RightText(value, x + width, y, row.Size, row.Strong);
+        }
+
+        private void InlineField(string label, string value, double x, double baseline, double width)
+        {
+            var size = 10d;
+            while (size > 8 && Width(label + " ", size, true) + Width(value, size) > width - 4) size -= 0.5;
+            if (Width(label + " ", size, true) + Width(value, size) > width - 4)
+                throw new InvalidOperationException("The quote's detail value is too long to display.");
+            Text(label + " ", x, baseline, size, strong: true);
+            Text(value, x + Width(label + " ", size, true), baseline, size);
+        }
+
+        private string ServiceName(QuotePdfLine line) => line.PricingComponent == "AdditionalRun" ? "Additional sequencing runs"
+            : line.CatalogItemId is { } id && document.CatalogItemNames?.TryGetValue(id, out var name) == true ? name : line.Description;
+
+        private static decimal LineAmount(QuotePdfLine line) => Math.Round(line.Quantity * line.UnitPrice, 2, MidpointRounding.AwayFromZero);
 
         private void SampleScope()
         {
@@ -236,25 +441,36 @@ public static class QuotePdfRenderer
             y -= 43;
         }
 
-        private void TableRow(QuotePdfLine line)
+        private void TableRow(QuotePdfLine line, bool last)
         {
-            var description = Wrap(line.Description, 268, 10);
+            var description = Wrap(ServiceName(line), 268, 10);
             var quantities = Wrap(Number(line.Quantity), 47, 10);
             var prices = Wrap(Money(line.UnitPrice, preservePrecision: true), 72, 10);
-            var amounts = Wrap(Money(Math.Round(line.Quantity * line.UnitPrice, 2, MidpointRounding.AwayFromZero)), 89, 10);
+            var amounts = Wrap(Money(LineAmount(line)), 89, 10);
             var count = new[] { description.Count, quantities.Count, prices.Count, amounts.Count }.Max();
+            var timingHeight = document.DeliveryTargetBusinessDays is { } days
+                ? Wrap($"TAT: {days} business days after Phaeno physically receives every required sample. Business days exclude Phaeno holidays.", Right - Left, 10).Count * Leading + 16 : 0;
+            var finalReserve = last ? FooterHeight + timingHeight + 14 : 0;
+            var finalCapacity = Math.Max(1, (int)Math.Floor((603 - Bottom - 25 - finalReserve) / Leading));
             var offset = 0;
             while (offset < count)
             {
                 var available = (int)Math.Floor((y - Bottom - 14) / Leading);
                 // Keep ordinary items together; only an item taller than a fresh page may split.
-                if (available < Math.Min(count - offset, 36))
+                var remaining = count - offset;
+                var required = remaining <= 36 ? remaining : 3;
+                if (last && remaining <= finalCapacity)
+                    required = (int)Math.Ceiling((remaining * Leading + 25 + finalReserve) / Leading);
+                if (available < required)
                 {
                     NewPage();
                     TableHeader();
                     available = (int)Math.Floor((y - Bottom - 14) / Leading);
                 }
-                var length = Math.Min(count - offset, available);
+                var length = Math.Min(remaining, available);
+                // Leave a final chunk with enough room for TAT, terms, and totals.
+                if (last && remaining <= available && remaining > finalCapacity)
+                    length = remaining - finalCapacity;
                 for (var index = offset; index < offset + length; index++)
                 {
                     if (index < description.Count) Text(description[index], Left + 10, y, 10);
@@ -270,59 +486,45 @@ public static class QuotePdfRenderer
             }
         }
 
+        private double FooterHeight => document.TaxDetermined ? 94 : 74;
+
         private void TotalsAndTerms()
         {
-            var panelHeight = document.TaxDetermined ? 117d : 95d;
-            Ensure(panelHeight + 28);
-            var panelTop = y + 5;
+            Ensure(FooterHeight + 14);
+            var top = y + 5;
+            var notes = new List<(string Text, double Size, bool Strong, bool Muted)>();
+            if (document.PaymentTermsDays is { } days)
+                notes.Add(($"Payment terms: Net {days.ToString(CultureInfo.InvariantCulture)} days.", 10, true, false));
+            if (!document.TaxDetermined)
+                notes.Add(("Applicable tax will be calculated at invoicing.", 10, false, false));
+            notes.Add(("Review this quote and its current status in Phaeno Portal.", 10, false, true));
+            Block(notes, Left, top - 15, DetailsWidth);
+
             page.SetTextAndFillColor(242, 247, 249);
             page.SetStrokeColor(242, 247, 249);
-            page.DrawRectangle(new PdfPoint(314, panelTop - panelHeight), Right - 314, panelHeight, 0, true);
-            y = panelTop - 19;
-            RightText($"Currency: {document.Currency}", Right - 14, y, 8, muted: true);
-            y -= 23;
+            page.DrawRectangle(new PdfPoint(PricingLeft, top - FooterHeight), Right - PricingLeft, FooterHeight, 0, true);
+            y = top - 17;
+            RightText($"Currency: {document.Currency}", Right - 12, y, 9, muted: true);
+            y -= 22;
             TotalRow("Subtotal", document.Subtotal);
             if (document.TaxDetermined) TotalRow("Tax", document.Tax);
-            Rule(328, Right - 14, y + 9);
-            y -= 10;
-            TotalRow(document.TaxDetermined ? "Total" : "Pre-tax total", document.Total, true);
-            y = panelTop - panelHeight - 22;
-            if (!document.TaxDetermined)
-                Paragraph("Applicable tax will be calculated at invoicing.", 9, muted: true);
-            if (document.PaymentTermsDays is { } days)
-            {
-                y -= 10;
-                Paragraph($"Payment terms: Net {days.ToString(CultureInfo.InvariantCulture)} days.", 10);
-            }
-            if (document.Phases is { Count: > 1 } phases)
-            {
-                y -= 10;
-                Paragraph("Phase scope and delivery targets", 10, strong: true);
-                foreach (var phase in phases)
-                {
-                    Paragraph($"{phase.Name}: {phase.SampleCount} samples; {phase.TurnaroundBusinessDays} business days; subtotal {Money(phase.AcceptedSubtotal)}.", 10);
-                    if (phase.Scope is { } scope)
-                        Paragraph($"{scope.SequencingRunCount} purchased sequencing runs. " + string.Join("; ", scope.Sources.Select(s => $"{s.BiologicalSource}: {s.SpecimenCount} samples")), 9);
-                }
-                Paragraph("Each target starts when Phaeno physically receives every required tube for that phase. Business days are Monday-Friday, excluding Phaeno holidays.", 10);
-            }
-            else if (document.DeliveryTargetBusinessDays is { } businessDays)
-            {
-                y -= 10;
-                Paragraph($"Delivery target: {businessDays} business days after Phaeno physically receives every required tube for all samples. Business days are Monday-Friday, excluding Phaeno holidays.", 10);
-            }
+            Rule(PricingLeft + 12, Right - 12, y + 9);
             y -= 8;
-            Paragraph("Review this quote and its current status in Phaeno Portal.", 9, muted: true);
+            TotalRow(document.TaxDetermined ? "Total" : "Pre-tax total", document.Total, true);
+            y = top - FooterHeight - 14;
         }
 
         private void TotalRow(string label, decimal amount, bool strong = false)
         {
-            Text(label, 328, y, strong ? 12 : 10, strong);
+            Text(label, PricingLeft + 12, y, strong ? 12 : 10.5, strong);
             var value = Money(amount);
-            var size = strong ? 12d : 10d;
-            while (size > 7 && Width(value, size, strong) > 132) size -= 0.5;
-            RightText(value, Right - 14, y, size, strong);
-            y -= strong ? 24 : 22;
+            var size = strong ? 14d : 10.5d;
+            var available = Right - PricingLeft - 24 - Width(label, strong ? 12 : 10.5, strong) - 12;
+            while (size > 8 && Width(value, size, strong) > available) size -= 0.5;
+            if (Width(value, size, strong) > available)
+                throw new InvalidOperationException("The quote total is too long to display.");
+            RightText(value, Right - 12, y, size, strong);
+            y -= strong ? 24 : 20;
         }
 
         private void Paragraph(string value, double size, bool strong = false, bool muted = false)

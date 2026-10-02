@@ -1,5 +1,221 @@
 # Playwright E2E Test Plan
 
+## Adaptive Progress presentation — October 1, 2026
+
+Verify accepted single-phase Jobs open Progress with details immediately visible,
+without a Phase 1 expander. Shipping (1 sample) retains the Request/Receive/Prepare/Send
+steps and order wording in kit/preparation dialogs. Before shipment identities
+exist, receipt shows Awaiting sample shipment; after they exist, show actual totals.
+Multi-phase Jobs retain phase headings, expansion and sequential shipping rules.
+Check Progress links and keyboard tabs, cancel/result permissions, modal focus,
+390 px reflow and dark theme. Use read-only synthetic previews at this checkpoint;
+no business mutation or automated E2E execution is authorized by this request.
+
+## Consolidated Job detail workspace — October 1, 2026
+
+Current acceptance replaces the stacked Sent phases, Phases, billing, Samples
+and shipping and After you send panels with a current task above Phases / Files
+and results / Order and billing / History. Accepted Jobs default to Phases;
+pricing requests default to billing. Verify browser back/reload retains the
+selected tab and phase filter independently of the current shipping phase.
+Expand one phase for its exact samples, shipment links, receipt/TAT and holds;
+results links open the correct filtered tab. Preserve recorded timing changes,
+request snapshots, QC and governed result/download restrictions.
+
+Request and Receive must not mount preparation controls. Prepare/Send remains
+mounted across background refresh and supporting-tab changes; dirty/modal work
+blocks conflicting navigation. Phase 2 Request still follows full Phase 1
+dispatch, with no automatic kit request. Verify active hold notice opens the
+affected phase, hold dialog Cancel focus/body/footer and focus return. Check
+keyboard tabs, single Actions indicators, dark mode and 390 px reflow. Connected
+business mutations and automated E2E execution require their existing separate
+authorization; synthetic previews perform no operational writes.
+
+## Shipping next phase after dispatch — October 1, 2026
+
+Supersedes the earlier result-delivery shipping prerequisite below. Record every
+Phase 1 required shipment: the Job should show Phase 2 / Request transportation
+kits with no automatic request and retain Phase 1 in Sent phases. Partial
+dispatch or missing sample coverage must not open later shipping. Pending
+cancellation on the current phase must block its new shipping writes. Verify
+receipt/Lab/result counts, full phase disclosure, final sent
+phase status, same-sized progress/quote buttons, keyboard, narrow and dark
+presentation. Scientific processing still waits for preceding full result
+delivery. Connected walkthrough and automated execution remain pending; use
+synthetic previews without operational writes for presentation verification.
+
+Manual checkpoint: Phase 1 sent with zero delivered results selects Phase 2 /
+Request transportation kits and retains Phase 1 receipt/progress/results. The kit
+modal names Phase 2 and starts on Cancel; keyboard View phase progress opens and
+focuses the existing disclosure. An unrecorded required shipment keeps Phase 1
+at Send. Desktop/dark/narrow previews show 176 × 32 px progress and quote buttons,
+with no horizontal overflow at 390 px. Screenshots are in
+`output/phase-next-evidence/`. A read-only transaction against the configured
+local database confirms H7QS6TY8 selects Phase 2, five samples, zero non-cancelled
+kit requests, zero allocated kits and no completed preparation. No operational
+write or physical/provider acceptance was performed. Local API rebuilt/restarted;
+health returns 200. Connected carrier-save focus transition remains a walkthrough
+check: focus should reach the new phase action or shipping card after refresh.
+
+## Ordered phase shipping refinement — October 1, 2026
+
+Selected-shipment Send action follow-up: with prepared phase pairs and a selected
+Preparing shipment, keep Send and record shipments as Next step. Its direct
+Review and confirm shipment contents action opens that exact shipment's shared
+confirmation modal. Check shipment identity, header/body/footer, cancel focus
+and focus return, no navigation or confirmation write on open/close, and disabled
+actions during shipment refresh or another active workspace modal. Later Send
+actions follow the selected shipment's current stage: one confirm-contents,
+Print shipping insert, then Record shipment command. Before explicit current-insert
+printed/packed acknowledgement, Record must not appear in Job header Actions.
+Confirm printed and packed opens frozen packing instructions in the same dialog,
+expanded initially and collapsible by keyboard. Verify printed revision identity,
+one dialog, a scrollable narrow body and visible footer. Not yet preserves Print;
+Printed and packed enables Record without a dispatch write. Instructions remain
+in Actions. No automated run is authorized for this follow-up.
+
+Manual component preview, October 1: the selected phase command opens the
+shipment confirmation. A synthetic print callback opens one printed-and-packed
+dialog with frozen instructions, Not yet focus, keyboard collapse and cancel
+focus return. At 390 px the body scrolls, the footer remains within the viewport
+and no horizontal overflow occurs. Synthetic acknowledgement changes the direct
+command to Record shipment; its form opens and cancels without a write. This
+uses fixture data and blocks operational writes; it is not physical printing,
+dispatch or connected acceptance. Screenshots are in
+`output/phase-send-evidence/packed-instructions.jpg` and
+`output/phase-send-evidence/packed-instructions-narrow.jpg`.
+
+Accepted phase-disclosure follow-up: confirm Phases / Delivery scope starts
+collapsed after acceptance, expands by pointer or keyboard, and exposes its
+existing progress/actions. View phase progress must open it before scrolling
+and focusing it. Check one aligned indicator and label, narrow layout and
+dark appearance. Automated browser execution remains request-only.
+
+Received-stock follow-up: confirm a whole phase can use already-received kits
+without a new delivery, with explicit completed-step notes and a no-new-delivery
+explanation. Insufficient/unreceived stock must not complete Receive; any pending
+or partially received outbound request keeps Receive current. Verify desktop,
+narrow and dark layouts and Prepare navigation. Connected physical acceptance
+remains pending; preview uses synthetic stock and receipt states only.
+The Receive step must show Request received, Sent or Received, with explicit
+partial dispatch/receipt and existing-stock qualifiers. Inspect its status
+announcement, narrow reflow and retained caption after preparation becomes current.
+
+Review-before-acceptance follow-up: verify **Review and Accept Order** before
+acceptance, with no step strip or confirmation next-step card. Scope, pricing
+and permission-appropriate quote actions remain available. Acceptance should
+replace that heading with **Shipping: Phase name (X samples)** and the four
+current-phase shipping steps; it must create no automatic kit request. Confirm
+Member/expired/pending quote rules remain in force. Connected acceptance remains
+pending; manual preview must use synthetic decisions without operational writes.
+
+Pending connected acceptance: phase one is automatic with no phase picker/overview; the Shipping heading includes the current phase name/sample count without a repeated phase line. Next step has one appropriate trailing action. Direct API calls and old phase URLs cannot request, pair, finalize or hand off a future phase. Sending all samples and partial results retain phase one; full Portal delivery unlocks phase two, repeating through phase three. Approved cancellation skips a phase; pending cancellation blocks new preparation/shipping. Check request/receipt/preparation/ship/progress navigation, stale data/errors, Member permissions, keyboard/focus, narrow layout and both themes. No automated E2E run was requested. See [the local checkpoint](../testing/runs/2026-10-01-ordered-phase-shipping.md) for manual component-preview evidence.
+
+## Initial on-demand phase kits checkpoint — October 1, 2026
+
+Accept a one-phase or multi-phase Job without a kit address or automatic request.
+When ready, request the current phase and confirm the current Department
+address. Verify distinct phase requests/physical kits, compatible received-stock
+allocation once, shortage-only ordering, duplicate replay and stale-version
+rejection. Review and cancel an unshipped request without cancelling the Job.
+Dispatch and barcode-confirm actual receipt, including partial deliveries.
+Prepare/confirm only phase one's source/sample/run crosswalk; future Sample IDs
+must not be required. Verify its authorization and exact shipments, then prepare
+a later phase as an amendment. Check wrong-phase stock rejection, phase scope
+changes/cancellation, expiry replacement, and tenant-scoped Customer/Partner
+permissions. Sequential processing and TAT require full physical sample receipt.
+
+Actual-component browser verification passed with an offline synthetic adapter
+for request/retry, cancellation, independent phase progress, dialog regions,
+keyboard/focus, light/dark and 390 px bounds. This creates no real requests or
+receipts and does not establish connected or physical acceptance. No automated
+E2E suite was run. See [the checkpoint](../testing/runs/2026-10-01-on-demand-phase-kits.md).
+
+## Kit requests default tab — October 1, 2026
+
+Open `/lab-operations` or `?section=receipt` without receiptTab: Kit requests
+must be selected. Explicit `receiptTab=receiving` and `receiptTab=accession`
+still open their respective tasks. Leaving and returning through the Receipt
+& accession sidebar selects Kit requests; assigned-shipment links retain an
+explicit receiving handoff. Verify selection without receipt, dispatch or
+accession writes. Automated E2E execution remains request-only.
+
+Signed-in POMS manual navigation passed for the default tab, explicit receiving
+across reload, accession selection and leaving/re-entering via the sidebar.
+The check was read-only and used browser accessibility state; screenshot
+capture timed out. No automated test or operational write was performed.
+
+## Placed transportation kit order modal — October 1, 2026
+
+Read-only acceptance uses an existing placed, paired-preparation Job with a
+saved kit request. View kit order (or Record receipt after dispatch) opens the
+same dialog as Actions → View kit order. Review the saved delivery address,
+ordered/sent/received counts, state and tracking. Closing preserves Job context
+and restores the invoking next-step button or Actions trigger. One menu cue
+and one active modal are required. Check visible body, keyboard containment,
+Escape, narrow reflow and both themes. Opening must not create an order or
+record receipt. Existing compatible-stock coverage stays readable.
+
+Separate connected physical acceptance must confirm a dispatched kit with its
+actual matching barcode, verify version/idempotency protection, and verify
+preparation becomes available after receipt. Cancellation or Escape from the
+receipt view returns to tracking without a write. Pending/error states retain
+the view and retry; Members can review without administrator receipt controls.
+Automated E2E execution remains request-only.
+
+Manual UI-preview evidence covers the actual modal and shared Actions controls,
+pending/dispatched display, one modal/one menu indicator, blank/wrong barcode
+validation, scanner focus advance without submission, receipt Escape/back,
+focus containment/return and 320px dark/desktop light reflow. The connected
+browser remains in POMS, so Customer/Partner data and physical receipt checks
+above are still pending. No order or receipt write was performed.
+
+## Unified on-screen phase review — October 1, 2026
+
+Read-only presentation acceptance: review an existing multi-phase issued quote with base and extra-run components. One Service/sample quantity appears for the order; each named phase groups sources, samples, TAT, total and per-sample runs with its quoted quantities, rates and Phase price. Verify 15 samples at 3 total runs each explains 1 included plus 2 additional and 30 additional runs, while a one-run phase has no extra charge. Saved prices/tax and existing quote Actions must remain intact. Check narrow scope-before-pricing order, themes and keyboard focus. Unknown phase IDs or inconsistent allocations must retain every quoted charge without an invented match or per-sample explanation. No accept, propose, decline or order writes are needed for this presentation checkpoint. Automated suites remain request-only; PDF presentation is excluded.
+
+## Phase-aware quote PDF — October 1, 2026
+
+Later PDF follow-up: manually verify the single-service summary, contained phase scope/prices and included/additional-run calculation. A 25-sample, two-phase quote with full billing address and 30 additional runs should fit one Letter page with its saved tax, terms and $38,750 total. A downloaded connected quote must retain its actual revision/status/billing and amounts; synthetic renderer evidence does not prove tenant authorization or acceptance. Automated E2E remains request-only.
+
+Synthetic presentation checkpoint passed for both one-page tax variants, five-page twenty-phase work, seven-page oversized phase sources and four-page single-scope descriptions. All 18 rendered pages have visible continuation identity/footers and retained end markers, without clipping or out-of-bounds glyphs. The local API was rebuilt/restarted and health-checked; a connected Customer/Partner download of the new layout remains pending. No order or quote decision was submitted.
+
+Later PDF follow-up: manually verify the single-service summary, contained phase scope/prices and included/additional-run calculation. A 25-sample, two-phase quote with full billing address and 30 additional runs should fit one Letter page with its saved tax, terms and $38,750 total. A downloaded connected quote must retain its actual revision/status/billing and amounts; synthetic renderer evidence does not prove tenant authorization or acceptance. Automated E2E remains request-only.
+
+Manual synthetic renderer review confirms one-page two-phase and additional-run/pre-tax quotes, paired phase details/pricing, concise service names and quantities, sample-based TAT, readable saved totals/payment terms and continuation identity on long documents. Twenty phases, oversized phase sources and oversized single-scope service descriptions were rendered and visually inspected on every page, with end markers and page-bound checks. This proves presentation in generated documents, not connected tenant download or financially binding acceptance.
+
+Deferred connected acceptance: Customer and Partner Department members download the displayed exact quote from Actions; verify tenant denial, revision/status/dates, frozen billing and quantities/rates/tax, phase-ID allocation, expired/accepted history and no quote/order write. Confirm incomplete saved scope produces the existing support error instead of current-order reconstruction. Review a two-phase one-page PDF and a longer quote in the browser and printed Letter output. No automated E2E suite was requested or run.
+
+## Service catalog row actions — October 1, 2026
+
+Deferred connected acceptance: a platform administrator sees one Actions menu per catalog row, opens Edit without losing list filters, cancels and returns to the row. Active rows offer Deactivate; Show inactive exposes Activate for inactive rows. Confirming a status change preserves the item's price, unit, reference, service family and saved order/quote snapshots; server authorization and version conflicts remain enforced. Check Cancel initial focus, keyboard menu opening, busy dismissal prevention and search focus after a deactivated row disappears. Verify narrow and light/dark layouts and single-line menu entries. No live catalog status change should be submitted during presentation verification; automated E2E execution remains request-only.
+
+## Quote decisions and scope refinements — October 1, 2026
+
+Deferred connected acceptance: an organization/department administrator opens the quote Actions menu, proposes changes using one multiline field, sees the original quote retained and acceptance paused, then sees Phaeno review/reissue resolve the pending proposal. Check exact quote revision and multiline explanation in both histories; idempotent retries must not duplicate events. Decline confirms and closes the entire unaccepted phased Job while retaining terms and scope. Verify member permissions, stale/replaced quote blocking, cancel focus, dirty discard, busy dismissal and focus restoration. PDF download belongs below a divider in the quote menu, whose entries remain on one line; no duplicate page-header PDF button should remain.
+
+Manual actual-component presentation checkpoint: desktop menu width 224px, five single-line actions and one separator; 320px dark-content reflow without overflow; base quantity 10 and additional-run quantity 5; None notes hidden; exact sample-based TAT text present. Proposal has one textarea with nonblank validation and shared dirty discard. Proposal and decline dialogs focus Keep reviewing, explain their consequences in a separate body and restore focus on close. No real decision was submitted, and no console errors were captured. Temporary preview files/tab/server were removed and viewport reset.
+
+Scope review must total each service's quoted quantity across phases, keep additional runs separate, hide notes consisting only of None, label meaningful notes and use the approved every-required-sample TAT sentence. Check desktop/narrow and light/dark reflow without horizontal overflow. Presentation previews do not establish connected decisions, delivery or production acceptance; automated E2E execution remains request-only.
+
+## Phase quote review and catalog selection — October 1, 2026
+
+Manual local presentation evidence: signed-in Draft entry has the active PSeq RNA Sequencing catalog option and aligned service/Sample type controls at desktop, with no horizontal overflow at 320px CSS. No order writes were performed. An actual-component synthetic quote preview confirmed two/twenty aligned phase pairs, details followed by pricing on narrow screens, TAT only in phase details, compact service/quantity/rate rows, conditional additional-run pricing, one-line amounts and dark-theme reflow. This does not establish persisted or financially binding acceptance.
+
+Synthetic keyboard evidence: the two-decision Actions menu has one chevron, opens with Enter and returns focus on Escape. One available decision renders a direct button without a chevron. Opening/closing its shared preview dialog restored focus to that button. Temporary previews are removed and the viewport restored.
+
+Connected acceptance remains pending after the local API is restarted from the new source: save/reopen the selected catalog service, reject missing/inactive/unrelated service on pricing submission, retain the selected service in quote issuance, exclude the duplicate pre-acceptance Phases panel, and preserve post-acceptance receipt/progress/rephasing/cancellation. Review immutable quantities/prices/tax/expiry and permission/disabled-state explanations as Customer and Partner. Verify two and many phases, light/dark themes, keyboard quote Actions, modal focus return, and a single direct decision without a dropdown. No automated E2E suite was requested or run.
+
+## Saved Draft readability — October 1, 2026
+
+Phase-price wording: read-only signed-in browser inspection confirmed Phase price in both phases, retaining the quoted and invoiced values. No order actions or automated E2E were executed for this text-only correction.
+
+Commercial scope follow-up: the six visible labels are bold (700 weight) at desktop (1163 px CSS) and narrow (487 px CSS) widths, without horizontal overflow. The existing quote value/revision/status and values remain present. The viewport was reset and no order actions were invoked. Automated E2E, dark-theme and conditional Proposal note visual cases remain unrun.
+
+Follow-up phase-card inspection: on the Quote-issued order, proposed-rate and all seven progress/receipt/delivery/timing/pricing labels per phase are bold (700 weight). Desktop (1163 px CSS) and narrow (487 px CSS) layouts have no horizontal overflow. Reset the viewport after inspection; no order actions or writes were performed. Automated execution, dark-theme and conditional additional-run visual checks remain pending.
+
+Manual signed-in inspection of the existing two-phase saved Draft confirmed bold count/price labels, inline values and missing-price messages at desktop (1163 px CSS) and narrow (487 px CSS) widths, with no horizontal overflow. The temporary viewport override was reset. The single Edit draft action and Version 2 remained visible; no record writes were performed. Automated E2E execution was not requested. Entered-price/additional-run and dark-theme visual cases remain pending; this check does not establish Draft persistence or pricing acceptance.
+
 ## POMS assembly messaging foundation — September 30, 2026
 
 Deferred live acceptance: with the updated local API, verify authorized WebSocket notification connection, saved status refresh after reconnect, account/role revocation, expiry, attention and delivery history presentation, keyboard/small-viewport behavior, and polling fallback when WebSockets fail. The Vite development configuration explicitly proxies the assembly notification upgrade path. Hosted release planning must verify a WebSocket-capable API origin or reverse proxy; an HTTP-only frontend proxy is insufficient.

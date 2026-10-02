@@ -39,7 +39,7 @@ describe('LabReceiptAccessionPanel navigation', () => {
 
   it('records container receipt only in Receive shipments, then opens separate tube accession', async () => {
     api.receive.mockResolvedValue({ shipmentId: 'shipment-1', shipmentNumber: 'SHIP-1', barcode: 'PH-P-23456789AB-C', receivedAt: '2026-09-10T18:00:00Z', alreadyReceived: false })
-    render(<QueryClientProvider client={new QueryClient()}><LabReceiptAccessionPanel apiEnabled canReceiveShipments workOrders={[]} /></QueryClientProvider>)
+    render(<QueryClientProvider client={new QueryClient()}><LabReceiptAccessionPanel apiEnabled canReceiveShipments tab="receiving" workOrders={[]} /></QueryClientProvider>)
     expect(screen.getByRole('tab', { name: 'Receive shipments' }).getAttribute('aria-selected')).toBe('true')
     expect(api.receive).not.toHaveBeenCalled()
     const input = screen.getByLabelText('Shipping insert barcode')
@@ -59,7 +59,7 @@ describe('LabReceiptAccessionPanel navigation', () => {
       { id: 'one', shipmentNumber: 'SHIP-ONE', organizationName: 'Customer', authorizationReference: 'JOB-1', labWorkOrderId: 'work-1', destinationName: 'Lab', status: 'Shipped', carrier: 'Carrier', trackingNumber: 'TRACK-ONE', expectedTubeCount: 10 },
       { id: 'two', shipmentNumber: 'SHIP-TWO', organizationName: 'Customer', authorizationReference: 'JOB-1', labWorkOrderId: 'work-1', destinationName: 'Lab', status: 'Shipped', carrier: 'Carrier', trackingNumber: 'TRACK-TWO', expectedTubeCount: 5 },
     ])
-    render(<QueryClientProvider client={new QueryClient()}><LabReceiptAccessionPanel apiEnabled workOrders={[]} /></QueryClientProvider>)
+    render(<QueryClientProvider client={new QueryClient()}><LabReceiptAccessionPanel apiEnabled tab="receiving" workOrders={[]} /></QueryClientProvider>)
     expect(await screen.findByText('TRACK-ONE')).toBeTruthy()
     expect(screen.getByText('TRACK-TWO')).toBeTruthy()
     expect(screen.getByRole('link', { name: 'SHIP-ONE' })).toBeTruthy()
@@ -104,11 +104,13 @@ describe('LabReceiptAccessionPanel navigation', () => {
   })
 
   it('combines kit requests and sent kits in one tab and supports keyboard tab selection', async () => {
-    render(<QueryClientProvider client={new QueryClient()}><LabReceiptAccessionPanel apiEnabled tab="accession" workOrders={[]} /></QueryClientProvider>)
+    render(<QueryClientProvider client={new QueryClient()}><LabReceiptAccessionPanel apiEnabled workOrders={[]} /></QueryClientProvider>)
     expect(screen.getByRole('tab', { name: 'Kit requests' })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: 'Kit requests' }).getAttribute('aria-selected')).toBe('true')
     expect(screen.queryByRole('tab', { name: 'Prepare kits' })).toBeNull()
     expect(screen.queryByRole('tab', { name: 'Kits sent' })).toBeNull()
     const accession = screen.getByRole('tab', { name: 'Accession samples' })
+    fireEvent.mouseDown(accession, { button: 0, ctrlKey: false })
     act(() => accession.focus())
     fireEvent.keyDown(accession, { key: 'ArrowLeft' })
     await waitFor(() => expect(screen.getByRole('tab', { name: 'Receive shipments' }).getAttribute('aria-selected')).toBe('true'))
@@ -118,8 +120,8 @@ describe('LabReceiptAccessionPanel navigation', () => {
     expect(screen.getByText('Return-kit queue')).toBeTruthy()
   })
 
-  it('opens shipment-specific receipt in Receive shipments', () => {
-    render(<QueryClientProvider client={new QueryClient()}><LabReceiptAccessionPanel apiEnabled shipmentId="shipment-1" workOrders={[]} /></QueryClientProvider>)
+  it('opens explicitly selected shipment-specific receipt in Receive shipments', () => {
+    render(<QueryClientProvider client={new QueryClient()}><LabReceiptAccessionPanel apiEnabled shipmentId="shipment-1" tab="receiving" workOrders={[]} /></QueryClientProvider>)
     expect(screen.getByRole('tab', { name: 'Receive shipments' }).getAttribute('aria-selected')).toBe('true')
   })
 

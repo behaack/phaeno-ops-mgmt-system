@@ -116,11 +116,13 @@ describe('SampleShippingDetailPage', () => {
     expect(api.assignSampleTube).not.toHaveBeenCalled()
   })
 
-  it('keeps separate review and print actions after cancelled printing and restores print focus after Not yet', async () => {
+  it('keeps instructions in header actions and one Print action after cancelled printing', async () => {
     const navigation = vi.fn()
     renderPage(undefined, customerSession(), sendHost({ onNavigationLockChange: navigation }))
-    const review = await waitFor(() => currentNext().getByRole('button', { name: 'Review shipping instructions' }))
-    const print = currentNext().getByRole('button', { name: 'Print shipping insert' })
+    const review = await screen.findByRole('button', { name: 'View shipping instructions' })
+    const print = await waitFor(() => currentNext().getByRole('button', { name: 'Print shipping insert' }))
+    expect(currentNext().getAllByRole('button')).toHaveLength(1)
+    expect(screen.queryByRole('button', { name: 'Record shipment' })).toBeNull()
     await waitFor(() => expect((print as HTMLButtonElement).disabled).toBe(false))
     fireEvent.click(review)
     const packing = await screen.findByRole('dialog', { name: 'Shipping instructions' })
@@ -133,14 +135,20 @@ describe('SampleShippingDetailPage', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Confirm printed and packed' })
     expect(dialog.textContent).toContain(shipment.currentPacket!.packetNumber)
     expect(dialog.textContent).toContain('Revision 1')
+    expect(await within(dialog).findByText('Regular ice: approved amount.')).toBeTruthy()
+    const instructions = within(dialog).getByText('Packing instructions').closest('details')!
+    expect(instructions.open).toBe(true)
+    expect(screen.getAllByRole('dialog')).toHaveLength(1)
+    expect(within(dialog).queryByRole('button', { name: 'Print shipping insert' })).toBeNull()
     expect(within(dialog).getByText('Before confirming')).toBeTruthy()
+    expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Not yet' }))
     expect(within(dialog).getByText('You printed this insert revision.')).toBeTruthy()
     expect(within(dialog).getByText('You placed it inside this shipment’s container.')).toBeTruthy()
     expect(navigation).toHaveBeenLastCalledWith(true)
     expect(api.recordSampleShipment).not.toHaveBeenCalled()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Not yet' }))
     await waitFor(() => expect(navigation).toHaveBeenLastCalledWith(false))
-    await waitFor(() => expect(currentNext().getByRole('button', { name: 'Review shipping instructions' })).toBeTruthy())
+    await waitFor(() => expect(currentNext().getByRole('button', { name: 'Print shipping insert' })).toBeTruthy())
     expect(currentNext().queryByRole('button', { name: 'Record shipment' })).toBeNull()
     await waitFor(() => expect(document.activeElement).toBe(print))
   })
@@ -167,7 +175,7 @@ describe('SampleShippingDetailPage', () => {
     const revised = { ...shipment, currentPacket: { ...shipment.currentPacket!, id: 'revised-insert', revision: 2 } }
     api.getSampleShipment.mockResolvedValue(revised)
     await act(async () => { await client.refetchQueries({ queryKey: ['sample-shipment', shipment.id] }) })
-    await waitFor(() => expect(currentNext().getByRole('button', { name: 'Review shipping instructions' })).toBeTruthy())
+    await waitFor(() => expect(currentNext().getByRole('button', { name: 'Print shipping insert' })).toBeTruthy())
     expect(currentNext().queryByRole('button', { name: 'Record shipment' })).toBeNull()
   })
 
@@ -210,7 +218,7 @@ describe('SampleShippingDetailPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Close print dialog' }))
     expect(screen.queryByRole('dialog', { name: 'Confirm printed and packed' })).toBeNull()
-    expect(currentNext().getByRole('button', { name: 'Review shipping instructions' })).toBeTruthy()
+    expect(currentNext().getByRole('button', { name: 'Print shipping insert' })).toBeTruthy()
   })
 
   it('offers direct insert confirmation only for a fully matched eligible container', async () => {
@@ -411,7 +419,7 @@ function embeddedHost(overrides: Partial<NonNullable<ComponentProps<typeof Sampl
 function currentNext() { return within(screen.getByTestId('next-shipping-action')) }
 
 function sendHost(overrides: Partial<NonNullable<ComponentProps<typeof SampleShippingDetailPage>['embedded']>> = {}) {
-  return embeddedHost({ renderSendAction: (action, ref, printAction, printRef) => <section data-testid="next-shipping-action">{action ? <button ref={ref} disabled={action.disabled} onClick={action.onSelect}>{action.label}</button> : null}{printAction ? <button ref={printRef} disabled={printAction.disabled} onClick={printAction.onSelect}>{printAction.label}</button> : null}</section>, ...overrides })
+  return embeddedHost({ renderSendAction: (action, ref) => <section data-testid="next-shipping-action">{action ? <button ref={ref} disabled={action.disabled} onClick={action.onSelect}>{action.label}</button> : null}</section>, ...overrides })
 }
 
 function customerSession(): PhaenoSessionContextValue {

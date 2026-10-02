@@ -3,10 +3,10 @@ import { useRef } from 'react'
 import { getLabPhasePlan, writeLabPhases } from '#/api/lab-phases'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
-export function useLabPhasePlan(orderId: string, internal: boolean) {
+export function useLabPhasePlan(orderId: string, internal: boolean, enabled = true) {
   const { authProvider, selectedOrganizationId, selectedDepartmentId } = usePhaenoSession()
   return useQuery({ queryKey: ['lab-phases', internal, selectedOrganizationId, selectedDepartmentId, orderId],
-    queryFn: () => getLabPhasePlan(orderId, internal), enabled: authProvider !== 'mock', refetchInterval: 60_000 })
+    queryFn: () => getLabPhasePlan(orderId, internal), enabled: enabled && authProvider !== 'mock', refetchInterval: 60_000 })
 }
 export function useLabPhaseWrite(orderId: string, internal: boolean, onSaved: () => Promise<unknown>) {
   const client = useQueryClient()

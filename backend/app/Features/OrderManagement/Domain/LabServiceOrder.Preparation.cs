@@ -2,6 +2,17 @@ namespace PhaenoPortal.App.Features.OrderManagement.Domain;
 
 public sealed partial class LabServiceOrder
 {
+    public bool UsesPairedPreparation { get; private set; }
+
+    public void EnablePairedPreparation()
+    {
+        UsesPairedPreparation = true;
+        var active = Phases.Where(p => p.SupersededAtUtc == null).ToArray();
+        if (active.Length == 1 && active[0].ScopeJson is null)
+            active[0].SetScope(new(SourceGroups.Select(g => new PhaseSourceScope(g.BiologicalSource, g.SpecimenCount)).ToArray(),
+                RequestedSequencingRunCount == RequestedSpecimenCount ? 1 : null, RequestedSequencingRunCount));
+    }
+
     // Accepted commercial quantities stay immutable. Cancellation changes the
     // outstanding physical preparation, not the agreement or existing identities.
     public LabPhaseScope ReadPreparationScope()

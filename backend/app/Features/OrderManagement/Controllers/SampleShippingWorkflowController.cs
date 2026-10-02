@@ -199,6 +199,7 @@ public sealed class SampleShippingWorkflowController(
             && item.DepartmentId == tenant.Department.Id, cancellationToken) ?? throw Missing();
         EnsureVersion(shipment.Version, request.Version);
         var shippedAt = RequireUtc(request.ShippedAt, "Shipment time");
+        await LabPhaseShippingSequence.RequireShipmentAsync(dbContext, shipment, cancellationToken);
         await TransportationKitSupplyGuard.EnsureBoundReceiptAsync(dbContext, shipment.Id, cancellationToken);
         var shippingPacket = await dbContext.SampleShippingPacketRevisions.AsNoTracking()
             .Where(item => item.SampleShipmentId == shipment.Id && item.VoidedAt == null)

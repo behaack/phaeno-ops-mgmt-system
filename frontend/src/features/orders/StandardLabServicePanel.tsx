@@ -1,10 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Link } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { getCustomerDeliveryLocations } from '#/api/customer-delivery-locations'
 import {
   listLabServiceOfferings,
   placeStandardLabOrder,
@@ -34,17 +32,18 @@ import {
   DialogTitle,
 } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
+import { Field } from '#/components/ui/field'
+import { NativeSelect } from '#/components/ui/native-select'
 import { Label } from '#/components/ui/label'
 import {
   RequiredDialogFooter,
   RequiredFieldName,
 } from '#/components/ui/required-field'
 import { usePhaenoSession } from '#/features/auth/session-context'
-import { useOrderDraftGuard } from './use-order-draft-guard'
+import { useOrderDecisionDismissal } from './use-order-decision-dismissal'
 
 const schema = z.object({
   purchaseOrderNumber: z.string().trim().max(255),
-  kitDeliveryLocationId: z.string().min(1, 'Select a Department delivery address.'),
   sampleTypeConfirmed: z.boolean().refine(value => value, 'Confirm the Sample type you will send.'),
   confirmed: z
     .boolean()
@@ -100,14 +99,9 @@ export function StandardLabServicePanel({
     enabled: Boolean(canReview && offeringId) && authProvider !== 'mock',
   })
   const [review, setReview] = useState<Review | null>(null)
-  const locations = useQuery({
-    queryKey: ['customer-delivery-locations', order.organizationId, selectedDepartmentId],
-    queryFn: () => getCustomerDeliveryLocations({ organizationId: order.organizationId, departmentId: selectedDepartmentId! }),
-    enabled: Boolean(review && selectedDepartmentId) && authProvider !== 'mock',
-  })
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { purchaseOrderNumber: '', confirmed: false, sampleTypeConfirmed: false, kitDeliveryLocationId: '' },
+    defaultValues: { purchaseOrderNumber: '', confirmed: false, sampleTypeConfirmed: false },
   })
   const requiresPo = session?.selectedDepartment?.purchaseOrderRequired === true
   const mutation = useMutation({
@@ -121,8 +115,6 @@ export function StandardLabServicePanel({
         throw new Error('Enter the required purchase order number.')
       }
       const terms = review.preview
-      const location = locations.data?.find(item => item.id === values.kitDeliveryLocationId && item.isActive)
-      if (!location) throw new Error('Select an active Department delivery address and try again.')
       if (!order.sampleTypeDefinitionId) throw new Error('Review the Sample type before placing the order.')
       if (
         !terms.canPlaceStandardOrder ||
@@ -147,8 +139,6 @@ export function StandardLabServicePanel({
           prohibitedDataConfirmed: values.confirmed,
           purchaseOrderNumber: values.purchaseOrderNumber || undefined,
           confirmedSampleTypeId: order.sampleTypeDefinitionId,
-          kitDeliveryLocationId: location.id,
-          kitDeliveryLocationVersion: location.version,
         },
         review.key,
       )
@@ -163,17 +153,14 @@ export function StandardLabServicePanel({
       ])
     },
   })
-  useOrderDraftGuard(
+  const dismissal = useOrderDecisionDismissal(
     Boolean(review) && form.formState.isDirty,
     mutation.isPending,
+    () => setReview(null),
+    { scope: 'order confirmation', description: 'Your confirmation entries will be discarded. The saved Job will remain unchanged.' },
   )
   function close() {
-    if (
-      !mutation.isPending &&
-      (!form.formState.isDirty ||
-        window.confirm('Discard the unsaved order confirmation?'))
-    )
-      setReview(null)
+    dismissal.close()
   }
   const selected = offerings.data?.find((item) => item.id === offeringId)
   function startReview() {
@@ -184,7 +171,7 @@ export function StandardLabServicePanel({
     )
       return
     mutation.reset()
-    form.reset({ purchaseOrderNumber: '', confirmed: false, sampleTypeConfirmed: false, kitDeliveryLocationId: '' })
+    form.reset({ purchaseOrderNumber: '', confirmed: false, sampleTypeConfirmed: false })
     setReview({ preview: preview.data, key: crypto.randomUUID() })
   }
   async function refreshReview() {
@@ -228,7 +215,7 @@ export function StandardLabServicePanel({
             {committed.priceProvenance ? <p className="text-sm text-muted-foreground">Accepted {committed.priceProvenance.source === 'Standard' ? 'standard service price' : `${committed.priceProvenance.source.toLowerCase()} negotiated price`}. Later price changes do not affect this commitment.</p> : null}
             <p className="text-sm text-muted-foreground">
               {committed.deliveryTargetBusinessDays
-                ? <>Delivery target: {committed.deliveryTargetBusinessDays} business days after Phaeno physically receives every required tube for a phase. Review the Phases card for phased commitments. Monday–Friday, excluding Phaeno holidays.</>
+                ? <>Delivery target: {committed.deliveryTargetBusinessDays} business days after Phaeno physically receives every required sample for a phase. Review the Phases card for phased commitments. Monday–Friday, excluding Phaeno holidays.</>
                 : <>Published turnaround: {committed.minimumTurnaroundDays}–{committed.maximumTurnaroundDays} days after scientific acceptance.</>} Accepted{' '}
               {new Date(committed.committedAtUtc).toLocaleDateString()}.
             </p>
@@ -254,13 +241,12 @@ export function StandardLabServicePanel({
             ) : null}
             {offerings.data?.length ? (
               <>
-                <div>
+                <Field>
                   <Label htmlFor="standard-lab-offering">Offering</Label>
-                  <select
+                  <NativeSelect
                     id="standard-lab-offering"
                     value={offeringId}
                     onChange={(event) => setOfferingId(event.target.value)}
-                    className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   >
                     <option value="">Select an offering</option>
                     {offerings.data.map((item) => (
@@ -269,8 +255,8 @@ export function StandardLabServicePanel({
                         specimen
                       </option>
                     ))}
-                  </select>
-                </div>
+                  </NativeSelect>
+                </Field>
                 {selected ? (
                   <OfferingSummary
                     offering={selected}
@@ -334,18 +320,19 @@ export function StandardLabServicePanel({
           <DialogContent
             showCloseButton={!mutation.isPending}
             aria-busy={mutation.isPending}
+            onOpenAutoFocus={event => { event.preventDefault(); document.getElementById('standard-order-keep-reviewing')?.focus() }}
           >
             <DialogHeader>
               <DialogTitle>
                 Place standard order {order.orderNumber}?
               </DialogTitle>
               <DialogDescription>
-                Confirm the price, Sample type and kit delivery address. Phaeno
+                Confirm the price and Sample type. Request transportation kits when ready. Phaeno
                 will choose and send the appropriate Transportation kits. Laboratory
                 work begins after you save and confirm each Sample ID and tube pair.
               </DialogDescription>
-              <p className="text-sm">Run the purchased number of sample-sequencing runs. Submitted tube counts are separate; failure-recovery attempts do not add purchased runs.</p>
             </DialogHeader>
+            <p className="text-sm">Run the purchased number of sample-sequencing runs. Submitted tube counts are separate; failure-recovery attempts do not add purchased runs.</p>
             {mutation.error ? (
               <Alert variant="destructive">
                 <AlertTitle>Standard order was not placed</AlertTitle>
@@ -388,19 +375,8 @@ export function StandardLabServicePanel({
                   </label>
                   {form.formState.errors.sampleTypeConfirmed ? <p role="alert" className="text-sm text-destructive">{form.formState.errors.sampleTypeConfirmed.message}</p> : null}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="standard-kit-delivery-location"><RequiredFieldName>Ship Transportation kits to</RequiredFieldName></Label>
-                  <select id="standard-kit-delivery-location" className="h-10 w-full cursor-pointer rounded-md border bg-background px-3 text-sm" value={form.watch('kitDeliveryLocationId')} onChange={event => form.setValue('kitDeliveryLocationId', event.target.value, { shouldDirty: true, shouldValidate: true })} disabled={locations.isLoading}>
-                    <option value="">Select a Department delivery address</option>
-                    {locations.data?.filter(item => item.isActive).map(item => <option key={item.id} value={item.id}>{item.label} · {item.line1}, {item.city}</option>)}
-                  </select>
-                  {locations.isLoading ? <p role="status" className="text-sm">Loading delivery addresses…</p> : null}
-                  {locations.error ? <p role="alert" className="text-sm text-destructive">Delivery addresses could not be loaded. Close and reopen this review to retry.</p> : null}
-                  {form.formState.errors.kitDeliveryLocationId ? <p role="alert" className="text-sm text-destructive">{form.formState.errors.kitDeliveryLocationId.message}</p> : null}
-                  {locations.data?.find(item => item.id === form.watch('kitDeliveryLocationId')) ? <p className="rounded-md bg-muted/40 p-3 text-sm">{(() => { const location = locations.data!.find(item => item.id === form.watch('kitDeliveryLocationId'))!; return `${location.recipient} · ${location.line1}${location.line2 ? `, ${location.line2}` : ''} · ${location.city}, ${location.region} ${location.postalCode}` })()}</p> : null}
-                  <Link to="/delivery-locations" search={{ organizationId: order.organizationId, departmentId: selectedDepartmentId ?? '' }} className="text-sm text-primary underline">Manage delivery addresses</Link>
-                </div>
-                <div>
+
+                <Field>
                   <Label htmlFor="standard-po">
                     {requiresPo ? (
                       <RequiredFieldName>
@@ -412,7 +388,6 @@ export function StandardLabServicePanel({
                   </Label>
                   <Input
                     id="standard-po"
-                    className="mt-2"
                     aria-invalid={Boolean(
                       form.formState.errors.purchaseOrderNumber,
                     )}
@@ -423,7 +398,7 @@ export function StandardLabServicePanel({
                       {form.formState.errors.purchaseOrderNumber.message}
                     </p>
                   ) : null}
-                </div>
+                </Field>
                 <label
                   htmlFor="standard-confirmed"
                   className="flex cursor-pointer items-start gap-2 text-sm"
@@ -454,6 +429,7 @@ export function StandardLabServicePanel({
             </form>
             <RequiredDialogFooter>
               <Button
+                id="standard-order-keep-reviewing"
                 type="button"
                 variant="outline"
                 disabled={mutation.isPending}
@@ -464,13 +440,14 @@ export function StandardLabServicePanel({
               <Button
                 type="submit"
                 form="standard-lab-order"
-                disabled={mutation.isPending || locations.isLoading || Boolean(locations.error) || !locations.data?.some(item => item.isActive)}
+                disabled={mutation.isPending}
               >
                 {mutation.isPending ? 'Placing order…' : 'Confirm price and order'}
               </Button>
             </RequiredDialogFooter>
           </DialogContent>
         </Dialog>
+        {dismissal.confirmation}
       </CardContent>
     </Card>
   )

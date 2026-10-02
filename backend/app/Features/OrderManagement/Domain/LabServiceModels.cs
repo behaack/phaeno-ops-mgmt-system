@@ -40,6 +40,7 @@ public sealed partial class LabServiceOrder : IAudit, IConcurrency
     public string? PlacementSnapshotJson { get; private set; }
     public LabServiceEntryMode EntryMode { get; private set; } = LabServiceEntryMode.ManualQuote;
     public Guid? LabServiceOfferingId { get; private set; }
+    public Guid? RequestedCatalogItemId { get; private set; }
     public string? ConfiguredCommercialSnapshotJson { get; private set; }
     public string? CommercialDraftJson { get; private set; }
     public string? CustomerDraftJson { get; private set; }
@@ -165,6 +166,8 @@ public sealed partial class LabServiceOrder : IAudit, IConcurrency
         EnsureStatus(LabServiceOrderStatus.DraftRequest);
         var draft = ReadCommercialDraft() ?? throw new InvalidOperationException("Save the commercial Draft first.");
         CommercialDraftRules.Validate(draft, true);
+        if (!draft.CatalogItemId.HasValue || draft.CatalogItemId == Guid.Empty)
+            throw new ArgumentException("Select a catalog service before submitting for pricing.");
         StorageRequirements = OrderText.Required(draft.StorageRequirements ?? sampleTypeStorageRequirements,
             "Storage requirements", 2000);
         foreach (var group in draft.Phases.SelectMany(p => p.Sources).GroupBy(s => LabServiceSourceGroup.Normalize(s.BiologicalSource)))
@@ -184,6 +187,7 @@ public sealed partial class LabServiceOrder : IAudit, IConcurrency
             Phases.Add(phase);
         }
         Submit(actorId, now);
+        RequestedCatalogItemId = draft.CatalogItemId;
         CommercialDraftJson = null;
     }
 
@@ -399,6 +403,33 @@ public sealed partial class LabServiceOrder : IAudit, IConcurrency
 
     public void AcceptQuote(Guid quoteId, DateTime utcNow)
         => AcceptQuote(quoteId, utcNow, "{}");
+
+    public bool CanRespondToInitialQuote => Status == LabServiceOrderStatus.QuoteIssued
+        && !AcceptedQuoteId.HasValue && !PlacedAt.HasValue
+        && Quotes.Any(quote => quote.Id == CurrentQuoteId && quote.Purpose == QuotePurpose.Initial
+            && quote.Status is QuoteStatus.Issued or QuoteStatus.Expired
+            && quote.AcceptedAt is null && quote.SupersededByQuoteId is null);
+
+    public void ProposeQuoteChanges(Guid quoteId, string reason)
+    {
+        RequireCurrentInitialQuote(quoteId);
+        var proposal = OrderText.Required(reason, "Proposed changes", 2000);
+        SetStatus(LabServiceOrderStatus.QuoteInPreparation, proposal, null);
+    }
+
+    public void DeclineInitialQuote(Guid quoteId, string reason)
+    {
+        RequireCurrentInitialQuote(quoteId);
+        var decisionReason = OrderText.Required(reason, "Reason", 2000);
+        Quotes.Single(quote => quote.Id == quoteId).DeclineInitial();
+        WithdrawOrCancel(decisionReason);
+    }
+
+    private void RequireCurrentInitialQuote(Guid quoteId)
+    {
+        if (!CanRespondToInitialQuote || CurrentQuoteId != quoteId)
+            throw new InvalidOperationException("Review the current unaccepted quote before making this decision.");
+    }
 
     public void MarkWorkStarted()
     {

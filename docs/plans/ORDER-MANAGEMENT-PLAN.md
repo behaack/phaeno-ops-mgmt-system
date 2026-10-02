@@ -1,5 +1,48 @@
 # Order Management Plan
 
+## Customer/Partner Job detail organization — October 1, 2026
+
+Approved refinement: the supporting tab is **Progress** for every Job. Single-phase
+Jobs display their status, timing, samples, shipments and holds directly;
+multi-phase Jobs retain the expandable phase list. Single-phase shipping uses
+`Shipping (N samples)` with correct singular wording and no phase-sequence
+instructions. Missing tube/container identities mean **Awaiting sample shipment**,
+not an empty receipt ratio. See the owning on-demand kit plan for the complete
+acceptance criteria. This supersedes the older tab name in the notes below.
+
+Owner-approved refinement: current shipping task above Phases, Files and results,
+Order and billing, and History. One phase list owns receipt, laboratory progress,
+shipment links, timing and holds; results offer an exact phase filter. Remove
+separate Sent phases and After you send summaries. Preparation/shipment controls
+appear only for the current task and persist during background refresh and tab
+changes. Accepted Jobs default to Phases, pricing requests to commercial review.
+Unique milestones/QC and recorded timing changes remain accessible. Active
+holds/customer actions remain prominent. See ON-DEMAND-PHASE-KIT-REQUESTS-PLAN.md
+for detailed scope and unchanged sequential shipping/processing rules. Current
+source supersedes older help describing automatic kit orders and stacked panels;
+the affected Customer/Partner guidance is updated with the feature.
+
+## October 1 update: on-demand phase kit requests
+
+[On-demand phase kit requests](ON-DEMAND-PHASE-KIT-REQUESTS-PLAN.md) supersedes the earlier automatic-at-acceptance fulfillment decision and whole-Job preparation requirement below. Acceptance places no kit order. Administrators request kits and confirm an address when ready, for the current phase, with distinct kits and sample-based capacity per phase. Customer shipping follows phase order and advances after every required result from that phase is Portal-accessible; approved cancelled phases are skipped. The Next step card names the action and provides its button. Preparation/finalization and shipping repeat per phase; laboratory execution and full-sample-receipt TAT rules remain sequential. Existing fulfillment and custody history is preserved. Earlier statements below describe the prior implementation/decision history.
+
+
+## Order details disclosure heading — October 1, 2026
+
+Accepted-Job presentation refinement: the **Order details and billing** disclosure
+keeps its expand indicator beside its label, including when quote actions wrap on
+a narrow screen. Native details/summary expansion and keyboard behavior remain
+in place; one decorative indicator replaces the browser marker. Customer and
+Partner guide instructions still describe the same collapse/review workflow.
+Scoped lint and manual wide/narrow layout checks pass; no automated test execution
+was requested for this spacing change. TypeScript also passes.
+
+## Service catalog row actions — October 1, 2026
+
+Phaeno platform administrators can use each catalog row's shared Actions menu to Edit or Activate/Deactivate the item according to its saved status. Edit reuses the existing bounded catalog editor; item names still open view-first details. Status changes require a named shared confirmation with a separate consequence body, Cancel initial focus, busy dismissal protection and focus return to the row or search if an active-only row disappears. The existing versioned catalog write preserves all other reviewed fields and refreshes configuration after success or failure; a changed reviewed version blocks resubmission. Existing order/quote snapshots, permissions and detail-only deletion eligibility are preserved. No backend or persisted-model change is needed. The Phaeno configuration guide describes the row actions.
+
+Verification: TypeScript, scoped ESLint, generated documentation consistency and whitespace checks passed. The signed-in local desktop catalog showed one menu indicator per row, keyboard opening and single-line Edit/Deactivate entries; Show inactive exposed Edit/Activate. Edit opened the existing populated editor. Both status confirmations named the item and explained the consequence in a separate body; Cancel received initial focus and cancellation returned focus to the row. No catalog edit or status save was submitted. Component regression coverage was authored but not executed under the request-only test policy. Narrow/dark rendering and connected status-save acceptance remain unverified. The browser console showed a body-attribute hydration mismatch involving `cz-shortcut-listen` and a Clerk development-key warning, with no observed row-action error.
+
 ## Service catalog discovery — September 30, 2026
 
 The Company's Add negotiated price Service dropdown also excludes inactive services, with backend validation against stale or direct inactive-service creation. Existing price records remain readable/editable with their saved inactive service fixed. Current catalog status is included in the existing pricing response; no persistence change is required.
@@ -750,11 +793,57 @@ share a wrapping action row beneath the total in Quote and billing. Accept quote
 is available to administrators, disabled with an explanation when blocked.
 The API also rejects expired acceptance. PDF downloads remain available.
 
-The owner subsequently approved contextual action wording: Decline quote for
+### Quote negotiation refinement — October 1, 2026
+
+The owner requested a **Propose changes** option and a visible **Decline quote** option alongside acceptance. Customer and Partner organization/department administrators decide the exact current initial quote through one **Actions** menu. Members can review the offer and history. Phase scope must never hide a pre-acceptance decline option.
+
+**Propose changes** collects one required Customer-safe explanation (up to 2,000 characters), covering requested pricing, scope, service or timing changes. It keeps the Job open, returns it to **Quote in preparation**, and pauses acceptance until Phaeno issues a new revision. The customer does not directly edit an issued quote or approve their proposed terms. Phaeno sees the proposal in Commercial control and the existing pricing queue, may request corrected scope through the established workflow, and issues a revised quote through existing readiness and pricing authority. Original terms remain readable and immutable.
+
+Store the proposal as an append-only order status event with `ChildRecordId` identifying the exact quote, the actor, required explanation and time. Project the pending proposal only while that quote remains current and the Job remains unaccepted and open; new issuance ends the pending projection while retaining history. This uses existing persistence and needs no migration or data conversion. Commands enforce active tenant administrator scope, exact quote, last-read Job version, idempotency and the shared order lock against acceptance/reissuance. Retried submissions cannot add duplicate proposal events. Decline marks the current initial quote Declined and closes the entire unaccepted Job as Cancelled, retaining phased scope, quotes and audit history. Post-acceptance Change quotes and cancellation decisions keep their separate rules.
+
+Quote PDF download moves from the page header to the quote **Actions** menu after a horizontal divider. Keep menu entries on one line. The initial October 1 scope layout showed services ordered with each quoted quantity summed across phases; the phase-block refinement below supersedes that on-screen presentation. Label meaningful notes as **Order notes** and omit a notes value consisting only of None. Phase TAT copy now says: "Each phase's TAT starts when Phaeno physically receives every required sample for that phase. Business days exclude Phaeno holidays."
+
+### On-screen phase scope and pricing refinement — October 1, 2026
+
+Approved users/problem: Customer and entitled Partner readers reviewing an issued manual quote need to understand each phase's scientific scope and charges together. The current order accepts one catalog service and one controlled Sample type; biological-source rows do not change that restriction. The owner authorized the on-screen review only and explicitly excluded the PDF presentation.
+
+Replace the global phase-details/pricing columns with one bordered block per frozen phase. Within each block, show samples, TAT, purchased runs, recorded runs per sample and biological sources alongside concise charges and the saved Phase price; stack scope then pricing on narrow screens. Order scope uses singular Service and Service quantity, summed from the saved base service lines, without presenting additional runs as a second catalog service. Quote metadata, saved tax/totals, billing and the existing permission-aware Actions menu retain their behavior.
+
+Explain additional runs from frozen scope and price-component quantities: 15 samples at 3 total runs each means 1 included plus 2 additional per sample, and 15 × 2 = 30 additional runs. Show the per-sample formula only for a recorded uniform allocation that reconciles with quoted quantities; otherwise a reconciled aggregate can show total minus included. Omit a derived explanation when saved quantities disagree, while keeping every quoted charge visible. Match scope and charges by exact phase ID; ambiguous associations retain the complete ungrouped quote. No model, service selection, Sample type, pricing authority or quote snapshot changes are included.
+
+Acceptance: each phase is a single named review region containing scope and prices; base-only phases omit additional charges; additional runs show their source; amounts and tax remain unchanged; mobile scope precedes its own pricing without overflow. Success means readers can trace every additional-run quantity to the phase allocation and assess its price within the same block. Customer/Partner help and existing component regressions are updated; automated execution remains request-only. Static and read-only browser verification are recorded at the checkpoint. PDF generation and PDF-specific help remain untouched.
+
+On-screen checkpoint: TypeScript and scoped ESLint pass. The owner confirmed the connected Customer presentation in the supplied screenshot. An isolated actual-component preview verified both phases, saved example values, singular service/sample quantity, the 15 × 2 = 30 explanation, base-only omission and the 16px gap between phase blocks. At 320px, scope precedes pricing without horizontal overflow in dark content, including the twenty-phase preview. Enter opens the existing Actions menu, Escape returns focus, and four entries remain single-line below one indicator with one divider. No order decision/write or automated suite was performed. The preview tab/server/files were removed and viewport restored.
+
+### PDF phase blocks and compact pagination — October 1, 2026
+
+After accepting the on-screen refinement, the owner explicitly authorized the PDF follow-up. This supersedes the preceding PDF exclusion for the new work only. Match the single-service summary and contained phase scope/pricing, explain reconciled included/additional runs, preserve saved quantities/rates/tax/terms and retain exact phase identities. Replace the redundant service/component quantity table with singular Service and sample/phase scope; add shared phase borders and one phase heading; keep quantity × unit price together when a narrow pricing column wraps. Reduce inter-charge and totals-box whitespace so a representative 25-sample quote with a full billing address, two phases, 30 additional runs and determined tax occupies one Letter page.
+
+Keep ordinary phases together, reserve space for the final phase's timing and terms/totals, and continue genuinely oversized sources/descriptions with repeated phase/source headings and page identity. Continued source blocks retain the additional-run scope explanation and identify where their pricing appeared. A mismatched frozen run allocation keeps all quoted charges without a guessed formula. No database, API contract, authorization, catalog selection, quote state or monetary calculation changes are included. Regression cases are authored but not executed; compilation, synthetic renderer inspection and connected download remain distinct evidence.
+
+PDF checkpoint: the full five-line billing address plus 25-sample/two-phase/30-additional-run example renders on one Letter page for both determined-tax and pre-tax variants. Twenty phases render on five pages, an oversized phased source on seven, and an oversized single-scope service description on four. All 18 rendered pages were visually inspected; complete end markers, continuation identity/source headings and saved totals were retained, with zero extracted glyphs outside content/footer bounds. The quantity/rate group remains intact when pricing wraps. Isolated solution/test assembly and normal API compilation pass with zero warnings/errors. Generated help and whitespace checks pass. The identified local IIS Express API was rebuilt/restarted and its health endpoint reports healthy. No automated suite, tenant quote decision, database write or deployment was performed; connected Customer download remains a separate acceptance check. The representative synthetic preview is retained at `output/pdf/quote-layout-preview.pdf`; scratch previews/build outputs are removed.
+
+Billing-address follow-up: the owner supplied the connected downloaded PDF and requested city, state and ZIP on one line, for example **Baltimore, MD 54415**. Compose city/region with a comma, then postal code with a space, omitting blank parts and retaining street/address-line-2/country as separate lines. This formats the saved billing snapshot; it does not change stored address data. Existing wrapping still protects unusually long locality lines from clipping. The compact synthetic preview is refreshed; no new mirrored test or automated suite is required for this formatting-only change.
+
+Address checkpoint: normal API compilation passes with zero warnings/errors; the identified local API is restarted and healthy. The refreshed one-page PDF visibly keeps **Baltimore, MD 21201** together, retains both phases/terms/$38,750 and has zero out-of-bounds glyphs. Whitespace checks pass. The scratch generator is removed; no automated suite or database write was performed.
+
+On-screen checkpoint: TypeScript and scoped ESLint pass. The owner confirmed the connected Customer presentation in the supplied screenshot. An isolated actual-component preview verified both phases, saved example values, singular service/sample quantity, the 15 × 2 = 30 explanation, base-only omission and the 16px gap between phase blocks. At 320px, scope precedes pricing without horizontal overflow in dark content, including the twenty-phase preview. Enter opens the existing Actions menu, Escape returns focus, and four entries remain single-line below one indicator with one divider. No order decision/write or automated suite was performed. The preview tab/server/files were removed and viewport restored.
+
+### PDF phase blocks and compact pagination — October 1, 2026
+
+After accepting the on-screen refinement, the owner explicitly authorized the PDF follow-up. This supersedes the preceding PDF exclusion for the new work only. Match the single-service summary and contained phase scope/pricing, explain reconciled included/additional runs, preserve saved quantities/rates/tax/terms and retain exact phase identities. Replace the redundant service/component quantity table with singular Service and sample/phase scope; add shared phase borders and one phase heading; keep quantity × unit price together when a narrow pricing column wraps. Reduce inter-charge and totals-box whitespace so a representative 25-sample quote with a full billing address, two phases, 30 additional runs and determined tax occupies one Letter page.
+
+Keep ordinary phases together, reserve space for the final phase's timing and terms/totals, and continue genuinely oversized sources/descriptions with repeated phase/source headings and page identity. Continued source blocks retain the additional-run scope explanation and identify where their pricing appeared. A mismatched frozen run allocation keeps all quoted charges without a guessed formula. No database, API contract, authorization, catalog selection, quote state or monetary calculation changes are included. Regression cases are authored but not executed; compilation, synthetic renderer inspection and connected download remain distinct evidence.
+
+Acceptance criteria: all three choices are visible to authorized administrators for single/multi-phase initial quotes; proposing validates nonblank text, retains drafts on failure, explains the acceptance pause and shows the exact proposal to both audiences; reissuance supersedes the old offer and removes the pending message; decline explicitly confirms whole-request closure, requires the existing reason selection and cannot target accepted/superseded quotes. Modal dismissal uses shared dialogs, cancel focus, persistent error feedback and focus restoration. Static verification is batched; automated tests are authored but not run unless requested. Git mutations and deployment remain outside this request.
+
+Local checkpoint: solution/test-project compilation and normal API compilation pass with zero warnings/errors; TypeScript, scoped lint, generated-help and diff-whitespace checks pass. The updated local API is running and /api/health reports healthy. Manual synthetic presentation checks cover multiline proposal validation/dismissal/focus, decline consequences, menu divider/width, service quantities, notes and 320px dark-content reflow. Automated suites and connected customer decision/reissue acceptance were not executed. The Visual Studio debugger may need reattachment after the local restart.
+
+The owner previously approved contextual action wording: Decline quote for
 an issued/expired offer, Withdraw request before a quote is available, and
 Request cancellation after acceptance. Decline retains the existing request
 closure operation; its confirmation explicitly says the entire request will
-close. This wording does not introduce a separate negotiation or reopening state.
+close. The October 1 refinement above adds negotiation through the existing pricing state; it does not reopen a closed Job.
 
 An extension request belongs to the exact current expired quote, with optional
 reason (up to 2,000 characters), requester, timestamps and durable Pending /
@@ -855,6 +944,28 @@ passed; 16 focused frontend cases, TypeScript, scoped lint, documentation and
 whitespace checks passed. The one-page representative quote and all five pages
 of the long layout sample were visually reviewed. The local API was rebuilt
 with zero warnings/errors and reloaded for the owner's same-step retry.
+
+## Shared handling controls — October 1, 2026
+
+The POMS order-entry user can explicitly choose **Insert “No known hazards”** beside the guidance above an empty Safety declaration. The subtle shared link-style button fills that exact editable text, marks the Draft dirty, validates the field and focuses the textarea. It is a field shortcut, not a save or submission action; an existing nonblank declaration is preserved and clearing the field restores the helper. Saving/submitting retains the existing required declaration rules. No default declaration, backend, persisted-model, permissions or release changes are needed. Update the Phaeno guide and verify entry, focus, dirty state, retained text, busy-state behavior and narrow/theme layout. Automated tests remain request-only.
+
+Place **Use different storage requirements** beside the **Storage requirements** heading and its **Sample type default** indicator. The configured default remains beneath that row; checking the control reveals the existing different-requirements field. Use a wrapping row on narrow screens, retaining the labeled checkbox, description association and existing default/override semantics.
+
+Place the visibly underlined insertion helper at the right end of the guidance row above the textarea. The guidance row wraps with a 3px vertical gap at narrow widths and keeps the helper right-aligned; surrounding Field spacing stays shared.
+
+## Phase-aware quote PDF refinement — October 1, 2026
+
+Customer and Partner readers need the exported quote to carry the same clear services, quantities, phase scope, TAT and pricing as Portal review. The owner supplied a two-page two-phase quote with verbose generic descriptions, duplicated scope and delivery information, excessive unused space and totals isolated on page two.
+
+Use compact prepared-for/billing columns, visible quote dates, a services-and-quantities summary and paired phase details/pricing. Resolve descriptive service names through the exact catalog identities already recorded in quote lines, as Portal review does; quantity, rate, phase allocation and totals remain frozen quote facts. Group by frozen phase ID and position rather than labels or the current Job. Each phase shows samples, purchased runs, runs per sample when recorded, TAT, biological sources, concise service quantity x unit price, conditional additional runs and Phase price. Put the approved sample-based TAT explanation beneath the phases. Present payment terms beside the saved subtotal/tax/total and keep the final phase, explanatory text and totals together where they fit. Repeat branding, Job/revision identity and phase headings on continuation pages; long sources/descriptions remain complete.
+
+Acceptance: the representative two-phase ten-sample quote fits one Letter page at readable type sizes; additional-run, determined/pre-tax, accepted/historical, many-phase and oversized-text documents preserve complete terms and have no clipped or overlapping content. Existing authorization, frozen billing terms, download failure behavior and quote data are unchanged. No model, migration, dependency, Git or deployment change. Use the existing PDF renderer, compile the affected projects and inspect rendered PDFs; automated test execution remains request-only. Document the output and verification limits at the checkpoint.
+
+Implemented presentation: exact saved phase IDs/positions pair scope and line prices; the concise catalog label is descriptive only and does not supply prices. The representative two-phase and additional-run/pre-tax PDFs each fit one Letter page. Twenty phases paginate to five pages, an oversized biological source to five, and an oversized accepted service description to four. Every rendered page was visually inspected, end markers and accented billing text were retained, and content/footer glyph bounds stayed on page. Ordinary phase blocks stay together, continuation pages repeat phase/source identity, and a final oversized service keeps its ending with TAT/terms/totals. The synthetic preview is `output/pdf/quote-layout-preview.pdf`; no quote/order/database writes were made for verification. Automated cases are authored but not executed under the request-only rule.
+
+Documentation discrepancy corrected: older Customer/Partner prose said missing recorded sample scope simply omitted the PDF source table. The current endpoint requires complete frozen source scope and returns `quote_document_unavailable` otherwise. Guides now explain the support path; endpoint behavior is retained.
+
+Verification checkpoint: the isolated solution, including authored PDF coverage, compiles with zero warnings/errors. Documentation generation/check and working/index diff checks pass. The local API was rebuilt and restarted with the refined renderer; its health check passes. Temporary renderer/build outputs are removed, retaining only the review PDF. No automated test suite was executed and no production release occurred; exact tenant download acceptance remains pending.
 
 ## Authorized bundle implementation — September 7, 2026
 

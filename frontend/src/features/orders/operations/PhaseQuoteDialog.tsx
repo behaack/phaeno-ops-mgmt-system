@@ -41,11 +41,12 @@ export function PhaseQuoteDialog({ open, order, sourceQuote, catalogItems, onOpe
   const offerings = catalogItems.filter(item => item.isActive && item.isPSeqLabService && item.salesUnit.toLowerCase() === 'specimen')
   const savedLines = readLines(sourceQuote)
   function defaults(): FormValues {
-    return { catalogItemId: savedLines[0]?.catalogItemId ?? (offerings.length === 1 ? offerings[0].id : ''), expiresAt: '', pricingDecisionReason: '',
+    const selectedItem = offerings.find(item => item.id === order.requestedCatalogItemId) ?? (offerings.length === 1 ? offerings[0] : undefined)
+    return { catalogItemId: order.requestedCatalogItemId ?? savedLines[0]?.catalogItemId ?? selectedItem?.id ?? '', expiresAt: '', pricingDecisionReason: '',
       phases: phases.map(phase => { const lines = savedLines.filter(line => scoped ? line.phaseId === phase.id : !line.phaseId)
         const standard = lines.find(line => line.pricingComponent === 'StandardSample')
         const additional = lines.find(line => line.pricingComponent === 'AdditionalRun')
-        return { id: phase.id, unitPrice: standard?.unitPrice ?? phase.proposedUnitPrice ?? (offerings.length === 1 ? offerings[0].basePrice : null),
+        return { id: phase.id, unitPrice: standard?.unitPrice ?? phase.proposedUnitPrice ?? selectedItem?.basePrice ?? null,
           additionalRunPrice: additional?.unitPrice ?? phase.proposedAdditionalRunPrice, turnaroundBusinessDays: standard?.turnaroundBusinessDays ?? phase.turnaroundBusinessDays ?? 14 } }) }
   }
   const form = useForm<FormValues, unknown, Values>({ resolver: zodResolver(schema), defaultValues: defaults(), mode: 'onBlur' })
@@ -69,7 +70,7 @@ export function PhaseQuoteDialog({ open, order, sourceQuote, catalogItems, onOpe
     if (sourceQuote && !input.expiresAt) { form.setError('expiresAt', { message: 'Choose the replacement quote’s expiration date.' }, { shouldFocus: true }); return }
     if (amended && !input.pricingDecisionReason) { form.setError('pricingDecisionReason', { message: 'Explain changes to the proposed prices.' }, { shouldFocus: true }); return }
     const item = offerings.find(value => value.id === input.catalogItemId)
-    if (!item) return
+    if (!item) { form.setError('catalogItemId', { message: 'The requested service is unavailable. Review its catalog configuration before issuing pricing.' }, { shouldFocus: true }); return }
     mutation.mutate({ ...input, currency: item.currency, deliveryTargetBusinessDays: scoped ? undefined : input.phases[0].turnaroundBusinessDays,
       lines: input.phases.flatMap((phase, index): QuoteLineInput[] => {
         const scope = phases[index]
@@ -87,7 +88,7 @@ export function PhaseQuoteDialog({ open, order, sourceQuote, catalogItems, onOpe
       <DialogHeader><DialogTitle>{sourceQuote ? 'Reissue laboratory quote' : 'Review laboratory pricing'}</DialogTitle><DialogDescription>Review the sample price, additional-run price and turnaround for {phases.length > 1 ? 'each phase' : 'this order'}. Issue one quote for Customer acceptance.</DialogDescription></DialogHeader>
       <form id="phase-quote" noValidate onSubmit={form.handleSubmit(submit)} className="max-h-[65vh] space-y-5 overflow-y-auto px-1">
         <fieldset disabled={mutation.isPending} className="space-y-5">
-          <Field><Label htmlFor="phase-quote-offering"><RequiredFieldName>Laboratory service</RequiredFieldName></Label><NativeSelect id="phase-quote-offering" {...form.register('catalogItemId')} aria-invalid={Boolean(form.formState.errors.catalogItemId)} aria-describedby="phase-quote-offering-error"><option value="">Select a service</option>{offerings.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</NativeSelect><FieldError id="phase-quote-offering-error">{form.formState.errors.catalogItemId?.message}</FieldError></Field>
+          <Field><Label htmlFor="phase-quote-offering"><RequiredFieldName>Laboratory service</RequiredFieldName></Label><NativeSelect id="phase-quote-offering" {...form.register('catalogItemId')} disabled={Boolean(order.requestedCatalogItemId)} aria-invalid={Boolean(form.formState.errors.catalogItemId)} aria-describedby="phase-quote-offering-help phase-quote-offering-error"><option value="">Select a service</option>{order.requestedCatalogItemId && !offerings.some(item => item.id === order.requestedCatalogItemId) ? <option value={order.requestedCatalogItemId}>Requested service unavailable</option> : null}{offerings.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</NativeSelect>{order.requestedCatalogItemId ? <p id="phase-quote-offering-help" className="text-xs text-muted-foreground">The catalog service selected for this order is retained for pricing.</p> : null}<FieldError id="phase-quote-offering-error">{form.formState.errors.catalogItemId?.message}</FieldError></Field>
           {phases.map((phase, index) => <section key={phase.id} className="space-y-3 rounded-lg border p-4"><h3 className="font-semibold">{phases.length > 1 ? phase.name : 'Order pricing'}</h3>
             <p className="text-sm">{phase.sampleCount} standard sample services · {pricing[index].additionalRuns} additional runs · {phase.scope.sequencingRunCount} total runs</p>
             <p className="text-xs text-muted-foreground">Each sample includes one library preparation, one sequencing run and data assembly. Additional runs use its existing prepared library while material remains available.</p>

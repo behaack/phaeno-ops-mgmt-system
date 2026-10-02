@@ -17,7 +17,9 @@ public static class TransportationKitRequestModelConfiguration
             entity.Property(item => item.Status).HasConversion<string>().HasMaxLength(40);
             entity.Property(item => item.DeliveryAddressSnapshotJson).HasColumnType("jsonb").IsRequired();
             entity.Property(item => item.CancellationReason).HasMaxLength(2000);
-            entity.HasIndex(item => item.LabServiceOrderId).IsUnique().HasFilter("closed_at IS NULL").HasDatabaseName("ix_transportation_kit_request_open_job");
+            entity.HasIndex(item => new { item.LabServiceOrderId, item.LabJobPhaseId }).IsUnique().HasFilter("closed_at IS NULL AND lab_job_phase_id IS NOT NULL").HasDatabaseName("ix_transportation_kit_request_open_phase");
+            entity.HasOne<LabJobPhase>().WithMany().HasForeignKey(item => item.LabJobPhaseId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_transportation_kit_request_phase");
+            entity.HasIndex(item => item.LabJobPhaseId).HasDatabaseName("ix_transportation_kit_request_phase");
             entity.HasIndex(item => new { item.OrganizationId, item.DepartmentId, item.RequestedAt });
             entity.HasOne<LabServiceOrder>().WithMany().HasForeignKey(item => item.LabServiceOrderId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<Organization>().WithMany().HasForeignKey(item => item.OrganizationId).OnDelete(DeleteBehavior.Restrict);

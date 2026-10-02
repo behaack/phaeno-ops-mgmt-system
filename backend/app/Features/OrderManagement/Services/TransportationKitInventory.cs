@@ -8,6 +8,13 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 
 public static class TransportationKitInventory
 {
+    public static bool HasPreparedTubeRoster(SampleShippingStockKit kit)
+    {
+        if (!kit.AssemblyWorkflowRevisionId.HasValue || !kit.AssemblyCompletedAt.HasValue) return false;
+        try { kit.EnsureCompleteTubeRoster(); return true; }
+        catch (InvalidOperationException) { return false; }
+    }
+
     public static bool IsPhysicallyUsable(SampleShippingStockKit kit, DateTime at)
     {
         try { kit.EnsurePhysicallyUsable(at); return true; }
@@ -36,8 +43,21 @@ public static class TransportationKitInventory
         => db.SampleShippingStockKits.AsNoTracking().Where(kit => locationId.HasValue && kit.OrganizationId == organizationId
             && kit.DepartmentId == departmentId && kit.CustomerDeliveryLocationId == locationId && kit.FulfilledAt.HasValue);
     public static IQueryable<SampleShippingStockKit> Available(PSeqOperationsDbContext db, SampleShipment shipment, Guid? locationId)
-        => AtLocation(db, shipment.OrganizationId, shipment.DepartmentId, locationId).Where(kit => kit.CustomerReceivedAt.HasValue
+        => ForShipment(db, AtLocation(db, shipment.OrganizationId, shipment.DepartmentId, locationId), shipment).Where(kit => kit.CustomerReceivedAt.HasValue
             && !kit.ReservedSampleShipmentId.HasValue && !kit.BoundSampleShipmentId.HasValue && !kit.WithdrawnAt.HasValue);
+
+    public static IQueryable<SampleShippingStockKit> ForShipment(PSeqOperationsDbContext db,
+        IQueryable<SampleShippingStockKit> stock, SampleShipment shipment)
+    {
+        var specimenIds = shipment.Items.Select(i => i.SubmittedSpecimenId).ToArray();
+        var phaseIds = db.LabSamples.Where(s => s.LabServiceOrderId == shipment.AuthorizationSourceId
+            && specimenIds.Contains(s.Id) && s.LabJobPhaseId.HasValue).Select(s => s.LabJobPhaseId!.Value);
+        return stock.Where(k => !db.LabSampleTubeKitSelections.Any(s => s.StockKitId == k.Id
+            && (s.LabServiceOrderId != shipment.AuthorizationSourceId || !s.LabJobPhaseId.HasValue || !phaseIds.Contains(s.LabJobPhaseId.Value)))
+            && !db.TransportationKitRequestLines.Join(db.TransportationKitRequests, l => l.TransportationKitRequestId, r => r.Id,
+                (l, r) => new { l.Id, r.LabJobPhaseId, r.LabServiceOrderId }).Any(r => r.Id == k.TransportationKitRequestLineId
+                    && r.LabJobPhaseId.HasValue && (r.LabServiceOrderId != shipment.AuthorizationSourceId || !phaseIds.Contains(r.LabJobPhaseId.Value))));
+    }
     public static async Task<IReadOnlyList<CustomerDeliveryLocationDto>> LocationsAsync(PSeqOperationsDbContext db, SampleShipment shipment, CancellationToken ct)
         => (await db.CustomerDeliveryLocations.AsNoTracking().Where(item => item.OrganizationId == shipment.OrganizationId
                 && item.DepartmentId == shipment.DepartmentId && item.IsActive)

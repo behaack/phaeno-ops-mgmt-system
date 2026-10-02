@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { acceptLabQuote, declineLabChangeQuote, downloadLabQuotePdf, getOrderErrorMessage, issuePlatformQuote, type LabServiceOrder, type OrderConfiguration, type Quote } from '#/api/order-management'
@@ -26,7 +26,7 @@ const changeSchema = z.object({
     context.addIssue({ code: 'custom', path: ['additionalRunPrice'], message: 'Enter the price per additional sequencing run.' })
 })
 
-export function IssueLabChangeQuote({ order, catalogItems, onSaved }: { order: LabServiceOrder; catalogItems: OrderConfiguration['catalogItems']; onSaved: () => Promise<void> }) {
+export function IssueLabChangeQuote({ order, catalogItems, onSaved, renderTrigger, onCloseFocus }: { order: LabServiceOrder; catalogItems: OrderConfiguration['catalogItems']; onSaved: () => Promise<void>; renderTrigger?: (open: () => void) => ReactNode; onCloseFocus?: () => void }) {
   const [open, setOpen] = useState(false)
   const [reviewVersion, setReviewVersion] = useState(order.version)
   const accepted = order.quotes.find(quote => quote.purpose === 'Initial' && quote.status === 'Accepted')
@@ -54,9 +54,10 @@ export function IssueLabChangeQuote({ order, catalogItems, onSaved }: { order: L
     onSuccess: async () => { await onSaved(); setOpen(false); form.reset() },
   })
   function close() { if (!change.isPending && (!form.formState.isDirty || window.confirm('Discard this unsaved Change quote?'))) setOpen(false) }
+  function openQuote() { setReviewVersion(order.version); change.reset(); setOpen(true) }
   return <>
-    <Button variant="outline" onClick={() => { setReviewVersion(order.version); change.reset(); setOpen(true) }}>Issue Change quote</Button>
-    <Dialog open={open} onOpenChange={value => { if (!value) close() }}><DialogContent>
+    {renderTrigger ? renderTrigger(openQuote) : <Button variant="outline" onClick={openQuote}>Issue Change quote</Button>}
+    <Dialog open={open} onOpenChange={value => { if (!value) close() }}><DialogContent onCloseAutoFocus={onCloseFocus ? event => { event.preventDefault(); onCloseFocus() } : undefined}>
       <DialogHeader><DialogTitle>Quote additional samples</DialogTitle><DialogDescription>These counts and charges are additions to the accepted Job. The Customer must accept before entering additional samples. Existing work continues under its original agreement.</DialogDescription></DialogHeader>
       <p className="text-sm">{catalog ? `Service: ${catalog.name}` : 'The accepted Job’s offering is unavailable. Review that service before quoting additional work.'}</p>
       <form id="change-quote" onSubmit={form.handleSubmit(values => change.mutate(values))} className="max-h-[60vh] space-y-4 overflow-y-auto">

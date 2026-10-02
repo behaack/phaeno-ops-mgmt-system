@@ -56,12 +56,14 @@ describe('Customer standard ordering', () => {
     const onSaved = open(); await complete()
     fireEvent.click(screen.getByRole('button', { name: 'Review order' }))
     await screen.findByRole('button', { name: 'Place order' })
+    expect(screen.queryByRole('combobox', { name: /Kit delivery address/ })).toBeNull()
+    expect(mocks.locations).not.toHaveBeenCalled()
     expect(screen.getByText('$2,550.00', { selector: 'dd' })).toBeTruthy()
     fireEvent.click(screen.getByRole('checkbox', { name: /I will send/ }))
     fireEvent.click(screen.getByRole('checkbox', { name: /I accept/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Place order' }))
     await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1))
-    expect(mocks.place).toHaveBeenCalledWith('order', expect.objectContaining({ reviewToken: 'review-evidence', version: 2, kitDeliveryLocationVersion: 4, confirmedSampleTypeId: type }), expect.any(String))
+    expect(mocks.place).toHaveBeenCalledWith('order', expect.objectContaining({ reviewToken: 'review-evidence', version: 2, confirmedSampleTypeId: type }), expect.any(String))
   })
   it('merges untouched server changes and blocks retry until the refreshed Draft is reviewed', async () => {
     const latest = { ...saved, version: 3, customerDraft: { ...draft, sources: [{ biologicalSource: 'Human PBMC', specimenCount: 2 }], notes: 'Other administrator note' } }

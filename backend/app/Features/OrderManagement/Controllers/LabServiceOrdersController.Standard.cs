@@ -64,13 +64,6 @@ public sealed partial class LabServiceOrdersController
                 if (!request.ConfirmedSampleTypeId.HasValue || request.ConfirmedSampleTypeId != order.SampleTypeDefinitionId
                     || offering.SupportedSampleTypes?.Any(value => value.Id == request.ConfirmedSampleTypeId && value.IsAvailable) != true)
                     throw Conflict("sample_type_confirmation_required", "Confirm the Sample type supported by this offering. Review a different order if it needs to change.");
-                if (!request.KitDeliveryLocationId.HasValue || !request.KitDeliveryLocationVersion.HasValue)
-                    throw Invalid("kit_delivery_location_required", "Select and confirm the kit delivery address.");
-                var kitLocation = await dbContext.CustomerDeliveryLocations.AsNoTracking().SingleOrDefaultAsync(item =>
-                    item.Id == request.KitDeliveryLocationId && item.OrganizationId == order.OrganizationId
-                    && item.DepartmentId == order.DepartmentId && item.IsActive, token)
-                    ?? throw Conflict("kit_delivery_location_unavailable", "Choose an active kit delivery address in this Department.");
-                EnsureVersion(kitLocation.Version, request.KitDeliveryLocationVersion.Value);
                 var analyses = await dbContext.AnalysisDefinitions.AsNoTracking().Where(value => offering.AnalysisIds.Contains(value.Id))
                     .Select(value => new { value.Id, value.Name, value.Description, value.SubmissionInstructions,
                         value.RequiredIntakeFieldsJson, value.ResultContractJson, value.Version }).ToListAsync(token);
@@ -112,16 +105,15 @@ public sealed partial class LabServiceOrdersController
                     materialType = order.SampleTypeMaterialClassSnapshot ?? StandardMaterialType, quantityUnit = StandardQuantityUnit, quoteId = quote.Id,
                     quote.Revision, quote.LinesJson, quote.Total, quote.Currency, acceptedAt = now,
                     configuredOffering = snapshot, prohibitedDataConfirmed = true,
-                    confirmedSampleTypeId = request.ConfirmedSampleTypeId,
-                    kitDeliveryAddress = kitLocation.ToDto()
+                    confirmedSampleTypeId = request.ConfirmedSampleTypeId
                 }, JsonSerializerOptions);
                 var before = order.Status.ToString();
                 await ShippingJobPinning.PinAtPlacementAsync(dbContext, order, token);
                 Execute(() => order.PlaceStandard(quote.Id, snapshot, placement, now));
-                await transportationKits.QueueAtAcceptanceAsync(order, kitLocation, currentTenant.Actor.Id, token);
+                order.EnablePairedPreparation();
                 dbContext.OrderStatusEvents.Add(NewEvent(order, before, order.Status.ToString(), currentTenant.Actor.Id));
                 QueueNotice(order, "lab-standard-order-placed", "Standard laboratory order placed",
-                    $"{order.OrderNumber} is placed. Phaeno is preparing Transportation kits; confirm physical receipt before pairing samples and tubes.", currentTenant.Actor.Id);
+                    $"{order.OrderNumber} is placed. Request Transportation kits when you are ready to prepare this phase’s samples.", currentTenant.Actor.Id);
                 await new CommercialSaleSummaryService(dbContext).StageAsync(OrderWorkflowTypes.LabService, order.Id,
                     order.OrganizationId, null, offering.Name, order.RequestedSequencingRunCount, quote.Total, quote.Currency,
                     now, currentTenant.Actor.Id, token);

@@ -257,8 +257,6 @@ export async function placeStandardLabOrder(
     prohibitedDataConfirmed: boolean
     purchaseOrderNumber?: string
     confirmedSampleTypeId: string
-    kitDeliveryLocationId: string
-    kitDeliveryLocationVersion: number
   },
   key: string,
 ) {

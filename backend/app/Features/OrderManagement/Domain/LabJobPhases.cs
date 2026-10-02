@@ -21,6 +21,7 @@ public sealed class LabJobPhase : CommercialReceivableEntity
     public Guid? PriceProposedByUserId { get; private set; }
     public DateTime? PriceProposedAtUtc { get; private set; }
     public DateTime? FirstReceiptAtUtc { get; private set; }
+    public DateTime? PreparationCompletedAtUtc { get; private set; }
     public DateTime? CompleteReceiptAtUtc { get; private set; }
     public DateTime? OriginalDueAtUtc { get; private set; }
     public DateTime? AdjustedDueAtUtc { get; private set; }
@@ -34,6 +35,13 @@ public sealed class LabJobPhase : CommercialReceivableEntity
     public DateTime? SupersededAtUtc { get; private set; }
 
     private LabJobPhase() { }
+
+    public void CompletePreparation(DateTime now)
+    {
+        if (now.Kind != DateTimeKind.Utc || CancelledAtUtc.HasValue || SupersededAtUtc.HasValue || PreparationCompletedAtUtc.HasValue)
+            throw new InvalidOperationException("Choose an active phase whose preparation is not already confirmed.");
+        PreparationCompletedAtUtc = now;
+    }
 
     public LabJobPhase(Guid orderId, int position, string name, int sampleCount,
         int? turnaroundBusinessDays = null, decimal acceptedSubtotal = 0,

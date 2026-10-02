@@ -435,19 +435,8 @@ public sealed partial class LabServiceOrdersController(
                 if (!isChange && !quote.DeliveryTargetBusinessDays.HasValue)
                     throw Conflict("delivery_target_required", "Phaeno must issue a quote with a business-day delivery target before this order can be approved.");
                 var selectedCatalogItemId = await LabQuoteCatalog.ReadItemAsync(dbContext, quote.LinesJson, true, operationCancellationToken);
-                CustomerDeliveryLocation? kitLocation = null;
-                if (!isChange)
-                {
-                    if (!request.ConfirmedSampleTypeId.HasValue || request.ConfirmedSampleTypeId != order.SampleTypeDefinitionId)
-                        throw Invalid("sample_type_confirmation_required", "Confirm the Sample type shown on this quote. Ask Phaeno for a revised quote if it needs to change.");
-                    if (!request.KitDeliveryLocationId.HasValue || !request.KitDeliveryLocationVersion.HasValue)
-                        throw Invalid("kit_delivery_location_required", "Select and confirm the kit delivery address.");
-                    kitLocation = await dbContext.CustomerDeliveryLocations.AsNoTracking().SingleOrDefaultAsync(item =>
-                        item.Id == request.KitDeliveryLocationId && item.OrganizationId == order.OrganizationId
-                        && item.DepartmentId == order.DepartmentId && item.IsActive, operationCancellationToken)
-                        ?? throw Conflict("kit_delivery_location_unavailable", "Choose an active kit delivery address in this Department.");
-                    EnsureVersion(kitLocation.Version, request.KitDeliveryLocationVersion.Value);
-                }
+                if (!isChange && (!request.ConfirmedSampleTypeId.HasValue || request.ConfirmedSampleTypeId != order.SampleTypeDefinitionId))
+                    throw Invalid("sample_type_confirmation_required", "Confirm the Sample type shown on this quote. Ask Phaeno for a revised quote if it needs to change.");
                 if (isChange)
                 {
                     var original = order.Quotes.SingleOrDefault(item => item.Id == order.AcceptedQuoteId) ?? throw Missing();
@@ -493,7 +482,6 @@ public sealed partial class LabServiceOrdersController(
                     quantityUnit = StandardQuantityUnit,
                     quoteId = quote.Id,
                     confirmedSampleTypeId = request.ConfirmedSampleTypeId,
-                    kitDeliveryAddress = kitLocation is null ? null : kitLocation.ToDto(),
                     quote.Revision,
                     quote.LinesJson,
                     quote.Total,
@@ -533,14 +521,14 @@ public sealed partial class LabServiceOrdersController(
                     await ShippingJobPinning.PinAtPlacementAsync(dbContext, order, operationCancellationToken);
                     Execute(() => quote.Accept(tenant.Actor.Id, acceptedAt));
                     Execute(() => order.AcceptQuote(quoteId, acceptedAt, placementSnapshot));
-                    await transportationKits.QueueAtAcceptanceAsync(order, kitLocation!, tenant.Actor.Id, operationCancellationToken);
+                    order.EnablePairedPreparation();
                 }
                 dbContext.OrderStatusEvents.Add(NewEvent(order, before, order.Status.ToString(), tenant.Actor.Id));
                 QueueNotice(
                     order,
                     "lab-quote-accepted",
                     "Laboratory quote accepted",
-                    isChange ? $"Additional scope for {order.OrderNumber} was accepted. Enter and finalize the additional samples before work begins." : $"{order.OrderNumber} is now placed. Phaeno is preparing the Transportation kits; confirm physical receipt before preparing samples.",
+                    isChange ? $"Additional scope for {order.OrderNumber} was accepted. Prepare the additional samples before work begins." : $"{order.OrderNumber} is now placed. Request transportation kits when you are ready to prepare a phase.",
                     tenant.Actor.Id);
                 await dbContext.SaveChangesAsync(operationCancellationToken);
                 return await MapAsync(order, true, false, operationCancellationToken);
@@ -590,7 +578,7 @@ public sealed partial class LabServiceOrdersController(
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var order = await ReadLockedRosterAsync(orderId, tenant, cancellationToken);
         EnsureVersion(order.Version, request.OrderVersion);
-        if (order.PlacementSnapshotJson?.Contains("\"kitDeliveryAddress\"", StringComparison.Ordinal) == true && !order.HasPendingChangeRoster)
+        if (order.UsesPairedPreparation && !order.HasPendingChangeRoster)
             throw Conflict("paired_preparation_required", "Save each Sample ID with its tube barcode in Prepare sample shipment.");
         Execute(order.EnsureSampleRosterEditable);
         if (order.Samples.Count >= order.RequestedSpecimenCount)
@@ -614,7 +602,7 @@ public sealed partial class LabServiceOrdersController(
         var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var order = await ReadLockedRosterAsync(orderId, tenant, cancellationToken);
-        if (order.PlacementSnapshotJson?.Contains("\"kitDeliveryAddress\"", StringComparison.Ordinal) == true && !order.HasPendingChangeRoster)
+        if (order.UsesPairedPreparation && !order.HasPendingChangeRoster)
             throw Conflict("paired_preparation_required", "Correct saved sample/tube pairs in Prepare sample shipment.");
         Execute(order.EnsureSampleRosterEditable);
         var sample = order.Samples.SingleOrDefault(item => item.Id == sampleId) ?? throw Missing();
@@ -643,7 +631,7 @@ public sealed partial class LabServiceOrdersController(
         var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var order = await ReadLockedRosterAsync(orderId, tenant, cancellationToken);
-        if (order.PlacementSnapshotJson?.Contains("\"kitDeliveryAddress\"", StringComparison.Ordinal) == true && !order.HasPendingChangeRoster)
+        if (order.UsesPairedPreparation && !order.HasPendingChangeRoster)
             throw Conflict("paired_preparation_required", "Correct saved sample/tube pairs in Prepare sample shipment.");
         Execute(order.EnsureSampleRosterEditable);
         var sample = order.Samples.SingleOrDefault(item => item.Id == sampleId) ?? throw Missing();
@@ -665,7 +653,7 @@ public sealed partial class LabServiceOrdersController(
         var tenant = await requestContext.RequireLabServiceTenantAsync(HttpContext, true, cancellationToken);
         var order = await ReadOrderAsync(orderId, tenant, cancellationToken);
         EnsureVersion(order.Version, version);
-        if (order.PlacementSnapshotJson?.Contains("\"kitDeliveryAddress\"", StringComparison.Ordinal) == true)
+        if (order.UsesPairedPreparation)
             throw Conflict("paired_preparation_required", "CSV import is unavailable for paired preparation. Save each Sample ID and tube together.");
         Execute(order.EnsureSampleRosterEditable);
         if (!string.Equals(Path.GetExtension(file.FileName), ".csv", StringComparison.OrdinalIgnoreCase))
@@ -699,7 +687,7 @@ public sealed partial class LabServiceOrdersController(
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var order = await ReadLockedRosterAsync(orderId, tenant, cancellationToken);
         EnsureVersion(order.Version, request.Version);
-        if (order.PlacementSnapshotJson?.Contains("\"kitDeliveryAddress\"", StringComparison.Ordinal) == true)
+        if (order.UsesPairedPreparation)
             throw Conflict("paired_preparation_required", "CSV import is unavailable for paired preparation. Save each Sample ID and tube together.");
         Execute(order.EnsureSampleRosterEditable);
         if (order.SampleRosterFinalizedAt.HasValue)
@@ -747,28 +735,34 @@ public sealed partial class LabServiceOrdersController(
             {
                 var order = await ReadLockedRosterAsync(orderId, tenant, operationCancellationToken);
                 EnsureVersion(order.Version, request.Version);
-                var pairedPreparation = order.PlacementSnapshotJson?.Contains("\"kitDeliveryAddress\"", StringComparison.Ordinal) == true;
+                var pairedPreparation = order.UsesPairedPreparation;
+                var preparationPhase = pairedPreparation ? LabPhaseScopeRules.Resolve(order, request.PhaseId) : null;
+                if (preparationPhase is not null)
+                    await LabPhaseShippingSequence.RequireCurrentAsync(dbContext, order, preparationPhase, operationCancellationToken);
+                if (preparationPhase?.PreparationCompletedAtUtc.HasValue == true)
+                    throw Conflict("phase_preparation_locked", "This phase's sample preparation is already confirmed.");
                 var draftPairs = pairedPreparation
                     ? await dbContext.LabSampleTubePairs.Where(item => item.LabServiceOrderId == order.Id)
                         .OrderBy(item => item.CreatedAt).ThenBy(item => item.Id).ToArrayAsync(operationCancellationToken)
                     : [];
-                draftPairs = draftPairs.Where(p => order.RequiresPreparation(p.LabJobPhaseId)).ToArray();
-                var preparation = order.ReadPreparationScope();
+                draftPairs = draftPairs.Where(p => order.RequiresPreparation(p.LabJobPhaseId)
+                    && (preparationPhase is null || p.LabJobPhaseId == preparationPhase.Id)).ToArray();
+                var preparation = preparationPhase is null ? order.ReadPreparationScope()
+                    : preparationPhase.ReadScope() ?? throw Conflict("phase_scope_missing", "Phaeno must confirm this phase's sample and run scope before preparation.");
                 Dictionary<Guid, SampleShippingStockKit>? pairedKits = null;
-                if (pairedPreparation && !order.HasPendingChangeRoster)
+                if (pairedPreparation)
                 {
-                    if (order.Samples.Count != 0 || draftPairs.Length != preparation.Sources.Sum(s => s.SpecimenCount)
+                    if (order.Samples.Any(s => s.LabJobPhaseId == preparationPhase!.Id) || draftPairs.Length != preparation.Sources.Sum(s => s.SpecimenCount)
                         || draftPairs.Sum(item => item.SequencingRunCount) != preparation.SequencingRunCount
                         || preparation.Sources.Any(group => draftPairs.Count(item =>
                             LabServiceSourceGroup.Normalize(item.BiologicalSource) == LabServiceSourceGroup.Normalize(group.BiologicalSource)) != group.SpecimenCount))
                         throw Conflict("paired_roster_incomplete", "Save one distinct Sample ID and tube barcode for every accepted sample and allocate every purchased run before confirming preparation.");
-                    var locationId = PairedKitLocation(order);
                     var kitIds = draftPairs.Select(item => item.StockKitId).Distinct().ToArray();
                     foreach (var kitId in kitIds.Order())
                         await SampleShippingPackingData.LockAsync(dbContext, $"stock-kit:{kitId}", operationCancellationToken);
                     pairedKits = await dbContext.SampleShippingStockKits.Include(item => item.Tubes)
                         .Where(item => kitIds.Contains(item.Id) && item.OrganizationId == order.OrganizationId
-                            && item.DepartmentId == order.DepartmentId && item.CustomerDeliveryLocationId == locationId
+                            && item.DepartmentId == order.DepartmentId
                             && item.CustomerReceivedAt.HasValue && !item.BoundSampleShipmentId.HasValue
                             && !item.ReservedSampleShipmentId.HasValue)
                         .ToDictionaryAsync(item => item.Id, operationCancellationToken);
@@ -783,6 +777,12 @@ public sealed partial class LabServiceOrdersController(
                         || await dbContext.RegisteredSampleTubes.AnyAsync(item => item.SourceStockTubeId.HasValue
                             && draftPairs.Select(pair => pair.StockTubeId).Contains(item.SourceStockTubeId.Value), operationCancellationToken))
                         throw Conflict("paired_kit_changed", "A selected kit or tube is no longer physically available. Review the saved pairs before confirming preparation.");
+                    var kitSelections = await dbContext.LabSampleTubeKitSelections.Where(s => s.LabServiceOrderId == order.Id
+                        && kitIds.Contains(s.StockKitId)).ToArrayAsync(operationCancellationToken);
+                    if (kitSelections.Length != kitIds.Length || kitSelections.Any(s => s.LabJobPhaseId != preparationPhase!.Id))
+                        throw Conflict("phase_kit_assignment_required", "Each physical kit must be assigned only to this phase before confirming preparation.");
+                    foreach (var selection in kitSelections.Where(s => !s.FinishedAt.HasValue))
+                        selection.Finish(tenant.Actor.Id, DateTime.UtcNow);
                     foreach (var pair in draftPairs)
                     {
                         var sample = ToRosterSample(order, new LabSampleRosterWriteRequest(pair.CustomerSampleId,
@@ -805,9 +805,14 @@ public sealed partial class LabServiceOrdersController(
                 var originalCommand = existingAuthorization is null ? null : JsonSerializer.Deserialize<AuthorizeLabWorkCommand>(existingAuthorization.AuthorizationSnapshotJson, JsonSerializerOptions);
                 var authorizedIds = originalCommand?.Specimens.Select(s => s.SubmittedSpecimenId).ToHashSet() ?? [];
                 var newSamples = order.Samples.Where(s => !authorizedIds.Contains(s.Id) && order.RequiresPreparation(s.LabJobPhaseId)).ToList();
-                if (existingAuthorization is not null && (!order.HasPendingChangeRoster || originalCommand is null || newSamples.Count == 0))
+                if (existingAuthorization is not null && (preparationPhase is null && !order.HasPendingChangeRoster || originalCommand is null || newSamples.Count == 0))
                     throw Conflict("lab_authorization_exists", "There is no accepted additional sample list to authorize.");
-                Execute(() => order.FinalizeSampleRoster(tenant.Actor.Id, DateTime.UtcNow));
+                if (preparationPhase is not null)
+                    Execute(() => preparationPhase.CompletePreparation(DateTime.UtcNow));
+                if (preparationPhase is null || order.Phases.Where(p => p.SupersededAtUtc == null && p.CancelledAtUtc == null)
+                    .All(p => p.PreparationCompletedAtUtc.HasValue))
+                    Execute(() => order.FinalizeSampleRoster(tenant.Actor.Id, DateTime.UtcNow));
+                order.MarkUpdated(DateTime.UtcNow, tenant.Actor.Id);
 
                 var shipping = await ResolveShippingConfigurationAsync(order, pairedKits is null, operationCancellationToken);
                 var existingShipmentDestinations = await dbContext.SampleShipments.AsNoTracking()
@@ -857,7 +862,7 @@ public sealed partial class LabServiceOrdersController(
                         Specimens = originalCommand!.Specimens.Concat(command.Specimens.Where(s => !authorizedIds.Contains(s.SubmittedSpecimenId))).ToList(),
                         ApprovedWorkflowVersionId = null };
                     acknowledgment = await labOperationsProvider.AmendAuthorizationAsync(new(command.Metadata, authorizationId,
-                        existingAuthorization.AuthorizationVersion, command.AuthorizationVersion, "accepted_additional_scope", command), operationCancellationToken);
+                        existingAuthorization.AuthorizationVersion, command.AuthorizationVersion, preparationPhase is null ? "accepted_additional_scope" : "phase_preparation", command), operationCancellationToken);
                     authorization = existingAuthorization;
                     authorization.RecordAmendment(command.AuthorizationVersion, commandId, JsonSerializer.Serialize(command, JsonSerializerOptions));
                 }
@@ -897,9 +902,9 @@ public sealed partial class LabServiceOrdersController(
                     dbContext.SampleShipments.Add(shipment);
                 }
                 dbContext.OrderStatusEvents.Add(NewEvent(order, order.Status.ToString(), order.Status.ToString(), tenant.Actor.Id,
-                    "Sample list finalized"));
+                    preparationPhase is null ? "Sample list finalized" : $"Sample preparation confirmed for {preparationPhase.Name}"));
                 QueueNotice(order, "lab-sample-roster-finalized", "Sample list finalized",
-                    $"{order.OrderNumber} is ready for Phaeno to prepare the return kit.", tenant.Actor.Id);
+                    $"{order.OrderNumber}: {preparationPhase?.Name ?? "Sample list"} confirmed. Review the shipping insert and record shipment handoff.", tenant.Actor.Id);
                 await dbContext.SaveChangesAsync(operationCancellationToken);
                 return await MapAsync(order, true, false, operationCancellationToken);
             },
@@ -1299,22 +1304,20 @@ public sealed partial class LabServiceOrdersController(
             : currentQuoteStatus == QuoteStatus.Expired ? "This quote has expired. Request an extension before accepting a new revision."
             : !orderingEligible ? "Ordering is currently unavailable. Contact Phaeno before accepting this quote."
             : !canAcceptQuote ? "There is no current issued quote available to accept." : null;
-        var pairedInitial = order.PlacedAt.HasValue && !order.SampleRosterFinalizedAt.HasValue
-            && !order.HasPendingChangeRoster && order.Samples.Count == 0
-            && order.PlacementSnapshotJson?.Contains("\"kitDeliveryAddress\"", StringComparison.Ordinal) == true;
+        var pairedInitial = order.PlacedAt.HasValue && !order.SampleRosterFinalizedAt.HasValue && order.UsesPairedPreparation;
         var canFinalizePaired = false;
         if (canManage && order.CanEditSampleRoster && pairedInitial)
         {
             var savedPairs = await dbContext.LabSampleTubePairs.AsNoTracking()
                 .Where(item => item.LabServiceOrderId == order.Id).ToArrayAsync(cancellationToken);
-            savedPairs = savedPairs.Where(p => order.RequiresPreparation(p.LabJobPhaseId)).ToArray();
-            var preparation = order.ReadPreparationScope();
-            canFinalizePaired = preparation.Sources.Count > 0 && savedPairs.Length == preparation.Sources.Sum(s => s.SpecimenCount)
-                && savedPairs.Sum(item => item.SequencingRunCount) == preparation.SequencingRunCount
-                && preparation.Sources.All(group => savedPairs.Count(item =>
-                    LabServiceSourceGroup.Normalize(item.BiologicalSource) == LabServiceSourceGroup.Normalize(group.BiologicalSource)) == group.SpecimenCount);
+            canFinalizePaired = order.Phases.Where(p => p.SupersededAtUtc == null && p.CancelledAtUtc == null && p.PreparationCompletedAtUtc == null)
+                .Any(p => p.ReadScope() is { } scope && savedPairs.Count(pair => pair.LabJobPhaseId == p.Id) == p.SampleCount
+                    && savedPairs.Where(pair => pair.LabJobPhaseId == p.Id).Sum(pair => pair.SequencingRunCount) == scope.SequencingRunCount
+                    && scope.Sources.All(source => savedPairs.Count(pair => pair.LabJobPhaseId == p.Id
+                        && LabServiceSourceGroup.Normalize(pair.BiologicalSource) == LabServiceSourceGroup.Normalize(source.BiologicalSource)) == source.SpecimenCount));
         }
         var timing = await new LabServiceTimingService(dbContext).ReadAsync(order.Id, order.OrganizationId, false, false, cancellationToken);
+        var catalogNames = await LabQuoteCatalog.ReadNamesAsync(dbContext, order.Quotes.Select(quote => quote.LinesJson), order.RequestedCatalogItemId, cancellationToken);
         return new LabServiceOrderDto(order.Id, order.OrganizationId, order.OrderNumber, order.CustomerReference, order.Description,
             order.HasMixedBiologicalSources, order.SharedBiologicalSource,
             order.StorageRequirements, order.SafetyDeclaration,
@@ -1324,11 +1327,11 @@ public sealed partial class LabServiceOrdersController(
             canManage && orderingEligible && editable,
             canManage && orderingEligible && submittable && order.CustomerDraftJson is null,
             canAcceptQuote,
-            canManage && !order.Phases.Any(p => p.ScopeJson != null && p.SupersededAtUtc == null) && order.Status is LabServiceOrderStatus.DraftRequest or LabServiceOrderStatus.SubmittedForQuote
+            canManage && order.Status is LabServiceOrderStatus.DraftRequest or LabServiceOrderStatus.SubmittedForQuote
                 or LabServiceOrderStatus.ChangesRequested or LabServiceOrderStatus.QuoteInPreparation or LabServiceOrderStatus.QuoteIssued,
             canManage && order.Status is LabServiceOrderStatus.PlacedAwaitingSamples or LabServiceOrderStatus.InProgress or LabServiceOrderStatus.ResultsAvailable,
             order.Samples.OrderBy(item => item.CreatedAt).Select(item => item.ToDto(platform)).ToList(),
-            order.Quotes.OrderByDescending(item => item.Revision).Select(item => item.ToDto(extensionRequests.GetValueOrDefault(item.Id))).ToList(),
+            order.Quotes.OrderByDescending(item => item.Revision).Select(item => item.ToDto(extensionRequests.GetValueOrDefault(item.Id), catalogNames)).ToList(),
             releases.Select(item => item.ToDto(
                 retentionByReleaseId.GetValueOrDefault(item.Id),
                 downloadByReleaseId.GetValueOrDefault(item.Id))).ToList(),
@@ -1373,14 +1376,19 @@ public sealed partial class LabServiceOrdersController(
                 && currentQuoteStatus == QuoteStatus.Expired && currentQuote is not null
                 && currentQuote.AcceptedAt is null && !extensionRequests.ContainsKey(currentQuote.Id),
             CanManageQuotes: canManage,
+            CanProposeQuoteChanges: canManage && order.CanRespondToInitialQuote,
+            CanDeclineQuote: canManage && order.CanRespondToInitialQuote,
+            QuoteChangeProposal: LabQuoteChangeProposals.Pending(order, timeline),
             QuoteAcceptanceBlockedReason: quoteAcceptanceBlockedReason,
             AuthorizedSampleIds: await AuthorizedSampleIdsAsync(order.Id, cancellationToken),
             SampleTypeDefinitionId: order.SampleTypeDefinitionId,
+            RequestedCatalogItemId: order.RequestedCatalogItemId,
+            RequestedServiceName: order.RequestedCatalogItemId.HasValue ? catalogNames.GetValueOrDefault(order.RequestedCatalogItemId.Value) : null,
             SampleTypeName: order.SampleTypeDefinitionId.HasValue
                 ? await dbContext.SampleTypeDefinitions.AsNoTracking().Where(value => value.Id == order.SampleTypeDefinitionId.Value)
                     .Select(value => value.Name).SingleOrDefaultAsync(cancellationToken) : null,
             UsesPairedPreparation: !order.PlacedAt.HasValue
-                || order.PlacementSnapshotJson?.Contains("\"kitDeliveryAddress\"", StringComparison.Ordinal) == true);
+                || order.UsesPairedPreparation);
     }
 
     private async Task<string> BuildRequestSnapshotAsync(LabServiceOrder order, CancellationToken cancellationToken)

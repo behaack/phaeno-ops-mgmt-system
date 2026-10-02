@@ -27,6 +27,7 @@ public sealed partial class PlatformLabServiceOrdersController
                     || order.SourceRequestId != request.SourceRequestId)
                     throw Conflict("draft_owner_fixed", "A saved Draft retains its Customer, Department and Sales handoff.");
                 Execute(() => CommercialDraftRules.Validate(request.Draft, false));
+                await LabQuoteCatalog.RequireDraftSelectionAsync(dbContext, request.Draft.CatalogItemId, false, token);
                 await EnsureUniqueJobNameAsync(order.OrganizationId, order.DepartmentId,
                     NormalizeJobName(request.Draft.JobName), token, order.Id);
                 Execute(() => order.SaveCommercialDraft(request.Draft));
@@ -51,6 +52,7 @@ public sealed partial class PlatformLabServiceOrdersController
                     throw Conflict("draft_not_editable", "Only a current commercial Draft can be submitted for pricing.");
                 var draft = order.ReadCommercialDraft()!;
                 Execute(() => CommercialDraftRules.Validate(draft, true));
+                await LabQuoteCatalog.RequireDraftSelectionAsync(dbContext, draft.CatalogItemId, true, token);
                 var readiness = await CustomerReadiness(order.OrganizationId, order.DepartmentId, token);
                 if (!readiness.CanStartPricing)
                     throw Conflict("customer_not_ready_for_pricing", "Resolve the Customer readiness requirements before submitting for pricing.");

@@ -1,12 +1,36 @@
 # POMS–DPS MQTT messaging plan
 
+## Immediate milestone — MQTT plumbing test, October 1, 2026
+
+Status: **plumbing round trip verified** on the owner-authorized retry. The remote server returned six correlated status messages from 0% through 100%; see the [October 1 run record](../testing/runs/2026-10-01-remote-mqtt-plumbing-probe.md).
+
+The owner clarified that the immediate goal is one connection test: send a synthetic command to the remote server, where a fake asynchronous job runs, and observe the returned status messages. This milestone uses dummy values and proves the MQTT round trip. Scientific input verification, persisted assembly lifecycle evidence, production security work, independent Operations alerts, and the complete recovery contract belong to later integration milestones.
+
+The owner confirmed **`test.mosquitto.org:1883`** as the broker used by the remote fake-job server. Use an isolated developer-side probe with plaintext/anonymous connection settings for this test, with no application authentication changes or new security-hardening scope. A separate Portal deployment is not needed for this probe.
+
+Implementation scope: a standalone .NET 10 [plumbing probe](../../backend/tools/PSeq.Operations.MqttPlumbingProbe/README.md), outside the Portal solution/runtime and with no API/database project reference. Its sole package dependency is [MQTTnet 5.2.0.1603](https://www.nuget.org/packages/MQTTnet/5.2.0.1603), verified against the package publisher's NuGet listing. The supplied guide is sufficient to publish the synthetic Start DTO and display raw status responses; full shared-source/schema review remains a later integration gate.
+
+1. Connect and subscribe to `backend/data_process/job/{job_id}` for a freshly generated synthetic UUID. Wait for subscription confirmation before publishing so a fast fake job's response can be observed.
+2. Publish one non-retained QoS 1 message to `backend/data_process/command/start_job`, with `dto_id=100`, the same `job_id`, and dummy `data_folder="mqtt-plumbing-test"`. No scientific files or processing recipe are required for the fake job; confirm a special dummy-folder value only if the remote stub requires one.
+3. Display returned status payloads from the exact subscribed topic, checking `dto_id=102` and the matching `job_id`. Record connection, subscription, publication, and response times in the test output. Display the supplied `status` value without inventing numeric enum meanings; map friendly state names only when confirmed by the remote shared source or wire examples.
+4. Observe the remote fake job's asynchronous status progression/completion, then disconnect. Use a bounded observation window and report the received messages or timeout. Make one intentional Start publication; do not automatically republish on reconnect or timeout. Keep application-level repeat handling and failure recovery for the later contract work.
+
+Success is a correlated response from the remote server and observed completion of its fake asynchronous job. Broker acknowledgment alone establishes publication, not execution of that fake job. The probe does not create a Lab assembly attempt, persist scientific evidence, or enable the normal assembly worker.
+
+- [x] Confirm the fake-job server's broker host/port and any existing connection settings: owner supplied `test.mosquitto.org:1883` on October 1.
+- [x] Prepare and compile the isolated probe using the supplied Start/status topics and dummy payload: standalone build passes with zero warnings/errors.
+- [x] Connect, subscribe, and publish one dummy Start to the confirmed broker. The first published job received no status; the owner-authorized retry used fresh job `326ed051-46ad-4fc6-aed7-df4b0d3bc23d` and was acknowledged by the broker.
+- [x] Exercise the remote fake job and retain its correlated status exchange: six `dto_id=102` responses progressed 0%, 20%, 40%, 60%, 80%, 100%, ending with raw `status=2`. This completes the isolated plumbing round trip; numeric enum definitions remain to be verified when implementing the full provider.
+
+The broader contract and activation gaps below remain tracked for the full POMS integration. They are not prerequisites for this isolated plumbing test.
+
 ## Authorized POMS foundation — September 30, 2026
 
 The owner authorized the provider-independent recovery and POMS notification slice. Extend the existing assembly attempt/worker with durable Run/Cancel command identities, delivery attempts, configurable retry/confirmation deadlines, persistent attention and 30-minute escalation; normalized lifecycle-event receipts with duplicate/conflict guards and acknowledgment eligibility only after commit; and authenticated job-scoped SignalR refresh notifications. Keep progress transient. Microsoft SignalR's browser client is the only new dependency in this slice, pinned to the registry-verified 10.0.11 release. Reuse Clerk JWT validation and existing active internal Lab roles; query-string bearer tokens are accepted only at the exact POMS notification endpoint. WebSocket connections skip negotiation, and each API instance reads committed job versions for its own connections, avoiding dependency on an external backplane or a timestamp event cursor. Recheck internal access before delivery and close expired/revoked connections. HTTP snapshots/polling remain the reconnect/fallback authority.
 
 New delivery/receipt tables are additive. One-time migration initialization records existing unfinished attempts as unconfirmed, with no invented provider receipt/execution evidence. No existing attempt, specimen, purchased-run or scientific record is removed. Create/apply the migration only to the configured local development database after verification. Synthetic fixtures exercise internal normalized messages; they do not define DPS wire enum values, response topics or manifest conventions. The unavailable provider and default-off processing gate remain. Real MQTT transport, DPS acknowledgments/replay, independent Operations alert delivery, shared-source review, scientific acceptance, deployment and live activation remain external gates.
 
-Status: POMS recovery and notification foundation implemented September 30, 2026; live MQTT integration remains gated. This plan specifies server-to-server messages between this project's POMS API and DPS. The authorized foundation adds internal persistence and POMS-to-UI SignalR notifications; it does not connect DPS, activate external processing, or deploy either server. It supersedes external-service SignalR transport in the [sequencing assembly plan](SEQUENCING-DATA-ASSEMBLY-PLAN.md).
+Status: POMS recovery and notification foundation implemented September 30, 2026; the isolated remote MQTT plumbing round trip was verified October 1, 2026. Full operational MQTT integration remains gated by the external contract. This plan specifies server-to-server messages between this project's POMS API and DPS. The authorized foundation adds internal persistence and POMS-to-UI SignalR notifications; it does not connect the runtime provider to DPS, activate assembly processing, or deploy either server. It supersedes external-service SignalR transport in the [sequencing assembly plan](SEQUENCING-DATA-ASSEMBLY-PLAN.md).
 
 The supplied guide establishes the current external library's connection settings, topics, DTOs, and status conventions. It does not yet satisfy all previously agreed lifecycle-evidence and recovery requirements. This plan distinguishes that supplied baseline from the contract additions still required before activation; receipt of the guide is not proof of a live DPS integration.
 
@@ -126,7 +150,7 @@ POMS retains the received final event ID and committed result so replay is idemp
 
 ## Contract gaps to close with DPS
 
-The supplied topics, field names, DTO IDs, 0–100 progress range, QoS 1, and status-only retention are now documented baseline facts. These remaining items are implementation/activation gates, not permission to weaken the agreed product behavior:
+The supplied topics, field names, DTO IDs, 0–100 progress range, QoS 1, and status-only retention are now documented baseline facts. These remaining items are gates for full operational integration/activation, not for the isolated fake-job plumbing test above, and do not weaken the agreed product behavior:
 
 | Gap in supplied guide | Required agreement/evidence |
 | --- | --- |
@@ -201,7 +225,7 @@ Success means every actually started job and DPS terminal outcome is attributabl
 
 ## Current implementation boundary
 
-The [provider boundary](../../backend/app/Features/LabOperations/Services/LabAssemblyProvider.cs) still registers an unavailable external provider through [Program.cs](../../backend/app/Program.cs), with processing default off. No MQTT client or broker credentials are added.
+The [provider boundary](../../backend/app/Features/LabOperations/Services/LabAssemblyProvider.cs) still registers an unavailable external provider through [Program.cs](../../backend/app/Program.cs), with processing default off. The Portal API has no MQTT runtime client or broker configuration; the standalone plumbing probe above supplies the isolated connection-test evidence.
 
 - [Delivery recovery](../../backend/app/Features/LabOperations/Services/LabAssemblyDelivery.cs) persists Run/Cancel identities before provider attempts, bounded retry schedules, receipt/start/cancellation deadlines and escalation. Default deadlines are 5 minutes for Run receipt, 10 minutes after receipt for start, 5 minutes for cancellation outcome, and 30 minutes for escalation. Recovery starts at 5 seconds and caps at 60 seconds. Options are under `LabAssembly`; dispatch reconciliation is bounded by `PollSeconds`. A receipt never establishes execution. Unavailable reconciliation before the first publish also ages into attention; queued work does not falsely age into an execution deadline.
 - [Normalized receipts](../../backend/app/Features/LabOperations/Services/LabAssemblyReceiptService.cs) validate saved attempt/provider/execution identity, serialize application using advisory locks, deduplicate provider event IDs and retain conflicting evidence without replacing saved outcomes. Acknowledgment eligibility is returned only after the receiver's owned transaction commits. Late nonterminal evidence is ignored; compatible terminal replay is idempotent. Percentages do not enter receipt hashes or persisted payloads. Conflicts pause automatic application pending a future authorized Operations reconciliation workflow.

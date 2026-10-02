@@ -36,6 +36,7 @@ import { CommercialDraftDetails } from './CommercialDraftDetails'
 import { PhaseQuoteDialog } from './operations/PhaseQuoteDialog'
 import { PlatformQuoteDialog } from './operations/PlatformQuoteDialog'
 import { IssueLabChangeQuote } from './LabChangeQuotes'
+import { quoteDecisionHistoryLabel } from './quote-decision-history'
 import { CompleteLabJob } from './operations/CompleteLabJob'
 import { ResultReleasePanel } from './ResultReleasePanel'
 import { FinanceOperationsPanel, OperationalAttentionPanel } from './PSeqOrderToCashPanels'
@@ -312,12 +313,12 @@ function OperationalSummary({ workflow, item }: { workflow: Workflow; item: LabS
         <CardContent>
           {workflow === 'lab' && 'sourceGroups' in item ? (
             <dl className="grid gap-4 text-sm sm:grid-cols-2">
-              <div><dt className="font-medium">Requested specimens</dt><dd className="mt-1 text-muted-foreground">{item.requestedSpecimenCount}</dd></div>
-              <div><dt className="font-medium">Biological sources</dt><dd className="mt-1 text-muted-foreground">{item.sourceGroups.map((group) => `${group.biologicalSource} (${group.specimenCount})`).join(', ')}</dd></div>
-              <div><dt className="font-medium">Storage requirements</dt><dd className="mt-1 whitespace-pre-wrap text-muted-foreground">{item.storageRequirements}</dd></div>
-              <div><dt className="font-medium">Safety declaration</dt><dd className="mt-1 whitespace-pre-wrap text-muted-foreground">{item.safetyDeclaration}</dd></div>
+              <div><dt className="font-bold">Requested specimens</dt><dd className="mt-1 text-muted-foreground">{item.requestedSpecimenCount}</dd></div>
+              <div><dt className="font-bold">Biological sources</dt><dd className="mt-1 text-muted-foreground">{item.sourceGroups.map((group) => `${group.biologicalSource} (${group.specimenCount})`).join(', ')}</dd></div>
+              <div><dt className="font-bold">Storage requirements</dt><dd className="mt-1 whitespace-pre-wrap text-muted-foreground">{item.storageRequirements}</dd></div>
+              <div><dt className="font-bold">Safety declaration</dt><dd className="mt-1 whitespace-pre-wrap text-muted-foreground">{item.safetyDeclaration}</dd></div>
               <div>
-                <dt className="font-medium">Proposed price</dt>
+                <dt className="font-bold">Proposed price</dt>
                 <dd className="mt-1 text-muted-foreground">
                   {item.phaseScopes?.length
                     ? item.phaseScopes.some(phase => phase.proposedUnitPrice != null) ? 'Proposed prices are shown by phase below.' : 'No price proposed'
@@ -328,7 +329,7 @@ function OperationalSummary({ workflow, item }: { workflow: Workflow; item: LabS
               </div>
               {quote ? (
                 <div>
-                  <dt className="font-medium">Current quote</dt>
+                  <dt className="font-bold">Current quote</dt>
                   <dd className="mt-1">
                     <span className="font-semibold text-foreground">{formatMoney(quote.total, quote.currency)}</span>
                     <span className="mt-1 block text-xs text-muted-foreground">
@@ -337,7 +338,7 @@ function OperationalSummary({ workflow, item }: { workflow: Workflow; item: LabS
                   </dd>
                 </div>
               ) : null}
-              {item.priceProposalNote ? <div><dt className="font-medium">Proposal note</dt><dd className="mt-1 whitespace-pre-wrap text-muted-foreground">{item.priceProposalNote}</dd></div> : null}
+              {item.priceProposalNote ? <div><dt className="font-bold">Proposal note</dt><dd className="mt-1 whitespace-pre-wrap text-muted-foreground">{item.priceProposalNote}</dd></div> : null}
             </dl>
           ) : null}
           {workflow === 'reagent' && 'lines' in item ? <ul className="divide-y">{item.lines.map((line) => <li key={line.id} className="flex justify-between gap-3 py-3"><span>{line.description} · {line.remainingQuantity} remaining</span><span>{line.currency} {line.lineTotal.toFixed(2)}</span></li>)}</ul> : null}
@@ -347,7 +348,7 @@ function OperationalSummary({ workflow, item }: { workflow: Workflow; item: LabS
       <div className="space-y-5">
         {item.tenantSafeReason ? <Alert><AlertTitle>Tenant-safe reason</AlertTitle><AlertDescription>{item.tenantSafeReason}</AlertDescription></Alert> : null}
         {internalNote ? <Alert><AlertTitle>Internal context</AlertTitle><AlertDescription>{internalNote}</AlertDescription></Alert> : null}
-        <Card><CardHeader><CardTitle>Audit timeline</CardTitle></CardHeader><CardContent><ol className="space-y-3">{timeline.slice().reverse().map((entry) => <li key={entry.id} className="border-l-2 pl-3 text-sm"><strong>{humanizeStatus(entry.toStatus)}</strong><span className="block text-xs text-muted-foreground">{formatDateTime(entry.occurredAt)}</span>{entry.internalNote ? <span className="mt-1 block text-muted-foreground"><span className="font-medium text-foreground">Internal context:</span> {entry.internalNote}</span> : null}</li>)}</ol></CardContent></Card>
+        <Card><CardHeader><CardTitle>Audit timeline</CardTitle></CardHeader><CardContent><ol className="space-y-3">{timeline.slice().reverse().map((entry) => <li key={entry.id} className="border-l-2 pl-3 text-sm"><strong>{quoteDecisionHistoryLabel(entry, 'quotes' in item ? item.quotes : [])}</strong><span className="block text-xs text-muted-foreground">{formatDateTime(entry.occurredAt)}</span>{entry.reason ? <p className="mt-1 whitespace-pre-wrap wrap-anywhere">{entry.reason}</p> : null}{entry.internalNote ? <span className="mt-1 block text-muted-foreground"><span className="font-medium text-foreground">Internal context:</span> {entry.internalNote}</span> : null}</li>)}</ol></CardContent></Card>
       </div>
     </div>
   )
@@ -369,13 +370,15 @@ export function CommercialControlPanel({
   const [quoteOpen, setQuoteOpen] = useState(false)
   const [quoteOpening, setQuoteOpening] = useState(false)
   const [quoteOpeningError, setQuoteOpeningError] = useState<string | null>(null)
+  const commercialActionRef = useRef<HTMLButtonElement>(null)
   const { session } = usePhaenoSession()
   const canOperate = Boolean(session?.capabilities?.canOperateCommercialWork)
   const labOrder = workflow === 'lab' && 'quotes' in item && 'requestedSpecimenCount' in item ? item : null
-  const issuedQuote = labOrder && item.status === 'QuoteIssued'
-    ? latestQuote(labOrder.quotes.filter(quote => quote.status === 'Issued' || quote.status === 'Expired'))
+  const issuedQuote = labOrder && ['QuoteIssued', 'QuoteInPreparation'].includes(item.status)
+    ? latestQuote(labOrder.quotes.filter(quote => quote.purpose === 'Initial' && (quote.status === 'Issued' || quote.status === 'Expired')))
     : undefined
   const extensionRequest = issuedQuote?.extensionRequest?.status === 'Pending' ? issuedQuote.extensionRequest : null
+  const proposal = labOrder?.quoteChangeProposal
   const mayQuote = canOperate && (labOrder
     ? labOrder.canManageQuotes && ['QuoteInPreparation', 'QuoteIssued'].includes(item.status)
     : workflow === 'assembly' && !('isIncludedAssembly' in item && item.isIncludedAssembly) && item.status === 'QuoteInPreparation')
@@ -392,6 +395,13 @@ export function CommercialControlPanel({
       setQuoteOpening(false)
     }
   }
+  function renderCommercialActions(openChangeQuote?: () => void) {
+    return <ActionMenu><DropdownMenuTrigger asChild><Button ref={commercialActionRef}>Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max max-w-[calc(100vw-2rem)] [&_[data-slot=dropdown-menu-item]]:whitespace-nowrap">
+      {openChangeQuote ? <DropdownMenuItem onSelect={openChangeQuote}>Issue Change quote</DropdownMenuItem> : null}
+      {mayQuote ? <DropdownMenuItem disabled={quoteOpening} onSelect={() => void openQuote()}>{quoteOpening ? 'Refreshing…' : proposal ? 'Review proposal and revise quote' : extensionRequest ? 'Review extension' : issuedQuote ? 'Reissue quote' : workflow === 'lab' && 'proposedUnitPrice' in item && item.proposedUnitPrice != null ? 'Review and issue quote' : 'Issue quote'}</DropdownMenuItem> : null}
+      {workflow === 'lab' && labWorkOrderId ? <DropdownMenuItem asChild><Link to="/lab-operations/$workOrderId" params={{ workOrderId: labWorkOrderId }} search={{ section: undefined }}>Open Lab work</Link></DropdownMenuItem> : null}
+    </DropdownMenuContent></ActionMenu>
+  }
   return (
     <div className="mt-5 space-y-5">
       {labOrder ? <LabPhasesPanel order={labOrder} internal onSaved={onSaved} /> : null}
@@ -406,16 +416,15 @@ export function CommercialControlPanel({
                   : 'Commercial approval and the immutable order remain here.'}
               </CardDescription>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {canOperate && labOrder?.canManageQuotes && labOrder.canProposeChange ? <IssueLabChangeQuote order={labOrder} catalogItems={catalogItems} onSaved={onSaved} /> : null}
-              {mayQuote ? <Button type="button" disabled={quoteOpening} onClick={() => void openQuote()}>{quoteOpening ? 'Refreshing…' : extensionRequest ? 'Review extension' : issuedQuote ? 'Reissue quote' : workflow === 'lab' && 'proposedUnitPrice' in item && item.proposedUnitPrice != null ? 'Review and issue quote' : 'Issue quote'}</Button> : null}
-              {workflow === 'lab' && labWorkOrderId ? <Button asChild variant="outline"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: labWorkOrderId }} search={{ section: undefined }}>Open Lab work</Link></Button> : null}
+            <div className="shrink-0">
+              {canOperate && labOrder?.canManageQuotes && labOrder.canProposeChange ? <IssueLabChangeQuote order={labOrder} catalogItems={catalogItems} onSaved={onSaved} renderTrigger={renderCommercialActions} onCloseFocus={() => commercialActionRef.current?.focus()} /> : renderCommercialActions()}
             </div>
           </div>
         </CardHeader>
         {quoteOpeningError ? <CardContent><Alert variant="destructive"><AlertTitle>Quote could not be opened</AlertTitle><AlertDescription>{quoteOpeningError}</AlertDescription></Alert></CardContent> : null}
         {workflow === 'lab' ? (
           <CardContent>
+            {proposal ? <Alert className="mb-4"><AlertTitle>Customer proposed changes</AlertTitle><AlertDescription><p>Quote revision {proposal.quoteRevision} · Sent {formatDateTime(proposal.proposedAt)}</p><p className="whitespace-pre-wrap break-words">{proposal.reason}</p><p>{mayQuote ? 'Review the proposal and issue a revised quote. Ask the Customer to correct the request first if scope needs to change. Quote acceptance is paused during this review.' : 'An authorized Commercial Operator must review this proposal.'}</p></AlertDescription></Alert> : null}
             {extensionRequest ? <Alert className="mb-4"><AlertTitle>Quote extension requested</AlertTitle><AlertDescription><p>Revision {issuedQuote?.revision} · Requested {formatDateTime(extensionRequest.requestedAt)}</p>{extensionRequest.reason ? <p className="whitespace-pre-wrap break-words">{extensionRequest.reason}</p> : null}<p>{mayQuote ? 'Review the request and issue a new quote revision with a future expiration date. The request closes when that revision is issued.' : 'An authorized Commercial Operator must review this request.'}</p></AlertDescription></Alert> : null}
             <p className="text-sm text-muted-foreground">
               {labWorkOrderId

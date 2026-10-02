@@ -1,5 +1,25 @@
 # Transportation kit products and workflows
 
+## October 1 update: on-demand phase kit requests
+
+[On-demand phase kit requests](ON-DEMAND-PHASE-KIT-REQUESTS-PLAN.md) supersedes the earlier automatic-at-acceptance fulfillment decision and whole-Job preparation requirement below. Acceptance places no kit order. Administrators request kits and confirm an address when ready, for one or several phases, with distinct kits and sample-based capacity per phase. Preparation/finalization and shipping repeat per phase; laboratory execution and full-sample-receipt TAT rules remain sequential. Existing fulfillment and custody history is preserved. Earlier statements below describe the prior implementation/decision history.
+
+
+October 1 default-tab refinement: **Receipt & accession** opens **Kit requests**
+when no receipt tab is selected. Explicit **Receive shipments** and **Accession
+samples** links retain their selected task. The assigned-shipment link now
+explicitly selects receiving, so the changed default does not redirect that
+contextual handoff. Existing request and physical-inventory destinations remain
+separate. Tab-resolution and existing panel expectations are updated; automated
+tests remain unrun under the request-only rule.
+
+Checkpoint: TypeScript, scoped lint, documentation generation/check and
+whitespace checks passed. Read-only signed-in POMS review confirmed Kit requests
+selected without receiptTab, explicit receiving retained across reload,
+accession selection, and Kit requests after leaving/re-entering through the
+sidebar. Screenshot capture timed out; selected-tab evidence came from the
+browser accessibility state. No shipment, kit or accession write occurred.
+
 September 26 naming refinement: a Transportation kit assembly workflow has its own required staff-facing name. The author enters it before choosing the finished product and ordered Lab steps; the workflow list shows it as the primary label and keeps the product name and SKU below for identification. A saved workflow remains uniquely linked to its finished Phaeno kit product, and older records receive the product description as their initial name. **Edit title** changes the name independently of revisions; Draft editing and new revision creation change the ordered Lab steps. Actions also expose **Approve draft** and **Discard draft**, which retains the discarded number in history. The list places revision, status, and singular/plural step-count pills beside the title. In the editor, **Add step** is aligned to the right of the Ordered Lab steps label.
 
 ## September 26, 2026 configuration-specific contents decision

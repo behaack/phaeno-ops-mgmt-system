@@ -143,6 +143,14 @@ public sealed class LabServiceQuote : IAudit, IConcurrency
         Status = QuoteStatus.Declined;
     }
 
+    public void DeclineInitial()
+    {
+        if (Purpose != QuotePurpose.Initial || Status is not (QuoteStatus.Issued or QuoteStatus.Expired)
+            || AcceptedAt.HasValue || SupersededByQuoteId.HasValue)
+            throw new InvalidOperationException("Only the current unaccepted initial quote can be declined.");
+        Status = QuoteStatus.Declined;
+    }
+
     public void FreezeCommercialTerms(
         string billingContactSnapshotJson,
         string billingAddressSnapshotJson,

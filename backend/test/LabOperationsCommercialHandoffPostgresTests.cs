@@ -477,6 +477,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         Assert.True(response.CanEditSamples);
         Assert.Empty(response.Samples);
         Assert.Null(response.SampleRosterFinalizedAt);
+        Assert.True(response.UsesPairedPreparation);
+        Assert.Empty(await scope.DbContext.TransportationKitRequests.Where(r => r.LabServiceOrderId == fixture.OrderId).ToArrayAsync());
         Assert.Empty(await scope.DbContext.CommercialLabAuthorizations
             .Where(item => item.CommercialOrderId == fixture.OrderId)
             .ToListAsync());
@@ -1493,7 +1495,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         private readonly List<Guid> createdCrmOpportunityIds = [];
         private readonly List<Guid> createdCrmPipelineIds = [];
         private readonly List<Guid> createdRelationshipRequestIds = [];
-        private readonly Dictionary<Guid, (Guid StockKitId, string KitNumber, string[] Barcodes)> pairedKits = [];
+        private readonly Dictionary<(Guid OrderId, Guid PhaseId), (Guid StockKitId, string KitNumber, string[] Barcodes)> pairedKits = [];
         private readonly ShippingConfigurationFixture shippingConfiguration;
         private readonly string platformOrganizationName;
         private Guid? createdCalendarId;
@@ -1856,7 +1858,11 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             {
                 order.Phases.Clear();
                 for (var position = 1; position <= specimenCount; position++)
-                    order.Phases.Add(new LabJobPhase(order.Id, position, $"Phase {position}", 1, 14, 100));
+                    {
+                        var phase = new LabJobPhase(order.Id, position, $"Phase {position}", 1, 14, 100);
+                        phase.SetScope(new([new("synthetic_reference", 1)], 1, 1));
+                        order.Phases.Add(phase);
+                    }
             }
             order.Submit(CustomerUser.Id, now);
             order.BeginQuotePreparation();
@@ -2031,9 +2037,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 fixture.OrderId,
                 fixture.QuoteId,
                 new AcceptQuoteRequest(fixture.OrderVersion, fixture.QuoteId,
-                    ConfirmedSampleTypeId: ActiveSampleTypeId,
-                    KitDeliveryLocationId: DeliveryLocationId,
-                    KitDeliveryLocationVersion: 1),
+                    ConfirmedSampleTypeId: ActiveSampleTypeId),
                 CancellationToken.None);
         }
 
@@ -2054,7 +2058,13 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                         "synthetic_reference", 1, OrderVersion: orderVersion),
                     CancellationToken.None);
 
-            if (!pairedKits.TryGetValue(orderId, out var physicalKit))
+            var pairedPhaseIds = await DbContext.LabSampleTubePairs.AsNoTracking()
+                .Where(item => item.LabServiceOrderId == orderId).Select(item => item.LabJobPhaseId).ToArrayAsync();
+            var phases = await DbContext.Set<LabJobPhase>().AsNoTracking().Where(item => item.LabServiceOrderId == orderId
+                && item.SupersededAtUtc == null && item.CancelledAtUtc == null).OrderBy(item => item.Position).ToArrayAsync();
+            var selectedPhase = phases.First(phase => pairedPhaseIds.Count(id => id == phase.Id) < phase.SampleCount);
+            var kitKey = (orderId, selectedPhase.Id);
+            if (!pairedKits.TryGetValue(kitKey, out var physicalKit))
             {
                 var definition = await DbContext.SampleShippingContainerDefinitions.AsNoTracking()
                     .Include(item => item.KitContents)
@@ -2091,19 +2101,14 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 DbContext.SampleShippingStockKits.Add(stock);
                 await DbContext.SaveChangesAsync();
                 physicalKit = (stock.Id, kitNumber, barcodes);
-                pairedKits.Add(orderId, physicalKit);
+                pairedKits.Add(kitKey, physicalKit);
                 DbContext.ChangeTracker.Clear();
                 await controller.SaveSampleTubeKit(orderId,
-                    new SaveLabSampleTubeKitRequest(orderVersion, kitNumber), CancellationToken.None);
+                    new SaveLabSampleTubeKitRequest(orderVersion, kitNumber, selectedPhase.Id), CancellationToken.None);
                 orderVersion = (await controller.Get(orderId, CancellationToken.None)).Version;
             }
             var pairNumber = await DbContext.LabSampleTubePairs.AsNoTracking()
-                .CountAsync(item => item.LabServiceOrderId == orderId);
-            var pairedPhaseIds = await DbContext.LabSampleTubePairs.AsNoTracking()
-                .Where(item => item.LabServiceOrderId == orderId).Select(item => item.LabJobPhaseId).ToArrayAsync();
-            var phases = await DbContext.Set<LabJobPhase>().AsNoTracking().Where(item => item.LabServiceOrderId == orderId
-                && item.SupersededAtUtc == null).OrderBy(item => item.Position).ToArrayAsync();
-            var selectedPhase = phases.First(phase => pairedPhaseIds.Count(id => id == phase.Id) < phase.SampleCount);
+                .CountAsync(item => item.LabServiceOrderId == orderId && item.StockKitId == physicalKit.StockKitId);
             DbContext.ChangeTracker.Clear();
             await controller.AddSampleTubePair(orderId,
                 new AddLabSampleTubePairRequest(orderVersion, physicalKit.StockKitId,
@@ -2122,10 +2127,18 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             var controller = CreateCustomerController(
                 provider,
                 idempotencyKey ?? Guid.NewGuid().ToString("N"));
-            return await controller.FinalizeSampleRoster(
-                orderId,
-                new FinalizeLabSampleRosterRequest(orderVersion, true),
-                CancellationToken.None);
+            var phases = await DbContext.Set<LabJobPhase>().AsNoTracking().Where(p => p.LabServiceOrderId == orderId
+                && p.SupersededAtUtc == null && p.CancelledAtUtc == null).OrderBy(p => p.Position).ToArrayAsync();
+            if (phases.Length <= 1)
+                return await controller.FinalizeSampleRoster(orderId, new(orderVersion, true, phases.SingleOrDefault()?.Id), default);
+            LabServiceOrderDto result = await controller.Get(orderId, default);
+            foreach (var phase in phases.Where(p => p.PreparationCompletedAtUtc == null))
+            {
+                DbContext.ChangeTracker.Clear();
+                result = await CreateCustomerController(provider, (idempotencyKey ?? Guid.NewGuid().ToString("N")) + phase.Id)
+                    .FinalizeSampleRoster(orderId, new(result.Version, true, phase.Id), default);
+            }
+            return result;
         }
 
         public async Task<LabServiceOrderDto> FinishCurrentReferenceKitAsync(Guid orderId, long orderVersion)
@@ -2133,9 +2146,10 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             DbContext.ChangeTracker.Clear();
             var controller = CreateCustomerController(new InternalLabOperationsProvider(DbContext),
                 Guid.NewGuid().ToString("N"));
-            await controller.FinishSampleTubeKit(orderId, pairedKits[orderId].StockKitId,
+            var kitKey = pairedKits.Keys.First(key => key.OrderId == orderId);
+            await controller.FinishSampleTubeKit(orderId, pairedKits[kitKey].StockKitId,
                 new FinishLabSampleTubeKitRequest(orderVersion), CancellationToken.None);
-            pairedKits.Remove(orderId);
+            pairedKits.Remove(kitKey);
             return await controller.Get(orderId, CancellationToken.None);
         }
 

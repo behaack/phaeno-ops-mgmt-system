@@ -4,8 +4,8 @@ import { beforeEach, expect, it, vi } from 'vitest'
 import { api } from '#/api/client'
 import { SpecimenHolds } from './SpecimenHolds'
 vi.mock('#/api/client', () => ({ api: { get: vi.fn(), post: vi.fn() } }))
-vi.mock('@tanstack/react-router', () => ({ useBlocker: vi.fn() }))
-const workspace = { workOrderId: 'work', specimens: [{ id: 'sample', name: 'RNA-01' }], holds: [], history: [], canRequest: true, canDecide: false }
+vi.mock('@tanstack/react-router', () => ({ useBlocker: () => ({ status: 'idle' }) }))
+const workspace = { workOrderId: 'work', specimens: [{ id: 'sample', sampleId: 'submitted-1', name: 'RNA-01' }], holds: [], history: [], canRequest: true, canDecide: false }
 function setup(staff = false) {
   render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>
     <SpecimenHolds {...(staff ? { workOrderId: 'work' } : { orderId: 'order' })} />
@@ -35,4 +35,16 @@ it('requires a safe-boundary confirmation before a staff decision', async () => 
   fireEvent.click(screen.getByRole('checkbox')); fireEvent.submit(screen.getByRole('dialog').querySelector('form')!)
   await waitFor(() => expect(api.post).toHaveBeenCalledWith('/platform/lab-operations/work-orders/work/customer-holds/hold',
     { version: 1, action: 'apply', reason: 'Safe now', confirmed: true }))
+})
+it('uses submitted sample identity to keep duplicate names in their own phase', async () => {
+  vi.mocked(api.get).mockResolvedValue({ data: { data: { ...workspace, specimens: [...workspace.specimens, { id: 'second-specimen', sampleId: 'submitted-2', name: 'RNA-01' }] } } })
+  render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><SpecimenHolds orderId="order" sampleIds={['submitted-2']} embedded /></QueryClientProvider>)
+  fireEvent.click(await screen.findByText('Specimen holds · 0 active'))
+  fireEvent.click(screen.getByRole('button', { name: 'Request pause' }))
+  const dialog = screen.getByRole('dialog')
+  expect(dialog.querySelector('[data-slot="dialog-body"]')).toBeTruthy()
+  await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Cancel' })))
+  fireEvent.change(screen.getByLabelText(/Reason/), { target: { value: 'Review this sample' } })
+  fireEvent.submit(dialog.querySelector('form')!)
+  await waitFor(() => expect(api.post).toHaveBeenCalledWith('/lab-service-orders/order/specimen-holds', expect.objectContaining({ specimenId: 'second-specimen' })))
 })

@@ -540,9 +540,9 @@
       "locale": "en-US",
       "slug": "lab-services",
       "title": "Request laboratory services",
-      "summary": "Confirm price, Sample type and kit delivery; pair one sample and tube at a time, send kits, and follow results.",
+      "summary": "Accept pricing, request phase kits when ready, prepare and send samples, and use Phases, Files and results, Order and billing, and History.",
       "order": 30,
-      "reviewedAt": "2026-09-30",
+      "reviewedAt": "2026-10-01",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -573,9 +573,9 @@
       "locale": "en-US",
       "slug": "sample-shipping",
       "title": "Prepare and ship samples",
-      "summary": "Receive Transportation kits, save each Sample ID with its exact tube barcode, then print inserts and send samples.",
+      "summary": "Request phase kits, confirm receipt, pair samples and tubes, pack and record shipments, and follow each phase.",
       "order": 35,
-      "reviewedAt": "2026-09-29",
+      "reviewedAt": "2026-10-01",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -608,7 +608,7 @@
       "title": "Results and billing",
       "summary": "Download scientifically released PSeq results, review retention, and find invoices independently of result access.",
       "order": 40,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-10-01",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -671,7 +671,7 @@
       "title": "Statuses and troubleshooting",
       "summary": "Interpret Job, sample, quote, invoice, scan, and release states; recover roster, access, and download problems.",
       "order": 60,
-      "reviewedAt": "2026-09-07",
+      "reviewedAt": "2026-10-01",
       "navigationGroup": "support",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1346,7 +1346,7 @@
       "title": "Order operations",
       "summary": "Find the Order operations workspace available to your role, manage commercial decisions, and continue Lab, Finance, and release work in their owning screens.",
       "order": 40,
-      "reviewedAt": "2026-09-30",
+      "reviewedAt": "2026-10-01",
       "navigationGroup": "order-operations",
       "contentType": "overview",
       "topicIds": [
@@ -1811,7 +1811,7 @@
       "title": "Configuration and file retention",
       "summary": "Maintain reusable defaults, services, analyses, Partner rules, Sample types, Shipping procedures, Phaeno ship-to destinations, Transportation kits, and released-file retention.",
       "order": 60,
-      "reviewedAt": "2026-09-30",
+      "reviewedAt": "2026-10-01",
       "navigationGroup": "platform-operations",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1874,9 +1874,9 @@
       "locale": "en-US",
       "slug": "lab-services",
       "title": "Use Partner Lab services",
-      "summary": "Complete Partner ordering, purchased-run allocation and shipping on the Job, then track sample receipt and laboratory results.",
+      "summary": "Accept pricing, request phase kits when ready, prepare and send samples, and use Phases, Files and results, Order and billing, and History.",
       "order": 25,
-      "reviewedAt": "2026-09-30",
+      "reviewedAt": "2026-10-01",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [

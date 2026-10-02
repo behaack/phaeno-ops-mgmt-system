@@ -60,11 +60,12 @@ function DraftEditor({ order, initialOrganizationId, sourceRequestId }: { order?
   const data = useCommercialDraftData(undefined, organizationId, departmentId, true)
   const mutation = useCommercialDraftWrite()
   const form = useForm<CommercialDraftForm>({ resolver: zodResolver(commercialDraftSchema), mode: 'onBlur', defaultValues: order?.commercialDraft ?? {
-    jobName: '', sampleTypeDefinitionId: null, storageRequirements: null, safetyDeclaration: '', notes: '', usesPhases: false, phases: [newDraftPhase(1)],
+    jobName: '', sampleTypeDefinitionId: null, catalogItemId: null, storageRequirements: null, safetyDeclaration: '', notes: '', usesPhases: false, phases: [newDraftPhase(1)],
   } })
   const phases = useFieldArray({ control: form.control, name: 'phases' })
   const values = form.watch()
   const totals = draftTotals(values)
+  const services = (data.pricingCatalog.data?.catalogItems ?? []).filter(item => item.isActive && item.isPSeqLabService && item.salesUnit.toLowerCase() === 'specimen')
   const approveNavigation = useOrderDraftGuard(form.formState.isDirty || ownerDirty, mutation.isPending)
   const [issueSummary, setIssueSummary] = useState<Array<{ path: string; message: string }>>([])
   function requestPhaseConfirmation(confirmation: PhaseConfirmation) {
@@ -106,6 +107,7 @@ function DraftEditor({ order, initialOrganizationId, sourceRequestId }: { order?
     await form.handleSubmit(async draft => {
       if (submit) {
         const issues = submissionIssues(draft)
+        if (draft.catalogItemId && !services.some(service => service.id === draft.catalogItemId)) issues.unshift({ path: 'catalogItemId', message: 'Select an available catalog service before submitting for pricing.' })
         if (issues.length) { setIssueSummary(issues); issues.forEach(issue => form.setError(issue.path as FieldPath<CommercialDraftForm>, { message: issue.message })); form.setFocus(issues[0].path as FieldPath<CommercialDraftForm>); return }
       }
       try {
@@ -137,10 +139,21 @@ function DraftEditor({ order, initialOrganizationId, sourceRequestId }: { order?
             <Label htmlFor="draft-department"><RequiredFieldName>Department</RequiredFieldName></Label>
             <NativeSelect id="draft-department" value={data.selectedDepartmentId} onChange={event => { setDepartmentId(event.target.value); setOwnerDirty(true) }} disabled={Boolean(savedOrder)}><option value="">Select Department</option>{data.departments.data?.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}</NativeSelect>
           </Field>
-          <Field>
+          <Field className="md:col-span-2">
             <Label htmlFor="draft-name"><RequiredFieldName>Job name</RequiredFieldName></Label>
             <Input id="draft-name" {...form.register('jobName')} aria-invalid={Boolean(form.formState.errors.jobName)} aria-describedby="draft-name-error" />
             <FieldError id="draft-name-error">{form.formState.errors.jobName?.message}</FieldError>
+          </Field>
+          <Field>
+            <Label htmlFor="draft-service"><RequiredFieldName>Catalog service</RequiredFieldName> · required for pricing</Label>
+            <NativeSelect id="draft-service" value={values.catalogItemId ?? ''} onChange={event => form.setValue('catalogItemId', event.target.value || null, { shouldDirty: true, shouldValidate: true })} aria-invalid={Boolean(form.formState.errors.catalogItemId)} aria-describedby="draft-service-help draft-service-error" disabled={data.pricingCatalog.isLoading}>
+              <option value="">{data.pricingCatalog.isLoading ? 'Loading services…' : 'Select catalog service'}</option>
+              {values.catalogItemId && !services.some(service => service.id === values.catalogItemId) ? <option value={values.catalogItemId} disabled>Unavailable service — select another</option> : null}
+              {services.map(service => <option key={service.id} value={service.id}>{service.name}</option>)}
+            </NativeSelect>
+            <p id="draft-service-help" className="text-xs text-muted-foreground">This service applies to the whole order. Its final prices are reviewed before the quote is issued.</p>
+            <FieldError id="draft-service-error">{form.formState.errors.catalogItemId?.message}</FieldError>
+            {data.pricingCatalog.error ? <p className="text-sm text-destructive">Services could not be loaded. <Button type="button" variant="link" onClick={() => void data.pricingCatalog.refetch()}>Retry</Button></p> : !data.pricingCatalog.isLoading && services.length === 0 ? <p className="text-sm text-muted-foreground">No active PSeq laboratory catalog services are available. Save a Draft and configure the service before submission.</p> : null}
           </Field>
           <Field>
             <Label htmlFor="draft-sample-type"><RequiredFieldName>Sample type</RequiredFieldName> · required for pricing</Label>

@@ -30,10 +30,23 @@ function show() {
 }
 
 describe('Lab Job step information', () => {
+  it.each(['DraftRequest', 'QuoteInPreparation', 'QuoteIssued'])('keeps an unaccepted %s focused on order review without shipping guidance', status => {
+    const select = vi.fn()
+    const confirmation = { ...mocks.progress!.steps[0], label: 'Confirm price and order', state: 'waiting-for-you' as const, detail: 'Review the scope and pricing, then accept or decline it.' }
+    mocks.progress!.nextStep = confirmation
+    render(<LabJobOrderProgress order={{ ...bundleLabDraft, status, placedAt: null }} shipments={[]} shippingState="ready" canManageShipping canAcceptOrder onStepSelect={select} />)
+    expect(screen.getByRole('heading', { name: 'Review and Accept Order' })).toBeTruthy()
+    expect(screen.queryByRole('list', { name: 'Ordering and shipping steps' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Information about step/ })).toBeNull()
+    expect(screen.queryByText('Your next step')).toBeNull()
+    expect(screen.queryByRole('button', { name: /Review pricing/ })).toBeNull()
+    expect(select).not.toHaveBeenCalled()
+  })
+
   it('hosts the sample panel review action when the complete roster needs finalization', () => {
     const target = vi.fn()
     mocks.progress!.nextStep = { ...mocks.progress!.steps[1], label: 'Review and finalize sample list', actionLabel: 'Review and finalize list', state: 'waiting-for-you' }
-    render(<LabJobOrderProgress order={{ ...bundleLabDraft, canEditSamples: true }} shipments={[]} shippingState="ready" canManageShipping canAcceptOrder sampleReviewTargetRef={target} />)
+    render(<LabJobOrderProgress order={{ ...bundleLabDraft, placedAt: '2026-09-10T00:00:00Z', canEditSamples: true }} shipments={[]} shippingState="ready" canManageShipping canAcceptOrder sampleReviewTargetRef={target} />)
     expect(target).toHaveBeenCalledWith(expect.any(HTMLDivElement))
     expect(screen.getByText('Review and finalize sample list')).toBeTruthy()
     expect(screen.queryByRole('button', { name: /Review samples/ })).toBeNull()
@@ -43,7 +56,7 @@ describe('Lab Job step information', () => {
     const select = vi.fn()
     const sendTarget = vi.fn()
     mocks.progress!.nextStep = mocks.progress!.steps[5]
-    render(<LabJobOrderProgress order={bundleLabDraft} shipments={[]} shippingState="ready" canManageShipping canAcceptOrder onStepSelect={select} sendActionTargetRef={sendTarget} />)
+    render(<LabJobOrderProgress order={{ ...bundleLabDraft, placedAt: '2026-09-10T00:00:00Z' }} shipments={[]} shippingState="ready" canManageShipping canAcceptOrder onStepSelect={select} sendActionTargetRef={sendTarget} />)
     expect(sendTarget).toHaveBeenCalledWith(expect.any(HTMLDivElement))
     expect(screen.queryByRole('button', { name: /Show shipping work/ })).toBeNull()
     expect(screen.getByText('Your next step')).toBeTruthy()

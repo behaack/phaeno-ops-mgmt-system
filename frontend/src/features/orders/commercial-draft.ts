@@ -4,6 +4,7 @@ import { sampleServicePricing } from './sample-service-pricing'
 export const commercialDraftSchema = z.object({
   jobName: z.string().trim().min(1, 'Enter a Job name before saving.').max(255),
   sampleTypeDefinitionId: z.string().nullable(),
+  catalogItemId: z.string().uuid('Select an available catalog service.').nullable().optional(),
   storageRequirements: z.string().max(2000).nullable(), safetyDeclaration: z.string().max(2000), notes: z.string().max(2000),
   usesPhases: z.boolean(),
   phases: z.array(z.object({
@@ -36,6 +37,7 @@ export function draftTotals(draft: Pick<CommercialDraftForm, 'phases'>) {
 }
 export function submissionIssues(draft: CommercialDraftForm): Array<{ path: string; message: string }> {
   const issues: Array<{ path: string; message: string }> = []
+  if (!draft.catalogItemId) issues.push({ path: 'catalogItemId', message: 'Select a catalog service before submitting for pricing.' })
   if (!draft.sampleTypeDefinitionId) issues.push({ path: 'sampleTypeDefinitionId', message: 'Select a Sample type before submitting for pricing.' })
   if (draft.storageRequirements !== null && !draft.storageRequirements.trim()) issues.push({ path: 'storageRequirements', message: 'Enter the different storage requirements, or use the Sample type requirements.' })
   if (!draft.safetyDeclaration.trim()) issues.push({ path: 'safetyDeclaration', message: 'Enter the safety declaration.' })

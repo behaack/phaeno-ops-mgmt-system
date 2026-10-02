@@ -19,8 +19,7 @@ vi.mock('#/features/sample-shipping/SampleShippingDetailPage', () => ({
       { kind: 'command', label: 'Print shipping insert', onSelect: mocks.print },
     ]
     const sendRef = useRef<HTMLButtonElement>(null)
-    const printRef = useRef<HTMLButtonElement>(null)
-    return <section aria-label="Embedded shipment"><p>Shipment {props.shipmentId}</p>{props.embedded?.renderActions(actions, ref, false)}{props.embedded?.renderSendAction?.(actions[0], sendRef, actions[1], printRef)}{props.embedded?.renderSamples?.()}{props.embedded?.showPreparation ? <p>Tube preparation</p> : null}</section>
+    return <section aria-label="Embedded shipment"><p>Shipment {props.shipmentId}</p>{props.embedded?.renderActions(actions, ref, false)}{props.embedded?.renderSendAction?.(actions[1], sendRef)}{props.embedded?.renderSamples?.()}{props.embedded?.showPreparation ? <p>Tube preparation</p> : null}</section>
   },
 }))
 

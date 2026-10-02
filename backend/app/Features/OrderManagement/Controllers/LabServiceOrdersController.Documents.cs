@@ -33,19 +33,21 @@ public sealed partial class LabServiceOrdersController
             var addressLines = new List<string>();
             AddAddressLine(address?.Line1);
             AddAddressLine(address?.Line2);
-            AddAddressLine(string.Join(", ", new[] { address?.City, address?.Region }
-                .Where(value => !string.IsNullOrWhiteSpace(value))));
-            AddAddressLine(address?.PostalCode);
+            var cityRegion = string.Join(", ", new[] { address?.City, address?.Region }
+                .Where(value => !string.IsNullOrWhiteSpace(value)).Select(value => value!.Trim()));
+            AddAddressLine(string.Join(" ", new[] { cityRegion, address?.PostalCode }
+                .Where(value => !string.IsNullOrWhiteSpace(value)).Select(value => value!.Trim())));
             AddAddressLine(address?.CountryCode);
 
             var status = quote.EffectiveStatus(DateTime.UtcNow).ToString();
+            var catalogNames = await LabQuoteCatalog.ReadNamesAsync(dbContext, [quote.LinesJson], null, cancellationToken);
             var document = new QuotePdfDocument(order.OrderNumber, order.CustomerReference,
                 tenant.Organization.Name, tenant.Department.Name, quote.Revision, status,
                 quote.Purpose.ToString(), quote.IssuedAt, quote.ExpiresAt, quote.AcceptedAt,
                 lines, quote.Subtotal, quote.Tax, quote.Total, quote.Currency,
                 !string.IsNullOrWhiteSpace(quote.TaxDecisionSnapshotJson), contact?.Name,
                 contact?.Email, addressLines, quote.PaymentTermsDaysSnapshot, ReadSampleScope(),
-                quote.DeliveryTargetBusinessDays, ReadQuoteSnapshot<List<QuotePdfPhase>>(quote.PhasePlanSnapshotJson));
+                quote.DeliveryTargetBusinessDays, ReadQuoteSnapshot<List<QuotePdfPhase>>(quote.PhasePlanSnapshotJson), catalogNames);
             var bytes = QuotePdfRenderer.Render(document);
             return File(bytes, "application/pdf", $"{order.OrderNumber}-quote-r{quote.Revision}.pdf");
 

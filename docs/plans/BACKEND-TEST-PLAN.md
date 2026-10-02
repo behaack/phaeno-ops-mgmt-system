@@ -1,5 +1,97 @@
 # Backend Test Plan
 
+## Consolidated Job detail hold projection — October 1, 2026
+
+The existing tenant-authorized hold read workspace now includes each specimen's
+submitted `sampleId`. The Customer phase filter uses this identity, never a
+sample name, while all hold writes and guards remain unchanged. Verify the
+read projection with duplicate display names in different phases and retain
+existing hold permission/concurrency/blocking coverage. This is an additive
+read field with no persistence change or migration. API compilation and frontend
+ID-filter regression sources cover the change; automated backend tests were not
+requested and are not run.
+
+## Phase shipping after dispatch — October 1, 2026
+
+Updated LabPhaseShippingSequenceTests for full sample/container dispatch without
+result delivery, partial/uncovered dispatch, mixed-phase contents, missing sample
+identity and cancellation skips. Request, pairing, finalization and handoff use
+the same tenant-scoped shipping guard; laboratory processing retains its separate
+result-delivery guard. Connected PostgreSQL acceptance should request Phase 2
+after full Phase 1 dispatch without results, reject it after partial dispatch,
+and confirm Phase 2 laboratory start still waits for Phase 1 delivery. Coverage
+is authored, not run; no automated test execution was requested.
+
+## Ordered phase shipping refinement — October 1, 2026
+
+Preparation availability follow-up: current completed assembly and exact unique
+tube product/namespace roster establish readiness without requiring the optional
+second-rescan marker. The existing one-pass assembly domain case now checks the
+shared preparation predicate. A connected phase case checks that a completed,
+physically received kit without that marker can be selected and count as phase
+coverage. Receipt, compatibility, phase ownership, expiry and duplicate-use
+guards remain required. Authored and compiled; automated execution is request-only.
+
+Received-stock follow-up: authored, not executed. OnDemandPhaseKitPostgresTests
+simulates an inconsistent allocated kit without Customer physical receipt and
+checks that the pair workspace marks it unusable with zero available tubes and
+the phase supply still recommends a replacement kit. Allocation alone must never
+establish physical receipt or count as received capacity.
+
+Authored, not executed: LabPhaseShippingSequenceTests covers position order, full Portal coverage, partial/withdrawn coverage, incomplete rosters, cancellation and preparation/delivery-date facts that cannot advance the workflow. OnDemandPhaseKitPostgresTests now rejects future requests and preparation/finalization, keeps per-phase capacity and idempotent replay, and authorizes the first phase without future Sample IDs. Carrier handoff shares the same server guard. API/test compilation is the local check; connected PostgreSQL acceptance remains pending.
+
+## Initial on-demand phase kits checkpoint — October 1, 2026
+
+Authored, not executed: `OnDemandPhaseKitPostgresTests` covers acceptance without
+an automatic kit request, independent bulk phase capacity, request replay without
+duplicates, stale Job versions, cross-phase physical kit rejection, and phase-one
+authorization/shipment creation before future Sample IDs exist. The second phase
+amends the same laboratory authorization. `PhaseKitSelectionDomainTests` covers
+immutable physical-kit phase assignment and preparation completion without
+starting TAT. Existing standard placement and handoff fixtures now use explicit
+phase preparation and expect no acceptance-time request.
+
+API and test assemblies compile with zero warnings/errors. The additive migration
+is applied only to the configured local development database; EF reports no
+pending model changes and the complete ERD is regenerated. Read-only before/after
+review preserves both existing Jobs and the unassigned whole-Job kit history.
+Automated PostgreSQL and domain execution were not requested. Remaining focused
+acceptance includes competing received-stock allocation, partial dispatch and
+receipt, expiry/replacement, amended/cancelled phases, and Customer/Partner tenant
+isolation. See [the implementation checkpoint](../testing/runs/2026-10-01-on-demand-phase-kits.md).
+
+## Phase-aware quote PDF — October 1, 2026
+
+Later owner-approved refinement updates the same regression set for singular Service, shared phase borders/headings, reconciled run derivation and compact terms/totals. Added cases cover a full five-line billing address with 15 samples × 2 additional runs/sample = 30, both phases and $38,750 on one Letter page, and inconsistent recorded allocation preserving its charges without a guessed formula. Continued-source checks retain the source heading after the added scope row. Tests are authored and compile; no automated execution was requested.
+
+Latest checkpoint: determined/pre-tax full-address examples are one page each; twenty phases are five pages; an oversized extra-run phase source is seven pages; a long single-scope service is four pages. All 18 pages were visually inspected, end markers retained and extracted glyph bounds clean. Isolated solution/test assembly and normal API builds pass with no warnings/errors. The rebuilt local API is running and healthy. This manual renderer evidence does not establish connected tenant download or automated regression execution.
+
+Later owner-approved refinement updates the same regression set for singular Service, shared phase borders/headings, reconciled run derivation and compact terms/totals. Added cases cover a full five-line billing address with 15 samples × 2 additional runs/sample = 30, both phases and $38,750 on one Letter page, and inconsistent recorded allocation preserving its charges without a guessed formula. Continued-source checks retain the source heading after the added scope row. Tests are authored and compile; no automated execution was requested.
+
+Authored, not executed: `QuotePdfRendererTests` covers concise catalog identities with frozen quantities/rates, exact phase-ID pairing despite reordered lines or repeated names, services and quantities, conditional additional runs, one-page two-phase determined/pre-tax totals, sample-based TAT, multi-page phase identity, oversized sources, final service/totals pagination and incomplete phase allocation rejection. Existing billing precision, statuses, historical source presentation, glyph rejection and bounds cases remain. Compilation and manually generated synthetic PDF inspection are distinct from automated test execution.
+
+Manual renderer evidence: the representative two-phase quote and additional-run/pre-tax variant each occupy one Letter page; twenty phases occupy five pages; an oversized source occupies five pages; an oversized accepted single-scope description occupies four pages and keeps its end with totals. All rendered pages were inspected, complete end markers and Latin accented billing text were retained, and extracted glyph bounds remained within the page content/footer limits. No database or quote records were written for this evidence. Connected download and automated case execution remain separate acceptance gates.
+
+The isolated solution/test assembly and refreshed local API compile with zero warnings/errors. Generated help is current and the restarted API health check passes. Automated tests were not run.
+
+## Initial quote proposals and decline — October 1, 2026
+
+Authored, not executed: `LabQuoteDecisionDomainTests` covers immutable terms and phase scope, acceptance paused during proposal review, whole-Job decline and accepted/replaced-quote rejection. `LabQuoteDecisionsPostgresTests` extends the commercial handoff fixture with active tenant administrator authorization, stale-version/foreign-quote rejection, idempotent retries, one exact-quote audit event, both audience projections, retained phased scope and reissuance ending the pending proposal. The isolated solution and test assembly compile with zero warnings/errors. Automated tests were not executed.
+
+The proposal uses existing status-event storage and introduces no migration. The local API was rebuilt and restarted after the user reported missing decision options; its health check passed. Connected customer proposal/decline/reissue acceptance remains unverified until authorized test execution or a user walkthrough.
+
+## Requested laboratory catalog service — October 1, 2026
+
+Authored, not executed: `CommercialOrderDraftDomainTests` checks that an incomplete service choice can be retained in a Draft but cannot create phase/source scope on submission, and that submission retains the exact catalog identity. `CatalogOfferingPostgresTests` covers optional Draft save, required service choice, unknown/unrelated/inactive catalog rejection, exact catalog-name lookup and unchanged quoted prices when the catalog price changes. Catalog deletion also checks requested-order and Draft JSON references. Connected controller rejection of a quote that substitutes another requested service remains in the E2E acceptance scope. Tests are request-only and were not run.
+
+The isolated solution build passes with zero warnings/errors. Reviewed `20261001155357_AddRequestedLabCatalogService` adds only a nullable UUID, index and restricted catalog foreign key; it is applied to localhost:5432 / phaeno_ops_clean_20260919, with no data conversion/reset. EF reports no pending model changes. The complete regenerated ERD covers 231 tables, 3,409 fields and 548 foreign keys. This earlier checkpoint preceded the quote-decision runtime activation; the local IIS Express API has subsequently been rebuilt and restarted. Connected service-selection acceptance remains pending.
+
+## Remote MQTT plumbing probe — October 1, 2026
+
+The standalone [probe](../../backend/tools/PSeq.Operations.MqttPlumbingProbe/README.md) sends one dummy `StartJobDto` to the owner-confirmed `test.mosquitto.org:1883` broker and observes only the freshly generated job ID's status topic. Verify successful subscription before publication, the non-retained QoS 1 command, and matching `dto_id=102`/`job_id` responses. Preserve raw numeric status values until the remote enum is confirmed. Record broker publication acknowledgment, remote response, and confirmed fake-job completion separately. The probe has no API/database reference, reconnect/automatic republish, real scientific inputs, or worker activation. No automated application suites are required for this isolated connection test.
+
+The [October 1 run](../testing/runs/2026-10-01-remote-mqtt-plumbing-probe.md) records the initial silent attempt and the subsequent owner-authorized successful retry. The standalone rebuild passed with zero warnings/errors. A fresh, broker-acknowledged dummy Start received six matching remote status responses at 0%, 20%, 40%, 60%, 80%, and 100%, with final raw `status=2`; the probe disconnected and exited `0`. The isolated plumbing round trip passes. Numeric enum semantics and full operational integration remain separate gates. Earlier handshake failures published no commands.
+
 ## POMS assembly messaging foundation — September 30, 2026
 
 `LabAssemblyMessagingTests` covers stable retry identity/backoff, receipt versus execution, escalation without abandonment, cancellation completion without inventing command receipt, provider cancellation before start, immutable conflict evidence, and scoped reconnect subscriptions. `LabAssemblyMessagingPostgresTests` covers commit-before-acknowledgment receipts, restart/replay, stale tracked receipts after another instance records conflict, transient percentages excluded from payload/hash, preserved terminal outcomes, deadline/start confirmation, retry persistence, wrong-provider/foreign-event rejection, owned transaction boundaries, fresh notification authorization after revocation/expiry and transient progress refresh without job writes. Existing assembly recovery/no-percentage-history tests remain included.

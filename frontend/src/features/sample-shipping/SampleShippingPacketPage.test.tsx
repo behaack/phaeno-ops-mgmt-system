@@ -70,6 +70,15 @@ describe('SampleShippingPacketPage', () => {
     expect(screen.queryByRole('button', { name: 'Print shipping insert' })).toBeNull()
   })
 
+  it('does not show another revision\'s packing instructions in printed confirmation', async () => {
+    api.getPacket.mockResolvedValue({ ...packet, shipment: { ...packet.shipment, currentPacket: { ...packet.shipment.currentPacket, revision: 2 } }, instructionSnapshotJson: JSON.stringify({ containerPacking: { temperatureControlInstructions: 'Replacement instructions.' } }) })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(<QueryClientProvider client={client}><SampleShippingPacketPage shipmentId="shipment-1" embedded packingOnly expectedInsert={packet.shipment.currentPacket} /></QueryClientProvider>)
+    expect(await screen.findByText('Shipping insert has changed')).toBeTruthy()
+    expect(screen.queryByText('Replacement instructions.')).toBeNull()
+    expect(window.print).not.toHaveBeenCalled()
+  })
+
   it('retains standalone packing in historical packets', async () => {
     api.getPacket.mockResolvedValue({ ...packet, instructionSnapshotJson: JSON.stringify({ samples: [{ sampleType: { packagingInstructions: 'Historical sample preparation.' }, procedure: { packingInstructions: 'Historical packing.' } }] }) })
     show()

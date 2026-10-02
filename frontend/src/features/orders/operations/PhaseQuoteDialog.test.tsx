@@ -10,17 +10,29 @@ vi.mock('../use-order-draft-guard', () => ({ useOrderDraftGuard: () => undefined
 const itemId = '00000000-0000-4000-8000-000000000010'
 const phaseId = '00000000-0000-4000-8000-000000000011'
 const catalogItems = [{ id: itemId, name: 'PSeq', isActive: true, isPSeqLabService: true, salesUnit: 'specimen', basePrice: 100, currency: 'USD' }] as OrderConfiguration['catalogItems']
-function renderPricing(phased: boolean, runs = 9) {
+function renderPricing(phased: boolean, runs = 9, requestedCatalogItemId?: string, items = catalogItems) {
   const sources = [{ biologicalSource: 'Human PBMC', specimenCount: 3 }]
   const order = { id: '00000000-0000-4000-8000-000000000012', version: 1, requestedSpecimenCount: 3, requestedSequencingRunCount: runs,
-    sourceGroups: sources, proposedUnitPrice: null, priceProposalNote: null,
+    sourceGroups: sources, proposedUnitPrice: null, priceProposalNote: null, requestedCatalogItemId,
     phaseScopes: phased ? [{ id: phaseId, name: 'Discovery', position: 1, sampleCount: 3, scope: { sources, runsPerSample: runs / 3, sequencingRunCount: runs },
       proposedUnitPrice: null, proposedAdditionalRunPrice: null, pricingNote: null, turnaroundBusinessDays: 14 }] : null } as LabServiceOrder
-  return render(<PhaseQuoteDialog open order={order} catalogItems={catalogItems} onOpenChange={vi.fn()} onSaved={vi.fn().mockResolvedValue(undefined)} />)
+  return render(<PhaseQuoteDialog open order={order} catalogItems={items} onOpenChange={vi.fn()} onSaved={vi.fn().mockResolvedValue(undefined)} />)
 }
 
 describe('laboratory sample and additional-run quote review', () => {
   beforeEach(() => mutation.mutate.mockReset())
+
+  it('retains the requested service with several catalog choices and uses its price instead of the first item', async () => {
+    const selectedId = '00000000-0000-4000-8000-000000000020'
+    renderPricing(true, 3, selectedId, [...catalogItems, { ...catalogItems[0], id: selectedId, name: 'PSeq RNA Sequencing', basePrice: 950 }])
+    const service = screen.getByRole('combobox', { name: /Laboratory service/ }) as HTMLSelectElement
+    expect(service.value).toBe(selectedId)
+    expect(service.disabled).toBe(true)
+    expect(screen.getByText('Quote subtotal: $2,850.00')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Issue quote' }))
+    await waitFor(() => expect(mutation.mutate).toHaveBeenCalledTimes(1))
+    expect(mutation.mutate.mock.calls[0][0].lines).toEqual([expect.objectContaining({ catalogItemId: selectedId, quantity: 3, unitPrice: 950 })])
+  })
 
   it.each([false, true])('prices one standard service per sample for phased=%s', async phased => {
     renderPricing(phased)

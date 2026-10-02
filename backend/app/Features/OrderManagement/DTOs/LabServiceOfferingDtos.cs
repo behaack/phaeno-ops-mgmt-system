@@ -29,7 +29,7 @@ public sealed record PlaceStandardLabOrderRequest(
     long Version, Guid OfferingId, int OfferingVersion, long OfferingRecordVersion,
     long CatalogItemVersion, long CommercialProfileVersion, long DepartmentVersion,
     long OrganizationVersion, string ReviewToken, bool ProhibitedDataConfirmed, string? PurchaseOrderNumber = null,
-    Guid? ConfirmedSampleTypeId = null, Guid? KitDeliveryLocationId = null, long? KitDeliveryLocationVersion = null);
+    Guid? ConfirmedSampleTypeId = null);
 
 public sealed record StandardLabOrderPreviewDto(
     LabServiceOfferingDto Offering, int SpecimenCount, decimal Subtotal, decimal? Tax, decimal? Total,

@@ -22,7 +22,7 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
                 && item.DepartmentId == tenant.Department.Id && item.AuthorizationSource == SampleShipmentAuthorizationSource.CustomerLabServiceOrder, ct) ?? throw Missing();
 
     public async Task<LabServiceOrder> JobAsync(Guid id, Guid organizationId, Guid departmentId, CancellationToken ct)
-        => await db.LabServiceOrders.AsNoTracking().SingleOrDefaultAsync(item => item.Id == id
+        => await db.LabServiceOrders.AsNoTracking().Include(item => item.Phases).SingleOrDefaultAsync(item => item.Id == id
             && item.OrganizationId == organizationId && item.DepartmentId == departmentId && !item.IsDiscarded, ct) ?? throw Missing();
 
     public static string? JobBlock(LabServiceOrder job)
@@ -30,52 +30,11 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
             || job.Status is not (LabServiceOrderStatus.PlacedAwaitingSamples or LabServiceOrderStatus.InProgress)
                 ? "Transportation kits require an accepted, active laboratory Job." : null;
 
-    /// <summary>Queue the initial kit shortage in the same transaction as quote acceptance.</summary>
-    public async Task QueueAtAcceptanceAsync(LabServiceOrder order, CustomerDeliveryLocation location,
-        Guid actorId, CancellationToken ct)
-    {
-        if (!order.SampleTypeDefinitionId.HasValue || order.RequestedSpecimenCount < 1)
-            throw Conflict("Confirm a supported Sample type and sample count before requesting kits.");
-        if (await db.TransportationKitRequests.AnyAsync(item => item.LabServiceOrderId == order.Id, ct))
-            throw Conflict("A Transportation kit request already exists for this Job.");
-        var contexts = new[] { new ContainerSampleTypeContext(order.SampleTypeDefinitionId.Value) };
-        var stock = await db.SampleShippingStockKits.AsNoTracking().Where(item =>
-            item.OrganizationId == order.OrganizationId && item.DepartmentId == order.DepartmentId
-            && item.CustomerDeliveryLocationId == location.Id && item.CustomerReceivedAt.HasValue
-            && !item.ReservedSampleShipmentId.HasValue && !item.BoundSampleShipmentId.HasValue
-            && !item.WithdrawnAt.HasValue).ToArrayAsync(ct);
-        var stockDefinitions = stock.Length == 0 ? [] : await catalog.ReadStockCompatibleAsync(contexts,
-            stock.Select(item => item.ContainerDefinitionId).Distinct().ToArray(), ct);
-        var compatibleStock = stock.Where(item => stockDefinitions.Any(definition => definition.Id == item.ContainerDefinitionId)
-            && TransportationKitInventory.IsPhysicallyUsable(item, DateTime.UtcNow)).ToArray();
-        var stockCoverage = SampleShippingContainerPacker.Preview(stockDefinitions, order.RequestedSpecimenCount,
-            compatibleStock.GroupBy(item => item.ContainerDefinitionId)
-                .Select(group => new ContainerQuantityRequest(group.Key, group.Count())).ToArray());
-        if (stockCoverage.UnallocatedTubes == 0) return;
-        var definitions = (await catalog.ReadCompatibleAsync(contexts, ct))
-            .Where(item => item.AssemblyWorkflowReady == true).ToArray();
-        if (definitions.Length == 0)
-            throw Conflict("No approved, assembly-ready Transportation kit supports this Sample type. Ask Phaeno to complete kit setup.");
-        var recommendation = SampleShippingContainerPacker.Preview(definitions, stockCoverage.UnallocatedTubes);
-        if (!recommendation.IsComplete || recommendation.ContainerCount == 0)
-            throw Conflict("No compatible Transportation kit can cover the accepted sample count.");
-        var request = new TransportationKitRequest(order.Id, order.OrganizationId, order.DepartmentId,
-            location.Id, JsonSerializer.Serialize(location.ToDto(), Json), actorId, DateTime.UtcNow);
-        foreach (var quantity in recommendation.Containers)
-        {
-            var definition = definitions.Single(item => item.Id == quantity.ContainerDefinitionId);
-            request.Lines.Add(new TransportationKitRequestLine(request.Id, definition.Id,
-                SampleShippingContainerCatalogService.Snapshot(definition), quantity.Quantity));
-        }
-        db.TransportationKitRequests.Add(request);
-        AddEvent(request, actorId, "Created", "Kit fulfillment was initiated when the quote was accepted. No separate Customer approval is required.");
-        await NotifyFulfillmentAsync(request, order.OrderNumber, ct);
-    }
-
     public async Task<ShipmentKitSupplyDto> SupplyAsync(Guid shipmentId, OrderTenantContext tenant, Guid? locationId, CancellationToken ct)
     {
         var shipment = await ShipmentAsync(shipmentId, tenant, ct);
         var job = await JobAsync(shipment.AuthorizationSourceId, tenant.Organization.Id, tenant.Department.Id, ct);
+        var phase = await ShipmentPhaseAsync(shipment, job, ct);
         var shipmentTypeIds = shipment.Items.Select(item => item.SampleTypeDefinitionId).Distinct().ToArray();
         Guid? selectedTypeId = job.SampleTypeDefinitionId ?? (shipmentTypeIds.Length == 1 ? shipmentTypeIds[0] : null);
         var sampleTypeName = selectedTypeId.HasValue
@@ -84,10 +43,10 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
         var locations = await TransportationKitInventory.LocationsAsync(db, shipment, ct);
         locationId = await TransportationKitInventory.LocationAsync(db, shipment, locationId, ct);
         var request = await db.TransportationKitRequests.AsNoTracking().Include(item => item.Lines)
-            .Where(item => item.LabServiceOrderId == job.Id && item.OrganizationId == tenant.Organization.Id && item.DepartmentId == tenant.Department.Id)
+            .Where(item => item.LabServiceOrderId == job.Id && item.LabJobPhaseId == phase.Id && item.OrganizationId == tenant.Organization.Id && item.DepartmentId == tenant.Department.Id)
             .OrderBy(item => item.ClosedAt.HasValue).ThenByDescending(item => item.RequestedAt).FirstOrDefaultAsync(ct);
         var definitions = shipment.Items.Count == 0 ? [] : await catalog.ReadCompatibleAsync(await SampleShippingPackingData.ContextsAsync(db, shipment, ct), ct);
-        var stock = (await TransportationKitInventory.AtLocation(db, tenant.Organization.Id, tenant.Department.Id, locationId).ToArrayAsync(ct))
+        var stock = (await TransportationKitInventory.ForShipment(db, TransportationKitInventory.AtLocation(db, tenant.Organization.Id, tenant.Department.Id, locationId), shipment).ToArrayAsync(ct))
             .Where(item => TransportationKitInventory.IsPhysicallyUsable(item, DateTime.UtcNow)).ToArray();
         var usableDefinitions = await TransportationKitInventory.OptionsAsync(db, shipment, locationId, ct);
         var compatibleDefinitionIds = usableDefinitions.Concat(definitions).Select(item => item.Id).ToHashSet();
@@ -103,8 +62,8 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
                 .Select(item => new ContainerQuantityRequest(item.ContainerDefinitionId, item.AvailableQuantity)).ToArray());
         var recommendation = SampleShippingContainerPacker.Preview(definitions, coverage.UnallocatedTubes);
         var block = !tenant.IsDepartmentAdmin ? "An organization or department administrator can order transportation kits."
-            : JobBlock(job) ?? SampleShippingPackingData.PackingBlock(shipment)
-            ?? (request is { ClosedAt: null } ? "A transportation-kit order is already open for this Job."
+            : JobBlock(job) ?? PhaseBlock(phase) ?? SampleShippingPackingData.PackingBlock(shipment)
+            ?? (request is { ClosedAt: null } ? "A transportation-kit order is already open for this phase."
                 : locations.Count == 0 ? "Add a delivery location."
                 : coverage.UnallocatedTubes == 0 ? "Received containers at this location cover these tubes."
                 : !recommendation.IsComplete || recommendation.ContainerCount == 0 ? "No effective compatible transportation kit is configured." : null);
@@ -122,13 +81,15 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
         var shipment = await ShipmentAsync(shipmentId, tenant, ct);
         await SampleShippingPackingData.LockAsync(db, $"sample-shipping:{shipment.AuthorizationSourceId}", ct);
         shipment = await ShipmentAsync(shipmentId, tenant, ct);
+        var job = await JobAsync(shipment.AuthorizationSourceId, tenant.Organization.Id, tenant.Department.Id, ct);
+        var phase = await ShipmentPhaseAsync(shipment, job, ct);
         var existing = await db.TransportationKitRequests.AsNoTracking().Include(item => item.Lines)
-            .SingleOrDefaultAsync(item => item.LabServiceOrderId == shipment.AuthorizationSourceId && !item.ClosedAt.HasValue, ct);
+            .SingleOrDefaultAsync(item => item.LabServiceOrderId == shipment.AuthorizationSourceId && item.LabJobPhaseId == phase.Id && !item.ClosedAt.HasValue, ct);
         if (existing is not null)
         {
             if (existing.OrganizationId != tenant.Organization.Id || existing.DepartmentId != tenant.Department.Id) throw Missing();
             if (existing.DeliveryLocationId != body.DeliveryLocationId || !SameLines(existing, body.Containers))
-                throw Conflict("A transportation-kit order is already open for this Job. Review it before changing the request.");
+                throw Conflict("A transportation-kit order is already open for this phase. Review it before changing the request.");
             return await MapAsync(existing, true, false, ct);
         }
         Version(shipment.Version, body.ShipmentVersion);
@@ -144,7 +105,7 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
             || selected.ContainerCount != body.Containers.Sum(item => item.Quantity))
             throw Invalid("Choose enough compatible transportation kits for the remaining tubes, without empty extras.");
         var request = new TransportationKitRequest(shipment.AuthorizationSourceId, tenant.Organization.Id, tenant.Department.Id,
-            location.Id, JsonSerializer.Serialize(location.ToDto(), Json), tenant.Actor.Id, DateTime.UtcNow);
+            location.Id, JsonSerializer.Serialize(location.ToDto(), Json), tenant.Actor.Id, DateTime.UtcNow, phase.Id, phase.SampleCount);
         foreach (var quantity in body.Containers)
         {
             var definition = definitions.Single(item => item.Id == quantity.ContainerDefinitionId);
@@ -172,6 +133,8 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
         var jobIds = requests.Select(request => request.LabServiceOrderId).Distinct().ToArray();
         var organizationIds = requests.Select(request => request.OrganizationId).Distinct().ToArray();
         var departmentIds = requests.Select(request => request.DepartmentId).Distinct().ToArray();
+        var phaseIds = requests.Where(r => r.LabJobPhaseId.HasValue).Select(r => r.LabJobPhaseId!.Value).Distinct().ToArray();
+        var phaseNames = await db.Set<PhaenoPortal.App.Features.OrderManagement.Domain.LabJobPhase>().Where(p => phaseIds.Contains(p.Id)).ToDictionaryAsync(p => p.Id, p => p.Name, ct);
         var jobNames = await db.LabServiceOrders.Where(item => jobIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, item => item.OrderNumber, ct);
         var organizationNames = await db.Organizations.Where(item => organizationIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, item => item.Name, ct);
         var departmentNames = await db.OrganizationDepartments.Where(item => departmentIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, item => item.Name, ct);
@@ -192,7 +155,8 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
                 kit.ContainerDefinitionId, kit.OutboundCarrier!, kit.OutboundTrackingNumber!, kit.FulfilledAt!.Value, kit.CustomerReceivedAt)).ToArray(),
             customerAdmin && kits.Any(kit => !kit.CustomerReceivedAt.HasValue),
             (customerAdmin || staff) && request.Status == TransportationKitRequestStatus.Pending, request.CancellationReason,
-            organizationNames[request.OrganizationId], departmentNames[request.DepartmentId]);
+            organizationNames[request.OrganizationId], departmentNames[request.DepartmentId], request.LabJobPhaseId,
+            request.LabJobPhaseId.HasValue ? phaseNames.GetValueOrDefault(request.LabJobPhaseId.Value) : null);
         }).ToArray();
     }
 
@@ -200,7 +164,7 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
     {
         var job = await JobAsync(request.LabServiceOrderId, request.OrganizationId, request.DepartmentId, ct);
         var block = request.ClosedAt.HasValue || request.Status == TransportationKitRequestStatus.Dispatched
-            ? "All requested kits have been dispatched or this request is closed." : JobBlock(job);
+            ? "All requested kits have been dispatched or this request is closed." : JobBlock(job) ?? PhaseBlock(job.Phases.SingleOrDefault(p => p.Id == request.LabJobPhaseId), request);
         var (selectedDestinationId, destinationChoices) = await DispatchDestinationChoicesAsync(request, job, ct);
         if (block is null && destinationChoices.Count == 0)
             block = "No current Active Phaeno ship-to destination is available for this request. Review the Default destination and the requested kit specifications.";
@@ -330,7 +294,7 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
         var request = await FreshRequestAsync(id, null, null, ct);
         Version(request.Version, body.Version);
         var job = await JobAsync(request.LabServiceOrderId, request.OrganizationId, request.DepartmentId, ct);
-        if (JobBlock(job) is { } blocked) throw Conflict(blocked);
+        if ((JobBlock(job) ?? PhaseBlock(job.Phases.SingleOrDefault(p => p.Id == request.LabJobPhaseId), request)) is { } blocked) throw Conflict(blocked);
         if (request.ClosedAt.HasValue || request.Status == TransportationKitRequestStatus.Dispatched) throw Conflict("This request has no kits remaining to dispatch.");
         var (selectedDestinationId, destinationChoices) = await DispatchDestinationChoicesAsync(request, job, ct);
         var destinationId = body.PhaenoDestinationId ?? selectedDestinationId;
@@ -402,16 +366,21 @@ public sealed partial class TransportationKitRequestService(PSeqOperationsDbCont
     {
         await SampleShippingPackingData.LockAsync(db, $"sample-shipping:{shipment.AuthorizationSourceId}", ct);
         var original = await db.SampleShippingStockKits.AsNoTracking().SingleOrDefaultAsync(item => item.Id == kitId, ct) ?? throw Missing();
+        var job = await JobAsync(shipment.AuthorizationSourceId, shipment.OrganizationId, shipment.DepartmentId, ct);
+        var phase = await ShipmentPhaseAsync(shipment, job, ct);
         var requestId = original.TransportationKitRequestLineId.HasValue
             ? await db.TransportationKitRequestLines.Where(line => line.Id == original.TransportationKitRequestLineId)
                 .Select(line => (Guid?)line.TransportationKitRequestId).SingleOrDefaultAsync(ct)
             : await db.TransportationKitRequests.Where(request => request.OrganizationId == shipment.OrganizationId
                 && request.DepartmentId == shipment.DepartmentId && request.LabServiceOrderId == shipment.AuthorizationSourceId
+                && request.LabJobPhaseId == phase.Id
                 && !request.ClosedAt.HasValue).Select(request => (Guid?)request.Id).SingleOrDefaultAsync(ct);
         if (!requestId.HasValue)
             throw new OrderManagementException("transportation_kit_order_required", "The Customer must order transportation kits for this Job before dispatch.", 409);
         var request = await FreshRequestAsync(requestId.Value, shipment.OrganizationId, shipment.DepartmentId, ct);
         if (request.LabServiceOrderId != shipment.AuthorizationSourceId) throw Conflict("This kit belongs to another Job's transportation-kit order.");
+        if (request.LabJobPhaseId.HasValue && request.LabJobPhaseId != phase.Id)
+            throw Conflict("This kit belongs to another phase's transportation-kit order.");
         await SampleShippingPackingData.LockAsync(db, $"stock-kit:{kitId}", ct);
         var kit = await db.SampleShippingStockKits.SingleAsync(item => item.Id == kitId, ct);
         await db.Entry(kit).ReloadAsync(ct);

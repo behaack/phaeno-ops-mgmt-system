@@ -16,7 +16,7 @@ import { currentLabQuote } from './use-quote-status'
 
 const schema = z.object({ reason: z.string().trim().max(2000, 'Use 2,000 characters or fewer.') })
 
-export function LabQuoteExtensionDialog({ order, quote, onClose }: { order: LabServiceOrder; quote: Quote; onClose: () => void }) {
+export function LabQuoteExtensionDialog({ order, quote, onClose, onCloseFocus }: { order: LabServiceOrder; quote: Quote; onClose: () => void; onCloseFocus?: () => void }) {
   const queryClient = useQueryClient()
   const formId = useId()
   const reasonId = useId()
@@ -51,7 +51,7 @@ export function LabQuoteExtensionDialog({ order, quote, onClose }: { order: LabS
     if (!mutation.isPending && (!form.formState.isDirty || window.confirm('Discard the unsaved extension request?'))) onClose()
   }
   return <Dialog open onOpenChange={open => { if (!open) close() }}>
-    <DialogContent showCloseButton={!mutation.isPending} aria-busy={mutation.isPending}>
+    <DialogContent showCloseButton={!mutation.isPending} aria-busy={mutation.isPending} onCloseAutoFocus={event => { if (onCloseFocus) { event.preventDefault(); onCloseFocus() } }}>
       <DialogHeader>
         <DialogTitle>Request quote extension</DialogTitle>
         <DialogDescription>Ask Phaeno to review revision {quote.revision} for {order.orderNumber}. If approved, Phaeno will issue a new quote revision with a new expiration date. This request does not accept the quote.</DialogDescription>

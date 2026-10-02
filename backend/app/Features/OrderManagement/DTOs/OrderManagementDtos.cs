@@ -71,7 +71,7 @@ public sealed record OrderTimelineDto(
     string? Reason,
     string? InternalNote,
     Guid ActorUserId,
-    DateTime OccurredAt);
+    DateTime OccurredAt, Guid? ChildRecordId = null);
 
 public sealed record CommercialDocumentDto(
     Guid Id,
@@ -146,7 +146,8 @@ public sealed record QuoteDto(
     DateTime? PricingDecidedAt = null,
     QuoteExtensionRequestDto? ExtensionRequest = null,
     string? ChangeScopeSnapshotJson = null, string? AcceptedAmendmentSnapshotJson = null,
-    int? DeliveryTargetBusinessDays = null, string? PhasePlanSnapshotJson = null);
+    int? DeliveryTargetBusinessDays = null, string? PhasePlanSnapshotJson = null,
+    IReadOnlyDictionary<Guid, string>? CatalogItemNames = null);
 
 public sealed record LabSampleDto(
     Guid Id,
@@ -171,7 +172,7 @@ public sealed record LabSampleDto(
     DateTime? CustomerShippedAt,
     string? TenantSafeReason,
     string? InternalNote,
-    long Version, int SequencingRunCount = 1);
+    long Version, int SequencingRunCount = 1, Guid? PhaseId = null);
 
 public sealed record LabServiceSourceGroupDto(
     Guid Id,
@@ -296,7 +297,10 @@ public sealed record LabServiceOrderDto(
     Guid? SampleTypeDefinitionId = null, string? SampleTypeName = null,
     bool UsesPairedPreparation = false, int PhaseCount = 1,
     CommercialLabOrderDraft? CommercialDraft = null, IReadOnlyList<LabOrderPhaseScopeDto>? PhaseScopes = null, Guid DepartmentId = default,
-    CustomerStandardOrderDraft? CustomerDraft = null);
+    CustomerStandardOrderDraft? CustomerDraft = null, Guid? RequestedCatalogItemId = null, string? RequestedServiceName = null,
+    bool CanProposeQuoteChanges = false, bool CanDeclineQuote = false, QuoteChangeProposalDto? QuoteChangeProposal = null);
+
+public sealed record QuoteChangeProposalDto(Guid QuoteId, int QuoteRevision, string Reason, DateTime ProposedAt);
 
 public sealed record LabOrderPhaseScopeDto(Guid Id, int Position, string Name, int SampleCount,
     LabPhaseScope Scope, int? TurnaroundBusinessDays, decimal? ProposedUnitPrice, string? PricingNote, decimal? ProposedAdditionalRunPrice = null);
@@ -584,7 +588,7 @@ public sealed record OrderConfigurationDto(
 
 public sealed record VersionRequest(long Version);
 public sealed record FinalizeLabSampleRosterRequest(long Version,
-    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] bool ConfirmTubeUsePolicy = false);
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] bool ConfirmTubeUsePolicy = false, Guid? PhaseId = null);
 public sealed record ReasonRequest(long Version, string Reason, string? InternalNote = null);
 public sealed record CancellationRequestBody(long Version, string Reason, string ScopeJson = "{}");
 public sealed record CancellationLineDecisionRequest(Guid OrderLineId, decimal Quantity);
@@ -636,18 +640,18 @@ public sealed record LabSampleRosterWriteRequest(
 public sealed record AddLabSampleTubePairRequest(long OrderVersion, Guid StockKitId,
     string CustomerSampleId, string BiologicalSource, string SupplierTubeBarcode,
     decimal DeclaredQuantity, string DeclaredQuantityUnit, int SequencingRunCount = 1, Guid? PhaseId = null);
-public sealed record SaveLabSampleTubeKitRequest(long OrderVersion, string KitNumber);
+public sealed record SaveLabSampleTubeKitRequest(long OrderVersion, string KitNumber, Guid? PhaseId = null);
 public sealed record FinishLabSampleTubeKitRequest(long OrderVersion);
 public sealed record RemoveLabSampleTubePairRequest(long Version, string Reason);
 public sealed record LabSampleTubePairDto(Guid Id, string CustomerSampleId, string BiologicalSource,
     Guid StockKitId, string KitNumber, string SupplierTubeBarcode, decimal DeclaredQuantity,
     string DeclaredQuantityUnit, int SequencingRunCount, long Version, Guid PhaseId);
 public sealed record LabSampleTubeKitOptionDto(Guid Id, string KitNumber, int TubeCapacity, int AvailableTubeCount,
-    DateTime? FinishedAt, decimal? MaximumSampleAmount = null, string? SampleAmountUnit = null);
+    DateTime? FinishedAt, decimal? MaximumSampleAmount = null, string? SampleAmountUnit = null, Guid? PhaseId = null, bool IsUsable = true);
 public sealed record LabSampleTubeWorkspaceDto(IReadOnlyList<LabSampleTubePairDto> Pairs,
     IReadOnlyList<LabSampleTubeKitOptionDto> Kits, int ExpectedSampleCount, int ExpectedSequencingRunCount,
     bool IsFinalized, IReadOnlyList<PhaseSourceScope> PreparationSources, IReadOnlyList<Guid> PreparationPhaseIds,
-    decimal? MinimumSampleAmount = null, string? SampleAmountUnit = null);
+    decimal? MinimumSampleAmount = null, string? SampleAmountUnit = null, IReadOnlyList<Guid>? PreparedPhaseIds = null);
 public sealed record LabSampleImportRowDto(
     int RowNumber,
     string CustomerSampleId,
@@ -673,7 +677,7 @@ public sealed record IssueQuoteRequest(long Version, IReadOnlyList<QuoteLineRequ
     int? DeliveryTargetBusinessDays = null);
 public sealed record QuoteExtensionRequestBody(long Version, string? Reason = null);
 public sealed record AcceptQuoteRequest(long Version, Guid QuoteId, string? PurchaseOrderNumber = null,
-    Guid? ConfirmedSampleTypeId = null, Guid? KitDeliveryLocationId = null, long? KitDeliveryLocationVersion = null);
+    Guid? ConfirmedSampleTypeId = null);
 
 public sealed record ReagentLineWriteRequest(Guid OfferingId, decimal Quantity, string? Note);
 public sealed record ReagentDraftDetailsRequest(string? PurchaseOrderNumber, Guid? ShippingAddressId,
@@ -766,9 +770,9 @@ public static class OrderManagementMappings
 
     public static OrderTimelineDto ToDto(this OrderStatusEvent item, bool platform) => new(
         item.Id, item.FromStatus, item.ToStatus, item.TenantSafeReason,
-        platform ? item.InternalNote : null, item.ActorUserId, item.OccurredAt);
+        platform ? item.InternalNote : null, item.ActorUserId, item.OccurredAt, item.ChildRecordId);
 
-    public static QuoteDto ToDto(this LabServiceQuote quote, LabServiceQuoteExtensionRequest? extensionRequest = null) => new(
+    public static QuoteDto ToDto(this LabServiceQuote quote, LabServiceQuoteExtensionRequest? extensionRequest = null, IReadOnlyDictionary<Guid, string>? catalogItemNames = null) => new(
         quote.Id, quote.Revision, quote.Purpose.ToString(), quote.EffectiveStatus(DateTime.UtcNow).ToString(), quote.LinesJson,
         quote.Subtotal, quote.Tax, quote.Total, quote.Currency, quote.IssuedAt, quote.ExpiresAt,
         quote.AcceptedAt, quote.Version, quote.BillingContactSnapshotJson,
@@ -780,7 +784,7 @@ public static class OrderManagementMappings
             extensionRequest.QuoteId, extensionRequest.ResolvedAt.HasValue ? "Resolved" : "Pending",
             extensionRequest.Reason, extensionRequest.RequestedAt, extensionRequest.ResolvedAt, extensionRequest.ReplacementQuoteId),
         quote.ChangeScopeSnapshotJson, quote.AcceptedAmendmentSnapshotJson,
-        quote.DeliveryTargetBusinessDays, quote.PhasePlanSnapshotJson);
+        quote.DeliveryTargetBusinessDays, quote.PhasePlanSnapshotJson, catalogItemNames);
 
     public static QuoteDto ToDto(this DataAssemblyQuote quote) => new(
         quote.Id, quote.Revision, quote.Purpose.ToString(), quote.Status.ToString(), quote.LinesJson,
@@ -793,7 +797,7 @@ public static class OrderManagementMappings
         sample.Concentration, sample.Notes, sample.AnalysisDefinitionIdsJson, sample.AccessionId,
         sample.Status.ToString(), sample.ReplacementForSampleId, sample.ReceivedAt, sample.ReceiptCondition,
         sample.Carrier, sample.TrackingNumber, sample.CustomerShippedAt, sample.TenantSafeReason,
-        platform ? sample.InternalNote : null, sample.Version, sample.SequencingRunCount);
+        platform ? sample.InternalNote : null, sample.Version, sample.SequencingRunCount, sample.LabJobPhaseId);
 
     public static LabResultReleaseDto ToDto(
         this LabResultRelease release,

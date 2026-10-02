@@ -16,17 +16,17 @@ public sealed class TransportationKitRequestsController(OrderRequestContext cont
     [HttpGet("api/transportation-kit-requests/{id:guid}")]
     public async Task<TransportationKitRequestDto> Read(Guid id, CancellationToken ct)
     {
-        var tenant = await context.RequireTenantAsync(HttpContext, OrganizationKind.Customer, false, ct);
+        var tenant = await context.RequireLabServiceTenantAsync(HttpContext, false, ct);
         return await service.MapAsync(await service.LoadAsync(id, tenant.Organization.Id, tenant.Department.Id, ct), tenant.IsDepartmentAdmin, false, ct);
     }
     [HttpGet("api/sample-shipping/{shipmentId:guid}/kit-supply")]
     public async Task<ShipmentKitSupplyDto> Supply(Guid shipmentId, [FromQuery] Guid? deliveryLocationId, CancellationToken ct)
-        => await service.SupplyAsync(shipmentId, await context.RequireTenantAsync(HttpContext, OrganizationKind.Customer, false, ct), deliveryLocationId, ct);
+        => await service.SupplyAsync(shipmentId, await context.RequireLabServiceTenantAsync(HttpContext, false, ct), deliveryLocationId, ct);
 
     [HttpPost("api/sample-shipping/{shipmentId:guid}/kit-requests")]
     public async Task<TransportationKitRequestDto> Create(Guid shipmentId, [FromBody] CreateTransportationKitRequest body, CancellationToken ct)
     {
-        var tenant = await context.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, ct);
+        var tenant = await context.RequireLabServiceTenantAsync(HttpContext, true, ct);
         var shipment = await service.ShipmentAsync(shipmentId, tenant, ct);
         var result = await idempotency.ExecuteAsync(tenant.Actor.Id, $"transportation-kits:{shipment.AuthorizationSourceId}:request",
             idempotency.RequireKey(HttpContext), body, token => service.CreateAsync(shipmentId, tenant, body, token),
@@ -36,7 +36,7 @@ public sealed class TransportationKitRequestsController(OrderRequestContext cont
     [HttpPost("api/transportation-kit-requests/{id:guid}/received")]
     public async Task<TransportationKitRequestDto> Receive(Guid id, [FromBody] ReceiveTransportationKitsRequest body, CancellationToken ct)
     {
-        var tenant = await context.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, ct);
+        var tenant = await context.RequireLabServiceTenantAsync(HttpContext, true, ct);
         await service.LoadAsync(id, tenant.Organization.Id, tenant.Department.Id, ct);
         var result = await idempotency.ExecuteAsync(tenant.Actor.Id, $"transportation-kits:{id}:received", idempotency.RequireKey(HttpContext), body,
             token => service.ReceiveAsync(id, tenant, body, token), cancellationToken: ct);
@@ -45,7 +45,7 @@ public sealed class TransportationKitRequestsController(OrderRequestContext cont
     [HttpPost("api/transportation-kit-requests/{id:guid}/cancel")]
     public async Task<TransportationKitRequestDto> Cancel(Guid id, [FromBody] CancelTransportationKitRequest body, CancellationToken ct)
     {
-        var tenant = await context.RequireTenantAsync(HttpContext, OrganizationKind.Customer, true, ct);
+        var tenant = await context.RequireLabServiceTenantAsync(HttpContext, true, ct);
         await service.LoadAsync(id, tenant.Organization.Id, tenant.Department.Id, ct);
         var result = await idempotency.ExecuteAsync(tenant.Actor.Id, $"transportation-kits:{id}:cancel", idempotency.RequireKey(HttpContext), body,
             token => service.CancelAsync(id, tenant.Organization.Id, tenant.Department.Id, tenant.Actor.Id, false, body, token), cancellationToken: ct);

@@ -10047,6 +10047,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("department_id");
 
+                    b.Property<Guid?>("LabJobPhaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_job_phase_id");
+
                     b.Property<Guid>("LabServiceOrderId")
                         .HasColumnType("uuid")
                         .HasColumnName("lab_service_order_id");
@@ -10054,6 +10058,10 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("uuid")
                         .HasColumnName("organization_id");
+
+                    b.Property<int?>("PhaseSampleCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("phase_sample_count");
 
                     b.Property<DateTime>("RequestedAt")
                         .HasColumnType("timestamp with time zone")
@@ -10090,14 +10098,17 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasIndex("DepartmentId");
 
-                    b.HasIndex("LabServiceOrderId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_transportation_kit_request_open_job")
-                        .HasFilter("closed_at IS NULL");
+                    b.HasIndex("LabJobPhaseId")
+                        .HasDatabaseName("ix_transportation_kit_request_phase");
 
                     b.HasIndex("RequestedByUserId");
 
                     b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("LabServiceOrderId", "LabJobPhaseId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_transportation_kit_request_open_phase")
+                        .HasFilter("closed_at IS NULL AND lab_job_phase_id IS NOT NULL");
 
                     b.HasIndex("OrganizationId", "DepartmentId", "RequestedAt");
 
@@ -17443,6 +17454,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("position");
 
+                    b.Property<DateTime?>("PreparationCompletedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("preparation_completed_at_utc");
+
                     b.Property<string>("PriceLinesJson")
                         .IsRequired()
                         .HasColumnType("jsonb")
@@ -18192,6 +18207,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("finished_by_user_id");
 
+                    b.Property<Guid?>("LabJobPhaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lab_job_phase_id");
+
                     b.Property<Guid>("LabServiceOrderId")
                         .HasColumnType("uuid")
                         .HasColumnName("lab_service_order_id");
@@ -18218,6 +18237,9 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnName("version");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("LabJobPhaseId")
+                        .HasDatabaseName("ix_lab_sample_tube_kit_selection_phase");
 
                     b.HasIndex("StockKitId")
                         .IsUnique();
@@ -18468,6 +18490,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("request_revision");
 
+                    b.Property<Guid?>("RequestedCatalogItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_catalog_item_id");
+
                     b.Property<int>("RequestedSpecimenCount")
                         .HasColumnType("integer")
                         .HasColumnName("requested_specimen_count");
@@ -18594,6 +18620,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("updated_by_user_id");
 
+                    b.Property<bool>("UsesPairedPreparation")
+                        .HasColumnType("boolean")
+                        .HasColumnName("uses_paired_preparation");
+
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
                         .HasColumnType("bigint")
@@ -18611,6 +18641,8 @@ namespace PSeq.Operations.Api.Migrations
                         .IsUnique();
 
                     b.HasIndex("PriceProposedByUserId");
+
+                    b.HasIndex("RequestedCatalogItemId");
 
                     b.HasIndex("SampleRosterFinalizedByUserId");
 
@@ -21207,6 +21239,12 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabJobPhase", null)
+                        .WithMany()
+                        .HasForeignKey("LabJobPhaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_transportation_kit_request_phase");
+
                     b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceOrder", null)
                         .WithMany()
                         .HasForeignKey("LabServiceOrderId")
@@ -22998,6 +23036,12 @@ namespace PSeq.Operations.Api.Migrations
 
             modelBuilder.Entity("PhaenoPortal.App.Features.OrderManagement.Domain.LabSampleTubeKitSelection", b =>
                 {
+                    b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabJobPhase", null)
+                        .WithMany()
+                        .HasForeignKey("LabJobPhaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_lab_sample_tube_kit_selection_phase");
+
                     b.HasOne("PhaenoPortal.App.Features.OrderManagement.Domain.LabServiceOrder", null)
                         .WithMany()
                         .HasForeignKey("LabServiceOrderId")
@@ -23065,6 +23109,11 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)
                         .WithMany()
                         .HasForeignKey("PriceProposedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.QboCatalogItem", null)
+                        .WithMany()
+                        .HasForeignKey("RequestedCatalogItemId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", null)

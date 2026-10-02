@@ -1,4 +1,3 @@
-import { ChevronDown } from 'lucide-react'
 import type { RefObject } from 'react'
 import { Button } from '#/components/ui/button'
 import { ActionMenu as DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
@@ -17,7 +16,7 @@ export function LabJobWorkspaceActions({ orderActions, shipmentActions = [], shi
   if (actions.length === 1) return <Button ref={triggerRef} variant={actions[0].variant === 'destructive' ? 'destructive' : undefined} disabled={actions[0].disabled} aria-busy={actions[0].busy || undefined} aria-describedby={actions[0].descriptionId} onClick={actions[0].onSelect}>{content(actions[0])}</Button>
   const items = (values: ShipmentHeaderAction[]) => values.map(action => <DropdownMenuItem key={action.label} variant={action.variant === 'destructive' ? 'destructive' : 'default'} disabled={action.disabled} aria-busy={action.busy || undefined} aria-describedby={action.descriptionId} onSelect={action.onSelect}>{content(action)}</DropdownMenuItem>)
   return <DropdownMenu>
-    <DropdownMenuTrigger asChild><Button ref={triggerRef}>Actions<ChevronDown aria-hidden="true" data-icon="inline-end" /></Button></DropdownMenuTrigger>
+    <DropdownMenuTrigger asChild><Button ref={triggerRef}>Actions</Button></DropdownMenuTrigger>
     <DropdownMenuContent align="end" className="w-72 max-w-[calc(100vw-2rem)]" onCloseAutoFocus={event => { if (dialogOpen) event.preventDefault() }}>
       {shipmentActions.length ? <><DropdownMenuLabel className="whitespace-normal wrap-anywhere">{shipmentLabel ? `Selected shipment · ${shipmentLabel}` : 'Shipping'}</DropdownMenuLabel>{items(shipmentActions)}</> : null}
       {orderActions.length ? <>{shipmentActions.length ? <DropdownMenuSeparator /> : null}<DropdownMenuLabel>This order</DropdownMenuLabel>{items(orderActions)}</> : null}

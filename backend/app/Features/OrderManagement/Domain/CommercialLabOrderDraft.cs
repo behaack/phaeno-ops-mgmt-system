@@ -10,7 +10,7 @@ public sealed record CommercialDraftPhase(string Name, IReadOnlyList<PhaseSource
     decimal? ProposedAdditionalRunPrice = null);
 public sealed record CommercialLabOrderDraft(string JobName, Guid? SampleTypeDefinitionId,
     string? StorageRequirements, string? SafetyDeclaration, string? Notes, bool UsesPhases,
-    IReadOnlyList<CommercialDraftPhase> Phases);
+    IReadOnlyList<CommercialDraftPhase> Phases, Guid? CatalogItemId = null);
 
 public static class CommercialDraftRules
 {

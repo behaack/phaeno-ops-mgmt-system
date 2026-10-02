@@ -3,7 +3,7 @@ import { parseLabJobWorkspaceSearch } from './lab-job-workspace-search'
 
 describe('Lab Job workspace search state', () => {
   it('restores a selected shipment, scan view, sample page and explicit kit-order intent', () => {
-    expect(parseLabJobWorkspaceSearch({ shipmentId: 'shipment-2', shippingView: 'tubes', samplePage: '3', orderKits: 'true' })).toEqual({ shipmentId: 'shipment-2', shippingView: 'tubes', samplePage: 3, orderKits: true })
+    expect(parseLabJobWorkspaceSearch({ shipmentId: 'shipment-2', shippingView: 'tubes', samplePage: '3', orderKits: 'true' })).toEqual({ shipmentId: 'shipment-2', shippingView: 'tubes', samplePage: 3, orderKits: true, phaseId: undefined, detailTab: undefined, detailPhaseId: undefined, resultPhaseId: undefined })
   })
 
   it('keeps an unknown shipment ID for the workspace to reject explicitly instead of silently selecting another', () => {
@@ -15,8 +15,13 @@ describe('Lab Job workspace search state', () => {
   })
 
   it('keeps only supported task state and explicitly true kit intent', () => {
-    expect(parseLabJobWorkspaceSearch({ shipmentId: ['shipment-1'], shippingView: 'unexpected', samplePage: 2, orderKits: 'false', unrelated: 'value' })).toEqual({ shipmentId: undefined, shippingView: undefined, samplePage: 2, orderKits: undefined })
+    expect(parseLabJobWorkspaceSearch({ shipmentId: ['shipment-1'], shippingView: 'unexpected', samplePage: 2, orderKits: 'false', unrelated: 'value' })).toEqual({ shipmentId: undefined, shippingView: undefined, samplePage: 2, orderKits: undefined, phaseId: undefined, detailTab: undefined, detailPhaseId: undefined, resultPhaseId: undefined })
     expect(parseLabJobWorkspaceSearch({ shipmentId: ' ', shippingView: 'samples', orderKits: 1 }).shipmentId).toBeUndefined()
     expect(parseLabJobWorkspaceSearch({ shipmentId: 'x'.repeat(101) }).shipmentId).toBeUndefined()
+  })
+  it('restores supporting tabs and phase filters without changing the shipping phase', () => {
+    const id = '10000000-0000-4000-8000-000000000001'
+    expect(parseLabJobWorkspaceSearch({ detailTab: 'results', detailPhaseId: id, resultPhaseId: id, phaseId: id })).toMatchObject({ detailTab: 'results', detailPhaseId: id, resultPhaseId: id, phaseId: id })
+    expect(parseLabJobWorkspaceSearch({ detailTab: ['phases'], detailPhaseId: 'other-job', resultPhaseId: { id } })).toMatchObject({ detailTab: undefined, detailPhaseId: undefined, resultPhaseId: undefined })
   })
 })

@@ -138,6 +138,8 @@ public static class SampleShippingPackingData
             ?? throw new OrderManagementException("supplier_tube_not_dispatched", "This tube is not in an available registered kit dispatched for this job.", 409);
         await LockAsync(db, $"stock-kit:{stock.Id}", ct);
         await db.Entry(stock).ReloadAsync(ct);
+        if (!await TransportationKitInventory.ForShipment(db, db.SampleShippingStockKits.Where(k => k.Id == stock.Id), shipment).AnyAsync(ct))
+            throw new OrderManagementException("stock_kit_phase_mismatch", "This physical kit is allocated to another phase or Job. Use the kit recorded for this shipment's phase.", 409);
         try { stock.EnsurePhysicallyUsable(DateTime.UtcNow); }
         catch (InvalidOperationException error)
         { throw new OrderManagementException("physical_kit_unavailable", error.Message, 409); }

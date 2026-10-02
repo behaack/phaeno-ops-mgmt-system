@@ -106,6 +106,24 @@ requires explicit printed-and-packed confirmation before dispatch recording.
 
 ## Authorized release verification
 
+October 1 simplification supersedes the two-button September 29 presentation
+for embedded Lab Job Send. Keep Send and record shipments as the phase step.
+Its single direct command advances from Review and confirm shipment contents
+to Print shipping insert to Record shipment. Instructions remain available as
+Actions → View shipping instructions after contents confirmation; reprints and
+downloads remain secondary actions. Record is unavailable from either Job entry
+point until the current insert's printed-and-packed acknowledgement. Preserve
+its tab-local, exact-revision meaning; it is not backend physical evidence.
+No new steps, fields or persisted model are introduced.
+
+The owner's follow-up places frozen packing instructions in **Confirm printed
+and packed**, expanded initially and collapsible in the existing dialog body.
+Bind the reader to the printed insert identity/revision; do not show a replacement
+revision's instructions. Keep the acknowledgement footer and revision guards.
+No nested modal or additional acknowledgement is needed. Current regressions are
+authored/updated, not run; the earlier release evidence below was not rerun for
+this October 1 refinement.
+
 - Frontend: all 1,110 tests across 177 files pass, including the actual packing
   dialog, print cancellation, focus restoration, exact-revision acknowledgment
   and retained shipment permissions. Full lint, TypeScript, production build,

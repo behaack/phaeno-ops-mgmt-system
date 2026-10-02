@@ -5,7 +5,6 @@ import axios from 'axios'
 import { useEffect, useRef, useState } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { createCustomerStandardDraft, saveCustomerStandardDraft, reviewCustomerStandardDraft } from '#/api/customer-standard-orders'
-import { getCustomerDeliveryLocations } from '#/api/customer-delivery-locations'
 import { listLabServiceOfferings, placeStandardLabOrder, type StandardLabOrderPreview } from '#/api/order-bundles'
 import { getLabOrder, getOrderErrorMessage, isOrderConcurrencyError, listLabOrderSampleTypes, type LabServiceOrder } from '#/api/order-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
@@ -34,13 +33,11 @@ export function CustomerStandardOrderDialog({ open, order, onOpenChange, onSaved
   const scopeKey = [selectedOrganizationId, selectedDepartmentId]
   const offerings = useQuery({ queryKey: ['lab-service-offerings', ...scopeKey], queryFn: () => listLabServiceOfferings(), enabled })
   const types = useQuery({ queryKey: ['lab-order-sample-types', ...scopeKey], queryFn: () => listLabOrderSampleTypes(false), enabled })
-  const locations = useQuery({ queryKey: ['customer-delivery-locations', ...scopeKey], queryFn: () => getCustomerDeliveryLocations({ organizationId: selectedOrganizationId!, departmentId: selectedDepartmentId! }), enabled: enabled && Boolean(selectedDepartmentId && selectedOrganizationId) })
   const form = useForm<CustomerDraftForm, unknown, CustomerDraftValues>({ resolver: zodResolver(customerDraftSchema), defaultValues: customerDraftValues(order?.customerDraft), mode: 'onBlur' })
   const sources = useFieldArray({ control: form.control, name: 'sources' })
   const [saved, setSaved] = useState<LabServiceOrder | null>(order ?? null)
   const [review, setReview] = useState<Review | null>(null)
   const [discard, setDiscard] = useState(false)
-  const [locationId, setLocationId] = useState('')
   const [po, setPo] = useState('')
   const [confirmed, setConfirmed] = useState(false)
   const [typeConfirmed, setTypeConfirmed] = useState(false)
@@ -92,7 +89,6 @@ export function CustomerStandardOrderDialog({ open, order, onOpenChange, onSaved
       if (result.preview) {
         setReview({ order: result.order, preview: result.preview, key: crypto.randomUUID() })
         setConfirmed(false); setTypeConfirmed(false); placementAttempt.current = null
-        setLocationId(locations.data?.find(l => l.isActive && l.isDefault)?.id ?? '')
         requestAnimationFrame(() => heading.current?.focus())
       } else { allowNavigation.current = true; await onSaved(result.order) }
     },
@@ -126,8 +122,7 @@ export function CustomerStandardOrderDialog({ open, order, onOpenChange, onSaved
     mutationFn: async () => {
       if (!review || !review.preview.canPlaceStandardOrder || !review.preview.commercialProfileVersion) throw new Error('Refresh the order review before placement.')
       if (!placementAttempt.current) {
-        const location = locations.data?.find(l => l.id === locationId && l.isActive)
-        if (!location || !confirmed || !typeConfirmed || requiresPo && !po.trim()) throw new Error('Confirm the scope, Sample type and delivery address, and enter any required purchase order number.')
+        if (!confirmed || !typeConfirmed || requiresPo && !po.trim()) throw new Error('Confirm the scope and Sample type, and enter any required purchase order number.')
         const p = review.preview
         placementAttempt.current = { id: review.order.id, key: review.key, input: {
           version: p.orderVersion, offeringId: p.offering.id, offeringVersion: p.offering.offeringVersion,
@@ -135,7 +130,6 @@ export function CustomerStandardOrderDialog({ open, order, onOpenChange, onSaved
           commercialProfileVersion: p.commercialProfileVersion!, departmentVersion: p.departmentVersion,
           organizationVersion: p.organizationVersion, reviewToken: p.reviewToken, prohibitedDataConfirmed: true,
           purchaseOrderNumber: po.trim() || undefined, confirmedSampleTypeId: review.order.sampleTypeDefinitionId!,
-          kitDeliveryLocationId: location.id, kitDeliveryLocationVersion: location.version,
         } }
       }
       const attempt = placementAttempt.current
@@ -214,15 +208,14 @@ export function CustomerStandardOrderDialog({ open, order, onOpenChange, onSaved
           <dl className="grid gap-2 text-sm"><div className="flex justify-between"><dt>Tax</dt><dd>{review.preview.tax == null ? 'Pending Finance setup' : money(review.preview.tax, review.preview.currency)}</dd></div><div className="flex justify-between font-semibold"><dt>Total</dt><dd>{review.preview.total == null ? 'Not available' : money(review.preview.total, review.preview.currency)}</dd></div></dl>
           <p className="text-xs text-muted-foreground">Delivery target: {review.preview.offering.maximumTurnaroundDays} business days after complete physical receipt of the required sample tubes. Additional runs and phased orders go through Sales.</p>
           {review.preview.blockers.length ? <Alert><AlertTitle>Placement is unavailable</AlertTitle><AlertDescription><ul className="list-disc pl-4">{review.preview.blockers.map(b => <li key={b}>{b}</li>)}</ul></AlertDescription></Alert> : null}
+          <p className="text-sm text-muted-foreground">Request transportation kits when you are ready. Confirm the delivery address at that time.</p>
           <fieldset disabled={busy || placementUncertain} className="space-y-4">
-            <Field><Label htmlFor="customer-order-location"><RequiredFieldName>Kit delivery address</RequiredFieldName></Label><NativeSelect id="customer-order-location" value={locationId} onChange={e => setLocationId(e.target.value)}><option value="">Select Department address</option>{locations.data?.filter(l => l.isActive).map(l => <option key={l.id} value={l.id}>{l.label} · {l.line1}, {l.city}, {l.region} {l.postalCode}</option>)}</NativeSelect>{locations.error ? <FieldError>Addresses could not be loaded. <Button variant="outline" type="button" onClick={() => void locations.refetch()}>Retry</Button></FieldError> : null}</Field>
-            {locations.data?.find(l => l.id === locationId) ? <p className="text-xs text-muted-foreground">{locations.data.find(l => l.id === locationId)!.recipient}, {locations.data.find(l => l.id === locationId)!.line1}, {locations.data.find(l => l.id === locationId)!.city}, {locations.data.find(l => l.id === locationId)!.region} {locations.data.find(l => l.id === locationId)!.postalCode}</p> : null}
             <Field><Label htmlFor="customer-order-po">{requiresPo ? <RequiredFieldName>Purchase order number</RequiredFieldName> : 'Purchase order number (optional)'}</Label><Input id="customer-order-po" maxLength={255} value={po} onChange={e => setPo(e.target.value)} /></Field>
             <label htmlFor="customer-order-confirm-type" className="flex cursor-pointer items-start gap-2"><Checkbox id="customer-order-confirm-type" checked={typeConfirmed} onCheckedChange={v => setTypeConfirmed(v === true)} /><span className="text-sm"><RequiredFieldName>I will send the selected Sample type.</RequiredFieldName></span></label>
             <label htmlFor="customer-order-confirm-scope" className="flex cursor-pointer items-start gap-2"><Checkbox id="customer-order-confirm-scope" checked={confirmed} onCheckedChange={v => setConfirmed(v === true)} /><span className="text-sm"><RequiredFieldName>I accept this scope and total and confirm that no patient identifiers, PHI or unnecessary personal data are included.</RequiredFieldName></span></label>
           </fieldset>
         </div>
-        <RequiredDialogFooter><Button variant="outline" disabled={busy || placementUncertain} onClick={back}>{reviewNeeded ? 'Refresh review' : 'Back to scope'}</Button><Button disabled={!enabled || busy || reviewNeeded || !review.preview.canPlaceStandardOrder || !confirmed || !typeConfirmed || !locationId || requiresPo && !po.trim()} onClick={() => place.mutate()}>{place.isPending ? 'Placing…' : placementUncertain ? 'Retry placement' : 'Place order'}</Button></RequiredDialogFooter>
+        <RequiredDialogFooter><Button variant="outline" disabled={busy || placementUncertain} onClick={back}>{reviewNeeded ? 'Refresh review' : 'Back to scope'}</Button><Button disabled={!enabled || busy || reviewNeeded || !review.preview.canPlaceStandardOrder || !confirmed || !typeConfirmed || requiresPo && !po.trim()} onClick={() => place.mutate()}>{place.isPending ? 'Placing…' : placementUncertain ? 'Retry placement' : 'Place order'}</Button></RequiredDialogFooter>
       </> : <>
         <form id="customer-order-scope" noValidate onSubmit={e => { e.preventDefault(); submit('review') }}>
           {conflict?.changes.length ? <section aria-label="Latest saved Draft changes" className="mb-4 rounded-lg border p-3 text-sm">

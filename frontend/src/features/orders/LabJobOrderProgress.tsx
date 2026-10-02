@@ -33,6 +33,7 @@ export function LabJobOrderProgress({ onStepSelect, sendActionTargetRef, sampleR
   useQuoteStatus(currentLabQuote(input.order.quotes))
   const progress = buildLabJobProgress({ ...input, now: Date.now() })
   const { nextStep, allSent, exception, shipmentCount } = progress
+  const confirmed = Boolean(input.order.placedAt)
   const currentStepId = nextStep?.id
   const currentStepIndex = progress.steps.findIndex(step => step.id === currentStepId)
   const reviewLabel = nextStep?.actionLabel ?? (currentStepId === 'confirm-order' ? nextStep?.state === 'waiting-for-phaeno' ? 'View request' : 'Review pricing' : currentStepId === 'samples' ? 'Review samples' : currentStepId === 'receive-kits' ? 'View kit order' : currentStepId === 'prepare' ? 'Prepare samples' : 'Show shipping work')
@@ -44,28 +45,28 @@ export function LabJobOrderProgress({ onStepSelect, sendActionTargetRef, sampleR
     const right = left + current.offsetWidth
     if (left < strip.scrollLeft) strip.scrollLeft = left
     else if (right > strip.scrollLeft + strip.clientWidth) strip.scrollLeft = right - strip.clientWidth
-  }, [currentStepId])
+  }, [currentStepId, confirmed])
 
   return <section aria-labelledby={headingId} className="space-y-4">
     <div className="space-y-1">
-      <h2 id={headingId} className="text-lg font-semibold">Ordering and shipping</h2>
-      <p className="text-sm text-muted-foreground">Complete these steps to prepare and send your samples.</p>
+      <h2 id={headingId} className="text-lg font-semibold">{confirmed ? 'Ordering and shipping' : 'Review and Accept Order'}</h2>
+      <p className="text-sm text-muted-foreground">{confirmed ? 'Complete these steps to prepare and send your samples.' : 'Review the order scope and pricing below.'}</p>
     </div>
-    <ol ref={stepsRef} aria-label="Ordering and shipping steps" className={cn('relative grid gap-2 overflow-x-auto px-1 py-1', !input.order.placedAt || input.order.usesPairedPreparation ? 'grid-cols-[repeat(4,minmax(7rem,1fr))]' : 'grid-cols-[repeat(6,minmax(6.5rem,1fr))]')}>
+    {confirmed ? <ol ref={stepsRef} aria-label="Ordering and shipping steps" className={cn('relative grid gap-2 overflow-x-auto px-1 py-1', input.order.usesPairedPreparation ? 'grid-cols-[repeat(4,minmax(7rem,1fr))]' : 'grid-cols-[repeat(6,minmax(6.5rem,1fr))]')}>
       {progress.steps.map((step, index) => {
         const current = currentStepId === step.id
         return <li key={step.id} aria-current={current ? 'step' : undefined} className="min-w-0">
           <StepInformation step={step} current={current} future={currentStepIndex >= 0 && index > currentStepIndex} index={index} open={informationStepId === step.id} onOpenChange={open => setInformationStepId(previous => open ? step.id : previous === step.id ? null : previous)} />
         </li>
       })}
-    </ol>
-    <div className="rounded-lg border bg-muted/40 px-4 py-3" aria-live="polite" aria-atomic="true">
+    </ol> : null}
+    {confirmed || exception ? <div className="rounded-lg border bg-muted/40 px-4 py-3" aria-live="polite" aria-atomic="true">
       {exception ? <div className="flex gap-3">
         <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
         <div className="min-w-0 space-y-1"><p className="font-medium">{exception.label}</p><p className="text-sm">{exception.detail}</p><p className="text-xs text-muted-foreground">With: {exception.owner}</p></div>
       </div> : allSent ? <div className="flex items-start gap-3">
         <CircleCheck className="mt-0.5 size-4 shrink-0 text-[var(--status-ready)]" aria-hidden="true" />
-        <div className="space-y-1"><p className="font-medium">{shipmentCount === 1 ? 'Your shipment is recorded — track progress below' : 'All shipments recorded — track progress below'}</p><p className="text-sm text-muted-foreground">Receipt, laboratory work and any later requests appear in After you send.</p></div>
+        <div className="space-y-1"><p className="font-medium">{shipmentCount === 1 ? 'Your shipment is recorded — track progress below' : 'All shipments recorded — track progress below'}</p><p className="text-sm text-muted-foreground">Receipt and laboratory work appear in Progress. Released files are in Files and results.</p></div>
       </div> : nextStep ? <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-1">
           <p className="text-xs font-medium text-muted-foreground">Your next step</p>
@@ -75,7 +76,7 @@ export function LabJobOrderProgress({ onStepSelect, sendActionTargetRef, sampleR
         </div>
         {nextStep.id === 'samples' && nextStep.actionLabel && input.order.canEditSamples && sampleReviewTargetRef ? <div ref={sampleReviewTargetRef} className="max-w-full self-start" /> : nextStep.id === 'send' && sendActionTargetRef ? <div ref={sendActionTargetRef} className="max-w-full self-start" /> : onStepSelect ? <Button type="button" variant="outline" size="sm" onClick={() => onStepSelect(nextStep.id)} aria-label={`${reviewLabel}: ${nextStep.label}`}>{reviewLabel}<ArrowRight aria-hidden="true" /></Button> : null}
       </div> : <p className="text-sm">Review the recorded preparation below.</p>}
-    </div>
+    </div> : null}
   </section>
 }
 

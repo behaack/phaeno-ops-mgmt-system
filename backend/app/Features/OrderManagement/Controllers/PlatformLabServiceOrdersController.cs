@@ -215,6 +215,7 @@ public sealed partial class PlatformLabServiceOrdersController(
             async operationCancellationToken =>
             {
                 Execute(() => CommercialDraftRules.Validate(request.Draft, false));
+                await LabQuoteCatalog.RequireDraftSelectionAsync(dbContext, request.Draft.CatalogItemId, false, operationCancellationToken);
 
                 CrmHandoff? sourceHandoff = null;
                 if (request.SourceRequestId.HasValue)
@@ -485,6 +486,8 @@ public sealed partial class PlatformLabServiceOrdersController(
         else LabPhasePricing.ValidateSingle(labServiceLines, changeScope?.AdditionalSources.Sum(s => s.SpecimenCount) ?? order.RequestedSpecimenCount,
             changeScope?.AdditionalSequencingRunCount ?? order.RequestedSequencingRunCount);
         var labServiceLine = labServiceLines.First(l => l.PricingComponent == LabPhasePricing.StandardSample);
+        if (order.RequestedCatalogItemId.HasValue && labServiceLines.Any(line => line.CatalogItemId != order.RequestedCatalogItemId))
+            throw Conflict("quote_requested_service_mismatch", "Price the catalog service selected for this order. Correct the requested scope before changing services.");
         if (changeScope != null)
         {
             var original = order.Quotes.SingleOrDefault(item => item.Id == order.AcceptedQuoteId)
@@ -513,7 +516,7 @@ public sealed partial class PlatformLabServiceOrdersController(
             throw Invalid("quote_expiration_invalid", "Choose a quote expiration date in the future.");
         var snapshots = request.Lines.Select(line => new QuoteLineSnapshot(line.CatalogItemId, catalog[line.CatalogItemId].ExternalItemId,
             line.PricingComponent != null
-                ? $"{(scopedPhases ? order.Phases.Single(p => p.Id == line.PhaseId).Name : catalog[line.CatalogItemId].Name)} · {(line.PricingComponent == LabPhasePricing.StandardSample ? "Standard sample service (library preparation, one run and data assembly)" : "Additional sequencing run (existing library)")}"
+                ? line.PricingComponent == LabPhasePricing.StandardSample ? catalog[line.CatalogItemId].Name : "Additional sequencing runs"
                 : line.Description.Trim(), line.Quantity, line.UnitPrice, line.PhaseId, line.TurnaroundBusinessDays,
             scopedPhases ? LabPhasePricing.ProposedPrice(order.Phases.Single(p => p.Id == line.PhaseId), line.PricingComponent) : null,
             request.PricingDecisionReason, line.PricingComponent)).ToList();
@@ -1026,12 +1029,14 @@ public sealed partial class PlatformLabServiceOrdersController(
         }
         var timing = await new LabServiceTimingService(dbContext).ReadAsync(order.Id, order.OrganizationId, true,
             await new LabServiceTimingService(dbContext).CanOverrideAsync(HttpContext, orderToCashOptions.Value.DualControlEnforced, cancellationToken), cancellationToken);
+        var requestedCatalogId = order.ReadCommercialDraft()?.CatalogItemId ?? order.RequestedCatalogItemId;
+        var catalogNames = await LabQuoteCatalog.ReadNamesAsync(dbContext, order.Quotes.Select(quote => quote.LinesJson), requestedCatalogId, cancellationToken);
         return new LabServiceOrderDto(order.Id, order.OrganizationId, order.OrderNumber, order.CustomerReference, order.Description,
             order.HasMixedBiologicalSources, order.SharedBiologicalSource,
             order.StorageRequirements, order.SafetyDeclaration, order.SubmissionInstructionsSnapshot,
             order.Status.ToString(), order.RequestRevision, order.SubmittedAt, order.PlacedAt, order.CompletedAt, order.TenantSafeReason,
             order.InternalNote, order.CreatedAt, order.UpdatedAt, order.Version, false, false, false, false, false,
-            order.Samples.OrderBy(item => item.CreatedAt).Select(item => item.ToDto(true)).ToList(), order.Quotes.OrderByDescending(item => item.Revision).Select(item => item.ToDto(extensionRequests.GetValueOrDefault(item.Id))).ToList(),
+            order.Samples.OrderBy(item => item.CreatedAt).Select(item => item.ToDto(true)).ToList(), order.Quotes.OrderByDescending(item => item.Revision).Select(item => item.ToDto(extensionRequests.GetValueOrDefault(item.Id), catalogNames)).ToList(),
             releases.Select(item => item.ToDto(retentionByReleaseId.GetValueOrDefault(item.Id))).ToList(), files.Select(item => item.ToDto()).ToList(), docs.Select(item => item.ToDto(true)).ToList(), cancellations.Select(item => item.ToDto()).ToList(), timeline.Select(item => item.ToDto(true)).ToList(),
             order.AssignedToUserId, order.DueAt,
             RequestRevisions: order.Revisions.OrderByDescending(item => item.Revision).Select(item => new LabRequestRevisionDto(item.Id,
@@ -1065,9 +1070,12 @@ public sealed partial class PlatformLabServiceOrdersController(
             StandardCommercialSnapshot: LabServiceTimingService.CommercialSnapshot(order.ReadConfiguredSnapshot()),
             Timing: timing,
             CanManageQuotes: await CanManageQuotesAsync(cancellationToken),
+            QuoteChangeProposal: LabQuoteChangeProposals.Pending(order, timeline),
             CanProposeChange: orderToCashOptions.Value.NativePSeqAccountsReceivable && order.CanProposeChange,
             SampleTypeDefinitionId: order.SampleTypeDefinitionId,
             CommercialDraft: order.ReadCommercialDraft(),
+            RequestedCatalogItemId: requestedCatalogId,
+            RequestedServiceName: requestedCatalogId.HasValue ? catalogNames.GetValueOrDefault(requestedCatalogId.Value) : null,
             SampleTypeName: order.SampleTypeDefinitionId.HasValue
                 ? await dbContext.SampleTypeDefinitions.AsNoTracking().Where(value => value.Id == order.SampleTypeDefinitionId.Value)
                     .Select(value => value.Name).SingleOrDefaultAsync(cancellationToken) : null);
@@ -1166,6 +1174,7 @@ public sealed partial class PlatformLabServiceOrdersController(
         => JsonSerializer.Serialize(new
         {
             order.CustomerReference,
+            order.RequestedCatalogItemId,
             jobNotes = order.Description,
             order.HasMixedBiologicalSources,
             order.SharedBiologicalSource,

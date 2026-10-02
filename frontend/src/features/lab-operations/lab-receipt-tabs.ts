@@ -9,5 +9,6 @@ export function parseLabReceiptTab(value: unknown): LabReceiptTab | undefined {
 export function resolveLabReceiptTab(tab: LabReceiptTab | undefined): LabReceiptTab {
   if (tab === 'kit-requests' || tab === 'return-kits') return 'kit-requests'
   if (tab === 'accession') return 'accession'
-  return 'receiving'
+  if (tab === 'receiving') return 'receiving'
+  return 'kit-requests'
 }

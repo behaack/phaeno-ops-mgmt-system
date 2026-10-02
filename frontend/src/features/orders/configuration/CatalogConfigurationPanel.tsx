@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { LabServiceOfferingsPanel } from './LabServiceOfferingsPanel';
 import { CatalogItemActions } from './CatalogItemActions';
+import { CatalogItemRowActions } from './CatalogItemRowActions';
 import { parseCatalogListSearch } from './catalog-list-navigation';
 import { useOrderDraftGuard } from '../use-order-draft-guard';
 import { useForm } from "react-hook-form";
@@ -258,7 +259,8 @@ export function CatalogConfigurationPanel({
                     <th className="px-3 py-3 text-right font-medium">
                       Base price
                     </th>
-                    <th className="py-3 pl-3 text-right font-medium">Status</th>
+                    <th className="px-3 py-3 text-right font-medium">Status</th>
+                    <th className="py-3 pl-3 text-right font-medium"><span className="sr-only">Actions</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -278,12 +280,15 @@ export function CatalogConfigurationPanel({
                       <td className="px-3 py-3 text-right">
                         {formatMoney(item.basePrice, item.currency)}
                       </td>
-                      <td className="py-3 pl-3 text-right">
+                      <td className="px-3 py-3 text-right">
                         <Badge
                           variant={item.isActive ? "secondary" : "outline"}
                         >
                           {item.isActive ? "Active" : "Inactive"}
                         </Badge>
+                      </td>
+                      <td className="py-3 pl-3">
+                        <CatalogItemRowActions item={item} apiEnabled={apiEnabled} onEdit={trigger => { open(item); actionRef.current = trigger }} />
                       </td>
                     </tr>
                   ))}

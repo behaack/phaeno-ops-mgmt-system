@@ -21,6 +21,19 @@ export type TransportationKitRequest = {
   requestedAt: string; version: number; includedInLabOrder: true
   lines: TransportationKitRequestLine[]; kits: TransportationKitDispatch[]
   canConfirmReceipt: boolean; canCancel: boolean; cancellationReason: string | null
+  phaseId?: string | null; phaseName?: string | null
+}
+export type LabPhaseKitSupply = {
+  phaseId: string; phaseName: string; sampleCount: number; deliveryLocationId: string | null
+  recommendation: ContainerRecommendation; receivedStock: AvailableTransportationStockKit[]
+  canRequest: boolean; blockedReason: string | null
+}
+export type LabOrderKitWorkspace = { requests: TransportationKitRequest[]; phases: LabPhaseKitSupply[]; locations: CustomerDeliveryLocation[] }
+export async function getLabPhaseKitSupply(orderId: string, deliveryLocationId?: string) {
+  return read((await api.get<Envelope<LabOrderKitWorkspace>>(`/lab-service-orders/${orderId}/phase-kit-supply`, { params: { deliveryLocationId } })).data)
+}
+export async function requestLabPhaseKits(orderId: string, input: { orderVersion: number; phaseIds: string[]; deliveryLocationId: string; deliveryLocationVersion: number }, key: string) {
+  return read((await api.post<Envelope<LabOrderKitWorkspace>>(`/lab-service-orders/${orderId}/phase-kit-requests`, input, { headers: { 'Idempotency-Key': key } })).data)
 }
 export type ShipmentKitSupply = {
   shipmentId: string; shipmentVersion: number; jobId: string; jobNumber: string; tubeCount: number

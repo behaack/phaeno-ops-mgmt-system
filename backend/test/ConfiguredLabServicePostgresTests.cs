@@ -210,9 +210,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
     private static PlaceStandardLabOrderRequest StandardRequest(HandoffTestScope scope, StandardLabOrderPreviewDto value) => new(value.OrderVersion,
         value.Offering.Id, value.Offering.OfferingVersion, value.Offering.Version, value.Offering.CatalogItemVersion,
         value.CommercialProfileVersion!.Value, value.DepartmentVersion, value.OrganizationVersion, value.ReviewToken, true,
-        ConfirmedSampleTypeId: scope.ActiveSampleTypeId,
-        KitDeliveryLocationId: scope.DeliveryLocationId,
-        KitDeliveryLocationVersion: 1);
+        ConfirmedSampleTypeId: scope.ActiveSampleTypeId);
 
     private sealed partial class HandoffTestScope
     {

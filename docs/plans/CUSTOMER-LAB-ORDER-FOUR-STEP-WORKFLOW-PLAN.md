@@ -1,8 +1,18 @@
 # Customer Lab order: four-step kit and sample workflow
 
+## October 1 update: on-demand phase kit requests
+
+[On-demand phase kit requests](ON-DEMAND-PHASE-KIT-REQUESTS-PLAN.md) supersedes the earlier automatic-at-acceptance fulfillment decision and whole-Job preparation requirement below. Acceptance places no kit order. Administrators request kits and confirm an address when ready, for the current phase, with distinct kits and sample-based capacity per phase. Customer shipping follows phase order and advances after every required result from that phase is Portal-accessible; approved cancelled phases are skipped. The Next step card names the action and provides its button. Preparation/finalization and shipping repeat per phase; laboratory execution and full-sample-receipt TAT rules remain sequential. Existing fulfillment and custody history is preserved. Earlier statements below describe the prior implementation/decision history.
+
+
 Status: implemented locally for new initial manual-quote and configured-standard orders; connected and physical acceptance pending. September 29, 2026.
 
 ## Product discovery and outcome
+
+The pre-acceptance presentation now reads **Review and Accept Order**, followed
+by scope, pricing and quote actions. The confirmation step strip and next-step
+card are omitted until acceptance; accepted Jobs use the current phase's four
+shipping steps. This supersedes the earlier combined pricing/shipping strip.
 
 Customer organization or Department administrators accept PSeq pricing and
 prepare physical samples. Phaeno fulfills Transportation kits and receives the
@@ -21,6 +31,44 @@ POMS still retains separate physical custody, immutable commercial, Lab
 authorization, packet, and dispatch evidence behind these four stages.
 
 ## Settled product rules
+
+### Placed kit order modal — October 1, 2026
+
+The owner requested a modal for the related kit order after Job acceptance.
+For placed orders using paired preparation, **View kit order** and **Record
+receipt** now open one shared **Transportation kit order** dialog instead of
+scrolling to a permanently expanded delivery card. **Actions → View kit order**
+keeps the saved order available after preparation or roster finalization.
+The Job remains the primary detail workspace; this is a bounded view of its
+related fulfillment request, not a replacement for the Job or POMS request detail.
+
+The body shows the saved delivery address, ordered/sent/received quantities,
+fulfillment state and physical kit tracking. Receipt opens within the same
+dialog, with no stacked modal. Cancel returns to the overview; Escape does the
+same during receipt and closes the overview otherwise. Initial receipt focus
+is Cancel; barcode validation still focuses the field, and a matching scanner
+Enter advances to confirmation. Closing the overview restores its invoking
+control. Existing barcode, version, idempotency and preparation gates remain
+authoritative. The change only reads existing kit orders until the user
+explicitly confirms physical receipt; it creates no request or duplicate order.
+
+Focused component regressions were updated/authored for the modal view, return
+to overview, focus restoration and review-only receipt permissions. Execution
+is deferred under the request-only test rule. Static and manual verification
+are recorded below after the implementation checkpoint.
+
+Checkpoint: TypeScript and scoped ESLint passed. An isolated browser preview
+of the actual modal and shared Actions components verified pending quantities
+and address, dispatched tracking, one active dialog, visible header/body/footer,
+initial Cancel focus for receipt, blank/wrong barcode rejection, matching scanner
+Enter advancing focus without a write, Escape returning to the overview,
+keyboard focus containment, dismissal/focus return and one Actions indicator.
+At 320 CSS pixels in dark mode, the body scrolls with no horizontal overflow;
+desktop light mode was visually reviewed. Synthetic data was used. The current
+signed-in browser is in POMS and cannot access the Customer detail route;
+connected Customer/Partner and physical receipt acceptance remain pending.
+No kit order or receipt was written. Temporary preview files, server and
+viewport override were removed; the visual proof remains under output/images.
 
 1. POMS may propose a Sample type during pricing. At acceptance, the Customer
    actively confirms the type and the Department-scoped kit delivery location.

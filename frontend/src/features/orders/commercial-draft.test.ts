@@ -10,7 +10,7 @@ describe('commercial Draft scope', () => {
     const draft = incompleteDraft()
     expect(commercialDraftSchema.safeParse(draft).success).toBe(true)
     expect(submissionIssues(draft).map(issue => issue.path)).toEqual(expect.arrayContaining([
-      'sampleTypeDefinitionId', 'storageRequirements', 'safetyDeclaration', 'phases.0.sources.0.biologicalSource',
+      'catalogItemId', 'sampleTypeDefinitionId', 'storageRequirements', 'safetyDeclaration', 'phases.0.sources.0.biologicalSource',
     ]))
   })
 
@@ -23,7 +23,7 @@ describe('commercial Draft scope', () => {
   })
 
   it('retains Sample type storage mode and distinguishes an unfinished override', () => {
-    const draft: CommercialDraftForm = { ...incompleteDraft(), sampleTypeDefinitionId: 'type', storageRequirements: null, safetyDeclaration: 'No known hazards',
+    const draft: CommercialDraftForm = { ...incompleteDraft(), catalogItemId: '00000000-0000-4000-8000-000000000010', sampleTypeDefinitionId: 'type', storageRequirements: null, safetyDeclaration: 'No known hazards',
       phases: [{ ...newDraftPhase(1), sources: [{ biologicalSource: 'Human PBMC', specimenCount: 1 }] }] }
     expect(commercialDraftSchema.parse(draft).storageRequirements).toBeNull()
     expect(submissionIssues(draft)).toEqual([])
@@ -35,7 +35,7 @@ describe('commercial Draft scope', () => {
   })
 
   it('accepts the same source across phases and rejects duplicates within one phase', () => {
-    const draft = { ...incompleteDraft(), sampleTypeDefinitionId: 'type', storageRequirements: 'Frozen', safetyDeclaration: 'No known hazards', usesPhases: true,
+    const draft = { ...incompleteDraft(), catalogItemId: '00000000-0000-4000-8000-000000000010', sampleTypeDefinitionId: 'type', storageRequirements: 'Frozen', safetyDeclaration: 'No known hazards', usesPhases: true,
       phases: [1, 2].map(position => ({ ...newDraftPhase(position), sources: [{ biologicalSource: 'Human PBMC', specimenCount: 2 }] })) }
     expect(submissionIssues(draft)).toEqual([])
     draft.phases[0].sources.push({ biologicalSource: ' human pbmc ', specimenCount: 1 })

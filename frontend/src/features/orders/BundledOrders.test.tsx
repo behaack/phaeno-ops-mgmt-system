@@ -59,7 +59,7 @@ vi.mock('@tanstack/react-router', () => ({
       {children}
     </a>
   ),
-  useBlocker: vi.fn(),
+  useBlocker: vi.fn(() => ({ status: 'idle' })),
   useNavigate: () => mocks.navigate,
 }))
 vi.mock('#/features/auth/session-context', () => ({
@@ -178,7 +178,6 @@ describe('configured Lab Service commitment', () => {
           catalogItemVersion: 4,
           prohibitedDataConfirmed: true,
           purchaseOrderNumber: 'TRAINING-PO',
-          kitDeliveryLocationId: '10000000-0000-4000-8000-000000000011',
         }),
         expect.any(String),
       ),

@@ -8,6 +8,30 @@ using PhaenoPortal.App.Features.OrderManagement.Services;
 public partial class LabOperationsCommercialHandoffPostgresTests
 {
     [PostgreSqlReferenceFact]
+    public async Task DraftCatalogSelectionRequiresTheExactActiveLabServiceAndRetainsQuotedIdentityLabels()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        var db = scope.DbContext;
+        var selected = new QboCatalogItem("SELECTED-" + Guid.NewGuid(), "PSeq RNA Sequencing", "", "specimen", 950, "USD", true, DateTime.UtcNow, CatalogServiceFamily.PSeqLabService);
+        var unrelated = new QboCatalogItem("OTHER-" + Guid.NewGuid(), "Unrelated service", "", "specimen", 10, "USD", true, DateTime.UtcNow);
+        db.AddRange(selected, unrelated); await db.SaveChangesAsync();
+        await LabQuoteCatalog.RequireDraftSelectionAsync(db, null, false, default);
+        await Assert.ThrowsAsync<OrderManagementException>(() => LabQuoteCatalog.RequireDraftSelectionAsync(db, null, true, default));
+        await Assert.ThrowsAsync<OrderManagementException>(() => LabQuoteCatalog.RequireDraftSelectionAsync(db, Guid.NewGuid(), true, default));
+        await Assert.ThrowsAsync<OrderManagementException>(() => LabQuoteCatalog.RequireDraftSelectionAsync(db, unrelated.Id, true, default));
+        await LabQuoteCatalog.RequireDraftSelectionAsync(db, selected.Id, true, default);
+        var quoted = JsonSerializer.Serialize(new[] { new { catalogItemId = selected.Id, quantity = 5, unitPrice = 900 } });
+        selected.Sync(selected.ExternalItemId, selected.Name, "", "specimen", 1200, "USD", false, DateTime.UtcNow);
+        await db.SaveChangesAsync();
+        await Assert.ThrowsAsync<OrderManagementException>(() => LabQuoteCatalog.RequireDraftSelectionAsync(db, selected.Id, true, default));
+        var names = await LabQuoteCatalog.ReadNamesAsync(db, [quoted], null, default);
+        Assert.Equal("PSeq RNA Sequencing", names[selected.Id]);
+        using var frozen = JsonDocument.Parse(quoted);
+        Assert.Equal(900, frozen.RootElement[0].GetProperty("unitPrice").GetDecimal());
+        Assert.DoesNotContain(unrelated.Id, names.Keys);
+    }
+
+    [PostgreSqlReferenceFact]
     public async Task SpecificFamilyOfferingsClearAvailabilityAndQuoteIdentityDoesNotUseFirstItem()
     {
         await using var scope = await HandoffTestScope.CreateAsync();
