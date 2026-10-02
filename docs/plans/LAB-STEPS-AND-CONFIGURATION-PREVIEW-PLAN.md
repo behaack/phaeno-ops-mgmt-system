@@ -3,6 +3,39 @@
 Status: implemented locally; validation and live catalog acceptance tracked below. Owner authorized execution on September 17, 2026.
 Decision date: September 17, 2026.
 
+## Consolidated Lab step actions — October 2, 2026
+
+The owner confirmed that a Lab step has at most one Draft, matching the current
+API's rejection of a second Draft. The detail page uses one Actions menu beside
+the catalog name. It groups name/description, new-version and retirement commands
+with the one Draft's Edit draft, Approve version and Discard draft commands.
+Edit draft appears once; New version is absent while that Draft exists.
+Configuration previews are in the same menu with explicit version/status labels,
+including readable historical and retired definitions. Version cards contain
+their summaries, without their own action menus. Approval and discard confirmations
+name the exact version, and the existing permissions, independent approval,
+administrator override, optimistic concurrency and history preservation remain.
+The shared ActionMenu supplies the single dropdown indicator. This is a UI-only
+change, with no API/model changes, operational writes, Git publication or deployment.
+
+Verification: live local POMS shows one Actions control and one shared indicator,
+one Edit draft command, no New version during a Draft, and the saved v1 preview.
+Approval retains the administrator override requirement; approval/discard name
+the exact version, have a body between header/footer, start on Cancel, and return
+focus to Actions after dismissal. Narrow DOM inspection at 487 CSS pixels showed
+no horizontal overflow and the menu stayed inside the viewport. Desktop screenshot
+retained under `output/lab-step-actions-evidence`. Typecheck, scoped lint and help
+generation/check passed; automated tests were not added or run for this reversible
+presentation change. Historical/read-only/retired permissions were reviewed in
+code; those scenarios and dark rendering were not exercised in the live browser.
+
+The owner's subsequent [October 2 release request](PORTAL-WORKFLOW-RELEASE-20261002-PLAN.md)
+authorizes complete testing and controlled publication of this menu change with
+the other workflow corrections. Full frontend component and desktop/mobile
+synthetic browser suites pass. Historical permission and live dark-menu coverage
+remain at the explicit boundary above; the release does not approve a Lab step
+or record scientific work.
+
 ## Purpose and users
 
 Laboratory configuration authors need to define reusable procedures consistently and inspect the operator-facing data-capture experience before approving a configuration for production use. Reviewers need to understand what changed and which protocols are affected.

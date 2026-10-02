@@ -115,8 +115,12 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         container.Update(container.ProductNumber, container.Description, container.ProductTypeId, true);
         await scope.DbContext.SaveChangesAsync();
         await AssertReadiness(false);
-        var blocked = await Assert.ThrowsAsync<OrderManagementException>(() => scope.AcceptQuoteAsync(quoted));
-        Assert.Equal("transportation_kit_conflict", blocked.ErrorCode);
+        var accepted = await scope.AcceptQuoteAsync(quoted);
+        Assert.Equal("PlacedAwaitingSamples", accepted.Status);
+        Assert.False(await scope.DbContext.TransportationKitRequests.AnyAsync(request => request.LabServiceOrderId == quoted.OrderId));
+        var supply = await scope.CreateCustomerController(new InternalLabOperationsProvider(scope.DbContext), Guid.NewGuid().ToString("N"))
+            .ReadPhaseKitSupply(quoted.OrderId, scope.DeliveryLocationId, default);
+        Assert.All(supply.Phases, phase => Assert.False(phase.CanRequest));
     }
 
     [PostgreSqlReferenceFact]
@@ -1870,7 +1874,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 order.Id,
                 1,
                 QuotePurpose.Initial,
-                JsonSerializer.Serialize(new[] { new { catalogItemId = catalogItem.Id, externalItemId = catalogItem.ExternalItemId, description = "PSeq Lab Service", quantity = specimenCount, unitPrice = 100m, pricingComponent = LabPhasePricing.StandardSample } }),
+                JsonSerializer.Serialize(order.Phases.Select(phase => new { phaseId = phase.Id, turnaroundBusinessDays = 14, catalogItemId = catalogItem.Id, externalItemId = catalogItem.ExternalItemId, description = "PSeq Lab Service", quantity = phase.SampleCount, unitPrice = 100m, pricingComponent = LabPhasePricing.StandardSample })),
                 100 * specimenCount,
                 0,
                 "USD",
@@ -1911,6 +1915,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             string? customerReference = null,
             Guid? sourceRequestId = null)
         {
+            var catalogId = await DbContext.QboCatalogItems.Where(item => item.ExternalItemId == OrderServiceKeys.PSeqLabService && item.ServiceFamily == CatalogServiceFamily.PSeqLabService).Select(item => item.Id).SingleAsync();
             var operationKey = idempotencyKey ?? Guid.NewGuid().ToString("N");
             var controller = CreatePlatformController(
                 new InternalLabOperationsProvider(DbContext),
@@ -1920,7 +1925,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 new PhaenoPortal.App.Features.OrderManagement.Domain.CommercialLabOrderDraft(customerReference ?? $"Phaeno initiated {Guid.NewGuid():N}",
                     shippingConfiguration.ActiveSampleTypeId, "Ship frozen on dry ice.", "No known hazards.",
                     "Customer-safe Job notes.", false, [new PhaenoPortal.App.Features.OrderManagement.Domain.CommercialDraftPhase("Phase 1",
-                        [new("Human PBMC", 2), new("Mouse liver", 1)], 1, 14, null, null)]), sourceRequestId), CancellationToken.None);
+                        [new("Human PBMC", 2), new("Mouse liver", 1)], 1, 14, null, null)], CatalogItemId: catalogId), sourceRequestId), CancellationToken.None);
             if (draft.CommercialDraft is null) return draft;
             var submitted = await CreatePlatformController(new InternalLabOperationsProvider(DbContext), operationKey + "-submit")
                 .SubmitDraft(draft.Id, new VersionRequest(draft.Version), CancellationToken.None);
@@ -2051,8 +2056,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 Guid.NewGuid().ToString("N"));
             var order = await DbContext.LabServiceOrders.AsNoTracking()
                 .SingleAsync(item => item.Id == orderId);
-            // An accepted addition to an already authorized Job still uses the change roster.
-            if (order.SampleRosterFinalizedAt.HasValue)
+            // Paired additions need the same physical sample/tube/run crosswalk as initial preparation.
+            if (order.SampleRosterFinalizedAt.HasValue && !order.UsesPairedPreparation)
                 return await controller.AddSample(orderId,
                     new LabSampleRosterWriteRequest($"sample-{Guid.NewGuid():N}",
                         "synthetic_reference", 1, OrderVersion: orderVersion),
@@ -2062,7 +2067,11 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 .Where(item => item.LabServiceOrderId == orderId).Select(item => item.LabJobPhaseId).ToArrayAsync();
             var phases = await DbContext.Set<LabJobPhase>().AsNoTracking().Where(item => item.LabServiceOrderId == orderId
                 && item.SupersededAtUtc == null && item.CancelledAtUtc == null).OrderBy(item => item.Position).ToArrayAsync();
-            var selectedPhase = phases.First(phase => pairedPhaseIds.Count(id => id == phase.Id) < phase.SampleCount);
+            var selectedPhase = phases.FirstOrDefault(phase => pairedPhaseIds.Count(id => id == phase.Id) < phase.SampleCount);
+            if (selectedPhase is null)
+                return await controller.AddSample(orderId,
+                    new LabSampleRosterWriteRequest($"sample-{Guid.NewGuid():N}",
+                        "synthetic_reference", 1, OrderVersion: orderVersion), CancellationToken.None);
             var kitKey = (orderId, selectedPhase.Id);
             if (!pairedKits.TryGetValue(kitKey, out var physicalKit))
             {

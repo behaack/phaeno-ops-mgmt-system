@@ -33,6 +33,15 @@ public sealed class SampleShippingWorkflowAdminController(
         return await reader.ReadAsync(shipmentId, null, cancellationToken);
     }
 
+    [HttpGet("shipments/return-kits")]
+    public async Task<PagedResult<SampleShipmentWorkflowDto>> ReturnKitShipments(CancellationToken cancellationToken,
+        [FromQuery] string? search = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 20,
+        [FromQuery] Guid? shipmentId = null)
+    {
+        await requestContext.RequirePlatformAdminAsync(HttpContext, cancellationToken);
+        return await reader.ListReturnKitsAsync(search, page, pageSize, shipmentId, cancellationToken);
+    }
+
     [HttpPost("shipments/{shipmentId:guid}/return-kit")]
     public async Task<ActionResult<SampleShipmentWorkflowDto>> CreateReturnKit(
         Guid shipmentId,

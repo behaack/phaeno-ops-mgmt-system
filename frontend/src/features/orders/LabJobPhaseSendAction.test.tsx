@@ -23,7 +23,7 @@ vi.mock('#/features/sample-shipping/SampleShippingDetailPage', () => ({
 }))
 
 const order = { ...phasedLabOrder, usesPairedPreparation: true, placedAt: '2026-10-01T12:00:00Z',
-  organizationId: shippingFixture.organizationId, samples: [{ id: 'sample-1', phaseId: 'phase-1' } as LabServiceOrder['samples'][number]] }
+  organizationId: shippingFixture.organizationId, samples: [{ id: 'sample-1', phaseId: 'phase-1', biologicalSource: 'Human PBMCs', customerSampleId: 'RNA-1' } as LabServiceOrder['samples'][number]] }
 const shipment = { ...shippingFixture, authorizationSourceId: order.id, crosswalk: [shippingTube(1)] }
 const pairs = { ...emptyPhasePairs, preparedPhaseIds: ['phase-1'] }
 const supply = { locations: [], requests: [], phases: [{ phaseId: 'phase-1', phaseName: 'Phase 1', sampleCount: 5, canRequest: false }] }

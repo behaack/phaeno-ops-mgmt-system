@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useBlocker, useNavigate, useRouterState } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
@@ -13,10 +13,11 @@ import { Input } from '#/components/ui/input'
 import { Checkbox } from '#/components/ui/checkbox'
 import { Label } from '#/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardAction } from '#/components/ui/card'
-import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
+import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
+import { DialogReturnFocus } from '#/components/ui/dialog'
 import { RequiredLegend } from '#/components/ui/required-field'
 import { recordLinkClassName } from '#/components/ui/record-link'
-import { PreparationActions, PreparationFormDialog, PreparationField } from './preparation-ui'
+import { PreparationFormDialog, PreparationField } from './preparation-ui'
 import { ProtocolStepEditor } from './ProtocolStepEditor'
 import { ConfigurationPreview } from './ConfigurationPreview'
 import { LabSettingsLayout } from './LabSettingsLayout'
@@ -100,36 +101,30 @@ export function LabStepPage({ stepId, editing = false }: { stepId: string; editi
 function LabStepDetails({ step }: { step: LabStep }) {
   const { session } = usePhaenoSession()
   const client = useQueryClient()
-  const navigate = useNavigate()
   const [preview, setPreview] = useState<LabStepVersion>()
   const [transition, setTransition] = useState<{ action: string; version?: LabStepVersion }>()
-  const canManage = Boolean(session?.capabilities.canManageLabProtocols)
   const mutation = useMutation({ mutationFn: (values: Record<string, string>) => transitionLabStep(step.id, {
     action: transition!.action, version: step.version, versionId: transition?.version?.id,
     reason: values.reason, ...(values.override ? { approvalOverrideReason: values.override } : {}),
   }), onSuccess: async () => { await client.invalidateQueries({ queryKey: ['lab-steps'] }); setTransition(undefined) }, onError: () => { void client.invalidateQueries({ queryKey: ['lab-steps'] }) } })
   const selfApproval = transition?.action === 'approve' && transition.version?.authoredByUserId === session?.user?.id
-  return <>
-    <Card><CardHeader><CardTitle role="heading" aria-level={2}>{step.name}</CardTitle>{step.description || step.retiredAtUtc ? <CardDescription>{step.description}{step.retiredAtUtc ? `${step.description ? ' · ' : ''}Retired: ${step.retirementReason}` : ''}</CardDescription> : null}{canManage && !step.retiredAtUtc ? <CardAction><LabStepActions step={step} /></CardAction> : null}</CardHeader><CardContent className="space-y-4">
-      {!step.versions.length ? <p>No version has been authored.</p> : [...step.versions].reverse().map(v => <section key={v.id} className="space-y-3 rounded-lg border p-4"><div className="flex items-start justify-between gap-3"><h3 className="font-medium">Version {v.stepVersion} · {v.status}</h3><PreparationActions items={[
-        ...(v.definitionJson !== '{}' ? [{ label: 'Configuration preview', onClick: () => setPreview(v) }] : []),
-        ...(canManage && !step.retiredAtUtc && v.status === 'Draft' ? [
-          { label: 'Edit draft', onClick: () => void navigate({ to: '/lab-operations/steps/$stepId/edit', params: { stepId: step.id }, search: labStepListSearch }) },
-          { label: 'Approve version', onClick: () => setTransition({ action: 'approve', version: v }), disabled: v.definitionJson === '{}' || v.authoredByUserId === session?.user?.id && !session?.isPlatformAdmin },
-          { label: 'Discard draft', onClick: () => setTransition({ action: 'discard', version: v }) },
-        ] : []),
-      ]} /></div><p className="text-sm">{v.status === 'Draft' ? 'Requires independent approval. A platform administrator may record an explicit override.' : `Approved ${v.approvedAtUtc?.slice(0, 10) ?? '—'}`}</p>{v.approvalOverrideReason ? <p className="text-sm">Approval override: {v.approvalOverrideReason}</p> : null}<LabStepSummary version={v} /></section>)}
+  return <DialogReturnFocus target={null} fallbackId={`lab-step-${step.id}-actions`}>
+    <Card><CardHeader><CardTitle role="heading" aria-level={2}>{step.name}</CardTitle>{step.description || step.retiredAtUtc ? <CardDescription>{step.description}{step.retiredAtUtc ? `${step.description ? ' · ' : ''}Retired: ${step.retirementReason}` : ''}</CardDescription> : null}<CardAction><LabStepActions step={step} onPreview={setPreview} onVersionTransition={(action, version) => setTransition({ action, version })} /></CardAction></CardHeader><CardContent className="space-y-4">
+      {!step.versions.length ? <p>No version has been authored.</p> : [...step.versions].reverse().map(v => <section key={v.id} className="space-y-3 rounded-lg border p-4"><h3 className="font-medium">Version {v.stepVersion} · {v.status}</h3><p id={`step-version-${v.id}-approval-help`} className="text-sm">{v.status === 'Draft' ? `Requires independent approval. A platform administrator may record an explicit override.${v.definitionJson === '{}' ? ' Save instructions and fields before approval.' : v.authoredByUserId === session?.user?.id && !session?.isPlatformAdmin ? ' A different authorized reviewer must approve your draft.' : ''}` : `Approved ${v.approvedAtUtc?.slice(0, 10) ?? '—'}`}</p>{v.approvalOverrideReason ? <p className="text-sm">Approval override: {v.approvalOverrideReason}</p> : null}<LabStepSummary version={v} /></section>)}
     </CardContent></Card>
     <Card><CardHeader><CardTitle role="heading" aria-level={2}>Used by protocols</CardTitle><CardDescription>Each occurrence retains its own identity and step records. New versions are adopted explicitly in a protocol draft.</CardDescription></CardHeader><CardContent className="space-y-2">{step.usedBy.length ? step.usedBy.map(u => <p key={`${u.protocolVersionId}-${u.occurrenceKey}`} className="text-sm">{u.protocolName} v{u.protocolVersion} · {u.status} · {u.occurrenceKey} · Lab step v{step.versions.find(v => v.id === u.stepVersionId)?.stepVersion}{step.versions.some(v => v.status === 'Approved' && v.stepVersion > (step.versions.find(x => x.id === u.stepVersionId)?.stepVersion ?? 0)) ? ' · Newer approved version available' : ''}</p>) : <p>No protocol references this Lab step.</p>}</CardContent></Card>
     {preview ? <ConfigurationPreview definition={JSON.parse(preview.definitionJson) as ProtocolDefinition} name={`${step.name} v${preview.stepVersion} · ${preview.status}`} onClose={() => setPreview(undefined)} /> : null}
-    {transition ? <PreparationFormDialog title={`${transition.action === 'approve' ? 'Approve' : 'Discard draft of'} ${step.name}`} description={transition.action === 'approve' ? 'Review the instructions, fields and QC criteria. Approval locks this version; assembled protocols require separate approval.' : 'The draft is retained as discarded and can no longer be edited.'} fields={[
+    {transition ? <PreparationFormDialog title={`${transition.action === 'approve' ? 'Approve' : 'Discard draft'} version ${transition.version?.stepVersion} of ${step.name}`} description={transition.action === 'approve' ? 'Review the instructions, fields and QC criteria. Approval locks this version; assembled protocols require separate approval.' : 'The draft is retained as discarded and can no longer be edited.'} fields={[
       ...(selfApproval ? [{ key: 'override', label: 'Administrator approval override reason', type: 'textarea' as const, required: true }] : []),
       { key: 'confirm', label: 'I reviewed this version and confirm this action', type: 'checkbox', required: true },
-    ]} pending={mutation.isPending} error={mutation.error ? getLabOperationsError(mutation.error, 'The action could not be completed. Review the current version and retry.') : undefined} onClose={() => { setTransition(undefined); mutation.reset() }} onSubmit={v => mutation.mutate(v)} submitLabel={transition.action === 'approve' ? 'Approve version' : 'Discard draft'} /> : null}
-  </>
+    ]} initialFocus="cancel" pending={mutation.isPending} error={mutation.error ? getLabOperationsError(mutation.error, 'The action could not be completed. Review the current version and retry.') : undefined} onClose={() => { setTransition(undefined); mutation.reset() }} onSubmit={v => mutation.mutate(v)} submitLabel={transition.action === 'approve' ? 'Approve version' : 'Discard draft'} /> : null}
+  </DialogReturnFocus>
 }
 
-function LabStepActions({ step, includeView = false }: { step: LabStep; includeView?: boolean }) {
+function LabStepActions({ step, includeView = false, onPreview, onVersionTransition }: {
+  step: LabStep; includeView?: boolean; onPreview?: (version: LabStepVersion) => void
+  onVersionTransition?: (action: 'approve' | 'discard', version: LabStepVersion) => void
+}) {
   const { session } = usePhaenoSession()
   const client = useQueryClient()
   const navigate = useNavigate()
@@ -137,21 +132,35 @@ function LabStepActions({ step, includeView = false }: { step: LabStep; includeV
   const [editingDetails, setEditingDetails] = useState(false)
   const [retiring, setRetiring] = useState(false)
   const canManage = Boolean(session?.capabilities.canManageLabProtocols) && !step.retiredAtUtc
+  const draft = step.versions.find(version => version.status === 'Draft')
+  const editVersion = () => void navigate({ to: '/lab-operations/steps/$stepId/edit', params: { stepId: step.id }, search: labStepListSearch(listState) })
   const detailsMutation = useMutation({ mutationFn: (values: Record<string, string>) => updateLabStep(step.id, { name: values.name, description: values.description, version: step.version }), onSuccess: async () => { await client.invalidateQueries({ queryKey: ['lab-steps'] }); setEditingDetails(false) }, onError: () => { void client.invalidateQueries({ queryKey: ['lab-steps'] }) } })
   const retireMutation = useMutation({ mutationFn: (values: Record<string, string>) => transitionLabStep(step.id, { action: 'retire', version: step.version, reason: values.reason }), onSuccess: async () => { await client.invalidateQueries({ queryKey: ['lab-steps'] }); setRetiring(false) }, onError: () => { void client.invalidateQueries({ queryKey: ['lab-steps'] }) } })
   const items = [
     ...(includeView ? [{ label: 'View details', onClick: () => void navigate({ to: '/lab-operations/steps/$stepId', params: { stepId: step.id }, search: labStepListSearch(listState) }) }] : []),
     ...(canManage ? [
       { label: 'Edit Lab step name and description', onClick: () => setEditingDetails(true) },
-      { label: step.versions.some(version => version.status === 'Draft') ? 'Edit draft' : 'New version', onClick: () => void navigate({ to: '/lab-operations/steps/$stepId/edit', params: { stepId: step.id }, search: labStepListSearch(listState) }) },
+      ...(!draft || !onVersionTransition ? [{ label: draft ? 'Edit draft' : 'New version', onClick: editVersion }] : []),
       { label: 'Retire Lab step', onClick: () => setRetiring(true) },
     ] : []),
   ]
-  return <>
-    <ActionMenu><DropdownMenuTrigger asChild><Button type="button" variant="outline" aria-label={`Actions for ${step.name}`}>Actions<ChevronDown aria-hidden="true" data-icon="inline-end" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]">{items.map(item => <DropdownMenuItem key={item.label} onSelect={item.onClick}>{item.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu>
+  return <DialogReturnFocus target={null} fallbackId={`lab-step-${step.id}-actions`}>
+    <ActionMenu><DropdownMenuTrigger asChild><Button id={`lab-step-${step.id}-actions`} type="button" variant="outline" aria-label={`Actions for ${step.name}`}>Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]">
+      {items.length ? <><DropdownMenuLabel>Lab step</DropdownMenuLabel>{items.map(item => <DropdownMenuItem key={item.label} onSelect={item.onClick}>{item.label}</DropdownMenuItem>)}</> : null}
+      {canManage && draft && onVersionTransition ? <>
+        {items.length ? <DropdownMenuSeparator /> : null}<DropdownMenuLabel>Draft · Version {draft.stepVersion}</DropdownMenuLabel>
+        <DropdownMenuItem onSelect={editVersion}>Edit draft</DropdownMenuItem>
+        <DropdownMenuItem disabled={draft.definitionJson === '{}' || draft.authoredByUserId === session?.user?.id && !session?.isPlatformAdmin} aria-describedby={`step-version-${draft.id}-approval-help`} onSelect={() => onVersionTransition('approve', draft)}>Approve version {draft.stepVersion}</DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onVersionTransition('discard', draft)}>Discard draft</DropdownMenuItem>
+      </> : null}
+      {onPreview && step.versions.some(version => version.definitionJson !== '{}') ? <>
+        {items.length || canManage && draft && onVersionTransition ? <DropdownMenuSeparator /> : null}<DropdownMenuLabel>Configuration previews</DropdownMenuLabel>
+        {[...step.versions].reverse().filter(version => version.definitionJson !== '{}').map(version => <DropdownMenuItem key={version.id} onSelect={() => onPreview(version)}>Preview version {version.stepVersion} · {version.status}</DropdownMenuItem>)}
+      </> : null}
+    </DropdownMenuContent></ActionMenu>
     {editingDetails ? <PreparationFormDialog title="Edit Lab step" description="The unique name identifies this step in the catalog. Approved protocol versions keep their saved names." fields={[{ key: 'name', label: 'Step name', required: true, maxLength: 160, defaultValue: step.name }, { key: 'description', label: 'Description', type: 'textarea', maxLength: 2000, defaultValue: step.description ?? '' }]} pending={detailsMutation.isPending} error={detailsMutation.error ? getLabOperationsError(detailsMutation.error, 'The Lab step could not be updated.') : undefined} onClose={() => { setEditingDetails(false); detailsMutation.reset() }} onSubmit={values => detailsMutation.mutate(values)} /> : null}
-    {retiring ? <PreparationFormDialog title={`Retire ${step.name}`} description={`Prevents new selection. ${step.usedBy.length} retained protocol occurrences and all execution history remain unchanged.`} fields={[{ key: 'reason', label: 'Retirement reason', type: 'textarea', required: true }, { key: 'confirm', label: 'I reviewed this version and confirm this action', type: 'checkbox', required: true }]} pending={retireMutation.isPending} error={retireMutation.error ? getLabOperationsError(retireMutation.error, 'The Lab step could not be retired. Review its current version and retry.') : undefined} onClose={() => { setRetiring(false); retireMutation.reset() }} onSubmit={values => retireMutation.mutate(values)} submitLabel="Retire Lab step" /> : null}
-  </>
+    {retiring ? <PreparationFormDialog title={`Retire ${step.name}`} description={`Prevents new selection. ${step.usedBy.length} retained protocol occurrences and all execution history remain unchanged.`} fields={[{ key: 'reason', label: 'Retirement reason', type: 'textarea', required: true }, { key: 'confirm', label: 'I reviewed this version and confirm this action', type: 'checkbox', required: true }]} initialFocus="cancel" pending={retireMutation.isPending} error={retireMutation.error ? getLabOperationsError(retireMutation.error, 'The Lab step could not be retired. Review its current version and retry.') : undefined} onClose={() => { setRetiring(false); retireMutation.reset() }} onSubmit={values => retireMutation.mutate(values)} submitLabel="Retire Lab step" /> : null}
+  </DialogReturnFocus>
 }
 
 function LabStepEditor({ step }: { step: LabStep }) {

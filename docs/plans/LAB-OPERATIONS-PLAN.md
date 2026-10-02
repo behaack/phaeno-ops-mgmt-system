@@ -1,5 +1,11 @@
 # Lab Operations Plan
 
+## Accession sample directory — October 2, 2026
+
+Sample-use follow-up: the directory adds a separate Used / Not used column and server filter, plus individual tube use and recorded exhaustion in its disclosure. Started attempts and biological transfers establish source use; planning does not. Historical started processing without source attribution establishes sample use while tube use remains unknown. Intake acceptance, remaining material and reuse eligibility remain distinct. See the directory plan for the read-only contract and verification scope.
+
+The Product Owner authorized a compact Received packages / Accessioned samples toggle under Accession samples. The received queue and guarded accession workflow remain available in the first view. The directory uses one specimen row per sample with customer/accession identity, Customer/Job, specimen intake status and expandable tube decisions/locations. Search, intake filter and 20-row pagination run on the server; URL state survives sample-detail return. Partial accession remains distinguishable from all-tube completion and laboratory processing. See [the directory plan](ACCESSION-SAMPLE-DIRECTORY-PLAN.md) for scope, defaults, authorization and verification boundaries. No schema, migration or operational write is included.
+
 ## Sequential phase Jobs — planning, September 30, 2026
 
 Plan one order/Job with ordered phases sufficient for invoicing and operations;
@@ -110,6 +116,13 @@ Lab Settings moves from the Lab operations sidebar to Administration in the user
 Lab step details and the Protocol and Workflow version builders now retain the same Lab Settings page header and pinned or collapsible section sidebar as the index. A single arrowed return link sits above each detail, targeting its owning section; Lab step returns preserve search, retired visibility, and page. Switching sections while a draft has unsaved edits requires a discard confirmation. This is a navigation and presentation change only.
 
 Each Lab step list row also has an Actions dropdown. It shares the detail page's permitted name/description edit, draft or new-version entry, and retirement confirmation; View details remains available for read-only and retired rows. The Lab step name still opens its detail page.
+
+October 2 refinement: Lab step details consolidate catalog and version commands
+into one Actions menu beside the step name. The sole Draft provides one Edit
+draft entry, approval and discard; historical configuration previews identify
+their exact version and status in that menu. The API already rejects a second
+Draft. Version summaries have no separate Actions control. See
+[Lab steps and configuration preview](LAB-STEPS-AND-CONFIGURATION-PREVIEW-PLAN.md).
 
 Lab step rows follow the Samples & shipping record-list pattern: linked name with revision and status badges, description and protocol-use context below, and Actions at the right. Search, retired visibility, and pagination remain in the list header and footer.
 
@@ -305,6 +318,24 @@ During test-protocol preparation the owner reported that the second row of Work 
 The owner authorized fixing Jobs stranded between accession and Work and correcting the two reported local Jobs from saved evidence. Users are Phaeno receiving operators and Customer/Partner users tracking their Jobs. First shipment arrival advances awaiting Lab work to Received and the Commercial Job to In progress. Verified tube receipt updates the sample; Accessioned requires all expected tubes across active shipments. Holds, terminal/later states, scientific acceptance, turnaround targets and physical identities are preserved.
 
 Receipt/accession publish a monotonic intake snapshot in the existing outbox within the physical action transaction. Its additive internal payload contains physical receipt presence, submitted-specimen IDs, receipt timestamps, completed accession IDs and the operator for audit. It excludes storage, receipt notes and scientific decisions. Commercial applies the snapshot under the authorization/organization boundary; projection, Job/sample status, timeline, receipt and acknowledgment commit atomically. Duplicate/older delivery cannot reapply progress. Shipment receipt refreshes Lab Work. No public provider milestone, persisted field or migration changes. Local correction and verification evidence belong in [the intake correction run record](../testing/runs/2026-09-10-intake-progress-correction.md).
+
+## Shipment receiving views — October 2, 2026
+
+Accession simplification follow-up: Open container lookup is in the header of Received containers awaiting accession, with one shared card and the queue below. The field and Open container button remain available when no containers are listed. Alternative-identifier help, read-only lookup results/errors, draft retention, the existing accession dialog and focus return are retained. Lookup does not write container arrival or accession; prior-receipt and individual tube checks remain enforced. Shared Field spacing replaces local label/input margins. Existing navigation regression source also checks header placement and the direct Open container action.
+
+Shipment rows show the saved PH-P- shipping-insert barcode beneath the shipment link in small, muted monospace text when available. The same identifier is visible in expected, received-history and accession queues; viewing it does not acknowledge arrival. Missing inserts do not produce a fabricated number or empty identifier line.
+
+PH-P display follow-up passed frontend typecheck, scoped lint and documentation checks, plus desktop/light and 390 px/dark synthetic review. The identifier renders at 12 px below the 14 px shipment link; missing identifiers are omitted and the narrow table stays contained. Screenshot: `output/shipment-receipt-evidence/expected-insert-number.png`. No test suite or operational write was performed; temporary preview files/cache were cleaned.
+
+Phaeno receiving staff use a compact pill toggle under Receive shipments: **Receive a shipment | Expected shipments | Shipments received**. Receive a shipment opens by default. Only the selected view is visible; changing views keeps the barcode draft and receipt feedback during the visit and performs no receipt or accession write. The scan remains an explicit, permission-checked physical-arrival action. Its focused task view retains the existing scanner-workspace exception to list-only presentation; the two queue views contain no form.
+
+Shipments received is arrival history, most recent first, with Customer/Job, destination, carrier/tracking, arrival time and accession counts. Completed accession remains visible here. The dedicated GET shipments/received read returns a counted page of existing row DTOs. Search is case-insensitive, treats characters literally, and covers shipment, Job, Customer, destination, carrier/tracking and the current non-voided PH-P insert. Search/count and stable arrival/ID ordering apply before Skip/Take; tube and insert details are loaded for that page only. The UI requests 20 arrivals per page; the API caps page size at 50 and clamps stale/out-of-range pages to a valid page. Expected and unfinished accession queues retain their existing read. The earlier unbounded includeCompleted flag from this local refinement is replaced by the dedicated history read. Existing Lab-role access, receipt mutation, tenant boundaries and row DTO fields remain unchanged. No persistence change, migration, data repair or operational write is needed.
+
+History has a header search with an accessible name and descriptive placeholder, a Clear search action, and Previous/Next controls with total/page counts. Search queries debounce for 300 ms and reset to page one. The receiving view, search and page are URL-backed, retain unrelated filters, and survive switching, refresh and shipment-detail return. Search persists in the URL immediately so changing views during the debounce does not lose it. Loading, failure, disconnected, empty history and no matches remain distinct; search stays available in empty/error states. Updated frontend navigation and PostgreSQL regression sources cover these behaviors; suites remain unexecuted under the request-only policy.
+
+Acceptance: compact rather than full-width toggle, one visible view, keyboard arrows and visible focus, retained scan draft, completed containers in arrival history, unfinished-only accession queue, contained narrow-screen tables and light/dark themes. Existing frontend navigation and PostgreSQL receipt/accession regression sources are extended; automated suites remain unexecuted under the request-only policy. Local static and synthetic browser verification are recorded at this checkpoint.
+
+Verification passed: isolated solution build (0 warnings/errors), frontend typecheck, scoped ESLint, documentation generation/check and diff whitespace check. Synthetic browser review verified Left/Right selection, retained receipt draft, one visible view, expected and received rows, completed accession counts, empty/failure/permission/session messages, and 390 px dark layout with table-contained scrolling. Evidence: `output/shipment-receipt-evidence/README.md`. The temporary server, preview/cache and isolated build output are removed; no operational writes, migrations, Git mutations or deployment were performed.
 
 ## Container receipt and separate accession tab — September 10, 2026
 
@@ -1469,6 +1500,10 @@ Receive samples now directs staff to the PH-P- barcode at the top right of the e
 Verification: solution build passed with zero warnings/errors using a separate output folder because Visual Studio/IIS Express held the normal output files. Frontend TypeScript, scoped ESLint, documentation freshness (56 guides) and whitespace passed. Read-only signed-in local browser inspection confirmed the separate tabs, two expected container rows with distinct tracking numbers for 69SJN4PA, and a received HS5Y7DB7 container showing 0/18 tubes accessioned. Desktop screenshot review passed. The agent did not submit receipt or accession. Automated suites, narrow/dark layouts, physical scanner and completed tube-accession acceptance remain unrun. The existing shipping insert files have no additional working-tree diff from this work.
 
 ## Container accession scan loop — 2026-09-10
+
+October 2: the Product Owner authorized [accession by freezer box](ACCESSION-BOX-PLACEMENT-PLAN.md). This supersedes the repeated per-tube box-entry form with one active box, explicit tube placement scans and atomic saving of each reviewed box group. Existing shipment receipt, exception, audit, concurrency and retry rules are retained; the deferred box inventory scope remains separate.
+
+The subsequent single-handling correction combines identity and pending placement in one scan within the same container dialog. Open the box first, inspect/scan/place each acceptable tube once, record exceptions from expected rows, then review and save that box. The initial identification selection and later tube rescan are removed; pending and persisted locations stay distinct.
 
 - Users: Phaeno laboratory operators and supervisors. Goal: accession every physical tube in a received container without navigating between records.
 - PH-P lookup opens a modal showing the complete expected crosswalk and saved tube count. Tube scan opens a nested freezer-box barcode form. Only saving that form accessions the matched tube; successful save returns focus to the tube scanner until every expected tube is complete. Closing preserves partial progress.

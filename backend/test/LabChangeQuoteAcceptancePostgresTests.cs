@@ -57,6 +57,9 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         var fixture = await scope.CreateQuotedOrderAsync("Started work addition");
         var authorized = await scope.AuthorizeSampleRosterAsync(fixture, new InternalLabOperationsProvider(scope.DbContext));
         var originalSample = authorized.Samples.Single();
+        // The preceding phase has explicit simulated dispatch evidence before a later phase is prepared.
+        var originalShipment = await scope.DbContext.SampleShipments.SingleAsync();
+        scope.DbContext.Entry(originalShipment).Property(shipment => shipment.ShippedAt).CurrentValue = DateTime.UtcNow;
         var work = await scope.DbContext.LabWorkOrders.Include(w => w.Specimens).SingleAsync();
         work.Specimens.Single().RecordReceipt(DateTime.UtcNow, "SIMULATED receipt", null);
         // Exercise a started work state while retaining all original custody and configuration.

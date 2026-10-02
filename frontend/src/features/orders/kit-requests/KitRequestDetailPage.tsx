@@ -1,24 +1,22 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { ArrowLeft } from 'lucide-react'
-import { useRef, useState } from 'react'
-import { cancelPlatformTransportationKitRequest, getPlatformTransportationKitRequest, type TransportationKitRequest, type TransportationKitRequestDetail } from '#/api/transportation-kit-requests'
+import { useState } from 'react'
+import { getPlatformTransportationKitRequest, type TransportationKitRequest, type TransportationKitRequestDetail } from '#/api/transportation-kit-requests'
 import { getOrderErrorMessage } from '#/api/order-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import { ActionMenu as DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
-import { Label } from '#/components/ui/label'
-import { Textarea } from '#/components/ui/textarea'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { DeliveryLocationAddress } from '#/features/organizations/delivery-locations/DeliveryLocationAddress'
 import { PrepareRequestedKitsDialog } from './PrepareRequestedKitsDialog'
 import type { ShippingStockKit } from '#/api/shipping-containers'
 import { KitRequestDispatchDialog } from './KitRequestDispatchDialog'
 import { kitRequestReference, kitRequestStatus } from './kit-request-navigation'
-import { useOrderDecisionDismissal } from '../use-order-decision-dismissal'
+import { CancelKitRequestDialog } from './CancelKitRequestDialog'
+import { kitRequestSupply } from './kit-request-supply'
 import { refreshStockKitSupply } from '../stock-kits/stock-kit-request-sync'
 
 export function KitRequestDetailPage({ requestId }: { requestId: string }) {
@@ -32,14 +30,7 @@ export function KitRequestDetailPage({ requestId }: { requestId: string }) {
   const detail = query.data, request = detail?.request
   async function refresh() { await refreshStockKitSupply(client) }
   async function dispatched(value: TransportationKitRequestDetail) { setDispatch(null); client.setQueryData(['platform-transportation-kit-request', requestId], value); await refresh() }
-  const outstanding = request?.lines.filter(line => line.requestedQuantity > line.dispatchedQuantity) ?? []
-  const stock = outstanding.map(line => {
-    const remaining = line.requestedQuantity - line.dispatchedQuantity
-    const ready = Math.min(remaining, detail?.availableTypes.find(type => type.containerDefinitionId === line.containerDefinitionId)?.availableQuantity ?? 0)
-    return { ...line, remaining, ready, missing: remaining - ready }
-  })
-  const shortage = stock.filter(line => line.missing > 0)
-  const readyCount = stock.reduce((total, line) => total + line.ready, 0)
+  const { shortage, readyCount } = detail ? kitRequestSupply(detail) : { shortage: [], readyCount: 0 }
   const active = request && ['Pending', 'PartiallyDispatched'].includes(request.status)
   const canRecord = Boolean(active && readyCount > 0)
   const canPrepare = Boolean(active && shortage.length > 0)
@@ -69,16 +60,4 @@ export function KitRequestDetailPage({ requestId }: { requestId: string }) {
       {cancelling ? <CancelKitRequestDialog request={cancelling} onClose={() => setCancelling(null)} onSaved={async () => { setCancelling(null); await refresh() }} /> : null}
     </>}
   </main>
-}
-
-function CancelKitRequestDialog({ request, onClose, onSaved }: { request: TransportationKitRequest; onClose: () => void; onSaved: () => Promise<void> }) {
-  const [reason, setReason] = useState(''), attempt = useRef<{ fingerprint: string; key: string } | null>(null)
-  const mutation = useMutation({ mutationFn: () => {
-    const input = { version: request.version, reason: reason.trim() || undefined }, fingerprint = JSON.stringify(input)
-    if (attempt.current?.fingerprint !== fingerprint) attempt.current = { fingerprint, key: crypto.randomUUID() }
-    return cancelPlatformTransportationKitRequest(request.id, input, attempt.current.key)
-  }, onSuccess: async () => { await onSaved() } })
-  const dismissal = useOrderDecisionDismissal(Boolean(reason.trim()), mutation.isPending, onClose, { scope: 'cancellation reason', description: 'The unsaved cancellation reason will be discarded. This kit order will remain active.' })
-  function close() { dismissal.close() }
-  return <><Dialog open onOpenChange={open => { if (!open) close() }}><DialogContent onOpenAutoFocus={event => { event.preventDefault(); document.getElementById("keep-kit-request")?.focus() }}><DialogHeader><DialogTitle>Cancel kit request</DialogTitle></DialogHeader><div><DialogDescription>Cancel {kitRequestReference(request)} for Job {request.jobNumber}. The Customer can submit a new request. Cancellation is available only before dispatch.</DialogDescription></div>{mutation.error ? <Alert variant="destructive"><AlertTitle>Request was not cancelled</AlertTitle><AlertDescription>{getOrderErrorMessage(mutation.error, 'Refresh the request and try again.')}</AlertDescription></Alert> : null}<div className="space-y-2"><Label htmlFor="cancel-kit-request-reason">Reason (optional)</Label><Textarea id="cancel-kit-request-reason" rows={3} maxLength={2000} disabled={mutation.isPending} value={reason} onChange={event => setReason(event.target.value)} /></div><DialogFooter><Button id="keep-kit-request" variant="outline" disabled={mutation.isPending} onClick={close}>Keep request</Button><Button variant="destructive" disabled={mutation.isPending} onClick={() => mutation.mutate()}>{mutation.isPending ? 'Cancelling…' : 'Cancel request'}</Button></DialogFooter></DialogContent></Dialog>{dismissal.confirmation}</>
 }

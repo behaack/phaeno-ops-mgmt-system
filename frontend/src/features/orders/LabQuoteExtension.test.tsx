@@ -25,7 +25,7 @@ afterEach(() => { vi.restoreAllMocks() })
 function show(order = expired) {
   mocks.read.mockResolvedValue(order)
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
-  render(<QueryClientProvider client={client}><LabServiceDetailPage orderId={order.id} /></QueryClientProvider>)
+  render(<QueryClientProvider client={client}><LabServiceDetailPage orderId={order.id} workspace={{ detailTab: 'billing' }} /></QueryClientProvider>)
   return client
 }
 async function requestDialog() {
@@ -60,8 +60,8 @@ describe('Lab quote acceptance and extensions', () => {
   it('shows quote decisions beside the source counts, keeps order details open, and hides later work', async () => {
     show({ ...expired, requestedSpecimenCount: 7, sourceGroups: [{ id: 'heart', biologicalSource: 'Heart tissue', specimenCount: 4, version: 1 }, { id: 'liver', biologicalSource: 'Liver tissue', specimenCount: 3, version: 1 }], canAcceptQuote: true, canWithdraw: true, canRequestQuoteExtension: false, quotes: [{ ...quote, status: 'Issued', expiresAt: '2099-10-04T14:00:00Z' }] })
     const accept = await headerAction('Accept quote')
-    const actions = screen.getByRole('group', { name: 'Quote actions' })
-    expect(within(actions).getByRole('button', { name: 'Actions' })).toBeTruthy()
+    const actions = screen.getByRole('group', { name: 'Quote actions', hidden: true })
+    expect(actions.querySelector('button')?.textContent).toContain('Actions')
     expect(screen.getByRole('menuitem', { name: 'Decline quote' })).toBeTruthy()
     expect(screen.getByRole('menuitem', { name: 'Propose changes' })).toBeTruthy()
     expect(screen.getByRole('menuitem', { name: 'Download quote PDF' })).toBeTruthy()
@@ -117,9 +117,10 @@ describe('Lab quote acceptance and extensions', () => {
   })
 
   it('keeps an accepted quote Accepted after its original expiration date', async () => {
-    show({ ...expired, status: 'PlacedAwaitingSamples', canRequestQuoteExtension: false, quotes: [{ ...quote, status: 'Accepted', acceptedAt: '2020-09-08T14:00:00Z' }] })
+    show({ ...expired, status: 'PlacedAwaitingSamples', placedAt: '2020-09-08T14:00:00Z', canRequestQuoteExtension: false, quotes: [{ ...quote, status: 'Accepted', acceptedAt: '2020-09-08T14:00:00Z' }] })
+    fireEvent.click(await screen.findByRole('tab', { name: 'Order and billing' }))
     expect(await screen.findByText('Accepted')).toBeTruthy()
-    expect(screen.getByText('Operational phase progress')).toBeTruthy()
+    expect(screen.queryByText('Operational phase progress')).toBeNull()
     expect(screen.queryByText(/Expired on/)).toBeNull()
     expect(screen.queryByRole('button', { name: 'Accept quote' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Request quote extension' })).toBeNull()

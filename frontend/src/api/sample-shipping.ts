@@ -511,6 +511,13 @@ export async function getPlatformSampleShipments() {
   return unwrap(response.data)
 }
 
+export type ReturnKitShipmentPage = { items: SampleShipmentWorkflow[]; page: number; pageSize: number; totalCount: number }
+
+export async function getPlatformReturnKitShipments(search: string, page: number, shipmentId?: string) {
+  const response = await api.get<ApiEnvelope<ReturnKitShipmentPage>>('/platform/lab-operations/sample-shipping/workflow/shipments/return-kits', { params: { search: search || undefined, page, pageSize: 20, shipmentId } })
+  return unwrap(response.data)
+}
+
 export async function createSampleReturnKit(shipmentId: string, input: {
   tubeSupplierProductId: string
   shipperSupplierProductId: string

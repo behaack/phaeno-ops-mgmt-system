@@ -45,6 +45,33 @@ public sealed class SampleShippingWorkflowReader(PSeqOperationsDbContext dbConte
         CancellationToken cancellationToken) =>
         await ReadAsync(shipmentId, organizationId, departmentId: null, cancellationToken);
 
+    public async Task<PagedResult<SampleShipmentWorkflowDto>> ListReturnKitsAsync(string? search,
+        int page, int pageSize, Guid? shipmentId, CancellationToken cancellationToken)
+    {
+        pageSize = Math.Clamp(pageSize, 1, 50);
+        var query = dbContext.SampleShipments.AsNoTracking().Where(item => item.ReturnKit != null);
+        if (shipmentId.HasValue) query = query.Where(item => item.Id == shipmentId.Value);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim().ToLowerInvariant();
+            if (term.Length > 255) throw new OrderManagementException("kit_shipment_search_too_long", "Kit shipment search must be 255 characters or fewer.", StatusCodes.Status400BadRequest);
+            query = query.Where(item => item.ShipmentNumber.ToLower().Contains(term)
+                || item.AuthorizationReference.ToLower().Contains(term)
+                || item.ReturnKit!.KitNumber.ToLower().Contains(term)
+                || (item.ReturnKit.OutboundCarrier != null && item.ReturnKit.OutboundCarrier.ToLower().Contains(term))
+                || (item.ReturnKit.OutboundTrackingNumber != null && item.ReturnKit.OutboundTrackingNumber.ToLower().Contains(term))
+                || dbContext.Organizations.Any(org => org.Id == item.OrganizationId && org.Name.ToLower().Contains(term)));
+        }
+        var total = await query.CountAsync(cancellationToken);
+        page = Math.Clamp(page, 1, Math.Max(1, (int)Math.Ceiling(total / (double)pageSize)));
+        var shipments = await query.OrderByDescending(item => item.CreatedAt).ThenByDescending(item => item.Id)
+            .Skip((page - 1) * pageSize).Take(pageSize)
+            .Include(item => item.Items).ThenInclude(item => item.TubeSlots)
+            .Include(item => item.PacketRevisions).Include(item => item.ReturnKit).ThenInclude(item => item!.Tubes)
+            .ToListAsync(cancellationToken);
+        return new PagedResult<SampleShipmentWorkflowDto>(await MapAsync(shipments, cancellationToken), page, pageSize, total);
+    }
+
     public async Task<SampleShipmentWorkflowDto> ReadAsync(
         Guid shipmentId,
         Guid? organizationId,

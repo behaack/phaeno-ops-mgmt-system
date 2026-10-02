@@ -73,6 +73,15 @@ public partial class SampleShippingPostgresTests
         scope.ClearTrackedState();
         var duplicateKit = await scope.DbContext.SampleReturnKits.AsNoTracking()
             .SingleAsync(item => item.SampleShipmentId == duplicateShipment.Id);
+        var kitReader = new SampleShippingWorkflowReader(scope.DbContext);
+        var kitPageOne = await kitReader.ListReturnKitsAsync(fixture.Shipment.AuthorizationReference, 1, 1, null, CancellationToken.None);
+        var kitPageTwo = await kitReader.ListReturnKitsAsync(fixture.Shipment.AuthorizationReference, 2, 1, null, CancellationToken.None);
+        Assert.Equal(2, kitPageOne.TotalCount);
+        Assert.Equal(1, kitPageOne.PageSize);
+        Assert.NotEqual(Assert.Single(kitPageOne.Items).Id, Assert.Single(kitPageTwo.Items).Id);
+        var selectedKitPage = await kitReader.ListReturnKitsAsync(kit.KitNumber.ToLowerInvariant(), int.MaxValue, 1, fixture.Shipment.Id, CancellationToken.None);
+        Assert.Equal(1, selectedKitPage.Page);
+        Assert.Equal(fixture.Shipment.Id, Assert.Single(selectedKitPage.Items).Id);
         var duplicateTube = await Assert.ThrowsAsync<OrderManagementException>(() =>
             platformWorkflow.RegisterTubes(
                 duplicateKit.Id,
@@ -250,6 +259,14 @@ public partial class SampleShippingPostgresTests
         Assert.Equal(LabContainerBarcodeSource.RegisteredSupplier.ToString(), container.BarcodeSource);
         Assert.NotNull(container.ExternalBarcodeReferenceId);
         Assert.DoesNotContain(await lab.ShipmentQueue(CancellationToken.None, received: true), item => item.Id == fixture.Shipment.Id);
+        var historyPage = await lab.ShipmentHistory(search: fixture.Shipment.ShipmentNumber.ToLowerInvariant(), page: int.MaxValue, pageSize: 1);
+        Assert.Equal(1, historyPage.Page);
+        Assert.Equal(1, historyPage.TotalCount);
+        var receivedHistory = Assert.Single(historyPage.Items);
+        Assert.NotNull(receivedHistory.ContainerReceivedAt);
+        Assert.Equal(receivedHistory.ExpectedTubeCount, receivedHistory.AccessionedTubeCount);
+        Assert.Empty((await lab.ShipmentHistory(search: "NO-MATCH-SHIPMENT-SEARCH")).Items);
+        Assert.Contains((await lab.ShipmentHistory(search: packet.Barcode.ToLowerInvariant())).Items, item => item.Id == fixture.Shipment.Id);
         Assert.Equal("AlreadyAccessioned", (await platformWorkflow.ScanTube(
             packet.Barcode, firstTubeBarcode, CancellationToken.None)).Outcome);
 

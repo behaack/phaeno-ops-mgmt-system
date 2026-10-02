@@ -60,14 +60,17 @@ describe('Customer Job detail organization', () => {
   })
 
   it('filters result packages by the exact phase sample IDs', async () => {
+    mocks.order.mockResolvedValue({ ...order, samples: order.samples.map(sample => ({ ...sample, status: 'Released' })) })
     show()
-    fireEvent.click(await screen.findByRole('tab', { name: 'Files and results' }))
+    const resultsTab = await screen.findByRole('tab', { name: 'Files and results' })
+    await waitFor(() => expect(resultsTab).toHaveProperty('disabled', false))
+    fireEvent.mouseDown(resultsTab, { button: 0, ctrlKey: false })
     await screen.findByText('Released package: RNA-1')
     fireEvent.change(await screen.findByLabelText('Phase'), { target: { value: 'phase-2' } })
     expect(screen.queryByText('Released package: RNA-1')).toBeNull()
     expect(screen.getByText('Released package: RNA-6')).toBeTruthy()
-    fireEvent.click(screen.getByRole('tab', { name: 'Progress' }))
-    fireEvent.click(screen.getByRole('tab', { name: 'Files and results' }))
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Progress' }), { button: 0, ctrlKey: false })
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Files and results' }), { button: 0, ctrlKey: false })
     expect(screen.getByLabelText('Phase')).toHaveProperty('value', 'phase-2')
   })
 

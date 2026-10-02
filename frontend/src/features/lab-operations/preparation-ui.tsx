@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { cloneElement, isValidElement, type ReactNode } from 'react'
+import { cloneElement, isValidElement, useRef, type ReactNode } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { Button } from '#/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
@@ -26,9 +26,10 @@ export function PreparationField({ label, id, required, children, error }: { lab
   return <div className="space-y-1.5"><Label htmlFor={id}>{required ? <RequiredFieldName>{label}</RequiredFieldName> : label}</Label>{control}{error ? <p id={`${id}-error`} role="alert" className="text-sm text-destructive">{error}</p> : null}</div>
 }
 export type PreparationFormField = { key: string; label: string; required?: boolean; type?: 'text' | 'number' | 'textarea' | 'checkbox'; defaultValue?: string; maxLength?: number; options?: { value: string; label: string }[] }
-export function PreparationFormDialog({ title, description, fields, onClose, onSubmit, pending, error, children, submitLabel = 'Save' }: {
-  title: string; description: string; fields: PreparationFormField[]; onClose: () => void; onSubmit: (values: Record<string, string>) => void; pending: boolean; error?: string; children?: ReactNode; submitLabel?: string
+export function PreparationFormDialog({ title, description, fields, onClose, onSubmit, pending, error, children, submitLabel = 'Save', initialFocus }: {
+  title: string; description: string; fields: PreparationFormField[]; onClose: () => void; onSubmit: (values: Record<string, string>) => void; pending: boolean; error?: string; children?: ReactNode; submitLabel?: string; initialFocus?: 'cancel'
 }) {
+  const cancelRef = useRef<HTMLButtonElement>(null)
   const schema = z.record(z.string(), z.string()).superRefine((values, ctx) => fields.forEach(field => {
     if (field.required && (field.type === 'checkbox' ? values[field.key] !== 'yes' : !(values[field.key] ?? '').trim())) ctx.addIssue({ code: 'custom', path: [field.key], message: field.type === 'checkbox' ? 'Check this box to confirm.' : `${field.label} is required.` })
     if (field.maxLength && (values[field.key] ?? '').trim().length > field.maxLength) ctx.addIssue({ code: 'custom', path: [field.key], message: `${field.label} must be ${field.maxLength} characters or fewer.` })
@@ -36,7 +37,7 @@ export function PreparationFormDialog({ title, description, fields, onClose, onS
     if (field.options && values[field.key] && !field.options.some(o => o.value === values[field.key])) ctx.addIssue({ code: 'custom', path: [field.key], message: 'Choose an available option.' })
   }))
   const form = useForm<Record<string, string>>({ resolver: zodResolver(schema), defaultValues: Object.fromEntries(fields.map(f => [f.key, f.defaultValue ?? ''])) })
-  return <Dialog open onOpenChange={open => { if (!open && !pending) onClose() }}><DialogContent><form className="contents" onSubmit={form.handleSubmit(onSubmit)} noValidate>
+  return <Dialog open onOpenChange={open => { if (!open && !pending) onClose() }}><DialogContent onOpenAutoFocus={event => { if (initialFocus === 'cancel') { event.preventDefault(); cancelRef.current?.focus() } }}><form className="contents" onSubmit={form.handleSubmit(onSubmit)} noValidate>
     <DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>{description}</DialogDescription></DialogHeader>
     <div className="space-y-4">{children}{error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
       {fields.map(field => field.type === 'checkbox' ? <div key={field.key} className="space-y-1.5">
@@ -53,7 +54,7 @@ export function PreparationFormDialog({ title, description, fields, onClose, onS
           : <Input id={`prep-${field.key}`} type={field.type ?? 'text'} step={field.type === 'number' ? 'any' : undefined} maxLength={field.maxLength} {...form.register(field.key)} />}
       </PreparationField>)}
     </div>
-    <RequiredDialogFooter showLegend={fields.some(field => field.required)}><Button type="button" variant="outline" disabled={pending} onClick={onClose}>Cancel</Button><Button disabled={pending} type="submit">{pending ? 'Saving…' : submitLabel}</Button></RequiredDialogFooter>
+    <RequiredDialogFooter showLegend={fields.some(field => field.required)}><Button ref={cancelRef} type="button" variant="outline" disabled={pending} onClick={onClose}>Cancel</Button><Button disabled={pending} type="submit">{pending ? 'Saving…' : submitLabel}</Button></RequiredDialogFooter>
   </form></DialogContent></Dialog>
 }
 

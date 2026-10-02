@@ -106,7 +106,7 @@ public sealed partial class LabServiceOrdersController
                     usable);
             }).ToArray(),
             preparation.Sources.Sum(s => s.SpecimenCount), preparation.SequencingRunCount,
-            order.SampleRosterFinalizedAt.HasValue, preparation.Sources,
+            order.SampleRosterFinalizedAt.HasValue && !order.HasPendingChangeRoster, preparation.Sources,
             order.Phases.Where(p => p.SupersededAtUtc == null && p.CancelledAtUtc == null).Select(p => p.Id).ToArray(),
             sampleType.MinimumSampleAmount, sampleType.SampleAmountUnit,
             order.Phases.Where(p => p.PreparationCompletedAtUtc.HasValue).Select(p => p.Id).ToArray());
@@ -121,7 +121,7 @@ public sealed partial class LabServiceOrdersController
             $"sample-shipping:{orderId}", cancellationToken);
         var order = await ReadLockedRosterAsync(orderId, tenant, cancellationToken);
         Execute(order.EnsureSampleRosterEditable);
-        if (order.SampleRosterFinalizedAt.HasValue)
+        if (order.SampleRosterFinalizedAt.HasValue && !order.HasPendingChangeRoster)
             throw Conflict("paired_preparation_unavailable", "This Job already has a confirmed sample list.");
         var phase = LabPhaseScopeRules.Resolve(order, request.PhaseId);
         await LabPhaseShippingSequence.RequireCurrentAsync(dbContext, order, phase, cancellationToken);
@@ -205,7 +205,7 @@ public sealed partial class LabServiceOrdersController
         var order = await ReadLockedRosterAsync(orderId, tenant, cancellationToken);
         EnsureVersion(order.Version, request.OrderVersion);
         Execute(order.EnsureSampleRosterEditable);
-        if (order.SampleRosterFinalizedAt.HasValue)
+        if (order.SampleRosterFinalizedAt.HasValue && !order.HasPendingChangeRoster)
             throw Conflict("paired_preparation_unavailable", "This Job already has a confirmed sample list.");
         var selections = await dbContext.LabSampleTubeKitSelections
             .Where(item => item.LabServiceOrderId == order.Id && item.OrganizationId == tenant.Organization.Id
@@ -246,7 +246,7 @@ public sealed partial class LabServiceOrdersController
         var order = await ReadLockedRosterAsync(orderId, tenant, cancellationToken);
         EnsureVersion(order.Version, request.OrderVersion);
         Execute(order.EnsureSampleRosterEditable);
-        if (order.SampleRosterFinalizedAt.HasValue)
+        if (order.SampleRosterFinalizedAt.HasValue && !order.HasPendingChangeRoster)
             throw Conflict("paired_preparation_unavailable", "This Job already has a sample list. Review its saved preparation instead.");
         var sampleType = await ReadShippingSampleTypeAsync(order, cancellationToken);
         var saved = await dbContext.LabSampleTubePairs.Where(item => item.LabServiceOrderId == orderId).ToArrayAsync(cancellationToken);
@@ -349,7 +349,7 @@ public sealed partial class LabServiceOrdersController
             $"sample-shipping:{orderId}", cancellationToken);
         var order = await ReadLockedRosterAsync(orderId, tenant, cancellationToken);
         Execute(order.EnsureSampleRosterEditable);
-        if (order.SampleRosterFinalizedAt.HasValue) throw Conflict("paired_preparation_locked", "Finalized sample/tube pairs cannot be removed.");
+        if (order.SampleRosterFinalizedAt.HasValue && !order.HasPendingChangeRoster) throw Conflict("paired_preparation_locked", "Finalized sample/tube pairs cannot be removed.");
         var pair = await dbContext.LabSampleTubePairs.SingleOrDefaultAsync(item => item.Id == pairId
             && item.LabServiceOrderId == orderId && item.OrganizationId == tenant.Organization.Id
             && item.DepartmentId == tenant.Department.Id, cancellationToken) ?? throw Missing();

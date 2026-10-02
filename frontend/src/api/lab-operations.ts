@@ -47,6 +47,8 @@ export type CreateLabMaterialLotInput = {
 }
 
 export type LabSpecimen = { id: string; submittedSpecimenId: string; accessionNumber: string | null; receivedAtUtc: string | null; intakeDisposition: string; receiptCondition: string | null; intakeReasonCode: string | null; currentLocation: string | null; version: number }
+export type LabAccessionedSample = { id: string; labWorkOrderId: string; customerSampleId: string; accessionNumber: string; organizationName: string; jobReference: string; intakeDisposition: string; receivedAtUtc: string | null; useStatus: 'Used' | 'NotUsed'; tubes: { id: string; barcode: string; location: string | null; intakeDisposition: string | null; status: string; useStatus: 'Used' | 'NotUsed' | 'Unknown' }[] }
+export type LabAccessionedSamplePage = { items: LabAccessionedSample[]; page: number; pageSize: number; totalCount: number }
 export type LabContainer = { id: string; labSpecimenId: string | null; parentContainerId: string | null; kind: string; barcode: string; barcodeNamespace?: string; barcodeSource: 'PhaenoGenerated' | 'RegisteredSupplier' | 'Manufacturer'; externalBarcodeReferenceId: string | null; label: string; labelPrintCount: number; location: string | null; quantity: number | null; quantityText?: string | null; quantityUnit: string | null; status: string; retainUntilUtc: string | null; version: number; intakeDisposition?: string | null; intakeReasonCode?: string | null; intakeNotes?: string | null; intakeReviewedAtUtc?: string | null; intakeReviewedByUserId?: string | null; initialQuantity?: number | null; initialQuantityText?: string | null; initialQuantityUnit?: string | null; quantityBasis?: string | null; quantityHistoryJson?: string }
 export type LabContainerScan = { labWorkOrderId: string; commercialOrderNumber: string | null; accessionNumber: string | null; parentBarcode: string | null; labLibraryId: string | null; libraryStatus: string | null; container: LabContainer }
 export type LabLabelPrintEvent = { id: string; labContainerId: string; outcome: string; reason: string; failureDetails: string | null; printNumber: number | null; actorUserId: string | null; occurredAtUtc: string }
@@ -100,6 +102,7 @@ export const createLabStorageLocation = (name: string) => post<ManagedLabStorage
 export const updateLabStorageLocation = (location: ManagedLabStorageLocation, name: string, isActive: boolean) =>
   put<ManagedLabStorageLocation>(`/platform/lab-operations/storage-locations/${location.id}`, { name, isActive, version: location.version })
 export const getLabWorkOrder = (id: string) => get<LabWorkOrderDetail>(`/platform/lab-operations/work-orders/${id}`)
+export const getLabAccessionedSamples = (search: string, page: number, intakeStatus?: string, useStatus?: string) => get<LabAccessionedSamplePage>(`/platform/lab-operations/samples/accessioned?${new URLSearchParams({ search, page: String(page), pageSize: '20', ...(intakeStatus ? { intakeStatus } : {}), ...(useStatus ? { useStatus } : {}) })}`)
 export const getLabExecution = (id: string) => get<LabExecutionDetail>(`/platform/lab-operations/executions/${id}`)
 export const recordLabExecutionStep = (id: string, input: LabExecutionStepInput) =>
   post<LabExecutionDetail>(`/platform/lab-operations/executions/${id}/steps`, input)

@@ -63,7 +63,7 @@ describe('SampleShippingDetailPage', () => {
     const onNavigationLockChange = vi.fn()
     api.getSampleShipment.mockResolvedValue({ ...shipment, authorizationSource: 'CustomerLabServiceOrder' })
     api.getKitSupply.mockResolvedValue({ shipmentId: shipment.id, jobId: shipment.authorizationSourceId, jobNumber: 'TEST-JOB', request: null, recordedStock: [], inventoryStatus: 'Unknown', canRequestKits: true, canPrepareSamples: false, locations: [deliveryLocationFixture], deliveryLocationId: deliveryLocationFixture.id, recommendation: { containers: [] } })
-    renderPage(undefined, customerSession(), embeddedHost({ onNavigationLockChange, showPreparation: true }))
+    renderPage(undefined, customerSession(), embeddedHost({ onNavigationLockChange, showPreparation: true, showKitDelivery: true }))
     fireEvent.click(await screen.findByRole('button', { name: 'Order transportation kits' }))
     await screen.findByRole('dialog', { name: 'Order transportation kits' })
     expect(screen.getByRole('link', { name: 'Manage delivery locations' })).toBeTruthy()

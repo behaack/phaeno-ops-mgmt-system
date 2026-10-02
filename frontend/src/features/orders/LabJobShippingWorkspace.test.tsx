@@ -1,4 +1,5 @@
 import { useRef, useState, type ComponentProps } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { LabServiceOrder } from '#/api/order-management'
@@ -35,7 +36,8 @@ function source(related = [active], overrides: Record<string, unknown> = {}) {
 function Harness({ workspace = {}, navigationLocked = false, orderDialogOpen = false }: { workspace?: LabJobWorkspaceSearch; navigationLocked?: boolean; orderDialogOpen?: boolean }) {
   const [target, setTarget] = useState<HTMLDivElement | null>(null)
   const [sendTarget, setSendTarget] = useState<HTMLDivElement | null>(null)
-  return <><div ref={setTarget} data-testid="job-header-actions" /><div ref={setSendTarget} data-testid="next-step-action" /><LabJobShippingWorkspace order={order} workspace={workspace} onWorkspaceChange={mocks.navigate} headerTarget={target} sendActionTarget={sendTarget} orderActions={[{ kind: 'command', label: 'Request cancellation', onSelect: mocks.cancel }]} orderDialogOpen={orderDialogOpen} navigationLocked={navigationLocked} onActivityChange={mocks.activity} /></>
+  const [client] = useState(() => new QueryClient({ defaultOptions: { queries: { retry: false } } }))
+  return <QueryClientProvider client={client}><div ref={setTarget} data-testid="job-header-actions" /><div ref={setSendTarget} data-testid="next-step-action" /><LabJobShippingWorkspace order={order} workspace={workspace} onWorkspaceChange={mocks.navigate} headerTarget={target} sendActionTarget={sendTarget} orderActions={[{ kind: 'command', label: 'Request cancellation', onSelect: mocks.cancel }]} orderDialogOpen={orderDialogOpen} navigationLocked={navigationLocked} onActivityChange={mocks.activity} /></QueryClientProvider>
 }
 
 describe('Lab Job shipping host selection and navigation', () => {
@@ -47,9 +49,10 @@ describe('Lab Job shipping host selection and navigation', () => {
     expect(target.closest('[data-slot="card-header"]')?.textContent).toContain('Samples and shipping')
   })
 
-  it('reviews or prints directly from separate next-step buttons without leaving the sample view', () => {
+  it('reviews instructions from Actions and prints from the next step without leaving the sample view', () => {
     render(<Harness />)
-    fireEvent.click(within(screen.getByTestId('next-step-action')).getByRole('button', { name: 'Review shipping instructions' }))
+    fireEvent.pointerDown(within(screen.getByTestId('job-header-actions')).getByRole('button', { name: 'Actions' }), { button: 0, ctrlKey: false })
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Review shipping instructions' }))
     expect(mocks.review).toHaveBeenCalledTimes(1)
     expect(mocks.print).not.toHaveBeenCalled()
     fireEvent.click(within(screen.getByTestId('next-step-action')).getByRole('button', { name: 'Print shipping insert' }))

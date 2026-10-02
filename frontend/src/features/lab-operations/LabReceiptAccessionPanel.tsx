@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
+import { useNavigate, useSearch } from '@tanstack/react-router'
 import { ScanLine } from 'lucide-react'
 import { useRef, useState } from 'react'
 
@@ -8,16 +9,18 @@ import { scanShippingIdentity } from '#/api/shipping-containers'
 import type { LabWorkOrderSummary } from '#/api/lab-operations'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
+import { Field, FieldDescription } from '#/components/ui/field'
 import { Input } from '#/components/ui/input'
+import { PillToggle } from '#/components/ui/pill-toggle'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { resolveLabReceiptTab, type LabReceiptTab } from './lab-receipt-tabs'
 import { Label } from '#/components/ui/label'
 import { LabShipmentReceiptPanel } from './LabShipmentReceiptPanel'
 import { LabShipmentQueue } from './LabShipmentQueue'
 import { ContainerAccessionDialog } from './ContainerAccessionDialog'
-import { KitRequestsPanel } from '#/features/orders/kit-requests/KitRequestsPanel'
-import { ReturnKitFulfillmentPanel } from '#/features/orders/ReturnKitFulfillmentPanel'
+import { LabKitRequestQueues } from './LabKitRequestQueues'
+import { LabAccessionedSamplesPanel } from './LabAccessionedSamplesPanel'
+import { parseAccessionSearch } from './lab-accession-search'
 
 export function LabReceiptAccessionPanel({
   apiEnabled,
@@ -35,6 +38,9 @@ export function LabReceiptAccessionPanel({
 }) {
   const [localTab, setLocalTab] = useState<LabReceiptTab>()
   const selectedTab = resolveLabReceiptTab(onTabChange ? tab : localTab ?? tab)
+  const routeSearch = useSearch({ strict: false }), navigate = useNavigate()
+  const accessionView = parseAccessionSearch(routeSearch).accessionView ?? 'packages'
+  const setAccessionView = (value: string) => void navigate({ to: '/lab-operations', search: previous => ({ ...previous, section: 'receipt', receiptTab: 'accession', accessionView: value === 'samples' ? 'samples' : 'packages' }), replace: true, resetScroll: false })
   const visibleTabs = [
     { value: 'kit-requests', label: 'Kit requests' },
     { value: 'receiving', label: 'Receive shipments' },
@@ -61,7 +67,7 @@ export function LabReceiptAccessionPanel({
     },
   })
   const changeTab = (next: LabReceiptTab) => { if (onTabChange) onTabChange(next); else setLocalTab(next) }
-  const openAccession = (barcode: string) => { changeTab('accession'); packetScan.mutate(barcode) }
+  const openAccession = (barcode: string) => { changeTab('accession'); setAccessionView('packages'); packetScan.mutate(barcode) }
 
   return (
     <div className="space-y-5">
@@ -75,23 +81,11 @@ export function LabReceiptAccessionPanel({
             {visibleTabs.map(item => <TabsTrigger key={item.value} value={item.value}>{item.label}</TabsTrigger>)}
           </TabsList>
         </div>
-        <TabsContent value="kit-requests" className="space-y-5"><KitRequestsPanel apiEnabled={apiEnabled} /><ReturnKitFulfillmentPanel apiEnabled={apiEnabled} shipmentId={shipmentId} showEmpty /></TabsContent>
+        <TabsContent value="kit-requests" className="space-y-5"><LabKitRequestQueues apiEnabled={apiEnabled} shipmentId={shipmentId} /></TabsContent>
         <TabsContent value="receiving"><LabShipmentReceiptPanel apiEnabled={apiEnabled} canReceive={canReceiveShipments} onAccession={openAccession} /></TabsContent>
         <TabsContent value="accession" className="space-y-5">
-      <LabShipmentQueue apiEnabled={apiEnabled} received onOpen={barcode => packetScan.mutate(barcode)} />
-      <Card className="gap-0 py-0">
-        <CardHeader className="border-b bg-muted/50 p-4">
-          <div className="flex items-start gap-3">
-            <ScanLine className="mt-0.5 size-5 text-primary" />
-            <div>
-              <CardTitle>Open a received container</CardTitle>
-              <CardDescription>
-                Select a received container above or scan its PH-P- shipping insert barcode. Then scan and accession each individual tube.
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4 p-4">
+          <PillToggle label="Accession views" className="[&>button]:px-3 sm:[&>button]:px-4" value={accessionView} onValueChange={setAccessionView} options={[{ value: 'packages', label: 'Received packages' }, { value: 'samples', label: 'Accessioned samples' }]} />
+          {accessionView === 'samples' ? <LabAccessionedSamplesPanel apiEnabled={apiEnabled} /> : <LabShipmentQueue apiEnabled={apiEnabled} received onOpen={barcode => packetScan.mutate(barcode)} headerContent={<div className="space-y-4">
           <form
             className="flex flex-col gap-3 sm:flex-row sm:items-end"
             onSubmit={(event) => {
@@ -103,24 +97,24 @@ export function LabReceiptAccessionPanel({
               }
             }}
           >
-            <div className="w-full max-w-xl">
+            <Field className="w-full max-w-xl">
               <Label htmlFor="shipment-packet-barcode">Shipping insert barcode</Label>
-              <p id="shipment-barcode-help" className="mt-1 text-sm text-muted-foreground">Scan or enter the complete PH-P- code printed below “Scan to receive this shipment” on the insert.</p>
+              <FieldDescription id="shipment-barcode-help">Scan or enter the complete PH-P- code printed below “Scan to receive this shipment” on the insert.</FieldDescription>
               <Input
                 ref={packetBarcodeInput}
                 id="shipment-packet-barcode"
                 aria-describedby="shipment-barcode-help"
-                className="mt-2 font-mono uppercase"
+                className="font-mono uppercase"
                 value={packetBarcode}
                 onChange={(event) => setPacketBarcode(event.target.value)}
                 autoComplete="off"
                 spellCheck={false}
                 placeholder="PH-P-…"
               />
-            </div>
+            </Field>
             <Button type="submit" disabled={!apiEnabled || !packetBarcode.trim() || packetScan.isPending || identityScan.isPending}>
-              <ScanLine data-icon="inline-start" />
-              {packetScan.isPending || identityScan.isPending ? 'Looking up…' : 'Look up barcode'}
+              <ScanLine aria-hidden="true" data-icon="inline-start" />
+              {packetScan.isPending || identityScan.isPending ? 'Opening…' : 'Open container'}
             </Button>
           </form>
           <details className="text-sm">
@@ -131,7 +125,7 @@ export function LabReceiptAccessionPanel({
               <li><strong>Physical container barcode (KIT-):</strong> identifies the kit and is not accepted here. Scan individual tube barcodes in the tube field after opening the insert.</li>
             </ul>
           </details>
-          <p className="text-sm text-muted-foreground">Opening an insert here does not record arrival. Receive the container in Receive shipments first; each tube is accessioned separately.</p>
+          <p className="text-xs text-muted-foreground">Lookup does not record arrival. Receive the container in Receive shipments first; accession each tube separately.</p>
           {identityScan.error ? <Alert variant="destructive"><AlertTitle>Shipping identity was not found</AlertTitle><AlertDescription>{getOrderErrorMessage(identityScan.error, 'Check the complete barcode and scan again.')}</AlertDescription></Alert> : null}
           {identityScan.data ? <section aria-live="polite" className="rounded-lg border p-4"><h3 className="wrap-anywhere font-medium">{identityScan.data.kind === 'Order' ? 'Customer Job' : 'Sample'} {identityScan.data.reference}</h3><p className="mt-1 text-xs text-muted-foreground">Choose the shipment manifest to compare its registered tubes. This lookup did not record receipt.</p><div className="mt-3 divide-y">{identityScan.data.shipments.map(shipment => <div key={shipment.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div className="min-w-0"><p className="wrap-anywhere text-sm font-medium">{shipment.shipmentNumber}</p><p className="wrap-anywhere text-xs text-muted-foreground">{shipment.organizationName} · {shipment.destinationName} · {formatCompactStatus(shipment.status)}</p></div>{shipment.currentPacket ? <Button size="sm" variant="outline" disabled={packetScan.isPending} onClick={() => packetScan.mutate(shipment.currentPacket!.barcode)}>Open manifest {shipment.currentPacket.packetNumber}</Button> : <span className="text-xs text-muted-foreground">No confirmed manifest</span>}</div>)}</div>{!identityScan.data.shipments.length ? <p className="mt-3 text-sm text-muted-foreground">No shipments are available for this identity.</p> : null}</section> : null}
           {packetScan.error ? (
@@ -141,8 +135,7 @@ export function LabReceiptAccessionPanel({
             </Alert>
           ) : null}
           {packetScan.data && containerOpen ? <ContainerAccessionDialog key={packetScan.data.barcode} initialPacket={packetScan.data} canAccession={canReceiveShipments} onClose={() => { setContainerOpen(false); window.requestAnimationFrame(() => packetBarcodeInput.current?.focus()) }} /> : null}
-        </CardContent>
-      </Card>
+      </div>} />}
 
         </TabsContent>
       </Tabs>

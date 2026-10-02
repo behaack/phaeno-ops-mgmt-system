@@ -67,7 +67,9 @@ export function LabJobPhaseShipping({ order, phasePlan, phaseState, onPhaseRefre
     if (requestOpen && !opened.current) {
       form.reset({ phaseIds: phase ? [phase.phaseId] : [], deliveryLocationId: defaultLocationId })
       const active = document.activeElement
-      opener.current = active instanceof HTMLElement && active.getAttribute('role') !== 'menuitem' ? active : document.getElementById('phase-shipping-actions')
+      opener.current = active instanceof HTMLElement && active.getAttribute('role') !== 'menuitem'
+        && !active.closest('[data-slot="dialog-content"]') ? active
+        : document.getElementById('phase-shipping-actions') ?? document.getElementById('phase-next-step')
     }
     opened.current = requestOpen
   }, [requestOpen, phase, defaultLocationId, form])

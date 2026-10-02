@@ -38,6 +38,13 @@ export async function getLabShipmentQueue(received: boolean) {
   return unwrap(response.data)
 }
 
+export type LabShipmentHistoryPage = { items: LabShipmentQueueItem[]; page: number; pageSize: number; totalCount: number }
+
+export async function getLabShipmentHistory(search: string, page: number) {
+  const response = await api.get<Envelope<LabShipmentHistoryPage>>('/platform/lab-operations/shipments/received', { params: { search: search || undefined, page, pageSize: 20 } })
+  return unwrap(response.data)
+}
+
 export async function receiveLabShipment(barcode: string) {
   const response = await api.post<Envelope<LabShipmentReceipt>>('/platform/lab-operations/shipments/receipt', { barcode })
   return unwrap(response.data)

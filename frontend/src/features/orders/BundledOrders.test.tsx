@@ -159,7 +159,7 @@ describe('configured Lab Service commitment', () => {
       dialog.getByRole('textbox', { name: /Purchase order number/ }),
       { target: { value: 'TRAINING-PO' } },
     )
-    fireEvent.change(dialog.getByRole('combobox', { name: /Ship Transportation kits to/ }), { target: { value: '10000000-0000-4000-8000-000000000011' } })
+    expect(dialog.queryByRole('combobox', { name: /Ship Transportation kits to/ })).toBeNull()
     fireEvent.click(dialog.getByRole('checkbox', { name: /I confirm this is the Sample type/ }))
     fireEvent.click(dialog.getByRole('checkbox', { name: /I accept the displayed scope/ }))
     fireEvent.click(
@@ -218,7 +218,7 @@ describe('configured Lab Service commitment', () => {
       dialog.getByRole('textbox', { name: /Purchase order number/ }),
       { target: { value: 'TRAINING-PO' } },
     )
-    fireEvent.change(dialog.getByRole('combobox', { name: /Ship Transportation kits to/ }), { target: { value: '10000000-0000-4000-8000-000000000011' } })
+    expect(dialog.queryByRole('combobox', { name: /Ship Transportation kits to/ })).toBeNull()
     fireEvent.click(dialog.getByRole('checkbox', { name: /I confirm this is the Sample type/ }))
     fireEvent.click(dialog.getByRole('checkbox', { name: /I accept the displayed scope/ }))
     fireEvent.click(

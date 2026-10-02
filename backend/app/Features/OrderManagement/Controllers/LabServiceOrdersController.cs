@@ -735,6 +735,7 @@ public sealed partial class LabServiceOrdersController(
             {
                 var order = await ReadLockedRosterAsync(orderId, tenant, operationCancellationToken);
                 EnsureVersion(order.Version, request.Version);
+                var acceptedAddition = order.HasPendingChangeRoster;
                 var pairedPreparation = order.UsesPairedPreparation;
                 var preparationPhase = pairedPreparation ? LabPhaseScopeRules.Resolve(order, request.PhaseId) : null;
                 if (preparationPhase is not null)
@@ -862,7 +863,8 @@ public sealed partial class LabServiceOrdersController(
                         Specimens = originalCommand!.Specimens.Concat(command.Specimens.Where(s => !authorizedIds.Contains(s.SubmittedSpecimenId))).ToList(),
                         ApprovedWorkflowVersionId = null };
                     acknowledgment = await labOperationsProvider.AmendAuthorizationAsync(new(command.Metadata, authorizationId,
-                        existingAuthorization.AuthorizationVersion, command.AuthorizationVersion, preparationPhase is null ? "accepted_additional_scope" : "phase_preparation", command), operationCancellationToken);
+                        existingAuthorization.AuthorizationVersion, command.AuthorizationVersion,
+                        acceptedAddition || preparationPhase is null ? "accepted_additional_scope" : "phase_preparation", command), operationCancellationToken);
                     authorization = existingAuthorization;
                     authorization.RecordAmendment(command.AuthorizationVersion, commandId, JsonSerializer.Serialize(command, JsonSerializerOptions));
                 }

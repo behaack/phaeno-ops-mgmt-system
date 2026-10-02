@@ -8,7 +8,6 @@ import { LabServiceDetailPage } from './LabServiceDetailPage'
 import { ReagentOrderDetailPage } from './ReagentOrderDetailPage'
 
 const mocks = vi.hoisted(() => ({ read: vi.fn(), save: vi.fn(), blocker: vi.fn() }))
-const kitLocationId = '10000000-0000-4000-8000-000000000011'
 vi.mock('#/api/customer-delivery-locations', () => ({
   getCustomerDeliveryLocations: async () => [{ id: '10000000-0000-4000-8000-000000000011', label: 'Training receiving', recipient: 'Training lab', line1: '1 Test Way', line2: null, city: 'Baltimore', region: 'MD', postalCode: '21201', countryCode: 'US', isActive: true, isDefault: true, version: 1 }],
 }))
@@ -45,7 +44,7 @@ vi.mock('./ReleasedDeliverableRetentionNotice', () => ({ ReleasedDeliverableRete
 
 const record = {
   id: 'order-1', organizationId: 'customer-1', version: 3, orderNumber: 'ORDER-1', requestNumber: 'ASSEMBLY-1', projectReference: 'Assembly project',
-  status: 'Quoted', updatedAt: '2026-09-07T12:00:00Z', metadataJson: '{}', shippingAddressSnapshotJson: null,
+  status: 'QuoteIssued', updatedAt: '2026-09-07T12:00:00Z', metadataJson: '{}', shippingAddressSnapshotJson: null,
   canAcceptQuote: true, canRequestCancellation: true, canWithdraw: true,
   sampleTypeDefinitionId: '10000000-0000-4000-8000-000000000012', sampleTypeName: 'Training RNA',
   requestedSpecimenCount: 7, sourceGroups: [{ id: 'source-1', biologicalSource: 'Human PBMCs', specimenCount: 7, version: 1 }],
@@ -66,7 +65,8 @@ async function headerAction(name: string) {
   await waitFor(() => expect(screen.queryByRole('button', { name }) ?? screen.queryByRole('button', { name: 'Actions' })).toBeTruthy())
   const direct = screen.queryByRole('button', { name })
   if (direct) return direct
-  fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions' }), { button: 0, ctrlKey: false })
+  const quoteActions = name === 'Accept quote' ? screen.getByRole('group', { name: 'Quote actions' }) : null
+  fireEvent.pointerDown(quoteActions ? within(quoteActions).getByRole('button', { name: 'Actions' }) : screen.getAllByRole('button', { name: 'Actions' })[0], { button: 0, ctrlKey: false })
   return screen.findByRole('menuitem', { name })
 }
 
@@ -76,7 +76,7 @@ function decisionBlocker() {
 }
 
 describe.each(cases)('$name decision dialog', ({ name, page, field, open, keep, save }) => {
-  beforeEach(() => { vi.clearAllMocks(); mocks.read.mockResolvedValue(record); mocks.save.mockReset() })
+  beforeEach(() => { vi.clearAllMocks(); mocks.blocker.mockReturnValue({ status: 'idle' }); mocks.read.mockResolvedValue(record); mocks.save.mockReset() })
   afterEach(() => { vi.restoreAllMocks() })
 
   async function openDialog() {
@@ -90,16 +90,29 @@ describe.each(cases)('$name decision dialog', ({ name, page, field, open, keep, 
     const dialog = await openDialog()
     expect(within(dialog).getByRole('button', { name: save }).matches(':disabled')).toBe(true)
     fireEvent.change(within(dialog).getByLabelText(field), { target: { value: 'Keep this entry' } })
+    const isLab = name.startsWith('Customer')
+    const keepUnsaved = async () => {
+      if (isLab) {
+        const confirmation = screen.getByRole('dialog', { name: 'Discard unsaved order changes?' })
+        fireEvent.click(within(confirmation).getByRole('button', { name: 'Keep reviewing' }))
+        await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Discard unsaved order changes?' })).toBeNull())
+      }
+    }
     fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }))
+    await keepUnsaved()
     fireEvent.click(within(dialog).getByRole('button', { name: keep }))
+    await keepUnsaved()
     fireEvent.keyDown(dialog, { key: 'Escape' })
+    await keepUnsaved()
     expect(screen.getByRole('dialog')).toBe(dialog)
     expect(within(dialog).getByLabelText(field)).toHaveProperty('value', 'Keep this entry')
     expect(decisionBlocker().shouldBlockFn()).toBe(true)
     expect(decisionBlocker().enableBeforeUnload()).toBe(true)
-    expect(confirm).toHaveBeenCalled()
+    if (isLab) expect(confirm).not.toHaveBeenCalled()
+    else expect(confirm).toHaveBeenCalled()
     confirm.mockReturnValue(true)
     fireEvent.click(within(dialog).getByRole('button', { name: keep }))
+    if (isLab) fireEvent.click(within(screen.getByRole('dialog', { name: 'Discard unsaved order changes?' })).getByRole('button', { name: 'Discard changes' }))
     expect(screen.queryByRole('dialog')).toBeNull()
     fireEvent.click(await headerAction(open))
     expect(within(screen.getByRole('dialog')).getByLabelText(field)).toHaveProperty('value', '')
@@ -113,14 +126,11 @@ describe.each(cases)('$name decision dialog', ({ name, page, field, open, keep, 
     let input = within(dialog).getByLabelText(field)
     fireEvent.change(input, { target: { value: 'Reviewed entry' } })
     if (name === 'Customer quote acceptance') {
-      await within(dialog).findByRole('option', { name: /Training receiving/ })
       dialog = screen.getByRole('dialog')
       input = within(dialog).getByLabelText(field)
       fireEvent.change(input, { target: { value: 'Reviewed entry' } })
       expect(input).toHaveProperty('value', 'Reviewed entry')
-      const address = within(dialog).getByRole('combobox', { name: /Ship Transportation kits to/ })
-      fireEvent.change(address, { target: { value: kitLocationId } })
-      await within(dialog).findByText(/Training lab · 1 Test Way/)
+      expect(within(dialog).queryByRole('combobox', { name: /Ship Transportation kits to/ })).toBeNull()
       const sampleTypeConfirmation = within(dialog).getByRole('checkbox', { name: /I confirm this is the Sample type/ })
       fireEvent.click(sampleTypeConfirmation.closest('label') as HTMLLabelElement)
       expect(sampleTypeConfirmation).toHaveProperty('checked', true)

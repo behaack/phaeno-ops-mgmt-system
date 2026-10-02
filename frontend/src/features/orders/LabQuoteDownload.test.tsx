@@ -1,14 +1,15 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { LabServiceOrder, Quote } from '#/api/order-management'
 import { bundleLabDraft } from '#/test-helpers/bundled-orders'
 import { LabServiceDetailPage } from './LabServiceDetailPage'
+import type { LabJobWorkspaceSearch } from './lab-job-workspace-search'
 
 const mocks = vi.hoisted(() => ({ getOrder: vi.fn(), getPdf: vi.fn(), createUrl: vi.fn(), revokeUrl: vi.fn() }))
-vi.mock('@tanstack/react-router', () => ({ Link: ({ children }: { children: ReactNode }) => <a href="#job">{children}</a>, useNavigate: () => vi.fn(), useBlocker: vi.fn() }))
+vi.mock('@tanstack/react-router', () => ({ Link: ({ children }: { children: ReactNode }) => <a href="#job">{children}</a>, useNavigate: () => vi.fn(), useBlocker: () => ({ status: 'idle' }) }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider: 'clerk', session: { capabilities: { canViewLabServiceOrders: true, canViewLabServiceInvoices: false } } }) }))
 vi.mock('#/api/client', () => ({ api: { get: mocks.getPdf } }))
 vi.mock('#/api/order-management', async original => ({ ...await original<typeof import('#/api/order-management')>(), getLabOrder: mocks.getOrder }))
@@ -43,8 +44,12 @@ beforeEach(() => {
 })
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
-function show() {
-  render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}><LabServiceDetailPage orderId={job.id} /></QueryClientProvider>)
+function show(detailTab: 'billing' | 'history' = 'billing') {
+  function Workspace() {
+    const [workspace, setWorkspace] = useState<LabJobWorkspaceSearch>({ detailTab })
+    return <LabServiceDetailPage orderId={job.id} workspace={workspace} onWorkspaceChange={patch => { setWorkspace(previous => ({ ...previous, ...patch })); return Promise.resolve() }} />
+  }
+  render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}><Workspace /></QueryClientProvider>)
 }
 
 describe('Customer quote PDF download', () => {
@@ -103,16 +108,15 @@ describe('Customer quote PDF download', () => {
   })
 
   it('keeps submitted request snapshots as JSON and hides the quote action until a quote exists', async () => {
-    mocks.getOrder.mockResolvedValueOnce({ ...job, quotes: [] })
-    show()
-    fireEvent.click(await screen.findByRole('tab', { name: 'History' }))
+    mocks.getOrder.mockResolvedValue({ ...job, quotes: [], requestRevisions: [{ id: 'submission-1', revision: 1, submittedAt: '2026-09-04T14:00:00Z', snapshotJson: '{}' }] })
+    show('history')
     fireEvent.click(await screen.findByText('Submitted request revisions'))
     fireEvent.click(await screen.findByRole('button', { name: 'Download snapshot' }))
     expect(downloads).toEqual([`${job.orderNumber}-request-r1.json`])
     expect(mocks.createUrl.mock.lastCall?.[0]).toHaveProperty('type', 'application/json')
     expect(mocks.getPdf).not.toHaveBeenCalled()
     expect(screen.queryByRole('button', { name: 'Download quote PDF' })).toBeNull()
-    fireEvent.click(screen.getByRole('tab', { name: 'Order and billing' }))
-    expect(screen.getByText('Phaeno has not issued pricing yet.')).toBeTruthy()
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Order and billing' }), { button: 0, ctrlKey: false })
+    expect(await screen.findByText('Phaeno has not issued pricing yet.')).toBeTruthy()
   })
 })

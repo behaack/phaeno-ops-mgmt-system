@@ -1,5 +1,64 @@
 # Playwright E2E Test Plan
 
+## Consolidated Lab step actions — October 2, 2026
+
+Manual acceptance: open a Lab step with one Draft and confirm exactly one Actions
+menu beside its name. Open it by keyboard, inspect one Edit draft, no New version,
+and version-specific approval, discard and preview commands. Confirm previews
+retain the selected historical definition; approval/discard dialogs name the
+Draft version and preserve existing restrictions. Dismiss without saving and
+check focus return. Include narrow/dark and read-only/retired preview access.
+Automated coverage is deferred for this presentation-only change under the
+request-only rule; no operational approval, discard or retirement is authorized.
+
+## Quote acceptance navigation — October 2, 2026
+
+Authored `lab-quote-acceptance.spec.ts` uses the real detail page/router blockers
+and an in-memory API adapter. Confirm a quoted Sample type and required purchase
+order, accept once, and verify the dialog closes, Progress opens, and Request
+transportation kits opens without refreshing or submitting a kit request. A
+separate case keeps unsaved entries after the discard warning. Automated execution
+remains request-only and was not run. Manual browser inspection reproduced the
+old discard warning and verified the corrected flow with synthetic records.
+This provides no live order, provider, physical-kit, or production acceptance.
+
+## Accession sample directory — October 2, 2026
+
+Sample-use follow-up: review Used/Not used independently from intake; combine use/intake/search filters and preserve them on detail return. Check a used source plus untouched reserve, recorded exhaustion and historical processing with unidentified source tubes. Used must not imply all material consumed; planned/cancelled unstarted selection must not establish use. Verify desktop/narrow/dark, contained table overflow, shared control heights, keyboard filter/disclosure operation and use-only filtered-empty feedback. Browser review uses synthetic responses; connected PostgreSQL and physical handling remain separate. Automated suites are not requested.
+
+Verify Received packages / Accessioned samples uses the compact PillToggle and shows one view at a time while preserving lookup draft and URL filters. Search by sample/accession/tube/box/Customer/Job, combine intake status, reset page on filters, page at both boundaries and return from the primary specimen link with the same context. Inspect individual accepted/held/rejected tube decisions and actual locations without implying complete arrival or processing start. Exercise successful, empty, filtered-empty, loading, failed/retry and disconnected states. Review keyboard arrow selection/disclosure operation, search/select vertical alignment and 390 px/dark table containment. No operational mutation is required for UI acceptance; automated suites remain request-only.
+
+## Accession recorded-tube disclosures — October 2, 2026
+
+In the box-first accession workspace, verify only undecided/pending rows stay in the main table. Accepted tubes start collapsed under Accessioned tubes with saved identities/locations; held/rejected records use Recorded exceptions and still contribute to the recorded total. Open/close disclosures using keyboard, confirm saved-tube scans cannot re-enter a pending group, and save the remaining box group without changing earlier locations. Review desktop footer legend/count/button center alignment and narrow/dark containment, including expanded tables and completion. Use synthetic responses for local UI review; connected persistence and physical handling are separate acceptance. Automated execution remains unrequested.
+
+## Box-at-a-time accession — October 2, 2026
+
+Single-scan follow-up: open the container into one box-first workspace with all expected decisions. Inspect each tube, scan once, wait for identity validation, physically place it and continue. Check one lookup per acceptable tube, visible sample identity, pending versus saved storage, no Identify/Accept-selection stage and no second tube scan. Exceptions before placement and after a pending scan must preserve other mappings, exclude only the successfully excepted tube and require the same box rescan. Keep the reviewed atomic group save, pause/late-scan, uncertainty/retry and dismissal gates below.
+
+Single-scan manual checkpoint: actual components completed a three/two split with five lookups total and exact boxes/request IDs/advancing versions. Pending-tube rejection preserved the other mapping, unreadable-tube rejection needed no lookup, and the remaining three-tube group excluded both rejected identities and used version 3. Exception completion focused box rescan; final completion focused Done. A simulated lost successful five-tube response retried identical payload/request ID without extra scans or duplicate synthetic records. Focus-loss pause and matching-box resume retained prior mappings. Desktop alignment and 390 × 844 dark form/table containment were verified; current screenshots are `single-scan-placement-desktop.png` and `single-scan-mobile-dark.png` in `output/box-placement-evidence/`. Preview files/server/cache/tab were removed and viewport restored. This is synthetic client-state evidence; no automated suite, connected intake write or physical qualification is claimed.
+
+Review five tubes in one box and a three/two split using individually scanned placement identities. Check box-only scanning creates no storage assignment, duplicate/wrong/ineligible scans do not enter a group, review starts unchecked with Back to placement focus and a meaningful body/footer, and saving removes only its exact group. Pause during a delayed scan, rescan a different box then the original one, lose focus/visibility/connection, and confirm earlier mappings persist without accepting late scan results. Check saved groups survive closing, unsaved dismissal explains physical reconciliation, and an uncertain successful response retries the identical request without duplicate records. Review keyboard scan focus and desktop/narrow light/dark layouts. Synthetic UI proof is separate from real operator/scanner/placement acceptance; automated suites remain unrequested.
+
+Manual synthetic checkpoint: the actual dialogs completed five-tube single-box and three/two split placement, exact payload/location and version checks, duplicate exclusion, matching-box resume, late-response exclusion after pause, uncertain-response identical retry, review focus/unchecked confirmation and safe keep/discard behavior. Desktop/light and 390 × 844 dark views were inspected. Evidence is in `output/box-placement-evidence/`; no real shipment, tube or storage writes occurred. Physical scanner/placement, connected backend and role acceptance remain separate. Temporary preview files/server/tab were removed and viewport restored. No automated E2E suite was run.
+
+## Shipment receiving views — October 2, 2026
+
+Manual synthetic checkpoint: both server-paged list components show 20 rows on an intermediate page and five rows on page three of a 45-record fixture. Global Customer search returns 22 matches across two pages, resets to page one, survives refresh and keeps search available on a no-match result. Previous/Next boundaries, Clear search and keyboard paging were reviewed. Accession has one card with its lookup in the header; its draft survives tab switches, lookup failure returns focus to the barcode field, and opening remains read-only. At 390 px in dark theme, card content stays within the application body and tables scroll inside their cards. Evidence is in `output/shipment-receipt-evidence/`. This is presentation proof with blocked operational writes; PostgreSQL runtime and automated E2E execution remain unrun.
+
+Additional checkpoint: Kit shipments has 20-record server pages, retained selected-shipment scope, global search, a page-one reset and preserved Actions/dialog safeguards. Accession samples has one card, with the barcode lookup in Received containers awaiting accession's header and a direct Open container action. Check lookup availability on an empty queue, alternate-identifier disclosure, loading/errors, draft retention and dialog focus. Lookup remains read-only; arrival and individual tube accession stay separate. Check narrow/dark header, table and pager containment.
+
+History follow-up: verify header search, 20-row server pages, total/page indicators and disabled first/last navigation. Search by shipment, PH-P, Customer, Job and carrier/tracking; changing search resets to page one. No-match and empty history keep the search visible; Clear search restores the list. Switch away during the search debounce and return, refresh and use browser Back/Forward without losing view/search/page. Shipment links and their return action keep history context. Check delayed/error/disconnected responses, keyboard focus and 390 px dark reflow. Synthetic reads only; automated suites and operational writes remain unrequested.
+
+Verify available PH-P- shipping-insert numbers appear in small text under their shipment links, including on narrow layouts. Unavailable insert numbers are omitted. Reading the number does not record receipt.
+
+In Receive shipments, verify the compact Receive a shipment | Expected shipments | Shipments received pill. Switch with pointer and keyboard arrows; show one view and preserve an unfinished scan draft. Expected shipments shows containers awaiting arrival; Shipments received includes completed accession, receipt time and tube counts, most recent first. Accession samples continues to show unfinished containers only. Check missing session, read-only operator permissions, empty/error states and narrow/dark layouts. Only explicit Receive shipment records arrival; selecting views and opening history do not mutate data. Synthetic browser review blocks operational writes; automated E2E suites and live scanner acceptance remain unexecuted.
+
+## Request fulfillment from the list - October 2, 2026
+
+Check the compact Kit requests | Kit shipments pill above the request header. One queue appears at a time; arrows select the alternate view, the URL retains request filters, and a shipment-specific link selects Kit shipments. Invoke Prepare kits, Record kit shipment and eligible Cancel request through row Actions without navigating to detail. Verify latest-request permission/stock gates, failure retry, unsaved cancellation, no save on dismissal, menu-to-dialog handoff, focus return and continued pointer interaction after closing. Sent-kit rows group Register tubes and Fulfill kit when both apply. Verify 390 px reflow, horizontal table containment and dark theme. Automated E2E suites and operational mutations are not authorized for this task; synthetic browser evidence is recorded in the owning plan.
+
+
 ## Adaptive Progress presentation — October 1, 2026
 
 Verify accepted single-phase Jobs open Progress with details immediately visible,
@@ -3618,3 +3677,18 @@ The owner requested the full suite for this release. An initial run reused an un
 Use an accepted 350-sample Job with distinct 50/150/150 cohorts, then a different number and distribution of phases. Verify Customer one-Job detail, Phaeno phase/holistic views, all recorded freezer boxes, mixed sample/container progress and overlapping holds. Receive a cohort across containers and confirm that first tube closes cancellation while last declared tube starts its TAT. Receive future scope early and retain that clock during the wait. Reject every later-phase processing start until all purchased outputs of its predecessors are Portal-accessible; release and billing are independent.
 
 Propose rephasing while Phase I runs, move only unsent future samples, review exact before/after named moves and priced portions, then accept as the authorized Customer administrator. Dispatch/receive between proposal and acceptance must reject stale eligibility. Retain prior commitments and original issued invoice snapshots through split/merge. Request/approve cancellation before receipt; reject after first tube; retain a separate cancelled outcome. Exercise Billing-only explicit upfront/partial/combined invoices, uncertain-response retry, tax snapshots, over-invoicing rejection and unchanged release access while unpaid. Confirm all-noncancelled-output completion creates no invoice. Hosted, physical tube/scanner, provider and scientific evidence remain separate gates. No E2E suite has been run for this slice.
+
+## October 2 requested workflow release verification
+
+The complete desktop/mobile Chromium run passed **198 cases, with 2 intentional
+mobile print skips and no failures**, on isolated mock-session port 3032.
+Quote acceptance uses the real detail page and in-memory router: one saved
+acceptance reaches Progress with kit requests enabled without discard or refresh,
+while leaving unsaved entries still offers Keep reviewing and guarded discard.
+No kit request is submitted by that navigation regression. Mixed-progress
+fixtures retain sample names, named phases, keyboard tabs, themes and responsive
+accessibility checks. A preceding run overlapped production build/source
+generation and suffered development-server reloads; the source-frozen full run
+passed without those errors. These synthetic browser results do not establish
+hosted operator, provider, physical printer/scanner or scientific acceptance.
+See the [release plan](PORTAL-WORKFLOW-RELEASE-20261002-PLAN.md) for deployment gates.

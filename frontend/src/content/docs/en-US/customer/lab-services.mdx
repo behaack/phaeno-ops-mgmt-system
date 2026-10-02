@@ -6,7 +6,7 @@ Use Lab services within the selected Department to describe and price a Job befo
 
 ## Additional samples after acceptance
 
-Phaeno can issue a separate **Change quote** for additional samples on an active accepted Job. Review the added source counts, incremental charge, tax status and expiry. An organization or assigned-Department administrator can **Review and accept addition**, enter a required purchase order number and affirm the exact scope and price, or **Decline addition**. The original agreement and existing laboratory work remain in effect. Expired or superseded proposals cannot be accepted.
+Phaeno can issue a separate **Change quote** for additional samples on an active accepted Job. Review the added source counts, incremental charge, tax status and expiry. An organization or assigned-Department administrator can **Review and accept addition**, enter a required purchase order number and affirm the exact scope and price, or **Decline addition**. The original agreement and existing laboratory work remain in effect. An accepted addition creates a later phase. After preceding phases are recorded as sent, request or allocate its own compatible kits, confirm receipt, and prepare the added sample IDs, tube barcodes and purchased runs. Confirming the addition preserves the original samples and their receipt and work history. Expired or superseded proposals cannot be accepted.
 
 Acceptance opens preparation for the additional counts. Previously authorized samples remain locked. For a Job using paired preparation, request kits and confirm each added phase’s Sample ID/tube pairs. Earlier Jobs retain their individual sample-list entry. Only new samples receive additional laboratory and shipping authorization. If laboratory review is required, no partial authorization is saved. Completion bills the original accepted quote plus accepted additions; declining a proposal does not cancel the Job.
 
@@ -124,7 +124,7 @@ When the pairs, source counts and run allocation match the selected phase, selec
 
 ## Earlier Jobs and supplemental sample work
 
-The following sample-list, CSV, container-assignment and tube-matching instructions apply to earlier Jobs and additional sample scope accepted through a Change quote. Their saved history remains available.
+The following sample-list, CSV, container-assignment and tube-matching instructions apply to Jobs that use separate sample-list preparation. Their saved history remains available. Accepted additions to Jobs using paired preparation follow the kit and sample/tube workflow of their new phase.
 
 After placing the standard order or accepting the manual quote, open **Sample identification** in **Samples and shipping**. A blank row is provided for each remaining accepted sample, grouped under its biological source. Enter a unique **Sample ID** in each row; **Tubes** starts at 1 and can be changed if that sample includes reserves. Select **Save sample IDs** for the group. You can save part of a group and return to the remaining blank rows. The counts show saved samples; blank rows are not saved records. If a save is interrupted, confirmed saves remain and unconfirmed entries stay available for review and retry.
 
@@ -191,6 +191,8 @@ biological-source counts in **Order scope** and the price and expiry in **Quote 
 Accepting still opens the confirmation dialog and any required purchase-order
 entry; selecting the first button alone does not place the order. Expired quotes
 cannot be accepted, and Members retain their existing review-only permissions.
+
+After **Confirm price and order** succeeds, the confirmation closes and **Progress** opens automatically. Use the shipping task's next action when eligible, including **Request transportation kits**; acceptance itself does not request kits.
 
 Preparation and shipment controls appear beneath the current task when needed. Saved submission instructions appear with preparation. Previously saved samples and shipment records remain available in **Progress**; **Order and billing** remains accessible through its tab.
 

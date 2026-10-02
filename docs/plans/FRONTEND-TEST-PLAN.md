@@ -1,5 +1,54 @@
 # Frontend Test Plan
 
+## Consolidated Lab step actions — October 2, 2026
+
+Manual review covers one detail Actions control/indicator, one Edit draft command,
+no New version during a Draft, exact-version approval/discard and historical
+previews. Check unconfigured and self-authored approval restrictions, administrator
+override, read-only/retired preview access, keyboard opening/Escape/focus return,
+and narrow/dark containment. The list keeps its existing permitted commands and
+return context. Automated tests are intentionally deferred for this reversible
+presentation change and remain request-only; verify scoped lint/typecheck/docs.
+
+## Quote acceptance navigation — October 2, 2026
+
+The successful acceptance callback uses the existing saved-workspace navigation
+contract so the still-mounted decision guard cannot leave the mutation pending.
+The real-router fixture in `lab-quote-acceptance.spec.ts` covers the detail page
+transition and released control locks. Ordinary unsaved decisions remain guarded.
+Static type/lint checks and manual synthetic browser inspection cover this fix;
+automated suites are unexecuted under the request-only rule. No component-only
+mock was added because it would bypass the router blocker responsible for the bug.
+
+## Accession sample directory — October 2, 2026
+
+Sample-use regressions cover use-filter requests with intake/search, page reset, filter clearing and preservation of unrelated URL state; detail return retains `accessionUse`. Mixed-tube and historical scenarios keep used counts, untouched reserves, recorded exhaustion and source uncertainty visible. URL parsing accepts Used/NotUsed and rejects other use values. Synthetic browser inspection covers desktop/narrow/dark layout, aligned controls, keyboard use selection and tube disclosure, filtered-empty feedback and retained detail context. Authored tests remain unexecuted under the request-only policy.
+
+LabReceiptAccessionPanel regressions cover one compact view at a time, retained lookup draft, no scan/intake writes on switching, server-page requests, boundaries, status/search resetting page one, filtered-empty versus empty feedback, clearing filters and unrelated URL state. Parser coverage rejects malformed page/status/view parameters. LabSpecimenPage coverage retains search/status/page through Back to accessioned samples. Manual acceptance includes expandable per-tube decisions/locations, completed and partially accessioned samples, mixed accepted/held/rejected tubes, failure/retry/disconnected states, keyboard toggle and disclosures, linked detail return, and desktop/narrow/dark control/table containment. Directory invalidation follows saved intake and existing Lab work updates. Authored tests remain unexecuted unless requested.
+
+## Box-at-a-time accession — October 2, 2026
+
+Recorded-tube disclosure follow-up: the existing split-group regression checks that saved accepted rows leave the main table, start collapsed under Accessioned tubes, retain actual box locations when opened, and are absent from the remaining table after completion. Pending-exception coverage checks that a saved rejection is collapsed separately and does not appear as accepted. Manual review covers keyboard disclosure operation, pending rows staying visible, already-recorded scan rejection, mixed accepted/hold/rejected records, and vertically centered footer legend/count/buttons on desktop with contained stacked controls on narrow screens. Automated suites remain request-only and unrun.
+
+ContainerAccessionDialog loads current records and opens a single box-first accession workspace. One successful supplier-tube scan identifies and assigns pending placement; no separate identification pass or second scan is required. StoreAcceptedTubesDialog regression sources cover exact three/two groups with one lookup per tube, advancing versions and separate request IDs, duplicate/unexpected/rejected exclusion, matching-box resume with discarded late scan results, and locked identical-payload retry after an uncertain response. Pending-tube exception coverage verifies physical reconciliation, exact exclusion, preserved remaining mappings and new-version acceptance without rescanning those tubes. Parent expectations cover box-first scanning, unreadable broken-tube rejection, pending/saved table state, review/confirmation and shared dismissal. Check the review action cannot submit the newly rendered save form, the confirmation starts unchecked, and focus reaches Back to placement. Automated execution is request-only and has not run.
+
+## Shipment receiving view toggle — October 2, 2026
+
+Additional checkpoint: ReturnKitFulfillmentPanel.test.tsx uses counted server-page responses and covers pagination boundaries, search reset, no-match/empty/loading/failure states and unrelated filters. Accession navigation coverage checks the lookup in the received-queue header and retained draft, while existing lookup/dialog/tube guards stay covered. Manually inspect both pagers and the single-card accession header on desktop and 390 px/dark, including an empty queue and a failed lookup. Automated suites remain unexecuted.
+
+History search/pagination follow-up: updated LabReceiptAccessionPanel.test.tsx covers URL-backed history, server page requests, page boundaries, search resetting to page one, no-match versus empty history, clearing search, unrelated filter preservation, view switching and no receipt/accession writes. Manual review includes 20-row pages, newest-first display, Previous/Next, search during debounce then view switch, refresh/Back, retained context in shipment links and narrow/dark header/table/footer containment. No automated suite is run unless requested.
+
+Manual follow-up: the saved PH-P- insert barcode appears in small text beneath the shipment link, wraps without page overflow, and is omitted when unavailable. This low-impact display change adds no mirror test.
+
+Updated LabReceiptAccessionPanel.test.tsx selects Expected shipments explicitly and covers the default receipt view, scan-draft retention, completed-container arrival history, distinct query scope and no writes on view changes. Manual synthetic review covers keyboard arrows/focus, one visible view, empty/failure/permission states, light/dark themes and contained 390 px tables. Automated suites remain unexecuted under the request-only policy.
+
+## Kit-request actions and compact view toggle - October 2, 2026
+
+Updated KitRequests.test.tsx covers list-invoked dispatch without navigation or initial per-row detail fetches and rejects cancellation from a stale list when the refreshed request no longer permits it. LabReceiptAccessionPanel.test.tsx covers one queue at a time, default selection, shipment-linked Kit shipments and preserved request filters. dialog.test.tsx covers focus return when a menu opener disappears. The shared PillToggle has radio-group semantics with keyboard selection. Authored regressions remain unexecuted under the request-only test policy.
+
+Manual verification uses the actual components with synthetic read responses and blocked operational writes. Cover desktop and 390 px dark layouts, compact pill sizing, keyboard selection, list action dialogs, initial cancellation focus, body/footer structure, focus return and post-dialog pointer interaction, blocked stock/changed permissions, and selected shipment context. ReturnKitFulfillmentPanel.test.tsx covers matching by Job and a filtered miss distinct from an empty queue. Visible filter labels are removed while accessible names remain. Source/type/documentation checks are recorded in the owning transportation-kit plan.
+
+
 ## Progress for single-phase Jobs — October 1, 2026
 
 Authored component regressions cover the Progress tab, directly visible single-order
@@ -3425,3 +3474,17 @@ The owner requested the complete frontend suite. The Customer quote-acceptance d
 ## September 30 phase workspace
 
 Authored, not executed: LabPhaseDialogs.test.tsx checks Customer Received aggregation and invoice portions limited to active remaining scope. LabCustomerProgressPanel tests now show Mixed without selecting one whole-Job stage. Static type checking and lint cover the phase editor/review, cancellation decision, scoped Finance Job picker, phase invoice dialog and Jobs grouping. Manual responsive/keyboard acceptance and stale-response/retry interaction remain unverified.
+
+## October 2 requested workflow release verification
+
+The owner requested complete testing for the [workflow release](PORTAL-WORKFLOW-RELEASE-20261002-PLAN.md).
+The complete unit run passed **1,353 tests in 212 files**, with no failures.
+A subsequent test-query typing correction passed its 18 focused cases.
+Full lint, TypeScript, documentation generation/check and the production build
+pass. The generated corpus contains 56 guides, version `a5744885cb96`.
+Updated fixtures use current commercial quote purposes, explicit phase and
+physical sample/tube crosswalks, guarded unsaved dismissal, query providers and
+Radix tab activation. Phase-kit tests await the saved/default address and require
+focus to return to the current surviving action after server-state refresh.
+These results supersede earlier unexecuted component checkpoints for included
+suites; physical/scientific and hosted authenticated acceptance remain separate.

@@ -5,6 +5,9 @@ public sealed record LabShipmentQueueItemDto(Guid Id, string ShipmentNumber, str
     string? Carrier, string? TrackingNumber, DateTime? ShippedAt, DateTime? ContainerReceivedAt,
     string? PacketBarcode, string? PacketNumber, int ExpectedTubeCount, int AccessionedTubeCount);
 
+public sealed record LabShipmentHistoryPageDto(IReadOnlyList<LabShipmentQueueItemDto> Items,
+    int Page, int PageSize, int TotalCount);
+
 public sealed record LabShipmentReceiptRequest(string Barcode);
 public sealed record LabShipmentReceiptDto(Guid ShipmentId, string ShipmentNumber, string Barcode,
     DateTime ReceivedAt, bool AlreadyReceived);

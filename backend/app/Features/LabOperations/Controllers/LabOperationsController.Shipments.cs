@@ -14,21 +14,64 @@ public sealed partial class LabOperationsController
     public async Task<IReadOnlyList<LabShipmentQueueItemDto>> ShipmentQueue(
         CancellationToken cancellationToken, [FromQuery] bool received = false)
     {
+        await RequireShipmentReaderAsync(cancellationToken);
+        return await ReadShipmentItemsAsync(ShipmentContainers(received)
+            .OrderBy(item => item.ShippedAt ?? item.CreatedAt), received, cancellationToken);
+    }
+
+    [HttpGet("shipments/received")]
+    public async Task<LabShipmentHistoryPageDto> ShipmentHistory([FromQuery] string? search = null,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
+    {
+        await RequireShipmentReaderAsync(cancellationToken);
+        pageSize = Math.Clamp(pageSize, 1, 50);
+        var query = ShipmentContainers(received: true);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim().ToLowerInvariant();
+            if (term.Length > 255) throw Invalid("shipment_search_too_long", "Shipment search must be 255 characters or fewer.");
+            query = query.Where(item => item.ShipmentNumber.ToLower().Contains(term)
+                || item.AuthorizationReference.ToLower().Contains(term)
+                || (item.Carrier != null && item.Carrier.ToLower().Contains(term))
+                || (item.TrackingNumber != null && item.TrackingNumber.ToLower().Contains(term))
+                || dbContext.Organizations.Any(org => org.Id == item.OrganizationId && org.Name.ToLower().Contains(term))
+                || dbContext.SampleShippingDestinations.Any(destination => destination.Id == item.DestinationId && destination.Name.ToLower().Contains(term))
+                || dbContext.SampleShippingPacketRevisions.Any(packet => packet.SampleShipmentId == item.Id
+                    && !packet.VoidedAt.HasValue && packet.Barcode.ToLower().Contains(term)
+                    && !dbContext.SampleShippingPacketRevisions.Any(newer => newer.SampleShipmentId == packet.SampleShipmentId
+                        && !newer.VoidedAt.HasValue && newer.Revision > packet.Revision)));
+        }
+        var total = await query.CountAsync(cancellationToken);
+        page = Math.Clamp(page, 1, Math.Max(1, (int)Math.Ceiling(total / (double)pageSize)));
+        var items = await ReadShipmentItemsAsync(query
+            .OrderByDescending(item => item.DeliveredAt ?? item.ReceivedAt).ThenByDescending(item => item.Id)
+            .Skip((page - 1) * pageSize).Take(pageSize), awaitingAccessionOnly: false, cancellationToken);
+        return new LabShipmentHistoryPageDto(items, page, pageSize, total);
+    }
+
+    private async Task RequireShipmentReaderAsync(CancellationToken cancellationToken)
+    {
         await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.Operator, LabRole.Supervisor, LabRole.ProtocolAdministrator,
             LabRole.ScientificReviewer, LabRole.OperationsAdministrator);
-        // Filter before materializing: this is the complete container queue, not
-        // the dashboard's bounded list of recently updated work orders.
+    }
+
+    private IQueryable<SampleShipment> ShipmentContainers(bool received)
+    {
         var query = dbContext.SampleShipments.AsNoTracking().Where(item => !item.IsPackingPool
             && item.Status != SampleShipmentStatus.Cancelled
             && (item.ContainerDefinitionId != null || item.ReturnKit != null)
             && item.Items.Any());
-        query = received
+        return received
             ? query.Where(item => item.DeliveredAt != null || item.ReceivedAt != null)
             : query.Where(item => item.DeliveredAt == null && item.ReceivedAt == null);
+    }
+
+    private async Task<IReadOnlyList<LabShipmentQueueItemDto>> ReadShipmentItemsAsync(
+        IQueryable<SampleShipment> query, bool awaitingAccessionOnly, CancellationToken cancellationToken)
+    {
         var shipments = await query.Include(item => item.Items).ThenInclude(item => item.TubeSlots)
-            .Include(item => item.PacketRevisions).OrderBy(item => item.ShippedAt ?? item.CreatedAt)
-            .ToListAsync(cancellationToken);
+            .Include(item => item.PacketRevisions).ToListAsync(cancellationToken);
         var orgIds = shipments.Select(item => item.OrganizationId).Distinct().ToArray();
         var destinationIds = shipments.Select(item => item.DestinationId).Distinct().ToArray();
         var organizations = await dbContext.Organizations.AsNoTracking().Where(item => orgIds.Contains(item.Id))
@@ -47,7 +90,7 @@ public sealed partial class LabOperationsController
                 item.Carrier, item.TrackingNumber, item.ShippedAt, item.DeliveredAt ?? item.ReceivedAt,
                 packet?.Barcode, packet?.PacketNumber, SampleShippingPackingData.TubeCount(item),
                 item.Items.SelectMany(SampleShippingPackingData.TubeIds).Distinct().Count(accessioned.Contains));
-        }).Where(item => !received || item.AccessionedTubeCount < item.ExpectedTubeCount).ToArray();
+        }).Where(item => !awaitingAccessionOnly || item.AccessionedTubeCount < item.ExpectedTubeCount).ToArray();
     }
 
     [HttpPost("shipments/receipt")]

@@ -1,5 +1,23 @@
 # Backend Test Plan
 
+## Accession sample directory — October 2, 2026
+
+Sample-use source coverage extends the existing fixture: fresh accession, planned and cancelled unstarted source selection remain NotUsed; starting an attempt changes the sample and exact source to Used while reserves stay NotUsed. Combined intake/use/search filters apply before paging, exclude Used samples from NotUsed, and reject invalid use values. Review transfer evidence before attempt start, held/failed started attempts, cross-Job associations and historical started processing without source attribution as connected acceptance. No automated tests are executed for this follow-up; compilation is checked separately.
+
+Extended the existing PostgreSQL tube-intake fixture to exclude unaccessioned planned samples, return one sample for multiple accepted/rejected tubes, preserve each actual box and a non-stored rejection, search a supplier barcode and box without regard to case, clamp an out-of-range page, filter the sample intake separately from a rejected reserve, and reject invalid status/overlong search. Count/filter/stable order/paging precede page-only tube loading. The existing Phaeno membership/Lab role reader gates the endpoint. Review unauthorized Customer/Partner and unauthenticated reads, multiple-page data, bounded page size, cross-Job specimen/tube association and read-only behavior as integration acceptance. Sources are authored; no automated or PostgreSQL suite is run for this request.
+
+## Box-at-a-time accession — October 2, 2026
+
+The new placement UI reuses the existing atomic accept-remaining endpoint with one exact box group per request. Preserve the prior receipt/packet/crosswalk/undecided/version checks, per-tube location and audit events, transaction rollback and actor/payload-bound request replay. No backend or persisted-model change is needed. Existing LabTubeAccessionPostgresTests remain the integration guard; live PostgreSQL execution is unrequested. Physical box validity/capacity/temperature/position are outside the current location-string model.
+
+The single-scan follow-up combines identity lookup and pending placement in the client; it does not change receipt/acceptance semantics. A successfully saved exception uses the existing individual intake endpoint and advances the work version before the remaining exact group is accepted. No backend tests or API/model changes are required for this follow-up; existing server guards remain authoritative.
+
+## Shipment arrival history — October 2, 2026
+
+Kit-shipment pagination: extended the existing PostgreSQL shipping fixture to check two distinct one-row pages with a total count, case-insensitive kit search, selected-shipment scope and out-of-range page clamping. The dedicated reader retains platform-admin access and existing workflow mapping, applying search/count and stable sorting before loading page details. Source-only regression coverage; no automated suite is run unless requested.
+
+Extended the existing SampleShippingPostgresTests receipt/accession case: a fully accessioned shipment leaves the default received queue but remains in the paged ShipmentHistory read with its original arrival time and completed tube count. Source coverage checks case-insensitive shipment/PH-P matching, no-match search, total count and clamping an out-of-range page. The query keeps existing Lab-role access and excludes packing pools, cancelled/empty/unconfigured containers. History applies search/count, arrival-descending/ID ordering and Skip/Take before loading page details; page size is bounded. No persisted model or mutation changes. Automated tests remain unexecuted under the request-only policy; solution compilation is checked separately. Multi-page PostgreSQL runtime and live role acceptance remain deferred until tests are requested.
+
 ## Consolidated Job detail hold projection — October 1, 2026
 
 The existing tenant-authorized hold read workspace now includes each specimen's
@@ -2610,3 +2628,24 @@ The [reconstruction plan](PORTAL-DATABASE-RECONSTRUCTION-WORKFLOW-PLAN.md) defin
 Requested connected rehearsal must use an isolated PostgreSQL 18 instance with database name `phaeno_portal_green`, never the production endpoint. Populate Customer/Partner/Prospect users and a dual-membership Phaeno user; active/inactive staff memberships, departments, role assignments and Trial primary/delegate authority links; all three canonical types plus custom types/catalog/stock; multiple calendar revisions; customized reference defaults; and jobs/invoices/Website intake/audits. Assert preview changes no persistent rows or database comment. Assert reset retains exact Phaeno identities/access states and all calendars, discards customer access and all nonallowed operational rows, recreates exact model defaults, preserves schema/migration history, and leaves exactly one new maintenance audit. Include two successive resets and newly added operational tables.
 
 Refuse wrong database, absent active linked administrator, missing canonical type/calendar, changed seed columns, unresolved retained authority references, cross-schema foreign keys/descendants and cross-table preservation cycles. Force reinsertion/comparison failure after TRUNCATE and prove transaction atomicity. Shell coverage must verify failed SQL restarts only the original API container, another maintenance lock/client refuses reset, confirmation is mandatory, secret/profile values never enter logs, and failed post-commit health is reported without inventing a rollback. No production reset or test suite was run for this implementation.
+
+## October 2 requested workflow release verification
+
+The complete Release solution builds with zero warnings/errors, and EF reports
+no pending model differences. The final connected full run on an explicitly
+isolated, freshly migrated local PostgreSQL 18 database passed **1,201 cases,
+with 2 intentional skips and no failures** (1,203 total). All fourteen migrations
+applied; the scratch database was removed and verified absent afterward.
+The skips are the Windows symbolic-link storage case and recovery export/private
+attachment case requiring its dedicated environment. Neither skip is claimed as
+passing physical or scientific recovery evidence.
+
+Current fixtures preserve catalog identity, valid commercial phase pricing,
+sample/tube crosswalks, phase shipment gates and cancellation boundaries.
+Location-stock reuse tests explicitly seed unallocated historical requests;
+new phase-owned kit exclusivity remains enforced. The full run covers the
+accession Used/Not used query, mapped latest-packet shipment search and accepted
+Change quote pair finalization/provider amendments after original work starts.
+The [release plan](PORTAL-WORKFLOW-RELEASE-20261002-PLAN.md) records a separate
+current-hosted-copy migration rehearsal. Destructive reconstruction execution,
+hosted operator, real provider and physical/scientific acceptance remain separate.

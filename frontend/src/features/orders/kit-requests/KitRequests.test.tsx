@@ -28,6 +28,28 @@ async function scanKit(barcode: string, accepted = true) { fill('Kit barcode', b
 beforeEach(() => { vi.clearAllMocks(); mocks.workflows.mockResolvedValue([]); mocks.catalog.mockReturnValue({ data: supplierCatalogFixture, isPending: false, isError: false, error: null }); mocks.allowed = true; mocks.definitions.mockResolvedValue([{ ...containerDefinition, id: request.lines[0].containerDefinitionId }, { ...containerDefinition, id: '40000000-0000-4000-8000-000000000004', commonName: 'Unrequested size' }]); mocks.create.mockResolvedValue(standardKit); mocks.list.mockResolvedValue([request]); mocks.get.mockResolvedValue(detail); mocks.resolve.mockImplementation(async (_id: string, barcode: string) => stockKits.find(kit => kit.kitNumber === barcode) ?? Promise.reject(new Error('Kit not ready.'))); mocks.dispatch.mockResolvedValue(detail); mocks.cancel.mockResolvedValue({ ...request, status: 'Cancelled' }) })
 
 describe('transportation-kit fulfillment', () => {
+  it('opens dispatch in the list only after checking the current request', async () => {
+    mount(<KitRequestsPanel apiEnabled />)
+    const actions = await screen.findByRole('button', { name: 'Actions for Request 20000000' })
+    expect(mocks.get).not.toHaveBeenCalled()
+    fireEvent.pointerDown(actions, { button: 0, ctrlKey: false })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Record kit shipment' }))
+    expect(await screen.findByRole('dialog', { name: 'Record kit shipment' })).toBeTruthy()
+    expect(await screen.findByLabelText(/Tracking number/)).toBeTruthy()
+    expect(mocks.get).toHaveBeenCalledWith(request.id)
+    expect(mocks.dispatch).not.toHaveBeenCalled()
+    expect(mocks.navigate).not.toHaveBeenCalled()
+  })
+
+  it('rechecks cancellation permission instead of writing from a stale list row', async () => {
+    mocks.get.mockResolvedValue({ ...detail, request: { ...request, status: 'Dispatched', canCancel: false }, canDispatch: false })
+    mount(<KitRequestsPanel apiEnabled />)
+    fireEvent.pointerDown(await screen.findByRole('button', { name: 'Actions for Request 20000000' }), { button: 0, ctrlKey: false })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Cancel request' }))
+    expect(await screen.findByText(/This request can no longer be cancelled/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Cancel request' })).toBeNull()
+    expect(mocks.cancel).not.toHaveBeenCalled()
+  })
   it('links an open request to its dedicated detail without embedding a dispatch form', async () => { mount(<KitRequestsPanel apiEnabled />); expect((await screen.findByRole('link', { name: 'Request 20000000' })).getAttribute('href')).toBe(`/lab-operations/kit-requests/${request.id}`); expect(screen.getByText('Example Customer · Research')).toBeTruthy(); expect(screen.queryByLabelText(/Tracking number/)).toBeNull() })
   it('does not request staff data without configuration access', () => { mocks.allowed = false; mount(<KitRequestDetailPage requestId={request.id} />); expect(screen.getByText('A Phaeno configuration administrator is required.')).toBeTruthy(); expect(mocks.get).not.toHaveBeenCalled() })
   it('shows a frozen address and stock shortage while explaining a blocked dispatch', async () => { mocks.get.mockResolvedValue({ ...detail, availableTypes: detail.availableTypes.map(type => ({ ...type, availableQuantity: 0 })), canDispatch: false, dispatchBlockedReason: 'Prepare fully registered kits first.' }); mount(<KitRequestDetailPage requestId={request.id} />); expect(await screen.findByText('100 Science Avenue')).toBeTruthy(); expect(screen.getByText('Prepare kits before shipping')).toBeTruthy(); expect(screen.getByText('Prepare fully registered kits first.')).toBeTruthy(); expect(screen.queryByRole('button', { name: 'Record kit shipment' })).toBeNull(); expect(screen.getByRole('button', { name: 'Actions' })).toBeTruthy() })

@@ -2,8 +2,7 @@ import { parseLabSection } from './lab-sections'
 import { SampleInvestigation } from './SampleInvestigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useBlocker } from '@tanstack/react-router'
-import { ChevronDown } from 'lucide-react'
+import { Link, useBlocker, useSearch } from '@tanstack/react-router'
 import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -20,6 +19,7 @@ import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/require
 import { Textarea } from '#/components/ui/textarea'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { AssemblyJobsList } from './AssemblyJobs'
+import { parseAccessionSearch } from './lab-accession-search'
 
 const policy = 'Complete the authorized sample-sequencing runs, one active attempt per sample. A failed attempt may use reserve material; it does not add a purchased run.'
 const human = (value: string) => value.replace(/([a-z])([A-Z])/g, '$1 $2').replaceAll('_', ' ')
@@ -40,6 +40,8 @@ export function LabSpecimenList({ workOrderId, specimens, onReceive, onAccession
 }
 
 export function LabSpecimenPage({ workOrderId, specimenId }: { workOrderId: string; specimenId: string }) {
+  const returnSearch = useSearch({ strict: false })
+  const returnToAccessions = returnSearch.section === 'receipt' && parseAccessionSearch(returnSearch).accessionView === 'samples'
   const query = useAttempts(workOrderId)
   const work = useQuery({ queryKey: ['lab-work-order', workOrderId], queryFn: () => getLabWorkOrder(workOrderId), enabled: Boolean(query.data) })
   const [action, setAction] = useState<{ key: string; stageId?: string } | null>(null)
@@ -74,8 +76,8 @@ export function LabSpecimenPage({ workOrderId, specimenId }: { workOrderId: stri
   }
   return <main className="page-wrap space-y-5 px-4 py-8">
     {(active ?? latest)?.preparationBatchId ? <div className="rounded-lg border bg-muted/30 p-4 text-sm">This attempt belongs to a preparation tray. <Link className="underline" to="/lab-operations/preparation/$preparationBatchId" params={{ preparationBatchId: (active ?? latest)!.preparationBatchId! }} search={{ section: 'work' }}>Open preparation batch</Link></div> : null}
-    <Link to="/lab-operations/$workOrderId" params={{ workOrderId }} search={previous => ({ ...previous, section: parseLabSection(previous.section) ?? 'jobs', tab: 'specimens' })} className="text-sm text-primary underline underline-offset-4">Back to {data.jobName}</Link>
-    <header className="flex flex-wrap items-start justify-between gap-4"><div><h1 className="text-2xl font-semibold">{specimen.name}</h1><p className="mt-1 text-sm text-muted-foreground">{specimen.accessionNumber ?? 'Awaiting accession'}</p><div className="mt-2 flex gap-2"><Badge variant="outline">Intake: {human(specimen.intakeDisposition)}</Badge><Badge variant="secondary">{human(specimen.processingState)}</Badge></div></div>{actions.length === 1 ? <Button ref={actionTrigger} variant="outline" disabled={actions[0].disabled} onClick={() => setAction({ key: actions[0].key, stageId: actions[0].stageId })}>{actions[0].label}</Button> : actions.length > 1 ? <DropdownMenu><DropdownMenuTrigger asChild><Button ref={actionTrigger} variant="outline">Actions <ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-56 max-w-[calc(100vw-2rem)]">{actions.map(a => <DropdownMenuItem key={a.key} disabled={a.disabled} onSelect={() => setAction({ key: a.key, stageId: a.stageId })}>{a.label}</DropdownMenuItem>)}</DropdownMenuContent></DropdownMenu> : null}</header>
+    {returnToAccessions ? <Link to="/lab-operations" search={previous => ({ ...previous, section: 'receipt', receiptTab: 'accession', accessionView: 'samples' })} className="text-sm text-primary underline underline-offset-4">Back to accessioned samples</Link> : <Link to="/lab-operations/$workOrderId" params={{ workOrderId }} search={previous => ({ ...previous, section: parseLabSection(previous.section) ?? 'jobs', tab: 'specimens' })} className="text-sm text-primary underline underline-offset-4">Back to {data.jobName}</Link>}
+    <header className="flex flex-wrap items-start justify-between gap-4"><div><h1 className="text-2xl font-semibold">{specimen.name}</h1><p className="mt-1 text-sm text-muted-foreground">{specimen.accessionNumber ?? 'Awaiting accession'}</p><div className="mt-2 flex gap-2"><Badge variant="outline">Intake: {human(specimen.intakeDisposition)}</Badge><Badge variant="secondary">{human(specimen.processingState)}</Badge></div></div>{actions.length === 1 ? <Button ref={actionTrigger} variant="outline" disabled={actions[0].disabled} onClick={() => setAction({ key: actions[0].key, stageId: actions[0].stageId })}>{actions[0].label}</Button> : actions.length > 1 ? <DropdownMenu><DropdownMenuTrigger asChild><Button ref={actionTrigger} variant="outline">Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-56 max-w-[calc(100vw-2rem)]">{actions.map(a => <DropdownMenuItem key={a.key} disabled={a.disabled} onSelect={() => setAction({ key: a.key, stageId: a.stageId })}>{a.label}</DropdownMenuItem>)}</DropdownMenuContent></DropdownMenu> : null}</header>
     <p className="text-sm">{data.policyKey ? policy : 'Tube-use instruction not recorded. A supervisor must confirm it before source selection.'}</p>
     {(active ?? latest)?.workflowName ? <p className="text-sm">Attempt workflow: {(active ?? latest)!.workflowName} · version {(active ?? latest)!.workflowVersion}</p> : data.workflowName ? <p className="text-sm">Default for a new standalone attempt: {data.workflowName} · version {data.workflowVersion}. Preparation batches use their selected workflow.</p> : <p className="text-sm text-muted-foreground">Select an approved preparation batch, or promote a service workflow before selecting a standalone source.</p>}
     {specimen.blocker || specimen.nextAction ? <Alert><AlertTitle>{final ? 'Processing outcome' : specimen.blocker ? 'Before processing' : 'Next action'}</AlertTitle><AlertDescription>{specimen.blocker ?? specimen.nextAction}{specimen.note ? <p>{specimen.note}</p> : null}</AlertDescription></Alert> : null}

@@ -213,7 +213,7 @@ public class PersistenceTests
             .Where(entityType => entityType.ClrType.Assembly == laboratoryAssembly)
             .ToList();
 
-        Assert.Equal(76, laboratoryEntities.Count);
+        Assert.Equal(78, laboratoryEntities.Count);
         Assert.Equal("lab_container_barcodes", dbContext.Model.FindEntityType(typeof(LabContainerBarcode))?.GetTableName());
         Assert.Equal("lab_biological_material_transfers", dbContext.Model.FindEntityType(typeof(LabBiologicalMaterialTransfer))?.GetTableName());
         Assert.Equal("lab_assembly_jobs", dbContext.Model.FindEntityType(typeof(LabAssemblyJob))?.GetTableName());

@@ -24,7 +24,7 @@ public partial class SampleShippingPostgresTests
         var consuming = await scope.CreateTransportationShipmentAsync(1, origin);
         var size = await scope.CreateContainerAsync(origin, 20);
         var location = await scope.CreateTransportationLocationAsync();
-        var request = await scope.KitCustomer().Create(origin.Shipment.Id, new(origin.Shipment.Version, location.Id, location.Version, [new(size.Id, 1)]), default);
+        var request = await scope.UnallocatedLocationRequestAsync(origin.Shipment, size, location);
         var kit = await scope.ReadyTransportationKitAsync(size);
         var dispatched = await scope.KitStaff().Dispatch(request.Id, new(request.Version, [kit.Id], "Carrier", "PRESERVE-FULFILLMENT", DateTime.UtcNow), default);
         await scope.KitCustomer().Receive(request.Id, new(dispatched.Request.Version, [kit.Id]), default);
@@ -71,7 +71,7 @@ public partial class SampleShippingPostgresTests
         var consuming = await scope.CreateTransportationShipmentAsync(8, origin);
         var size = await scope.CreateContainerAsync(origin, 20);
         var location = await scope.CreateTransportationLocationAsync();
-        var request = await scope.KitCustomer().Create(origin.Shipment.Id, new(origin.Shipment.Version, location.Id, location.Version, [new(size.Id, 1)]), default);
+        var request = await scope.UnallocatedLocationRequestAsync(origin.Shipment, size, location);
         var kit = await scope.ReadyTransportationKitAsync(size);
         kit = await scope.StockController().Dispatch(kit.Id, new(null, kit.Version, "Carrier", "LOCATION-STOCK", DateTime.UtcNow, location.Id, request.Id), default);
         Assert.Equal("OnTheWay", kit.Status);
@@ -238,6 +238,19 @@ public partial class SampleShippingPostgresTests
 
     private sealed partial class ShippingTestScope
     {
+        public async Task<TransportationKitRequestDto> UnallocatedLocationRequestAsync(SampleShipment origin,
+            SampleShippingContainerDefinitionDto size, CustomerDeliveryLocation location)
+        {
+            // Explicit existing unallocated fulfillment history. New phase requests stay exclusive to their phase.
+            var request = new TransportationKitRequest(origin.AuthorizationSourceId, origin.OrganizationId,
+                origin.DepartmentId, location.Id, System.Text.Json.JsonSerializer.Serialize(location.ToDto(),
+                    new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web)), CustomerUser.Id, DateTime.UtcNow);
+            request.Lines.Add(new(request.Id, size.Id, SampleShippingContainerCatalogService.Snapshot(size), 1));
+            DbContext.TransportationKitRequests.Add(request);
+            await DbContext.SaveChangesAsync();
+            ClearTrackedState();
+            return await KitCustomer().Read(request.Id, default);
+        }
         public PlatformLabServiceOrdersController InventoryCancellationStaff() => new(DbContext,
             new OrderRequestContext(DbContext, new FixedIdentityContext(platformIdentity)), new OrderIdempotencyService(DbContext),
             null!, null!, Options.Create(new OrderManagementOptions()), Options.Create(new PSeqOrderToCashOptions()),

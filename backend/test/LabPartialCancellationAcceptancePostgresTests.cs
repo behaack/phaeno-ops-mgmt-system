@@ -19,7 +19,15 @@ public partial class LabOperationsCommercialHandoffPostgresTests
         var accepted = await scope.AcceptQuoteAsync(fixture);
         var first = await scope.AddReferenceSampleAsync(fixture.OrderId, accepted.Version);
         var finished = await scope.FinishCurrentReferenceKitAsync(fixture.OrderId, first.Version);
-        var second = await scope.AddReferenceSampleAsync(fixture.OrderId, finished.Version);
+        var firstPhaseId = await scope.DbContext.Set<LabJobPhase>().Where(phase => phase.LabServiceOrderId == fixture.OrderId)
+            .OrderBy(phase => phase.Position).Select(phase => phase.Id).FirstAsync();
+        var prepared = await scope.CreateChangeCustomerController().FinalizeSampleRoster(fixture.OrderId,
+            new(finished.Version, true, firstPhaseId), default);
+        // Explicit simulated dispatch completes the first phase's shipping prerequisite.
+        var sent = await scope.DbContext.SampleShipments.SingleAsync();
+        scope.DbContext.Entry(sent).Property(shipment => shipment.ShippedAt).CurrentValue = DateTime.UtcNow;
+        await scope.DbContext.SaveChangesAsync();
+        var second = await scope.AddReferenceSampleAsync(fixture.OrderId, prepared.Version);
         await scope.FinalizeSampleRosterAsync(fixture.OrderId, second.Version, new InternalLabOperationsProvider(scope.DbContext));
         var authorization = await scope.DbContext.CommercialLabAuthorizations.SingleAsync(value => value.CommercialOrderId == fixture.OrderId);
         var phases = await scope.DbContext.Set<LabJobPhase>().Where(value => value.LabServiceOrderId == fixture.OrderId)

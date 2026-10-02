@@ -7,9 +7,11 @@ import { parseLabReceiptTab, type LabReceiptTab } from '#/features/lab-operation
 import { parseLabSection } from '#/features/lab-operations/lab-sections'
 import { parseStockKitListSearch, type StockKitListSearch } from '#/features/orders/stock-kits/stock-kit-utils'
 import { parseKitRequestSearch, type KitRequestListSearch } from '#/features/orders/kit-requests/kit-request-navigation'
+import { parseShipmentHistorySearch, type ShipmentHistorySearch } from '#/features/lab-operations/lab-shipment-history-search'
+import { parseAccessionSearch, type AccessionSearch } from '#/features/lab-operations/lab-accession-search'
 
 export const Route = createFileRoute('/lab-operations')({
-  validateSearch: (search: Record<string, unknown>): StockKitListSearch & KitRequestListSearch & JobListSearch & { section?: LabSection; assemblyTab?: 'runs' | 'cases'; assemblySearch?: string; shipmentId?: string; receiptTab?: LabReceiptTab; labStepSearch?: string; labStepRetired?: boolean; labStepPage?: number; returnKitRequestId?: string } => ({
+  validateSearch: (search: Record<string, unknown>): StockKitListSearch & KitRequestListSearch & JobListSearch & ShipmentHistorySearch & AccessionSearch & { section?: LabSection; assemblyTab?: 'runs' | 'cases'; assemblySearch?: string; shipmentId?: string; receiptTab?: LabReceiptTab; labStepSearch?: string; labStepRetired?: boolean; labStepPage?: number; returnKitRequestId?: string } => ({
     assemblyTab: search.assemblyTab === 'cases' ? 'cases' : 'runs',
     assemblySearch: typeof search.assemblySearch === 'string' ? search.assemblySearch.slice(0, 255) : undefined,
     labStepSearch: typeof search.labStepSearch === 'string' ? search.labStepSearch.slice(0, 255) : undefined,
@@ -18,6 +20,8 @@ export const Route = createFileRoute('/lab-operations')({
     ...parseJobListSearch(search),
     ...parseStockKitListSearch(search),
     ...parseKitRequestSearch(search),
+    ...parseShipmentHistorySearch(search),
+    ...parseAccessionSearch(search),
     shipmentId: typeof search.shipmentId === 'string' && /^[0-9a-f-]{36}$/i.test(search.shipmentId) ? search.shipmentId : undefined,
     section: parseLabSection(search.section),
     receiptTab: parseLabReceiptTab(search.receiptTab),

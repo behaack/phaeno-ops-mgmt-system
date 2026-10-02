@@ -17,7 +17,7 @@ vi.mock('./operations/PhaseQuoteDialog', () => ({
 }))
 
 const quote = {
-  id: 'quote-1', revision: 1, status: 'Expired',
+  id: 'quote-1', revision: 1, purpose: 'Initial', status: 'Expired',
   extensionRequest: { id: 'request-1', quoteId: 'quote-1', status: 'Pending', reason: 'More time for purchase approval.', requestedAt: '2026-09-08T12:00:00Z' },
 } as Quote
 
@@ -62,5 +62,6 @@ describe('Commercial quote extension review', () => {
 function renderPanel(overrides: Partial<LabServiceOrder>, onSaved = vi.fn().mockResolvedValue(undefined)) {
   const order = { id: 'order-1', status: 'QuoteIssued', requestedSpecimenCount: 3, quotes: [quote], cancellationRequests: [], ...overrides } as LabServiceOrder
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return render(<QueryClientProvider client={client}><CommercialControlPanel workflow="lab" item={order} catalogItems={[]} labWorkOrderId={null} onSaved={onSaved} /></QueryClientProvider>)
+  const view = render(<QueryClientProvider client={client}><CommercialControlPanel workflow="lab" item={order} catalogItems={[]} labWorkOrderId={null} onSaved={onSaved} /></QueryClientProvider>)
+  return view
 }

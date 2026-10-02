@@ -128,7 +128,7 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
     onSuccess: async (updated, kind) => {
       queryClient.setQueryData(['lab-service-order', orderId], updated)
       setDialog(null); setCancellationReason(''); setPurchaseOrderNumber(''); setSampleTypeConfirmed(false)
-      if (kind === 'accept') await changeWorkspace({ detailTab: 'phases', shipmentId: undefined, phaseId: undefined })
+      if (kind === 'accept') await changeWorkspace({ detailTab: 'phases', shipmentId: undefined, phaseId: undefined }, { afterSave: true })
       await queryClient.invalidateQueries({ queryKey: ['lab-service-order', orderId] })
       await queryClient.invalidateQueries({ queryKey: ['lab-service-orders'] })
     },

@@ -6,15 +6,30 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as api from '#/api/lab-operations'
 import { LabSpecimenPage } from './LabSpecimenPage'
 
-vi.mock('@tanstack/react-router', () => ({ useBlocker: vi.fn(), Link: ({ children }: { children: ReactNode }) => <span>{children}</span> }))
+const routeSearch = vi.hoisted(() => ({ value: {} as Record<string, unknown> }))
+vi.mock('@tanstack/react-router', () => ({ useBlocker: vi.fn(), useSearch: () => routeSearch.value, Link: ({ children, to, search }: { children: ReactNode; to: string; search?: Record<string, unknown> | ((previous: Record<string, unknown>) => Record<string, unknown>) }) => {
+  const next = typeof search === 'function' ? search(routeSearch.value) : search ?? {}
+  return <a href={`${to}?${new URLSearchParams(Object.entries(next).filter(([, value]) => value !== undefined).map(([key, value]) => [key, String(value)])).toString()}`}>{children}</a>
+} }))
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ session: { capabilities: { canManageLabOperations: true } }, authProvider: 'clerk' }) }))
 vi.mock('#/api/lab-operations', async original => ({ ...await original<typeof api>(), getLabAttempts: vi.fn(), getLabWorkOrder: vi.fn(), applyLabAttemptCommand: vi.fn() }))
 
 describe('Specimen attempt draft recovery', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    routeSearch.value = {}
     vi.mocked(api.getLabAttempts).mockResolvedValue({ workOrderId: 'work', jobName: 'Test Job', workOrderVersion: 1, policyKey: null, canOperate: true, canAdoptPolicy: true, stages: [], specimens: [{ id: 'specimen', name: 'Test specimen', intakeDisposition: 'Accepted', processingState: 'Not started', tubes: [], attempts: [], receivedTubes: 0, expectedTubes: 0, eligibleTubes: 0 }] } as unknown as api.LabAttemptWorkspace)
     vi.mocked(api.getLabWorkOrder).mockResolvedValue({ executions: [] } as unknown as Awaited<ReturnType<typeof api.getLabWorkOrder>>)
+  })
+
+  it('returns to the accession directory with its search, status and page', async () => {
+    routeSearch.value = { section: 'receipt', accessionView: 'samples', accessionSearch: 'FB-1', accessionStatus: 'Accepted', accessionUse: 'Used', accessionPage: 2 }
+    render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><LabSpecimenPage workOrderId="work" specimenId="specimen" /></QueryClientProvider>)
+    const link = await screen.findByRole('link', { name: 'Back to accessioned samples' })
+    expect(link.getAttribute('href')).toContain('accessionPage=2')
+    expect(link.getAttribute('href')).toContain('accessionSearch=FB-1')
+    expect(link.getAttribute('href')).toContain('accessionStatus=Accepted')
+    expect(link.getAttribute('href')).toContain('accessionUse=Used')
   })
 
   it('retains entered evidence when discard is declined and protects navigation until discard is accepted', async () => {

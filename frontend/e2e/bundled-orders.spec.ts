@@ -12,6 +12,7 @@ import {
   bundleTiming,
 } from '../src/test-helpers/bundled-orders'
 import type { LabServiceOrder, OperationalFile } from '../src/api/order-management'
+import { shippingPhasePlan } from '../src/test-helpers/lab-phase-shipping'
 
 test.use({
   launchOptions: {
@@ -56,7 +57,15 @@ async function fixture(page: Page, screen: string, patch: Partial<LabServiceOrde
         if (path === '/platform/sample-shipping/configuration') return send({ destinations: [], sampleTypes: [], instructionRules: [] })
         if (path === '/customer-delivery-locations') return send([{ id: '10000000-0000-4000-8000-000000000011', organizationId: bundleIds.organization, departmentId: bundleIds.department, label: 'Training receiving', recipient: 'Training lab', line1: '1 Test Way', line2: null, city: 'Baltimore', region: 'MD', postalCode: '21201', countryCode: 'US', isActive: true, isDefault: true, version: 1 }])
         if (path === labPath) return send(lab)
-        if (path === `${labPath}/phases`) return send({ orderId: lab.id, revision: 1, sampleCount: lab.requestedSpecimenCount, acceptedSubtotal: 0, currency: 'USD', phases: [], samples: [], proposals: [], cancellations: [] })
+        if (path === `${labPath}/phases`) return send({ orderId: lab.id, revision: 1, sampleCount: lab.requestedSpecimenCount, acceptedSubtotal: 0, currency: 'USD',
+          phases: lab.samples.length ? [{ ...shippingPhasePlan.phases[0], id: 'phase-1', sampleCount: lab.samples.length,
+            sampleIds: lab.samples.map(sample => sample.id), lifecycle: 'InProgress',
+            stageCounts: Object.fromEntries(lab.laboratoryProgress?.counts.map(count => [count.stage, count.count]) ?? []),
+            deliveredSamples: packages.length, expectedTubes: lab.samples.length, receivedTubes: lab.samples.length }] : [],
+          samples: lab.samples.map(sample => ({ id: sample.id, phaseId: 'phase-1', name: sample.customerSampleId,
+            stage: lab.laboratoryProgress?.samples.find(value => value.sampleId === sample.id)?.stage ?? 'AwaitingReceipt',
+            held: false, failed: false, canRephase: false })), proposals: [], cancellations: [] })
+        if (path === `${labPath}/phase-kit-supply`) return send({ requests: [], locations: [], phases: [] })
         if (path === `${labPath}/transportation-kits`) return send(null)
         if (path === `${labPath}/sample-tube-pairs`) return send({ pairs: [], kits: [], expectedSampleCount: 2, expectedSequencingRunCount: 2, isFinalized: false, preparationSources: lab.sourceGroups ?? [], preparationPhaseIds: lab.phaseScopes?.map(p => p.id) ?? [], minimumSampleAmount: null, sampleAmountUnit: null })
         if (path === `${labPath}/standard-preview`) return send(bundlePreview)
@@ -205,7 +214,7 @@ async function fixture(page: Page, screen: string, patch: Partial<LabServiceOrde
 }
 
 for (const audience of ['customer-lab', 'partner-lab']) {
-  test(`${audience} mixed laboratory stages preserve sample names and keyboard disclosures`, async ({ page }, info) => {
+  test(`${audience} mixed laboratory progress preserves sample names and keyboard tab access`, async ({ page }, info) => {
     const samples = [10, 2, 1].map(number => ({
       id: `simulated-sample-${number}`, customerSampleId: `Sample ${number}`, materialType: 'RNA',
       biologicalSource: 'Yeast', quantity: 1, quantityUnit: 'tube', storageRequirements: 'Frozen',
@@ -223,7 +232,7 @@ for (const audience of ['customer-lab', 'partner-lab']) {
       sampleRosterFinalizedAt: '2026-09-15T10:00:00Z', requestedSpecimenCount: 3, samples,
       labReadyForRelease: true, labPermittedQcProjectionJson: '{"quality":"Approved simulated summary"}',
       laboratoryProgress: {
-        currentStage: 'Received', jobStage: 'QualityReview', hasContainerReceipt: true,
+        currentStage: 'Mixed', jobStage: 'QualityReview', hasContainerReceipt: true,
         counts: [{ stage: 'Received', count: 1 }, { stage: 'LibraryPrep', count: 1 }, { stage: 'ResultsAvailable', count: 1 }],
         samples: samples.map((sample, i) => ({ sampleId: sample.id, stage: ['Received', 'LibraryPrep', 'ResultsAvailable'][i] })),
       },
@@ -231,23 +240,23 @@ for (const audience of ['customer-lab', 'partner-lab']) {
       releasedAtUtc: '2026-09-15T12:00:00Z', retentionState: 'Available', isDownloadAvailable: true,
       artifacts: [{ id: bundleIds.profile, logicalRole: 'report', fileName: 'SIMULATED-sample-1.txt',
         contentType: 'text/plain', sizeBytes: 10, sha256: 'a'.repeat(64), deletedAtUtc: null }] }])
-    const stages = page.getByRole('list', { name: 'Laboratory stages' })
-    await expect(stages.locator('[aria-current="step"]')).toHaveText(/Received/)
-    await expect(stages.locator('li').last()).not.toHaveAttribute('aria-current', 'step')
-    await expect(page.getByText(/Latest Job-wide activity: Quality Review/)).toBeVisible()
+    const progress = page.getByRole('region', { name: 'Order progress', exact: true })
+    await expect(progress).toBeVisible()
+    await expect(progress.getByText('1 Received · 1 Library Prep · 1 Results Available', { exact: true })).toBeVisible()
+    const names = progress.getByRole('region', { name: 'Samples and shipment progress', exact: true })
+    await expect(names.locator('li > span:first-child')).toHaveText(['Sample 10', 'Sample 2', 'Sample 1'])
+    await page.getByRole('tab', { name: 'Files and results' }).focus(); await page.keyboard.press('Enter')
     await expect(page.getByText('SIMULATED-sample-1.txt', { exact: true })).toBeVisible()
-    const names = page.locator('details').filter({ has: page.locator('summary', { hasText: 'View sample stages' }) })
-    await names.locator('summary').focus(); await page.keyboard.press('Enter')
-    await expect(names).toHaveAttribute('open', '')
-    await expect(names.locator('li > span:first-child')).toHaveText(['Sample 1', 'Sample 2', 'Sample 10'])
-    const qc = page.locator('details').filter({ has: page.locator('summary', { hasText: 'Approved QC summary' }) })
+    await page.getByRole('tab', { name: 'Progress', exact: true }).focus(); await page.keyboard.press('Enter')
+    await expect(names).toBeVisible()
+    const qc = page.locator('details').filter({ has: page.locator('summary', { hasText: 'Approved job QC summary' }) })
     await qc.locator('summary').focus(); await page.keyboard.press('Space')
     await expect(qc).toHaveAttribute('open', '')
     for (const theme of ['light', 'dark']) {
       await page.evaluate(value => document.documentElement.classList.toggle('dark', value === 'dark'), theme)
       for (const width of [320, 375, 1440]) {
         await page.setViewportSize({ width, height: 950 })
-        await expect(stages).toBeVisible()
+        await expect(progress).toBeVisible()
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true)
         await page.screenshot({ path: info.outputPath(`${audience}-${theme}-${width}.png`), fullPage: true })
       }
@@ -259,8 +268,7 @@ for (const audience of ['customer-lab', 'partner-lab']) {
     await page.evaluate(() => { document.body.style.zoom = '' })
     const accessibility = await new AxeBuilder({ page }).include('main').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()
     expect(accessibility.violations).toEqual([])
-    await names.locator('summary').focus(); await page.keyboard.press('Enter')
-    await expect(names).not.toHaveAttribute('open', '')
+    await expect(names).toBeVisible()
     expect(state.writes).toEqual([]); expect(state.unexpected).toEqual([]); expect(state.errors).toEqual([])
   })
 }
@@ -312,14 +320,14 @@ for (const audience of ['lab', 'partner-lab'])
       .getByRole('textbox', { name: /Purchase order number/ })
       .fill('TRAINING-PO')
     await dialog.getByRole('checkbox', { name: /I confirm this is the Sample type/ }).check()
-    await dialog.getByRole('combobox', { name: /Ship Transportation kits to/ }).selectOption('10000000-0000-4000-8000-000000000011')
+    await expect(dialog.getByRole('combobox', { name: /Ship Transportation kits to/ })).toHaveCount(0)
     await dialog.getByRole('checkbox', { name: /I accept the displayed scope/ }).check()
     await capture(page, info, `${audience}-price-confirmation`)
     await dialog
       .getByRole('button', { name: 'Confirm price and order', exact: true })
       .click()
     await expect(dialog).toHaveCount(0)
-    await expect(page.getByText('No available received kits were found. Ask Phaeno to review kit fulfillment.')).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Progress', exact: true })).toHaveAttribute('aria-selected', 'true')
     await expect(page.getByRole('textbox', { name: 'Sample ID 1 for Yeast', exact: true })).toHaveCount(0)
     await capture(page, info, `${audience}-placed-samples`)
     expect(state.writes).toHaveLength(1)

@@ -3,6 +3,38 @@
 Owner-authorized implementation, October 1, 2026. Applies to every Customer or
 Partner Lab Job, including one-phase Jobs. No Git publication or deployment.
 
+## Release verification corrections — October 2, 2026
+
+The owner subsequently authorized documentation, complete tests, commit/push,
+deployment and required migrations under the October 2 hosted release plan.
+An accepted Change quote opens preparation only for its new unprepared phase;
+the original finalized roster timestamp does not block that pending addition.
+Existing prepared phases, kit ownership and preceding-phase dispatch remain
+locked. The connected change-quote regression retains the original sample and
+receipt, appends a real sample/tube/run crosswalk and verifies incremental work
+authorization and invoicing. The cancellation fixture now finalizes and records
+explicit simulated dispatch for phase one before preparing phase two.
+
+Closing a kit-request dialog returns focus to its surviving invoking control.
+The opener lookup excludes the dialog's auto-focused Cancel control and falls
+back to the current shipping action if a supply refresh remounted the button.
+
+## Acceptance transition correction — October 2, 2026
+
+Customer/Partner quote acceptance must close its confirmation, open Progress,
+and release pending-action locks so an eligible shipping action works without
+a refresh. Acceptance still creates no kit request. The successful acceptance
+navigation uses the existing `afterSave` contract; ordinary unsaved decisions
+retain their discard/navigation guard. Previously, navigation from the success
+callback could hit the still-mounted dirty guard and leave the mutation pending.
+
+`lab-quote-acceptance.spec.ts` uses the actual detail page and router blockers
+with in-memory records. It covers successful navigation, opening the kit request
+without submitting one, and retaining unsaved confirmation entries. Browser
+inspection reproduced the original warning and verifies the correction with
+synthetic records only; no saved orders were accepted or kit requests submitted.
+Automated suites remain unexecuted under the request-only rule.
+
 ## Order detail organization refinement — October 1, 2026
 
 Single-phase refinement (owner approved): the first supporting tab is **Progress**
@@ -191,3 +223,16 @@ action, dynamic Shipping heading and direct API guards are complete locally.
 See [the refinement evidence](../testing/runs/2026-10-01-ordered-phase-shipping.md)
 for compilation, browser preview coverage and the remaining connected acceptance
 boundary. The earlier checkpoint's bulk request selection is superseded.
+
+## October 2 release corrections
+
+Saved quote acceptance now awaits the transition to Progress with the explicit
+after-save path, so the still-mounted acceptance form cannot trigger a false
+discard prompt or leave kit requests disabled. Ordinary unsaved navigation stays
+guarded. Accepted Change quote additions can prepare and finalize new sample/tube
+pairs after the original roster is finalized; their provider amendment retains
+the accepted-additional-scope reason when original work has already started.
+Original pairs, phase-order gates and physical kit exclusivity remain enforced.
+The full component and synthetic browser suites passed as recorded in the
+[October 2 release plan](PORTAL-WORKFLOW-RELEASE-20261002-PLAN.md). Connected backend
+results and exact hosted activation evidence belong to that release checkpoint.

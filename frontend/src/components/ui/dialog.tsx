@@ -5,6 +5,13 @@ import { XIcon } from "lucide-react"
 import { Alert } from "#/components/ui/alert"
 import { cn } from "#/lib/utils"
 
+const DialogReturnFocusContext = React.createContext<{ target: HTMLElement | null; fallbackId?: string } | null>(null)
+
+// Menu items vanish after selection. Their dialogs can name a surviving control.
+export function DialogReturnFocus({ target, fallbackId, children }: { target: HTMLElement | null; fallbackId?: string; children: React.ReactNode }) {
+  return <DialogReturnFocusContext.Provider value={{ target, fallbackId }}>{children}</DialogReturnFocusContext.Provider>
+}
+
 function Dialog({
   modal = true,
   ...props
@@ -62,6 +69,7 @@ function DialogContent({
 }) {
   const arrangedChildren = arrangeDialogChildren(children)
   const openerRef = React.useRef<HTMLElement | null>(null)
+  const returnFocus = React.useContext(DialogReturnFocusContext)
 
   return (
     <DialogPortal>
@@ -99,6 +107,12 @@ function DialogContent({
           if (!event.defaultPrevented && openerRef.current?.isConnected) {
             event.preventDefault()
             openerRef.current.focus()
+          } else if (!event.defaultPrevented && returnFocus) {
+            event.preventDefault()
+            // A loading dialog may hand off to a form; retain the new dialog's focus.
+            if (document.querySelector('[data-slot="dialog-content"][data-state="open"]')) return
+            const target = returnFocus.target?.isConnected ? returnFocus.target : returnFocus.fallbackId ? document.getElementById(returnFocus.fallbackId) : null
+            target?.focus()
           }
         }}
         onEscapeKeyDown={(event) => {

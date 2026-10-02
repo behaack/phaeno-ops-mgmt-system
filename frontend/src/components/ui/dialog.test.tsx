@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { Fragment, useState } from 'react'
 import { vi } from 'vitest'
 
@@ -11,6 +11,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogReturnFocus,
 } from './dialog'
 
 function TestDialog() {
@@ -27,6 +28,19 @@ function TestDialog() {
 }
 
 describe('DialogContent', () => {
+  it('returns a menu-launched dialog to the surviving row control when its opener disappears', async () => {
+    function MenuDialog() {
+      const [open, setOpen] = useState(false)
+      const [target, setTarget] = useState<HTMLButtonElement | null>(null)
+      return <><button ref={setTarget}>Row Actions</button>{!open ? <button onClick={() => setOpen(true)}>Menu action</button> : null}
+        <DialogReturnFocus target={target}><Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogHeader><DialogTitle>Row action</DialogTitle><DialogDescription>Confirm this request.</DialogDescription></DialogHeader><div>Request contents</div><DialogFooter><button onClick={() => setOpen(false)}>Keep request</button></DialogFooter></DialogContent></Dialog></DialogReturnFocus></>
+    }
+    render(<MenuDialog />)
+    screen.getByRole('button', { name: 'Menu action' }).focus()
+    fireEvent.click(screen.getByRole('button', { name: 'Menu action' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Keep request' }))
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Row Actions' })))
+  })
   it('requires an explicit dismissal instead of closing on an outside click', () => {
     render(<TestDialog />)
 
