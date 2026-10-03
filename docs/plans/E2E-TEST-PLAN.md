@@ -11,6 +11,8 @@ Automated execution remains request-only.
 
 ## Kit UI release verification — October 3, 2026
 
+The final full run after the required TanStack security and SSR adapter alignment passed **198 cases, with two intentional mobile print skips, zero failures and zero flaky cases**, on isolated mock-session port 3123. It supersedes the incompatible adapter run and the focused cold-cache retries. Both desktop and mobile routes retain console-error assertions; no hosted operational writes or physical/scientific acceptance are implied.
+
 Final isolated desktop/mobile run: 198 passed, two existing mobile print skips, zero failures. Mock-session fixtures use port 3123 and do not perform hosted writes. Full unit/manual actual-component evidence covers the new receipt/cancellation controls; hosted operator and physical/scientific acceptance remain separate.
 
 Owner requests complete test execution for the receipt dispatch prerequisite, quiet cancellation menus and Fulfilled requests label. Run the isolated source suite and record final counts and any intentional environment skips in the release receipt. Pending kit receipt, partial dispatch, receipt permission and ordinary sole actions retain regression coverage.

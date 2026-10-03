@@ -11,6 +11,8 @@ destructive styling.
 
 ## Kit UI release verification — October 3, 2026
 
+After the required TanStack security/SSR compatibility update, the complete isolated suite again passed all **1,363 cases in 212 files** with zero failures. Lint, TypeScript and documentation consistency pass. React Start 1.168.60, Router 1.170.41, SSR query adapter 1.167.3 and React Query 5.102.0 are pinned; the generated route file retains all 159 paths. See the [release plan](KIT-UI-RELEASE-20261003-PLAN.md) for deployment evidence.
+
 Final isolated run: all 1,363 unit cases passed in 212 files. The order-dialog helper now handles multiple Actions triggers; the retained-draft regression also passes. Full lint and TypeScript pass. Receipt dispatch, cancellation exception and Fulfilled requests selectors are covered. The first overloaded full run is superseded by the bounded-concurrency clean run.
 
 Owner requests complete test execution for the receipt dispatch prerequisite, quiet cancellation menus and Fulfilled requests label. Run the isolated source suite and record final counts and any intentional environment skips in the release receipt. Pending kit receipt, partial dispatch, receipt permission and ordinary sole actions retain regression coverage.
