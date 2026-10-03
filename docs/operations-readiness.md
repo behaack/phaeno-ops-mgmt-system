@@ -1,5 +1,9 @@
 # Operations and production-readiness boundary
 
+## Controlled kit UI release — October 3, 2026
+
+The owner authorized documentation, complete tests, commit/push and matched API/Portal UI deployment under the [kit UI release plan](plans/KIT-UI-RELEASE-20261003-PLAN.md). The [completed receipt](operations/kit-ui-release-20261003.md) records source `5bc89d13e59b3bde9e784ab188dfec0641eb4429`, dispatch-gated kit receipt, quiet red cancellation menu items and Fulfilled requests labeling, plus the required patched TanStack/SSR query integration. Full backend, unit and desktop/mobile browser suites pass with intentional environment skips and zero failures. Restore-verified encrypted database/private-file recovery is exported off-server. All 231 current application table counts, fourteen migrations, runtime hashes and storage mounts are preserved; no migration, reset or identity cutover was performed. Matching API/UI identity, public health/proxy boundaries and actual production sign-in rendering pass. Both protected workflows are disabled again and automatic Vercel Git controls remain held. Authenticated operator, provider, physical and scientific acceptance remain separate.
+
 ## Controlled workflow release — October 2, 2026
 
 The owner authorized documentation, complete tests, commit/push, matched API/Portal

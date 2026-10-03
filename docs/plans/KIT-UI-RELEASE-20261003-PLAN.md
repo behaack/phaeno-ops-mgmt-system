@@ -20,7 +20,9 @@ Verify Portal/API root and health, database ping, proxy authorization boundaries
 
 ## Status
 
-Verification passed: backend Release build has zero warnings/errors; the full connected suite passed 1,201 cases with two intentional environment skips; all 1,363 frontend unit cases and 198 desktop/mobile browser cases passed, with two existing mobile print skips. Lint, TypeScript, production build, documentation generation/check (56 guides, corpus 3fe25a14288c), EF model drift, whitespace and staged credential checks pass. The disposable loopback reference database was removed. Initial naming/selector/resource issues were corrected or superseded by clean complete runs. Activation evidence will be recorded in the release receipt.
+Verification passed: backend Release build has zero warnings/errors; the full connected suite passed 1,201 cases with two intentional environment skips; all 1,363 frontend unit cases and 198 desktop/mobile browser cases passed, with two existing mobile print skips. Lint, TypeScript, production build, documentation generation/check (56 guides, corpus 3fe25a14288c), EF model drift, whitespace and staged credential checks pass. The disposable loopback reference database was removed. Initial naming/selector/resource issues were corrected or superseded by clean complete runs. The release receipt records completed activation evidence.
+
+Completed activation is recorded in the [release receipt](../operations/kit-ui-release-20261003.md): application source 5bc89d13, successful API workflow 37152095279 and promoted Ready UI dpl_3Q9LGPGXXqYaJJFZswkRFBi3vvae. Fresh snapshot/restore/export, all preserved hosted counts/migrations/configuration/mounts, public health/proxy checks and actual production sign-in rendering pass. No migration was applied. Both protected workflows are disabled again; automatic Git controls remain held.
 
 ## Deployment security prerequisite
 
