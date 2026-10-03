@@ -80,7 +80,7 @@ export function PhasePlanDialog({ orderId, plan, amendment, onSaved, onClose }: 
   </DialogContent></Dialog>
 }
 
-export type PhaseReasonAction = { title: string; description: string; path: string; input: Record<string, unknown>; internal: boolean; review?: string }
+export type PhaseReasonAction = { title: string; description: string; path: string; input: Record<string, unknown>; internal: boolean; review?: string; variant?: 'default' | 'destructive' }
 export function PhaseReasonDialog({ orderId, action, onSaved, onClose }: { orderId: string; action: PhaseReasonAction; onSaved: () => Promise<unknown>; onClose: () => void }) {
   const form = useForm({ resolver: zodResolver(reasonSchema), defaultValues: { reason: '' } })
   const mutation = useLabPhaseWrite(orderId, action.internal, onSaved)
@@ -92,7 +92,7 @@ export function PhaseReasonDialog({ orderId, action, onSaved, onClose }: { order
       <Label htmlFor="phase-reason"><RequiredFieldName>Reason</RequiredFieldName></Label><Textarea id="phase-reason" disabled={mutation.isPending} aria-invalid={Boolean(form.formState.errors.reason)} aria-describedby="phase-reason-error" {...form.register('reason')} /><FieldError id="phase-reason-error">{form.formState.errors.reason?.message}</FieldError>
     </form>
     {mutation.error ? <DialogFeedback><p role="alert">{getOrderErrorMessage(mutation.error, 'The decision could not be saved. Refresh to review changed facts or retry this operation.')}</p></DialogFeedback> : null}
-    <RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="phase-reason-form" disabled={mutation.isPending}>{mutation.isPending ? 'Saving…' : action.title}</Button></RequiredDialogFooter>
+    <RequiredDialogFooter><Button variant="outline" disabled={mutation.isPending} onClick={close}>Cancel</Button><Button type="submit" form="phase-reason-form" variant={action.variant} disabled={mutation.isPending}>{mutation.isPending ? 'Saving…' : action.title}</Button></RequiredDialogFooter>
   </DialogContent></Dialog>
 }
 

@@ -36,6 +36,26 @@ describe('Lab Job workspace actions', () => {
     expect(print).toHaveBeenCalledTimes(1)
   })
 
+  it.each([false, true])('keeps a sole Job cancellation inside a neutral Actions menu with disabled=%s', async disabled => {
+    const cancel = vi.fn()
+    const triggerRef = createRef<HTMLButtonElement>()
+    render(<LabJobWorkspaceActions orderActions={[{ ...command('Request cancellation', cancel, disabled), variant: 'destructive', keepInMenu: true }]} triggerRef={triggerRef} />)
+    const trigger = screen.getByRole('button', { name: 'Actions' })
+    expect(triggerRef.current).toBe(trigger)
+    expect(trigger.getAttribute('data-variant')).toBe('outline')
+    expect(trigger.hasAttribute('disabled')).toBe(disabled)
+    expect(trigger.querySelectorAll('[data-slot="action-menu-indicator"]')).toHaveLength(1)
+    expect(screen.queryByRole('button', { name: 'Request cancellation' })).toBeNull()
+    expect(cancel).not.toHaveBeenCalled()
+    if (!disabled) {
+      fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false })
+      const item = await screen.findByRole('menuitem', { name: 'Request cancellation' })
+      expect(item.getAttribute('data-variant')).toBe('destructive')
+      fireEvent.click(item)
+      expect(cancel).toHaveBeenCalledTimes(1)
+    }
+  })
+
   it('keeps read-only print and download commands without offering shipment mutations', async () => {
     render(<LabJobWorkspaceActions orderActions={[]} shipmentActions={[command('Print shipping insert'), command('Download tube list (CSV)')]} triggerRef={createRef<HTMLButtonElement>()} />)
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Actions' }), { button: 0, ctrlKey: false })

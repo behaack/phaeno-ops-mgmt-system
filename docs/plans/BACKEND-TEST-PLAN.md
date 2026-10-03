@@ -1,5 +1,9 @@
 # Backend Test Plan
 
+## Kit UI release checkpoint — October 3, 2026
+
+The full connected Release suite passed 1,201 cases, two intentional skips and zero failures on a freshly migrated disposable loopback database. The database was removed after completion. The skips require a supported symbolic-link host and a dedicated recovery-export fixture. This UI/help release changes no backend behavior or persisted model; EF reports no pending model differences. See [the release plan](KIT-UI-RELEASE-20261003-PLAN.md).
+
 ## Accession sample directory — October 2, 2026
 
 Sample-use source coverage extends the existing fixture: fresh accession, planned and cancelled unstarted source selection remain NotUsed; starting an attempt changes the sample and exact source to Used while reserves stay NotUsed. Combined intake/use/search filters apply before paging, exclude Used samples from NotUsed, and reject invalid use values. Review transfer evidence before attempt start, held/failed started attempts, cross-Job associations and historical started processing without source attribution as connected acceptance. No automated tests are executed for this follow-up; compilation is checked separately.

@@ -5,8 +5,8 @@ import { ChevronDown } from 'lucide-react'
 import { Button } from './button'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './dropdown-menu'
 
-function Menu({ children, triggerRef }: { children: ReactNode; triggerRef?: React.Ref<HTMLButtonElement> }) {
-  return <ActionMenu><DropdownMenuTrigger asChild><Button ref={triggerRef} size="icon-sm" aria-label="Record actions">Actions</Button></DropdownMenuTrigger><DropdownMenuContent>{children}</DropdownMenuContent></ActionMenu>
+function Menu({ children, triggerRef, keepSingleActionInMenu = false }: { children: ReactNode; triggerRef?: React.Ref<HTMLButtonElement>; keepSingleActionInMenu?: boolean }) {
+  return <ActionMenu keepSingleActionInMenu={keepSingleActionInMenu}><DropdownMenuTrigger asChild><Button ref={triggerRef} size="icon-sm" aria-label="Record actions">Actions</Button></DropdownMenuTrigger><DropdownMenuContent>{children}</DropdownMenuContent></ActionMenu>
 }
 describe('record action presentation', () => {
   it('surfaces a single visible action and preserves its callback and focus ref', () => {
@@ -27,6 +27,22 @@ describe('record action presentation', () => {
     expect(indicator).not.toBeNull()
     expect(indicator?.getAttribute('aria-hidden')).toBe('true')
     expect(trigger.getAttribute('data-size')).toBe('sm')
+  })
+  it('retains one destructive menu item only when the documented exception is enabled', async () => {
+    const select = vi.fn()
+    const ref = createRef<HTMLButtonElement>()
+    render(<Menu keepSingleActionInMenu triggerRef={ref}><DropdownMenuItem variant="destructive" onSelect={select}>Request cancellation</DropdownMenuItem></Menu>)
+    const trigger = screen.getByRole('button', { name: 'Record actions' })
+    expect(ref.current).toBe(trigger)
+    expect(trigger.getAttribute('aria-haspopup')).toBe('menu')
+    expect(trigger.querySelectorAll('[data-slot="action-menu-indicator"]')).toHaveLength(1)
+    expect(screen.queryByRole('button', { name: 'Request cancellation' })).toBeNull()
+    expect(select).not.toHaveBeenCalled()
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false })
+    const item = await screen.findByRole('menuitem', { name: 'Request cancellation' })
+    expect(item.getAttribute('data-variant')).toBe('destructive')
+    fireEvent.click(item)
+    expect(select).toHaveBeenCalledTimes(1)
   })
   it('does not duplicate a chevron already supplied by the screen', () => {
     render(<ActionMenu><DropdownMenuTrigger asChild><Button>Actions <ChevronDown aria-hidden="true" /></Button></DropdownMenuTrigger><DropdownMenuContent><DropdownMenuItem>Edit</DropdownMenuItem><DropdownMenuItem>Delete</DropdownMenuItem></DropdownMenuContent></ActionMenu>)

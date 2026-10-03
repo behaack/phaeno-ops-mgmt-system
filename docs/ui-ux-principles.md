@@ -225,6 +225,7 @@ Each page, modal, or workflow has one visually dominant primary action.
   call to action whose width communicates hierarchy rather than compensating
   for layout.
 - Group multiple record or version actions in an `Actions` dropdown, including status transitions. When exactly one action is shown, surface it as a directly labeled button; do not hide it in an Actions dropdown. Preserve its disabled state when prerequisites are unmet. Keep menus wide enough for clear labels and aligned to the trailing edge of the record or version row.
+- Owner-approved exception: Customer/Partner Lab Job and phase cancellation requests remain inside a neutral **Actions** dropdown even when cancellation is the only available action. Cancellation is an exceptional task and must not dominate the ordinary Job/phase workflow. Use a red destructive menu item and destructive confirmation action; keep the Actions trigger neutral. Use the shared `ActionMenu` with `keepSingleActionInMenu` for this documented exception. Other sole actions remain directly labeled buttons.
 - Every labeled Actions dropdown shows one trailing down-chevron. The shared `ActionMenu` owns this cue so screens do not have to supply it. A direct action has no dropdown chevron. Keep the icon decorative so it does not change the button's accessible name.
 - Hide actions the user is never authorized to perform.
 - Disable a temporarily unavailable action only when knowing it exists is useful, and explain the blocking condition.

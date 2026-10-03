@@ -1,5 +1,20 @@
 # Playwright E2E Test Plan
 
+## Cancellation action exception — October 3, 2026
+
+Verify Job and eligible phase cancellation stays inside neutral Actions even as
+the sole action, with one chevron and red cancellation items/confirmation buttons.
+Check keyboard opening, Escape/focus return, disabled and ineligible states,
+desktop/phone and light/dark appearance. Ordinary single actions remain direct.
+Use unsaved or synthetic decisions; do not submit cancellation requests.
+Automated execution remains request-only.
+
+## Kit UI release verification — October 3, 2026
+
+Final isolated desktop/mobile run: 198 passed, two existing mobile print skips, zero failures. Mock-session fixtures use port 3123 and do not perform hosted writes. Full unit/manual actual-component evidence covers the new receipt/cancellation controls; hosted operator and physical/scientific acceptance remain separate.
+
+Owner requests complete test execution for the receipt dispatch prerequisite, quiet cancellation menus and Fulfilled requests label. Run the isolated source suite and record final counts and any intentional environment skips in the release receipt. Pending kit receipt, partial dispatch, receipt permission and ordinary sole actions retain regression coverage.
+
 ## Consolidated Lab step actions — October 2, 2026
 
 Manual acceptance: open a Lab step with one Draft and confirm exactly one Actions
@@ -46,7 +61,7 @@ Manual synthetic checkpoint: the actual dialogs completed five-tube single-box a
 
 Manual synthetic checkpoint: both server-paged list components show 20 rows on an intermediate page and five rows on page three of a 45-record fixture. Global Customer search returns 22 matches across two pages, resets to page one, survives refresh and keeps search available on a no-match result. Previous/Next boundaries, Clear search and keyboard paging were reviewed. Accession has one card with its lookup in the header; its draft survives tab switches, lookup failure returns focus to the barcode field, and opening remains read-only. At 390 px in dark theme, card content stays within the application body and tables scroll inside their cards. Evidence is in `output/shipment-receipt-evidence/`. This is presentation proof with blocked operational writes; PostgreSQL runtime and automated E2E execution remain unrun.
 
-Additional checkpoint: Kit shipments has 20-record server pages, retained selected-shipment scope, global search, a page-one reset and preserved Actions/dialog safeguards. Accession samples has one card, with the barcode lookup in Received containers awaiting accession's header and a direct Open container action. Check lookup availability on an empty queue, alternate-identifier disclosure, loading/errors, draft retention and dialog focus. Lookup remains read-only; arrival and individual tube accession stay separate. Check narrow/dark header, table and pager containment.
+Additional checkpoint: Fulfilled requests has 20-record server pages, retained selected-shipment scope, global search, a page-one reset and preserved Actions/dialog safeguards. Accession samples has one card, with the barcode lookup in Received containers awaiting accession's header and a direct Open container action. Check lookup availability on an empty queue, alternate-identifier disclosure, loading/errors, draft retention and dialog focus. Lookup remains read-only; arrival and individual tube accession stay separate. Check narrow/dark header, table and pager containment.
 
 History follow-up: verify header search, 20-row server pages, total/page indicators and disabled first/last navigation. Search by shipment, PH-P, Customer, Job and carrier/tracking; changing search resets to page one. No-match and empty history keep the search visible; Clear search restores the list. Switch away during the search debounce and return, refresh and use browser Back/Forward without losing view/search/page. Shipment links and their return action keep history context. Check delayed/error/disconnected responses, keyboard focus and 390 px dark reflow. Synthetic reads only; automated suites and operational writes remain unrequested.
 
@@ -56,7 +71,7 @@ In Receive shipments, verify the compact Receive a shipment | Expected shipments
 
 ## Request fulfillment from the list - October 2, 2026
 
-Check the compact Kit requests | Kit shipments pill above the request header. One queue appears at a time; arrows select the alternate view, the URL retains request filters, and a shipment-specific link selects Kit shipments. Invoke Prepare kits, Record kit shipment and eligible Cancel request through row Actions without navigating to detail. Verify latest-request permission/stock gates, failure retry, unsaved cancellation, no save on dismissal, menu-to-dialog handoff, focus return and continued pointer interaction after closing. Sent-kit rows group Register tubes and Fulfill kit when both apply. Verify 390 px reflow, horizontal table containment and dark theme. Automated E2E suites and operational mutations are not authorized for this task; synthetic browser evidence is recorded in the owning plan.
+Check the compact Kit requests | Fulfilled requests pill above the request header. One queue appears at a time; arrows select the alternate view, the URL retains request filters, and a shipment-specific link selects Fulfilled requests. Invoke Prepare kits, Record kit shipment and eligible Cancel request through row Actions without navigating to detail. Verify latest-request permission/stock gates, failure retry, unsaved cancellation, no save on dismissal, menu-to-dialog handoff, focus return and continued pointer interaction after closing. Sent-kit rows group Register tubes and Fulfill kit when both apply. Verify 390 px reflow, horizontal table containment and dark theme. Automated E2E suites and operational mutations are not authorized for this task; synthetic browser evidence is recorded in the owning plan.
 
 
 ## Adaptive Progress presentation — October 1, 2026

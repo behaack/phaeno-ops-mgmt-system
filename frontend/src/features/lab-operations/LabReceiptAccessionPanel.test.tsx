@@ -227,7 +227,7 @@ describe('LabReceiptAccessionPanel navigation', () => {
     expect(screen.getByRole('radio', { name: 'Kit requests' }).getAttribute('aria-checked')).toBe('true')
     expect(screen.queryByText('Return-kit queue')).toBeNull()
     expect(screen.queryByRole('tab', { name: 'Prepare kits' })).toBeNull()
-    fireEvent.click(screen.getByRole('radio', { name: 'Kit shipments' }))
+    fireEvent.click(screen.getByRole('radio', { name: 'Fulfilled requests' }))
     view.rerender(<QueryClientProvider client={client}><LabReceiptAccessionPanel apiEnabled workOrders={[]} /></QueryClientProvider>)
     expect(screen.getByText('Return-kit queue')).toBeTruthy()
     expect(screen.queryByText('Kit-request queue')).toBeNull()
@@ -247,7 +247,7 @@ describe('LabReceiptAccessionPanel navigation', () => {
   it('selects the sent-kit queue for a shipment link while preserving request filters', () => {
     route.search = { requestSearch: 'JOB-1', requestPage: 2 }
     render(<QueryClientProvider client={new QueryClient()}><LabReceiptAccessionPanel apiEnabled shipmentId="shipment-1" workOrders={[]} /></QueryClientProvider>)
-    expect(screen.getByRole('radio', { name: 'Kit shipments' }).getAttribute('aria-checked')).toBe('true')
+    expect(screen.getByRole('radio', { name: 'Fulfilled requests' }).getAttribute('aria-checked')).toBe('true')
     expect(screen.queryByText('Kit-request queue')).toBeNull()
     fireEvent.click(screen.getByRole('radio', { name: 'Kit requests' }))
     expect(route.search).toMatchObject({ kitQueue: 'requests', requestSearch: 'JOB-1', requestPage: 2 })

@@ -116,7 +116,7 @@ Choose **Request transportation kits** in the **Next step** card and confirm the
 
 If previously received kits cover every sample in the phase, the first two steps show **Existing kits allocated** and **Received · existing stock**. **Next step** explains that no new delivery is needed and opens sample preparation. A new kit delivery stays at **Receive kits** until every requested kit is physically received and confirmed. Under **Receive kits**, the status shows **Request received**, **Sent**, or **Received**; partial dispatch and receipt show **Partially sent** or **Partially received**.
 
-Choose **Record kit receipt** in **Next step** to open the saved kit order, including its address, quantities, fulfillment status and tracking. An administrator selects **Confirm received** beside each dispatched kit and scans its physical barcode. Confirm receipt only after arrival. **Cancel** returns without recording receipt. **Cancel kit request** cancels an unshipped request; the accepted Job and prices stay intact and you can request corrected kits. Dispatched requests cannot be cancelled this way. After receipt, **View kit order** remains available beside the phase heading, in **Actions** when several secondary actions are available. Other phase orders and earlier whole-Job requests retain their delivery history. Received physical kits are assigned to one phase.
+While Phaeno prepares the kits, **Next step** shows **Wait for Phaeno to send kits**, with no receipt action. **View kit order** beside the shipping heading opens the saved address, quantities and fulfillment status. Once Phaeno has sent a kit awaiting receipt, an administrator can choose **Record kit receipt** in **Next step** to open the kit order and tracking. Select **Confirm received** beside each dispatched kit and scan its physical barcode only after arrival. If all sent kits in a partial delivery have been received, wait for Phaeno to send the remaining kits before recording more receipts. **Cancel** returns without recording receipt. **Cancel kit request** cancels an unshipped request; the accepted Job and prices stay intact and you can request corrected kits. Dispatched requests cannot be cancelled this way. After receipt, **View kit order** remains available beside the phase heading, in **Actions** when several secondary actions are available. Other phase orders and earlier whole-Job requests retain their delivery history. Received physical kits are assigned to one phase.
 
 For each sample, select one received kit and enter one non-PHI Sample ID with one barcode from a physical tube in that kit. Enter the accepted biological source and actual material amount. The Quantity label shows the accepted unit and range. One sequencing run is assigned automatically unless the accepted order explicitly includes additional runs. Select **Save pair** at the end of the row; a new row opens after it is saved. The page shows the saved pairs and remaining accepted totals. A wrong-kit, duplicate, unknown or unavailable barcode is rejected without clearing the entry. Use **Correct pair** with a reason before final confirmation if a saved match needs correction.
 
@@ -176,6 +176,8 @@ Phaeno may update the expected completion with a recorded reason. The original t
 
 ## Cancel work
 
+For an eligible Job, choose the red **Request cancellation** item in its header's **Actions** menu. For an eligible phase, expand it in **Progress** and use that phase's **Actions → Request cancellation**. Cancellation stays inside **Actions** even when it is the only available action. Review the affected scope and enter the required reason before submitting; closing the dialog leaves the Job and phase unchanged.
+
 A draft can be discarded before submission. Before Phaeno accepts work, an administrator can cancel eligible scope. After acceptance, submit a cancellation request. Phaeno records whether the request is approved, partially approved, or declined. Any correction to an issued PSeq invoice is retained as an append-only credit, debit, or write-off adjustment rather than editing the invoice.
 
 ## Find and resume work
@@ -227,7 +229,7 @@ One Job may have several ordered phases, each with its own samples, agreed turna
 
 A phase's TAT starts when Phaeno physically receives the last required tube across that phase's samples and containers. Receiving a future cohort early starts its clock even while it waits for the preceding phase. A container arrival alone is not complete tube receipt.
 
-An administrator can select **Request cancellation** for an eligible phase before the first required tube is received. Phaeno reviews the request; a request is not approval. Receipt closes eligibility. Cancellation retains the recorded scope and any invoices for separate financial review.
+An administrator can select the red **Actions → Request cancellation** item for an eligible phase before the first required tube is received. Phaeno reviews the request; a request is not approval. Receipt closes eligibility. Cancellation retains the recorded scope and any invoices for separate financial review.
 
 After approval, that phase no longer requires Sample IDs or physical tube pairs to complete preparation. Prepare all remaining phases. Previously saved cancelled pairs remain marked as history and are excluded from the required totals and new shipments.
 

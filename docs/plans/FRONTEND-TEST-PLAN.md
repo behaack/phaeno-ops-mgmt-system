@@ -1,5 +1,20 @@
 # Frontend Test Plan
 
+## Cancellation action exception — October 3, 2026
+
+Shared ActionMenu, LabJobWorkspaceActions and LabJobPhaseList coverage retains
+a sole cancellation inside Actions with one indicator and a destructive item.
+Job trigger guards and callbacks are preserved; ordinary single actions stay
+direct. Single-order and expanded-phase expectations are updated. Authored,
+not executed under the request-only rule. Phase cancellation confirmation uses
+destructive styling.
+
+## Kit UI release verification — October 3, 2026
+
+Final isolated run: all 1,363 unit cases passed in 212 files. The order-dialog helper now handles multiple Actions triggers; the retained-draft regression also passes. Full lint and TypeScript pass. Receipt dispatch, cancellation exception and Fulfilled requests selectors are covered. The first overloaded full run is superseded by the bounded-concurrency clean run.
+
+Owner requests complete test execution for the receipt dispatch prerequisite, quiet cancellation menus and Fulfilled requests label. Run the isolated source suite and record final counts and any intentional environment skips in the release receipt. Pending kit receipt, partial dispatch, receipt permission and ordinary sole actions retain regression coverage.
+
 ## Consolidated Lab step actions — October 2, 2026
 
 Manual review covers one detail Actions control/indicator, one Edit draft command,
@@ -44,7 +59,7 @@ Updated LabReceiptAccessionPanel.test.tsx selects Expected shipments explicitly 
 
 ## Kit-request actions and compact view toggle - October 2, 2026
 
-Updated KitRequests.test.tsx covers list-invoked dispatch without navigation or initial per-row detail fetches and rejects cancellation from a stale list when the refreshed request no longer permits it. LabReceiptAccessionPanel.test.tsx covers one queue at a time, default selection, shipment-linked Kit shipments and preserved request filters. dialog.test.tsx covers focus return when a menu opener disappears. The shared PillToggle has radio-group semantics with keyboard selection. Authored regressions remain unexecuted under the request-only test policy.
+Updated KitRequests.test.tsx covers list-invoked dispatch without navigation or initial per-row detail fetches and rejects cancellation from a stale list when the refreshed request no longer permits it. LabReceiptAccessionPanel.test.tsx covers one queue at a time, default selection, shipment-linked Fulfilled requests and preserved request filters. dialog.test.tsx covers focus return when a menu opener disappears. The shared PillToggle has radio-group semantics with keyboard selection. Authored regressions remain unexecuted under the request-only test policy.
 
 Manual verification uses the actual components with synthetic read responses and blocked operational writes. Cover desktop and 390 px dark layouts, compact pill sizing, keyboard selection, list action dialogs, initial cancellation focus, body/footer structure, focus return and post-dialog pointer interaction, blocked stock/changed permissions, and selected shipment context. ReturnKitFulfillmentPanel.test.tsx covers matching by Job and a filtered miss distinct from an empty queue. Visible filter labels are removed while accessible names remain. Source/type/documentation checks are recorded in the owning transportation-kit plan.
 

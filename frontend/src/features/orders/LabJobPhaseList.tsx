@@ -50,8 +50,8 @@ export function LabJobPhaseList({ order, plan, tracking, canCancel, onCancel }: 
       const open = single || tracking.expandedPhaseId === phase.id
       const inactive = ['Cancelled', 'Superseded'].includes(phase.lifecycle)
       const phaseActions = [
-        ...(phase.deliveredSamples > 0 ? [{ label: 'View results', run: () => tracking.onResults(phase.id) }] : []),
-        ...(canCancel && phase.cancellationEligible && !phase.cancellationPending ? [{ label: 'Request cancellation', run: () => onCancel(phase) }] : []),
+        ...(phase.deliveredSamples > 0 ? [{ label: 'View results', variant: 'default' as const, run: () => tracking.onResults(phase.id) }] : []),
+        ...(canCancel && phase.cancellationEligible && !phase.cancellationPending ? [{ label: 'Request cancellation', variant: 'destructive' as const, run: () => onCancel(phase) }] : []),
       ]
       const date = (value: string | null) => value ? new Date(value).toLocaleString() : 'Not established'
       return <section key={phase.id} id={single ? `phase-summary-${phase.id}` : undefined} tabIndex={single ? -1 : undefined} aria-label={single ? 'Order progress' : phase.name} className="py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -78,7 +78,7 @@ export function LabJobPhaseList({ order, plan, tracking, canCancel, onCancel }: 
               <div><dt className="text-muted-foreground">Containers received</dt><dd>{phase.containerCount > 0 ? `${phase.arrivedContainers} of ${phase.containerCount}` : inactive ? 'No containers expected' : 'Awaiting sample shipment'}</dd></div>
               {phase.scope ? <div><dt className="text-muted-foreground">Sequencing runs</dt><dd>{phase.scope.sequencingRunCount} total{phase.scope.runsPerSample ? ` · ${phase.scope.runsPerSample} per sample` : ''}</dd></div> : null}
             </dl>
-            {phaseActions.length ? <ActionMenu><DropdownMenuTrigger asChild><Button variant="outline" size="sm" disabled={tracking.disabled}>Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end">{phaseActions.map(action => <DropdownMenuItem key={action.label} onSelect={action.run}>{action.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu> : null}
+            {phaseActions.length ? <ActionMenu keepSingleActionInMenu={phaseActions.some(action => action.variant === 'destructive')}><DropdownMenuTrigger asChild><Button variant="outline" size="sm" disabled={tracking.disabled}>Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-44 max-w-[calc(100vw-2rem)]">{phaseActions.map(action => <DropdownMenuItem key={action.label} variant={action.variant} onSelect={action.run}>{action.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu> : null}
           </div>
           {phase.scope ? <p className="text-sm text-muted-foreground">{phase.scope.sources.map(source => `${source.biologicalSource}: ${labSampleCount(source.specimenCount)}`).join(' · ')}</p> : null}
           <div><h4 className="font-semibold">Samples</h4>{sampleIds.length ? <ul className="mt-2 divide-y">{sampleIds.map(id => {

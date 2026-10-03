@@ -540,9 +540,9 @@
       "locale": "en-US",
       "slug": "lab-services",
       "title": "Request laboratory services",
-      "summary": "Accept pricing, request phase kits when ready, prepare and send samples, and use Progress, Files and results, Order and billing, and History.",
+      "summary": "Accept pricing, request phase kits, wait for dispatch before recording receipt, prepare and send samples, and follow Progress and results.",
       "order": 30,
-      "reviewedAt": "2026-10-02",
+      "reviewedAt": "2026-10-03",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -1564,7 +1564,7 @@
       "title": "Laboratory operations",
       "summary": "Find laboratory work, receive purchased kits and stock, assemble Phaeno kits and reagents, record scientific evidence, and trace result delivery.",
       "order": 50,
-      "reviewedAt": "2026-10-02",
+      "reviewedAt": "2026-10-03",
       "navigationGroup": "laboratory-operations",
       "contentType": "overview",
       "topicIds": [
@@ -1595,7 +1595,7 @@
       "title": "Receipt and accession",
       "summary": "Fulfill kits, receive shipments, accession tubes into freezer boxes, and find recorded samples by identity, location, intake status or sample use.",
       "order": 51,
-      "reviewedAt": "2026-10-02",
+      "reviewedAt": "2026-10-03",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1874,9 +1874,9 @@
       "locale": "en-US",
       "slug": "lab-services",
       "title": "Use Partner Lab services",
-      "summary": "Accept pricing, request phase kits when ready, prepare and send samples, and use Progress, Files and results, Order and billing, and History.",
+      "summary": "Accept pricing, request phase kits, wait for dispatch before recording receipt, prepare and send samples, and follow Progress and results.",
       "order": 25,
-      "reviewedAt": "2026-10-02",
+      "reviewedAt": "2026-10-03",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [

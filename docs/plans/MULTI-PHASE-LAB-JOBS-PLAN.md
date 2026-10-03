@@ -112,6 +112,12 @@ Confirmed by the Product Owner:
   negotiation workflow or general dependency engine.
 - Support requests to cancel unstarted phases. A request is distinct from an
   approved cancellation; started-phase cancellation is outside this enhancement.
+  Owner-approved presentation exception (October 3, 2026): eligible Job and
+  phase cancellation requests remain inside neutral Actions even as the sole
+  action, with red cancellation items and destructive confirmation actions.
+  Other sole actions remain direct. The shared ActionMenu carries the explicit
+  exception; eligibility and saved decisions are unchanged. See the UI policy
+  and the on-demand phase-kit plan for the implementation/verification checkpoint.
 - Receipt of the first required sample/tube closes cancellation-request
   eligibility, even if laboratory processing has not begun. This is distinct
   from the complete-receipt milestone that starts TAT.

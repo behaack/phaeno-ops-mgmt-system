@@ -47,6 +47,7 @@ export type ShipmentHeaderAction = {
   busy?: boolean
   descriptionId?: string
   variant?: 'default' | 'outline' | 'destructive'
+  keepInMenu?: boolean
   kind: 'command'
   onSelect: () => void
 }
