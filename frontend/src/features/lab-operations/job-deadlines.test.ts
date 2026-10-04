@@ -13,6 +13,21 @@ describe('Jobs navigation state', () => {
     expect(parseJobListSearch({ ...closed, ...clearJobFilters('Closed') })).toMatchObject({ jobSearch: 'Active search', jobPage: 3, jobClosedSearch: undefined, jobClosedPage: undefined, jobOutcome: undefined })
     expect(parseJobListSearch({ ...closed, ...clearJobFilters('Active') })).toMatchObject({ jobSearch: undefined, jobPage: undefined, jobClosedSearch: 'Closed search', jobClosedPage: 7 })
   })
+  it.each([['Jobs', 'Phases'], ['Phases', 'Jobs']] as const)('retains Active %s and Closed %s grouping independently through tab switches and filter clearing', (activeGrouping, closedGrouping) => {
+    const active = parseJobListSearch({ jobGrouping: activeGrouping, jobClosedGrouping: closedGrouping, jobSearch: 'Active search', jobPage: 3, jobClosedSearch: 'Closed search', jobClosedPage: 7 })
+    const closed = parseJobListSearch({ ...active, jobView: 'Closed' })
+    expect(closed.jobGrouping ?? 'Phases').toBe(activeGrouping)
+    expect(closed.jobClosedGrouping ?? 'Phases').toBe(closedGrouping)
+    expect(closed.jobPage).toBe(3)
+    expect(closed.jobClosedPage).toBe(7)
+    expect(parseJobListSearch({ ...closed, jobView: 'Active' })).toEqual(active)
+    for (const view of ['Active', 'Closed'] as const) {
+      const cleared = parseJobListSearch({ ...closed, ...clearJobFilters(view) })
+      expect(cleared.jobGrouping ?? 'Phases').toBe(activeGrouping)
+      expect(cleared.jobClosedGrouping ?? 'Phases').toBe(closedGrouping)
+    }
+    expect(parseJobListSearch({ jobGrouping: 'invalid', jobClosedGrouping: 'invalid' })).toMatchObject({ jobGrouping: undefined, jobClosedGrouping: undefined })
+  })
   it('rejects unsupported filters without restoring Show complete', () => {
     expect(parseJobListSearch({ jobDeadline: 'NeedsDueDate', jobStatus: '__proto__', jobOutcome: 'Failed', jobPage: -4 })).toMatchObject({ jobDeadline: undefined, jobStatus: undefined, jobOutcome: undefined, jobPage: undefined })
     expect(parseJobListSearch({ jobDeadline: 'Cancelled', jobSearch: 'ABC' })).toMatchObject({ jobView: undefined, jobSearch: 'ABC', jobOutcome: undefined, jobClosedSearch: undefined, jobDeadline: undefined })

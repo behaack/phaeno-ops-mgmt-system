@@ -1,8 +1,3 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { FinanceRecordPage, type FinanceRecord } from '#/features/orders/FinanceOperationsPanel'
-export const Route = createFileRoute('/order-operations/finance/$kind/$recordId')({ component: FinanceRecordRoute })
-function FinanceRecordRoute() {
-  const { kind, recordId } = Route.useParams()
-  if (!['invoice', 'receipt', 'customer', 'reconciliation'].includes(kind)) return <main className="page-wrap p-8">Finance record unavailable.</main>
-  return <FinanceRecordPage record={{ kind: kind as FinanceRecord['kind'], id: recordId }} />
-}
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { parseServiceWorkspaceSearch } from '#/features/orders/service-workspace-search'
+export const Route = createFileRoute('/order-operations/finance/$kind/$recordId')({ validateSearch: parseServiceWorkspaceSearch, beforeLoad: ({ params, search }) => { throw redirect({ to: '/finance/$kind/$recordId', params: { kind: params.kind, recordId: params.recordId }, search, replace: true }) } })

@@ -5,6 +5,7 @@ import { createRootRoute, createRoute, createRouter, createMemoryHistory, Router
 import { TrialScopePage } from '../../src/features/trials/TrialScopePage'
 import { TrialDetailPage } from '../../src/features/trials/TrialDetailPage'
 import { TrialProjectsPage } from '../../src/features/trials/TrialProjectsPage'
+import { OrderConfigurationPage, parseConfigurationSection } from '../../src/features/orders/configuration/OrderConfigurationPage'
 import { PhaenoSessionContext, type PhaenoSessionContextValue } from '../../src/features/auth/session-context'
 import type { SessionCapabilities } from '../../src/api/session'
 import { applyThemeMode } from '../../src/components/theme-mode'
@@ -12,11 +13,12 @@ import '../../src/styles.css'
 applyThemeMode('auto')
 const query = new URLSearchParams(window.location.search)
 const view = query.get('view')
-const staff = view === 'scope' || view === 'request'
+const staff = view === 'scope' || view === 'request' || view === 'configuration'
 const root = createRootRoute({ component: Outlet })
-const route = createRoute({ getParentRoute: () => root, path: '/trial-projects/$trialId', component: () => <TrialDetailPage trialId="trial-1" /> })
-const scopeRoute = createRoute({ getParentRoute: () => root, path: '/trial-projects/$trialId/scope', component: () => <TrialScopePage trialId="trial-1" /> })
-const listRoute = createRoute({ getParentRoute: () => root, path: '/trial-projects', component: () => <TrialProjectsPage search="" status="" owner="" requestId={query.get('requestId') ?? undefined} fromCompanyId={query.get('fromCompanyId') ?? undefined} onFilter={() => {}} /> })
-const router = createRouter({ routeTree: root.addChildren([route, scopeRoute, listRoute]), history: createMemoryHistory({ initialEntries: [view === 'request' ? '/trial-projects' : view === 'scope' ? '/trial-projects/trial-1/scope' : '/trial-projects/trial-1'] }) })
-const session: PhaenoSessionContextValue = { authConfigured: true, authProvider: 'clerk', clerkLoaded: true, signedIn: true, isLoading: false, error: null, selectedOrganizationId: 'prospect-1', selectedDepartmentId: 'research', setSelectedOrganizationId: () => {}, session: { state: 'ready', user: { id: 'member', email: 'member@example.test', firstName: 'Research', lastName: 'Administrator', status: 'Active' }, memberships: [], isPlatformAdmin: false, selectedOrganization: { organizationId: 'prospect-1', membershipId: 'membership', isAvailable: true }, capabilities: { canViewTrialProjects: true, canManageTrialProjects: staff } as SessionCapabilities } }
+const route = createRoute({ getParentRoute: () => root, path: '/order-operations/lab-services/trials/$trialId', component: () => <TrialDetailPage trialId="trial-1" /> })
+const scopeRoute = createRoute({ getParentRoute: () => root, path: '/order-operations/lab-services/trials/$trialId/scope', component: () => <TrialScopePage trialId="trial-1" /> })
+const listRoute = createRoute({ getParentRoute: () => root, path: '/order-operations/lab-services/trials', component: () => <TrialProjectsPage search="" status="" owner="" requestId={query.get('requestId') ?? undefined} fromCompanyId={query.get('fromCompanyId') ?? undefined} onFilter={() => {}} /> })
+const configurationRoute = createRoute({ getParentRoute: () => root, path: '/order-configuration', validateSearch: search => ({ configurationSection: parseConfigurationSection(search.configurationSection) }), component: OrderConfigurationPage })
+const router = createRouter({ routeTree: root.addChildren([route, scopeRoute, listRoute, configurationRoute]), history: createMemoryHistory({ initialEntries: [view === 'configuration' ? '/order-configuration?configurationSection=trials' : view === 'request' ? '/order-operations/lab-services/trials' : view === 'scope' ? '/order-operations/lab-services/trials/trial-1/scope' : '/order-operations/lab-services/trials/trial-1'] }) })
+const session: PhaenoSessionContextValue = { authConfigured: true, authProvider: 'clerk', clerkLoaded: true, signedIn: true, isLoading: false, error: null, selectedOrganizationId: 'prospect-1', selectedDepartmentId: 'research', setSelectedOrganizationId: () => {}, session: { state: 'ready', user: { id: 'member', email: 'member@example.test', firstName: 'Research', lastName: 'Administrator', status: 'Active' }, memberships: [], isPlatformAdmin: false, selectedOrganization: { organizationId: 'prospect-1', membershipId: 'membership', isAvailable: true }, capabilities: { canViewTrialProjects: true, canManageTrialProjects: staff, canCreateTrialProjects: staff } as SessionCapabilities } }
 createRoot(document.getElementById('root')!).render(<PhaenoSessionContext.Provider value={session}><QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}><RouterProvider router={router} /></QueryClientProvider></PhaenoSessionContext.Provider>)

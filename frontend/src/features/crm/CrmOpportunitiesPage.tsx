@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import {
   apiErrorMessage,
   createCrmOpportunity,
-  listCrmCompanies,
   listCrmOpportunities,
   getCrmOpportunityStageSummary,
   listCrmPipelines,
@@ -47,6 +46,10 @@ export function CrmOpportunitiesPage() {
   const allPipelines = showPipelineFilter && (pipelineId === "all" || (!pipelineId && stale));
   const selectedPipelineId = allPipelines ? "" : activePipelines.length === 1 ? activePipelines[0].id : pipelineId && pipelineId !== "all" ? pipelineId : defaultPipelineId;
   const selectedStageId = allPipelines || pipelineId === "all" ? "" : stageId;
+  const creationReadiness = pipelines.isError ? "Available pipelines could not be loaded."
+    : !pipelines.isSuccess ? "Loading available pipelines…"
+    : !activePipelines.length ? "An active pipeline is required to create an Opportunity."
+    : pipelineId !== (allPipelines ? "all" : selectedPipelineId) || (allPipelines && stageId) ? "Preparing the selected pipeline…" : null;
   const opportunities = useQuery({
     queryKey: ["crm-opportunities", search, selectedPipelineId, selectedStageId, stale, page],
     queryFn: () => listCrmOpportunities({
@@ -62,10 +65,6 @@ export function CrmOpportunitiesPage() {
     queryKey: ["crm-opportunities", "stage-summary", search, selectedPipelineId, stale],
     queryFn: () => getCrmOpportunityStageSummary({ search, pipelineId: selectedPipelineId, staleOnly: stale }),
     enabled: pipelines.isSuccess && !allPipelines && Boolean(selectedPipelineId),
-  });
-  const companies = useQuery({
-    queryKey: ["crm-companies", "choices"],
-    queryFn: () => listCrmCompanies({ pageSize: 100 }),
   });
   useEffect(() => {
     if (!pipelines.isSuccess || !defaultPipelineId) return;
@@ -107,17 +106,18 @@ export function CrmOpportunitiesPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setOpen(true)}>
+          <Button disabled={Boolean(creationReadiness)} aria-describedby={creationReadiness ? "opportunity-create-readiness" : undefined} onClick={() => setOpen(true)}>
             <Plus data-icon="inline-start" />
             New opportunity
           </Button>
         </div>
       </section>
-      {opportunities.error || pipelines.error || companies.error ? (
+      {creationReadiness ? <p id="opportunity-create-readiness" role="status" className="text-sm text-muted-foreground">{creationReadiness}</p> : null}
+      {opportunities.error || pipelines.error ? (
         <Alert variant="destructive">
           <AlertDescription>
             {apiErrorMessage(
-              opportunities.error ?? pipelines.error ?? companies.error,
+              opportunities.error ?? pipelines.error,
             )}
           </AlertDescription>
         </Alert>
@@ -278,7 +278,6 @@ export function CrmOpportunitiesPage() {
         </Card>
       <CrmOpportunityDialog
         open={open}
-        companies={companies.data?.items ?? []}
         pipelines={pipelines.data ?? []}
         pending={create.isPending}
         error={create.error ? apiErrorMessage(create.error) : undefined}

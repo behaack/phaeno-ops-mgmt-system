@@ -274,6 +274,7 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
                 var stage = await dbContext.CrmPipelineStages.Where(value => value.IsActive && value.Category == CrmPipelineStageCategory.Open && value.Pipeline.IsActive).OrderByDescending(value => value.Pipeline.IsDefault).ThenBy(value => value.Position).FirstAsync(cancellationToken);
                 decimal? amount = decimal.TryParse(Get(row, "amount"), NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed) ? parsed : null;
                 var opportunity = Execute(() => new CrmOpportunity(Get(row, "name")!, company.Id, stage, actor.Id, Get(row, "product_interest"), amount, Get(row, "currency") ?? "USD", null, Get(row, "next_step"), null, null, null));
+                opportunity.AssignDepartment(await CrmOpportunityDepartments.ResolveAsync(dbContext, company, null, cancellationToken));
                 dbContext.CrmOpportunities.Add(opportunity);
                 dbContext.CrmOpportunityStageHistory.Add(new CrmOpportunityStageHistory(opportunity.Id, null, stage.Id, "Opportunity imported.", actor.Id, DateTime.UtcNow));
                 break;
@@ -303,7 +304,9 @@ public sealed class CrmAdministrationController(PSeqOperationsDbContext dbContex
                     var opportunityName = Get(row, "name");
                     var opportunityCompanyName = Get(row, "company_name");
                     if (string.IsNullOrWhiteSpace(opportunityName) || string.IsNullOrWhiteSpace(opportunityCompanyName)) return "name and company_name are required.";
-                    if (!await dbContext.CrmCompanies.AnyAsync(value => value.IsActive && value.Name.ToLower() == opportunityCompanyName.ToLower(), cancellationToken)) return "company_name must exactly match an active Company.";
+                    var opportunityCompany = await dbContext.CrmCompanies.SingleOrDefaultAsync(value => value.IsActive && value.Name.ToLower() == opportunityCompanyName.ToLower(), cancellationToken);
+                    if (opportunityCompany is null) return "company_name must exactly match an active Company.";
+                    if ((await CrmOpportunityDepartments.ReadAsync(dbContext, opportunityCompany, cancellationToken)).Count > 1) return "This Company has multiple Departments. Create the Opportunity in CRM and select its Department.";
                     if (!decimal.TryParse(Get(row, "amount"), NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed) && !string.IsNullOrWhiteSpace(Get(row, "amount"))) return "amount must be a number.";
                     var stage = await dbContext.CrmPipelineStages.AsNoTracking().Where(value => value.IsActive && value.Category == CrmPipelineStageCategory.Open && value.Pipeline.IsActive).OrderByDescending(value => value.Pipeline.IsDefault).ThenBy(value => value.Position).FirstOrDefaultAsync(cancellationToken);
                     if (stage is null) return "an active pipeline with an open stage is required.";

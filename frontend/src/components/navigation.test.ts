@@ -53,6 +53,24 @@ describe('data navigation permissions', () => {
 })
 
 describe('order navigation permissions', () => {
+  it('keeps one Order Ops entry for Trial staff and scopes moved destinations by role', () => {
+    const trialStaff = createSession('Phaeno', { canViewTrialProjects: true })
+    const context = { selectedOrganizationKind: 'Phaeno' as const, selectedMembership: trialStaff.memberships[0] }
+    expect(getVisibleMainMenuItems(trialStaff, context, 'workspace').map(item => item.label)).toEqual(['Dashboard', 'CRM', 'Order ops'])
+    expect(getVisibleMainMenuItems(trialStaff, context, 'more').some(item => ['Finance', 'Legacy integrations'].includes(item.label))).toBe(false)
+    const finance = createSession('Phaeno', { canViewAllOperationalOrders: true, canManagePSeqBilling: true })
+    expect(getVisibleMainMenuItems(finance, context, 'more')).toContainEqual(expect.objectContaining({ label: 'Finance', to: '/finance' }))
+    expect(getVisibleMainMenuItems(finance, context, 'workspace').some(item => item.label === 'Order ops')).toBe(false)
+    expect(isMainMenuRouteActive('/order-operations/lab-services/trials/trial-1', '/order-operations')).toBe(true)
+    expect(isMainMenuRouteActive('/dashboard/attention', '/')).toBe(true)
+    expect(isMainMenuRouteActive('/lab-operations/result-release', '/order-operations')).toBe(false)
+  })
+
+  it('retains Order settings navigation for Phaeno Trial staff without broader configuration access', () => {
+    const session = createSession('Phaeno', { canManageTrialProjects: true, canManageOrderConfiguration: false })
+    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Phaeno', selectedMembership: session.memberships[0] }).map(item => item.label)).toContain('Order settings')
+    expect(getVisibleMainMenuItems(session, { selectedOrganizationKind: 'Prospect', selectedMembership: session.memberships[1] }).map(item => item.label)).not.toContain('Order settings')
+  })
   it.each<OrganizationKind>(['Customer', 'Partner'])('shows laboratory services in an authorized %s context', (kind) => {
     const session = createSession(kind, {
       canViewLabServiceOrders: true,
@@ -103,7 +121,6 @@ describe('order navigation permissions', () => {
     expect(labels).toContain('Lab ops')
     expect(labels).toContain('Order settings')
     expect(labels).toContain('File retention policies')
-    expect(labels).not.toContain('Lab services')
     expect(labels).not.toContain('PSeq kit orders')
   })
 })
@@ -206,8 +223,8 @@ describe('navigation placement', () => {
       ...(orders ? ['Order settings', 'Samples & shipping settings'] : []),
       ...(retention ? ['File retention policies'] : []),
     ])
-    expect(getVisibleMainMenuItems(session, context, 'workspace').some(item => item.label === 'Order ops')).toBe(false)
-    expect(getVisibleMainMenuItems(session, context, 'more').map(item => item.label)).toEqual(orders ? ['Purchasing'] : [])
+    expect(getVisibleMainMenuItems(session, context, 'workspace').some(item => item.label === 'Order ops')).toBe(orders)
+    expect(getVisibleMainMenuItems(session, context, 'more').map(item => item.label)).toEqual(orders ? ['Purchasing', 'Legacy integrations'] : [])
   })
 
   it('keeps settings independent of operational workspaces', () => {
@@ -249,8 +266,8 @@ describe('navigation placement', () => {
         (item) => item.label,
       ),
     ).toEqual(['Order settings', 'Lab settings', 'CRM settings', 'Samples & shipping settings', 'File retention policies'])
-    expect(getVisibleMainMenuItems(session, context, 'more').map(item => item.label)).toEqual(['Purchasing', 'Equipment', 'Data provisioning'])
-    for (const label of ['Purchasing', 'Equipment', 'Data provisioning']) {
+    expect(getVisibleMainMenuItems(session, context, 'more').map(item => item.label)).toEqual(['Purchasing', 'Equipment', 'Data provisioning', 'Legacy integrations'])
+    for (const label of ['Purchasing', 'Equipment', 'Data provisioning', 'Legacy integrations']) {
       expect(getVisibleMainMenuItems(session, context).filter(item => item.label === label)).toHaveLength(1)
     }
     expect(

@@ -1,5 +1,121 @@
 # Lab Operations Plan
 
+## Catalog requirement and sequencing tube pairs — October 4, 2026
+
+The owner requires Catalog-controlled sequencing volume and a form like Customer sample/tube matching. The [pairing plan](CATALOG-SEQUENCING-TUBE-PAIRING-PLAN.md) owns this correction: per-service minimums, immutable physical-pair snapshots, one active pair form, progress and compact saved pairs. Operators cannot edit the requirement. Actual volume remains an Operator entry with both scans and exact atomic debit/credit. The demo uses the previously authorized 5 µL; its six 20 µL libraries remain unchanged. Local conversion approval and verification are recorded in that plan.
+
+## Empty sequencing batch recovery — October 4, 2026
+
+An Operator must assign passing libraries while the sequencing batch is Draft,
+then record its actual start. An empty batch cannot start, complete or create a
+sendout. Disable empty Start and Sequencing tubes actions and show the assignment
+prerequisite on the batch card. An empty In progress batch without a sendout
+offers **Return empty batch to draft** with a required correction reason,
+Cancel focus and focus return to its Actions control. Recovery preserves the
+identifier/name/notes and records the previous start, actor and reason in the
+existing audit infrastructure while clearing the current start. Current-version
+checks and the sequencing batch transaction lock protect recovery against
+membership/sendout changes. Populated, completed or sent-out work cannot be
+reopened this way. No persisted model change or migration is needed.
+
+The owner explicitly authorized correcting local batch
+`PH-BAT-20261004-TAHDCRV5`. This correction does not assign libraries or record
+sequencing work. Acceptance is the same identifier in Draft, zero members,
+preserved audit evidence, disabled empty Start and enabled handoff assignment
+when this draft is available. Compile, lint, documentation and connected UI
+checks apply; automated suite execution remains deferred unless requested.
+
+Connected verification passed: the reason is required, Cancel initially has
+focus, the dialog has header/body/footer regions, and focus returns to Actions.
+The correction saved once through the UI. The batch was Draft with zero members
+and empty Start/Sequencing tubes actions disabled. A read-only database check
+confirmed the actor, reason and original `2026-10-04T19:09:00Z` start in its audit
+entry. During the remaining checks, six libraries were assigned from the user's
+session; the refreshed completed tray shows **6 passing libraries · 6 assigned**
+to this same Draft. This task performed no membership or sequencing command.
+Solution build, frontend typechecking, scoped lint and documentation checks pass.
+See [the local recovery record](../testing/runs/2026-10-04-sequencing-batch-recovery.md).
+
+
+
+## Master mix card header — October 4, 2026
+
+The tray's **Open Master mixes** navigation is an outline button link at the
+right end of the **Master mix** title row. The description wraps beside it;
+narrow screens also wrap the compact button label. Use the shared preparation
+header action, keep a single link to the same workspace and retain recorded
+use rows. This is a presentation change with no operational writes. Acceptance
+covers desktop/narrow containment, keyboard focus and navigation. Automated
+tests are not requested for this reversible layout change.
+
+Connected geometry checks passed at 320, 1025 and normal desktop CSS widths:
+the action starts on the title row, the description wraps, and neither extends
+past the card. A single link remains, keyboard focus is visible, and Enter opens
+the Master mixes workspace. Scoped lint, typechecking and help generation pass.
+
+
+
+## Sequencing batch availability and identifiers — October 4, 2026
+
+Operators handing completed libraries to sequencing must have a draft batch.
+Disable assignment in the handoff and tube details while batches are loading,
+unavailable or absent, and explain the prerequisite beside the handoff list.
+The existing header link opens the sequencing workspace to create a batch.
+Use the existing server-allocated `PH-BAT-YYYYMMDD-XXXXXXXX` identity as the
+default display name; an optional descriptive name need not be unique. Keep
+custom names, existing identifiers, library lineage and draft-only backend
+validation intact. Creation accepts an omitted name without changing persisted
+fields, indexes or historical records; no migration is needed. Avoid repeating
+the identifier as both name and number in touched batch lists and selectors.
+Acceptance covers empty/loading/error and available draft states, creation
+without a name and with a custom name, and unchanged assignment safeguards.
+Automated suite execution remains request-only; compile and connected UI
+checks are the current verification scope.
+
+Verification: solution build (including added test source), frontend
+typechecking, scoped lint, documentation generation/check and whitespace
+checks pass. Connected Chrome shows six disabled Add actions with the empty
+draft explanation, one header link, optional-name creation guidance and a
+blank-name enabled Create button. Keyboard activation opens the sequencing
+workspace, and Cancel restores visible focus to New batch. Header geometry
+contains its title, wrapped description and action at 320 and desktop widths.
+The local Development API was refreshed at its existing URLs with no database
+change. No batch was created or assigned; automated tests were not executed.
+
+## Sequencing handoff header — October 4, 2026
+
+Move **Open sequencing batches** to the far right of the **Sequencing handoff**
+title row using the shared preparation card header action. The description
+wraps in the remaining column. Keep one navigation link, the same destination,
+and each library's existing assignment action. This is a presentation change;
+no laboratory record or handoff state changes. Phaeno help identifies the new
+header location. Connected desktop/narrow and keyboard verification is the
+acceptance checkpoint; automated suites are not requested. The connected check
+passes at 320 and 1025 CSS pixels and at the normal desktop size. The sole
+header link retains keyboard focus and opens the original destination; narrow
+screens wrap the compact action label as well as the description.
+
+## Fake PSeq tray completion — October 4, 2026
+
+The owner-authorized local **6WTMNUFE** walkthrough is complete through library
+preparation: the saved DEMO PSeq 2 × 3 tray is **Complete**, all six library
+positions are **Succeeded**, and six passing libraries are ready for sequencing.
+The UI recorded matching label/output barcodes, 0.010 mL specimen transfers,
+60 µL of a fresh approved master mix, and fictional yield/concentration/Pass QC.
+The expired prior mix and the fresh mix's 40 µL remainder were explicitly
+discarded without inventing a measured disposal amount. Original source and
+earlier history remain retained. This is **Pass (simulated)**, not scientific,
+physical or production acceptance; no sequencing or result release occurred.
+See the [completion record](../testing/runs/2026-10-04-6wtmnufe-pseq-library-preparation.md).
+The earlier label sections retain their historical checkpoints; this completion
+supersedes their outstanding fake-tray work.
+
+## Subject workspace navigation — October 3, 2026
+
+The approved Lab Ops sidebar now keeps **Jobs** first as the ungrouped overview and default landing section. CRM-style groups are **SAMPLE PROCESSING** (Sample receipt & accession, Library prep, Sequencing batches, Data assembly), **RESULTS** (Results & scientific review, Result release), **LAB PREPARATIONS** (Master mixes, Reagent manufacturing), and **KITS & FULFILLMENT** (Transportation kit requests, Transportation kit inventory, PSeq kit fulfillment). Transportation requests and sent-kit queues move out of sample receipt; receiving and accession remain together. Saved kit bookmarks and record return filters follow the new owning section. Data assembly keeps its two existing workflows. This is navigation only, with unchanged execution and release permissions; see the owning navigation plan for acceptance and local verification.
+
+The approved [navigation restructure](WORKSPACE-NAVIGATION-RESTRUCTURE-PLAN.md) groups Lab Order intake and Trials under LAB SERVICES and commercial Kit/Data assembly work under PARTNER SERVICES within Order Ops, governed result release to Lab ops, cross-workflow attention to the Dashboard, and Finance/Legacy integrations to More. Canonical list and record routes follow their subject domains; existing bookmarks redirect. Role isolation, scientific review, approval, billing, records and backend contracts remain intact. No persistence change or migration.
+
 ## Accession sample directory — October 2, 2026
 
 Sample-use follow-up: the directory adds a separate Used / Not used column and server filter, plus individual tube use and recorded exhaustion in its disclosure. Started attempts and biological transfers establish source use; planning does not. Historical started processing without source attribution establishes sample use while tube use remains unknown. Intake acceptance, remaining material and reuse eligibility remain distinct. See the directory plan for the read-only contract and verification scope.
@@ -87,11 +203,15 @@ Acceptance: authorized staff can list, search, create, correct an unused name, d
 
 ## DataMatrix tube labels and scan-result presentation — September 23, 2026
 
+October 4 label-dialog correction: the owner reported an oversized DataMatrix preview, incorrect print layout and an apparent dead end with all footer actions disabled. The preview now bounds the symbol independently of modal width, while print media isolates one 50 × 25 mm label with explicit grid placement for metadata and barcode text. After browser printing, operators select the outcome before entering its evidence: a successful print requires the matching scan; a failed or cancelled print requires an explanation and no scan. The outcome action uses React Hook Form and Zod validation instead of silently disabling the failed-print path. The window stays open until the attempt is recorded, preserving the existing audit and tube-activation rules. The tube Actions trigger receives focus when the label dialog closes. Physical printer, label-stock and scanner qualification remain separate. Both focused component regressions, typecheck and scoped lint pass. Connected local checks pass for the compact preview, 320 px reflow without horizontal overflow, fixed modal regions and Escape focus return. The malformed demo preview was explicitly recorded as Failed without activating the tube. The final owner-exported PDF and Failed-path checks pass as recorded below. The fake PSeq tray remains In progress behind its simulated label verification.
+
 POMS-generated laboratory tube labels now render the existing exact, checksummed container identifier as DataMatrix with readable text on the 50 × 25 mm label. The Lab container's UUID remains its internal identity; the existing unique barcode and source fields continue to identify the physical tube independently of its specimen and accession. A newly allocated POMS container has `LabelPending` status and cannot serve as available material until its printed physical label is scanned back. The API independently checks the POMS identifier and records the successful print and activation only for a matching scan; failed print attempts retain their reason without increasing the print count or activating the tube. Existing saved containers retain their current state. This supersedes the September 10 QR choice for laboratory tube labels only. Supplier-applied tube labels, saved barcode values, shipping inserts, kit labels and physical tray label printing retain their established identities and symbols.
 
 After a tube or tray has been scanned, the preparation tray and saved sample-matching rows show readable identifiers without recreating on-screen QR codes. The stock-kit detail likewise shows its identifier as text; the dedicated print dialog retains the scannable label. The tray's print dialog retains its QR label for attachment to the physical tray. Existing USB keyboard-mode scanning and Enter submission remain the input path. A physical 2D scanner must support DataMatrix as well as QR for work across these areas. Printer/label stock, scanner, readability and bench acceptance remain separate operational gates.
 
 The owner confirmed that the tube manufacturer is selected when the physical container is assembled. The selected supplier product identifies that manufacturer in stock-kit assembly. The barcode registry, manufacturer-scoped duplicate values and scoped scan resolution are implemented locally as described in the physical container barcode identity section below. Existing manufacturer tubes retain their sole applied barcode and do not receive a second POMS label in current intake. Shared-environment migration and deployment remain separate release steps.
+
+October 4 print-page evidence: the owner's first exported PDF contained three pages: a blank Letter page, one 50.12 × 25.06 mm label page with readable symbol/metadata, and another blank Letter page. The named-page transition therefore failed the single-page requirement. The correction removes the named page and mounts one default 50 × 25 mm page rule only while the tube-label modal is open, avoiding different page types for portal ancestors. The second owner-exported PDF has exactly one 50.12 × 25.06 mm page (browser rounding), with the entire barcode, accession, location and parent inside the label. Raster inspection confirms its placement. Connected acceptance also passes for the Failed outcome: the scan field is absent, an empty explanation shows an inline error and receives focus, and a completed explanation saves Failed history without activating the tube; Close and printing become available again. Both focused component tests, final typecheck, scoped lint, documentation corpus and whitespace checks pass. The print regression source is updated but its automated browser run remains pending. This is a local layout correction, with no barcode, API, schema or activation-rule change. The fake tray remains In progress until its simulated label-verification and preparation steps are completed.
 
 ## Sample material transfers — September 23, 2026
 
@@ -1607,3 +1727,7 @@ Shipment and packet scans resolve supplier tube identity within that shipment. A
 The tube detail page adds an operator or supervisor action to scan the container, scan a destination freezer box or location barcode and confirm a move. The container's stored location and immutable job event record the previous location, destination, actor and time. The detail page reads those move events as location history. The destination is a scanned text identifier under the existing free-text location model; a registered freezer-box inventory and box-position model remain governed by the deferred location plan above.
 
 September 30 local phase implementation: [MULTI-PHASE-LAB-JOBS-PLAN.md](MULTI-PHASE-LAB-JOBS-PLAN.md) now owns the implemented sequential cohort extension, derived mixed progress, phase-specific receipt/TAT/deadline, unsent-only mutual rephasing, first-tube cancellation cutoff and explicit partial/combined phase invoices. It supersedes older whole-Job completion invoicing and single-status assumptions for phased PSeq Jobs. Local migration applied after the authorized Job purge; connected/browser/physical/scientific acceptance and release remain separate, unverified gates.
+
+### Service workflow header — October 3, 2026
+
+Keep **New service workflow** on the same row as **Controlled service workflows**. Give the heading/description a flexible minimum-zero width and prevent the creation button from shrinking; the description wraps into the remaining space. On exceptionally narrow content widths, bound the button to 55% of its row and let its label wrap with a minimum standard control height, so neither the heading nor description collapses. Preserve filters below and keyboard behavior. This layout-only change needs scoped lint/type checking and visual inspection; no user-guide change is necessary.

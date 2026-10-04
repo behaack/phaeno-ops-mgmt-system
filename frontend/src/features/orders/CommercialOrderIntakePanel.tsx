@@ -1,3 +1,4 @@
+import { commercialRecordRoute } from '#/features/orders/service-workspaces'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
@@ -42,7 +43,7 @@ export function CommercialOrderIntakePanel({
   const view = searchState.intakeView ?? 'active'
   const page = searchState.intakePage ?? 1
   const setFilters = (changes: { intakeSearch?: string; intakeView?: 'active' | 'holds' | 'all'; intakePage?: number }) => {
-    void navigate({ to: '/order-operations', search: (previous) => ({ ...previous, orderSection: 'intake', intakePage: 1, ...changes }), replace: true })
+    void navigate({ to: '/order-operations/lab-services', search: (previous) => ({ ...previous, intakePage: 1, ...changes }), replace: true })
   }
   const customers = useQuery({
     queryKey: ['order-operations', 'customer-options'],
@@ -56,7 +57,7 @@ export function CommercialOrderIntakePanel({
   })
   const orders = useQuery({
     queryKey: ['commercial-orders', 'intake', view, search, page],
-    queryFn: () => listCommercialOrders({ activeIntake: view === 'active', holds: view === 'holds', search: search.trim() || undefined, page, pageSize: 25 }),
+    queryFn: () => listCommercialOrders({ orderType: 'PSeqLabService', activeIntake: view === 'active', holds: view === 'holds', search: search.trim() || undefined, page, pageSize: 25 }),
     enabled: apiEnabled,
   })
   const eligibleCustomers = customers.data ?? []
@@ -69,7 +70,7 @@ export function CommercialOrderIntakePanel({
       ...(orders.data?.items
         .map((order) => ({ kind: 'order' as const, updatedAt: order.updatedAt, order })) ?? []),
       ...(handoffs.data
-        ?.filter((item) => view === 'active' && page === 1 && !item.handoff.orderId)
+        ?.filter((item) => view === 'active' && page === 1 && item.handoff.type !== 'PortalEvaluation' && item.handoff.type !== 'TrialProject' && !item.handoff.orderId)
         .map((handoff) => ({ kind: 'handoff' as const, updatedAt: handoff.handoff.createdAt, handoff })) ?? []),
     ]
     items.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
@@ -88,7 +89,7 @@ export function CommercialOrderIntakePanel({
               className="shrink-0"
               type="button"
               disabled={!canCreate || (!mock && (!apiEnabled || customers.isLoading || customers.isError || eligibleCustomers.length === 0))}
-              onClick={() => void navigate({ to: '/order-operations/new', search: { organizationId: undefined, sourceRequestId: undefined } })}
+              onClick={() => void navigate({ to: '/order-operations/lab-services/orders/new', search: { organizationId: undefined, sourceRequestId: undefined } })}
             >
               <Plus data-icon="inline-start" /> New Order
             </Button>
@@ -145,7 +146,7 @@ export function CommercialOrderIntakePanel({
                 key={item.handoff.handoff.id}
                 item={item.handoff}
                 canCreate={canCreate}
-                onStart={handoff => void navigate({ to: '/order-operations/new', search: { organizationId: handoff.handoff.organizationId ?? undefined, sourceRequestId: handoff.handoff.relationshipRequestId } })}
+                onStart={handoff => void navigate({ to: '/order-operations/lab-services/orders/new', search: { organizationId: handoff.handoff.organizationId ?? undefined, sourceRequestId: handoff.handoff.relationshipRequestId } })}
               />
             ))}
           </div>
@@ -181,8 +182,8 @@ function CommercialOrderRow({
       <div className="min-w-0 flex-1 basis-64">
         <div className="flex flex-wrap items-center gap-2">
           <Link
-            to="/order-operations/$workflow/$orderId"
-            params={{ workflow, orderId: order.id }}
+            to={commercialRecordRoute(workflow)}
+            params={{ orderId: order.id }}
             search={previous => previous}
             className="font-bold text-primary hover:underline"
           >

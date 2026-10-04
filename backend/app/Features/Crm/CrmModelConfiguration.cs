@@ -213,8 +213,10 @@ public static class CrmModelConfiguration
             entity.HasIndex(value => value.OpportunityNumber).IsUnique();
             entity.HasIndex(value => new { value.PipelineId, value.StageId });
             entity.HasIndex(value => new { value.CompanyId, value.IsActive });
+            entity.HasIndex(value => value.DepartmentId);
             entity.HasIndex(value => value.ExpectedCloseDate);
             entity.HasOne(value => value.Company).WithMany().HasForeignKey(value => value.CompanyId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(value => value.Department).WithMany().HasForeignKey(value => value.DepartmentId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(value => value.Pipeline).WithMany().HasForeignKey(value => value.PipelineId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(value => value.Stage).WithMany().HasForeignKey(value => value.StageId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(value => value.Owner).WithMany().HasForeignKey(value => value.OwnerUserId).OnDelete(DeleteBehavior.Restrict);

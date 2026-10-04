@@ -7,6 +7,7 @@ import {
   Settings,
   Workflow,
   BookOpen,
+  FlaskConical,
 } from 'lucide-react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 
@@ -15,6 +16,7 @@ import { WorkspaceSidebar, type WorkspaceSidebarItem } from '#/components/Worksp
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { usePhaenoSession } from '#/features/auth/session-context'
+import { TrialConfigurationPanel } from '#/features/trials/TrialConfigurationPage'
 import { AnalysisConfigurationPanel } from './AnalysisConfigurationPanel'
 import { AssemblyConfigurationPanel } from './AssemblyConfigurationPanel'
 import { CommercialConfigurationPanel } from './CommercialConfigurationPanel'
@@ -22,8 +24,8 @@ import { ReagentConfigurationPanel } from './ReagentConfigurationPanel'
 import { CatalogConfigurationPanel } from './CatalogConfigurationPanel'
 import { SystemConfigurationPanel } from './SystemConfigurationPanel'
 
-export type ConfigurationSection = 'system' | 'catalog' | 'analyses' | 'reagents' | 'assembly' | 'commercial'
-export function parseConfigurationSection(value: unknown): ConfigurationSection { return ['system', 'catalog', 'analyses', 'reagents', 'assembly', 'commercial'].includes(String(value)) ? value as ConfigurationSection : 'system' }
+export type ConfigurationSection = 'system' | 'catalog' | 'analyses' | 'reagents' | 'assembly' | 'trials' | 'commercial'
+export function parseConfigurationSection(value: unknown): ConfigurationSection { return ['system', 'catalog', 'analyses', 'reagents', 'assembly', 'trials', 'commercial'].includes(String(value)) ? value as ConfigurationSection : 'system' }
 
 const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSection>> = [
   {
@@ -52,6 +54,12 @@ const configurationSections: ReadonlyArray<WorkspaceSidebarItem<ConfigurationSec
     icon: Workflow,
   },
   {
+    value: 'trials',
+    label: 'Trial configuration',
+    description: 'Scientific responsibilities and Trial deliverables',
+    icon: FlaskConical,
+  },
+  {
     value: 'commercial',
     label: 'Legacy links',
     description: 'Historical credit and connector recovery',
@@ -65,16 +73,17 @@ export function OrderConfigurationPage({ catalogItemId }: { catalogItemId?: stri
   const navigate = useNavigate()
   const search = useSearch({ strict: false })
   const canManage = Boolean(session?.capabilities.canManageOrderConfiguration)
-  const sections = canManage ? configurationSections : []
+  const canManageTrials = Boolean(session?.capabilities.canManageTrialProjects)
+  const sections = configurationSections.filter(item => item.value === 'trials' ? canManageTrials || canManage : canManage)
   const requestedSection = catalogItemId ? 'catalog' : parseConfigurationSection(search.configurationSection)
   const section = sections.find(item => item.value === requestedSection)?.value ?? sections[0]?.value
-  const showingOrders = Boolean(section)
+  const showingOrders = Boolean(section && section !== 'trials')
   const setSection = (value: ConfigurationSection) => { void navigate({ to: '/order-configuration', search: { configurationSection: value } }) }
   const apiEnabled = canManage && showingOrders && authProvider !== 'mock'
   const configuration = useQuery({ queryKey: ['order-configuration'], queryFn: getOrderConfiguration, enabled: apiEnabled })
   const sync = useMutation({ mutationFn: syncQuickBooksCatalog, onSuccess: async () => queryClient.invalidateQueries({ queryKey: ['order-configuration'] }) })
 
-  if (!canManage) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Order Settings unavailable</AlertTitle><AlertDescription>A Phaeno platform administrator is required.</AlertDescription></Alert></main>
+  if (!sections.length) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Order Settings unavailable</AlertTitle><AlertDescription>A Phaeno platform administrator or Trial staff access is required.</AlertDescription></Alert></main>
   return (
     <main className="py-8">
       <WorkspaceSidebar
@@ -89,12 +98,12 @@ export function OrderConfigurationPage({ catalogItemId }: { catalogItemId?: stri
               <h1 className="text-3xl font-semibold">Order Settings</h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
                 Maintain quote validity, order workflows, scientific service definitions,
-                Partner-negotiated reagent prices, assembly profiles, and legacy
+                Partner-negotiated reagent prices, assembly profiles, Trial configuration, and legacy
                 accounting links. Customer billing and tax approval live in Finance.
               </p>
             </div>
           </section>
-          {showingOrders && authProvider === 'mock' ? (
+          {authProvider === 'mock' ? (
             <Alert className="mb-5">
               <AlertTitle>Connected configuration is paused in mock-session mode</AlertTitle>
               <AlertDescription>
@@ -102,6 +111,7 @@ export function OrderConfigurationPage({ catalogItemId }: { catalogItemId?: stri
               </AlertDescription>
             </Alert>
           ) : null}
+          {section === 'trials' && authProvider !== 'mock' ? <TrialConfigurationPanel /> : null}
           {showingOrders && configuration.error ? (
             <Alert variant="destructive" className="mb-5">
               <AlertTitle>Configuration could not be loaded</AlertTitle>

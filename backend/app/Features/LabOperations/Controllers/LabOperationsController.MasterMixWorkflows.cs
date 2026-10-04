@@ -8,12 +8,12 @@ using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 
 public sealed record LabMasterMixWorkflowDto(Guid Id, string Name, string QuantityUnit,
-    IReadOnlyList<LabReagentStep> Steps, IReadOnlyList<LabMasterMixRecipeIngredient> Ingredients,
+    IReadOnlyList<LabProtocolStepDefinition> Steps, IReadOnlyList<LabMasterMixRecipeIngredient> Ingredients,
     int Revision, string Status, Guid AuthoredByUserId,
     Guid? ApprovedByUserId, DateTime? ApprovedAtUtc, string? ApprovalOverrideReason,
     long Version, IReadOnlyList<LabMasterMixWorkflowRevision> Revisions);
 public sealed record SaveLabMasterMixWorkflowRequest(string Name, string QuantityUnit,
-    IReadOnlyList<LabReagentStep> Steps, IReadOnlyList<LabMasterMixRecipeIngredient> Ingredients, long Version = 0);
+    IReadOnlyList<Guid> StepVersionIds, long Version = 0);
 public sealed record DecideLabMasterMixWorkflowRequest(long Version, string? ApprovalOverrideReason = null);
 
 public sealed partial class LabOperationsController
@@ -41,8 +41,8 @@ public sealed partial class LabOperationsController
         await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext,
             "master-mix-workflow-name", ct);
         LabMasterMixWorkflow workflow;
-        var ingredients = await ResolveMasterMixRecipeIngredientsAsync(request.Ingredients, ct);
-        try { workflow = new(request.Name, request.QuantityUnit, request.Steps, ingredients, actor.User.Id); }
+        var steps = await ResolveMasterMixStepsAsync(request.StepVersionIds, null, ct);
+        try { workflow = new(request.Name, request.QuantityUnit, steps, actor.User.Id); }
         catch (ArgumentException error) { throw Invalid("master_mix_workflow_invalid", error.Message); }
         await RequireUniqueMasterMixWorkflowNameAsync(workflow.Name, null, ct);
         dbContext.LabMasterMixWorkflows.Add(workflow);
@@ -63,8 +63,8 @@ public sealed partial class LabOperationsController
         EnsureVersion(workflow.Version, request.Version);
         await SampleShippingPackingData.LockAsync(dbContext, "master-mix-workflow-name", ct);
         await RequireUniqueMasterMixWorkflowNameAsync(request.Name, id, ct);
-        var ingredients = await ResolveMasterMixRecipeIngredientsAsync(request.Ingredients, ct);
-        try { workflow.Revise(request.Name, request.QuantityUnit, request.Steps, ingredients, actor.User.Id); }
+        var steps = await ResolveMasterMixStepsAsync(request.StepVersionIds, workflow.Steps(), ct);
+        try { workflow.Revise(request.Name, request.QuantityUnit, steps, actor.User.Id); }
         catch (ArgumentException error) { throw Invalid("master_mix_workflow_invalid", error.Message); }
         catch (InvalidOperationException error) { throw Conflict("master_mix_workflow_unavailable", error.Message); }
         await dbContext.SaveChangesAsync(ct);
@@ -83,6 +83,7 @@ public sealed partial class LabOperationsController
         var workflow = await dbContext.LabMasterMixWorkflows.SingleOrDefaultAsync(item => item.Id == id, ct) ?? throw Missing();
         EnsureVersion(workflow.Version, request.Version);
         var ownApproval = workflow.AuthoredByUserId == actor.User.Id;
+        foreach (var step in workflow.Steps()) await RequireMasterMixReagentsAsync(step, ct);
         if (ownApproval && !actor.IsPlatformAdmin)
             throw Conflict("master_mix_independent_approval_required", "A different administrator must approve this workflow.");
         try { workflow.Approve(actor.User.Id, DateTime.UtcNow,
@@ -119,22 +120,51 @@ public sealed partial class LabOperationsController
             throw Conflict("master_mix_workflow_name_taken", "A current master-mix workflow already has this name.");
     }
 
-    private async Task<IReadOnlyList<LabMasterMixRecipeIngredient>> ResolveMasterMixRecipeIngredientsAsync(
-        IReadOnlyList<LabMasterMixRecipeIngredient> requested, CancellationToken ct)
+    private async Task<IReadOnlyList<LabProtocolStepDefinition>> ResolveMasterMixStepsAsync(
+        IReadOnlyList<Guid> versionIds, IReadOnlyList<LabProtocolStepDefinition>? previous, CancellationToken ct)
     {
-        if (requested is null || requested.Count == 0) throw Invalid("master_mix_ingredients_required", "Add at least one recipe ingredient.");
-        var ids = requested.Select(item => item.MaterialDefinitionId).Distinct().ToArray();
-        var definitions = await dbContext.LabMaterialDefinitions.AsNoTracking()
-            .Where(item => ids.Contains(item.Id) && item.IsActive).ToDictionaryAsync(item => item.Id, ct);
-        if (definitions.Count != ids.Length) throw Invalid("master_mix_ingredient_unavailable", "Choose active source material definitions.");
-        return requested.Select(item =>
+        if (versionIds is null || versionIds.Count is < 1 or > 100 || versionIds.Any(id => id == Guid.Empty))
+            throw Invalid("master_mix_steps_required", "Assemble 1 to 100 approved master-mix Lab steps.");
+        var result = new List<LabProtocolStepDefinition>();
+        foreach (var id in versionIds)
         {
-            if (item.QuantityText is null) return item with { Name = definitions[item.MaterialDefinitionId].Name };
-            if (!ExactDecimalQuantity.TryParse(item.QuantityText, out var quantity))
-                throw Invalid("master_mix_ingredient_quantity_invalid", "Enter an exact positive decimal recipe amount.");
-            return item with { Name = definitions[item.MaterialDefinitionId].Name,
-                Quantity = quantity, QuantityText = quantity.ToString(System.Globalization.CultureInfo.InvariantCulture) };
-        }).ToArray();
+            var version = await dbContext.LabStepVersions.SingleOrDefaultAsync(item => item.Id == id, ct) ?? throw Missing();
+            var identity = await dbContext.LabSteps.SingleAsync(item => item.Id == version.LabStepId, ct);
+            var retained = previous?.Any(step => step.LabStepVersionId == id) == true;
+            if (version.Status != LabProtocolStatus.Approved || identity.RetiredAtUtc.HasValue && !retained)
+                throw Conflict("master_mix_step_unavailable", "Select an approved version of a current master-mix Lab step.");
+            Execute(version.RequireReleaseApproval);
+            var source = LabProtocolDefinition.Parse(version.DefinitionJson).Steps.Single();
+            try { LabMasterMixDefinition.ValidateStep(source); }
+            catch (ArgumentException error) { throw Invalid("master_mix_step_invalid", error.Message); }
+            await RequireMasterMixReagentsAsync(source, ct);
+            result.Add(source with { Name = identity.Name, Key = $"step-{result.Count + 1}", LabStepVersionId = id, Required = true, Condition = null });
+            dbContext.Entry(identity).Property(step => step.UpdatedAt).IsModified = true;
+        }
+        return result;
+    }
+
+    private async Task RequireMasterMixReagentsAsync(LabProtocolStepDefinition step, CancellationToken ct)
+    {
+        foreach (var field in step.Captures.Where(field => field.Type == "material"))
+        {
+            var material = field.Material!;
+            if (material.ProductId is Guid productId)
+            {
+                if (!await dbContext.LabSupplierProducts.AnyAsync(product => product.Id == productId && product.IsActive
+                    && product.ProductTypeId == LabProductType.ReagentId
+                    && dbContext.LabSuppliers.Any(supplier => supplier.Id == product.SupplierId && supplier.IsActive && !supplier.IsInternalProducer)
+                    && dbContext.LabProductTypes.Any(type => type.Id == product.ProductTypeId && type.IsActive), ct))
+                    throw Invalid("master_mix_reagent_required", "Choose an active purchased Reagent product.");
+            }
+            else if (material.MaterialDefinitionId is Guid definitionId)
+            {
+                if (!await dbContext.LabMaterialDefinitions.AnyAsync(definition => definition.Id == definitionId
+                    && definition.IsActive && definition.Kind == LabMaterialLotKind.PreparedReagent, ct))
+                    throw Invalid("master_mix_reagent_required", "Choose an active internally prepared reagent.");
+            }
+            else throw Invalid("master_mix_reagent_required", "Master-mix entries require a reagent identity and lot tracking.");
+        }
     }
 
     private async Task RequireMasterMixRetirementSafeAsync(Guid workflowId, CancellationToken ct)

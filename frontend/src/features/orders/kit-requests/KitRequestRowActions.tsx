@@ -25,7 +25,7 @@ export function KitRequestRowActions({ request, disabled, onAction }: { request:
     <DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]">
       {active ? <><DropdownMenuItem onSelect={() => open('prepare')}>Prepare kits</DropdownMenuItem><DropdownMenuItem onSelect={() => open('dispatch')}>Record kit shipment</DropdownMenuItem></> : null}
       {request.canCancel ? <DropdownMenuItem variant="destructive" onSelect={() => open('cancel')}>Cancel request</DropdownMenuItem> : null}
-      <DropdownMenuItem asChild><Link to="/lab-operations/kit-requests/$requestId" params={{ requestId: request.id }} search={{ ...search, kitQueue: 'requests', section: 'receipt', receiptTab: 'kit-requests' }}>View request</Link></DropdownMenuItem>
+      <DropdownMenuItem asChild><Link to="/lab-operations/kit-requests/$requestId" params={{ requestId: request.id }} search={{ ...search, kitQueue: 'requests', section: 'kit-requests', receiptTab: undefined }}>View request</Link></DropdownMenuItem>
     </DropdownMenuContent>
   </ActionMenu>
 }

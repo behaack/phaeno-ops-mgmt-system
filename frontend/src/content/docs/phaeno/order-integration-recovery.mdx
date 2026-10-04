@@ -1,10 +1,10 @@
 # Accounting and notification recovery
 
-A failed notice or integration remains attached to the original business record with its attempts and error history. Use Company **People** for invitation access and delivery recovery, **Attention** for operational follow-up, and the owning Lab, Trial, or release record for scientific publication. Native PSeq accounts receivable is maintained in **Finance**; retained accounting connectors serve historical or non-PSeq work.
+A failed notice or integration remains attached to the original business record with its attempts and error history. Use Company **People** for invitation access and delivery recovery, **Dashboard → Needs attention → View all** for operational follow-up, and the owning Lab, Trial, or release record for scientific publication. Native PSeq accounts receivable is maintained in **Finance**; retained accounting connectors serve historical or non-PSeq work.
 
 ## Triage the failure
 
-Open **Attention** for the owned cross-workflow exception or **Legacy integrations** for a retained connector/notification event. Identify the affected record, current delivery state, owner, age, attempts, next action, and tenant-visible consequence. Determine whether the local operation committed successfully before taking recovery action.
+Open **Dashboard → Needs attention → View all** for the owned cross-workflow exception or **More → Legacy integrations** for a retained connector/notification event. Identify the affected record, current delivery state, owner, age, attempts, next action, and tenant-visible consequence. Determine whether the local operation committed successfully before taking recovery action.
 
 Common states include:
 
@@ -14,7 +14,7 @@ Common states include:
 
 ## Retry safely
 
-For a configured Lab order or Kit bundle, a platform administrator can open **Order Ops → Attention → CRM sale summaries**. Follow the order link, correct the reported commercial setup problem, then choose **Retry publication**. The original order stays committed while the same summary is queued again. Publication updates first-party CRM; it does not create another purchase or transmit specimen details, internal Lab notes or batch membership.
+For a configured Lab order or Kit bundle, a platform administrator can open **Dashboard → Needs attention → View all → CRM sale summaries**. Follow the order link, correct the reported commercial setup problem, then choose **Retry publication**. The original order stays committed while the same summary is queued again. Publication updates first-party CRM; it does not create another purchase or transmit specimen details, internal Lab notes or batch membership.
 
 Refresh the workflow before investigating a missing accounting row. Do not recreate the order, quote, shipment, output approval, or result completion to force another row. Use the stable source ID when reconciling repeated report downloads.
 

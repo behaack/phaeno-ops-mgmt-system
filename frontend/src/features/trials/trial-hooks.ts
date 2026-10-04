@@ -6,13 +6,14 @@ export function useTrialQueries(id?: string, search = '', status = '', ownerId =
   const { session, selectedOrganizationId, selectedDepartmentId, authProvider } = usePhaenoSession()
   const allowed = Boolean(session?.capabilities.canViewTrialProjects)
   const staff = Boolean(session?.capabilities.canManageTrialProjects)
+  const canCreate = Boolean(session?.capabilities.canCreateTrialProjects)
   const enabled = allowed && authProvider !== 'mock'
   const scope = [selectedOrganizationId, selectedDepartmentId]
   const list = useQuery({ queryKey: ['trials', ...scope, search, status, ownerId], queryFn: () => listTrials(search, status, ownerId), enabled: enabled && !id })
   const detail = useQuery({ queryKey: ['trial', ...scope, id], queryFn: () => getTrial(id!), enabled: enabled && Boolean(id) })
   const config = useQuery({ queryKey: ['trial-configuration', ...scope, detail.data?.companyId], queryFn: () => getTrialConfiguration(staff ? detail.data?.companyId : undefined), enabled })
   const packages = useQuery({ queryKey: ['trial-packages', ...scope, id], queryFn: () => getTrialOutputPackages(id!), enabled: enabled && staff && Boolean(id) })
-  return { allowed, staff, enabled, list, detail, config, packages }
+  return { allowed, staff, canCreate, enabled, list, detail, config, packages }
 }
 export function useTrialMutation<T>() {
   const cache = useQueryClient()

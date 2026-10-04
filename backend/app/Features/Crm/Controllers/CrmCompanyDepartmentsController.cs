@@ -18,6 +18,17 @@ using PhaenoPortal.App.Infrastructure.Persistence;
 [Route("api/platform/crm/companies/{companyId:guid}/departments")]
 public sealed class CrmCompanyDepartmentsController(PSeqOperationsDbContext dbContext, IExternalIdentityContext externalIdentityContext) : ControllerBase
 {
+    [HttpGet("opportunity-choices")]
+    public async Task<IReadOnlyList<PhaenoPortal.App.Features.Crm.DTOs.CrmOpportunityDepartmentDto>> OpportunityChoices(
+        Guid companyId, CancellationToken cancellationToken)
+    {
+        await CrmAccess.RequireCrmAccessAsync(HttpContext, dbContext, externalIdentityContext, cancellationToken);
+        var company = await dbContext.CrmCompanies.AsNoTracking()
+            .SingleOrDefaultAsync(value => value.Id == companyId && value.IsActive, cancellationToken)
+            ?? throw CrmAccess.NotFound("crm_company_not_found", "The active Company was not found.");
+        return await CrmOpportunityDepartments.ReadAsync(dbContext, company, cancellationToken);
+    }
+
     [HttpPost]
     public async Task<ActionResult<DepartmentDto>> CreateDepartment(Guid companyId,
         [FromBody] UpsertDepartmentRequest request, CancellationToken cancellationToken)

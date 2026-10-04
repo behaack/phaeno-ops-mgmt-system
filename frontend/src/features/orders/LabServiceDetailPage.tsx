@@ -202,7 +202,7 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
   if (order.canEdit) orderActions.push({ kind: 'command', label: order.customerDraft ? 'Edit Draft' : 'Edit request', disabled: shippingActive || action.isPending, onSelect: () => { void navigate({ to: '/lab-services/$orderId/edit', params: { orderId: order.id }, search: previous => previous }) } })
   if (order.canSubmit) orderActions.push({ kind: 'command', label: 'Submit for pricing', disabled: shippingActive || action.isPending, onSelect: () => action.mutate('submit') })
   if (order.canWithdraw && !awaitingQuoteAcceptance) orderActions.push({ kind: 'command', label: 'Withdraw request', disabled: shippingActive || action.isPending, onSelect: () => openDecision('withdraw') })
-  if (order.canRequestCancellation) orderActions.push({ kind: 'command', label: 'Request cancellation', variant: 'destructive', disabled: shippingActive || action.isPending, onSelect: () => openDecision('cancel') })
+  if (order.canRequestCancellation) orderActions.push({ kind: 'command', label: 'Request cancellation', variant: 'destructive', keepInMenu: true, disabled: shippingActive || action.isPending, onSelect: () => openDecision('cancel') })
   const quoteActions = quote && !order.standardCommercialSnapshot ? <LabQuoteActions
     canAccept={awaitingQuoteAcceptance && canManageQuotes} canPropose={awaitingQuoteAcceptance && canManageQuotes && order.canProposeQuoteChanges === true}
     canDecline={awaitingQuoteAcceptance && canManageQuotes && order.canDeclineQuote === true}

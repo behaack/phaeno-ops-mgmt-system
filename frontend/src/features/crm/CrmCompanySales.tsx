@@ -17,7 +17,7 @@ export function CrmCompanySales({ companyId, company }: { companyId: string; com
   const companyQuery = useQuery({ queryKey: ['crm-company', companyId], queryFn: () => getCrmCompany(companyId), enabled: open && !company })
   const resolvedCompany = company ?? companyQuery.data
   const pipelines = useQuery({ queryKey: ['crm-pipelines'], queryFn: () => listCrmPipelines(), enabled: open })
-  const create = useMutation({ mutationFn: (input: CrmOpportunityInput) => createCrmOpportunity({ ...input, companyId }), onSuccess: async () => { setOpen(false); await client.invalidateQueries({ queryKey: ['crm-company-opportunities', companyId] }); await client.invalidateQueries({ queryKey: ['crm-opportunities'] }) } })
+  const create = useMutation({ mutationFn: (input: CrmOpportunityInput) => createCrmOpportunity(input), onSuccess: async () => { setOpen(false); await client.invalidateQueries({ queryKey: ['crm-company-opportunities'] }); await client.invalidateQueries({ queryKey: ['crm-opportunities'] }) } })
   const opportunities = useQuery({
     queryKey: ['crm-company-opportunities', companyId, page],
     queryFn: () => listCrmOpportunities({ companyId, page, pageSize: 25 }),

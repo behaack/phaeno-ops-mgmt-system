@@ -309,6 +309,7 @@ public static class OrderManagementModelConfiguration
             Text(entity.Property(e => e.Description), 2000);
             Text(entity.Property(e => e.SalesUnit), 100);
             EnumText(entity.Property(e => e.ServiceFamily));
+            entity.Property(e => e.MinimumSequencingVolumeUl).HasColumnType("numeric");
             Money(entity.Property(e => e.BasePrice));
             Text(entity.Property(e => e.Currency), 3);
             entity.HasIndex(e => e.ExternalItemId).IsUnique();

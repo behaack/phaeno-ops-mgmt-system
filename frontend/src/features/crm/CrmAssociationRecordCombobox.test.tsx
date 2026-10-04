@@ -15,6 +15,26 @@ vi.mock("#/api/crm", () => ({
 describe("CRM association record combobox", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    HTMLElement.prototype.scrollIntoView = vi.fn();
+  });
+
+  it("keeps portaled Company choices outside the scrolling dialog body and supports keyboard selection", async () => {
+    vi.mocked(listCrmCompanies).mockResolvedValue({ items: [{ id: "company-1", name: "Research Company", domainName: null }], page: 1, pageSize: 20, totalCount: 1 } as Awaited<ReturnType<typeof listCrmCompanies>>);
+    const onValueChange = vi.fn();
+    renderSearch(<Dialog open><DialogContent>
+      <DialogTitle>Create Trial project</DialogTitle><DialogDescription>Select a Company.</DialogDescription>
+      <Label htmlFor="portal-company">Company</Label>
+      <CrmAssociationRecordCombobox id="portal-company" name="companyId" kind="company" portal onValueChange={onValueChange} />
+    </DialogContent></Dialog>);
+    const input = screen.getByRole("combobox", { name: "Company" });
+    act(() => input.focus());
+    const option = await screen.findByRole("option", { name: "Research Company" });
+    expect(document.querySelector('[data-slot="dialog-body"]')?.contains(option)).toBe(false);
+    expect(document.activeElement).toBe(input);
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onValueChange).toHaveBeenCalledWith("company-1");
+    expect(screen.queryByRole("listbox")).toBeNull();
+    expect(input).toHaveProperty("value", "Research Company");
   });
 
   it("closes empty contact choices before dismissing the association dialog", async () => {

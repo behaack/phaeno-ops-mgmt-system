@@ -21,7 +21,7 @@ import { PreparationFormDialog, PreparationField } from './preparation-ui'
 import { ProtocolStepEditor } from './ProtocolStepEditor'
 import { ConfigurationPreview } from './ConfigurationPreview'
 import { LabSettingsLayout } from './LabSettingsLayout'
-import { createEmptyProtocolStep, deserializeProtocolDefinition, serializeProtocolDefinition, protocolDefinitionFormSchema, type ProtocolDefinition, type ProtocolDefinitionFormValues } from './protocol-definition'
+import { createEmptyProtocolStep, deserializeProtocolDefinition, serializeProtocolDefinition, protocolCaptureLabel, protocolDefinitionFormSchema, type ProtocolDefinition, type ProtocolDefinitionFormValues } from './protocol-definition'
 
 function useStepCatalog() {
   const { session, authProvider } = usePhaenoSession()
@@ -199,7 +199,7 @@ function LabStepSummary({ version }: { version: LabStepVersion }) {
   if (!definition) return <p role="alert">The stored definition cannot be displayed.</p>
   return <details><summary className="cursor-pointer">Instructions and fields to record</summary><div className="mt-3 space-y-3 text-sm">
     <p className="whitespace-pre-wrap">{definition.instructions}</p>
-    <dl className="space-y-2">{definition.captures.map((c, i) => <div key={c.key ?? i}><dt className="font-medium">{c.label}{c.type === 'equipment' || c.required ? ' · Required' : ' · Optional'}</dt><dd>{c.type} · {c.scope ?? 'Individual'}{c.unit ? ` · ${c.unit}` : ''}{c.material ? ` · ${c.material.name}${c.material.vendor ? ` · ${c.material.vendor}` : ''}${c.material.productNumber ? ` · ${c.material.productNumber}` : ''}` : ''}{c.type === 'material' ? ` · ${c.quantityBasis === 'total' ? 'Total batch quantity' : 'Quantity per sample'} · ${c.includeTracking ? 'Lot number included' : 'Configured material'} ` : ''}{c.type === 'equipment' ? ' · Registered equipment selection required' : ''}{c.choices ? ` · ${c.choices}` : ''}</dd></div>)}</dl>
+    <dl className="space-y-2">{definition.captures.map((c, i) => <div key={c.key ?? i}><dt className="font-medium">{c.label}{c.type === 'equipment' || c.required ? ' · Required' : ' · Optional'}</dt><dd>{protocolCaptureLabel(c.type)} · {c.scope === 'batch' ? 'Batch' : c.scope === 'shared' ? 'Shared with sample exceptions' : 'Individual sample'}{c.unit ? ` · ${c.unit}` : ''}{c.material ? ` · ${c.material.name}${c.material.vendor ? ` · ${c.material.vendor}` : ''}${c.material.productNumber ? ` · ${c.material.productNumber}` : ''}` : ''}{['material', 'masterMix'].includes(c.type) ? ` · ${c.quantityBasis === 'total' ? 'Total batch quantity' : 'Quantity per sample'} · ${c.type === 'masterMix' ? `Prepared mix from workflow revision ${c.material?.masterMixWorkflowRevision}` : c.includeTracking ? 'Lot number included' : 'Configured material'}` : ''}{c.type === 'equipment' ? ' · Registered equipment selection required' : ''}{c.choices ? ` · ${c.choices}` : ''}</dd></div>)}</dl>
     <p>Inputs: {definition.inputMaterials || 'None'}<br />Equipment: {definition.equipmentTypes || 'None'}<br />Outputs: {definition.preparedOutputs || 'None'}</p>
     {definition.attachmentKind && definition.attachmentKind !== 'none' ? <p>{definition.attachmentRequired ? 'Required' : 'Optional'} PDF: {definition.attachmentKind === 'qc' ? 'QC report' : 'Preparation report or worksheet'}</p> : null}
     {definition.qcEnabled ? <p>QC ({definition.qcScope}): {definition.qcCriteria}</p> : null}

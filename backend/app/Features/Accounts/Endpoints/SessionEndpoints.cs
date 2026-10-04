@@ -148,7 +148,7 @@ public static class SessionEndpoints
         }
 
         var trialStaff = selectedMembership?.Organization?.Kind == OrganizationKind.Phaeno && (IsPlatformAdmin(user)
-            || businessRoles.Any(role => role is BusinessRole.CommercialOperator or BusinessRole.ResultReleaseManager)
+            || businessRoles.Any(role => role is BusinessRole.CommercialOperator or BusinessRole.ResultReleaseManager or BusinessRole.BusinessDevelopment or BusinessRole.CommercialLeadership)
             || labRoles.Any(role => role is LabRole.Operator or LabRole.Supervisor or LabRole.ScientificReviewer)
             || await dbContext.TrialApprovalAuthorities.AnyAsync(value => value.UserId == user.Id && value.RevokedAtUtc == null, cancellationToken));
         var trialViewer = selectedMembership?.Organization?.Kind == OrganizationKind.Prospect || (selectedMembership is not null && selectedDepartment is not null
@@ -164,7 +164,9 @@ public static class SessionEndpoints
             selectedDepartment,
             partnerLabAccess: selectedMembership?.Organization?.Kind == OrganizationKind.Partner && selectedDepartment is not null
                 && await LabServiceOrderingEligibility.HasPartnerAccessAsync(dbContext, selectedMembership.OrganizationId, selectedDepartment.Id, cancellationToken));
-        return TypedResults.Ok(readySession with { Capabilities = readySession.Capabilities with { CanViewTrialProjects = trialStaff || trialViewer, CanManageTrialProjects = trialStaff } });
+        return TypedResults.Ok(readySession with { Capabilities = readySession.Capabilities with { CanViewTrialProjects = trialStaff || trialViewer, CanManageTrialProjects = trialStaff,
+            CanCreateTrialProjects = trialStaff && (IsPlatformAdmin(user)
+                || businessRoles.Any(role => role is BusinessRole.BusinessDevelopment or BusinessRole.CommercialLeadership)) } });
     }
 
     public static void MapSessionEndpoints(this WebApplication app)

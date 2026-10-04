@@ -51,6 +51,8 @@ public sealed class LabBiologicalMaterialTransfer
             throw new ArgumentException("Transfer performance must have a valid performer and UTC time no later than recording.");
         unit = LabAuditedEntity.Required(unit, nameof(unit), 50);
         // Validate the destination before changing the source in memory.
+        if (destination.Status == LabContainerStatus.LabelPending)
+            throw new InvalidOperationException("Print the allocated library tube's POMS label and scan it back to verify its identity before transferring material.");
         if (destination.Status != LabContainerStatus.Available || destination.Quantity.HasValue &&
             (destination.QuantityBasis != "Transferred" || destination.QuantityUnit != unit || sequencingBatchMemberId.HasValue)
             || destination.Quantity.HasValue && quantity > decimal.MaxValue - destination.Quantity.Value)

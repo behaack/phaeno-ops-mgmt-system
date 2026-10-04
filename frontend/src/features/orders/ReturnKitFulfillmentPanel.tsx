@@ -49,7 +49,7 @@ export function ReturnKitFulfillmentPanel({ apiEnabled, shipmentId, showEmpty = 
   const data = waitingForSearch ? undefined : query.data, shipments = data?.items ?? []
   const pages = Math.max(1, Math.ceil((data?.totalCount ?? 0) / (data?.pageSize ?? 20)))
   function changeSearch(value: string, nextPage = 1, replace = true) {
-    void navigate({ to: '/lab-operations', search: previous => ({ ...previous, section: 'receipt', receiptTab: 'kit-requests', kitQueue: 'sent', kitShipmentSearch: value || undefined, kitShipmentPage: nextPage }), replace, resetScroll: false })
+    void navigate({ to: '/lab-operations', search: previous => ({ ...previous, section: 'kit-requests', receiptTab: undefined, kitQueue: 'sent', kitShipmentSearch: value || undefined, kitShipmentPage: nextPage }), replace, resetScroll: false })
   }
   if (!apiEnabled || (!showEmpty && !needle && !waitingForSearch && query.isSuccess && !data?.totalCount)) return null
 
@@ -65,14 +65,14 @@ export function ReturnKitFulfillmentPanel({ apiEnabled, shipmentId, showEmpty = 
       </div>
     </CardHeader>
     <CardContent className="min-w-0 p-4">
-      {shipmentId ? <p className="mb-4 text-sm">Showing the selected shipment. <Link to="/lab-operations" search={{ ...currentSearch, shipmentId: undefined, section: 'receipt', receiptTab: 'kit-requests', kitQueue: 'sent' }} className="text-primary underline">Show all shipments</Link></p> : null}
+      {shipmentId ? <p className="mb-4 text-sm">Showing the selected shipment. <Link to="/lab-operations" search={{ ...currentSearch, shipmentId: undefined, section: 'kit-requests', receiptTab: undefined, kitQueue: 'sent' }} className="text-primary underline">Show all shipments</Link></p> : null}
       {error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Return kits could not be updated</AlertTitle><AlertDescription>{getOrderErrorMessage(error, 'Refresh and try again.')}</AlertDescription></Alert> : null}
       {waitingForSearch || query.isLoading ? <p role="status" className="text-sm text-muted-foreground">Loading return kits…</p> : null}
       {shipments.length ? <div className="w-full min-w-0 max-w-full overflow-x-auto rounded-lg border">
         <table className="w-full min-w-[660px] text-left text-sm">
           <thead className="border-b bg-muted text-foreground"><tr><th className="px-2 py-3 font-medium">Shipment</th><th className="px-2 py-3 font-medium">Organization</th><th className="px-2 py-3 font-medium">Kit</th><th className="px-2 py-3 font-medium">Registered tubes</th><th className="px-2 py-3 font-medium">Fulfillment date</th><th className="px-2 py-3 font-medium"><span className="sr-only">Actions</span></th></tr></thead>
           <tbody>{shipments.map(shipment => <tr key={shipment.id} className="border-b bg-muted/20 last:border-0">
-            <td className="px-2 py-3"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: shipment.labWorkOrderId }} search={{ ...currentSearch, section: 'receipt', receiptTab: 'kit-requests', kitQueue: 'sent' }} className="font-medium text-primary underline">{shipment.shipmentNumber}</Link><p className="mt-1 text-xs text-muted-foreground">{shipment.authorizationReference}</p></td>
+            <td className="px-2 py-3"><Link to="/lab-operations/$workOrderId" params={{ workOrderId: shipment.labWorkOrderId }} search={{ ...currentSearch, section: 'kit-requests', receiptTab: undefined, kitQueue: 'sent' }} className="font-medium text-primary underline">{shipment.shipmentNumber}</Link><p className="mt-1 text-xs text-muted-foreground">{shipment.authorizationReference}</p></td>
             <td className="px-2 py-3">{shipment.organizationName}</td>
             <td className="px-2 py-3"><span className="font-mono">{shipment.returnKit!.kitNumber}</span><p className="mt-1"><Badge variant="outline">{humanize(shipment.returnKit!.status)}</Badge></p></td>
             <td className="px-2 py-3">{shipment.returnKit!.tubes.length + ' of ' + shipment.returnKit!.requiredTubeCount}</td>

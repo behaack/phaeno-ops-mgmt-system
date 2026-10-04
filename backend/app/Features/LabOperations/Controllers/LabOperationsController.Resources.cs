@@ -6,6 +6,7 @@ using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Features.LabOperations.DTOs;
 using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Features.OrderManagement.Services;
+using PhaenoPortal.App.Features.Accounts.Services;
 
 public sealed partial class LabOperationsController
 {
@@ -451,18 +452,37 @@ public sealed partial class LabOperationsController
     public async Task<LabBatchDto> TransitionBatch(Guid batchId,
         [FromBody] BatchTransitionRequest request, CancellationToken cancellationToken)
     {
-        await requestContext.RequireAsync(HttpContext, cancellationToken,
+        var actor = await requestContext.RequireAsync(HttpContext, cancellationToken,
             LabRole.Operator, LabRole.Supervisor, LabRole.OperationsAdministrator);
         await using var transaction = await PhaenoPortal.App.Features.OrderManagement.Services.SampleShippingPackingData.BeginAsync(dbContext, $"lab-sequencing-batch:{batchId}", cancellationToken);
         var batch = await dbContext.LabOperationalBatches.SingleOrDefaultAsync(item => item.Id == batchId, cancellationToken)
             ?? throw Missing();
         EnsureVersion(batch.Version, request.Version);
         var occurredAtUtc = request.OccurredAtUtc?.ToUniversalTime() ?? DateTime.UtcNow;
-        await RequireBatchAttemptReadinessAsync(batch.Id, cancellationToken);
+        var memberCount = await dbContext.LabBatchMembers.CountAsync(item => item.LabOperationalBatchId == batch.Id, cancellationToken);
         switch (request.Action.Trim().ToLowerInvariant())
         {
-            case "start": batch.Start(occurredAtUtc); break;
-            case "complete": batch.Complete(occurredAtUtc); break;
+            case "start":
+            case "complete":
+                if (memberCount == 0)
+                    throw Conflict("batch_libraries_required", "Add libraries to the draft sequencing batch before starting work. An empty batch cannot start or complete.");
+                await RequireBatchAttemptReadinessAsync(batch.Id, cancellationToken);
+                if (request.Action.Trim().Equals("start", StringComparison.OrdinalIgnoreCase)) batch.Start(occurredAtUtc);
+                else batch.Complete(occurredAtUtc);
+                break;
+            case "return-to-draft":
+                var hasSendout = await dbContext.LabNgsSendouts.AnyAsync(item => item.LabOperationalBatchId == batch.Id, cancellationToken);
+                if (batch.Status != LabBatchStatus.InProgress || batch.CompletedAtUtc.HasValue || memberCount != 0 || hasSendout)
+                    throw Conflict("batch_recovery_unavailable", "Only an empty active batch without a sendout can return to draft. Refresh the batch and review its current work.");
+                var reason = request.Reason?.Trim();
+                if (string.IsNullOrEmpty(reason) || reason.Length > 4000)
+                    throw Invalid("batch_recovery_reason_required", "Enter a correction reason of 1 to 4,000 characters.");
+                var previousStartedAtUtc = batch.StartedAtUtc;
+                batch.ReturnEmptyToDraft(memberCount, hasSendout);
+                AccountAudit.Add(dbContext, HttpContext, nameof(LabOperationalBatch), batch.Id,
+                    "EmptySequencingBatchReturnedToDraft", null, actor.User.Id,
+                    new { batch.BatchNumber, reason, previousStatus = LabBatchStatus.InProgress.ToString(), previousStartedAtUtc, status = batch.Status.ToString(), memberCount });
+                break;
             default: throw Invalid("batch_transition_invalid", "The batch transition is invalid.");
         }
         await dbContext.SaveChangesAsync(cancellationToken);

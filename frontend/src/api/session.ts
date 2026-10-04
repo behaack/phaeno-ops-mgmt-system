@@ -58,6 +58,7 @@ export type SessionCapabilities = {
   canAdministerCrm: boolean
   canViewTrialProjects?: boolean
   canManageTrialProjects?: boolean
+  canCreateTrialProjects?: boolean
   canInviteUsers: boolean
   canManageMembers: boolean
   canChangeMemberRoles: boolean

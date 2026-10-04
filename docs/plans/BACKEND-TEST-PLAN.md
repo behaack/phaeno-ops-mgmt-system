@@ -1,5 +1,103 @@
 # Backend Test Plan
 
+## Catalog sequencing requirement and tube pairing — October 4, 2026
+
+`SequencingVolumeTests` covers exact volume boundaries, supported units, Catalog service restrictions and immutable pair snapshots. PostgreSQL handoff coverage captures the Catalog version at allocation, rejects below-minimum transfers without changing balances, and proves a later Catalog edit cannot change the existing pair. Obsolete batch-setting regressions are removed. Sources compile; execution remains request-only/deferred.
+
+## Empty sequencing batch recovery — October 4, 2026
+
+Domain recovery tests cover unchanged identity/notes and reject populated,
+sent-out or completed work. `LabSequencingBatchRecoveryPostgresTests` adds
+controller/database coverage for stale versions, missing/oversized reasons,
+empty start/complete/sendout refusal, sendout recovery refusal, audit evidence
+and repeat recovery refusal. The existing handoff journey checks empty start
+and populated recovery refusal before continuing its usual sequencing flow.
+Added source is compiled; automated execution remains request-only and deferred.
+
+## Sequencing batch automatic identity — October 4, 2026
+
+`LabOperationsDomainTests` covers omitted/empty/whitespace creation names using
+the allocated identifier, retained notes and Draft status, and repeated custom
+names with distinct immutable batch numbers. Existing scanner-safe allocation
+and draft-only membership safeguards remain unchanged. Added test source is
+compiled; automated execution is deferred under the request-only rule.
+
+## Purchased service correction — October 3, 2026
+
+`LabServiceIdentityCorrectionPolicyTests` covers unchanged specimen/run/timing/
+scope/organization policy, the next authorization version, preserved contract
+and correlation identity, Commercial-only scope, unstarted statuses and workflow
+pins. Source is included in the build; automated execution is deferred in this
+local UI walkthrough. Database acceptance must additionally cover immutable
+versions, no receipt/accession changes, required reason, exact purchase resolution,
+request replay/conflict, stale writes, roles, and source-selection races. See
+[the correction plan](LAB-PURCHASED-SERVICE-IDENTITY-CORRECTION-PLAN.md).
+
+`LabBiologicalMaterialTransferTests.PendingGeneratedLabelExplainsRecoveryAndConsumesNoMaterial`
+adds a label-guard recovery regression: a pending generated destination names
+print/scan-back and leaves source quantity/history untouched. Source compiles;
+automated execution remains deferred for this walkthrough.
+
+## Subject workspace navigation — October 3, 2026
+
+Trial CRM, retention and notification acceptance assertions now expect the canonical /lab-services/trials/{id} link. No endpoint or persistence contract changes. Automated test execution is deferred because this navigation implementation request did not request test execution. Lint, typechecking, documentation generation and local HTTP diagnostics are the verification checkpoint; do not count these as browser acceptance or automated-test passes. See [the owning plan](WORKSPACE-NAVIGATION-RESTRUCTURE-PLAN.md).
+
+## Trial source quantities and order workflow — October 2, 2026
+
+Creation and scope requests require an eligible extracted-RNA sample type and
+variable biological source/count rows. Validate missing/nonpositive quantities,
+case/whitespace duplicates and totals; persist the calculated allowance in the
+initial draft and freeze the type/version and rows in scope. PostgreSQL coverage
+rejects another type, a changed type, an unapproved source and per-source overflow
+before Lab/shipment creation. Valid composition uses one shared Lab authorization
+and shipment while the paid-order count stays unchanged. Domain coverage verifies
+amendments cannot remove or reduce already-submitted sources and replacements
+retain original source lineage without adding original slots.
+
+Final focused Trial, CRM access and session run: **85 passed, zero failed/skipped**
+on a disposable local PostgreSQL database; isolated build has zero warnings/errors.
+EF reports no pending model changes. This refinement changes existing JSON
+contracts and requires no new migration. See the
+[source workflow receipt](../testing/runs/2026-10-02-trial-source-quantity-workflow-verification.md).
+
+## Initial Trial creation details — October 2, 2026
+
+Trial creation requires name, Objective / Description, positive sample count and
+an ordered UTC submission window. PostgreSQL regressions verify that one save
+persists all details and Department in the initial shared draft, leaves the Trial
+Requested with no scope revision, approval or acceptance, exposes the draft name
+to staff only, and rejects missing/invalid values without adding a Trial. Retain
+Trial lifecycle, Commercial role revocation, direct approval and session-capability
+coverage. No new persisted model or migration is required for initial draft fields.
+
+See the [local verification receipt](../testing/runs/2026-10-02-trial-creation-details-and-settings-verification.md).
+
+## Direct Trial approval on submission - October 2, 2026
+
+Creation permits active Phaeno Business Development, Commercial leadership and
+Platform administrators. Session and workflow regressions check all three,
+ordinary-role/Prospect denial and revocation. Administrator and leadership
+complete-scope submission records one Commercial approval, remains unaccepted
+by the Prospect, and sends the existing ready-for-acceptance notice. Draft saves
+do not approve; held or invalid Department scopes cannot create an approval.
+Business Development alone remains UnderReview until a leadership decision.
+Existing Trial lifecycle, scope history, scientific controls and release coverage
+remain in the focused regression slice. No persisted model change is required.
+
+Focused verification passes all 79 Trial, CRM access and session cases after the
+obsolete two-approval message assertion is corrected. See the
+[verification receipt](../testing/runs/2026-10-02-trial-direct-approval-verification.md).
+
+## Direct Trial roles and Company Departments - October 2, 2026
+
+Domain and PostgreSQL regressions cover one Commercial leadership approval, rejection of Scientific Operations scope decisions, direct Business Development creation without CRM parent records, revoked-role denial, active Phaeno session capabilities without billing/cash/laboratory privileges, department auto-selection and required multi-department validation, invalid selections, editing persistence, and existing scope/acceptance/sample/release controls. Use a disposable local verification database for invitation and transaction-commit tests. The additive migration preserves historical references and cannot downgrade by inventing CRM parents.
+
+The broad solution run passed 1,200 cases with three failures and two skips.
+The three failures were corrected; the focused 78-case retest passes, including
+historical scope visibility, rollback guarding and department/session fixtures.
+See the [verification receipt](../testing/runs/2026-10-02-direct-trial-workflow-verification.md)
+for exact scope and evidence. This is local PostgreSQL/software verification.
+
 ## Accession sample directory — October 2, 2026
 
 Sample-use source coverage extends the existing fixture: fresh accession, planned and cancelled unstarted source selection remain NotUsed; starting an attempt changes the sample and exact source to Used while reserves stay NotUsed. Combined intake/use/search filters apply before paging, exclude Used samples from NotUsed, and reject invalid use values. Review transfer evidence before attempt start, held/failed started attempts, cross-Job associations and historical started processing without source attribution as connected acceptance. No automated tests are executed for this follow-up; compilation is checked separately.
@@ -2649,3 +2747,18 @@ Change quote pair finalization/provider amendments after original work starts.
 The [release plan](PORTAL-WORKFLOW-RELEASE-20261002-PLAN.md) records a separate
 current-hosted-copy migration rehearsal. Destructive reconstruction execution,
 hosted operator, real provider and physical/scientific acceptance remain separate.
+
+### Master-mix Lab step assembly and service workflow header — October 3, 2026
+
+`MasterMixDomainTests` now covers recipe derivation across repeated approved step occurrences, exact 12-place totals, rejection of missing pins or optional/untracked reagents, required typed evidence, QC holds and permitted repeats, immutable revisions, shared quantity limits and discard. Whole-solution Release build verifies compilation. Automated suites were not requested for this new scope. Connected acceptance remains required for reagent-only catalog validation, actual lot/step/field matching, stock/replay atomicity, equipment eligibility, QC correction lineage and migration refusal on a nonempty target.
+
+### October 4 release verification
+
+The persistence boundary test explicitly permits only the new restricted
+`LabBatchMember.SequencingCatalogItemId` relationship to `QboCatalogItem`;
+other cross-schema relationships retain their existing allowlist. The current
+Release solution builds with zero warnings/errors and no EF model drift.
+All four pending migrations passed twice against an isolated hosted copy,
+with eighteen migrations and unchanged counts for all 226 existing tables.
+Full connected regression results are recorded in the
+[release plan](PORTAL-WORKFLOW-RELEASE-20261004-PLAN.md).

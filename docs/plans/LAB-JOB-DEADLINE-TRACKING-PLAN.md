@@ -1,5 +1,21 @@
 # Jobs workspace and deadline tracking
 
+## October 3, 2026 card clarity
+
+Show the operational status once under **Current status**. Omit a deadline badge when its label repeats that status, and remove the appended phase lifecycle from this summary. A homogeneous sample cohort shows **Samples: N**; a mixed or distinct stage breakdown retains its positive counts with readable sentence-case labels, including camel-case dictionary keys such as `awaitingReceipt`. Preserve distinct deadline warnings, overlapping holds/review counts, physical receipt, forecast coverage, freezer boxes and Portal delivery. Use bold field labels and regular-weight values throughout the card, including Containers, Tubes and optional sample targets. This is local presentation only; no API, filtering, deadline, persisted-model or release-semantics change.
+
+Implemented locally. Scoped ESLint, TypeScript, generated documentation/check (56 guides, corpus `44f96c4f91a1`) and diff whitespace pass. Read-only inspection of four authenticated local phase cards confirmed readable status names, one occurrence of Awaiting receipt on each affected card, separate sample totals, label weight 600 and value weight 400 for every definition-list field. Distinct No known risk badges and saved freezer-box identifiers remain visible on the preparation-ready cards. A desktop screenshot records the appearance. Mixed/closed, narrow and dark-theme scenarios were not exercised for this correction; automated suites were not run. No operational records, Git or deployment changes.
+
+## October 3, 2026 Phases / Jobs toggle
+
+Follow-up: the Product Owner requires independent Active and Closed grouping selections. Active retains `jobGrouping`; Closed retains `jobClosedGrouping`. Both default to Phases and survive tab switches, refresh and record return. Changing grouping resets only that tab's page and preserves the other tab's grouping, filters and page. Clear filters retains grouping choices. This supersedes the initial shared grouping and both-page reset described below. Update existing navigation-state regression source and the Phaeno guide. No API or persisted-model change.
+
+Follow-up verification: scoped ESLint, TypeScript, generated documentation/check (56 guides, corpus `1386c45426e3`) and diff whitespace pass. Authenticated local browser interaction confirmed Active Jobs with Closed Phases, retained Active Jobs after setting Closed Jobs, and Active Phases with Closed Jobs. Both contrasting selections survived refresh and subsequent tab switching. Grouping changes reset only the current page in source; existing navigation-state tests were extended but not executed. No operational data, Git or deployment changes.
+
+Replace the changing Active/Closed phases/jobs card title and Show dropdown with the shared **Phases / Jobs** pill toggle at the start of the card header. Preserve the outer Active jobs / Closed jobs tabs, default Phases selection, URL grouping, filters, record return and both pagination resets when grouping changes. Use the shared accessible radio-group keyboard and focus behavior. This is a presentation change with no API, model or migration changes. Update the Phaeno Lab guide and generated corpus; scoped lint, typechecking and read-only browser checks are the checkpoint. Automated suites are not requested, and no new implementation-mirroring test is added for this reversible control replacement.
+
+Implemented locally. Scoped ESLint, TypeScript, documentation generation/check (56 guides, corpus `5289e6c53f06`) and diff whitespace pass. Authenticated browser navigation confirmed Phases by default, the absent Show dropdown/title, keyboard arrow focus and Space activation of Jobs, grouping in the Closed view, and retained Active search after switching grouping and lifecycle tabs. Screenshot capture timed out; this is browser semantic/interaction evidence without a visual screenshot. Pagination resets retain their existing source logic; populated multi-page and narrow/theme scenarios were not rerun. Automated suites were not run. No operational data was changed.
+
 ## September 30, 2026 list status and freezer boxes
 
 Phaeno laboratory operators need to see a Job's current operational stage and

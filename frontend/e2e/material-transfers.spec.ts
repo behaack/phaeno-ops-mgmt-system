@@ -9,7 +9,7 @@ test('an interrupted physical transfer survives reload and retries without anoth
   const html = await readFile(new URL('./fixtures/lab-material-transfers.html', import.meta.url), 'utf8')
   await page.route('**/e2e/fixtures/lab-material-transfers.html', route => route.fulfill({ contentType: 'text/html', body: html }))
   const source = { id: 'source', labSpecimenId: 'sample', parentContainerId: 'original', kind: 'Library', barcode: 'LIBRARY-123', barcodeSource: 'Manufacturer' as const, externalBarcodeReferenceId: null, label: 'Library', labelPrintCount: 0, location: 'Freezer A', quantity: 100, quantityUnit: 'µL', status: 'Available', retainUntilUtc: null, version: 4 }
-  const data: SequencingTubeWorkspace = { batchId: 'test-batch', batchVersion: 3, batchStatus: 'Draft', hasSendout: false, members: [{ id: 'member', labWorkOrderId: 'work', labLibraryId: 'library', libraryKey: source.barcode, source, sequencingTube: { ...source, id: 'destination', parentContainerId: source.id, kind: 'Sequencing', barcode: 'SEQUENCING-123', quantity: null, quantityUnit: null, version: 1 }, transfer: null }] }
+  const data: SequencingTubeWorkspace = { batchId: 'test-batch', batchVersion: 3, batchStatus: 'Draft', hasSendout: false, members: [{ id: 'member', labWorkOrderId: 'work', labLibraryId: 'library', libraryKey: source.barcode, source, sequencingTube: { ...source, id: 'destination', parentContainerId: source.id, kind: 'Sequencing', barcode: 'SEQUENCING-123', quantity: null, quantityUnit: null, version: 1 }, transfer: null, catalogItemId: 'catalog', catalogServiceName: 'PSeq', catalogVersion: 1, minimumSequencingVolumeUl: 5, minimumSequencingVolumeUlText: '5', requirementCaptured: true }] }
   const submitted: SequencingTubeCommand[] = []
   let debits = 0
   await page.route('**/api/platform/lab-operations/batches/test-batch/**', async route => {
@@ -31,21 +31,20 @@ test('an interrupted physical transfer survives reload and retries without anoth
     return route.fulfill({ json: { success: true, data } })
   })
   await page.goto('/e2e/fixtures/lab-material-transfers.html')
-  await page.getByRole('button', { name: 'Record transfer', exact: true }).click()
   await page.getByLabel('Scan source library barcode', { exact: false }).fill('*library-123*')
   await page.getByLabel('Scan sequencing tube barcode', { exact: false }).fill('*sequencing-123*')
   await page.getByLabel('Actual amount transferred', { exact: false }).fill('20')
   await page.getByRole('checkbox', { name: /Material exhausted/ }).check()
   await page.getByRole('checkbox', { name: /I personally performed/ }).check()
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([])
-  await page.getByRole('button', { name: 'Record transfer', exact: true }).click()
+  await page.getByRole('button', { name: 'Save pair and transfer', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Retry same command' })).toBeVisible()
   await page.reload()
   await expect(page.getByRole('button', { name: 'Retry same command' })).toBeVisible()
   await expect(page.getByLabel('Actual amount transferred', { exact: false })).toHaveValue('20')
   await page.getByRole('button', { name: 'Retry same command' }).click()
-  await expect(page.getByText(/Physical transfer recorded/)).toBeVisible()
-  await expect(page.getByText('Transferred 20 µL', { exact: false })).toBeVisible()
+  await expect(page.getByText(/Transfer recorded:/)).toBeVisible()
+  await expect(page.getByText('20 µL', { exact: true })).toBeVisible()
   await expect(page.getByText('Tube assigned. Physical transfer has not been recorded.')).toHaveCount(0)
   expect(submitted).toHaveLength(2)
   expect(debits).toBe(1)

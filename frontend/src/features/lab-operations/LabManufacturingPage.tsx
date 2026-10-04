@@ -1,3 +1,4 @@
+import { commercialRecordRoute } from '#/features/orders/service-workspaces'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
@@ -117,12 +118,12 @@ export function LabManufacturingOrderPage({ workflow, orderId }: { workflow: Man
     <main className="page-wrap px-4 py-8">
       <section className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm text-muted-foreground"><Link to="/lab-operations" search={{ section: workflow === 'reagent' ? 'kits' : 'assembly' }} className="hover:underline">Lab operations</Link> / {workflow === 'reagent' ? 'PSeq kits' : 'Data assembly'} / <span className="font-mono">{number}</span></p>
+          <p className="text-sm text-muted-foreground"><Link to="/lab-operations" search={{ section: workflow === 'reagent' ? 'kits' : 'assembly' }} className="hover:underline">Lab operations</Link> / {workflow === 'reagent' ? 'PSeq kit fulfillment' : 'Data assembly'} / <span className="font-mono">{number}</span></p>
           <div className="mt-2 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold">{number}</h1><OrderStatusBadge status={item.status} /></div>
           <p className="mt-2 text-sm text-muted-foreground">Manufacturing record for organization {item.organizationId}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline"><Link to="/order-operations/$workflow/$orderId" params={{ workflow, orderId }}>View commercial order</Link></Button>
+          <Button asChild variant="outline"><Link to={commercialRecordRoute(workflow)} params={{ orderId }}>View commercial order</Link></Button>
           {actions.map((action) => <Button key={action.path} type="button" variant={action.reason ? 'outline' : 'default'} disabled={transition.isPending} onClick={() => action.reason ? setReasonAction(action.path) : transition.mutate({ action: action.path })}>{action.label}</Button>)}
         </div>
       </section>

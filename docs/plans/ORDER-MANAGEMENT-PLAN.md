@@ -1,5 +1,22 @@
 # Order Management Plan
 
+## Catalog sequencing requirement — October 4, 2026
+
+Catalog administrators configure the positive minimum sequencing volume on each PSeq Lab Service. Operators read it during one-pair-at-a-time tube preparation; each allocated pair retains its service version and requirement. Batch-level editing is superseded. See [the owning plan](CATALOG-SEQUENCING-TUBE-PAIRING-PLAN.md) for behavior, conversion and verification.
+
+## Subject workspace navigation — October 3, 2026
+
+The approved [navigation restructure](WORKSPACE-NAVIGATION-RESTRUCTURE-PLAN.md) groups Lab Order intake and Trials under LAB SERVICES and commercial Kit/Data assembly work under PARTNER SERVICES within Order Ops, governed result release to Lab ops, cross-workflow attention to the Dashboard, and Finance/Legacy integrations to More. Canonical list and record routes follow their subject domains; existing bookmarks redirect. Role isolation, scientific review, approval, billing, records and backend contracts remain intact. No persistence change or migration.
+
+## Commercial draft source-row presentation — October 3, 2026
+
+Show the **Biological source** and **Samples** column headings once per order or
+phase, with all source rows aligned underneath at desktop and mobile widths.
+Replace the row's Remove text with a trash-can icon and preserve its accessible
+name, keyboard behavior, last-row protection, quantity validation and source cap.
+Use shared Field spacing for these controls. This is a presentation refinement;
+current audience guides remain accurate without a content change.
+
 ## Customer/Partner Job detail organization — October 1, 2026
 
 Approved refinement: the supporting tab is **Progress** for every Job. Single-phase

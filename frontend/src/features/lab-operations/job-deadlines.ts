@@ -11,11 +11,17 @@ export const jobStatusLabels = {
   QualityReview: 'Quality review', AwaitingDelivery: 'Awaiting delivery', OnHold: 'On hold',
 } as const
 export type JobStatus = keyof typeof jobStatusLabels
+export function jobStatusLabel(value: string) {
+  const status = value.charAt(0).toUpperCase() + value.slice(1)
+  if (Object.hasOwn(jobStatusLabels, status)) return jobStatusLabels[status as JobStatus]
+  return status.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[-_]+/g, ' ').toLowerCase()
+    .replace(/^./, character => character.toUpperCase())
+}
 export type JobView = 'Active' | 'Closed'
 export type JobListSearch = {
   jobGrouping?: 'Phases' | 'Jobs'; jobView?: JobView; jobSearch?: string; jobDeadline?: keyof typeof activeDeadlineLabels; jobPage?: number
   jobFrom?: string; jobTo?: string; jobStatus?: JobStatus
-  jobClosedSearch?: string; jobClosedFrom?: string; jobClosedTo?: string; jobOutcome?: 'Delivered' | 'Cancelled'; jobClosedPage?: number
+  jobClosedGrouping?: 'Phases' | 'Jobs'; jobClosedSearch?: string; jobClosedFrom?: string; jobClosedTo?: string; jobOutcome?: 'Delivered' | 'Cancelled'; jobClosedPage?: number
 }
 export function parseJobDate(value: unknown): string | undefined {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value) || value < '0100-01-01' || value > '9998-12-31') return undefined
@@ -34,6 +40,7 @@ export function parseJobListSearch(search: Record<string, unknown>): JobListSear
   const page = (v: unknown) => Number.isSafeInteger(Number(v)) && Number(v) > 0 ? Number(v) : undefined
   return {
     jobGrouping: search.jobGrouping === 'Jobs' ? 'Jobs' : undefined,
+    jobClosedGrouping: search.jobClosedGrouping === 'Jobs' ? 'Jobs' : undefined,
     jobView: search.jobView === 'Closed' ? 'Closed' : undefined,
     jobSearch: text(search.jobSearch),
     jobDeadline: typeof search.jobDeadline === 'string' && Object.hasOwn(activeDeadlineLabels, search.jobDeadline) ? search.jobDeadline as JobListSearch['jobDeadline'] : undefined,

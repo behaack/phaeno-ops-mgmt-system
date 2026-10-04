@@ -312,6 +312,8 @@ export type CrmOpportunity = {
   name: string;
   companyId: string;
   companyName: string;
+  departmentId: string | null;
+  departmentName: string | null;
   pipelineId: string;
   pipelineName: string;
   stageId: string;
@@ -339,6 +341,7 @@ export type CrmOpportunity = {
 export type CrmOpportunityInput = {
   name: string;
   companyId: string;
+  departmentId?: string | null;
   pipelineId: string;
   stageId?: string | null;
   ownerUserId?: string | null;
@@ -352,6 +355,15 @@ export type CrmOpportunityInput = {
   tags: string[];
   version?: number;
 };
+
+export type CrmOpportunityDepartment = { id: string; name: string };
+
+export async function listCrmOpportunityDepartments(companyId: string) {
+  const response = await api.get<ApiEnvelope<CrmOpportunityDepartment[]>>(
+    `/platform/crm/companies/${companyId}/departments/opportunity-choices`,
+  );
+  return response.data.data!;
+}
 
 export type CrmOpportunityContact = {
   id: string;

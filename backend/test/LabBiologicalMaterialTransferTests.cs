@@ -42,6 +42,22 @@ public sealed class LabBiologicalMaterialTransferTests
     }
 
     [Fact]
+    public void PendingGeneratedLabelExplainsRecoveryAndConsumesNoMaterial()
+    {
+        var material = Material();
+        var destination = new LabContainer(material.Source.LabWorkOrderId, material.Source.LabSpecimenId,
+            material.Source.Id, LabContainerKind.Library, "PH-L-DEMO", "Demo pending label", "Tray A1",
+            null, null, null, labelVerificationRequired: true);
+        destination.AttachAttempt(material.Attempt);
+        var error = Assert.Throws<InvalidOperationException>(() => Transfer(
+            (material.Source, destination, material.Attempt), 10));
+        Assert.Contains("scan it back", error.Message);
+        Assert.Equal(100m, material.Source.Quantity);
+        Assert.Null(destination.Quantity);
+        Assert.Equal("[]", material.Source.QuantityHistoryJson);
+    }
+
+    [Fact]
     public void EqualPrintedValuesFromDifferentManufacturersCannotVerifyBothEndsOfTransfer()
     {
         var material = Material();

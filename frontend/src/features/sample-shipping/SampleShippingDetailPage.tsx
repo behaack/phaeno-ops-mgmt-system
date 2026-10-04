@@ -47,6 +47,7 @@ export type ShipmentHeaderAction = {
   busy?: boolean
   descriptionId?: string
   variant?: 'default' | 'outline' | 'destructive'
+  keepInMenu?: boolean
   kind: 'command'
   onSelect: () => void
 }
@@ -240,7 +241,7 @@ export function SampleShippingDetailPage({ shipmentId, autoOpenKitOrder = false,
               Back to lab job {shipment.authorizationReference}
             </Link>
           ) : (
-            <Link to="/trial-projects/$trialId" params={{ trialId: shipment.authorizationSourceId }} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <Link to="/order-operations/lab-services/trials/$trialId" params={{ trialId: shipment.authorizationSourceId }} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
               <ArrowLeft aria-hidden="true" className="size-4" />
               Back to Trial {shipment.authorizationReference}
             </Link>

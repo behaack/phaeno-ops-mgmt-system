@@ -16,6 +16,7 @@ public sealed class QboCatalogItem : IAudit, IConcurrency
     public bool IsActive { get; private set; } = true;
     public CatalogServiceFamily ServiceFamily { get; private set; }
     public int? MaximumCustomerSamples { get; private set; }
+    public decimal? MinimumSequencingVolumeUl { get; private set; }
     public DateTime LastSyncedAt { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
     public Guid? CreatedByUserId { get; private set; }
@@ -53,6 +54,14 @@ public sealed class QboCatalogItem : IAudit, IConcurrency
         if (maximum.HasValue && ServiceFamily != CatalogServiceFamily.PSeqLabService)
             throw new ArgumentException("Customer sample limits apply to Lab services.");
         MaximumCustomerSamples = maximum;
+    }
+
+    public void SetMinimumSequencingVolume(decimal? minimumUl)
+    {
+        if (minimumUl is <= 0) throw new ArgumentException("Enter a positive minimum sequencing volume in µL, or leave it unconfigured.");
+        if (minimumUl.HasValue && ServiceFamily != CatalogServiceFamily.PSeqLabService)
+            throw new ArgumentException("Sequencing requirements apply to PSeq Lab services.");
+        MinimumSequencingVolumeUl = minimumUl;
     }
 
     public void Sync(

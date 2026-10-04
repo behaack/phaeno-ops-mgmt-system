@@ -13,7 +13,7 @@ public static class CrmAccess
         || (user is { IsActive: true, Status: UserAccountStatus.Active }
             && user.Memberships.Any(membership => membership.IsActive
                 && membership.Organization is { IsActive: true, Kind: OrganizationKind.Phaeno })
-            && activeRoles.Contains(BusinessRole.CommercialOperator));
+            && activeRoles.Any(role => role is BusinessRole.CommercialOperator or BusinessRole.BusinessDevelopment or BusinessRole.CommercialLeadership));
 
     public static async Task<User> RequireCrmAccessAsync(
         HttpContext httpContext,

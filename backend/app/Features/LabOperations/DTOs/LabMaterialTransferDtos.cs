@@ -7,7 +7,11 @@ public sealed record LabSequencingTubeWorkspaceDto(Guid BatchId, long BatchVersi
     bool HasSendout, IReadOnlyList<LabSequencingTubeMemberDto> Members);
 public sealed record LabSequencingTubeMemberDto(Guid Id, Guid LabWorkOrderId, Guid LabLibraryId,
     string LibraryKey, LabContainerDto Source, LabContainerDto? SequencingTube,
-    LabMaterialTransferDto? Transfer);
+    LabMaterialTransferDto? Transfer, Guid? CatalogItemId, string? CatalogServiceName, long? CatalogVersion,
+    decimal? MinimumSequencingVolumeUl, bool RequirementCaptured)
+{
+    public string? MinimumSequencingVolumeUlText => MinimumSequencingVolumeUl?.ToString(CultureInfo.InvariantCulture);
+}
 public sealed record LabMaterialTransferDto(Guid Id, Guid SourceContainerId, string SourceBarcode,
     Guid DestinationContainerId, string DestinationBarcode, decimal Quantity, string QuantityUnit,
     decimal? SourceQuantityBefore, decimal? SourceQuantityAfter, string? SourceQuantityBasis,
@@ -25,4 +29,4 @@ public sealed record LabSequencingTubeCommand(Guid RequestId, long BatchVersion,
     long? SourceVersion = null, long? DestinationVersion = null,
     string? ConfirmedSourceBarcode = null, string? ConfirmedDestinationBarcode = null,
     LabStepPerformanceInput? Performance = null, string? QuantityText = null,
-    Guid? ManufacturerSupplierId = null);
+    Guid? ManufacturerSupplierId = null, long? CatalogVersion = null);

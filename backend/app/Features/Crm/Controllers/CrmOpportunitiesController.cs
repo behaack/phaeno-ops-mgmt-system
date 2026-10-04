@@ -99,9 +99,11 @@ public sealed class CrmOpportunitiesController(PSeqOperationsDbContext dbContext
     {
         var actor = await RequireActor(cancellationToken);
         var company = await RequireCompany(request.CompanyId, cancellationToken);
+        var departmentId = await CrmOpportunityDepartments.ResolveAsync(dbContext, company, request.DepartmentId, cancellationToken);
         var stage = await RequireInitialStage(request.PipelineId, request.StageId, cancellationToken);
         var owner = request.OwnerUserId.HasValue ? await RequireOwner(request.OwnerUserId.Value, cancellationToken) : actor;
         var value = Execute(() => new CrmOpportunity(request.Name, company.Id, stage, owner.Id, request.ProductInterest, request.Amount, request.Currency, request.ExpectedCloseDate, request.NextStep, request.Competitors, request.Description, request.Tags));
+        value.AssignDepartment(departmentId);
         dbContext.CrmOpportunities.Add(value);
         dbContext.CrmOpportunityStageHistory.Add(new CrmOpportunityStageHistory(value.Id, null, stage.Id, "Opportunity created.", actor.Id, DateTime.UtcNow));
         dbContext.CrmActivities.Add(new CrmActivity(CrmActivityType.StatusChange, "Opportunity created", $"Created in {stage.Name}.", DateTime.UtcNow, CrmActivityVisibility.Internal, actor.Id, company.Id, opportunityId: value.Id));
@@ -116,9 +118,11 @@ public sealed class CrmOpportunitiesController(PSeqOperationsDbContext dbContext
         await RequireActor(cancellationToken);
         var value = await Require(opportunityId, true, cancellationToken);
         EnsureVersion(value.Version, request.Version ?? 0);
-        if (request.CompanyId != value.CompanyId) await RequireCompany(request.CompanyId, cancellationToken);
+        var company = await RequireCompany(request.CompanyId, cancellationToken);
+        var departmentId = await CrmOpportunityDepartments.ResolveAsync(dbContext, company, request.DepartmentId, cancellationToken);
         Execute(() => value.UpdateProfile(request.Name, request.ProductInterest, request.Amount, request.Currency, request.ExpectedCloseDate, request.NextStep, request.Competitors, request.Description, request.Tags));
         if (request.CompanyId != value.CompanyId) value.ReassignCompany(request.CompanyId);
+        value.AssignDepartment(departmentId);
         User? owner = null;
         if (request.OwnerUserId.HasValue && request.OwnerUserId.Value != value.OwnerUserId)
         {
@@ -226,7 +230,7 @@ public sealed class CrmOpportunitiesController(PSeqOperationsDbContext dbContext
 
     private IQueryable<CrmOpportunity> Query(bool tracking)
     {
-        var query = dbContext.CrmOpportunities.Include(value => value.Company).Include(value => value.Pipeline).Include(value => value.Stage).Include(value => value.Owner).AsQueryable();
+        var query = dbContext.CrmOpportunities.Include(value => value.Company).Include(value => value.Department).Include(value => value.Pipeline).Include(value => value.Stage).Include(value => value.Owner).AsQueryable();
         return tracking ? query : query.AsNoTracking();
     }
 
@@ -252,7 +256,7 @@ public sealed class CrmOpportunitiesController(PSeqOperationsDbContext dbContext
         var resolvedOwner = owner ?? value.Owner;
         return new(value.Id, value.OpportunityNumber, value.Name, value.CompanyId, value.Company.Name, value.PipelineId, value.Pipeline.Name, value.StageId, value.Stage.Name, value.Stage.Category,
             value.OwnerUserId, $"{resolvedOwner.FirstName} {resolvedOwner.LastName}".Trim(), value.ProductInterest, value.Amount, value.Currency, value.Probability,
-            value.ExpectedCloseDate, value.NextStep, value.Competitors, value.Description, value.Tags, value.ClosedAt, value.OutcomeReason, value.IsActive, value.CreatedAt, value.UpdatedAt, value.Version);
+            value.ExpectedCloseDate, value.NextStep, value.Competitors, value.Description, value.Tags, value.ClosedAt, value.OutcomeReason, value.IsActive, value.CreatedAt, value.UpdatedAt, value.Version, value.DepartmentId, value.Department?.Name);
     }
 
     private static string EscapeLike(string value) => value.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("%", "\\%", StringComparison.Ordinal).Replace("_", "\\_", StringComparison.Ordinal);

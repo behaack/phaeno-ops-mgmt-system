@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Commercial.LabOperations.Application;
 using PSeq.Operations.Laboratory.Domain;
 using PhaenoPortal.App.Infrastructure.Persistence;
+using PhaenoPortal.App.Features.OrderManagement.Services;
 
 public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbContext)
     : ILabOperationsProvider
@@ -270,6 +271,28 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
             return ManualReviewAcknowledgment(command.Metadata, workOrder, acknowledgedAtUtc);
 
         var additive = command.CommercialReasonCode == "accepted_additional_scope";
+        var serviceCorrection = command.CommercialReasonCode == LabServiceIdentityCorrectionPolicy.ReasonCode;
+        if (serviceCorrection)
+        {
+            var authorization = await dbContext.CommercialLabAuthorizations.AsNoTracking()
+                .SingleOrDefaultAsync(a => a.AuthorizationId == workOrder.AuthorizationId, cancellationToken);
+            var order = authorization is null ? null : await dbContext.LabServiceOrders.AsNoTracking()
+                .Include(o => o.Quotes).SingleOrDefaultAsync(o => o.Id == authorization.CommercialOrderId, cancellationToken);
+            var quote = order?.Quotes.SingleOrDefault(q => q.Id == order.AcceptedQuoteId);
+            var previous = authorization is null ? null
+                : LabServiceIdentityCorrectionPolicy.ReadCommercialSnapshot(authorization.AuthorizationSnapshotJson);
+            if (previous is null || quote is null || order!.Id != workOrder.AuthorizationSourceId
+                || order.OrganizationId != workOrder.SubmittingOrganizationId
+                || !LabServiceIdentityCorrectionPolicy.HasUnstartedStatus(workOrder)
+                || !LabServiceIdentityCorrectionPolicy.PreservesScope(previous, replacement)
+                || await dbContext.LabSpecimenAttempts.AnyAsync(a => a.LabWorkOrderId == workOrder.Id, cancellationToken)
+                || await dbContext.LabProtocolExecutions.AnyAsync(e => e.LabWorkOrderId == workOrder.Id, cancellationToken)
+                || await dbContext.LabLibraries.AnyAsync(l => l.LabWorkOrderId == workOrder.Id, cancellationToken))
+                return ManualReviewAcknowledgment(command.Metadata, workOrder, acknowledgedAtUtc);
+            var purchased = await LabQuoteCatalog.ReadServiceIdentityAsync(dbContext, quote.LinesJson, cancellationToken);
+            if (replacement.ServiceKey != purchased.ServiceKey)
+                return ManualReviewAcknowledgment(command.Metadata, workOrder, acknowledgedAtUtc);
+        }
         if (additive)
         {
             var previousJson = await dbContext.LabWorkAuthorizationVersions.AsNoTracking()
@@ -291,7 +314,7 @@ public sealed class InternalLabOperationsProvider(PSeqOperationsDbContext dbCont
                 || workOrder.Status is LabWorkOrderStatus.OnHold or LabWorkOrderStatus.Cancelled or LabWorkOrderStatus.ReadyForRelease)
                 return ManualReviewAcknowledgment(command.Metadata, workOrder, acknowledgedAtUtc);
         }
-        if (!additive && workOrder.Status != LabWorkOrderStatus.AwaitingSpecimens)
+        if (!additive && !serviceCorrection && workOrder.Status != LabWorkOrderStatus.AwaitingSpecimens)
         {
             return ManualReviewAcknowledgment(command.Metadata, workOrder, acknowledgedAtUtc);
         }

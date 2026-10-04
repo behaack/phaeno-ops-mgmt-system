@@ -6,14 +6,14 @@ import { OrderOperationsSummary } from './OrderOperationsSummary'
 
 const mocks = vi.hoisted(() => ({ commercial: vi.fn() }))
 vi.mock('./ConnectedOperationsSummary', () => ({ ConnectedOperationsSummary: (props: unknown) => { mocks.commercial(props); return <p>Commercial intake summary</p> } }))
-vi.mock('@tanstack/react-router', () => ({ Link: ({ children, search }: { children: ReactNode; search: { orderSection: string } }) => <a href={`/order-operations?orderSection=${search.orderSection}`}>{children}</a> }))
+vi.mock('@tanstack/react-router', () => ({ Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a> }))
 beforeEach(() => vi.clearAllMocks())
 const capabilities = (values: Partial<SessionCapabilities>) => ({ canViewAllOperationalOrders: true, ...values }) as SessionCapabilities
 
 describe('Order dashboard role access', () => {
   it.each(['canManagePSeqBilling', 'canManagePSeqCash', 'canReconcilePSeqCash'] as const)('shows Finance workspaces for %s without mounting commercial queries', role => {
     render(<OrderOperationsSummary capabilities={capabilities({ [role]: true })} />)
-    expect(screen.getByRole('link', { name: 'Finance' }).getAttribute('href')).toContain('orderSection=finance')
+    expect(screen.getByRole('link', { name: 'Finance' }).getAttribute('href')).toBe('/finance')
     expect(screen.queryByRole('link', { name: 'Order intake' })).toBeNull()
     expect(screen.queryByRole('link', { name: 'Result release' })).toBeNull()
     expect(mocks.commercial).not.toHaveBeenCalled()

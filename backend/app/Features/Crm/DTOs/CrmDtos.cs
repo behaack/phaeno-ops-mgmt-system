@@ -235,7 +235,9 @@ public sealed record CrmOpportunityDto(
     bool IsActive,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    long Version);
+    long Version,
+    Guid? DepartmentId,
+    string? DepartmentName);
 
 public sealed record UpsertCrmOpportunityRequest(
     string Name,
@@ -251,7 +253,10 @@ public sealed record UpsertCrmOpportunityRequest(
     string? Competitors,
     string? Description,
     IReadOnlyList<string> Tags,
-    long? Version);
+    long? Version,
+    Guid? DepartmentId = null);
+
+public sealed record CrmOpportunityDepartmentDto(Guid Id, string Name);
 
 public sealed record MoveCrmOpportunityStageRequest(Guid StageId, string? Reason, long Version);
 public sealed record CrmOpportunityContactDto(Guid Id, Guid ContactId, string ContactName, string? Role, bool IsPrimary, bool IsActive, long Version);

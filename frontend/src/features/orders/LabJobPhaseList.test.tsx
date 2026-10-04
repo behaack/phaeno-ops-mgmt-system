@@ -14,7 +14,7 @@ function View({ receiving = false, onResults = vi.fn() }: { receiving?: boolean;
     pairs: shippedPhasePairs, shipments: [sentPhaseShipment], requests: receiving ? [{ ...kitRequestFixture, phaseId: 'phase-2', status: 'Dispatched' }] : [] }} />
 }
 describe('Consolidated phase tracking', () => {
-  it('shows single-order details immediately without a phase expander or fabricated receipt totals', () => {
+  it('shows single-order details immediately and keeps cancellation in a destructive menu item', async () => {
     render(<LabJobPhaseList order={singleShippingOrder} plan={singleShippingPlan} canCancel onCancel={vi.fn()} tracking={{
       onExpand: vi.fn(), onResults: vi.fn(), disabled: false, onHoldModalChange: vi.fn(), shippingReady: true,
       pairs: singleShippingPairs, shipments: [], requests: [],
@@ -24,7 +24,11 @@ describe('Consolidated phase tracking', () => {
     expect(screen.getByText('Human liver: 1 sample')).toBeTruthy()
     expect(screen.getAllByText('Awaiting sample shipment')).toHaveLength(2)
     expect(screen.getByText('Sample IDs will appear after preparation.')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Request cancellation' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Request cancellation' })).toBeNull()
+    const trigger = screen.getByRole('button', { name: 'Actions' })
+    expect(trigger.querySelectorAll('[data-slot="action-menu-indicator"]')).toHaveLength(1)
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false })
+    expect((await screen.findByRole('menuitem', { name: 'Request cancellation' })).getAttribute('data-variant')).toBe('destructive')
     expect(screen.queryByRole('button', { name: /Phase 1/ })).toBeNull()
     expect(screen.queryByText('0 of 0')).toBeNull()
   })
@@ -57,5 +61,13 @@ describe('Consolidated phase tracking', () => {
   it('labels outbound kits separately from samples sent to the laboratory', () => {
     render(<View receiving />)
     expect(within(screen.getByRole('region', { name: 'Phase 2' })).getByText('Kits sent')).toBeTruthy()
+  })
+  it('keeps cancellation for an expanded phase inside Actions without a standalone cancel button', async () => {
+    render(<View />)
+    fireEvent.click(screen.getByRole('button', { name: '2. Phase 2' }))
+    const phase = within(screen.getByRole('region', { name: 'Phase 2' }))
+    expect(phase.queryByRole('button', { name: 'Request cancellation' })).toBeNull()
+    fireEvent.pointerDown(phase.getByRole('button', { name: 'Actions' }), { button: 0, ctrlKey: false })
+    expect((await screen.findByRole('menuitem', { name: 'Request cancellation' })).getAttribute('data-variant')).toBe('destructive')
   })
 })

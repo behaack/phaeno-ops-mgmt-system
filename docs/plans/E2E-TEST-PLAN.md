@@ -1,5 +1,158 @@
 # Playwright E2E Test Plan
 
+## Catalog sequencing requirement and tube pairing — October 4, 2026
+
+The exact-retry fixture carries a member Catalog snapshot and uses the single pair form. Connected acceptance should configure the owner-authorized demo service to 5 µL, verify read-only requirements, progress, retained six 20 µL libraries, keyboard/scanner behavior and narrow layouts without allocating tubes or recording a transfer. Physical/scientific/provider acceptance and automated E2E execution are separate and not claimed.
+
+## Empty sequencing batch recovery — October 4, 2026
+
+Connected local acceptance: correct the owner-named empty In progress batch
+through its confirmation dialog; verify required reason, Cancel focus, retained
+identifier, Draft status, zero members and the disabled empty Start prerequisite.
+Return to the completed demo tray and verify its six assignment actions enable
+and offer the recovered Draft without saving an assignment. Confirm no recovery
+action for populated/completed/sent-out work via compiled regression source.
+No physical sequencing, provider acceptance or automated E2E execution is claimed.
+
+## Master mix card header — October 4, 2026
+
+Read-only connected review of the saved fake tray checks the header button,
+wrapping at desktop/narrow widths, keyboard focus and its unchanged Master
+mixes destination. Preserve the recorded uses; no preparation/use command or
+automated suite execution is requested.
+
+## Sequencing batch availability and identifiers — October 4, 2026
+
+Read-only connected acceptance checks the completed fake tray with no draft
+batches: visible explanation, disabled Add actions and enabled header
+navigation. Open New batch and verify optional name/notes plus automatic-ID
+guidance. Do not create or assign a batch as part of this configuration edit.
+Future automated coverage should verify unnamed/custom creation, assignment
+after return, non-draft exclusion and lookup failure. No suite is requested.
+Connected local review passed for the actual six-library empty handoff,
+disabled Add actions, header navigation, optional-name modal and keyboard
+focus return. No batch creation/assignment or scientific execution occurred.
+
+## Sequencing handoff header — October 4, 2026
+
+Read-only connected verification uses the completed fake tray. Check the header
+link at desktop/narrow widths, wrapped description, keyboard activation and
+navigation to Sequencing batches. Do not assign libraries or create a batch.
+Automated browser execution is not requested for this presentation change.
+Connected header geometry passes at 320/1025 CSS pixels and normal desktop
+size. Keyboard activation reaches Sequencing batches, with the original
+completed fake tray and its library outcomes preserved.
+
+## Purchased service and fake PSeq tray — October 3, 2026
+
+The named local fake job **6WTMNUFE** may be corrected through its reviewed
+Actions dialog, then loaded into the saved six-position DEMO tray using its
+approved exact workflow. Record simulated biological transfer, Ready mix use,
+yield/QC and library barcodes, then complete preparation and verify the sequencing
+handoff. Preserve ten original accessioned tubes and all earlier authorization,
+receipt and accession evidence. Every fake operational record must identify the
+simulation; it establishes no physical/scientific or production acceptance.
+Automated execution is deferred; capture the final UI result in the owning plan.
+
+October 4 completion: **Pass (simulated)** through the connected local Chrome
+UI. The original tray is Complete with six Succeeded libraries and a visible
+sequencing handoff. Label outcomes, specimen transfers, a fresh approved mix,
+yield/QC, output identity, protocol and batch completion all saved through UI.
+The expired unused mix and the fresh mix's 40 µL remainder were explicitly
+discarded. No sequencing or result release was performed. See the
+[completion evidence](../testing/runs/2026-10-04-6wtmnufe-pseq-library-preparation.md).
+Automated suites and physical/scientific qualification are not claimed.
+
+## Jobs card clarity — October 3, 2026
+
+Read-only acceptance: uniform stage status appears once; mixed stage counts use readable labels without raw enum keys; a distinct risk badge remains visible. Labels are bold and values regular, with long names/box barcodes wrapping on narrow screens in both themes. Check Active/Closed and Phases/Jobs views and preserved record navigation/filter state. No operational writes or automated browser suite is requested for this correction.
+
+## Shipping heading phase number — October 3, 2026
+
+Multi-phase shipping names the saved phase number, phase name and sample count, matching Progress as the current phase advances. Verify long-name wrapping on narrow screens and retained numbering when cancelled phases are skipped. Single-phase wording remains unchanged. Automated browser execution is deferred under the request-only rule.
+
+## Cancellation action exception — October 3, 2026
+
+Verify Job and eligible phase cancellation stays inside neutral Actions even as
+the sole action, with one chevron and red cancellation items/confirmation buttons.
+Check keyboard opening, Escape/focus return, disabled and ineligible states,
+desktop/phone and light/dark appearance. Ordinary single actions remain direct.
+Use unsaved or synthetic decisions; do not submit cancellation requests.
+Automated execution remains request-only.
+
+## Subject workspace navigation — October 3, 2026
+
+Independent Jobs grouping follow-up: manually choose Jobs in Active with Phases in Closed, then reverse the selections; confirm both remain selected after tab switches and refresh, and filtering/grouping changes affect only the current tab's pagination. No operational records are written. Automated browser suites remain unrun unless requested.
+
+Jobs grouping presentation: manually review Phases / Jobs in both Active jobs and Closed jobs, keyboard selection, retained filters and the absence of the old heading/Show select. The shared toggle supplies responsive wrapping and focus styles. This reversible presentation change does not add an automated browser scenario; suites remain unexecuted unless requested.
+
+Lab Ops grouping: the updated `order-management.spec.ts` scenario covers Jobs first/default, four CRM-style headings, the dedicated transportation request section and its queue toggle, saved request bookmarks with filters, receiving default and absence of kit-request tabs in sample receipt. Desktop/narrow suite source is maintained; automated execution is deferred because it was not requested. Manual local navigation and visual review are tracked separately in the owning plan.
+
+Finance sidebar presentation: verify all five authorized entries on desktop and through the narrow-screen edge tab, active selection, absence of tabs, filters retained across section changes and record return. Preserve existing financial fixtures and perform navigation only. Automated browser-suite execution is not requested for this change.
+
+Desktop/narrow menu placement, grouped Order Ops sidebar, domain lists/details and return filters, old Order operations/Trial bookmarks, release-only navigation, Dashboard View all. `order-management.spec.ts` covers grouped queue navigation and the reported Result release bookmark redirect; Trial fixtures use the canonical nested routes. Automated test execution is deferred because this navigation implementation request did not request test execution. Lint, typechecking, documentation generation and local browser/HTTP checks are the verification checkpoint; do not count these as automated-test passes. See [the owning plan](WORKSPACE-NAVIGATION-RESTRUCTURE-PLAN.md).
+
+## Trial source quantities and order-style intake — October 2, 2026
+
+Desktop/mobile creation selects extracted RNA, adds two biological sources with
+independent sample quantities, displays the calculated total and sends the source
+rows with date-only inclusive bounds. Scope submission sends the frozen sample
+type and source rows without an independent allowance field. Prospect roster
+selects only approved sources and preserves entries through conflict/reload.
+Retain Commercial approval/direct submission, renewed acceptance, result history,
+Company search, modal focus/discard and Order settings coverage. Check WCAG 2.2 AA,
+dark/reduced-motion behavior, containment and shared field alignment.
+
+**18 cases passed**, nine each on desktop and mobile. Source/quantity and date
+screenshots were visually reviewed. Deterministic browser fixtures prove software
+behavior, not live physical/scientific acceptance. See the
+[source workflow receipt](../testing/runs/2026-10-02-trial-source-quantity-workflow-verification.md).
+
+## Trial creation form and Order settings — October 2, 2026
+
+Desktop/mobile Trial fixtures verify the required creation fields, date-only inputs
+and inclusive closing payload, searchable Company choice hit testing, visible
+anchor within the modal body, required Department and resulting leadership action.
+Check Company Escape and Keep editing/discard focus behavior, fixed header/footer
+with a scrollable body, no horizontal overflow, WCAG 2.2 AA scans, dark theme and
+reduced motion. After returning to Company from lower fields, scroll the anchor
+into the modal body and scroll active options only within their portaled list.
+
+Verify that authorized Trial staff can open the Trial configuration section in
+Order settings without accessing other settings or making their API requests.
+The old configuration bookmark redirects to this section; page header keeps
+Create Trial separately. Existing scope approval, Prospect acceptance, conflict,
+result availability and material-term cases remain covered. Browser fixtures are
+software simulation; local authenticated navigation and API health are separate
+runtime checks and do not constitute hosted release or scientific acceptance.
+
+See the [local verification receipt](../testing/runs/2026-10-02-trial-creation-details-and-settings-verification.md).
+
+## Direct Trial approval on submission - October 2, 2026
+
+Desktop/light and mobile/dark fixtures exercise administrator and leadership
+Approve and submit scope, one scope POST without a separate decision request,
+navigation to AwaitingAcceptance, no horizontal overflow, WCAG 2.2 AA scans
+and reduced motion. Retain all prior Trial browser cases for Business Development
+creation/leadership review, scope conflict, renewed acceptance, results and draft
+discard. Browser fixtures establish UI behavior; local PostgreSQL verifies roles
+and actual domain approval/acceptance records separately.
+
+All 16 Trial cases pass across desktop and mobile Chromium, including the four
+new direct-approval cases. See the
+[verification receipt](../testing/runs/2026-10-02-trial-direct-approval-verification.md).
+
+## Direct Trial roles and Company Departments - October 2, 2026
+
+Desktop and mobile Chromium synthetic fixtures cover direct Trial creation from Company search, required Department without an unauthorized write, one Commercial decision, scope/acceptance/sample conflict recovery, result access, and shared draft handling. Include WCAG 2.2 AA scans, dark/reduced motion, Escape within Company choices, meaningful discard dialog body, cancel focus, preserved entries and opener focus restoration. Synthetic browser evidence does not substitute for a production release or live scientific processing.
+
+All 22 distinct cases pass across the affected slices: 12 Trial cases, eight
+existing CRM cases and two new Opportunity creation cases. The latter verify
+required Department focus before any POST, exact saved Company/Department,
+successful detail navigation, aligned search/select controls and serious
+accessibility violations. Review includes desktop/light, mobile/dark and reduced
+motion. See the [verification receipt](../testing/runs/2026-10-02-direct-trial-workflow-verification.md).
+
 ## Consolidated Lab step actions — October 2, 2026
 
 Manual acceptance: open a Lab step with one Draft and confirm exactly one Actions
@@ -46,7 +199,7 @@ Manual synthetic checkpoint: the actual dialogs completed five-tube single-box a
 
 Manual synthetic checkpoint: both server-paged list components show 20 rows on an intermediate page and five rows on page three of a 45-record fixture. Global Customer search returns 22 matches across two pages, resets to page one, survives refresh and keeps search available on a no-match result. Previous/Next boundaries, Clear search and keyboard paging were reviewed. Accession has one card with its lookup in the header; its draft survives tab switches, lookup failure returns focus to the barcode field, and opening remains read-only. At 390 px in dark theme, card content stays within the application body and tables scroll inside their cards. Evidence is in `output/shipment-receipt-evidence/`. This is presentation proof with blocked operational writes; PostgreSQL runtime and automated E2E execution remain unrun.
 
-Additional checkpoint: Kit shipments has 20-record server pages, retained selected-shipment scope, global search, a page-one reset and preserved Actions/dialog safeguards. Accession samples has one card, with the barcode lookup in Received containers awaiting accession's header and a direct Open container action. Check lookup availability on an empty queue, alternate-identifier disclosure, loading/errors, draft retention and dialog focus. Lookup remains read-only; arrival and individual tube accession stay separate. Check narrow/dark header, table and pager containment.
+Additional checkpoint: Fulfilled requests has 20-record server pages, retained selected-shipment scope, global search, a page-one reset and preserved Actions/dialog safeguards. Accession samples has one card, with the barcode lookup in Received containers awaiting accession's header and a direct Open container action. Check lookup availability on an empty queue, alternate-identifier disclosure, loading/errors, draft retention and dialog focus. Lookup remains read-only; arrival and individual tube accession stay separate. Check narrow/dark header, table and pager containment.
 
 History follow-up: verify header search, 20-row server pages, total/page indicators and disabled first/last navigation. Search by shipment, PH-P, Customer, Job and carrier/tracking; changing search resets to page one. No-match and empty history keep the search visible; Clear search restores the list. Switch away during the search debounce and return, refresh and use browser Back/Forward without losing view/search/page. Shipment links and their return action keep history context. Check delayed/error/disconnected responses, keyboard focus and 390 px dark reflow. Synthetic reads only; automated suites and operational writes remain unrequested.
 
@@ -56,7 +209,7 @@ In Receive shipments, verify the compact Receive a shipment | Expected shipments
 
 ## Request fulfillment from the list - October 2, 2026
 
-Check the compact Kit requests | Kit shipments pill above the request header. One queue appears at a time; arrows select the alternate view, the URL retains request filters, and a shipment-specific link selects Kit shipments. Invoke Prepare kits, Record kit shipment and eligible Cancel request through row Actions without navigating to detail. Verify latest-request permission/stock gates, failure retry, unsaved cancellation, no save on dismissal, menu-to-dialog handoff, focus return and continued pointer interaction after closing. Sent-kit rows group Register tubes and Fulfill kit when both apply. Verify 390 px reflow, horizontal table containment and dark theme. Automated E2E suites and operational mutations are not authorized for this task; synthetic browser evidence is recorded in the owning plan.
+Check the compact Kit requests | Fulfilled requests pill above the request header. One queue appears at a time; arrows select the alternate view, the URL retains request filters, and a shipment-specific link selects Fulfilled requests. Invoke Prepare kits, Record kit shipment and eligible Cancel request through row Actions without navigating to detail. Verify latest-request permission/stock gates, failure retry, unsaved cancellation, no save on dismissal, menu-to-dialog handoff, focus return and continued pointer interaction after closing. Sent-kit rows group Register tubes and Fulfill kit when both apply. Verify 390 px reflow, horizontal table containment and dark theme. Automated E2E suites and operational mutations are not authorized for this task; synthetic browser evidence is recorded in the owning plan.
 
 
 ## Adaptive Progress presentation — October 1, 2026
@@ -160,10 +313,19 @@ The Receive step must show Request received, Sent or Received, with explicit
 partial dispatch/receipt and existing-stock qualifiers. Inspect its status
 announcement, narrow reflow and retained caption after preparation becomes current.
 
+Dispatch prerequisite follow-up — October 3, 2026: inspect pending requests at
+desktop/narrow widths and in both themes. Next step must show Wait for Phaeno
+to send kits with no action; View kit order must remain usable beside the
+shipping heading. A sent kit awaiting receipt offers Record kit receipt only
+to an authorized administrator. Partial dispatch permits receipt of sent kits;
+once those are received, wait again for any remaining dispatch. Preparation
+must not open early. Check keyboard opening and focus return for the saved kit
+order. Automated execution and connected physical acceptance remain request-only.
+
 Review-before-acceptance follow-up: verify **Review and Accept Order** before
 acceptance, with no step strip or confirmation next-step card. Scope, pricing
 and permission-appropriate quote actions remain available. Acceptance should
-replace that heading with **Shipping: Phase name (X samples)** and the four
+replace that heading with **Shipping: Phase N · Phase name (X samples)** and the four
 current-phase shipping steps; it must create no automatic kit request. Confirm
 Member/expired/pending quote rules remain in force. Connected acceptance remains
 pending; manual preview must use synthetic decisions without operational writes.
@@ -3586,6 +3748,14 @@ Connected acceptance should create a uniquely named Lab step, confirm version 1 
 
 ## Single-use master mix — September 24, 2026
 
+October 3 mix unit entry: in an unsaved create/revise workflow dialog, verify the
+compact **Units** control below **Mix amount unit**, keyboard opening and
+focus return, quantity-unit replacement and preserved custom units. The menu
+offers µL, mL, L, ng, µg, mg, g and kg without unrelated scientific symbols.
+Check required/error linkage and the 50-character limit. This entry convenience
+does not require a saved recipe or scientific execution; the automated journey
+below remains separate.
+
 September 30 header layout received a connected, read-only desktop review and
 narrow-layout DOM checks at 520 px CSS width: title/start alignment, description
 wrapping, full-width stacked fields and no horizontal overflow. Opening/cancelling
@@ -3692,3 +3862,42 @@ generation and suffered development-server reloads; the source-frozen full run
 passed without those errors. These synthetic browser results do not establish
 hosted operator, provider, physical printer/scanner or scientific acceptance.
 See the [release plan](PORTAL-WORKFLOW-RELEASE-20261002-PLAN.md) for deployment gates.
+
+### Master-mix Lab step assembly and service workflow header — October 3, 2026
+
+Manual local header check verifies New service workflow stays beside the heading and the description wraps. Master-mix acceptance must cover authoring a reagent-only Lab step, required planned amount and lot tracking, independent approval, ordered workflow selection/pinning and derived totals, actual numbered lot withdrawal with exact replay, typed measurement/equipment/confirmation/QC, hold/repeat/correction, completion/deviation and shared tray allocation/discard. No automated E2E suite or fixture writes were requested for this redesign.
+
+### Library Lab step source authoring and fake PSeq configuration — October 3, 2026
+
+The owner explicitly authorizes fake local UI configuration. Create distinct
+specimen-transfer and Master mix fields through Lab steps, pin approved versions
+into a protocol, assemble a PSeq service workflow and create a demo tray
+format. Check the source-only and preparation-only controls, inherited mix unit,
+approval/empty/error behavior, save/reopen, readable summaries and configuration
+preview. Verify typed amounts, source/destination and mix container scans through
+the fictional preview without claiming physical work. The owner subsequently
+requested an end-to-end local UI tray run, including saved simulated source
+transfers, mix use, library outputs and QC. The workflow is approved locally
+without production promotion. Configuration, both reagent lot receipts/QC and
+the complete 100 µL Ready mix have been saved through UI. The tray is Draft and
+empty while confirmation that existing customer-labeled specimens are fake is
+pending. Resume this exact tray/mix after that answer; do not recreate fixtures.
+Automated E2E execution, production promotion and real bench acceptance remain
+separate. The saved mix page also verifies the corrected laboratory cutoff
+format renders with its timezone suffix instead of crashing.
+
+### Shared footer clearance for pinned sidebars — October 3, 2026
+
+Manual local acceptance passes on the signed-in Lab Settings protocol page:
+copyright clears the pinned 256px panel at 1025, 1137 and 1422px CSS widths;
+1700px retains the centered layout without extra offset. Unpinning restores
+normal footer spacing. At 390 and 320px the copyright and help link reflow inside
+the viewport without horizontal overflow; the narrow drawer closes with Escape
+and restores edge-tab focus. Original pin preference and default viewport were
+restored. Saved screenshot evidence shows the corrected footer with the sidebar
+and page context. No automated E2E run was requested for this CSS-only fix.
+## October 4, 2026 — compact tube label and print outcome
+
+Verify the bounded preview at desktop and 320 px reflow, fixed modal header/footer, keyboard outcome selection and focus return. A cancelled or failed print must expose only failure details and permit recording without a scan; successful printing must reject missing or mismatched scans. Verify a single 50 × 25 mm print page containing the complete barcode and long accession/location metadata, with portal chrome and form controls hidden. The existing print regression source is strengthened for metadata containment and page count. Automated execution is pending; real printer/stock/scanner qualification remains separate.
+
+Connected local acceptance passes for desktop/320 px preview, fixed footer, Escape focus return, failed-outcome validation and Failed history without a scan or activation. The first exported PDF failed with two blank Letter pages around its label page. After removing named-page transitions, the owner's second export has one 50.12 × 25.06 mm page with contained barcode and metadata. The focused component tests, typecheck, scoped lint and docs checks pass; these manual/PDF checks do not claim an automated E2E run or physical printer/scanner qualification.

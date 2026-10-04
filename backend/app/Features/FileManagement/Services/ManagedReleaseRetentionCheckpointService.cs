@@ -39,7 +39,7 @@ public sealed class ManagedReleaseRetentionCheckpointService(PSeqOperationsDbCon
                 && file.OrganizationId == package.OrganizationId && file.WorkflowId == package.WorkflowId && file.Purpose == purpose
                 && (type == ReleasedDeliverablePackageType.TrialResult || (type == ReleasedDeliverablePackageType.LabResult ? file.ParentRecordId == package.SampleId : file.ParentRecordId == packageId))
                 && file.ReleaseStatus == FileReleaseStatus.Released && file.ScanStatus == OperationalFileScanStatus.Clean, token) == package.FileIds.Count;
-        var route = type == ReleasedDeliverablePackageType.TrialResult ? $"/trial-projects/{package.WorkflowId:D}" : type == ReleasedDeliverablePackageType.LabResult ? $"/lab-services/{package.WorkflowId:D}" : $"/data-assembly/{package.WorkflowId:D}";
+        var route = type == ReleasedDeliverablePackageType.TrialResult ? $"/order-operations/lab-services/trials/{package.WorkflowId:D}" : type == ReleasedDeliverablePackageType.LabResult ? $"/lab-services/{package.WorkflowId:D}" : $"/data-assembly/{package.WorkflowId:D}";
         if (!snapshot.WarningCheckpointAtUtc.HasValue && now >= snapshot.WarningAtUtc)
         {
             if (!available) snapshot.RecordWarningCheckpoint(now, "SkippedUnavailable", null);

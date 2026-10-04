@@ -42,6 +42,7 @@ describe('OrderConfigurationPage', () => {
     expect(screen.queryByRole('button', { name: /^Sample shipping/ })).toBeNull()
     expect(screen.getByRole('button', { name: /^PSeq kits/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: /^Assembly/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /^Trial configuration/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: /^Legacy links/ })).toBeTruthy()
     expect(screen.queryByRole('button', { name: /^File retention/ })).toBeNull()
 
@@ -49,6 +50,22 @@ describe('OrderConfigurationPage', () => {
     expect(await screen.findByRole('button', {
       name: 'Open Order Settings navigation; current selection: PSeq kits',
     })).toBeTruthy()
+  })
+
+  it('preserves Trial staff access without exposing other Order settings', async () => {
+    const context = createPlatformContext()
+    context.session!.isPlatformAdmin = false
+    context.session!.capabilities.canManageOrderConfiguration = false
+    context.session!.capabilities.canManageTrialProjects = true
+    const root = createRootRoute()
+    const route = createRoute({ getParentRoute: () => root, path: '/order-configuration', component: OrderConfigurationPage })
+    const router = createRouter({ routeTree: root.addChildren([route]), history: createMemoryHistory({ initialEntries: ['/order-configuration?configurationSection=catalog'] }) })
+    render(<QueryClientProvider client={new QueryClient()}><PhaenoSessionContext.Provider value={context}><RouterProvider router={router} /></PhaenoSessionContext.Provider></QueryClientProvider>)
+    const navigation = await screen.findByRole('button', { name: 'Open Order Settings navigation; current selection: Trial configuration' })
+    fireEvent.click(navigation)
+    expect(screen.getByRole('button', { name: /^Trial configuration/ }).getAttribute('aria-current')).toBe('page')
+    expect(screen.queryByRole('button', { name: /^Service catalog/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Quote & workflow/ })).toBeNull()
   })
 })
 

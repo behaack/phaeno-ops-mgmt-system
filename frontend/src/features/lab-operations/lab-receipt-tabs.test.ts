@@ -9,12 +9,12 @@ describe('shipping and receiving tab links', () => {
     expect(parseLabReceiptTab(['kit-requests'])).toBeUndefined()
     expect(parseLabReceiptTab('unknown')).toBeUndefined()
   })
-  it('defaults to kit requests while preserving explicit receipt and accession links', () => {
-    expect(resolveLabReceiptTab(undefined)).toBe('kit-requests')
+  it('defaults to receiving and preserves explicit accession links after kit requests move out', () => {
+    expect(resolveLabReceiptTab(undefined)).toBe('receiving')
     expect(resolveLabReceiptTab('receiving')).toBe('receiving')
     expect(resolveLabReceiptTab('accession')).toBe('accession')
-    expect(resolveLabReceiptTab('standard-kits')).toBe('kit-requests')
-    expect(resolveLabReceiptTab('kit-requests')).toBe('kit-requests')
-    expect(resolveLabReceiptTab('return-kits')).toBe('kit-requests')
+    expect(resolveLabReceiptTab('standard-kits')).toBe('receiving')
+    expect(resolveLabReceiptTab('kit-requests')).toBe('receiving')
+    expect(resolveLabReceiptTab('return-kits')).toBe('receiving')
   })
 })

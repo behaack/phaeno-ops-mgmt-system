@@ -62,7 +62,7 @@ const cases = [
 ]
 
 async function headerAction(name: string) {
-  await waitFor(() => expect(screen.queryByRole('button', { name }) ?? screen.queryByRole('button', { name: 'Actions' })).toBeTruthy())
+  await waitFor(() => expect(screen.queryByRole('button', { name }) ?? screen.queryAllByRole('button', { name: 'Actions' })[0]).toBeTruthy())
   const direct = screen.queryByRole('button', { name })
   if (direct) return direct
   const quoteActions = name === 'Accept quote' ? screen.getByRole('group', { name: 'Quote actions' }) : null

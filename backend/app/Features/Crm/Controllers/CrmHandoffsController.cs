@@ -74,6 +74,8 @@ public sealed class CrmHandoffsController(PSeqOperationsDbContext dbContext, IEx
     public async Task<ActionResult<CrmHandoffDto>> CreateHandoff(Guid companyId, [FromBody] CreateCrmHandoffRequest request, CancellationToken cancellationToken)
     {
         var actor = await RequireActor(cancellationToken);
+        if (request.Type == CrmHandoffType.TrialProject)
+            throw new CrmException("crm_trial_direct_creation_required", "Business Development creates Trials directly in Trial projects; no Company request or Opportunity is required.");
         var company = await dbContext.CrmCompanies
             .Include(value => value.AccessOrganization)
             .FirstOrDefaultAsync(value => value.Id == companyId && value.IsActive, cancellationToken)

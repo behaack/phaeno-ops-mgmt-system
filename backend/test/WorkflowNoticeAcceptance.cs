@@ -21,7 +21,7 @@ internal static class WorkflowNoticeAcceptance
             {
                 var link = Assert.Single(body.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries), value => Uri.TryCreate(value, UriKind.Absolute, out var uri) && uri.Scheme == "https");
                 var uri = new Uri(link);
-                Assert.Equal((notice.EventType == "pseq-result-released" ? "/lab-services/" : "/trial-projects/") + workflowId, uri.AbsolutePath);
+                Assert.Equal((notice.EventType == "pseq-result-released" ? "/lab-services/" : "/order-operations/lab-services/trials/") + workflowId, uri.AbsolutePath);
                 Assert.Empty(uri.Query); Assert.Empty(uri.UserInfo);
             }
             var sender = new Sender();

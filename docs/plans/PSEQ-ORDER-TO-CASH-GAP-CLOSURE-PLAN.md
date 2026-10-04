@@ -1,5 +1,13 @@
 # PSeq Order-to-Cash Gap-Closure Plan
 
+## Finance sidebar — October 3, 2026
+
+The Product Owner requested moving Invoices and aging, Receipts, Customer billing, Import receipts and Reconciliation from the Finance tab bar into the shared far-left workspace sidebar. Finance lists and records now retain one capability-filtered sidebar, including the existing pin preference, narrow-screen drawer, keyboard controls and active section indication. Existing `/finance` routes, `financeSection`/Customer search state, record return paths, authorized queries and financial actions remain unchanged. This supersedes the September 19 tab-bar presentation. Update Phaeno help and focused navigation coverage; automated test execution remains request-only. No backend, persistence, migration, Git or deployment scope.
+
+## Subject workspace navigation — October 3, 2026
+
+The approved [navigation restructure](WORKSPACE-NAVIGATION-RESTRUCTURE-PLAN.md) groups Lab Order intake and Trials under LAB SERVICES and commercial Kit/Data assembly work under PARTNER SERVICES within Order Ops, governed result release to Lab ops, cross-workflow attention to the Dashboard, and Finance/Legacy integrations to More. Canonical list and record routes follow their subject domains; existing bookmarks redirect. Role isolation, scientific review, approval, billing, records and backend contracts remain intact. No persistence change or migration.
+
 ## Phase invoice attribution — planning, September 30, 2026
 
 For the future [sequential phase Job workflow](MULTI-PHASE-LAB-JOBS-PLAN.md),

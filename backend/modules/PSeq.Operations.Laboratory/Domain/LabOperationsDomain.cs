@@ -1035,10 +1035,10 @@ public sealed class LabOperationalBatch : LabAuditedEntity
 
     private LabOperationalBatch() { }
 
-    public LabOperationalBatch(string batchNumber, string name, string? notes)
+    public LabOperationalBatch(string batchNumber, string? name, string? notes)
     {
         BatchNumber = Required(batchNumber, nameof(batchNumber), 100);
-        Name = Required(name, nameof(name), 255);
+        Name = string.IsNullOrWhiteSpace(name) ? BatchNumber : Required(name, nameof(name), 255);
         BatchType = ExternalSequencingType;
         Notes = Optional(notes, 4000);
     }
@@ -1056,6 +1056,14 @@ public sealed class LabOperationalBatch : LabAuditedEntity
         Status = LabBatchStatus.Complete;
         CompletedAtUtc = utcNow;
     }
+
+    public void ReturnEmptyToDraft(int memberCount, bool hasSendout)
+    {
+        if (Status != LabBatchStatus.InProgress || CompletedAtUtc.HasValue || memberCount != 0 || hasSendout)
+            throw new InvalidOperationException("Only an empty active batch without a sendout can return to draft.");
+        Status = LabBatchStatus.Draft;
+        StartedAtUtc = null;
+    }
 }
 
 public sealed class LabBatchMember
@@ -1067,6 +1075,22 @@ public sealed class LabBatchMember
     public DateTime AddedAtUtc { get; private set; }
     public Guid? SequencingContainerId { get; private set; }
     public Guid? MaterialTransferId { get; private set; }
+    public Guid? SequencingCatalogItemId { get; private set; }
+    public long? SequencingCatalogVersion { get; private set; }
+    public string? SequencingCatalogName { get; private set; }
+    public decimal? MinimumSequencingVolumeUl { get; private set; }
+
+    public void CaptureSequencingRequirement(Guid catalogItemId, long version, string name, decimal minimumUl)
+    {
+        if (SequencingContainerId.HasValue || SequencingCatalogItemId.HasValue)
+            throw new InvalidOperationException("The Catalog requirement for this physical pair is already fixed.");
+        if (catalogItemId == Guid.Empty || version < 1 || string.IsNullOrWhiteSpace(name) || minimumUl <= 0)
+            throw new ArgumentException("A configured Catalog service and positive sequencing volume are required.");
+        SequencingCatalogItemId = catalogItemId;
+        SequencingCatalogVersion = version;
+        SequencingCatalogName = name;
+        MinimumSequencingVolumeUl = minimumUl;
+    }
 
     public void AssignSequencingTube(Guid containerId)
     {

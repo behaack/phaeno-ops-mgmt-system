@@ -656,7 +656,7 @@ export type ManualJournalEntryRow = {
 export type OrderConfiguration = {
   labServiceOfferings?: LabServiceOffering[];
   system: { id: string; quoteValidityDays: number; sampleSubmissionInstructions: string; shippingConfigurationJson: string; sampleConfigurationJson: string; resultDestinationConfigurationJson: string; version: number }
-  catalogItems: Array<{ id: string; externalItemId: string; name: string; description: string; salesUnit: string; basePrice: number; currency: string; isActive: boolean; isPSeqLabService: boolean; lastSyncedAt: string; version: number; maximumCustomerSamples?: number | null }>
+  catalogItems: Array<{ id: string; externalItemId: string; name: string; description: string; salesUnit: string; basePrice: number; currency: string; isActive: boolean; isPSeqLabService: boolean; lastSyncedAt: string; version: number; maximumCustomerSamples?: number | null; minimumSequencingVolumeUlText?: string | null }>
   analyses: AnalysisDefinition[]
   reagentOfferings: ReagentOffering[]
   assemblyProfiles: AssemblyProfile[]
@@ -1467,6 +1467,7 @@ export async function saveCatalogItem(
     version?: number;
     serviceFamily?: 'Other' | 'PSeqLabService';
     maximumCustomerSamples?: number | null;
+    minimumSequencingVolumeUlText?: string | null;
   },
 ) {
   return id

@@ -94,16 +94,16 @@ export function ServiceWorkflowList({
     <>
       <Card className="gap-0 py-0">
         <CardHeader className="border-b bg-muted/50 p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
+          <div className="flex min-w-0 items-start justify-between gap-3">
+            <div className="min-w-0 flex-1 wrap-anywhere">
               <CardTitle>Controlled service workflows</CardTitle>
               <CardDescription>
                 One canonical workflow per marketed service stitches approved protocols into an ordered production process.
               </CardDescription>
             </div>
             {canManage ? (
-              <Button type="button" onClick={() => setCreateOpen(true)}>
-                <Plus data-icon="inline-start" /> New service workflow
+              <Button type="button" className="h-auto min-h-9 max-w-[55%] shrink-0 whitespace-normal" onClick={() => setCreateOpen(true)}>
+                <Plus data-icon="inline-start" /><span className="min-w-0 wrap-anywhere">New service workflow</span>
               </Button>
             ) : null}
           </div>

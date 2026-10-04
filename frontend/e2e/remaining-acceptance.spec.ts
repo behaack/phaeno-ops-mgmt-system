@@ -45,7 +45,7 @@ for (const theme of ['light', 'dark'] as const) for (const width of [320, 1440])
 }
 
 test('unavailable authentication prevents protected records from rendering (simulated)', async ({ page }) => {
-  for (const path of ['/', '/lab-services/22222222-2222-4222-8222-222222222222', '/trial-projects/33333333-3333-4333-8333-333333333333']) {
+  for (const path of ['/', '/lab-services/22222222-2222-4222-8222-222222222222', '/order-operations/lab-services/trials/33333333-3333-4333-8333-333333333333']) {
     const html = await readFile(new URL('./fixtures/signed-out-access.html', import.meta.url), 'utf8')
     await page.route(`**${path}`, route => route.fulfill({ contentType: 'text/html', body: html }))
     await page.goto(path)

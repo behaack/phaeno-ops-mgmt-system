@@ -304,6 +304,13 @@ public class PersistenceTests
             .Where(foreignKey => foreignKey.PrincipalEntityType.ClrType.Assembly != laboratoryAssembly);
         Assert.All(crossSchemaForeignKeys, foreignKey =>
         {
+            if (foreignKey.DeclaringEntityType.ClrType == typeof(LabBatchMember))
+            {
+                Assert.Equal(typeof(QboCatalogItem), foreignKey.PrincipalEntityType.ClrType);
+                Assert.Equal([nameof(LabBatchMember.SequencingCatalogItemId)], foreignKey.Properties.Select(property => property.Name));
+                Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
+                return;
+            }
             if (foreignKey.DeclaringEntityType.ClrType == typeof(LabJobDeadlineChange))
             {
                 Assert.Equal(typeof(LabJobPhase), foreignKey.PrincipalEntityType.ClrType);

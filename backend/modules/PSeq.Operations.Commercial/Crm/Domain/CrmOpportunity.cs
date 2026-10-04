@@ -10,6 +10,8 @@ public sealed class CrmOpportunity : IAudit, IConcurrency
     public string Name { get; private set; } = null!;
     public Guid CompanyId { get; private set; }
     public CrmCompany Company { get; private set; } = null!;
+    public Guid? DepartmentId { get; private set; }
+    public OrganizationDepartment? Department { get; private set; }
     public Guid PipelineId { get; private set; }
     public CrmPipeline Pipeline { get; private set; } = null!;
     public Guid StageId { get; private set; }
@@ -142,6 +144,7 @@ public sealed class CrmOpportunity : IAudit, IConcurrency
     }
 
     public void ReassignCompany(Guid companyId) => CompanyId = companyId;
+    public void AssignDepartment(Guid? departmentId) => DepartmentId = departmentId;
     public void Deactivate() => IsActive = false;
     public void Reactivate() => IsActive = true;
 

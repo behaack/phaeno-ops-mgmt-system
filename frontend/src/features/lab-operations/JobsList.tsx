@@ -5,14 +5,15 @@ import { getLabJobs } from '#/api/lab-jobs'
 import { getLabOperationsError } from '#/api/lab-operations'
 import { Alert, AlertDescription } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader } from '#/components/ui/card'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import { PillToggle } from '#/components/ui/pill-toggle'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { useEffect, useState } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { Collapsible } from 'radix-ui'
-import { activeDeadlineLabels, clearJobFilters, deadlineDate, deadlineLabels, jobDateBoundary, jobFilterSummary, jobStatusLabels, parseJobDate, parseJobListSearch, type DeadlineStatus, type JobListSearch, type JobView } from './job-deadlines'
+import { activeDeadlineLabels, clearJobFilters, deadlineDate, deadlineLabels, jobDateBoundary, jobFilterSummary, jobStatusLabel, jobStatusLabels, parseJobDate, parseJobListSearch, type DeadlineStatus, type JobListSearch, type JobView } from './job-deadlines'
 
 export function DeadlineBadge({ status }: { status: DeadlineStatus }) {
   const urgent = status === 'Overdue' || status === 'AtRisk'
@@ -50,8 +51,8 @@ export function JobsList({ enabled }: { enabled: boolean }) {
   const search = useRouterState({ select: s => s.location.search })
   const filters = parseJobListSearch(search)
   const view: JobView = filters.jobView ?? 'Active'
-  const grouping = filters.jobGrouping ?? 'Phases'
   const closed = view === 'Closed'
+  const grouping = (closed ? filters.jobClosedGrouping : filters.jobGrouping) ?? 'Phases'
   const searchValue = (closed ? filters.jobClosedSearch : filters.jobSearch) ?? ''
   const from = closed ? filters.jobClosedFrom : filters.jobFrom
   const to = closed ? filters.jobClosedTo : filters.jobTo
@@ -75,7 +76,8 @@ export function JobsList({ enabled }: { enabled: boolean }) {
   const data = invalidRange || jobs.error ? undefined : jobs.data
   const content = <Card className="gap-0 py-0">
     <CardHeader className="border-b bg-muted/50 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3"><CardTitle>{closed ? 'Closed' : 'Active'} {grouping === 'Phases' ? 'phases' : 'jobs'}</CardTitle><div className="space-y-1"><Label htmlFor="job-grouping">Show</Label><select id="job-grouping" className="h-9 w-full rounded-md border bg-background px-3 text-sm" value={grouping} onChange={e => change({ jobGrouping: e.target.value as 'Phases' | 'Jobs', jobPage: undefined, jobClosedPage: undefined })}><option value="Phases">Each phase</option><option value="Jobs">Whole jobs</option></select></div></div>
+      <PillToggle label="Jobs grouping" value={grouping} options={[{ value: 'Phases', label: 'Phases' }, { value: 'Jobs', label: 'Jobs' }]}
+        onValueChange={value => change(closed ? { jobClosedGrouping: value as 'Phases' | 'Jobs' } : { jobGrouping: value as 'Phases' | 'Jobs' })} />
       <CardDescription>{closed ? 'Find delivered and cancelled jobs.' : 'Track sent specimens through delivery of every sample’s results.'}</CardDescription>
       <Collapsible.Root className="group/filters">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -114,19 +116,27 @@ export function JobsList({ enabled }: { enabled: boolean }) {
     <CardContent className="space-y-3 p-4" aria-busy={jobs.isFetching}>
       {jobs.isLoading ? <p role="status">Loading jobs…</p> : null}
       {jobs.error ? <Alert variant="destructive"><AlertDescription>{getLabOperationsError(jobs.error, 'Jobs could not be loaded. Try Refresh.')}</AlertDescription></Alert> : null}
-      {data?.items.map(({ job, deadlineStatus, reason, jobStatus, forecast, phaseId, phaseName, lifecycle, stageCounts, heldSamples, failedSamples, containerCount, sentContainers, arrivedContainers, expectedTubes, receivedTubes, accessionedTubes }) => <article key={phaseId ?? job.id} className="space-y-3 rounded-lg border bg-muted/30 p-4">
-        <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><Link className="font-medium text-primary underline-offset-4 hover:underline" to="/lab-operations/$workOrderId" params={{ workOrderId: job.id }} search={previous => ({ ...previous, section: 'jobs', tab: 'specimens' })}>{job.name}{phaseName ? ` · ${phaseName}` : ''}</Link><p className="mt-1 text-sm text-muted-foreground wrap-anywhere">{job.organizationName}{job.customerReference ? ` · ${job.customerReference}` : ''}</p></div>{!closed ? <DeadlineBadge status={deadlineStatus} /> : null}</div>
+      {data?.items.map(({ job, deadlineStatus, reason, jobStatus, forecast, phaseId, phaseName, stageCounts, heldSamples, failedSamples, containerCount, sentContainers, arrivedContainers, expectedTubes, receivedTubes, accessionedTubes }) => {
+        const statusLabel = jobStatusLabel(jobStatus)
+        const stages = Object.entries(stageCounts ?? {}).filter(([, count]) => count > 0)
+        const uniformStage = stages.length === 1 && stages[0][1] === job.sampleCount && jobStatusLabel(stages[0][0]) === statusLabel
+        const stageSummary = stages.map(([stage, count]) => {
+          const label = jobStatusLabel(stage)
+          return `${count} ${label.charAt(0).toLowerCase()}${label.slice(1)}`
+        }).join(' · ')
+        return <article key={phaseId ?? job.id} className="space-y-3 rounded-lg border bg-muted/30 p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><Link className="font-medium text-primary underline-offset-4 hover:underline" to="/lab-operations/$workOrderId" params={{ workOrderId: job.id }} search={previous => ({ ...previous, section: 'jobs', tab: 'specimens' })}>{job.name}{phaseName ? ` · ${phaseName}` : ''}</Link><p className="mt-1 text-sm text-muted-foreground wrap-anywhere">{job.organizationName}{job.customerReference ? ` · ${job.customerReference}` : ''}</p></div>{!closed && deadlineLabels[deadlineStatus] !== statusLabel ? <DeadlineBadge status={deadlineStatus} /> : null}</div>
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
-          <div><dt className="text-muted-foreground">Current status</dt><dd className="mt-1 font-medium">{jobStatus === 'Delivered' || jobStatus === 'Cancelled' || jobStatus === 'Mixed' ? jobStatus : jobStatusLabels[jobStatus]}{lifecycle ? ` · ${lifecycle.replace(/([a-z])([A-Z])/g, '$1 $2')}` : ''}</dd></div>
-          <div className="min-w-0"><dt className="text-muted-foreground">Recorded freezer {job.freezerBoxBarcodes.length === 1 ? 'box' : 'boxes'}</dt><dd className="mt-1 font-medium wrap-anywhere">{job.freezerBoxBarcodes.length ? job.freezerBoxBarcodes.join(', ') : 'Not recorded'}</dd></div>
+          <div><dt className="font-semibold">Current status</dt><dd className="mt-1">{statusLabel}</dd></div>
+          <div className="min-w-0"><dt className="font-semibold">Recorded freezer {job.freezerBoxBarcodes.length === 1 ? 'box' : 'boxes'}</dt><dd className="mt-1 wrap-anywhere">{job.freezerBoxBarcodes.length ? job.freezerBoxBarcodes.join(', ') : 'Not recorded'}</dd></div>
         </dl>
-        {Object.keys(stageCounts ?? {}).length ? <p className="text-sm" aria-label="Sample progress distribution">{Object.entries(stageCounts).map(([stage, count]) => `${count} ${stage === 'Delivered' ? 'delivered' : jobStatusLabels[stage as keyof typeof jobStatusLabels] ?? stage}`).join(' · ')}</p> : null}
-        {heldSamples || failedSamples ? <p className="text-sm">{heldSamples} held · {failedSamples} need review (overlapping stage counts)</p> : null}
-        {phaseId ? <p className="text-sm text-muted-foreground">Containers: {sentContainers} sent · {arrivedContainers} arrived / {containerCount}. Tubes: {receivedTubes} received · {accessionedTubes} accessioned / {expectedTubes} expected.</p> : null}
-        <dl className="grid gap-3 text-sm sm:grid-cols-3"><div><dt className="text-muted-foreground">Delivery due {job.dueDateAdjusted ? '(adjusted)' : '(standard TAT)'}</dt><dd>{deadlineDate(job.dueAtUtc)}</dd></div><div><dt className="text-muted-foreground">{closed ? 'Order date' : 'Calculated expected completion'}</dt><dd>{closed ? deadlineDate(job.orderCreatedAtUtc) : <ForecastSummary forecast={forecast} />}</dd></div><div><dt className="text-muted-foreground">Portal delivery</dt><dd>{job.deliveredSampleCount} of {job.sampleCount} samples{job.isComplete ? ` · ${deadlineDate(job.completedAtUtc)}` : ''}</dd></div></dl>
+        <p className="text-sm" aria-label="Sample progress distribution"><span className="font-semibold">Samples:</span> {stages.length && !uniformStage ? stageSummary : job.sampleCount}</p>
+        {heldSamples || failedSamples ? <p className="text-sm">{heldSamples ? <><span className="font-semibold">Held:</span> {heldSamples}</> : null}{heldSamples && failedSamples ? ' · ' : null}{failedSamples ? <><span className="font-semibold">Need review:</span> {failedSamples}</> : null} <span className="text-muted-foreground">(overlapping stage counts)</span></p> : null}
+        {phaseId ? <p className="text-sm"><span className="font-semibold">Containers:</span> {sentContainers} sent · {arrivedContainers} arrived / {containerCount}. <span className="font-semibold">Tubes:</span> {receivedTubes} received · {accessionedTubes} accessioned / {expectedTubes} expected.</p> : null}
+        <dl className="grid gap-3 text-sm sm:grid-cols-3"><div><dt className="font-semibold">Delivery due {job.dueDateAdjusted ? '(adjusted)' : '(standard TAT)'}</dt><dd className="mt-1">{deadlineDate(job.dueAtUtc)}</dd></div><div><dt className="font-semibold">{closed ? 'Order date' : 'Calculated expected completion'}</dt><dd className="mt-1">{closed ? deadlineDate(job.orderCreatedAtUtc) : <ForecastSummary forecast={forecast} />}</dd></div><div><dt className="font-semibold">Portal delivery</dt><dd className="mt-1">{job.deliveredSampleCount} of {job.sampleCount} samples{job.isComplete ? ` · ${deadlineDate(job.completedAtUtc)}` : ''}</dd></div></dl>
         <p className="text-sm">{closed && jobStatus === 'Cancelled' ? 'This job was cancelled.' : reason}</p>
-        {job.nextSampleDueAtUtc && !closed ? <p className="text-xs text-muted-foreground">Next outstanding sample target: {deadlineDate(job.nextSampleDueAtUtc)}</p> : null}
-      </article>)}
+        {job.nextSampleDueAtUtc && !closed ? <p className="text-xs"><span className="font-semibold">Next outstanding sample target:</span> {deadlineDate(job.nextSampleDueAtUtc)}</p> : null}
+      </article>})}
       {data && data.items.length === 0 ? <p className="py-5 text-center text-sm text-muted-foreground">No records match these filters.</p> : null}
       {data ? <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3"><p className="text-sm" role="status">{data.totalCount} {grouping === 'Phases' ? 'phases' : 'jobs'} · Page {data.page} of {Math.max(1, Math.ceil(data.totalCount / data.pageSize))}</p><div className="flex gap-2"><Button variant="outline" disabled={data.page <= 1 || jobs.isFetching} onClick={() => change(closed ? { jobClosedPage: data.page - 1 } : { jobPage: data.page - 1 })}>Previous</Button><Button variant="outline" disabled={data.page * data.pageSize >= data.totalCount || jobs.isFetching} onClick={() => change(closed ? { jobClosedPage: data.page + 1 } : { jobPage: data.page + 1 })}>Next</Button></div></div> : null}
     </CardContent>

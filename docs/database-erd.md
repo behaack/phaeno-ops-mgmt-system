@@ -8,6 +8,8 @@ The additive [step performance JSON contract](plans/LAB-STEP-PERFORMANCE-CONTRAC
 
 The [material tracking contract](plans/LAB-OPERATIONS-CONTRACT.md#material-transfers-and-expiration--september-23-2026) describes per-tube declarations, quantity history and immutable transfer evidence. `sample_shipping_stock_kits.product_expiry_snapshot_json` and `sample_return_kits.product_expiry_snapshot_json` retain arrays of `{supplierProductId, supplierName, productNumber, canExpire, expirationDate}` objects; dates are date-only strings or null. A null historical snapshot means unknown, and later product edits do not rewrite it.
 
+The [master-mix step assembly contract](plans/MASTER-MIX-PREPARATION-PLAN.md#assemble-approved-lab-steps--october-3-2026) describes pinned LabStepVersionId snapshots, batch process fields and exact planned reagent amounts in steps_json, the derived ingredients_json recipe, typed preparation evidence_json, and step_sequence/field_key links on source withdrawals. Step input_json supports exact replay; per-entry evidence_json preserves lot and equipment snapshots, QC, repeats and corrections. JSON identities are application-validated references rather than database foreign keys.
+
 ## Legend and totals
 
 - `PK` = primary key; `FK` = database-enforced foreign key; `UK` = a column participating in a unique key/index. Filtered uniqueness remains subject to its model predicate.
@@ -17,10 +19,10 @@ The [material tracking contract](plans/LAB-OPERATIONS-CONTRACT.md#material-trans
 | Schema | Entities | Fields | Foreign keys |
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
-| `commercial_ops` | 147 | 2401 | 389 |
-| `lab_ops` | 79 | 962 | 157 |
+| `commercial_ops` | 147 | 2403 | 390 |
+| `lab_ops` | 79 | 971 | 158 |
 | `website` | 5 | 51 | 4 |
-| **Total** | **232** | **3416** | **550** |
+| **Total** | **232** | **3427** | **552** |
 
 ## `public` schema
 
@@ -421,6 +423,7 @@ erDiagram
         timestamp_with_time_zone created_at "not null"
         uuid created_by_user_id "nullable"
         character_varying_3 currency "not null"
+        uuid department_id FK "nullable"
         character_varying_2000 description "nullable"
         date expected_close_date "nullable"
         boolean is_active "not null"
@@ -528,6 +531,7 @@ erDiagram
     users ||--o{ crm_leads : "owner_user_id"
     users ||--o{ crm_merge_records : "merged_by_user_id"
     crm_companies ||--o{ crm_opportunities : "company_id"
+    organization_departments o|--o{ crm_opportunities : "department_id"
     users ||--o{ crm_opportunities : "owner_user_id"
     crm_pipelines ||--o{ crm_opportunities : "pipeline_id"
     crm_pipeline_stages ||--o{ crm_opportunities : "stage_id"
@@ -2633,6 +2637,7 @@ erDiagram
         boolean is_active "not null"
         timestamp_with_time_zone last_synced_at "not null"
         integer maximum_customer_samples "nullable"
+        numeric minimum_sequencing_volume_ul "nullable"
         character_varying_255 name "not null"
         character_varying_100 sales_unit "not null"
         character_varying_100 service_family "not null"
@@ -3039,7 +3044,7 @@ erDiagram
         uuid id PK "not null"
         uuid actor_user_id FK "not null"
         boolean as_delegate "not null"
-        uuid authority_id FK "not null"
+        uuid authority_id FK "nullable"
         timestamp_with_time_zone decided_at_utc "not null"
         character_varying_50 domain UK "not null"
         character_varying_50 kind "not null"
@@ -3084,7 +3089,7 @@ erDiagram
         uuid complete_release_id FK "nullable"
         timestamp_with_time_zone created_at "not null"
         uuid created_by_user_id FK "nullable"
-        uuid crm_handoff_id FK,UK "not null"
+        uuid crm_handoff_id FK,UK "nullable"
         integer current_scope_revision "not null"
         uuid department_id FK "nullable"
         timestamp_with_time_zone draft_saved_at_utc "nullable"
@@ -3097,7 +3102,7 @@ erDiagram
         timestamp_with_time_zone material_disposed_at_utc "nullable"
         uuid material_disposed_by_user_id FK "nullable"
         character_varying_4000 number UK "not null"
-        uuid opportunity_id FK "not null"
+        uuid opportunity_id FK "nullable"
         uuid organization_id FK "nullable"
         timestamp_with_time_zone residual_retain_until_utc "nullable"
         uuid sales_owner_user_id FK "not null"
@@ -3197,7 +3202,7 @@ erDiagram
     users o|--o{ trial_approval_authorities : "updated_by_user_id"
     users ||--o{ trial_approval_authorities : "user_id"
     users ||--o{ trial_decisions : "actor_user_id"
-    trial_approval_authorities ||--o{ trial_decisions : "authority_id"
+    trial_approval_authorities o|--o{ trial_decisions : "authority_id"
     trial_scopes ||--o{ trial_decisions : "trial_scope_id"
     users o|--o{ trial_deliverable_definitions : "created_by_user_id"
     users o|--o{ trial_deliverable_definitions : "updated_by_user_id"
@@ -3207,12 +3212,12 @@ erDiagram
     crm_companies ||--o{ trial_projects : "company_id"
     trial_result_releases o|--o{ trial_projects : "complete_release_id"
     users o|--o{ trial_projects : "created_by_user_id"
-    crm_handoffs ||--o{ trial_projects : "crm_handoff_id"
+    crm_handoffs o|--o{ trial_projects : "crm_handoff_id"
     organization_departments o|--o{ trial_projects : "department_id"
     users o|--o{ trial_projects : "draft_saved_by_user_id"
     users o|--o{ trial_projects : "follow_up_owner_user_id"
     users o|--o{ trial_projects : "material_disposed_by_user_id"
-    crm_opportunities ||--o{ trial_projects : "opportunity_id"
+    crm_opportunities o|--o{ trial_projects : "opportunity_id"
     organizations o|--o{ trial_projects : "organization_id"
     users ||--o{ trial_projects : "sales_owner_user_id"
     users o|--o{ trial_projects : "updated_by_user_id"
@@ -3847,6 +3852,7 @@ erDiagram
     }
     lab_master_mix_ingredients {
         uuid id PK "not null"
+        character_varying_100 field_key "not null"
         boolean material_exhausted "not null"
         uuid preparation_id FK "not null"
         numeric_28_12 quantity "not null"
@@ -3854,6 +3860,7 @@ erDiagram
         timestamp_with_time_zone recorded_at_utc "not null"
         uuid recorded_by_user_id "not null"
         uuid source_material_lot_id FK "not null"
+        integer step_sequence "not null"
         timestamp_with_time_zone voided_at_utc "nullable"
         uuid voided_by_user_id "nullable"
     }
@@ -3864,6 +3871,7 @@ erDiagram
         character_varying_2000 discard_reason "nullable"
         timestamp_with_time_zone discarded_at_utc "nullable"
         uuid discarded_by_user_id "nullable"
+        jsonb evidence_json "not null"
         integer ingredient_use_count "not null"
         jsonb ingredients_json "not null"
         numeric_28_12 measured_discard_quantity "nullable"
@@ -3891,11 +3899,13 @@ erDiagram
     }
     lab_master_mix_steps {
         uuid id PK "not null"
+        jsonb evidence_json "not null"
+        jsonb input_json "not null"
         character_varying_4000 notes "not null"
         timestamp_with_time_zone performed_at_utc "not null"
         uuid performed_by_user_id "not null"
-        uuid preparation_id FK,UK "not null"
-        integer sequence UK "not null"
+        uuid preparation_id FK "not null"
+        integer sequence "not null"
     }
     lab_master_mix_tray_uses {
         uuid id PK "not null"
@@ -4113,6 +4123,10 @@ erDiagram
         uuid lab_operational_batch_id FK,UK "not null"
         uuid lab_work_order_id FK "not null"
         uuid material_transfer_id FK "nullable"
+        numeric minimum_sequencing_volume_ul "nullable"
+        uuid sequencing_catalog_item_id FK "nullable"
+        character_varying_255 sequencing_catalog_name "nullable"
+        bigint sequencing_catalog_version "nullable"
         uuid sequencing_container_id FK "nullable"
     }
     lab_libraries {
@@ -4254,6 +4268,7 @@ erDiagram
     lab_operational_batches ||--o{ lab_batch_members : "lab_operational_batch_id"
     lab_work_orders ||--o{ lab_batch_members : "lab_work_order_id"
     lab_biological_material_transfers o|--o{ lab_batch_members : "material_transfer_id"
+    qbo_catalog_items o|--o{ lab_batch_members : "sequencing_catalog_item_id"
     lab_containers o|--o{ lab_batch_members : "sequencing_container_id"
     lab_specimens ||--o{ lab_libraries : "lab_specimen_id"
     lab_work_orders ||--o{ lab_libraries : "lab_work_order_id"

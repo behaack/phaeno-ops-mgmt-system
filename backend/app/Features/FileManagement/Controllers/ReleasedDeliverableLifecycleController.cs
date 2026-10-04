@@ -88,7 +88,7 @@ public sealed class ReleasedDeliverableLifecycleController(PSeqOperationsDbConte
                 commits.GetValueOrDefault(value.Id), commits.GetValueOrDefault(value.Id) > decision.DeletionDueAtUtc && value.StartedAtUtc < decision.DeletionDueAtUtc)));
         }
         var name = await db.Organizations.Where(value => value.Id == snapshot.OrganizationId).Select(value => value.Name).SingleAsync(token);
-        var path = package.Type == ReleasedDeliverablePackageType.TrialResult ? $"/trial-projects/{package.WorkflowId:D}" : package.Type == ReleasedDeliverablePackageType.AssemblyOutput ? $"/data-assembly/{package.WorkflowId:D}" : $"/lab-services/{package.WorkflowId:D}";
+        var path = package.Type == ReleasedDeliverablePackageType.TrialResult ? $"/order-operations/lab-services/trials/{package.WorkflowId:D}" : package.Type == ReleasedDeliverablePackageType.AssemblyOutput ? $"/data-assembly/{package.WorkflowId:D}" : $"/lab-services/{package.WorkflowId:D}";
         return new(await EnrichRowAsync(Row(snapshot, name, package), package, token), snapshot.ToDto(projection) with { GraceActivatedAtUtc = decision.GraceActivatedAtUtc, DownloadAccessClosedAtUtc = decision.DownloadAccessClosedAtUtc },
             package.WorkflowId, path, snapshot.Version, admin,
             package.Type == ReleasedDeliverablePackageType.PSeqResult ? pseq.Value.GovernedPSeqResults : options.Value.ReleasedDeliverableRetentionEnforcement,

@@ -40,7 +40,7 @@ export function CommercialOrderDraftPage({ orderId, organizationId = '', sourceR
   if (orderId && data.order.isLoading) return <main className="page-wrap px-4 py-8"><p role="status">Loading Draft…</p></main>
   if (orderId && (data.order.error || !data.order.data)) return <main className="page-wrap px-4 py-8"><Alert variant="destructive"><AlertTitle>Draft unavailable</AlertTitle><AlertDescription>{getOrderErrorMessage(data.order.error, 'Reload the order and try again.')} <Button variant="outline" onClick={() => void data.order.refetch()}>Retry</Button></AlertDescription></Alert></main>
   const order = data.order.data && 'samples' in data.order.data ? data.order.data as LabServiceOrder : undefined
-  if (orderId && !order?.commercialDraft) return <main className="page-wrap px-4 py-8"><p>This order has already been submitted for pricing.</p><Button asChild variant="outline"><Link to="/order-operations/$workflow/$orderId" params={{ workflow: 'lab', orderId }}>Open order</Link></Button></main>
+  if (orderId && !order?.commercialDraft) return <main className="page-wrap px-4 py-8"><p>This order has already been submitted for pricing.</p><Button asChild variant="outline"><Link to="/order-operations/lab-services/orders/$orderId" params={{ orderId }}>Open order</Link></Button></main>
   return <DraftEditor key={orderId ?? 'new'} order={order} initialOrganizationId={organizationId} sourceRequestId={sourceRequestId} />
 }
 
@@ -116,7 +116,7 @@ function DraftEditor({ order, initialOrganizationId, sourceRequestId }: { order?
         setSavedOrder(result.order); setOwnerDirty(false); form.reset(draft)
         if (result.submissionError) { setSubmissionError(result.submissionError); return }
         approveNavigation()
-        await navigate({ to: '/order-operations/$workflow/$orderId', params: { workflow: 'lab', orderId: result.order.id }, search: previous => ({ ...previous, orderSection: 'intake' }) })
+        await navigate({ to: '/order-operations/lab-services/orders/$orderId', params: { orderId: result.order.id }, search: previous => ({ ...previous }) })
       } catch { /* Retain entries and the original concurrency version. */ }
     }, errors => {
       const issues: Array<{ path: string; message: string }> = []
@@ -126,7 +126,7 @@ function DraftEditor({ order, initialOrganizationId, sourceRequestId }: { order?
   }
   const busy = mutation.isPending
   return <main className="page-wrap px-4 py-8">
-    <header className="mb-6"><Link to="/order-operations" search={previous => ({ ...previous, orderSection: 'intake' })} className="text-sm text-primary hover:underline">Order intake</Link><h1 className="mt-2 text-3xl font-semibold">{savedOrder ? `Edit Draft · ${savedOrder.orderNumber}` : 'New Customer order'}</h1><p className="mt-2 text-sm text-muted-foreground">Record the Customer’s scope and optional proposed prices. Save a Draft, then submit the completed order for pricing.</p></header>
+    <header className="mb-6"><Link to="/order-operations/lab-services" search={previous => ({ ...previous })} className="text-sm text-primary hover:underline">Order intake</Link><h1 className="mt-2 text-3xl font-semibold">{savedOrder ? `Edit Draft · ${savedOrder.orderNumber}` : 'New Customer order'}</h1><p className="mt-2 text-sm text-muted-foreground">Record the Customer’s scope and optional proposed prices. Save a Draft, then submit the completed order for pricing.</p></header>
     {ownerError || mutation.error || submissionError || issueSummary.length ? <Alert variant="destructive" className="mb-5" role="alert"><AlertTitle>{submissionError ? 'Draft saved; pricing submission needs attention' : 'Review the order entries'}</AlertTitle><AlertDescription>{ownerError || getOrderErrorMessage(submissionError ?? mutation.error, '')}{issueSummary.length ? <ul className="list-disc space-y-1 pl-5">{issueSummary.map((issue, index) => <li key={`${issue.path}-${index}`}><button type="button" className="cursor-pointer text-left underline" onClick={() => form.setFocus(issue.path as FieldPath<CommercialDraftForm>)}>{issue.message}</button></li>)}</ul> : null}<p>Your entries are retained. If another user changed the Draft, reopen its saved details before reconciling your changes.</p></AlertDescription></Alert> : null}
     <form noValidate onSubmit={event => { event.preventDefault(); void save(false) }} className="space-y-5">
       <fieldset disabled={busy} className="space-y-5">
@@ -183,7 +183,7 @@ function DraftEditor({ order, initialOrganizationId, sourceRequestId }: { order?
         <CommercialDraftHandlingFields form={form} sampleType={data.sampleTypes.data?.find(type => type.id === values.sampleTypeDefinitionId)} />
       </fieldset>
       <Card><CardHeader><CardTitle>Order summary</CardTitle></CardHeader><CardContent><p>{totals.samples} samples · {totals.runs} sequencing runs{values.usesPhases ? ` · ${phases.fields.length} phases` : ''}</p><p className="mt-2 font-medium">Proposed subtotal: {totals.pricedPhases ? money(totals.proposed) : 'No price proposed'}{totals.pricedPhases > 0 && totals.pricedPhases < phases.fields.length ? ' · Some phases have no proposed price' : ''}</p><p className="mt-1 text-xs text-muted-foreground">Formal quote prices are reviewed by phase. Saving a Draft does not submit it for pricing or authorize laboratory work.</p></CardContent></Card>
-      <footer className="flex flex-wrap items-center justify-between gap-3 border-t pt-4"><div><RequiredLegend /><p className="mt-1 text-xs text-muted-foreground">Customer, Department and Job name are required to save. Complete the remaining required fields before submitting for pricing.</p></div><div className="flex flex-wrap gap-2"><Button asChild type="button" variant="outline"><Link to="/order-operations" search={previous => ({ ...previous, orderSection: 'intake' })}>Cancel</Link></Button><Button type="submit" variant="outline" disabled={busy}>{busy ? 'Saving…' : 'Save draft'}</Button><Button type="button" disabled={busy} onClick={() => void save(true)}>Submit for pricing</Button></div></footer>
+      <footer className="flex flex-wrap items-center justify-between gap-3 border-t pt-4"><div><RequiredLegend /><p className="mt-1 text-xs text-muted-foreground">Customer, Department and Job name are required to save. Complete the remaining required fields before submitting for pricing.</p></div><div className="flex flex-wrap gap-2"><Button asChild type="button" variant="outline"><Link to="/order-operations/lab-services" search={previous => ({ ...previous })}>Cancel</Link></Button><Button type="submit" variant="outline" disabled={busy}>{busy ? 'Saving…' : 'Save draft'}</Button><Button type="button" disabled={busy} onClick={() => void save(true)}>Submit for pricing</Button></div></footer>
     </form>
     <Dialog open={Boolean(phaseConfirmation)} onOpenChange={open => { if (!open) setPhaseConfirmation(null) }}>
       <DialogContent onOpenAutoFocus={event => { event.preventDefault(); cancelPhaseConfirmation.current?.focus() }} onCloseAutoFocus={event => { event.preventDefault(); document.querySelector<HTMLElement>(phaseConfirmationFocusSelector.current)?.focus() }}>

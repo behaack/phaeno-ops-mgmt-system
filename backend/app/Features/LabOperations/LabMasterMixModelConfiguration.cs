@@ -22,6 +22,7 @@ public static class LabMasterMixModelConfiguration
         });
         modelBuilder.Entity<LabMasterMixPreparation>(e =>
         {
+            e.Property(x => x.EvidenceJson).HasColumnType("jsonb");
             e.ToTable("lab_master_mix_preparations", schema); e.HasKey(x => x.Id);
             e.Property(x => x.WorkflowName).HasMaxLength(160);
             e.Property(x => x.QuantityUnit).HasMaxLength(50);
@@ -39,13 +40,16 @@ public static class LabMasterMixModelConfiguration
         });
         modelBuilder.Entity<LabMasterMixStepRecord>(e =>
         {
+            e.Property(x => x.InputJson).HasColumnType("jsonb");
+            e.Property(x => x.EvidenceJson).HasColumnType("jsonb");
             e.ToTable("lab_master_mix_steps", schema); e.HasKey(x => x.Id);
             e.Property(x => x.Notes).HasMaxLength(4000);
-            e.HasIndex(x => new { x.PreparationId, x.Sequence }).IsUnique();
+            e.HasIndex(x => new { x.PreparationId, x.Sequence });
             e.HasOne<LabMasterMixPreparation>().WithMany().HasForeignKey(x => x.PreparationId).OnDelete(DeleteBehavior.Restrict);
         });
         modelBuilder.Entity<LabMasterMixIngredientUse>(e =>
         {
+            e.Property(x => x.FieldKey).HasMaxLength(100);
             e.ToTable("lab_master_mix_ingredients", schema); e.HasKey(x => x.Id);
             e.Property(x => x.Quantity).HasPrecision(28, 12);
             e.Property(x => x.QuantityUnit).HasMaxLength(50);

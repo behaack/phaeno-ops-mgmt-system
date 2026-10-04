@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { isMasterMixDecimalQuantity } from './decimal-quantity'
 
 export const protocolCaptureTypes = [
   'number',
@@ -12,6 +13,15 @@ export const protocolCaptureTypes = [
   'equipment',
   'output',
 ] as const
+
+// Authoring distinguishes a shared preparation from an inventory material.
+// The saved protocol retains its material reference and exact workflow revision.
+export const protocolCaptureFormTypes = [...protocolCaptureTypes, 'masterMix'] as const
+
+export function protocolCaptureLabel(type: typeof protocolCaptureFormTypes[number]): string {
+  const labels = { biologicalMaterial: 'Biological material from specimen', masterMix: 'Master mix', material: 'Material used', equipment: 'Equipment used', output: 'Output created', fileReference: 'File reference' }
+  return type in labels ? labels[type as keyof typeof labels] : type.charAt(0).toUpperCase() + type.slice(1)
+}
 
 export const protocolRequirementTypes = ['required', 'optional', 'conditional'] as const
 
@@ -31,16 +41,18 @@ const captureSchema = z.object({
   key: z.string().optional(),
   scope: z.enum(['', 'batch', 'tube', 'shared']).optional(),
   label: z.string().trim().min(1, 'Capture label is required.').max(120),
-  type: z.enum(protocolCaptureTypes),
+  type: z.enum(protocolCaptureFormTypes),
   required: z.boolean(),
   sourceTube: z.boolean().optional(),
   material: materialSchema.optional(),
   includeTracking: z.boolean().optional(),
   quantityBasis: z.enum(['perSample', 'total']).optional(),
+  plannedQuantityText: z.string().optional(),
   unit: z.string().trim().max(50),
   choices: z.string().trim().max(1000),
 }).superRefine((capture, context) => {
-  if (capture.type === 'material' && !capture.unit) context.addIssue({ code: 'custom', message: 'Enter the quantity unit.', path: ['unit'] })
+  if (['material', 'masterMix'].includes(capture.type) && !capture.unit) context.addIssue({ code: 'custom', message: 'Enter the quantity unit.', path: ['unit'] })
+  if (capture.type === 'masterMix' && (!capture.material?.masterMixWorkflowId || !capture.material.masterMixWorkflowRevision)) context.addIssue({ code: 'custom', message: 'Choose an approved master-mix workflow revision.', path: ['material'] })
   if (capture.type === 'material' && capture.includeTracking && capture.material && !capture.material.productId && !capture.material.materialDefinitionId) context.addIssue({ code: 'custom', message: 'Lot tracking requires a catalog product or prepared reagent.', path: ['material'] })
   if (capture.material && [capture.material.productId, capture.material.materialDefinitionId, capture.material.masterMixWorkflowId].filter(Boolean).length > 1) context.addIssue({ code: 'custom', message: 'Choose one material identity.', path: ['material'] })
   if (capture.material?.masterMixWorkflowId && capture.includeTracking) context.addIssue({ code: 'custom', message: 'Master mix uses a preparation record, not an inventory lot.', path: ['includeTracking'] })
@@ -58,6 +70,7 @@ const captureSchema = z.object({
 })
 
 const stepSchema = z.object({
+  processType: z.enum(['', 'masterMix']).optional(),
   key: z.string().optional(),
   labStepVersionId: z.string().uuid().optional(),
   attachmentKind: z.enum(['', 'none', 'qc', 'preparation']).optional(),
@@ -77,6 +90,14 @@ const stepSchema = z.object({
   qcScope: z.enum(['', 'batch', 'tube', 'shared']).optional(),
   qcCriteria: z.string().trim().max(2000),
 }).superRefine((step, context) => {
+  if (step.processType === 'masterMix') {
+    if (step.inputMaterials || step.preparedOutputs || step.equipmentTypes || step.attachmentRequired || !['', 'none'].includes(step.attachmentKind ?? '')) context.addIssue({ code: 'custom', message: 'Use batch fields for master-mix resources; reports and sample outputs do not apply.', path: ['processType'] })
+    if (step.qcEnabled && step.qcScope !== 'batch') context.addIssue({ code: 'custom', message: 'Master-mix QC applies to the batch.', path: ['qcScope'] })
+    step.captures.forEach((capture, index) => {
+      if (capture.scope !== 'batch' || !['material', 'equipment', 'number', 'text', 'date', 'choice'].includes(capture.type)) context.addIssue({ code: 'custom', message: 'Master-mix fields apply to the batch.', path: ['captures', index, 'scope'] })
+      if (capture.type === 'material' && (!capture.required || !capture.includeTracking || capture.quantityBasis !== 'total' || !isMasterMixDecimalQuantity(capture.plannedQuantityText ?? '') || !capture.material || capture.material.masterMixWorkflowId || !(capture.material.productId || capture.material.materialDefinitionId))) context.addIssue({ code: 'custom', message: 'Choose a reagent, require its lot number and enter a positive planned amount for this mix.', path: ['captures', index, 'plannedQuantityText'] })
+    })
+  }
   if (step.requirement === 'conditional' && !step.condition) {
     context.addIssue({
       code: 'custom',
@@ -103,7 +124,7 @@ export const protocolDefinitionFormSchema = z.object({
     if (step.attachmentRequired && (!value.preparationBatchEnabled || !['qc', 'preparation'].includes(step.attachmentKind ?? ''))) context.addIssue({ code: 'custom', message: 'Choose a report type and enable preparation batches to require a report.', path: ['steps', i, 'attachmentKind'] })
   })
   if (!value.preparationBatchEnabled) {
-    value.steps.forEach((step, i) => { if (step.captures.some(c => ['material', 'biologicalMaterial', 'equipment', 'output'].includes(c.type))) context.addIssue({ code: 'custom', message: 'Linked fields require preparation batches.', path: ['steps', i, 'captures'] }) })
+    value.steps.forEach((step, i) => { if (step.captures.some(c => ['material', 'masterMix', 'biologicalMaterial', 'equipment', 'output'].includes(c.type))) context.addIssue({ code: 'custom', message: 'Linked fields require preparation batches.', path: ['steps', i, 'captures'] }) })
     return
   }
   value.steps.forEach((step, i) => {
@@ -111,7 +132,7 @@ export const protocolDefinitionFormSchema = z.object({
     if (step.captures.filter(c => c.type === 'biologicalMaterial').length > 1) context.addIssue({ code: 'custom', message: 'Use one biological material field per step.', path: ['steps', i, 'captures'] })
     step.captures.forEach((capture, j) => {
       if (capture.type === 'biologicalMaterial' && capture.scope !== 'tube') context.addIssue({ code: 'custom', message: 'Biological material must be recorded individually for each sample.', path: ['steps', i, 'captures', j, 'scope'] })
-      if (['material', 'equipment', 'output'].includes(capture.type) && (!(['batch', 'tube'].includes(capture.scope ?? '') || capture.type === 'material' && capture.scope === 'shared' && capture.quantityBasis !== 'total') || capture.type === 'output' && capture.scope !== 'tube')) context.addIssue({ code: 'custom', message: 'Material exceptions require per-sample amounts; equipment uses batch or sample scope and outputs are individual.', path: ['steps', i, 'captures', j, 'scope'] })
+      if (['material', 'masterMix', 'equipment', 'output'].includes(capture.type) && (!(['batch', 'tube'].includes(capture.scope ?? '') || ['material', 'masterMix'].includes(capture.type) && capture.scope === 'shared' && capture.quantityBasis !== 'total') || capture.type === 'output' && capture.scope !== 'tube')) context.addIssue({ code: 'custom', message: 'Material exceptions require per-sample amounts; equipment uses batch or sample scope and outputs are individual.', path: ['steps', i, 'captures', j, 'scope'] })
       if (!capture.scope || capture.type === 'barcode' && capture.scope !== 'tube') context.addIssue({ code: 'custom', message: capture.type === 'barcode' ? 'Barcodes require Tube scope.' : 'Choose the evidence scope.', path: ['steps', i, 'captures', j, 'scope'] })
     })
     if (step.qcEnabled && !step.qcScope) context.addIssue({ code: 'custom', message: 'Choose the QC scope.', path: ['steps', i, 'qcScope'] })
@@ -125,6 +146,7 @@ export type ProtocolDefinition = {
   schemaVersion: 1
   preparationBatchEnabled?: boolean
   steps: Array<{
+    processType?: 'masterMix'
     key: string
     labStepVersionId?: string | null
     attachmentKind?: 'none' | 'qc' | 'preparation' | null
@@ -146,6 +168,7 @@ export type ProtocolDefinition = {
       material?: ConfiguredMaterial
       includeTracking?: boolean
       quantityBasis?: 'perSample' | 'total'
+      plannedQuantityText?: string
       unit?: string | null
       options?: string[] | null
     }>
@@ -161,6 +184,7 @@ export type ProtocolDefinition = {
 }
 
 const storedProtocolCaptureSchema = z.object({
+  plannedQuantityText: z.string().optional(),
   key: z.string().optional(),
   scope: z.enum(['batch', 'tube', 'shared']).nullish(),
   label: z.string().default(''),
@@ -175,6 +199,7 @@ const storedProtocolCaptureSchema = z.object({
 }).passthrough()
 
 const storedProtocolStepSchema = z.object({
+  processType: z.enum(['masterMix']).optional(),
   key: z.string().optional(),
   labStepVersionId: z.string().uuid().nullish(),
   attachmentKind: z.enum(['none', 'qc', 'preparation']).nullish(),
@@ -293,6 +318,7 @@ export function deserializeProtocolDefinition(value: string): ProtocolDefinition
     if (!parsed.success) return null
     const steps = parsed.data.steps.map((step) => ({
       ...(step.key ? { key: step.key } : {}),
+      ...(step.processType ? { processType: step.processType } : {}),
       ...(step.labStepVersionId ? { labStepVersionId: step.labStepVersionId } : {}),
       ...(step.attachmentKind ? { attachmentKind: step.attachmentKind } : {}),
       ...(step.attachmentRequired ? { attachmentRequired: true } : {}),
@@ -309,12 +335,13 @@ export function deserializeProtocolDefinition(value: string): ProtocolDefinition
       captures: step.captures.map((capture) => ({
         ...(capture.key ? { key: capture.key } : {}),
         label: capture.label,
-        type: capture.type,
+        type: capture.type === 'material' && capture.material?.masterMixWorkflowId ? 'masterMix' as const : capture.type,
         required: capture.type === 'equipment' || capture.required,
         ...(capture.sourceTube ? { sourceTube: true } : {}),
         ...(capture.material ? { material: capture.material } : {}),
         ...(capture.includeTracking ? { includeTracking: true } : {}),
         ...(capture.quantityBasis ? { quantityBasis: capture.quantityBasis } : {}),
+        ...(capture.plannedQuantityText ? { plannedQuantityText: capture.plannedQuantityText } : {}),
         ...(capture.scope ? { scope: capture.scope } : {}),
         unit: capture.unit ?? '',
         choices: capture.options?.join(', ') ?? '',
@@ -342,6 +369,7 @@ export function serializeProtocolDefinition(values: ProtocolDefinitionFormValues
         ...(step.attachmentKind ? { attachmentKind: step.attachmentKind } : {}),
         ...(step.attachmentRequired ? { attachmentRequired: true } : {}),
         name: step.name.trim(),
+        ...(step.processType ? { processType: step.processType } : {}),
         instructions: step.instructions.trim(),
         required: step.requirement === 'required',
         ...(step.requirement === 'conditional' ? { condition: step.condition.trim() } : {}),
@@ -351,14 +379,15 @@ export function serializeProtocolDefinition(values: ProtocolDefinitionFormValues
         captures: step.captures.map((capture) => ({
           key: uniqueKey(capture.key || capture.label, usedCaptureKeys, 'capture'),
           label: capture.label.trim(),
-          type: capture.type,
+          type: capture.type === 'masterMix' ? 'material' : capture.type,
           required: capture.type === 'equipment' || capture.required,
           ...(values.preparationBatchEnabled && capture.scope ? { scope: capture.scope } : {}),
           ...(capture.type === 'barcode' && capture.sourceTube ? { sourceTube: true } : {}),
-          ...(capture.type === 'material' && capture.material ? { material: capture.material } : {}),
+          ...(['material', 'masterMix'].includes(capture.type) && capture.material ? { material: capture.material } : {}),
           ...(capture.type === 'equipment' || capture.type === 'material' && capture.includeTracking ? { includeTracking: true } : {}),
-          ...(capture.type === 'material' ? { quantityBasis: capture.quantityBasis ?? 'perSample' } : {}),
-          ...(['number', 'material', 'biologicalMaterial'].includes(capture.type) && capture.unit.trim()
+          ...(['material', 'masterMix'].includes(capture.type) ? { quantityBasis: capture.quantityBasis ?? 'perSample' } : {}),
+          ...(capture.type === 'material' && capture.plannedQuantityText ? { plannedQuantityText: capture.plannedQuantityText.trim() } : {}),
+          ...(['number', 'material', 'masterMix', 'biologicalMaterial'].includes(capture.type) && capture.unit.trim()
             ? { unit: capture.unit.trim() }
             : {}),
           ...(capture.type === 'choice'

@@ -1,5 +1,140 @@
 # Frontend Test Plan
 
+## Catalog sequencing requirement and tube pairing — October 4, 2026
+
+Sequencing tube regressions cover a read-only Catalog minimum, blocked unconfigured services, one active pair form, source scan/label prerequisites, exact balance preview and interrupted-command recovery. Batch naming stays optional with no minimum editor. Authored coverage includes a different service's requirement selected by source scan and advancing to the next blank library pair after a transfer, while retaining saved evidence. Typecheck/lint and manual connected verification apply; suite execution remains request-only/deferred.
+
+## Empty sequencing batch recovery — October 4, 2026
+
+`LabOperationsPage.test.tsx` adds empty Draft prerequisites/disabled menu actions
+and empty In progress recovery with Cancel initial focus, a meaningful dialog
+body, required correction reason, versioned payload and Actions focus return.
+Connected acceptance verifies the authorized local correction and handoff
+availability. Typechecking/lint apply; automated test execution is deferred
+under the request-only rule.
+
+## Master mix card header — October 4, 2026
+
+Manually verify one **Open Master mixes** outline button link at the right end
+of the title row, wrapped description, retained use rows, narrow containment
+and keyboard navigation. No new automated test is needed for this layout move;
+suite execution remains request-only.
+
+## Sequencing batch availability and optional name — October 4, 2026
+
+`PreparationBatchPage.access.test.tsx` covers empty/non-draft destinations,
+loading then available draft recovery, lookup failure, disabled assignment in
+the handoff and tube details, and draft-only selector labels without repeated
+automatic identifiers. `LabOperationsPage.test.tsx` covers blank/custom name
+creation, optional presentation and the assigned identity. Added source is
+typechecked; automated execution is deferred under the request-only rule.
+Connected review checks the real empty handoff and optional-name modal.
+Connected verification passed for the six disabled actions, visible reason,
+optional fields and active blank-name Create action. Keyboard focus returns to
+New batch after Cancel. Lint and typechecking pass; test execution is deferred.
+
+## Sequencing handoff header — October 4, 2026
+
+Check that the sole **Open sequencing batches** link appears in the handoff card
+header at the end of the title row, with the description wrapping beside it and
+no duplicate beneath the library list. Verify desktop/narrow containment,
+keyboard focus, and the unchanged destination. This reversible layout move does
+not add a component test; automated suite execution remains request-only.
+Connected desktop/320-width containment and wrapped text pass, with one header
+link and successful keyboard activation to the unchanged destination.
+
+## Purchased service correction — October 3, 2026
+
+Manual acceptance: eligible supervisors see **Correct purchased service** in the
+job's shared Actions menu. Its bounded dialog displays the job and purchased
+service, requires a reason, starts focus on Cancel and returns focus to Actions.
+Verify meaningful header/body/footer regions, stale/failed write recovery and
+pending-state duplicate prevention. Successful correction refreshes job and
+eligibility without changing specimen/tube evidence. Check narrow wrapping and
+keyboard dismissal. Automated execution is deferred for this UI walkthrough.
+
+## Jobs card clarity — October 3, 2026
+
+Review a uniform Awaiting receipt phase for one operational status and a separate sample count; review mixed camel-case stage counts for readable labels and retained totals. Distinct deadline warnings, holds/review overlaps, freezer boxes, physical receipt and Portal delivery must remain visible. Verify bold labels and regular values in Active/Closed and Phases/Jobs views. No new automated test is added for this presentation-only correction; suite execution remains request-only.
+
+## Shipping heading phase number — October 3, 2026
+
+Existing LabJobPhaseShipping assertions now include the saved phase position in the first and next phase headings. Single-phase heading assertions remain unchanged. No new test is added for this presentation-only change; automated execution is deferred under the request-only rule.
+
+## Cancellation action exception — October 3, 2026
+
+Shared ActionMenu, LabJobWorkspaceActions and LabJobPhaseList coverage retains
+a sole cancellation inside Actions with one indicator and a destructive item.
+Job trigger guards and callbacks are preserved; ordinary single actions stay
+direct. Single-order and expanded-phase expectations are updated. Authored,
+not executed under the request-only rule. Phase cancellation confirmation uses
+destructive styling.
+
+## Subject workspace navigation — October 3, 2026
+
+Independent Jobs grouping follow-up: `job-deadlines.test.ts` now covers contrasting Active/Closed grouping choices through tab switches, refresh-equivalent URL parsing and filter clearing, preserving each tab's pages and rejecting invalid values. Grouping changes reset only the current tab's page. Scoped lint, typechecking and browser interaction checks are the checkpoint; automated suites remain unrun unless requested.
+
+Jobs grouping presentation: the shared Phases / Jobs pill toggle replaces the dynamic card title and Show select. Verify active/closed selection, arrow-key behavior, URL grouping, retained filters and pagination resets through static checks and read-only browser review. Existing grouping/search parsing coverage remains applicable; no new test mirrors this control substitution. Automated suites are not requested.
+
+Lab Ops grouping: `lab-sections.test.ts` covers Jobs landing, saved request/inventory/sample bookmarks and release-only isolation. Updated receipt-tab, receipt/accession panel and Lab page regression source covers receiving default, standalone kit queues with preserved filters, receiving keyboard navigation and no general dashboard request for kit fulfillment. Automated tests are not run for this navigation request; scoped lint, TypeScript, documentation consistency and manual browser checks are the checkpoint.
+
+Finance sidebar coverage in `FinanceSidebar.test.tsx` verifies Billing/Cash/Reconciler section boundaries, retained Customer filters and the record's owning section. Existing Finance panel expectations use named regions instead of tab semantics. Source updated; automated test execution is not requested for this presentation change.
+
+Navigation domain/More placement, grouped Order Ops sidebar, Release Manager isolation, subject record links, Dashboard attention permissions and disabled/empty states. Focused coverage is in `OrderOperationsSidebar.test.tsx`, `service-workspaces.test.ts`, `NeedsAttentionSummary.test.tsx`, `navigation.test.ts`, and the updated intake/record-link tests. Automated test execution is deferred because this navigation implementation request did not request test execution. Lint, typechecking, documentation generation and local browser/HTTP checks are the verification checkpoint; do not count these as automated-test passes. See [the owning plan](WORKSPACE-NAVIGATION-RESTRUCTURE-PLAN.md).
+
+## Trial source quantities — October 2, 2026
+
+Creation and scope use the order **Source / quantity** layout with a current sample
+type, arbitrary source rows and a calculated total. Verify add/remove, duplicate
+source normalization, positive quantities, retry-preserved rows, initial draft
+resume and inclusive dates. Approved scope review displays the frozen type and
+rows. Sample roster validation restricts the type/version and sources, enforces
+per-source quantities as well as total allowance, and canonicalizes approved
+source labels in the payload. Preserve changed-scope reload and confirmation.
+Scope submission sends source quantities rather than an independently editable
+allowance; partial staff drafts keep unfinished rows without approving them.
+
+Focused Trial forms, shared Company search, navigation and settings coverage:
+**60 passed in nine files**. TypeScript and touched ESLint pass. See the
+[source workflow receipt](../testing/runs/2026-10-02-trial-source-quantity-workflow-verification.md).
+
+## Trial creation details, dates and settings — October 2, 2026
+
+Cover required name, Objective / Description, positive whole-number sample count,
+date-only opening/closing fields, reversed-date rejection, single-day allowance,
+explicit selection for multiple Departments and stable retry/idempotency behavior.
+Resume the creation draft with its initial details and preserve exact calendar dates
+on save. Date helpers cover inclusive closing bounds, month/year and leap-day
+transitions, daylight-saving boundaries, invalid dates and absent values.
+
+Verify the create capability, Trial configuration under Order settings with existing
+permissions, no broader order-configuration calls, server-backed Company search,
+portaled choices, keyboard selection/Escape and failure/retry feedback. CRM search
+tests wait for the requested debounced search before selecting its results.
+
+See the [local verification receipt](../testing/runs/2026-10-02-trial-creation-details-and-settings-verification.md).
+
+## Direct Trial approval on submission - October 2, 2026
+
+The scope form uses the backend capability to show Approve and submit scope
+for administrators/leadership and Submit scope for approval for other staff.
+The regression verifies the approval label and ordinary payload, held-scope
+disabled explanation, draft availability and successful detail navigation.
+Creation help and empty-state instructions reflect all three permitted roles.
+Existing Trial draft, conflict, acceptance and download tests remain covered.
+
+All 20 Trial component cases, scoped lint and full TypeScript checks pass. See the
+[verification receipt](../testing/runs/2026-10-02-trial-direct-approval-verification.md).
+
+## Direct Trial roles and Company Departments - October 2, 2026
+
+Component regressions cover server-side Company search beyond a capped list, required multiple-Department selection, saved Department payload, clearing selections on Company changes, and historical CRM Trial links to the direct Trial workspace. Trial record actions share one contextual Actions menu. Verify staff role options and permission-dependent create/decision visibility, form errors, loading/retry behavior, and stable idempotency keys after failed saves.
+
+The complete frontend unit suite passes all 1,355 tests. Lint and TypeScript
+checks pass. Browser coverage also checks pipeline initialization before opening
+New opportunity and the deferred menu-to-dialog focus handoff for Trial decisions.
+See the [verification receipt](../testing/runs/2026-10-02-direct-trial-workflow-verification.md).
+
 ## Consolidated Lab step actions — October 2, 2026
 
 Manual review covers one detail Actions control/indicator, one Edit draft command,
@@ -44,7 +179,7 @@ Updated LabReceiptAccessionPanel.test.tsx selects Expected shipments explicitly 
 
 ## Kit-request actions and compact view toggle - October 2, 2026
 
-Updated KitRequests.test.tsx covers list-invoked dispatch without navigation or initial per-row detail fetches and rejects cancellation from a stale list when the refreshed request no longer permits it. LabReceiptAccessionPanel.test.tsx covers one queue at a time, default selection, shipment-linked Kit shipments and preserved request filters. dialog.test.tsx covers focus return when a menu opener disappears. The shared PillToggle has radio-group semantics with keyboard selection. Authored regressions remain unexecuted under the request-only test policy.
+Updated KitRequests.test.tsx covers list-invoked dispatch without navigation or initial per-row detail fetches and rejects cancellation from a stale list when the refreshed request no longer permits it. LabReceiptAccessionPanel.test.tsx covers one queue at a time, default selection, shipment-linked Fulfilled requests and preserved request filters. dialog.test.tsx covers focus return when a menu opener disappears. The shared PillToggle has radio-group semantics with keyboard selection. Authored regressions remain unexecuted under the request-only test policy.
 
 Manual verification uses the actual components with synthetic read responses and blocked operational writes. Cover desktop and 390 px dark layouts, compact pill sizing, keyboard selection, list action dialogs, initial cancellation focus, body/footer structure, focus return and post-dialog pointer interaction, blocked stock/changed permissions, and selected shipment context. ReturnKitFulfillmentPanel.test.tsx covers matching by Job and a filtered miss distinct from an empty queue. Visible filter labels are removed while accessible names remain. Source/type/documentation checks are recorded in the owning transportation-kit plan.
 
@@ -132,6 +267,15 @@ the no-new-delivery explanation and Prepare navigation, plus outbound receipt
 waiting. Manual synthetic preview and static checks are recorded in the checkpoint.
 The helper also covers Request received, Sent, Received and partial dispatch/
 receipt labels; the Receive caption announces status changes to assistive technology.
+
+Dispatch prerequisite follow-up — October 3, 2026: authored, not executed.
+`LabJobPhaseShipping.test.tsx` covers pending one/multiple-phase requests showing
+Wait for Phaeno to send kits without a next-step button, while View kit order
+remains available. Partial dispatch offers receipt only for sent kits, all sent
+kits received with an outstanding shortage returns to waiting, and Member or
+server-denied receipt permission retains viewing without Record kit receipt.
+Preparation stays unavailable for outstanding deliveries, including when some
+previously received stock has been allocated.
 
 Review-before-acceptance follow-up: `LabJobOrderProgress.test.tsx` covers Draft,
 pricing and issued-quote states with **Review and Accept Order**, no step strip,
@@ -3365,6 +3509,13 @@ Focused stock-kit tests now cover the At Phaeno default, every dispatched status
 
 ### Single-use master mix (2026-09-24)
 
+October 3 mix unit entry: **Units** below **Mix amount unit** reuses the
+scientific text picker in create/revise dialogs with volume/mass units only.
+Check unit replacement, keyboard focus return, required/error association and the
+50-character limit without saving a workflow. Scoped lint/typecheck and
+documentation consistency are the checkpoint; no new automated test is needed
+for this reversible use of the shared control.
+
 September 30 header layout: Start master mix remains at the title's upper right,
 the description wraps beside it, and name/barcode plus status filters fill the
 shaded header. This reversible layout adjustment adds no automated test. Scoped
@@ -3488,3 +3639,47 @@ Radix tab activation. Phase-kit tests await the saved/default address and requir
 focus to return to the current surviving action after server-state refresh.
 These results supersede earlier unexecuted component checkpoints for included
 suites; physical/scientific and hosted authenticated acceptance remain separate.
+
+### Master-mix Lab step assembly and service workflow header — October 3, 2026
+
+Master-mix authoring uses Process-specific batch fields with required reagent lots and planned exact amounts. Workflow assembly selects approved versions and displays a derived recipe; preparation captures typed fields, registered equipment and QC. Extend protocol-definition coverage for round-trip master-mix fields and rejection of untracked/manual reagents. Check scoped lint and TypeScript; automated suites remain unrun for this scope. The Controlled service workflows heading and New service workflow button share the top row, with the description wrapping in the remaining width; verify desktop and narrow layout.
+
+### Library specimen and master-mix Lab step fields — October 3, 2026
+
+Authored regression source checks a specimen-transfer field and explicit Master
+mix authoring choice in one library Lab step, canonical save/reopen of the exact
+mix revision without inventory tracking, rejection of missing or conflicting
+sources, and preparation-context/scope guards. Check frontend typing, scoped lint
+and documentation generation. Automated suites are not requested for this slice.
+Use the signed-in local UI to create the owner's clearly named fake PSeq steps,
+protocol, service workflow and tray format. Manual source preview validates a
+10 µL per-sample mix entry over two fictional tubes (20 µL total), without saving.
+Approval review translates field types and includes the pinned mix revision and
+quantity basis. The requested saved demo walkthrough creates reagent lots with
+simulated QC and completes the exact 80/20 µL mix as Ready; notes distinguish
+simulated evidence from physical work. The saved page verifies the cutoff date
+renders with a laboratory timezone suffix. Physical specimen withdrawal,
+scanner and scientific acceptance remain separate from this local UI evidence.
+
+### Shared footer clearance for pinned sidebars — October 3, 2026
+
+CSS-only fix: the root footer uses the workspace's existing pinned clearance in
+the 1024–1691px range. Manual authenticated browser geometry and screenshot
+checks pass at 1025, 1137, 1422 and 1700px pinned, 1422px unpinned, and 390/320px
+narrow. Copyright and help remain visible without horizontal overflow; narrow
+drawer Escape returns focus to its edge tab. No component or automated suite
+change is required for this visual correction; automated suites were not run.
+## October 4, 2026 — label outcome correction
+
+Updated `LabLabelDialog` regressions cover an enabled outcome action after browser printing, conditional scan verification for success, and failed/cancelled printing with required details and no scan. The failed attempt retains its history without activating the tube, then allows another print attempt. Both focused component cases pass; typecheck and scoped lint also pass. Connected-browser and print acceptance are recorded in the Lab operations plan.
+
+### October 4 release verification
+
+The complete unit suite passes: 1,428 cases in 220 files. Batch fixtures now
+include the required sequencing type and assert the displayed identifier rather
+than its duplicate select option. Recipe round-trip checks compare parsed
+content, preserving exact quantities and pins without depending on JSON key
+order. Label page sizing remains inside print media, so screen layout and dialog
+presence do not evaluate page rules. Lint and TypeScript pass. Complete browser
+and connected backend release checks are recorded separately in the
+[release plan](PORTAL-WORKFLOW-RELEASE-20261004-PLAN.md).

@@ -115,6 +115,19 @@ describe('user-management self-deactivation', () => {
     expect(screen.queryByRole('menuitem', { name: 'Deactivate' })).toBeNull()
   })
 
+  it('offers both Trial roles and saves their explicit assignments', async () => {
+    mocks.listPhaenoUsers.mockResolvedValue([createPhaenoUser('other-user', 'Another', 'User')])
+    mocks.updatePhaenoUser.mockResolvedValue(createPhaenoUser('other-user', 'Another', 'User'))
+    renderPanel(<PhaenoUserManagementPanel canManageAccounts canManageLabRoles currentUserId="current-user" organizationId="phaeno-organization" />)
+    await openActions('Another User')
+    fireEvent.click(screen.getByRole('menuitem', { name: /^Edit$/ }))
+    const dialog = await screen.findByRole('dialog', { name: 'Edit user' })
+    fireEvent.click(within(dialog).getByRole('checkbox', { name: 'Business Development' }))
+    fireEvent.click(within(dialog).getByRole('checkbox', { name: 'Commercial leadership' }))
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save changes' }))
+    await waitFor(() => expect(mocks.updatePhaenoUser).toHaveBeenCalledWith('other-user', expect.objectContaining({ businessRoles: expect.arrayContaining([expect.objectContaining({ role: 'BusinessDevelopment', isActive: true }), expect.objectContaining({ role: 'CommercialLeadership', isActive: true })]) })))
+  })
+
   it('retains account deactivation for another Phaeno user', async () => {
     mocks.listPhaenoUsers.mockResolvedValue([
       createPhaenoUser('other-user', 'Another', 'User'),
@@ -201,6 +214,6 @@ function createPhaenoUser(
     userVersion: 1,
     membershipVersion: 1,
     labRoles: [],
-    businessRoles: [],
+    businessRoles: [{ role: 'BusinessDevelopment', isActive: false, version: null }, { role: 'CommercialLeadership', isActive: false, version: null }],
   }
 }

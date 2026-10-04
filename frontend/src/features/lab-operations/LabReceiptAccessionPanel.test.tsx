@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { LabReceiptAccessionPanel } from './LabReceiptAccessionPanel'
+import { LabKitRequestQueues } from './LabKitRequestQueues'
 
 const api = vi.hoisted(() => ({ packet: vi.fn(), tube: vi.fn(), identity: vi.fn(), queue: vi.fn(), history: vi.fn(), receive: vi.fn(), work: vi.fn(), accession: vi.fn(), batch: vi.fn(), samples: vi.fn() }))
 const route = vi.hoisted(() => ({ search: {} as Record<string, unknown>, listeners: new Set<() => void>() }))
@@ -220,41 +221,47 @@ describe('LabReceiptAccessionPanel navigation', () => {
     expect(screen.getAllByRole('tabpanel')).toHaveLength(1)
   })
 
-  it('shows one kit queue at a time within the kit task and retains receiving keyboard navigation', async () => {
+  it('shows one kit queue at a time in the separate requests section', () => {
     const client = new QueryClient()
-    const view = render(<QueryClientProvider client={client}><LabReceiptAccessionPanel apiEnabled workOrders={[]} /></QueryClientProvider>)
-    expect(screen.getByRole('tab', { name: 'Kit requests' }).getAttribute('aria-selected')).toBe('true')
+    const view = render(<QueryClientProvider client={client}><LabKitRequestQueues apiEnabled /></QueryClientProvider>)
     expect(screen.getByRole('radio', { name: 'Kit requests' }).getAttribute('aria-checked')).toBe('true')
     expect(screen.queryByText('Return-kit queue')).toBeNull()
     expect(screen.queryByRole('tab', { name: 'Prepare kits' })).toBeNull()
-    fireEvent.click(screen.getByRole('radio', { name: 'Kit shipments' }))
-    view.rerender(<QueryClientProvider client={client}><LabReceiptAccessionPanel apiEnabled workOrders={[]} /></QueryClientProvider>)
+    fireEvent.click(screen.getByRole('radio', { name: 'Fulfilled requests' }))
+    view.rerender(<QueryClientProvider client={client}><LabKitRequestQueues apiEnabled /></QueryClientProvider>)
     expect(screen.getByText('Return-kit queue')).toBeTruthy()
     expect(screen.queryByText('Kit-request queue')).toBeNull()
+    fireEvent.click(screen.getByRole('radio', { name: 'Kit requests' }))
+    view.rerender(<QueryClientProvider client={client}><LabKitRequestQueues apiEnabled /></QueryClientProvider>)
+    expect(screen.getByText('Kit-request queue')).toBeTruthy()
+    expect(screen.queryByText('Return-kit queue')).toBeNull()
+    expect(route.search).toMatchObject({ section: 'kit-requests', kitQueue: 'requests' })
+  })
+
+  it('keeps receiving and accession keyboard navigation without kit task tabs', async () => {
+    render(<QueryClientProvider client={new QueryClient()}><LabReceiptAccessionPanel apiEnabled workOrders={[]} /></QueryClientProvider>)
+    expect(screen.getByRole('tab', { name: 'Receive shipments' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.queryByRole('tab', { name: 'Kit requests' })).toBeNull()
     const accession = screen.getByRole('tab', { name: 'Accession samples' })
     fireEvent.mouseDown(accession, { button: 0, ctrlKey: false })
     act(() => accession.focus())
     fireEvent.keyDown(accession, { key: 'ArrowLeft' })
     await waitFor(() => expect(screen.getByRole('tab', { name: 'Receive shipments' }).getAttribute('aria-selected')).toBe('true'))
-    expect(screen.queryByLabelText('Shipping insert barcode')).toBeNull()
-    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Kit requests' }), { button: 0, ctrlKey: false })
-    fireEvent.click(screen.getByRole('radio', { name: 'Kit requests' }))
-    view.rerender(<QueryClientProvider client={client}><LabReceiptAccessionPanel apiEnabled workOrders={[]} /></QueryClientProvider>)
-    expect(screen.getByText('Kit-request queue')).toBeTruthy()
-    expect(screen.queryByText('Return-kit queue')).toBeNull()
+    expect(screen.getAllByRole('tabpanel')).toHaveLength(1)
   })
 
   it('selects the sent-kit queue for a shipment link while preserving request filters', () => {
     route.search = { requestSearch: 'JOB-1', requestPage: 2 }
-    render(<QueryClientProvider client={new QueryClient()}><LabReceiptAccessionPanel apiEnabled shipmentId="shipment-1" workOrders={[]} /></QueryClientProvider>)
-    expect(screen.getByRole('radio', { name: 'Kit shipments' }).getAttribute('aria-checked')).toBe('true')
+    render(<QueryClientProvider client={new QueryClient()}><LabKitRequestQueues apiEnabled shipmentId="shipment-1" /></QueryClientProvider>)
+    expect(screen.getByRole('radio', { name: 'Fulfilled requests' }).getAttribute('aria-checked')).toBe('true')
     expect(screen.queryByText('Kit-request queue')).toBeNull()
     fireEvent.click(screen.getByRole('radio', { name: 'Kit requests' }))
     expect(route.search).toMatchObject({ kitQueue: 'requests', requestSearch: 'JOB-1', requestPage: 2 })
   })
 
   it('opens explicitly selected shipment-specific receipt in Receive shipments', () => {
-    render(<QueryClientProvider client={new QueryClient()}><LabReceiptAccessionPanel apiEnabled shipmentId="shipment-1" tab="receiving" workOrders={[]} /></QueryClientProvider>)
+    route.search = { shipmentId: 'shipment-1', receiptTab: 'receiving' }
+    render(<QueryClientProvider client={new QueryClient()}><LabReceiptAccessionPanel apiEnabled tab="receiving" workOrders={[]} /></QueryClientProvider>)
     expect(screen.getByRole('tab', { name: 'Receive shipments' }).getAttribute('aria-selected')).toBe('true')
   })
 

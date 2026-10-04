@@ -56,7 +56,7 @@ type WorkflowCardProps = {
     | '/phaeno-users'
     | '/reagent-orders'
     | '/sample-shipping'
-    | '/trial-projects'
+    | '/order-operations/lab-services/trials'
   icon: LucideIcon
   isLoading: boolean
   mock: boolean
@@ -149,7 +149,7 @@ export function ExternalDashboardContent({
     const awaitingAcceptance = trials.data?.filter(trial => trial.status === 'AwaitingAcceptance' && !trial.isOnHold).length ?? 0
     const awaitingSamples = trials.data?.filter(trial => trial.status === 'AwaitingSamples' && !trial.isOnHold).length ?? 0
     cards.push(<WorkflowCard key="trials" title="Trial projects" description="Review approved scope, prepare samples, follow progress, and open released results." icon={FlaskConical}
-      href="/trial-projects" actionLabel="Open Trial projects" total={trials.data?.length} totalLabel="Trials"
+      href="/order-operations/lab-services/trials" actionLabel="Open Trial projects" total={trials.data?.length} totalLabel="Trials"
       summary={awaitingAcceptance ? `${awaitingAcceptance} ${awaitingAcceptance === 1 ? 'Trial awaits' : 'Trials await'} scope acceptance.` : awaitingSamples ? `${awaitingSamples} ${awaitingSamples === 1 ? 'Trial awaits' : 'Trials await'} samples. Open the Trial to check its approved window.` : trials.data?.length ? 'Review current progress, released results, and retained Trial history.' : 'No Trial projects have been shared in this Department.'}
       isLoading={trials.isLoading} error={Boolean(trials.error)} mock={!apiEnabled} />)
   }

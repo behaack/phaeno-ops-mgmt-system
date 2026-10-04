@@ -7,7 +7,10 @@ import { Button } from "#/components/ui/button"
 
 // Action menus count rendered items after permission/status conditions resolve.
 // Navigation, radio and checkbox menus keep their regular dropdown behavior.
-function ActionMenu(props: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
+function ActionMenu({ keepSingleActionInMenu = false, ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Root> & {
+  /** Use only for a documented product-policy exception to the direct-action rule. */
+  keepSingleActionInMenu?: boolean
+}) {
   const children = React.Children.toArray(props.children)
   const trigger = children.find(child => React.isValidElement(child) && child.type === DropdownMenuTrigger)
   const content = children.find(child => React.isValidElement(child) && child.type === DropdownMenuContent)
@@ -25,7 +28,7 @@ function ActionMenu(props: React.ComponentProps<typeof DropdownMenuPrimitive.Roo
   if (React.isValidElement<{ children?: React.ReactNode }>(content)) collect(content.props.children)
   else supported = false
   if (supported && items.length === 0) return null
-  if (supported && items.length === 1 && !items[0].props.onClick && React.isValidElement<{ children?: React.ReactNode }>(trigger)) {
+  if (!keepSingleActionInMenu && supported && items.length === 1 && !items[0].props.onClick && React.isValidElement<{ children?: React.ReactNode }>(trigger)) {
     const button = React.Children.toArray(trigger.props.children)[0]
     if (React.isValidElement<React.ComponentProps<typeof Button>>(button) && button.type === Button) {
       const item = items[0].props

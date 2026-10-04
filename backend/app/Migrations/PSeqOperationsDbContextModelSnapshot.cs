@@ -1880,6 +1880,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(3)")
                         .HasColumnName("currency");
 
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
                     b.Property<string>("Description")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)")
@@ -1957,6 +1961,8 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnName("version");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId");
 
                     b.HasIndex("ExpectedCloseDate");
 
@@ -7424,6 +7430,10 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("maximum_customer_samples");
 
+                    b.Property<decimal?>("MinimumSequencingVolumeUl")
+                        .HasColumnType("numeric")
+                        .HasColumnName("minimum_sequencing_volume_ul");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -10496,7 +10506,7 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("as_delegate");
 
-                    b.Property<Guid>("AuthorityId")
+                    b.Property<Guid?>("AuthorityId")
                         .HasColumnType("uuid")
                         .HasColumnName("authority_id");
 
@@ -10757,7 +10767,7 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
 
-                    b.Property<Guid>("CrmHandoffId")
+                    b.Property<Guid?>("CrmHandoffId")
                         .HasColumnType("uuid")
                         .HasColumnName("crm_handoff_id");
 
@@ -10812,7 +10822,7 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("character varying(4000)")
                         .HasColumnName("number");
 
-                    b.Property<Guid>("OpportunityId")
+                    b.Property<Guid?>("OpportunityId")
                         .HasColumnType("uuid")
                         .HasColumnName("opportunity_id");
 
@@ -11795,6 +11805,23 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("material_transfer_id");
 
+                    b.Property<decimal?>("MinimumSequencingVolumeUl")
+                        .HasColumnType("numeric")
+                        .HasColumnName("minimum_sequencing_volume_ul");
+
+                    b.Property<Guid?>("SequencingCatalogItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sequencing_catalog_item_id");
+
+                    b.Property<string>("SequencingCatalogName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("sequencing_catalog_name");
+
+                    b.Property<long?>("SequencingCatalogVersion")
+                        .HasColumnType("bigint")
+                        .HasColumnName("sequencing_catalog_version");
+
                     b.Property<Guid?>("SequencingContainerId")
                         .HasColumnType("uuid")
                         .HasColumnName("sequencing_container_id");
@@ -11806,6 +11833,9 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasIndex("LabWorkOrderId");
 
                     b.HasIndex("MaterialTransferId");
+
+                    b.HasIndex("SequencingCatalogItemId")
+                        .HasDatabaseName("ix_lab_batch_members_sequencing_catalog_item_id");
 
                     b.HasIndex("SequencingContainerId");
 
@@ -13304,6 +13334,12 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("FieldKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("field_key");
+
                     b.Property<bool>("MaterialExhausted")
                         .HasColumnType("boolean")
                         .HasColumnName("material_exhausted");
@@ -13334,6 +13370,10 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid>("SourceMaterialLotId")
                         .HasColumnType("uuid")
                         .HasColumnName("source_material_lot_id");
+
+                    b.Property<int>("StepSequence")
+                        .HasColumnType("integer")
+                        .HasColumnName("step_sequence");
 
                     b.Property<DateTime?>("VoidedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -13379,6 +13419,11 @@ namespace PSeq.Operations.Api.Migrations
                     b.Property<Guid?>("DiscardedByUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("discarded_by_user_id");
+
+                    b.Property<string>("EvidenceJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("evidence_json");
 
                     b.Property<int>("IngredientUseCount")
                         .HasColumnType("integer")
@@ -13505,6 +13550,16 @@ namespace PSeq.Operations.Api.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("EvidenceJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("evidence_json");
+
+                    b.Property<string>("InputJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("input_json");
+
                     b.Property<string>("Notes")
                         .IsRequired()
                         .HasMaxLength(4000)
@@ -13529,8 +13584,7 @@ namespace PSeq.Operations.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PreparationId", "Sequence")
-                        .IsUnique();
+                    b.HasIndex("PreparationId", "Sequence");
 
                     b.ToTable("lab_master_mix_steps", "lab_ops");
                 });
@@ -19719,6 +19773,11 @@ namespace PSeq.Operations.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.User", "Owner")
                         .WithMany()
                         .HasForeignKey("OwnerUserId")
@@ -19738,6 +19797,8 @@ namespace PSeq.Operations.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Company");
+
+                    b.Navigation("Department");
 
                     b.Navigation("Owner");
 
@@ -21370,8 +21431,7 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasOne("PSeq.Operations.Commercial.Trials.Domain.TrialApprovalAuthority", null)
                         .WithMany()
                         .HasForeignKey("AuthorityId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PSeq.Operations.Commercial.Trials.Domain.TrialScope", null)
                         .WithMany("Decisions")
@@ -21434,8 +21494,7 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmHandoff", null)
                         .WithMany()
                         .HasForeignKey("CrmHandoffId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.OrganizationDepartment", null)
                         .WithMany()
@@ -21460,8 +21519,7 @@ namespace PSeq.Operations.Api.Migrations
                     b.HasOne("PSeq.Operations.Commercial.Crm.Domain.CrmOpportunity", null)
                         .WithMany()
                         .HasForeignKey("OpportunityId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PSeq.Operations.Commercial.Accounts.Domain.Organization", null)
                         .WithMany()
@@ -21776,6 +21834,12 @@ namespace PSeq.Operations.Api.Migrations
                         .WithMany()
                         .HasForeignKey("MaterialTransferId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PSeq.Operations.Commercial.OrderManagement.Domain.QboCatalogItem", null)
+                        .WithMany()
+                        .HasForeignKey("SequencingCatalogItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_lab_batch_members_sequencing_catalog");
 
                     b.HasOne("PSeq.Operations.Laboratory.Domain.LabContainer", null)
                         .WithMany()

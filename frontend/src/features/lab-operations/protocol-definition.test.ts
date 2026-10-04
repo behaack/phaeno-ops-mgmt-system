@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   createLibraryPreparationExample,
+  createEmptyProtocolStep,
   deserializeProtocolDefinition,
   protocolDefinitionFormSchema,
   serializeProtocolDefinition,
@@ -93,5 +94,72 @@ describe('material assignment at configuration', () => {
     expect(deserializeProtocolDefinition(serializeProtocolDefinition(form))?.steps[0].captures[0].unit).toBe('µL')
     form.steps[0].captures[0].unit = ''
     expect(protocolDefinitionFormSchema.safeParse(form).success).toBe(false)
+  })
+})
+
+
+describe('master-mix step configuration', () => {
+  function definition() {
+    return { preparationBatchEnabled: true, steps: [{ ...createEmptyProtocolStep(), name: 'Combine buffer', instructions: 'Combine the released buffer.', processType: 'masterMix' as const, attachmentKind: 'none' as const,
+      captures: [{ key: 'buffer', label: 'Buffer', type: 'material' as const, scope: 'batch' as const, required: true, includeTracking: true, quantityBasis: 'total' as const, unit: 'µL', choices: '', plannedQuantityText: '0.100000000001', material: { name: 'Buffer', materialDefinitionId: '11111111-1111-4111-8111-111111111111' } }],
+    }] }
+  }
+  it('retains the process, mandatory lot and exact planned amount through a draft round trip', () => {
+    const values = definition()
+    expect(protocolDefinitionFormSchema.safeParse(values).success).toBe(true)
+    const stored = JSON.parse(serializeProtocolDefinition(values)) as ProtocolDefinition
+    expect(stored.steps[0].processType).toBe('masterMix')
+    expect(stored.steps[0].captures[0].plannedQuantityText).toBe('0.100000000001')
+    expect(stored.steps[0].captures[0].includeTracking).toBe(true)
+    expect(JSON.parse(serializeProtocolDefinition(deserializeProtocolDefinition(JSON.stringify(stored))!))).toEqual(stored)
+  })
+  it('rejects manual identity, optional lot tracking and nonquantity fields', () => {
+    const values = definition()
+    values.steps[0].captures[0].includeTracking = false
+    expect(protocolDefinitionFormSchema.safeParse(values).success).toBe(false)
+    values.steps[0].captures[0].includeTracking = true
+    values.steps[0].captures[0].plannedQuantityText = '0.0000000000001'
+    expect(protocolDefinitionFormSchema.safeParse(values).success).toBe(false)
+    values.steps[0].captures[0].plannedQuantityText = '1'
+    const manual = { ...values.steps[0].captures[0], material: { name: 'Buffer' } }
+    expect(protocolDefinitionFormSchema.safeParse({ ...values, steps: [{ ...values.steps[0], captures: [manual] }] }).success).toBe(false)
+    expect(protocolDefinitionFormSchema.safeParse({ ...values, steps: [{ ...values.steps[0], captures: [{ ...values.steps[0].captures[0], type: 'barcode' }] }] }).success).toBe(false)
+  })
+})
+
+describe('library Lab step source fields', () => {
+  const mix = { name: 'Demo mix', masterMixWorkflowId: '11111111-1111-4111-8111-111111111111', masterMixWorkflowRevision: 3 }
+  function definition() {
+    return { preparationBatchEnabled: true, steps: [{ ...createEmptyProtocolStep(), name: 'Combine specimen and mix', instructions: 'Transfer the specimen material, then add the prepared mix.', captures: [
+      { label: 'Specimen material', type: 'biologicalMaterial' as const, scope: 'tube' as const, required: true, unit: '', choices: '' },
+      { label: 'Prepared master mix', type: 'masterMix' as const, scope: 'batch' as const, required: true, unit: 'µL', choices: '', quantityBasis: 'perSample' as const, material: mix },
+    ] }] }
+  }
+  it('keeps specimen transfer separate from the exact shared mix revision through save and reopen', () => {
+    const values = definition()
+    expect(protocolDefinitionFormSchema.safeParse(values).success).toBe(true)
+    const stored = JSON.parse(serializeProtocolDefinition(values)) as ProtocolDefinition
+    expect(stored.steps[0].captures[0]).toMatchObject({ type: 'biologicalMaterial', scope: 'tube' })
+    expect(stored.steps[0].captures[0].material).toBeUndefined()
+    expect(stored.steps[0].captures[1]).toMatchObject({ type: 'material', scope: 'batch', quantityBasis: 'perSample', unit: 'µL', material: mix })
+    expect(stored.steps[0].captures[1].includeTracking).toBeUndefined()
+    expect(deserializeProtocolDefinition(JSON.stringify(stored))?.steps[0].captures[1].type).toBe('masterMix')
+    expect(JSON.parse(serializeProtocolDefinition(deserializeProtocolDefinition(JSON.stringify(stored))!))).toEqual(stored)
+  })
+  it('rejects an unselected mix, an inventory lot and a shared total amount', () => {
+    const values = definition()
+    const capture = values.steps[0].captures[1]
+    for (const field of [
+      { ...capture, material: undefined },
+      { ...capture, material: { name: 'Purchased reagent', productId: '22222222-2222-4222-8222-222222222222' } },
+      { ...capture, includeTracking: true },
+      { ...capture, scope: 'shared', quantityBasis: 'total' },
+      { ...capture, unit: '' },
+    ]) expect(protocolDefinitionFormSchema.safeParse({ ...values, steps: [{ ...values.steps[0], captures: [field] }] }).success).toBe(false)
+  })
+  it('requires preparation batches and disallows specimen or mix use inside a master-mix preparation step', () => {
+    const values = definition()
+    expect(protocolDefinitionFormSchema.safeParse({ ...values, preparationBatchEnabled: false }).success).toBe(false)
+    expect(protocolDefinitionFormSchema.safeParse({ ...values, steps: [{ ...values.steps[0], processType: 'masterMix' }] }).success).toBe(false)
   })
 })

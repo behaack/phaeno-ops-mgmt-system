@@ -28,6 +28,90 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 [Collection(PostgreSqlReferenceCollection.Name)]
 public sealed partial class TrialProjectPostgresTests
 {
+    private static TrialCreateRequest CreationRequest(Guid companyId, Guid sampleTypeId, Guid? departmentId = null) =>
+        new(companyId, departmentId, "RNA transcript evaluation", "Evaluate research RNA outputs.", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(14), sampleTypeId, [new("Synthetic RNA", 1), new("Second synthetic source", 1)]);
+
+    [PostgreSqlReferenceFact]
+    public async Task CreationDetailsAreSavedAtomicallyAsAnUnapprovedStaffDraft()
+    {
+        await using var scope = await Fixture.Create();
+        var request = CreationRequest(scope.Company.Id, scope.SampleType.Id, scope.Department.Id);
+        var trial = await scope.Workflow.CreateAsync(scope.Commercial, request, default);
+        await scope.Db.SaveChangesAsync();
+        await scope.Db.Entry(trial).ReloadAsync();
+        var draft = trial.ReadScopeDraft()!;
+        Assert.Equal(request.Name, draft.Name); Assert.Equal(request.Objective, draft.Objective);
+        Assert.Equal(TrialRules.SourceCount(request.Sources), draft.SampleAllowance);
+        Assert.Equal(request.SubmissionOpensAtUtc, draft.SubmissionOpensAtUtc);
+        Assert.Equal(request.SubmissionClosesAtUtc, draft.SubmissionClosesAtUtc);
+        Assert.Equal(scope.Department.Id, draft.DepartmentId);
+        Assert.Equal(request.SampleTypeId, draft.SampleTypeId); Assert.Equal(request.Sources, draft.Sources);
+        Assert.Equal(scope.Commercial.User.Id, trial.DraftSavedByUserId);
+        Assert.Equal(TrialStatus.Requested, trial.Status); Assert.Empty(trial.Scopes);
+        Assert.Null(trial.ApprovedScopeRevision); Assert.Null(trial.AcceptedScopeRevision);
+        Assert.Equal(request.Name, Assert.Single(await scope.Reader.ListAsync(scope.Commercial, trial.Number, default)).Name);
+        Assert.NotNull((await scope.Reader.DetailAsync(trial, scope.Commercial, default)).ScopeDraft);
+        Assert.Null((await scope.Reader.DetailAsync(trial, scope.Prospect, default)).ScopeDraft);
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task MissingOrInvalidCreationDetailsDoNotCreateATrial()
+    {
+        await using var scope = await Fixture.Create();
+        var request = CreationRequest(scope.Company.Id, scope.SampleType.Id, scope.Department.Id);
+        var count = await scope.Db.TrialProjects.CountAsync();
+        foreach (var invalid in new[] { request with { Name = " " }, request with { Objective = "" }, request with { SubmissionClosesAtUtc = request.SubmissionOpensAtUtc } })
+            await Assert.ThrowsAsync<OrderManagementException>(() => scope.Workflow.CreateAsync(scope.Commercial, invalid, default));
+        await Assert.ThrowsAsync<ArgumentException>(() => scope.Workflow.CreateAsync(scope.Commercial, request with { Name = new string('X', 256) }, default));
+        await Assert.ThrowsAsync<ArgumentException>(() => scope.Workflow.CreateAsync(scope.Commercial, request with { SubmissionOpensAtUtc = DateTime.SpecifyKind(request.SubmissionOpensAtUtc, DateTimeKind.Unspecified) }, default));
+        foreach (var sources in new IReadOnlyList<TrialSourceGroup>[] { [], [new("Synthetic RNA", 0)], [new("Synthetic RNA", null)], [new("Synthetic RNA", 1), new(" synthetic  RNA ", 1)] })
+            await Assert.ThrowsAsync<ArgumentException>(() => scope.Workflow.CreateAsync(scope.Commercial, request with { Sources = sources }, default));
+        await Assert.ThrowsAsync<OrderManagementException>(() => scope.Workflow.CreateAsync(scope.Commercial, request with { SampleTypeId = Guid.NewGuid() }, default));
+        Assert.Equal(count, await scope.Db.TrialProjects.CountAsync());
+        Assert.DoesNotContain(scope.Db.ChangeTracker.Entries<TrialProject>(), entry => entry.State == EntityState.Added);
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task SourceQuantitiesEnforceApprovedCompositionBeforeSharedLabAndShipping()
+    {
+        await using var scope = await Fixture.Create();
+        var trial = await scope.Workflow.CreateAsync(scope.Commercial, CreationRequest(scope.Company.Id, scope.SampleType.Id, scope.Department.Id), default);
+        await scope.Db.SaveChangesAsync();
+        var request = await scope.ScopeRequest(trial);
+        await scope.Workflow.ProposeAsync(trial, scope.Commercial, request with { Sources = [new("Synthetic RNA", 1), new("Second synthetic source", 1)] }, default);
+        await scope.Db.SaveChangesAsync();
+        scope.Workflow.Accept(trial, scope.Prospect, new(trial.Version, trial.CurrentScopeRevision, TrialRules.TermsVersion, true));
+        await scope.Db.SaveChangesAsync();
+        var orders = await scope.Db.LabServiceOrders.CountAsync();
+        var input = scope.Submission(trial, "RNA-1");
+        await Assert.ThrowsAsync<OrderManagementException>(() => scope.Workflow.SubmitAsync(trial, scope.Prospect, input with { SampleTypeId = Guid.NewGuid() }, default));
+        await Assert.ThrowsAsync<OrderManagementException>(() => scope.Workflow.SubmitAsync(trial, scope.Prospect, input with { Samples = [input.Samples[0] with { BiologicalSource = "Unapproved tissue" }] }, default));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => scope.Workflow.SubmitAsync(trial, scope.Prospect, input with { Samples = [input.Samples[0], input.Samples[0] with { Reference = "RNA-2" }] }, default));
+        Assert.Empty(trial.Samples);
+        await scope.Workflow.SubmitAsync(trial, scope.Prospect, input with { Samples = [input.Samples[0], input.Samples[0] with { Reference = "RNA-2", BiologicalSource = " second   synthetic source " }] }, default);
+        await scope.Db.SaveChangesAsync();
+        Assert.Equal(2, trial.Samples.Count); Assert.Equal(2, trial.CurrentScope().Read().SampleAllowance);
+        Assert.Contains(trial.Samples, sample => sample.BiologicalSource == "Second synthetic source");
+        Assert.All(trial.Samples, sample => Assert.NotEqual(Guid.Empty, sample.AuthorizationId));
+        var shipment = await scope.Db.SampleShipments.Include(value => value.Items).SingleAsync(value => value.AuthorizationSourceId == trial.Id);
+        Assert.Equal(2, shipment.Items.Count); Assert.All(shipment.Items, item => Assert.Equal(scope.SampleType.Id, item.SampleTypeDefinitionId));
+        Assert.Equal(orders, await scope.Db.LabServiceOrders.CountAsync());
+        var visible = (await scope.Reader.DetailAsync(trial, scope.Prospect, default)).Scope!;
+        Assert.Equal(scope.SampleType.Name, visible.SampleType.Name); Assert.Equal(2, visible.Sources.Count);
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task ChangedApprovedSampleTypeRequiresRevisedScopeBeforeSubmission()
+    {
+        await using var scope = await Fixture.Create(); var trial = await scope.CreateApprovedTrial();
+        scope.Workflow.Accept(trial, scope.Prospect, new(trial.Version, trial.CurrentScopeRevision, TrialRules.TermsVersion, true));
+        await scope.Db.SaveChangesAsync(); var frozen = trial.CurrentScope().ValuesJson;
+        scope.SampleType.IncrementVersion(); scope.Db.Entry(scope.SampleType).Property(value => value.Version).IsModified = true;
+        await scope.Db.SaveChangesAsync();
+        var failure = await Assert.ThrowsAsync<OrderManagementException>(() => scope.Workflow.SubmitAsync(trial, scope.Prospect, scope.Submission(trial, "RNA-1"), default));
+        Assert.Contains("sample type changed", failure.Message); Assert.Empty(trial.Samples); Assert.Equal(frozen, trial.CurrentScope().ValuesJson);
+    }
+
     [PostgreSqlReferenceFact]
     public async Task DepartmentAdministratorAcceptsTrialWhileMembersAndOtherDepartmentsRemainExcluded()
     {
@@ -77,12 +161,12 @@ public sealed partial class TrialProjectPostgresTests
     }
 
     [PostgreSqlReferenceFact]
-    public async Task FirstScopeDraftCanBeSavedBeforeTrialOrganizationBinding()
+    public async Task FirstScopeDraftPreservesDepartmentSelectedAtCreation()
     {
         await using var scope = await Fixture.Create();
-        var trial = await scope.Workflow.CreateAsync(scope.Commercial, new(scope.Handoff.Id), default); await scope.Db.SaveChangesAsync();
+        var trial = await scope.Workflow.CreateAsync(scope.Commercial, CreationRequest(scope.Company.Id, scope.SampleType.Id, scope.Department.Id), default); await scope.Db.SaveChangesAsync();
         await scope.Workflow.SaveDraftAsync(trial, scope.Commercial, new(trial.Version, new(Name: "Early discussion")), default); await scope.Db.SaveChangesAsync();
-        Assert.Null(trial.OrganizationId); Assert.Null(trial.DepartmentId); Assert.Empty(trial.Scopes);
+        Assert.Equal(scope.Organization.Id, trial.OrganizationId); Assert.Equal(scope.Department.Id, trial.DepartmentId); Assert.Empty(trial.Scopes);
         Assert.Equal(TrialStatus.Requested, trial.Status); Assert.NotNull(trial.SubmissionBlocker(DateTime.UtcNow));
     }
     [PostgreSqlReferenceFact]
@@ -101,17 +185,102 @@ public sealed partial class TrialProjectPostgresTests
     }
 
     [PostgreSqlReferenceFact]
-    public async Task TrialRequestSearchFindsExactEligibleRequestAndHonorsCompanyContext()
+    public async Task ProspectHistoryExcludesIncompletePriorNamedAuthorityReview()
+    {
+        await using var scope = await Fixture.Create(); var trial = await scope.CreateApprovedTrial();
+        var values = trial.CurrentScope().Read(); var now = DateTime.UtcNow;
+        var authorityId = await scope.Db.TrialApprovalAuthorities.Where(value => value.UserId == scope.Commercial.User.Id && value.Domain == TrialApprovalDomain.Commercial && value.RevokedAtUtc == null).Select(value => value.Id).SingleAsync();
+        var pending = trial.Propose(values, "TEST historical incomplete review", scope.Commercial.User.Id, now);
+        pending.Decisions.Add(new TrialDecision(pending.Id, TrialApprovalDomain.Commercial, TrialDecisionKind.Approve,
+            scope.Commercial.User.Id, authorityId, false, "TEST historical commercial decision only", now));
+        var revised = trial.Propose(values, "TEST revised scope", scope.Commercial.User.Id, now);
+        scope.Db.AddRange(pending, revised); await scope.Db.SaveChangesAsync();
+        await scope.Workflow.DecideAsync(trial, scope.Commercial, new(trial.Version, TrialApprovalDomain.Commercial, TrialDecisionKind.Approve, "Leadership approved revised scope"), default);
+        await scope.Db.SaveChangesAsync();
+        var detail = await scope.Reader.DetailAsync(trial, scope.Prospect, default);
+        Assert.Equal(new[] { 3, 1 }, detail.ScopeHistory.Select(value => value.Revision));
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task DirectCreationAllowsBusinessDevelopmentLeadershipAndAdministratorWithoutCrmParents()
     {
         await using var scope = await Fixture.Create();
-        var page = await scope.Reader.HandoffsAsync(scope.Commercial, null, 0, scope.Company.Id, scope.Handoff.Id, default);
-        Assert.Equal(scope.Handoff.Id, Assert.Single(page.Items).Id); Assert.Equal(1, page.Total);
-        Assert.Empty((await scope.Reader.HandoffsAsync(scope.Commercial, null, 0, Guid.NewGuid(), scope.Handoff.Id, default)).Items);
-        Assert.Empty((await scope.Reader.HandoffsAsync(scope.Commercial, "no-such-request", 0, scope.Company.Id, null, default)).Items);
-        await Assert.ThrowsAsync<OrderManagementException>(() => scope.Reader.HandoffsAsync(scope.Prospect, null, 0, scope.Company.Id, null, default));
-        await scope.CreateApprovedTrial();
-        Assert.Empty((await scope.Reader.HandoffsAsync(scope.Commercial, null, 0, scope.Company.Id, scope.Handoff.Id, default)).Items);
+        var requestCount = await scope.Db.CrmHandoffs.CountAsync(); var opportunityCount = await scope.Db.CrmOpportunities.CountAsync();
+        var operatorActor = scope.Commercial with { IsPlatformAdmin = false };
+        var trial = await scope.Workflow.CreateAsync(operatorActor, CreationRequest(scope.Company.Id, scope.SampleType.Id, scope.Department.Id), default);
+        await scope.Db.SaveChangesAsync();
+        Assert.Null(trial.CrmHandoffId); Assert.Null(trial.OpportunityId);
+        Assert.Equal(scope.Company.Id, trial.CompanyId); Assert.Equal(scope.Department.Id, trial.DepartmentId);
+        Assert.Equal(scope.Commercial.User.Id, trial.SalesOwnerUserId); Assert.Equal(TrialStatus.Requested, trial.Status);
+        Assert.Equal(requestCount, await scope.Db.CrmHandoffs.CountAsync()); Assert.Equal(opportunityCount, await scope.Db.CrmOpportunities.CountAsync());
+        await Assert.ThrowsAsync<OrderManagementException>(() => scope.Workflow.CreateAsync(scope.Scientific, CreationRequest(scope.Company.Id, scope.SampleType.Id), default));
+        var role = await scope.Db.BusinessRoleAssignments.SingleAsync(value => value.UserId == scope.Commercial.User.Id && value.Role == BusinessRole.BusinessDevelopment);
+        role.SetActive(false); await scope.Db.SaveChangesAsync();
+        var leadershipTrial = await scope.Workflow.CreateAsync(operatorActor, CreationRequest(scope.Company.Id, scope.SampleType.Id), default);
+        Assert.Equal(TrialStatus.Requested, leadershipTrial.Status);
+        Assert.Equal(new[] { "Commercial" }, (await scope.Reader.DetailAsync(trial, scope.Commercial, default)).ApprovalDomains);
+        var leadership = await scope.Db.BusinessRoleAssignments.SingleAsync(value => value.UserId == scope.Commercial.User.Id && value.Role == BusinessRole.CommercialLeadership);
+        leadership.SetActive(false); await scope.Db.SaveChangesAsync();
+        await Assert.ThrowsAsync<OrderManagementException>(() => scope.Workflow.CreateAsync(operatorActor, CreationRequest(scope.Company.Id, scope.SampleType.Id), default));
+        var administratorTrial = await scope.Workflow.CreateAsync(scope.Commercial, CreationRequest(scope.Company.Id, scope.SampleType.Id), default);
+        Assert.Equal(TrialStatus.Requested, administratorTrial.Status);
+        await Assert.ThrowsAsync<OrderManagementException>(() => scope.Workflow.CreateAsync(scope.Prospect, CreationRequest(scope.Company.Id, scope.SampleType.Id), default));
+        Assert.Empty((await scope.Reader.DetailAsync(trial, scope.Commercial, default)).ApprovalDomains);
+        await Assert.ThrowsAsync<OrderManagementException>(() => scope.Workflow.DecideAsync(trial, scope.Commercial, new(trial.Version, TrialApprovalDomain.Commercial, TrialDecisionKind.Approve, "Role revoked"), default));
     }
+
+    [PostgreSqlReferenceFact]
+    public async Task AdministratorAndLeadershipApproveCompleteScopesOnSubmissionWithoutAnotherDecision()
+    {
+        await using var scope = await Fixture.Create();
+        var development = await scope.Db.BusinessRoleAssignments.SingleAsync(value => value.UserId == scope.Commercial.User.Id && value.Role == BusinessRole.BusinessDevelopment);
+        var leadership = await scope.Db.BusinessRoleAssignments.SingleAsync(value => value.UserId == scope.Commercial.User.Id && value.Role == BusinessRole.CommercialLeadership);
+        development.SetActive(false);
+        foreach (var administrator in new[] { false, true })
+        {
+            leadership.SetActive(!administrator); await scope.Db.SaveChangesAsync();
+            var actor = scope.Commercial with { IsPlatformAdmin = administrator };
+            var trial = await scope.Workflow.CreateAsync(actor, CreationRequest(scope.Company.Id, scope.SampleType.Id, scope.Department.Id), default); await scope.Db.SaveChangesAsync();
+            Assert.True((await scope.Reader.DetailAsync(trial, actor, default)).CanApproveScopeOnSubmission);
+            await scope.Workflow.SaveDraftAsync(trial, actor, new(trial.Version, new(Name: "Unfinished evaluation")), default); await scope.Db.SaveChangesAsync();
+            Assert.Equal(TrialStatus.Requested, trial.Status); Assert.Empty(trial.Scopes);
+            var request = await scope.ScopeRequest(trial);
+            trial.SetHold(true, "TEST pending hold"); await scope.Db.SaveChangesAsync();
+            var heldRequest = request with { Version = trial.Version };
+            Assert.Equal("trial_on_hold", (await Assert.ThrowsAsync<OrderManagementException>(() => scope.Workflow.ProposeAsync(trial, actor, heldRequest, default))).ErrorCode);
+            Assert.Empty(trial.Scopes); Assert.NotNull(trial.ReadScopeDraft());
+            trial.SetHold(false, "TEST hold resolved"); await scope.Db.SaveChangesAsync();
+            request = request with { Version = trial.Version };
+            await Assert.ThrowsAsync<OrderManagementException>(() => scope.Workflow.ProposeAsync(trial, actor, request with { DepartmentId = Guid.NewGuid() }, default));
+            Assert.Empty(trial.Scopes);
+            await scope.Workflow.ProposeAsync(trial, actor, request, default); await scope.Db.SaveChangesAsync();
+            Assert.Equal(TrialStatus.AwaitingAcceptance, trial.Status); Assert.Equal(1, trial.ApprovedScopeRevision);
+            Assert.Null(trial.AcceptedScopeRevision); Assert.Null(trial.ReadScopeDraft());
+            var decision = Assert.Single(trial.CurrentScope().Decisions);
+            Assert.Equal(TrialDecisionKind.Approve, decision.Kind); Assert.Equal(actor.User.Id, decision.ActorUserId); Assert.Null(decision.AuthorityId);
+            Assert.Single(await scope.Db.TrialEvents.Where(value => value.TrialProjectId == trial.Id && value.Kind == "DecisionRecorded").ToListAsync());
+            Assert.True((await scope.Reader.DetailAsync(trial, scope.Prospect, default)).CanAccept);
+            Assert.False((await scope.Reader.DetailAsync(trial, scope.Prospect, default)).CanApproveScopeOnSubmission);
+        }
+    }
+
+    [PostgreSqlReferenceFact]
+    public async Task BusinessDevelopmentSubmissionStillRequiresLeadershipReviewAfterLeadershipRoleRemoval()
+    {
+        await using var scope = await Fixture.Create();
+        var leadership = await scope.Db.BusinessRoleAssignments.SingleAsync(value => value.UserId == scope.Commercial.User.Id && value.Role == BusinessRole.CommercialLeadership);
+        leadership.SetActive(false); await scope.Db.SaveChangesAsync();
+        var actor = scope.Commercial with { IsPlatformAdmin = false };
+        var trial = await scope.Workflow.CreateAsync(actor, CreationRequest(scope.Company.Id, scope.SampleType.Id, scope.Department.Id), default); await scope.Db.SaveChangesAsync();
+        Assert.False((await scope.Reader.DetailAsync(trial, actor, default)).CanApproveScopeOnSubmission);
+        await scope.Workflow.ProposeAsync(trial, actor, await scope.ScopeRequest(trial), default); await scope.Db.SaveChangesAsync();
+        Assert.Equal(TrialStatus.UnderReview, trial.Status); Assert.Null(trial.ApprovedScopeRevision);
+        Assert.Empty(trial.CurrentScope().Decisions); Assert.False((await scope.Reader.DetailAsync(trial, scope.Prospect, default)).CanAccept);
+        leadership.SetActive(true); await scope.Db.SaveChangesAsync();
+        await scope.Workflow.DecideAsync(trial, actor, new(trial.Version, TrialApprovalDomain.Commercial, TrialDecisionKind.Approve, "Leadership review"), default);
+        await scope.Db.SaveChangesAsync(); Assert.Equal(TrialStatus.AwaitingAcceptance, trial.Status);
+    }
+
     [PostgreSqlReferenceFact]
     public async Task CrmApprovalAcceptanceSubmissionPinsLabWorkWithoutCreatingAnOrder()
     {
@@ -122,8 +291,8 @@ public sealed partial class TrialProjectPostgresTests
         Assert.NotNull(commercialView.Scope!.InternalValues); Assert.Null(externalView.Scope!.InternalValues);
         Assert.All(externalView.Scope.Decisions, value => { Assert.Null(value.ActorUserId); Assert.Null(value.Reason); });
         Assert.True(externalView.CanAccept);
-        var replay = await scope.Workflow.CreateAsync(scope.Commercial, new(scope.Handoff.Id), default);
-        Assert.Equal(trial.Id, replay.Id);
+        var replay = await scope.Workflow.CreateAsync(scope.Commercial, CreationRequest(scope.Company.Id, scope.SampleType.Id, scope.Department.Id), default);
+        Assert.NotEqual(trial.Id, replay.Id); // Different create operations are separate evaluations; controller idempotency governs retries.
         await scope.Submit(trial, "RNA-1");
         var sample = Assert.Single(trial.Samples);
         var work = await scope.Db.LabWorkOrders.SingleAsync(value => value.Id == sample.LabWorkOrderId);
@@ -247,10 +416,11 @@ public sealed partial class TrialProjectPostgresTests
     public async Task RevocationBlocksNewDecisionsButPreservesPriorApproval()
     {
         await using var scope = await Fixture.Create(); var trial = await scope.CreateApprovedTrial();
-        var approval = trial.CurrentScope().Decisions.Single(value => value.Domain == TrialApprovalDomain.ScientificOperations);
-        scope.ScientificAuthority.Revoke(scope.Commercial.User.Id, "Responsibility reassigned", DateTime.UtcNow); await scope.Db.SaveChangesAsync();
-        await Assert.ThrowsAsync<OrderManagementException>(() => scope.Access.RequireAuthorityAsync(scope.Scientific, TrialApprovalDomain.ScientificOperations, default));
-        Assert.True(trial.CurrentScope().IsApproved); Assert.Equal(scope.ScientificAuthority.Id, approval.AuthorityId);
+        var approval = trial.CurrentScope().Decisions.Single(value => value.Domain == TrialApprovalDomain.Commercial);
+        var leadership = await scope.Db.BusinessRoleAssignments.SingleAsync(value => value.UserId == scope.Commercial.User.Id && value.Role == BusinessRole.CommercialLeadership);
+        leadership.SetActive(false); await scope.Db.SaveChangesAsync();
+        await Assert.ThrowsAsync<OrderManagementException>(() => scope.Access.RequireRoleAsync(scope.Commercial, BusinessRole.CommercialLeadership, default));
+        Assert.True(trial.CurrentScope().IsApproved); Assert.Null(approval.AuthorityId);
     }
 
     [PostgreSqlReferenceFact]
@@ -263,7 +433,7 @@ public sealed partial class TrialProjectPostgresTests
         await scope.Workflow.ActAsync(trial, scope.Commercial, "commercial-outcome", new(trial.Version, "No conversion", CommercialOutcome: TrialCommercialOutcome.ClosedWithoutConversion), default); await scope.Db.SaveChangesAsync();
         await Assert.ThrowsAsync<OrderManagementException>(() => scope.Workflow.ActAsync(trial, scope.Commercial, "deactivate-prospect", new(trial.Version, "Relationship reviewed"), default));
         Assert.True(scope.Organization.IsActive);
-        var opportunity = await scope.Db.CrmOpportunities.Include(value => value.Stage).SingleAsync(value => value.Id == trial.OpportunityId);
+        var opportunity = await scope.Db.CrmOpportunities.Include(value => value.Stage).SingleAsync(value => value.Id == scope.Handoff.OpportunityId);
         var lost = new CrmPipelineStage(opportunity.Stage.PipelineId, "Closed", 2, CrmPipelineStageCategory.Lost, 0, false); scope.Db.Add(lost);
         opportunity.MoveToStage(lost, "Evaluation closed", DateTime.UtcNow); await scope.Db.SaveChangesAsync();
         await scope.Workflow.ActAsync(trial, scope.Commercial, "deactivate-prospect", new(trial.Version, "All relationships reviewed"), default); await scope.Db.SaveChangesAsync();
@@ -461,6 +631,7 @@ public sealed partial class TrialProjectPostgresTests
         private AnalysisDefinition analysis = null!;
         private SampleShippingDestination destination = null!;
         private SampleTypeDefinition sampleType = null!;
+        public SampleTypeDefinition SampleType => sampleType;
         public TrialAccess Access => new(db, new Identity(), new(db, new Identity()));
         public TrialWorkflowService Workflow => new(db, new InternalLabOperationsProvider(db), Access);
         public TrialReader Reader => new(db, Workflow, orders: Options.Create(new OrderManagementOptions { ReleasedDeliverableRetentionEnforcement = true }));
@@ -486,6 +657,7 @@ public sealed partial class TrialProjectPostgresTests
             scientific.LinkExternalIdentity("clerk", "trial-science-" + scientific.Id); db.Add(new LabRoleAssignment(scientific.Id, LabRole.ScientificReviewer));
             var membership = new OrganizationMembership(fixture.Customer.Id, fixture.Organization.Id, true);
             db.AddRange(phaeno, fixture.Organization, membership, new OrganizationMembership(commercial.Id, phaeno.Id, true), new OrganizationMembership(scientific.Id, phaeno.Id, false));
+            db.AddRange(new BusinessRoleAssignment(commercial.Id, BusinessRole.BusinessDevelopment), new BusinessRoleAssignment(commercial.Id, BusinessRole.CommercialLeadership));
             fixture.Commercial = new(commercial, true, true, null); fixture.Scientific = new(scientific, true, false, null);
             fixture.Prospect = new(fixture.Customer, false, false, new(fixture.Customer, fixture.Organization, membership, fixture.Department, true));
             // An established fixture grant should remain active if the host clock is adjusted during the suite.
@@ -518,16 +690,20 @@ public sealed partial class TrialProjectPostgresTests
         }
         public async Task<TrialProject> CreateApprovedTrial()
         {
-            var trial = await Workflow.CreateAsync(Commercial, new(Handoff.Id), default); await db.SaveChangesAsync();
+            var trial = await Workflow.CreateAsync(Commercial, CreationRequest(Company.Id, sampleType.Id, Department.Id), default); await db.SaveChangesAsync();
+            await Workflow.ProposeAsync(trial, Commercial, await ScopeRequest(trial), default); await db.SaveChangesAsync();
+            Assert.Equal(TrialStatus.AwaitingAcceptance, trial.Status);
+            return trial;
+        }
+        public async Task<TrialScopeRequest> ScopeRequest(TrialProject trial)
+        {
             var deliverable = await db.TrialDeliverableDefinitions.SingleOrDefaultAsync(value => value.Key == "FASTQ" && value.IsActive);
             if (deliverable is null)
             {
                 deliverable = new TrialDeliverableDefinition("FASTQ", "SIMULATED FASTQ", 1, true);
                 db.Add(deliverable); await db.SaveChangesAsync();
             }
-            await Workflow.ProposeAsync(trial, Commercial, new(trial.Version, Department.Id, "Trial evaluation", "Research objective", 2, DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(10), WorkflowVersion.Id, [analysis.Id], [deliverable.Id], "Frozen extracted RNA", "Existing PSeq criteria", 2000, 500, 30, TrialMaterialDisposition.Destroy, null, null, null, "RUO; no PHI", "Initial scope"), default); await db.SaveChangesAsync();
-            await Workflow.DecideAsync(trial, Commercial, new(trial.Version, TrialApprovalDomain.Commercial, TrialDecisionKind.Approve, "Commercially appropriate"), default); await db.SaveChangesAsync();
-            await Workflow.DecideAsync(trial, Scientific, new(trial.Version, TrialApprovalDomain.ScientificOperations, TrialDecisionKind.Approve, "Scientifically appropriate"), default); await db.SaveChangesAsync(); return trial;
+            return new(trial.Version, Department.Id, "Trial evaluation", "Research objective", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(10), WorkflowVersion.Id, [analysis.Id], [deliverable.Id], "Frozen extracted RNA", "Existing PSeq criteria", 2000, 500, 30, TrialMaterialDisposition.Destroy, null, null, null, "RUO; no PHI", "Initial scope", sampleType.Id, [new("Synthetic RNA", 2)]);
         }
         public TrialSubmitRequest Submission(TrialProject trial, string reference) => new(trial.Version, destination.Id, sampleType.Id, true, [new(reference, "Synthetic RNA", 2, 100, "ng", 10, "Frozen", "Nonhazardous; no PHI", new() { ["organism"] = "Synthetic organism" }, null, null)]);
         public async Task Submit(TrialProject trial, string reference)

@@ -1,4 +1,2 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { TrialScopePage } from '#/features/trials/TrialScopePage'
-export const Route = createFileRoute('/trial-projects/$trialId/scope')({ component: TrialScopeRoute })
-function TrialScopeRoute() { const { trialId } = Route.useParams(); const { fromCompanyId } = Route.useSearch(); return <TrialScopePage trialId={trialId} fromCompanyId={fromCompanyId} /> }
+import { createFileRoute, redirect } from '@tanstack/react-router'
+export const Route = createFileRoute('/trial-projects/$trialId/scope')({ beforeLoad: ({ params, search }) => { throw redirect({ to: '/order-operations/lab-services/trials/$trialId/scope', params, search, replace: true }) } })

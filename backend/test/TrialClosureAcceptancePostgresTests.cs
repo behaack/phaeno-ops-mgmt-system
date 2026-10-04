@@ -108,7 +108,7 @@ public sealed partial class TrialProjectPostgresTests
         Assert.Equal(events.Length, activities.Length);
         var safe = System.Text.Json.JsonSerializer.Serialize(activities.Select(value => new { value.Subject, value.Body }));
         Assert.DoesNotContain("SIMULATED-PRIVATE-SAMPLE", safe);
-        Assert.Contains("/trial-projects/" + trial.Id, safe);
+        Assert.Contains("/order-operations/lab-services/trials/" + trial.Id, safe);
         Assert.Equal(trial.ClosedAtUtc.Value.AddDays(30), trial.ResidualRetainUntilUtc);
     }
 

@@ -243,8 +243,8 @@ public sealed record RecordEquipmentUsageRequest(Guid LabEquipmentId, DateTime U
 public sealed record CreateLibraryRequest(Guid LabSpecimenId, Guid SourceContainerId,
     Guid LibraryContainerId, Guid PreparationExecutionId);
 public sealed record LibraryQcRequest(bool Passed, string ResultsJson, long Version);
-public sealed record CreateBatchRequest(string Name, string? Notes);
-public sealed record BatchTransitionRequest(string Action, long Version, DateTime? OccurredAtUtc = null);
+public sealed record CreateBatchRequest(string? Name = null, string? Notes = null);
+public sealed record BatchTransitionRequest(string Action, long Version, DateTime? OccurredAtUtc = null, string? Reason = null);
 public sealed record AddBatchMemberRequest(Guid LabWorkOrderId, Guid LabLibraryId);
 public sealed record CreateSendoutRequest(string ProviderName, string? ProviderReference,
     string ManifestJson, DateTime? ExpectedCompletionAtUtc);

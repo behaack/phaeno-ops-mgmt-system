@@ -19,7 +19,7 @@ import {
 } from '#/components/ui/dialog'
 import { Label } from '#/components/ui/label'
 
-import { deserializeProtocolDefinition, protocolDefinitionFormSchema } from './protocol-definition'
+import { deserializeProtocolDefinition, protocolCaptureLabel, protocolDefinitionFormSchema } from './protocol-definition'
 
 type ProtocolVersion = LabProtocol['versions'][number]
 
@@ -120,7 +120,16 @@ export function ProtocolApprovalDialog({
                   {step.captures.length > 0 ? (
                     <ReviewDetail
                       label="Fields to record"
-                      value={step.captures.map((capture) => `${capture.label} (${capture.type === 'biologicalMaterial' ? 'Biological material' : capture.type}${capture.required ? ', required' : ''}${capture.unit ? `, ${capture.unit}` : ''}${capture.type === 'choice' ? `; choices: ${capture.choices}` : ''}${definition.preparationBatchEnabled && capture.scope ? `; evidence scope: ${captureScopeLabels[capture.scope]}` : ''}${capture.sourceTube ? '; must match the selected source tube' : ''}${capture.material ? `; material: ${capture.material.name}; vendor: ${capture.material.vendor || 'Not specified'}${capture.material.productNumber ? `; product: ${capture.material.productNumber}` : ''}` : ''}${capture.type === 'material' ? `; quantity: ${capture.quantityBasis === 'total' ? 'total batch' : 'per sample'}; ${capture.includeTracking ? 'tracked lot' : 'configured material, no stock use'}` : ''}${capture.type === 'biologicalMaterial' ? '; selected source to barcoded library tube; actual amount; optional exhausted override' : ''}${capture.type === 'equipment' ? '; registered equipment selection required' : ''})`).join('; ')}
+                      value={step.captures.map((capture) => {
+                        const material = capture.material
+                        const source = material?.masterMixWorkflowId
+                          ? `; master mix: ${material.name} · revision ${material.masterMixWorkflowRevision}`
+                          : material ? `; material: ${material.name}; vendor: ${material.vendor || 'Not specified'}${material.productNumber ? `; product: ${material.productNumber}` : ''}` : ''
+                        const quantity = capture.type === 'masterMix' || capture.type === 'material'
+                          ? `; quantity: ${capture.quantityBasis === 'total' ? 'total batch' : 'per sample'}; ${capture.type === 'masterMix' ? 'prepared container barcode required' : capture.includeTracking ? 'tracked lot' : 'configured material, no stock use'}`
+                          : ''
+                        return `${capture.label} (${protocolCaptureLabel(capture.type)}${capture.required ? ', required' : ''}${capture.unit ? `, ${capture.unit}` : ''}${capture.type === 'choice' ? `; choices: ${capture.choices}` : ''}${definition.preparationBatchEnabled && capture.scope ? `; evidence scope: ${captureScopeLabels[capture.scope]}` : ''}${capture.sourceTube ? '; must match the selected source tube' : ''}${source}${quantity}${capture.type === 'biologicalMaterial' ? '; selected source to barcoded library tube; actual amount; optional exhausted override' : ''}${capture.type === 'equipment' ? '; registered equipment selection required' : ''})`
+                      }).join('; ')}
                     />
                   ) : null}
                   {step.qcEnabled ? <ReviewDetail label="QC acceptance criteria" value={step.qcCriteria} /> : null}

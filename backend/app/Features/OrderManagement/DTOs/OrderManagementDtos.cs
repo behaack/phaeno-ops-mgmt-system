@@ -547,7 +547,10 @@ public sealed record CatalogItemDto(
     bool IsActive,
     bool IsPSeqLabService,
     DateTime LastSyncedAt,
-    long Version, int? MaximumCustomerSamples = null);
+    long Version, int? MaximumCustomerSamples = null, decimal? MinimumSequencingVolumeUl = null)
+{
+    public string? MinimumSequencingVolumeUlText => MinimumSequencingVolumeUl?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+}
 
 public sealed record CommercialProfileDto(
     Guid Id,
@@ -717,7 +720,7 @@ public sealed record BillingProfileWriteRequest(
     string? TaxExemptionEvidence);
 public sealed record ApproveTaxDecisionRequest(long Version, string Notes);
 public sealed record LocalCatalogItemRequest(string ExternalItemId, string Name, string Description, string SalesUnit, decimal BasePrice, string Currency, bool IsActive);
-public sealed record CatalogItemWriteRequest(string ExternalItemId, string Name, string Description, string SalesUnit, decimal BasePrice, string Currency, bool IsActive, long? Version = null, CatalogServiceFamily? ServiceFamily = null, int? MaximumCustomerSamples = null);
+public sealed record CatalogItemWriteRequest(string ExternalItemId, string Name, string Description, string SalesUnit, decimal BasePrice, string Currency, bool IsActive, long? Version = null, CatalogServiceFamily? ServiceFamily = null, int? MaximumCustomerSamples = null, string? MinimumSequencingVolumeUlText = null);
 public sealed record CatalogItemDeletionDto(bool CanDelete, string? Reason, long Version);
 
 public sealed record IntegrationMessageDto(Guid Id, string Operation, string WorkflowType, Guid WorkflowId, string Status, int AttemptCount, DateTime NextAttemptAt, string? LastError, DateTime CreatedAt, long Version);

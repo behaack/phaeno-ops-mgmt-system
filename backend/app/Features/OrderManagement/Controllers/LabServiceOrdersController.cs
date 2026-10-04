@@ -838,10 +838,13 @@ public sealed partial class LabServiceOrdersController(
                 var now = DateTime.UtcNow;
                 var agreedTargetDays = order.Quotes.SingleOrDefault(q => q.Id == order.AcceptedQuoteId)
                     ?.DeliveryTargetBusinessDays;
+                var acceptedQuote = order.Quotes.SingleOrDefault(q => q.Id == order.AcceptedQuoteId)
+                    ?? throw Conflict("accepted_quote_required", "The purchased service must have an accepted quote before laboratory authorization.");
+                var purchasedService = await LabQuoteCatalog.ReadServiceIdentityAsync(dbContext, acceptedQuote.LinesJson, operationCancellationToken);
                 var command = new AuthorizeLabWorkCommand(
                     new LabOperationsCommandMetadata(commandId, authorizationId, now, LabOperationsContractVersions.V2),
                     authorizationId, 1, LabWorkAuthorizationSource.CommercialOrder, order.Id,
-                    order.OrganizationId, OrderServiceKeys.PSeqLabService, 1,
+                    order.OrganizationId, purchasedService.ServiceKey, 1,
                     agreedTargetDays.HasValue
                         ? "business-days-after-full-receipt" : "quoted-turnaround", order.OrderNumber,
                     order.Samples.Where(s => order.RequiresPreparation(s.LabJobPhaseId)).Select(sample => new AuthorizedSpecimen(

@@ -20,6 +20,7 @@ import {
   getLabOperationsDashboard,
   getLabOperationsError,
   getLabWorkOrder,
+  getLabPurchasedService,
   labWorkOrderLabel,
   getLabAttempts,
   receiveLabSpecimen,
@@ -50,6 +51,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
 import { LabLabelDialog } from './LabLabelDialog'
+import { LabPurchasedServiceCorrectionDialog } from './LabPurchasedServiceCorrectionDialog'
 
 type WorkAction =
   | { kind: 'milestone' | 'container' | 'execution' | 'exception' | 'approval' }
@@ -67,10 +69,12 @@ export function LabWorkOrderPage({ workOrderId, packetBarcode, supplierTubeBarco
   const apiEnabled = canView && authProvider !== 'mock'
   const client = useQueryClient()
   const [action, setAction] = useState<WorkAction>(null)
+  const [correctingService, setCorrectingService] = useState(false)
   const [deadlineEditing, setDeadlineEditing] = useState<JobDeadline | null>(null)
   const deadline = useJobDeadline(workOrderId, apiEnabled)
   const [labelContainer, setLabelContainer] = useState<LabContainer | null>(null)
   const work = useQuery({ queryKey: ['lab-work-order', workOrderId], queryFn: () => getLabWorkOrder(workOrderId), enabled: apiEnabled })
+  const purchasedService = useQuery({ queryKey: ['lab-purchased-service', workOrderId], queryFn: () => getLabPurchasedService(workOrderId), enabled: apiEnabled && Boolean(session?.capabilities.canSuperviseLabWork && work.data?.workOrder.commercialOrderId) })
   const dashboard = useQuery({ queryKey: ['lab-operations'], queryFn: getLabOperationsDashboard, enabled: apiEnabled })
   const packet = useQuery({ queryKey: ['lab-receipt-context', packetBarcode], queryFn: () => scanSampleShippingPacket(packetBarcode!), enabled: apiEnabled && Boolean(packetBarcode) })
   const comparison = useQuery({ queryKey: ['lab-tube-context', packetBarcode, supplierTubeBarcode], queryFn: () => scanRegisteredSampleTube(packetBarcode!, supplierTubeBarcode!), enabled: apiEnabled && Boolean(supplierTubeBarcode) && packet.data?.labWorkOrderId === workOrderId && !packet.data.isVoided })
@@ -81,6 +85,7 @@ export function LabWorkOrderPage({ workOrderId, packetBarcode, supplierTubeBarco
     await client.invalidateQueries({ queryKey: ['lab-operations'] })
     await client.invalidateQueries({ queryKey: ['lab-job-deadline', workOrderId] })
     await client.invalidateQueries({ queryKey: ['lab-jobs'] })
+    await client.invalidateQueries({ queryKey: ['lab-purchased-service', workOrderId] })
   }
   if (!canView) return <PageAlert title="Lab work unavailable" message="An assigned Phaeno laboratory role is required." />
   if (authProvider === 'mock') return <PageAlert title="Connected Lab operations are paused" message="Use a real Phaeno session to operate laboratory work." />
@@ -101,10 +106,10 @@ export function LabWorkOrderPage({ workOrderId, packetBarcode, supplierTubeBarco
       {assignmentUnavailable ? <Alert variant="destructive" className="mb-4"><AlertTitle>Execution workflow needs review</AlertTitle><AlertDescription>An existing execution uses an unavailable workflow or retired protocol. Its history is retained. Ask a supervisor to review that attempt before continuing. {invalidWorkflow?.invalidationReason ?? retiredAssignment?.retirementReason}</AlertDescription></Alert> : null}
       <section className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div><p className="text-sm text-muted-foreground"><Link to="/lab-operations" search={previous => ({ ...previous, section: returnSection ?? (data.workOrder.status === 'AwaitingSpecimens' ? 'receipt' : 'jobs'), shipmentId: returnShipmentId, receiptTab: previous.receiptTab === 'kit-requests' ? 'kit-requests' : previous.receiptView === 'received' ? 'receiving' : 'accession' })} className="hover:underline">Lab operations</Link> / {labWorkOrderLabel(data.workOrder)}</p><div className="mt-2 flex items-center gap-3"><h1 className="wrap-anywhere text-3xl font-semibold">{labWorkOrderLabel(data.workOrder)}</h1><Status value={data.workOrder.status} /></div><p className="mt-2 text-sm text-muted-foreground">{data.specimens.length} specimen(s) · {data.exceptions.filter((item) => item.status === 'Open').length} open exception(s)</p></div>
-        {canOperate || canRecordApproval ? (
+        {canOperate || canRecordApproval || purchasedService.data?.canCorrect ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button type="button" variant="outline">Actions <ChevronDown aria-hidden="true" /></Button>
+              <Button id="lab-work-actions" type="button" variant="outline">Actions</Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-max min-w-44 max-w-[calc(100vw-2rem)]">
               <DropdownMenuLabel>Work order actions</DropdownMenuLabel>
@@ -117,6 +122,7 @@ export function LabWorkOrderPage({ workOrderId, packetBarcode, supplierTubeBarco
                 </>
               ) : null}
               {canRecordApproval ? <DropdownMenuItem onSelect={() => setAction({ kind: 'approval' })}>Record scientific approval</DropdownMenuItem> : null}
+              {purchasedService.data?.canCorrect ? <DropdownMenuItem onSelect={() => setCorrectingService(true)}>Correct purchased service</DropdownMenuItem> : null}
             </DropdownMenuContent>
           </DropdownMenu>
         ) : null}
@@ -168,6 +174,7 @@ export function LabWorkOrderPage({ workOrderId, packetBarcode, supplierTubeBarco
         }
       }} />
       {labelContainer ? <LabLabelDialog key={labelContainer.id} container={labelContainer} onClose={() => setLabelContainer(null)} onRecorded={refresh} /> : null}
+      {correctingService && purchasedService.data ? <LabPurchasedServiceCorrectionDialog workOrderId={workOrderId} jobLabel={labWorkOrderLabel(data.workOrder)} service={purchasedService.data} onClose={() => setCorrectingService(false)} onSaved={refresh} /> : null}
     </main>
   )
 }

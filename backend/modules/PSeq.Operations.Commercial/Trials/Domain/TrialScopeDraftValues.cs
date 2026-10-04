@@ -8,7 +8,8 @@ public sealed record TrialScopeDraftValues(
     string? SubmissionInstructions = null, string? SuccessCriteria = null, decimal? EstimatedRetailValue = null,
     decimal? AnticipatedInternalCost = null, int? ResidualRetentionDays = null,
     TrialMaterialDisposition? MaterialDisposition = null, string? ReturnDestination = null,
-    string? ReturnHandling = null, string? ReturnShippingPayer = null, string? Terms = null, string? Reason = null)
+    string? ReturnHandling = null, string? ReturnShippingPayer = null, string? Terms = null, string? Reason = null,
+    Guid? SampleTypeId = null, IReadOnlyList<TrialSourceGroup>? Sources = null)
 {
     public void Validate()
     {
@@ -16,13 +17,14 @@ public sealed record TrialScopeDraftValues(
         Limit(ReturnDestination); Limit(ReturnHandling); Limit(ReturnShippingPayer, 255); Limit(Terms, 12000); Limit(Reason);
         if (SampleAllowance is < 1 || ResidualRetentionDays is < 0 || EstimatedRetailValue is < 0 || AnticipatedInternalCost is < 0)
             throw new ArgumentException("Use a positive sample allowance and non-negative cost and material-retention values, or leave them blank in the draft.");
-        if (DepartmentId == Guid.Empty || WorkflowVersionId == Guid.Empty)
+        if (DepartmentId == Guid.Empty || WorkflowVersionId == Guid.Empty || SampleTypeId == Guid.Empty)
             throw new ArgumentException("Selected Department and workflow identifiers must be valid.");
         if (SubmissionOpensAtUtc.HasValue) TrialRules.Utc(SubmissionOpensAtUtc.Value);
         if (SubmissionClosesAtUtc.HasValue) TrialRules.Utc(SubmissionClosesAtUtc.Value);
         if (MaterialDisposition.HasValue && !Enum.IsDefined(MaterialDisposition.Value))
             throw new ArgumentException("Select a supported material disposition.");
         Choices(AnalysisIds); Choices(DeliverableIds);
+        if (Sources is not null) TrialRules.ValidateSources(Sources, allowIncomplete: true);
     }
 
     private static void Limit(string? value, int maximum = 4000)

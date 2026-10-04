@@ -10,12 +10,13 @@ export type MaterialTransfer = {
   balanceAdjustmentQuantity: number | null; balanceAdjustmentQuantityText?: string | null;
   performedByUserId: string; performedAtUtc: string; recordedByUserId: string; recordedAtUtc: string;
 }
-export type SequencingTubeMember = { id: string; labWorkOrderId: string; labLibraryId: string; libraryKey: string; source: LabContainer; sequencingTube: LabContainer | null; transfer: MaterialTransfer | null }
+export type SequencingTubeMember = { id: string; labWorkOrderId: string; labLibraryId: string; libraryKey: string; source: LabContainer; sequencingTube: LabContainer | null; transfer: MaterialTransfer | null; catalogItemId: string | null; catalogServiceName: string | null; catalogVersion: number | null; minimumSequencingVolumeUl: number | null; minimumSequencingVolumeUlText: string | null; requirementCaptured: boolean }
 export type SequencingTubeWorkspace = { batchId: string; batchVersion: number; batchStatus: string; hasSendout: boolean; members: SequencingTubeMember[] }
 export type SequencingTubeCommand = {
   requestId: string; batchVersion: number; action: 'allocate' | 'transfer'; barcodeSource?: 'Manufacturer' | 'PhaenoGenerated'; barcode?: string; manufacturerSupplierId?: string;
   location?: string; quantity?: number; quantityText?: string; quantityUnit?: string; materialExhausted?: boolean; sourceVersion?: number; destinationVersion?: number;
   confirmedSourceBarcode?: string; confirmedDestinationBarcode?: string; performance?: LabStepPerformanceInput;
+  catalogVersion?: number;
 }
 export const getSequencingTubes = async (batchId: string) =>
   (await api.get<{ data: SequencingTubeWorkspace }>(`/platform/lab-operations/batches/${batchId}/sequencing-tubes`)).data.data

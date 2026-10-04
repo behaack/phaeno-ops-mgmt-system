@@ -28,8 +28,19 @@ public sealed partial class LabOperationsController
         foreach (var workId in affectedJobs)
             await SampleShippingPackingData.LockAsync(dbContext, $"lab-tube-receipt:{workId}", cancellationToken);
         var tubeWorkspace = await ReadSequencingTubesAsync(batchId, cancellationToken);
+        if (tubeWorkspace.Members.Count == 0)
+            throw Conflict("batch_libraries_required", "An empty sequencing batch cannot create a sendout. Return the empty batch to draft and add libraries first.");
         if (tubeWorkspace.Members.Any(m => m.SequencingTube is null || m.Transfer is null || m.SequencingTube.Status != "Available"))
             throw Conflict("sequencing_transfers_required", "Record the transfer into a confirmed sequencing tube for every library before creating the sendout.");
+        foreach (var member in tubeWorkspace.Members)
+        {
+            if (!member.RequirementCaptured || !member.MinimumSequencingVolumeUl.HasValue)
+                throw Conflict("sequencing_minimum_required", "Every sequencing pair requires a captured Catalog requirement before sendout.");
+            RequireSequencingMinimum(member.Transfer!.Quantity, member.Transfer.QuantityUnit, member.MinimumSequencingVolumeUl.Value);
+            if (!member.SequencingTube!.Quantity.HasValue)
+                throw Conflict("sequencing_volume_unknown", "Verify the volume in every sequencing tube before sendout.");
+            RequireSequencingMinimum(member.SequencingTube.Quantity.Value, member.SequencingTube.QuantityUnit, member.MinimumSequencingVolumeUl.Value);
+        }
         var tubeIds = tubeWorkspace.Members.Where(m => m.SequencingTube is not null).Select(m => m.SequencingTube!.Id).ToList();
         var physicalTubes = await dbContext.LabContainers.Where(c => tubeIds.Contains(c.Id)).ToListAsync(cancellationToken);
         foreach (var tube in physicalTubes)
@@ -47,7 +58,9 @@ public sealed partial class LabOperationsController
             select new { memberId = member.Id, libraryId = library.Id, libraryKey = library.LibraryKey,
                 libraryContainerId = container.Id, libraryContainerBarcode = container.Barcode,
                 sequencingContainerId = tube.Id, containerBarcode = tube.Barcode, materialTransferId = transfer.Id,
-                quantity = transfer.Quantity, quantityUnit = transfer.QuantityUnit })
+                quantity = transfer.Quantity, quantityUnit = transfer.QuantityUnit,
+                catalogItemId = member.SequencingCatalogItemId, catalogVersion = member.SequencingCatalogVersion,
+                catalogServiceName = member.SequencingCatalogName, minimumSequencingVolumeUl = member.MinimumSequencingVolumeUl })
             .ToListAsync(cancellationToken);
         if (members.Count == 0)
             throw Conflict("batch_members_required", "Add at least one library before creating a sendout.");

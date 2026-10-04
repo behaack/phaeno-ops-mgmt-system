@@ -589,6 +589,10 @@ public static class LabOperationsModelConfiguration
         {
             entity.ToTable("lab_batch_members", laboratorySchema);
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.MinimumSequencingVolumeUl).HasColumnType("numeric");
+            entity.Property(e => e.SequencingCatalogName).HasMaxLength(255);
+            entity.HasOne<PSeq.Operations.Commercial.OrderManagement.Domain.QboCatalogItem>().WithMany().HasForeignKey(e => e.SequencingCatalogItemId).OnDelete(DeleteBehavior.Restrict).HasConstraintName("fk_lab_batch_members_sequencing_catalog");
+            entity.HasIndex(e => e.SequencingCatalogItemId).HasDatabaseName("ix_lab_batch_members_sequencing_catalog_item_id");
             entity.HasIndex(e => new { e.LabOperationalBatchId, e.LabLibraryId }).IsUnique();
             entity.HasOne<LabOperationalBatch>().WithMany().HasForeignKey(e => e.LabOperationalBatchId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<LabWorkOrder>().WithMany().HasForeignKey(e => e.LabWorkOrderId).OnDelete(DeleteBehavior.Restrict);

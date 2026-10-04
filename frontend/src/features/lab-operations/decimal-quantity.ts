@@ -14,6 +14,16 @@ export function isPositiveDecimalQuantity(value: string) {
   return parts !== null && parts.coefficient > 0n
 }
 
+export function meetsMinimumSequencingVolume(value: string, unit: string, minimumUlText: string) {
+  const amount = decimalParts(value)
+  const minimum = decimalParts(minimumUlText)
+  const exponent = ({ 'µL': 0, 'μL': 0, uL: 0, mL: 3, L: 6, nL: -3 } as Record<string, number>)[unit.trim()]
+  if (!amount || !minimum || exponent === undefined) return false
+  const shift = minimum.scale - amount.scale + exponent
+  return shift >= 0 ? amount.coefficient * 10n ** BigInt(shift) >= minimum.coefficient
+    : amount.coefficient >= minimum.coefficient * 10n ** BigInt(-shift)
+}
+
 export function isMasterMixDecimalQuantity(value: string, allowZero = false) {
   const parts = decimalParts(value)
   return parts !== null && parts.scale <= 12

@@ -2,7 +2,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { cloneElement, isValidElement, useRef, type ReactNode } from 'react'
-import { ChevronDown } from 'lucide-react'
 import { Button } from '#/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '#/components/ui/dialog'
@@ -16,10 +15,10 @@ export const prepRowClass = 'rounded-lg border bg-muted/30 p-4 shadow-xs'
 export function PreparationPanel({ title, description, actions, headerContent, children }: { title: string; description?: string; actions?: ReactNode; headerContent?: ReactNode; children: ReactNode }) {
   return <Card className="gap-0 overflow-hidden py-0"><CardHeader className="border-b bg-muted/50 p-4"><CardTitle>{title}</CardTitle>{description ? <CardDescription>{description}</CardDescription> : null}{actions ? <CardAction>{actions}</CardAction> : null}{headerContent ? <div className="col-span-full space-y-2">{headerContent}</div> : null}</CardHeader><CardContent className="space-y-3 p-4">{children}</CardContent></Card>
 }
-export function PreparationActions({ items }: { items: { label: string; onClick: () => void; disabled?: boolean }[] }) {
+export function PreparationActions({ items, triggerId }: { items: { label: string; onClick: () => void; disabled?: boolean }[]; triggerId?: string }) {
   if (!items.length) return null
-  if (items.length === 1) return <Button type="button" variant="outline" onClick={items[0].onClick} disabled={items[0].disabled}>{items[0].label}</Button>
-  return <ActionMenu><DropdownMenuTrigger asChild><Button type="button" variant="outline">Actions <ChevronDown /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]">{items.map(item => <DropdownMenuItem key={item.label} disabled={item.disabled} onSelect={item.onClick}>{item.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu>
+  if (items.length === 1) return <Button id={triggerId} type="button" variant="outline" onClick={items[0].onClick} disabled={items[0].disabled}>{items[0].label}</Button>
+  return <ActionMenu><DropdownMenuTrigger asChild><Button id={triggerId} type="button" variant="outline">Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-48 max-w-[calc(100vw-2rem)]">{items.map(item => <DropdownMenuItem key={item.label} disabled={item.disabled} onSelect={item.onClick}>{item.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu>
 }
 export function PreparationField({ label, id, required, children, error }: { label: string; id: string; required?: boolean; children: ReactNode; error?: string }) {
   const control = isValidElement<{ 'aria-required'?: boolean; 'aria-invalid'?: boolean; 'aria-describedby'?: string }>(children) ? cloneElement(children, { 'aria-required': required || undefined, 'aria-invalid': Boolean(error), 'aria-describedby': [children.props['aria-describedby'], error ? `${id}-error` : undefined].filter(Boolean).join(' ') || undefined }) : children

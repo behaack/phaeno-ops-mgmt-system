@@ -58,11 +58,20 @@ test('laboratory DataMatrix label remains visible through the dialog portal and 
   const label = (await surface.boundingBox())!
   const matrix = (await surface.locator('img').boundingBox())!
   const caption = (await surface.locator('figcaption').boundingBox())!
+  const metadata = (await surface.locator('.lab-label-metadata').boundingBox())!
+  expect(Math.abs(label.width - 50 * 96 / 25.4)).toBeLessThan(1)
+  expect(Math.abs(label.height - 25 * 96 / 25.4)).toBeLessThan(1)
   expect(Math.abs(matrix.width - matrix.height)).toBeLessThan(1)
   expect(matrix.width).toBeGreaterThanOrEqual(67)
   expect(matrix.x + matrix.width).toBeLessThanOrEqual(label.x + label.width)
   expect(caption.y + caption.height).toBeLessThanOrEqual(label.y + label.height)
-  await page.pdf({ path: info.outputPath('laboratory-label.pdf'), preferCSSPageSize: true, printBackground: true })
+  expect(metadata.y + metadata.height).toBeLessThanOrEqual(caption.y)
+  for (const row of await surface.locator('.lab-label-metadata > span').all()) {
+    const bounds = (await row.boundingBox())!
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(matrix.x)
+  }
+  const pdf = await page.pdf({ path: info.outputPath('laboratory-label.pdf'), preferCSSPageSize: true, printBackground: true })
+  expect(pdf.toString('latin1').match(/\/Type\s*\/Page\b/g)).toHaveLength(1)
   await surface.screenshot({ path: info.outputPath('laboratory-label.png') })
 })
 

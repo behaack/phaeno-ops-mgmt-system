@@ -1,6 +1,9 @@
 # Build output
 tmp
 artifacts
+/output/
+/.artifacts/
+/_mastermix_release_check/
 **/bin/
 **/obj/
 **/dist/

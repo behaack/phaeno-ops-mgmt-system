@@ -20,9 +20,6 @@ public sealed class TrialProjectsController(PSeqOperationsDbContext db, TrialAcc
     [HttpGet("configuration")]
     public async Task<TrialConfigurationDto> Configuration([FromQuery] Guid? companyId, CancellationToken token) =>
         await reader.ConfigurationAsync(await access.ReadAsync(HttpContext, token), companyId, token);
-    [HttpGet("requests")]
-    public async Task<TrialHandoffPageDto> Requests(CancellationToken token, [FromQuery] string? search = null, [FromQuery] int page = 0, [FromQuery] Guid? companyId = null, [FromQuery] Guid? requestId = null) =>
-        await reader.HandoffsAsync(await access.ReadAsync(HttpContext, token), search, page, companyId, requestId, token);
     [HttpGet("{id:guid}")]
     public async Task<TrialDetailDto> Detail(Guid id, CancellationToken token)
     { var actor = await access.ReadAsync(HttpContext, token); return await reader.DetailAsync(await workflow.ReadAsync(id, actor, token), actor, token); }
@@ -31,7 +28,8 @@ public sealed class TrialProjectsController(PSeqOperationsDbContext db, TrialAcc
     public async Task<TrialDetailDto> Create([FromBody] TrialCreateRequest request, CancellationToken token)
     {
         var actor = await access.ReadAsync(HttpContext, token); RequireStaff(actor);
-        return await ExecuteAsync(actor, $"trial-create:{request.CrmHandoffId}", request, async () =>
+        await access.RequireCreateAsync(actor, token);
+        return await ExecuteAsync(actor, $"trial-create:{request.CompanyId}", request, async () =>
         {
             var trial = await workflow.CreateAsync(actor, request, token); await db.SaveChangesAsync(token);
             return await reader.DetailAsync(trial, actor, token);
@@ -72,6 +70,8 @@ public sealed class TrialProjectsController(PSeqOperationsDbContext db, TrialAcc
     [HttpPost("configuration/authorities")]
     public async Task<TrialConfigurationDto> AssignAuthority([FromBody] TrialAuthorityRequest request, CancellationToken token)
     {
+        if (request.Domain != TrialApprovalDomain.ScientificOperations)
+            throw Error("trial_authority_domain_invalid", "Assign Commercial leadership in Phaeno user management. Trial configuration manages Scientific Operations authority only.");
         var actor = await access.ReadAsync(HttpContext, token); RequireStaff(actor);
         return await ExecuteAsync(actor, $"trial-authority:{request.Domain}", request, async () =>
         {

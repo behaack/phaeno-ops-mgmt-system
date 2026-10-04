@@ -117,6 +117,12 @@ The owner subsequently authorized completing the implementation, documentation, 
 
 ## API and persistence decisions
 
+### October 4 Catalog requirement and paired sequencing entry
+
+The [Catalog sequencing and pairing plan](CATALOG-SEQUENCING-TUBE-PAIRING-PLAN.md) supersedes the initial batch-editable minimum. Each service defines its minimum in Catalog; the workspace shows it read-only and captures identity/version/minimum with the physical pair at allocation. One active pair form replaces repeated action cards. Each library in a cross-service batch uses its own requirement. The owner-authorized fake PSeq minimum remains 5 µL.
+
+Both physical scans, actual volume, performed attribution, generated-label verification, exact source debit/destination credit and durable exact retries remain mandatory. Transfer and sendout compare each pair against its captured minimum. Catalog and member fields replace the obsolete batch setting through a reviewed local conversion that archives previous settings before column removal; approval and retained-data verification are tracked in the pairing plan. No physical transfers or inferred historical quantities are part of this correction.
+
 - Customer tube assignment adds the per-tube customer-declared amount/unit; packet rows freeze those values and declaration provenance. Accession reads the frozen packet, retaining unknown historical amounts.
 - Preparation definitions add `biologicalMaterial` under typed fields. Allocation uses `allocate-library-tube`; recording the field captures source/destination scans, actual quantity/unit, optional exhaustion and existing performance evidence under the preparation command receipt. Library yield measures the same tube without another source debit.
 - Sequencing uses a two-phase versioned command: allocate/register the empty tube, then confirm both barcodes and record the physical transfer. `GET batches/{id}/sequencing-tubes` supports the bounded workspace; `POST batches/{id}/members/{memberId}/sequencing-tube` applies the command. Exact retries preserve the original request, versions and actor.

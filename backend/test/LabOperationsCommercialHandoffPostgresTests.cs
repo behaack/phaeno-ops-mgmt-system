@@ -1146,6 +1146,9 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             Assert.Matches(
                 "^PH-BAT-[0-9]{8}-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{8}$",
                 batch.BatchNumber);
+            var emptyStart = await Assert.ThrowsAsync<OrderManagementException>(() => lab.TransitionBatch(
+                batch.Id, new BatchTransitionRequest("start", batch.Version), default));
+            Assert.Equal("batch_libraries_required", emptyStart.ErrorCode);
             library = await lab.RecordLibraryQc(library.Id, new(false, "{\"concentrationNgUl\":0.1,\"scope\":\"SIMULATED failed QC\"}", library.Version), default);
             var failedQc = await Assert.ThrowsAsync<OrderManagementException>(() => lab.AddBatchMember(batch.Id,
                 new(workOrderId.Value, library.Id), default));
@@ -1167,13 +1170,21 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 batch.Id,
                 new BatchTransitionRequest("start", batch.Version, DateTime.UtcNow),
                 CancellationToken.None);
+            var populatedRecovery = await Assert.ThrowsAsync<OrderManagementException>(() => lab.TransitionBatch(
+                batch.Id, new BatchTransitionRequest("return-to-draft", batch.Version, Reason: "TEST ONLY correction"), default));
+            Assert.Equal("batch_recovery_unavailable", populatedRecovery.ErrorCode);
             var sendoutWithoutTransfer = await Assert.ThrowsAsync<OrderManagementException>(() => lab.CreateSendout(
                 batch.Id, new CreateSendoutRequest("Reference sequencing provider", null, "{}", null), CancellationToken.None));
             Assert.Equal("sequencing_transfers_required", sendoutWithoutTransfer.ErrorCode);
+            var workService = await scope.DbContext.LabWorkOrders.AsNoTracking().Where(w => w.Id == workOrderId.Value).Select(w => w.ServiceKey).SingleAsync();
+            var sequencingCatalog = await scope.DbContext.QboCatalogItems.SingleAsync(c => c.ExternalItemId.ToLower() == workService);
+            sequencingCatalog.SetMinimumSequencingVolume(5);
+            await scope.DbContext.SaveChangesAsync();
             var sequencing = await lab.SequencingTubes(batch.Id, CancellationToken.None);
             var sequencingMember = Assert.Single(sequencing.Members);
             var allocateTube = new LabSequencingTubeCommand(Guid.NewGuid(), sequencing.BatchVersion, "allocate",
-                BarcodeSource: "PhaenoGenerated", Location: "Reference sequencing rack", SourceVersion: sequencingMember.Source.Version);
+                BarcodeSource: "PhaenoGenerated", Location: "Reference sequencing rack", SourceVersion: sequencingMember.Source.Version,
+                ConfirmedSourceBarcode: sequencingMember.Source.Barcode, CatalogVersion: sequencingMember.CatalogVersion);
             var currentLibraryVersion = await scope.DbContext.LabLibraries.AsNoTracking().Where(l => l.Id == library.Id).Select(l => l.Version).SingleAsync();
             library = await lab.RecordLibraryQc(library.Id, new(false, "{\"scope\":\"SIMULATED failed after assignment\"}", currentLibraryVersion), default);
             var failedQcAfterAssignment = await Assert.ThrowsAsync<OrderManagementException>(() => lab.ApplySequencingTubeCommand(
@@ -1203,11 +1214,23 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             var roundedQuantity = await Assert.ThrowsAsync<OrderManagementException>(() => lab.ApplySequencingTubeCommand(batch.Id,
                 sequencingMember.Id, transferMaterial with { RequestId = Guid.NewGuid(), QuantityText = "0.12345678901234567890123456789" }, CancellationToken.None));
             Assert.Equal("transfer_quantity_invalid", roundedQuantity.ErrorCode);
+            var belowMinimum = await Assert.ThrowsAsync<OrderManagementException>(() => lab.ApplySequencingTubeCommand(batch.Id,
+                sequencingMember.Id, transferMaterial with { RequestId = Guid.NewGuid(), QuantityText = "4.9999999999999999999999999999" }, CancellationToken.None));
+            Assert.Equal("sequencing_volume_below_minimum", belowMinimum.ErrorCode);
+            var unchanged = await lab.SequencingTubes(batch.Id, default);
+            Assert.Null(Assert.Single(unchanged.Members).Transfer);
+            Assert.Equal(sequencingMember.Source.Quantity, Assert.Single(unchanged.Members).Source.Quantity);
+            Assert.Null(Assert.Single(unchanged.Members).SequencingTube!.Quantity);
             sequencing = await lab.ApplySequencingTubeCommand(batch.Id, sequencingMember.Id, transferMaterial, CancellationToken.None);
             var transferred = Assert.Single(sequencing.Members);
             Assert.Equal(0.999999999999999999999999999m, transferred.Source.Quantity);
             Assert.Equal(19.000000000000000000000000001m, transferred.SequencingTube!.Quantity);
             Assert.Equal("19.000000000000000000000000001", transferred.Transfer!.QuantityText);
+            Assert.True(transferred.RequirementCaptured);
+            Assert.Equal(5m, transferred.MinimumSequencingVolumeUl);
+            sequencingCatalog.SetMinimumSequencingVolume(6);
+            await scope.DbContext.SaveChangesAsync();
+            Assert.Equal(5m, Assert.Single((await lab.SequencingTubes(batch.Id, default)).Members).MinimumSequencingVolumeUl);
             var transferReplay = await lab.ApplySequencingTubeCommand(batch.Id, sequencingMember.Id, transferMaterial, CancellationToken.None);
             Assert.Equal(transferred.Transfer!.Id, Assert.Single(transferReplay.Members).Transfer!.Id);
             Assert.Equal(0.999999999999999999999999999m, Assert.Single(transferReplay.Members).Source.Quantity);

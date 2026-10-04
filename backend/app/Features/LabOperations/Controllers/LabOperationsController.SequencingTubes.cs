@@ -30,17 +30,27 @@ public sealed partial class LabOperationsController
         var containers = await dbContext.LabContainers.AsNoTracking().Where(c => containerIds.Contains(c.Id)).ToDictionaryAsync(c => c.Id, ct);
         var memberIds = members.Select(m => m.Id).ToList();
         var transfers = await dbContext.LabBiologicalMaterialTransfers.AsNoTracking().Where(t => t.SequencingBatchMemberId.HasValue && memberIds.Contains(t.SequencingBatchMemberId.Value)).ToDictionaryAsync(t => t.Id, ct);
-        return new(batch.Id, batch.Version, batch.Status.ToString(), await dbContext.LabNgsSendouts.AnyAsync(s => s.LabOperationalBatchId == batchId, ct),
+        var hasSendout = await dbContext.LabNgsSendouts.AnyAsync(s => s.LabOperationalBatchId == batchId, ct);
+        var workIds = members.Select(m => m.LabWorkOrderId).Distinct().ToList();
+        var works = await dbContext.LabWorkOrders.AsNoTracking().Where(w => workIds.Contains(w.Id)).ToDictionaryAsync(w => w.Id, ct);
+        var keys = works.Values.Select(w => w.ServiceKey.ToLower()).Distinct().ToList();
+        var catalog = await dbContext.QboCatalogItems.AsNoTracking().Where(c => keys.Contains(c.ExternalItemId.ToLower())
+            && c.ServiceFamily == CatalogServiceFamily.PSeqLabService).ToDictionaryAsync(c => c.ExternalItemId.ToLower(), ct);
+        return new(batch.Id, batch.Version, batch.Status.ToString(), hasSendout,
             members.Select(m =>
             {
                 var library = libraries[m.LabLibraryId];
                 var source = containers[library.LibraryContainerId];
                 var destination = m.SequencingContainerId.HasValue ? containers[m.SequencingContainerId.Value] : null;
+                catalog.TryGetValue(works[m.LabWorkOrderId].ServiceKey.ToLower(), out var service);
+                var captured = m.SequencingCatalogItemId.HasValue;
                 return new LabSequencingTubeMemberDto(m.Id, m.LabWorkOrderId, library.Id, library.LibraryKey, MapContainer(source),
                     destination is null ? null : MapContainer(destination),
                     m.MaterialTransferId.HasValue && destination is not null && transfers.TryGetValue(m.MaterialTransferId.Value, out var transfer)
-                        ? MapMaterialTransfer(transfer, source.Barcode, destination.Barcode) : null);
-            }).OrderBy(m => m.LibraryKey).ToList());
+                        ? MapMaterialTransfer(transfer, source.Barcode, destination.Barcode) : null,
+                    captured ? m.SequencingCatalogItemId : service?.Id, captured ? m.SequencingCatalogName : service?.Name,
+                    captured ? m.SequencingCatalogVersion : service?.Version, captured ? m.MinimumSequencingVolumeUl : service?.MinimumSequencingVolumeUl, captured);
+            }).OrderBy(m => m.Source.Location).ThenBy(m => m.LibraryKey).ToList());
     }
 
     [HttpPost("batches/{batchId:guid}/members/{memberId:guid}/sequencing-tube")]
@@ -78,10 +88,19 @@ public sealed partial class LabOperationsController
         {
             case "allocate":
             {
+                var work = await dbContext.LabWorkOrders.AsNoTracking().SingleAsync(w => w.Id == member.LabWorkOrderId, ct);
+                var catalog = await dbContext.QboCatalogItems.AsNoTracking().SingleOrDefaultAsync(c => c.ExternalItemId.ToLower() == work.ServiceKey.ToLower()
+                    && c.ServiceFamily == CatalogServiceFamily.PSeqLabService, ct);
+                if (catalog?.MinimumSequencingVolumeUl is null)
+                    throw Conflict("sequencing_minimum_required", "Configure this library's minimum sequencing volume in the service Catalog before preparing a sequencing tube.");
+                if (request.CatalogVersion is null) throw Invalid("sequencing_catalog_version_required", "Refresh the Catalog requirement before preparing the tube.");
+                EnsureVersion(catalog.Version, request.CatalogVersion.Value);
                 if (member.SequencingContainerId.HasValue) throw Conflict("sequencing_tube_exists", "A sequencing tube is already assigned to this library in the batch.");
                 if (source.Status != LabContainerStatus.Available) throw Conflict("library_material_unavailable", "This library has no available material for a new transfer.");
                 if (request.SourceVersion is null) throw Invalid("source_version_required", "Refresh the library before assigning a tube.");
                 EnsureVersion(source.Version, request.SourceVersion.Value);
+                if (!BarcodeMatches(request.ConfirmedSourceBarcode, source.Barcode))
+                    throw Invalid("transfer_identity_mismatch", "Scan the selected source library tube before preparing its sequencing tube.");
                 if (request.BarcodeSource is not ("PhaenoGenerated" or "Manufacturer")) throw Invalid("barcode_source_invalid", "Choose a manufacturer barcode or a POMS label.");
                 string barcode;
                 var barcodeNamespace = "PHAENO";
@@ -111,6 +130,7 @@ public sealed partial class LabOperationsController
                     request.BarcodeSource == "Manufacturer" ? LabContainerBarcodeSource.Manufacturer : LabContainerBarcodeSource.PhaenoGenerated,
                     labelVerificationRequired: request.BarcodeSource == "PhaenoGenerated", barcodeNamespace: barcodeNamespace);
                 tube.AttachAttempt(attempt);
+                Execute(() => member.CaptureSequencingRequirement(catalog.Id, catalog.Version, catalog.Name, catalog.MinimumSequencingVolumeUl.Value));
                 member.AssignSequencingTube(tube.Id);
                 dbContext.LabContainers.Add(tube);
                 dbContext.Entry(source).Property(c => c.UpdatedAt).IsModified = true;
@@ -139,6 +159,9 @@ public sealed partial class LabOperationsController
                 }
                 if (quantity is null || quantity <= 0 || string.IsNullOrWhiteSpace(request.QuantityUnit))
                     throw Invalid("transfer_quantity_required", "Enter the positive amount transferred and its unit.");
+                if (!member.MinimumSequencingVolumeUl.HasValue)
+                    throw Conflict("sequencing_minimum_required", "The sequencing pair requires a captured Catalog requirement before recording a transfer.");
+                RequireSequencingMinimum(quantity.Value, request.QuantityUnit, member.MinimumSequencingVolumeUl.Value);
                 if (source.Quantity.HasValue && !ExactDecimalQuantity.CanSubtract(source.Quantity.Value, quantity.Value))
                     throw Invalid("transfer_quantity_precision", "Use an amount whose source balance can be recorded exactly.");
                 if (request.Performance is null || !request.Performance.PersonallyPerformed || request.Performance.PerformedByUserId.HasValue)
@@ -166,6 +189,14 @@ public sealed partial class LabOperationsController
 
     private static bool BarcodeMatches(string? scanned, string expected) =>
         (LabBarcodeService.TryNormalize(scanned, out var normalized) || SupplierTubeBarcode.TryNormalize(scanned, out normalized)) && normalized == expected;
+
+    private static void RequireSequencingMinimum(decimal quantity, string? unit, decimal minimumUl)
+    {
+        bool meetsMinimum = false;
+        Execute(() => meetsMinimum = SequencingVolume.MeetsMinimum(quantity, unit, minimumUl));
+        if (!meetsMinimum)
+            throw Invalid("sequencing_volume_below_minimum", $"Each sequencing tube requires at least {minimumUl.ToString(System.Globalization.CultureInfo.InvariantCulture)} µL.");
+    }
 
     [HttpGet("work-orders/{workOrderId:guid}/containers/{containerId:guid}/material-transfers")]
     public async Task<IReadOnlyList<LabMaterialTransferDto>> ContainerMaterialTransfers(Guid workOrderId, Guid containerId, CancellationToken ct)

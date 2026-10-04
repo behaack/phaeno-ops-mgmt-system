@@ -215,7 +215,8 @@ html {
 }
 
 @media (min-width: 1024px) and (max-width: 1691px) {
-  .workspace-sidebar-pinned {
+  .workspace-sidebar-pinned,
+  [data-portal-shell]:has(.workspace-sidebar-pinned) > footer {
     padding-left: 16rem;
   }
 }
@@ -280,37 +281,73 @@ html {
   }
 }
 
+.lab-label-print-surface {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8rem;
+  gap: .25rem .75rem;
+  width: 100%;
+  max-width: 26rem;
+  margin-inline: auto;
+  padding: .75rem;
+  border: 1px solid var(--border);
+  border-radius: .5rem;
+  background: white;
+  color: black;
+}
+.lab-label-heading {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: .5rem;
+  font-size: .625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.lab-label-title { grid-column: 1; grid-row: 2; margin: 0; font-size: .75rem; font-weight: 600; overflow-wrap: anywhere; }
+.lab-label-metadata { grid-column: 1; grid-row: 3; display: flex; flex-direction: column; font-size: .625rem; line-height: 1.35; overflow-wrap: anywhere; }
+.lab-label-print-surface .identifier-data-matrix { display: contents; }
+.lab-label-print-surface .identifier-data-matrix img { grid-column: 2; grid-row: 1 / span 3; align-self: center; width: 8rem; height: 8rem; object-fit: contain; }
+.lab-label-print-surface .identifier-data-matrix figcaption { grid-column: 1 / -1; grid-row: 4; margin-top: .25rem; font-size: .75rem; text-align: center; }
+
+@media (max-width: 400px) {
+  .lab-label-print-surface { grid-template-columns: minmax(0, 1fr) 5rem; gap: .25rem .5rem; padding: .5rem; }
+  .lab-label-print-surface .identifier-data-matrix img { width: 5rem; height: 5rem; }
+}
+
 @media print {
   @page {
     size: auto;
     margin: 0;
   }
 
-  @page lab-label { size: 50mm 25mm; margin: 0; }
-  html:has(.lab-label-print-dialog) { min-width: 0 !important; width: 50mm; }
-  body:has(.lab-label-print-dialog) { min-width: 0 !important; width: 50mm; page: lab-label; background: white !important; height: auto !important; margin: 0 !important; overflow: visible !important; }
+  html:has(.lab-label-print-dialog) { min-width: 0 !important; width: 50mm; min-height: 0 !important; height: auto !important; overflow: visible !important; }
+  body:has(.lab-label-print-dialog) { min-width: 0 !important; width: 50mm; background: white !important; min-height: 0 !important; height: auto !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
   body:has(.lab-label-print-dialog) > :not(:has(.lab-label-print-dialog)):not(.lab-label-print-dialog) { display: none !important; }
-  .lab-label-print-dialog { page: lab-label; position: static !important; inset: auto !important; translate: none !important; transform: none !important; display: block !important; width: 50mm; max-width: none; max-height: none; overflow: visible; border: 0; padding: 0; gap: 0; box-shadow: none; background: white; color: black; }
+  .lab-label-print-dialog { position: static !important; inset: auto !important; translate: none !important; transform: none !important; animation: none !important; display: block !important; width: 50mm; max-width: none; max-height: none; overflow: visible; border: 0; padding: 0; margin: 0; gap: 0; box-shadow: none; background: white; color: black; }
   .lab-label-print-dialog > :not([data-slot="dialog-body"]) { display: none !important; }
   .lab-label-print-dialog [data-slot="dialog-body"] { display: block; padding: 0; overflow: visible; }
-  .lab-label-print-dialog [data-slot="dialog-body"] > :not(.lab-label-print-surface) { display: none !important; }
+  .lab-label-print-dialog [data-slot="dialog-body"] > :not(.lab-label-preview), .lab-label-preview > :not(.lab-label-print-surface) { display: none !important; }
 
   .lab-label-print-surface {
-    page: lab-label;
-    position: relative;
     width: 50mm;
     height: 25mm;
+    max-width: none;
+    margin: 0;
+    box-sizing: border-box;
+    grid-template-columns: 28mm 18mm;
+    grid-template-rows: 2mm 3mm 15mm 3mm;
+    gap: 0 2mm;
+    break-inside: avoid;
     border: 0 !important;
     border-radius: 0 !important;
     padding: 1mm !important;
   }
-  .lab-label-print-surface > :not(.identifier-data-matrix) { width: 28mm; }
-  .lab-label-print-surface > div:first-child { font-size: 5pt; line-height: 2mm; gap: 1mm; }
-  .lab-label-print-surface > p { font-size: 6pt; line-height: 2.4mm; margin: 0; }
-  .lab-label-print-surface > div:last-child { display: flex; flex-direction: column; font-size: 5pt; line-height: 2.3mm; margin: 0; }
-  .lab-label-print-surface .identifier-data-matrix { position: absolute; inset: 1mm 1mm auto auto; margin: 0; width: 18mm; }
+  .lab-label-heading { font-size: 5pt; line-height: 2mm; gap: 1mm; }
+  .lab-label-title { font-size: 5pt; line-height: 1.5mm; }
+  .lab-label-metadata { font-size: 4.5pt; line-height: 1.8mm; word-break: break-all; }
   .lab-label-print-surface .identifier-data-matrix img { width: 18mm; height: 18mm; object-fit: contain; }
-  .lab-label-print-surface .identifier-data-matrix figcaption { position: absolute; right: 0; top: 19mm; width: 48mm; font-size: 6pt; line-height: 2.5mm; margin: 0; }
+  .lab-label-print-surface .identifier-data-matrix figcaption { font-size: 6pt; line-height: 3mm; margin: 0; }
 
 }
 

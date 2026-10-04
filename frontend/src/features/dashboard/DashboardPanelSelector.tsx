@@ -17,6 +17,7 @@ import {
 import { useMemo, useState } from 'react'
 
 import { ConnectedOperationsSummary } from './ConnectedOperationsSummary'
+import { NeedsAttentionSummary } from './NeedsAttentionSummary'
 import { OrderOperationsSummary } from './OrderOperationsSummary'
 import { AccountsDashboardContent } from './AccountsDashboardContent'
 import { DashboardHero } from './DashboardHero'
@@ -55,7 +56,7 @@ const operationsPanels = {
     description:
       'Commercial work requiring pricing, fulfillment, release, or integration attention.',
     href: '/order-operations',
-    actionLabel: 'Open Order Operations',
+    actionLabel: 'Open Order operations',
     metrics: [
       { label: 'Awaiting review', value: '8', icon: Clock3 },
       { label: 'On hold', value: '3', icon: AlertTriangle },
@@ -282,7 +283,7 @@ export function DashboardPanelSelector() {
     [canViewWebOperations, webOperationsCount, apiEnabled],
   )
 
-  const visibleSections = sections.filter(item => !apiEnabled || (item.value === 'orders' ? session?.capabilities.canViewAllOperationalOrders : item.value === 'lab' ? session?.capabilities.canManageLabOperations : item.value === 'accounts' ? session?.capabilities.canManageOrganizations : canViewWebOperations))
+  const visibleSections = sections.filter(item => !apiEnabled || (item.value === 'orders' ? (session?.capabilities.canViewAllOperationalOrders || session?.capabilities.canViewTrialProjects) : item.value === 'lab' ? session?.capabilities.canManageLabOperations : item.value === 'accounts' ? session?.capabilities.canManageOrganizations : canViewWebOperations))
   const activeSection = visibleSections.some(item => item.value === section) ? section : visibleSections[0]?.value
   if (!activeSection) return <main className="page-wrap px-4 py-8"><DashboardHero /><p>No operational workspaces are assigned to your role.</p></main>
   return (
@@ -295,6 +296,7 @@ export function DashboardPanelSelector() {
       <main className="page-wrap px-4 py-8">
         <div className="soft-enter">
           <DashboardHero />
+          <NeedsAttentionSummary capabilities={session?.capabilities} enabled={apiEnabled} />
         </div>
         <div className="soft-enter soft-enter-delay-1">
           {activeSection === 'orders' ? (

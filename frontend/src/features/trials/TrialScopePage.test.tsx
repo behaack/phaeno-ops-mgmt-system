@@ -15,6 +15,7 @@ vi.mock('@tanstack/react-router', () => ({
 beforeEach(() => { mocks.queries.mockReset(); mocks.mutation.mockReset(); mocks.blocker.mockClear(); mocks.navigate.mockReset() })
 
 const draftValues: TrialScopeDraftValues = {
+  sampleTypeId: null, sources: null,
   departmentId: null, name: 'Early research idea', objective: '', sampleAllowance: null, submissionOpensAtUtc: null,
   submissionClosesAtUtc: null, workflowVersionId: null, analysisIds: [], deliverableIds: [], submissionInstructions: '',
   successCriteria: '', estimatedRetailValue: null, anticipatedInternalCost: null, residualRetentionDays: null,
@@ -22,6 +23,48 @@ const draftValues: TrialScopeDraftValues = {
 }
 
 describe('Trial scope drafts', () => {
+  it('resumes creation details with date-only inclusive bounds and preserves them on save', async () => {
+    const values = { ...draftValues, name: 'RNA evaluation', objective: 'Evaluate research outputs.', sampleAllowance: 10, sampleTypeId: 'rna', sources: [{ biologicalSource: 'Human PBMC', specimenCount: 10 }],
+      submissionOpensAtUtc: '2026-10-10T00:00:00.000Z', submissionClosesAtUtc: '2026-10-21T00:00:00.000Z' }
+    const trial = { ...trialDetail, isStaff: true, scope: null, scopeDraft: { values, savedByUserId: 'staff-1', savedByName: 'Trial Operator', savedAtUtc: '2026-10-02T12:00:00Z' } }
+    mocks.queries.mockReturnValue({ staff: true, detail: { data: trial }, config: { data: trialConfiguration } })
+    mocks.mutation.mockResolvedValue({ ...trial, version: 5 })
+    render(<TrialScopePage trialId={trial.id} />)
+    expect(screen.getByLabelText('Trial name', { exact: false })).toHaveProperty('value', values.name)
+    expect(screen.getByLabelText('Objective / Description', { exact: false })).toHaveProperty('value', values.objective)
+    const opening = screen.getByLabelText('Submission opens', { exact: false })
+    const closing = screen.getByLabelText('Submission closes', { exact: false })
+    expect(opening).toHaveProperty('type', 'date')
+    expect(opening).toHaveProperty('value', '2026-10-10')
+    expect(closing).toHaveProperty('type', 'date')
+    expect(closing).toHaveProperty('value', '2026-10-20')
+    fireEvent.change(screen.getByLabelText('Objective / Description', { exact: false }), { target: { value: 'Updated evaluation description' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }))
+    await waitFor(() => expect(mocks.mutation).toHaveBeenCalledOnce())
+    expect(mocks.mutation.mock.calls[0][0].payload.values).toMatchObject({ name: values.name, sampleAllowance: 10,
+      submissionOpensAtUtc: values.submissionOpensAtUtc, submissionClosesAtUtc: values.submissionClosesAtUtc })
+  })
+
+  it('offers direct approval to authorized submitters while preserving draft and hold restrictions', async () => {
+    const scope = { ...trialDetail.scope!, internalValues: { ...trialDetail.scope!, workflowVersionId: 'workflow-1', estimatedRetailValue: 2000, anticipatedInternalCost: 500 } }
+    const trial = { ...trialDetail, isStaff: true, canApproveScopeOnSubmission: true, scope, isOnHold: true }
+    const configuration = { ...trialConfiguration, workflows: [{ id: 'workflow-1', name: 'Approved PSeq workflow', version: 3 }], analyses: scope.analyses, deliverables: scope.deliverables }
+    mocks.queries.mockReturnValue({ staff: true, detail: { data: trial }, config: { data: configuration } })
+    const view = render(<TrialScopePage trialId={trial.id} />)
+    expect(screen.getByRole('button', { name: 'Approve and submit scope' }).matches(':disabled')).toBe(true)
+    expect(screen.getByText(/Resolve the Trial hold before approving scope/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Submit scope for approval' })).toBeNull()
+    fireEvent.change(screen.getByLabelText('Reason for this scope revision', { exact: false }), { target: { value: 'Approve completed evaluation scope' } })
+    expect(screen.getByRole('button', { name: 'Save draft' }).matches(':disabled')).toBe(false)
+    mocks.queries.mockReturnValue({ staff: true, detail: { data: { ...trial, isOnHold: false } }, config: { data: configuration } })
+    mocks.mutation.mockResolvedValue({ ...trial, status: 'AwaitingAcceptance', version: 5 })
+    view.rerender(<TrialScopePage trialId={trial.id} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Approve and submit scope' }))
+    await waitFor(() => expect(mocks.mutation).toHaveBeenCalledOnce())
+    expect(mocks.mutation.mock.calls[0][0]).toMatchObject({ path: '/trial-1/scope', payload: { version: trial.version, reason: 'Approve completed evaluation scope' } })
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledOnce())
+  })
+
   it('saves incomplete work separately while approval submission requires complete scope', async () => {
     const trial = { ...trialDetail, isStaff: true, status: 'Requested', scope: null, scopeHistory: [] }
     mocks.queries.mockReturnValue({ staff: true, detail: { data: trial }, config: { data: trialConfiguration } })
@@ -45,11 +88,11 @@ describe('Trial scope drafts', () => {
     expect(screen.getByText('Resume Trial scope draft')).toBeTruthy()
     expect((screen.getByLabelText('Residual RNA retention days', { exact: false }) as HTMLInputElement).value).toBe('')
     expect((screen.getByLabelText('Prospect terms and RUO / no-PHI requirements', { exact: false }) as HTMLTextAreaElement).value).toBe('')
-    fireEvent.change(screen.getByLabelText('Scientific objective', { exact: false }), { target: { value: 'Retain this working idea' } })
+    fireEvent.change(screen.getByLabelText('Objective / Description', { exact: false }), { target: { value: 'Retain this working idea' } })
     mocks.queries.mockReturnValue({ ...query, detail: { data: { ...trial, version: 9 } } }); view.rerender(<TrialScopePage trialId={trial.id} />)
     fireEvent.click(screen.getByRole('button', { name: 'Save draft' })); await screen.findByText('Trial changed')
     expect(mocks.mutation.mock.calls[0][0].payload).toMatchObject({ version: trial.version, values: { objective: 'Retain this working idea', terms: '', residualRetentionDays: null } })
-    expect((screen.getByLabelText('Scientific objective', { exact: false }) as HTMLTextAreaElement).value).toBe('Retain this working idea')
+    expect((screen.getByLabelText('Objective / Description', { exact: false }) as HTMLTextAreaElement).value).toBe('Retain this working idea')
     expect(mocks.navigate).not.toHaveBeenCalled()
   })
 

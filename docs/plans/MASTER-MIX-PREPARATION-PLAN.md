@@ -1,5 +1,144 @@
 # Shared, single-use master mix for library preparation
 
+## Library Lab step sources and demo setup — October 3, 2026
+
+The owner requires library preparation to include both specimen biological
+material and prepared master mix through reusable Lab steps. Keep these distinct:
+the former records each specimen's physical source-to-library-tube transfer;
+the latter pins an approved master-mix workflow revision and records actual
+shared-preparation use during tray execution. Existing source balances,
+exhaustion adjustments, barcode verification, QC and immutable version lineage
+remain authoritative.
+
+The Lab step field Type now explicitly offers **Biological material from specimen**
+and **Master mix**. The mix selector offers exact approved revisions, inherits
+their unit and omits inventory-lot controls. Engineering decision: this is an
+authoring distinction over the existing saved material/workflow reference, so
+serialization retains the current API contract and database model. Reopening
+that reference presents the explicit Master mix choice. Reagent-only mix
+preparation steps cannot contain either library source field. The Phaeno guide
+and frontend schema regression source describe this behavior.
+
+The owner also requested a fake PSeq library setup through the local UI, including
+specimen transfer, master-mix addition, reusable steps, an assembled protocol,
+service workflow and a named library tray format. Keep fixture names explicitly
+DEMO and record honest demo-only administrator approval overrides when needed
+for assembly. The owner subsequently requested an end-to-end tray run. Approve
+the local demo workflow revision for that simulated run; production promotion
+and deployment remain separate. This configuration and its simulated bench
+entries do not represent physical processing or scientific qualification.
+
+UI configuration checkpoint: `DEMO PSeq 2 × 3` is active with six usable grid
+positions. The approved v1 Lab steps are `DEMO PSeq — Transfer specimen material`
+(`a77b184e-9978-40bc-b6ac-68e0a754c2b3`), `DEMO PSeq — Add master mix`
+(`3df63ea7-c7cb-4b03-84e5-5f7faff658d5`), and `DEMO PSeq — Library yield and QC`.
+`DEMO PSeq library preparation` v1 pins those three required steps in order and
+is approved with an explicit demo-only override. `DEMO PSeq library workflow`
+(`86288cff-8f59-4da7-a9de-c4907f618a6d`) v1 pins that approved protocol and is
+approved locally, without production promotion. Its preparation batch
+`f98d854e-8575-4923-b783-14b83540e4f1` has been created and remains empty/Draft.
+Its saved demo tray barcode is `DEMO-PSEQ-TRAY-20261003`; resume at loading
+accessioned tubes into A1 through B3 after the specimen decision is resolved.
+The master-mix preview validates a fictional 10 µL per sample entry across two
+example tubes (20 µL total) without saving execution evidence.
+
+The requested run is in progress. Automatic approval review blocked detailed
+access to existing customer-labeled accessioned specimens; explicit confirmation
+that local job `6WTMNUFE` contains fake specimens is pending. Do not access or
+process those records while the question is pending. Independent prerequisite
+setup uses only the newly created DEMO reagent lots and mix preparation.
+
+Mix prerequisite checkpoint: UI-created lots `DEMO-BUF-20261003`
+(`463e8452-6f35-4c5f-9cb9-12019f1bcf48`, initially 1000 µL) and
+`DEMO-ENZ-20261003` (`59f9a8b6-5bdc-4916-af6a-6cc9bdacd1e7`, initially
+500 µL, demo expiration December 31) have simulated Pass QC. Preparation
+`e4025d9a-162b-4d4d-b82a-c0c3eaa79ba0` is Ready with 100 µL after the
+recorded 80/20 µL lot uses, two required step confirmations, a fake 30-second
+mixing duration and Pass QC. Step notes explicitly identify simulated evidence
+and absence of physical work. No tray use is recorded yet. Its assigned barcode
+is `PH-MX-E4025D9A162B4D4DB82AC0C3EAA79BA0`.
+
+The UI walkthrough exposed a master-mix detail crash caused by combining
+`dateStyle`/`timeStyle` with `timeZoneName` in `Intl.DateTimeFormat`. Explicit
+date/time components preserve the laboratory timezone and PDT/PST suffix and
+render the saved preparation successfully. Protocol approval review now uses
+readable field labels and shows the exact mix revision and quantity basis.
+
+## Assemble approved Lab steps — October 3, 2026
+
+The owner requires a master-mix workflow to assemble ordered Lab steps, with
+the complete recipe derived from those steps. This supersedes the separate
+ingredient editor and free-text procedure rows described below.
+
+- Author reusable master-mix Lab steps with batch-scoped entries. Each reagent
+  entry pins a purchased Reagent product or an internally prepared reagent,
+  its unit and positive exact planned amount. Lot capture is mandatory.
+- Assemble exact approved versions in order; preserve pinned content and
+  explicit adoption of newer approved versions. Derive and display the recipe
+  from the material entries, including repeated occurrences. Do not maintain
+  a second editable recipe or pin a physical lot in reusable configuration.
+- During preparation, record each actual reagent lot and amount against its
+  step and field. Exclude tubes, containers and other products in the UI and
+  backend. Do not display the internal SupplierLot enumeration.
+- Retain typed batch entries, operator confirmation, roles, equipment and QC
+  evidence from the approved steps. QC failures/holds block subsequent work;
+  permitted repeats and Supervisor corrections preserve prior evidence.
+- Preserve exact quantities, source-stock deductions, replay recovery,
+  independent approval, cutoff, shared tray use, deviation review and discard.
+
+Compatibility: a read-only inspection of the configured local loopback database
+on October 3 found zero workflows, preparations, ingredient uses, step records
+and tray uses. No local conversion or deletion is needed. The migration must
+refuse a nonempty master-mix target. Existing data elsewhere would require a
+separately reviewed one-time conversion preserving snapshots and lineage,
+or an explicitly authorized reset of disposable test records (losing that
+master-mix history). Recommend preservation for retained scientific records.
+Do not apply this migration or deploy outside configured local development.
+Update the ERD, Phaeno guide and living test plans with the implementation.
+
+Local implementation checkpoint: structured approved-version assembly, derived
+recipe, reagent-only selection, required actual numbered lot use per step/field,
+typed evidence, equipment eligibility, QC blocking, repeat and Supervisor
+correction history are implemented. `20261003231435_AssembleMasterMixLabSteps`
+was applied to configured loopback development after verifying all six
+master-mix tables empty. EF reports no pending model changes. Whole-solution
+Release build, frontend TypeScript, scoped ESLint, documentation generation/check
+(56 guides) and diff checks pass. Browser checks without saving verify the
+assembly editor, one Actions indicator, quantity-only unit controls and exclusion
+of the RNA tube from reagent options. Existing local draft configuration was
+left unchanged. The service-workflow creation button shares the heading's row
+at normal and narrow widths; description space remains positive with no page
+horizontal overflow. The normal viewport was restored.
+
+Meaningful domain and frontend authoring test source was updated, including
+correction invalidation of later evidence; automated suites were not run for this
+new scope. Connected preparation/stock/replay acceptance and physical qualification
+remain separate. The running Visual Studio/IIS Express Debug session was preserved;
+restart the local API to load the new backend before saving master-mix definitions.
+No external database migration or release was performed by this implementation.
+
+## Mix amount unit picker — October 3, 2026
+
+In the create/revise workflow dialog, add the shared **Units** picker below
+**Mix amount unit**, aligned to the input's trailing edge. Following the owner's
+clarification, offer quantity units only: µL, mL, L, ng, µg, mg, g and kg. Omit
+mathematical symbols, Greek letters, temperature, time and percentages. Selecting
+a unit replaces the field and returns focus to it. Preserve custom unit text,
+the required-field/error association and the 50-character limit. This is a local entry convenience;
+units, recipes, quantities, approval rules and saved revisions retain their meaning.
+Update Phaeno help and check scoped lint, typing, documentation consistency and
+unsaved browser interaction. Automated suites and release are not requested for
+this correction.
+
+Local checkpoint: scoped ESLint, TypeScript, documentation generation/check (56
+guides, corpus `74a9256591bf`) and diff whitespace pass. The authenticated create
+dialog exposes the trailing **Units** link, and keyboard opening shows exactly
+the eight configured quantity units. A screenshot records the control and an mL
+value in the open unsaved dialog. Selection/focus-return, validation, revise-dialog,
+narrow and theme scenarios were not independently completed during concurrent
+browser use. No workflow was saved and no automated suite, Git mutation or release
+was performed.
+
 ## List header refinement — September 30, 2026
 
 Operators need the list's start action and discovery controls together in its

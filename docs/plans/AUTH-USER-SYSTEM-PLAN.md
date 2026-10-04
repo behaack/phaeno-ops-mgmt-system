@@ -1,5 +1,16 @@
 # Auth and User System Plan
 
+## October 2, 2026 - Trial business roles
+
+Owner-approved additive roles: Business Development creates Trials and submits
+scope for leadership review. Commercial leadership and Platform administrators
+can create Trials and approve complete scope when they submit it, without a
+separate decision. Both business roles receive CRM and Trial visibility with
+active Phaeno membership. No automatic role grant is added. Invitations/edits retain audited role assignment;
+revocation prevents subsequent actions. Pricing, finance, laboratory and result
+release remain separate. See PROSPECT-TRIAL-PROJECT-PLAN.md.
+
+
 ## September 22, 2026 - Customer dashboard label
 
 The Customer home-page badge now reads **Customer dashboard**. This is a display

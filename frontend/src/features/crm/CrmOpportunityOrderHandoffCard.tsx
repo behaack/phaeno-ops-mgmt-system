@@ -74,12 +74,12 @@ export function CrmOpportunityOrderHandoffCard({ opportunity }: { opportunity: C
               </div>
               {handoff.orderId ? (
                 <Button asChild variant="outline">
-                  <Link to="/order-operations/$workflow/$orderId" params={{ workflow: "lab", orderId: handoff.orderId }}>
+                  <Link to="/order-operations/lab-services/orders/$orderId" params={{ orderId: handoff.orderId }}>
                     Open {handoff.orderNumber ?? "order"}
                   </Link>
                 </Button>
               ) : handoff.canStartCustomerOrder && handoff.organizationId ? (
-                <Button type="button" onClick={() => void navigate({ to: '/order-operations/new', search: { organizationId: handoff.organizationId ?? undefined, sourceRequestId: handoff.relationshipRequestId } })}>Start Customer order</Button>
+                <Button type="button" onClick={() => void navigate({ to: '/order-operations/lab-services/orders/new', search: { organizationId: handoff.organizationId ?? undefined, sourceRequestId: handoff.relationshipRequestId } })}>Start Customer order</Button>
               ) : (
                 <Button asChild variant="outline"><Link to="/crm/companies">Review Company access</Link></Button>
               )}

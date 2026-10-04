@@ -1,13 +1,12 @@
 namespace PSeq.Operations.Laboratory.Domain;
 
 using System.Text.Json;
-using System.Text.RegularExpressions;
 
 public enum LabMasterMixWorkflowStatus { Draft, Approved, Retired }
-public sealed record LabMasterMixRecipeIngredient(Guid MaterialDefinitionId, string Name, decimal Quantity, string QuantityUnit,
-    string? QuantityText = null);
+public sealed record LabMasterMixRecipeIngredient(Guid? MaterialDefinitionId, string Name, decimal Quantity, string QuantityUnit,
+    string QuantityText, Guid? ProductId);
 public sealed record LabMasterMixWorkflowRevision(int Revision, string Name, string QuantityUnit,
-    IReadOnlyList<LabReagentStep> Steps, IReadOnlyList<LabMasterMixRecipeIngredient> Ingredients,
+    IReadOnlyList<LabProtocolStepDefinition> Steps, IReadOnlyList<LabMasterMixRecipeIngredient> Ingredients,
     string Status, Guid AuthoredByUserId,
     Guid? ApprovedByUserId, DateTime? ApprovedAtUtc, string? ApprovalOverrideReason);
 
@@ -27,15 +26,14 @@ public sealed class LabMasterMixWorkflow : LabAuditedEntity
     public string? ApprovalOverrideReason { get; private set; }
 
     private LabMasterMixWorkflow() { }
-    public LabMasterMixWorkflow(string name, string quantityUnit, IReadOnlyList<LabReagentStep> steps,
-        IReadOnlyList<LabMasterMixRecipeIngredient> ingredients, Guid authorId)
+    public LabMasterMixWorkflow(string name, string quantityUnit, IReadOnlyList<LabProtocolStepDefinition> steps, Guid authorId)
     {
         if (authorId == Guid.Empty) throw new ArgumentException("An author is required.");
-        SetDetails(name, quantityUnit, steps, ingredients);
+        SetDetails(name, quantityUnit, steps);
         AuthoredByUserId = authorId;
     }
 
-    public IReadOnlyList<LabReagentStep> Steps() => JsonSerializer.Deserialize<List<LabReagentStep>>(StepsJson) ?? [];
+    public IReadOnlyList<LabProtocolStepDefinition> Steps() => JsonSerializer.Deserialize<List<LabProtocolStepDefinition>>(StepsJson) ?? [];
     public IReadOnlyList<LabMasterMixRecipeIngredient> Ingredients() =>
         JsonSerializer.Deserialize<List<LabMasterMixRecipeIngredient>>(IngredientsJson) ?? [];
     public IReadOnlyList<LabMasterMixWorkflowRevision> Revisions()
@@ -47,14 +45,13 @@ public sealed class LabMasterMixWorkflow : LabAuditedEntity
     private LabMasterMixWorkflowRevision CurrentSnapshot() => new(Revision, Name, QuantityUnit,
         Steps(), Ingredients(), Status.ToString(), AuthoredByUserId, ApprovedByUserId, ApprovedAtUtc, ApprovalOverrideReason);
 
-    public void Revise(string name, string quantityUnit, IReadOnlyList<LabReagentStep> steps,
-        IReadOnlyList<LabMasterMixRecipeIngredient> ingredients, Guid authorId)
+    public void Revise(string name, string quantityUnit, IReadOnlyList<LabProtocolStepDefinition> steps, Guid authorId)
     {
         if (Status == LabMasterMixWorkflowStatus.Retired) throw new InvalidOperationException("A retired workflow cannot be revised.");
         if (authorId == Guid.Empty) throw new ArgumentException("An author is required.");
         var history = JsonSerializer.Deserialize<List<LabMasterMixWorkflowRevision>>(RevisionHistoryJson) ?? [];
         history.Add(CurrentSnapshot());
-        SetDetails(name, quantityUnit, steps, ingredients);
+        SetDetails(name, quantityUnit, steps);
         RevisionHistoryJson = JsonSerializer.Serialize(history);
         Revision++;
         Status = LabMasterMixWorkflowStatus.Draft;
@@ -84,34 +81,14 @@ public sealed class LabMasterMixWorkflow : LabAuditedEntity
         Status = LabMasterMixWorkflowStatus.Retired;
     }
 
-    private void SetDetails(string name, string quantityUnit, IReadOnlyList<LabReagentStep> steps,
-        IReadOnlyList<LabMasterMixRecipeIngredient> ingredients)
+    private void SetDetails(string name, string quantityUnit, IReadOnlyList<LabProtocolStepDefinition> steps)
     {
         Name = Required(name, nameof(name), 160);
         QuantityUnit = Required(quantityUnit, nameof(quantityUnit), 50);
-        if (steps is null || steps.Count is < 1 or > 100) throw new ArgumentException("A master-mix workflow needs 1 to 100 steps.");
-        var keys = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var step in steps)
-        {
-            if (step is null || string.IsNullOrWhiteSpace(step.Key)
-                || !Regex.IsMatch(step.Key, "^[a-z0-9]+(?:-[a-z0-9]+)*$", RegexOptions.CultureInvariant)
-                || step.Key.Length > 100 || !keys.Add(step.Key))
-                throw new ArgumentException("Every workflow step needs a unique readable key.");
-            Required(step.Name, nameof(step.Name), 160);
-            Required(step.Instructions, nameof(step.Instructions), 4000);
-        }
+        if (steps is null) throw new ArgumentException("Assemble approved Lab steps.");
+        LabProtocolDefinition.Parse(new LabProtocolDefinition { SchemaVersion = 1, PreparationBatchEnabled = true, Steps = steps }.ToJson());
+        var ingredients = LabMasterMixDefinition.Recipe(steps);
         StepsJson = JsonSerializer.Serialize(steps);
-        if (ingredients is null || ingredients.Count is < 1 or > 100)
-            throw new ArgumentException("A master-mix recipe needs 1 to 100 ingredients.");
-        var definitions = new HashSet<Guid>();
-        foreach (var ingredient in ingredients)
-        {
-            if (ingredient.MaterialDefinitionId == Guid.Empty || !definitions.Add(ingredient.MaterialDefinitionId)
-                || !ValidQuantity(ingredient.Quantity))
-                throw new ArgumentException("Recipe ingredients need unique material definitions and positive amounts with at most 12 decimal places.");
-            Required(ingredient.Name, nameof(ingredient.Name), 255);
-            Required(ingredient.QuantityUnit, nameof(ingredient.QuantityUnit), 50);
-        }
         IngredientsJson = JsonSerializer.Serialize(ingredients);
     }
     private static bool ValidQuantity(decimal quantity) => quantity > 0 && quantity < 10000000000000000m
@@ -122,6 +99,7 @@ public enum LabMasterMixStatus { Preparing, Ready, Discarded }
 
 public sealed class LabMasterMixPreparation : LabAuditedEntity
 {
+    public string EvidenceJson { get; private set; } = new LabProtocolEvidence(1, []).ToJson();
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid WorkflowId { get; private set; }
     public int WorkflowRevision { get; private set; }
@@ -183,16 +161,20 @@ public sealed class LabMasterMixPreparation : LabAuditedEntity
         StartedAtUtc = utcNow;
         UseByUtc = EndOfLabDayUtc(utcNow);
     }
-    public IReadOnlyList<LabReagentStep> Steps() => JsonSerializer.Deserialize<List<LabReagentStep>>(StepsJson) ?? [];
+    public IReadOnlyList<LabProtocolStepDefinition> Steps() => JsonSerializer.Deserialize<List<LabProtocolStepDefinition>>(StepsJson) ?? [];
     public IReadOnlyList<LabMasterMixRecipeIngredient> Ingredients() =>
         JsonSerializer.Deserialize<List<LabMasterMixRecipeIngredient>>(IngredientsJson) ?? [];
     public decimal? RemainingQuantity => PreparedQuantity - UsedQuantity;
-    public void RecordStep(int sequence, DateTime utcNow)
+    public void RecordStep(int sequence, LabProtocolStepInput input, Guid actorId, IReadOnlySet<LabRole> roles, DateTime utcNow)
     {
         RequireOpenDay(utcNow);
-        if (Status != LabMasterMixStatus.Preparing || sequence != RecordedStepCount || sequence >= Steps().Count)
+        if (Status != LabMasterMixStatus.Preparing || sequence < 0 || sequence > RecordedStepCount || sequence >= Steps().Count
+            || input.StepKey != Steps()[sequence].Key)
             throw new InvalidOperationException("Record the next step of the active master-mix preparation.");
-        RecordedStepCount++;
+        var definition = new LabProtocolDefinition { SchemaVersion = 1, PreparationBatchEnabled = true, Steps = Steps() };
+        var evidence = LabProtocolEvidence.Read(EvidenceJson).Append(definition, input, actorId, roles, utcNow);
+        EvidenceJson = evidence.ToJson();
+        RecordedStepCount = definition.Steps.TakeWhile(step => evidence.StepBlocker(definition, step) is null).Count();
     }
     public void RecordIngredientUse(DateTime utcNow)
     {
@@ -258,6 +240,8 @@ public sealed class LabMasterMixPreparation : LabAuditedEntity
 
 public sealed class LabMasterMixStepRecord
 {
+    public string InputJson { get; private set; } = null!;
+    public string EvidenceJson { get; private set; } = null!;
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid PreparationId { get; private set; }
     public int Sequence { get; private set; }
@@ -265,7 +249,8 @@ public sealed class LabMasterMixStepRecord
     public Guid PerformedByUserId { get; private set; }
     public DateTime PerformedAtUtc { get; private set; }
     private LabMasterMixStepRecord() { }
-    public LabMasterMixStepRecord(Guid id, Guid preparationId, int sequence, string notes, Guid actorId, DateTime utcNow)
+    public LabMasterMixStepRecord(Guid id, Guid preparationId, int sequence, string notes, Guid actorId, DateTime utcNow,
+        string inputJson, string evidenceJson)
     {
         if (id == Guid.Empty || preparationId == Guid.Empty || sequence < 0 || actorId == Guid.Empty) throw new ArgumentException("A preparation, step, operator and request identifier are required.");
         Id = id;
@@ -274,11 +259,15 @@ public sealed class LabMasterMixStepRecord
         Notes = LabAuditedEntity.Required(notes, nameof(notes), 4000);
         PerformedByUserId = actorId;
         PerformedAtUtc = utcNow;
+        InputJson = inputJson;
+        EvidenceJson = evidenceJson;
     }
 }
 
 public sealed class LabMasterMixIngredientUse
 {
+    public int StepSequence { get; private set; }
+    public string FieldKey { get; private set; } = null!;
     public Guid Id { get; private set; } = Guid.NewGuid();
     public Guid PreparationId { get; private set; }
     public Guid SourceMaterialLotId { get; private set; }
@@ -291,7 +280,7 @@ public sealed class LabMasterMixIngredientUse
     public Guid? VoidedByUserId { get; private set; }
     private LabMasterMixIngredientUse() { }
     public LabMasterMixIngredientUse(Guid id, Guid preparationId, Guid sourceLotId, decimal quantity,
-        string unit, bool exhausted, Guid actorId, DateTime utcNow)
+        string unit, bool exhausted, Guid actorId, DateTime utcNow, int stepSequence, string fieldKey)
     {
         if (id == Guid.Empty || preparationId == Guid.Empty || sourceLotId == Guid.Empty || quantity <= 0
             || quantity >= 10000000000000000m || decimal.Round(quantity, 12) != quantity || actorId == Guid.Empty)
@@ -304,6 +293,9 @@ public sealed class LabMasterMixIngredientUse
         MaterialExhausted = exhausted;
         RecordedByUserId = actorId;
         RecordedAtUtc = utcNow;
+        if (stepSequence < 0) throw new ArgumentException("Choose the reagent's step occurrence.");
+        StepSequence = stepSequence;
+        FieldKey = LabAuditedEntity.Required(fieldKey, nameof(fieldKey), 100);
     }
     public void VoidUndispensed(Guid actorId, DateTime utcNow)
     {

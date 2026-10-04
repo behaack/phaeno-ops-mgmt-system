@@ -1,5 +1,65 @@
 # First-Party CRM Plan
 
+## October 2, 2026 — Searchable Opportunity Company and Department scope
+
+The owner requires Company search in New/Edit Opportunity and an explicit
+Department choice when the selected Company has multiple active departments.
+Reuse the server-searched CRM Company combobox; do not preload a capped Company
+list. Preserve the selected Company name when editing or opening from Company
+Sales. Load only department identifiers/names through a CRM-authorized endpoint,
+including internal department setup before online access.
+
+Persist a nullable DepartmentId on the Opportunity. One active department is
+selected automatically; multiple require a deliberate selection; zero permit
+Company-level commercial work. Company changes clear the previous selection.
+The API enforces active department ownership on create/edit before writing.
+Lead conversion and import auto-select a sole Department; multiple Departments
+require the ordinary Opportunity form rather than bypassing the selection rule.
+Existing Opportunities remain Company-level until edited, when the current
+selection rule applies. The additive FK/index migration performs no backfill,
+deletion or reset. Apply only to the configured local development database;
+hosted migration/deployment remains separately gated. Update the complete ERD,
+Phaeno help, regression coverage and living plans.
+
+The Opportunities list enables creation after its default pipeline selection is
+loaded and reflected in the URL. This prevents filter initialization from
+remounting the page and closing a newly opened creation modal. Department
+validation keeps focus on the missing selection; successful creation opens the
+dedicated detail workspace. Desktop/light and mobile/dark browser coverage checks
+search, required selection, saved scope, aligned controls and accessibility.
+Local implementation and verification are recorded in the
+[verification receipt](../testing/runs/2026-10-02-direct-trial-workflow-verification.md).
+
+## October 2, 2026 — Sales-created Trial requests
+
+Superseded later in the same conversation: Business Development creates Trials
+directly without a CRM request or Opportunity, with Commercial leadership-only
+approval. See [the Trial plan](PROSPECT-TRIAL-PROJECT-PLAN.md#october-2-2026--direct-business-development-creation-and-leadership-approval).
+The searchable Company and required multi-Department Opportunity form scope
+above remains requested.
+
+The owner authorized Sales to create the CRM request that begins a Trial. Use
+the existing active Phaeno Commercial Operator role rather than requiring
+Platform Administrator. Sales opens Company → Requests → Create request,
+links an active Opportunity belonging to that Company, and submits one pending
+Trial Project request. Success means Sales can see the request status and open
+the existing Start Trial workflow without an administrator preparing the request.
+
+Authorization scope: Commercial Operators may list Trial requests for a Company
+and create Trial Project requests only. Platform administrators retain the other
+Company request types and the central decision/completion queue. Existing Trial
+approval authorities, Prospect acceptance, access grants, service entitlements
+and audit/concurrency controls remain authoritative. The request grants no
+access or permission to perform scientific work.
+
+Use the existing CRM access check, filter non-administrator Company request
+reads to Trial Project, and reject other request types before any write. Expose
+the permitted Company tab and bounded creation form, visibly require the Trial
+Opportunity, and default an unlinked Company's proposed relationship to
+Prospect. Add focused permission/form regressions and update Phaeno help and
+living test plans. No model, migration, dependency or authentication provider
+change is needed.
+
 ## September 29, 2026 — Company list headers
 
 Use the established muted, bordered list header and padded content treatment in

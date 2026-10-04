@@ -1,5 +1,13 @@
 # Commercial to Lab Operations Contract
 
+## Catalog sequencing volume and tube pairing — October 4, 2026
+
+The [pairing plan](CATALOG-SEQUENCING-TUBE-PAIRING-PLAN.md) supersedes batch-editable minimums. Catalog writes accept exact `minimumSequencingVolumeUlText` (positive, or null to leave the service unconfigured) through the existing administrator/versioned Catalog API. Batch creation accepts optional name and notes only. No operator batch-requirement endpoint remains.
+
+Each sequencing workspace member exposes its Catalog identity/name/version, exact minimum text and `requirementCaptured`. Before allocation these are resolved from the work order's normalized service key. Allocation requires the displayed `catalogVersion`, scans the source, and captures the requirement on the member atomically with destination identity. Later transfer/sendout use the captured requirement; Catalog edits cannot silently change an allocated pair. Missing configuration blocks allocation; missing captured evidence blocks transfer/sendout. No batch fallback or inferred minimum.
+
+Both scans, exact positive actual quantity text, source/destination versions and personal performance remain required. Existing locks, command receipts, exact debit/credit and generated-label verification stay authoritative. Schema-2 sendout members retain Catalog identity/version/name/minimum alongside tube/transfer evidence. Each member may have a different minimum. No concentration/mass requirement or inventory-unit rewrite is introduced.
+
 ## Storage, purchased inventory and reagent manufacturing — September 24, 2026
 
 Named material and equipment locations are maintained under **Lab settings → Storage locations**. Authorized Laboratory staff can list them; Operators can create, and Supervisors or Operations Administrators can correct an unused name or change active status with the current version. A name referenced by a material lot cannot be changed. Inactive locations stay on historical records and are excluded from new lots and reagent runs. These location records do not represent physical tube or freezer-box positions.
@@ -49,6 +57,18 @@ Preparation detail advertises `optionalQcReports: true`. `POST /platform/lab-ope
 ## Service-based commercial jobs — September 16, 2026
 
 Commercial AuthorizeLabWorkCommand and amendments no longer resolve a Production workflow or require ApprovedWorkflowVersionId. The optional field remains wire-compatible for historical replay and explicitly approved Trial scope. Commercial jobs choose exact procedures at attempt/batch execution; preserve service identity, authorization snapshots and provider command idempotency. Existing job workflow columns are retained historical data, not commercial eligibility restrictions.
+
+Commercial authorization now uses the accepted quote's catalog external item
+identity as `ServiceKey`, matching marketed service workflow identity. The PSeq
+service family remains the specimen's requested scientific/commercial family.
+The `purchased_service_identity_correction` amendment is an explicit audited
+correction for unstarted Commercial jobs only; it verifies the accepted purchase
+and preserves all other authorization scope. It rejects attempts, executions,
+libraries, workflow pins, holds, cancelled jobs and changed/replayed evidence.
+Successful correction advances the current Commercial snapshot for later phase
+additions and retains earlier Lab authorization versions and command receipts.
+No service alias or runtime fallback is introduced. See
+[the approved correction plan](LAB-PURCHASED-SERVICE-IDENTITY-CORRECTION-PLAN.md).
 
 
 This document defines the version 1 application contract between

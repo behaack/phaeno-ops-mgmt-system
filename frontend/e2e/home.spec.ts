@@ -164,7 +164,7 @@ test('keeps workspace navigation concise and groups the user menu', async ({
 
   await expect(header.getByRole('link', { name: /^(Docs|Documentation)$/ })).toHaveCount(0)
 
-  const moreLabels = ['Purchasing', 'Equipment', 'Data provisioning']
+  const moreLabels = ['Finance', 'Purchasing', 'Equipment', 'Data provisioning', 'Legacy integrations']
   const moreTrigger = header.getByRole('button', { name: 'More workspaces', exact: true })
   if (isMobile) {
     await expect(moreTrigger).toBeHidden()
@@ -172,11 +172,11 @@ test('keeps workspace navigation concise and groups the user menu', async ({
     await moreTrigger.focus()
     await moreTrigger.press('Enter')
     await expect(page.getByRole('menuitem')).toHaveText(moreLabels)
-    await expect(page.getByRole('menuitem', { name: 'Purchasing', exact: true })).toBeFocused()
+    await expect(page.getByRole('menuitem', { name: 'Finance', exact: true })).toBeFocused()
     await page.keyboard.press('ArrowDown')
-    await expect(page.getByRole('menuitem', { name: 'Equipment', exact: true })).toBeFocused()
-    await page.keyboard.press('ArrowUp')
     await expect(page.getByRole('menuitem', { name: 'Purchasing', exact: true })).toBeFocused()
+    await page.keyboard.press('ArrowUp')
+    await expect(page.getByRole('menuitem', { name: 'Finance', exact: true })).toBeFocused()
     await page.keyboard.press('Escape')
     for (const label of moreLabels) {
       await moreTrigger.press('Enter')
@@ -356,13 +356,13 @@ async function verifyMobileNavigationTray(page: Page) {
   expect(links.indexOf('User management')).toBe(links.indexOf('Documentation') + 1)
   await more.press('Enter')
   await expect(more).toHaveAttribute('aria-expanded', 'true')
-  await expect(tray.getByRole('group', { name: 'More', exact: true }).getByRole('link')).toHaveText(['Purchasing', 'Equipment', 'Data provisioning'])
+  await expect(tray.getByRole('group', { name: 'More', exact: true }).getByRole('link')).toHaveText(['Finance', 'Purchasing', 'Equipment', 'Data provisioning', 'Legacy integrations'])
   await more.press('ArrowDown')
-  await expect(tray.getByRole('link', { name: 'Purchasing', exact: true })).toBeFocused()
+  await expect(tray.getByRole('link', { name: 'Finance', exact: true })).toBeFocused()
   await page.keyboard.press('Tab')
-  await expect(tray.getByRole('link', { name: 'Equipment', exact: true })).toBeFocused()
-  await page.keyboard.press('Shift+Tab')
   await expect(tray.getByRole('link', { name: 'Purchasing', exact: true })).toBeFocused()
+  await page.keyboard.press('Shift+Tab')
+  await expect(tray.getByRole('link', { name: 'Finance', exact: true })).toBeFocused()
   await settings.click()
   await expect(settings).toBeFocused()
   await expect(more).toHaveAttribute('aria-expanded', 'false')

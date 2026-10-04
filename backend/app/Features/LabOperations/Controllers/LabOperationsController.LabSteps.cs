@@ -26,6 +26,12 @@ public sealed partial class LabOperationsController
 
     private async Task<LabProtocolStepDefinition> ResolveConfiguredMaterialsAsync(LabProtocolStepDefinition step, CancellationToken ct)
     {
+        if (step.ProcessType == "masterMix")
+        {
+            try { LabMasterMixDefinition.ValidateStep(step); }
+            catch (ArgumentException error) { throw Invalid("master_mix_step_invalid", error.Message); }
+            await RequireMasterMixReagentsAsync(step, ct);
+        }
         var captures = new List<LabProtocolCaptureDefinition>();
         foreach (var capture in step.Captures)
         {

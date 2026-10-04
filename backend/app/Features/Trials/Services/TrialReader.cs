@@ -37,7 +37,8 @@ public sealed class TrialReader(PSeqOperationsDbContext db, TrialWorkflowService
         return projects.Select(value =>
         {
             var scope = VisibleScope(value, actor)?.Read();
-            return new TrialListDto(value.Id, value.Number, scope?.Name ?? "Trial request", names[value.CompanyId], value.Status.ToString(),
+            var draft = actor.IsStaff ? value.ReadScopeDraft() : null;
+            return new TrialListDto(value.Id, value.Number, scope?.Name ?? draft?.Name ?? "Trial request", names[value.CompanyId], value.Status.ToString(),
                 value.IsOnHold, value.Samples.Count, scope?.SampleAllowance, scope?.SubmissionClosesAtUtc, value.UpdatedAt, value.Version, actor.IsStaff ? value.SalesOwnerUserId : null, actor.IsStaff ? owners.GetValueOrDefault(value.SalesOwnerUserId) : null, value.CreatedAt, actor.IsStaff ? value.FollowUpAtUtc ?? scope?.SubmissionClosesAtUtc : scope?.SubmissionClosesAtUtc);
         }).ToList();
     }
@@ -52,12 +53,11 @@ public sealed class TrialReader(PSeqOperationsDbContext db, TrialWorkflowService
             draft = new(draftValues, trial.DraftSavedByUserId.Value, savedBy, trial.DraftSavedAtUtc.Value);
         }
         var name = await db.CrmCompanies.AsNoTracking().Where(value => value.Id == trial.CompanyId).Select(value => value.Name).SingleAsync(token);
-        var domains = actor.IsStaff ? await db.TrialApprovalAuthorities.AsNoTracking().Where(value => value.UserId == actor.User.Id && value.RevokedAtUtc == null && value.EffectiveAtUtc <= now
-            && (value.IsPrimary || db.TrialApprovalAuthorities.Any(primary => primary.Id == value.PrimaryAuthorityId && primary.RevokedAtUtc == null)))
-            .Select(value => value.Domain.ToString()).ToListAsync(token) : [];
+        List<string> domains = actor.IsStaff && await db.BusinessRoleAssignments.AnyAsync(value => value.UserId == actor.User.Id
+            && value.Role == BusinessRole.CommercialLeadership && value.IsActive, token) ? ["Commercial"] : [];
         var sampleIds = trial.Samples.Select(value => value.AuthorizationId).ToList();
         var projections = await db.CommercialLabWorkProjections.AsNoTracking().Where(value => sampleIds.Contains(value.AuthorizationId)).ToDictionaryAsync(value => value.AuthorizationId, token);
-        var scopes = trial.Scopes.Where(value => actor.IsStaff || value.IsApproved).OrderByDescending(value => value.Revision).Select(value => MapScope(value, actor.IsStaff)).ToList();
+        var scopes = trial.Scopes.Where(value => actor.IsStaff || value.Revision <= trial.ApprovedScopeRevision && ScopeApprovalWasCompleted(value)).OrderByDescending(value => value.Revision).Select(value => MapScope(value, actor.IsStaff)).ToList();
         var scope = VisibleScope(trial, actor);
         var remaining = Math.Max(0, (scope?.Read().SampleAllowance ?? 0) - trial.Samples.Count(value => !value.ReplacesSampleId.HasValue));
         var replacements = await db.TrialReplacementAuthorizations.AsNoTracking().Where(value => value.TrialProjectId == trial.Id).ToListAsync(token);
@@ -121,18 +121,16 @@ public sealed class TrialReader(PSeqOperationsDbContext db, TrialWorkflowService
                 && await db.Organizations.AnyAsync(value => value.Id == trial.OrganizationId && value.IsActive && value.Kind == OrganizationKind.Prospect, token),
             actor.IsStaff && (actor.IsPlatformAdmin && !(pseq?.Value.BusinessRoles == true || pseq?.Value.DualControlEnforced == true)
                 || await db.BusinessRoleAssignments.AnyAsync(value => value.UserId == actor.User.Id && value.IsActive && value.Role == BusinessRole.ResultReleaseManager, token)),
-            ScopeDraft: draft);
+            ScopeDraft: draft, CanManageScientificOperations: actor.IsStaff && await db.TrialApprovalAuthorities.AnyAsync(value => value.UserId == actor.User.Id
+                && value.Domain == TrialApprovalDomain.ScientificOperations && value.RevokedAtUtc == null && value.EffectiveAtUtc <= now
+                && (value.IsPrimary || db.TrialApprovalAuthorities.Any(primary => primary.Id == value.PrimaryAuthorityId && primary.RevokedAtUtc == null)), token),
+            CanApproveScopeOnSubmission: await TrialAccess.CanApproveScopeOnSubmissionAsync(db, actor, token));
     }
     public async Task<TrialConfigurationDto> ConfigurationAsync(TrialActor actor, Guid? companyId, CancellationToken token)
     {
         var now = DateTime.UtcNow;
         var primaryDomains = actor.IsStaff ? await db.TrialApprovalAuthorities.AsNoTracking().Where(value => value.UserId == actor.User.Id && value.IsPrimary && value.RevokedAtUtc == null)
             .Select(value => value.Domain.ToString()).ToListAsync(token) : [];
-        var handoffs = actor.IsStaff ? await db.CrmHandoffs.AsNoTracking().Where(value => value.Type == CrmHandoffType.TrialProject
-            && value.RelationshipRequest.Status != PSeq.Operations.Commercial.Relationships.Domain.PortalIntegrationRequestStatus.Declined
-            && value.RelationshipRequest.Status != PSeq.Operations.Commercial.Relationships.Domain.PortalIntegrationRequestStatus.Cancelled
-            && value.Company.IsActive && value.OpportunityId != null && value.Opportunity!.IsActive && !db.TrialProjects.Any(trial => trial.CrmHandoffId == value.Id))
-            .Select(value => new TrialHandoffChoiceDto(value.Id, value.Company.Name, value.Opportunity!.Name, value.RelationshipRequest.Summary)).Take(250).ToListAsync(token) : [];
         var analyses = actor.IsStaff ? await (from analysis in db.AnalysisDefinitions.AsNoTracking()
             join catalog in db.QboCatalogItems on analysis.QboCatalogItemId equals catalog.Id
             where analysis.IsActive && !analysis.IsSynthetic && catalog.ServiceFamily == CatalogServiceFamily.PSeqLabService
@@ -156,27 +154,18 @@ public sealed class TrialReader(PSeqOperationsDbContext db, TrialWorkflowService
             join user in db.Users on authority.UserId equals user.Id
             select new TrialAuthorityDto(authority.Id, authority.UserId, user.FirstName + " " + user.LastName, authority.Domain.ToString(),
                 authority.IsPrimary, authority.PrimaryAuthorityId, authority.RevokedAtUtc, authority.Version, authority.DesignatedByUserId, authority.EffectiveAtUtc, authority.Reason, authority.RevocationReason)).ToListAsync(token) : [];
-        return new(actor.IsStaff && authorities.Any(value => value.UserId == actor.User.Id && value.Domain == "ScientificOperations" && value.RevokedAtUtc == null), actor.IsPlatformAdmin, primaryDomains, handoffs, analyses, workflows,
+        return new(actor.IsStaff && authorities.Any(value => value.UserId == actor.User.Id && value.Domain == "ScientificOperations" && value.RevokedAtUtc == null), actor.IsPlatformAdmin, primaryDomains, analyses, workflows,
             definitions.Select(value => new TrialDeliverableSnapshot(value.Id, value.Revision, value.Key, value.Name)).ToList(), definitions.Where(value => value.IsDefault).Select(value => value.Id).ToList(),
             departments, destinations, types.Where(value => string.Equals(value.MaterialClass.Replace(" ", "").Replace("-", "").Replace("_", ""), "extractedrna", StringComparison.OrdinalIgnoreCase))
                 .Select(value => new TrialSampleTypeDto(value.Id, value.Name, value.Version, value.QuantityUnit, value.MinimumQuantity, value.MaximumQuantity)).ToList(), staff, authorities);
     }
-    public async Task<TrialHandoffPageDto> HandoffsAsync(TrialActor actor, string? search, int page, Guid? companyId, Guid? requestId, CancellationToken token)
-    {
-        TrialAccess.RequireStaff(actor);
-        var query = db.CrmHandoffs.AsNoTracking().Where(value => value.Type == CrmHandoffType.TrialProject
-            && value.RelationshipRequest.Status != PSeq.Operations.Commercial.Relationships.Domain.PortalIntegrationRequestStatus.Declined
-            && value.RelationshipRequest.Status != PSeq.Operations.Commercial.Relationships.Domain.PortalIntegrationRequestStatus.Cancelled
-            && value.Company.IsActive && value.OpportunityId != null && value.Opportunity!.IsActive && !db.TrialProjects.Any(trial => trial.CrmHandoffId == value.Id));
-        if (companyId.HasValue) query = query.Where(value => value.CompanyId == companyId);
-        if (requestId.HasValue) query = query.Where(value => value.Id == requestId);
-        if (!string.IsNullOrWhiteSpace(search)) { var term = search.Trim(); query = query.Where(value => value.Company.Name.Contains(term) || value.Opportunity!.Name.Contains(term) || value.RelationshipRequest.Summary.Contains(term)); }
-        const int size = 25; page = Math.Max(0, page);
-        var total = await query.CountAsync(token);
-        var items = await query.OrderBy(value => value.Company.Name).ThenBy(value => value.Id).Skip(page * size).Take(size)
-            .Select(value => new TrialHandoffChoiceDto(value.Id, value.Company.Name, value.Opportunity!.Name, value.RelationshipRequest.Summary)).ToListAsync(token);
-        return new(items, total, page, size);
-    }
+    // Historical decisions keep their original authority provenance. An incomplete or rejected
+    // prior review must not become visible merely because the current workflow needs one decision.
+    private static bool ScopeApprovalWasCompleted(TrialScope scope) =>
+        scope.Decisions.Any(value => value.Domain == TrialApprovalDomain.Commercial && value.Kind == TrialDecisionKind.Approve && value.AuthorityId == null)
+        || scope.Decisions.Count == 2 && scope.Decisions.All(value => value.Kind == TrialDecisionKind.Approve)
+            && scope.Decisions.Select(value => value.Domain).Distinct().Count() == 2
+            && scope.Decisions.Select(value => value.ActorUserId).Distinct().Count() == 2;
     private static TrialScope? VisibleScope(TrialProject trial, TrialActor actor) => trial.Scopes.FirstOrDefault(value => value.Revision == (actor.IsStaff ? trial.CurrentScopeRevision : trial.ApprovedScopeRevision));
     private static TrialScopeDto MapScope(TrialScope scope, bool staff)
     {
@@ -185,6 +174,6 @@ public sealed class TrialReader(PSeqOperationsDbContext db, TrialWorkflowService
             TrialRules.TermsVersion, TrialRules.RuoStatement, value.ResidualRetentionDays, value.MaterialDisposition.ToString(),
             value.ReturnDestination, value.ReturnHandling, value.ReturnShippingPayer, value.Analyses, value.Deliverables,
             scope.Decisions.Select(decision => new TrialDecisionDto(decision.Domain.ToString(), decision.Kind.ToString(), staff ? decision.Reason : null,
-                staff ? decision.ActorUserId : null, staff ? decision.AsDelegate : null, decision.DecidedAtUtc)).ToList());
+                staff ? decision.ActorUserId : null, staff ? decision.AsDelegate : null, decision.DecidedAtUtc)).ToList(), value.SampleType, value.Sources);
     }
 }

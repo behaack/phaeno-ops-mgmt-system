@@ -76,13 +76,13 @@ export function CrmRequestCard({ request, isPending, onAction, onRecover }: {
             </DropdownMenuItem> : null}
             {approved && work.handoff?.type === 'TrialProject' ? <DropdownMenuItem asChild>
               {work.handoff.trialProjectId ? (
-                <Link to="/trial-projects/$trialId" params={{ trialId: work.handoff.trialProjectId }} search={{ fromCompanyId: request.companyId ?? undefined }}>Open Trial</Link>
+                <Link to="/order-operations/lab-services/trials/$trialId" params={{ trialId: work.handoff.trialProjectId }} search={{ fromCompanyId: request.companyId ?? undefined }}>Open Trial</Link>
               ) : (
-                <Link to="/trial-projects" search={{ requestId: work.handoff.id, fromCompanyId: request.companyId ?? undefined }}>Start Trial</Link>
+                <Link to="/order-operations/lab-services/trials" search={{ fromCompanyId: request.companyId ?? undefined }}>Trial projects</Link>
               )}
             </DropdownMenuItem> : null}
             {approved && (request.requestType === 'SalesAssistedOrder' || request.requestType === 'Offboarding') ? <DropdownMenuItem asChild>
-              <Link to="/order-operations">Open Order operations</Link>
+              <Link to="/order-operations/lab-services">Open Order operations</Link>
             </DropdownMenuItem> : null}
             {approved && work.handoff?.opportunityId ? <DropdownMenuItem asChild>
               <Link to="/crm/opportunities/$opportunityId" params={{ opportunityId: work.handoff.opportunityId }}>Open Opportunity</Link>

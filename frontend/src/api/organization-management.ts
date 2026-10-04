@@ -183,6 +183,8 @@ export type PhaenoLabRoleState = {
 }
 
 export type BusinessRole =
+  | 'BusinessDevelopment'
+  | 'CommercialLeadership'
   | 'CommercialOperator'
   | 'ResultReleaseManager'
   | 'BillingOperator'

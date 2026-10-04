@@ -36,7 +36,7 @@ describe('staff location inventory and physical identity', () => {
   })
   it('keeps origin provenance distinct from the assigned Job and receipt', () => {
     render(<StockKitFacts kit={{ ...standardKit, status: 'Assigned', deliveryLocationId: 'location-a', deliveryLocationLabel: 'Main laboratory', originatingJobNumber: 'JOB-A', transportationKitRequestId: 'request-a', customerReceivedAt: '2026-09-09T12:00:00Z', assignedJobId: 'job-b', assignedJobNumber: 'JOB-B', reservedSampleShipmentId: 'shipment-b', organizationName: 'Example Customer', departmentName: 'Research' }} />)
-    expect(screen.getByText('Main laboratory')).toBeTruthy(); expect(screen.getByText('JOB-A')).toBeTruthy(); expect(screen.getByRole('link', { name: 'JOB-B' }).getAttribute('href')).toBe('/order-operations/lab/job-b')
+    expect(screen.getByText('Main laboratory')).toBeTruthy(); expect(screen.getByText('JOB-A')).toBeTruthy(); expect(screen.getByRole('link', { name: 'JOB-B' }).getAttribute('href')).toBe('/order-operations/lab-services/orders/job-b')
     expect(screen.getByRole('link', { name: 'Request REQUEST-' }).getAttribute('href')).toBe('/lab-operations/kit-requests/request-a')
     expect(screen.queryByText('Not acknowledged')).toBeNull(); expect(screen.getByText(/Resetting its configuration before tube scanning releases/)).toBeTruthy()
   })

@@ -7,7 +7,6 @@ import {
   apiErrorMessage,
   getCrmOpportunity,
   getCrmOpportunityHistory,
-  listCrmCompanies,
   listCrmPipelines,
   moveCrmOpportunity,
   updateCrmOpportunity,
@@ -49,10 +48,6 @@ export function CrmOpportunityDetailPage({
   const pipelines = useQuery({
     queryKey: ["crm-pipelines"],
     queryFn: () => listCrmPipelines(),
-  });
-  const companies = useQuery({
-    queryKey: ["crm-companies", "choices"],
-    queryFn: () => listCrmCompanies({ pageSize: 100 }),
   });
   const history = useQuery({
     queryKey: ["crm-opportunity-history", opportunityId],
@@ -158,6 +153,7 @@ export function CrmOpportunityDetailPage({
           </CardHeader>
           <CardContent>
             <dl className="grid gap-4 sm:grid-cols-2">
+              <Info label="Department" value={opportunity.departmentName ?? "Company-level"} />
               <Info
                 label="Product interest"
                 value={productInterestLabel(opportunity.productInterest)}
@@ -253,7 +249,6 @@ export function CrmOpportunityDetailPage({
       <CrmOpportunityDialog
         open={editOpen}
         opportunity={opportunity}
-        companies={companies.data?.items ?? []}
         pipelines={pipelines.data ?? []}
         pending={edit.isPending}
         error={edit.error ? apiErrorMessage(edit.error) : undefined}

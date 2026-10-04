@@ -8,6 +8,14 @@ using PhaenoPortal.App.Features.OrderManagement.Domain;
 
 public static class LabQuoteCatalog
 {
+    public static async Task<(string ServiceKey, string Name)> ReadServiceIdentityAsync(
+        PSeqOperationsDbContext db, string linesJson, CancellationToken ct)
+    {
+        var id = await ReadItemAsync(db, linesJson, false, ct);
+        var item = await db.QboCatalogItems.AsNoTracking().SingleAsync(value => value.Id == id, ct);
+        return (item.ExternalItemId.Trim().ToLowerInvariant(), item.Name);
+    }
+
     public static async Task RequireDraftSelectionAsync(PSeqOperationsDbContext db, Guid? id, bool required, CancellationToken ct)
     {
         if (!id.HasValue && !required) return;

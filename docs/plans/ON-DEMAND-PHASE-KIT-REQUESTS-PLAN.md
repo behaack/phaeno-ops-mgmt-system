@@ -3,6 +3,61 @@
 Owner-authorized implementation, October 1, 2026. Applies to every Customer or
 Partner Lab Job, including one-phase Jobs. No Git publication or deployment.
 
+## Quiet cancellation action exception — October 3, 2026
+
+Shipping heading follow-up: multi-phase Jobs show **Shipping: Phase N · Phase name (X samples)**. Use the current phase's saved position, matching Progress, even when earlier phases are sent or cancelled. Preserve the existing single-phase Shipping heading, current-phase selection and shipment workflow. Customer/Partner and Phaeno guides and existing heading assertions are updated.
+
+Owner-approved exception to the ordinary sole-action rule: Customer/Partner
+Job and phase cancellation requests remain in a neutral **Actions** dropdown,
+even when they are the only eligible action. Both cancellation menu items are
+red, and their confirmation actions use destructive styling. This keeps an
+exceptional operation available without emphasizing it in the ordinary workflow.
+Use the shared ActionMenu's explicit documented-exception option, including
+the phase-card presentation. Ordinary single actions retain direct buttons.
+Eligibility, pending-state guards, reason entry, review and backend writes remain
+unchanged. Record the exception in UI policy and AGENTS.md, update external
+guides and preserve menu keyboard behavior, focus return and disabled metadata.
+
+Local verification: TypeScript, scoped ESLint, regenerated/checkable 56-guide
+help corpus and scoped diff checks pass. Manual actual-component preview with
+synthetic records verifies neutral sole-cancellation menus, one indicator,
+destructive Job/phase items and phase confirmation, keyboard opening and focus
+return, disabled guards and ordinary direct View results. At 390 px in dark
+mode the phase menu fits with no page overflow. Temporary Job/phase menu
+screenshots were removed during owner-requested artifact cleanup on October 4;
+the recorded observations above remain the historical verification summary.
+Temporary preview files/cache are removed; no cancellation or other saved write,
+automated suite, Git publication or deployment was performed.
+
+## Receipt action dispatch prerequisite — October 3, 2026
+
+Owner-requested correction: Customer and Partner administrators must not see
+**Record kit receipt** before Phaeno sends a physical kit. While none of the
+current request's dispatched kits awaits receipt, **Next step** shows **Wait for
+Phaeno to send kits** and an explanation, with no next-step action. The saved
+request stays available through **View kit order** beside the shipping heading.
+After dispatch, receipt is offered only when the server reports receipt
+permission. Partial dispatch allows receipt of sent kits; receiving all sent
+kits returns to waiting if more kits remain unsent. Preparation still requires
+complete receipt or sufficient previously received stock.
+
+This is a presentation correction using existing dispatch records and permission
+flags. No API, persistence, authorization or historical-data change is required.
+Focused component regressions cover pending one/multiple-phase Jobs, partial
+dispatch, remaining unsent kits, and receipt permissions; execution is
+request-only. Customer, Partner and Phaeno guides are updated together.
+
+Local verification: TypeScript, scoped ESLint, help generation/check (56 guides)
+and scoped diff whitespace checks pass. Manual actual-component browser review
+uses synthetic records with all saved writes prevented: pending, partial/sent,
+remaining dispatch, Member, complete receipt and existing stock behave as above.
+Keyboard kit-order opening/closing restores focus. At 390 px in dark mode, the
+page has no horizontal overflow and pending/sent states respectively have zero
+and one receipt buttons. Temporary desktop/dark-phone screenshots were removed
+during owner-requested artifact cleanup on October 4; the recorded observations
+above remain the historical verification summary.
+Automated suites were not run; no Git publication, deployment or data writes.
+
 ## Release verification corrections — October 2, 2026
 
 The owner subsequently authorized documentation, complete tests, commit/push,
@@ -131,7 +186,7 @@ Before acceptance, show **Review and Accept Order** with order scope, quote
 pricing and the existing Actions menu. Omit the confirmation/shipping step strip
 and its next-step card. Keep exceptional order-status feedback and permission,
 expiry and decision guards. After acceptance, the Customer workspace automatically shows the earliest unfinished phase's
-four shipping steps under **Shipping: Phase name (X samples)** after acceptance.
+four shipping steps under **Shipping: Phase N · Phase name (X samples)** after acceptance.
 Use the current phase's name and physical sample count in the heading; remove
 the repeated phase identity below it, the phase picker and status overview. A Next step
 card names the action and offers a trailing button to perform it or navigate to

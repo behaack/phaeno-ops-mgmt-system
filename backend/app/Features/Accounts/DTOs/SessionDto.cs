@@ -84,6 +84,7 @@ public sealed record SessionCapabilitiesDto
     public bool CanAdministerCrm { get; init; }
     public bool CanViewTrialProjects { get; init; }
     public bool CanManageTrialProjects { get; init; }
+    public bool CanCreateTrialProjects { get; init; }
     public required bool CanInviteUsers { get; init; }
 
     public required bool CanManageMembers { get; init; }

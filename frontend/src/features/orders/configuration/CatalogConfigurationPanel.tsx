@@ -39,6 +39,7 @@ import { Input } from "#/components/ui/input";
 import { Field as SharedField, FieldDescription, FieldError } from '#/components/ui/field';
 import { Label } from "#/components/ui/label";
 import { NativeSelect } from '#/components/ui/native-select';
+import { isPositiveDecimalQuantity } from '#/features/lab-operations/decimal-quantity';
 import {
   RequiredDialogFooter,
   RequiredFieldName,
@@ -59,6 +60,7 @@ const schema = z
     isActive: z.boolean(),
     serviceFamily: z.enum(['Other', 'PSeqLabService']),
     maximumCustomerSamples: z.union([z.literal(''), z.coerce.number().int('Use a whole number.').min(1).max(10000)]).transform(v => v === '' ? null : v).nullable(),
+    minimumSequencingVolumeUlText: z.string().trim().refine(value => !value || isPositiveDecimalQuantity(value), 'Enter a positive volume in µL.'),
   })
   .superRefine((value, context) => {
     if (
@@ -95,6 +97,7 @@ const empty: Values = {
   isActive: false,
   serviceFamily: 'PSeqLabService',
   maximumCustomerSamples: null,
+  minimumSequencingVolumeUlText: '',
 };
 
 export function CatalogConfigurationPanel({
@@ -137,6 +140,8 @@ export function CatalogConfigurationPanel({
     undefined,
   );
   const generatedCode = useRef('');
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const keepEditingRef = useRef<HTMLButtonElement>(null);
   const form = useForm<FormValues, unknown, Values>({
     resolver: zodResolver(schema),
     defaultValues: empty,
@@ -147,13 +152,14 @@ export function CatalogConfigurationPanel({
         ...values,
         currency: values.currency.toUpperCase(),
         maximumCustomerSamples: values.serviceFamily === 'PSeqLabService' ? values.maximumCustomerSamples : null,
+        minimumSequencingVolumeUlText: values.serviceFamily === 'PSeqLabService' ? values.minimumSequencingVolumeUlText || null : null,
         version: editing?.version,
       }),
     onError: async () => {
       try {
         const fresh = await client.fetchQuery({ queryKey: ['order-configuration'], queryFn: getOrderConfiguration, staleTime: 0 });
         const current = fresh.catalogItems.find(item => item.id === editing?.id);
-        if (current) { setEditing(current); form.reset({ ...current, serviceFamily: current.isPSeqLabService ? 'PSeqLabService' : 'Other', maximumCustomerSamples: current.maximumCustomerSamples ?? null }, { keepDirtyValues: true }); }
+        if (current) { setEditing(current); form.reset({ ...current, serviceFamily: current.isPSeqLabService ? 'PSeqLabService' : 'Other', maximumCustomerSamples: current.maximumCustomerSamples ?? null, minimumSequencingVolumeUlText: current.minimumSequencingVolumeUlText ?? '' }, { keepDirtyValues: true }); }
       } catch { /* Keep the original save error and entered values visible. */ }
     },
     onSuccess: async (saved) => {
@@ -169,7 +175,9 @@ export function CatalogConfigurationPanel({
   const unitOptions = Array.from(new Set([...salesUnits.map(unit => unit.value), ...configuration.catalogItems.map(item => item.salesUnit), selectedUnit])).filter(Boolean);
   useOrderDraftGuard(editing !== undefined && form.formState.isDirty, mutation.isPending);
   function close() {
-    if (!mutation.isPending && (!form.formState.isDirty || window.confirm('Discard unsaved catalog changes?'))) setEditing(undefined);
+    if (mutation.isPending) return;
+    if (form.formState.isDirty) setConfirmDiscard(true);
+    else setEditing(undefined);
   }
 
   function open(item: CatalogItem | null) {
@@ -189,6 +197,7 @@ export function CatalogConfigurationPanel({
             isActive: item.isActive,
             serviceFamily: item.isPSeqLabService ? 'PSeqLabService' : 'Other',
             maximumCustomerSamples: item.maximumCustomerSamples ?? null,
+            minimumSequencingVolumeUlText: item.minimumSequencingVolumeUlText ?? '',
           }
         : { ...empty, externalItemId: generatedCode.current },
     );
@@ -215,6 +224,7 @@ export function CatalogConfigurationPanel({
               <div><dt className="text-muted-foreground">Status</dt><dd>{selected.isActive ? 'Active' : 'Inactive'}</dd></div>
               <div><dt className="text-muted-foreground">Service family</dt><dd>{selected.isPSeqLabService ? 'PSeq Lab Service' : 'Other'}</dd></div>
               {selected.isPSeqLabService ? <div><dt className="text-muted-foreground">Customer sample limit</dt><dd>{selected.maximumCustomerSamples ?? 'Unconfigured — Customer placement unavailable'}</dd></div> : null}
+              {selected.isPSeqLabService ? <div><dt className="text-muted-foreground">Minimum sequencing volume per tube</dt><dd className="font-medium">{selected.minimumSequencingVolumeUlText ? `${selected.minimumSequencingVolumeUlText} µL` : 'Unconfigured — sequencing tube preparation unavailable'}</dd></div> : null}
             </dl>
             {!selected.isActive ? <p className="text-sm text-muted-foreground">Inactive items are excluded from new pricing.</p> : null}
             <details className="text-sm"><summary className="w-fit cursor-pointer rounded-sm text-primary focus-visible:ring-2 focus-visible:ring-ring">Reference details</summary><p className="mt-2 break-all text-muted-foreground">Item reference: {selected.externalItemId}. This permanent reference links pricing and accounting records and stays the same when the item is renamed.</p></details>
@@ -305,7 +315,7 @@ export function CatalogConfigurationPanel({
       )}
 
       <Dialog
-        open={editing !== undefined}
+        open={editing !== undefined && !confirmDiscard}
         onOpenChange={(openState) => !openState && close()}
       >
         <DialogContent
@@ -412,6 +422,7 @@ export function CatalogConfigurationPanel({
               />
             </Field>
             {isLabService ? <SharedField><Label htmlFor="catalog-customer-limit">Maximum Customer samples</Label><FieldDescription>Set the largest order Customers may place directly. Above this limit, they contact Sales for negotiated pricing. Leave blank to disable Customer standard placement until a limit is configured.</FieldDescription><Input id="catalog-customer-limit" type="number" min={1} max={10000} {...form.register('maximumCustomerSamples')} aria-invalid={Boolean(form.formState.errors.maximumCustomerSamples)} aria-describedby="catalog-customer-limit-error" /><FieldError id="catalog-customer-limit-error">{form.formState.errors.maximumCustomerSamples?.message}</FieldError></SharedField> : null}
+            {isLabService ? <SharedField><Label htmlFor="catalog-sequencing-minimum">Minimum sequencing volume per tube (µL)</Label><FieldDescription id="catalog-sequencing-minimum-help">Required before preparing sequencing tubes. Leave blank to block new tube preparation. Operators cannot change this requirement; each prepared pair retains its saved Catalog version.</FieldDescription><Input id="catalog-sequencing-minimum" inputMode="decimal" maxLength={40} {...form.register('minimumSequencingVolumeUlText')} aria-invalid={Boolean(form.formState.errors.minimumSequencingVolumeUlText)} aria-describedby="catalog-sequencing-minimum-help catalog-sequencing-minimum-error" /><FieldError id="catalog-sequencing-minimum-error">{form.formState.errors.minimumSequencingVolumeUlText?.message}</FieldError></SharedField> : null}
             </fieldset>
           </form>
           {mutation.error ? (
@@ -438,6 +449,13 @@ export function CatalogConfigurationPanel({
               {mutation.isPending ? "Saving…" : "Save item"}
             </Button>
           </RequiredDialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={confirmDiscard} onOpenChange={openState => { if (!openState) setConfirmDiscard(false); }}>
+        <DialogContent onOpenAutoFocus={event => { event.preventDefault(); keepEditingRef.current?.focus(); }}>
+          <DialogHeader><DialogTitle>Discard catalog changes?</DialogTitle></DialogHeader>
+          <div><DialogDescription>Unsaved changes to this Catalog item, including its sequencing requirement, will be discarded. Saved items and prepared tube pairs will be retained.</DialogDescription></div>
+          <RequiredDialogFooter showLegend={false}><Button ref={keepEditingRef} type="button" variant="outline" onClick={() => setConfirmDiscard(false)}>Keep editing</Button><Button type="button" variant="destructive" onClick={() => { setConfirmDiscard(false); setEditing(undefined); }}>Discard changes</Button></RequiredDialogFooter>
         </DialogContent>
       </Dialog>
     </>

@@ -4,6 +4,8 @@ import {
   Library,
   LayoutDashboard,
   ClipboardList,
+  CircleDollarSign,
+  PlugZap,
   Microscope,
   FlaskConical,
   Handshake,
@@ -48,7 +50,7 @@ type MainMenuItem = {
 export const mainMenuItems: readonly MainMenuItem[] = [
   {
     label: 'Trial projects',
-    to: '/trial-projects',
+    to: '/order-operations/lab-services/trials',
     icon: FlaskConical,
     group: 'workspace',
     visibleWhen: (session, context) => session?.state === 'ready' && isExternalOrganizationKind(context.selectedOrganizationKind) && Boolean(session.capabilities.canViewTrialProjects),
@@ -143,7 +145,7 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     group: 'workspace',
     visibleWhen: (session, context) =>
       context.selectedOrganizationKind === 'Phaeno' &&
-      Boolean(session?.capabilities.canViewAllOperationalOrders || session?.capabilities.canViewTrialProjects),
+      Boolean(session?.capabilities.canManageOrderConfiguration || session?.capabilities.canQuoteLabServiceWork || session?.capabilities.canViewTrialProjects),
   },
   {
     label: 'Lab ops',
@@ -152,7 +154,14 @@ export const mainMenuItems: readonly MainMenuItem[] = [
     group: 'workspace',
     visibleWhen: (session, context) =>
       context.selectedOrganizationKind === 'Phaeno' &&
-      Boolean(session?.capabilities.canManageLabOperations),
+      Boolean(session?.capabilities.canManageLabOperations || session?.capabilities.canReleasePSeqResults),
+  },
+  {
+    label: 'Finance',
+    to: '/finance',
+    icon: CircleDollarSign,
+    group: 'more',
+    visibleWhen: (session, context) => context.selectedOrganizationKind === 'Phaeno' && Boolean(session?.capabilities.canManagePSeqBilling || session?.capabilities.canManagePSeqCash || session?.capabilities.canReconcilePSeqCash),
   },
   {
     label: 'Purchasing',
@@ -183,13 +192,20 @@ export const mainMenuItems: readonly MainMenuItem[] = [
       Boolean(session?.capabilities.canViewDatasetConfiguration),
   },
   {
+    label: 'Legacy integrations',
+    to: '/legacy-integrations',
+    icon: PlugZap,
+    group: 'more',
+    visibleWhen: (session, context) => context.selectedOrganizationKind === 'Phaeno' && Boolean(session?.capabilities.canManageOrderConfiguration),
+  },
+  {
     label: 'Order settings',
     to: '/order-configuration',
     icon: Settings,
     group: 'administration',
     visibleWhen: (session, context) =>
       context.selectedOrganizationKind === 'Phaeno' &&
-      Boolean(session?.capabilities.canManageOrderConfiguration),
+      Boolean(session?.capabilities.canManageOrderConfiguration || session?.capabilities.canManageTrialProjects),
   },
   {
     label: 'Lab settings',
@@ -292,6 +308,6 @@ export function isPhaenoEmployee(session: SessionResponse | null) {
 
 export function isMainMenuRouteActive(pathname: string, to: string, exact?: boolean) {
   if (to === '/crm' && (pathname === '/crm/administration' || pathname.startsWith('/crm/administration/'))) return false
-  if (to === '/order-operations' && (pathname === '/trial-projects' || pathname.startsWith('/trial-projects/'))) return true
+  if (to === '/' && pathname === '/dashboard/attention') return true
   return pathname === to || (!exact && pathname.startsWith(`${to}/`))
 }

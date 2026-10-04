@@ -85,7 +85,7 @@ describe("Commercial order intake CRM handoffs", () => {
     expect(await screen.findByText("PRQ-100")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Start Customer order" }));
 
-    expect(router.navigate).toHaveBeenCalledWith({ to: "/order-operations/new", search: { organizationId: "customer-1", sourceRequestId: "request-1" } });
+    expect(router.navigate).toHaveBeenCalledWith({ to: "/order-operations/lab-services/orders/new", search: { organizationId: "customer-1", sourceRequestId: "request-1" } });
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
@@ -130,7 +130,7 @@ describe("Commercial order intake CRM handoffs", () => {
     expect(screen.getByText(/JOB-1001 · Johns Hopkins University/)).toBeTruthy();
     expect(screen.getByText("Quote In Preparation")).toBeTruthy();
     expect(screen.getByText("Price proposed · $120.00 per sample")).toBeTruthy();
-    expect(apiMocks.orders).toHaveBeenCalledWith({ activeIntake: true, holds: false, search: undefined, page: 1, pageSize: 25 });
+    expect(apiMocks.orders).toHaveBeenCalledWith({ orderType: "PSeqLabService", activeIntake: true, holds: false, search: undefined, page: 1, pageSize: 25 });
   });
 
   it("does not present a failed intake request as an empty queue", async () => {
@@ -178,7 +178,7 @@ describe("Commercial order intake CRM handoffs", () => {
   it("restores the On hold view and search from the URL without adding pending CRM handoffs", async () => {
     router.search = { intakeView: "holds", intakeSearch: " Atlas " };
     renderIntake();
-    await waitFor(() => expect(apiMocks.orders).toHaveBeenCalledWith({ activeIntake: false, holds: true, search: "Atlas", page: 1, pageSize: 25 }));
+    await waitFor(() => expect(apiMocks.orders).toHaveBeenCalledWith({ orderType: "PSeqLabService", activeIntake: false, holds: true, search: "Atlas", page: 1, pageSize: 25 }));
     expect(screen.getByLabelText("View")).toHaveProperty("value", "holds");
     expect(screen.getByLabelText("Search intake")).toHaveProperty("value", " Atlas ");
     expect(screen.queryByText("PRQ-100")).toBeNull();
@@ -189,14 +189,14 @@ describe("Commercial order intake CRM handoffs", () => {
     apiMocks.orders.mockResolvedValue({ items: [], page: 2, pageSize: 25, totalCount: 76 });
     renderIntake();
     await screen.findByText("76 orders · Page 2 of 4");
-    expect(apiMocks.orders).toHaveBeenCalledWith({ activeIntake: false, holds: false, search: "Atlas", page: 2, pageSize: 25 });
+    expect(apiMocks.orders).toHaveBeenCalledWith({ orderType: "PSeqLabService", activeIntake: false, holds: false, search: "Atlas", page: 2, pageSize: 25 });
     expect(screen.queryByText("PRQ-100")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     const navigation = router.navigate.mock.calls.at(-1)?.[0];
-    expect(navigation.to).toBe("/order-operations");
+    expect(navigation.to).toBe("/order-operations/lab-services");
     expect(navigation.replace).toBe(true);
     expect(navigation.search({ ...router.search, financeSection: "receipts" })).toEqual({
-      intakeView: "all", intakeSearch: "Atlas", intakePage: 3, orderSection: "intake", financeSection: "receipts",
+      intakeView: "all", intakeSearch: "Atlas", intakePage: 3, financeSection: "receipts",
     });
   });
 
@@ -207,11 +207,11 @@ describe("Commercial order intake CRM handoffs", () => {
     fireEvent.change(screen.getByLabelText("Search intake"), { target: { value: "new query" } });
     let navigation = router.navigate.mock.calls.at(-1)?.[0];
     expect(navigation.search({ ...router.search, financeCustomer: "customer-2" })).toEqual({
-      intakeView: "all", intakeSearch: "new query", intakePage: 1, financeCustomer: "customer-2", orderSection: "intake",
+      intakeView: "all", intakeSearch: "new query", intakePage: 1, financeCustomer: "customer-2",
     });
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
     navigation = router.navigate.mock.calls.at(-1)?.[0];
-    expect(navigation.search(router.search)).toEqual({ intakeView: "active", intakeSearch: "", intakePage: 1, orderSection: "intake" });
+    expect(navigation.search(router.search)).toEqual({ intakeView: "active", intakeSearch: "", intakePage: 1 });
   });
 
 });

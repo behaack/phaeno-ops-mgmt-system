@@ -51,8 +51,11 @@ export function LabJobPhaseShipping({ order, phasePlan, phaseState, onPhaseRefre
   const selectedPhases = form.watch('phaseIds')
   const currentPhase = phaseState === 'ready' ? currentShippingPhase(phasePlan?.phases, order, pairs, shipments) : undefined
   const multiplePhases = hasMultipleLabPhases(order, phasePlan)
+  const currentPhaseTitle = currentPhase
+    ? `Phase ${currentPhase.position}${currentPhase.name.trim().toLowerCase() === `phase ${currentPhase.position}` ? '' : ` · ${currentPhase.name}`}`
+    : null
   const shippingTitle = multiplePhases
-    ? currentPhase ? `Shipping: ${currentPhase.name} (${labSampleCount(currentPhase.sampleCount)})` : 'Shipping'
+    ? currentPhase ? `Shipping: ${currentPhaseTitle} (${labSampleCount(currentPhase.sampleCount)})` : 'Shipping'
     : `Shipping (${labSampleCount(currentPhase?.sampleCount ?? phasePlan?.sampleCount ?? order.requestedSpecimenCount)})`
   const shippingDescription = phaseState === 'ready' && phasePlan && phasePlan.phases.length > 0 && !currentPhase
     ? 'Track sample receipt, laboratory work and released results in Progress.'
@@ -101,9 +104,11 @@ export function LabJobPhaseShipping({ order, phasePlan, phaseState, onPhaseRefre
   const unassigned = supply.data?.requests.filter(r => !r.phaseId) ?? []
   const earlierOpenRequest = progress?.next === 'request' ? unassigned.find(r => !['Received', 'Cancelled'].includes(r.status)) : undefined
   const earlierPhases = supply.data?.requests.filter(r => r.phaseId && r.phaseId !== phase?.phaseId) ?? []
-  const nextTitle = earlierOpenRequest ? 'Review earlier kit order' : progress?.next === 'request' ? 'Request transportation kits' : progress?.next === 'receive' ? 'Receive transportation kits'
+  const waitingForKitDispatch = progress?.next === 'receive' && !progress.request?.kits.some(kit => kit.dispatchedAt && !kit.receivedAt)
+  const showKitOrder = Boolean(progress?.request && (progress.next !== 'receive' || waitingForKitDispatch))
+  const nextTitle = earlierOpenRequest ? 'Review earlier kit order' : waitingForKitDispatch ? 'Wait for Phaeno to send kits' : progress?.next === 'request' ? 'Request transportation kits' : progress?.next === 'receive' ? 'Receive transportation kits'
     : progress?.next === 'prepare' ? 'Prepare sample shipment' : progress?.next === 'send' ? 'Send and record shipments' : 'Phase shipped'
-  const nextButton = earlierOpenRequest ? 'View kit order' : progress?.next === 'request' ? 'Request transportation kits' : progress?.next === 'receive' ? canManage ? 'Record kit receipt' : 'View kit order'
+  const nextButton = waitingForKitDispatch ? null : earlierOpenRequest ? 'View kit order' : progress?.next === 'request' ? 'Request transportation kits' : progress?.next === 'receive' ? canManage && progress.request?.canConfirmReceipt ? 'Record kit receipt' : 'View kit order'
     : progress?.next === 'prepare' ? 'Prepare samples' : progress?.next === 'send' ? 'Review shipments' : 'View progress'
   const nextDisabled = actionsDisabled || !earlierOpenRequest && currentPhase?.cancellationPending === true && ['request', 'prepare', 'send'].includes(progress?.next ?? '')
     || progress?.next === 'request' && !earlierOpenRequest && (!canManage || !phase?.canRequest || supply.isFetching)
@@ -111,16 +116,16 @@ export function LabJobPhaseShipping({ order, phasePlan, phaseState, onPhaseRefre
   const executeNext = () => {
     if (earlierOpenRequest) showReceipt(earlierOpenRequest.id)
     else if (progress?.next === 'request') { request.reset(); onRequestOpenChange(true) }
-    else if (progress?.next === 'receive' && progress.request) showReceipt(progress.request.id)
+    else if (progress?.next === 'receive' && progress.request && !waitingForKitDispatch) showReceipt(progress.request.id)
     else onStepSelect(progress?.next ?? 'phase-progress')
   }
   return <div className="space-y-4"><Card id="phase-shipping" tabIndex={-1} className="scroll-mt-6">
     <CardHeader className="flex flex-row flex-wrap justify-between gap-3">
       <div className="min-w-0 flex-1"><CardTitle><h2>{shippingTitle}</h2></CardTitle><p className="mt-1 text-sm text-muted-foreground">{shippingDescription}</p></div>
-      {phase && progress ? canManage && (progress.request && progress.next !== 'receive' || progress.allSent) ? <ActionMenu><DropdownMenuTrigger asChild><Button id="phase-shipping-actions" variant="outline" size="sm" disabled={actionsDisabled}>Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-56 max-w-[calc(100vw-2rem)]">
-        {progress.request && progress.next !== 'receive' ? <DropdownMenuItem onSelect={() => showReceipt(progress.request!.id)}>View kit order</DropdownMenuItem> : null}
+      {phase && progress ? canManage && (showKitOrder || progress.allSent) ? <ActionMenu><DropdownMenuTrigger asChild><Button id="phase-shipping-actions" variant="outline" size="sm" disabled={actionsDisabled}>Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-56 max-w-[calc(100vw-2rem)]">
+        {showKitOrder ? <DropdownMenuItem onSelect={() => showReceipt(progress.request!.id)}>View kit order</DropdownMenuItem> : null}
         {progress.allSent ? <DropdownMenuItem onSelect={() => onStepSelect('send')}>Review shipments</DropdownMenuItem> : null}
-      </DropdownMenuContent></ActionMenu> : progress.request && progress.next !== 'receive' ? <Button variant="outline" size="sm" disabled={actionsDisabled} onClick={() => showReceipt(progress.request!.id)}>View kit order</Button> : null : null}
+      </DropdownMenuContent></ActionMenu> : showKitOrder ? <Button variant="outline" size="sm" disabled={actionsDisabled} onClick={() => showReceipt(progress.request!.id)}>View kit order</Button> : null : null}
     </CardHeader>
     <CardContent className="space-y-4">
       {supply.isLoading ? <p role="status">Checking kit requirements…</p> : null}
@@ -137,8 +142,8 @@ export function LabJobPhaseShipping({ order, phasePlan, phaseState, onPhaseRefre
           const note = step.id === 'receive' ? progress.receiveStatus : step.id === 'request' && progress.usesReceivedStock && complete ? 'Existing kits allocated' : null
           return <li key={step.id} aria-current={current ? 'step' : undefined} className={cn('flex items-center gap-2 rounded-md border px-3 py-3 text-sm sm:flex-col sm:text-center', current ? 'border-primary bg-accent/40' : 'border-transparent')}><Icon aria-hidden="true" className="size-5 shrink-0" /><div><span>{step.label}</span>{note ? <p role={step.id === 'receive' ? 'status' : undefined} className="mt-1 text-xs text-muted-foreground">{note}</p> : null}</div>{complete ? <span className="sr-only">Complete</span> : null}</li>
         })}</ol>
-        <div className="flex flex-col gap-3 rounded-md border bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between" aria-live="polite"><div className="min-w-0 flex-1 text-sm"><p className="text-xs text-muted-foreground">Next step</p><p className="font-semibold">{nextTitle}</p>{progress.next === 'prepare' && progress.usesReceivedStock ? <p className="text-muted-foreground">This {multiplePhases ? 'phase' : 'order'} uses {progress.kits.length} previously received kit{progress.kits.length === 1 ? '' : 's'}, covering {labSampleCount(phase.sampleCount)}. No new delivery is needed.</p> : null}<p className="text-muted-foreground">{earlierOpenRequest ? `Review the earlier kit order. Confirm its physical arrivals or cancel it before dispatch, then allocate the received kits to this ${multiplePhases ? 'phase' : 'order'}.` : progress.next === 'request' ? `Request kits and confirm the address when ${multiplePhases ? 'this phase is' : 'you’re'} ready.` : progress.next === 'receive' ? 'Phaeno prepares the requested kits. Confirm each kit only after it physically arrives.' : progress.next === 'prepare' ? `Save and confirm ${multiplePhases ? 'this phase’s' : 'your'} Sample IDs and physical tube barcodes.` : progress.next === 'send' ? 'Review each insert, pack the matching kit, and record carrier handoff.' : 'Track sample receipt, laboratory progress and available results in Progress.'}</p></div>
-          {progress.next === 'send' && sendActionTargetRef ? <div ref={sendActionTargetRef} className="max-w-full shrink-0 self-end sm:self-center" /> : <Button id="phase-next-step" className="shrink-0 self-end sm:self-center" disabled={nextDisabled} onClick={executeNext}>{nextButton}</Button>}
+        <div className="flex flex-col gap-3 rounded-md border bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between" aria-live="polite"><div className="min-w-0 flex-1 text-sm"><p className="text-xs text-muted-foreground">Next step</p><p className="font-semibold">{nextTitle}</p>{progress.next === 'prepare' && progress.usesReceivedStock ? <p className="text-muted-foreground">This {multiplePhases ? 'phase' : 'order'} uses {progress.kits.length} previously received kit{progress.kits.length === 1 ? '' : 's'}, covering {labSampleCount(phase.sampleCount)}. No new delivery is needed.</p> : null}<p className="text-muted-foreground">{earlierOpenRequest ? `Review the earlier kit order. Confirm its physical arrivals or cancel it before dispatch, then allocate the received kits to this ${multiplePhases ? 'phase' : 'order'}.` : waitingForKitDispatch ? 'Phaeno is preparing the outstanding kits. You can record their receipt after Phaeno sends them and they physically arrive.' : progress.next === 'request' ? `Request kits and confirm the address when ${multiplePhases ? 'this phase is' : 'you’re'} ready.` : progress.next === 'receive' ? 'Phaeno has sent kits. Confirm each kit only after it physically arrives.' : progress.next === 'prepare' ? `Save and confirm ${multiplePhases ? 'this phase’s' : 'your'} Sample IDs and physical tube barcodes.` : progress.next === 'send' ? 'Review each insert, pack the matching kit, and record carrier handoff.' : 'Track sample receipt, laboratory progress and available results in Progress.'}</p></div>
+          {progress.next === 'send' && sendActionTargetRef ? <div ref={sendActionTargetRef} className="max-w-full shrink-0 self-end sm:self-center" /> : nextButton ? <Button id="phase-next-step" className="shrink-0 self-end sm:self-center" disabled={nextDisabled} onClick={executeNext}>{nextButton}</Button> : null}
         </div>
         {currentPhase?.cancellationPending ? <p className="text-sm text-muted-foreground">Phaeno must resolve this {multiplePhases ? 'phase’s' : 'order’s'} cancellation request before you continue preparation or shipping.</p> : !canManage && ['request', 'prepare'].includes(progress.next ?? '') ? <p className="text-sm text-muted-foreground">An organization or department administrator can complete this step.</p> : null}
         {!phase.canRequest && progress.next === 'request' ? <p className="text-sm text-muted-foreground">{phase.blockedReason}</p> : null}

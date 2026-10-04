@@ -11,15 +11,21 @@ public enum TrialMaterialDisposition { Destroy, Return }
 public enum TrialCommercialOutcome { FollowUpScheduled, ConvertedToCustomer, ConvertedToPartner, ClosedWithoutConversion }
 public sealed record TrialAnalysisSnapshot(Guid Id, long Version, string Name, string Instructions, string RequiredInputsJson, string ResultContractJson);
 public sealed record TrialDeliverableSnapshot(Guid Id, int Revision, string Key, string Name);
+public sealed record TrialSourceGroup(string BiologicalSource, int? SpecimenCount);
+public sealed record TrialSampleTypeSnapshot(Guid Id, long Version, string Name, string QuantityUnit, decimal? MinimumQuantity, decimal? MaximumQuantity);
 public sealed record TrialScopeValues(
     string Name, string Objective, int SampleAllowance, DateTime SubmissionOpensAtUtc, DateTime SubmissionClosesAtUtc,
     Guid WorkflowVersionId, IReadOnlyList<TrialAnalysisSnapshot> Analyses, IReadOnlyList<TrialDeliverableSnapshot> Deliverables,
     string SubmissionInstructions, string SuccessCriteria, decimal EstimatedRetailValue, decimal AnticipatedInternalCost,
     int ResidualRetentionDays, TrialMaterialDisposition MaterialDisposition, string? ReturnDestination,
-    string? ReturnHandling, string? ReturnShippingPayer, string Terms)
+    string? ReturnHandling, string? ReturnShippingPayer, string Terms,
+    TrialSampleTypeSnapshot SampleType, IReadOnlyList<TrialSourceGroup> Sources)
 {
     public void Validate()
     {
+        if (SampleType is null || SampleType.Id == Guid.Empty || SampleType.Version < 1) throw new ArgumentException("Select a versioned extracted RNA sample type.");
+        TrialRules.ValidateSources(Sources);
+        if (TrialRules.SourceCount(Sources) != SampleAllowance) throw new ArgumentException("Sample allowance must equal the source quantities.");
         TrialRules.Text(Name, 255); TrialRules.Text(Objective); TrialRules.Text(SubmissionInstructions);
         TrialRules.Text(SuccessCriteria); TrialRules.Text(Terms, 12000);
         if (SampleAllowance < 1 || ResidualRetentionDays < 0 || EstimatedRetailValue < 0 || AnticipatedInternalCost < 0)
@@ -42,9 +48,9 @@ public sealed class TrialProject : CommercialReceivableEntity
 {
     public Guid Id { get; private set; } = Guid.NewGuid();
     public string Number { get; private set; } = null!;
-    public Guid CrmHandoffId { get; private set; }
+    public Guid? CrmHandoffId { get; private set; }
     public Guid CompanyId { get; private set; }
-    public Guid OpportunityId { get; private set; }
+    public Guid? OpportunityId { get; private set; }
     public Guid SalesOwnerUserId { get; private set; }
     public Guid? OrganizationId { get; private set; }
     public Guid? DepartmentId { get; private set; }
@@ -76,11 +82,11 @@ public sealed class TrialProject : CommercialReceivableEntity
     public ICollection<TrialSample> Samples { get; private set; } = new List<TrialSample>();
     public bool IsTerminal => Status is TrialStatus.Completed or TrialStatus.Declined or TrialStatus.Expired or TrialStatus.Cancelled or TrialStatus.ClosedIncomplete;
     private TrialProject() { }
-    public TrialProject(string number, Guid handoffId, Guid companyId, Guid opportunityId, Guid salesOwnerUserId)
+    public TrialProject(string number, Guid? handoffId, Guid companyId, Guid? opportunityId, Guid salesOwnerUserId)
     {
         Number = TrialRules.Text(number, 40);
-        if (new[] { handoffId, companyId, opportunityId, salesOwnerUserId }.Contains(Guid.Empty))
-            throw new ArgumentException("A CRM request, Company, Opportunity and Sales owner are required.");
+        if (companyId == Guid.Empty || salesOwnerUserId == Guid.Empty || handoffId == Guid.Empty || opportunityId == Guid.Empty)
+            throw new ArgumentException("A Company and Trial owner are required.");
         CrmHandoffId = handoffId; CompanyId = companyId; OpportunityId = opportunityId; SalesOwnerUserId = salesOwnerUserId;
     }
     public TrialScopeDraftValues? ReadScopeDraft() => DraftScopeJson is null ? null : JsonSerializer.Deserialize<TrialScopeDraftValues>(DraftScopeJson);
@@ -95,6 +101,9 @@ public sealed class TrialProject : CommercialReceivableEntity
         EnsureOpen(); values.Validate();
         if (Samples.Count(value => !value.ReplacesSampleId.HasValue) > values.SampleAllowance)
             throw new InvalidOperationException("The allowance cannot be smaller than the original samples already submitted.");
+        foreach (var group in Samples.Where(sample => !sample.ReplacesSampleId.HasValue).GroupBy(sample => TrialRules.SourceKey(sample.BiologicalSource)))
+            if (values.Sources.SingleOrDefault(source => TrialRules.SourceKey(source.BiologicalSource) == group.Key)?.SpecimenCount is not int count || count < group.Count())
+                throw new InvalidOperationException("Source quantities cannot be smaller than the original samples already submitted.");
         var approved = ApprovedScopeRevision.HasValue ? Scopes.Single(value => value.Revision == ApprovedScopeRevision).Read() : null;
         if (Samples.Count > 0 && approved is not null && (values.MaterialDisposition != approved.MaterialDisposition
             || values.ReturnDestination != approved.ReturnDestination || values.ReturnHandling != approved.ReturnHandling
@@ -113,7 +122,7 @@ public sealed class TrialProject : CommercialReceivableEntity
             throw new InvalidOperationException("Approved Trial ownership is immutable.");
         OrganizationId = organizationId; DepartmentId = departmentId;
     }
-    public TrialDecision Decide(TrialApprovalDomain domain, TrialDecisionKind kind, Guid actorId, Guid authorityId, bool asDelegate, string reason, DateTime now)
+    public TrialDecision Decide(TrialApprovalDomain domain, TrialDecisionKind kind, Guid actorId, Guid? authorityId, bool asDelegate, string reason, DateTime now)
     {
         EnsureOpen();
         if (Status != TrialStatus.UnderReview) throw new InvalidOperationException("Submit a scope for review first.");
@@ -140,9 +149,10 @@ public sealed class TrialProject : CommercialReceivableEntity
     {
         if (IsTerminal) return "This Trial is closed.";
         if (IsOnHold) return "This Trial is on hold.";
-        if (CurrentScopeRevision == 0 || ApprovedScopeRevision != CurrentScopeRevision) return "The current scope needs both approvals.";
+        if (CurrentScopeRevision == 0 || ApprovedScopeRevision != CurrentScopeRevision) return "The current scope needs Commercial approval.";
         if (AcceptedScopeRevision != CurrentScopeRevision) return "An organization administrator must accept the current Trial terms.";
         var values = CurrentScope().Read();
+        values.Validate();
         if (now < values.SubmissionOpensAtUtc) return "The submission window has not opened.";
         if (now >= values.SubmissionClosesAtUtc) return "The submission window has closed.";
         return null;
@@ -152,6 +162,17 @@ public sealed class TrialProject : CommercialReceivableEntity
         var blocker = SubmissionBlocker(now); if (blocker is not null) throw new InvalidOperationException(blocker);
         if (samples.Count == 0 || samples.Any(value => value.TrialProjectId != Id || value.ScopeRevision != CurrentScopeRevision))
             throw new ArgumentException("Submit samples for this Trial's current scope.");
+        var values = CurrentScope().Read();
+        foreach (var sample in samples)
+        {
+            if (!values.Sources.Any(source => TrialRules.SourceKey(source.BiologicalSource) == TrialRules.SourceKey(sample.BiologicalSource)))
+                throw new ArgumentException("Select a biological source from the approved Trial scope.");
+            if (sample.ReplacesSampleId.HasValue && TrialRules.SourceKey(Samples.Single(value => value.Id == sample.ReplacesSampleId).BiologicalSource) != TrialRules.SourceKey(sample.BiologicalSource))
+                throw new ArgumentException("A replacement must use the failed sample's biological source.");
+        }
+        foreach (var group in Samples.Concat(samples).Where(sample => !sample.ReplacesSampleId.HasValue).GroupBy(sample => TrialRules.SourceKey(sample.BiologicalSource)))
+            if (group.Count() > values.Sources.Single(source => TrialRules.SourceKey(source.BiologicalSource) == group.Key).SpecimenCount)
+                throw new InvalidOperationException("The approved quantity for this biological source is full.");
         if (Samples.Count(value => !value.ReplacesSampleId.HasValue) + samples.Count(value => !value.ReplacesSampleId.HasValue) > CurrentScope().Read().SampleAllowance)
             throw new InvalidOperationException("The approved sample allowance is full.");
         if (Samples.Concat(samples).Select(value => value.Reference.ToUpperInvariant()).Distinct().Count() != Samples.Count + samples.Count)
@@ -219,20 +240,18 @@ public sealed class TrialScope : CommercialReceivableEntity
     public Guid ProposedByUserId { get; private set; }
     public DateTime ProposedAtUtc { get; private set; }
     public ICollection<TrialDecision> Decisions { get; private set; } = new List<TrialDecision>();
-    public bool IsApproved => Decisions.Count == 2 && Decisions.All(value => value.Kind == TrialDecisionKind.Approve) && Decisions.Select(value => value.ActorUserId).Distinct().Count() == 2;
+    public bool IsApproved => Decisions.Any(value => value.Domain == TrialApprovalDomain.Commercial && value.Kind == TrialDecisionKind.Approve);
     private TrialScope() { }
     public TrialScope(Guid trialId, int revision, TrialScopeValues values, string reason, Guid actorId, DateTime now)
     { values.Validate(); TrialRules.Utc(now); TrialProjectId = trialId; Revision = revision; ValuesJson = JsonSerializer.Serialize(values);
         AmendmentReason = TrialRules.Text(reason); ProposedByUserId = actorId; ProposedAtUtc = now; }
     public TrialScopeValues Read() => JsonSerializer.Deserialize<TrialScopeValues>(ValuesJson)!;
-    public TrialDecision Decide(TrialApprovalDomain domain, TrialDecisionKind kind, Guid actorId, Guid authorityId, bool asDelegate, string reason, DateTime now)
+    public TrialDecision Decide(TrialApprovalDomain domain, TrialDecisionKind kind, Guid actorId, Guid? authorityId, bool asDelegate, string reason, DateTime now)
     {
-        if (!Enum.IsDefined(domain) || !Enum.IsDefined(kind) || actorId == Guid.Empty || authorityId == Guid.Empty)
-            throw new ArgumentException("A valid domain, decision and acting authority are required.");
+        if (domain != TrialApprovalDomain.Commercial || !Enum.IsDefined(kind) || actorId == Guid.Empty || authorityId == Guid.Empty)
+            throw new ArgumentException("A Commercial leadership decision and acting user are required.");
         if (Decisions.Any(value => value.Domain == domain || value.Kind != TrialDecisionKind.Approve))
             throw new InvalidOperationException("Revise the scope before recording a new decision for this domain.");
-        if (kind == TrialDecisionKind.Approve && Decisions.Any(value => value.ActorUserId == actorId))
-            throw new InvalidOperationException("Two different people must approve each scope version.");
         var value = new TrialDecision(Id, domain, kind, actorId, authorityId, asDelegate, reason, now); Decisions.Add(value); return value;
     }
 }
@@ -243,18 +262,36 @@ public sealed class TrialDecision
     public TrialApprovalDomain Domain { get; private set; }
     public TrialDecisionKind Kind { get; private set; }
     public Guid ActorUserId { get; private set; }
-    public Guid AuthorityId { get; private set; }
+    public Guid? AuthorityId { get; private set; }
     public bool AsDelegate { get; private set; }
     public string Reason { get; private set; } = null!;
     public DateTime DecidedAtUtc { get; private set; }
     private TrialDecision() { }
-    public TrialDecision(Guid scopeId, TrialApprovalDomain domain, TrialDecisionKind kind, Guid actorId, Guid authorityId, bool asDelegate, string reason, DateTime now)
+    public TrialDecision(Guid scopeId, TrialApprovalDomain domain, TrialDecisionKind kind, Guid actorId, Guid? authorityId, bool asDelegate, string reason, DateTime now)
     { TrialRules.Utc(now); TrialScopeId = scopeId; Domain = domain; Kind = kind; ActorUserId = actorId; AuthorityId = authorityId;
         AsDelegate = asDelegate; Reason = TrialRules.Text(reason); DecidedAtUtc = now; }
 }
 
 public static partial class TrialRules
 {
+    public static string SourceKey(string value) => Regex.Replace(value.Trim(), @"\s+", " ").ToUpperInvariant();
+    public static int SourceCount(IReadOnlyList<TrialSourceGroup> sources) => checked((int)sources.Sum(value => (long)(value.SpecimenCount ?? 0)));
+    public static void ValidateSources(IReadOnlyList<TrialSourceGroup>? sources, bool allowIncomplete = false)
+    {
+        if (sources is null || !allowIncomplete && sources.Count == 0)
+            throw new ArgumentException("Enter at least one biological source and quantity.");
+        foreach (var source in sources)
+        {
+            if (source is null) throw new ArgumentException("Provide a biological source and quantity.");
+            if (!allowIncomplete || !string.IsNullOrWhiteSpace(source.BiologicalSource)) Text(source.BiologicalSource, 500);
+            if (source.SpecimenCount is < 1 || !allowIncomplete && !source.SpecimenCount.HasValue)
+                throw new ArgumentException("Enter a positive whole-number sample quantity for each source.");
+        }
+        var named = sources.Where(value => !string.IsNullOrWhiteSpace(value.BiologicalSource)).Select(value => SourceKey(value.BiologicalSource)).ToList();
+        if (named.Distinct().Count() != named.Count) throw new ArgumentException("Each biological source must be distinct.");
+        if (sources.Sum(value => (long)(value.SpecimenCount ?? 0)) > int.MaxValue) throw new ArgumentException("The total sample quantity is too large.");
+    }
+
     public const string TermsVersion = "trial-ruo-no-phi-v1";
     public const string RuoStatement = "For Research Use Only. Not for use in diagnostic procedures.";
     public static string Text(string? text, int max = 4000) => OrderText.Required(text, nameof(text), max);

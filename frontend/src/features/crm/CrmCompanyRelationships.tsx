@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, ChevronDown, Pencil, Plus } from "lucide-react";
+import { ArrowRight, Pencil, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   apiErrorMessage,
@@ -276,16 +276,16 @@ export function CrmCompanyRelationships({
                       <ActionMenu modal={false}>
                         <DropdownMenuTrigger asChild>
                           <Button size="sm" variant="outline" aria-label={`Actions for ${value.requestNumber}`}>
-                            Actions <ChevronDown aria-hidden="true" />
+                            Actions
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-max min-w-40 max-w-[calc(100vw-2rem)]">
                           {value.type === "TrialProject" ? (
                             <DropdownMenuItem asChild>
                               {value.trialProjectId ? (
-                                <Link to="/trial-projects/$trialId" params={{ trialId: value.trialProjectId }} search={{ fromCompanyId: companyId }}>Open Trial</Link>
+                                <Link to="/order-operations/lab-services/trials/$trialId" params={{ trialId: value.trialProjectId }} search={{ fromCompanyId: companyId }}>Open Trial</Link>
                               ) : (
-                                <Link to="/trial-projects" search={{ requestId: value.id, fromCompanyId: companyId }}>Start Trial</Link>
+                                <Link to="/order-operations/lab-services/trials" search={{ fromCompanyId: companyId }}>Trial projects</Link>
                               )}
                             </DropdownMenuItem>
                           ) : null}
@@ -468,7 +468,7 @@ const companyRequestCategories: ReadonlyArray<{
   {
     value: "Work",
     label: "Start reviewed work",
-    requestTypes: ["TrialProject", "CustomWork"],
+    requestTypes: ["CustomWork"],
   },
   {
     value: "Relationship",

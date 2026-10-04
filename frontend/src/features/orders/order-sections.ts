@@ -5,10 +5,10 @@ import type { WorkspaceSidebarItem } from '#/components/WorkspaceSidebar'
 export type OrderSection = 'intake' | 'trials' | 'reagent' | 'assembly' | 'attention' | 'results' | 'finance' | 'integrations'
 
 const orderSections: ReadonlyArray<WorkspaceSidebarItem<OrderSection>> = [
-  { value: 'intake', label: 'Order intake', description: 'Commercial intake, pricing, and quotes', icon: ClipboardCheck },
-  { value: 'trials', label: 'Trial projects', description: 'No-charge PSeq evaluations', icon: FlaskConical },
-  { value: 'reagent', label: 'PSeq kits', description: 'Commercial status and Lab fulfillment', icon: Boxes },
-  { value: 'assembly', label: 'Assembly', description: 'Commercial status and Lab processing', icon: Workflow },
+  { value: 'intake', group: 'LAB SERVICES', label: 'Order intake', description: 'Commercial intake, pricing, and quotes', icon: ClipboardCheck },
+  { value: 'trials', group: 'LAB SERVICES', label: 'Trial projects', description: 'No-charge PSeq evaluations', icon: FlaskConical },
+  { value: 'reagent', group: 'PARTNER SERVICES', label: 'PSeq kits', description: 'Commercial status and Lab fulfillment', icon: Boxes },
+  { value: 'assembly', group: 'PARTNER SERVICES', label: 'Data assembly', description: 'Commercial status and Lab processing', icon: Workflow },
   { value: 'attention', label: 'Attention', description: 'Owned cross-workflow blockers and failures', icon: ListChecks },
   { value: 'results', label: 'Result release', description: 'Governed, sample-level PSeq delivery', icon: FileCheck2 },
   { value: 'finance', label: 'Finance', description: 'Invoices, receipts, allocations, and reconciliation', icon: CircleDollarSign },

@@ -509,6 +509,37 @@ public class LabOperationsDomainTests
         Assert.Equal(completedAt, batch.CompletedAtUtc);
     }
 
+    [Fact]
+    public void EmptyActiveBatchCanReturnToDraftWithoutChangingItsIdentity()
+    {
+        var batch = new LabOperationalBatch("PH-BAT-RECOVERY", "Demo", "Retained notes");
+        var id = batch.Id;
+        batch.Start(DateTime.UtcNow);
+        batch.ReturnEmptyToDraft(0, false);
+        Assert.Equal(id, batch.Id);
+        Assert.Equal("PH-BAT-RECOVERY", batch.BatchNumber);
+        Assert.Equal("Demo", batch.Name);
+        Assert.Equal("Retained notes", batch.Notes);
+        Assert.Equal(LabBatchStatus.Draft, batch.Status);
+        Assert.Null(batch.StartedAtUtc);
+        Assert.Null(batch.CompletedAtUtc);
+    }
+
+    [Theory]
+    [InlineData(1, false, false)]
+    [InlineData(0, true, false)]
+    [InlineData(0, false, true)]
+    public void BatchRecoveryRejectsExistingWork(int memberCount, bool hasSendout, bool completed)
+    {
+        var batch = new LabOperationalBatch("PH-BAT-RECOVERY", null, null);
+        var startedAt = DateTime.UtcNow;
+        batch.Start(startedAt);
+        if (completed) batch.Complete(startedAt.AddHours(1));
+        Assert.Throws<InvalidOperationException>(() => batch.ReturnEmptyToDraft(memberCount, hasSendout));
+        Assert.Equal(startedAt, batch.StartedAtUtc);
+        Assert.Equal(completed ? LabBatchStatus.Complete : LabBatchStatus.InProgress, batch.Status);
+    }
+
     private static LabWorkOrder WorkOrder(int authorizationVersion) => new(
         Guid.NewGuid(),
         authorizationVersion,

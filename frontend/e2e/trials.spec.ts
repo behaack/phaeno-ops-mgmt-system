@@ -35,7 +35,7 @@ test('Prospect reviews scope in the dialog, accepts it, and submits coded RNA wi
   await page.goto('/e2e/fixtures/trials.html')
   await expect(page.getByRole('heading', { name: 'RNA transcript evaluation' })).toBeVisible()
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([])
-  await page.getByRole('button', { name: 'Review and accept scope' }).click()
+  await trialAction(page, 'Review and accept scope')
   const dialog = page.getByRole('dialog')
   await expect(dialog.getByText('For Research Use Only. Not for use in diagnostic procedures.')).toBeVisible()
   await expect(dialog.getByText('FASTQ sequencing reads')).toBeVisible()
@@ -45,7 +45,7 @@ test('Prospect reviews scope in the dialog, accepts it, and submits coded RNA wi
   await expect(dialog).toHaveCount(0)
   await page.getByRole('button', { name: 'Submit samples' }).click()
   await dialog.getByLabel('Coded sample reference', { exact: false }).fill('RNA-CODE-01')
-  await dialog.getByLabel('Biological source', { exact: false }).fill('Synthetic research RNA')
+  await dialog.getByLabel('Biological source', { exact: false }).selectOption('Research RNA')
   await dialog.getByLabel('Number of tubes', { exact: false }).fill('2')
   await dialog.getByLabel('Quantity (ng)', { exact: false }).fill('100')
   await dialog.getByLabel('Storage requirements', { exact: false }).fill('Frozen')
@@ -54,7 +54,7 @@ test('Prospect reviews scope in the dialog, accepts it, and submits coded RNA wi
   await dialog.getByRole('button', { name: 'Add another sample' }).click()
   const second = dialog.getByRole('group', { name: 'Sample 2', exact: true })
   await second.getByLabel('Coded sample reference', { exact: false }).fill('RNA-CODE-02')
-  await second.getByLabel('Biological source', { exact: false }).fill('Second research RNA')
+  await second.getByLabel('Biological source', { exact: false }).selectOption('Second research RNA')
   await second.getByLabel('Quantity (ng)', { exact: false }).fill('120')
   await second.getByLabel('Storage requirements', { exact: false }).fill('Frozen')
   await second.getByLabel('Research material safety declaration', { exact: false }).fill('Nonhazardous research material')
@@ -112,7 +112,8 @@ test('Phaeno scopes a Trial using the existing PSeq catalog and explicit materia
     if (route.request().method() === 'POST') {
       attempts++
       if (attempts === 1) { current = { ...current, version: 5 }; waitingForReload = true; return route.fulfill({ status: 409, json: { success: false, error: { code: 'trial_version_conflict', message: 'The Trial scope changed.' } } }) }
-      expect(route.request().postDataJSON()).toMatchObject({ version: 5, workflowVersionId: 'workflow-1', analysisIds: ['analysis-1'], deliverableIds: ['deliverable-1'], sampleAllowance: 2, materialDisposition: 'Destroy', reason: 'Reviewed initial PSeq scope' })
+      expect(route.request().postDataJSON()).toMatchObject({ version: 5, workflowVersionId: 'workflow-1', analysisIds: ['analysis-1'], deliverableIds: ['deliverable-1'], sampleTypeId: 'rna', sources: [{ biologicalSource: 'Research RNA', specimenCount: 1 }, { biologicalSource: 'Second research RNA', specimenCount: 1 }], materialDisposition: 'Destroy', reason: 'Reviewed initial PSeq scope' })
+      expect(route.request().postDataJSON()).not.toHaveProperty('sampleAllowance')
       submitted = true
     }
     if (route.request().method() === 'GET' && waitingForReload) { await reloaded; waitingForReload = false }
@@ -154,6 +155,41 @@ test('Phaeno scopes a Trial using the existing PSeq catalog and explicit materia
   expect(submitted).toBe(true); expect(errors).toEqual([])
 })
 
+for (const role of ['Platform administrator', 'Commercial leadership']) {
+  test(`${role} submits a complete scope with approval and no separate decision`, async ({ page }, info) => {
+    const scope = { ...trialDetail.scope!, internalValues: { ...trialDetail.scope!, workflowVersionId: 'workflow-1', estimatedRetailValue: 2000, anticipatedInternalCost: 500 } }
+    let current = { ...trialDetail, isStaff: true, canManage: true, canApproveScopeOnSubmission: true, canAccept: false, status: 'UnderReview', scope }
+    const config = { ...trialConfiguration, analyses: scope.analyses, workflows: [{ id: 'workflow-1', name: 'Approved PSeq workflow', version: 3 }], deliverables: scope.deliverables }
+    const writes: string[] = []; const errors: string[] = []
+    page.on('pageerror', error => errors.push(error.message))
+    if (info.project.name === 'mobile-chrome') await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
+    await page.route('**/api/trials/**', async route => {
+      const path = new URL(route.request().url()).pathname
+      if (path.endsWith('/configuration')) return route.fulfill({ json: { success: true, data: config } })
+      if (path.endsWith('/candidates')) return route.fulfill({ json: { success: true, data: [] } })
+      if (route.request().method() === 'POST') {
+        writes.push(path)
+        expect(path).toBe('/api/trials/trial-1/scope')
+        expect(route.request().postDataJSON()).toMatchObject({ version: 4, reason: 'Approved scope on submission' })
+        current = { ...current, status: 'AwaitingAcceptance', version: 5 }
+      }
+      return route.fulfill({ json: { success: true, data: current } })
+    })
+    const html = (await readFile(new URL('./fixtures/release-receipt.html', import.meta.url), 'utf8')).replaceAll('release-receipt', 'trials')
+    await page.route('**/e2e/fixtures/trials.html**', route => route.fulfill({ contentType: 'text/html', body: html }))
+    await page.goto('/e2e/fixtures/trials.html?view=scope')
+    await expect(page.getByRole('button', { name: 'Approve and submit scope' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Submit scope for approval' })).toHaveCount(0)
+    await page.getByLabel('Reason for this scope revision', { exact: false }).fill('Approved scope on submission')
+    expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([])
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+    await page.screenshot({ path: info.outputPath('trial-direct-approval.png'), fullPage: true })
+    await page.getByRole('button', { name: 'Approve and submit scope' }).click()
+    await expect(page.getByText('Awaiting Acceptance · No charge · Research use only', { exact: true })).toBeVisible()
+    expect(writes).toEqual(['/api/trials/trial-1/scope']); expect(errors).toEqual([])
+  })
+}
+
 test('Changed approved scope reload refreshes visible terms and requires renewed acceptance after a failed refresh', async ({ page }) => {
   let current = structuredClone(trialDetail); let attempts = 0; let failNextRead = false
   let finishFailedReload!: () => void
@@ -164,7 +200,7 @@ test('Changed approved scope reload refreshes visible terms and requires renewed
     if (route.request().method() === 'POST') {
       attempts++
       if (attempts === 1) {
-        current = { ...current, version: 9, approvedScopeRevision: 2, scope: { ...current.scope!, revision: 2, termsVersion: 'trial-terms-v2', terms: 'Amended Trial terms: return residual RNA under the agreed arrangements.', sampleAllowance: 3 } }
+        current = { ...current, version: 9, approvedScopeRevision: 2, scope: { ...current.scope!, revision: 2, termsVersion: 'trial-terms-v2', terms: 'Amended Trial terms: return residual RNA under the agreed arrangements.', sampleAllowance: 3, sources: [{ biologicalSource: 'Research RNA', specimenCount: 2 }, { biologicalSource: 'Second research RNA', specimenCount: 1 }] } }
         failNextRead = true
         return route.fulfill({ status: 409, json: { success: false, error: { code: 'trial_version_conflict', message: 'The approved scope changed.' } } })
       }
@@ -179,7 +215,7 @@ test('Changed approved scope reload refreshes visible terms and requires renewed
   })
   const html = (await readFile(new URL('./fixtures/release-receipt.html', import.meta.url), 'utf8')).replaceAll('release-receipt', 'trials')
   await page.route('**/e2e/fixtures/trials.html', route => route.fulfill({ contentType: 'text/html', body: html }))
-  await page.goto('/e2e/fixtures/trials.html'); await page.getByRole('button', { name: 'Review and accept scope' }).click()
+  await page.goto('/e2e/fixtures/trials.html'); await trialAction(page, 'Review and accept scope')
   const dialog = page.getByRole('dialog'); await dialog.getByRole('checkbox').check(); await dialog.getByRole('button', { name: 'Accept Trial scope' }).click()
   await expect(dialog.getByRole('alert')).toContainText('The approved scope changed')
   await dialog.getByRole('button', { name: 'Reload current Trial; keep my entries' }).click()
@@ -227,83 +263,158 @@ test('Trial results show superseded and closed history and refresh availability 
   await expect(page.getByRole('button', { name: 'Refresh results and access' })).toBeVisible()
 })
 
-test('Company handoff opens the exact eligible request even outside configuration choices', async ({ page }) => {
-  let requestRead = false; let created = false
-  await page.route(url => url.pathname === '/api/trials' || url.pathname.startsWith('/api/trials/'), async route => {
-    const url = new URL(route.request().url())
-    if (url.pathname.endsWith('/configuration')) return route.fulfill({ json: { success: true, data: trialConfiguration } })
-    if (url.pathname.endsWith('/requests')) {
-      expect(url.searchParams.get('requestId')).toBe('handoff-251'); expect(url.searchParams.get('companyId')).toBe('company-1'); requestRead = true
-      return route.fulfill({ json: { success: true, data: { items: [{ id: 'handoff-251', companyName: 'Synthetic Research', opportunityName: 'RNA Evaluation', summary: 'Selected Company request' }], page: 0, pageSize: 25, total: 1 } } })
+
+test('Business Development creates a Trial directly with Company search and required Department, then leadership decides scope', async ({ page }, info) => {
+  let current = { ...trialDetail, isStaff: true, canManage: true, canAccept: false, status: 'UnderReview', approvalDomains: ['Commercial'] }
+  const writes: string[] = []
+  await page.route(/^https:\/\/127\.0\.0\.1:\d+\/api\//, async route => {
+    const path = new URL(route.request().url()).pathname
+    if (path.endsWith('/crm/companies')) return route.fulfill({ json: { success: true, data: { items: [{ id: 'company-1', name: 'Synthetic Research', domainName: 'research.example.test' }], totalCount: 1, page: 1, pageSize: 20 } } })
+    if (path.endsWith('/departments/opportunity-choices')) return route.fulfill({ json: { success: true, data: [{ id: 'research', name: 'Research' }, { id: 'oncology', name: 'Oncology' }] } })
+    if (path.endsWith('/configuration')) return route.fulfill({ json: { success: true, data: trialConfiguration } })
+    if (route.request().method() === 'POST') {
+      writes.push(path)
+      const payload = route.request().postDataJSON()
+      if (path.endsWith('/trials')) {
+        expect(payload).toMatchObject({ companyId: 'company-1', departmentId: 'oncology', name: 'Oncology RNA evaluation', objective: 'Evaluate transcript research outputs.', sampleTypeId: 'rna', sources: [{ biologicalSource: 'Human PBMC', specimenCount: 6 }, { biologicalSource: 'Mouse liver', specimenCount: 4 }] })
+        expect(payload.submissionOpensAtUtc).toBe('2026-10-10T00:00:00.000Z')
+        expect(payload.submissionClosesAtUtc).toBe('2026-10-21T00:00:00.000Z')
+        expect(route.request().headers()['idempotency-key']).toBeTruthy()
+      } else if (path.endsWith('/decisions')) {
+        expect(payload).toMatchObject({ domain: 'Commercial', decision: 'Approve' })
+        current = { ...current, status: 'AwaitingAcceptance' }
+      } else throw new Error('Unexpected write: ' + path)
+      return route.fulfill({ json: { success: true, data: current } })
     }
-    if (url.pathname.endsWith('/candidates')) return route.fulfill({ json: { success: true, data: [] } })
-    if (route.request().method() === 'POST') { expect(route.request().postDataJSON()).toEqual({ crmHandoffId: 'handoff-251' }); created = true; return route.fulfill({ json: { success: true, data: { ...trialDetail, isStaff: true } } }) }
-    return route.fulfill({ json: { success: true, data: url.pathname === '/api/trials' ? [] : { ...trialDetail, isStaff: true } } })
+    return route.fulfill({ json: { success: true, data: path.endsWith('/trials') ? [] : path.endsWith('/candidates') ? [] : current } })
   })
-  const html = (await readFile(new URL('./fixtures/release-receipt.html', import.meta.url), 'utf8')).replaceAll('release-receipt', 'trials')
-  await page.route('**/e2e/fixtures/trials.html*', route => route.fulfill({ contentType: 'text/html', body: html }))
-  await page.goto('/e2e/fixtures/trials.html?view=request&requestId=handoff-251&fromCompanyId=company-1')
-  const dialog = page.getByRole('dialog')
-  await expect(dialog.getByRole('combobox', { name: /CRM Trial request/ })).toHaveValue('Synthetic Research · RNA Evaluation · Selected Company request')
-  expect(requestRead).toBe(true); await dialog.getByRole('button', { name: 'Start Trial', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'RNA transcript evaluation' })).toBeVisible(); expect(created).toBe(true)
-})
-
-test('Trial request floating choices handle Escape before offering to discard the draft', async ({ page }, info) => {
-  if (info.project.name === 'mobile-chrome') await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
-  const requests = [
-    { id: 'handoff-1', companyName: 'Synthetic Research', opportunityName: 'First RNA evaluation', summary: 'First eligible request' },
-    { id: 'handoff-2', companyName: 'Synthetic Research', opportunityName: 'Second RNA evaluation', summary: 'Second eligible request' },
-  ]
-  const label = (index: number) => `${requests[index].companyName} · ${requests[index].opportunityName} · ${requests[index].summary}`
-  let submissions = 0
-  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message))
-  await page.route(url => url.pathname === '/api/trials' || url.pathname.startsWith('/api/trials/'), async route => {
-    const url = new URL(route.request().url())
-    if (url.pathname.endsWith('/configuration')) return route.fulfill({ json: { success: true, data: trialConfiguration } })
-    if (url.pathname.endsWith('/requests')) return route.fulfill({ json: { success: true, data: { items: requests, page: 0, pageSize: 25, total: requests.length } } })
-    if (route.request().method() === 'POST') submissions++
-    return route.fulfill({ json: { success: true, data: [] } })
-  })
-  const html = (await readFile(new URL('./fixtures/release-receipt.html', import.meta.url), 'utf8')).replaceAll('release-receipt', 'trials')
-  await page.route('**/e2e/fixtures/trials.html*', route => route.fulfill({ contentType: 'text/html', body: html }))
+  const fixtureHtml = (await readFile(new URL('./fixtures/release-receipt.html', import.meta.url), 'utf8')).replaceAll('release-receipt', 'trials')
+  await page.route('**/e2e/fixtures/trials.html**', route => route.fulfill({ contentType: 'text/html', body: fixtureHtml }))
   await page.goto('/e2e/fixtures/trials.html?view=request')
-  await page.getByRole('button', { name: 'Start Trial', exact: true }).click()
-  const dialog = page.getByRole('dialog')
-  const input = dialog.getByRole('combobox', { name: /CRM Trial request/ })
-  await expect(dialog.getByText('2 eligible requests.', { exact: true })).toBeVisible()
-  await input.focus(); await input.press('ArrowDown'); await input.press('Enter')
-  await expect(input).toHaveValue(label(1)); await expect(input).toBeFocused()
-  await expect(page.getByRole('listbox')).toHaveCount(0)
-
-  let confirmations = 0
-  let discard = false
-  page.on('dialog', async prompt => {
-    expect(prompt.type()).toBe('confirm'); expect(prompt.message()).toBe('Discard the unsaved Trial changes?')
-    confirmations++
-    if (discard) await prompt.accept(); else await prompt.dismiss()
-  })
-  await input.press('ArrowDown')
-  await expect(input).toBeFocused()
-  await expect(page.getByRole('listbox')).toBeVisible()
-  await expect(dialog.getByRole('listbox')).toHaveCount(0)
-  await page.keyboard.press('Escape')
-  await expect(page.getByRole('listbox')).toHaveCount(0)
-  await expect(input).toBeFocused(); await expect(input).toHaveValue(label(1))
-  await expect(input).toHaveAttribute('aria-expanded', 'false')
-  await expect(dialog).toBeVisible(); expect(confirmations).toBe(0)
+  await expect(page.getByRole('heading', { name: 'Trial projects', exact: true })).toBeVisible({ timeout: 10000 })
+  await expect(page.getByRole('link', { name: 'Trial configuration', exact: true })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Create Trial', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'Create Trial project' })
+  await dialog.getByRole('textbox', { name: 'Trial name', exact: true }).fill('Oncology RNA evaluation')
+  await dialog.getByRole('textbox', { name: 'Objective / Description', exact: true }).fill('Evaluate transcript research outputs.')
+  await dialog.getByRole('combobox', { name: 'Sample type', exact: true }).selectOption('rna')
+  await dialog.getByRole('textbox', { name: 'Biological source', exact: true }).fill('Human PBMC')
+  await dialog.getByRole('spinbutton', { name: 'Samples', exact: true }).fill('6')
+  await dialog.getByRole('button', { name: 'Add source' }).click()
+  await dialog.getByRole('textbox', { name: 'Biological source', exact: true }).nth(1).fill('Mouse liver')
+  await dialog.getByRole('spinbutton', { name: 'Samples', exact: true }).nth(1).fill('4')
+  await expect(dialog.getByText('Total samples: 10', { exact: true })).toBeVisible()
+  await dialog.getByLabel('Submission opens', { exact: false }).fill('2026-10-10')
+  await dialog.getByLabel('Submission closes', { exact: false }).fill('2026-10-20')
+  await expect(dialog.getByLabel('Submission opens', { exact: false })).toHaveAttribute('type', 'date')
+  await expect(dialog.getByLabel('Submission closes', { exact: false })).toHaveAttribute('type', 'date')
+  const company = dialog.getByRole('combobox', { name: 'Company' })
+  await company.fill('Synthetic')
+  const companyOption = page.getByRole('option', { name: /Synthetic Research/ })
+  await expect(companyOption).toBeVisible()
+  expect(await companyOption.evaluate(element => {
+    const box = element.getBoundingClientRect()
+    return element.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2))
+  })).toBe(true)
+  expect(await dialog.getByRole('combobox', { name: 'Company' }).evaluate(element => {
+    const box = element.getBoundingClientRect()
+    const body = element.closest('[data-slot="dialog-body"]')!.getBoundingClientRect()
+    return box.top >= body.top && box.bottom <= body.bottom
+  })).toBe(true)
+  await page.screenshot({ path: info.outputPath('trial-company-search-results.png') })
+  await companyOption.click()
+  await expect(dialog.getByRole('combobox', { name: 'Department' })).toHaveValue('')
+  await dialog.getByRole('button', { name: 'Create Trial project' }).click()
+  await expect(dialog.getByText('Select the Department this Trial belongs to.')).toBeVisible()
+  expect(writes).toEqual([])
+  await dialog.getByRole('combobox', { name: 'Department' }).selectOption('oncology')
   expect((await new AxeBuilder({ page }).include('[role="dialog"]').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([])
-  await page.screenshot({ path: info.outputPath('floating-choice-escape-draft-preserved.png') })
-  await page.keyboard.press('Escape')
-  await expect.poll(() => confirmations).toBe(1)
-  await expect(dialog).toBeVisible(); await expect(input).toHaveValue(label(1))
-
-  await input.fill('Synthetic Research')
-  await page.getByRole('option', { name: label(0), exact: true }).click()
-  await expect(input).toHaveValue(label(0)); await expect(page.getByRole('listbox')).toHaveCount(0)
-  await expect(dialog.getByRole('button', { name: 'Start Trial', exact: true })).toBeEnabled()
-  discard = true
-  await input.press('Escape')
-  await expect(dialog).toHaveCount(0); expect(confirmations).toBe(2)
-  expect(submissions).toBe(0); expect(errors).toEqual([])
+  await page.screenshot({ path: info.outputPath('trial-direct-company-department.png') })
+  await dialog.getByLabel('Submission closes', { exact: false }).scrollIntoViewIfNeeded()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+  await page.screenshot({ path: info.outputPath('trial-creation-dates.png') })
+  await dialog.getByRole('button', { name: 'Create Trial project' }).click()
+  const actions = page.getByRole('button', { name: 'Actions', exact: true })
+  await expect(actions.locator('[data-slot="action-menu-indicator"]')).toHaveCount(1)
+  await actions.focus(); await actions.press('Enter')
+  await page.getByRole('menuitem', { name: 'Record decision' }).click()
+  const decision = page.getByRole('dialog', { name: 'Commercial leadership decision' })
+  await decision.getByRole('combobox', { name: 'Decision' }).fill('Approve')
+  await page.getByRole('option', { name: 'Approve', exact: true }).click()
+  await decision.getByRole('textbox', { name: /Reason/ }).fill('Leadership approved the submitted evaluation.')
+  await decision.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(decision).toHaveCount(0)
+  await expect(page.getByText('Awaiting Acceptance · No charge · Research use only', { exact: true })).toBeVisible()
+  await expect(actions).toBeFocused()
+  expect(writes).toEqual(['/api/trials', '/api/trials/trial-1/decisions'])
 })
+
+test('Trial Company choices handle Escape and a Portal confirmation preserves or discards the draft', async ({ page }, info) => {
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
+  await page.route(/^https:\/\/127\.0\.0\.1:\d+\/api\//, route => {
+    const path = new URL(route.request().url()).pathname
+    if (path.endsWith('/crm/companies')) return route.fulfill({ json: { success: true, data: { items: [{ id: 'company-1', name: 'Synthetic Research', domainName: null }] } } })
+    if (path.endsWith('/departments/opportunity-choices')) return route.fulfill({ json: { success: true, data: [{ id: 'research', name: 'Research' }] } })
+    return route.fulfill({ json: { success: true, data: path.endsWith('/configuration') ? trialConfiguration : [] } })
+  })
+  const fixtureHtml = (await readFile(new URL('./fixtures/release-receipt.html', import.meta.url), 'utf8')).replaceAll('release-receipt', 'trials')
+  await page.route('**/e2e/fixtures/trials.html**', route => route.fulfill({ contentType: 'text/html', body: fixtureHtml }))
+  await page.goto('/e2e/fixtures/trials.html?view=request')
+  await expect(page.getByRole('heading', { name: 'Trial projects', exact: true })).toBeVisible({ timeout: 10000 })
+  const opener = page.getByRole('button', { name: 'Create Trial', exact: true })
+  await opener.click()
+  const dialog = page.getByRole('dialog', { name: 'Create Trial project' })
+  const input = dialog.getByRole('combobox', { name: 'Company' })
+  await input.fill('Synthetic')
+  await expect(page.getByRole('option', { name: 'Synthetic Research', exact: true })).toBeVisible()
+  await input.press('Escape')
+  await expect(page.getByRole('listbox')).toHaveCount(0); await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
+  const discard = page.getByRole('dialog', { name: 'Discard unsaved Trial project?' })
+  await expect(discard.locator('[data-slot="dialog-body"]')).toContainText('No Trial has been created.')
+  await expect(discard.getByRole('button', { name: 'Keep editing' })).toBeFocused()
+  await discard.getByRole('button', { name: 'Keep editing' }).click()
+  await expect(input).toHaveValue('Synthetic')
+  await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await page.screenshot({ path: info.outputPath('trial-discard-dark.png') })
+  await discard.getByRole('button', { name: 'Discard changes' }).click()
+  await expect(dialog).toHaveCount(0); await expect(opener).toBeFocused()
+})
+
+test('Trial staff reach configuration in Order settings without broader order configuration access', async ({ page }, info) => {
+  const errors: string[] = []
+  const apiPaths: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  if (info.project.name === 'mobile-chrome') await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
+  await page.route(/^https:\/\/127\.0\.0\.1:\d+\/api\//, route => {
+    const path = new URL(route.request().url()).pathname
+    apiPaths.push(path)
+    expect(route.request().method()).toBe('GET')
+    return route.fulfill({ json: { success: true, data: path.endsWith('/configuration') ? { ...trialConfiguration, canAssignPrimary: true } : [] } })
+  })
+  const html = (await readFile(new URL('./fixtures/release-receipt.html', import.meta.url), 'utf8')).replaceAll('release-receipt', 'trials')
+  await page.route('**/e2e/fixtures/trials.html**', route => route.fulfill({ contentType: 'text/html', body: html }))
+  await page.goto('/e2e/fixtures/trials.html?view=configuration')
+  await expect(page.getByRole('heading', { name: 'Order Settings', exact: true, level: 1 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Trial configuration', exact: true })).toBeVisible()
+  const sidebarTrigger = page.getByRole('button', { name: /^Open Order Settings navigation/ })
+  if (info.project.name === 'mobile-chrome') await sidebarTrigger.click()
+  await expect(page.getByRole('button', { name: /^Trial configuration/ })).toHaveAttribute('aria-current', 'page')
+  await expect(page.getByRole('button', { name: /^Service catalog/ })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /^Quote & workflow/ })).toHaveCount(0)
+  await page.getByRole('button', { name: /^Trial configuration/ }).click()
+  await expect(page.getByRole('main')).toHaveCount(1)
+  await expect(page.getByRole('link', { name: 'Back to Trial projects' })).toHaveCount(0)
+  expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([])
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+  expect(apiPaths).not.toContain('/api/platform/order-configuration')
+  expect(errors).toEqual([])
+  await page.screenshot({ path: info.outputPath('trial-order-settings.png'), fullPage: true })
+})
+
+async function trialAction(page: import('@playwright/test').Page, name: string) {
+  const button = page.getByRole('button', { name, exact: true })
+  if (await button.count()) { await button.click(); return }
+  await page.getByRole('button', { name: 'Actions', exact: true }).click()
+  await page.getByRole('menuitem', { name, exact: true }).click()
+}

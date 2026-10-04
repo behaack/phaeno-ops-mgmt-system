@@ -151,6 +151,7 @@ public sealed class CrmLeadsController(PSeqOperationsDbContext dbContext, IExter
             var stage = pipeline.Stages.Where(value => value.IsActive && value.Category == CrmPipelineStageCategory.Open).OrderBy(value => value.Position).FirstOrDefault()
                 ?? throw Conflict("crm_pipeline_open_stage_missing", "The selected pipeline has no active open stage.");
             opportunity = Execute(() => new CrmOpportunity(request.OpportunityName ?? $"{company.Name} opportunity", company.Id, stage, lead.OwnerUserId, null, null, "USD", null, lead.NextAction, null, lead.QualificationNotes, lead.Tags));
+            opportunity.AssignDepartment(await CrmOpportunityDepartments.ResolveAsync(dbContext, company, null, cancellationToken));
             dbContext.CrmOpportunities.Add(opportunity);
             dbContext.CrmOpportunityStageHistory.Add(new CrmOpportunityStageHistory(opportunity.Id, null, stage.Id, "Created from qualified lead.", actor.Id, DateTime.UtcNow));
             if (contact is not null) dbContext.CrmOpportunityContacts.Add(new CrmOpportunityContact(opportunity.Id, contact.Id, "Lead contact", true));

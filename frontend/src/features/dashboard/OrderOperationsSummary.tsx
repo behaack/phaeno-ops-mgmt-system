@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import type { SessionCapabilities } from '#/api/session'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
 import { canAccessOperationalAttention, getOrderSections } from '#/features/orders/order-sections'
+import { serviceSectionRoute, serviceSectionSearch } from '#/features/orders/service-workspaces'
 import { ConnectedOperationsSummary } from './ConnectedOperationsSummary'
 
 export function OrderOperationsSummary({ capabilities }: { capabilities?: SessionCapabilities }) {
@@ -18,7 +19,7 @@ export function OrderOperationsSummary({ capabilities }: { capabilities?: Sessio
     <CardContent className="p-4">
       {sections.length ? <ul className="divide-y" aria-label="Available order workspaces">
         {sections.map(section => <li key={section.value} className="py-3 first:pt-0 last:pb-0">
-          <Link to="/order-operations" search={{ orderSection: section.value }} className="font-medium text-primary underline underline-offset-4">{section.label}</Link>
+          <Link to={serviceSectionRoute(section.value)} search={serviceSectionSearch(section.value)} className="font-medium text-primary underline underline-offset-4">{section.label}</Link>
           <p className="mt-1 text-sm text-muted-foreground">{section.description}</p>
         </li>)}
       </ul> : <p>No order workspaces are assigned to your role.</p>}

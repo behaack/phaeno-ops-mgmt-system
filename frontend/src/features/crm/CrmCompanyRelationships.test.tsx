@@ -94,8 +94,8 @@ describe("Company relationship collections", () => {
     expect(screen.getByRole("button", { name: "Create request" })).toHaveProperty("disabled", true);
     fireEvent.click(screen.getByRole("button", { name: "Retry Company requests" }));
     fireEvent.pointerDown(await screen.findByRole("button", { name: "Actions for REQ-1" }), { button: 0, ctrlKey: false });
-    expect(await screen.findByRole("menuitem", { name: "Start Trial" })).toHaveProperty("href", expect.stringContaining("/trial-projects?requestId=request-1&fromCompanyId=company-1"));
-    expect(screen.getByRole("link", { name: "Open Trial" })).toHaveProperty("href", expect.stringContaining("/trial-projects/trial-2?fromCompanyId=company-1"));
+    expect(await screen.findByRole("menuitem", { name: "Trial projects" })).toHaveProperty("href", expect.stringContaining("/order-operations/lab-services/trials?fromCompanyId=company-1"));
+    expect(screen.getByRole("link", { name: "Open Trial" })).toHaveProperty("href", expect.stringContaining("/order-operations/lab-services/trials/trial-2?fromCompanyId=company-1"));
   });
 
   it("requires reliable opportunity choices for reviewed work and preserves request entries through retry", async () => {
@@ -188,9 +188,8 @@ describe("Company request dialog", () => {
     expect(screen.queryByRole("combobox", { name: "Request type" })).toBeNull();
 
     fireEvent.change(category, { target: { value: "Work" } });
-    expect(
-      (screen.getByRole("combobox", { name: "Request type" }) as HTMLSelectElement).value,
-    ).toBe("TrialProject");
+    expect(screen.queryByRole("combobox", { name: "Request type" })).toBeNull();
+    expect(screen.queryByRole("option", { name: "Trial Project" })).toBeNull();
     expect(screen.getByLabelText("Opportunity")).toBeTruthy();
 
     fireEvent.change(category, { target: { value: "Relationship" } });

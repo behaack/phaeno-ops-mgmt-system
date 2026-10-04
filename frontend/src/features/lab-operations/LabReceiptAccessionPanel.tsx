@@ -18,7 +18,6 @@ import { Label } from '#/components/ui/label'
 import { LabShipmentReceiptPanel } from './LabShipmentReceiptPanel'
 import { LabShipmentQueue } from './LabShipmentQueue'
 import { ContainerAccessionDialog } from './ContainerAccessionDialog'
-import { LabKitRequestQueues } from './LabKitRequestQueues'
 import { LabAccessionedSamplesPanel } from './LabAccessionedSamplesPanel'
 import { parseAccessionSearch } from './lab-accession-search'
 
@@ -27,13 +26,11 @@ export function LabReceiptAccessionPanel({
   tab,
   onTabChange,
   canReceiveShipments = false,
-  shipmentId,
 }: {
   apiEnabled: boolean
   tab?: LabReceiptTab
   onTabChange?: (tab: LabReceiptTab) => void
   canReceiveShipments?: boolean
-  shipmentId?: string
   workOrders: LabWorkOrderSummary[]
 }) {
   const [localTab, setLocalTab] = useState<LabReceiptTab>()
@@ -42,7 +39,6 @@ export function LabReceiptAccessionPanel({
   const accessionView = parseAccessionSearch(routeSearch).accessionView ?? 'packages'
   const setAccessionView = (value: string) => void navigate({ to: '/lab-operations', search: previous => ({ ...previous, section: 'receipt', receiptTab: 'accession', accessionView: value === 'samples' ? 'samples' : 'packages' }), replace: true, resetScroll: false })
   const visibleTabs = [
-    { value: 'kit-requests', label: 'Kit requests' },
     { value: 'receiving', label: 'Receive shipments' },
     { value: 'accession', label: 'Accession samples' },
   ] as const
@@ -72,8 +68,8 @@ export function LabReceiptAccessionPanel({
   return (
     <div className="space-y-5">
       <div className="space-y-1">
-        <h2 className="text-lg font-semibold">Receipt and accession</h2>
-        <p className="text-sm text-muted-foreground">Fulfill kit requests, receive incoming shipments, and accession their physical tubes.</p>
+        <h2 className="text-lg font-semibold">Sample receipt & accession</h2>
+        <p className="text-sm text-muted-foreground">Receive incoming sample shipments and accession their physical tubes.</p>
       </div>
       <Tabs value={selectedTab} onValueChange={value => changeTab(value as LabReceiptTab)} className="gap-4">
         <div className="min-w-0 overflow-x-auto pb-1">
@@ -81,7 +77,6 @@ export function LabReceiptAccessionPanel({
             {visibleTabs.map(item => <TabsTrigger key={item.value} value={item.value}>{item.label}</TabsTrigger>)}
           </TabsList>
         </div>
-        <TabsContent value="kit-requests" className="space-y-5"><LabKitRequestQueues apiEnabled={apiEnabled} shipmentId={shipmentId} /></TabsContent>
         <TabsContent value="receiving"><LabShipmentReceiptPanel apiEnabled={apiEnabled} canReceive={canReceiveShipments} onAccession={openAccession} /></TabsContent>
         <TabsContent value="accession" className="space-y-5">
           <PillToggle label="Accession views" className="[&>button]:px-3 sm:[&>button]:px-4" value={accessionView} onValueChange={setAccessionView} options={[{ value: 'packages', label: 'Received packages' }, { value: 'samples', label: 'Accessioned samples' }]} />

@@ -8,9 +8,9 @@ export function LabKitRequestQueues({ apiEnabled, shipmentId }: { apiEnabled: bo
   const navigate = useNavigate(), search = useSearch({ strict: false })
   const selected = parseKitRequestSearch(search).kitQueue ?? (shipmentId ? 'sent' : 'requests')
   return <div className="min-w-0 max-w-full space-y-4">
-    <PillToggle label="Kit queues" value={selected} options={[{ value: 'requests', label: 'Kit requests' }, { value: 'sent', label: 'Kit shipments' }]}
-      onValueChange={value => { void navigate({ to: '/lab-operations', search: { ...search, section: 'receipt', receiptTab: 'kit-requests', kitQueue: value as 'requests' | 'sent' }, replace: true, resetScroll: false }) }} />
-    <div role="region" className="min-w-0" aria-label={selected === 'requests' ? 'Kit requests queue' : 'Kit shipments queue'}>
+    <PillToggle label="Kit queues" value={selected} options={[{ value: 'requests', label: 'Kit requests' }, { value: 'sent', label: 'Fulfilled requests' }]}
+      onValueChange={value => { void navigate({ to: '/lab-operations', search: { ...search, section: 'kit-requests', receiptTab: undefined, kitQueue: value as 'requests' | 'sent' }, replace: true, resetScroll: false }) }} />
+    <div role="region" className="min-w-0" aria-label={selected === 'requests' ? 'Kit requests queue' : 'Fulfilled requests queue'}>
       {selected === 'requests' ? <KitRequestsPanel apiEnabled={apiEnabled} /> : <ReturnKitFulfillmentPanel apiEnabled={apiEnabled} shipmentId={shipmentId} showEmpty />}
     </div>
   </div>

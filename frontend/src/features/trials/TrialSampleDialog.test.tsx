@@ -8,7 +8,7 @@ vi.mock('@tanstack/react-router', () => ({ useBlocker: blocker }))
 
 const trial = { ...trialDetail, canAccept: false, canSubmit: true, status: 'AwaitingSamples', acceptedScopeRevision: 1 }
 const row = { reference: 'RNA-1', biologicalSource: 'Research RNA', tubeCount: '2', quantity: '100', concentration: '', storageRequirements: 'Frozen', safetyDeclaration: 'Nonhazardous', inputs: { organism: 'Synthetic organism' }, replacementAuthorizationId: '' }
-const values = { destinationId: 'destination-1', sampleTypeId: 'rna', confirmed: true, samples: [row, { ...row, reference: 'RNA-2' }] }
+const values = { destinationId: 'destination-1', sampleTypeId: 'rna', confirmed: true, samples: [row, { ...row, reference: 'RNA-2', biologicalSource: 'Second research RNA' }] }
 
 describe('Trial sample roster', () => {
   it('submits all reviewed rows together using the configured quantity unit', () => {
@@ -27,6 +27,18 @@ describe('Trial sample roster', () => {
     const duplicate = trialSampleSchema(trial, trialConfiguration).safeParse({ ...values, samples: [row, { ...row }] })
     expect(duplicate.success).toBe(false)
     expect(trialSampleSchema(trial, trialConfiguration).safeParse({ ...values, samples: [{ ...row, replacementAuthorizationId: 'no-longer-eligible' }] }).success).toBe(false)
+  })
+  it('enforces the approved sample type and each source quantity without borrowing other source slots', () => {
+    expect(trialSampleSchema(trial, trialConfiguration).safeParse({ ...values, sampleTypeId: 'other-type' }).success).toBe(false)
+    const changed = { ...trialConfiguration, sampleTypes: [{ ...trialConfiguration.sampleTypes[0], version: 2 }] }
+    expect(trialSampleSchema(trial, changed).safeParse(values).success).toBe(false)
+    for (const source of ['Unapproved tissue', 'Research RNA']) {
+      const result = trialSampleSchema(trial, trialConfiguration).safeParse({ ...values, samples: [row, { ...row, reference: 'RNA-2', biologicalSource: source }] })
+      expect(result.success).toBe(false)
+      if (!result.success) expect(result.error.issues.some(issue => issue.path.join('.') === 'samples.1.biologicalSource')).toBe(true)
+    }
+    const parsed = trialSampleSchema(trial, trialConfiguration).parse({ ...values, samples: [{ ...row, biologicalSource: ' research   RNA ' }, values.samples[1]] })
+    expect(trialSamplePayload(parsed, trial, trialConfiguration).samples[0].biologicalSource).toBe('Research RNA')
   })
   it('locks the roster during reload, preserves it on failure and renews confirmation after changed-scope recovery', async () => {
     let rejectReload!: (error: Error) => void

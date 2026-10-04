@@ -52,6 +52,7 @@ public sealed record LabProtocolDefinition
         foreach (var step in Steps)
         {
             if (step is null) throw new ArgumentException("Every protocol step must contain a definition.");
+            if (step.ProcessType is not (null or "masterMix")) throw new ArgumentException("Choose an existing step process type.");
             ValidateKey(step.Key, keys, "Step");
             if (step.AttachmentKind is not (null or "none" or "qc" or "preparation")) throw new ArgumentException("Choose a QC report, preparation worksheet, or no attachment.");
             if (step.AttachmentRequired && (step.AttachmentKind is not ("qc" or "preparation") || !PreparationBatchEnabled))
@@ -76,6 +77,11 @@ public sealed record LabProtocolDefinition
             foreach (var capture in step.Captures)
             {
                 if (capture is null) throw new ArgumentException("Every capture must contain a definition.");
+                if (capture.PlannedQuantityText is not null)
+                {
+                    if (capture.Type != "material") throw new ArgumentException("Only reagent fields have planned amounts.");
+                    LabMasterMixDefinition.ParseAmount(capture.PlannedQuantityText);
+                }
                 ValidateKey(capture.Key, captureKeys, "Capture");
                 RequiredText(capture.Label, 120, "Capture label");
                 if (PreparationBatchEnabled && capture.Scope is not ("batch" or "tube" or "shared"))
@@ -122,6 +128,7 @@ public sealed record LabProtocolDefinition
                 else if (capture.Options is not null)
                     throw new ArgumentException("Only choice captures can specify permitted choices.");
             }
+            if (step.ProcessType == "masterMix") LabMasterMixDefinition.ValidateStep(step);
             if (step.QcGate is not null)
             {
                 RequiredText(step.QcGate.Criteria, 2000, "QC acceptance criteria");
@@ -173,12 +180,14 @@ public sealed record LabProtocolDefinition
 
 public sealed record LabProtocolStepDefinition
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ProcessType { get; init; }
     public Guid? LabStepVersionId { get; init; }
     public string? AttachmentKind { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool AttachmentRequired { get; init; }
     [JsonIgnore]
-    public string? PreparationReportProperty => AttachmentKind == "none" ? null
+    public string? PreparationReportProperty => ProcessType == "masterMix" || AttachmentKind == "none" ? null
         : AttachmentKind == "preparation" ? "preparationReport"
         : AttachmentKind == "qc" || QcGate is not null ? "qcReport"
         : Captures.Any(c => LabProtocolEvidence.IsPreparationReportReference(this, c)) ? "preparationReport" : null;
@@ -207,6 +216,8 @@ public sealed record LabProtocolStepDefinition
 
 public sealed record LabProtocolCaptureDefinition
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? PlannedQuantityText { get; init; }
     [JsonIgnore]
     public bool IsResource => Type is "material" or "equipment" or "output" or "biologicalMaterial";
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

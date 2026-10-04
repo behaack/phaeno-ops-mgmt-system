@@ -8,13 +8,21 @@ The separate **File retention policies** page, after **Order settings**, **Lab s
 
 In **Samples & shipping settings → Phaeno ship-to destinations**, open an available destination's **Actions** menu and choose **Set as default**. The **Default** badge shows the current choice. Ordering is blocked without an available Default. A new Job using a customer-held kit captures that Default; when new kits are sent, staff may choose the destination at first dispatch. Later changes to the Default do not redirect an Order whose destination is fixed. A Sample type also needs an Active shared procedure and at least one usable linked Transportation kit before new Orders can proceed. Existing issued shipping inserts keep their saved destination and instructions.
 
-Use the far-left **Order settings** sidebar to move among **Quote & workflow**, **Service catalog**, **Analyses**, **PSeq kits**, **Assembly**, and **Legacy links**. Scientific service definitions are managed inside their catalog item. On wider screens the sidebar can remain pinned; when it is unpinned or the screen is narrow, open the same non-modal navigation from the edge tab. The selected subject appears in the main pane without duplicating the navigation above the configuration form.
+Use the far-left **Order settings** sidebar to move among **Quote & workflow**, **Service catalog**, **Analyses**, **PSeq kits**, **Assembly**, **Trial configuration**, and **Legacy links**. Scientific service definitions are managed inside their catalog item. On wider screens the sidebar can remain pinned; when it is unpinned or the screen is narrow, open the same non-modal navigation from the edge tab. The selected subject appears in the main pane without duplicating the navigation above the configuration form.
+
+## Maintain Trial configuration
+
+Choose **Order settings → Trial configuration** to review Scientific Operations authorities and the versioned Trial deliverable catalog. Platform administrators may assign primary authorities; a primary may designate its own Scientific Operations delegate. Catalog changes retain approved scope snapshots. Commercial leadership is assigned through Phaeno user management and approves Trial scopes through that business role.
+
+Trial staff retain access to this section. The other Order settings sections remain restricted to Platform administrators. Create new Trials from **Order ops → Trial projects → Create Trial**.
 
 ## Maintain commercial configuration
 
 Maintain billable items under **Service catalog**. Each row's **Actions** menu contains **Edit** and either **Activate** or **Deactivate**, depending on its current status. **Edit** opens the item editor; review the name, description, base price and currency before saving. You can also open an item's name to review its details and select **Edit item** (under **Actions** when deletion is also shown).
 
 Choose **Activate** or **Deactivate** from the row's **Actions** menu and review the named confirmation. Active items are available for new pricing; inactive items are excluded. Existing orders and quotes retain their saved service details and prices. Select **Cancel** to leave the status unchanged. If the item changes while you are reviewing it, close the confirmation and review the latest item before trying again.
+
+For a PSeq Lab Service, set **Minimum sequencing volume per tube (µL)** in **Edit catalog item**. Enter a positive volume, or leave it blank to block new sequencing tube preparation until configured. Laboratory Operators see this requirement read-only. Each physical library/sequencing-tube pair retains the Catalog version and minimum used when preparing its empty destination tube; later edits apply to newly prepared pairs. The actual volume transferred is recorded separately by the Operator.
 
 The catalog shows active items by default. Use the search textbox in its header to find items by name, description, reference or sales unit. Select **Show inactive** to include inactive items, or **Clear all** to return to the active-only list. Search and the inactive choice are retained when opening an item and returning to the catalog.
 
@@ -26,7 +34,7 @@ To remove an unused item, open it and choose **Actions → Delete item**. Review
 
 Configure Partner PSeq Kit availability, negotiated bundle price, currency, effective period, whole-unit quantity rules and shipping restrictions. Bind each active Kit offering to an active, validated included Assembly profile. Each unit creates one included case at purchase; existing orders keep their frozen profile and outputs. Overlapping active price periods for the same Partner and item are not allowed.
 
-Historical credit and accounting links are retained under **Legacy links**. Partner Assembly payment gates remain in its owning workflow. PSeq Customer result release depends on scientific approval and the Result Release Manager; invoice balance and credit do not gate it. Customer billing, tax, invoices and cash are maintained in **Order Ops → Finance**.
+Historical credit and accounting links are retained under **Legacy links**. Partner Assembly payment gates remain in its owning workflow. PSeq Customer result release depends on scientific approval and the Result Release Manager; invoice balance and credit do not gate it. Customer billing, tax, invoices and cash are maintained in **More → Finance**.
 
 Open **Quote & workflow → Edit settings** to maintain quote validity and review the supported sample and result workflows. The initial quote validity is 30 days, and an issued quote snapshots its own expiration. The supported sample workflow uses an exact roster after quote acceptance; the supported result destination is governed Portal delivery. Free-form configuration text no longer establishes readiness. Review and save older workflow settings once, then maintain shared definitions in **Samples & shipping settings → Sample types** and destinations and rules in **Samples & shipping settings**. Each order and shipment still checks its specific requirements.
 
@@ -93,7 +101,7 @@ Governed PSeq packages use the same frozen policy and verified-download rules. D
 
 ## Accounting and recovery
 
-Use **Order Ops → Finance** for native PSeq invoices, receipts, allocations, imports, aging and reconciliation. Export reports from the owning Finance view. An export does not record payment or mark an invoice as posted elsewhere.
+Use **More → Finance** for native PSeq invoices, receipts, allocations, imports, aging and reconciliation. Export reports from the owning Finance view. An export does not record payment or mark an invoice as posted elsewhere.
 
 Historical connector mappings and explicit QuickBooks catalog recovery remain in **Legacy links**. A queued recovery request does not prove that the connector is configured or that the catalog synchronized. An unconfigured connector reports unavailable and **Needs attention**; it records no invoice, payment, or successful balance. The active Service catalog can be maintained directly. Consult the owning integration recovery status before retrying a historical connector operation.
 

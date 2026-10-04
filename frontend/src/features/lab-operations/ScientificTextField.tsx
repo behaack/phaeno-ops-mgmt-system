@@ -24,13 +24,15 @@ const symbols = [
   ['₂', 'Subscript two', 'Powers and subscripts'], ['₃', 'Subscript three', 'Powers and subscripts'],
 ] as const
 
-export function ScientificTextField<T extends FieldValues>({ control, name, id, label, multiline = false, rows, unit = false, insertUnits = false, placeholder, additionalUnits = [], unitOptions = commonUnits, showSymbols = true, symbolOptions = symbols, disabled = false, describedBy, supportingText }: {
+export function ScientificTextField<T extends FieldValues>({ control, name, id, label, multiline = false, rows, maxLength, required, unit = false, insertUnits = false, placeholder, additionalUnits = [], unitOptions = commonUnits, showSymbols = true, symbolOptions = symbols, disabled = false, describedBy, supportingText }: {
   control: Control<T>
   name: FieldPathByValue<T, string | undefined>
   id: string
   label: string
   multiline?: boolean
   rows?: number
+  maxLength?: number
+  required?: boolean
   insertUnits?: boolean
   symbolOptions?: readonly (readonly [string, string, string?])[]
   unit?: boolean
@@ -53,14 +55,17 @@ export function ScientificTextField<T extends FieldValues>({ control, name, id, 
     const value = typeof field.value === 'string' ? field.value : ''
     function insert(text: string, replace = false) {
       const { start, end } = selection.current ?? { start: value.length, end: value.length }
-      field.onChange(replace ? text : value.slice(0, start) + text + value.slice(end))
+      const nextValue = replace ? text : value.slice(0, start) + text + value.slice(end)
+      if (maxLength !== undefined && nextValue.length > maxLength) return
+      field.onChange(nextValue)
       insertedAt.current = replace ? text.length : start + text.length
     }
     const props = {
-      id, name: field.name, value, placeholder, disabled,
+      id, name: field.name, value, placeholder, disabled, maxLength,
       ref: (element: HTMLInputElement | HTMLTextAreaElement | null) => { input.current = element; field.ref(element) },
       onChange: field.onChange, onBlur: () => { rememberSelection(); field.onBlur() }, onSelect: rememberSelection,
       'aria-invalid': fieldState.invalid || undefined,
+      'aria-required': required || undefined,
       'aria-describedby': describedBy,
     }
     return <div className={showSymbols && !insertUnits ? "min-w-0 space-y-[3px]" : "min-w-0 space-y-0"}>

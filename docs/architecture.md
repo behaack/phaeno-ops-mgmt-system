@@ -353,10 +353,16 @@ remain accessible after byte deletion. Physical deletion defaults off.
 
 ## Trial Projects
 
-Commercial owns the distinct Trial aggregate, versioned scope, domain approval
-authorities, acceptance, coded samples, replacement authorizations, immutable
-release manifests and safe event outbox. The first-party CRM Company Opportunity
-is its commercial parent. Trial events project asynchronously into CRM activity
+Commercial owns the distinct Trial aggregate, versioned scope, acceptance, coded
+samples, replacement authorizations, immutable release manifests and safe event
+outbox. Business Development, Commercial leadership and Platform administrators create
+Trials directly for a CRM Company and its Department, without an Opportunity or
+CRM request. Administrator/leadership scope submission records Commercial approval
+in the same transaction; other staff submit for a leadership decision. Each
+approved revision becomes available for Prospect
+acceptance. Scientific Operations authority continues to govern catalog and
+laboratory controls separately. Historical CRM parents and named approval
+authorities remain readable without being created for new Trials. Trial events project asynchronously into CRM activity
 receipts and never carry scientific payloads. Trials create no paid order or QBO
 transaction. The Lab provider consumes a TrialProject authorization pinned to the
 approved PSeq workflow version; shared shipping and governed result services keep

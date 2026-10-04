@@ -22,6 +22,51 @@ function show(client = new QueryClient({ defaultOptions: { queries: { retry: fal
 
 beforeEach(() => { vi.clearAllMocks(); state.canAccess = false; state.sessionAvailable = true })
 
+const completedHandoff = () => ({ id: 'saved-preparation', name: 'Batch', version: 1, status: 'Complete', canOperate: true,
+  members: [{ id: 'member', position: 'A1', barcode: 'TUBE', workOrderId: 'job', jobName: 'JOB', specimenId: 'specimen', specimenName: 'ACCESSION', sequence: 1, state: 'Succeeded', executions: [], stageSkips: [], library: { id: 'library', libraryKey: 'LIBRARY', status: 'QcPassed', sequencing: null } }],
+  stages: [], records: [], roles: [], layout: { name: 'Tray', rows: 1, columns: 2, labels: 'grid', unavailable: [] } })
+
+describe('sequencing handoff availability', () => {
+  it.each([{ batches: [] }, { batches: [{ id: 'locked', status: 'InProgress', name: 'Locked', batchNumber: 'LOCKED' }] }])('disables assignment when no draft batch exists: $batches', async ({ batches }) => {
+    state.canAccess = true
+    state.batch.mockResolvedValue(completedHandoff())
+    state.resources.mockResolvedValue({ materialLots: [], equipment: [], batches })
+    show()
+    const buttons = await screen.findAllByRole('button', { name: 'Add to sequencing batch' })
+    await screen.findAllByText(/No draft sequencing batches are available/)
+    buttons.forEach(button => expect(button).toHaveProperty('disabled', true))
+    expect(screen.getAllByRole('link', { name: 'Open sequencing batches' })).toHaveLength(1)
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('keeps loading disabled, then enables assignment and offers only draft destinations', async () => {
+    state.canAccess = true
+    state.batch.mockResolvedValue(completedHandoff())
+    let resolveResources!: (value: object) => void
+    state.resources.mockReturnValue(new Promise(resolve => { resolveResources = resolve }))
+    show()
+    const buttons = await screen.findAllByRole('button', { name: 'Add to sequencing batch' })
+    buttons.forEach(button => expect(button).toHaveProperty('disabled', true))
+    expect(screen.getAllByText('Checking available sequencing batches…')).toHaveLength(2)
+    await act(async () => resolveResources({ materialLots: [], equipment: [], batches: [{ id: 'draft', name: 'PH-BAT-EXAMPLE', batchNumber: 'PH-BAT-EXAMPLE', status: 'Draft' }, { id: 'locked', name: 'Locked', batchNumber: 'LOCKED', status: 'InProgress' }] }))
+    await waitFor(() => buttons.forEach(button => expect(button).toHaveProperty('disabled', false)))
+    fireEvent.click(buttons.at(-1)!)
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByRole('option', { name: 'PH-BAT-EXAMPLE' })).toBeTruthy()
+    expect(within(dialog).queryByRole('option', { name: /Locked/ })).toBeNull()
+  })
+
+  it('explains a failed batch lookup without claiming no batches exist', async () => {
+    state.canAccess = true
+    state.batch.mockResolvedValue(completedHandoff())
+    state.resources.mockRejectedValue(new Error('Unavailable'))
+    show()
+    await screen.findAllByText('Sequencing batches could not be loaded. Open sequencing batches to retry.')
+    screen.getAllByRole('button', { name: 'Add to sequencing batch' }).forEach(button => expect(button).toHaveProperty('disabled', true))
+    expect(screen.queryByText(/No draft sequencing batches are available/)).toBeNull()
+  })
+})
+
 describe('preparation access feedback', () => {
   it('retries a biological transfer with its original source version after an uncertain response refreshes the balance', async () => {
     state.canAccess = true

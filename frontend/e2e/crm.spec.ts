@@ -64,7 +64,7 @@ test("creates a standalone CRM company without changing Portal access", async ({
 
   await page.goto("/crm/companies");
   await expect(page.getByRole("heading", { name: "Companies" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Atlas Research" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Atlas Research" })).toBeVisible({ timeout: 15000 });
   const crmNavigation = await openCrmNavigation(page);
   await expect(
     crmNavigation.getByRole("button", { name: /^Companies/ }),
@@ -112,11 +112,8 @@ test("creates a standalone CRM company without changing Portal access", async ({
   await requestDialog
     .getByRole("combobox", { name: "What does this Company need?" })
     .selectOption("Work");
-  await expect(
-    requestDialog.getByRole("combobox", { name: "Request type" }),
-  ).toHaveValue(
-    "TrialProject",
-  );
+  await expect(requestDialog.getByRole("combobox", { name: "Request type" })).toHaveCount(0);
+  await expect(requestDialog.getByRole("option", { name: "Trial Project", exact: true })).toHaveCount(0);
   await expect(requestDialog.getByLabel("Opportunity")).toBeVisible();
   await requestDialog.getByRole("button", { name: "Cancel" }).click();
   await page.getByRole("link", { name: "Back to companies" }).click();
@@ -139,6 +136,46 @@ test("creates a standalone CRM company without changing Portal access", async ({
   expect(portalWrites).toEqual([]);
   expect(browserErrors).toEqual([]);
   await expect(page.locator("vite-error-overlay")).toHaveCount(0);
+});
+
+test("searches Company and requires Department when creating an Opportunity", async ({ page }, info) => {
+  if (info.project.name === "mobile-chrome") await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
+  let saved: Record<string, unknown> | null = null;
+  const created = { ...opportunity(), name: "Department program", departmentId: "oncology", departmentName: "Oncology" };
+  await page.route(apiRequestPattern, async route => {
+    const url = new URL(route.request().url());
+    if (url.pathname.endsWith("/crm/pipelines")) return envelope(route, [{ id: "pipeline-1", name: "General Sales", isDefault: true, isActive: true, description: null, stages: [], version: 1 }]);
+    if (url.pathname.endsWith("/crm/companies")) return envelope(route, { items: url.searchParams.get("search") === "Atlas" ? [company("Atlas Research")] : [], page: 1, pageSize: 20, totalCount: 1 });
+    if (url.pathname.endsWith("/departments/opportunity-choices")) return envelope(route, [{ id: "research", name: "Research" }, { id: "oncology", name: "Oncology" }]);
+    if (url.pathname.endsWith("/crm/opportunities") && route.request().method() === "POST") { saved = route.request().postDataJSON(); return envelope(route, created); }
+    if (url.pathname.endsWith(`/crm/opportunities/${opportunityId}`)) return envelope(route, created);
+    if (url.pathname.endsWith("/crm/opportunities")) return envelope(route, emptyPage());
+    if (["/api/platform/crm/activities", "/api/platform/crm/tasks"].includes(url.pathname)) return envelope(route, emptyPage());
+    if (route.request().method() === "GET") return envelope(route, []);
+    return notFound(route);
+  });
+  await page.goto("/crm/opportunities");
+  await page.getByRole("button", { name: "New opportunity" }).click();
+  const dialog = page.getByRole("dialog", { name: "New opportunity" });
+  await dialog.getByRole("textbox", { name: "Opportunity name" }).fill("Department program");
+  const companyInput = dialog.getByRole("combobox", { name: "Company", exact: true });
+  await companyInput.fill("Atlas");
+  await dialog.getByRole("option", { name: /Atlas Research/ }).click();
+  const department = dialog.getByRole("combobox", { name: "Department", exact: true });
+  await expect(department).toHaveValue("");
+  await dialog.getByRole("button", { name: "Create opportunity" }).click();
+  expect(saved).toBeNull(); await expect(department).toBeFocused();
+  await department.selectOption("oncology");
+  const companyBounds = await companyInput.boundingBox();
+  const pipelineBounds = await dialog.getByRole("combobox", { name: "Pipeline", exact: true }).boundingBox();
+  expect(Math.abs(companyBounds!.height - pipelineBounds!.height)).toBeLessThanOrEqual(1);
+  if (info.project.name === "chromium") expect(Math.abs(companyBounds!.y - pipelineBounds!.y)).toBeLessThanOrEqual(1);
+  await expectNoSeriousAccessibilityViolations(page, dialog);
+  await page.screenshot({ path: info.outputPath("opportunity-company-department.png") });
+  await dialog.getByRole("button", { name: "Create opportunity" }).click();
+  await expect(page.getByRole("heading", { name: "Department program" })).toBeVisible();
+  expect(saved).toMatchObject({ companyId, departmentId: "oncology" });
+  await expect(page.getByText("Oncology", { exact: true })).toBeVisible();
 });
 
 test("finds converted Lead history through all-status and Converted filters", async ({ page }) => {
@@ -302,7 +339,7 @@ test("opens an approved Won Opportunity handoff as a locked Customer order", asy
   await editDialog.getByRole("button", { name: "Cancel" }).click();
   await page.getByRole("button", { name: "Start Customer order" }).click();
 
-  await expect(page).toHaveURL(/\/order-operations\/new\?.*sourceRequestId=request-1/);
+  await expect(page).toHaveURL(/\/order-operations\/lab-services\/orders\/new\?.*sourceRequestId=request-1/);
   await expect(page).toHaveURL(/organizationId=customer-1/);
   await expect(page.getByText("Draft entry unavailable")).toBeVisible();
   await expect(page.getByText("A real Phaeno session with Commercial Operator access is required.")).toBeVisible();

@@ -1,6 +1,7 @@
 namespace PhaenoPortal.App.Features.LabOperations.Controllers;
 
 using System.Globalization;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PSeq.Operations.Laboratory.Domain;
@@ -8,9 +9,9 @@ using PhaenoPortal.App.Features.LabOperations.Services;
 using PhaenoPortal.App.Features.OrderManagement.Services;
 
 public sealed record StartLabMasterMixRequest(Guid RequestId, Guid WorkflowId, int WorkflowRevision);
-public sealed record RecordLabMasterMixStepRequest(Guid RequestId, int Sequence, string Notes, long Version);
+public sealed record RecordLabMasterMixStepRequest(Guid RequestId, int Sequence, string Notes, long Version, LabProtocolStepInput Input);
 public sealed record RecordLabMasterMixIngredientRequest(Guid RequestId, Guid SourceMaterialLotId,
-    decimal Quantity, string QuantityUnit, bool MaterialExhausted, long Version, string? QuantityText = null);
+    decimal Quantity, string QuantityUnit, bool MaterialExhausted, long Version, int StepSequence, string FieldKey, string? QuantityText = null);
 public sealed record CompleteLabMasterMixRequest(decimal PreparedQuantity, long Version, string? PreparedQuantityText = null);
 public sealed record ApproveLabMasterMixDeviationRequest(string Reason, long Version);
 public sealed record DiscardLabMasterMixRequest(string Reason, decimal? MeasuredDiscardQuantity, long Version,
@@ -19,11 +20,11 @@ public sealed record LabMasterMixSummaryDto(Guid Id, string Barcode, Guid Workfl
     string WorkflowName, string QuantityUnit, string Status, long Version, decimal? RemainingQuantity,
     string? RemainingQuantityText, DateTime StartedAtUtc, DateTime UseByUtc);
 public sealed record LabMasterMixPageDto(IReadOnlyList<LabMasterMixSummaryDto> Items, int Page, int PageSize, int Total);
-public sealed record LabMasterMixStepDto(Guid Id, int Sequence, string Notes, Guid PerformedByUserId, DateTime PerformedAtUtc);
+public sealed record LabMasterMixStepDto(Guid Id, int Sequence, string Notes, Guid PerformedByUserId, DateTime PerformedAtUtc, LabProtocolStepRecord Evidence);
 public sealed record LabMasterMixActorDto(Guid Id, string Name);
 public sealed record LabMasterMixIngredientDto(Guid Id, Guid SourceMaterialLotId, string SourceName,
     string SourceLotNumber, decimal Quantity, string QuantityText, string QuantityUnit, bool MaterialExhausted,
-    Guid RecordedByUserId, DateTime RecordedAtUtc, Guid? VoidedByUserId, DateTime? VoidedAtUtc);
+    Guid RecordedByUserId, DateTime RecordedAtUtc, Guid? VoidedByUserId, DateTime? VoidedAtUtc, int StepSequence, string FieldKey);
 public sealed record LabMasterMixTrayUseDto(Guid Id, Guid LabPreparationBatchId, string TrayName,
     Guid LabPreparationRecordId, string FieldKey, decimal Quantity, string QuantityText, string QuantityUnit,
     Guid RecordedByUserId, DateTime RecordedAtUtc, Guid? VoidedByUserId, DateTime? VoidedAtUtc);
@@ -35,7 +36,7 @@ public sealed record LabMasterMixDto(Guid Id, string Barcode, Guid WorkflowId, i
     Guid? DiscardedByUserId, DateTime? DiscardedAtUtc, decimal? MeasuredDiscardQuantity,
     string? DiscardReason, string? RecipeDeviationReason, Guid? RecipeDeviationApprovedByUserId,
     DateTime? RecipeDeviationApprovedAtUtc, bool RecipeDeviationApprovalCurrent, bool RecipeMatches,
-    IReadOnlyList<LabReagentStep> Steps, IReadOnlyList<LabMasterMixRecipeIngredient> RecipeIngredients,
+    int NextStepSequence, IReadOnlyList<LabProtocolStepDefinition> Steps, IReadOnlyList<LabMasterMixRecipeIngredient> RecipeIngredients,
     IReadOnlyList<LabMasterMixStepDto> RecordedSteps,
     IReadOnlyList<LabMasterMixIngredientDto> Ingredients,
     IReadOnlyList<LabMasterMixTrayUseDto> TrayUses,
@@ -137,13 +138,17 @@ public sealed partial class LabOperationsController
     {
         var actor = await requestContext.RequireAsync(HttpContext, ct, LabRole.Operator, LabRole.Supervisor);
         if (request.RequestId == Guid.Empty) throw Invalid("master_mix_request_required", "A request identifier is required.");
+        if (request.Input is null || request.Input.Captures is null || request.Input.PreparationRecordId.HasValue || request.Input.Performance is not null)
+            throw Invalid("master_mix_step_invalid", "Supply this mix step's recorded fields; tray references and late-entry performance do not apply.");
+        var inputJson = JsonSerializer.Serialize(request.Input, JsonSerializerOptions.Web);
         await using var transaction = await SampleShippingPackingData.BeginAsync(dbContext, $"master-mix:{id}", ct);
         var previous = await dbContext.LabMasterMixStepRecords.AsNoTracking()
             .SingleOrDefaultAsync(item => item.Id == request.RequestId, ct);
         if (previous is not null)
         {
             if (previous.PreparationId != id || previous.Sequence != request.Sequence
-                || previous.Notes != request.Notes?.Trim() || previous.PerformedByUserId != actor.User.Id)
+                || previous.Notes != request.Notes?.Trim() || previous.PerformedByUserId != actor.User.Id
+                || !JsonElement.DeepEquals(JsonSerializer.Deserialize<JsonElement>(previous.InputJson), JsonSerializer.Deserialize<JsonElement>(inputJson)))
                 throw Conflict("master_mix_request_reused", "This request already recorded a different step.");
             return await ReadMasterMixWithoutAuthorizationAsync(id, ct);
         }
@@ -151,11 +156,39 @@ public sealed partial class LabOperationsController
         var steps = preparation.Steps();
         if (request.Sequence < 0 || request.Sequence >= steps.Count)
             throw Invalid("master_mix_step_invalid", "Select the next procedure step.");
+        var step = steps[request.Sequence];
+        var captured = request.Input.Captures.ToDictionary(pair => pair.Key, pair => pair.Value.Clone(), StringComparer.Ordinal);
+        var prior = LabProtocolEvidence.Read(preparation.EvidenceJson).Records.LastOrDefault(item => item.StepKey == step.Key);
+        foreach (var field in step.Captures.Where(field => field.Type == "material"))
+        {
+            var query = dbContext.LabMasterMixIngredientUses.AsNoTracking().Where(item => item.PreparationId == id
+                && item.StepSequence == request.Sequence && item.FieldKey == field.Key && item.VoidedAtUtc == null);
+            if (prior is not null && request.Input.Action == "repeat") query = query.Where(item => item.RecordedAtUtc > prior.RecordedAtUtc);
+            var sources = await query.ToListAsync(ct);
+            if (sources.Count == 0) throw Invalid("master_mix_lot_required", $"Record the actual reagent lot and amount for {field.Label} before recording this step.");
+            var lotIds = sources.Select(item => item.SourceMaterialLotId).ToArray();
+            var lots = await dbContext.LabMaterialLots.AsNoTracking().Where(item => lotIds.Contains(item.Id)).ToDictionaryAsync(item => item.Id, ct);
+            var trace = string.Join("; ", sources.Select(item => $"{lots[item.SourceMaterialLotId].LotNumber}: {item.Quantity.ToString(CultureInfo.InvariantCulture)} {item.QuantityUnit}"));
+            captured[field.Key] = JsonSerializer.SerializeToElement(trace);
+        }
+        foreach (var field in step.Captures.Where(field => field.Type == "equipment"))
+        {
+            if (!captured.TryGetValue(field.Key, out var value) || value.ValueKind != JsonValueKind.String
+                || !Guid.TryParse(value.GetString(), out var equipmentId))
+                throw Invalid("master_mix_equipment_required", $"Select the registered equipment for {field.Label}.");
+            var equipment = await dbContext.LabEquipment.AsNoTracking().SingleOrDefaultAsync(item => item.Id == equipmentId, ct);
+            if (equipment is null || !equipment.CanRecordUsage(DateOnly.FromDateTime(DateTime.UtcNow)))
+                throw Conflict("master_mix_equipment_unavailable", "The selected equipment must be active and within its calibration dates.");
+            captured[field.Key] = JsonSerializer.SerializeToElement($"{equipment.Name} · {equipment.AssetCode} · {equipment.Id}");
+        }
         LabMasterMixStepRecord record;
         try
         {
-            record = new(request.RequestId, id, request.Sequence, request.Notes, actor.User.Id, DateTime.UtcNow);
-            preparation.RecordStep(request.Sequence, DateTime.UtcNow);
+            var now = DateTime.UtcNow;
+            preparation.RecordStep(request.Sequence, request.Input with { Captures = captured }, actor.User.Id, EffectiveExecutionRoles(actor), now);
+            var evidence = LabProtocolEvidence.Read(preparation.EvidenceJson).Records.Last();
+            record = new(request.RequestId, id, request.Sequence, request.Notes, actor.User.Id, now,
+                inputJson, JsonSerializer.Serialize(evidence, JsonSerializerOptions.Web));
         }
         catch (ArgumentException error) { throw Invalid("master_mix_step_invalid", error.Message); }
         catch (InvalidOperationException error) { throw Conflict("master_mix_step_unavailable", error.Message); }
@@ -183,14 +216,24 @@ public sealed partial class LabOperationsController
                 throw Conflict("master_mix_ingredient_voided", "This ingredient use was voided. Review the mix correction record.");
             if (previous.PreparationId != id || previous.SourceMaterialLotId != request.SourceMaterialLotId
                 || previous.Quantity != quantity || previous.QuantityUnit != request.QuantityUnit?.Trim()
+                || previous.StepSequence != request.StepSequence || previous.FieldKey != request.FieldKey
                 || previous.MaterialExhausted != request.MaterialExhausted || previous.RecordedByUserId != actor.User.Id)
                 throw Conflict("master_mix_request_reused", "This request already recorded a different ingredient use.");
             return await ReadMasterMixWithoutAuthorizationAsync(id, ct);
         }
         var preparation = await RequireMasterMixForChangeAsync(id, request.Version, ct);
+        if (request.StepSequence != preparation.RecordedStepCount || request.StepSequence >= preparation.Steps().Count)
+            throw Conflict("master_mix_step_unavailable", "Record reagent use for the current preparation step.");
+        var field = preparation.Steps()[request.StepSequence].Captures.SingleOrDefault(item => item.Key == request.FieldKey && item.Type == "material")
+            ?? throw Invalid("master_mix_reagent_invalid", "Choose a required reagent from the current step.");
         await SampleShippingPackingData.LockAsync(dbContext, $"material-lot:{request.SourceMaterialLotId}", ct);
         var source = await dbContext.LabMaterialLots.SingleOrDefaultAsync(item => item.Id == request.SourceMaterialLotId, ct)
             ?? throw Missing();
+        var material = field.Material!;
+        var definition = await dbContext.LabMaterialDefinitions.AsNoTracking().SingleAsync(item => item.Id == source.MaterialDefinitionId, ct);
+        if (string.IsNullOrWhiteSpace(source.LotNumber) || !MatchesMasterMixReagent(material, source, definition.Kind)
+            || !string.Equals(field.Unit, source.QuantityUnit, StringComparison.Ordinal))
+            throw Invalid("master_mix_reagent_mismatch", "Choose a numbered lot of the step's configured reagent in the planned quantity unit.");
         if (source.QcDisposition is not (LabQcDisposition.Passed or LabQcDisposition.ApprovedException)
             || source.ExpirationOrRetestDate < DateOnly.FromDateTime(DateTime.UtcNow))
             throw Conflict("master_mix_source_unavailable", "The source lot must pass QC and be in date.");
@@ -201,7 +244,7 @@ public sealed partial class LabOperationsController
         try
         {
             ingredient = new(request.RequestId, id, source.Id, quantity, source.QuantityUnit,
-                request.MaterialExhausted, actor.User.Id, now);
+                request.MaterialExhausted, actor.User.Id, now, request.StepSequence, request.FieldKey);
             source.Consume(quantity, request.MaterialExhausted, ingredient.Id, actor.User.Id, now);
             preparation.RecordIngredientUse(now);
         }
@@ -312,11 +355,25 @@ public sealed partial class LabOperationsController
     {
         var expected = preparation.Ingredients();
         if (uses.Count == 0 || uses.Any(item => !lots.ContainsKey(item.SourceMaterialLotId))) return false;
-        var actual = uses.GroupBy(item => (lots[item.SourceMaterialLotId].MaterialDefinitionId, item.QuantityUnit))
-            .ToDictionary(group => group.Key, group => group.Sum(item => item.Quantity));
-        return actual.Count == expected.Count && expected.All(item =>
-            actual.TryGetValue((item.MaterialDefinitionId, item.QuantityUnit), out var amount) && amount == item.Quantity);
+        var amounts = new decimal[expected.Count];
+        try
+        {
+            foreach (var use in uses)
+            {
+                var lot = lots[use.SourceMaterialLotId];
+                var index = expected.ToList().FindIndex(item => item.QuantityUnit == use.QuantityUnit &&
+                    (item.ProductId.HasValue ? item.ProductId == lot.SupplierProductId : item.MaterialDefinitionId == lot.MaterialDefinitionId));
+                if (index < 0) return false;
+                amounts[index] += use.Quantity;
+            }
+        }
+        catch (OverflowException) { return false; }
+        return expected.Select((item, index) => item.Quantity == amounts[index]).All(matches => matches);
     }
+
+    private static bool MatchesMasterMixReagent(LabConfiguredMaterial material, LabMaterialLot lot, LabMaterialLotKind kind) =>
+        material.ProductId.HasValue ? lot.SupplierProductId == material.ProductId && kind == LabMaterialLotKind.SupplierLot
+            : material.MaterialDefinitionId == lot.MaterialDefinitionId && kind == LabMaterialLotKind.PreparedReagent;
 
     private async Task<IReadOnlyList<LabMasterMixDto>> ReadMasterMixesAsync(
         IReadOnlyList<LabMasterMixPreparation> preparations, CancellationToken ct)
@@ -360,16 +417,16 @@ public sealed partial class LabOperationsController
             item.RecipeDeviationReason, item.RecipeDeviationApprovedByUserId, item.RecipeDeviationApprovedAtUtc,
             item.RecipeDeviationApprovedIngredientCount == item.IngredientUseCount && item.RecipeDeviationApprovedByUserId.HasValue,
             RecipeMatches(item, ingredients.Where(use => use.PreparationId == item.Id && use.VoidedAtUtc == null).ToArray(), lots),
-            item.Steps(), item.Ingredients(), steps.Where(step => step.PreparationId == item.Id).OrderBy(step => step.Sequence)
+            item.RecordedStepCount, item.Steps(), item.Ingredients(), steps.Where(step => step.PreparationId == item.Id).OrderBy(step => step.PerformedAtUtc)
                 .Select(step => new LabMasterMixStepDto(step.Id, step.Sequence, step.Notes,
-                    step.PerformedByUserId, step.PerformedAtUtc)).ToArray(),
+                    step.PerformedByUserId, step.PerformedAtUtc, JsonSerializer.Deserialize<LabProtocolStepRecord>(step.EvidenceJson, JsonSerializerOptions.Web)!)).ToArray(),
             ingredients.Where(use => use.PreparationId == item.Id).OrderBy(use => use.RecordedAtUtc)
                 .Select(use => new LabMasterMixIngredientDto(use.Id, use.SourceMaterialLotId,
                     definitions[lots[use.SourceMaterialLotId].MaterialDefinitionId].Name,
                     lots[use.SourceMaterialLotId].LotNumber, use.Quantity,
                     use.Quantity.ToString(CultureInfo.InvariantCulture), use.QuantityUnit,
                     use.MaterialExhausted, use.RecordedByUserId, use.RecordedAtUtc,
-                    use.VoidedByUserId, use.VoidedAtUtc)).ToArray(),
+                    use.VoidedByUserId, use.VoidedAtUtc, use.StepSequence, use.FieldKey)).ToArray(),
             uses.Where(use => use.PreparationId == item.Id).OrderBy(use => use.RecordedAtUtc)
                 .Select(use => new LabMasterMixTrayUseDto(use.Id, use.LabPreparationBatchId,
                     trays[use.LabPreparationBatchId].Name, use.LabPreparationRecordId, use.FieldKey,
