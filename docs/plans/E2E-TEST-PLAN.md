@@ -1,5 +1,111 @@
 # Playwright E2E Test Plan
 
+## Phase sample-stage counts and completion checks — October 5, 2026
+
+Manual presentation review: mixed cohort with seven sequencing and three ready
+for preparation yields 10/10 Received, 7/10 preparation, 0/10 sequencing, seven in
+sequencing and only the Received check. Quality review is unfinished while its
+samples remain in review; approved AwaitingDelivery completes review without
+completing Results available. Partial delivery retains its sample fraction; only
+all Portal-delivered samples complete every step. Check zero/missing/unknown/cancelled
+cohorts, held/failed notes, single-phase visibility, multi-phase expansion and
+320-pixel reflow. Use existing records or labeled synthetic previews; no sample,
+shipment, bench, result release or phase mutation for presentation evidence.
+Automated suites remain request-only; previews do not establish connected
+Customer, scientific or provider acceptance.
+
+Single-phase refinement: confirm one Actions control at the trailing Progress
+header on desktop and phones, no action beside TAT, retained cancellation dialog
+and disabled state, and keyboard focus return. Sample fractions remain semibold
+at the smaller size; check the reduced circles/icons and aligned connectors in
+both orientations. Do not submit any cancellation during presentation review.
+
+The bounded manual browser checks are complete; see the
+[review evidence](../testing/runs/2026-10-05-graphical-workflow-progress.md).
+Customer previews used blocked API access and do not establish connected UAT.
+
+Single-phase refinement: confirm one Actions control at the trailing Progress
+header on desktop and phones, no action beside TAT, retained cancellation dialog
+and disabled state, and keyboard focus return. Sample fractions remain semibold
+at the smaller size; check the reduced circles/icons and aligned connectors in
+both orientations. Do not submit any cancellation during presentation review.
+
+## Shared graphical shipping tracker — October 5, 2026
+
+Read-only Customer/Partner review: four connected stage icons, phase-specific count,
+check badges and Complete labels, one highlighted current stage, saved partial
+receipt/existing-stock notes and unchanged Next step control. Review 320 CSS pixels,
+768-pixel breakpoint and wide layout, light/dark contrast, keyboard access to the
+next action and no horizontal overflow. Do not request kits, record receipt, change
+sample preparation or dispatch merely to create visual proof. Recheck sequencing's
+six-stage mapping after sharing the presentation. Automated suites remain
+request-only; saved synthetic/operational facts must remain intact.
+
+## Graphical sequencing send-out progress — October 5, 2026
+
+Read-only browser review: open an existing completed send-out and a historical
+completed record without outcomes. Verify connected stage icons/check badges,
+explicit final outcome, retained missing evidence, no current step on a closed
+record, six horizontal stages when wide, vertical stages at 320 CSS pixels,
+no horizontal overflow, and one unchanged Actions menu. Review active sequencing
+and failed-outcome mapping in source when no existing fixture is available; do
+not mutate sequencing facts just to exercise the tracker. Check light/dark token
+readability when possible and restore any temporary appearance/viewport settings.
+Automated suites remain request-only.
+
+## Connected six-library send-out walkthrough — October 5, 2026
+
+The Owner-authorized connected local walkthrough passed with synthetic fixture
+evidence: six pre-barcoded tube pairs, two vendor destinations, a reasoned
+pre-dispatch address change, dispatch, vendor receipt with retained ETA, sequencing,
+results receipt, whole-batch permanent storage reference, and final Success with
+one required-reason Failure exception. The previously blocked dispatch now works
+while the shared Job remains advanced. Destination editing disappears after
+dispatch; final outcome actions disappear after completion. Export has six rows.
+Mobile receipt/outcome forms at 320 CSS pixels fit without horizontal scrolling.
+Dirty evidence/reference drafts retain entries on Keep reviewing; discard returns
+focus to Actions. See [the exact fixture and evidence](../testing/runs/2026-10-05-sequencing-sendout-walkthrough.md).
+
+Automated E2E suites, concurrent/stale HTTP rejection, dark theme, additional role
+boundaries and uncertain-network recovery are not rerun in this walkthrough.
+Simulated local facts do not prove bench, carrier, vendor, scientific or production
+acceptance. Earlier records and fixtures are preserved.
+
+## Vendor sequencing shipment and results — October 5, 2026
+
+Manual acceptance: prepare a batch with passing libraries and confirmed transferred tubes; review/export the frozen manifest; require carrier/tracking at dispatch and ETA at vendor receipt; advance only sequential actual-time/evidence stages; update tracking/ETA; receive results without inferred success; finalize Success/Failure with explicit library exceptions and reasons; add batch/library permanent storage references before or after finalization; confirm missing/unverified handoff and separate scientific output/release. Check foreign members, stale writes, uncertain retries, future/backdated stages, destination freeze, keyboard/focus, one Actions indicator, 390 px and light/dark. Preserve existing demo records. New end-to-end writes and provider/physical acceptance remain unexecuted; readonly UI checks are recorded separately.
+
+For batch cards, verify Actions stays at the top-right at every width. On narrow
+layouts (below 640 CSS pixels), the status pill belongs below the full-width
+description, leaving only the batch number and Actions on the first row. On wider layouts,
+status and Actions stay at the top-right while details wrap beside them. Check
+320/390 CSS pixels, the breakpoint, readable identifiers, and horizontal overflow.
+Verify the immutable batch number is the linked card title and detail heading;
+the descriptive name belongs in secondary detail and is omitted when it equals
+the number. Existing record values must remain unchanged.
+
+## Customer specimen holds suppressed — October 5, 2026
+
+Acceptance should confirm single/multi-phase Job tracking has no Specimen holds,
+Review holds, pause/resumption controls or hold API polling. Existing generic
+laboratory held counts remain readable. Customer/Partner help and search omit the
+hidden request instructions; Phaeno existing-hold tools remain available. Direct
+Customer hold GET/POST requests must return 404 without changing records. Local
+route diagnostics and compilation are distinct from authenticated Customer browser
+acceptance; automated E2E execution remains request-only.
+
+## Nine walkthrough fixes — October 5, 2026
+
+Read-only connected checks use the saved pre-barcoded demonstration records:
+readable preparation identity, singular counts, exact trimmed volumes, batch
+primary links, stable sequencing detail, retained tube pairs and frozen manifest,
+custody facts and contextual Actions. Inspect desktop/narrow layout and keyboard
+dialogs without advancing saved batches. Remaining interactive acceptance:
+cross-tab Ready arrival/discard/expiry with a preserved waiting draft, exact-recipe
+prepare/return, contextual batch create then separate assignment, single required
+sample capture, and timed sendout evidence saved through all transitions on a
+fresh owner-authorized fixture. Automated E2E execution remains request-only.
+
 ## Catalog sequencing requirement and tube pairing — October 4, 2026
 
 The exact-retry fixture carries a member Catalog snapshot and uses the single pair form. Connected acceptance should configure the owner-authorized demo service to 5 µL, verify read-only requirements, progress, retained six 20 µL libraries, keyboard/scanner behavior and narrow layouts without allocating tubes or recording a transfer. Physical/scientific/provider acceptance and automated E2E execution are separate and not claimed.
@@ -3913,3 +4019,36 @@ verifies the URL and retained value across every section. Label PDF, pair
 validation, protocol execution, cancellation, and narrow-layout cases are covered.
 This automated evidence does not qualify a physical printer/scanner or bench run.
 See the [release receipt](../operations/portal-workflow-release-20261004.md).
+
+### Sequencing vendor catalog — October 5, 2026
+
+Pending authorized connected acceptance: create a synthetic external vendor with
+two addresses and a Sequencing service; prepare a batch using each explicit
+selection; reject wrong-owner and inactive/stale choices; verify frozen snapshots
+after catalog edits, pre-dispatch retargeting with evidence, post-dispatch refusal,
+and last-address retirement/activation concurrency. Verify Operator read access
+and administrator writes, Customer denial, catalog setup recovery, desktop/320 px
+reflow, light/dark contrast, keyboard menus, modal body/header/footer and focus
+return. Verify services never appear as kit contents or stock materials.
+
+Read-only local browser inspection and additive migration preservation are
+recorded in the vendor catalog receipt. Automated E2E execution and operational
+fixture writes were not requested; physical shipment/provider/scientific proof
+and production deployment remain separate.
+
+## October 5 controlled release verification
+
+The owner separately authorized full tests, commit/push, deployment and the two
+preserving EF migrations under [the hosted release plan](PORTAL-WORKFLOW-RELEASE-20261005-PLAN.md).
+Final results and hosted activation are recorded in [the release receipt](../operations/portal-workflow-release-20261005.md).
+This supersedes request-only execution statements in the earlier local checkpoints;
+physical/scientific/provider and authenticated operator acceptance remain separate.
+
+The clean final desktop/mobile run passes 212 tests, with zero failures, two
+intentional mobile print skips and no retries. Coverage includes the suppressed
+Customer specimen-hold surface in both themes, no hold API reads/writes,
+320/375/1,440 px reflow and accessibility. Existing shipping, preparation, label,
+workflow, documentation and recovery regressions pass. Fixtures assert roster
+names independently of graphical tracker icons and preserve the automatically
+expanded single-sample preparation control. This automated evidence does not
+replace the connected operator, physical shipment or scientific/provider checks.

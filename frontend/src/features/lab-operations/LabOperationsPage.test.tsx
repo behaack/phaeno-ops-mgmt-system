@@ -37,7 +37,8 @@ it.each(['', '  PSeq demo  '])('creates a batch with an optional descriptive nam
   fireEvent.click(within(dialog).getByRole('button', { name: 'Create batch' }))
   await waitFor(() => expect(api.createBatch).toHaveBeenCalledWith({ name: name.trim() || null, notes: null }))
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
-  expect(screen.getByText(batch.name, { selector: 'p.font-medium', exact: true })).toBeTruthy()
+  expect(await screen.findByRole('link', { name: identifier })).toBeTruthy()
+  if (name.trim()) expect(screen.getByText(text => text.startsWith(`${name.trim()} ·`), { selector: 'p' })).toBeTruthy()
 })
 
 it('explains why an empty draft cannot start and disables its empty tube workspace', async () => {
@@ -47,7 +48,7 @@ it('explains why an empty draft cannot start and disables its empty tube workspa
   render(<QueryClientProvider client={client}><LabOperationsPage section="batches" onSectionChange={vi.fn()} /></QueryClientProvider>)
   expect(await screen.findByText('Add passing libraries from Library prep or Scan libraries before starting this batch.')).toBeTruthy()
   fireEvent.keyDown(screen.getByRole('button', { name: 'Actions' }), { key: 'Enter' })
-  expect((await screen.findByRole('menuitem', { name: 'Start' })).getAttribute('aria-disabled')).toBe('true')
+  expect((await screen.findByRole('menuitem', { name: 'Begin shipment preparation' })).getAttribute('aria-disabled')).toBe('true')
   expect(screen.getByRole('menuitem', { name: 'Sequencing tubes' }).getAttribute('aria-disabled')).toBe('true')
 })
 

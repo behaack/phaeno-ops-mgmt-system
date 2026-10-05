@@ -57,7 +57,7 @@ test('biological material and its report survive a reload after an interrupted s
     member.libraryTube = { id: 'library', barcode: 'TEST-LIBRARY', barcodeSource: 'Manufacturer', quantity: null, quantityUnit: null, version: 1, confirmed: false, transferId: null }
   } })
   await page.getByRole('region', { name: 'Preparation progress' }).getByRole('button', { name: 'Record step', exact: true }).click()
-  await page.getByRole('button', { name: /^A1 · TEST-TUBE-1/ }).click()
+  await expect(page.getByRole('button', { name: /^A1 · TEST-TUBE-1/ })).toHaveAttribute('aria-expanded', 'true')
   await page.getByLabel('Scan accessioned source tube barcode', { exact: false }).fill('*test-tube-1*')
   await page.getByLabel('Scan library tube barcode', { exact: false }).fill('*test-library*')
   await page.getByLabel('Actual amount transferred', { exact: false }).fill('25')
@@ -108,7 +108,7 @@ test('failed tubes are excluded from later evidence and output identity is carri
   await expect(page.getByText('Output retained for traceability. This attempt failed and cannot supply a sequencing library.')).toBeVisible()
   await expect(page.getByRole('link', { name: 'TEST-FAILED-OUTPUT', exact: true })).toBeVisible()
   await expect(page.getByText('Output scan needed', { exact: false })).toHaveCount(0)
-  await expect(page.getByText('Open the output tube to print and scan back its label, then confirm its identity.')).toHaveCount(0)
+  await expect(page.getByText('Open the output tube to print, attach and scan back its label, then confirm its identity.')).toHaveCount(0)
   await page.getByRole('region', { name: 'Preparation progress' }).getByRole('button', { name: 'Record step', exact: true }).click()
   await expect(page.getByLabel('A2 · TEST-TUBE-2 · TEST-JOB-2', { exact: true })).toHaveCount(0)
   await page.getByRole('button', { name: 'Cancel', exact: true }).click()
@@ -124,7 +124,7 @@ test('failed tubes are excluded from later evidence and output identity is carri
   await expect(page.getByRole('dialog')).toHaveCount(0)
   expect(bodies[0]).toMatchObject({ action: 'output', memberId: 'member-0', quantity: 10, quantityUnit: 'uL', location: 'TEST-BOX' })
   expect(bodies[0]).not.toHaveProperty('specimenId')
-  await expect(page.getByText('Open the output tube to print and scan back its label, then confirm its identity.')).toBeVisible()
+  await expect(page.getByText('Open the output tube to print, attach and scan back its label, then confirm its identity.')).toBeVisible()
 })
 
 

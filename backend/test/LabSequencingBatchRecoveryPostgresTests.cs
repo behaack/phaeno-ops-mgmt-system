@@ -36,7 +36,7 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                 batch.Id, new("complete", version), default));
             Assert.Equal("batch_libraries_required", emptyComplete.ErrorCode);
             var emptySendout = await Assert.ThrowsAsync<OrderManagementException>(() => lab.CreateSendout(
-                batch.Id, new("TEST ONLY provider", null, "{}", null), default));
+                batch.Id, new(Guid.Empty, Guid.Empty, Guid.Empty, 0, 0, 0, null, "{}", null, version), default));
             Assert.Equal("batch_libraries_required", emptySendout.ErrorCode);
             var sentBatchDto = await lab.CreateBatch(new CreateBatchRequest(Notes: "TEST ONLY retained sendout"), default);
             cleanupIds.Add(sentBatchDto.Id);

@@ -30,10 +30,10 @@ public sealed partial class LabOperationsController
         var suppliers = await dbContext.LabSuppliers.AsNoTracking().Where(s => s.IsActive && !s.IsInternalProducer).OrderBy(s => s.Name).ToListAsync(ct);
         var products = await (from p in dbContext.LabSupplierProducts.AsNoTracking()
             join t in dbContext.LabProductTypes.AsNoTracking() on p.ProductTypeId equals t.Id
-            where p.IsActive && t.IsActive
+            where p.IsActive && t.IsActive && p.ProductTypeId != LabProductType.SequencingServiceId
             orderby p.ProductNumber
             select new SupplierCatalogProductDto(p.Id, p.SupplierId, p.ProductNumber, p.Description, t.KitUse.ToString(), p.IsActive, p.Version, t.Id, t.Name, t.IsActive, p.CanExpire, p.DefaultQuantityUnit, null, p.TubeCapacity)).ToListAsync(ct);
-        return suppliers.Select(s => new SupplierCatalogEntryDto(s.Id, s.Name, s.IsActive, s.Version, products.Where(p => p.SupplierId == s.Id).ToArray())).ToArray();
+        return suppliers.Select(s => new SupplierCatalogEntryDto(s.Id, s.Name, s.IsActive, s.Version, products.Where(p => p.SupplierId == s.Id).ToArray(), [])).ToArray();
     }
 
     private static IReadOnlyList<LabProtocolCaptureDefinition> PreparationResourceFields(LabProtocolStepDefinition step)

@@ -18,15 +18,33 @@ Use Lab services within the selected Department to describe and price a Job befo
 
 ## Follow the Job workspace
 
-For a Job with one phase, **Shipping (1 sample)** or **Shipping (N samples)** identifies the work to send. **Progress** shows status, timing, samples, shipments and holds directly; there is no Phase 1 row to expand. Before tubes and containers are recorded, physical receipt reads **Awaiting sample shipment**. TAT starts after all required samples are received. The ordered phase list and phase instructions below apply to Jobs with multiple phases.
+For a Job with one phase, **Shipping (1 sample)** or **Shipping (N samples)** identifies the work to send. **Progress** shows status, timing, samples and shipments directly; there is no Phase 1 row to expand. Before tubes and containers are recorded, physical receipt reads **Awaiting sample shipment**. TAT starts after all required samples are received. The ordered phase list and phase instructions below apply to Jobs with multiple phases.
 
-The current task stays above four supporting tabs. Accepted Jobs open in **Progress**; unaccepted requests open in **Order and billing** for pricing review. For multi-phase Jobs, **Progress** lists every cohort, including phases already sent and phases still planned. Expand a phase to review its samples, shipment links, physical receipt, laboratory stages, turnaround and specimen holds. A phase's shipment reference opens its saved shipment, where permitted instructions and reprinting remain available.
+The current task stays above four supporting tabs. Accepted Jobs open in **Progress**; unaccepted requests open in **Order and billing** for pricing review. For multi-phase Jobs, **Progress** lists every cohort, including phases already sent and phases still planned. Expand a phase to review its samples, shipment links, physical receipt, laboratory stages and turnaround. A phase's shipment reference opens its saved shipment, where permitted instructions and reprinting remain available.
+
+For a single-phase Job, eligible progress actions appear at the end of the **Progress** heading. **Request cancellation** stays in **Actions**; when **View results** is the only available action, it appears directly. Multi-phase actions remain within their expanded phase.
 
 **Files and results** contains released packages and downloads. For multi-phase Jobs, use **Phase** to show one cohort or **All phases**. **Order and billing** contains the accepted scope, quote and permitted invoices. **History** combines order decisions and timing changes, newest first, with submitted request snapshots. Changing supporting tabs retains the current shipping task and saved work.
 
-Sample preparation and shipment controls appear immediately beneath the current task when its preparation or Send step needs them. Request and Receive do not show an unrelated preparation form. Active sample holds and customer requests remain prominent above the work areas; **Review holds** opens the affected phase. Expand its **Specimen holds** to review status and permitted actions. A hold request blocks new work and release but does not establish that an ongoing procedure has stopped.
+Sample preparation and shipment controls appear immediately beneath the current task when its preparation or Send step needs them. Request and Receive do not show an unrelated preparation form.
 
 ## Request and prepare kits by phase
+
+The shipping tracker shows connected stage icons, checks for completed steps,
+and a highlighted current step. Future steps read **Upcoming**. Its progress count
+applies to the current phase or single-phase Job; the steps stack vertically on
+phones. Continue using the action in **Next step**. Kit dispatch and partial receipt
+remain visible under **Receive kits**; its check requires the phase's complete
+receipt or sufficient compatible received stock.
+
+In **Progress**, expand a phase to see its **Laboratory sample progress** tracker;
+single-phase Jobs show it directly. Each stage shows how many samples have finished
+that step, with a check only when all samples have finished. Samples still in
+preparation, sequencing, data assembly or review are listed separately as **in this
+stage**. Later-stage samples count toward earlier completed steps. **Results
+available** finishes only after all samples' required results are released to your
+Portal; approved results awaiting release remain separate. Holds and samples
+needing review stay visible and do not advance their saved stage.
 
 Before acceptance, **Review and Accept Order** keeps the focus on scope, pricing
 and the quote's **Actions** menu. Shipping steps and next-step guidance are hidden
@@ -242,16 +260,6 @@ Sample rows show matching progress as **1 of 1 tube matched** or **2 of 2 tubes 
 ### Delivery due date
 
 The delivery due date is separate from the current expected completion. Phaeno may adjust it with a recorded customer-safe reason; the original delivery target remains visible, and the change queues a notice. A forecast change alone does not move the delivery due date. Results are delivered when data for every in-scope sample has been made available through the Portal; you do not have to download or acknowledge them. Partial results and laboratory completion do not by themselves complete delivery. Standard turnaround remains an operating target unless your agreement explicitly provides a guarantee.
-
-## Requesting a specimen pause or resumption
-
-An organization administrator or administrator of the assigned Department can open a Lab Job, select **Progress**, expand the affected phase, and open **Specimen holds**. Choose **Request pause** for the affected sample and enter a reason. Other samples are unaffected.
-
-The request immediately blocks new preparation, new sequencing handoffs, new analysis and result release for that sample. **Pause requested** does not mean an ongoing physical procedure has stopped. Phaeno must confirm a safe pause, including any work already with an external provider. If that procedure cannot pause, its facts can still be recorded; new work and release remain blocked.
-
-Use **Request resumption** when ready. Work remains blocked until Phaeno approves resumption. Other authorization, material, quality and workflow requirements still apply, and approval does not automatically start work. Read **Hold history** for the recorded reasons and decisions.
-
-A hold does not automatically change charges, deadlines or retention dates, and results already delivered remain available. Contact Phaeno directly for an urgent request or a separate commercial or retention adjustment.
 
 ## Follow phased Jobs
 

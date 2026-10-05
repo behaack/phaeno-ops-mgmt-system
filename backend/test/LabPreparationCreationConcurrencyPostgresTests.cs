@@ -30,7 +30,7 @@ public partial class SampleShippingPostgresTests
         // Cover a bounded wall-clock window so both requests must resolve an existing
         // base-name collision without changing the application or machine clock.
         var reservedNames = Enumerable.Range(-1, 122).Select(offset =>
-            $"{workflow.ServiceKey}-{now.AddSeconds(offset).ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture)}").ToHashSet();
+            $"TEST-ONLY-creation-race-{now.AddSeconds(offset).ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture)}").ToHashSet();
         db.AddRange(reservedNames.Select(name => new LabPreparationBatch(name, format, workflowVersion.Id)));
         await db.SaveChangesAsync();
         scope.ClearTrackedState();

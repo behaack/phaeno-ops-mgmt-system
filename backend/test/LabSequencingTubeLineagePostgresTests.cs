@@ -74,7 +74,7 @@ public partial class SampleShippingPostgresTests
                     materialTransferId = transfer.Id, quantity = transfer.Quantity, quantityUnit = transfer.QuantityUnit } }
             });
             var sendout = new LabNgsSendout(batch.Id, "TEST provider", "TEST aliquot submission", manifest, null);
-            sendout.SetStatus(LabNgsSendoutStatus.Complete, now);
+            VendorSendoutFixture.Complete(sendout, now);
             db.LabNgsSendouts.Add(sendout); await db.SaveChangesAsync();
             var request = new RegisterSequencingOutputRequest(Guid.NewGuid(), work.Id, specimen.Id, library.Id, sendout.Id,
                 "TEST provider", "TEST aliquot run", "sample:TEST-ALIQUOT", "TEST raw file", new string('B', 64), 100);

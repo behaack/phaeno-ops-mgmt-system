@@ -15,7 +15,7 @@ beforeEach(() => { vi.clearAllMocks(); mocks.types.mockReturnValue({ data: produ
 describe('supplier catalog', () => {
   it('defines each Phaeno reagent as a distinct product with fixed Reagent type', async () => {
     const phaeno = { id: '81000000-0000-4000-8000-000000000099', name: 'Phaeno', isActive: true,
-      isInternalProducer: true, version: 1, products: [
+      isInternalProducer: true, version: 1, shipmentAddresses: [], products: [
         { id: '82000000-0000-4000-8000-000000000091', supplierId: '81000000-0000-4000-8000-000000000099', productNumber: 'Buffer A', description: 'Buffer', kind: 'Other' as const, productTypeId: reagentProductTypeId, productTypeName: 'Reagent', productTypeIsActive: true, defaultQuantityUnit: 'mL', isActive: true, version: 1 },
         { id: '82000000-0000-4000-8000-000000000092', supplierId: '81000000-0000-4000-8000-000000000099', productNumber: 'Enzyme B', description: 'Enzyme', kind: 'Other' as const, productTypeId: reagentProductTypeId, productTypeName: 'Reagent', productTypeIsActive: true, defaultQuantityUnit: 'µL', isActive: true, version: 1 },
       ] }
@@ -117,7 +117,7 @@ describe('supplier catalog', () => {
   it('opens suppliers as view-first records and searches product descriptions', () => {
     mount()
     expect(screen.queryByRole('dialog')).toBeNull()
-    fireEvent.change(screen.getByLabelText('Search suppliers or products'), { target: { value: 'Sterile' } })
+    fireEvent.change(screen.getByLabelText('Search suppliers, products or addresses'), { target: { value: 'Sterile' } })
     expect(screen.getByRole('link', { name: 'Tube maker' }).getAttribute('href')).toContain(supplierCatalogFixture[0].id)
     expect(screen.queryByRole('link', { name: supplierCatalogFixture[1].name })).toBeNull()
   })

@@ -15,6 +15,7 @@ import { buildLabJobProgress } from './lab-job-progress'
 import { LabJobDetailTabs, type LabJobDetailTab } from './LabJobDetailTabs'
 import { LabJobHistory } from './LabJobHistory'
 import { LabJobHoldNotice, LabJobTrackingSummary } from './LabJobTrackingSummary'
+import { customerSpecimenHoldsEnabled } from './use-specimen-holds'
 import { useLabPhasePlan } from './use-lab-phases'
 import { LabJobOrderProgress } from './LabJobOrderProgress'
 import type { ChangeLabJobWorkspace, LabJobWorkspaceSearch } from './lab-job-workspace-search'
@@ -227,7 +228,7 @@ export function LabServiceDetailPage({ orderId, workspace: controlledWorkspace, 
         <div ref={setHeaderTarget} className="shrink-0">{!showShippingWorkspace ? <LabJobWorkspaceActions orderActions={orderActions} triggerRef={orderActionRef} dialogOpen={Boolean(dialog) || Boolean(extensionQuote) || kitOrderOpen || phaseDialogOpen} /> : null}</div>
       </section>
       {order.tenantSafeReason && (order.status === 'ChangesRequested' || order.tenantSafeReason !== proposal?.reason) ? <Alert className="mb-5"><AlertTitle>Action needed</AlertTitle><AlertDescription>{order.tenantSafeReason}</AlertDescription></Alert> : null}
-      {visibility.trackingRelevant ? <LabJobHoldNotice order={order} onReview={phaseId => changeDetails('phases', phaseId)} /> : null}
+      {customerSpecimenHoldsEnabled && visibility.trackingRelevant ? <LabJobHoldNotice order={order} onReview={phaseId => changeDetails('phases', phaseId)} /> : null}
       {order.labCustomerActionSummary ? <Alert className="mb-5"><AlertTitle>Laboratory action needed</AlertTitle><AlertDescription>{order.labCustomerActionSummary}</AlertDescription></Alert> : null}
       {action.error && !dialog ? <Alert variant="destructive" className="mb-5"><AlertTitle>Order was not updated</AlertTitle><AlertDescription>{getOrderErrorMessage(action.error, 'Reload and try again.')}</AlertDescription></Alert> : null}
       {quoteDownload.error ? <Alert variant="destructive" className="mb-5"><AlertTitle>Quote could not be downloaded</AlertTitle><AlertDescription>{getOrderErrorMessage(quoteDownload.error, 'Try Download quote PDF again. If the problem continues, contact Phaeno.')}</AlertDescription></Alert> : null}

@@ -170,7 +170,7 @@ public partial class SampleShippingPostgresTests
         db.AddRange(source, attempt, output, execution, library, record); await db.SaveChangesAsync(); attempt.Refresh(false, true, actor, now); await db.SaveChangesAsync();
         var batch = new LabOperationalBatch("RESTORE-SEQ-" + scope.Suffix, "TEST sequencing", null); batch.Start(now);
         var sendout = new LabNgsSendout(batch.Id, "TEST provider", "TEST submission", JsonSerializer.Serialize(new { members = new[] { new { libraryId = library.Id, libraryKey = library.LibraryKey, containerBarcode = output.Barcode } } }), null);
-        sendout.SetStatus(LabNgsSendoutStatus.Complete, now); db.AddRange(batch, sendout, new LabBatchMember(batch.Id, work.Id, library.Id, now)); await db.SaveChangesAsync();
+        VendorSendoutFixture.Complete(sendout, now); db.AddRange(batch, sendout, new LabBatchMember(batch.Id, work.Id, library.Id, now)); await db.SaveChangesAsync();
         await using var rawBytes = new MemoryStream(Encoding.UTF8.GetBytes("TEST ONLY sequencing bytes"));
         var rawFile = await files.SaveAsync(rawBytes, ".bin", 1024, default);
         var receipt = new LabScientificFile(work.Id, specimen.Id, "restore-sequencing.txt", rawFile.StorageKey, rawFile.Sha256, rawFile.SizeBytes, actor, now);

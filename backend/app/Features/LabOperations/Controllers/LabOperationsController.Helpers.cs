@@ -302,10 +302,13 @@ public sealed partial class LabOperationsController
             .ToDictionaryAsync(item => item.Id, item => item.Count, cancellationToken);
         var sendouts = await dbContext.LabNgsSendouts.AsNoTracking()
             .ToDictionaryAsync(item => item.LabOperationalBatchId, cancellationToken);
+        var exceptions = await dbContext.LabVendorLibraryExceptions.AsNoTracking().GroupBy(e => e.LabNgsSendoutId)
+            .Select(group => new { Id = group.Key, Count = group.Count() }).ToDictionaryAsync(e => e.Id, e => e.Count, cancellationToken);
         return batches.Select(batch =>
         {
             sendouts.TryGetValue(batch.Id, out var sendout);
-            return MapBatch(batch, counts.GetValueOrDefault(batch.Id), sendout?.Status.ToString(), sendout?.Id, sendout?.Version);
+            return MapBatch(batch, counts.GetValueOrDefault(batch.Id), sendout?.Status.ToString(), sendout?.Id, sendout?.Version, sendout,
+                sendout is null ? 0 : exceptions.GetValueOrDefault(sendout.Id));
         }).ToList();
     }
 
@@ -408,10 +411,11 @@ public sealed partial class LabOperationsController
             item.RetirementReason, item.RetiredAtUtc, item.RetiredByUserId);
 
     private static LabBatchDto MapBatch(LabOperationalBatch item, int memberCount, string? sendoutStatus,
-        Guid? sendoutId = null, long? sendoutVersion = null) =>
+        Guid? sendoutId = null, long? sendoutVersion = null, LabNgsSendout? sendout = null, int exceptionCount = 0) =>
         new(item.Id, item.BatchNumber, item.Name, item.BatchType, item.Status.ToString(),
             item.StartedAtUtc, item.CompletedAtUtc, item.Notes,
-            memberCount, sendoutId, sendoutStatus, sendoutVersion, item.Version);
+            memberCount, sendoutId, sendoutStatus, sendoutVersion, item.Version,
+            sendout?.Outcome?.ToString(), sendout?.ProviderName, sendout?.TrackingReference, sendout?.ExpectedCompletionAtUtc, exceptionCount);
 
     private static LabContainerDto MapContainer(LabContainer item) =>
         new(item.Id, item.LabSpecimenId, item.ParentContainerId, item.Kind.ToString(), item.Barcode,

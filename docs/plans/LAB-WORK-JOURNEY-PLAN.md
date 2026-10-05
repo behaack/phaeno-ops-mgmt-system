@@ -1,5 +1,52 @@
 # Library preparation batches and connected workflow
 
+## Nine walkthrough fixes — October 5, 2026
+
+The owner authorized all nine findings in the pre-barcoded review. Users are
+Phaeno operators and supervisors completing a tray and handing passing libraries
+to external sequencing. Success means a preserved step draft can obtain its
+required mix, supplied labels receive correct instructions, and each sequencing
+status has reviewable actual-time/evidence capture in a stable batch workspace.
+
+Scope: refresh Ready mixes on step opening, focus return and explicit Refresh;
+contextual exact-recipe mix preparation in a separate tab while the waiting form
+stays mounted; readable service/batch presentation without rewriting identifiers;
+open the sole required sample and remove empty/redundant sections; contextual
+batch creation followed by a separate membership save; sequencing detail with
+members, tube pairs, frozen manifest and custody; incomplete recipe guidance;
+count, decimal, status and operational autofill presentation. The single-required-
+sample exception supersedes the earlier all-cards-collapsed policy; multiple
+sample cards retain their disclosure behavior.
+
+Internal Lab API scope: add read-only batch detail and preparation presentation
+fields; require actual occurrence time and provider evidence for sendout status
+commands, preserving concurrency, roles and audited records. Existing custody
+event JSON holds new status evidence and its server-recorded time; no persisted
+model change, migration, history repair, dependency or authentication change is
+needed. Existing demonstration records remain untouched. Phaeno guides and living
+test plans accompany the change. Build/type/lint and read-only UI checks are in
+scope; automated test suites, Git publishing and deployment are not requested.
+
+Local implementation is complete for all nine findings. The [implementation and
+verification record](../testing/runs/2026-10-05-prebarcoded-workflow-fixes.md)
+tracks exact changes, preserved demonstration records, compilation/lint/help
+checks and read-only desktop/narrow review. Authored automated regressions and
+fresh-fixture interactive acceptance remain unexecuted; these are not physical,
+provider, scientific or production-release evidence.
+
+## Pre-barcoded walkthrough and review — October 4, 2026
+
+The owner-requested additional fake PSeq library completed preparation and
+simulated sequencing through a separate completed sendout/batch, using supplied
+manufacturer barcodes throughout. The [run and prioritized workflow review](../testing/runs/2026-10-04-prebarcoded-library-sequencing-review.md)
+retain its exact records and evidence boundary. The existing six-library batch
+was not advanced. Findings include stale Ready-mix choices, incorrect printing
+guidance for manufacturer outputs, direct sendout status changes without event
+capture, prerequisite navigation, readable batch identity and single-sample form
+disclosure. These recommendations remain proposed; no application implementation
+changed. Physical/scientific/provider acceptance and Customer release are not
+established by this simulated run.
+
 ## Scan-result display update — September 23, 2026
 
 The owner removed decorative QR codes from the preparation tray heading and occupied cells after those physical identities have been scanned. Show the saved tray and tube identifiers as readable text, including when a started tray is collapsed. Keep the QR only in **Print tray label**, where it is needed on the physical tray. This supersedes the earlier compact on-screen QR presentation; tray assignment, confirmation, scan focus, positions and saved membership do not change.
@@ -359,3 +406,11 @@ September 12 linked-record acceptance: completed resource specimen and execution
 September 12 reviewer draft correction: Draft status messaging now distinguishes read-only access from closed preparation, and explains positions lock at start. Scientific Reviewer session confirmed absent operating controls and unchanged draft history. Resource job remains Processing; scientific-approval validation requires a suitable ScientificReview fixture. No workflow or authorization rule changed.
 
 September 14 signed-in response-loss acceptance: one new empty test tray was cancelled through the real isolated API, with its first successful response discarded by a bounded loopback proxy. An unchanged browser retry preserved request ID/version/payload and returned the same saved state, with one cancellation record and retained form values. The owner explicitly approved temporary Operator access; the exact assignment was deactivated immediately after the test and reviewer-only controls were verified. Older preparation fixtures remain preserved. This is bounded empty-cancellation recovery evidence; populated writes, uncertain creation and full laboratory acceptance remain separate. No application behavior change. See [the recovery run](../testing/runs/2026-09-12-laboratory-uat-closeout.md#september-14-saved-response-recovery--passed-with-temporary-access-removed).
+
+## October 5 controlled release verification
+
+The owner separately authorized full tests, commit/push, deployment and the two
+preserving EF migrations under [the hosted release plan](PORTAL-WORKFLOW-RELEASE-20261005-PLAN.md).
+Final results and hosted activation are recorded in [the release receipt](../operations/portal-workflow-release-20261005.md).
+This supersedes request-only execution statements in the earlier local checkpoints;
+physical/scientific/provider and authenticated operator acceptance remain separate.

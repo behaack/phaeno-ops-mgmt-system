@@ -73,7 +73,7 @@ public partial class SampleShippingPostgresTests
                 members = new[] { new { libraryId = reserve.Library.Id, libraryKey = reserve.Library.LibraryKey,
                     containerBarcode = $"LIBRARY-{scope.Suffix}-2" } }
             }), null);
-            sendout.SetStatus(LabNgsSendoutStatus.Complete, now);
+            VendorSendoutFixture.Complete(sendout, now);
             db.AddRange(batch, sendout, new LabBatchMember(batch.Id, work.Id, reserve.Library.Id, now));
             await db.SaveChangesAsync();
             var service = new LabResultLineageService(db);

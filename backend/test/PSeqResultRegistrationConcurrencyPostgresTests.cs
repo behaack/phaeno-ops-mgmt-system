@@ -147,7 +147,7 @@ public sealed class PSeqResultRegistrationConcurrencyPostgresTests
         var batch = new LabOperationalBatch("TEST-REGISTRATION-BATCH", "Synthetic sequencing", null);
         batch.Start(now);
         var sendout = new LabNgsSendout(batch.Id, "test-only", "Synthetic sendout", "{}", null);
-        sendout.SetStatus(LabNgsSendoutStatus.Complete, now);
+        VendorSendoutFixture.Complete(sendout, now);
         var output = new LabSequencingOutput(Guid.NewGuid(), work.Id, specimen.Id, attempt.Id, source.Id,
             library.Id, sendout.Id, "test-only", "TEST-RUN", "TEST-SAMPLE", "TEST-RAW", Hash("raw"), 1,
             null, null, "{}", Hash("output"), actor.Id, "test-only", now);

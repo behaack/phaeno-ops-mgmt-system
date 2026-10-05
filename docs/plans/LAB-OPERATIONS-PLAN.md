@@ -1,5 +1,15 @@
 # Lab Operations Plan
 
+## Vendor sequencing batch workflow — October 5, 2026
+
+The owner confirmed **Prepare shipment → Shipped → Vendor received (ETA) →
+Sequencing → Results received → Success / Failure**, a batch outcome with explicit
+library exceptions, and external storage references for the initial handoff. The
+[owning plan](VENDOR-SEQUENCING-BATCH-WORKFLOW-PLAN.md) records the implementation,
+role/version guards, additive model scope and verification. Existing completed
+records retain their history with an unrecorded vendor outcome; storage references
+remain unverified and separate from scientific output registration and release.
+
 ## Catalog requirement and sequencing tube pairs — October 4, 2026
 
 The owner requires Catalog-controlled sequencing volume and a form like Customer sample/tube matching. The [pairing plan](CATALOG-SEQUENCING-TUBE-PAIRING-PLAN.md) owns this correction: per-service minimums, immutable physical-pair snapshots, one active pair form, progress and compact saved pairs. Operators cannot edit the requirement. Actual volume remains an Operator entry with both scans and exact atomic debit/credit. The demo uses the previously authorized 5 µL; its six 20 µL libraries remain unchanged. Local conversion approval and verification are recorded in that plan.

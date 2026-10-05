@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
 
-import { useSupplierCatalog, supplierCatalogKey, type CatalogSupplier, type SupplierProduct } from '#/api/supplier-catalog'
+import { useSupplierCatalog, supplierCatalogKey, sequencingServiceProductTypeId, type CatalogSupplier, type SupplierProduct } from '#/api/supplier-catalog'
 import { getLabOperationsError } from '#/api/lab-operations'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
@@ -67,7 +67,7 @@ export function ProductCatalogPage({ supplierId, productId }: { supplierId?: str
         <Fact label="Product type">{current.product.productTypeName}</Fact>
         <Fact label="Product name or SKU">{current.product.productNumber}</Fact>
         <Fact label="Description">{current.product.description}</Fact>
-        <Fact label="Inventory unit">{current.product.defaultQuantityUnit ?? 'Needs configuration'}</Fact>
+        {current.product.productTypeId !== sequencingServiceProductTypeId ? <Fact label="Inventory unit">{current.product.defaultQuantityUnit ?? 'Needs configuration'}</Fact> : <Fact label="Shipment addresses">Manage destinations on the supplier record.</Fact>}
         {current.product.kind === 'ShippingContainer' ? <Fact label="Tube capacity">{current.product.tubeCapacity ?? 'Needs configuration'}</Fact> : null}
         {current.product.kind === 'Tube' ? <Fact label="Maximum sample amount">{current.product.maximumSampleAmount != null && current.product.sampleAmountUnit ? `${current.product.maximumSampleAmount} ${current.product.sampleAmountUnit}` : 'Needs configuration'}</Fact> : null}
         <Fact label="Status"><Badge variant="secondary">{current.product.isActive ? 'Active' : 'Inactive'}</Badge></Fact>

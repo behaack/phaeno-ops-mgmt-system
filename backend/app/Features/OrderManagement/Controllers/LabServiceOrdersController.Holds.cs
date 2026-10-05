@@ -10,6 +10,8 @@ using PSeq.Operations.Commercial.LabOperations.Domain;
 public sealed partial class LabServiceOrdersController
 {
     public sealed record CustomerHoldRequest(Guid SpecimenId, Guid? HoldId, int Version, string Reason);
+    // Temporarily suppressed by Product Owner direction; retain the implementation.
+    [NonAction]
     [HttpGet("{orderId:guid}/specimen-holds")]
     public async Task<object> CustomerSpecimenHolds(Guid orderId, CancellationToken ct)
     {
@@ -20,6 +22,7 @@ public sealed partial class LabServiceOrdersController
         if (work is null) return new { workOrderId = (Guid?)null, specimens = Array.Empty<object>(), holds = Array.Empty<object>(), canRequest = false, canDecide = false };
         return await LabCustomerHolds.ReadAsync(dbContext, work.Id, tenant.IsDepartmentAdmin, false, ct);
     }
+    [NonAction]
     [HttpPost("{orderId:guid}/specimen-holds")]
     public async Task<object> RequestSpecimenHold(Guid orderId, CustomerHoldRequest input, CancellationToken ct)
     {

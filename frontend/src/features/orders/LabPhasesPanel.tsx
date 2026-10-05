@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react'
 import type { LabServiceOrder } from '#/api/order-management'
 import { getOrderErrorMessage } from '#/api/order-management'
-import type { LabPhasePlan, PhasePlanItem } from '#/api/lab-phases'
+import type { LabPhase, LabPhasePlan, PhasePlanItem } from '#/api/lab-phases'
 import { Alert, AlertDescription } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
+import { DialogReturnFocus } from '#/components/ui/dialog'
 import { ActionMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '#/components/ui/dropdown-menu'
 import { usePhaenoSession } from '#/features/auth/session-context'
 import { humanizeStatus } from './OrderStatusBadge'
 import { useLabPhasePlan } from './use-lab-phases'
 import { PhasePlanDialog, PhaseReasonDialog, PhaseInvoiceDialog, type PhaseReasonAction } from './LabPhaseDialogs'
 import { LabJobPhaseList, type LabJobPhaseTracking } from './LabJobPhaseList'
+import { LabJobPhaseActions, labJobPhaseActions } from './LabJobPhaseActions'
 import { hasMultipleLabPhases } from './lab-job-presentation'
 import { phaseProgress } from './lab-phase-progress'
 export { customerStage, phaseProgress } from './lab-phase-progress'
@@ -32,21 +34,28 @@ export function LabPhasesPanel({ order, internal = false, onSaved, tracking, onM
   const pending = plan?.proposals.some(p => p.status === 'Pending')
   const money = (value: number) => new Intl.NumberFormat(undefined, { style: 'currency', currency: plan?.currency ?? 'USD' }).format(value)
   const date = (value: string | null) => value ? new Date(value).toLocaleString() : 'Not established'
+  const canCancel = Boolean(!internal && canManage && accepted && !closed)
+  const onCancel = (phase: LabPhase) => {
+    if (!plan) return
+    setReason({ title: multiplePhases ? `Request cancellation of ${phase.name}` : 'Request cancellation of sample work', description: 'Phaeno reviews this request. Eligibility closes when the first required tube is physically received. Any billing adjustment is reviewed separately.', path: `${phase.id}/cancellation`, input: { revision: plan.revision }, internal: false, variant: 'destructive' })
+  }
+  const singleTrackingPhase = tracking && plan && !multiplePhases && plan.phases.length === 1 ? plan.phases[0] : undefined
   const actions = plan ? [
     ...(internal && canManage && !closed && (configurable || accepted && !pending) ? [{ label: accepted ? 'Propose rephasing' : 'Configure phases', run: () => setEditor(plan) }] : []),
     ...(internal && session?.capabilities.canManagePSeqBilling && accepted && plan.phases.some(p => p.lifecycle !== 'Cancelled' && p.acceptedSubtotal > p.invoicedSubtotal) ? [{ label: 'Issue phase invoice', run: () => setInvoice(plan) }] : []),
+    ...(singleTrackingPhase && tracking ? labJobPhaseActions(singleTrackingPhase, canCancel, tracking.onResults, onCancel) : []),
   ] : []
   if (order.phaseScopes?.length === 1 && !accepted) return <Card><CardHeader><CardTitle>Samples and pricing</CardTitle></CardHeader><CardContent><p>{order.phaseScopes[0].sampleCount} samples · {order.phaseScopes[0].scope.runsPerSample} runs per sample · {order.phaseScopes[0].scope.sequencingRunCount} purchased runs</p><p className="mt-2 text-sm"><span className="font-bold">Proposed rate:</span> {order.phaseScopes[0].proposedUnitPrice === null ? 'No price proposed' : `${money(order.phaseScopes[0].proposedUnitPrice)} per sample`}</p>{order.phaseScopes[0].scope.sequencingRunCount > order.phaseScopes[0].sampleCount ? <p className="mt-1 text-sm"><span className="font-bold">Additional-run rate:</span> {order.phaseScopes[0].proposedAdditionalRunPrice == null ? 'No price proposed' : `${money(order.phaseScopes[0].proposedAdditionalRunPrice)} per additional run`}</p> : null}{order.phaseScopes[0].pricingNote ? <p className="mt-2 text-sm">{order.phaseScopes[0].pricingNote}</p> : null}</CardContent></Card>
   return <Card>
-    <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
-      <div className="min-w-0 flex-1"><CardTitle>{tracking ? 'Progress' : multiplePhases ? 'Phases' : 'Delivery scope'}</CardTitle><CardDescription>{tracking ? multiplePhases ? 'Expand a phase for its samples, shipments, timing and holds.' : 'Review your samples, shipments, timing and holds.' : 'Ship each phase in order. The next phase can be requested after all required shipments are sent. Laboratory processing remains in phase order; each phase’s TAT starts when every required sample is received.'}</CardDescription></div>
-      {actions.length === 1 ? <Button variant="outline" onClick={actions[0].run}>{actions[0].label}</Button> : actions.length > 1 ? <ActionMenu><DropdownMenuTrigger asChild><Button variant="outline">Actions</Button></DropdownMenuTrigger><DropdownMenuContent>{actions.map(action => <DropdownMenuItem key={action.label} onSelect={action.run}>{action.label}</DropdownMenuItem>)}</DropdownMenuContent></ActionMenu> : null}
+    <CardHeader className="flex flex-row items-start justify-between gap-3">
+      <div className="min-w-0 flex-1"><CardTitle>{tracking ? 'Progress' : multiplePhases ? 'Phases' : 'Delivery scope'}</CardTitle><CardDescription>{tracking ? multiplePhases ? 'Expand a phase for its samples, shipments and timing.' : 'Review your samples, shipments and timing.' : 'Ship each phase in order. The next phase can be requested after all required shipments are sent. Laboratory processing remains in phase order; each phase’s TAT starts when every required sample is received.'}</CardDescription></div>
+      <LabJobPhaseActions id={`phase-progress-actions-${order.id}`} actions={actions} disabled={tracking?.disabled} compact={Boolean(tracking)} />
     </CardHeader>
     <CardContent className="space-y-4" aria-busy={query.isFetching}>
       {query.isLoading ? <p role="status">{tracking ? 'Loading progress…' : 'Loading phases…'}</p> : null}
       {query.error ? <Alert variant="destructive"><AlertDescription>{getOrderErrorMessage(query.error, tracking ? 'Progress could not be loaded.' : 'Phases could not be loaded.')} <Button variant="outline" onClick={() => void query.refetch()}>Retry</Button></AlertDescription></Alert> : null}
       {plan && !tracking ? <p className="text-sm text-muted-foreground">{plan.sampleCount} samples · Plan revision {plan.revision}{accepted ? ` · ${money(plan.acceptedSubtotal)} accepted subtotal` : ''}</p> : null}
-      {plan && tracking ? <LabJobPhaseList order={order} plan={plan} tracking={tracking} canCancel={Boolean(!internal && canManage && accepted && !closed)} onCancel={phase => setReason({ title: multiplePhases ? `Request cancellation of ${phase.name}` : 'Request cancellation of sample work', description: 'Phaeno reviews this request. Eligibility closes when the first required tube is physically received. Any billing adjustment is reviewed separately.', path: `${phase.id}/cancellation`, input: { revision: plan.revision }, internal: false, variant: 'destructive' })} /> : plan?.phases.map(phase => <article key={phase.id} className="space-y-3 rounded-md border p-4">
+      {plan && tracking ? <LabJobPhaseList order={order} plan={plan} tracking={tracking} canCancel={canCancel} onCancel={onCancel} singlePhaseActionsInHeader={Boolean(singleTrackingPhase)} /> : plan?.phases.map(phase => <article key={phase.id} className="space-y-3 rounded-md border p-4">
         <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-semibold">{(order.phaseCount ?? 1) > 1 ? `${phase.position}. ${phase.name}` : 'Order delivery'}</h3><p className="text-sm">{phase.sampleCount} samples · {humanizeStatus(phase.lifecycle)}{phase.cancellationPending ? ' · Cancellation requested' : ''}</p></div>
           {!internal && canManage && accepted && !closed && phase.cancellationEligible && !phase.cancellationPending ? <ActionMenu keepSingleActionInMenu><DropdownMenuTrigger asChild><Button variant="outline">Actions</Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-max min-w-44 max-w-[calc(100vw-2rem)]"><DropdownMenuItem variant="destructive" onSelect={() => setReason({ title: multiplePhases ? `Request cancellation of ${phase.name}` : 'Request cancellation of sample work', description: 'Phaeno reviews this request. Eligibility closes when the first required tube is physically received. Any billing adjustment is reviewed separately.', path: `${phase.id}/cancellation`, input: { revision: plan.revision }, internal: false, variant: 'destructive' })}>Request cancellation</DropdownMenuItem></DropdownMenuContent></ActionMenu> : null}
         </div>
@@ -75,7 +84,7 @@ export function LabPhasesPanel({ order, internal = false, onSaved, tracking, onM
     </CardContent>
     {editor ? <PhasePlanDialog orderId={order.id} plan={editor} amendment={accepted} onSaved={onSaved} onClose={() => setEditor(null)} /> : null}
     {invoice ? <PhaseInvoiceDialog orderId={order.id} plan={invoice} onSaved={onSaved} onClose={() => setInvoice(null)} /> : null}
-    {reason ? <PhaseReasonDialog orderId={order.id} action={reason} onSaved={onSaved} onClose={() => setReason(null)} /> : null}
+    {reason ? <DialogReturnFocus target={null} fallbackId={tracking && reason.path.endsWith('/cancellation') ? singleTrackingPhase ? `phase-progress-actions-${order.id}` : `phase-summary-${reason.path.split('/')[0]}` : undefined}><PhaseReasonDialog orderId={order.id} action={reason} onSaved={onSaved} onClose={() => setReason(null)} /></DialogReturnFocus> : null}
   </Card>
 }
 

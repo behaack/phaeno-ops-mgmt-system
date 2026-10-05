@@ -10,7 +10,7 @@ public sealed partial class LabServiceOrdersController
     {
         var snapshot = await dbContext.CommercialLabAuthorizations.AsNoTracking().Where(a => a.CommercialOrderId == orderId)
             .Select(a => a.AuthorizationSnapshotJson).SingleOrDefaultAsync(token);
-        return snapshot is null ? [] : System.Text.Json.JsonSerializer.Deserialize<PSeq.Operations.Commercial.LabOperations.Application.AuthorizeLabWorkCommand>(snapshot, JsonSerializerOptions)!
+        return snapshot is null ? [] : System.Text.Json.JsonSerializer.Deserialize<PSeq.Operations.Commercial.LabOperations.Application.AuthorizeLabWorkCommand>(snapshot, AuthorizationSnapshotOptions)!
             .Specimens.Select(s => s.SubmittedSpecimenId).ToList();
     }
 

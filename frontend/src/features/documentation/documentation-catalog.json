@@ -542,7 +542,7 @@
       "title": "Request laboratory services",
       "summary": "Accept pricing, request phase kits, wait for dispatch before recording receipt, prepare and send samples, and follow Progress and results.",
       "order": 30,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-05",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -575,7 +575,7 @@
       "title": "Prepare and ship samples",
       "summary": "Request phase kits, confirm receipt, pair samples and tubes, pack and record shipments, and follow each phase.",
       "order": 35,
-      "reviewedAt": "2026-10-01",
+      "reviewedAt": "2026-10-05",
       "navigationGroup": "laboratory-work",
       "contentType": "guide",
       "topicIds": [
@@ -1645,7 +1645,7 @@
       "title": "Service workflows, protocol control, and execution",
       "summary": "Configure service, reagent, and master-mix workflows; record controlled Lab steps and material use.",
       "order": 54,
-      "reviewedAt": "2026-10-04",
+      "reviewedAt": "2026-10-05",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1680,7 +1680,7 @@
       "title": "Materials and equipment",
       "summary": "Receive purchased lots, configure Phaeno reagent products and manufacture their lots, qualify stock, and track consumption and storage.",
       "order": 55,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-05",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1711,9 +1711,9 @@
       "slug": "lab-libraries-batches-sequencing",
       "parentSlug": "lab-operations",
       "title": "Libraries, batches, and sequencing",
-      "summary": "Track barcoded library and sequencing tubes, actual aliquots, remaining material, QC, sendout manifests and custody.",
+      "summary": "Track library tubes and aliquots, ship vendor sequencing batches, record ETA and final outcomes with library exceptions, and retain external storage references.",
       "order": 56,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-05",
       "navigationGroup": "laboratory-operations",
       "contentType": "guide",
       "topicIds": [
@@ -1724,7 +1724,10 @@
       ],
       "taskKeywords": [
         "Libraries, batches, and sequencing",
-        "lab libraries batches sequencing"
+        "lab libraries batches sequencing",
+        "vendor sequencing shipment tracking ETA",
+        "batch success failure library exceptions",
+        "external result storage references"
       ],
       "aliases": [
         "QC",
@@ -1746,7 +1749,7 @@
       "title": "Exceptions, rework, and cancellation",
       "summary": "Classify exceptions, preserve rework history, and respond safely to cancellation requests.",
       "order": 57,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-05",
       "navigationGroup": "laboratory-operations",
       "contentType": "troubleshooting",
       "topicIds": [
@@ -1881,7 +1884,7 @@
       "title": "Use Partner Lab services",
       "summary": "Accept pricing, request phase kits, wait for dispatch before recording receipt, prepare and send samples, and follow Progress and results.",
       "order": 25,
-      "reviewedAt": "2026-10-03",
+      "reviewedAt": "2026-10-05",
       "navigationGroup": "partner-work",
       "contentType": "guide",
       "topicIds": [

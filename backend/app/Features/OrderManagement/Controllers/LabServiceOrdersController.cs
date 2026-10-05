@@ -4,6 +4,7 @@ using System.Data;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -39,6 +40,8 @@ public sealed partial class LabServiceOrdersController(
     ILogger<CompletionTrackedArchiveResult> archiveDownloadLogger) : ControllerBase
 {
     private static readonly JsonSerializerOptions JsonSerializerOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions AuthorizationSnapshotOptions = new(JsonSerializerDefaults.Web)
+    { Converters = { new JsonStringEnumConverter() } };
     private const string StandardMaterialType = "extracted_rna";
     private const string StandardQuantityUnit = "tube";
 
@@ -803,7 +806,7 @@ public sealed partial class LabServiceOrdersController(
                 if ((order.TubeUsePolicyKey != "run_one_with_failure_fallback" && order.TubeUsePolicyKey != "run_authorized_with_failure_fallback") || order.TubeUsePolicyVersion != 1)
                     throw Conflict("tube_policy_unsupported", "Review the unsupported tube-use instruction with Phaeno before authorizing work.");
                 var existingAuthorization = await dbContext.CommercialLabAuthorizations.SingleOrDefaultAsync(item => item.CommercialOrderId == order.Id, operationCancellationToken);
-                var originalCommand = existingAuthorization is null ? null : JsonSerializer.Deserialize<AuthorizeLabWorkCommand>(existingAuthorization.AuthorizationSnapshotJson, JsonSerializerOptions);
+                var originalCommand = existingAuthorization is null ? null : JsonSerializer.Deserialize<AuthorizeLabWorkCommand>(existingAuthorization.AuthorizationSnapshotJson, AuthorizationSnapshotOptions);
                 var authorizedIds = originalCommand?.Specimens.Select(s => s.SubmittedSpecimenId).ToHashSet() ?? [];
                 var newSamples = order.Samples.Where(s => !authorizedIds.Contains(s.Id) && order.RequiresPreparation(s.LabJobPhaseId)).ToList();
                 if (existingAuthorization is not null && (preparationPhase is null && !order.HasPendingChangeRoster || originalCommand is null || newSamples.Count == 0))
@@ -869,12 +872,12 @@ public sealed partial class LabServiceOrdersController(
                         existingAuthorization.AuthorizationVersion, command.AuthorizationVersion,
                         acceptedAddition || preparationPhase is null ? "accepted_additional_scope" : "phase_preparation", command), operationCancellationToken);
                     authorization = existingAuthorization;
-                    authorization.RecordAmendment(command.AuthorizationVersion, commandId, JsonSerializer.Serialize(command, JsonSerializerOptions));
+                    authorization.RecordAmendment(command.AuthorizationVersion, commandId, JsonSerializer.Serialize(command, AuthorizationSnapshotOptions));
                 }
                 else
                 {
                     authorization = new CommercialLabAuthorization(authorizationId, order.Id, order.OrganizationId, 1,
-                        commandId, JsonSerializer.Serialize(command, JsonSerializerOptions));
+                        commandId, JsonSerializer.Serialize(command, AuthorizationSnapshotOptions));
                     dbContext.CommercialLabAuthorizations.Add(authorization);
                     acknowledgment = await labOperationsProvider.AuthorizeWorkAsync(command, operationCancellationToken);
                 }

@@ -20,9 +20,9 @@ The [master-mix step assembly contract](plans/MASTER-MIX-PREPARATION-PLAN.md#ass
 | --- | ---: | ---: | ---: |
 | `public` | 1 | 2 | 0 |
 | `commercial_ops` | 147 | 2403 | 390 |
-| `lab_ops` | 79 | 971 | 158 |
+| `lab_ops` | 82 | 1017 | 166 |
 | `website` | 5 | 51 | 4 |
-| **Total** | **232** | **3427** | **552** |
+| **Total** | **235** | **3473** | **560** |
 
 ## `public` schema
 
@@ -3257,6 +3257,34 @@ erDiagram
 
 ```mermaid
 erDiagram
+    lab_supplier_shipment_addresses {
+        uuid id PK "not null"
+        character_varying_200 address_line1 "not null"
+        character_varying_200 address_line2 "nullable"
+        character_varying_150 city "not null"
+        character_varying_2 country_code "not null"
+        timestamp_with_time_zone created_at "not null"
+        uuid created_by_user_id "nullable"
+        character_varying_500 instructions "nullable"
+        boolean is_active "not null"
+        character_varying_100 label "not null"
+        character_varying_100 normalized_label UK "not null"
+        character_varying_50 phone "nullable"
+        character_varying_40 postal_code "nullable"
+        character_varying_200 recipient "nullable"
+        character_varying_150 region "nullable"
+        uuid supplier_id FK,UK "not null"
+        timestamp_with_time_zone updated_at "not null"
+        uuid updated_by_user_id "nullable"
+        bigint version "not null"
+    }
+    lab_suppliers ||--o{ lab_supplier_shipment_addresses : "supplier_id"
+```
+
+### Domain (1)
+
+```mermaid
+erDiagram
     lab_assembly_commands {
         uuid id PK "not null"
         integer attempt_count "not null"
@@ -3394,6 +3422,13 @@ erDiagram
         uuid user_id "not null"
         integer version "not null"
     }
+    lab_vendor_library_exceptions {
+        uuid id PK "not null"
+        uuid lab_batch_member_id FK,UK "not null"
+        uuid lab_ngs_sendout_id FK,UK "not null"
+        character_varying_50 outcome "not null"
+        character_varying_4000 reason "not null"
+    }
     lab_assembly_jobs ||--o{ lab_assembly_commands : "lab_assembly_job_id"
     lab_assembly_jobs ||--o{ lab_assembly_events : "lab_assembly_job_id"
     lab_analysis_runs o|--o{ lab_assembly_jobs : "lab_analysis_run_id"
@@ -3418,6 +3453,8 @@ erDiagram
     lab_scientific_files o|--o{ lab_scientific_uploads : "completed_file_id"
     lab_specimens ||--o{ lab_scientific_uploads : "lab_specimen_id"
     lab_work_orders ||--o{ lab_scientific_uploads : "lab_work_order_id"
+    lab_batch_members ||--o{ lab_vendor_library_exceptions : "lab_batch_member_id"
+    lab_ngs_sendouts ||--o{ lab_vendor_library_exceptions : "lab_ngs_sendout_id"
 ```
 
 ### Domain (1) (1) (1)
@@ -3762,6 +3799,16 @@ erDiagram
         uuid updated_by_user_id "nullable"
         bigint version "not null"
     }
+    lab_vendor_result_references {
+        uuid id PK "not null"
+        uuid lab_batch_member_id FK "nullable"
+        uuid lab_ngs_sendout_id FK "not null"
+        character_varying_255 label "not null"
+        character_varying_4000 notes "nullable"
+        timestamp_with_time_zone recorded_at_utc "not null"
+        uuid recorded_by_user_id "not null"
+        character_varying_2000 storage_reference "not null"
+    }
     lab_work_timing_changes {
         uuid id PK "not null"
         character_varying_2000 customer_safe_note "nullable"
@@ -3776,6 +3823,8 @@ erDiagram
     }
     lab_business_calendars ||--o{ lab_timing_policies : "lab_business_calendar_id"
     lab_service_workflow_versions ||--o{ lab_timing_policies : "lab_service_workflow_version_id"
+    lab_batch_members o|--o{ lab_vendor_result_references : "lab_batch_member_id"
+    lab_ngs_sendouts ||--o{ lab_vendor_result_references : "lab_ngs_sendout_id"
     lab_work_orders ||--o{ lab_work_timing_changes : "lab_work_order_id"
     order_notifications o|--o{ lab_work_timing_changes : "notification_id"
     users ||--o{ lab_work_timing_changes : "timing_changed_by_user_id"
@@ -4147,18 +4196,32 @@ erDiagram
     }
     lab_ngs_sendouts {
         uuid id PK "not null"
+        character_varying_255 carrier "nullable"
         timestamp_with_time_zone created_at "not null"
         uuid created_by_user_id "nullable"
+        character_varying_2000 destination "nullable"
         timestamp_with_time_zone expected_completion_at_utc "nullable"
         uuid lab_operational_batch_id FK,UK "not null"
         jsonb manifest_json "not null"
+        character_varying_50 outcome "nullable"
+        timestamp_with_time_zone outcome_at_utc "nullable"
+        character_varying_4000 outcome_note "nullable"
         character_varying_255 provider_name "not null"
         timestamp_with_time_zone provider_received_at_utc "nullable"
         character_varying_255 provider_reference "nullable"
+        timestamp_with_time_zone results_received_at_utc "nullable"
+        timestamp_with_time_zone sequencing_started_at_utc "nullable"
         timestamp_with_time_zone shipped_at_utc "nullable"
         character_varying_50 status "not null"
+        character_varying_255 tracking_reference "nullable"
         timestamp_with_time_zone updated_at "not null"
         uuid updated_by_user_id "nullable"
+        uuid vendor_product_id FK "nullable"
+        character_varying_100 vendor_product_name "nullable"
+        uuid vendor_shipment_address_id FK "nullable"
+        character_varying_100 vendor_shipment_address_label "nullable"
+        bigint vendor_shipment_address_version "nullable"
+        uuid vendor_supplier_id FK "nullable"
         bigint version "not null"
     }
     lab_operational_batches {
@@ -4276,6 +4339,9 @@ erDiagram
     lab_protocol_executions ||--o{ lab_libraries : "preparation_execution_id"
     lab_containers ||--o{ lab_libraries : "source_container_id"
     lab_operational_batches ||--o{ lab_ngs_sendouts : "lab_operational_batch_id"
+    lab_supplier_products o|--o{ lab_ngs_sendouts : "vendor_product_id"
+    lab_supplier_shipment_addresses o|--o{ lab_ngs_sendouts : "vendor_shipment_address_id"
+    lab_suppliers o|--o{ lab_ngs_sendouts : "vendor_supplier_id"
     lab_protocol_versions ||--o{ lab_protocol_executions : "lab_protocol_version_id"
     lab_service_workflow_stages o|--o{ lab_protocol_executions : "lab_service_workflow_stage_id"
     lab_specimen_attempts o|--o{ lab_protocol_executions : "lab_specimen_attempt_id"

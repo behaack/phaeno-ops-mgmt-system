@@ -63,5 +63,15 @@ public sealed class ControllerRouteTests
             .ToList();
 
         Assert.NotEmpty(endpoints);
+        var actions = endpoints.Select(endpoint => endpoint.Metadata.GetMetadata<ControllerActionDescriptor>())
+            .Where(action => action is not null).ToArray();
+        Assert.DoesNotContain(actions, action => action!.ControllerName == "LabServiceOrders"
+            && action.ActionName is "CustomerSpecimenHolds" or "RequestSpecimenHold");
+        Assert.Contains(actions, action => action!.ControllerName == "LabOperations" && action.ActionName == "ReadCustomerHolds");
+        foreach (var name in new[] { "SequencingVendors", "UpdateVendorShipment", "AddVendorResultReference", "FinalizeVendorOutcome" })
+            Assert.Contains(actions, action => action!.ControllerName == "LabOperations" && action.ActionName == name);
+        foreach (var name in new[] { "CreateAddress", "UpdateAddress" })
+            Assert.Contains(actions, action => action!.ControllerName == "LabSupplierCatalog" && action.ActionName == name);
+        Assert.Contains(actions, action => action!.ControllerName == "LabOperations" && action.ActionName == "ResolveCustomerHold");
     }
 }

@@ -23,14 +23,14 @@ function fill(label: RegExp | string, value: string) { fireEvent.change(screen.g
 const product: SupplierProduct = { id: '77777777-7777-4777-8777-777777777771', supplierId: '88888888-8888-4888-8888-888888888881', productNumber: 'PRODUCT-20', description: 'Insulated shipper', kind: 'ShippingContainer', tubeCapacity: 20, defaultQuantityUnit: 'each', productTypeId: 'shipper-type', productTypeName: 'Shipping Container', productTypeIsActive: true, isActive: true, version: 1 }
 const selectedContainerProduct: SupplierProduct = { ...product, id: '77777777-7777-4777-8777-777777777775', supplierId: '88888888-8888-4888-8888-888888888885', productNumber: '000-20', description: 'Approved 20-tube container', kind: 'ShippingContainer', productTypeId: shippingContainerProductTypeId, productTypeName: 'Shipping Container', productTypeIsActive: true }
 const suppliers: CatalogSupplier[] = [
-  { id: '88888888-8888-4888-8888-888888888881', name: 'Synthetic supplier', isActive: true, version: 1, products: [product,
+  { id: '88888888-8888-4888-8888-888888888881', name: 'Synthetic supplier', isActive: true, version: 1, shipmentAddresses: [], products: [product,
     { ...product, id: '77777777-7777-4777-8777-777777777772', productNumber: 'TUBE', kind: 'Tube' },
     { ...product, id: '77777777-7777-4777-8777-777777777774', productNumber: 'LABEL', kind: 'Other', productTypeName: 'Labels' },
     { ...product, id: 'retired', productNumber: 'RETIRED', isActive: false },
     { ...product, id: 'inactive-type', productNumber: 'INACTIVE-TYPE', productTypeIsActive: false }] },
-  { id: '88888888-8888-4888-8888-888888888882', name: 'Other supplier', isActive: true, version: 1, products: [{ ...product, id: '77777777-7777-4777-8777-777777777773', supplierId: '88888888-8888-4888-8888-888888888882', productNumber: 'OTHER-10' }] },
-  { id: 'inactive', name: 'Inactive supplier', isActive: false, version: 1, products: [product] },
-  { id: selectedContainerProduct.supplierId, name: 'Containers R US', isInternalProducer: false, isActive: true, version: 1, products: [selectedContainerProduct] },
+  { id: '88888888-8888-4888-8888-888888888882', name: 'Other supplier', isActive: true, version: 1, shipmentAddresses: [], products: [{ ...product, id: '77777777-7777-4777-8777-777777777773', supplierId: '88888888-8888-4888-8888-888888888882', productNumber: 'OTHER-10' }] },
+  { id: 'inactive', name: 'Inactive supplier', isActive: false, version: 1, shipmentAddresses: [], products: [product] },
+  { id: selectedContainerProduct.supplierId, name: 'Containers R US', isInternalProducer: false, isActive: true, version: 1, shipmentAddresses: [], products: [selectedContainerProduct] },
 ]
 const definition = { ...baseDefinition, kitContents: [{ supplierProductId: product.id, supplierId: product.supplierId, supplierName: 'Synthetic supplier', productNumber: product.productNumber, productDescription: product.description, productTypeName: product.productTypeName, kind: product.kind, quantity: 1 }] }
 const named = { ...definition, shippingContainerProductId: selectedContainerProduct.id }

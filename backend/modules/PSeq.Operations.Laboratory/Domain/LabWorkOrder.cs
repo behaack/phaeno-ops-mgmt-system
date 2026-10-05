@@ -211,6 +211,24 @@ public sealed class LabWorkOrder : IAudit, IConcurrency
         ProjectionVersion++;
     }
 
+    public void RecordSendoutProgress(LabNgsSendoutStatus sendoutStatus)
+    {
+        var milestone = sendoutStatus switch
+        {
+            LabNgsSendoutStatus.Shipped or LabNgsSendoutStatus.ReceivedByProvider or LabNgsSendoutStatus.Sequencing
+                => LabWorkOrderStatus.AwaitingExternalSequencing,
+            LabNgsSendoutStatus.ResultsReceived => LabWorkOrderStatus.DataProcessing,
+            _ => throw new ArgumentOutOfRangeException(nameof(sendoutStatus))
+        };
+        // Batches within a Job can progress independently. A later batch must not
+        // undo earlier processing/review or clear a hold while recording receipt.
+        if (Status == milestone || Status is LabWorkOrderStatus.DataProcessing
+            or LabWorkOrderStatus.ScientificReview or LabWorkOrderStatus.ReadyForRelease or LabWorkOrderStatus.OnHold)
+            AdvanceProjectionVersion();
+        else
+            RecordMilestone(milestone);
+    }
+
     public void RefreshAcceptedSpecimenTargets()
     {
         if (TurnaroundPolicyKey == FullReceiptBusinessDayPolicy) return;

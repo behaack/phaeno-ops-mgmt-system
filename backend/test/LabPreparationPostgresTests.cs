@@ -103,7 +103,9 @@ public partial class SampleShippingPostgresTests
         {
             var createRequest = new CreateLabPreparationRequest(Guid.NewGuid(), null, format.Id, wv.Id, "TEST ONLY mixed tray notes");
             var batch = Json(await lab.CreatePreparation(createRequest, default)); var id = batch.GetProperty("id").GetGuid(); prepIds.Add(id);
-            Assert.StartsWith(workflow.ServiceKey + "-", batch.GetProperty("name").GetString());
+            Assert.StartsWith("TEST-ONLY-preparation-", batch.GetProperty("name").GetString());
+            Assert.Equal(workflow.Name, batch.GetProperty("serviceName").GetString());
+            Assert.StartsWith(workflow.Name + " · Prep ", batch.GetProperty("displayName").GetString());
             Assert.Equal("TEST ONLY mixed tray notes", batch.GetProperty("notes").GetString());
             scope.ClearTrackedState();
             var replay = Json(await lab.CreatePreparation(createRequest, default));

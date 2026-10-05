@@ -5,7 +5,7 @@ import type { ProtocolDefinition } from '#/features/lab-operations/protocol-defi
 type Envelope<T> = { data: T }
 export type TrayLayout = { name: string; rows: number; columns: number; labels: 'grid' | 'numeric'; unavailable: string[] }
 export type TrayFormat = { id: string; version: number; isActive: boolean; layout: TrayLayout }
-export type PreparationSummary = { id: string; name: string; status: string; version: number; startedAtUtc: string | null; completedAtUtc: string | null }
+export type PreparationSummary = { id: string; name: string; displayName?: string; serviceName?: string; status: string; version: number; startedAtUtc: string | null; completedAtUtc: string | null }
 export type PreparationIndex = { formats: TrayFormat[]; batches: PreparationSummary[]; workflows: LabServiceWorkflow[]; compatibleWorkflowVersionIds: string[]; canOperate: boolean; canConfigure: boolean }
 export type PreparationStage = { id: string; name: string; sequence: number; requirement: string; definition: ProtocolDefinition }
 export type PreparationExecution = { id: string; stageId: string; status: string; evidence: { records: (LabExecutionStepRecord & { preparationRecordId?: string })[] }; blockers: string[]; stepPrerequisites?: Record<string, string[]> }
@@ -15,7 +15,7 @@ export type PreparationMember = { id: string; position: string; barcode: string;
   sourceMaterial?: PreparationSourceMaterial | null; libraryTube?: PreparationLibraryTube | null;
   customerSampleId?: string | null; biologicalSource?: string | null; safetyInformation?: string | null;
   stageSkips: { stageId: string; reason: string }[]; executions: PreparationExecution[];
-  output: { id: string; barcode: string; quantity: number; quantityUnit: string; confirmed: boolean } | null;
+  output: { id: string; barcode: string; barcodeSource?: string; quantityText?: string | null; quantity: number; quantityUnit: string; confirmed: boolean } | null;
   availableOutputs?: { id: string; barcode: string; quantity: number; quantityUnit: string }[];
   library: { id: string; libraryKey: string; status: string; sequencing: { id: string; batchNumber: string; name: string } | null } | null }
 export type PreparationDetail = PreparationSummary & { recorders?: { id: string; name: string }[]; masterMixUses?: { preparationId: string; labPreparationRecordId: string; fieldKey: string; quantity: number; quantityText: string; quantityUnit: string; recordedAtUtc: string; voidedAtUtc: string | null; voidedByUserId: string | null; correctionAction: 'VerifiedVoid' | 'Discrepancy' | null; correctionReason: string | null; workflowName: string; workflowRevision: number }[]; inlineResourceFields?: boolean; configuredMaterials?: boolean; automaticSkipAvailable?: boolean; automaticSpecimenReferences?: boolean; optionalQcReports?: boolean; optionalPreparationReports?: boolean; bulkOutputs?: boolean; trayBarcode?: string | null; trayConfirmed?: boolean; notes?: string | null; layout: TrayLayout; labServiceWorkflowVersionId: string; stages: PreparationStage[]; members: PreparationMember[]; canOperate: boolean; canCorrect: boolean; roles: string[];

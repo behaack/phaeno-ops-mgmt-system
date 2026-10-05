@@ -1,5 +1,34 @@
 # On-demand transportation kits and phase shipping
 
+## Graphical shipping progress — October 5, 2026
+
+The Owner requested the sequencing send-out tracker's connected stage icons and
+completion checks for Customer shipping. Customer/Partner administrators and
+members need to recognize the current phase's progress at a glance. Reuse one
+shared read-only WorkflowProgress presentation for both workflows, while each
+feature retains its own stage definitions and completion rules.
+
+The four existing shipping stages use distinct icons, connected circles,
+completion-check badges, an explicit Complete / Next step / Upcoming label and
+the current phase's completed-step count. Four stages display horizontally at
+768 CSS pixels and above, vertically below that breakpoint. Keep receipt/partial
+dispatch/partial receipt and existing-stock notes beside the relevant stage. Keep
+the exact phaseShippingProgress gates, current phase selection, single/multiple
+phase wording, next-step controls, permission/cancellation guards, modal behavior
+and Actions menus. The icons remain a status summary rather than new commands.
+Accepting a Job still does not request kits, allocation does not establish physical
+receipt, and partial sample dispatch does not complete Send.
+
+Acceptance: shared visual treatment with sequencing, visible checks only for
+completed steps, exactly one accessible current step while work remains, preserved
+next-action behavior, readable phone layouts without horizontal overflow and
+semantic light/dark theme tokens. Update the affected Customer/Partner guides and
+living verification plans. Automated suites remain request-only; no saved
+operational facts, API, model, migration, authorization or deployment change.
+
+Completed presentation verification, including the later smaller circles/icons,
+is recorded in the [graphical progress review](../testing/runs/2026-10-05-graphical-workflow-progress.md).
+
 Owner-authorized implementation, October 1, 2026. Applies to every Customer or
 Partner Lab Job, including one-phase Jobs. No Git publication or deployment.
 

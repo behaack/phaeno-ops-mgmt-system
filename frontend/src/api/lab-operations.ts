@@ -1,3 +1,4 @@
+import type { SequencingTubeWorkspace } from './lab-material-transfers'
 import axios from 'axios'
 
 import { api } from './client'
@@ -28,7 +29,7 @@ export type LabEquipment = { id: string; assetCode: string; name: string; equipm
 
 export const retireLabEquipment = (equipmentId: string, input: { reason: string; version: number }) =>
   post<LabEquipment>(`/platform/lab-operations/equipment/${equipmentId}/retire`, input)
-export type LabBatch = { id: string; batchNumber: string; name: string; batchType: string; status: string; startedAtUtc: string | null; completedAtUtc: string | null; notes: string | null; memberCount: number; sendoutId: string | null; sendoutStatus: string | null; sendoutVersion: number | null; version: number }
+export type LabBatch = { id: string; batchNumber: string; name: string; batchType: string; status: string; startedAtUtc: string | null; completedAtUtc: string | null; notes: string | null; memberCount: number; sendoutId: string | null; sendoutStatus: string | null; sendoutVersion: number | null; version: number; libraryExceptionCount: number; vendorOutcome: 'Success' | 'Failure' | null; providerName: string | null; trackingReference: string | null; expectedCompletionAtUtc: string | null }
 export type LabOperationsDashboard = { workOrders: LabWorkOrderSummary[]; protocols: LabProtocol[]; serviceWorkflows: LabServiceWorkflow[]; marketedServices: LabMarketedService[]; materialLots: LabMaterialLot[]; materialDefinitions: LabMaterialDefinition[]; suppliers: LabSupplier[]; storageLocations: LabStorageLocation[]; equipment: LabEquipment[]; batches: LabBatch[]; roleAssignments: LabRoleAssignment[] }
 export type CreateLabMaterialLotInput = {
   supplierProductId?: string | null
@@ -184,8 +185,13 @@ export const recordLabLibraryQc = (id: string, input: object) => post<LabLibrary
 export const createLabBatch = (input: { name?: string | null; notes?: string | null }) => post<LabBatch>('/platform/lab-operations/batches', input)
 export const addLabBatchMember = (id: string, input: object) => post<LabBatch>(`/platform/lab-operations/batches/${id}/members`, input)
 export const transitionLabBatch = (id: string, input: { action: 'start' | 'complete' | 'return-to-draft'; version: number; occurredAtUtc?: string; reason?: string }) => post<LabBatch>(`/platform/lab-operations/batches/${id}/transition`, input)
-export const createLabSendout = (id: string, input: object) => post<LabBatch>(`/platform/lab-operations/batches/${id}/sendout`, input)
-export const transitionLabSendout = (id: string, input: object) => post<LabBatch>(`/platform/lab-operations/sendouts/${id}/transition`, input)
+export type SequencingVendor = { id: string; name: string; version: number; products: { id: string; productNumber: string; description: string; version: number }[]; shipmentAddresses: import('./supplier-catalog').SupplierShipmentAddress[] }
+export const getSequencingVendors = () => get<SequencingVendor[]>('/platform/lab-operations/sequencing-vendors')
+export const createLabSendout = (id: string, input: { vendorSupplierId: string; vendorProductId: string; vendorShipmentAddressId: string; vendorSupplierVersion: number; vendorProductVersion: number; vendorShipmentAddressVersion: number; batchVersion: number; manifestJson: string; carrier: string | null; trackingReference: string | null; providerReference: string | null; expectedCompletionAtUtc: string | null }) => post<LabBatch>(`/platform/lab-operations/batches/${id}/sendout`, input)
+export const transitionLabSendout = (id: string, input: { status: string; version: number; occurredAtUtc: string; evidence: string; providerReference: string | null; expectedCompletionAtUtc?: string | null }) => post<LabBatch>(`/platform/lab-operations/sendouts/${id}/transition`, input)
+export const updateVendorShipment = (id: string, input: { version: number; vendorShipmentAddressId?: string; vendorShipmentAddressVersion?: number; carrier: string | null; trackingReference: string | null; providerReference: string | null; expectedCompletionAtUtc: string | null; evidence: string }) => post<LabBatch>(`/platform/lab-operations/sendouts/${id}/shipment`, input)
+export const finalizeVendorOutcome = (id: string, input: { requestId: string; version: number; outcome: string; occurredAtUtc: string; evidence: string; exceptions: { memberId: string; outcome: string; reason: string }[] }) => post<LabBatch>(`/platform/lab-operations/sendouts/${id}/outcome`, input)
+export const addVendorResultReference = (id: string, input: { requestId: string; version: number; memberId: string | null; label: string; storageReference: string; notes: string | null }) => post<LabBatch>(`/platform/lab-operations/sendouts/${id}/result-references`, input)
 export const recordLabCustody = (id: string, input: object) => post<LabBatch>(`/platform/lab-operations/sendouts/${id}/custody-events`, input)
 export const createLabException = (workId: string, input: object) => post<LabException>(`/platform/lab-operations/work-orders/${workId}/exceptions`, input)
 export const resolveLabException = (id: string, input: object) => post<LabException>(`/platform/lab-operations/exceptions/${id}/resolve`, input)
@@ -241,3 +247,6 @@ export const acceptRemainingLabTubes = (workId: string, shipmentId: string, inpu
 export function labWorkOrderLabel(work: LabWorkOrderSummary): string {
   return work.displayName?.trim() || work.commercialOrderNumber?.trim() || `WO-${work.id}`
 }
+
+export type LabBatchDetail = { batch: LabBatch; tubes: SequencingTubeWorkspace; sendout: { id: string; vendorSupplierId: string | null; vendorProductId: string | null; vendorShipmentAddressId: string | null; vendorShipmentAddressVersion: number | null; vendorProductName: string | null; vendorShipmentAddressLabel: string | null; providerName: string; providerReference: string | null; manifestJson: string; expectedCompletionAtUtc: string | null; shippedAtUtc: string | null; providerReceivedAtUtc: string | null; destination: string | null; carrier: string | null; trackingReference: string | null; sequencingStartedAtUtc: string | null; resultsReceivedAtUtc: string | null; outcome: 'Success' | 'Failure' | null; outcomeAtUtc: string | null; outcomeNote: string | null } | null; resultReferences: { id: string; memberId: string | null; label: string; storageReference: string; notes: string | null; recordedAtUtc: string; recordedByUserId: string; recordedBy: string }[]; libraryExceptions: { memberId: string; outcome: 'Success' | 'Failure'; reason: string }[]; custody: { id: string; eventCode: string; locationOrParty: string; labContainerId: string | null; detailsJson: string; occurredAtUtc: string; recordedByUserId: string; recordedBy: string }[] }
+export const getLabBatchDetail = (id: string) => get<LabBatchDetail>(`/platform/lab-operations/batches/${id}`)

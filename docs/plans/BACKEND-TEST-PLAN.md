@@ -1,5 +1,57 @@
 # Backend Test Plan
 
+## Independent batch send-out progression — October 5, 2026
+
+`LabSendoutProgressTests` covers forward Job milestones, one projection version
+per stage, and preservation of DataProcessing, ScientificReview, ReadyForRelease
+and OnHold when another batch records progress. The commercial handoff PostgreSQL
+journey now starts vendor dispatch with the shared Job already in DataProcessing
+and checks that each stage preserves it and advances the projection version.
+Generic milestone and repeat-run authorization remain unchanged. Source compiles;
+these automated regressions are not executed. The real local HTTP 500 and successful
+six-library retry are recorded in [the walkthrough](../testing/runs/2026-10-05-sequencing-sendout-walkthrough.md).
+
+## Vendor sequencing results — October 5, 2026
+
+Domain coverage in `LabVendorResultsDomainTests` covers ordered stages, receipt without inferred success, final-outcome immutability/time, dispatched destination, permanent reference constraints and library identity. The commercial handoff controller regression now covers ResultsReceived, final batch outcome with a library exception, foreign-member rejection and unchanged/changed outcome/reference replays. Existing completed sendout fixtures advance through the valid workflow. Customer progress retains Sequencing during results reconciliation. Compilation applies; suites are not executed without a request.
+
+## Customer specimen hold routes suppressed — October 5, 2026
+
+The Customer hold GET/POST implementations remain `NonAction` methods and are
+not registered endpoints. `ControllerRouteTests` now checks their absence while
+Phaeno hold read/decision actions remain registered. Existing domain/controller
+hold tests retain coverage of the preserved implementation and safeguards; their
+direct method calls do not establish HTTP availability. Source is compiled;
+automated execution remains deferred under the request-only rule.
+
+## Customer order authorization snapshot — October 5, 2026
+
+`CustomerOrderReadsCorrectedAuthorizationWithoutChangingItsHistory` covers the
+Customer detail controller reading the string-enum snapshot produced by the
+purchased-service correction. It checks authorized sample identities and retained
+order version, snapshot and authorization version. Both roster readers and new
+authorization writes use the same scoped options. The regression source is
+compiled; automated PostgreSQL execution remains deferred pending a request.
+
+## Customer order authorization snapshot — October 5, 2026
+
+`CustomerOrderReadsCorrectedAuthorizationWithoutChangingItsHistory` covers the
+Customer detail controller reading the string-enum snapshot produced by the
+purchased-service correction. It checks authorized sample identities and retained
+order version, snapshot and authorization version. Both roster readers and new
+authorization writes use the same scoped options. The regression source is
+compiled; automated PostgreSQL execution remains deferred pending a request.
+
+## Sequencing status evidence — October 5, 2026
+
+The PostgreSQL commercial handoff regression now supplies actual event time and
+provider evidence for each sendout status. Authored negative checks reject
+missing/future time, missing evidence and skipped statuses without status-history
+writes. API requires roles, expected version, monotonic actual times and serial
+status updates. Status evidence retains server entry time and operator in custody
+history JSON; existing records are preserved. Solution compilation applies;
+automated PostgreSQL execution is deferred pending a request.
+
 ## Catalog sequencing requirement and tube pairing — October 4, 2026
 
 `SequencingVolumeTests` covers exact volume boundaries, supported units, Catalog service restrictions and immutable pair snapshots. PostgreSQL handoff coverage captures the Catalog version at allocation, rejects below-minimum transfers without changing balances, and proves a later Catalog edit cannot change the existing pair. Obsolete batch-setting regressions are removed. Sources compile; execution remains request-only/deferred.
@@ -2769,3 +2821,39 @@ batch for the retained-sendout rejection case rather than deleting permanent
 history; the application's lineage deletion guard remains intact. Its twelve
 persistence/recovery cases also pass independently. The disposable verification
 database was dropped and verified absent after the full run.
+
+### Sequencing vendor catalog — October 5, 2026
+
+`SequencingVendorCatalogTests.cs` adds domain coverage for vendor/address ownership,
+inactive addresses, physical-product rejection, immutable reviewed snapshots and
+post-dispatch address freezing. Its PostgreSQL reference case covers multiple
+addresses, service activation prerequisites, last-address retirement, stale writes,
+wrong-parent writes and Customer denial. `ControllerRouteTests` registers the
+vendor lookup and address write actions. Commercial handoff fixtures now create
+explicit synthetic catalog selections and validate the version-3 manifest; both
+version-2 and version-3 manifests enforce frozen sequencing-tube custody scope.
+
+The solution builds with zero warnings/errors. Migration
+`20261005182306_SequencingVendorCatalog` is additive and applied only to the verified
+configured local database. Model drift is absent and before/after fingerprints
+match for the existing batches, sendout and demo tubes. Automated execution was
+not requested; these authored cases and connected stale-selection/concurrency
+acceptance remain pending.
+
+## October 5 controlled release verification
+
+The owner separately authorized full tests, commit/push, deployment and the two
+preserving EF migrations under [the hosted release plan](PORTAL-WORKFLOW-RELEASE-20261005-PLAN.md).
+Final results and hosted activation are recorded in [the release receipt](../operations/portal-workflow-release-20261005.md).
+This supersedes request-only execution statements in the earlier local checkpoints;
+physical/scientific/provider and authenticated operator acceptance remain separate.
+
+The complete connected final run passes 1,261 tests with zero failures and two
+intentional environment skips: the Windows linked-directory case and the opt-in
+private-attachment investigation restore scenario. The full Release solution build
+has zero warnings/errors and EF reports no model drift. Both new migrations apply
+to an isolated local verification database, which is dropped and verified absent.
+The 63 focused repair cases also pass. Fixture repairs preserve unique preparation
+identity, actual custody actor, catalog-backed sendouts and immutable JSON values
+across PostgreSQL JSONB formatting. Hosted backup restoration has its own evidence
+in the release receipt; it does not substitute for the opt-in scientific scenario.

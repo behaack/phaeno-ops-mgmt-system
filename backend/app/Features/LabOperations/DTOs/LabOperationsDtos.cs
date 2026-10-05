@@ -78,7 +78,9 @@ public sealed record RetireEquipmentRequest(string Reason, long Version);
 public sealed record LabBatchDto(
     Guid Id, string BatchNumber, string Name, string BatchType, string Status,
     DateTime? StartedAtUtc, DateTime? CompletedAtUtc, string? Notes,
-    int MemberCount, Guid? SendoutId, string? SendoutStatus, long? SendoutVersion, long Version);
+    int MemberCount, Guid? SendoutId, string? SendoutStatus, long? SendoutVersion, long Version,
+    string? VendorOutcome = null, string? ProviderName = null, string? TrackingReference = null,
+    DateTime? ExpectedCompletionAtUtc = null, int LibraryExceptionCount = 0);
 
 public sealed record LabOperationsDashboardDto(
     IReadOnlyList<LabWorkOrderSummaryDto> WorkOrders,
@@ -246,9 +248,21 @@ public sealed record LibraryQcRequest(bool Passed, string ResultsJson, long Vers
 public sealed record CreateBatchRequest(string? Name = null, string? Notes = null);
 public sealed record BatchTransitionRequest(string Action, long Version, DateTime? OccurredAtUtc = null, string? Reason = null);
 public sealed record AddBatchMemberRequest(Guid LabWorkOrderId, Guid LabLibraryId);
-public sealed record CreateSendoutRequest(string ProviderName, string? ProviderReference,
-    string ManifestJson, DateTime? ExpectedCompletionAtUtc);
-public sealed record SendoutTransitionRequest(string Status, long Version);
+public sealed record CreateSendoutRequest(Guid VendorSupplierId, Guid VendorProductId, Guid VendorShipmentAddressId,
+    long VendorSupplierVersion, long VendorProductVersion, long VendorShipmentAddressVersion, string? ProviderReference,
+    string ManifestJson, DateTime? ExpectedCompletionAtUtc, long BatchVersion,
+    string? Carrier = null, string? TrackingReference = null);
+public sealed record SendoutTransitionRequest(string Status, long Version,
+    DateTime? OccurredAtUtc = null, string? Evidence = null, string? ProviderReference = null,
+    DateTime? ExpectedCompletionAtUtc = null);
+public sealed record UpdateVendorShipmentRequest(long Version, string? Carrier,
+    string? TrackingReference, string? ProviderReference, DateTime? ExpectedCompletionAtUtc, string Evidence,
+    Guid? VendorShipmentAddressId = null, long? VendorShipmentAddressVersion = null);
+public sealed record VendorLibraryExceptionRequest(Guid MemberId, string Outcome, string Reason);
+public sealed record FinalizeVendorOutcomeRequest(Guid RequestId, long Version, string Outcome,
+    DateTime OccurredAtUtc, string Evidence, IReadOnlyList<VendorLibraryExceptionRequest> Exceptions);
+public sealed record AddVendorResultReferenceRequest(Guid RequestId, long Version, Guid? MemberId,
+    string Label, string StorageReference, string? Notes);
 public sealed record CustodyEventRequest(Guid? LabContainerId, string EventCode,
     string LocationOrParty, string DetailsJson);
 public sealed record CreateExceptionRequest(Guid? LabSpecimenId, Guid? LabProtocolExecutionId,

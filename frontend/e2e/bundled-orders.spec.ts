@@ -244,7 +244,7 @@ for (const audience of ['customer-lab', 'partner-lab']) {
     await expect(progress).toBeVisible()
     await expect(progress.getByText('1 Received · 1 Library Prep · 1 Results Available', { exact: true })).toBeVisible()
     const names = progress.getByRole('region', { name: 'Samples and shipment progress', exact: true })
-    await expect(names.locator('li > span:first-child')).toHaveText(['Sample 10', 'Sample 2', 'Sample 1'])
+    await expect(names.locator('ul li > span:first-child')).toHaveText(['Sample 10', 'Sample 2', 'Sample 1'])
     await page.getByRole('tab', { name: 'Files and results' }).focus(); await page.keyboard.press('Enter')
     await expect(page.getByText('SIMULATED-sample-1.txt', { exact: true })).toBeVisible()
     await page.getByRole('tab', { name: 'Progress', exact: true }).focus(); await page.keyboard.press('Enter')

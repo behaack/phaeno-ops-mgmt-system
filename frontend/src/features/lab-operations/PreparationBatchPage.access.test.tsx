@@ -27,16 +27,19 @@ const completedHandoff = () => ({ id: 'saved-preparation', name: 'Batch', versio
   stages: [], records: [], roles: [], layout: { name: 'Tray', rows: 1, columns: 2, labels: 'grid', unavailable: [] } })
 
 describe('sequencing handoff availability', () => {
-  it.each([{ batches: [] }, { batches: [{ id: 'locked', status: 'InProgress', name: 'Locked', batchNumber: 'LOCKED' }] }])('disables assignment when no draft batch exists: $batches', async ({ batches }) => {
+  it.each([{ batches: [] }, { batches: [{ id: 'locked', status: 'InProgress', name: 'Locked', batchNumber: 'LOCKED' }] }])('offers contextual batch creation when no draft batch exists: $batches', async ({ batches }) => {
     state.canAccess = true
     state.batch.mockResolvedValue(completedHandoff())
     state.resources.mockResolvedValue({ materialLots: [], equipment: [], batches })
     show()
     const buttons = await screen.findAllByRole('button', { name: 'Add to sequencing batch' })
     await screen.findAllByText(/No draft sequencing batches are available/)
-    buttons.forEach(button => expect(button).toHaveProperty('disabled', true))
+    buttons.forEach(button => expect(button).toHaveProperty('disabled', false))
     expect(screen.getAllByRole('link', { name: 'Open sequencing batches' })).toHaveLength(1)
-    expect(screen.queryByRole('dialog')).toBeNull()
+    fireEvent.click(buttons.at(-1)!)
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByRole('button', { name: 'Create sequencing batch' })).toBeTruthy()
+    expect(within(dialog).getAllByRole('option')).toHaveLength(1)
   })
 
   it('keeps loading disabled, then enables assignment and offers only draft destinations', async () => {

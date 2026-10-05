@@ -79,7 +79,7 @@ public static class TransportationKitDefinitionReadiness
         var activeProducts = await (from product in db.LabSupplierProducts.AsNoTracking()
             join supplier in db.LabSuppliers.AsNoTracking() on product.SupplierId equals supplier.Id
             join type in db.LabProductTypes.AsNoTracking() on product.ProductTypeId equals type.Id
-            where productIds.Contains(product.Id) && product.IsActive && supplier.IsActive && type.IsActive
+            where productIds.Contains(product.Id) && product.ProductTypeId != LabProductType.SequencingServiceId && product.IsActive && supplier.IsActive && type.IsActive
             select new { product.Id, product.ProductTypeId, product.DefaultQuantityUnit, product.TubeCapacity,
                 product.MaximumSampleAmount, product.SampleAmountUnit,
                 supplier.IsInternalProducer, type.KitUse }).ToArrayAsync(ct);

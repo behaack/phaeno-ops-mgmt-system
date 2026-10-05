@@ -1,6 +1,39 @@
 # Customer-requested specimen holds
 
-Status: implementation authorized September 20, 2026; local verification in progress. The owner explicitly approved customer requests, staff-controlled safe pause/resumption, immediate blocking of new work/release, and unchanged charges/retention. See [current gap closure](OPERATIONAL-GAP-CLOSURE-20260920.md). The earlier deferral below is retained as historical planning context, not a current implementation prohibition.
+Status: Customer availability temporarily suppressed by the Product Owner on
+October 5, 2026. Retain the implemented workflow and recorded data for later use.
+The September 20 approval below describes the retained implementation, not
+current Customer availability.
+
+## Temporary suppression — October 5, 2026
+
+The Customer Job workspace hides specimen-hold panels, alerts and pause/resumption
+actions. It makes no Customer hold queries, including when cached hold data exists.
+The Customer GET/POST `lab-service-orders/{orderId}/specimen-holds` actions retain
+their code and route attributes but use MVC `NonAction`, so the routes are not
+registered or exposed as API actions. Phaeno hold reads/decisions, existing hold
+history and execution/release safeguards remain available. No existing hold is
+released or deleted. This shared external Job workspace also serves Partner Lab
+Jobs; their help must match the suppressed shared routes.
+
+Customer/Partner help omits the request/resumption section and workspace control
+references. Phaeno help explains the temporary restriction while retaining guidance
+for existing requests. Registry review dates and the searchable corpus are updated.
+Restoring availability requires explicitly restoring the Customer UI flag, removing
+the two `NonAction` attributes, and restoring the affected help together; it is not
+a runtime setting. No migration, authentication change, Git publishing or deployment.
+
+Acceptance: no Customer hold UI or requests; both routes return 404; ordinary Job
+tracking continues; Phaeno routes remain registered; help does not advertise hidden
+Customer actions. Build/type/lint/help checks apply. Authored route/component
+regressions are compiled but automated execution remains request-only.
+
+Local checkpoint: solution build passed with zero warnings/errors, frontend
+typecheck/scoped lint and whitespace checks passed, and the 56-guide corpus
+checks at `9720a10921ce`. The restarted local API returns 404 for both Customer
+hold routes and 200 for API health. Authenticated Customer rendering remains
+unverified because only the Phaeno browser session is connected. No records were
+changed during these diagnostics. Automated suites were not run.
 
 ## Approved implementation
 

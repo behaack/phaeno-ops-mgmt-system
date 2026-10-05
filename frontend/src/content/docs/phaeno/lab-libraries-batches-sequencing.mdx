@@ -36,11 +36,11 @@ Authorized Phaeno users receive refresh notifications for the assembly attempts 
 
 ## Prepare a library
 
-For tray-based preparation, open **Library prep** and the preparation batch. Select an eligible source tube from its job, then scan its physical barcode into an empty tray position. From a tube's actions, assign its distinct library tray tube using an existing manufacturer barcode or a POMS-generated label. For a manufacturer-barcoded tube, select its manufacturer and scan the printed barcode. The accessioned source tube, library tube and reusable tray each retain their own identity. A new POMS tube is **Label pending** until you print its DataMatrix label, attach it to the physical tube and scan the printed label back. Complete that verification before recording the transfer.
+For tray-based preparation, open **Library prep** and the preparation batch. Lists and headings show the readable service and preparation identity; the saved immutable identifier and physical tray barcode remain separate on the record. Select an eligible source tube from its job, then scan its physical barcode into an empty tray position. From a tube's actions, assign its distinct library tray tube using an existing manufacturer barcode or a POMS-generated label. For a manufacturer-barcoded tube, select its manufacturer and scan the printed barcode. The accessioned source tube, library tube and reusable tray each retain their own identity. A new POMS tube is **Label pending** until you print its DataMatrix label, attach it to the physical tube and scan the printed label back. Complete that verification before recording the transfer.
 
 When the approved step includes **Biological material**, scan both the accessioned source and destination library tube and enter the actual decimal amount pipetted in the configured unit. The two physical tubes must have different printed barcode values so the scans identify the intended source and destination. POMS subtracts that amount from the source and records it in the destination. The form accepts up to 28 fractional places and checks that the resulting source and library-tube balances can be recorded exactly. Select **Material exhausted** only when no usable source material remains; it preserves the actual transferred amount and separately records any adjustment to the source balance. Exhausting the source does not prevent continuing preparation with the transferred material.
 
-Choose **Create library output** to record the prepared quantity, unit and storage location, then **Confirm output identity** by scanning its barcode. When a library tray tube has been assigned and its transfer recorded, output uses that same tube. Prepared yield is a separate measurement and does not consume the source again. Earlier approved workflows without a Biological material field retain their existing output workflow; adopt a newly approved configuration to capture input transfers.
+Choose **Create library output** to record the prepared quantity, unit and storage location, then **Confirm output identity** by scanning its barcode. For a manufacturer or registered supplied tube, scan its existing supplied label; printing is unnecessary. For a POMS-generated tube, print, attach and verify the label first. When a library tray tube has been assigned and its transfer recorded, output uses that same tube. Prepared yield is a separate measurement and does not consume the source again. Earlier approved workflows without a Biological material field retain their existing output workflow; adopt a newly approved configuration to capture input transfers.
 
 The job, specimen, source and preparation attempt are carried forward. Completing the final preparation stage creates the library and reuses its recorded QC evidence; do not enter the same measurements or disposition again. Complete the preparation batch before adding its eligible libraries to a sequencing batch. Open a source or destination tube to inspect its remaining amount and transfer history; an unrecorded historical balance remains unknown.
 
@@ -50,15 +50,17 @@ Only a library with passed QC can enter a sequencing batch. If QC fails, preserv
 
 ## Build a batch
 
-A **preparation batch** tracks the selected source tubes and the library tubes occupying its tray positions through library preparation. A **sequencing batch** groups completed, eligible libraries for sequencing. These are separate records. The preparation workspace shows each library's current sequencing membership and offers **Add to sequencing batch** for eligible, unassigned libraries after the preparation batch is complete. Duplicate membership within a batch is rejected. A library may supply another sequencing batch when its previous batches and sendouts are complete and purchased runs remain outstanding.
+A **preparation batch** tracks the selected source tubes and the library tubes occupying its tray positions through library preparation. A **sequencing batch** groups completed, eligible libraries for sequencing. These are separate records. The preparation workspace shows each library's current sequencing membership and offers **Add to sequencing batch** for eligible, unassigned libraries after the preparation batch is complete. The assignment form offers **Create sequencing batch** when a new draft is needed. Creating the batch and saving its library membership are separate actions. Draft choices show the descriptive name and immutable number. Duplicate membership within a batch is rejected. A library may supply another sequencing batch when its previous batches and sendouts are complete and purchased runs remain outstanding.
 
 A batch may contain libraries from different organizations and Commercial orders. Give it a human-friendly name and optional notes. POMS assigns the current **External sequencing** type and a date-stamped, scanner-safe batch number when the batch is created. The name helps operators recognize the run; the batch number remains the immutable identifier. Add only the required library identifiers and operational facts. Do not copy Customer names, prices, order notes, or other confidential Commercial details into the batch manifest.
+
+The batch number is the title in **Sequencing batches** and its dedicated workspace. A descriptive name appears below when it differs from that number. Select the batch number to open its workspace. It shows the next step, members and tube pairs, saved transfers, provider, frozen manifest, and custody/status history. The same Actions menu is available from the list and record.
 
 For scan-first entry, open **Sequencing batches**, expand **Scan libraries** in the list header, select a draft batch, and scan each physical library container. If two manufacturers use the same printed value, choose the physical tube's manufacturer in the optional field before scanning. The scan section starts collapsed and retains your entries when collapsed again. POMS accepts a container linked to a library with passed QC. A previously sequenced library can be reused while purchased runs remain, provided its material is available and its earlier batches and sendouts are complete. An unknown or ambiguous barcode, non-library container, failed QC, active earlier assignment, or duplicate membership is rejected without changing the batch. Open the library record to review its sequencing history. A successful scan clears and refocuses the field for the next container.
 
 Confirm membership before starting the batch. Once started, preserve the membership history and use supported add, remove, or exception actions rather than rewriting the original manifest. Scanning proves the container identity used for entry; it does not replace the approved physical manifest and custody checks.
 
-When an authorized operator uses **Start** or **Complete batch**, POMS opens a confirmation modal with the observed start or completion time prefilled. The operator can correct the time when the bench event happened before it was entered; POMS stores the submitted value as UTC and retains the server audit timestamp. Use the **Status** filter above the batch list to focus on drafts, in-progress batches, or completed batches without changing which draft batches are available for scanning.
+When an authorized operator chooses **Begin shipment preparation**, POMS opens a confirmation modal with the actual preparation time prefilled. Correct the time when preparation began before it was entered; POMS stores the submitted value as UTC and retains the server audit timestamp. Final batch completion follows the vendor results and outcome workflow below. Use the **Status** filter above the batch list to focus on drafts, shipment stages or final outcomes without changing which draft batches are available for scanning.
 
 ## Create an outsourced sendout
 
@@ -66,13 +68,114 @@ If allocation or transfer confirmation is interrupted, use the offered retry bef
 
 From a batch's **Actions**, open **Sequencing tubes**. Assign a separate tube for each library using a manufacturer barcode or a POMS-generated label. Select the physical tube's manufacturer when using its printed barcode. A POMS-generated sequencing tube remains **Label pending** until its printed DataMatrix is scanned back; use **Print label** before recording the transfer. The sequencing tube's printed value must differ from its source library tube's value. Record the physical transfer by scanning the source library and destination sequencing tube, entering the actual decimal amount and matching unit, and recording when you performed it. The form accepts up to 28 fractional places and checks that the remaining source balance can be recorded exactly. The optional **Material exhausted** override applies to the source library. The transferred aliquot belongs to the sequencing tube; the remaining library stays in its original tube.
 
-Every member needs its recorded transfer before a new sendout can be created. For outsourced NGS, enter the provider name, optional provider reference, expected completion, and any additional manifest notes. POMS freezes the batch membership, library identity, actual sequencing-tube barcode, transfer and aliquot amount in the sendout manifest. Confirm the physical contents against the batch before saving. Earlier sendouts retain their original library-barcode manifests. Advance through **Shipped**, **Received by provider**, **Sequencing**, and **Complete** only when the corresponding operational fact is known.
+## Ship and track vendor sequencing batches
 
-Add custody events whenever responsibility or location changes. Record the event code, location or responsible party, and carrier or tracking reference when used by the approved procedure. An optional custody note captures additional operational facts.
+Open **Lab operations > Sequencing batches**. Select the batch number to open its
+workspace. The list filters by shipment stage or final outcome and displays the
+vendor, tracking reference and expected completion. An elapsed ETA is marked
+**Overdue** until results are received.
+
+The workflow is **Prepare shipment → Shipped → Vendor received (ETA) → Sequencing
+→ Results received → Success / Failure**. Use the batch's **Actions** for each
+stage. Operators and Supervisors can record shipment, vendor progress, results
+and storage references; reviewers can read the records.
+
+The graphical tracker uses a stage icon and checkmark for each completed step.
+The current or next step is highlighted and named; future steps remain **Upcoming**.
+On narrow screens, the connected steps stack vertically. Preparing the saved
+shipment completes **Prepare shipment**; recording dispatch completes **Shipped**.
+**Sequencing** stays **In progress** until results are received. Recording either
+**Success** or **Failure** completes the final step; its checkmark means the decision
+was recorded, not that sequencing succeeded. Completed historical records leave
+missing stage evidence or outcomes **Not recorded**. Use **Actions** to record each
+transition; the tracker displays saved progress.
+
+After assigning passing libraries, choose **Begin shipment preparation**. Record
+the actual preparation time; this does not mean the vendor has started sequencing.
+Use **Sequencing tubes** to confirm every physical tube and transfer against its
+captured Catalog minimum. Choose **Prepare vendor shipment**, select the vendor,
+its **Sequencing service** product and one of its named shipment addresses. Review
+the complete address shown below the selections. Changing vendor clears the
+service and address choices. A Purchasing administrator maintains these records
+under **More → Purchasing → Suppliers**; an active service and address are required.
+The preparation dialog shows the tube-pair readiness count and an expandable
+**Review tube manifest** list. Every pair needs a confirmed available sequencing
+tube, recorded transfer and captured minimum volume before preparation can be saved.
+Optionally enter carrier, tracking, vendor reference, ETA and notes. **Prepare shipment** retains
+the reviewed vendor, service and address, and freezes the member identities, tube barcodes and aliquot
+amounts. Review the actual package against this manifest. **Download tube manifest**
+saves the frozen tube list and current shipment details as a CSV for handoff.
+
+Before marking **Shipped**, record the carrier and tracking reference through
+**Update shipment and ETA**. Before dispatch, this action can explicitly select a
+different active address belonging to the same vendor, with an update reason.
+The saved vendor and service remain fixed. Catalog edits do not replace the saved
+destination. Mark Shipped after physical dispatch. The destination
+cannot change afterward. Mark **Vendor received** using the confirmed receipt time
+and the vendor's required completion ETA, then **Sequencing** after the vendor
+confirms sequencing has started. Use **Update shipment and ETA** to retain tracking
+or ETA changes with the required evidence/reason.
+
+Each status confirmation names the batch, vendor and proposed stage, and shows
+the saved sequencing service, destination, carrier and tracking for review. Vendor
+receipt starts with the saved completion ETA; check it against the vendor's confirmation.
+The optional **Vendor reference** is separate from the shipment's tracking reference.
+Enter the
+actual occurrence time and required provider/custody evidence. Times use your
+browser's local timezone and are saved in UTC. An event cannot be in the future
+or precede the preceding stage. History retains the actual time, separate entry
+time and operator. **Custody event** records additional responsibility/location
+changes without replacing a stage transition.
+
+The workspace places shipment details, final outcomes and external storage ahead
+of the longer physical transfer history. Expand **Frozen tube manifest** to review
+the submitted tubes. **Next step** names the next action and its prerequisite.
+When batches for one Job progress at different times, recording the later batch's
+shipment does not move the whole Job backward from data processing or clear a hold.
+
+Closing a vendor or status form with unsaved entries opens a discard confirmation.
+Choose **Keep reviewing** to retain your entries, or **Discard changes** to close
+the draft. Focus returns to the batch's Actions control after closing. Saving a
+shipment update requires its reason and uses **Save shipment changes**.
+
+## Receive results and record the final outcome
+
+Choose **Mark results received** when the vendor's results or final report arrive.
+Receipt alone does not assign success or failure. Choose **Record final outcome**,
+select **Success** or **Failure**, record the actual decision time and vendor report
+or decision evidence, and review all libraries.
+
+The batch outcome applies to every library unless you select a library exception.
+Each exception receives the opposite outcome and requires its reason. For example,
+a Success batch can have two failed libraries with their failure reasons; a Failure
+batch can retain specific successful libraries. Saving records the final decision
+and exceptions and completes the batch. The decision cannot be overwritten through
+this workflow. Older completed records with no vendor result remain explicitly
+**outcome unrecorded**; POMS does not infer success from historical completion.
+
+Finalization does not consume more material, fail an entire specimen, order a retry,
+approve scientific results or publish Customer data.
+
+## Record external result storage
+
+After Results received, choose **Add external storage reference**. Enter a label,
+the permanent file/folder/manifest location, optional notes, and either **Whole batch**
+or one submitted library. Use a permanent location without credentials, expiring
+query strings or fragments. Record provider/run and file-mapping context in the
+notes when available. Locations display as selectable text and remain **Unverified**.
+
+References can be added after finalization. A successful batch without references
+still has an outstanding data handoff. References remain in history; record a new
+reference with explanatory correction notes if an earlier location is wrong.
+
+A location entry does not upload files, verify bytes, establish access or register
+a ready scientific output. Continue through **Record sequencing output** for each
+purchased run using the producing library, actual submission, provider/run mapping,
+exact file identity, SHA-256 checksum, byte size and required scientific evidence.
 
 ## Respect the implementation boundary
 
-The sendout tracks material, manifest, timing, provider status, and custody. The assembly workspace tracks requested processing attempts and their outcomes, but the external processing connection and automatic result import still require integration setup. Uploading raw sequencing datasets and preserving externally held files remain responsibilities of their producing system. Scientific approval and customer release remain separate steps.
+The sendout tracks material, manifest, shipment, timing, vendor progress, final outcomes, library exceptions, declared storage references and custody. The assembly workspace tracks requested processing attempts and their outcomes, but the external processing connection and automatic result import still require integration setup. Uploading raw sequencing datasets and preserving externally held files remain responsibilities of their producing system. Scientific approval and customer release remain separate steps.
 
 ## Record library quality evidence
 

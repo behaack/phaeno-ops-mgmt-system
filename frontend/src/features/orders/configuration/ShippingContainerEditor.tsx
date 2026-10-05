@@ -5,7 +5,7 @@ import { useFieldArray, useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { getOrderErrorMessage } from '#/api/order-management'
 import type { SampleShippingConfiguration } from '#/api/sample-shipping'
-import { shippingContainerProductTypeId, useSupplierCatalog } from '#/api/supplier-catalog'
+import { shippingContainerProductTypeId, sequencingServiceProductTypeId, useSupplierCatalog } from '#/api/supplier-catalog'
 import { getKitAssemblyWorkflows, kitAssemblyWorkflowsKey } from '#/api/lab-kit-assembly'
 import { createShippingContainerDefinition, reviseShippingContainerDefinition, updateShippingContainerDraft, type ShippingContainerDefinition } from '#/api/shipping-containers'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
@@ -123,7 +123,7 @@ export function ShippingContainerEditor({ source, configuration, existingDefinit
   const skuUses = [...matchingSkuSpecifications.values()].sort((a, b) =>
     a.commonName.localeCompare(b.commonName) || a.revision - b.revision)
   const componentSuppliers = suppliers.filter(item => !item.isInternalProducer)
-    .map(item => ({ ...item, products: item.products.filter(product => product.isActive && product.productTypeIsActive) }))
+    .map(item => ({ ...item, products: item.products.filter(product => product.isActive && product.productTypeIsActive && product.productTypeId !== sequencingServiceProductTypeId) }))
     .filter(item => item.products.length > 0)
   const usableTubeCapacity = Number(form.watch('tubeCapacity'))
   const configuredShipperAvailable = componentSuppliers.some(item => item.products.some(product =>

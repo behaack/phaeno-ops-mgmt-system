@@ -56,7 +56,7 @@ describe('Selected shipment action in phased next step', () => {
   it('keeps the Send title and invokes the selected shipment command directly', async () => {
     render(<View />)
     const action = await screen.findByRole('button', { name: 'Review and confirm shipment contents' })
-    const nextStep = screen.getByText('Next step').closest('[aria-live]') as HTMLElement
+    const nextStep = screen.getByText('Next step', { selector: '[aria-live] p' }).closest('[aria-live]') as HTMLElement
     expect(within(nextStep).getByText('Send and record shipments')).toBeTruthy()
     expect(within(nextStep).queryByRole('button', { name: 'Review shipments' })).toBeNull()
     fireEvent.click(action)

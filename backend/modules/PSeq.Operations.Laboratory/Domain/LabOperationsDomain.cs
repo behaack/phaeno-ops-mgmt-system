@@ -1125,7 +1125,8 @@ public enum LabNgsSendoutStatus
     ReceivedByProvider,
     Sequencing,
     Complete,
-    Exception
+    Exception,
+    ResultsReceived
 }
 
 public sealed class LabNgsSendout : LabAuditedEntity
@@ -1139,6 +1140,20 @@ public sealed class LabNgsSendout : LabAuditedEntity
     public DateTime? ShippedAtUtc { get; private set; }
     public DateTime? ProviderReceivedAtUtc { get; private set; }
     public DateTime? ExpectedCompletionAtUtc { get; private set; }
+    public string? Destination { get; private set; }
+    public string? Carrier { get; private set; }
+    public string? TrackingReference { get; private set; }
+    public DateTime? SequencingStartedAtUtc { get; private set; }
+    public DateTime? ResultsReceivedAtUtc { get; private set; }
+    public LabVendorOutcome? Outcome { get; private set; }
+    public DateTime? OutcomeAtUtc { get; private set; }
+    public string? OutcomeNote { get; private set; }
+    public Guid? VendorSupplierId { get; private set; }
+    public Guid? VendorProductId { get; private set; }
+    public Guid? VendorShipmentAddressId { get; private set; }
+    public long? VendorShipmentAddressVersion { get; private set; }
+    public string? VendorProductName { get; private set; }
+    public string? VendorShipmentAddressLabel { get; private set; }
 
     private LabNgsSendout() { }
 
@@ -1154,9 +1169,77 @@ public sealed class LabNgsSendout : LabAuditedEntity
 
     public void SetStatus(LabNgsSendoutStatus status, DateTime utcNow)
     {
+        var next = Status switch
+        {
+            LabNgsSendoutStatus.Preparing => LabNgsSendoutStatus.Shipped,
+            LabNgsSendoutStatus.Shipped => LabNgsSendoutStatus.ReceivedByProvider,
+            LabNgsSendoutStatus.ReceivedByProvider => LabNgsSendoutStatus.Sequencing,
+            LabNgsSendoutStatus.Sequencing => LabNgsSendoutStatus.ResultsReceived,
+            _ => (LabNgsSendoutStatus?)null
+        };
+        if (status != next) throw new InvalidOperationException("Record each vendor stage in order; finalize the outcome after results are received.");
+        var previousAt = ResultsReceivedAtUtc ?? SequencingStartedAtUtc ?? ProviderReceivedAtUtc ?? ShippedAtUtc;
+        if (utcNow.Kind != DateTimeKind.Utc || utcNow > DateTime.UtcNow || previousAt.HasValue && utcNow < previousAt.Value)
+            throw new ArgumentException("Record the actual UTC event time, on or after the previous stage and no later than now.");
         Status = status;
         if (status == LabNgsSendoutStatus.Shipped) ShippedAtUtc ??= utcNow;
         if (status == LabNgsSendoutStatus.ReceivedByProvider) ProviderReceivedAtUtc ??= utcNow;
+        if (status == LabNgsSendoutStatus.Sequencing) SequencingStartedAtUtc = utcNow;
+        if (status == LabNgsSendoutStatus.ResultsReceived) ResultsReceivedAtUtc = utcNow;
+    }
+
+    public void UpdateShipment(string destination, string? carrier, string? trackingReference,
+        string? providerReference, DateTime? expectedCompletionAtUtc)
+    {
+        if (Status == LabNgsSendoutStatus.Complete) throw new InvalidOperationException("The finalized shipment cannot be edited.");
+        var normalizedDestination = Required(destination, nameof(destination), 2000);
+        if (Status != LabNgsSendoutStatus.Preparing && normalizedDestination != Destination)
+            throw new InvalidOperationException("The dispatched destination cannot be changed.");
+        Destination = normalizedDestination;
+        Carrier = Optional(carrier, 255);
+        TrackingReference = Optional(trackingReference, 255);
+        ProviderReference = Optional(providerReference, 255);
+        ExpectedCompletionAtUtc = expectedCompletionAtUtc;
+    }
+
+    public void SelectVendor(LabSupplier supplier, LabSupplierProduct product, LabSupplierShipmentAddress address)
+    {
+        if (Status != LabNgsSendoutStatus.Preparing || VendorSupplierId.HasValue)
+            throw new InvalidOperationException("The prepared vendor and service cannot be replaced.");
+        if (!supplier.IsActive || supplier.IsInternalProducer || !product.IsActive
+            || product.ProductTypeId != LabProductType.SequencingServiceId || product.SupplierId != supplier.Id
+            || !address.IsActive || address.SupplierId != supplier.Id)
+            throw new ArgumentException("Choose an active sequencing service and shipment address belonging to this vendor.");
+        VendorSupplierId = supplier.Id;
+        VendorProductId = product.Id;
+        ProviderName = supplier.Name;
+        VendorProductName = product.ProductNumber;
+        SelectShipmentAddress(address);
+    }
+
+    public void SelectShipmentAddress(LabSupplierShipmentAddress address)
+    {
+        if (Status != LabNgsSendoutStatus.Preparing)
+            throw new InvalidOperationException("The dispatched shipment address cannot change.");
+        if (!address.IsActive || !VendorSupplierId.HasValue || address.SupplierId != VendorSupplierId)
+            throw new ArgumentException("Choose an active shipment address belonging to the saved vendor.");
+        VendorShipmentAddressId = address.Id;
+        VendorShipmentAddressVersion = address.Version;
+        VendorShipmentAddressLabel = address.Label;
+        Destination = address.DestinationText();
+    }
+
+    public void FinalizeOutcome(LabVendorOutcome outcome, DateTime occurredAtUtc, string note)
+    {
+        if (Status != LabNgsSendoutStatus.ResultsReceived || Outcome.HasValue)
+            throw new InvalidOperationException("Receive the results before recording one final batch outcome.");
+        if (!Enum.IsDefined(outcome)) throw new ArgumentException("A valid outcome is required.");
+        if (occurredAtUtc.Kind != DateTimeKind.Utc || occurredAtUtc < ResultsReceivedAtUtc || occurredAtUtc > DateTime.UtcNow)
+            throw new ArgumentException("The outcome time must follow results receipt and cannot be in the future.");
+        OutcomeNote = Required(note, nameof(note), 4000);
+        Outcome = outcome;
+        OutcomeAtUtc = occurredAtUtc;
+        Status = LabNgsSendoutStatus.Complete;
     }
 }
 

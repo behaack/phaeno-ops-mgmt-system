@@ -432,3 +432,32 @@ describe('optional preparation report', () => {
     expect(screen.getAllByLabelText(/Preparation record reference/).length).toBeGreaterThan(0)
   })
 })
+
+
+describe('single-sample walkthrough refinements', () => {
+  it('opens the sole required sample and omits an empty batch-entry section', () => {
+    render(<PreparationStepDialog batch={{ ...batch, members: [batch.members[0]], inlineResourceFields: true }} stage={stage} step={{ ...step, captures: [{ key: 'transfer', label: 'Biological material', type: 'biologicalMaterial', scope: 'tube', required: true, unit: 'mL' }] }} action="record" onClose={vi.fn()} onSubmit={vi.fn()} pending={false} />)
+    expect(screen.getByRole('button', { name: 'A1 · TUBE-A' }).getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByLabelText(/Actual amount transferred/)).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Batch entries' })).toBeNull()
+  })
+  it('updates available mixes while preserving the entered quantity and exact recipe context', async () => {
+    const onPrepareMix = vi.fn()
+    const onRefreshMixes = vi.fn()
+    const mixStep: typeof step = { ...step, captures: [{ key: 'mix', label: 'Mix used', type: 'material', scope: 'batch', required: true, unit: 'µL', material: { name: 'Recipe A', masterMixWorkflowId: 'recipe-a', masterMixWorkflowRevision: 2 } }] }
+    const props = { batch: { ...batch, inlineResourceFields: true, configuredMaterials: true }, stage, step: mixStep, action: 'record' as const, onClose: vi.fn(), onSubmit: vi.fn(), pending: false, onPrepareMix, onRefreshMixes }
+    const catalog = { materialLots: [], masterMixes: [], equipment: [], suppliers: [] }
+    const { rerender } = render(<PreparationStepDialog {...props} resourceCatalog={catalog} />)
+    fireEvent.change(screen.getByLabelText(/Quantity per sample \(µL\)/), { target: { value: '10' } })
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Actions' }), { key: 'Enter' })
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Prepare required mix' }))
+    expect(onPrepareMix).toHaveBeenCalledWith({ workflowId: 'recipe-a', revision: 2 })
+    const ready = { id: 'mix-a', barcode: 'PH-MX-A', workflowId: 'recipe-a', workflowRevision: 2, workflowName: 'Recipe A', quantityUnit: 'µL', status: 'Ready' as const, version: 1, remainingQuantity: 100, remainingQuantityText: '100.000000000000', startedAtUtc: new Date().toISOString(), useByUtc: new Date(Date.now() + 60_000).toISOString() }
+    rerender(<PreparationStepDialog {...props} resourceCatalog={{ ...catalog, masterMixes: [ready] }} />)
+    expect(screen.getByRole('option', { name: /PH-MX-A.*100 µL remaining/ })).toBeTruthy()
+    expect(screen.getByLabelText(/Quantity per sample \(µL\)/)).toHaveProperty('value', '10')
+    rerender(<PreparationStepDialog {...props} resourceCatalog={catalog} />)
+    expect(screen.queryByRole('option', { name: /PH-MX-A/ })).toBeNull()
+    expect(screen.getByLabelText(/Quantity per sample \(µL\)/)).toHaveProperty('value', '10')
+  })
+})

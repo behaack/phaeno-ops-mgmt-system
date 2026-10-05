@@ -1,6 +1,7 @@
 namespace PhaenoPortal.Test;
 
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -32,6 +33,39 @@ using PhaenoPortal.App.Infrastructure.Persistence.Auditing;
 [Collection(PostgreSqlReferenceCollection.Name)]
 public partial class LabOperationsCommercialHandoffPostgresTests
 {
+    [PostgreSqlReferenceFact]
+    public async Task CustomerOrderReadsCorrectedAuthorizationWithoutChangingItsHistory()
+    {
+        await using var scope = await HandoffTestScope.CreateAsync();
+        var fixture = await scope.CreateQuotedOrderAsync();
+        var authorized = await scope.AuthorizeSampleRosterAsync(fixture, new InternalLabOperationsProvider(scope.DbContext));
+        var authorization = await scope.DbContext.CommercialLabAuthorizations
+            .SingleAsync(item => item.CommercialOrderId == fixture.OrderId);
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
+        { Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() } };
+        var command = JsonSerializer.Deserialize<AuthorizeLabWorkCommand>(authorization.AuthorizationSnapshotJson, options)!;
+        var corrected = command with
+        {
+            Metadata = command.Metadata with { CommandId = Guid.NewGuid() },
+            AuthorizationVersion = command.AuthorizationVersion + 1,
+        };
+        var correctedJson = JsonSerializer.Serialize(corrected, options);
+        Assert.Contains("\"sourceType\":\"CommercialOrder\"", correctedJson);
+        authorization.RecordAmendment(corrected.AuthorizationVersion, corrected.Metadata.CommandId, correctedJson);
+        await scope.DbContext.SaveChangesAsync();
+        scope.DbContext.ChangeTracker.Clear();
+
+        var read = await scope.CreateCustomerController(new InternalLabOperationsProvider(scope.DbContext), Guid.NewGuid().ToString("N"))
+            .Get(fixture.OrderId, default);
+        Assert.Equal(authorized.Version, read.Version);
+        Assert.Equal(command.Specimens.Select(item => item.SubmittedSpecimenId).Order(), read.AuthorizedSampleIds!.Order());
+        var retained = await scope.DbContext.CommercialLabAuthorizations.AsNoTracking()
+            .SingleAsync(item => item.CommercialOrderId == fixture.OrderId);
+        Assert.True(JsonNode.DeepEquals(JsonNode.Parse(correctedJson), JsonNode.Parse(retained.AuthorizationSnapshotJson)),
+            "Reading the order must preserve every authorization snapshot value; JSONB formatting is not retained.");
+        Assert.Equal(corrected.AuthorizationVersion, retained.AuthorizationVersion);
+    }
+
     [PostgreSqlReferenceFact]
     public async Task RetiredAssemblyKeepsOrderingOpenButInactiveTubeOrContainerStopsNewWork()
     {
@@ -1173,8 +1207,8 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             var populatedRecovery = await Assert.ThrowsAsync<OrderManagementException>(() => lab.TransitionBatch(
                 batch.Id, new BatchTransitionRequest("return-to-draft", batch.Version, Reason: "TEST ONLY correction"), default));
             Assert.Equal("batch_recovery_unavailable", populatedRecovery.ErrorCode);
-            var sendoutWithoutTransfer = await Assert.ThrowsAsync<OrderManagementException>(() => lab.CreateSendout(
-                batch.Id, new CreateSendoutRequest("Reference sequencing provider", null, "{}", null), CancellationToken.None));
+            var sendoutWithoutTransfer = await Assert.ThrowsAsync<OrderManagementException>(async () => await lab.CreateSendout(
+                batch.Id, await VendorSendoutFixture.RequestAsync(scope.DbContext, (await scope.DbContext.LabOperationalBatches.AsNoTracking().SingleAsync(b => b.Id == batch.Id)).Version), CancellationToken.None));
             Assert.Equal("sequencing_transfers_required", sendoutWithoutTransfer.ErrorCode);
             var workService = await scope.DbContext.LabWorkOrders.AsNoTracking().Where(w => w.Id == workOrderId.Value).Select(w => w.ServiceKey).SingleAsync();
             var sequencingCatalog = await scope.DbContext.QboCatalogItems.SingleAsync(c => c.ExternalItemId.ToLower() == workService);
@@ -1240,25 +1274,23 @@ public partial class LabOperationsCommercialHandoffPostgresTests
             Assert.Equal("transfer_request_reused", alteredReplay.ErrorCode);
             currentLibraryVersion = await scope.DbContext.LabLibraries.AsNoTracking().Where(l => l.Id == library.Id).Select(l => l.Version).SingleAsync();
             library = await lab.RecordLibraryQc(library.Id, new(false, "{\"scope\":\"SIMULATED failed after transfer\"}", currentLibraryVersion), default);
-            var failedQcBeforeSendout = await Assert.ThrowsAsync<OrderManagementException>(() => lab.CreateSendout(
-                batch.Id, new CreateSendoutRequest("Reference sequencing provider", null, "{}", null), CancellationToken.None));
+            var failedQcBeforeSendout = await Assert.ThrowsAsync<OrderManagementException>(async () => await lab.CreateSendout(
+                batch.Id, await VendorSendoutFixture.RequestAsync(scope.DbContext, (await scope.DbContext.LabOperationalBatches.AsNoTracking().SingleAsync(b => b.Id == batch.Id)).Version), CancellationToken.None));
             Assert.Equal("library_qc_required", failedQcBeforeSendout.ErrorCode);
             Assert.False(await scope.DbContext.LabNgsSendouts.AnyAsync(s => s.LabOperationalBatchId == batch.Id));
             library = await lab.RecordLibraryQc(library.Id, new(true, "{\"scope\":\"SIMULATED final passing recheck\"}", library.Version), default);
             batch = await lab.CreateSendout(
                 batch.Id,
-                new CreateSendoutRequest(
-                    "Reference sequencing provider",
-                    $"provider-{Guid.NewGuid():N}",
-                    $$"""{"batch":"{{batch.BatchNumber}}","container":"{{libraryContainer.Barcode}}"}""",
-                    DateTime.UtcNow.AddDays(10)),
+                await VendorSendoutFixture.RequestAsync(scope.DbContext, (await scope.DbContext.LabOperationalBatches.AsNoTracking().SingleAsync(b => b.Id == batch.Id)).Version, $$"""{"batch":"{{batch.BatchNumber}}","container":"{{libraryContainer.Barcode}}"}""", DateTime.UtcNow.AddDays(10), $"provider-{Guid.NewGuid():N}"),
                 CancellationToken.None);
             Assert.NotNull(batch.SendoutId);
             Assert.NotNull(batch.SendoutVersion);
             using (var frozenManifest = JsonDocument.Parse((await scope.DbContext.LabNgsSendouts.AsNoTracking()
                 .SingleAsync(s => s.Id == batch.SendoutId)).ManifestJson))
             {
-                Assert.Equal(2, frozenManifest.RootElement.GetProperty("schemaVersion").GetInt32());
+                Assert.Equal(3, frozenManifest.RootElement.GetProperty("schemaVersion").GetInt32());
+                Assert.Equal("SIMULATED-SEQUENCING", frozenManifest.RootElement.GetProperty("vendor").GetProperty("serviceName").GetString());
+                Assert.Equal("Synthetic test service", frozenManifest.RootElement.GetProperty("vendor").GetProperty("serviceDescription").GetString());
                 var submittedMember = Assert.Single(frozenManifest.RootElement.GetProperty("members").EnumerateArray());
                 Assert.Equal(allocatedSequencingTube.Barcode, submittedMember.GetProperty("containerBarcode").GetString());
                 Assert.Equal(libraryContainer.Barcode, submittedMember.GetProperty("libraryContainerBarcode").GetString());
@@ -1276,29 +1308,84 @@ public partial class LabOperationsCommercialHandoffPostgresTests
                     "Reference sequencing provider",
                     """{"condition":"sealed"}"""),
                 CancellationToken.None);
+            var missingTime = await Assert.ThrowsAsync<OrderManagementException>(() => lab.TransitionSendout(
+                batch.SendoutId!.Value, new SendoutTransitionRequest("Shipped", batch.SendoutVersion!.Value,
+                    Evidence: "Provider collection confirmed"), CancellationToken.None));
+            Assert.Equal("sendout_time_invalid", missingTime.ErrorCode);
+            var missingEvidence = await Assert.ThrowsAsync<OrderManagementException>(() => lab.TransitionSendout(
+                batch.SendoutId!.Value, new SendoutTransitionRequest("Shipped", batch.SendoutVersion!.Value,
+                    DateTime.UtcNow, " "), CancellationToken.None));
+            Assert.Equal("sendout_evidence_required", missingEvidence.ErrorCode);
+            var futureTime = await Assert.ThrowsAsync<OrderManagementException>(() => lab.TransitionSendout(
+                batch.SendoutId!.Value, new SendoutTransitionRequest("Shipped", batch.SendoutVersion!.Value,
+                    DateTime.UtcNow.AddDays(1), "Provider collection confirmed"), CancellationToken.None));
+            Assert.Equal("sendout_time_invalid", futureTime.ErrorCode);
+            var skippedStatus = await Assert.ThrowsAsync<OrderManagementException>(() => lab.TransitionSendout(
+                batch.SendoutId!.Value, new SendoutTransitionRequest("Complete", batch.SendoutVersion!.Value,
+                    DateTime.UtcNow, "Provider completion confirmed"), CancellationToken.None));
+            Assert.Equal("sendout_transition_invalid", skippedStatus.ErrorCode);
+            Assert.Empty(await scope.DbContext.LabCustodyEvents.AsNoTracking()
+                .Where(item => item.LabNgsSendoutId == batch.SendoutId && item.EventCode.StartsWith("STATUS_")).ToListAsync());
+            // Another batch on this Job may have reached processing before this dispatch.
+            var sharedJob = await scope.DbContext.LabWorkOrders.SingleAsync(item => item.Id == workOrderId.Value);
+            sharedJob.RecordMilestone(LabWorkOrderStatus.DataProcessing);
+            await scope.DbContext.SaveChangesAsync();
             foreach (var status in new[]
             {
                 LabNgsSendoutStatus.Shipped,
                 LabNgsSendoutStatus.ReceivedByProvider,
                 LabNgsSendoutStatus.Sequencing,
-                LabNgsSendoutStatus.Complete
+                LabNgsSendoutStatus.ResultsReceived
             })
             {
+                var previousProjectionVersion = sharedJob.ProjectionVersion;
                 batch = await lab.TransitionSendout(
                     batch.SendoutId!.Value,
                     new SendoutTransitionRequest(
                         status.ToString(),
-                        batch.SendoutVersion!.Value),
+                        batch.SendoutVersion!.Value, DateTime.UtcNow, $"Reference provider confirmed {status}", "REFERENCE-NGS", DateTime.UtcNow.AddDays(10)),
                     CancellationToken.None);
+                Assert.Equal(LabWorkOrderStatus.DataProcessing, sharedJob.Status);
+                Assert.Equal(previousProjectionVersion + 1, sharedJob.ProjectionVersion);
                 var sendoutProgress = (await customerProgress.ReadAsync(scope.CustomerOrganization.Id, [fixture.OrderId], CancellationToken.None))[fixture.OrderId];
-                Assert.Equal(status is LabNgsSendoutStatus.Sequencing or LabNgsSendoutStatus.Complete
+                Assert.Equal(status is LabNgsSendoutStatus.Sequencing or LabNgsSendoutStatus.ResultsReceived
                     ? "Sequencing" : "LibraryPrep", Assert.Single(sendoutProgress.Samples).Stage);
             }
-            batch = await lab.TransitionBatch(
-                batch.Id,
-                new BatchTransitionRequest("complete", batch.Version, DateTime.UtcNow.AddMinutes(5)),
-                CancellationToken.None);
+            var statusHistory = await scope.DbContext.LabCustodyEvents.AsNoTracking()
+                .Where(item => item.LabNgsSendoutId == batch.SendoutId && item.EventCode.StartsWith("STATUS_"))
+                .OrderBy(item => item.OccurredAtUtc).ToListAsync();
+            Assert.Equal(4, statusHistory.Count);
+            foreach (var entry in statusHistory)
+            {
+                using var evidence = JsonDocument.Parse(entry.DetailsJson);
+                Assert.Equal("REFERENCE-NGS", evidence.RootElement.GetProperty("providerReference").GetString());
+                Assert.True(evidence.RootElement.GetProperty("recordedAtUtc").GetDateTime() >= entry.OccurredAtUtc);
+                Assert.Equal(staff.User.Id, entry.RecordedByUserId);
+            }
+            var batchWorkspace = JsonSerializer.SerializeToElement(await lab.BatchDetail(batch.Id, CancellationToken.None), new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            Assert.Equal(6, batchWorkspace.GetProperty("custody").GetArrayLength());
+            Assert.Equal(1, batchWorkspace.GetProperty("tubes").GetProperty("members").GetArrayLength());
+            var foreignException = await Assert.ThrowsAsync<OrderManagementException>(() => lab.FinalizeVendorOutcome(batch.SendoutId!.Value,
+                new(Guid.NewGuid(), batch.SendoutVersion!.Value, "Success", DateTime.UtcNow, "SIMULATED vendor report", [new(Guid.NewGuid(), "Failure", "SIMULATED failed library")]), default));
+            Assert.Equal("vendor_exception_invalid", foreignException.ErrorCode);
+            var outcomeRequest = new FinalizeVendorOutcomeRequest(Guid.NewGuid(), batch.SendoutVersion!.Value, "Success", DateTime.UtcNow,
+                "SIMULATED vendor result report", [new(sequencingMember.Id, "Failure", "SIMULATED low read yield")]);
+            batch = await lab.FinalizeVendorOutcome(batch.SendoutId!.Value, outcomeRequest, default);
+            Assert.Equal("Success", batch.VendorOutcome);
             Assert.Equal(LabBatchStatus.Complete.ToString(), batch.Status);
+            var sameOutcome = await lab.FinalizeVendorOutcome(batch.SendoutId!.Value, outcomeRequest, default);
+            Assert.Equal(batch.Version, sameOutcome.Version);
+            Assert.Single(await scope.DbContext.LabVendorLibraryExceptions.Where(e => e.LabNgsSendoutId == batch.SendoutId).ToListAsync());
+            var changedOutcome = await Assert.ThrowsAsync<OrderManagementException>(() => lab.FinalizeVendorOutcome(batch.SendoutId!.Value, outcomeRequest with { Evidence = "Changed" }, default));
+            Assert.Equal("vendor_outcome_finalized", changedOutcome.ErrorCode);
+            var referenceRequest = new AddVendorResultReferenceRequest(Guid.NewGuid(), batch.SendoutVersion!.Value, sequencingMember.Id,
+                "SIMULATED manifest", "s3://simulated-results/batch/manifest.csv", "SIMULATED reference only");
+            batch = await lab.AddVendorResultReference(batch.SendoutId!.Value, referenceRequest, default);
+            await lab.AddVendorResultReference(batch.SendoutId!.Value, referenceRequest, default);
+            Assert.Single(await scope.DbContext.LabVendorResultReferences.Where(r => r.LabNgsSendoutId == batch.SendoutId).ToListAsync());
+            var changedReference = await Assert.ThrowsAsync<OrderManagementException>(() => lab.AddVendorResultReference(batch.SendoutId!.Value,
+                referenceRequest with { StorageReference = "s3://changed/location" }, default));
+            Assert.Equal("result_reference_replay_conflict", changedReference.ErrorCode);
 
             await scope.VerifyMixedProgressAsync(fixture.OrderId, workOrderId.Value, released: false);
 

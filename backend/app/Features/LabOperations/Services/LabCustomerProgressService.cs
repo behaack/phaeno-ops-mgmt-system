@@ -45,7 +45,7 @@ public sealed class LabCustomerProgressService(PSeqOperationsDbContext db)
         var sequencing = await (from member in db.LabBatchMembers.AsNoTracking()
             join sendout in db.LabNgsSendouts.AsNoTracking() on member.LabOperationalBatchId equals sendout.LabOperationalBatchId
             where workIds.Contains(member.LabWorkOrderId)
-                && (sendout.Status == LabNgsSendoutStatus.Sequencing || sendout.Status == LabNgsSendoutStatus.Complete)
+                && (sendout.Status == LabNgsSendoutStatus.Sequencing || sendout.Status == LabNgsSendoutStatus.ResultsReceived || sendout.Status == LabNgsSendoutStatus.Complete)
             select member.LabLibraryId).Distinct().ToListAsync(cancellationToken);
         var packages = await db.ResultOutputPackages.AsNoTracking()
             .Where(package => package.OrganizationId == organizationId && package.LabServiceOrderId.HasValue

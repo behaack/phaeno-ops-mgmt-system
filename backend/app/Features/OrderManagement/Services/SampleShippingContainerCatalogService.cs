@@ -268,7 +268,7 @@ public sealed partial class SampleShippingContainerCatalogService(PSeqOperations
         var products = await (from product in dbContext.LabSupplierProducts.AsNoTracking()
             join supplier in dbContext.LabSuppliers.AsNoTracking() on product.SupplierId equals supplier.Id
             join type in dbContext.LabProductTypes.AsNoTracking() on product.ProductTypeId equals type.Id
-            where componentIds.Contains(product.Id) && product.IsActive && supplier.IsActive
+            where componentIds.Contains(product.Id) && product.ProductTypeId != PSeq.Operations.Laboratory.Domain.LabProductType.SequencingServiceId && product.IsActive && supplier.IsActive
                 && !supplier.IsInternalProducer && type.IsActive
             select new { product.Id, product.ProductTypeId, product.DefaultQuantityUnit, product.TubeCapacity,
                 product.MaximumSampleAmount, product.SampleAmountUnit, type.KitUse }).ToDictionaryAsync(item => item.Id, ct);

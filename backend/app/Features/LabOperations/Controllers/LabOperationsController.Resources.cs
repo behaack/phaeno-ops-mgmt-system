@@ -157,7 +157,7 @@ public sealed partial class LabOperationsController
 
     private async Task<LabSupplierProduct> RequireLotProductAsync(Guid? productId, Guid supplierId, CancellationToken ct)
     {
-        var product = await dbContext.LabSupplierProducts.SingleOrDefaultAsync(p => p.Id == productId && p.SupplierId == supplierId && p.IsActive, ct)
+        var product = await dbContext.LabSupplierProducts.SingleOrDefaultAsync(p => p.Id == productId && p.SupplierId == supplierId && p.IsActive && p.ProductTypeId != LabProductType.SequencingServiceId, ct)
             ?? throw Invalid("material_product_invalid", "Select an active product from the lot's supplier.");
         if (!await dbContext.LabSuppliers.AnyAsync(s => s.Id == supplierId && s.IsActive, ct)
             || !await dbContext.LabProductTypes.AnyAsync(t => t.Id == product.ProductTypeId && t.IsActive, ct))
@@ -458,7 +458,9 @@ public sealed partial class LabOperationsController
         var batch = await dbContext.LabOperationalBatches.SingleOrDefaultAsync(item => item.Id == batchId, cancellationToken)
             ?? throw Missing();
         EnsureVersion(batch.Version, request.Version);
-        var occurredAtUtc = request.OccurredAtUtc?.ToUniversalTime() ?? DateTime.UtcNow;
+        var occurredAtUtc = request.OccurredAtUtc ?? DateTime.UtcNow;
+        if (occurredAtUtc.Kind != DateTimeKind.Utc || occurredAtUtc > DateTime.UtcNow)
+            throw Invalid("batch_time_invalid", "Record an actual UTC occurrence time no later than now.");
         var memberCount = await dbContext.LabBatchMembers.CountAsync(item => item.LabOperationalBatchId == batch.Id, cancellationToken);
         switch (request.Action.Trim().ToLowerInvariant())
         {
@@ -468,7 +470,12 @@ public sealed partial class LabOperationsController
                     throw Conflict("batch_libraries_required", "Add libraries to the draft sequencing batch before starting work. An empty batch cannot start or complete.");
                 await RequireBatchAttemptReadinessAsync(batch.Id, cancellationToken);
                 if (request.Action.Trim().Equals("start", StringComparison.OrdinalIgnoreCase)) batch.Start(occurredAtUtc);
-                else batch.Complete(occurredAtUtc);
+                else
+                {
+                    if (!await dbContext.LabNgsSendouts.AnyAsync(s => s.LabOperationalBatchId == batch.Id && s.Outcome != null, cancellationToken))
+                        throw Conflict("vendor_outcome_required", "Receive the vendor results and record Success or Failure before completing this batch.");
+                    batch.Complete(occurredAtUtc);
+                }
                 break;
             case "return-to-draft":
                 var hasSendout = await dbContext.LabNgsSendouts.AnyAsync(item => item.LabOperationalBatchId == batch.Id, cancellationToken);

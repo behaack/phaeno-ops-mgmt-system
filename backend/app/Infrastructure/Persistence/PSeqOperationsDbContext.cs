@@ -252,6 +252,7 @@ public sealed partial class PSeqOperationsDbContext(
     public DbSet<LabProductType> LabProductTypes { get; set; }
     public DbSet<LabSupplierProduct> LabSupplierProducts { get; set; }
     public DbSet<LabSupplier> LabSuppliers { get; set; }
+    public DbSet<LabSupplierShipmentAddress> LabSupplierShipmentAddresses { get; set; }
     public DbSet<LabStorageLocation> LabStorageLocations { get; set; }
     public DbSet<LabMaterialLot> LabMaterialLots { get; set; }
     public DbSet<LabPreparedReagentComponent> LabPreparedReagentComponents { get; set; }
@@ -278,6 +279,8 @@ public sealed partial class PSeqOperationsDbContext(
     public DbSet<LabOperationalBatch> LabOperationalBatches { get; set; }
     public DbSet<LabBatchMember> LabBatchMembers { get; set; }
     public DbSet<LabNgsSendout> LabNgsSendouts { get; set; }
+    public DbSet<LabVendorLibraryException> LabVendorLibraryExceptions { get; set; }
+    public DbSet<LabVendorResultReference> LabVendorResultReferences { get; set; }
     public DbSet<LabCustodyEvent> LabCustodyEvents { get; set; }
     public DbSet<LabException> LabExceptions { get; set; }
     public DbSet<LabOperationsOutboxEvent> LabOperationsOutboxEvents { get; set; }

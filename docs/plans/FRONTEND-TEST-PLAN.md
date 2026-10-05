@@ -1,5 +1,106 @@
 # Frontend Test Plan
 
+## Graphical laboratory sample completion — October 5, 2026
+
+`lab-phase-progress.test.ts` covers seven sequencing / three ready-for-preparation
+samples, quality review still in progress, approved results awaiting release,
+partial/all Portal delivery, unknown/cancelled/unreceived samples and zero-cohort
+guards. Tests are authored without execution. Review the actual phase detail
+tracker with distinct sample counts and in-stage populations, one earliest
+unfinished current step, held/failed notes, no current step for cancelled phases
+or all-delivered cohorts, retained list/expansion/Actions behavior, 320-pixel
+reflow and theme tokens. Count progression uses current authorized LabPhaseFacts
+keys; it does not use tube totals or coarse Job status. Static checks are batched
+with the shared shipping/send-out tracker checkpoint.
+
+Owner refinements are presentation-only: review the single-phase Actions at the
+trailing Progress header with no duplicate timing control, unchanged cancellation
+eligibility/confirmation and results navigation, one dropdown indicator, keyboard
+opening/Escape/focus return, mobile containment, smaller semibold sample fractions,
+40-pixel circles and 16-pixel stage icons. Retain standalone list and multi-phase
+action behavior. No additional automated test is required for these bounded edits.
+
+Tracker/timing demarcation: inspect the full-width divider and spacing before
+TAT/receipt/due details, with the existing semantic border token in light/dark
+themes and both single-phase/expanded multi-phase layouts. Scoped lint and
+whitespace checks suffice for this class-only refinement; no new tests or
+automated suite execution.
+
+Checkpoint passed: full TypeScript, scoped ESLint, generated guide freshness and
+whitespace checks. Actual-component synthetic browser review covered counts,
+shipping, responsive layouts and moved menu/focus behavior; see the
+[review evidence](../testing/runs/2026-10-05-graphical-workflow-progress.md).
+Automated suites remain unexecuted.
+
+Highlighted summary/timing/source labels use bold weight at their current size;
+values, counts and the unhighlighted Sequencing runs label retain their weight.
+Review source-row delimiters and counts for multiple biological sources. Scoped
+lint, TypeScript and whitespace checks apply; no new automated tests for emphasis.
+The existing single-sample scope assertion now reads the complete source/count
+text across the emphasized label markup; its expected content is unchanged.
+Automated execution remains request-only.
+
+## Shared Customer/Partner shipping progress — October 5, 2026
+
+The shared WorkflowProgress replaces four boxed icons without changing existing
+phaseShippingProgress completion gates or Next step actions. Review request,
+pending/sent/partial receipt, sufficient existing stock, prepare and partial sample
+dispatch states; preserve the receipt status announcement and single-phase/phase
+list names. Completed steps expose visible Complete text/checks; unfinished work
+has exactly one current step. Existing LabJobPhaseShipping and send-action coverage
+remain applicable, authored without execution. No new automated tests for this
+bounded visual change. Check TypeScript, scoped lint, guides, desktop/phone reflow
+and semantic light/dark tokens at the logical checkpoint.
+
+## Graphical sequencing send-out tracker — October 5, 2026
+
+Read-only presentation checklist: stage-specific icons and completion checks,
+explicit state text, one `aria-current="step"`, saved preparation/dispatch/receipt
+evidence, sequencing in progress until results receipt, both final outcomes
+completing the decision step, and historical missing evidence without inferred
+success. Check horizontal desktop and vertical narrow layouts, theme tokens,
+decorative icons and the accessible ordered list. Typecheck/scoped lint and help
+generation apply; no new automated tests for this bounded presentation change.
+
+## Connected vendor send-out review — October 5, 2026
+
+`VendorBatchDialog.test.tsx` adds missing-transfer preparation refusal and retained
+dirty storage drafts. `SendoutStatusDialog.test.tsx` covers saved dispatch context,
+missing carrier/tracking, retained receipt ETA/vendor reference, dirty evidence,
+and pinned shipment/version during background refresh. `vendor-workflow.test.ts`
+checks both transferred and remaining destination volume against the exact Catalog
+minimum, including nL and a decimal immediately below the minimum. These cases
+are authored; automated execution remains request-only. Typecheck and scoped lint
+apply. The connected manual walkthrough and responsive/focus evidence are in
+[the send-out run](../testing/runs/2026-10-05-sequencing-sendout-walkthrough.md).
+
+## Vendor sequencing results — October 5, 2026
+
+`SendoutStatusDialog.test.tsx` now expects Vendor received and required ETA. `VendorBatchDialog.test.tsx` covers default outcome plus library exception/reason, permanent reference scope and no bytes verification. `vendor-workflow.test.ts` covers exact next stages, historical unrecorded outcomes and overdue ETA. Barcode scanner fixtures include the new list metadata. Typecheck/scoped lint and documentation generation apply. Automated suites remain request-only.
+
+## Customer specimen holds suppressed — October 5, 2026
+
+Customer hold controls/notice and queries are disabled, including cached data.
+`SpecimenHolds.test.tsx` retains the request workflow cases but conditionally skips
+them while suppressed; staff safe-boundary coverage remains active. Authored
+suppression coverage checks no controls or API calls with cached capability data.
+Phase tracking expects the hold panel to be absent. Customer/Partner help omits
+the hidden controls; Phaeno help retains existing-request guidance. Typecheck,
+scoped lint and generated documentation checks apply; suites remain unexecuted.
+
+## Nine walkthrough fixes — October 5, 2026
+
+Authored regressions in `PreparationStepDialog.test.tsx` cover the sole required
+sample opening, absence of empty batch entries, exact-recipe contextual action,
+Ready-mix arrival/removal and preserved quantity drafts. `SendoutStatusDialog.test.tsx`
+covers batch/provider scope, real dialog body, Cancel focus, required evidence,
+actual-time conversion and original sendout version. Preparation access coverage
+now allows contextual creation when no draft batch exists, while keeping loading
+and failed batch lookups disabled. Typecheck and touched-file
+lint apply. Automated execution remains deferred under the request-only rule.
+Cross-tab refresh and nested create/return need connected operator acceptance;
+saved demonstration records must not be replayed for verification.
+
 ## Catalog sequencing requirement and tube pairing — October 4, 2026
 
 Sequencing tube regressions cover a read-only Catalog minimum, blocked unconfigured services, one active pair form, source scan/label prerequisites, exact balance preview and interrupted-command recovery. Batch naming stays optional with no minimum editor. Authored coverage includes a different service's requirement selected by source scan and advancing to the next blank library pair after a transfer, while retaining saved evidence. Typecheck/lint and manual connected verification apply; suite execution remains request-only/deferred.
@@ -3683,3 +3784,35 @@ order. Label page sizing remains inside print media, so screen layout and dialog
 presence do not evaluate page rules. Lint and TypeScript pass. Complete browser
 and connected backend release checks are recorded separately in the
 [release plan](PORTAL-WORKFLOW-RELEASE-20261004-PLAN.md).
+
+### Sequencing vendor catalog — October 5, 2026
+
+`VendorBatchDialog.test.tsx` now covers vendor-dependent service/address clearing,
+full destination preview, missing-catalog setup recovery and reviewed selection versions
+retained through background refresh. `SupplierShipmentAddresses.test.tsx` covers
+the last required address retirement explanation and eligibility with a second
+active destination. Supplier/API fixtures include the current
+shipment-address collection and built-in Sequencing service type. New address
+configuration uses shared Field controls, modal regions, required markers and
+contextual Actions; service products omit physical inventory and expiry fields.
+
+Scoped lint and TypeScript verification pass. Automated component execution was
+not requested. Connected browser inspection covers address form validation,
+320 px reflow, bounded scrolling, focus return, single menu chevron and service
+prerequisite presentation; writes and complete catalog-to-sendout acceptance remain
+pending. See the vendor catalog evidence receipt.
+
+## October 5 controlled release verification
+
+The owner separately authorized full tests, commit/push, deployment and the two
+preserving EF migrations under [the hosted release plan](PORTAL-WORKFLOW-RELEASE-20261005-PLAN.md).
+Final results and hosted activation are recorded in [the release receipt](../operations/portal-workflow-release-20261005.md).
+This supersedes request-only execution statements in the earlier local checkpoints;
+physical/scientific/provider and authenticated operator acceptance remain separate.
+
+The clean final unit run passes 1,448 tests across 225 files, with zero failures
+and three intentional cases skipped while Customer specimen holds are suppressed.
+The suppression regression is active. Lint, TypeScript and generated help checks
+pass. Updated selectors retain the primary batch link, vendor-dependent controls,
+per-sample quantity labels and next-step announcement assertions. The vendor batch
+modal now includes its required accessible description.

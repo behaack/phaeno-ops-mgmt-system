@@ -87,6 +87,7 @@ import { Route as LabOperationsMasterMixesMixIdRouteImport } from './routes/lab-
 import { Route as LabOperationsKitRequestsRequestIdRouteImport } from './routes/lab-operations.kit-requests.$requestId'
 import { Route as LabOperationsExecutionsExecutionIdRouteImport } from './routes/lab-operations.executions.$executionId'
 import { Route as LabOperationsDataAssemblyOrderIdRouteImport } from './routes/lab-operations.data-assembly.$orderId'
+import { Route as LabOperationsBatchesBatchIdRouteImport } from './routes/lab-operations.batches.$batchId'
 import { Route as LabOperationsAssemblyJobsJobIdRouteImport } from './routes/lab-operations.assembly-jobs.$jobId'
 import { Route as FinanceKindRecordIdRouteImport } from './routes/finance.$kind.$recordId'
 import { Route as DocsAudienceSlugRouteImport } from './routes/docs.$audience.$slug'
@@ -537,6 +538,12 @@ const LabOperationsDataAssemblyOrderIdRoute =
     path: '/data-assembly/$orderId',
     getParentRoute: () => LabOperationsRoute,
   } as any)
+const LabOperationsBatchesBatchIdRoute =
+  LabOperationsBatchesBatchIdRouteImport.update({
+    id: '/batches/$batchId',
+    path: '/batches/$batchId',
+    getParentRoute: () => LabOperationsRoute,
+  } as any)
 const LabOperationsAssemblyJobsJobIdRoute =
   LabOperationsAssemblyJobsJobIdRouteImport.update({
     id: '/assembly-jobs/$jobId',
@@ -774,6 +781,7 @@ export interface FileRoutesByFullPath {
   '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
   '/finance/$kind/$recordId': typeof FinanceKindRecordIdRoute
   '/lab-operations/assembly-jobs/$jobId': typeof LabOperationsAssemblyJobsJobIdRoute
+  '/lab-operations/batches/$batchId': typeof LabOperationsBatchesBatchIdRoute
   '/lab-operations/data-assembly/$orderId': typeof LabOperationsDataAssemblyOrderIdRoute
   '/lab-operations/executions/$executionId': typeof LabOperationsExecutionsExecutionIdRoute
   '/lab-operations/kit-requests/$requestId': typeof LabOperationsKitRequestsRequestIdRoute
@@ -883,6 +891,7 @@ export interface FileRoutesByTo {
   '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
   '/finance/$kind/$recordId': typeof FinanceKindRecordIdRoute
   '/lab-operations/assembly-jobs/$jobId': typeof LabOperationsAssemblyJobsJobIdRoute
+  '/lab-operations/batches/$batchId': typeof LabOperationsBatchesBatchIdRoute
   '/lab-operations/data-assembly/$orderId': typeof LabOperationsDataAssemblyOrderIdRoute
   '/lab-operations/executions/$executionId': typeof LabOperationsExecutionsExecutionIdRoute
   '/lab-operations/kit-requests/$requestId': typeof LabOperationsKitRequestsRequestIdRoute
@@ -993,6 +1002,7 @@ export interface FileRoutesById {
   '/docs/$audience/$slug': typeof DocsAudienceSlugRoute
   '/finance/$kind/$recordId': typeof FinanceKindRecordIdRoute
   '/lab-operations/assembly-jobs/$jobId': typeof LabOperationsAssemblyJobsJobIdRoute
+  '/lab-operations/batches/$batchId': typeof LabOperationsBatchesBatchIdRoute
   '/lab-operations/data-assembly/$orderId': typeof LabOperationsDataAssemblyOrderIdRoute
   '/lab-operations/executions/$executionId': typeof LabOperationsExecutionsExecutionIdRoute
   '/lab-operations/kit-requests/$requestId': typeof LabOperationsKitRequestsRequestIdRoute
@@ -1104,6 +1114,7 @@ export interface FileRouteTypes {
     | '/docs/$audience/$slug'
     | '/finance/$kind/$recordId'
     | '/lab-operations/assembly-jobs/$jobId'
+    | '/lab-operations/batches/$batchId'
     | '/lab-operations/data-assembly/$orderId'
     | '/lab-operations/executions/$executionId'
     | '/lab-operations/kit-requests/$requestId'
@@ -1213,6 +1224,7 @@ export interface FileRouteTypes {
     | '/docs/$audience/$slug'
     | '/finance/$kind/$recordId'
     | '/lab-operations/assembly-jobs/$jobId'
+    | '/lab-operations/batches/$batchId'
     | '/lab-operations/data-assembly/$orderId'
     | '/lab-operations/executions/$executionId'
     | '/lab-operations/kit-requests/$requestId'
@@ -1322,6 +1334,7 @@ export interface FileRouteTypes {
     | '/docs/$audience/$slug'
     | '/finance/$kind/$recordId'
     | '/lab-operations/assembly-jobs/$jobId'
+    | '/lab-operations/batches/$batchId'
     | '/lab-operations/data-assembly/$orderId'
     | '/lab-operations/executions/$executionId'
     | '/lab-operations/kit-requests/$requestId'
@@ -1948,6 +1961,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LabOperationsDataAssemblyOrderIdRouteImport
       parentRoute: typeof LabOperationsRoute
     }
+    '/lab-operations/batches/$batchId': {
+      id: '/lab-operations/batches/$batchId'
+      path: '/batches/$batchId'
+      fullPath: '/lab-operations/batches/$batchId'
+      preLoaderRoute: typeof LabOperationsBatchesBatchIdRouteImport
+      parentRoute: typeof LabOperationsRoute
+    }
     '/lab-operations/assembly-jobs/$jobId': {
       id: '/lab-operations/assembly-jobs/$jobId'
       path: '/assembly-jobs/$jobId'
@@ -2289,6 +2309,7 @@ interface LabOperationsRouteChildren {
   LabOperationsWorkOrderIdRoute: typeof LabOperationsWorkOrderIdRoute
   LabOperationsResultReleaseRoute: typeof LabOperationsResultReleaseRoute
   LabOperationsAssemblyJobsJobIdRoute: typeof LabOperationsAssemblyJobsJobIdRoute
+  LabOperationsBatchesBatchIdRoute: typeof LabOperationsBatchesBatchIdRoute
   LabOperationsDataAssemblyOrderIdRoute: typeof LabOperationsDataAssemblyOrderIdRoute
   LabOperationsExecutionsExecutionIdRoute: typeof LabOperationsExecutionsExecutionIdRoute
   LabOperationsKitRequestsRequestIdRoute: typeof LabOperationsKitRequestsRequestIdRoute
@@ -2312,6 +2333,7 @@ const LabOperationsRouteChildren: LabOperationsRouteChildren = {
   LabOperationsWorkOrderIdRoute: LabOperationsWorkOrderIdRoute,
   LabOperationsResultReleaseRoute: LabOperationsResultReleaseRoute,
   LabOperationsAssemblyJobsJobIdRoute: LabOperationsAssemblyJobsJobIdRoute,
+  LabOperationsBatchesBatchIdRoute: LabOperationsBatchesBatchIdRoute,
   LabOperationsDataAssemblyOrderIdRoute: LabOperationsDataAssemblyOrderIdRoute,
   LabOperationsExecutionsExecutionIdRoute:
     LabOperationsExecutionsExecutionIdRoute,

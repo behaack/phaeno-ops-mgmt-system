@@ -11,7 +11,7 @@ import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/require
 import { Label } from '#/components/ui/label'
 import { ActionMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '#/components/ui/dropdown-menu'
 import { EvidenceError } from '#/features/lab-operations/InvestigationEvidence'
-import { useSpecimenHolds, type SpecimenHold as Hold } from './use-specimen-holds'
+import { customerSpecimenHoldsEnabled, useSpecimenHolds, type SpecimenHold as Hold } from './use-specimen-holds'
 import { useOrderDecisionDismissal } from './use-order-decision-dismissal'
 
 type Decision = { specimen: { id: string; name: string }; hold?: Hold; action: string; label: string }
@@ -43,6 +43,7 @@ export function SpecimenHolds({ orderId, workOrderId, sampleIds, embedded = fals
   const dismissal = useOrderDecisionDismissal(dirty, mutation.isPending, () => { setDecision(null); form.reset() }, { scope: 'hold request', description: 'Your unsaved reason will be discarded. The sample’s saved hold status will remain unchanged.' })
   const close = dismissal.close
   function choose(value: Decision) { opener.current = document.getElementById(`hold-action-${value.specimen.id}`); mutation.reset(); form.reset(); setDecision(value) }
+  if (!staff && !customerSpecimenHoldsEnabled) return null
   if (query.isPending) return <p role="status">Loading specimen holds…</p>
   if (query.isError) return <div><EvidenceError error={query.error} /><Button variant="outline" onClick={() => void query.refetch()}>Reload specimen holds</Button></div>
   if (!query.data.workOrderId || !query.data.specimens.length) return null

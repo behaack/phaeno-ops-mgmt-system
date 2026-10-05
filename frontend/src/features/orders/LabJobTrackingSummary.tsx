@@ -2,11 +2,12 @@ import type { LabServiceOrder } from '#/api/order-management'
 import { Alert, AlertDescription, AlertTitle } from '#/components/ui/alert'
 import { Button } from '#/components/ui/button'
 import { humanizeStatus } from './OrderStatusBadge'
-import { useSpecimenHolds } from './use-specimen-holds'
+import { customerSpecimenHoldsEnabled, useSpecimenHolds } from './use-specimen-holds'
 import { hasMultipleLabPhases } from './lab-job-presentation'
 
 export function LabJobHoldNotice({ order, onReview }: { order: LabServiceOrder; onReview: (phaseId?: string) => void }) {
   const { query } = useSpecimenHolds(order.id)
+  if (!customerSpecimenHoldsEnabled) return null
   if (query.error) return <Alert className="mb-5" variant="destructive"><AlertTitle>Sample holds could not be checked</AlertTitle><AlertDescription>Your saved records are preserved. <Button variant="outline" size="sm" onClick={() => void query.refetch()}>Retry holds</Button></AlertDescription></Alert>
   const active = query.data?.holds.filter(hold => hold.state !== 'Released') ?? []
   if (!active.length) return null

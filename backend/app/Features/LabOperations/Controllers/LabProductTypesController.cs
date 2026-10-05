@@ -46,6 +46,9 @@ public sealed class LabProductTypesController(PSeqOperationsDbContext db, OrderR
             ?? throw new OrderManagementException("product_type_not_found", "The product type was not found.", 404);
         if (type.Version != request.Version) throw new OrderManagementException("product_type_changed", "This type changed. Close the editor and refresh before trying again.", 409);
         var requestedName = request.Name ?? string.Empty;
+        if (type.Id == LabProductType.SequencingServiceId && (!string.Equals(requestedName.Trim(), "Sequencing service", StringComparison.Ordinal)
+            || !request.IsActive || Use(request.KitUse) != LabSupplierProductKind.Other))
+            throw new OrderManagementException("sequencing_type_protected", "The Sequencing service type is built in; its name, active status and kit use are fixed.", 409);
         if (type.Id == LabProductType.ReagentId && (!string.Equals(requestedName.Trim(), "Reagent", StringComparison.Ordinal)
             || !request.IsActive || Use(request.KitUse) != LabSupplierProductKind.Other))
             throw new OrderManagementException("reagent_type_protected", "The Reagent product type is fixed for Phaeno-made products.", 409);

@@ -382,6 +382,26 @@ public static class LabOperationsModelConfiguration
             });
         });
 
+        modelBuilder.Entity<LabSupplierShipmentAddress>(entity =>
+        {
+            entity.ToTable("lab_supplier_shipment_addresses", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            ConfigureAudited(entity);
+            entity.Property(e => e.Label).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.NormalizedLabel).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Recipient).HasMaxLength(200);
+            entity.Property(e => e.AddressLine1).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.AddressLine2).HasMaxLength(200);
+            entity.Property(e => e.City).HasMaxLength(150).IsRequired();
+            entity.Property(e => e.Region).HasMaxLength(150);
+            entity.Property(e => e.PostalCode).HasMaxLength(40);
+            entity.Property(e => e.CountryCode).HasMaxLength(2).IsRequired();
+            entity.Property(e => e.Phone).HasMaxLength(50);
+            entity.Property(e => e.Instructions).HasMaxLength(500);
+            entity.HasIndex(e => new { e.SupplierId, e.NormalizedLabel }).IsUnique();
+            entity.HasOne<LabSupplier>().WithMany().HasForeignKey(e => e.SupplierId).OnDelete(DeleteBehavior.Restrict);
+        });
+
         modelBuilder.Entity<LabProductType>(entity =>
         {
             entity.ToTable("lab_product_types", laboratorySchema);
@@ -395,7 +415,8 @@ public static class LabOperationsModelConfiguration
             entity.HasData(
                 new { Id = LabProductType.TubeId, Name = "Tube", NormalizedName = "TUBE", Description = "Individual sample tubes.", KitUse = LabSupplierProductKind.Tube, IsActive = true, Version = 1L, CreatedAt = new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc) },
                 new { Id = LabProductType.ShippingContainerId, Name = "Shipping Container", NormalizedName = "SHIPPING CONTAINER", Description = "Outer shipping containers with a configured tube capacity.", KitUse = LabSupplierProductKind.ShippingContainer, IsActive = true, Version = 1L, CreatedAt = new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc) },
-                new { Id = LabProductType.ReagentId, Name = "Reagent", NormalizedName = "REAGENT", Description = "Purchased and Phaeno-manufactured reagents.", KitUse = LabSupplierProductKind.Other, IsActive = true, Version = 1L, CreatedAt = new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc) });
+                new { Id = LabProductType.ReagentId, Name = "Reagent", NormalizedName = "REAGENT", Description = "Purchased and Phaeno-manufactured reagents.", KitUse = LabSupplierProductKind.Other, IsActive = true, Version = 1L, CreatedAt = new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 9, 28, 0, 0, 0, DateTimeKind.Utc) },
+                new { Id = LabProductType.SequencingServiceId, Name = "Sequencing service", NormalizedName = "SEQUENCING SERVICE", Description = "External sequencing services supplied by a vendor.", KitUse = LabSupplierProductKind.Other, IsActive = true, Version = 1L, CreatedAt = new DateTime(2026, 10, 5, 0, 0, 0, DateTimeKind.Utc), UpdatedAt = new DateTime(2026, 10, 5, 0, 0, 0, DateTimeKind.Utc) });
         });
 
         modelBuilder.Entity<LabSupplierProduct>(entity =>
@@ -627,11 +648,44 @@ public static class LabOperationsModelConfiguration
             ConfigureAudited(entity);
             entity.Property(e => e.ProviderName).HasMaxLength(255).IsRequired();
             entity.Property(e => e.ProviderReference).HasMaxLength(255);
+            entity.Property(e => e.Destination).HasMaxLength(2000);
+            entity.Property(e => e.Carrier).HasMaxLength(255);
+            entity.Property(e => e.TrackingReference).HasMaxLength(255);
+            entity.Property(e => e.Outcome).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.OutcomeNote).HasMaxLength(4000);
+            entity.Property(e => e.VendorProductName).HasMaxLength(100);
+            entity.Property(e => e.VendorShipmentAddressLabel).HasMaxLength(100);
+            entity.HasOne<LabSupplier>().WithMany().HasForeignKey(e => e.VendorSupplierId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabSupplierProduct>().WithMany().HasForeignKey(e => e.VendorProductId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabSupplierShipmentAddress>().WithMany().HasForeignKey(e => e.VendorShipmentAddressId).OnDelete(DeleteBehavior.Restrict);
             entity.Property(e => e.ManifestJson).HasColumnType("jsonb").IsRequired();
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.HasIndex(e => e.LabOperationalBatchId).IsUnique();
             entity.HasIndex(e => e.ProviderReference);
             entity.HasOne<LabOperationalBatch>().WithMany().HasForeignKey(e => e.LabOperationalBatchId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<LabVendorLibraryException>(entity =>
+        {
+            entity.ToTable("lab_vendor_library_exceptions", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Outcome).HasConversion<string>().HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Reason).HasMaxLength(4000).IsRequired();
+            entity.HasIndex(e => new { e.LabNgsSendoutId, e.LabBatchMemberId }).IsUnique();
+            entity.HasOne<LabNgsSendout>().WithMany().HasForeignKey(e => e.LabNgsSendoutId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabBatchMember>().WithMany().HasForeignKey(e => e.LabBatchMemberId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<LabVendorResultReference>(entity =>
+        {
+            entity.ToTable("lab_vendor_result_references", laboratorySchema);
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Label).HasMaxLength(255).IsRequired();
+            entity.Property(e => e.StorageReference).HasMaxLength(2000).IsRequired();
+            entity.Property(e => e.Notes).HasMaxLength(4000);
+            entity.HasIndex(e => e.LabNgsSendoutId);
+            entity.HasOne<LabNgsSendout>().WithMany().HasForeignKey(e => e.LabNgsSendoutId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<LabBatchMember>().WithMany().HasForeignKey(e => e.LabBatchMemberId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<LabCustodyEvent>(entity =>

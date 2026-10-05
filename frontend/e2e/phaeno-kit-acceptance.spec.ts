@@ -5,7 +5,7 @@ import type { CatalogSupplier, ProductWrite, SupplierProduct } from '../src/api/
 import type { ShippingStockKit } from '../src/api/shipping-containers'
 
 const shippingContainerProductTypeId = '90000000-0000-4000-8000-000000000002'
-const containerSupplier: CatalogSupplier = { id: 'shipping-supplier', name: 'Shipping supplier', isActive: true, isInternalProducer: false, version: 1, products: [] }
+const containerSupplier: CatalogSupplier = { id: 'shipping-supplier', name: 'Shipping supplier', isActive: true, isInternalProducer: false, version: 1, shipmentAddresses: [], products: [] }
 const container = { definitionId: 'container-1', sku: 'SHIPPER-1', commonName: 'Sample shipper', capacity: 1 }
 function kit(id: number, status: ShippingStockKit['status']): ShippingStockKit {
   const atPhaeno = status === 'Preparing'

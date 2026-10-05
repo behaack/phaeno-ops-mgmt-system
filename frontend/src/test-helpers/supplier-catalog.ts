@@ -4,13 +4,14 @@ export const shipperSupplierId = '81000000-0000-4000-8000-000000000002'
 export const tubeProductId = '82000000-0000-4000-8000-000000000001'
 export const shipperProductId = '82000000-0000-4000-8000-000000000002'
 export const supplierCatalogFixture: CatalogSupplier[] = [
-  { id: tubeSupplierId, name: 'Tube maker', isActive: true, version: 1, products: [{ id: tubeProductId, supplierId: tubeSupplierId, productNumber: 'T-001', description: 'Sterile transport tube', kind: 'Tube', productTypeId: '90000000-0000-4000-8000-000000000001', productTypeName: 'Tube', productTypeIsActive: true, defaultQuantityUnit: 'each', isActive: true, version: 1 }] },
-  { id: shipperSupplierId, name: 'Synthetic supplier', isActive: true, version: 1, products: [{ id: shipperProductId, supplierId: shipperSupplierId, productNumber: 'PRODUCT-20', description: 'Insulated shipping container', tubeCapacity: 20, kind: 'ShippingContainer', productTypeId: '90000000-0000-4000-8000-000000000002', productTypeName: 'Shipping Container', productTypeIsActive: true, defaultQuantityUnit: 'each', isActive: true, version: 1 }] },
+  { id: tubeSupplierId, name: 'Tube maker', isActive: true, version: 1, shipmentAddresses: [], products: [{ id: tubeProductId, supplierId: tubeSupplierId, productNumber: 'T-001', description: 'Sterile transport tube', kind: 'Tube', productTypeId: '90000000-0000-4000-8000-000000000001', productTypeName: 'Tube', productTypeIsActive: true, defaultQuantityUnit: 'each', isActive: true, version: 1 }] },
+  { id: shipperSupplierId, name: 'Synthetic supplier', isActive: true, version: 1, shipmentAddresses: [], products: [{ id: shipperProductId, supplierId: shipperSupplierId, productNumber: 'PRODUCT-20', description: 'Insulated shipping container', tubeCapacity: 20, kind: 'ShippingContainer', productTypeId: '90000000-0000-4000-8000-000000000002', productTypeName: 'Shipping Container', productTypeIsActive: true, defaultQuantityUnit: 'each', isActive: true, version: 1 }] },
 ]
 
 export const productTypesFixture: ProductType[] = [
   { id: '90000000-0000-4000-8000-000000000001', name: 'Tube', description: 'Sample transportation tubes', kitUse: 'Tube', isActive: true, version: 1, productCount: 1 },
   { id: '90000000-0000-4000-8000-000000000002', name: 'Shipping Container', description: 'Transportation containers', kitUse: 'ShippingContainer', isActive: true, version: 1, productCount: 1 },
   { id: '90000000-0000-4000-8000-000000000003', name: 'Reagent', description: 'Laboratory reagents', kitUse: 'Other', isActive: true, version: 1, productCount: 0 },
-  { id: '90000000-0000-4000-8000-000000000004', name: 'Labels', description: 'Kit labels', kitUse: 'Other', isActive: true, version: 1, productCount: 0 },
+  { id: '90000000-0000-4000-8000-000000000005', name: 'Labels', description: 'Kit labels', kitUse: 'Other', isActive: true, version: 1, productCount: 0 },
+  { id: '90000000-0000-4000-8000-000000000004', name: 'Sequencing service', description: 'Vendor sequencing', kitUse: 'Other', isActive: true, version: 1, productCount: 0 },
 ]

@@ -1,3 +1,5 @@
+import { NativeSelect } from '#/components/ui/native-select'
+import { operationalInputProps } from './lab-presentation'
 import { useEffect, useId, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { ChevronRight } from 'lucide-react'
@@ -16,6 +18,7 @@ import type { ProtocolDefinition } from './protocol-definition'
 import { isAutomaticSpecimenReference, isOptionalPreparationReference, isSharedIdentityCheckDate, preparationFailureReasons } from './preparation-evidence'
 import { PreparationField, prepRowClass, prepSelectClass } from './preparation-ui'
 
+import type { RequiredMix } from './PrepareRequiredMixDialog'
 import { PreparationResourceField } from './PreparationResourceField'
 import { StepTimingFields } from './StepTimingFields'
 import { emptyStepTiming, performanceInput, stepTimingSchema, timingIssues } from './step-performance'
@@ -28,8 +31,8 @@ const failureSchema = z.object({
   reason: z.string().trim().min(1, 'Record the reason and evidence.').max(4000, 'Use 4,000 characters or fewer.'),
 })
 type Values = z.infer<typeof baseSchema>
-function TubeEvidenceCard({ title, action, children, invalid = false }: { title: string; action: ReactNode; children: ReactNode; invalid?: boolean }) {
-  const [open, setOpen] = useState(false)
+function TubeEvidenceCard({ title, action, children, invalid = false, defaultOpen = false }: { title: string; action: ReactNode; children: ReactNode; invalid?: boolean; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen)
   const contentId = useId()
   useEffect(() => { if (invalid) setOpen(true) }, [invalid])
   return <section className={prepRowClass}>
@@ -40,8 +43,8 @@ function TubeEvidenceCard({ title, action, children, invalid = false }: { title:
     <div id={contentId} hidden={!open} className="mt-4 space-y-4">{children}</div>
   </section>
 }
-export function PreparationStepDialog({ batch, stage, step: sourceStep, action, onClose, onSubmit, pending, error, resourceCatalog = emptyResourceCatalog, catalogError, onFail, onFailureExit, preview, previewControls, suspended = false }: {
-  resourceCatalog?: ResourceCatalog; catalogError?: string; preview?: boolean; previewControls?: ReactNode; suspended?: boolean
+export function PreparationStepDialog({ batch, stage, step: sourceStep, action, onClose, onSubmit, pending, error, resourceCatalog = emptyResourceCatalog, catalogError, onPrepareMix, onRefreshMixes, mixesRefreshing, onFail, onFailureExit, preview, previewControls, suspended = false }: {
+  resourceCatalog?: ResourceCatalog; catalogError?: string; onPrepareMix?: (requirement: RequiredMix) => void; onRefreshMixes?: () => void; mixesRefreshing?: boolean; preview?: boolean; previewControls?: ReactNode; suspended?: boolean
   onFail?: (memberId: string, reasonCode: string, reason: string) => Promise<unknown>; onFailureExit?: () => void
   batch: PreparationDetail; stage: PreparationStage; step: Step; action: 'record' | 'repeat' | 'correct'; onClose: () => void; onSubmit: (input: PreparationStepInput, report?: File) => void; pending: boolean; error?: string; onResource?: (action: 'material' | 'equipment' | 'output', coveredMemberIds: string[]) => void
 }) {
@@ -78,6 +81,8 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
   const hasValueExceptions = manualCaptures.some(c => c.scope === 'shared' && !isSharedIdentityCheckDate(c)) || step.qcGate?.scope === 'shared'
   const hasExceptions = hasMaterialExceptions || hasValueExceptions
   const hasIndividual = manualCaptures.some(c => c.scope === 'tube') || resources.some(c => c.scope === 'tube') || step.qcGate?.scope === 'tube'
+  const hasRequiredIndividual = manualCaptures.some(c => c.scope === 'tube' && c.required) || resources.some(c => c.scope === 'tube' && c.required) || step.qcGate?.scope === 'tube'
+  const batchResources = resources.filter(f => ['batch', 'shared'].includes(f.scope ?? '') || f.type === 'output' && action !== 'correct' && applicable.length > 1)
   const showTubeReason = hasValueExceptions && recordException || step.qcGate?.scope === 'tube'
   const schema = baseSchema.transform(v => ({ ...v, covered: applicable.map(m => m.id) })).superRefine((v, ctx) => {
     if (!v.covered.length) ctx.addIssue({ code: 'custom', path: ['covered'], message: 'No tubes remain eligible for this entry.' })
@@ -173,12 +178,12 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
   const captureInput = (capture: Step['captures'][number], prefix: string, required: boolean) => {
     const key = `${prefix}_${capture.key}`
     return <PreparationField key={key} id={key} label={`${capture.label}${capture.unit ? ` (${capture.unit})` : ''}`} required={required} error={form.formState.errors.values?.[key]?.message}>
-      {capture.type === 'choice' ? <select id={key} className={prepSelectClass} {...form.register(`values.${key}`)}><option value="">{!required && capture.scope === 'shared' ? 'Use shared value' : 'Choose…'}</option>{capture.options?.map(o => <option key={o}>{o}</option>)}</select>
-        : <Input id={key} type={capture.type === 'number' ? 'number' : capture.type === 'date' ? 'date' : 'text'} step="any" placeholder={!required && capture.scope === 'shared' ? 'Use shared value' : undefined} {...form.register(`values.${key}`)} />}
+      {capture.type === 'choice' ? <NativeSelect id={key} {...form.register(`values.${key}`)}><option value="">{!required && capture.scope === 'shared' ? 'Use shared value' : 'Choose…'}</option>{capture.options?.map(o => <option key={o}>{o}</option>)}</NativeSelect>
+        : <Input {...operationalInputProps} id={key} type={capture.type === 'number' ? 'number' : capture.type === 'date' ? 'date' : 'text'} step="any" placeholder={!required && capture.scope === 'shared' ? 'Use shared value' : undefined} {...form.register(`values.${key}`)} />}
     </PreparationField>
   }
   const qcInput = (prefix: string, required: boolean) => <PreparationField id={`${prefix}_qc`} label="QC outcome" required={required} error={form.formState.errors.values?.[`${prefix}_qc`]?.message}>
-    <select id={`${prefix}_qc`} className={prepSelectClass} {...form.register(`values.${prefix}_qc`)}><option value="">{required ? 'Choose an outcome…' : 'Use shared outcome'}</option><option value="pass">Pass</option><option value="fail">Fail</option><option value="hold">Hold</option></select>
+    <NativeSelect id={`${prefix}_qc`} {...form.register(`values.${prefix}_qc`)}><option value="">{required ? 'Choose an outcome…' : 'Use shared outcome'}</option><option value="pass">Pass</option><option value="fail">Fail</option><option value="hold">Hold</option></NativeSelect>
   </PreparationField>
   const submit = (v: Values) => {
     const captures = (prefix: string, scopes: string[]) => Object.fromEntries(manualCaptures.filter(c => scopes.includes(c.scope ?? '') && (prefix === 'shared' || !isSharedIdentityCheckDate(c) && (c.scope !== 'shared' || recordException)) && v.values[`${prefix}_${c.key}`]?.trim()).map(c => [c.key, c.type === 'number' ? Number(v.values[`${prefix}_${c.key}`]) : v.values[`${prefix}_${c.key}`]]))
@@ -193,7 +198,7 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
   return <Dialog open={!suspended} onOpenChange={open => { if (!open && !pending && !failing.current) { if (failureMember) returnFromFailure(); else onClose() } }}><DialogContent className={failureMember ? 'sm:max-w-lg' : 'sm:max-w-3xl'}>{failureMember ? <form className="contents" onSubmit={failureForm.handleSubmit(submitFailure)} noValidate>
     <DialogHeader><DialogTitle>Close attempt as failed: {failureMember.position} · {failureMember.barcode}</DialogTitle><DialogDescription>This closes this tube attempt and prevents it from producing a successful library. The tube remains visible in its tray position with its failure reason and history. Entries for the other tubes will be preserved.</DialogDescription>{failureError ? <p role="alert" className="text-sm text-destructive">{failureError}</p> : null}</DialogHeader>
     <div className="space-y-4">
-      <PreparationField id="step-failure-code" label="Failure reason" required error={failureForm.formState.errors.code?.message}><select id="step-failure-code" className={prepSelectClass} disabled={failurePending} {...failureForm.register('code')}><option value="">Choose…</option>{preparationFailureReasons.map(reason => <option key={reason.value} value={reason.value}>{reason.label}</option>)}</select></PreparationField>
+      <PreparationField id="step-failure-code" label="Failure reason" required error={failureForm.formState.errors.code?.message}><NativeSelect id="step-failure-code" className={prepSelectClass} disabled={failurePending} {...failureForm.register('code')}><option value="">Choose…</option>{preparationFailureReasons.map(reason => <option key={reason.value} value={reason.value}>{reason.label}</option>)}</NativeSelect></PreparationField>
       <PreparationField id="step-failure-reason" label="Reason and evidence" required error={failureForm.formState.errors.reason?.message}><textarea id="step-failure-reason" className={`${prepSelectClass} min-h-24 py-2`} disabled={failurePending} {...failureForm.register('reason')} /></PreparationField>
     </div>
     <RequiredDialogFooter><Button type="button" variant="outline" disabled={failurePending} onClick={returnFromFailure}>Back to step</Button><Button type="submit" variant="destructive" disabled={failurePending || !canFail}>{failurePending ? 'Saving…' : 'Close attempt as failed'}</Button></RequiredDialogFooter>
@@ -207,16 +212,17 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
         {!applicable.length ? <p>No tubes are eligible for this action.</p> : null}
         {form.formState.errors.covered ? <p role="alert" className="text-sm text-destructive">{form.formState.errors.covered.message}</p> : null}
       </div>
-      {!step.required ? <PreparationField label="Decision" id="prep-decision" required><select id="prep-decision" className={prepSelectClass} {...form.register('outcome')}><option value="recorded">Performed</option><option value="skipped">Skip with reason</option></select></PreparationField> : null}
+      {!step.required ? <PreparationField label="Decision" id="prep-decision" required><NativeSelect id="prep-decision" {...form.register('outcome')}><option value="recorded">Performed</option><option value="skipped">Skip with reason</option></NativeSelect></PreparationField> : null}
       {!skipped ? <>
+        {catalogError && resources.length && !batchResources.length ? <p role="alert" className="text-sm text-destructive">{catalogError}</p> : null}
         {action === 'correct' ? <p className="text-sm text-muted-foreground">This correction preserves each tube’s earlier performer and performed time, including any unknowns. It does not record new work.</p> : <Controller name="timing" control={form.control} render={({ field }) => <StepTimingFields value={field.value} onChange={field.onChange} onBlur={field.onBlur} inputRef={field.ref} errors={form.formState.errors.timing} shared preview={Boolean(preview)} />} />}
-        {manualCaptures.some(c => c.scope !== 'tube') || resources.length > 0 || step.qcGate && step.qcGate.scope !== 'tube' ? <div className={`${prepRowClass} space-y-4`}>
+        {manualCaptures.some(c => c.scope !== 'tube') || batchResources.length > 0 || step.qcGate && step.qcGate.scope !== 'tube' ? <div className={`${prepRowClass} space-y-4`}>
           <h3 className="font-medium">Batch entries</h3>
           {manualCaptures.filter(c => c.scope !== 'tube').map(c => captureInput(c, 'shared', c.required))}
           {manualCaptures.some(isSharedIdentityCheckDate) ? <p className="text-sm text-muted-foreground">This identity check date is recorded for every tube covered by this entry.</p> : null}
           {step.qcGate && step.qcGate.scope !== 'tube' ? <><p className="text-sm">{step.qcGate.criteria}</p>{qcInput('shared', true)}</> : null}
         {catalogError && resources.length ? <p role="alert" className="text-sm text-destructive">{catalogError}</p> : null}
-        {resources.filter(f => ['batch', 'shared'].includes(f.scope ?? '') || f.type === 'output' && action !== 'correct').map(field => <PreparationResourceField key={field.key} field={field} form={form} catalog={catalog} count={field.scope === 'shared' ? applicable.filter(m => form.watch(`values.${m.id}_${field.key}_exception`) !== 'yes').length : covered.length} defaults={field.type === 'output'} correction={action === 'correct'} previous={applicable[0]?.executions.find(e => e.stageId === stage.id)?.evidence.records.filter(r => r.stepKey === step.key).at(-1)?.captures[field.key]} />)}
+        {batchResources.map(field => <PreparationResourceField onPrepareMix={onPrepareMix} onRefreshMixes={onRefreshMixes} mixesRefreshing={mixesRefreshing} key={field.key} field={field} form={form} catalog={catalog} count={field.scope === 'shared' ? applicable.filter(m => form.watch(`values.${m.id}_${field.key}_exception`) !== 'yes').length : covered.length} defaults={field.type === 'output'} correction={action === 'correct'} previous={applicable[0]?.executions.find(e => e.stageId === stage.id)?.evidence.records.filter(r => r.stepKey === step.key).at(-1)?.captures[field.key]} />)}
         {action === 'correct' && resources.length ? <p className="text-sm text-muted-foreground">Resource use is retained. This correction does not consume stock again or replace an output.</p> : null}
         </div> : null}
       </> : null}
@@ -227,7 +233,7 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
           const recorded = m.executions.find(e => e.stageId === stage.id)?.evidence.records.filter(r => r.stepKey === step.key).at(-1)
           const draftCaptures = manualCaptures.filter(c => form.getValues(`values.${m.id}_${c.key}`)?.trim())
           const hasUnsavedTransfer = resources.some(c => c.type === 'biologicalMaterial' && (!m.libraryTube?.transferId || form.watch(`values.${m.id}_${c.key}_additional`) === 'yes') && ['quantity', 'barcode', 'sourceBarcode', 'exhausted'].some(part => form.watch(`values.${m.id}_${c.key}_${part}`)?.trim()))
-          return <TubeEvidenceCard key={m.id} invalid={Object.keys(form.formState.errors.values ?? {}).some(key => key.startsWith(`${m.id}_`))} title={`${m.position} · ${m.barcode}`} action={failed ? <Badge variant="destructive">Failed</Badge> : canFail ? <Button type="button" variant="outline" size="sm" className="shrink-0 text-destructive" ref={element => { failureButtons.current[m.id] = element }} disabled={pending || hasUnsavedTransfer || hasMaterialExceptions && recordException} title={hasUnsavedTransfer ? 'Save the physical transfer before closing this attempt as failed.' : hasMaterialExceptions && recordException ? 'Choose the outcome in the material exception and save the step to retain consumption.' : undefined} aria-label={`Close attempt as failed for ${m.position}, tube ${m.barcode}`} onClick={() => { returnTo.current = m.id; failureForm.reset({ code: '', reason: '' }); setFailureError(undefined); setFailureMemberId(m.id) }}>Close attempt as failed</Button> : null}>
+          return <TubeEvidenceCard key={m.id} defaultOpen={!failed && covered.length === 1 && hasRequiredIndividual} invalid={Object.keys(form.formState.errors.values ?? {}).some(key => key.startsWith(`${m.id}_`))} title={`${m.position} · ${m.barcode}`} action={failed ? <Badge variant="destructive">Failed</Badge> : canFail ? <Button type="button" variant="outline" size="sm" className="shrink-0 text-destructive" ref={element => { failureButtons.current[m.id] = element }} disabled={pending || hasUnsavedTransfer || hasMaterialExceptions && recordException} title={hasUnsavedTransfer ? 'Save the physical transfer before closing this attempt as failed.' : hasMaterialExceptions && recordException ? 'Choose the outcome in the material exception and save the step to retain consumption.' : undefined} aria-label={`Close attempt as failed for ${m.position}, tube ${m.barcode}`} onClick={() => { returnTo.current = m.id; failureForm.reset({ code: '', reason: '' }); setFailureError(undefined); setFailureMemberId(m.id) }}>Close attempt as failed</Button> : null}>
           <dl className="grid gap-3 rounded-md border bg-background p-3 sm:grid-cols-2">
             <div className="min-w-0"><dt className="text-xs text-muted-foreground">Customer sample ID</dt><dd className="wrap-anywhere">{m.customerSampleId === undefined ? 'Not available' : m.customerSampleId?.trim() || 'Not recorded'}</dd></div>
             <div className="min-w-0"><dt className="text-xs text-muted-foreground">Specimen type</dt><dd className="wrap-anywhere">{m.biologicalSource?.trim() || 'Not recorded'}</dd></div>
@@ -239,9 +245,9 @@ export function PreparationStepDialog({ batch, stage, step: sourceStep, action, 
             {recorded ? <div className="space-y-2 text-sm"><h5 className="font-medium">Step record</h5><dl className="space-y-2">{Object.entries(recorded.captures).map(([key, value]) => <div key={key}><dt className="text-muted-foreground">{step.captures.find(c => c.key === key)?.label ?? key}</dt><dd className="whitespace-pre-wrap break-words">{String(value)}</dd></div>)}</dl>{recorded.qcOutcome ? <p>QC outcome: {recorded.qcOutcome}</p> : null}{recorded.reason ? <p className="whitespace-pre-wrap break-words">{recorded.reason}</p> : null}</div> : null}
             {draftCaptures.length ? <div className="space-y-2 text-sm"><h5 className="font-medium">Unsaved entries — for reference only</h5><dl className="space-y-2">{draftCaptures.map(c => <div key={c.key}><dt className="text-muted-foreground">{c.label}</dt><dd className="whitespace-pre-wrap break-words">{form.getValues(`values.${m.id}_${c.key}`)}</dd></div>)}</dl></div> : null}
           </> : <>
-            {resources.filter(f => f.scope === 'tube' || f.scope === 'shared' && recordException).map(field => <PreparationResourceField key={field.key} field={field} member={m} form={form} catalog={catalog} count={covered.length} correction={action === 'correct'} previous={recorded?.captures[field.key]} />)}
+            {resources.filter(f => f.scope === 'tube' || f.scope === 'shared' && recordException).map(field => <PreparationResourceField onPrepareMix={onPrepareMix} onRefreshMixes={onRefreshMixes} mixesRefreshing={mixesRefreshing} key={field.key} field={field} member={m} form={form} catalog={catalog} count={covered.length} correction={action === 'correct'} previous={recorded?.captures[field.key]} />)}
             {recordsSpecimenReference ? <p className="text-sm text-muted-foreground">POMS records this accession reference automatically. Verify the specimen details against the tube you are processing.</p> : null}
-            {manualCaptures.filter(c => (c.scope === 'tube' || c.scope === 'shared' && recordException) && !isSharedIdentityCheckDate(c)).map(c => captureInput(c, m.id, c.scope === 'tube' && c.required))}{step.qcGate && (step.qcGate.scope === 'tube' || step.qcGate.scope === 'shared' && recordException) ? <><p className="text-sm">{step.qcGate.criteria}</p>{qcInput(m.id, step.qcGate.scope === 'tube')}</> : null}{showTubeReason ? <PreparationField label="Tube exception or QC reason" id={`${m.id}_reason`} error={form.formState.errors.values?.[`${m.id}_reason`]?.message}><Input id={`${m.id}_reason`} {...form.register(`values.${m.id}_reason`)} /></PreparationField> : null}
+            {manualCaptures.filter(c => (c.scope === 'tube' || c.scope === 'shared' && recordException) && !isSharedIdentityCheckDate(c)).map(c => captureInput(c, m.id, c.scope === 'tube' && c.required))}{step.qcGate && (step.qcGate.scope === 'tube' || step.qcGate.scope === 'shared' && recordException) ? <><p className="text-sm">{step.qcGate.criteria}</p>{qcInput(m.id, step.qcGate.scope === 'tube')}</> : null}{showTubeReason ? <PreparationField label="Tube exception or QC reason" id={`${m.id}_reason`} error={form.formState.errors.values?.[`${m.id}_reason`]?.message}><Input {...operationalInputProps} id={`${m.id}_reason`} {...form.register(`values.${m.id}_reason`)} /></PreparationField> : null}
           </>}</TubeEvidenceCard>
         })}
       {!skipped ? <>

@@ -1,5 +1,85 @@
 # Order Management Plan
 
+## Graphical phase sample completion — October 5, 2026
+
+The Owner requested the same graphical tracker in Customer Progress, with sample
+counts at each laboratory stage and a check when all samples finish a step.
+Customer/Partner administrators and members need to understand mixed progress,
+including seven samples sequencing while three remain ready for preparation.
+
+Place a six-stage Laboratory sample progress tracker at the top of an expanded
+phase, before timing; single-phase Jobs show it directly. Preserve the compact
+phase summary for comparison, sample/shipment details, phase expansion/URL state,
+and contextual Actions. Reuse shared WorkflowProgress, with sample counts at each
+stage, distinct completed/current/in-progress/upcoming labels and mobile reflow.
+
+Owner refinements: single-phase tracking Actions moves to the trailing end of the
+Progress header, with no second control beside timing. Multi-phase actions remain
+with their cohort. Share the same eligibility/callback logic in both locations;
+preserve the cancellation-only neutral dropdown and the directly labeled sole
+results action. Sample fractions use smaller `text-xs` with semibold weight.
+Shared stage circles shrink from 48 to 40 pixels, their icons from 20 to 16 pixels,
+and check badges/connectors remain aligned in horizontal and vertical layouts.
+
+The Owner also requested visual demarcation below the laboratory tracker.
+Add a full-width semantic border and top padding before the timing/receipt/run
+details, in both single-phase and expanded multi-phase Progress. Preserve the
+existing tracker size, counts, header Actions and responsive grid. This is a
+presentation-only refinement; audience guides need no instruction changes.
+
+Highlighted summary labels (Samples, Shipping, Physical receipt, Laboratory,
+Results), TAT, Complete receipt, Delivery due, Containers received and biological
+source names use bold weight. Retain their font sizes and normal-weight values
+and sample counts. Apply the same summary emphasis to multi-phase column/mobile
+labels. This visual refinement requires no audience instruction change.
+
+Use only the existing authorized sample-scoped LabPhaseFacts stage counts, never
+the coarse Job milestone, tube totals or vendor batch status. Current source keys
+are AwaitingReceipt, AwaitingAcceptance, ReadyForPreparation, LibraryPreparation,
+Sequencing, DataProcessing, QualityReview, AwaitingDelivery, Delivered, Cancelled.
+Received completes for the two received states and every later recorded state.
+Library preparation completes at Sequencing or later; Sequencing at DataProcessing
+or later; Data assembly at QualityReview or later; Quality review at AwaitingDelivery
+or Delivered; Results available only at Delivered. Later-stage samples count toward
+earlier completed steps, while current stage populations are labeled separately.
+Missing, unknown and cancelled samples do not create completion checks. A check
+requires a positive expected cohort count and exactly that many finished samples.
+Holds/failed flags remain visible without advancing stage facts; cancelled or
+superseded phases do not advertise a next stage.
+
+For seven Sequencing plus three ReadyForPreparation samples, counts are
+10/10 Received, 7/10 Library preparation, 0/10 Sequencing, with seven in sequencing.
+Approved results awaiting release can complete review while Results available
+remains unfinished. Denominators are samples, independent of physical tube or
+purchased sequencing-run totals. No API, persistence, authorization, migration,
+historical repair, scientific decision, operational writes or deployment change.
+
+Acceptance: correct mixed-stage counts/checks, no sequencing-start completion or
+scientific-approval delivery shortcut, no empty-cohort checks, read-only histories,
+preserved phase/next-action behavior, desktop/mobile and semantic theme readability.
+Author focused count regressions, update Customer/Partner help and living plans;
+automated execution remains request-only. Current source supersedes older plan
+wording that makes result delivery a prerequisite for Customer phase shipping:
+shipping advances after all required dispatches, as recorded in the owning
+on-demand phase kit plan.
+
+Implementation and bounded verification completed. See the
+[graphical progress review](../testing/runs/2026-10-05-graphical-workflow-progress.md)
+for static results, synthetic Customer previews, read-only sequencing evidence,
+responsive/menu focus checks and remaining acceptance boundaries.
+
+## Customer authorization snapshot read — October 5, 2026
+
+The Customer order endpoint failed to read a laboratory authorization saved by
+the purchased-service correction because `sourceType` was a named enum. Both
+Customer roster readers now use scoped string-enum serialization options that
+match the correction writer; initial and additional authorization writes use
+the same format. General order/quote serialization, tenant permissions, saved
+order data and immutable laboratory history are unchanged. No conversion or
+migration is needed. A PostgreSQL controller regression covers Customer detail,
+authorized sample identities and unchanged saved evidence after reading. Its
+source is compiled; automated execution remains request-only.
+
 ## Catalog sequencing requirement — October 4, 2026
 
 Catalog administrators configure the positive minimum sequencing volume on each PSeq Lab Service. Operators read it during one-pair-at-a-time tube preparation; each allocated pair retains its service version and requirement. Batch-level editing is superseded. See [the owning plan](CATALOG-SEQUENCING-TUBE-PAIRING-PLAN.md) for behavior, conversion and verification.

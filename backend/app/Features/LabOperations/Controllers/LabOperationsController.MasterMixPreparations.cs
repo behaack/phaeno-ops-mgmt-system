@@ -37,6 +37,7 @@ public sealed record LabMasterMixDto(Guid Id, string Barcode, Guid WorkflowId, i
     string? DiscardReason, string? RecipeDeviationReason, Guid? RecipeDeviationApprovedByUserId,
     DateTime? RecipeDeviationApprovedAtUtc, bool RecipeDeviationApprovalCurrent, bool RecipeMatches,
     int NextStepSequence, IReadOnlyList<LabProtocolStepDefinition> Steps, IReadOnlyList<LabMasterMixRecipeIngredient> RecipeIngredients,
+    IReadOnlyList<LabMasterMixRecipeIngredient> MissingRecipeIngredients,
     IReadOnlyList<LabMasterMixStepDto> RecordedSteps,
     IReadOnlyList<LabMasterMixIngredientDto> Ingredients,
     IReadOnlyList<LabMasterMixTrayUseDto> TrayUses,
@@ -375,6 +376,25 @@ public sealed partial class LabOperationsController
         material.ProductId.HasValue ? lot.SupplierProductId == material.ProductId && kind == LabMaterialLotKind.SupplierLot
             : material.MaterialDefinitionId == lot.MaterialDefinitionId && kind == LabMaterialLotKind.PreparedReagent;
 
+    private static IReadOnlyList<LabMasterMixRecipeIngredient> MissingRecipeAmounts(LabMasterMixPreparation preparation,
+        IReadOnlyCollection<LabMasterMixIngredientUse> uses, IReadOnlyDictionary<Guid, LabMaterialLot> lots)
+    {
+        var missing = new List<LabMasterMixRecipeIngredient>();
+        foreach (var required in preparation.Ingredients())
+        {
+            var remaining = required.Quantity;
+            foreach (var use in uses.Where(use => use.PreparationId == preparation.Id && use.VoidedAtUtc == null
+                && use.QuantityUnit == required.QuantityUnit && lots.TryGetValue(use.SourceMaterialLotId, out var lot)
+                && (required.ProductId.HasValue ? required.ProductId == lot.SupplierProductId : required.MaterialDefinitionId == lot.MaterialDefinitionId)))
+            {
+                if (use.Quantity >= remaining) { remaining = 0; break; }
+                remaining -= use.Quantity;
+            }
+            if (remaining > 0) missing.Add(required with { Quantity = remaining, QuantityText = remaining.ToString(CultureInfo.InvariantCulture) });
+        }
+        return missing;
+    }
+
     private async Task<IReadOnlyList<LabMasterMixDto>> ReadMasterMixesAsync(
         IReadOnlyList<LabMasterMixPreparation> preparations, CancellationToken ct)
     {
@@ -417,7 +437,8 @@ public sealed partial class LabOperationsController
             item.RecipeDeviationReason, item.RecipeDeviationApprovedByUserId, item.RecipeDeviationApprovedAtUtc,
             item.RecipeDeviationApprovedIngredientCount == item.IngredientUseCount && item.RecipeDeviationApprovedByUserId.HasValue,
             RecipeMatches(item, ingredients.Where(use => use.PreparationId == item.Id && use.VoidedAtUtc == null).ToArray(), lots),
-            item.RecordedStepCount, item.Steps(), item.Ingredients(), steps.Where(step => step.PreparationId == item.Id).OrderBy(step => step.PerformedAtUtc)
+            item.RecordedStepCount, item.Steps(), item.Ingredients(), MissingRecipeAmounts(item, ingredients, lots),
+            steps.Where(step => step.PreparationId == item.Id).OrderBy(step => step.PerformedAtUtc)
                 .Select(step => new LabMasterMixStepDto(step.Id, step.Sequence, step.Notes,
                     step.PerformedByUserId, step.PerformedAtUtc, JsonSerializer.Deserialize<LabProtocolStepRecord>(step.EvidenceJson, JsonSerializerOptions.Web)!)).ToArray(),
             ingredients.Where(use => use.PreparationId == item.Id).OrderBy(use => use.RecordedAtUtc)

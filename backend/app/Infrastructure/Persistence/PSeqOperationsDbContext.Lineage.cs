@@ -24,7 +24,8 @@ public sealed partial class PSeqOperationsDbContext
         if (ChangeTracker.Entries().Any(e => e.State is EntityState.Modified or EntityState.Deleted
             && e.Entity is LabScientificFile or LabSequencingOutput or LabAnalysisRun or LabAnalysisInput
                 or LabMaterialConsumption or LabEquipmentUsage or LabCustodyEvent or LabInvestigationReport
-                or LabPerformanceProposal or LabPerformanceDecision or LabPreparationRecord or LabAssemblyEvent or LabBiologicalMaterialTransfer))
+                or LabPerformanceProposal or LabPerformanceDecision or LabPreparationRecord or LabAssemblyEvent or LabBiologicalMaterialTransfer
+                or LabVendorLibraryException or LabVendorResultReference))
             throw new InvalidOperationException("Recorded lineage, resource use and custody evidence cannot be overwritten or deleted. Record a linked correction instead.");
     }
 }

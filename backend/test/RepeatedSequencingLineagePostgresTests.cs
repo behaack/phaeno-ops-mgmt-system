@@ -83,7 +83,7 @@ public partial class SampleShippingPostgresTests
                 members = new[] { new { libraryId = reserve.Library.Id, libraryKey = reserve.Library.LibraryKey,
                     containerBarcode = $"LIBRARY-{scope.Suffix}-2" } }
             }), null);
-            sendout.SetStatus(LabNgsSendoutStatus.Complete, now);
+            VendorSendoutFixture.Complete(sendout, now);
             db.AddRange(batch, sendout, new LabBatchMember(batch.Id, work.Id, reserve.Library.Id, now));
             await db.SaveChangesAsync();
             var service = new LabResultLineageService(db);
@@ -126,7 +126,7 @@ public partial class SampleShippingPostgresTests
             var freshSendout = new LabNgsSendout(freshBatch.Id, "TEST provider", "TEST new submission", JsonSerializer.Serialize(new {
                 members = new[] { new { libraryId = fresh.Library.Id, libraryKey = fresh.Library.LibraryKey, containerBarcode = $"LIBRARY-{scope.Suffix}-3" } }
             }), null);
-            freshSendout.SetStatus(LabNgsSendoutStatus.Complete, now); db.AddRange(freshBatch, freshSendout); await db.SaveChangesAsync();
+            VendorSendoutFixture.Complete(freshSendout, now); db.AddRange(freshBatch, freshSendout); await db.SaveChangesAsync();
             var corrected = await service.RegisterOutputAsync(Output(20) with { LabLibraryId = fresh.Library.Id, LabNgsSendoutId = freshSendout.Id,
                 ProviderRunReference = "replacement-machine-run", ExternalFileReference = "replacement:20", CorrectsOutputId = outputs[19].Id,
                 CorrectionReason = "TEST ONLY repeat sequencing after failed output", LibraryPreparationChoice = "NewPreparation" }, actor, "lab-staff", default);

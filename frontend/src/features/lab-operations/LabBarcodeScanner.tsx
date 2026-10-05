@@ -169,7 +169,7 @@ export function LabBatchBarcodeScanner({
               value={batchId}
             >
               <option value="">Select…</option>
-              {drafts.map((item) => <option key={item.id} value={item.id}>{item.batchNumber}</option>)}
+              {drafts.map((item) => <option key={item.id} value={item.id}>{item.name === item.batchNumber ? item.batchNumber : `${item.name} · ${item.batchNumber}`}</option>)}
             </select>
           </div>
           <div>

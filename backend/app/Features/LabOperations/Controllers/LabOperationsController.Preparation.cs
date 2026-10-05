@@ -19,6 +19,7 @@ public sealed partial class LabOperationsController
         var formats = await dbContext.LabTrayFormats.AsNoTracking().OrderBy(f => f.CreatedAt).ToListAsync(ct);
         var batches = await dbContext.LabPreparationBatches.AsNoTracking().OrderByDescending(b => b.CreatedAt).Take(250).ToListAsync(ct);
         var workflows = await ReadServiceWorkflowsAsync(ct);
+        var serviceNames = await ReadPreparationServiceNamesAsync(batches.Select(b => b.LabServiceWorkflowVersionId), ct);
         var versions = await dbContext.LabProtocolVersions.AsNoTracking().ToListAsync(ct);
         var stages = await dbContext.LabServiceWorkflowStages.AsNoTracking().OrderBy(s => s.Sequence).ToListAsync(ct);
         var availableMixWorkflowIds = await dbContext.LabMasterMixWorkflows.AsNoTracking()
@@ -37,7 +38,7 @@ public sealed partial class LabOperationsController
             catch (ArgumentException) { return false; }
         }) && g.Any(s => LabProtocolDefinition.Parse(versions.Single(v => v.Id == s.LabProtocolVersionId).DefinitionJson).Steps.Any(step => step.QcGate is not null))).Select(g => g.Key).ToHashSet();
         return new { formats = formats.Select(f => new { f.Id, f.Version, f.IsActive, layout = LabTrayLayout.Read(f.LayoutJson) }),
-            batches = batches.Select(b => new { b.Id, b.Name, status = b.Status.ToString(), b.Version, b.StartedAtUtc, b.CompletedAtUtc }),
+            batches = batches.Select(b => new { b.Id, b.Name, serviceName = serviceNames[b.LabServiceWorkflowVersionId], displayName = PreparationDisplayName(b, serviceNames[b.LabServiceWorkflowVersionId]), status = b.Status.ToString(), b.Version, b.StartedAtUtc, b.CompletedAtUtc }),
             workflows, compatibleWorkflowVersionIds = compatible, canOperate = actor.HasAny(LabRole.Operator, LabRole.Supervisor),
             canConfigure = actor.HasAny(LabRole.Supervisor, LabRole.ProtocolAdministrator) };
     }
@@ -91,11 +92,8 @@ public sealed partial class LabOperationsController
         if (!format.IsActive) throw Conflict("tray_retired", "Choose an active tray format.");
         dbContext.Entry(format).Property(f => f.UpdatedAt).IsModified = true;
         if (request.Notes?.Length > 2000) throw Invalid("preparation_notes_invalid", "Use at most 2,000 characters for batch notes.");
-        var serviceKey = await (from version in dbContext.LabServiceWorkflowVersions
-            join workflow in dbContext.LabServiceWorkflows on version.LabServiceWorkflowId equals workflow.Id
-            where version.Id == request.WorkflowVersionId select workflow.ServiceKey).SingleAsync(ct);
-        var prefix = serviceKey == "pseq-lab-service" ? "PSeq" :
-            new string(serviceKey.Where(c => char.IsAsciiLetterOrDigit(c) || c == '-').Take(80).ToArray());
+        var serviceName = (await ReadPreparationServiceNamesAsync([request.WorkflowVersionId], ct))[request.WorkflowVersionId];
+        var prefix = new string(serviceName.Replace(' ', '-').Where(c => char.IsAsciiLetterOrDigit(c) || c == '-').Take(80).ToArray());
         if (prefix.Length == 0) prefix = "Lab";
         var baseName = $"{prefix}-{DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture)}";
         var name = baseName;
@@ -158,7 +156,8 @@ public sealed partial class LabOperationsController
             where libraries.Select(l => l.Id).Contains(m.LabLibraryId) orderby m.AddedAtUtc descending, m.Id descending select new { m.LabLibraryId, b.Id, b.BatchNumber, b.Name }).ToListAsync(ct);
         var creation = records.FirstOrDefault(r => r.Action == "create");
         var notes = creation is null ? null : JsonSerializer.Deserialize<CreateLabPreparationRequest>(creation.DetailsJson, JsonOptions)?.Notes;
-        return new { batch.Id, batch.Name, batch.TrayBarcode, inlineResourceFields = true, configuredMaterials = true, automaticSpecimenReferences = true, bulkOutputs = true, optionalPreparationReports = true, optionalQcReports = true, trayConfirmed = batch.StartedAtUtc.HasValue || PreparationTrayConfirmed(records), notes, batch.Version, status = batch.Status.ToString(), batch.LabServiceWorkflowVersionId,
+        var serviceName = (await ReadPreparationServiceNamesAsync([batch.LabServiceWorkflowVersionId], ct))[batch.LabServiceWorkflowVersionId];
+        return new { batch.Id, batch.Name, serviceName, displayName = PreparationDisplayName(batch, serviceName), batch.TrayBarcode, inlineResourceFields = true, configuredMaterials = true, automaticSpecimenReferences = true, bulkOutputs = true, optionalPreparationReports = true, optionalQcReports = true, trayConfirmed = batch.StartedAtUtc.HasValue || PreparationTrayConfirmed(records), notes, batch.Version, status = batch.Status.ToString(), batch.LabServiceWorkflowVersionId,
             automaticSkipAvailable = jobs.Values.All(w => w.Status is not (LabWorkOrderStatus.OnHold or LabWorkOrderStatus.Cancelled or LabWorkOrderStatus.ReadyForRelease))
                 && FindAutomaticPreparationSkip(batch, attempts, executions, stages, protocols, EffectiveExecutionRoles(actor)) is not null,
             layout = LabTrayLayout.Read(batch.LayoutJson), batch.StartedAtUtc, batch.CompletedAtUtc,
@@ -176,7 +175,7 @@ public sealed partial class LabOperationsController
                     sourceMaterial = new { source.Id, source.Barcode, source.Quantity, quantityText = source.Quantity?.ToString(System.Globalization.CultureInfo.InvariantCulture), source.QuantityUnit, source.Version, status = source.Status.ToString(), source.InitialQuantity, source.InitialQuantityUnit, source.QuantityBasis },
                     libraryTube = libraryTube is null ? null : new { libraryTube.Id, libraryTube.Barcode, barcodeSource = libraryTube.BarcodeSource.ToString(), libraryTube.Quantity, quantityText = libraryTube.Quantity?.ToString(System.Globalization.CultureInfo.InvariantCulture), libraryTube.QuantityUnit, libraryTube.Version, confirmed = m.MaterialTransferId.HasValue, transferId = m.MaterialTransferId },
                     blocker = w.Status is LabWorkOrderStatus.OnHold or LabWorkOrderStatus.Cancelled or LabWorkOrderStatus.ReadyForRelease ? "The job is held or closed." : a.HoldReason,
-                    output = outputs.Where(o => o.Id == m.OutputContainerId).Select(o => new { o.Id, o.Barcode, o.Quantity, o.QuantityUnit, confirmed = m.OutputConfirmed }).SingleOrDefault(),
+                    output = outputs.Where(o => o.Id == m.OutputContainerId).Select(o => new { o.Id, o.Barcode, barcodeSource = o.BarcodeSource.ToString(), o.Quantity, quantityText = o.Quantity?.ToString(System.Globalization.CultureInfo.InvariantCulture), o.QuantityUnit, confirmed = m.OutputConfirmed }).SingleOrDefault(),
                     availableOutputs = availableOutputs.Where(o => o.LabSpecimenAttemptId == a.Id && !members.Any(other => other.OutputContainerId == o.Id))
                         .Select(o => new { o.Id, o.Barcode, o.Quantity, o.QuantityUnit }),
                     library = libraries.Where(l => l.Id == m.LabLibraryId).Select(l => new { l.Id, l.LibraryKey, status = l.Status.ToString(), sequencing = sequencing.FirstOrDefault(s => s.LabLibraryId == l.Id) }).SingleOrDefault(),

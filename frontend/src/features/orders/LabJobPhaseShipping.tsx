@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CircleCheck, Package, ScanBarcode, Truck } from 'lucide-react'
+import { Package, PackageCheck, ScanBarcode, Truck } from 'lucide-react'
 import { useEffect, useRef, useState, type Ref } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -17,8 +17,8 @@ import { Field, FieldError } from '#/components/ui/field'
 import { Label } from '#/components/ui/label'
 import { NativeSelect } from '#/components/ui/native-select'
 import { RequiredDialogFooter, RequiredFieldName } from '#/components/ui/required-field'
+import { WorkflowProgress } from '#/components/ui/workflow-progress'
 import { DeliveryLocationAddress } from '#/features/organizations/delivery-locations/DeliveryLocationAddress'
-import { cn } from '#/lib/utils'
 import { LabJobKitDeliveryPanel } from './LabJobKitDeliveryPanel'
 import { hasMultipleLabPhases, labSampleCount } from './lab-job-presentation'
 import { currentShippingPhase, phaseShippingProgress } from './lab-phase-shipping'
@@ -27,7 +27,7 @@ import { useOrderDecisionDismissal } from './use-order-decision-dismissal'
 const schema = z.object({ phaseIds: z.array(z.string()).length(1, 'Request kits for the current shipping step.'), deliveryLocationId: z.string().min(1, 'Choose a delivery address.') })
 const steps = [
   { id: 'request', label: 'Request transportation kits', icon: Package },
-  { id: 'receive', label: 'Receive kits', icon: Package },
+  { id: 'receive', label: 'Receive kits', icon: PackageCheck },
   { id: 'prepare', label: 'Prepare sample shipment', icon: ScanBarcode },
   { id: 'send', label: 'Send and record shipments', icon: Truck },
 ] as const
@@ -134,14 +134,13 @@ export function LabJobPhaseShipping({ order, phasePlan, phaseState, onPhaseRefre
       {phase && !progress && !supply.error ? <p role="status">Checking sample preparation and shipments…</p> : null}
       {supply.error ? <Alert variant="destructive"><AlertTitle>Kit requirements could not be loaded</AlertTitle><AlertDescription>{getOrderErrorMessage(supply.error, 'Your order is preserved.')} <Button variant="outline" onClick={() => void supply.refetch()}>Retry</Button></AlertDescription></Alert> : null}
       {phase && progress ? <>
-        <ol className="grid gap-2 sm:grid-cols-4" aria-label={multiplePhases ? `${phase.phaseName} shipping steps` : 'Shipping steps'}>{steps.map((step, index) => {
+        <WorkflowProgress label={multiplePhases ? `${phase.phaseName} shipping steps` : 'Shipping steps'} horizontalAt="md" steps={steps.map((step, index) => {
           const nextIndex = steps.findIndex(s => s.id === progress.next)
           const complete = progress.allSent || nextIndex > index
           const current = progress.next === step.id
-          const Icon = complete ? CircleCheck : step.icon
           const note = step.id === 'receive' ? progress.receiveStatus : step.id === 'request' && progress.usesReceivedStock && complete ? 'Existing kits allocated' : null
-          return <li key={step.id} aria-current={current ? 'step' : undefined} className={cn('flex items-center gap-2 rounded-md border px-3 py-3 text-sm sm:flex-col sm:text-center', current ? 'border-primary bg-accent/40' : 'border-transparent')}><Icon aria-hidden="true" className="size-5 shrink-0" /><div><span>{step.label}</span>{note ? <p role={step.id === 'receive' ? 'status' : undefined} className="mt-1 text-xs text-muted-foreground">{note}</p> : null}</div>{complete ? <span className="sr-only">Complete</span> : null}</li>
-        })}</ol>
+          return { ...step, complete, current, description: note ? <span role={step.id === 'receive' ? 'status' : undefined}>{note}</span> : undefined }
+        })} />
         <div className="flex flex-col gap-3 rounded-md border bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between" aria-live="polite"><div className="min-w-0 flex-1 text-sm"><p className="text-xs text-muted-foreground">Next step</p><p className="font-semibold">{nextTitle}</p>{progress.next === 'prepare' && progress.usesReceivedStock ? <p className="text-muted-foreground">This {multiplePhases ? 'phase' : 'order'} uses {progress.kits.length} previously received kit{progress.kits.length === 1 ? '' : 's'}, covering {labSampleCount(phase.sampleCount)}. No new delivery is needed.</p> : null}<p className="text-muted-foreground">{earlierOpenRequest ? `Review the earlier kit order. Confirm its physical arrivals or cancel it before dispatch, then allocate the received kits to this ${multiplePhases ? 'phase' : 'order'}.` : waitingForKitDispatch ? 'Phaeno is preparing the outstanding kits. You can record their receipt after Phaeno sends them and they physically arrive.' : progress.next === 'request' ? `Request kits and confirm the address when ${multiplePhases ? 'this phase is' : 'you’re'} ready.` : progress.next === 'receive' ? 'Phaeno has sent kits. Confirm each kit only after it physically arrives.' : progress.next === 'prepare' ? `Save and confirm ${multiplePhases ? 'this phase’s' : 'your'} Sample IDs and physical tube barcodes.` : progress.next === 'send' ? 'Review each insert, pack the matching kit, and record carrier handoff.' : 'Track sample receipt, laboratory progress and available results in Progress.'}</p></div>
           {progress.next === 'send' && sendActionTargetRef ? <div ref={sendActionTargetRef} className="max-w-full shrink-0 self-end sm:self-center" /> : nextButton ? <Button id="phase-next-step" className="shrink-0 self-end sm:self-center" disabled={nextDisabled} onClick={executeNext}>{nextButton}</Button> : null}
         </div>

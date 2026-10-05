@@ -1,3 +1,4 @@
+import { SequencingBatchList as BatchList } from './SequencingBatchList'
 import { StageDurations } from './StageDurations'
 import { HolidayCalendar } from './HolidayCalendar'
 import { JobsList } from './JobsList'
@@ -6,26 +7,21 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { CheckCircle2, ChevronDown, FileX, Pencil, Plus, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react'
 import { useRef, useState, type FormEvent } from 'react'
-import { Archive, ChevronRight } from 'lucide-react'
+import { Archive } from 'lucide-react'
 import { retireLabProtocol } from '#/api/lab-operations'
 import { ProtocolRetirementDialog } from './ProtocolRetirementDialog'
 
 import {
   createLabBatch,
   createLabProtocol,
-  createLabSendout,
   deleteLabProtocol,
   getLabOperationsDashboard,
   labWorkOrderLabel,
   getLabOperationsError,
   recordLabMaterialQc,
   retireLabEquipment,
-  recordLabCustody,
-  transitionLabBatch,
   transitionLabProtocolVersion,
-  transitionLabSendout,
   updateLabProtocol,
-  type LabBatch,
   type LabMaterialLot,
   type LabProtocol,
 } from '#/api/lab-operations'
@@ -34,7 +30,7 @@ import { WorkspaceSidebar } from '#/components/WorkspaceSidebar'
 import { getLabWorkspaceSections } from './LabOperationsSidebar'
 import { Button } from '#/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#/components/ui/card'
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogReturnFocus } from '#/components/ui/dialog'
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '#/components/ui/dialog'
 import {
   ActionMenu as DropdownMenu,
   DropdownMenuContent,
@@ -54,9 +50,6 @@ import {
 } from '#/components/ui/required-field'
 import { usePhaenoSession } from '#/features/auth/session-context'
 
-import { LabBatchBarcodeScanner } from './LabBarcodeScanner'
-import { SequencingTubesDialog } from './SequencingTubesDialog'
-import { PreparationActions, PreparationFormDialog } from './preparation-ui'
 import { EquipmentRetirementDialog } from './EquipmentRetirementDialog'
 import { LabManufacturingQueue } from './LabManufacturingPage'
 import { DataAssemblyWorkspace } from './AssemblyJobs'
@@ -176,6 +169,7 @@ export function LabOperationsPage({ section, shipmentId, receiptTab, onReceiptTa
             onSaved={async (record) => {
               setCreateKind(null)
               await refresh()
+              if (record.kind === 'batch') await navigate({ to: '/lab-operations/batches/$batchId', params: { batchId: record.id } })
               if (record.kind === 'protocol') {
                 await navigate({
                   to: '/lab-operations/protocols/$protocolId/versions/new',
@@ -893,179 +887,6 @@ export function EquipmentList({ items, canManage, onCreate }: { items: Awaited<R
   )
 }
 
-function BatchList({ items, suppliers, canManage, onCreate, refresh }: { items: Awaited<ReturnType<typeof getLabOperationsDashboard>>['batches']; suppliers: Awaited<ReturnType<typeof getLabOperationsDashboard>>['suppliers']; canManage: boolean; onCreate: () => void; refresh: () => Promise<unknown> }) {
-  const [tubeBatch, setTubeBatch] = useState<LabBatch | null>(null)
-  const [dialog, setDialog] = useState<{ batch: LabBatch; kind: 'sendout' | 'custody' } | null>(null)
-  const [transitionDialog, setTransitionDialog] = useState<{ batch: LabBatch; action: 'start' | 'complete' } | null>(null)
-  const [form, setForm] = useState<Record<string, string>>({})
-  const [statusFilter, setStatusFilter] = useState('All')
-  const [transitionAt, setTransitionAt] = useState('')
-  const [recoveryTarget, setRecoveryTarget] = useState<LabBatch | null>(null)
-  const recovery = useMutation({
-    mutationFn: ({ batch, reason }: { batch: LabBatch; reason: string }) => transitionLabBatch(batch.id, { version: batch.version, action: 'return-to-draft', reason }),
-    onSuccess: async () => { setRecoveryTarget(null); await refresh() },
-  })
-  const transition = useMutation({ mutationFn: ({ id, version, action, occurredAtUtc }: { id: string; version: number; action: 'start' | 'complete'; occurredAtUtc: string }) => transitionLabBatch(id, { version, action, occurredAtUtc }), onSuccess: async () => { setTransitionDialog(null); setTransitionAt(''); await refresh() } })
-  const sendoutTransition = useMutation({ mutationFn: ({ item, status }: { item: LabBatch; status: string }) => transitionLabSendout(item.sendoutId!, { status, version: item.sendoutVersion }), onSuccess: refresh })
-  const save = useMutation({ mutationFn: async () => {
-    if (!dialog) throw new Error('Choose a batch action.')
-    if (dialog.kind === 'sendout') return createLabSendout(dialog.batch.id, { providerName: form.providerName, providerReference: form.providerReference || null, manifestJson: JSON.stringify({ notes: form.manifestNotes?.trim() || null }), expectedCompletionAtUtc: form.expectedCompletionAtUtc ? new Date(form.expectedCompletionAtUtc).toISOString() : null })
-    return recordLabCustody(dialog.batch.sendoutId!, { labContainerId: null, eventCode: form.eventCode, locationOrParty: form.locationOrParty, detailsJson: JSON.stringify({ carrierReference: form.carrierReference?.trim() || null, notes: form.custodyNotes?.trim() || null }) })
-  }, onSuccess: async () => { setDialog(null); setForm({}); await refresh() } })
-  const openBatchAction = (batch: LabBatch, kind: 'sendout' | 'custody') => { save.reset(); setForm({}); setDialog({ batch, kind }) }
-  const nextStatus = (status: string | null) => status === 'Preparing' ? 'Shipped' : status === 'Shipped' ? 'ReceivedByProvider' : status === 'ReceivedByProvider' ? 'Sequencing' : status === 'Sequencing' ? 'Complete' : null
-  const set = (key: string) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm((current) => ({ ...current, [key]: event.target.value }))
-  const filteredItems = statusFilter === 'All' ? items : items.filter((item) => item.status === statusFilter)
-  const openTransition = (batch: LabBatch, action: 'start' | 'complete') => { transition.reset(); setTransitionDialog({ batch, action }); setTransitionAt(nowDateTimeLocal()) }
-  const saveTransition = () => {
-    if (!transitionDialog || !transitionAt) return
-    const occurredAtUtc = new Date(transitionAt)
-    if (Number.isNaN(occurredAtUtc.getTime())) return
-    transition.mutate({ id: transitionDialog.batch.id, version: transitionDialog.batch.version, action: transitionDialog.action, occurredAtUtc: occurredAtUtc.toISOString() })
-  }
-
-  return (
-    <>
-      <div className="space-y-5">
-        <Card className="gap-0 py-0">
-          <CardHeader className="border-b bg-muted/50 p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <CardTitle>Sequencing batches</CardTitle>
-                <CardDescription>Libraries may cross Commercial orders while retaining work-order and specimen lineage.</CardDescription>
-              </div>
-              <div className="flex flex-wrap items-end gap-3">
-                <div>
-                  <Label htmlFor="batch-status-filter">Status</Label>
-                  <select
-                    id="batch-status-filter"
-                    className="mt-2 h-9 min-w-44 rounded-lg border border-input bg-background px-3 text-sm"
-                    value={statusFilter}
-                    onChange={(event) => setStatusFilter(event.target.value)}
-                  >
-                    <option value="All">All statuses</option>
-                    <option value="Draft">Draft</option>
-                    <option value="InProgress">In progress</option>
-                    <option value="Complete">Complete</option>
-                  </select>
-                </div>
-                {canManage ? <Button type="button" onClick={onCreate}><Plus data-icon="inline-start" /> New batch</Button> : null}
-              </div>
-            </div>
-            {canManage ? <details className="group/scan mt-3 border-t pt-3">
-              <summary className="flex cursor-pointer list-none items-center gap-2 rounded-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden"><ChevronRight aria-hidden="true" className="size-4 shrink-0 group-open/scan:rotate-90" />Scan libraries</summary>
-              <div className="mt-3"><LabBatchBarcodeScanner batches={items} suppliers={suppliers} onAdded={refresh} /></div>
-            </details> : null}
-          </CardHeader>
-          <CardContent className="p-4">
-            {filteredItems.length === 0 ? (
-              <p className="py-3 text-sm text-muted-foreground">No batches match this status.</p>
-            ) : (
-              <div className="space-y-3">
-                {filteredItems.map((item) => {
-                  const next = nextStatus(item.sendoutStatus)
-                  return (
-                    <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 p-4 shadow-xs">
-                      <div>
-                        <p className="font-medium">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {item.name !== item.batchNumber ? `${item.batchNumber} · ` : ''}{humanize(item.batchType)} · {item.memberCount} libraries
-                          {item.startedAtUtc ? ` · started ${formatDate(item.startedAtUtc)}` : ''}
-                          {item.completedAtUtc ? ` · completed ${formatDate(item.completedAtUtc)}` : ''}
-                          {item.sendoutStatus ? ` · sendout ${humanize(item.sendoutStatus)}` : ''}
-                        </p>
-                        {item.memberCount === 0 && item.status === 'Draft' ? <p className="mt-2 text-sm text-muted-foreground">Add passing libraries from Library prep or Scan libraries before starting this batch.</p> : null}
-                        {item.memberCount === 0 && item.status === 'InProgress' && !item.sendoutId ? <p className="mt-2 text-sm text-muted-foreground">This batch has no libraries. Return it to draft before adding libraries.</p> : null}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Status value={item.status} />
-                        <PreparationActions triggerId={`sequencing-batch-actions-${item.id}`} items={[
-                          { label: 'Sequencing tubes', disabled: item.memberCount === 0, onClick: () => setTubeBatch(item) },
-                          ...(canManage && item.status === 'Draft' ? [{ label: 'Start', disabled: transition.isPending || item.memberCount === 0, onClick: () => openTransition(item, 'start') }] : []),
-                          ...(canManage && item.status === 'InProgress' && item.memberCount === 0 && !item.sendoutId ? [{ label: 'Return empty batch to draft', disabled: recovery.isPending, onClick: () => { recovery.reset(); setRecoveryTarget(item) } }] : []),
-                          ...(canManage && item.status === 'InProgress' && !item.sendoutId && item.memberCount > 0 ? [{ label: 'Create sendout', onClick: () => openBatchAction(item, 'sendout') }] : []),
-                          ...(canManage && item.sendoutId ? [{ label: 'Custody event', onClick: () => openBatchAction(item, 'custody') }] : []),
-                          ...(canManage && item.sendoutId && next ? [{ label: `Mark ${humanize(next)}`, disabled: sendoutTransition.isPending, onClick: () => sendoutTransition.mutate({ item, status: next }) }] : []),
-                          ...(canManage && item.status === 'InProgress' && item.memberCount > 0 && (!item.sendoutId || item.sendoutStatus === 'Complete') ? [{ label: 'Complete batch', disabled: transition.isPending, onClick: () => openTransition(item, 'complete') }] : []),
-                        ]} />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-      {recoveryTarget ? <DialogReturnFocus target={null} fallbackId={`sequencing-batch-actions-${recoveryTarget.id}`}>
-        <PreparationFormDialog
-          title="Return empty batch to draft"
-          description="Correct a batch that was started before libraries were assigned."
-          fields={[{ key: 'reason', label: 'Correction reason', required: true, type: 'textarea', maxLength: 4000 }]}
-          initialFocus="cancel"
-          submitLabel="Return to draft"
-          pending={recovery.isPending}
-          error={recovery.error ? getLabOperationsError(recovery.error, 'Refresh the batch and try again.') : undefined}
-          onClose={() => setRecoveryTarget(null)}
-          onSubmit={({ reason }) => recovery.mutate({ batch: recoveryTarget, reason: reason.trim() })}
-        >
-          <p className="text-sm"><strong>{recoveryTarget.batchNumber}</strong> will return to Draft so libraries can be added. The recorded start will be cleared; its previous value and your correction reason remain in the audit history. This is available only while the batch has no libraries or sendout.</p>
-        </PreparationFormDialog>
-      </DialogReturnFocus> : null}
-      {tubeBatch ? <SequencingTubesDialog batchId={tubeBatch.id} batchName={tubeBatch.name} suppliers={suppliers} canManage={canManage} onClose={() => setTubeBatch(null)} onChanged={refresh} /> : null}
-      <Dialog open={transitionDialog !== null} onOpenChange={(open) => !open && setTransitionDialog(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{transitionDialog?.action === 'start' ? 'Start batch' : 'Complete batch'}</DialogTitle>
-            <DialogDescription>Record when the laboratory work actually {transitionDialog?.action === 'start' ? 'started' : 'completed'}. The time is prefilled with now and saved as UTC.</DialogDescription>
-          </DialogHeader>
-          <div className="my-5 grid gap-4">
-            <div>
-              <Label htmlFor="batch-transition-at"><RequiredFieldName>{transitionDialog?.action === 'start' ? 'Started at' : 'Completed at'}</RequiredFieldName></Label>
-              <Input id="batch-transition-at" className="mt-2" type="datetime-local" value={transitionAt} onChange={(event) => setTransitionAt(event.target.value)} required />
-            </div>
-          </div>
-          {transition.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Batch transition failed</AlertTitle><AlertDescription>{getLabOperationsError(transition.error, 'Check the entered time and try again.')}</AlertDescription></Alert> : null}
-          <RequiredDialogFooter>
-            <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
-            <Button type="button" disabled={transition.isPending || !transitionAt} onClick={saveTransition}>{transitionDialog?.action === 'start' ? 'Start batch' : 'Complete batch'}</Button>
-          </RequiredDialogFooter>
-        </DialogContent>
-      </Dialog>
-      <Dialog open={dialog !== null} onOpenChange={(open) => !open && setDialog(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{dialog?.kind === 'sendout' ? 'Create sequencing sendout' : 'Record custody event'}</DialogTitle>
-            <DialogDescription>Provider-neutral metadata and custody evidence only; no sequencing files or pipeline orchestration are created.</DialogDescription>
-          </DialogHeader>
-          <div className="my-5 grid gap-4">
-            {dialog?.kind === 'sendout' ? (
-              <>
-                <Field label="Provider name" value={form.providerName} onChange={set('providerName')} required />
-                <Field label="Provider reference" value={form.providerReference} onChange={set('providerReference')} />
-                <Field label="Expected completion" type="datetime-local" value={form.expectedCompletionAtUtc} onChange={set('expectedCompletionAtUtc')} />
-                <p className="text-sm text-muted-foreground">POMS freezes the {dialog.batch.memberCount} sequencing tube barcodes and their source library links in the sendout manifest for {dialog.batch.batchNumber}. Record each physical transfer in Sequencing tubes and confirm the actual tubes being sent before saving.</p>
-                <TextField label="Additional manifest notes (optional)" value={form.manifestNotes} onChange={set('manifestNotes')} />
-              </>
-            ) : (
-              <>
-                <Field label="Event code" value={form.eventCode} onChange={set('eventCode')} required />
-                <Field label="Location or party" value={form.locationOrParty} onChange={set('locationOrParty')} required />
-                <Field label="Carrier or tracking reference (optional)" value={form.carrierReference} onChange={set('carrierReference')} />
-                <TextField label="Custody note (optional)" value={form.custodyNotes} onChange={set('custodyNotes')} />
-              </>
-            )}
-          </div>
-          {save.error ? <Alert variant="destructive" className="mb-4"><AlertTitle>Batch action failed</AlertTitle><AlertDescription>{getLabOperationsError(save.error, 'Check the entered values.')}</AlertDescription></Alert> : null}
-          <RequiredDialogFooter>
-            <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
-            <Button type="button" disabled={save.isPending} onClick={() => save.mutate()}>Save</Button>
-          </RequiredDialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  )
-}
 function CreateRecordDialog({ kind, onClose, onSaved }: { kind: SimpleCreateKind; onClose: () => void; onSaved: (record: { kind: 'protocol' | 'batch'; id: string }) => Promise<unknown> }) {
   const invokingControl = useRef<HTMLElement | null>(null)
   const [form, setForm] = useState<Record<string, string>>({})
@@ -1103,7 +924,6 @@ function AccessDenied() { return <main className="page-wrap px-4 py-8"><Alert va
 function humanize(value: string) { return value.replace(/([a-z])([A-Z])/g, '$1 $2').replaceAll('_', ' ').replace(/^./, (character) => character.toUpperCase()) }
 function createActionLabel(kind: Exclude<CreateKind, null>) { return `Create ${humanize(kind).toLowerCase()}` }
 function formatDate(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
-function nowDateTimeLocal() { const now = new Date(); const offset = now.getTimezoneOffset(); return new Date(now.getTime() - offset * 60_000).toISOString().slice(0, 16) }
 function formatDateOnly(value: string) { return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(`${value}T00:00:00Z`)) }
 function todayDateOnly() {
   const now = new Date()
