@@ -20,6 +20,15 @@ PSeq specimens, material and Catalog configuration are not copied to hosting.
 - Frontend unit suite: 1,428 passed in 220 files; subsequent Finance cases: 38
   passed. Lint, TypeScript and generated documentation pass: 56 guides, corpus
   `a198cfcd3c50`. Release build has zero warnings/errors and no EF model drift.
+- Complete frozen desktop/mobile browser suite: 212 passed, zero failures,
+  two intentional mobile print skips. Production-configured Portal UI build passes.
+- Complete connected backend suite: 1,244 passed, zero failures, two intentional
+  environment skips. Verification database cleanup passed. The repaired
+  persistence/recovery group also passes all twelve cases independently.
+- Application source committed and pushed:
+  `58f2af34e989c3b7187b39d542174444c2985896`. The frozen frontend has zero
+  source differences from that commit. Generated build outputs and recovery
+  files are excluded from Git.
 
 ## Recovery evidence
 
@@ -45,8 +54,59 @@ The local encrypted recovery copy matches its checksum manifest:
 
 ## Activation status
 
-Release verification and staging remain in progress. No new API/UI activation or
-hosted migration has occurred at this checkpoint. Final regression results,
-source SHA, staged deployment and activation identities will be recorded here.
+The preserving release completed under the owner's October 4 commit, push and
+deploy instruction. Production UI `dpl_F2eTLxgsiU6ydnyYRrXNR6ztPLwY` is Ready at
+`phaeno-ops-mgmt-system-dk36rhwo8-cadexgenomics.vercel.app`, with metadata matching
+application source `58f2af34e989c3b7187b39d542174444c2985896`. Its isolated build uses
+Production Clerk, the production API proxy and mock sessions disabled. It was
+staged without changing the public alias.
+
+[Protected API run 37246241157](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/37246241157)
+succeeded from the same application commit with migrations enabled and storage,
+scanning and bootstrap set to Preserve; Clerk cutover remained false. The workflow
+was disabled immediately afterward. The matching UI was promoted after API health,
+source identity, eighteen migrations and preserved data/runtime checks passed.
+Public-domain inspection independently resolves to that exact UI deployment.
+
+| Active component | Verified identity |
+| --- | --- |
+| Application source | `58f2af34e989c3b7187b39d542174444c2985896` |
+| API image | `phaeno-portal-green-api:sha-58f2af34e989-run-37246241157-1` |
+| API image ID | `sha256:51cec6f42565c644e04078f8ed972cd5f51d5954310ded820869c494e0daf6bb` |
+| API release | `/opt/phaeno.portal-green/releases/58f2af34e989c3b7187b39d542174444c2985896-37246241157-1` |
+| Portal UI | `dpl_F2eTLxgsiU6ydnyYRrXNR6ztPLwY`, Ready |
+| Public Portal | `https://portal.phaenobiotech.com` |
+| Database | `phaeno_portal_green`, PostgreSQL 18.6, eighteen migrations |
+
+The deployment-lock pre-migration database backup passed isolated restore,
+migration identity, encrypted checksum and cleanup verification. Its encrypted
+files were copied off-server and matched the manifest:
+
+| File | SHA-256 |
+| --- | --- |
+| `pre-migration-20261005T001053Z-58f2af34e989.dump.enc` | `4ed4a082c7950e4c0312ca69ee5cc04ab32fad6500d88e11df1b386582aff1fb` |
+| `pre-migration-20261005T001053Z-58f2af34e989.key.enc` | `70183cb327a157cdf3c3df0eaca0c3f5023300bc294cf1853c71e893723e1897` |
+
+All 226 existing application table counts match the precutover inventory.
+Database and Portal runtime hashes and private/index mounts are preserved.
+The Catalog requirement and restricted member relationship are present; the
+obsolete batch-only minimum column is absent. API/scanner/database and the
+independent OCIA services remain healthy. A bounded startup log check found zero
+failure, fatal or unhandled-exception entries.
+
+Live smoke checks pass: API health 200, database ping 204, accession directory
+401 without credentials directly and through the Portal proxy, Website
+search/root 200 and Portal root 200. An isolated production browser renders
+the actual Clerk sign-in form with no console warnings or errors. No
+authentication or operational form was submitted.
+
+Both Vercel Git deployment holds remain false for automatic deployment. Both
+protected GitHub workflows are disabled again. Prior recovery packages remain
+retained. Temporary isolated backend builds, the frozen frontend/dependency tree,
+production environment copy and source archive were removed after use. Final
+test logs/TRX, public smoke evidence, SQL/inventory evidence and encrypted
+recovery copies remain in ignored release storage. Local API and frontend
+listeners on 44399/48056 and 3000 are preserved. Final release documentation is a subsequent source-control-only
+checkpoint; the application deployment identity remains the SHA recorded above.
 Physical printer/scanner, measured-volume, scientific and real-provider
 acceptance remain separate from automated synthetic checks.

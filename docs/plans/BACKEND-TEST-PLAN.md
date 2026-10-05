@@ -2762,3 +2762,10 @@ All four pending migrations passed twice against an isolated hosted copy,
 with eighteen migrations and unchanged counts for all 226 existing tables.
 Full connected regression results are recorded in the
 [release plan](PORTAL-WORKFLOW-RELEASE-20261004-PLAN.md).
+
+The final complete connected run passes: 1,244 cases, zero failures and two
+intentional environment skips. The recovery fixture now creates an independent
+batch for the retained-sendout rejection case rather than deleting permanent
+history; the application's lineage deletion guard remains intact. Its twelve
+persistence/recovery cases also pass independently. The disposable verification
+database was dropped and verified absent after the full run.

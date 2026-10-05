@@ -48,9 +48,12 @@ eighteen migration records, then repeat the script to verify idempotence.
 Remove only the disposable database and temporary unencrypted dump.
 
 The owner's earlier conversion approval applies to the local demo database.
-Obtain any required hosted migration authorization against the prepared release
-and verified impact before applying these migrations outside development.
-No reset, guessed conversion or data repair is included.
+The current October 4 instruction to commit, push and deploy authorizes this
+preserving release against the reviewed hosted target. Rehearsal and a fresh
+precutover inventory confirm that the migration guards pass with no affected
+master-mix or sequencing records. No reset, guessed conversion, destructive data
+remedy or copying of local demo configuration is included. Stop if those
+prerequisites change and a data conversion or destructive remedy becomes necessary.
 
 ## Verification and activation
 
@@ -95,8 +98,22 @@ SQL (`322d65c524ecaa6d65133efbe5213f18602214da4e2eefeb282948ca1d24b743`),
 with eighteen migrations and unchanged counts for all 226 existing tables.
 Disposable rehearsal database and unencrypted dump cleanup passed.
 
-The connected backend run and browser suites are in progress. A test fixture
-that removed retained sendout history now uses an independent batch instead;
-the twelve persistence/recovery cases pass from the repaired source. This
-changes test setup, preserving the application's deletion guard. Final results,
-backup and activation identities will be recorded in the release receipt.
+The final full connected backend run passes: 1,244 cases, zero failures and two
+intentional environment skips. The full desktop/mobile browser suite passes:
+212 cases, zero failures and two intentional mobile print skips. A recovery
+fixture uses an independent batch rather than removing retained sendout history;
+the twelve persistence/recovery cases also pass independently, preserving the
+application's deletion guard. Verification databases were dropped and verified
+absent. Production UI build passes, and the Ready staged deployment records
+the exact pushed application SHA. Backup and activation identities are retained
+in the [release receipt](../operations/portal-workflow-release-20261004.md).
+
+## Completed activation
+
+The release receipt records matching API/UI application source
+`58f2af34e989c3b7187b39d542174444c2985896`, successful protected backup/deployment,
+all eighteen hosted migrations, two verified encrypted off-server recovery sets,
+unchanged counts for all 226 existing application tables, preserved runtime and
+mounts, and passing public proxy, health and actual sign-in checks. Automatic
+deployment holds remain enabled and both protected workflows are disabled again.
+Physical/scientific/provider and authenticated operator acceptance remain separate.

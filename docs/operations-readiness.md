@@ -1,5 +1,21 @@
 # Operations and production-readiness boundary
 
+## Controlled workflow release — October 4, 2026
+
+The owner's commit, push and deploy instruction was executed under the separate
+[hosted release plan](plans/PORTAL-WORKFLOW-RELEASE-20261004-PLAN.md).
+The [completed receipt](operations/portal-workflow-release-20261004.md) records
+matched API/UI source `58f2af34e989c3b7187b39d542174444c2985896`, four rehearsed
+migrations above the existing fourteen, verified encrypted database/private-file
+recovery and off-server copies, unchanged counts for all 226 existing application
+tables, preserved runtime/storage and passing public health, proxy and actual
+Clerk sign-in checks. Full regression passes: 1,244 backend, 1,428 frontend unit
+and 212 desktop/mobile browser cases, with four intentional environment skips.
+No reset, copying of local fake PSeq data, hosted data repair or Clerk cutover
+occurred. Automatic deployment controls remain held and both protected workflows
+were disabled again. Physical/scientific/provider and authenticated operator
+acceptance remain separate.
+
 ## Controlled workflow release — October 2, 2026
 
 The owner authorized documentation, complete tests, commit/push, matched API/Portal

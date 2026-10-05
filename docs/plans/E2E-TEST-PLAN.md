@@ -3901,3 +3901,15 @@ and page context. No automated E2E run was requested for this CSS-only fix.
 Verify the bounded preview at desktop and 320 px reflow, fixed modal header/footer, keyboard outcome selection and focus return. A cancelled or failed print must expose only failure details and permit recording without a scan; successful printing must reject missing or mismatched scans. Verify a single 50 × 25 mm print page containing the complete barcode and long accession/location metadata, with portal chrome and form controls hidden. The existing print regression source is strengthened for metadata containment and page count. Automated execution is pending; real printer/stock/scanner qualification remains separate.
 
 Connected local acceptance passes for desktop/320 px preview, fixed footer, Escape focus return, failed-outcome validation and Failed history without a scan or activation. The first exported PDF failed with two blank Letter pages around its label page. After removing named-page transitions, the owner's second export has one 50.12 × 25.06 mm page with contained barcode and metadata. The focused component tests, typecheck, scoped lint and docs checks pass; these manual/PDF checks do not claim an automated E2E run or physical printer/scanner qualification.
+
+### October 4 release regression
+
+The complete source-frozen desktop/mobile suite passes: 212 cases, zero failures,
+and two intentional mobile print skips. The current workspace navigation,
+canonical CRM handoff destination, and visible Order Settings sections replace
+stale fixture expectations. Finance filter retention waits for an interactive
+sidebar transition before entering text into the server-rendered form, then
+verifies the URL and retained value across every section. Label PDF, pair
+validation, protocol execution, cancellation, and narrow-layout cases are covered.
+This automated evidence does not qualify a physical printer/scanner or bench run.
+See the [release receipt](../operations/portal-workflow-release-20261004.md).
