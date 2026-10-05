@@ -1,5 +1,20 @@
 # Operations and production-readiness boundary
 
+## Supplier detail tabs UI-only release — October 5, 2026
+
+The owner's commit/push and UI deployment instruction is complete. The
+[UI release receipt](operations/supplier-tabs-ui-release-20261005.md) records UI
+source `4c61eddb73a94e4c46d26caefc4e0bddaabb7753`, deployment
+`dpl_Fk24GZmK2zmyHojYgLw1StfatFkj`, production build, source/alias verification
+and passing live sign-in/health/proxy checks. API source remains
+`c781988630ddfdb07f0d76dd7c3bb9753c15d660`, healthy with twenty migrations; no
+API deployment or migration occurred. The current generic guide/corpus stays
+aligned with the API so documentation search remains version-compatible.
+Explicit tab help wording is deferred to a paired UI/API release. Both Vercel
+Git holds and disabled protected workflows are preserved. Authenticated supplier
+and documentation-search walkthroughs remain separate from local simulated and
+public smoke evidence.
+
 ## Controlled vendor sequencing release — October 5, 2026
 
 The owner's documentation, tests, commit/push and deployment instruction was

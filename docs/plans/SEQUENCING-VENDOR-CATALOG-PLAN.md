@@ -147,3 +147,10 @@ introducing a documentation-search version failure in a UI-only deployment.
 
 Record deployment identities and validation in the
 [UI release receipt](../operations/supplier-tabs-ui-release-20261005.md).
+
+Completed UI-only release: source `4c61eddb73a94e4c46d26caefc4e0bddaabb7753` is
+pushed and active in UI `dpl_Fk24GZmK2zmyHojYgLw1StfatFkj`. Production build,
+staged/public source verification, live sign-in/health/proxy checks and preserved
+API source/twenty migrations pass. See the completed UI release receipt. The
+current generic bundled guide remains on the API-compatible corpus; the explicit
+tab wording above remains deferred to a paired documentation release.
