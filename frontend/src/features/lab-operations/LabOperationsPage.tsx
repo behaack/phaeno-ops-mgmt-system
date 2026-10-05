@@ -653,41 +653,40 @@ export function MaterialList({ items, canManage, canApprove, onCreate, refresh }
                 key={item.id}
                 id={`material-lot-${item.id}`}
                 tabIndex={-1}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-background p-4 shadow-xs focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                className="flex items-start justify-between gap-3 rounded-lg border bg-background p-4 shadow-xs focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
               >
-                <div>
+                <div className="min-w-0 flex-1">
                   <Link className="font-medium text-primary underline underline-offset-4 wrap-anywhere" to="/purchasing/materials/$materialLotId" params={{ materialLotId: item.id }}>{item.name} · {item.lotNumber}</Link>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="wrap-anywhere text-xs text-muted-foreground">
                     {item.quantityHoldReason ? 'Quantity reconciliation required · ' : ''}{item.materialKey} · {item.availableQuantity} {item.quantityUnit} · {item.storageLocation}
                     {item.supplier ? ` · ${item.supplier}` : ''}
                     {item.expirationOrRetestDate ? ` · expiration/retest ${formatDateOnly(item.expirationOrRetestDate)}` : ''}
                     {item.qcPerformedOn ? ` · QC ${formatDateOnly(item.qcPerformedOn)}` : ''}
                   </p>
                   {item.qcDisposition === 'Failed' && item.qcFailureReason ? (
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p className="mt-1 wrap-anywhere text-xs text-muted-foreground">
                       QC failure reason: {item.qcFailureReason}
                     </p>
                   ) : null}
                   {item.components.length > 0 ? (
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p className="mt-1 wrap-anywhere text-xs text-muted-foreground">
                       Prepared from {item.components.map((component) => `${component.materialName} ${component.lotNumber}`).join(', ')}
                     </p>
                   ) : null}
+                  <div className="mt-2"><Status value={item.qcDisposition} prefix="QC" /></div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Status value={item.qcDisposition} prefix="QC" />
-                  {canApprove && item.qcDisposition === 'Pending' ? (
-                    <Button
-                      id={`material-qc-action-${item.id}`}
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openQcDialog(item)}
-                    >
-                      Record QC
-                    </Button>
-                  ) : null}
-                </div>
+                {canApprove && item.qcDisposition === 'Pending' ? (
+                  <Button
+                    id={`material-qc-action-${item.id}`}
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0"
+                    onClick={() => openQcDialog(item)}
+                  >
+                    Record QC
+                  </Button>
+                ) : null}
               </li>
             ))}
           </ul>

@@ -4065,3 +4065,13 @@ or accessibility violations. Screenshot review passes. At the next authorized
 connected checkpoint, verify supplier-tab URL refresh/direct links, supplier-list
 filter return and existing modal focus return from both tabs. This follow-up
 change is local and is not part of the earlier October 5 hosted release receipt.
+
+### Material lot QC card reflow — October 5, 2026
+
+Read-only simulated 1,440/320 px light/dark inspection passes top-row trailing
+Record QC placement, reserved action space, wrapped long identifiers/details,
+no horizontal overflow, modal open/Cancel focus return and operator action absence.
+No QC outcome or API request is performed. Screenshot and accessibility review
+pass. Existing permissions, version/outcome behavior and identifiers are unchanged;
+automated regression suite execution remains request-only. Hosted public smoke
+and UI identity evidence belong in the dedicated QC layout release receipt.

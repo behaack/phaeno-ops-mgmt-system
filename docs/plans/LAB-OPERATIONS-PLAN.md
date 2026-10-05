@@ -1751,3 +1751,32 @@ hosted row/runtime preservation and public smoke checks pass under
 [the completed release receipt](../operations/portal-workflow-release-20261005.md).
 This supersedes earlier request-only test/release statements for this batch;
 physical/scientific/provider and authenticated operator acceptance remain separate.
+
+## Material lot QC action placement — October 5, 2026
+
+The owner requested Record QC on the card's top row at the trailing edge, with
+material details wrapping to accommodate it. Purchasing supervisors need the
+pending-QC action visible without scanning below a long identity/details row.
+Use a non-wrapping outer row, a flexible minimum-width-zero information column,
+wrappable detail/failure/component text and a non-shrinking Record QC button.
+Keep the QC badge below the information. Preserve the primary record link,
+Pending/supervisor gate, button ID, modal workflow, concurrency and scientific
+outcome rules. This is presentation-only with no persisted model change.
+
+Scoped lint/TypeScript and read-only simulated 1,440/320 px light/dark inspection
+pass: top-right action geometry, details wrapping without overlap/overflow,
+modal Cancel focus return, action absent for an operator, zero browser/accessibility
+errors and no API requests or QC writes. The existing materials guide remains
+accurate; its generic Record QC instructions do not describe card placement.
+Retain the API-compatible bundled help/corpus version for this UI-only follow-up.
+Automated regression suites were not requested; no behavior-test changes are
+needed because the labels, identifiers, guards and callbacks are preserved.
+
+Include this adjustment in the active authorized commit/push and UI deployment.
+Follow the preserving UI-only process used by the
+[supplier tabs release](../operations/supplier-tabs-ui-release-20261005.md): frozen
+committed source, production configuration, staged source/root checks, promotion,
+public smoke, unchanged API source/twenty migrations, held automatic deployment
+controls and task-only cleanup. Roll back to UI
+`dpl_Fk24GZmK2zmyHojYgLw1StfatFkj` if activation fails. Record results in the
+[QC layout release receipt](../operations/material-lot-qc-ui-release-20261005.md).

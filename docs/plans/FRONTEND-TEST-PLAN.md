@@ -3829,3 +3829,12 @@ exclusive panels, independent retained filters, arrow-key focus/selection and
 zero accessibility violations. The supplier route validates the Addresses query
 selection and defaults other values to Products; verify refresh/direct-link
 restoration in the next authorized connected regression checkpoint.
+
+### Material lot QC action placement — October 5, 2026
+
+Presentation-only card changes preserve Record QC label/ID, supervisor/Pending
+gate and mutation/modal callbacks. Scoped lint and TypeScript pass. Read-only
+simulated desktop/320 px checks in both themes verify action at the top-right,
+long details wrapping, no overlap/overflow, Cancel focus return and operator
+absence, with zero browser/accessibility errors and no API requests. Existing
+behavior assertions remain applicable; no automated regression suite was requested.
