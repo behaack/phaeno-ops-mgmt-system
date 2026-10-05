@@ -60,8 +60,11 @@ or requires a destructive remedy; the release authorizes no such remedy.
    checksums and an off-server recovery copy. Keep prior recovery sets.
 5. Recheck live migration/data prerequisites. Dispatch protected API deployment
    with migrations enabled, storage/scanning/bootstrap **Preserve**, and Clerk
-   cutover false. Require its deployment lock, write freeze, final encrypted
-   pre-migration backup and restore/health verification.
+   cutover false. Require its deployment lock, reviewed additive compatibility,
+   final encrypted consistent-database backup and restore/health verification.
+   The coordinated database/private-file snapshot pauses and resumes the API;
+   the API deployer keeps the old API available while taking its PostgreSQL dump
+   and applying additive migrations. Do not describe that as a separate write freeze.
 6. Verify running source/image, twenty migrations, preservation counts including
    the intentional product-type addition, runtime hashes and private mounts.
    Promote the matching UI only after API verification. Check public health,
@@ -73,10 +76,11 @@ or requires a destructive remedy; the release authorizes no such remedy.
 
 ## Rollback
 
-Before reopening writes, restore the verified database/private-file snapshot
-with the matching prior API/runtime and UI deployment. Do not use migration
-Down to discard new vendor history. After writes reopen, preserve newly recorded
-facts and assess a forward fix or coordinated recovery before rollback.
+For coordinated recovery, freeze writes before restoring the verified
+database/private-file snapshot with the matching prior API/runtime and UI.
+Do not use migration Down to discard new vendor history. Account for any facts
+written after the recovery snapshot; preserve those facts and assess a forward
+fix or coordinated recovery before rollback.
 
 ## Status
 
@@ -103,3 +107,12 @@ Protected backup run `37376489067` succeeded from maintenance source
 database/file-reference restore, populated synthetic restore, encryption round
 trip, cleanup and API resume. The off-server artifact and local encrypted copy
 were retained and checksum-verified. The backup workflow is disabled again.
+
+Completed October 5: application `c781988630ddfdb07f0d76dd7c3bb9753c15d660` is
+committed, pushed and deployed as matching API/UI under protected run
+`37380436791` and UI `dpl_EeQv4SD3AgZkL8fKGw2DMHyxcDS2`. Twenty hosted
+migrations, preserving row counts, unchanged runtime settings/private mounts,
+restore-verified encrypted recovery with off-server copies, public authorization
+and actual production sign-in all pass. Both workflow holds and Vercel Git holds
+remain in place. See the completed release receipt for exact identities and
+remaining physical/scientific/provider and authenticated acceptance boundaries.

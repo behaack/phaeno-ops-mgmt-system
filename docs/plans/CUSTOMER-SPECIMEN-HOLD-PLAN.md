@@ -72,3 +72,13 @@ Original deferred acceptance outline (current evidence is in the linked gap plan
 - [Specimen tube attempts and fallback](SPECIMEN-TUBE-ATTEMPT-PLAN.md)
 - [Lab Operations](LAB-OPERATIONS-PLAN.md)
 - [Order Management](ORDER-MANAGEMENT-PLAN.md)
+
+## Completed hosted release — October 5, 2026
+
+This implementation batch is included in application
+`c781988630ddfdb07f0d76dd7c3bb9753c15d660`, now deployed as matching API/UI with
+the two preserving EF migrations. Full regression, fresh recovery verification,
+hosted row/runtime preservation and public smoke checks pass under
+[the completed release receipt](../operations/portal-workflow-release-20261005.md).
+This supersedes earlier request-only test/release statements for this batch;
+physical/scientific/provider and authenticated operator acceptance remain separate.

@@ -1741,3 +1741,13 @@ September 30 local phase implementation: [MULTI-PHASE-LAB-JOBS-PLAN.md](MULTI-PH
 ### Service workflow header — October 3, 2026
 
 Keep **New service workflow** on the same row as **Controlled service workflows**. Give the heading/description a flexible minimum-zero width and prevent the creation button from shrinking; the description wraps into the remaining space. On exceptionally narrow content widths, bound the button to 55% of its row and let its label wrap with a minimum standard control height, so neither the heading nor description collapses. Preserve filters below and keyboard behavior. This layout-only change needs scoped lint/type checking and visual inspection; no user-guide change is necessary.
+
+## Completed hosted release — October 5, 2026
+
+This implementation batch is included in application
+`c781988630ddfdb07f0d76dd7c3bb9753c15d660`, now deployed as matching API/UI with
+the two preserving EF migrations. Full regression, fresh recovery verification,
+hosted row/runtime preservation and public smoke checks pass under
+[the completed release receipt](../operations/portal-workflow-release-20261005.md).
+This supersedes earlier request-only test/release statements for this batch;
+physical/scientific/provider and authenticated operator acceptance remain separate.

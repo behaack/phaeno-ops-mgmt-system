@@ -320,3 +320,13 @@ Original pairs, phase-order gates and physical kit exclusivity remain enforced.
 The full component and synthetic browser suites passed as recorded in the
 [October 2 release plan](PORTAL-WORKFLOW-RELEASE-20261002-PLAN.md). Connected backend
 results and exact hosted activation evidence belong to that release checkpoint.
+
+## Completed hosted release — October 5, 2026
+
+This implementation batch is included in application
+`c781988630ddfdb07f0d76dd7c3bb9753c15d660`, now deployed as matching API/UI with
+the two preserving EF migrations. Full regression, fresh recovery verification,
+hosted row/runtime preservation and public smoke checks pass under
+[the completed release receipt](../operations/portal-workflow-release-20261005.md).
+This supersedes earlier request-only test/release statements for this batch;
+physical/scientific/provider and authenticated operator acceptance remain separate.

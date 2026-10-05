@@ -1,5 +1,22 @@
 # Operations and production-readiness boundary
 
+## Controlled vendor sequencing release — October 5, 2026
+
+The owner's documentation, tests, commit/push and deployment instruction was
+completed under [the hosted release plan](plans/PORTAL-WORKFLOW-RELEASE-20261005-PLAN.md).
+The [completed receipt](operations/portal-workflow-release-20261005.md) records
+matching API/UI source `c781988630ddfdb07f0d76dd7c3bb9753c15d660`, two rehearsed
+additive EF migrations above eighteen, restore-verified encrypted database/file
+recovery and off-server copies. All 231 existing application table counts are
+preserved except the one built-in Sequencing service addition; runtime settings
+and private mounts are preserved. Full regression passes 1,261 backend, 1,448
+frontend unit and 212 desktop/mobile browser cases with seven intentional skips.
+Public health, database/proxy authorization, Website availability and actual
+production Clerk sign-in pass. No reset, local fixture copy, backfill or Clerk
+cutover occurred. Automatic deployment controls remain held and both protected
+workflows are disabled again. Physical/scientific/provider and authenticated
+operator acceptance remain separate.
+
 ## Controlled workflow release — October 4, 2026
 
 The owner's commit, push and deploy instruction was executed under the separate

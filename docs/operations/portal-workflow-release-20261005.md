@@ -54,4 +54,58 @@ The local encrypted recovery copy matches its manifest:
 
 ## Activation
 
-Commit/push, matched API/UI deployment and live acceptance checks are pending.
+Application source `c781988630ddfdb07f0d76dd7c3bb9753c15d660` is committed and
+pushed to `codex/portal-documentation-search-release`.
+[Protected deployment run 37380436791](https://github.com/behaack/phaeno-ops-mgmt-system/actions/runs/37380436791)
+succeeded from that exact source with migrations enabled, storage/scanning/bootstrap
+**Preserve** and Clerk cutover false. The running healthy API uses image
+`phaeno-portal-green-api:sha-c781988630dd-run-37380436791-1`, image ID
+`sha256:18642a967aa9500563bf2332e3939e4025ba7cca15c85b150ab506bcd3848e92`.
+
+The hosted history contains all twenty migrations, including
+`20261005163942_VendorSequencingResults` and
+`20261005182306_SequencingVendorCatalog`. All 231 existing application table
+counts are unchanged except the intentional single Sequencing service seed.
+The three new tables are empty and all fourteen new sendout fields are nullable.
+Database/Portal runtime hashes and private mounts match the baseline; Compose
+changes only the release image/source identity. Database and managed scanner are
+healthy, independent OCIA services remain running, and bounded API logs contain
+zero failure lines. No reset, backfill, local fixture copy or Clerk cutover occurred.
+
+The production-configured UI was built from an isolated copy matching all 1,056
+frontend source files. Mock sessions are disabled, production Clerk is configured
+and `/api` uses the existing public proxy. Staged deployment
+`dpl_EeQv4SD3AgZkL8fKGw2DMHyxcDS2` passed protected-root verification before
+promotion. Vercel's source metadata and canonical domain alias confirm that
+[Portal](https://portal.phaenobiotech.com) now serves this same application commit.
+
+Live checks pass: health 200, database ping 204, accession and vendor catalog
+access 401 both directly and through the Portal proxy, Website search/root 200
+and Portal root 200. Actual production Clerk sign-in controls render with zero
+browser warnings/errors. Both protected workflows are disabled again and both
+Vercel Git deployment holds remain enabled. Physical/scientific/provider and
+authenticated operator acceptance remain separate.
+
+## Final pre-migration recovery
+
+The coordinated database/private-file snapshot pauses and resumes API writes.
+The API deployer separately holds the exclusive deployment lock and takes a
+consistent PostgreSQL dump while the old API remains available; it does not
+provide another write freeze. The reviewed migrations are additive and the
+post-deployment preservation checks pass. This corrects the initial plan wording
+to match the actual protected procedure.
+
+The deployment produced and restore-verified
+`pre-migration-20261005T221124Z-c781988630dd` at the eighteen-migration baseline.
+Encrypted database and key files were exported off-server and checksum-verified:
+
+| File | SHA-256 |
+| --- | --- |
+| `.dump.enc` | `0f2b5bed5b3a521ce6c1c588a84fa7f24721020c99d945e8fb8ec8ba91e2f9d7` |
+| `.key.enc` | `c1a4f005e550621adac2a07965c9314e8b352b3f438ba2d2d0f7f2f5d0d369df` |
+
+Recovery, test reports, migration SQL, inventories and live smoke evidence are
+retained under ignored `artifacts/portal-release-20261005`. Temporary isolated
+backend builds and frontend source/dependency/configuration copies are removed.
+The final documentation checkpoint records this completed activation; the
+application deployment remains pinned to `c781988630ddfdb07f0d76dd7c3bb9753c15d660`.

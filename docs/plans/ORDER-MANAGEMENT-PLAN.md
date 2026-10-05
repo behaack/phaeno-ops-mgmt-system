@@ -3561,3 +3561,13 @@ The catalog modal uses one field per row at every viewport size. The catalog edi
 Verification: TypeScript, scoped ESLint, generated documentation consistency and whitespace checks passed. Signed-in browser inspection confirmed the edit and create dialogs, one field per row, fixed PSeq unit, no code input, predefined unit choices, and Status changes enabling Save item. No catalog save was submitted during verification; existing pricing and activation were not changed by the agent. No browser errors were reported. Automated suites were not run under repository policy.
 
 September 30 local phase implementation: [MULTI-PHASE-LAB-JOBS-PLAN.md](MULTI-PHASE-LAB-JOBS-PLAN.md) now owns the implemented sequential cohort extension, derived mixed progress, phase-specific receipt/TAT/deadline, unsent-only mutual rephasing, first-tube cancellation cutoff and explicit partial/combined phase invoices. It supersedes older whole-Job completion invoicing and single-status assumptions for phased PSeq Jobs. Local migration applied after the authorized Job purge; connected/browser/physical/scientific acceptance and release remain separate, unverified gates.
+
+## Completed hosted release — October 5, 2026
+
+This implementation batch is included in application
+`c781988630ddfdb07f0d76dd7c3bb9753c15d660`, now deployed as matching API/UI with
+the two preserving EF migrations. Full regression, fresh recovery verification,
+hosted row/runtime preservation and public smoke checks pass under
+[the completed release receipt](../operations/portal-workflow-release-20261005.md).
+This supersedes earlier request-only test/release statements for this batch;
+physical/scientific/provider and authenticated operator acceptance remain separate.
