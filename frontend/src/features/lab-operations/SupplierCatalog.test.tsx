@@ -10,7 +10,11 @@ vi.mock('#/api/supplier-catalog', async importOriginal => ({ ...await importOrig
 vi.mock('#/features/auth/session-context', () => ({ usePhaenoSession: () => ({ authProvider: 'clerk', session: { capabilities: { canManageOrderConfiguration: mocks.allowed } } }) }))
 vi.mock('#/features/orders/use-order-draft-guard', () => ({ useOrderDraftGuard: () => vi.fn() }))
 vi.mock('@tanstack/react-router', () => ({ useSearch: () => ({}), Link: ({ children, to, params }: { children: ReactNode; to: string; params?: { supplierId: string } }) => <a href={to.replace('$supplierId', params?.supplierId ?? '')}>{children}</a> }))
-function mount(supplierId?: string) { render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}><SupplierCatalogPage supplierId={supplierId} /></QueryClientProvider>) }
+function mount(supplierId?: string) {
+  render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}><SupplierCatalogPage supplierId={supplierId} /></QueryClientProvider>)
+  const productsTab = supplierId ? screen.queryByRole('tab', { name: 'Products' }) : null
+  if (productsTab) fireEvent.keyDown(productsTab, { key: 'Enter' })
+}
 beforeEach(() => { vi.clearAllMocks(); mocks.types.mockReturnValue({ data: productTypesFixture, isPending: false, isError: false }); mocks.allowed = true; mocks.catalog.mockReturnValue({ data: supplierCatalogFixture, isPending: false, isError: false }); mocks.supplier.mockResolvedValue(supplierCatalogFixture[0]); mocks.product.mockResolvedValue(supplierCatalogFixture[0].products[0]) })
 describe('supplier catalog', () => {
   it('defines each Phaeno reagent as a distinct product with fixed Reagent type', async () => {

@@ -4052,3 +4052,16 @@ workflow, documentation and recovery regressions pass. Fixtures assert roster
 names independently of graphical tracker icons and preserve the automatically
 expanded single-sample preparation control. This automated evidence does not
 replace the connected operator, physical shipment or scientific/provider checks.
+
+### Supplier detail tabs — October 5, 2026 (local)
+
+The existing purchased-container catalog case opens Products before New product.
+It retains the original create/edit assertions and fixture data. The regression
+suite is adapted but not executed for this presentation request. Read-only
+simulated browser checks pass for Addresses/Products visibility, retained product
+search/inactive and address-inactive filters, keyboard arrow selection/focus,
+light/dark and 1,440/320 px layouts, with no overflow, browser errors, API writes
+or accessibility violations. Screenshot review passes. At the next authorized
+connected checkpoint, verify supplier-tab URL refresh/direct links, supplier-list
+filter return and existing modal focus return from both tabs. This follow-up
+change is local and is not part of the earlier October 5 hosted release receipt.

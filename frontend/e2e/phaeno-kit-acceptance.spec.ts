@@ -65,6 +65,7 @@ test('signed-in Phaeno staff can create a purchased container with capacity and 
   await page.emulateMedia({ colorScheme: info.project.name === 'mobile-chrome' ? 'dark' : 'light', reducedMotion: 'reduce' })
   const state = await fixture(page, 'catalog')
   await expect(page.getByRole('heading', { name: 'Shipping supplier' })).toBeVisible()
+  await page.getByRole('tab', { name: 'Products', exact: true }).click()
   await page.getByRole('button', { name: 'New product' }).click()
   const create = page.getByRole('dialog', { name: 'New product' })
   await create.getByRole('button', { name: 'Units for Inventory unit' }).click()

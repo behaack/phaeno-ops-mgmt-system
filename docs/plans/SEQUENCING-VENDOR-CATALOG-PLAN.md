@@ -95,3 +95,55 @@ hosted row/runtime preservation and public smoke checks pass under
 [the completed release receipt](../operations/portal-workflow-release-20261005.md).
 This supersedes earlier request-only test/release statements for this batch;
 physical/scientific/provider and authenticated operator acceptance remain separate.
+
+## Supplier detail tabs — October 5, 2026 (local)
+
+The owner requested separate **Products | Addresses** tabs so Purchasing
+administrators can manage each collection without scanning two stacked cards.
+Use the shared Portal Tabs beneath the supplier identity and Actions menu. The
+tab bar spans the full container width at every viewport, with two equal columns.
+Products opens first and owns its search, inactive filter and New product
+action. Each pane retains its filters while switching, and only the selected
+pane exposes controls to keyboard and assistive technology. Persist Addresses
+selection through the supplier route query; returning to the supplier list
+retains its existing filters. Phaeno's internal-producer record keeps its existing
+Products-only view because it does not support vendor shipment addresses.
+
+Implemented locally with no persistence or permission changes. Scoped lint,
+TypeScript, help generation and whitespace checks pass. A read-only simulated
+browser preview at 1,440 and 320 px in both themes confirms exclusive panels,
+retained filters, arrow-key selection/focus, no horizontal overflow, no browser
+errors and zero automated accessibility violations. Screenshot review passes.
+Existing component/product-creation E2E cases now enter Products explicitly;
+those regression suites were not executed for this presentation request. The
+earlier hosted release receipt does not include this subsequent tab change.
+
+## Supplier tabs UI-only release — October 5, 2026
+
+The owner now authorizes commit/push and Portal UI deployment. The separate
+[hosted release plan](PORTAL-WORKFLOW-RELEASE-20261005-PLAN.md) already addresses
+the September production-database planning hold. This follow-up changes only the
+UI: no API deployment, EF migration, data reset, provider/authentication switch or
+public Website deployment. Preserve the protected workflow and Vercel Git holds.
+
+Build the committed frontend from a frozen snapshot with the existing installed
+lockfile-compatible dependencies. Pull production configuration; require the
+production Clerk key, mock sessions disabled and the existing `/api` proxy.
+Stage without assigning public domains, verify READY state, source SHA and
+protected root rendering, then promote the exact deployment. Roll back the UI
+alias to `dpl_EeQv4SD3AgZkL8fKGw2DMHyxcDS2` if activation checks fail. Verify
+public health, authorization/proxy and actual sign-in, plus unchanged API source
+and twenty migrations. Retain evidence and remove task-only build outputs.
+
+UI-only documentation boundary: browser search requires the same corpus hash as
+the API. Preserve the current generic vendor guide and generated corpus/version
+`1fcbe16fb9a6`, matching API `c781988630ddfdb07f0d76dd7c3bb9753c15d660`.
+Its existing collection-management instructions remain accurate. Defer this
+explicit wording until a paired UI/API help release: “Open the supplier name to
+use Products and Addresses. Products opens first for catalog search and New
+product; Addresses contains Shipment addresses and New address. The selected tab
+survives refresh, and switching tabs preserves their filters.” This avoids
+introducing a documentation-search version failure in a UI-only deployment.
+
+Record deployment identities and validation in the
+[UI release receipt](../operations/supplier-tabs-ui-release-20261005.md).

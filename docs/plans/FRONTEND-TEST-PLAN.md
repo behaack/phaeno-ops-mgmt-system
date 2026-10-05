@@ -3816,3 +3816,16 @@ The suppression regression is active. Lint, TypeScript and generated help checks
 pass. Updated selectors retain the primary batch link, vendor-dependent controls,
 per-sample quantity labels and next-step announcement assertions. The vendor batch
 modal now includes its required accessible description.
+
+### Supplier detail tabs — October 5, 2026 (local)
+
+Existing SupplierCatalog product cases now activate the Products tab using its
+keyboard selection before interacting with product controls. The shared tabs
+preserve mounted address and product filter state, hide inactive panels and
+retain supplier-level Actions outside the pane. Scoped lint and TypeScript pass;
+component regressions are adapted but not executed for this presentation request.
+Read-only simulated browser verification covers both themes at desktop/320 px,
+exclusive panels, independent retained filters, arrow-key focus/selection and
+zero accessibility violations. The supplier route validates the Addresses query
+selection and defaults other values to Products; verify refresh/direct-link
+restoration in the next authorized connected regression checkpoint.
