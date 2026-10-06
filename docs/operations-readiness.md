@@ -1,5 +1,18 @@
 # Operations and production-readiness boundary
 
+## Material lot QC card UI release — October 5, 2026
+
+The in-progress UI release includes the owner's top-right Record QC and wrapped
+details adjustment. The [QC layout receipt](operations/material-lot-qc-ui-release-20261005.md)
+records UI source `2fe9571d5ed722365a6c91f687703ade267b7e72`, deployment
+`dpl_HkmQDYddxbcAj37ZKc1MvgGinis2`, passing production build and live
+sign-in/health/proxy checks. API source `c781988630ddfdb07f0d76dd7c3bb9753c15d660`
+and twenty migrations remain unchanged. Supervisor/Pending gates, scientific QC
+workflow and the API-compatible help corpus are preserved. No QC outcome was
+recorded by verification or deployment. Both disabled protected workflows and
+Vercel Git holds remain in place; authenticated QC execution is separate from
+local simulated layout/focus and public smoke evidence.
+
 ## Supplier detail tabs UI-only release — October 5, 2026
 
 The owner's commit/push and UI deployment instruction is complete. The

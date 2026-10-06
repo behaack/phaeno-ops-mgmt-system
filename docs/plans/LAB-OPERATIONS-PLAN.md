@@ -1780,3 +1780,9 @@ public smoke, unchanged API source/twenty migrations, held automatic deployment
 controls and task-only cleanup. Roll back to UI
 `dpl_Fk24GZmK2zmyHojYgLw1StfatFkj` if activation fails. Record results in the
 [QC layout release receipt](../operations/material-lot-qc-ui-release-20261005.md).
+
+Completed UI-only release: `2fe9571d5ed722365a6c91f687703ade267b7e72` is pushed
+and active in UI `dpl_HkmQDYddxbcAj37ZKc1MvgGinis2`. Frozen-source production
+build, staging/source/alias verification, live sign-in/health/proxy and unchanged
+API/twenty migrations checks pass. See the completed QC layout release receipt.
+No QC outcome was recorded by verification or deployment.

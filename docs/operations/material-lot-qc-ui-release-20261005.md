@@ -24,8 +24,32 @@ and both Vercel Git deployment holds in place.
 
 ## Activation
 
-Commit/push, frozen-source production build, protected staging/source verification,
-promotion and live checks are pending. Preserve shared installed dependencies and
-remove task-only build/configuration copies after verification. Retain deployment,
-preview and live smoke evidence under ignored
-`artifacts/material-lot-qc-ui-release-20261005`.
+UI source `2fe9571d5ed722365a6c91f687703ade267b7e72` is committed and pushed to
+`codex/portal-documentation-search-release`. The production build passed from a
+frozen Git archive matching all 1,056 frontend files after line-ending
+canonicalization. Existing verified dependencies were reused without installation;
+production Clerk, disabled mock sessions and the existing `/api` proxy are verified.
+The built help corpus remains compatible with the current API.
+
+Staged deployment `dpl_HkmQDYddxbcAj37ZKc1MvgGinis2` reached READY from the exact
+pushed source and passed protected-root rendering before promotion. Canonical
+Vercel alias and source metadata confirm [Portal](https://portal.phaenobiotech.com)
+serves that same source at
+`phaeno-ops-mgmt-system-mo5pp72l4-cadexgenomics.vercel.app`.
+
+Live health 200, database ping 204, accession/vendor lookup authorization 401
+directly and through the Portal proxy, Website search/root 200 and Portal root
+200 all pass. Production Clerk sign-in renders with zero browser warnings/errors.
+The API remains healthy on source `c781988630ddfdb07f0d76dd7c3bb9753c15d660`
+with twenty migrations; no API deployment or migration occurred. Both protected
+workflows remain disabled and both Vercel Git holds are preserved. No QC outcome
+or production catalog write was performed during verification or deployment.
+Authenticated QC execution remains separate from the simulated layout/focus and
+public smoke evidence; scientific QC behavior was not changed.
+
+Task-only build/configuration copies, archive and preview fixture/cache are
+removed; shared installed dependencies are preserved. Deployment metadata,
+configuration/source proofs, preview screenshots and live smoke evidence remain
+under ignored `artifacts/material-lot-qc-ui-release-20261005`. The final
+receipt checkpoint is documentation-only; UI stays pinned to the application
+source above and API remains on its previous source.
