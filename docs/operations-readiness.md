@@ -1,5 +1,19 @@
 # Operations and production-readiness boundary
 
+## Sequencing results and FASTQ release — October 6, 2026
+
+The Owner's two commit/push checkpoints and preserving API/Portal deployment with
+EF migrations are complete under the [hosted plan](plans/PORTAL-SEQUENCING-RELEASE-20261006-PLAN.md).
+The [release receipt](operations/portal-sequencing-release-20261006.md) records
+matching application `49a90f77b41ceacd42c54d5d0b709c262f797e89`, UI
+`dpl_PLcuDhNJSwjMLbHJeizLqE7ya6Qn`, five rehearsed migrations above twenty,
+unchanged existing table counts/runtime/private services and encrypted restore-
+verified off-server recovery. Full tests pass: 1,280 backend, 1,457 frontend unit
+and 212 browser cases with six documented intentional skips. Public health,
+proxy/authorization, Website and production sign-in checks pass. Workflow and
+Vercel Git holds are restored. Real DPS execution/access/output integration,
+physical/scientific validity and signed-in workflow acceptance remain separate.
+
 ## Material lot QC card UI release — October 5, 2026
 
 The in-progress UI release includes the owner's top-right Record QC and wrapped

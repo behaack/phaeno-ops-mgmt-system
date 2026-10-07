@@ -137,6 +137,13 @@ pass. The 56-guide corpus is `2720e5faf305`. Source tests preserve all history,
 scope, concurrency, permission and focus assertions. Deployment remains gated on
 fresh coordinated recovery and exact-SHA API/UI activation below.
 
+Completed: source `49a90f77b41ceacd42c54d5d0b709c262f797e89` is deployed as matching
+API/UI with 25 hosted migrations, unchanged existing counts/runtime/private
+services and verified encrypted off-server recovery. Backup run `37566195680`,
+API run `37566708677`, UI `dpl_PLcuDhNJSwjMLbHJeizLqE7ya6Qn`; public health,
+proxy/authorization, Website and production sign-in checks pass. All automatic
+holds are restored. See the [completed receipt](../operations/portal-sequencing-release-20261006.md).
+
 Final verification: the complete connected backend suite passes 1,280 tests with
 one Windows linked-directory fixture skip; frontend unit passes 1,457 with three
 previously suppressed hold cases, and desktop/mobile browser passes 212 with the
